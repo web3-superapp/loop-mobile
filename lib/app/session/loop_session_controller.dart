@@ -53,6 +53,7 @@ class LoopSessionState {
 
 class LoopSessionController extends Notifier<LoopSessionState> {
   StreamSubscription<PrivySessionSnapshot>? _subscription;
+  var _localSignOutBarrier = false;
 
   @override
   LoopSessionState build() {
@@ -83,6 +84,10 @@ class LoopSessionController extends Notifier<LoopSessionState> {
   }
 
   void _receiveSnapshot(PrivySessionSnapshot snapshot) {
+    if (_localSignOutBarrier &&
+        snapshot.kind != PrivySessionKind.unauthenticated) {
+      return;
+    }
     if (state.mode == LoopSessionMode.preview &&
         snapshot.kind != PrivySessionKind.authenticated) {
       return;
@@ -107,6 +112,7 @@ class LoopSessionController extends Notifier<LoopSessionState> {
   }
 
   void acceptAuthenticated(PrivyAccountSummary account) {
+    _localSignOutBarrier = false;
     state = LoopSessionState(
       mode: LoopSessionMode.authenticated,
       account: account,
@@ -127,11 +133,26 @@ class LoopSessionController extends Notifier<LoopSessionState> {
   }
 
   Future<void> exit() async {
-    if (state.mode == LoopSessionMode.authenticated ||
-        state.mode == LoopSessionMode.authenticatedUnverified) {
-      await ref.read(privyAuthGatewayProvider).logout();
-    }
+    final shouldLogout =
+        state.mode == LoopSessionMode.authenticated ||
+        state.mode == LoopSessionMode.authenticatedUnverified;
+    _localSignOutBarrier = true;
     state = const LoopSessionState.signedOut();
+    if (!shouldLogout) return;
+
+    try {
+      await ref.read(privyAuthGatewayProvider).logout();
+    } on PrivyGatewayException catch (error) {
+      if (ref.mounted && _localSignOutBarrier) {
+        state = LoopSessionState.signedOut(errorMessage: error.userMessage);
+      }
+    } catch (_) {
+      if (ref.mounted && _localSignOutBarrier) {
+        state = const LoopSessionState.signedOut(
+          errorMessage: '本地会话已退出，但 Privy 远端退出尚未确认。',
+        );
+      }
+    }
   }
 }
 

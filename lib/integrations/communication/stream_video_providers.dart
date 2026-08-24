@@ -3,14 +3,15 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
+import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
+import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
+import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
 
-/// Future backend integration overrides only this narrow source.
-///
-/// The default returns no identity and never returns a token, so the public API
-/// key alone cannot construct or connect an authenticated Video client.
 final streamVideoSessionSourceProvider = Provider<StreamVideoSessionSource>(
-  (ref) => const _UnavailableStreamVideoSessionSource(),
+  (ref) => _LoopBackendStreamVideoSessionSource(
+    ref.watch(loopBootstrapSessionProvider),
+  ),
 );
 
 final streamVideoClientFactoryProvider = Provider<StreamVideoClientFactory>(
@@ -73,15 +74,31 @@ Future<void> _disposeSessionSafely(StreamVideoSdkSession session) async {
   }
 }
 
-final class _UnavailableStreamVideoSessionSource
+final class _LoopBackendStreamVideoSessionSource
     implements StreamVideoSessionSource {
-  const _UnavailableStreamVideoSessionSource();
+  const _LoopBackendStreamVideoSessionSource(this._bootstrapSession);
+
+  final LoopBootstrapSession? _bootstrapSession;
 
   @override
-  Future<StreamVideoIdentity?> loadIdentity() async => null;
+  Future<StreamVideoIdentity?> loadIdentity() async {
+    final session = _bootstrapSession;
+    if (session == null ||
+        await session.authorize() != LoopBootstrapAuthorization.authorized) {
+      return null;
+    }
+    final identity = session.identity;
+    if (identity == null) return null;
+    return StreamVideoIdentity(userId: identity.streamUserId);
+  }
 
   @override
   Future<String> loadToken(String userId) {
-    throw StateError('LOOP Stream Video bootstrap is not configured.');
+    return Future<String>.error(
+      const LoopBackendFailure(
+        LoopBackendFailureKind.unavailable,
+        code: 'stream_token_contract_unavailable',
+      ),
+    );
   }
 }

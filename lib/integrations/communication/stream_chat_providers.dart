@@ -3,15 +3,16 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
+import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
+import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
+import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_sdk_session.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 
-/// Future backend integration overrides only this narrow source.
-///
-/// The default never returns a user or token, so merely supplying the public
-/// Stream API key cannot create an authenticated connection.
 final streamChatSessionSourceProvider = Provider<StreamChatSessionSource>(
-  (ref) => const _UnavailableStreamChatSessionSource(),
+  (ref) => _LoopBackendStreamChatSessionSource(
+    ref.watch(loopBootstrapSessionProvider),
+  ),
 );
 
 /// Opaque account-rotation key; never a Stream user ID.
@@ -73,15 +74,31 @@ Future<void> _disposeSessionSafely(StreamChatSdkSession session) async {
   }
 }
 
-final class _UnavailableStreamChatSessionSource
+final class _LoopBackendStreamChatSessionSource
     implements StreamChatSessionSource {
-  const _UnavailableStreamChatSessionSource();
+  const _LoopBackendStreamChatSessionSource(this._bootstrapSession);
+
+  final LoopBootstrapSession? _bootstrapSession;
 
   @override
-  Future<StreamChatIdentity?> loadIdentity() async => null;
+  Future<StreamChatIdentity?> loadIdentity() async {
+    final session = _bootstrapSession;
+    if (session == null ||
+        await session.authorize() != LoopBootstrapAuthorization.authorized) {
+      return null;
+    }
+    final identity = session.identity;
+    if (identity == null) return null;
+    return StreamChatIdentity(userId: identity.streamUserId);
+  }
 
   @override
   Future<String> loadToken(String userId) {
-    throw StateError('LOOP Stream bootstrap is not configured.');
+    return Future<String>.error(
+      const LoopBackendFailure(
+        LoopBackendFailureKind.unavailable,
+        code: 'stream_token_contract_unavailable',
+      ),
+    );
   }
 }

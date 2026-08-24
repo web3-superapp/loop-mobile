@@ -18,6 +18,7 @@ Keep the formal repository's existing UI/catalog and six primary destinations wh
 - Official Stream Chat principal-bound client/persistence ownership, backend identity/token seam, root session rotation, bounded channel list, CID route, and official message UI.
 - Stream text composition is structurally enabled; attachment and voice-recording entry points remain disabled pending platform policy and device verification.
 - Foreground Stream Video principal-bound lifecycle, pre-construction initial-token gate, refresh loader, explicit no-push connection, UUID call-ID generator, production/preview voice-page separation, and an unmounted official `CallState`-driven foreground view.
+- Native Privy Bearer bootstrap with an HTTPS-only production origin, exact no-body request, strict no-store response parsing, principal rotation, single-flight loading, and one bounded 401 refresh attempt. Chat and Video share only the validated server-derived Stream identity; neither may connect without its separate short-lived token contract.
 
 ## Verification
 
@@ -66,6 +67,18 @@ The foreground Stream Video foundation was re-verified on 2026-08-24:
 
 These checks cover pre-construction backend identity/initial-token gating, SDK refresh-token user-ID validation, explicit push-registration disablement, single-flight authorization, logout/account-switch invalidation, stuck identity/token/connect retirement, fresh UUID v4 generation, production/preview voice separation, and truthful loading/unavailable/ready UI. The official `CallState` foreground view compiled but remains deliberately unmounted because no backend room/callee contract or native media permissions exist. No live Video token, call creation/join, media capture/playback, ringing, push, CallKit, weak-network, or two-device test was run.
 
+The native LOOP identity bootstrap slice was re-verified on 2026-08-24:
+
+- `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/dart format --output=none --set-exit-if-changed lib test`: passed; 99 files, 0 changed.
+- `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/flutter analyze`: passed; no issues.
+- `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/flutter test`: passed; 121 tests.
+- `python3 scripts/check_harness.py`: passed.
+- `python3 -m unittest discover -s tests -p 'test_*.py'`: passed; 9 tests.
+- `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/flutter build apk --debug`: passed; generated `app-debug.apk`. Flutter repeated the accepted Gradle 8.14/AGP 8.13.2 future-support warnings; the compatibility matrix was not changed.
+- `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/flutter build ios --debug --no-codesign`: passed; generated `Runner.app` for `com.cywd.loop`.
+
+These checks cover safe backend-origin parsing, an exact Bearer-only `POST /v1/bootstrap`, rejection of redirects, non-200 success codes and response drift, same-UUID LOOP/Stream identity derivation, no-store enforcement, sanitized errors, one HTTP 401 refresh attempt, timeout classification, single-flight authorization, verified-principal gating, synchronous local sign-out invalidation, stale SDK snapshot rejection, account-switch invalidation, and shared Chat/Video identity projection without a token shortcut. They use fake transports and identities. No deployed endpoint, TLS/device path, live Privy token verification, database identity stability, or live Stream connection was tested.
+
 ## Provider readiness
 
 | Capability | Current status |
@@ -74,12 +87,12 @@ These checks cover pre-construction backend identity/initial-token gating, SDK r
 | Privy Mobile App Client ID | Client-safe Development identifier supplied and wired; build-time override remains available |
 | Privy Email OTP | Guarded implementation; provider/device verification pending |
 | Stream API key | Client-safe identifier supplied |
-| Stream Chat | Official client, persistence, lifecycle, controller and UI integrated; backend-derived user ID and short-lived token source still required |
-| Stream Video | Delayed foreground SDK lifecycle and official-state UI boundary integrated; backend identity/initial token/refresh source, call target or room contract, media permissions, and device verification still required |
+| Stream Chat | Official client, persistence, lifecycle, controller and UI integrated; backend-derived identity bootstrap is wired, while the short-lived Chat token source is still required |
+| Stream Video | Delayed foreground SDK lifecycle and official-state UI boundary integrated; backend-derived identity bootstrap is wired, while initial/refresh Video tokens, an authorized Audio Room target, media permissions, and device verification are still required |
 | Firebase/push | No mobile configs or exact Stream push-provider names; initialization remains disabled |
 | Hyperliquid public markets | Direct Testnet read-only adapter available |
 | Private trading | Backend-only by design; not connected |
 
 ## Follow-up inputs
 
-Privy Email OTP still requires dashboard confirmation and physical-device evidence before it is called connected. Provide future Firebase mobile configuration only through documented client inputs. Keep Privy/Stream secrets, Firebase service-account JSON, APNs `.p8`, and Hyperliquid agent keys in backend/provider secret managers. Backend bootstrap/token contracts and a two-device test setup are required before claiming communication or trading connectivity.
+Privy Email OTP still requires dashboard confirmation and physical-device evidence before it is called connected. Provide future Firebase mobile configuration only through documented client inputs. Keep Privy/Stream secrets, Firebase service-account JSON, APNs `.p8`, and Hyperliquid agent keys in backend/provider secret managers. A deployed bootstrap endpoint, Stream token/Audio Room contracts, and a two-device test setup are required before claiming communication or trading connectivity.

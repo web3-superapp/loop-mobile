@@ -34,13 +34,15 @@ Product priority and current delivery are separate:
 - Text chat composition is wired through official UI. Attachments and voice recording remain disabled until platform permissions, upload policy and provider/device verification are complete.
 - Stream Video now has a foreground-only, principal-bound SDK lifecycle and a narrow backend identity/token seam. The SDK is constructed only after an initial backend token is available, connects with push registration disabled, and is retired on route disposal, logout, or account change.
 - Production voice surfaces never render preview room/member data. They remain disabled until the backend supplies a room/callee contract and native media permissions are reviewed; a future mounted call view must read the official `CallState` directly.
-- The current Flutter code still does not contain the Loop backend Video session source or create/join a production `Call`. It does not prove that chat writes, presence, push, ringing, media, or voice rooms are live.
+- The current Flutter code contains a shared LOOP identity Bootstrap source, but no Stream Chat/Video token source and no create/join path for a production `Call`. It does not prove that chat writes, presence, push, ringing, media, or voice rooms are live.
 - A persistent group with 200,000 members is not a verified Stream capability. LOOP must obtain written provider confirmation covering membership, message semantics, reactions, mentions, history, search and moderation before promising it.
 - Without that written confirmation, the product must adopt a sharded-group or channel model and update the information architecture before implementation.
 
 ## Identity and safety language
 
 - An internal immutable `user id` is the primary identity for accounts, social relationships and communication-provider mapping.
+- The native client now has a principal-bound adapter for the implemented `POST /v1/bootstrap` boundary. It sends one current Privy Bearer access token, accepts only the backend-derived LOOP and Stream identities, retries one HTTP 401 at most once with a newly requested token, and keeps the validated identity in memory only.
+- Chat and Video share that trusted `stream_user_id` projection, but remain disconnected while the separately owned Stream token contract is unavailable.
 - Wallet addresses are bindable and replaceable credentials. They are not database primary keys, public chat identities or communication user IDs.
 - LOOP does not present an AI Guard brand or a proprietary risk score.
 - Safety UI may show concrete, attributable facts such as simulation asset changes, allowance scope, malicious-domain signals, policy state and source time. Missing or stale evidence fails closed.

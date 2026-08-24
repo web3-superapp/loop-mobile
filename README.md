@@ -13,6 +13,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - 受 Privy 会话保护的 Email OTP 实现；缺少 Mobile App Client ID 时保持不可登录，真机验证待补
 - Hyperliquid Testnet 公共只读永续行情；订单、仓位、账户和私有交易仅保留明确标注的开发预览 UI
 - Stream Chat 官方 client、按用户持久化、token-provider 会话、频道列表与消息页已接入；后端身份/token 未就绪时不连接、不声称在线
+- 原生 Privy Bearer `POST /v1/bootstrap` 客户端已接入；严格解析服务端 LOOP/Stream 身份、隔离账号切换并最多重试一次 401。未配置后端地址时零请求，Stream token 缺失时仍不连接
 - Account、Wallet、Market、Perp、Chat、Profile 与系统状态组件
 - 深色 LOOP 设计系统、键盘焦点、语义标签、reduced-motion 与手机/桌面响应式布局
 
@@ -94,7 +95,7 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 - 不要启用 Hyperliquid HIP-3、builder fee 或非 Core 市场
 - Pay 保留首页 `Coming soon` 入口以表达产品位置，但 A / B / C 优先级不等于交付期；B5-B8 当前全部 deferred，落地页不得出现扫码、相机、金额或支付动作
 
-前端现已具备 Stream Chat 与前台 Stream Video 的主体轮换、后端身份/token 边界和失败关闭 UI。下一阶段应完成 Privy Email OTP 真机验证，并由后端实现 Loop bootstrap、Stream Chat/Video 短期 token 与语音房/被叫契约；原生媒体权限评审通过后再挂载真实 `Call`，随后配置 Firebase/Push，并继续私有 Hyperliquid Testnet 交易纵切，而不是重复 UI 基础工程。
+前端现已具备原生 LOOP identity bootstrap、Stream Chat 与前台 Stream Video 的主体轮换、后端 token 边界和失败关闭 UI。下一阶段采用前后端并行：移动端先完成前台 Audio Room 的麦克风权限、Lobby 与官方 `CallState` UI；后端实现 Stream Chat/Video 短期 token 和 Audio Room locator/角色契约。双方就绪后再做真机双端联调，Firebase/Push 与后台响铃随后单独启用。
 
 ## 仓库结构
 
