@@ -26,10 +26,13 @@ Product priority and current delivery are separate:
 ## Communication
 
 - Stream Chat + Stream Video/Audio Rooms is the selected communication integration.
-- `communicationGatewayProvider` defaults to the unconfigured production Stream seam and fails closed. Only the explicit offline composition root in `lib/main_preview.dart` injects memory data; `lib/main.dart` is the fail-closed production entry point.
+- The production Chat inbox uses Stream's official client, persistence, token provider, channel-list controller/view, channel scope and message page. Stream owns messages, pagination, ACK/read state, presence, typing and offline synchronization.
+- `communicationGatewayProvider` remains the fail-closed seam for preview-only secondary communication surfaces that have not yet moved to official SDK UI. Only `lib/main_preview.dart` injects memory data; `lib/main.dart` never injects it.
 - Communication mode is explicit: memory data is `preview`; the Stream seam is `production`. Preview UI continuously identifies itself as offline, simulated and not connected.
-- A production session authorizer must obtain or refresh a short-lived, server-issued user token and establish the SDK session before every bridge operation. Missing or failed authorization stops the operation before the bridge is invoked.
-- The current Flutter code does not contain a configured Stream SDK implementation or token service. It does not prove that chat writes, presence or voice rooms are live.
+- The official client may be constructed from the public API key without connecting. A production session source must obtain a backend-derived Stream user ID and short-lived server-issued token; missing or failed authorization prevents controller/message UI from mounting.
+- Privy user ID is only an opaque logout/account-switch key in Flutter. It is never converted into the Stream user ID. Each principal gets an isolated Stream client/persistence pair; logout and account switches retire the old pair, invalidate in-flight authorization, and disconnect without deleting per-user offline history.
+- Text chat composition is wired through official UI. Attachments and voice recording remain disabled until platform permissions, upload policy and provider/device verification are complete.
+- The current Flutter code does not contain the Loop backend session source or Stream Video connection. It does not prove that chat writes, presence, push or voice rooms are live.
 - A persistent group with 200,000 members is not a verified Stream capability. LOOP must obtain written provider confirmation covering membership, message semantics, reactions, mentions, history, search and moderation before promising it.
 - Without that written confirmation, the product must adopt a sharded-group or channel model and update the information architecture before implementation.
 

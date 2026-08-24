@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
+import 'package:loop_mobile/features/chat/stream_chat_inbox_page.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
@@ -32,6 +33,8 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
   Widget build(BuildContext context) {
     final gateway = ref.watch(communicationGatewayProvider);
     final preview = gateway.mode == CommunicationMode.preview;
+    if (!preview) return const StreamChatInboxPage();
+
     final conversations = ref.watch(conversationListProvider);
     return LoopPage(
       eyebrow: 'Discuss',

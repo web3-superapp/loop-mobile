@@ -18,8 +18,28 @@ import 'package:loop_mobile/features/review/signing_review_surface.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/features/wallet/wallet_screens.dart';
+import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:stream_chat_flutter/stream_chat_flutter.dart'
+    show
+        DefaultStreamMessageComposer,
+        StreamChat,
+        StreamComponentBuilders,
+        streamChatComponentBuilders;
 import 'package:uuid/uuid.dart';
+
+final _loopStreamComponentBuilders = StreamComponentBuilders(
+  extensions: streamChatComponentBuilders(
+    messageComposer: (context, props) => DefaultStreamMessageComposer(
+      props: props.copyWith(
+        // Platform permissions and attachment policy are intentionally not
+        // fabricated. Text messaging remains available through official UI.
+        disableAttachments: true,
+        enableVoiceRecording: false,
+      ),
+    ),
+  ),
+);
 
 class LoopApp extends ConsumerStatefulWidget {
   const LoopApp({super.key});
@@ -48,6 +68,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
 
   @override
   Widget build(BuildContext context) {
+    final streamSession = ref.watch(streamChatSdkSessionProvider);
     return MaterialApp.router(
       title: 'LOOP',
       debugShowCheckedModeBanner: false,
@@ -55,6 +76,14 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       darkTheme: LoopTheme.dark,
       themeMode: ThemeMode.dark,
       routerConfig: router,
+      builder: streamSession == null
+          ? null
+          : (context, child) => StreamChat(
+              key: ObjectKey(streamSession.client),
+              client: streamSession.client,
+              componentBuilders: _loopStreamComponentBuilders,
+              child: child,
+            ),
     );
   }
 }
@@ -251,6 +280,11 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
       GoRoute(
         path: '/chat/search',
         builder: (context, state) => const MessageSearchPage(),
+      ),
+      GoRoute(
+        path: '/chat/channel/:cid',
+        builder: (context, state) =>
+            StreamChatChannelRoutePage(cid: state.pathParameters['cid'] ?? ''),
       ),
       GoRoute(
         path: '/chat/meeting',

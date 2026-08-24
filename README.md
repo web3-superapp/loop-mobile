@@ -12,13 +12,13 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - 全量 103 个产品 surface 的路由目录；产品优先级独立采用 A / B / C（47 / 46 / 10），`deferred` 单独表达本期不交付
 - 受 Privy 会话保护的 Email OTP 实现；缺少 Mobile App Client ID 时保持不可登录，真机验证待补
 - Hyperliquid Testnet 公共只读永续行情；订单、仓位、账户和私有交易仅保留明确标注的开发预览 UI
-- 已选 Stream Chat + Stream Video/Audio Rooms 的薄适配边界；后端 token 未就绪时不连接 SDK、不声称在线
+- Stream Chat 官方 client、按用户持久化、token-provider 会话、频道列表与消息页已接入；后端身份/token 未就绪时不连接、不声称在线
 - Account、Wallet、Market、Perp、Chat、Profile 与系统状态组件
 - 深色 LOOP 设计系统、键盘焦点、语义标签、reduced-motion 与手机/桌面响应式布局
 
 所有供应商写入默认 fail-closed。正式入口 `lib/main.dart` 不注入 fixture；只有 `lib/main_preview.dart` 的显式离线 Preview 组合根注入 memory/fixture gateway。Preview 中的聊天、语音、钱包和交易状态都标注为 offline / simulated 或 `开发预览`，不代表生产登录、签名、下单、聊天或语音已经接通。
 
-Stream 生产路径必须先通过 BFF 获取或刷新短期用户 token，并由 session authorizer 建立 SDK 会话；gateway 会在每次 bridge 操作前执行授权。缺少授权或授权失败时不会调用 bridge，也不会把本地 preview 伪装成在线能力。
+Stream 生产路径必须先通过 BFF 获取或刷新短期用户 token，并由 session authorizer 建立 SDK 会话。每个 Privy principal 使用独立的 Stream client/persistence 实例，账号切换会废弃旧实例，避免不可取消的旧连接污染新账号。正式 Chat 页面直接使用 Stream 官方 controller/UI 作为消息、分页、已读、输入状态与离线历史的真相源；缺少授权时保持 fail-closed，也不会把本地 preview 伪装成在线能力。附件与语音录制会等平台权限和产品策略正式配置后再开放。
 
 当前产品决定以 [`docs/product-decisions.md`](docs/product-decisions.md) 为准。内部不可变 `user id` 是账户与社交关系的主身份，钱包地址只是可绑定、可替换的凭证。界面只陈述可验证的安全事实及来源时间，不使用 AI Guard 或风险分口径。
 
@@ -94,7 +94,7 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 - 不要启用 Hyperliquid HIP-3、builder fee 或非 Core 市场
 - Pay 保留首页 `Coming soon` 入口以表达产品位置，但 A / B / C 优先级不等于交付期；B5-B8 当前全部 deferred，落地页不得出现扫码、相机、金额或支付动作
 
-下一阶段应补齐 Privy Mobile App Client ID 并做 Email OTP 真机验证；随后实现 Loop BFF bootstrap、Stream 短期 token、Firebase/Push 配置及私有 Hyperliquid Testnet 交易纵切，而不是重复 UI 基础工程。
+下一阶段应完成 Privy Email OTP 真机验证，并由后端实现 Loop bootstrap、Stream Chat/Video 短期 token；随后再配置 Firebase/Push，并继续私有 Hyperliquid Testnet 交易纵切，而不是重复 UI 基础工程。
 
 ## 仓库结构
 

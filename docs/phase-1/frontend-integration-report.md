@@ -15,6 +15,8 @@ Keep the formal repository's existing UI/catalog and six primary destinations wh
 - Repository Harness, product constraints, decision, failure memory, compatibility evidence, and license register.
 - Six-destination product contract: Home, Market, Launch, Chat, Wallet, Profile.
 - Provider shortcuts fail closed; public Hyperliquid mobile access stays Testnet read-only.
+- Official Stream Chat principal-bound client/persistence ownership, backend identity/token seam, root session rotation, bounded channel list, CID route, and official message UI.
+- Stream text composition is structurally enabled; attachment and voice-recording entry points remain disabled pending platform policy and device verification.
 
 ## Verification
 
@@ -39,6 +41,18 @@ The first Flutter test/native-asset attempt was interrupted by a GitHub TLS erro
 
 These builds prove the integrated dependency and native compile matrix. They do not prove dashboard configuration, provider connectivity, store signing, or device behavior.
 
+The official Stream Chat frontend slice was re-verified on 2026-08-24:
+
+- `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/dart format --output=none --set-exit-if-changed lib test`: passed; 82 files, 0 changed.
+- `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/flutter analyze`: passed; no issues.
+- `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/flutter test`: passed; 82 tests.
+- `python3 scripts/check_harness.py`: passed.
+- `python3 -m unittest discover -s tests -p 'test_*.py'`: passed; 9 tests.
+- `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/flutter build apk --debug`: passed; generated `app-debug.apk`. Flutter repeated the already-recorded Gradle 8.14/AGP 8.13.2 future-support warnings; the accepted matrix was not changed.
+- `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/flutter build ios --debug --no-codesign`: passed; generated `Runner.app` for `com.cywd.loop`.
+
+These checks include lazy SDK construction, persistence attachment, backend identity/token fail-closed behavior, token-provider refresh, principal-bound client rotation, logout/dispose races, isolation and final reaping of permanently stuck or late old-principal identity/token/SDK-connection work, root client replacement, bounded official channel-controller configuration, CID parsing/routing, disabled attachment/recording entry points, and preservation of the explicit offline preview. The authorized controller/UI path was verified structurally and at compile time only; it was not rendered against a live or synthetic connected Stream user. No live Stream token, provider channel, two-device message, presence, read/typing, background, push, or call test was run.
+
 ## Provider readiness
 
 | Capability | Current status |
@@ -47,7 +61,8 @@ These builds prove the integrated dependency and native compile matrix. They do 
 | Privy Mobile App Client ID | Client-safe Development identifier supplied and wired; build-time override remains available |
 | Privy Email OTP | Guarded implementation; provider/device verification pending |
 | Stream API key | Client-safe identifier supplied |
-| Stream Chat/Video | Backend-derived user ID and short-lived token endpoints still required |
+| Stream Chat | Official client, persistence, lifecycle, controller and UI integrated; backend-derived user ID and short-lived token source still required |
+| Stream Video | API key is available; backend token and delayed client/call integration still required |
 | Firebase/push | No mobile configs or exact Stream push-provider names; initialization remains disabled |
 | Hyperliquid public markets | Direct Testnet read-only adapter available |
 | Private trading | Backend-only by design; not connected |

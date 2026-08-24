@@ -3,6 +3,7 @@ export 'chat_preview_pages.dart';
 export 'chat_secondary_pages.dart';
 export 'chat_state.dart';
 export 'conversation_pages.dart';
+export 'stream_chat_inbox_page.dart';
 export 'voice_room_page.dart';
 export 'widgets/chat_components.dart'
     show
