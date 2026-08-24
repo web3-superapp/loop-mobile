@@ -177,13 +177,13 @@ body::after{ /* grain */
 .loop-cell b{font-family:var(--disp); font-weight:500; font-size:10px; letter-spacing:.12em; display:block}
 .loop-cell span{font-size:10.5px; color:var(--tx3); display:block; margin-top:4px; line-height:1.4}
 .lc-m b{color:var(--cyan)} .lc-c b{color:var(--amber)} .lc-w b{color:var(--mint)}
-.home-pay{width:100%; margin-top:10px; padding:12px 14px; border:1px solid rgba(61,240,174,.3); border-radius:16px; background:linear-gradient(110deg,rgba(61,240,174,.14),rgba(90,200,255,.06)); color:var(--tx); display:flex; align-items:center; gap:12px; text-align:left; font-family:var(--body); cursor:pointer; transition:.18s}
-.home-pay:hover{border-color:rgba(61,240,174,.6); transform:translateY(-1px)}
+.home-pay{width:100%; margin-top:10px; padding:12px 14px; border:1px solid rgba(61,240,174,.3); border-radius:16px; background:linear-gradient(110deg,rgba(61,240,174,.14),rgba(90,200,255,.06)); color:var(--tx); display:flex; align-items:center; gap:12px; text-align:left; font-family:var(--body)}
+.home-pay-disabled{border-style:dashed; opacity:.78; cursor:default}
 .home-pay .hp-ico{width:38px; height:38px; border-radius:12px; background:var(--mint); color:#062418; display:flex; align-items:center; justify-content:center; flex:none}
 .home-pay .hp-ico svg{width:21px; height:21px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
 .home-pay b{display:block; font-size:13.5px}
 .home-pay span{display:block; margin-top:2px; color:var(--tx2); font-size:11px}
-.home-pay .hp-go{margin-left:auto; color:var(--mint); font-size:18px}
+.home-pay b small{display:inline; margin-left:6px; color:var(--mint); font:600 9px/1 var(--mono); letter-spacing:.05em; text-transform:uppercase}
 .feed-item{display:flex; gap:12px; padding:14px 0; border-bottom:1px solid var(--line); cursor:pointer}
 .feed-item:hover .fi-t{color:var(--mint)}
 .fi-ico{width:36px; height:36px; border-radius:12px; flex:none; display:flex; align-items:center; justify-content:center; font-size:16px}
@@ -197,25 +197,12 @@ body::after{ /* grain */
 .eq i:nth-child(1){height:40%; animation-delay:0s}.eq i:nth-child(2){height:90%; animation-delay:.2s}.eq i:nth-child(3){height:60%; animation-delay:.4s}
 @keyframes eq{50%{transform:scaleY(.4)}}
 
-/* ---------- PAY / QR SCANNER ---------- */
-.scan-shell{margin-top:18px; border:1px solid var(--line2); border-radius:24px; overflow:hidden; background:#05080c; box-shadow:0 18px 50px rgba(0,0,0,.35)}
-.scan-view{height:390px; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; background:radial-gradient(circle at 28% 25%,rgba(90,200,255,.13),transparent 30%),radial-gradient(circle at 72% 72%,rgba(61,240,174,.09),transparent 34%),#070b10}
-.scan-noise{position:absolute; inset:0; opacity:.18; background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px); background-size:22px 22px}
-.scan-frame{width:238px; height:238px; position:relative; border:1px solid rgba(255,255,255,.08); border-radius:20px}
-.scan-frame i{position:absolute; width:32px; height:32px; border-color:var(--mint); border-style:solid}
-.scan-frame i:nth-child(1){top:-2px;left:-2px;border-width:3px 0 0 3px;border-radius:14px 0 0}
-.scan-frame i:nth-child(2){top:-2px;right:-2px;border-width:3px 3px 0 0;border-radius:0 14px 0 0}
-.scan-frame i:nth-child(3){bottom:-2px;left:-2px;border-width:0 0 3px 3px;border-radius:0 0 0 14px}
-.scan-frame i:nth-child(4){bottom:-2px;right:-2px;border-width:0 3px 3px 0;border-radius:0 0 14px}
-.scan-line{position:absolute; left:12px; right:12px; top:18px; height:2px; background:linear-gradient(90deg,transparent,var(--mint),transparent); box-shadow:0 0 13px var(--mint); animation:scan 2.4s ease-in-out infinite alternate}
-@keyframes scan{to{transform:translateY(198px)}}
-.scan-hint{position:absolute; left:20px; right:20px; bottom:22px; text-align:center; color:rgba(233,238,244,.72); font-size:12px}
-.scan-actions{display:flex; justify-content:center; gap:34px; padding:18px 20px 20px; background:#0c1118}
-.scan-action{border:0; background:none; color:var(--tx2); font-family:var(--body); font-size:11px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:7px}
-.scan-action b{width:42px; height:42px; border-radius:50%; background:var(--card2); border:1px solid var(--line2); color:var(--tx); display:flex; align-items:center; justify-content:center; font-size:17px}
-.scan-action:hover b{color:var(--mint); border-color:rgba(61,240,174,.4)}
-.scan-safety{display:flex; align-items:flex-start; gap:9px; margin-top:14px; padding:11px 13px; border-radius:14px; background:var(--mint-soft); color:var(--tx2); font-size:11px; line-height:1.45}
-.scan-safety b{color:var(--mint)}
+/* ---------- PAY / CURRENTLY DEFERRED ---------- */
+.pay-unavailable{margin-top:48px; min-height:370px; padding:46px 28px; border:1px dashed rgba(61,240,174,.34); border-radius:24px; background:radial-gradient(circle at 50% 12%,rgba(61,240,174,.1),transparent 38%),var(--card); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center}
+.pay-unavailable-mark{width:62px; height:62px; border:1px solid rgba(61,240,174,.4); border-radius:20px; color:var(--mint); display:grid; place-items:center; font-size:31px; margin-bottom:18px}
+.pay-unavailable .chip{margin-bottom:12px}
+.pay-unavailable p{max-width:330px; margin-top:10px; color:var(--tx2); font-size:13px; line-height:1.6}
+.pay-unavailable small{max-width:310px; margin-top:18px; color:var(--tx3); font:10px/1.55 var(--mono)}
 
 /* ---------- MARKET ---------- */
 .search{display:flex; align-items:center; gap:9px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:11px 14px; color:var(--tx3); font-size:13px}
@@ -307,7 +294,7 @@ body::after{ /* grain */
 .voice-room-card.minimized .vr-body{display:none}
 .vr-header{display:flex; align-items:center; gap:10px; padding:12px 14px; background:rgba(61,240,174,.05)}
 .vr-body{padding:14px}
-/* AI bot slot — a reserved, non-functional placeholder (Phase 1 scope) */
+/* Assistant slot — a reserved, non-functional placeholder (Phase 1 scope) */
 .bot-slot{margin:14px 20px; padding:13px 14px; border:1px dashed var(--line2); border-radius:16px; background:rgba(255,255,255,.015)}
 .bot-slot-head{display:flex; gap:11px; align-items:flex-start}
 .bot-slot-ico{width:34px; height:34px; border-radius:11px; flex:none; display:flex; align-items:center; justify-content:center; font-size:16px; background:rgba(255,255,255,.04); filter:grayscale(1); opacity:.55}
@@ -850,7 +837,7 @@ body::after{ /* grain */
     <div class="demos">
       <h4>Guided demos</h4>
       <button class="demo" onclick="demoTokenCard()"><span class="no">01</span>Token card inside a group chat</button>
-      <button class="demo" onclick="demoSecurity()"><span class="no">02</span>AI security layer on a token</button>
+      <button class="demo" onclick="demoSecurity()"><span class="no">02</span>Source-labelled contract facts</button>
       <button class="demo" onclick="demoApproval()"><span class="no">03</span>DApp approval firewall</button>
       <button class="demo" onclick="demoBuy()"><span class="no">04</span>Chat → Buy → Wallet, end to end</button>
     </div>
@@ -1176,11 +1163,10 @@ body::after{ /* grain */
             <span aria-hidden="true">⚠️</span>
             <div><b>Wallet backup incomplete</b><p>Finish your recovery backup before relying on this wallet.</p></div>
           </div>
-          <button class="home-pay" id="home-pay" data-requires-signing onclick="openPay()" aria-label="Open QR scanner to pay">
+          <div class="home-pay home-pay-disabled" id="home-pay" role="status" aria-label="Pay coming soon and unavailable in this release">
             <span class="hp-ico"><svg viewBox="0 0 24 24"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4M8 8h3v3H8zM14 8h2v2h-2zM8 14h2v2H8zM13 13h3v3h-3z"/></svg></span>
-            <span><b>Pay</b><span>Scan a QR code to pay</span></span>
-            <span class="hp-go">›</span>
-          </button>
+            <span><b>Pay <small>Coming soon</small></b><span>Unavailable in this release</span></span>
+          </div>
 
           <p class="label">Trending in your circles</p>
           <div class="feed-item" onclick="openToken('GLYPH')">
@@ -1206,7 +1192,7 @@ body::after{ /* grain */
           <div class="card" style="padding:6px 16px">
             <div class="sec-item"><span>🛡️</span><span><b>Blocked an unlimited USDT approval</b> on a look-alike DEX domain — yesterday, 22:14</span></div>
             <div class="sec-item"><span>⏳</span><span><b>$GLYPH liquidity unlocks in 3 days</b> — 41% of pool. Position alert armed.</span></div>
-            <div class="sec-item"><span>🔴</span><span><b>1 contract shared in your chats was flagged</b> as high-risk (hidden mint).</span></div>
+            <div class="sec-item"><span>🔴</span><span><b>1 shared contract exposes a hidden mint function</b> — provider fact observed 18 min ago.</span></div>
           </div>
 
           <p class="label">Voice room</p>
@@ -1225,20 +1211,13 @@ body::after{ /* grain */
       <section class="scr" id="scr-pay">
         <div class="pad">
           <button class="back" onclick="back()">‹ Back</button>
-          <div class="h-row" style="margin-top:10px"><h1 class="h1">扫一扫</h1><span class="chip">Pay</span></div>
-          <p style="font-size:12px;color:var(--tx2);margin-top:5px">Scan a payment QR code</p>
-          <div class="scan-shell">
-            <div class="scan-view">
-              <div class="scan-noise"></div>
-              <div class="scan-frame" aria-label="QR code scan area"><i></i><i></i><i></i><i></i><span class="scan-line"></span></div>
-              <p class="scan-hint">Align the QR code within the frame</p>
-            </div>
-            <div class="scan-actions">
-              <button class="scan-action" onclick="toast('Flashlight toggled · simulated')"><b>⚡</b><span>Flash</span></button>
-              <button class="scan-action" onclick="toast('Choose a QR image · simulated')"><b>▧</b><span>Album</span></button>
-            </div>
+          <div class="pay-unavailable" role="status" aria-label="Pay coming soon and unavailable in this release">
+            <span class="pay-unavailable-mark" aria-hidden="true">◌</span>
+            <span class="chip">Coming soon</span>
+            <h1 class="h1">Pay</h1>
+            <p>Pay is not included in the current delivery. This frozen route does not open a camera, read a code, collect payment details, or confirm a transfer.</p>
+            <small>Product priority is retained for future planning; no payment capability is connected.</small>
           </div>
-          <div class="scan-safety"><span>🛡️</span><span>The recipient, network and amount are checked against sanctions lists before you confirm.</span></div>
         </div>
       </section>
       <!-- ============ NOTIFICATIONS ============ -->
@@ -1300,7 +1279,7 @@ body::after{ /* grain */
           <div id="mkt-list"></div>
           <div class="card" style="display:flex;gap:11px;align-items:center">
             <div class="fi-ico" style="background:var(--mint-soft);flex:none">🤖</div>
-            <p style="font-size:12.5px;color:var(--tx2);line-height:1.5">4 tokens match your pattern <b style="color:var(--tx)">"renounced + rising holders + safe LP"</b> in the last 6h.</p>
+            <p style="font-size:12.5px;color:var(--tx2);line-height:1.5">4 tokens match your pattern <b style="color:var(--tx)">"ownership renounced + holders rising + LP locked"</b> in the last 6h.</p>
           </div>
           <div style="height:16px"></div>
         </div>
@@ -1590,8 +1569,7 @@ body::after{ /* grain */
             <div class="stat"><b id="tk-vol">$18.7M</b><span>Vol 24h</span></div>
           </div>
 
-          <!-- No score ring: the old 0–100 dial implied a precision the underlying data does not
-               have. Findings are listed as checkable facts, with a count instead of a grade. -->
+          <!-- Findings are listed as source-labelled, checkable facts with an observation count. -->
           <div class="h-row" style="margin:22px 0 0">
             <p class="label" style="margin:0">Contract facts</p>
             <span class="risk-pill risk-med" id="tk-factcount">2 to review</span>
@@ -1744,7 +1722,7 @@ body::after{ /* grain */
               <div class="vr-seats stream-roster-unavailable" id="vrSeats" aria-label="Participant projection unavailable">
                 <p>No official CallState participant projection is available.</p>
               </div>
-              <p class="stream-roster-gate">Visible projection ≤ 250 · Complete roster PENDING · 200k/Audio R0 PENDING</p>
+              <p class="stream-roster-gate">Visible projection ≤ 250 · Complete roster PENDING · persistent single-group scale is a written-confirmation Go/No-Go</p>
               <button class="stream-action stream-wide" id="vrJoinBtn" type="button" data-stream-provider-mutation="join_audio_room" disabled aria-disabled="true" onclick="joinVoiceRoom()">Join via Stream Video · PENDING</button>
               <div class="vr-ctrls" id="vrCtrls">
                 <button class="stream-icon-btn" id="vrMuteBtn" type="button" data-stream-provider-mutation="set_microphone_enabled" disabled aria-disabled="true" onclick="toggleMute()" aria-label="Microphone control pending" title="Microphone control pending">🎙️</button>
@@ -2022,11 +2000,11 @@ body::after{ /* grain */
           <div class="pf-head">
             <div class="pf-ava"><div>🎭</div></div>
             <p class="pf-name" id="alias-pf">Voyager_7</p>
-            <p class="pf-addr" onclick="toast('Address copied')">0x7c4e…9f21 ⧉ · 1 identity, 3 wallets</p>
+            <p class="pf-addr">Internal user ID · 3 wallet credentials bound</p>
             <div class="pf-stats">
               <div><b>128</b><span>connections</span></div>
               <div><b>7</b><span>groups</span></div>
-              <div><b>94</b><span>trust score</span></div>
+              <div><b>3</b><span>wallets bound</span></div>
             </div>
           </div>
 
@@ -2067,9 +2045,9 @@ body::after{ /* grain */
             </div>
           </div>
 
-          <p class="label">One identity, three surfaces</p>
+          <p class="label">Stable account, replaceable credentials</p>
           <div class="card" style="font-size:12.5px;color:var(--tx2);line-height:1.6">
-            Your wallet address, social alias and market activity are <b style="color:var(--tx)">one identity under your control</b> — linked internally, never exposed without consent.
+            Your internal LOOP user ID is the stable social identity. Wallets are <b style="color:var(--tx)">bindable and replaceable credentials</b>; changing a wallet does not recreate your profile, conversations, or social graph.
           </div>
           <button class="btn btn-ghost restart-onboarding" id="restart-onboarding" type="button" onclick="restartOnboarding()">Restart onboarding demo</button>
           <div style="height:16px"></div>
@@ -2105,7 +2083,7 @@ body::after{ /* grain */
             <div><p class="eyebrow">H5 · Privy wallet security</p><h1 class="h1" data-route-focus tabindex="-1">Security center</h1></div>
             <span class="platform-fixture-badge">Offline fixture</span>
           </div>
-          <p class="platform-disclosure">Privy is the primary authority for account security. GoPlus and Chainalysis facts appear only as B9 secondary evidence; LOOP does not calculate a security score.</p>
+          <p class="platform-disclosure">Privy is the primary authority for account security. GoPlus and Chainalysis appear only as B9 secondary facts with their source and observation time.</p>
           <p id="security-facts-status" class="platform-status" role="status" aria-live="polite">Loading provider facts…</p>
           <p class="label">Privy account protections</p>
           <div id="privy-security-capabilities" class="card platform-settings-card" aria-label="Privy security capabilities" data-canonical-capabilities="MFA|App lock|Devices &amp; sessions|Recovery|Login history"></div>
@@ -6085,7 +6063,7 @@ var qrcode = function() {
     const authoritativeRecheck=config.authoritativeRecheck;
     const capabilities=freeze(['wallet_mutation','privacy_mutation']);
     const operations=freeze(['transfer','swap','approval','perp_order','privacy_export',
-      'privacy_delete','control_home-pay','control_token-buy','control_group-token-buy',
+      'privacy_delete','control_token-buy','control_group-token-buy',
       'control_group-copy-trade','control_wallet-send','control_wallet-swap',
       'control_wallet-bridge','control_wallet-dapps','control_swap-submit',
       'control_dapp-approve','control_approval-limit','control_approval-unlimited']);
@@ -6226,7 +6204,7 @@ var qrcode = function() {
       verified:false,source:'trusted_offline_policy_fixture'});
     const capabilities=freeze(['wallet_mutation','privacy_mutation']);
     const operations=freeze(['transfer','swap','approval','perp_order','privacy_export',
-      'privacy_delete','control_home-pay','control_token-buy','control_group-token-buy',
+      'privacy_delete','control_token-buy','control_group-token-buy',
       'control_group-copy-trade','control_wallet-send','control_wallet-swap',
       'control_wallet-bridge','control_wallet-dapps','control_swap-submit',
       'control_dapp-approve','control_approval-limit','control_approval-unlimited']);
@@ -6895,10 +6873,9 @@ var qrcode = function() {
 
 /* ============ SCRIPT: app.js ============ */
 /* ---------- data ----------
-   No 0–100 risk score anywhere: a single number invites users to treat a heuristic as a verdict,
-   and it is the part of a "risk API" that is least defensible. We surface the underlying facts
-   (which functions exist, how concentrated supply is, when LP unlocks) and let the worst one
-   drive the badge. Capability is unchanged — only the framing is. See 文档/页面清单.md §5. */
+   Security surfaces project source-labelled, time-bound facts: contract functions, supply
+   concentration and LP unlock observations. They do not synthesize an aggregate verdict.
+   See 文档/页面清单.md §5. */
 const TOKENS = {
   GLYPH:{name:'Glyph',sym:'$GLYPH',logo:'G',grad:'linear-gradient(135deg,var(--cyan),var(--mint))',chain:'Ethereum',
     price:'$0.00231',chg:'▲ +36.2% · 24h',up:true,liq:'$4.2M',hold:'28,421',vol:'$18.7M',
@@ -8783,7 +8760,7 @@ const walletViewState={chainFilter:'all',
 };
 const walletAuthority=(()=>{
   const operations=Object.freeze({
-    'home-pay':'transfer','token-buy':'swap','group-token-buy':'swap',
+    'token-buy':'swap','group-token-buy':'swap',
     'group-copy-trade':'swap','wallet-send':'transfer','wallet-swap':'swap',
     'wallet-bridge':'bridge','wallet-dapps':'approve','swap-submit':'swap',
     'dapp-approve':'approve',
@@ -11707,7 +11684,6 @@ function renderVoice(){
 }
 function openSwap(){push('scr-swap')}
 function openDapp(){push('scr-dapp')}
-function openPay(){navigate(['scr-home','scr-pay'])}
 function openSheet(id){
   document.getElementById('veil').classList.add('open');
   const s=document.getElementById(id); s.classList.add('open'); s.removeAttribute('inert'); s.removeAttribute('aria-hidden');
@@ -11960,7 +11936,7 @@ function handleGlobalSystemKeys(event){
 
 /* ---------- guided demos (desktop aside) ---------- */
 function demoTokenCard(){openGroup();toast('Tickers in chat become live, executable cards')}
-function demoSecurity(){goTab('market');setTimeout(()=>{openToken('GLYPH');toast('AI security is a layer, not a tab — it follows the token')},350)}
+function demoSecurity(){goTab('market');setTimeout(()=>{openToken('GLYPH');toast('Verified contract facts stay attached to the token with source and observation time')},350)}
 function demoApproval(){goTab('wallet');setTimeout(()=>{openDapp();setTimeout(()=>{openApproveSheet();toast('Choose an allowance to review in the shared wallet flow')},700)},350)}
 function demoBuy(){openGroup();toast('Tap Buy on the $GLYPH card → swap → wallet')}
 

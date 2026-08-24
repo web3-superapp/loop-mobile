@@ -32,19 +32,35 @@ with sync_playwright() as p:
 
     print('\n== 新增第九章 ==')
     for needle in ['技术选型与交付计划', 'Privy', 'Stream', 'deriv_chart',
-                   'iOS 上不了永续合约', '内部 user id', 'Go/No-Go', '19%']:
+                   'iOS 上不了永续合约', '内部随机 user ID', 'Go/No-Go', '19%']:
         check(needle in txt, f'含「{needle}」')
 
     print('\n== 章节编号 ==')
     h2s = pg.evaluate("() => [...document.querySelectorAll('#content h2')].map(h=>h.textContent)")
     check(any('九、技术选型' in h for h in h2s), '第九章为技术选型')
-    check(any('十、已拍板' in h for h in h2s), '原第九章已改为第十章')
+    check(any('十、历史决策记录' in h for h in h2s),
+          '第十章明确为历史决策记录')
     check(len(h2s) == len(set(h2s)), f'无重复章节标题（{len(h2s)} 章）')
 
     print('\n== 过期内容已清除 ==')
     check('AI 风险分 | 72/100' not in txt, '4.1 表格无风险分')
     check('11 屏' not in pg.evaluate("() => document.querySelector('.hero-meta').innerText"),
           'hero 不再写 11 屏')
+    hero = pg.evaluate("() => document.querySelector('.hero-meta').innerText")
+    check('Stream Chat + Stream Video/Audio Rooms' in hero and
+          'A/B/C = 47/46/10' in hero,
+          '当前 hero 使用统一 Stream 口径与 47/46/10 优先级')
+
+    print('\n== Pay 当前交付冻结 ==')
+    check(pg.locator('a[href="./app.html#pay"]').count() == 0 and
+          pg.locator('.proto-card.is-disabled[role="status"]').count() == 1 and
+          'Pay' in pg.locator('.proto-card.is-disabled').inner_text() and
+          'Coming soon' in pg.locator('.proto-card.is-disabled').inner_text(),
+          'Pay 原型索引为不可点击 Coming soon')
+    check('Current scope / historical prototype' in
+          pg.locator('.foot').inner_text() and
+          '产品方案 v0.1' not in pg.locator('.foot').inner_text(),
+          'footer 区分当前范围与历史原型')
 
     print('\n== 文档页链接 ==')
     hrefs = pg.evaluate("() => [...document.querySelectorAll('a')].map(a=>a.getAttribute('href'))")

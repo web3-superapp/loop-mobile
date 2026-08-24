@@ -1,5 +1,7 @@
 # LOOP · Flutter 技术栈可行性评估（SDK 层面）
 
+> **SUPERSEDED / 历史研究，不是当前开发指令**：本文记录 2026-08-21 的 SDK 比较与风险发现。当前通信选型已确定为 **Stream Chat + Stream Video/Audio Rooms**；Agora、LiveKit、腾讯云等段落仅为当时的候选证据。真实完成度以当前依赖、BFF、testnet 和真机结果为准，旧人日与周计划不是 live 状态。
+
 > 调研日期：2026-08-21
 > 调研范围：**只核实 Flutter/Dart SDK 真实状况**（能不能接、怎么接、要写多少胶水代码）。不做能力与价格对比。
 > 数据来源：pub.dev 官方 API（版本/发布日期/likes/30 日下载量）、GitHub API（stars/最后 push）、各服务官方文档。

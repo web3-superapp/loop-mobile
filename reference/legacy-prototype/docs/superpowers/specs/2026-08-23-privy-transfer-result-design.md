@@ -1,5 +1,7 @@
 # Privy 同链转账闭环设计（F3–F5 + F11 + F12）
 
+> **SUPERSEDED / HISTORICAL SPECIFICATION (2026-08-24):** This document is a dated wallet-transfer design record, not evidence that a live integration or the current-release Pay feature exists. Current scope is governed by the repository root `README.md` and `文档/页面清单.md`: communication uses **Stream Chat + Stream Video/Audio Rooms**; Pay B5–B8 are current-release deferred even though their A/B/C product priorities remain; Home shows only a noninteractive **Coming soon** status. Any scan/transfer flow described below belongs to the historical wallet-transfer slice and must not be presented as current Pay capability.
+
 > 日期：2026-08-23  
 > 状态：Owner 已批准设计方向；独立规格审查第 4 轮例外复审 `APPROVED`  
 > 全局目标：A–I 继续开发，本规格只定义下一可独立验收切片，不表示全项目完成  

@@ -3551,7 +3551,6 @@ with sync_playwright() as p:
       navigate(ROUTES.home.stack.slice(),{replace:true});
     }""")
     expected_signing = {
-        'home': ['home-pay'],
         'token': ['token-buy'],
         'group': ['group-token-buy', 'group-copy-trade'],
         'wallet': ['wallet-send', 'wallet-swap', 'wallet-bridge', 'wallet-dapps'],
@@ -3564,8 +3563,8 @@ with sync_playwright() as p:
         expected_shell_ids)
     actual_signing_ids = watch_page.evaluate("""() =>
       [...document.querySelectorAll('[data-requires-signing]')].map(el=>el.id).sort()""")
-    check(actual_signing_ids == expected_signing_ids and len(actual_signing_ids) == 12,
-          f'签名控制 authoritative inventory 精确 12 个，actual={actual_signing_ids} expected={expected_signing_ids}')
+    check(actual_signing_ids == expected_signing_ids and len(actual_signing_ids) == 11,
+          f'签名控制 authoritative inventory 精确 11 个，actual={actual_signing_ids} expected={expected_signing_ids}')
     restricted = {}
     for route_name, ids in expected_signing.items():
         watch_page.evaluate("routeName => navigate(ROUTES[routeName].stack.slice(),{replace:true})",
@@ -3653,10 +3652,10 @@ with sync_playwright() as p:
                     explanation:document.getElementById('watch-only-explanation').hidden};
                 }""", [control_id, baseline])
                 interaction_results.append({'id': control_id, 'method': method, **result})
-    check(len(interaction_results) == 60 and
+    check(len(interaction_results) == 55 and
           all(item['same'] and item['disabled'] and not item['explanation']
               for item in interaction_results),
-          f'12 个签名入口 × user/keyboard/nested/native/synthetic 全由 capture defense 阻断且恢复 disabled，'
+          f'11 个签名入口 × user/keyboard/nested/native/synthetic 全由 capture defense 阻断且恢复 disabled，'
           f'failures={[item for item in interaction_results if not item.get("same") or not item.get("disabled") or item.get("explanation")]} count={len(interaction_results)}')
 
     completed_before = watch_page.evaluate("""() => {
