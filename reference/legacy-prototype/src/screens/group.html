@@ -1,0 +1,110 @@
+      <section class="scr stream-conversation-shell" id="scr-group">
+        <section class="stream-conversation-view" data-conversation-view="group" data-stream-authority="stream_chat_sdk_channel_state">
+          <div class="stream-preview-banner stream-preview-inline" role="status">
+            <b>Offline preview · not connected</b>
+            <span>Message, reply, reaction, mention and pin fields are read-only official DTO projections.</span>
+          </div>
+
+          <section class="voice-room-card" id="voiceRoomCard" style="display:none" aria-label="Offline Stream Video room preview"
+            data-stream-authority="CallState.callParticipants" data-stream-count-authority="CallState.participantCount" data-visible-participant-limit="250">
+            <div class="vr-header">
+              <div class="eq stream-eq-static" aria-hidden="true"><i></i><i></i><i></i></div>
+              <div class="stream-grow">
+                <p class="stream-room-title">ETH ETF watch party</p>
+                <p class="stream-room-sub" id="vrCounts">Unavailable · 0 projected participants</p>
+              </div>
+              <span class="vr-badge warn" id="vrBadge">preview</span>
+              <button class="stream-icon-btn" id="vrToggleBtn" type="button" onclick="toggleVoiceRoom()" aria-expanded="true" aria-controls="voiceRoomBody" aria-label="Minimize voice room preview" title="Minimize voice room preview">−</button>
+            </div>
+            <div class="vr-body" id="voiceRoomBody">
+              <div class="stream-video-authorities">
+                <span>Connection · StreamVideo.state.connection</span>
+                <span>Status · CallState.status</span>
+              </div>
+              <div class="vr-seats stream-roster-unavailable" id="vrSeats" aria-label="Participant projection unavailable">
+                <p>No official CallState participant projection is available.</p>
+              </div>
+              <p class="stream-roster-gate">Visible projection ≤ 250 · Complete roster PENDING · 200k/Audio R0 PENDING</p>
+              <button class="stream-action stream-wide" id="vrJoinBtn" type="button" data-stream-provider-mutation="join_audio_room" disabled aria-disabled="true" onclick="joinVoiceRoom()">Join via Stream Video · PENDING</button>
+              <div class="vr-ctrls" id="vrCtrls">
+                <button class="stream-icon-btn" id="vrMuteBtn" type="button" data-stream-provider-mutation="set_microphone_enabled" disabled aria-disabled="true" onclick="toggleMute()" aria-label="Microphone control pending" title="Microphone control pending">🎙️</button>
+                <button class="stream-icon-btn" id="vrHandBtn" type="button" data-stream-provider-mutation="request_speaking_permission" disabled aria-disabled="true" onclick="toggleHand()" aria-label="Speaking request pending" title="Speaking request pending">✋</button>
+                <button class="stream-action stream-grow" type="button" data-stream-provider-mutation="leave_audio_room" disabled aria-disabled="true" onclick="leaveVoiceRoom()">Leave · PENDING</button>
+              </div>
+            </div>
+          </section>
+
+          <div class="sysline">— Stream Chat SDK channel state · read-only preview —</div>
+
+          <article class="msg stream-message" data-provider-message-id="fixture_m_001" data-provider-cid="messaging:glyph-hunters" data-parent-id="" data-mention-user="" data-reaction-count="4" data-pinned-at="2026-08-23T14:03:00.000Z">
+            <div class="avatar stream-avatar amber">🦉</div>
+            <div class="stream-message-body">
+              <p class="msg-who">NightOwl <time datetime="2026-08-23T14:02:00.000Z">14:02</time><span class="stream-pinned">Pinned</span></p>
+              <div class="bubble">gm degens. new find today 👇 small cap, LP looks clean-ish, dyor</div>
+              <div class="tok-card" aria-label="Token card attachment projection">
+                <div class="tc-top">
+                  <div class="tok-logo stream-avatar glyph" style="width:32px;height:32px;font-size:12px">G</div>
+                  <div><p style="font-weight:700;font-size:13.5px">Glyph <span class="mono" style="color:var(--tx3);font-size:11px">$GLYPH</span></p><p class="mono" style="font-size:12px;margin-top:1px">$0.00231 <span class="up">+36.2%</span></p></div>
+                  <span class="risk-pill risk-med" style="margin-left:auto">LP unlock 3d</span>
+                </div>
+                <div class="tc-stats"><div><b>$4.2M</b><span>Liquidity</span></div><div><b>28,421</b><span>Holders</span></div><div><b>3 days</b><span>LP unlock</span></div></div>
+                <div class="tc-actions">
+                  <button id="group-chart" type="button" onclick="openToken('GLYPH')">Chart</button>
+                  <button class="tc-buy" id="group-token-buy" type="button" data-requires-signing onclick="openSwap()">Buy</button>
+                  <button id="group-watch" type="button" onclick="toast('$GLYPH added to watchlist')">Watch</button>
+                </div>
+                <p class="tc-detect"><i></i>Stream token_card attachment · read-only projection</p>
+              </div>
+              <div class="stream-message-actions" aria-label="Provider mutation previews">
+                <button type="button" data-stream-provider-mutation="send_thread_reply" disabled aria-disabled="true">Reply · PENDING</button>
+                <button type="button" data-stream-provider-mutation="send_reaction" disabled aria-disabled="true">🔥 4 · PENDING</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="msg stream-message" data-provider-message-id="fixture_m_002" data-provider-cid="messaging:glyph-hunters" data-parent-id="fixture_m_001" data-mention-user="loop_fixture_alicia" data-reaction-count="2" data-pinned-at="">
+            <div class="avatar stream-avatar violet">0x</div>
+            <div class="stream-message-body">
+              <p class="msg-who">0xSable <time datetime="2026-08-23T14:07:00.000Z">14:07</time><span class="stream-reply-label">Reply to NightOwl</span></p>
+              <div class="bubble"><span class="stream-mention">@Alicia</span> contract facts are attached to the provider message.</div>
+              <div class="risk-strip">⚠️ <span style="color:#ffb3c1;font-size:11px">This contract can mint unlimited tokens and pause selling</span><button id="group-analysis" type="button" onclick="openRiskSheet()">View analysis</button></div>
+              <div class="stream-message-actions">
+                <button type="button" data-stream-provider-mutation="send_thread_reply" disabled aria-disabled="true">Reply · PENDING</button>
+                <button type="button" data-stream-provider-mutation="send_reaction" disabled aria-disabled="true">✅ 2 · PENDING</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="msg me stream-message" data-provider-message-id="fixture_m_003" data-provider-cid="messaging:glyph-hunters" data-parent-id="" data-mention-user="" data-reaction-count="0" data-pinned-at="">
+            <div class="avatar stream-avatar mint">V</div>
+            <div class="stream-message-body">
+              <p class="msg-who"><time datetime="2026-08-23T14:11:00.000Z">14:11</time> Voyager_7 (preview)</p>
+              <div class="bubble">No send occurred. This bubble is part of the explicit offline preview.</div>
+              <div class="asset-msg"><p class="am-h"><i></i>Bought ETH</p><p class="am-amt">5 ETH · ≈ $19,210</p><p class="am-note">Wallet action preview; not a Stream provider write.</p><div class="am-act"><button type="button" onclick="openToken('ETH')">View ETH</button><button id="group-copy-trade" type="button" data-requires-signing onclick="toast('Copy-trade drafted — review in Wallet')">Copy trade</button></div></div>
+            </div>
+          </article>
+        </section>
+
+        <section class="stream-conversation-view stream-dm-view" data-conversation-view="dm" data-stream-authority="stream_chat_sdk_channel_state" hidden inert>
+          <div class="stream-preview-banner stream-preview-inline" role="status">
+            <b>Offline preview · not connected</b>
+            <span>Direct-message DTO projection only. Provider writes remain PENDING.</span>
+          </div>
+          <div class="stream-privacy-note">
+            <b>Protection claim</b>
+            <p>End-to-end encryption is not claimed. Transport and message protection depend on provider and account policy.</p>
+          </div>
+          <div class="sysline">— direct message · Stream Chat SDK state preview —</div>
+          <article class="msg stream-message" data-provider-message-id="fixture_dm_001" data-provider-cid="messaging:shadowfax" data-parent-id="" data-mention-user="" data-reaction-count="1" data-pinned-at="">
+            <div class="avatar stream-avatar shadow">S</div>
+            <div class="stream-message-body">
+              <p class="msg-who">shadowfax.eth <time datetime="2026-08-23T13:42:00.000Z">13:42</time></p>
+              <div class="bubble">Watch party recap is in the group. This is a read-only preview.</div>
+              <div class="stream-message-actions">
+                <button type="button" data-stream-provider-mutation="send_thread_reply" disabled aria-disabled="true">Reply · PENDING</button>
+                <button type="button" data-stream-provider-mutation="send_reaction" disabled aria-disabled="true">👍 1 · PENDING</button>
+              </div>
+            </div>
+          </article>
+        </section>
+      </section>

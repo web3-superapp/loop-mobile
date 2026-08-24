@@ -1,0 +1,67 @@
+      <section class="scr" id="scr-chat">
+        <div class="pad stream-list-shell" data-stream-authority="stream_chat_sdk_state">
+          <div class="h-row">
+            <div>
+              <p class="stream-kicker">Stream Chat · E1</p>
+              <h1 class="h1" data-route-focus tabindex="-1">Chats</h1>
+            </div>
+            <button class="stream-action" type="button" data-stream-provider-mutation="watch_channel" disabled aria-disabled="true" aria-describedby="stream-preview-status">New</button>
+          </div>
+
+          <div class="stream-preview-banner" id="stream-preview-status" role="status">
+            <b>Offline preview · not connected</b>
+            <span>Read-only Stream-shaped examples. Credentials and provider writes remain PENDING.</span>
+          </div>
+
+          <div class="alias-bar">🎭 You appear as <b id="alias-chat">Voyager_7</b> — display alias preview
+            <button title="Shuffle preview alias" aria-label="Shuffle preview alias" onclick="shuffleAlias()">⟳</button>
+          </div>
+
+          <div class="stream-state-tabs" role="tablist" aria-label="Channel list preview states">
+            <button class="stream-state-tab on" type="button" role="tab" aria-selected="true" aria-controls="stream-list-preview" onclick="streamPreviewState(this,'preview')">Preview</button>
+            <button class="stream-state-tab" type="button" role="tab" aria-selected="false" aria-controls="stream-list-loading" onclick="streamPreviewState(this,'loading')">Loading</button>
+            <button class="stream-state-tab" type="button" role="tab" aria-selected="false" aria-controls="stream-list-empty" onclick="streamPreviewState(this,'empty')">Empty</button>
+            <button class="stream-state-tab" type="button" role="tab" aria-selected="false" aria-controls="stream-list-offline" onclick="streamPreviewState(this,'offline')">Offline</button>
+          </div>
+
+          <section class="stream-list-state" id="stream-list-preview" data-stream-list-state="preview" role="tabpanel" aria-label="Offline channel preview">
+            <button class="stream-channel-row" type="button" data-provider-cid="messaging:glyph-hunters" data-channel-kind="group" data-unread-count="12" data-muted="false" onclick="openGroup()">
+              <span class="avatar stream-avatar glyph">🜁</span>
+              <span class="stream-channel-copy"><b>Glyph Hunters <small>group · 1.2k</small></b><span>NightOwl: <em>$GLYPH</em> · LP unlocks in 3 days</span></span>
+              <span class="badge" aria-label="12 unread">12</span>
+            </button>
+            <button class="stream-channel-row" type="button" data-provider-cid="messaging:eth-holders" data-channel-kind="voice" data-unread-count="3" data-muted="false" onclick="openGroup();openVoiceRoom()">
+              <span class="avatar stream-avatar eth">Ξ</span>
+              <span class="stream-channel-copy"><b>ETH Holders Lounge <small>voice room</small></b><span>Watch party · Stream Video projection</span></span>
+              <span class="badge" aria-label="3 unread">3</span>
+            </button>
+            <button class="stream-channel-row" type="button" data-provider-cid="messaging:shadowfax" data-channel-kind="dm" data-unread-count="0" data-muted="true" onclick="openDM()">
+              <span class="avatar stream-avatar shadow">S</span>
+              <span class="stream-channel-copy"><b>shadowfax.eth <small>direct message</small></b><span>Provider protection policy pending · preview only</span></span>
+              <span class="mute" aria-label="Muted">🔇</span>
+            </button>
+          </section>
+
+          <section class="stream-list-state" id="stream-list-loading" data-stream-list-state="loading" role="tabpanel" aria-label="Loading channels" hidden inert>
+            <div class="stream-skeleton" aria-hidden="true"></div>
+            <div class="stream-skeleton" aria-hidden="true"></div>
+            <p role="status">Waiting for an official Stream SDK channel projection…</p>
+          </section>
+
+          <section class="stream-list-state stream-state-card" id="stream-list-empty" data-stream-list-state="empty" role="tabpanel" aria-label="No conversations" hidden inert>
+            <span aria-hidden="true">◌</span><h2>No conversations yet</h2>
+            <p>An official Stream projection returned an empty channel list.</p>
+          </section>
+
+          <section class="stream-list-state stream-state-card" id="stream-list-offline" data-stream-list-state="offline" role="tabpanel" aria-label="Chat offline" hidden inert>
+            <span aria-hidden="true">⌁</span><h2>Chat unavailable</h2>
+            <p>LOOP is not connected to Stream. No custom transport or cached message store is used.</p>
+            <button class="stream-action" type="button" data-stream-provider-mutation="connect_user" disabled aria-disabled="true">Connect PENDING</button>
+          </section>
+
+          <div class="stream-authority-note">
+            <b>Provider authority</b>
+            <p>Unread counts, mute status, channel kind and last message are projections from Stream Chat SDK state. This prototype does not mark channels delivered or read.</p>
+          </div>
+        </div>
+      </section>
