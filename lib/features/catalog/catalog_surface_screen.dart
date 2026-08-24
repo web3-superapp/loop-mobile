@@ -11,10 +11,13 @@ class CatalogSurfaceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (_isPaymentSurface(surface)) {
+      return _PayComingSoonScreen(surface: surface);
+    }
     final tone = _toneForModule(surface.module);
     return LoopPage(
       title: surface.title,
-      eyebrow: '${surface.id} · ${_tierLabel(surface.tier)}',
+      eyebrow: '${surface.id} · ${_priorityLabel(surface.priority)}',
       subtitle: surface.description,
       actions: <Widget>[
         IconButton(
@@ -43,8 +46,8 @@ class CatalogSurfaceScreen extends StatelessWidget {
                 LoopKeyValueRow(label: 'Surface', value: surface.id),
                 LoopKeyValueRow(label: 'Route', value: surface.path),
                 LoopKeyValueRow(
-                  label: 'Delivery',
-                  value: _tierLabel(surface.tier),
+                  label: 'Product priority',
+                  value: _priorityLabel(surface.priority),
                 ),
                 LoopKeyValueRow(
                   label: 'Data state',
@@ -76,17 +79,59 @@ class CatalogSurfaceScreen extends StatelessWidget {
     _ => LoopTone.neutral,
   };
 
-  static String _tierLabel(DeliveryTier tier) => switch (tier) {
-    DeliveryTier.core => 'Core',
-    DeliveryTier.phaseOne => 'Phase one',
-    DeliveryTier.later => 'Later',
+  static String _priorityLabel(ProductPriority priority) => switch (priority) {
+    ProductPriority.a => 'A priority',
+    ProductPriority.b => 'B priority',
+    ProductPriority.c => 'C priority',
   };
 
   static String _deferredMessage(AppSurface surface) {
-    if (surface.path.startsWith('/pay') || surface.path == '/onramp') {
-      return 'Payments and fiat funding are deliberately excluded while the wallet, trading and communication core is completed.';
-    }
     return '${surface.title} stays visible in the product map, but no control on this preview claims the capability is live.';
+  }
+
+  static bool _isPaymentSurface(AppSurface surface) =>
+      surface.path.startsWith('/pay') || surface.path == '/onramp';
+}
+
+class _PayComingSoonScreen extends StatelessWidget {
+  const _PayComingSoonScreen({required this.surface});
+
+  final AppSurface surface;
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopPage(
+      title: 'Pay',
+      eyebrow:
+          '${surface.id} · ${CatalogSurfaceScreen._priorityLabel(surface.priority)}',
+      subtitle:
+          'Payment remains in the product map, but it is not part of this release.',
+      children: <Widget>[
+        LoopCard(
+          child: Column(
+            children: <Widget>[
+              LoopKeyValueRow(
+                label: 'Product priority',
+                value: CatalogSurfaceScreen._priorityLabel(surface.priority),
+              ),
+              const LoopKeyValueRow(
+                label: 'Delivery status',
+                value: 'Deferred',
+                last: true,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        const LoopStateCard(
+          title: 'Coming soon',
+          message:
+              'Pay is not available yet. This route cannot scan a code, request camera access, collect payment details or submit a transaction.',
+          icon: Icons.schedule_rounded,
+          tone: LoopTone.neutral,
+        ),
+      ],
+    );
   }
 }
 
@@ -249,7 +294,7 @@ class _UiInventoryScreenState extends State<UiInventoryScreen> {
                     ),
                   ),
                   if (surface.deferred)
-                    const LoopStatusPill(label: 'Later')
+                    const LoopStatusPill(label: 'Deferred')
                   else
                     const Icon(
                       Icons.chevron_right_rounded,

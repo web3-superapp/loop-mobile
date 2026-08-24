@@ -1,11 +1,23 @@
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 
-/// A narrow bridge for the future Agora Chat and RTC SDK packages.
+enum StreamSessionAuthorization { authorized, unavailable }
+
+/// Establishes or refreshes the Stream user session before every SDK operation.
 ///
-/// No application ID, token, certificate, or user credential belongs in the
-/// mobile repository. A production bridge must receive short-lived tokens from
-/// the BFF and implement this interface in the application composition root.
-abstract interface class AgoraCommunicationBridge {
+/// A production implementation obtains a short-lived user token from the BFF
+/// and connects that token through the SDK bridge. Token material is never
+/// returned to application UI code.
+abstract interface class StreamSessionAuthorizer {
+  Future<StreamSessionAuthorization> authorize();
+}
+
+/// A narrow bridge for the selected Stream Chat + Stream Video/Audio Rooms SDKs.
+///
+/// No Stream API secret or user token belongs in the mobile repository. A
+/// production bridge may receive the public Stream API key from configuration,
+/// but user tokens must be short-lived and issued by the BFF. The selected
+/// provider is not live until that bridge is supplied and verified.
+abstract interface class StreamCommunicationBridge {
   Future<List<ConversationSummary>> loadConversations();
 
   Future<List<ConversationMessage>> loadMessages(String conversationId);
@@ -44,19 +56,26 @@ abstract interface class AgoraCommunicationBridge {
   });
 }
 
-class AgoraCommunicationGateway implements CommunicationGateway {
-  const AgoraCommunicationGateway({this.bridge, this.tokenEndpoint});
+class StreamCommunicationGateway implements CommunicationGateway {
+  const StreamCommunicationGateway({
+    required this.bridge,
+    required this.authorizer,
+  });
 
-  /// The default production seam. It intentionally performs no network work.
-  const AgoraCommunicationGateway.unconfigured()
+  /// The selected production seam. It intentionally performs no network work
+  /// until both an SDK bridge and a session authorizer are configured.
+  const StreamCommunicationGateway.unconfigured()
     : bridge = null,
-      tokenEndpoint = null;
+      authorizer = null;
 
-  final AgoraCommunicationBridge? bridge;
-  final Uri? tokenEndpoint;
+  final StreamCommunicationBridge? bridge;
+  final StreamSessionAuthorizer? authorizer;
 
   @override
-  bool get isConfigured => bridge != null && tokenEndpoint != null;
+  CommunicationMode get mode => CommunicationMode.production;
+
+  @override
+  bool get isConfigured => bridge != null && authorizer != null;
 
   @override
   Future<CommunicationResult<void>> acceptMessageRequest(String requestId) {
@@ -152,6 +171,19 @@ class AgoraCommunicationGateway implements CommunicationGateway {
   Future<CommunicationResult<T>> _run<T>(Future<T> Function() operation) async {
     if (!isConfigured) {
       return CommunicationResult<T>.failure(CommunicationFailure.notConfigured);
+    }
+    StreamSessionAuthorization authorization;
+    try {
+      authorization = await authorizer!.authorize();
+    } catch (_) {
+      return CommunicationResult<T>.failure(
+        CommunicationFailure.authorizationUnavailable,
+      );
+    }
+    if (authorization != StreamSessionAuthorization.authorized) {
+      return CommunicationResult<T>.failure(
+        CommunicationFailure.authorizationUnavailable,
+      );
     }
     try {
       return CommunicationResult<T>.success(await operation());

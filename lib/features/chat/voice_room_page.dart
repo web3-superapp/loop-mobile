@@ -21,8 +21,11 @@ class _VoiceRoomPageState extends ConsumerState<VoiceRoomPage> {
 
   @override
   Widget build(BuildContext context) {
+    final gateway = ref.watch(communicationGatewayProvider);
+    final preview = gateway.mode == CommunicationMode.preview;
     final session = ref.watch(voiceSessionControllerProvider);
     final room = session.room ?? ChatContent.voiceRoom;
+    final connected = !preview && session.phase == VoiceConnectionPhase.joined;
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -63,7 +66,13 @@ class _VoiceRoomPageState extends ConsumerState<VoiceRoomPage> {
                       padding: const EdgeInsets.fromLTRB(20, 32, 20, 20),
                       sliver: SliverList.list(
                         children: <Widget>[
-                          Center(child: VoicePhasePill(phase: session.phase)),
+                          Center(
+                            child: VoicePhasePill(
+                              phase: session.phase,
+                              mode: gateway.mode,
+                              configured: gateway.isConfigured,
+                            ),
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             room.title,
@@ -86,30 +95,49 @@ class _VoiceRoomPageState extends ConsumerState<VoiceRoomPage> {
                                 color: LoopColors.vapor,
                               ),
                               const SizedBox(width: 6),
-                              Text(
-                                '${room.listenerCount} listening · ${room.speakerCount} speaking',
-                                style: Theme.of(context).textTheme.labelMedium,
+                              Flexible(
+                                child: Text(
+                                  preview
+                                      ? 'Offline preview · simulated room layout'
+                                      : connected
+                                      ? '${room.listenerCount} listeners · ${room.speakerCount} speakers'
+                                      : gateway.isConfigured
+                                      ? 'Stream configured · no active session'
+                                      : 'No Stream session is active',
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.labelMedium,
+                                ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 32),
                           _FeaturedSpeaker(
                             participant: room.participants.first,
-                            connected:
-                                session.phase == VoiceConnectionPhase.joined,
+                            connected: connected,
+                            preview: preview,
                           ),
                           const SizedBox(height: 30),
                           Row(
                             children: <Widget>[
                               Expanded(
                                 child: Text(
-                                  'ON STAGE',
+                                  preview
+                                      ? 'SIMULATED SEATS'
+                                      : connected
+                                      ? 'ON STAGE'
+                                      : 'ROOM PREVIEW',
                                   style: Theme.of(context).textTheme.labelMedium
                                       ?.copyWith(letterSpacing: 1.1),
                                 ),
                               ),
                               Text(
-                                '${room.speakerCount} seats',
+                                preview
+                                    ? '${room.participants.length} preview participants'
+                                    : connected
+                                    ? '${room.speakerCount} seats'
+                                    : 'No active session',
                                 style: Theme.of(context).textTheme.labelMedium,
                               ),
                             ],
@@ -132,9 +160,8 @@ class _VoiceRoomPageState extends ConsumerState<VoiceRoomPage> {
                                         width: itemWidth,
                                         child: _SpeakerCard(
                                           participant: participant,
-                                          connected:
-                                              session.phase ==
-                                              VoiceConnectionPhase.joined,
+                                          connected: connected,
+                                          preview: preview,
                                         ),
                                       );
                                     })
@@ -171,6 +198,8 @@ class _VoiceRoomPageState extends ConsumerState<VoiceRoomPage> {
               ),
               _VoiceControlDock(
                 session: session,
+                preview: preview,
+                configured: gateway.isConfigured,
                 handRaised: _handRaised,
                 speakerOn: _speakerOn,
                 onJoin: () => ref
@@ -197,10 +226,15 @@ class _VoiceRoomPageState extends ConsumerState<VoiceRoomPage> {
 }
 
 class _FeaturedSpeaker extends StatelessWidget {
-  const _FeaturedSpeaker({required this.participant, required this.connected});
+  const _FeaturedSpeaker({
+    required this.participant,
+    required this.connected,
+    required this.preview,
+  });
 
   final VoiceParticipant participant;
   final bool connected;
+  final bool preview;
 
   @override
   Widget build(BuildContext context) {
@@ -256,7 +290,13 @@ class _FeaturedSpeaker extends StatelessWidget {
           ),
           const SizedBox(height: 5),
           Text(
-            speaking ? 'Speaking' : 'On stage',
+            preview
+                ? 'Simulated participant'
+                : !connected
+                ? 'Participant preview · not connected'
+                : speaking
+                ? 'Speaking'
+                : 'On stage',
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: speaking ? LoopColors.chat : LoopColors.vapor,
             ),
@@ -268,10 +308,15 @@ class _FeaturedSpeaker extends StatelessWidget {
 }
 
 class _SpeakerCard extends StatelessWidget {
-  const _SpeakerCard({required this.participant, required this.connected});
+  const _SpeakerCard({
+    required this.participant,
+    required this.connected,
+    required this.preview,
+  });
 
   final VoiceParticipant participant;
   final bool connected;
+  final bool preview;
 
   @override
   Widget build(BuildContext context) {
@@ -310,11 +355,11 @@ class _SpeakerCard extends StatelessWidget {
                       border: Border.all(color: LoopColors.line),
                     ),
                     child: Icon(
-                      participant.isMuted
+                      preview || !connected || participant.isMuted
                           ? Icons.mic_off_rounded
                           : Icons.mic_rounded,
                       size: 10,
-                      color: participant.isMuted
+                      color: preview || !connected || participant.isMuted
                           ? LoopColors.vapor
                           : LoopColors.mint,
                     ),
@@ -335,7 +380,13 @@ class _SpeakerCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    speaking ? 'Speaking' : 'Listening',
+                    preview
+                        ? 'Simulated participant'
+                        : !connected
+                        ? 'Participant preview · not connected'
+                        : speaking
+                        ? 'Speaking'
+                        : 'Listening',
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: speaking ? LoopColors.chat : LoopColors.vapor,
                     ),
@@ -353,6 +404,8 @@ class _SpeakerCard extends StatelessWidget {
 class _VoiceControlDock extends StatelessWidget {
   const _VoiceControlDock({
     required this.session,
+    required this.preview,
+    required this.configured,
     required this.handRaised,
     required this.speakerOn,
     required this.onJoin,
@@ -363,6 +416,8 @@ class _VoiceControlDock extends StatelessWidget {
   });
 
   final VoiceSessionState session;
+  final bool preview;
+  final bool configured;
   final bool handRaised;
   final bool speakerOn;
   final VoidCallback onJoin;
@@ -378,9 +433,15 @@ class _VoiceControlDock extends StatelessWidget {
         child: SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: onJoin,
+            onPressed: preview || configured ? onJoin : null,
             icon: const Icon(Icons.mic_off_rounded),
-            label: const Text('Join with microphone muted'),
+            label: Text(
+              preview
+                  ? 'Open offline preview'
+                  : configured
+                  ? 'Join with microphone muted'
+                  : 'Stream not connected',
+            ),
             style: FilledButton.styleFrom(
               backgroundColor: LoopColors.chat,
               foregroundColor: LoopColors.abyss,
@@ -390,24 +451,29 @@ class _VoiceControlDock extends StatelessWidget {
       );
     }
     if (session.phase == VoiceConnectionPhase.joining) {
-      return const LoopActionDock(
+      return LoopActionDock(
         child: SizedBox(
           height: 48,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              SizedBox.square(
+              const SizedBox.square(
                 dimension: 18,
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
-              SizedBox(width: 11),
-              Text('Joining with microphone muted…'),
+              const SizedBox(width: 11),
+              Text(
+                preview
+                    ? 'Opening simulated room…'
+                    : 'Joining with microphone muted…',
+              ),
             ],
           ),
         ),
       );
     }
     final connected = session.phase == VoiceConnectionPhase.joined;
+    final interactive = preview || connected;
     return LoopActionDock(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -416,29 +482,47 @@ class _VoiceControlDock extends StatelessWidget {
             icon: session.microphoneMuted
                 ? Icons.mic_off_rounded
                 : Icons.mic_rounded,
-            label: session.microphoneMuted ? 'Muted' : 'Mic on',
+            label: preview
+                ? session.microphoneMuted
+                      ? 'Preview muted'
+                      : 'Preview mic'
+                : session.microphoneMuted
+                ? 'Muted'
+                : 'Mic on',
             selected: !session.microphoneMuted,
-            onTap: connected ? onMicrophone : null,
+            onTap: interactive ? onMicrophone : null,
           ),
           _RoundControl(
             icon: handRaised
                 ? Icons.back_hand_rounded
                 : Icons.back_hand_outlined,
-            label: handRaised ? 'Raised' : 'Raise hand',
+            label: preview
+                ? handRaised
+                      ? 'Simulated up'
+                      : 'Simulate hand'
+                : handRaised
+                ? 'Raised'
+                : 'Raise hand',
             selected: handRaised,
-            onTap: connected ? onHand : null,
+            onTap: interactive ? onHand : null,
           ),
           _RoundControl(
             icon: speakerOn
                 ? Icons.volume_up_rounded
                 : Icons.volume_off_rounded,
-            label: speakerOn ? 'Speaker' : 'Audio off',
+            label: preview
+                ? speakerOn
+                      ? 'Preview audio'
+                      : 'Preview quiet'
+                : speakerOn
+                ? 'Speaker'
+                : 'Audio off',
             selected: speakerOn,
-            onTap: connected ? onSpeaker : null,
+            onTap: interactive ? onSpeaker : null,
           ),
           _RoundControl(
             icon: Icons.call_end_rounded,
-            label: 'Leave',
+            label: preview ? 'Close preview' : 'Leave',
             danger: true,
             onTap: onLeave,
           ),

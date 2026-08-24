@@ -394,7 +394,7 @@ if build.returncode == 0 and "42 screens" in build.stdout and APP.is_file():
         check(initial_default['policy']['state'] == 'unknown' and
               initial_default['policy']['verified'] is False and
               initial_default['runtime'] == 'offline_fixture' and
-              initial_default['disabled'] and initial_default['signing'] == 12 and
+              initial_default['disabled'] and initial_default['signing'] == 11 and
               initial_default['privacy'] == 2 and not initial_default['opened'] and
               not initial_default['review'] and initial_default['reviewRuntime'] == '' and
               initial_default['state'] == 'provider_blocked' and
@@ -498,14 +498,14 @@ if build.returncode == 0 and "42 screens" in build.stdout and APP.is_file():
                         check(regional['query'] == 'regional' and
                               regional['active'] == 'active' and regional['dialog'] and
                               regional['route'] == '#home' and
-                              len(regional['signing']) == 12 and
+                              len(regional['signing']) == 11 and
                               len(regional['mutations']) >= 3 and
                               all(item['disabled'] and
                                   item['describedby'] == 'regional-policy-explanation'
                                   for item in regional['signing'] + regional['mutations']),
                               f"{viewport['width']}px regional gate remains non-bypassable: {regional}")
                         bypass = page.evaluate("""() => {
-                          const control=document.getElementById('home-pay');
+                          const control=document.getElementById('token-buy');
                           let reached=false;control.disabled=false;
                           control.removeAttribute('aria-disabled');
                           control.removeAttribute('aria-describedby');
@@ -606,14 +606,14 @@ if build.returncode == 0 and "42 screens" in build.stdout and APP.is_file():
                   denied['review']['state'] == 'provider_blocked' and
                   'pending' not in denied['review']['text'].lower() and
                   'pending' not in denied['privacyStatus'].lower() and
-                  len(denied['signing']) == 12 and len(denied['privacy']) == 2 and
+                  len(denied['signing']) == 11 and len(denied['privacy']) == 2 and
                   all(item['disabled'] and item['describedby'] ==
                       'regional-policy-explanation'
                       for item in denied['signing'] + denied['privacy']) and
                   reload_denied['storage']['trusted'] is False and
                   reload_denied['signing'] and reload_denied['privacy'] and
                   back_denied['signing'] and back_denied['privacy'] and not errors,
-                  f"storage {mutation} fails closed across 12+2/F11/reload/Back/BFCache: "
+                  f"storage {mutation} fails closed across 11+2/F11/reload/Back/BFCache: "
                   f"{denied} / {reload_denied} / {back_denied} / {errors}")
             page.close(); context.close()
 

@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/chat_state.dart';
+import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final gateway = ref.watch(communicationGatewayProvider);
+    final preview = gateway.mode == CommunicationMode.preview;
+    final communicationStatus = preview
+        ? 'Offline preview · not connected'
+        : gateway.isConfigured
+        ? 'Stream configured · open to verify session'
+        : 'Stream not connected';
     return LoopPage(
       title: 'Home overview',
       eyebrow: 'gm, Voyager 7',
@@ -36,6 +46,8 @@ class HomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         _PortfolioHero(onTap: () => context.push('/home/net-worth')),
+        const LoopSectionLabel('Pay'),
+        _PayComingSoonCard(onTap: () => context.push('/pay')),
         const LoopSectionLabel('Continue the loop'),
         _LoopStep(
           number: '01',
@@ -66,15 +78,17 @@ class HomeScreen extends StatelessWidget {
           tone: LoopTone.positive,
           onTap: () => context.go('/wallet'),
         ),
-        const LoopSectionLabel('Live context'),
+        LoopSectionLabel(preview ? 'Communication preview' : 'Communication'),
         LoopCard(
           accent: true,
           tone: LoopTone.conversation,
           onTap: () => context.push('/chat/voice'),
-          semanticLabel: 'Open ETH Holders voice room',
+          semanticLabel: preview
+              ? 'Open the offline ETH Holders voice preview'
+              : 'Open ETH Holders communication status',
           child: Row(
             children: <Widget>[
-              const _LiveGlyph(),
+              const _VoicePreviewGlyph(),
               const SizedBox(width: 13),
               Expanded(
                 child: Column(
@@ -86,7 +100,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Voice room · connection required',
+                      communicationStatus,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -126,6 +140,60 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+class _PayComingSoonCard extends StatelessWidget {
+  const _PayComingSoonCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopCard(
+      key: const ValueKey<String>('home-pay-coming-soon'),
+      onTap: onTap,
+      semanticLabel: 'Open the Pay coming soon notice',
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: LoopColors.vapor.withValues(alpha: 0.08),
+              borderRadius: LoopRadius.small,
+            ),
+            child: const Icon(
+              Icons.account_balance_wallet_outlined,
+              color: LoopColors.vapor,
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Text('Pay', style: Theme.of(context).textTheme.titleMedium),
+                    const Spacer(),
+                    const LoopStatusPill(label: 'Coming soon'),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  'A priority · Delivery status: Deferred',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.chevron_right_rounded, color: LoopColors.vapor),
+        ],
+      ),
+    );
+  }
+}
+
 class _PortfolioHero extends StatelessWidget {
   const _PortfolioHero({required this.onTap});
 
@@ -142,11 +210,13 @@ class _PortfolioHero extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Text(
-                'TOTAL NET WORTH',
-                style: Theme.of(context).textTheme.labelMedium,
+              Expanded(
+                child: Text(
+                  'TOTAL NET WORTH',
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               const LoopStatusPill(
                 label: '+2.6% today',
                 tone: LoopTone.positive,
@@ -231,13 +301,25 @@ class _LoopStep extends StatelessWidget {
               children: <Widget>[
                 Row(
                   children: <Widget>[
-                    Text(title, style: Theme.of(context).textTheme.titleMedium),
-                    const Spacer(),
-                    Text(
-                      meta,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelMedium?.copyWith(color: color),
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        meta,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.right,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.labelMedium?.copyWith(color: color),
+                      ),
                     ),
                   ],
                 ),
@@ -252,8 +334,8 @@ class _LoopStep extends StatelessWidget {
   }
 }
 
-class _LiveGlyph extends StatelessWidget {
-  const _LiveGlyph();
+class _VoicePreviewGlyph extends StatelessWidget {
+  const _VoicePreviewGlyph();
 
   @override
   Widget build(BuildContext context) {
@@ -546,7 +628,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
           icon: Icons.forum_outlined,
           tone: LoopTone.conversation,
           title: 'ETH Holders Lounge',
-          subtitle: 'Group · voice available',
+          subtitle: 'Group · offline voice preview',
           onTap: () => context.push('/chat/group'),
         ),
       ],

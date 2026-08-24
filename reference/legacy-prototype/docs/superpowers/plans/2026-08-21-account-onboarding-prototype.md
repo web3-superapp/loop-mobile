@@ -1,5 +1,7 @@
 # LOOP Account Onboarding Prototype Implementation Plan
 
+> **SUPERSEDED / HISTORICAL IMPLEMENTATION RECORD (2026-08-24):** This dated plan records how the frozen HTML onboarding prototype was built; it is not the current release plan. Current scope is governed by the repository root `README.md` and `文档/页面清单.md`: communication uses **Stream Chat + Stream Video/Audio Rooms**; Pay keeps its A/B/C product priority but B5–B8 are deferred for the current release and Home exposes only a noninteractive **Coming soon** status; the internal LOOP `user_id` is the stable social identity and wallets are bindable/replaceable credentials; safety UI may show only objective, source- and time-stamped facts. Any older wording below (including the former Home Pay signing-control inventory) is retained solely as historical evidence.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add the nine approved A-tier account screens (A1 and A3–A10) as a complete, safe, accessible HTML onboarding prototype without regressing the existing LOOP demo.

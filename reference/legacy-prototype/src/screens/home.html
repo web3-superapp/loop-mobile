@@ -17,11 +17,10 @@
             <span aria-hidden="true">⚠️</span>
             <div><b>Wallet backup incomplete</b><p>Finish your recovery backup before relying on this wallet.</p></div>
           </div>
-          <button class="home-pay" id="home-pay" data-requires-signing onclick="openPay()" aria-label="Open QR scanner to pay">
+          <div class="home-pay home-pay-disabled" id="home-pay" role="status" aria-label="Pay coming soon and unavailable in this release">
             <span class="hp-ico"><svg viewBox="0 0 24 24"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4M8 8h3v3H8zM14 8h2v2h-2zM8 14h2v2H8zM13 13h3v3h-3z"/></svg></span>
-            <span><b>Pay</b><span>Scan a QR code to pay</span></span>
-            <span class="hp-go">›</span>
-          </button>
+            <span><b>Pay <small>Coming soon</small></b><span>Unavailable in this release</span></span>
+          </div>
 
           <p class="label">Trending in your circles</p>
           <div class="feed-item" onclick="openToken('GLYPH')">
@@ -47,7 +46,7 @@
           <div class="card" style="padding:6px 16px">
             <div class="sec-item"><span>🛡️</span><span><b>Blocked an unlimited USDT approval</b> on a look-alike DEX domain — yesterday, 22:14</span></div>
             <div class="sec-item"><span>⏳</span><span><b>$GLYPH liquidity unlocks in 3 days</b> — 41% of pool. Position alert armed.</span></div>
-            <div class="sec-item"><span>🔴</span><span><b>1 contract shared in your chats was flagged</b> as high-risk (hidden mint).</span></div>
+            <div class="sec-item"><span>🔴</span><span><b>1 shared contract exposes a hidden mint function</b> — provider fact observed 18 min ago.</span></div>
           </div>
 
           <p class="label">Voice room</p>

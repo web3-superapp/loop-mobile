@@ -99,7 +99,7 @@
     const authoritativeRecheck=config.authoritativeRecheck;
     const capabilities=freeze(['wallet_mutation','privacy_mutation']);
     const operations=freeze(['transfer','swap','approval','perp_order','privacy_export',
-      'privacy_delete','control_home-pay','control_token-buy','control_group-token-buy',
+      'privacy_delete','control_token-buy','control_group-token-buy',
       'control_group-copy-trade','control_wallet-send','control_wallet-swap',
       'control_wallet-bridge','control_wallet-dapps','control_swap-submit',
       'control_dapp-approve','control_approval-limit','control_approval-unlimited']);

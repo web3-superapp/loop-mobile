@@ -5,6 +5,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
+import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
 class GroupChatPage extends StatelessWidget {
@@ -15,7 +16,6 @@ class GroupChatPage extends StatelessWidget {
     return const _ConversationPage(
       conversationId: ChatContent.groupId,
       title: 'Glyph Hunters',
-      subtitle: '842 members · 126 online',
       direct: false,
     );
   }
@@ -29,7 +29,6 @@ class DirectMessagePage extends StatelessWidget {
     return const _ConversationPage(
       conversationId: ChatContent.directId,
       title: '0xSable',
-      subtitle: 'Online',
       direct: true,
     );
   }
@@ -39,17 +38,22 @@ class _ConversationPage extends ConsumerWidget {
   const _ConversationPage({
     required this.conversationId,
     required this.title,
-    required this.subtitle,
     required this.direct,
   });
 
   final String conversationId;
   final String title;
-  final String subtitle;
   final bool direct;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final gateway = ref.watch(communicationGatewayProvider);
+    final preview = gateway.mode == CommunicationMode.preview;
+    final connectionLabel = preview
+        ? 'Offline preview · simulated conversation'
+        : gateway.isConfigured
+        ? 'Stream presence not verified'
+        : 'Stream not connected';
     final messages = ref.watch(conversationMessagesProvider(conversationId));
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -67,7 +71,6 @@ class _ConversationPage extends ConsumerWidget {
               size: 36,
               colorSeed: direct ? 4 : 2,
               icon: direct ? null : Icons.groups_rounded,
-              online: direct,
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -83,10 +86,10 @@ class _ConversationPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 1),
                   Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: direct ? LoopColors.mint : LoopColors.vapor,
-                    ),
+                    connectionLabel,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.labelMedium?.copyWith(color: LoopColors.vapor),
                   ),
                 ],
               ),
@@ -209,7 +212,10 @@ class _ConversationPage extends ConsumerWidget {
                   ),
                 ),
                 ChatComposer(
-                  hintText: direct
+                  enabled: preview || gateway.isConfigured,
+                  hintText: preview
+                      ? 'Simulate a message in this preview'
+                      : direct
                       ? 'Message 0xSable'
                       : 'Message Glyph Hunters',
                   onSend: (text) async {
@@ -221,6 +227,17 @@ class _ConversationPage extends ConsumerWidget {
                       ref.invalidate(
                         conversationMessagesProvider(conversationId),
                       );
+                      if (preview) {
+                        ScaffoldMessenger.of(context)
+                          ..hideCurrentSnackBar()
+                          ..showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Simulated message added to the offline preview.',
+                              ),
+                            ),
+                          );
+                      }
                     } else {
                       ScaffoldMessenger.of(context)
                         ..hideCurrentSnackBar()

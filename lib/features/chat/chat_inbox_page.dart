@@ -30,6 +30,8 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
 
   @override
   Widget build(BuildContext context) {
+    final gateway = ref.watch(communicationGatewayProvider);
+    final preview = gateway.mode == CommunicationMode.preview;
     final conversations = ref.watch(conversationListProvider);
     return LoopPage(
       eyebrow: 'Discuss',
@@ -57,6 +59,20 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
       children: <Widget>[
         const LoopContextRail(stage: LoopStage.discuss),
         const SizedBox(height: 16),
+        if (preview || !gateway.isConfigured) ...<Widget>[
+          LoopStateCard(
+            key: const ValueKey<String>('communication-mode-status'),
+            title: preview
+                ? 'Offline preview · not connected'
+                : 'Stream not connected',
+            message: preview
+                ? 'Conversations and voice states are simulated UI data. No Stream chat or voice session is active.'
+                : 'Configure the Stream SDK bridge and server-issued user-token authorization before using chat or voice.',
+            icon: Icons.cloud_off_outlined,
+            tone: LoopTone.neutral,
+          ),
+          const SizedBox(height: 12),
+        ],
         ChatAliasBar(
           alias: _aliases[_aliasIndex],
           onShuffle: () {
@@ -147,7 +163,9 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
           loading: () => const _ConversationLoading(),
           error: (error, stackTrace) => LoopStateCard(
             title: 'Chats are unavailable',
-            message: 'Check your connection, then try again.',
+            message: gateway.isConfigured
+                ? 'Stream authorization or connectivity failed. Try again after the session is restored.'
+                : 'Stream is not configured. Chat stays fail-closed.',
             icon: Icons.cloud_off_outlined,
             tone: LoopTone.warning,
             action: OutlinedButton.icon(

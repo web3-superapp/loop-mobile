@@ -1,5 +1,7 @@
 # Web3 Superapp Prototype — Persistent Development Plan
 
+> **SUPERSEDED / historical execution plan**: this file preserves the prototype-era task sequence and review evidence. It is not the current sprint plan and its `complete` / `in_progress` labels do not describe the live Flutter or BFF integrations. Current product language: Privy for wallet authority, Hyperliquid Core for Perp, Stream Chat + Stream Video/Audio Rooms for communication; internal user ID is the primary identity; Pay B5–B8 are deferred and Home exposes only a non-interactive `Coming soon` state.
+
 ## Goal
 
 Complete modules A–I in the authoritative inventory using the researched integration boundaries: Privy for wallets, Stream for communication, and Hyperliquid for Perp. Preserve existing behavior, pass the complete test inventory, and run repeated independent specification and code-quality reviews for every slice.

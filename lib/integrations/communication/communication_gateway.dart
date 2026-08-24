@@ -6,6 +6,8 @@ enum MessageKind { text, token, assetSnapshot, system }
 
 enum VoiceConnectionPhase { idle, joining, joined, reconnecting, error }
 
+enum CommunicationMode { preview, production }
+
 @immutable
 class ConversationSummary {
   const ConversationSummary({
@@ -151,6 +153,11 @@ class CommunicationFailure {
     code: 'communication_not_configured',
     message: 'Communication is not available yet.',
   );
+
+  static const authorizationUnavailable = CommunicationFailure(
+    code: 'communication_authorization_unavailable',
+    message: 'Communication authorization is not available.',
+  );
 }
 
 @immutable
@@ -166,6 +173,8 @@ class CommunicationResult<T> {
 }
 
 abstract interface class CommunicationGateway {
+  CommunicationMode get mode;
+
   bool get isConfigured;
 
   Future<CommunicationResult<List<ConversationSummary>>> loadConversations();

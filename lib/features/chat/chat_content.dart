@@ -14,17 +14,17 @@ abstract final class ChatContent {
       timeLabel: '14:12',
       kind: ConversationKind.group,
       unreadCount: 12,
-      memberLabel: '842 members',
+      memberLabel: '842 simulated members',
       accentSeed: 2,
     ),
     ConversationSummary(
       id: voiceRoomId,
       title: 'ETH Macro Room',
       preview: 'Weekly positioning roundtable',
-      timeLabel: 'Live',
+      timeLabel: 'Preview',
       kind: ConversationKind.voice,
       unreadCount: 3,
-      memberLabel: '84 listening',
+      memberLabel: 'Offline preview · not connected',
       accentSeed: 1,
     ),
     ConversationSummary(
@@ -218,6 +218,9 @@ class MemoryCommunicationGateway implements CommunicationGateway {
   final List<MessageRequestSummary> _requests;
   final List<ConversationMessage> _groupMessages;
   final List<ConversationMessage> _directMessages;
+
+  @override
+  CommunicationMode get mode => CommunicationMode.preview;
 
   @override
   bool get isConfigured => true;

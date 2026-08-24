@@ -1202,7 +1202,7 @@ class _ConnectionsScreenState extends State<_ConnectionsScreen> {
       eyebrow: 'NETWORK',
       title: 'Connections',
       subtitle:
-          'Social connections use aliases. Wallet addresses are not shared by following someone.',
+          'Connections belong to your LOOP account, not a wallet address. People see aliases unless you choose to share more.',
       children: <Widget>[
         SegmentedButton<_ConnectionView>(
           showSelectedIcon: false,

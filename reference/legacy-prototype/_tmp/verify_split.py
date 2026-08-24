@@ -51,6 +51,32 @@ check('StreamChatOfflineFixture' not in generated and
       'Offline fixture — Stream credentials not connected' not in generated,
       '测试专用 Stream 离线 fixture 未进入生产生成物')
 
+home_source = (ROOT / 'src/screens/home.html').read_text()
+pay_source = (ROOT / 'src/screens/pay.html').read_text()
+profile_source = (ROOT / 'src/screens/profile.html').read_text()
+check('class="home-pay home-pay-disabled"' in home_source and
+      'id="home-pay" role="status"' in home_source and
+      'Coming soon' in home_source and
+      'onclick="openPay()"' not in home_source and
+      '<button class="home-pay"' not in home_source,
+      'Home Pay 是无点击、无签名的 Coming soon 状态')
+check('role="status"' in pay_source and 'Coming soon' in pay_source and
+      pay_source.count('<button') == 1 and '<input' not in pay_source and
+      '<select' not in pay_source and 'scan-' not in pay_source and
+      'data-requires-signing' not in pay_source,
+      'Pay 冻结路由仅有 Back 控件，无取景/识别/金额/确认能力')
+check('scan-frame' not in generated and 'scan-action' not in generated and
+      'onclick="openPay()"' not in generated,
+      '生成 app.html 不再包含扫码取景器或 Home Pay 导航')
+check('internal LOOP user ID is the stable social identity' in profile_source and
+      'bindable and replaceable credentials' in profile_source and
+      'wallet address, social alias and market activity are' not in profile_source and
+      '1 identity, 3 wallets' not in profile_source,
+      'Profile 以内部 user ID 为稳定社交身份，钱包只是可替换凭证')
+check('wallet address, social alias and market activity are' not in generated and
+      'internal LOOP user ID is the stable social identity' in generated,
+      '生成 app.html 不再暗示钱包地址等于社交身份')
+
 URL = production_policy_test_app(ROOT).as_uri()
 
 with sync_playwright() as p:

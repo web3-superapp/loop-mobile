@@ -1,5 +1,7 @@
 # Findings
 
+> **HISTORICAL FINDINGS WITH CURRENT OVERRIDE**: dated observations remain for traceability. Current communication selection is Stream Chat + Stream Video/Audio Rooms; 20 万成员持久单群 remains a written-confirmation Go/No-Go with a split-group/channel fallback; internal user ID is the primary social identity; Pay is deferred; and no preview/fixture is evidence of a live integration.
+
 ## 2026-08-24 — Current known state
 
 - Project owner replaced the old HTML-first sequence on 2026-08-24: delivery now proceeds directly as Flutter client + BFF + automated tests in parallel. The HTML build is a frozen interaction/security reference only and is no longer a release gate or a valid measure of implementation progress.
@@ -233,3 +235,13 @@
 - The deterministic 42-screen, twelve-script `app.html` SHA-256 is `087531b07fa2eea0b3755a8ea0143eabc7c9a620f0177ebf3f64f2cced8f4cd3`.
 - The reproducible five-source `docs.html` SHA-256 is `1947b1674216ed66aa640f32563846f348231f805cc0a096e3e3b8ddc8859092`.
 - The global goal remains incomplete; credentialed Hyperliquid account transport, eligibility/region policy, nonce and unknown-submit reconciliation, and remaining A–I work remain pending/in progress.
+
+## Current product-language checkpoint evidence
+
+- This checkpoint updates the current scope documents and frozen interaction reference; it is not evidence of a credentialed production integration.
+- Pay B5–B8 retain A/B/B/C product priority while all four remain deferred for the current release. Home exposes only a non-interactive `Coming soon`, and the frozen `#pay` route has no camera, scan, recipient, amount, confirmation, or result controls.
+- Current communication language is **Stream Chat + Stream Video/Audio Rooms**. A 20 万-member persistent single group remains a written-confirmation and load-test Go/No-Go; the fallback is a split-group/channel model.
+- The internal LOOP user ID is the stable social identity; wallets are bindable and replaceable credentials. Security surfaces show source-labelled, time-bound facts rather than an aggregate verdict.
+- The deterministic 42-screen, twelve-script `app.html` SHA-256 is `6e9d3753964078f759838dce03388ff6fcdc8063451b98baea463da9c602eac9`.
+- The reproducible five-source `docs.html` SHA-256 is `3588ff766a5c255f954a96e98489bf7fe818f4950da807aef367217fd70c48b2`.
+- The global goal remains incomplete; real Privy, Hyperliquid, Stream, BFF, testnet, push, persistence, monitoring, and device-release evidence remain pending.

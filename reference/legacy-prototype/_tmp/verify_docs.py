@@ -303,15 +303,12 @@ check('42 个 routed screen fragments' in readme and
 for name, source in (
         ('README', readme), ('页面清单', inventory), ('开发进度安排', schedule)):
     check(all(term in source for term in (
-        'Stream E1–E4 final semantic composition',
-        '37 screens / 10 scripts',
-        '42 screens / 12 scripts',
-        'Stream Chat/Video',
-        'disconnected/unavailable/count 0',
-        'RTC/presence',
-        'Token Card → Buy → Swap → F11 → Privy',
-        'Hyperliquid D1–D7')),
-        f'{name} 记录最终 Stream/Perp 组合边界且不回退 30/8')
+        'Stream Chat + Stream Video/Audio Rooms',
+        'Go/No-Go',
+        'Coming soon',
+        'deferred',
+        '历史')),
+        f'{name} 分开当前 Stream/Pay 口径与历史原型证据')
 check(all(term in current_docs for term in (
     'F3–F5', 'F12', '待实现')),
       '新增 transfer/result 路由仅为结构壳，F3–F5/F12 仍显式待实现')
@@ -480,11 +477,15 @@ hyper_account_final_app_hash = \
     '087531b07fa2eea0b3755a8ea0143eabc7c9a620f0177ebf3f64f2cced8f4cd3'
 hyper_account_final_docs_hash = \
     '1947b1674216ed66aa640f32563846f348231f805cc0a096e3e3b8ddc8859092'
+current_scope_app_hash = \
+    '6e9d3753964078f759838dce03388ff6fcdc8063451b98baea463da9c602eac9'
+current_scope_docs_hash = \
+    '3588ff766a5c255f954a96e98489bf7fe818f4950da807aef367217fd70c48b2'
 hashes_in_findings = re.findall(r'\b[a-f0-9]{64}\b', findings_doc)
 actual_app_hash = sha256(ROOT / 'app.html')
 actual_docs_hash = sha256(PAGE)
-check(actual_app_hash == hyper_account_final_app_hash and
-      actual_docs_hash == hyper_account_final_docs_hash and
+check(actual_app_hash == current_scope_app_hash and
+      actual_docs_hash == current_scope_docs_hash and
       task1_quality_remediation_app_hash != task1_post_spec_fix_app_hash and
       app_pre_review_hash in findings_doc and
       docs_pre_review_hash in findings_doc and
@@ -511,6 +512,8 @@ check(actual_app_hash == hyper_account_final_app_hash and
       stream_final_current_docs_hash in findings_doc and
       hyper_account_final_app_hash in findings_doc and
       hyper_account_final_docs_hash in findings_doc and
+      current_scope_app_hash in findings_doc and
+      current_scope_docs_hash in findings_doc and
       set(hashes_in_findings) >= {
           app_pre_review_hash, docs_pre_review_hash, docs_post_remediation_hash,
           docs_quality_remediation_hash, docs_vendored_marked_hash,
@@ -530,7 +533,9 @@ check(actual_app_hash == hyper_account_final_app_hash and
           stream_final_current_app_hash,
           stream_final_current_docs_hash,
           hyper_account_final_app_hash,
-          hyper_account_final_docs_hash} and
+          hyper_account_final_docs_hash,
+          current_scope_app_hash,
+          current_scope_docs_hash} and
       all(term in findings_doc for term in (
           'Task 8 pre-review deterministic evidence',
           'pre-review evidence, not a final checkpoint',
@@ -568,8 +573,11 @@ check(actual_app_hash == hyper_account_final_app_hash and
           'exact production manifest remains 37 screens / 10 scripts',
           'Hyperliquid D8–D12 post-Stream final candidate evidence',
           'exact combined manifest is 42 screens / 12 scripts',
+          'Current product-language checkpoint evidence',
+          'Pay B5–B8 retain A/B/B/C product priority',
+          'Stream Chat + Stream Video/Audio Rooms',
           'global goal remains incomplete')),
-      f'历史 checkpoint SHA-256 已区分，当前 D8–D12 post-Stream app/docs hash '
+      f'历史 checkpoint SHA-256 已区分，当前产品口径 app/docs hash '
       f'与对应记录一致：{actual_app_hash}/{actual_docs_hash}')
 
 body_rows = [
@@ -594,19 +602,19 @@ check(len(body_rows) == 103 and len({code for code, _ in body_rows}) == 103 and
 scope_table = dict(re.findall(
     r'^\| \*\*([ABC])\*\* \|[^|]+\| ([^|]+) \|$', inventory, re.M))
 check('只画 A 档' in inventory and scope_table == {
-          'A': '✅ 必画',
-          'B': '❌ 本次只列清单',
-          'C': '❌ 本次只列清单',
-      }, f'HTML 范围声明与 A/B/C 表格一致：{scope_table}')
+          'A': 'P0：先实现并形成端到端测试',
+          'B': 'P1：在核心集成稳定后补齐',
+          'C': 'P2：保留路由与供应商边界，不阻塞内测',
+      }, f'A/B/C 产品优先级与当前 Flutter 实现顺序分开：{scope_table}')
 check('### 4.7 F Wallet（A 档 9 屏；签名授权见第二章）' in
       generated_source_docs['测试用例.md'],
       '测试用例 F Wallet 与权威汇总 A 档 9 / 总计 20 一致')
-check('原 E6「高风险合约拦截条」是 E5 的高风险状态变体' in inventory and
-      'E5 的高风险状态（原 E6 拦截条）' in inventory and
-      '原 E6 为 E5 高风险状态' in schedule and
+check('原 E6「合约拦截条」是 E5 的阻断事实状态变体' in inventory and
+      'E5 的阻断事实状态（原 E6 拦截条）' in inventory and
+      '原 E6 并入 E5 事实警示状态' in schedule and
       not any(term in '\n'.join((inventory, schedule)) for term in (
           'E6（拦截条）和 E7', '、E6 高风险拦截条')),
-      'E6 统一为 E5 高风险状态，不再声明独立组件')
+      'E6 统一为 E5 阻断事实状态，不再声明独立组件')
 
 
 with sync_playwright() as p:

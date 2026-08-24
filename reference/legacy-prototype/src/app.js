@@ -1,8 +1,7 @@
 /* ---------- data ----------
-   No 0–100 risk score anywhere: a single number invites users to treat a heuristic as a verdict,
-   and it is the part of a "risk API" that is least defensible. We surface the underlying facts
-   (which functions exist, how concentrated supply is, when LP unlocks) and let the worst one
-   drive the badge. Capability is unchanged — only the framing is. See 文档/页面清单.md §5. */
+   Security surfaces project source-labelled, time-bound facts: contract functions, supply
+   concentration and LP unlock observations. They do not synthesize an aggregate verdict.
+   See 文档/页面清单.md §5. */
 const TOKENS = {
   GLYPH:{name:'Glyph',sym:'$GLYPH',logo:'G',grad:'linear-gradient(135deg,var(--cyan),var(--mint))',chain:'Ethereum',
     price:'$0.00231',chg:'▲ +36.2% · 24h',up:true,liq:'$4.2M',hold:'28,421',vol:'$18.7M',
@@ -1887,7 +1886,7 @@ const walletViewState={chainFilter:'all',
 };
 const walletAuthority=(()=>{
   const operations=Object.freeze({
-    'home-pay':'transfer','token-buy':'swap','group-token-buy':'swap',
+    'token-buy':'swap','group-token-buy':'swap',
     'group-copy-trade':'swap','wallet-send':'transfer','wallet-swap':'swap',
     'wallet-bridge':'bridge','wallet-dapps':'approve','swap-submit':'swap',
     'dapp-approve':'approve',
@@ -4811,7 +4810,6 @@ function renderVoice(){
 }
 function openSwap(){push('scr-swap')}
 function openDapp(){push('scr-dapp')}
-function openPay(){navigate(['scr-home','scr-pay'])}
 function openSheet(id){
   document.getElementById('veil').classList.add('open');
   const s=document.getElementById(id); s.classList.add('open'); s.removeAttribute('inert'); s.removeAttribute('aria-hidden');
@@ -5064,7 +5062,7 @@ function handleGlobalSystemKeys(event){
 
 /* ---------- guided demos (desktop aside) ---------- */
 function demoTokenCard(){openGroup();toast('Tickers in chat become live, executable cards')}
-function demoSecurity(){goTab('market');setTimeout(()=>{openToken('GLYPH');toast('AI security is a layer, not a tab — it follows the token')},350)}
+function demoSecurity(){goTab('market');setTimeout(()=>{openToken('GLYPH');toast('Verified contract facts stay attached to the token with source and observation time')},350)}
 function demoApproval(){goTab('wallet');setTimeout(()=>{openDapp();setTimeout(()=>{openApproveSheet();toast('Choose an allowance to review in the shared wallet flow')},700)},350)}
 function demoBuy(){openGroup();toast('Tap Buy on the $GLYPH card → swap → wallet')}
 

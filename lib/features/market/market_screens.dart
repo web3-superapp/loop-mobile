@@ -412,7 +412,7 @@ class TokenDetailScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'No connected Agora conversation count. Community activity is unavailable.',
+                        'No connected Stream conversation count. Community activity is unavailable.',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],

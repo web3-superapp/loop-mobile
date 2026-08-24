@@ -1,5 +1,7 @@
 # Progress Log
 
+> **HISTORICAL LOG**: entries below are immutable evidence of prototype work, not claims about current production completion. Current status must be verified from Flutter/BFF code, automated tests, testnet and real-device evidence. Supplier names inside dated entries reflect the decision at that time unless a later current-scope document overrides them.
+
 ## 2026-08-22
 
 - 2026-08-23 app-wide platform/UI candidate: expanded the deterministic prototype from 26 to 30 routed screens with B3 notifications, B4 bounded provider search, H3 async privacy boundary, and H5 provider security facts; added I1/I2/I3/I5 global states with explicit recovery/blocking semantics. The offline fixture owns no network, credential, durable persistence, provider fallback, or mutation. Production whole-app reuse remains gated by the approved integration catalog; this does not claim credentialed provider delivery, and the global A–I goal remains active.
