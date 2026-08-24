@@ -94,7 +94,7 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 - 不要启用 Hyperliquid HIP-3、builder fee 或非 Core 市场
 - Pay 保留首页 `Coming soon` 入口以表达产品位置，但 A / B / C 优先级不等于交付期；B5-B8 当前全部 deferred，落地页不得出现扫码、相机、金额或支付动作
 
-下一阶段应完成 Privy Email OTP 真机验证，并由后端实现 Loop bootstrap、Stream Chat/Video 短期 token；随后再配置 Firebase/Push，并继续私有 Hyperliquid Testnet 交易纵切，而不是重复 UI 基础工程。
+前端现已具备 Stream Chat 与前台 Stream Video 的主体轮换、后端身份/token 边界和失败关闭 UI。下一阶段应完成 Privy Email OTP 真机验证，并由后端实现 Loop bootstrap、Stream Chat/Video 短期 token 与语音房/被叫契约；原生媒体权限评审通过后再挂载真实 `Call`，随后配置 Firebase/Push，并继续私有 Hyperliquid Testnet 交易纵切，而不是重复 UI 基础工程。
 
 ## 仓库结构
 

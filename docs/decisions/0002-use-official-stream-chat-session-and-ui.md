@@ -23,7 +23,7 @@ The Loop backend is being implemented separately and does not yet provide the re
 - Query only `messaging` channels containing the current backend-derived Stream user. Use a bounded channel page (`limit: 20`, `messageLimit: 25`, `memberLimit: 30`) and the SDK's `last_updated` ordering and pagination.
 - Carry only an encoded CID through global routing. Parse and resolve it to SDK types inside the Chat feature.
 - Disable attachments and voice recording in the official composer until platform permissions and product/provider policy are configured. Text composition remains official Stream UI.
-- Preserve the explicit memory-backed Chat experience only in Development Preview. Stream Video, Firebase push, background ringing, and secondary production communication surfaces remain unconnected.
+- Preserve the explicit memory-backed Chat experience only in Development Preview. Live Stream Video calls, Firebase push, background ringing, and secondary production communication surfaces remain unconnected.
 
 ## Consequences
 
