@@ -57,8 +57,11 @@ class _SigningReviewSurfaceState extends ConsumerState<SigningReviewSurface> {
   Widget build(BuildContext context) {
     final gateway = ref.watch(walletSigningGatewayProvider);
     final validation = widget.intent.validateAt(DateTime.now().toUtc());
+    final requiresBackend = widget.intent.requiresLoopBackend;
+    final isLocalPreview = widget.intent.isLocalPreview;
     final canContinue =
         validation == null &&
+        widget.intent.allowsWalletHandoff &&
         acknowledged &&
         gateway.availability == WalletGatewayAvailability.available &&
         !submitting;
@@ -69,18 +72,26 @@ class _SigningReviewSurfaceState extends ConsumerState<SigningReviewSurface> {
         const LoopContextRail(stage: LoopStage.execute),
         const SizedBox(height: 20),
         Text(
-          'Privy signing review',
+          'Transaction intent review',
           style: Theme.of(context).textTheme.headlineLarge,
         ),
         const SizedBox(height: 8),
         Text(
-          'This is LOOP’s only transaction-intent review. Your wallet provider performs the final authorization.',
+          requiresBackend
+              ? 'Review this preview only. Hyperliquid orders require LOOP backend risk checks, idempotency and server-side signing.'
+              : isLocalPreview
+              ? 'This local draft is for layout review only. Backend canonicalization is required before wallet authorization.'
+              : 'Review the complete canonical intent before a configured wallet provider performs final authorization.',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 22),
         LoopCard(
           accent: true,
-          tone: validation == null ? LoopTone.positive : LoopTone.danger,
+          tone: validation != null
+              ? LoopTone.danger
+              : requiresBackend || isLocalPreview
+              ? LoopTone.warning
+              : LoopTone.positive,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -100,10 +111,18 @@ class _SigningReviewSurfaceState extends ConsumerState<SigningReviewSurface> {
                     ),
                   ),
                   LoopStatusPill(
-                    label: validation == null ? 'Validated' : 'Blocked',
-                    tone: validation == null
-                        ? LoopTone.positive
-                        : LoopTone.danger,
+                    label: validation != null
+                        ? 'Blocked'
+                        : requiresBackend
+                        ? 'Backend required'
+                        : isLocalPreview
+                        ? 'Development preview'
+                        : 'Local checks passed',
+                    tone: validation != null
+                        ? LoopTone.danger
+                        : requiresBackend || isLocalPreview
+                        ? LoopTone.warning
+                        : LoopTone.positive,
                   ),
                 ],
               ),
@@ -124,9 +143,12 @@ class _SigningReviewSurfaceState extends ConsumerState<SigningReviewSurface> {
             children: <Widget>[
               LoopKeyValueRow(
                 label: 'Authority',
-                value:
-                    gateway.availability ==
-                        WalletGatewayAvailability.fixtureReadOnly
+                value: requiresBackend
+                    ? 'LOOP backend · not connected'
+                    : isLocalPreview
+                    ? 'Privy after backend canonical review'
+                    : gateway.availability ==
+                          WalletGatewayAvailability.fixtureReadOnly
                     ? 'Privy preview · read-only'
                     : gateway.label,
               ),
@@ -154,6 +176,22 @@ class _SigningReviewSurfaceState extends ConsumerState<SigningReviewSurface> {
             icon: Icons.block_rounded,
             tone: LoopTone.danger,
           ),
+        ] else if (requiresBackend) ...<Widget>[
+          const SizedBox(height: 14),
+          const LoopStateCard(
+            title: 'Backend execution unavailable',
+            message: 'This order will not be signed or submitted from the app. Connect the LOOP trading backend before enabling execution.',
+            icon: Icons.dns_outlined,
+            tone: LoopTone.warning,
+          ),
+        ] else if (isLocalPreview) ...<Widget>[
+          const SizedBox(height: 14),
+          const LoopStateCard(
+            title: 'Canonical review unavailable',
+            message: 'This locally constructed draft cannot be signed. The LOOP backend must return verified, immutable facts first.',
+            icon: Icons.fact_check_outlined,
+            tone: LoopTone.warning,
+          ),
         ] else if (gateway.availability !=
             WalletGatewayAvailability.available) ...<Widget>[
           const SizedBox(height: 14),
@@ -163,7 +201,7 @@ class _SigningReviewSurfaceState extends ConsumerState<SigningReviewSurface> {
                 gateway.availability ==
                     WalletGatewayAvailability.fixtureReadOnly
                 ? 'This preview is read-only. It will never submit an order or transfer.'
-                : 'Configure Privy credentials before enabling final wallet authorization.',
+                : 'Wallet authorization is not connected to a backend canonical review yet.',
             icon: Icons.key_off_outlined,
             tone: LoopTone.warning,
           ),
@@ -198,7 +236,15 @@ class _SigningReviewSurfaceState extends ConsumerState<SigningReviewSurface> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.lock_open_rounded),
-            label: Text(submitting ? 'Opening wallet…' : 'Continue to Privy'),
+            label: Text(
+              submitting
+                  ? 'Opening wallet…'
+                  : requiresBackend
+                  ? 'Backend execution unavailable'
+                  : isLocalPreview
+                  ? 'Canonical intent required'
+                  : 'Continue to Privy',
+            ),
           ),
         ),
         const SizedBox(height: 10),
@@ -214,6 +260,10 @@ class _SigningReviewSurfaceState extends ConsumerState<SigningReviewSurface> {
   }
 
   Future<void> _handoff(WalletSigningGateway gateway) async {
+    if (!widget.intent.allowsWalletHandoff) {
+      setState(() => result = 'This intent requires LOOP backend execution.');
+      return;
+    }
     setState(() {
       submitting = true;
       result = null;
@@ -239,12 +289,10 @@ class _SigningReviewSurfaceState extends ConsumerState<SigningReviewSurface> {
   };
 
   static String _validationMessage(String code) => switch (code) {
-    'market_not_core' =>
-      'Only BTC, ETH and SOL Hyperliquid Core markets are permitted in this release.',
+    'market_not_core' => 'Only BTC, ETH and SOL Hyperliquid Core markets are permitted in this release.',
     'builder_fee_forbidden' =>
       'Builder fees are not enabled in the current product scope.',
-    'intent_stale' =>
-      'The quote expired. Return to the previous screen and request a fresh intent.',
+    'intent_stale' => 'The quote expired. Return to the previous screen and request a fresh intent.',
     _ => 'The intent failed a local policy check.',
   };
 

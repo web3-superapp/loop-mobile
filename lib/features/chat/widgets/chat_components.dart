@@ -397,17 +397,15 @@ class InlineVoiceRoomCard extends ConsumerWidget {
                   child: Text(
                     preview
                         ? 'Offline preview · simulated participants'
-                        : connected
-                        ? '${session.room!.speakerCount} speakers · ${session.room!.listenerCount} listeners'
                         : gateway.isConfigured
-                        ? 'Stream room · session not active'
+                        ? 'Stream configured · CallState adapter pending'
                         : 'Stream not connected',
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
                 ),
                 FilledButton.icon(
                   onPressed: () async {
-                    if ((preview || gateway.isConfigured) && !active) {
+                    if (preview && !active) {
                       await ref
                           .read(voiceSessionControllerProvider.notifier)
                           .join(room);
@@ -422,9 +420,7 @@ class InlineVoiceRoomCard extends ConsumerWidget {
                     preview
                         ? 'Open preview'
                         : gateway.isConfigured
-                        ? active
-                              ? 'Open'
-                              : 'Join muted'
+                        ? 'View status'
                         : 'View status',
                   ),
                   style: FilledButton.styleFrom(
@@ -547,34 +543,11 @@ class VoicePhasePill extends StatelessWidget {
         icon: Icons.cloud_off_outlined,
       );
     }
-    final (label, tone, icon) = switch (phase) {
-      VoiceConnectionPhase.idle => (
-        'Ready',
-        LoopTone.neutral,
-        Icons.circle_outlined,
-      ),
-      VoiceConnectionPhase.joining => (
-        'Joining',
-        LoopTone.warning,
-        Icons.sync_rounded,
-      ),
-      VoiceConnectionPhase.joined => (
-        'Joined',
-        LoopTone.positive,
-        Icons.check_circle_outline,
-      ),
-      VoiceConnectionPhase.reconnecting => (
-        'Reconnecting',
-        LoopTone.warning,
-        Icons.sync_problem_rounded,
-      ),
-      VoiceConnectionPhase.error => (
-        'Connection issue',
-        LoopTone.danger,
-        Icons.error_outline,
-      ),
-    };
-    return LoopStatusPill(label: label, tone: tone, icon: icon);
+    return const LoopStatusPill(
+      label: 'CallState adapter pending',
+      tone: LoopTone.neutral,
+      icon: Icons.sync_disabled_rounded,
+    );
   }
 }
 
@@ -647,9 +620,8 @@ class ChatMessageTile extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       message.replyLabel!,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: LoopColors.market,
-                      ),
+                      style: Theme.of(context).textTheme.labelMedium
+                          ?.copyWith(color: LoopColors.market),
                     ),
                   ],
                   const SizedBox(height: 7),
@@ -767,9 +739,8 @@ class TokenMessageCard extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     '+8.4% 24h',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelMedium?.copyWith(color: LoopColors.mint),
+                    style: Theme.of(context).textTheme.labelMedium
+                        ?.copyWith(color: LoopColors.mint),
                   ),
                 ],
               ),

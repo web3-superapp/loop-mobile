@@ -129,9 +129,8 @@ class LoopConnectivityBanner extends StatelessWidget {
                 Expanded(
                   child: Text(
                     content.banner,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelLarge?.copyWith(color: content.color),
+                    style: Theme.of(context).textTheme.labelLarge
+                        ?.copyWith(color: content.color),
                   ),
                 ),
                 if (onRetry != null)
@@ -329,8 +328,7 @@ class _ServerErrorScreen extends StatelessWidget {
     return _SystemStateScaffold(
       eyebrow: 'SERVICE ERROR',
       title: 'LOOP couldn’t finish that',
-      message:
-          'Your request did not complete. No account or wallet change should be assumed until the latest status is confirmed.',
+      message: 'Your request did not complete. No account or wallet change should be assumed until the latest status is confirmed.',
       icon: Icons.cloud_off_outlined,
       tone: LoopColors.danger,
       primaryLabel: 'Try again',
@@ -352,14 +350,12 @@ class _ForceUpdateScreen extends StatelessWidget {
     return _SystemStateScaffold(
       eyebrow: 'UPDATE REQUIRED',
       title: 'Update LOOP to continue',
-      message:
-          'This version can no longer protect account and trading flows correctly.',
+      message: 'This version can no longer protect account and trading flows correctly.',
       icon: Icons.system_update_alt_rounded,
       tone: LoopColors.mint,
       primaryLabel: 'Update now',
       onPrimary: onUpdate,
-      detail:
-          'Install the latest version before returning to LOOP. This update cannot be skipped.',
+      detail: 'Install the latest version before returning to LOOP. This update cannot be skipped.',
       blocking: true,
     );
   }
@@ -381,8 +377,7 @@ class _MaintenanceScreen extends StatelessWidget {
     return _SystemStateScaffold(
       eyebrow: 'SCHEDULED MAINTENANCE',
       title: 'LOOP is taking a short pause',
-      message:
-          'Account, wallet, trading, and chat actions are temporarily unavailable while maintenance completes.',
+      message: 'Account, wallet, trading, and chat actions are temporarily unavailable while maintenance completes.',
       icon: Icons.construction_rounded,
       tone: LoopColors.warning,
       primaryLabel: 'Check again',
@@ -408,8 +403,7 @@ class _RegionRestrictedScreen extends StatelessWidget {
     return LoopPage(
       eyebrow: 'FEATURE AVAILABILITY',
       title: 'Some features aren’t available here',
-      subtitle:
-          'Availability is based on the location and account information currently on record.',
+      subtitle: 'Availability is based on the location and account information currently on record.',
       bottom: LoopActionDock(
         child: SizedBox(
           width: double.infinity,
@@ -459,8 +453,7 @@ class _RegionRestrictedScreen extends StatelessWidget {
         const SizedBox(height: 14),
         const LoopStateCard(
           title: 'What still works',
-          message:
-              'You can review supported markets, use eligible wallet views, and continue permitted conversations.',
+          message: 'You can review supported markets, use eligible wallet views, and continue permitted conversations.',
           icon: Icons.check_circle_outline_rounded,
           tone: LoopTone.positive,
         ),
@@ -545,8 +538,7 @@ class _NoticeGallery extends StatelessWidget {
     return const LoopPage(
       eyebrow: 'GLOBAL NOTICES',
       title: 'Short, specific feedback',
-      subtitle:
-          'Notices state exactly what happened and preserve a clear next action.',
+      subtitle: 'Notices state exactly what happened and preserve a clear next action.',
       children: <Widget>[
         LoopGlobalNotice(
           kind: LoopNoticeKind.success,
@@ -575,8 +567,7 @@ class _SkeletonGallery extends StatelessWidget {
     return const LoopPage(
       eyebrow: 'LOADING',
       title: 'Content is on the way',
-      subtitle:
-          'Skeletons preserve the shape of each surface without implying that data has loaded.',
+      subtitle: 'Skeletons preserve the shape of each surface without implying that data has loaded.',
       children: <Widget>[
         LoopSectionLabel('List'),
         LoopSkeletonView(kind: LoopSkeletonKind.list, itemCount: 3),
@@ -648,10 +639,8 @@ class _SystemStateScaffold extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       eyebrow,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: tone,
-                        letterSpacing: 1.4,
-                      ),
+                      style: Theme.of(context).textTheme.labelMedium
+                          ?.copyWith(color: tone, letterSpacing: 1.4),
                     ),
                     const Spacer(),
                     Center(
@@ -665,9 +654,8 @@ class _SystemStateScaffold extends StatelessWidget {
                     const SizedBox(height: 13),
                     Text(
                       message,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyLarge?.copyWith(color: LoopColors.vapor),
+                      style: Theme.of(context).textTheme.bodyLarge
+                          ?.copyWith(color: LoopColors.vapor),
                     ),
                     const SizedBox(height: 20),
                     Container(
@@ -984,16 +972,14 @@ _connectivityContent(LoopConnectivityScope scope) {
     ),
     LoopConnectivityScope.marketDataUnavailable => (
       title: 'Market data is unavailable',
-      message:
-          'Live prices and charts cannot refresh. Trading actions that depend on current prices remain disabled.',
+      message: 'Live prices and charts cannot refresh. Trading actions that depend on current prices remain disabled.',
       banner: 'Market data unavailable · prices may be stale',
       icon: Icons.query_stats_rounded,
       color: LoopColors.market,
     ),
     LoopConnectivityScope.tradingServiceUnavailable => (
       title: 'Trading is temporarily unavailable',
-      message:
-          'Orders and account changes cannot be submitted. Market browsing and chat may still work.',
+      message: 'Orders and account changes cannot be submitted. Market browsing and chat may still work.',
       banner: 'Trading service interrupted · actions paused',
       icon: Icons.sync_problem_rounded,
       color: LoopColors.danger,
@@ -1016,8 +1002,7 @@ _permissionContent(LoopPermissionKind kind) {
       shortName: 'Camera',
       title: 'Use the camera to scan',
       message: 'LOOP needs camera access only while you scan a QR code.',
-      deniedMessage:
-          'Scanning stays unavailable until camera access is enabled in device settings.',
+      deniedMessage: 'Scanning stays unavailable until camera access is enabled in device settings.',
       usedFor: 'Used to read a QR code while the scanner is open.',
       icon: Icons.qr_code_scanner_rounded,
       color: LoopColors.market,
@@ -1025,10 +1010,8 @@ _permissionContent(LoopPermissionKind kind) {
     LoopPermissionKind.notifications => (
       shortName: 'Notification',
       title: 'Receive time-sensitive alerts',
-      message:
-          'Allow notifications for fills, liquidation risk, security events, and selected community activity.',
-      deniedMessage:
-          'Alerts cannot reach you while LOOP is closed until notifications are enabled in device settings.',
+      message: 'Allow notifications for fills, liquidation risk, security events, and selected community activity.',
+      deniedMessage: 'Alerts cannot reach you while LOOP is closed until notifications are enabled in device settings.',
       usedFor: 'Used for the categories you enable in Notification settings.',
       icon: Icons.notifications_active_outlined,
       color: LoopColors.chat,
@@ -1036,12 +1019,9 @@ _permissionContent(LoopPermissionKind kind) {
     LoopPermissionKind.biometrics => (
       shortName: 'Biometric',
       title: 'Confirm sensitive actions locally',
-      message:
-          'Use device biometrics for app lock, recovery, and other protected account changes.',
-      deniedMessage:
-          'Biometric confirmation is unavailable. Use another configured account check or enable it in settings.',
-      usedFor:
-          'The device returns only whether the check succeeded. Biometric data stays on the device.',
+      message: 'Use device biometrics for app lock, recovery, and other protected account changes.',
+      deniedMessage: 'Biometric confirmation is unavailable. Use another configured account check or enable it in settings.',
+      usedFor: 'The device returns only whether the check succeeded. Biometric data stays on the device.',
       icon: Icons.fingerprint_rounded,
       color: LoopColors.mint,
     ),

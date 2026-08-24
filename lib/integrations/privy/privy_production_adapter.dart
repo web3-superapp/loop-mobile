@@ -11,12 +11,8 @@ final class PrivyProductionAdapter implements WalletSigningGateway {
   final String appClientId;
 
   @override
-  WalletGatewayAvailability get availability {
-    if (appId.trim().isEmpty || appClientId.trim().isEmpty) {
-      return WalletGatewayAvailability.unavailable;
-    }
-    return WalletGatewayAvailability.available;
-  }
+  WalletGatewayAvailability get availability =>
+      WalletGatewayAvailability.unavailable;
 
   @override
   String get label => 'Privy';
@@ -26,10 +22,22 @@ final class PrivyProductionAdapter implements WalletSigningGateway {
     SigningIntent intent, {
     required DateTime now,
   }) async {
-    if (availability == WalletGatewayAvailability.unavailable) {
+    if (appId.trim().isEmpty || appClientId.trim().isEmpty) {
       return const WalletHandoffResult(
         accepted: false,
         code: 'privy_credentials_missing',
+      );
+    }
+    if (intent.requiresLoopBackend) {
+      return const WalletHandoffResult(
+        accepted: false,
+        code: 'loop_backend_required',
+      );
+    }
+    if (intent.isLocalPreview) {
+      return const WalletHandoffResult(
+        accepted: false,
+        code: 'canonical_intent_required',
       );
     }
     final validation = intent.validateAt(now);

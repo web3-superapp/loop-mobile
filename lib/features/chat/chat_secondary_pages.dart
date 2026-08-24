@@ -92,8 +92,7 @@ class _GroupInfoPageState extends ConsumerState<GroupInfoPage> {
         const LoopSectionLabel('Announcement'),
         const LoopStateCard(
           title: 'Research before reaction',
-          message:
-              'Share sources with contract claims. Flag unlocks, admin controls, and concentrated ownership.',
+          message: 'Share sources with contract claims. Flag unlocks, admin controls, and concentrated ownership.',
           icon: Icons.campaign_outlined,
           tone: LoopTone.conversation,
         ),
@@ -205,8 +204,7 @@ class MessageRequestsPage extends ConsumerWidget {
       children: <Widget>[
         const LoopStateCard(
           title: 'You stay in control',
-          message:
-              'Accepting a request starts a conversation. Ignoring it does not notify the sender.',
+          message: 'Accepting a request starts a conversation. Ignoring it does not notify the sender.',
           icon: Icons.mark_email_unread_outlined,
           tone: LoopTone.conversation,
         ),
@@ -216,8 +214,7 @@ class MessageRequestsPage extends ConsumerWidget {
             if (items.isEmpty) {
               return const LoopStateCard(
                 title: 'No pending requests',
-                message:
-                    'New requests from people you do not know will appear here.',
+                message: 'New requests from people you do not know will appear here.',
                 icon: Icons.inbox_outlined,
               );
             }
@@ -409,9 +406,8 @@ class _RequestCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       request.sharedContext,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: LoopColors.market,
-                      ),
+                      style: Theme.of(context).textTheme.labelMedium
+                          ?.copyWith(color: LoopColors.market),
                     ),
                   ],
                 ),

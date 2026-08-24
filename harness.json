@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "project": {
+    "name": "Loop Mobile",
+    "phase": "active",
+    "purpose": "Build Loop, a Flutter iOS/Android app with six primary destinations—Home, Market, Launch, Chat, Wallet, and Profile—using Privy identity/wallets, Stream Chat/Video, and backend-mediated Hyperliquid Testnet trading.",
+    "primary_destinations": [
+      "Home",
+      "Market",
+      "Launch",
+      "Chat",
+      "Wallet",
+      "Profile"
+    ],
+    "ownership_boundaries": [
+      "lib/main.dart and lib/app.dart own composition, application bootstrap, routing, and the six-destination shell",
+      "lib/core owns cross-cutting navigation, theme, signing intent, errors, logging, and security primitives",
+      "lib/integrations owns narrow provider and backend adapters",
+      "lib/features owns product-facing feature modules",
+      "reference/legacy-prototype is frozen history",
+      "The backend owns provider secrets, token minting, private trading, signing, risk, idempotency, and reconciliation"
+    ]
+  },
+  "application": {
+    "stack": [
+      "Flutter 3.47.1 / Dart 3.13.1",
+      "Android API 28-36 / AGP 8.13.2 / Gradle 8.14 / Kotlin 2.3.20 / Java 17",
+      "iOS 17+ / Xcode 26.6 / CocoaPods 1.16.2",
+      "Privy Flutter 0.10.1",
+      "Stream Chat/Persistence 10.3.0",
+      "Stream Video/Push 1.4.3",
+      "Firebase Core 4.13.0 / Messaging 16.5.0",
+      "Riverpod 3.4.2 / go_router 17.5.0 / Dio 5.11.0",
+      "Decimal 3.2.6 / UUID 4.6.0"
+    ],
+    "package_managers": [
+      "Flutter pub with repository pubspec.lock",
+      "Gradle Wrapper 8.14",
+      "CocoaPods 1.16.2 with repository ios/Podfile.lock"
+    ],
+    "manifests": [
+      "pubspec.yaml",
+      "ios/Podfile"
+    ],
+    "lockfiles": [
+      "pubspec.lock",
+      "ios/Podfile.lock"
+    ],
+    "source_roots": [
+      "lib",
+      "test"
+    ],
+    "generated_paths": [
+      ".metadata",
+      ".dart_tool",
+      ".flutter-plugins-dependencies",
+      ".tooling",
+      ".gitnexus",
+      "build",
+      "android/local.properties",
+      "ios/Flutter/Generated.xcconfig",
+      "ios/Flutter/ephemeral",
+      "ios/Flutter/flutter_export_environment.sh",
+      "ios/Runner/GeneratedPluginRegistrant.h",
+      "ios/Runner/GeneratedPluginRegistrant.m"
+    ]
+  },
+  "commands": {
+    "setup": "bin/flutter pub get",
+    "lint": "bin/dart format --output=none --set-exit-if-changed lib test",
+    "typecheck": "bin/flutter analyze",
+    "test": "bin/flutter test",
+    "build": "bin/flutter build apk --debug",
+    "run": "bin/flutter run",
+    "native_release_matrix": [
+      "bin/flutter build apk --release",
+      "bin/flutter build ios --debug --no-codesign",
+      "bin/flutter build ios --release --no-codesign"
+    ],
+    "harness": [
+      "python3 scripts/check_harness.py",
+      "python3 -m unittest discover -s tests -p 'test_*.py'"
+    ]
+  }
+}

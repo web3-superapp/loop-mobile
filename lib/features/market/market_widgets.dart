@@ -19,7 +19,7 @@ class MarketSnapshotBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final descriptor = switch (state) {
       MarketSnapshotState.preview => (
-        'PREVIEW · READ-ONLY',
+        '开发预览 · 只读',
         MarketPreviewData.observedLabel,
         LoopTone.market,
         Icons.visibility_outlined,
@@ -79,10 +79,8 @@ class MarketSnapshotBanner extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     descriptor.$1,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: color,
-                      letterSpacing: 0.85,
-                    ),
+                    style: Theme.of(context).textTheme.labelMedium
+                        ?.copyWith(color: color, letterSpacing: 0.85),
                   ),
                   if (!compact) ...<Widget>[
                     const SizedBox(height: 3),
@@ -96,7 +94,7 @@ class MarketSnapshotBanner extends StatelessWidget {
             ),
             if (state == MarketSnapshotState.preview)
               Text(
-                'DEMO DATA',
+                '演示数据',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: LoopColors.vapor,
                   fontFamily: 'monospace',
@@ -363,10 +361,8 @@ class MarketAssetRow extends StatelessWidget {
               width: 22,
               child: Text(
                 rank.toString().padLeft(2, '0'),
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontFamily: 'monospace',
-                  color: LoopColors.line,
-                ),
+                style: Theme.of(context).textTheme.labelMedium
+                    ?.copyWith(fontFamily: 'monospace', color: LoopColors.line),
               ),
             ),
             const SizedBox(width: 8),

@@ -99,15 +99,13 @@ class _VoiceRoomPageState extends ConsumerState<VoiceRoomPage> {
                                 child: Text(
                                   preview
                                       ? 'Offline preview · simulated room layout'
-                                      : connected
-                                      ? '${room.listenerCount} listeners · ${room.speakerCount} speakers'
                                       : gateway.isConfigured
-                                      ? 'Stream configured · no active session'
+                                      ? 'Stream configured · CallState adapter pending'
                                       : 'No Stream session is active',
                                   textAlign: TextAlign.center,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.labelMedium,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelMedium,
                                 ),
                               ),
                             ],
@@ -433,13 +431,13 @@ class _VoiceControlDock extends StatelessWidget {
         child: SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: preview || configured ? onJoin : null,
+            onPressed: preview ? onJoin : null,
             icon: const Icon(Icons.mic_off_rounded),
             label: Text(
               preview
                   ? 'Open offline preview'
                   : configured
-                  ? 'Join with microphone muted'
+                  ? 'CallState adapter pending'
                   : 'Stream not connected',
             ),
             style: FilledButton.styleFrom(

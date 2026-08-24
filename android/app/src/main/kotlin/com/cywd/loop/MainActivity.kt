@@ -1,4 +1,4 @@
-package com.dinolabs.loop_mobile
+package com.cywd.loop
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -125,6 +125,29 @@ void main() {
     expect(authorizer.calls, 1);
     expect(bridge.loadConversationCalls, 1);
   });
+
+  test(
+    'configured production voice still waits for official Stream CallState',
+    () async {
+      final bridge = _RecordingStreamBridge();
+      final gateway = StreamCommunicationGateway(
+        bridge: bridge,
+        authorizer: _TestStreamAuthorizer(),
+      );
+      final container = ProviderContainer(
+        overrides: [communicationGatewayProvider.overrideWithValue(gateway)],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(voiceSessionControllerProvider.notifier).join();
+
+      expect(
+        container.read(voiceSessionControllerProvider).phase,
+        VoiceConnectionPhase.idle,
+      );
+      expect(bridge.joinVoiceCalls, 0);
+    },
+  );
 }
 
 class _TestStreamAuthorizer implements StreamSessionAuthorizer {
@@ -147,6 +170,7 @@ class _TestStreamAuthorizer implements StreamSessionAuthorizer {
 
 class _RecordingStreamBridge implements StreamCommunicationBridge {
   int loadConversationCalls = 0;
+  int joinVoiceCalls = 0;
 
   @override
   Future<void> acceptMessageRequest(String requestId) async {}
@@ -159,6 +183,7 @@ class _RecordingStreamBridge implements StreamCommunicationBridge {
     required String roomId,
     required bool microphoneMuted,
   }) async {
+    joinVoiceCalls += 1;
     return VoiceRoomSummary(
       id: roomId,
       groupId: 'group-preview',

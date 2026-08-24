@@ -12,6 +12,27 @@
 .swiftpm/
 migrate_working_dir/
 
+# Local secrets. Commit documented examples, never populated credentials.
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.key
+*.p8
+*.p12
+*.pem
+*firebase-adminsdk*.json
+*service-account*.json
+*service_account*.json
+
+# Project-local SDK, compatibility artifacts, and GitNexus indexes.
+.tooling/
+.gitnexus/
+
+# Python is used only for the repository harness.
+__pycache__/
+*.py[cod]
+
 # IntelliJ related
 *.iml
 *.ipr

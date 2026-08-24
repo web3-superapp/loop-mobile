@@ -87,9 +87,8 @@ class _ConversationPage extends ConsumerWidget {
                   const SizedBox(height: 1),
                   Text(
                     connectionLabel,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelMedium?.copyWith(color: LoopColors.vapor),
+                    style: Theme.of(context).textTheme.labelMedium
+                        ?.copyWith(color: LoopColors.vapor),
                   ),
                 ],
               ),
@@ -165,9 +164,9 @@ class _ConversationPage extends ConsumerWidget {
                                       ),
                                       child: Text(
                                         'Today',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.labelMedium,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelMedium,
                                       ),
                                     ),
                                   ),
@@ -301,9 +300,8 @@ class _PinnedMessageBanner extends StatelessWidget {
                   'Pinned · Review the unlock schedule before sharing a call.',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelMedium?.copyWith(color: LoopColors.chalk),
+                  style: Theme.of(context).textTheme.labelMedium
+                      ?.copyWith(color: LoopColors.chalk),
                 ),
               ),
               const Icon(Icons.chevron_right_rounded, color: LoopColors.vapor),

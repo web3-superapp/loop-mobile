@@ -4,15 +4,24 @@ publish_to: none
 version: 0.1.0+1
 
 environment:
-  sdk: '>=3.12.0 <4.0.0'
+  sdk: '>=3.13.1 <4.0.0'
 
 dependencies:
+  decimal: 3.2.6
+  dio: 5.11.0
   flutter:
     sdk: flutter
   cupertino_icons: 1.0.8
+  firebase_core: 4.13.0
+  firebase_messaging: 16.5.0
   flutter_riverpod: 3.4.2
   go_router: 17.5.0
   privy_flutter: 0.10.1
+  stream_chat_flutter: 10.3.0
+  stream_chat_persistence: 10.3.0
+  stream_video_flutter: 1.4.3
+  stream_video_push_notification: 1.4.3
+  uuid: 4.6.0
 
 dev_dependencies:
   flutter_test:
@@ -20,4 +29,6 @@ dev_dependencies:
   flutter_lints: 6.0.0
 
 flutter:
+  config:
+    enable-swift-package-manager: false
   uses-material-design: true

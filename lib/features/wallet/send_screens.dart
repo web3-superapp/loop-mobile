@@ -1,8 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:decimal/decimal.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:uuid/uuid.dart';
+
+@immutable
+final class TransferDraft {
+  const TransferDraft({
+    required this.asset,
+    required this.network,
+    this.recipient = '',
+  });
+
+  final String asset;
+  final String network;
+  final String recipient;
+
+  TransferDraft copyWith({String? recipient}) => TransferDraft(
+    asset: asset,
+    network: network,
+    recipient: recipient ?? this.recipient,
+  );
+}
 
 class SendAssetScreen extends StatelessWidget {
   const SendAssetScreen({super.key});
@@ -11,8 +32,8 @@ class SendAssetScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return LoopPage(
       title: 'Choose asset',
-      eyebrow: 'Send · 1 of 3',
-      subtitle: 'Only available balances are shown.',
+      eyebrow: '开发预览 · Send · 1 of 3',
+      subtitle: 'Balances below are layout fixtures. A wallet provider is not connected.',
       children: <Widget>[
         const TextField(
           decoration: InputDecoration(
@@ -20,33 +41,41 @@ class SendAssetScreen extends StatelessWidget {
             prefixIcon: Icon(Icons.search_rounded),
           ),
         ),
-        const LoopSectionLabel('Available'),
+        const LoopSectionLabel('Available · 演示数据'),
         _SendAssetRow(
           symbol: 'ETH',
           name: 'Ethereum',
           balance: '4.82 ETH',
           value: r'$22,319.01',
-          onTap: () => context.push('/wallet/send/to'),
+          onTap: () => context.push(
+            '/wallet/send/to',
+            extra: const TransferDraft(asset: 'ETH', network: 'Ethereum'),
+          ),
         ),
         _SendAssetRow(
           symbol: 'USDC',
           name: 'USD Coin',
           balance: '6,810.20 USDC',
           value: r'$6,810.20',
-          onTap: () => context.push('/wallet/send/to'),
+          onTap: () => context.push(
+            '/wallet/send/to',
+            extra: const TransferDraft(asset: 'USDC', network: 'Ethereum'),
+          ),
         ),
         _SendAssetRow(
           symbol: 'SOL',
           name: 'Solana',
           balance: '13.44 SOL',
           value: r'$2,110.79',
-          onTap: () => context.push('/wallet/send/to'),
+          onTap: () => context.push(
+            '/wallet/send/to',
+            extra: const TransferDraft(asset: 'SOL', network: 'Solana'),
+          ),
         ),
-        const LoopSectionLabel('Unavailable'),
+        const LoopSectionLabel('Unavailable · 演示数据'),
         const LoopStateCard(
-          title: 'ARB has no spendable balance',
-          message:
-              'The asset remains visible so a zero balance is not confused with a loading error.',
+          title: '演示数据 · ARB zero-balance state',
+          message: 'The asset remains visible so a zero balance is not confused with a loading error.',
           icon: Icons.account_balance_wallet_outlined,
         ),
       ],
@@ -91,14 +120,16 @@ class _SendAssetRow extends StatelessWidget {
 }
 
 class SendRecipientScreen extends StatefulWidget {
-  const SendRecipientScreen({super.key});
+  const SendRecipientScreen({required this.draft, super.key});
+
+  final TransferDraft draft;
 
   @override
   State<SendRecipientScreen> createState() => _SendRecipientScreenState();
 }
 
 class _SendRecipientScreenState extends State<SendRecipientScreen> {
-  final controller = TextEditingController(text: '0xA1c0…88C2');
+  late final controller = TextEditingController(text: widget.draft.recipient);
 
   @override
   void dispose() {
@@ -110,13 +141,18 @@ class _SendRecipientScreenState extends State<SendRecipientScreen> {
   Widget build(BuildContext context) {
     return LoopPage(
       title: 'Choose recipient',
-      eyebrow: 'Send ETH · 2 of 3',
-      subtitle: 'The full address is reviewed again before signing.',
+      eyebrow: '开发预览 · Send ${widget.draft.asset} · 2 of 3',
+      subtitle: 'Enter the complete raw address. LOOP has not validated or screened it.',
       bottom: LoopActionDock(
         child: FilledButton(
           onPressed: controller.text.trim().isEmpty
               ? null
-              : () => context.push('/wallet/send/confirm'),
+              : () => context.push(
+                  '/wallet/send/confirm',
+                  extra: widget.draft.copyWith(
+                    recipient: controller.text.trim(),
+                  ),
+                ),
           child: const Text('Continue'),
         ),
       ),
@@ -128,37 +164,35 @@ class _SendRecipientScreenState extends State<SendRecipientScreen> {
             labelText: 'Address or name',
             prefixIcon: const Icon(Icons.alternate_email_rounded),
             suffixIcon: IconButton(
-              onPressed: () {},
-              tooltip: 'Scan address',
+              onPressed: null,
+              tooltip: 'Scanner not connected',
               icon: const Icon(Icons.qr_code_scanner_rounded),
             ),
           ),
         ),
         const SizedBox(height: 14),
         const LoopStateCard(
-          title: 'First time sending here',
-          message:
-              'This address has not received funds from this wallet before. Check every character in the final review.',
+          title: 'Recipient history unavailable',
+          message: 'LOOP cannot determine whether this wallet has used the address before. Check every character in the final review.',
           icon: Icons.person_search_outlined,
           tone: LoopTone.warning,
         ),
         const LoopSectionLabel('Recent'),
-        const _RecipientRow(name: 'Treasury', address: '0x3C91…D710'),
-        const _RecipientRow(name: 'Cold wallet', address: '0x21B4…A90F'),
+        const LoopStateCard(
+          title: 'No verified recipient history',
+          message: 'Recent recipients will appear only after the wallet backend supplies complete addresses.',
+          icon: Icons.history_toggle_off_rounded,
+        ),
         const LoopSectionLabel('Recipient facts'),
-        const LoopCard(
+        LoopCard(
           child: Column(
             children: <Widget>[
-              LoopKeyValueRow(label: 'Network', value: 'Ethereum'),
-              LoopKeyValueRow(
-                label: 'Address format',
-                value: 'Valid',
-                tone: LoopTone.positive,
-              ),
-              LoopKeyValueRow(
-                label: 'Sanctions match',
-                value: 'No known match',
-                tone: LoopTone.positive,
+              LoopKeyValueRow(label: 'Asset', value: widget.draft.asset),
+              LoopKeyValueRow(label: 'Network', value: widget.draft.network),
+              const LoopKeyValueRow(
+                label: 'Format and screening',
+                value: 'Not verified · backend unavailable',
+                tone: LoopTone.warning,
                 last: true,
               ),
             ],
@@ -169,46 +203,17 @@ class _SendRecipientScreenState extends State<SendRecipientScreen> {
   }
 }
 
-class _RecipientRow extends StatelessWidget {
-  const _RecipientRow({required this.name, required this.address});
-
-  final String name;
-  final String address;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      onTap: () {},
-      contentPadding: EdgeInsets.zero,
-      minTileHeight: 60,
-      leading: const CircleAvatar(
-        backgroundColor: LoopColors.elevated,
-        child: Icon(Icons.person_outline_rounded, color: LoopColors.vapor),
-      ),
-      title: Text(name, style: Theme.of(context).textTheme.titleMedium),
-      subtitle: Text(
-        address,
-        style: Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
-      ),
-      trailing: const Icon(
-        Icons.chevron_right_rounded,
-        color: LoopColors.vapor,
-      ),
-    );
-  }
-}
-
 class SendConfirmScreen extends StatefulWidget {
-  const SendConfirmScreen({super.key});
+  const SendConfirmScreen({required this.draft, super.key});
+
+  final TransferDraft draft;
 
   @override
   State<SendConfirmScreen> createState() => _SendConfirmScreenState();
 }
 
 class _SendConfirmScreenState extends State<SendConfirmScreen> {
-  final controller = TextEditingController(text: '0.25');
+  final controller = TextEditingController();
 
   @override
   void dispose() {
@@ -218,37 +223,40 @@ class _SendConfirmScreenState extends State<SendConfirmScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final amount = Decimal.tryParse(controller.text.trim());
+    final hasValidAmount = amount != null && amount > Decimal.zero;
     return LoopPage(
       title: 'Confirm transfer',
-      eyebrow: 'Send ETH · 3 of 3',
-      subtitle:
-          'No balance changes until the provider reports a confirmed transaction.',
+      eyebrow: '开发预览 · Send ${widget.draft.asset} · 3 of 3',
+      subtitle: 'Draft review only. No quote, simulation, signing or submission has run.',
       bottom: LoopActionDock(
         child: FilledButton(
-          onPressed: () {
-            final now = DateTime.now().toUtc();
-            final intent = SigningIntent.transfer(
-              revision: 'transfer_eth_0001',
-              asset: 'ETH',
-              amount: '${controller.text} ETH',
-              recipient: '0xA1c0F6B39D3b9B0C5e7A8426CF52AaFB1fA888C2',
-              network: 'Ethereum',
-              fee: '0.00042 ETH',
-              observedAt: now,
-              expiresAt: now.add(const Duration(seconds: 30)),
-            );
-            context.push('/preview/signing-review', extra: intent);
-          },
-          child: const Text('Review transfer'),
+          onPressed: !hasValidAmount || widget.draft.recipient.trim().isEmpty
+              ? null
+              : () {
+                  final now = DateTime.now().toUtc();
+                  final intent = SigningIntent.transfer(
+                    revision: const Uuid().v4(),
+                    asset: widget.draft.asset,
+                    amount: '${controller.text.trim()} ${widget.draft.asset}',
+                    recipient: widget.draft.recipient,
+                    network: widget.draft.network,
+                    fee: 'Unavailable · backend quote required',
+                    observedAt: now,
+                    expiresAt: now.add(const Duration(seconds: 30)),
+                  );
+                  context.push('/preview/signing-review', extra: intent);
+                },
+          child: const Text('Review draft'),
         ),
       ),
       children: <Widget>[
         LoopCard(
           accent: true,
-          tone: LoopTone.positive,
+          tone: LoopTone.warning,
           child: Column(
             children: <Widget>[
-              const LoopAssetMark(symbol: 'ETH', size: 52),
+              LoopAssetMark(symbol: widget.draft.asset, size: 52),
               const SizedBox(height: 16),
               TextField(
                 controller: controller,
@@ -257,32 +265,26 @@ class _SendConfirmScreenState extends State<SendConfirmScreen> {
                   decimal: true,
                 ),
                 style: Theme.of(context).textTheme.displayMedium,
-                decoration: const InputDecoration(
-                  suffixText: 'ETH',
-                  helperText: 'Available 4.82 ETH',
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  suffixText: widget.draft.asset,
+                  helperText: 'Spendable balance unavailable',
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                r'≈ $1,157.63',
-                style: Theme.of(context).textTheme.bodyMedium,
               ),
             ],
           ),
         ),
         const LoopSectionLabel('Transfer details'),
-        const LoopCard(
+        LoopCard(
           child: Column(
             children: <Widget>[
-              LoopKeyValueRow(label: 'To', value: '0xA1c0…88C2'),
-              LoopKeyValueRow(label: 'Network', value: 'Ethereum'),
-              LoopKeyValueRow(
-                label: 'Estimated network fee',
-                value: '0.00042 ETH',
-              ),
-              LoopKeyValueRow(
-                label: 'Estimated arrival',
-                value: '~30 seconds',
+              LoopKeyValueRow(label: 'To', value: widget.draft.recipient),
+              LoopKeyValueRow(label: 'Network', value: widget.draft.network),
+              const LoopKeyValueRow(label: 'Network fee', value: 'Unavailable'),
+              const LoopKeyValueRow(
+                label: 'Recipient screening',
+                value: 'Not performed',
+                tone: LoopTone.warning,
                 last: true,
               ),
             ],
@@ -290,11 +292,10 @@ class _SendConfirmScreenState extends State<SendConfirmScreen> {
         ),
         const SizedBox(height: 14),
         const LoopStateCard(
-          title: 'Simulation ready',
-          message:
-              'Expected result: 0.25 ETH leaves this wallet and no token approvals change.',
-          icon: Icons.check_circle_outline_rounded,
-          tone: LoopTone.positive,
+          title: 'Provider facts unavailable',
+          message: 'The LOOP backend must validate the full recipient, screen policy, quote fees and return a canonical intent before signing can be enabled.',
+          icon: Icons.policy_outlined,
+          tone: LoopTone.warning,
         ),
       ],
     );
@@ -320,30 +321,31 @@ class _TransactionResultScreenState extends State<TransactionResultScreen> {
       TransactionPreviewState.pending => (
         Icons.hourglass_top_rounded,
         LoopTone.warning,
-        'Transaction pending',
-        'The wallet submitted the transaction. Waiting for a network receipt.',
+        'Pending state example',
+        'No wallet request occurred. This demonstrates where a provider-backed pending status would appear.',
       ),
       TransactionPreviewState.succeeded => (
         Icons.check_circle_rounded,
         LoopTone.positive,
-        'Transfer complete',
-        '0.25 ETH reached 0xA1c0…88C2.',
+        'Success state example',
+        'No transfer occurred. This demonstrates a future provider-confirmed success layout.',
       ),
       TransactionPreviewState.failed => (
         Icons.error_outline_rounded,
         LoopTone.danger,
-        'Transaction failed',
-        'The network rejected the transaction. Your displayed balance was not changed.',
+        'Failure state example',
+        'No network request occurred. This demonstrates how a verified failure would be explained.',
       ),
       TransactionPreviewState.unknown => (
         Icons.help_outline_rounded,
         LoopTone.warning,
-        'Submission status unknown',
-        'The request may have reached the network. LOOP will read back the account before offering another attempt.',
+        'Unknown state example',
+        'No request was sent. Production unknown states will require provider reconciliation before retry.',
       ),
     };
     return LoopPage(
       title: 'Transaction result',
+      eyebrow: '开发预览',
       subtitle:
           'Preview each terminal state without claiming a live transaction.',
       children: <Widget>[
@@ -397,12 +399,12 @@ class _TransactionResultScreenState extends State<TransactionResultScreen> {
         const LoopCard(
           child: Column(
             children: <Widget>[
-              LoopKeyValueRow(label: 'Asset', value: '0.25 ETH'),
-              LoopKeyValueRow(label: 'Network', value: 'Ethereum'),
-              LoopKeyValueRow(label: 'Recipient', value: '0xA1c0…88C2'),
+              LoopKeyValueRow(label: 'Asset', value: '演示数据 · 0.25 ETH'),
+              LoopKeyValueRow(label: 'Network', value: '演示数据 · Ethereum'),
+              LoopKeyValueRow(label: 'Recipient', value: 'Unavailable'),
               LoopKeyValueRow(
                 label: 'Transaction',
-                value: '0x72f1…9c2a',
+                value: 'Not submitted',
                 last: true,
               ),
             ],
@@ -415,9 +417,9 @@ class _TransactionResultScreenState extends State<TransactionResultScreen> {
         ),
         const SizedBox(height: 10),
         OutlinedButton.icon(
-          onPressed: () {},
+          onPressed: null,
           icon: const Icon(Icons.open_in_new_rounded),
-          label: const Text('Open block explorer'),
+          label: const Text('No transaction to inspect'),
         ),
       ],
     );

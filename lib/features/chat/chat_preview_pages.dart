@@ -11,8 +11,7 @@ class TokenCardPreviewPage extends StatelessWidget {
     return LoopPage(
       eyebrow: 'Shared in chat',
       title: 'Token context',
-      subtitle:
-          'A token mention keeps its price snapshot and contract facts together.',
+      subtitle: 'A token mention keeps its price snapshot and contract facts together.',
       children: <Widget>[
         const LoopContextRail(stage: LoopStage.discuss),
         const SizedBox(height: 20),
@@ -40,8 +39,7 @@ class TokenCardPreviewPage extends StatelessWidget {
         const SizedBox(height: 14),
         const LoopStateCard(
           title: 'Shared context is not a recommendation',
-          message:
-              'Prices and contract conditions can change after a message is sent. Check current facts before acting.',
+          message: 'Prices and contract conditions can change after a message is sent. Check current facts before acting.',
           icon: Icons.schedule_rounded,
           tone: LoopTone.conversation,
         ),
@@ -197,8 +195,7 @@ class AssetMessagePreviewPage extends StatelessWidget {
         const LoopSectionLabel('Snapshot boundaries'),
         const LoopStateCard(
           title: 'The position does not update after sharing',
-          message:
-              'Entry, size, and return reflect the time on the card. Opening the market does not copy the position.',
+          message: 'Entry, size, and return reflect the time on the card. Opening the market does not copy the position.',
           icon: Icons.camera_alt_outlined,
           tone: LoopTone.market,
         ),

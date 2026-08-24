@@ -215,9 +215,8 @@ class LoopSectionLabel extends StatelessWidget {
           Expanded(
             child: Text(
               label.toUpperCase(),
-              style: Theme.of(
-                context,
-              ).textTheme.labelMedium?.copyWith(letterSpacing: 1.15),
+              style: Theme.of(context).textTheme.labelMedium
+                  ?.copyWith(letterSpacing: 1.15),
             ),
           ),
           ?trailing,
@@ -261,9 +260,8 @@ class LoopStatusPill extends StatelessWidget {
               ],
               Text(
                 label,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelMedium?.copyWith(color: color),
+                style: Theme.of(context).textTheme.labelMedium
+                    ?.copyWith(color: color),
               ),
             ],
           ),
@@ -301,10 +299,8 @@ class LoopAssetMark extends StatelessWidget {
         ),
         child: Text(
           _markForSymbol(symbol),
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: resolved,
-            fontWeight: FontWeight.w700,
-          ),
+          style: Theme.of(context).textTheme.titleMedium
+              ?.copyWith(color: resolved, fontWeight: FontWeight.w700),
         ),
       ),
     );
@@ -361,9 +357,8 @@ class LoopMetric extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             detail!,
-            style: Theme.of(
-              context,
-            ).textTheme.labelMedium?.copyWith(color: color),
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: color),
           ),
         ],
       ],

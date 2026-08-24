@@ -1,7 +1,4 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
@@ -126,11 +123,7 @@ class AccountSurfaceScreen extends StatelessWidget {
         capabilities: capabilities,
         onNavigate: (destination) => _navigate(context, destination),
       ),
-      'auth-otp' => _OtpScreen(
-        destination: maskedDestination,
-        onVerified:
-            onPrimaryAction ?? () => _navigate(context, 'wallet-create'),
-      ),
+      'auth-otp' => _OtpScreen(destination: maskedDestination),
       'auth-wallet' => _ExternalWalletScreen(
         capabilityAvailable: capabilities.canConnectExternalWallet,
         onConnected:
@@ -200,9 +193,8 @@ class _SplashScreen extends StatelessWidget {
                   const SizedBox(height: 14),
                   Text(
                     'Checking your session and account protection before you continue.',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyLarge?.copyWith(color: LoopColors.vapor),
+                    style: Theme.of(context).textTheme.bodyLarge
+                        ?.copyWith(color: LoopColors.vapor),
                   ),
                   const SizedBox(height: 24),
                   Semantics(
@@ -269,24 +261,21 @@ class _OnboardingScreenState extends State<_OnboardingScreen> {
         (
           eyebrow: 'DISCOVER',
           title: 'Read the market\nwithout losing context.',
-          body:
-              'Move from a market signal to the conversation around it, with the asset still in view.',
+          body: 'Move from a market signal to the conversation around it, with the asset still in view.',
           icon: Icons.radar_rounded,
           color: LoopColors.market,
         ),
         (
           eyebrow: 'DISCUSS',
           title: 'Talk as an identity,\nnot an address.',
-          body:
-              'Use a rotating alias, choose what others can see, and keep wallet details private by default.',
+          body: 'Use a rotating alias, choose what others can see, and keep wallet details private by default.',
           icon: Icons.forum_outlined,
           color: LoopColors.chat,
         ),
         (
           eyebrow: 'EXECUTE',
           title: 'Review the facts.\nThen make the move.',
-          body:
-              'Every sensitive action returns to a clear review step before your wallet signs.',
+          body: 'Every sensitive action returns to a clear review step before your wallet signs.',
           icon: Icons.bolt_rounded,
           color: LoopColors.mint,
         ),
@@ -437,30 +426,31 @@ class _AuthScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LoopPage(
-      eyebrow: 'YOUR ACCOUNT',
-      title: 'Welcome to LOOP',
-      subtitle:
-          'Choose how you want to sign in. Your social identity and wallet remain separate until you decide to link them.',
+      eyebrow: '开发预览 · AUTH CATALOG',
+      title: 'Authentication layouts',
+      subtitle: 'The live /auth route uses Privy Email OTP. These additional methods are non-actionable product previews.',
       children: <Widget>[
         _AccountMethodTile(
           icon: Icons.alternate_email_rounded,
           title: 'Continue with email',
-          detail: 'We’ll send a one-time code',
+          detail: 'Open the real Privy Email OTP route',
           tone: LoopTone.positive,
-          onTap: () => onNavigate('auth-otp'),
+          onTap: () => onNavigate('auth'),
         ),
         const SizedBox(height: 10),
         _AccountMethodTile(
           icon: Icons.apple_rounded,
           title: 'Continue with Apple',
-          detail: 'Use your Apple account',
+          detail: 'Not enabled in this phase',
+          enabled: false,
           onTap: () => onNavigate('wallet-create'),
         ),
         const SizedBox(height: 10),
         _AccountMethodTile(
           icon: Icons.g_mobiledata_rounded,
           title: 'Continue with Google',
-          detail: 'Use your Google account',
+          detail: 'Not enabled in this phase',
+          enabled: false,
           onTap: () => onNavigate('wallet-create'),
         ),
         const SizedBox(height: 10),
@@ -494,167 +484,31 @@ class _AuthScreen extends StatelessWidget {
         const SizedBox(height: 18),
         const _PlainDisclosure(
           icon: Icons.lock_outline_rounded,
-          text:
-              'LOOP never asks for recovery words during sign-in. Sensitive wallet actions require a separate confirmation.',
+          text: 'LOOP never asks for recovery words during sign-in. Sensitive wallet actions require a separate confirmation.',
         ),
       ],
     );
   }
 }
 
-class _OtpScreen extends StatefulWidget {
-  const _OtpScreen({required this.destination, required this.onVerified});
+class _OtpScreen extends StatelessWidget {
+  const _OtpScreen({required this.destination});
 
   final String destination;
-  final VoidCallback onVerified;
-
-  @override
-  State<_OtpScreen> createState() => _OtpScreenState();
-}
-
-class _OtpScreenState extends State<_OtpScreen> {
-  final _controllers = List<TextEditingController>.generate(
-    6,
-    (_) => TextEditingController(),
-  );
-  final _focusNodes = List<FocusNode>.generate(6, (_) => FocusNode());
-  Timer? _timer;
-  int _remaining = 30;
-  String? _error;
-
-  bool get _complete =>
-      _controllers.every((controller) => controller.text.length == 1);
-
-  @override
-  void initState() {
-    super.initState();
-    _startTimer();
-  }
-
-  void _startTimer() {
-    _timer?.cancel();
-    _remaining = 30;
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) return;
-      if (_remaining <= 1) {
-        timer.cancel();
-        setState(() => _remaining = 0);
-      } else {
-        setState(() => _remaining -= 1);
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    for (final controller in _controllers) {
-      controller.dispose();
-    }
-    for (final node in _focusNodes) {
-      node.dispose();
-    }
-    super.dispose();
-  }
-
-  void _changed(int index, String value) {
-    setState(() => _error = null);
-    if (value.isNotEmpty && index < _focusNodes.length - 1) {
-      _focusNodes[index + 1].requestFocus();
-    }
-  }
-
-  void _verify() {
-    if (!_complete) {
-      setState(() => _error = 'Enter all six digits.');
-      return;
-    }
-    widget.onVerified();
-  }
 
   @override
   Widget build(BuildContext context) {
     return LoopPage(
-      eyebrow: 'VERIFICATION',
-      title: 'Enter your code',
-      subtitle: 'We sent a six-digit code to ${widget.destination}.',
-      bottom: LoopActionDock(
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: _complete ? _verify : null,
-            child: const Text('Verify code'),
-          ),
-        ),
-      ),
+      eyebrow: '开发预览 · LEGACY OTP CATALOG',
+      title: 'OTP layout retired',
+      subtitle:
+          '$destination is sample text only. No code was sent and no local code can authenticate a user.',
       children: <Widget>[
-        Semantics(
-          label: 'Six digit verification code',
-          child: Row(
-            children: List<Widget>.generate(6, (index) {
-              return Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(right: index == 5 ? 0 : 7),
-                  child: TextField(
-                    controller: _controllers[index],
-                    focusNode: _focusNodes[index],
-                    autofocus: index == 0,
-                    textAlign: TextAlign.center,
-                    keyboardType: TextInputType.number,
-                    textInputAction: index == 5
-                        ? TextInputAction.done
-                        : TextInputAction.next,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(1),
-                    ],
-                    style: context.dataStyle.copyWith(fontSize: 20),
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                      errorText: null,
-                      counterText: '',
-                    ),
-                    onChanged: (value) => _changed(index, value),
-                    onSubmitted: (_) {
-                      if (index == 5 && _complete) _verify();
-                    },
-                  ),
-                ),
-              );
-            }),
-          ),
-        ),
-        if (_error != null) ...<Widget>[
-          const SizedBox(height: 12),
-          Text(
-            _error!,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: LoopColors.danger),
-          ),
-        ],
-        const SizedBox(height: 20),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: Text(
-                _remaining > 0
-                    ? 'Resend available in 0:${_remaining.toString().padLeft(2, '0')}'
-                    : 'Didn’t receive a code?',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ),
-            TextButton(
-              onPressed: _remaining == 0 ? () => setState(_startTimer) : null,
-              child: const Text('Resend'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        const _PlainDisclosure(
-          icon: Icons.shield_outlined,
-          text:
-              'For your security, repeated incorrect attempts temporarily pause verification.',
+        const LoopStateCard(
+          title: 'Use the production authentication route',
+          message: 'Privy sends and verifies Email OTP through /auth. This catalog surface has no inputs, resend timer or success navigation.',
+          icon: Icons.key_off_outlined,
+          tone: LoopTone.warning,
         ),
       ],
     );
@@ -699,8 +553,7 @@ class _ExternalWalletScreenState extends State<_ExternalWalletScreen> {
         if (!widget.capabilityAvailable) ...<Widget>[
           const LoopStateCard(
             title: 'Wallet connection is unavailable',
-            message:
-                'Continue with email, Apple, or Google and try connecting a wallet later.',
+            message: 'Continue with email, Apple, or Google and try connecting a wallet later.',
             icon: Icons.link_off_rounded,
             tone: LoopTone.warning,
           ),
@@ -779,8 +632,7 @@ class _ExternalWalletScreenState extends State<_ExternalWalletScreen> {
         const SizedBox(height: 18),
         const _PlainDisclosure(
           icon: Icons.draw_outlined,
-          text:
-              'Your wallet will ask you to sign a sign-in message. This does not move funds or approve token access.',
+          text: 'Your wallet will ask you to sign a sign-in message. This does not move funds or approve token access.',
         ),
       ],
     );
@@ -801,8 +653,7 @@ class _WalletCreateScreen extends StatelessWidget {
     return LoopPage(
       eyebrow: 'EMBEDDED WALLET',
       title: 'Set up your wallet',
-      subtitle:
-          'Your account can hold an embedded wallet when this capability is available for your configuration.',
+      subtitle: 'Your account can hold an embedded wallet when this capability is available for your configuration.',
       bottom: capabilityAvailable
           ? LoopActionDock(
               child: SizedBox(
@@ -820,16 +671,14 @@ class _WalletCreateScreen extends StatelessWidget {
         if (capabilityAvailable)
           const LoopStateCard(
             title: 'Ready to create',
-            message:
-                'Wallet creation happens inside the secured wallet service. LOOP does not receive raw key material.',
+            message: 'Wallet creation happens inside the secured wallet service. LOOP does not receive raw key material.',
             icon: Icons.verified_user_outlined,
             tone: LoopTone.positive,
           )
         else
           const LoopStateCard(
             title: 'Embedded wallet unavailable',
-            message:
-                'No wallet will be created. Connect an external wallet or return to sign-in options.',
+            message: 'No wallet will be created. Connect an external wallet or return to sign-in options.',
             icon: Icons.lock_clock_outlined,
             tone: LoopTone.warning,
           ),
@@ -884,8 +733,7 @@ class _WalletBackupScreen extends StatelessWidget {
     return LoopPage(
       eyebrow: 'RECOVERY',
       title: 'Choose how to recover',
-      subtitle:
-          'Available methods are confirmed for this wallet at the moment you choose them.',
+      subtitle: 'Available methods are confirmed for this wallet at the moment you choose them.',
       children: <Widget>[
         _RecoveryMethodTile(
           icon: Icons.cloud_outlined,
@@ -923,8 +771,7 @@ class _WalletBackupScreen extends StatelessWidget {
         const SizedBox(height: 22),
         LoopStateCard(
           title: 'Skipping recovery can lock you out',
-          message:
-              'If you lose access before setting a recovery method, assets may be permanently unreachable.',
+          message: 'If you lose access before setting a recovery method, assets may be permanently unreachable.',
           icon: Icons.warning_amber_rounded,
           tone: LoopTone.danger,
           action: OutlinedButton(
@@ -1015,8 +862,7 @@ class _SeedShowScreenState extends State<_SeedShowScreen>
     return LoopPage(
       eyebrow: 'RECOVERY PHRASE',
       title: 'Record it offline',
-      subtitle:
-          'Anyone with these words can control the wallet. Never share them with support or paste them into a website.',
+      subtitle: 'Anyone with these words can control the wallet. Never share them with support or paste them into a website.',
       bottom: _authorized && _revealed
           ? LoopActionDock(
               child: SizedBox(
@@ -1031,8 +877,7 @@ class _SeedShowScreenState extends State<_SeedShowScreen>
       children: <Widget>[
         const LoopStateCard(
           title: 'Private screen',
-          message:
-              'Move away from cameras and people. The phrase hides when LOOP leaves the foreground.',
+          message: 'Move away from cameras and people. The phrase hides when LOOP leaves the foreground.',
           icon: Icons.visibility_off_outlined,
           tone: LoopTone.danger,
         ),
@@ -1142,8 +987,7 @@ class _SeedVerifyScreenState extends State<_SeedVerifyScreen> {
     return LoopPage(
       eyebrow: 'FINAL CHECK',
       title: 'Verify your backup',
-      subtitle:
-          'Enter the requested words exactly as you recorded them. LOOP will not reveal or suggest the answer.',
+      subtitle: 'Enter the requested words exactly as you recorded them. LOOP will not reveal or suggest the answer.',
       bottom: widget.capabilityAvailable
           ? LoopActionDock(
               child: SizedBox(
@@ -1159,8 +1003,7 @@ class _SeedVerifyScreenState extends State<_SeedVerifyScreen> {
         if (!widget.capabilityAvailable)
           const LoopStateCard(
             title: 'Verification unavailable',
-            message:
-                'This wallet has not authorized recovery-phrase verification. Your setup remains incomplete.',
+            message: 'This wallet has not authorized recovery-phrase verification. Your setup remains incomplete.',
             icon: Icons.lock_outline_rounded,
             tone: LoopTone.warning,
           )
@@ -1188,8 +1031,7 @@ class _SeedVerifyScreenState extends State<_SeedVerifyScreen> {
           ],
         const _PlainDisclosure(
           icon: Icons.no_accounts_outlined,
-          text:
-              'Support will never ask for your full recovery phrase or private key.',
+          text: 'Support will never ask for your full recovery phrase or private key.',
         ),
       ],
     );
@@ -1244,8 +1086,7 @@ class _WalletImportScreenState extends State<_WalletImportScreen> {
     return LoopPage(
       eyebrow: 'EXISTING WALLET',
       title: 'Add a wallet',
-      subtitle:
-          'Choose a method. Import options appear only when the secured wallet service confirms support.',
+      subtitle: 'Choose a method. Import options appear only when the secured wallet service confirms support.',
       bottom: LoopActionDock(
         child: SizedBox(
           width: double.infinity,
@@ -1285,8 +1126,7 @@ class _WalletImportScreenState extends State<_WalletImportScreen> {
         if (!_available) ...<Widget>[
           LoopStateCard(
             title: '$_label import is unavailable',
-            message:
-                'Nothing entered here will be processed. Choose another available method.',
+            message: 'Nothing entered here will be processed. Choose another available method.',
             icon: Icons.lock_outline_rounded,
             tone: LoopTone.warning,
           ),
@@ -1343,8 +1183,7 @@ class _SecuritySetupScreenState extends State<_SecuritySetupScreen> {
     return LoopPage(
       eyebrow: 'ACCOUNT PROTECTION',
       title: 'Protect sensitive actions',
-      subtitle:
-          'Choose at least one local check for wallet recovery, withdrawals, and account changes.',
+      subtitle: 'Choose at least one local check for wallet recovery, withdrawals, and account changes.',
       bottom: LoopActionDock(
         child: SizedBox(
           width: double.infinity,
@@ -1390,8 +1229,7 @@ class _SecuritySetupScreenState extends State<_SecuritySetupScreen> {
         const SizedBox(height: 18),
         const _PlainDisclosure(
           icon: Icons.info_outline_rounded,
-          text:
-              'Device biometrics never leave your phone. LOOP receives only the success or failure of the device check.',
+          text: 'Device biometrics never leave your phone. LOOP receives only the success or failure of the device check.',
         ),
       ],
     );
@@ -1432,8 +1270,7 @@ class _ProfileSetupScreenState extends State<_ProfileSetupScreen> {
     return LoopPage(
       eyebrow: 'YOUR IDENTITY',
       title: 'Start private',
-      subtitle:
-          'Your LOOP account stays stable when you add or replace a wallet. Chats show your alias, not a wallet address.',
+      subtitle: 'Your LOOP account stays stable when you add or replace a wallet. Chats show your alias, not a wallet address.',
       bottom: LoopActionDock(
         child: SizedBox(
           width: double.infinity,
@@ -1563,10 +1400,8 @@ class _LoopWordmark extends StatelessWidget {
         const SizedBox(width: 10),
         Text(
           'LOOP',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            letterSpacing: 2,
-            color: LoopColors.chalk,
-          ),
+          style: Theme.of(context).textTheme.titleMedium
+              ?.copyWith(letterSpacing: 2, color: LoopColors.chalk),
         ),
       ],
     );
@@ -1616,9 +1451,8 @@ class _IdentityOrbit extends StatelessWidget {
               alignment: Alignment.center,
               child: Text(
                 'L',
-                style: Theme.of(
-                  context,
-                ).textTheme.displayMedium?.copyWith(color: LoopColors.mint),
+                style: Theme.of(context).textTheme.displayMedium
+                    ?.copyWith(color: LoopColors.mint),
               ),
             ),
             Positioned(
@@ -1934,9 +1768,8 @@ class _StepRow extends StatelessWidget {
             ),
             child: Text(
               number,
-              style: Theme.of(
-                context,
-              ).textTheme.labelMedium?.copyWith(color: LoopColors.mint),
+              style: Theme.of(context).textTheme.labelMedium
+                  ?.copyWith(color: LoopColors.mint),
             ),
           ),
           const SizedBox(width: 12),

@@ -9,13 +9,31 @@ import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/review/signing_review_surface.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_fixture_adapter.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_providers.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_repository.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_trading_gateway.dart';
+import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
+
+import 'support/authenticated_test_privy_gateway.dart';
 
 void main() {
   testWidgets('navigates the six primary destinations with one shell', (
     tester,
   ) async {
-    await tester.pumpWidget(const ProviderScope(child: LoopApp()));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
+          hyperliquidMarketRepositoryProvider.overrideWithValue(
+            const _EmptyMarketRepository(),
+          ),
+        ],
+        child: const LoopApp(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Home overview'), findsOneWidget);
@@ -39,6 +57,12 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
+          hyperliquidMarketRepositoryProvider.overrideWithValue(
+            const _EmptyMarketRepository(),
+          ),
           hyperliquidTradingGatewayProvider.overrideWithValue(
             const HyperliquidFixtureAdapter(),
           ),
@@ -49,7 +73,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(NavigationDestination, 'Market'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Perpetual'));
+    final perpEntry = find.widgetWithText(ActionChip, 'Perp trading · 开发预览');
+    await tester.ensureVisible(perpEntry);
+    await tester.pumpAndSettle();
+    await tester.tap(perpEntry);
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('ETH-PERP'));
     await tester.pumpAndSettle();
@@ -57,11 +84,12 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Review preview order'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Continue to Privy review'));
+    await tester.tap(find.text('Continue to intent review'));
     await tester.pumpAndSettle();
 
     expect(find.byType(SigningReviewSurface), findsOneWidget);
-    expect(find.text('Privy signing review'), findsOneWidget);
+    expect(find.text('Transaction intent review'), findsOneWidget);
+    expect(find.text('Backend execution unavailable'), findsWidgets);
     expect(find.text('1.25'), findsOneWidget);
     expect(find.text('20×'), findsOneWidget);
   });
@@ -74,7 +102,16 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const ProviderScope(child: LoopApp()));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
+        ],
+        child: const LoopApp(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     final payNotice = find.byKey(
@@ -142,6 +179,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
           communicationGatewayProvider.overrideWithValue(
             MemoryCommunicationGateway(),
           ),
@@ -164,7 +204,16 @@ void main() {
   testWidgets('default production communication mode stays unconfigured', (
     tester,
   ) async {
-    await tester.pumpWidget(const ProviderScope(child: LoopApp()));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
+        ],
+        child: const LoopApp(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Stream not connected'), findsOneWidget);
@@ -187,6 +236,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
           communicationGatewayProvider.overrideWithValue(
             MemoryCommunicationGateway(),
           ),
@@ -218,4 +270,11 @@ void main() {
     expect(find.text('SIMULATED SEATS'), findsOneWidget);
     expect(find.text('Close preview'), findsOneWidget);
   });
+}
+
+final class _EmptyMarketRepository implements HyperliquidMarketRepository {
+  const _EmptyMarketRepository();
+
+  @override
+  Future<List<HyperliquidMarket>> fetchMarkets() async => const [];
 }

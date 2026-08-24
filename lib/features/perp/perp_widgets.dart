@@ -78,10 +78,8 @@ class PerpSnapshotBanner extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     descriptor.$1,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: color,
-                      letterSpacing: 0.78,
-                    ),
+                    style: Theme.of(context).textTheme.labelMedium
+                        ?.copyWith(color: color, letterSpacing: 0.78),
                   ),
                   if (!compact) ...<Widget>[
                     const SizedBox(height: 3),
@@ -96,9 +94,8 @@ class PerpSnapshotBanner extends StatelessWidget {
             if (state == PerpSnapshotState.preview)
               Text(
                 'NO SUBMISSION',
-                style: Theme.of(
-                  context,
-                ).textTheme.labelMedium?.copyWith(fontFamily: 'monospace'),
+                style: Theme.of(context).textTheme.labelMedium
+                    ?.copyWith(fontFamily: 'monospace'),
               ),
           ],
         ),
@@ -239,9 +236,8 @@ class PerpModeControl extends StatelessWidget {
               ),
               child: Text(
                 'Perpetual',
-                style: Theme.of(
-                  context,
-                ).textTheme.labelLarge?.copyWith(color: LoopColors.mint),
+                style: Theme.of(context).textTheme.labelLarge
+                    ?.copyWith(color: LoopColors.mint),
               ),
             ),
           ),
@@ -378,9 +374,7 @@ class PerpReadOnlyNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     return LoopStateCard(
       title: 'Execution locked',
-      message:
-          message ??
-          'Production credentials, regional eligibility, and Privy signing are not connected. This route cannot submit.',
+      message: message ?? 'Production credentials, regional eligibility, and Privy signing are not connected. This route cannot submit.',
       icon: Icons.lock_outline_rounded,
       tone: LoopTone.warning,
     );

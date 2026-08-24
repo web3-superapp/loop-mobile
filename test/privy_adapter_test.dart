@@ -31,6 +31,40 @@ void main() {
     expect(result.code, 'privy_credentials_missing');
   });
 
+  test('public credentials never enable client Perp signing', () async {
+    const adapter = PrivyProductionAdapter(
+      appId: 'public-app-id',
+      appClientId: 'public-client-id',
+    );
+
+    expect(adapter.availability, WalletGatewayAvailability.unavailable);
+    final result = await adapter.handoff(intent, now: now);
+    expect(result.accepted, isFalse);
+    expect(result.code, 'loop_backend_required');
+  });
+
+  test('locally built transfers cannot reach Privy handoff', () async {
+    const adapter = PrivyProductionAdapter(
+      appId: 'public-app-id',
+      appClientId: 'public-client-id',
+    );
+    final transfer = SigningIntent.transfer(
+      revision: 'preview-transfer',
+      asset: 'ETH',
+      amount: '0.1 ETH',
+      recipient: '0x0000000000000000000000000000000000000001',
+      network: 'Ethereum',
+      fee: 'Unavailable',
+      observedAt: now,
+      expiresAt: now.add(const Duration(minutes: 1)),
+    );
+
+    final result = await adapter.handoff(transfer, now: now);
+
+    expect(result.accepted, isFalse);
+    expect(result.code, 'canonical_intent_required');
+  });
+
   test(
     'fixture adapter is explicitly read-only and never claims signing',
     () async {

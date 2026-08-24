@@ -1,0 +1,77 @@
+#!/bin/sh
+set -eu
+
+if [ "$#" -lt 1 ]; then
+  echo "usage: loop-sdk <flutter|dart> [arguments...]" >&2
+  exit 64
+fi
+
+tool=$1
+shift
+case "$tool" in
+  flutter|dart) ;;
+  *)
+    echo "unsupported Loop SDK tool: $tool" >&2
+    exit 64
+    ;;
+esac
+
+script_dir=$(CDPATH= cd "$(dirname "$0")" && pwd -P)
+project_root=$(dirname "$script_dir")
+sdk_flutter=
+
+if [ -x "$project_root/.tooling/flutter/bin/flutter" ]; then
+  sdk_flutter="$project_root/.tooling/flutter/bin/flutter"
+elif [ -n "${LOOP_FLUTTER_ROOT:-}" ] && [ -x "$LOOP_FLUTTER_ROOT/bin/flutter" ]; then
+  sdk_flutter="$LOOP_FLUTTER_ROOT/bin/flutter"
+else
+  previous_ifs=$IFS
+  IFS=:
+  for path_entry in $PATH; do
+    [ -n "$path_entry" ] || path_entry=.
+    candidate="$path_entry/flutter"
+    if [ -x "$candidate" ]; then
+      candidate_dir=$(CDPATH= cd "$(dirname "$candidate")" && pwd -P)
+      candidate="$candidate_dir/flutter"
+      if [ "$candidate" != "$script_dir/flutter" ]; then
+        sdk_flutter=$candidate
+        break
+      fi
+    fi
+  done
+  IFS=$previous_ifs
+fi
+
+if [ -z "$sdk_flutter" ]; then
+  echo "Loop requires Flutter 3.47.1. Install it or set LOOP_FLUTTER_ROOT." >&2
+  exit 69
+fi
+
+version_output=$("$sdk_flutter" --version --machine)
+case "$version_output" in
+  *'"frameworkRevision": "6655482ec06e547f90abf8ae7590466f4415978d"'*) ;;
+  *)
+    echo "Loop requires Flutter revision 6655482ec06e547f90abf8ae7590466f4415978d (3.47.1)." >&2
+    echo "Rejected SDK: $sdk_flutter" >&2
+    exit 69
+    ;;
+esac
+case "$version_output" in
+  *'"dartSdkVersion": "3.13.1"'*) ;;
+  *)
+    echo "Loop requires Dart 3.13.1 from Flutter 3.47.1." >&2
+    echo "Rejected SDK: $sdk_flutter" >&2
+    exit 69
+    ;;
+esac
+
+if [ "$tool" = flutter ]; then
+  exec "$sdk_flutter" "$@"
+fi
+
+flutter_root=$(printf '%s\n' "$version_output" | sed -n 's/.*"flutterRoot": "\([^"]*\)".*/\1/p' | head -n 1)
+if [ -z "$flutter_root" ] || [ ! -x "$flutter_root/bin/dart" ]; then
+  echo "The selected Flutter SDK does not expose its bundled Dart executable." >&2
+  exit 69
+fi
+exec "$flutter_root/bin/dart" "$@"

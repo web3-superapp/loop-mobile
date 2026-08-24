@@ -24,8 +24,7 @@ class HolderDistributionScreen extends StatelessWidget {
     return LoopPage(
       eyebrow: 'C5 · ${asset.symbol} ownership',
       title: 'Holder distribution',
-      subtitle:
-          'See concentration and known wallet groups without turning incomplete labels into conclusions.',
+      subtitle: 'See concentration and known wallet groups without turning incomplete labels into conclusions.',
       actions: <Widget>[
         IconButton(
           onPressed: () => context.push('/market/trades', extra: asset.symbol),
@@ -154,8 +153,7 @@ class HolderDistributionScreen extends StatelessWidget {
           const SizedBox(height: 12),
           const LoopStateCard(
             title: 'Concentration is a fact, not a verdict',
-            message:
-                'Wallet labels can be missing or wrong. Review transfers and ownership controls before acting.',
+            message: 'Wallet labels can be missing or wrong. Review transfers and ownership controls before acting.',
             icon: Icons.info_outline_rounded,
             tone: LoopTone.warning,
           ),
@@ -333,9 +331,8 @@ class _HolderRow extends StatelessWidget {
             width: 30,
             child: Text(
               rank,
-              style: Theme.of(
-                context,
-              ).textTheme.labelMedium?.copyWith(fontFamily: 'monospace'),
+              style: Theme.of(context).textTheme.labelMedium
+                  ?.copyWith(fontFamily: 'monospace'),
             ),
           ),
           Expanded(
@@ -380,8 +377,7 @@ class _TradingActivityScreenState extends State<TradingActivityScreen> {
     return LoopPage(
       eyebrow: 'C6 · ${asset.symbol} activity',
       title: 'Trading activity',
-      subtitle:
-          'A sample stream of recent buys and sells, with larger trades called out plainly.',
+      subtitle: 'A sample stream of recent buys and sells, with larger trades called out plainly.',
       actions: <Widget>[
         IconButton(
           onPressed: () => context.push('/market/holders', extra: asset.symbol),
@@ -486,8 +482,7 @@ class _TradingActivityScreenState extends State<TradingActivityScreen> {
           const SizedBox(height: 12),
           const LoopStateCard(
             title: 'Recent activity is not direction',
-            message:
-                'A labelled wallet or large trade can buy, sell, hedge, or transfer for many reasons.',
+            message: 'A labelled wallet or large trade can buy, sell, hedge, or transfer for many reasons.',
             icon: Icons.info_outline_rounded,
             tone: LoopTone.warning,
           ),
@@ -533,9 +528,8 @@ class _TradeRow extends StatelessWidget {
             width: 58,
             child: Text(
               time,
-              style: Theme.of(
-                context,
-              ).textTheme.labelMedium?.copyWith(fontFamily: 'monospace'),
+              style: Theme.of(context).textTheme.labelMedium
+                  ?.copyWith(fontFamily: 'monospace'),
             ),
           ),
           Container(
@@ -555,9 +549,8 @@ class _TradeRow extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       side,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelMedium?.copyWith(color: color),
+                      style: Theme.of(context).textTheme.labelMedium
+                          ?.copyWith(color: color),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -580,9 +573,8 @@ class _TradeRow extends StatelessWidget {
               child: Text(
                 note!,
                 textAlign: TextAlign.right,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelMedium?.copyWith(color: LoopColors.chat),
+                style: Theme.of(context).textTheme.labelMedium
+                    ?.copyWith(color: LoopColors.chat),
               ),
             ),
         ],
@@ -606,8 +598,7 @@ class WatchlistEditorScreen extends StatelessWidget {
     return LoopPage(
       eyebrow: 'C7 · Personal list',
       title: 'Watchlist',
-      subtitle:
-          'Review grouping and order. Saving, removing, and bulk import stay unavailable in this preview.',
+      subtitle: 'Review grouping and order. Saving, removing, and bulk import stay unavailable in this preview.',
       actions: <Widget>[
         IconButton(
           onPressed: null,
@@ -674,8 +665,7 @@ class WatchlistEditorScreen extends StatelessWidget {
           const SizedBox(height: 12),
           const LoopStateCard(
             title: 'Changes are not saved',
-            message:
-                'This sample watchlist does not update your account or notifications.',
+            message: 'This sample watchlist does not update your account or notifications.',
             icon: Icons.lock_outline_rounded,
             tone: LoopTone.warning,
           ),
@@ -764,8 +754,7 @@ class PriceAlertsScreen extends StatelessWidget {
     return LoopPage(
       eyebrow: 'C9 · Notifications',
       title: 'Price alerts',
-      subtitle:
-          'Review how thresholds and trigger history will read. Alert changes remain off.',
+      subtitle: 'Review how thresholds and trigger history will read. Alert changes remain off.',
       actions: <Widget>[
         IconButton(
           onPressed: null,
@@ -782,8 +771,7 @@ class PriceAlertsScreen extends StatelessWidget {
           const SizedBox(height: 18),
           const LoopStateCard(
             title: 'Notifications are off',
-            message:
-                'Allow notifications in system settings before expecting price or liquidation reminders.',
+            message: 'Allow notifications in system settings before expecting price or liquidation reminders.',
             icon: Icons.notifications_off_outlined,
             tone: LoopTone.warning,
           ),
@@ -968,8 +956,7 @@ class _SmartMoneyScreenState extends State<SmartMoneyScreen> {
     return LoopPage(
       eyebrow: 'C11 · Followed wallets',
       title: 'Wallet activity',
-      subtitle:
-          'Track public wallet movements as facts. A profitable history does not make the next move reliable.',
+      subtitle: 'Track public wallet movements as facts. A profitable history does not make the next move reliable.',
       actions: <Widget>[
         IconButton(
           onPressed: null,
@@ -989,8 +976,7 @@ class _SmartMoneyScreenState extends State<SmartMoneyScreen> {
           const SizedBox(height: 18),
           const LoopStateCard(
             title: 'Public activity, incomplete context',
-            message:
-                'Wallet transfers can be hedges, custody moves, or internal routing. Nothing here is a recommendation.',
+            message: 'Wallet transfers can be hedges, custody moves, or internal routing. Nothing here is a recommendation.',
             icon: Icons.visibility_outlined,
             tone: LoopTone.warning,
           ),
@@ -1137,9 +1123,8 @@ class _WalletActivityCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       address,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        fontFamily: 'monospace',
-                      ),
+                      style: Theme.of(context).textTheme.labelMedium
+                          ?.copyWith(fontFamily: 'monospace'),
                     ),
                   ],
                 ),
@@ -1240,10 +1225,8 @@ class _MarketPreviewBanner extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     descriptor.$1,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: color,
-                      letterSpacing: 0.75,
-                    ),
+                    style: Theme.of(context).textTheme.labelMedium
+                        ?.copyWith(color: color, letterSpacing: 0.75),
                   ),
                   const SizedBox(height: 3),
                   Text(

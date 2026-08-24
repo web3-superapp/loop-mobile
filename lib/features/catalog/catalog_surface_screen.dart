@@ -60,8 +60,7 @@ class CatalogSurfaceScreen extends StatelessWidget {
           const SizedBox(height: 14),
           const LoopStateCard(
             title: 'Safe preview data',
-            message:
-                'Values on this catalog surface illustrate layout and states. No provider request or wallet mutation was made.',
+            message: 'Values on this catalog surface illustrate layout and states. No provider request or wallet mutation was made.',
             icon: Icons.visibility_outlined,
           ),
         ],
@@ -104,8 +103,7 @@ class _PayComingSoonScreen extends StatelessWidget {
       title: 'Pay',
       eyebrow:
           '${surface.id} · ${CatalogSurfaceScreen._priorityLabel(surface.priority)}',
-      subtitle:
-          'Payment remains in the product map, but it is not part of this release.',
+      subtitle: 'Payment remains in the product map, but it is not part of this release.',
       children: <Widget>[
         LoopCard(
           child: Column(
@@ -125,8 +123,7 @@ class _PayComingSoonScreen extends StatelessWidget {
         const SizedBox(height: 14),
         const LoopStateCard(
           title: 'Coming soon',
-          message:
-              'Pay is not available yet. This route cannot scan a code, request camera access, collect payment details or submit a transaction.',
+          message: 'Pay is not available yet. This route cannot scan a code, request camera access, collect payment details or submit a transaction.',
           icon: Icons.schedule_rounded,
           tone: LoopTone.neutral,
         ),
@@ -202,14 +199,10 @@ class _SurfacePreview extends StatelessWidget {
   };
 
   static String _bodyFor(AppSurface surface) => switch (surface.kind) {
-    SurfaceKind.sheet =>
-      'Critical facts stay compact, keyboard reachable and explicit before any action.',
-    SurfaceKind.component =>
-      'The component carries its source time and never silently becomes a live transaction.',
-    SurfaceKind.globalState =>
-      'The state explains what failed, what remains available and the next safe action.',
-    SurfaceKind.screen =>
-      'Loading, empty, partial and unavailable states share the same information hierarchy.',
+    SurfaceKind.sheet => 'Critical facts stay compact, keyboard reachable and explicit before any action.',
+    SurfaceKind.component => 'The component carries its source time and never silently becomes a live transaction.',
+    SurfaceKind.globalState => 'The state explains what failed, what remains available and the next safe action.',
+    SurfaceKind.screen => 'Loading, empty, partial and unavailable states share the same information hierarchy.',
   };
 }
 
@@ -231,8 +224,7 @@ class _UiInventoryScreenState extends State<UiInventoryScreen> {
     return LoopPage(
       title: 'UI inventory',
       eyebrow: '${SurfaceCatalog.all.length} surfaces',
-      subtitle:
-          'The implementation map for every screen, sheet, component and global state.',
+      subtitle: 'The implementation map for every screen, sheet, component and global state.',
       children: <Widget>[
         SizedBox(
           height: 40,

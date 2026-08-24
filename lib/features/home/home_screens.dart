@@ -16,12 +16,12 @@ class HomeScreen extends ConsumerWidget {
     final communicationStatus = preview
         ? 'Offline preview · not connected'
         : gateway.isConfigured
-        ? 'Stream configured · open to verify session'
+        ? 'Stream configured · session adapter pending'
         : 'Stream not connected';
     return LoopPage(
       title: 'Home overview',
-      eyebrow: 'gm, Voyager 7',
-      subtitle: 'Your market, conversations and wallet stay in one context.',
+      eyebrow: '开发预览 · gm, Voyager 7',
+      subtitle: 'Static portfolio and activity cards demonstrate layout; they are not account facts.',
       actions: <Widget>[
         IconButton(
           onPressed: () => context.push('/search'),
@@ -40,6 +40,12 @@ class HomeScreen extends ConsumerWidget {
         const SizedBox(width: 4),
       ],
       children: <Widget>[
+        const LoopStateCard(
+          title: '开发预览',
+          message: 'Balances, alerts, unread counts and activity below are 演示数据. Provider-backed sections identify their own connection state.',
+          icon: Icons.visibility_outlined,
+          tone: LoopTone.warning,
+        ),
         const Align(
           alignment: Alignment.centerLeft,
           child: LoopContextRail(stage: LoopStage.discover),
@@ -110,7 +116,7 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
         ),
-        const LoopSectionLabel('Today'),
+        const LoopSectionLabel('Today · 演示数据'),
         _ActivityRow(
           icon: Icons.show_chart_rounded,
           color: LoopColors.market,
@@ -285,9 +291,8 @@ class _LoopStep extends StatelessWidget {
               children: <Widget>[
                 Text(
                   number,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelMedium?.copyWith(color: color),
+                  style: Theme.of(context).textTheme.labelMedium
+                      ?.copyWith(color: color),
                 ),
                 const SizedBox(height: 8),
                 Icon(icon, size: 20, color: color),
@@ -316,9 +321,8 @@ class _LoopStep extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.right,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.labelMedium?.copyWith(color: color),
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(color: color),
                       ),
                     ),
                   ],
@@ -422,8 +426,7 @@ class NetWorthScreen extends StatelessWidget {
     return LoopPage(
       title: 'Net worth',
       eyebrow: 'Portfolio',
-      subtitle:
-          'A read-only view across connected wallets and the active trading account.',
+      subtitle: 'A read-only view across connected wallets and the active trading account.',
       children: <Widget>[
         const LoopCard(
           accent: true,
@@ -462,8 +465,7 @@ class NetWorthScreen extends StatelessWidget {
         const LoopSectionLabel('Data health'),
         const LoopStateCard(
           title: 'All sources current',
-          message:
-              'Wallet balances refreshed 14 seconds ago. Hyperliquid equity refreshed 6 seconds ago.',
+          message: 'Wallet balances refreshed 14 seconds ago. Hyperliquid equity refreshed 6 seconds ago.',
           icon: Icons.cloud_done_outlined,
           tone: LoopTone.positive,
         ),
@@ -489,8 +491,7 @@ class NotificationsScreen extends StatelessWidget {
           tone: LoopTone.danger,
           icon: Icons.warning_amber_rounded,
           title: 'ETH position risk increased',
-          body:
-              'Margin ratio moved to 18.4%. Review before placing another order.',
+          body: 'Margin ratio moved to 18.4%. Review before placing another order.',
           time: 'Now',
           onTap: () => context.push('/perp/position'),
         ),
@@ -684,13 +685,11 @@ class SecurityActivityScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const LoopPage(
       title: 'Security activity',
-      subtitle:
-          'Facts from wallet policy and account events. No score is calculated.',
+      subtitle: 'Facts from wallet policy and account events. No score is calculated.',
       children: <Widget>[
         LoopStateCard(
           title: 'No urgent action',
-          message:
-              'MFA is active and no new device signed in during the last seven days.',
+          message: 'MFA is active and no new device signed in during the last seven days.',
           icon: Icons.verified_user_outlined,
           tone: LoopTone.positive,
         ),

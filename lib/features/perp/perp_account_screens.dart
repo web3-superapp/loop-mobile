@@ -20,8 +20,7 @@ class PerpAccountScreen extends StatelessWidget {
     return LoopPage(
       eyebrow: 'D8 · Margin account',
       title: 'Perp account',
-      subtitle:
-          'A read-only account projection; LOOP does not maintain a second ledger.',
+      subtitle: 'A read-only account projection; LOOP does not maintain a second ledger.',
       actions: <Widget>[
         IconButton(
           onPressed: () => context.push('/perp/risk'),
@@ -135,16 +134,14 @@ class PerpAccountScreen extends StatelessWidget {
           _AccountRouteCard(
             icon: Icons.swap_horiz_rounded,
             title: 'Spot ↔ Perp transfer',
-            description:
-                'Inspect official account transfer context and rollback states.',
+            description: 'Inspect official account transfer context and rollback states.',
             path: '/perp/transfer',
           ),
           const SizedBox(height: 10),
           _AccountRouteCard(
             icon: Icons.account_balance_outlined,
             title: 'Deposit & withdrawal',
-            description:
-                'Inspect official Hyperliquid bridge context and network requirements.',
+            description: 'Inspect official Hyperliquid bridge context and network requirements.',
             path: '/perp/deposit',
           ),
           const SizedBox(height: 10),
@@ -243,8 +240,7 @@ class _PerpTransferScreenState extends State<PerpTransferScreen> {
     return LoopPage(
       eyebrow: 'D9 · Official account transfer',
       title: 'Move USDC',
-      subtitle:
-          'Preview the exact source and destination. No custom bridge, router, or LOOP ledger is involved.',
+      subtitle: 'Preview the exact source and destination. No custom bridge, router, or LOOP ledger is involved.',
       children: <Widget>[
         PerpSnapshotBanner(state: widget.snapshotState),
         if (!hasFacts) ...<Widget>[
@@ -361,8 +357,7 @@ class _PerpTransferScreenState extends State<PerpTransferScreen> {
           ),
           const SizedBox(height: 12),
           const PerpReadOnlyNotice(
-            message:
-                'Transfer execution is disabled. A production failure must always state whether funds remain in Spot or Perp.',
+            message: 'Transfer execution is disabled. A production failure must always state whether funds remain in Spot or Perp.',
           ),
         ],
       ],
@@ -433,8 +428,7 @@ class _PerpDepositScreenState extends State<PerpDepositScreen> {
     return LoopPage(
       eyebrow: 'D10 · Official bridge',
       title: 'Deposit & withdraw',
-      subtitle:
-          'Network and amount details are visible for review; address copy and submission are disabled.',
+      subtitle: 'Network and amount details are visible for review; address copy and submission are disabled.',
       children: <Widget>[
         PerpSnapshotBanner(state: widget.snapshotState),
         if (!hasFacts) ...<Widget>[
@@ -572,8 +566,7 @@ class _PerpDepositScreenState extends State<PerpDepositScreen> {
           const SizedBox(height: 12),
           const LoopStateCard(
             title: 'Timeouts need a case ID',
-            message:
-                'Production pending, timeout, and manual-review states must preserve the provider transaction identity.',
+            message: 'Production pending, timeout, and manual-review states must preserve the provider transaction identity.',
             icon: Icons.schedule_rounded,
             tone: LoopTone.warning,
           ),
@@ -585,8 +578,7 @@ class _PerpDepositScreenState extends State<PerpDepositScreen> {
           ),
           const SizedBox(height: 12),
           const PerpReadOnlyNotice(
-            message:
-                'No deposit address, withdrawal request, custom bridge, or routing transaction is created by this preview.',
+            message: 'No deposit address, withdrawal request, custom bridge, or routing transaction is created by this preview.',
           ),
         ],
       ],
@@ -609,8 +601,7 @@ class PerpFundingScreen extends StatelessWidget {
     return LoopPage(
       eyebrow: 'D11 · Funding ledger',
       title: 'Funding rates',
-      subtitle:
-          'Rates and settlement times are preview projections, not forecasts or live market facts.',
+      subtitle: 'Rates and settlement times are preview projections, not forecasts or live market facts.',
       children: <Widget>[
         PerpSnapshotBanner(state: snapshotState),
         if (!hasFacts) ...<Widget>[
@@ -716,8 +707,7 @@ class PerpFundingScreen extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           const PerpReadOnlyNotice(
-            message:
-                'The countdown does not tick because this is a deterministic preview. Production settlement state must come from Hyperliquid.',
+            message: 'The countdown does not tick because this is a deterministic preview. Production settlement state must come from Hyperliquid.',
           ),
         ],
       ],
@@ -786,8 +776,7 @@ class _PerpRiskScreenState extends State<PerpRiskScreen> {
     return LoopPage(
       eyebrow: 'D12 · First-use gate',
       title: 'Leverage changes the loss',
-      subtitle:
-          'This acknowledgement is required before a production order review. Preview state is not persisted.',
+      subtitle: 'This acknowledgement is required before a production order review. Preview state is not persisted.',
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 166),
       bottom: LoopActionDock(
         child: Column(
@@ -823,32 +812,28 @@ class _PerpRiskScreenState extends State<PerpRiskScreen> {
           const _RiskStatement(
             icon: Icons.compress_rounded,
             title: 'Leverage accelerates liquidation',
-            message:
-                'A small adverse price move can consume isolated margin. The displayed liquidation price is an estimate, not a guarantee.',
+            message: 'A small adverse price move can consume isolated margin. The displayed liquidation price is an estimate, not a guarantee.',
             tone: LoopTone.danger,
           ),
           const SizedBox(height: 10),
           const _RiskStatement(
             icon: Icons.waterfall_chart_rounded,
             title: 'Mark price drives risk',
-            message:
-                'Unrealized PnL and liquidation use provider mark price. A disconnected or stale feed must hide these values.',
+            message: 'Unrealized PnL and liquidation use provider mark price. A disconnected or stale feed must hide these values.',
             tone: LoopTone.warning,
           ),
           const SizedBox(height: 10),
           const _RiskStatement(
             icon: Icons.schedule_rounded,
             title: 'Funding is recurring',
-            message:
-                'Longs or shorts may pay funding at settlement. Rates can change before the next provider settlement.',
+            message: 'Longs or shorts may pay funding at settlement. Rates can change before the next provider settlement.',
             tone: LoopTone.market,
           ),
           const SizedBox(height: 10),
           const _RiskStatement(
             icon: Icons.wifi_off_rounded,
             title: 'Orders can remain open',
-            message:
-                'Network loss does not guarantee cancellation. Production must reconcile provider state before showing controls again.',
+            message: 'Network loss does not guarantee cancellation. Production must reconcile provider state before showing controls again.',
             tone: LoopTone.warning,
           ),
           const LoopSectionLabel('Acknowledgement preview'),
@@ -874,8 +859,7 @@ class _PerpRiskScreenState extends State<PerpRiskScreen> {
           ),
           const SizedBox(height: 12),
           const PerpReadOnlyNotice(
-            message:
-                'Checking this box changes only local preview state. It does not enable trading or create a legal eligibility decision.',
+            message: 'Checking this box changes only local preview state. It does not enable trading or create a legal eligibility decision.',
           ),
         ],
       ],

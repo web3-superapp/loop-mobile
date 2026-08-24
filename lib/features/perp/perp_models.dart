@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:uuid/uuid.dart';
 
 /// Hyperliquid projection states. Only [preview] may expose fixture facts.
 enum PerpSnapshotState {
@@ -125,8 +126,7 @@ abstract final class PerpPreviewData {
     final market = PerpPreviewData.market(symbol);
     final now = DateTime.now().toUtc();
     return SigningIntent.perpOrder(
-      revision:
-          'preview-${market.symbol.toLowerCase()}-${now.microsecondsSinceEpoch}',
+      revision: const Uuid().v4(),
       market: market.symbol,
       direction: OrderDirection.buy,
       orderType: PerpOrderType.market,

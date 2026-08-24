@@ -26,7 +26,7 @@ Product priority and current delivery are separate:
 ## Communication
 
 - Stream Chat + Stream Video/Audio Rooms is the selected communication integration.
-- `communicationGatewayProvider` defaults to the unconfigured production Stream seam and fails closed. Only the explicit preview composition root in `main.dart` injects memory data.
+- `communicationGatewayProvider` defaults to the unconfigured production Stream seam and fails closed. Only the explicit offline composition root in `lib/main_preview.dart` injects memory data; `lib/main.dart` is the fail-closed production entry point.
 - Communication mode is explicit: memory data is `preview`; the Stream seam is `production`. Preview UI continuously identifies itself as offline, simulated and not connected.
 - A production session authorizer must obtain or refresh a short-lived, server-issued user token and establish the SDK session before every bridge operation. Missing or failed authorization stops the operation before the bridge is invoked.
 - The current Flutter code does not contain a configured Stream SDK implementation or token service. It does not prove that chat writes, presence or voice rooms are live.

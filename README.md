@@ -1,5 +1,7 @@
 # LOOP Flutter App
 
+Repository phase: `active`.
+
 LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`web/` 仅用于本地 UI 自动化与响应式预览，不是独立网页产品，也不是生产交付目标。
 
 正式前端仓库：<https://github.com/web3-superapp/loop-mobile>。原仓库中的 HTML 原型、调研、计划和验证脚本已迁入 [`reference/legacy-prototype/`](reference/legacy-prototype/README.md)，仅作为冻结参考，不再作为开发入口。后端契约与适配器位于 <https://github.com/web3-superapp/loop-api>。
@@ -8,13 +10,13 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 
 - 六个固定主入口：Home / Market / Launch / Chat / Wallet / Profile
 - 全量 103 个产品 surface 的路由目录；产品优先级独立采用 A / B / C（47 / 46 / 10），`deferred` 单独表达本期不交付
-- Privy 登录、钱包与唯一签名审查边界
-- Hyperliquid Core BTC / ETH / SOL 行情、订单、仓位与账户 UI
-- 已选 Stream Chat + Stream Video/Audio Rooms 的薄适配边界、显式 preview / production mode、语音房五态与跨页 mini bar
+- 受 Privy 会话保护的 Email OTP 实现；缺少 Mobile App Client ID 时保持不可登录，真机验证待补
+- Hyperliquid Testnet 公共只读永续行情；订单、仓位、账户和私有交易仅保留明确标注的开发预览 UI
+- 已选 Stream Chat + Stream Video/Audio Rooms 的薄适配边界；后端 token 未就绪时不连接 SDK、不声称在线
 - Account、Wallet、Market、Perp、Chat、Profile 与系统状态组件
 - 深色 LOOP 设计系统、键盘焦点、语义标签、reduced-motion 与手机/桌面响应式布局
 
-所有供应商写入默认 fail-closed。`communicationGatewayProvider` 默认使用未配置的 production Stream seam；只有 `main.dart` 的显式 Preview 组合根注入 memory gateway。Preview 中的聊天、语音和在线状态都标注为 offline / simulated，不代表生产登录、签名、下单、聊天或语音已经接通。
+所有供应商写入默认 fail-closed。正式入口 `lib/main.dart` 不注入 fixture；只有 `lib/main_preview.dart` 的显式离线 Preview 组合根注入 memory/fixture gateway。Preview 中的聊天、语音、钱包和交易状态都标注为 offline / simulated 或 `开发预览`，不代表生产登录、签名、下单、聊天或语音已经接通。
 
 Stream 生产路径必须先通过 BFF 获取或刷新短期用户 token，并由 session authorizer 建立 SDK 会话；gateway 会在每次 bridge 操作前执行授权。缺少授权或授权失败时不会调用 bridge，也不会把本地 preview 伪装成在线能力。
 
@@ -23,16 +25,63 @@ Stream 生产路径必须先通过 BFF 获取或刷新短期用户 token，并�
 ## 开发入口
 
 ```bash
-flutter pub get
-dart analyze lib test
-flutter test
-flutter run
+bin/flutter pub get
+bin/dart format --output=none --set-exit-if-changed lib test
+bin/flutter analyze
+bin/flutter test
+bin/flutter build apk --debug
+bin/flutter run
 ```
+
+真实 Privy Email OTP 还需要把 Dashboard 中完整的 Mobile App Client ID 作为客户端安全的构建参数传入：
+
+```bash
+bin/flutter run --dart-define=PRIVY_APP_CLIENT_ID=client-你的完整值
+```
+
+仓库已内置你提供的 Privy App ID 与 Stream API key；不要把 Privy Secret、Stream Secret、Firebase service-account、APNs 私钥或 Hyperliquid 私钥放进 Flutter 或 Git。
+
+离线 UI 目录与演示数据使用独立入口：
+
+```bash
+bin/flutter run -t lib/main_preview.dart
+```
+
+该入口会清空供应商标识并显式开启 Development Preview，不会发送 OTP、连接 Stream、请求实时行情或发起钱包/交易操作。
 
 Web release build 只用于本地视觉验收：
 
 ```bash
 flutter build web --release
+```
+
+## 已锁定工程基线
+
+本仓库的目的为：Build Loop, a Flutter iOS/Android app with six primary destinations—Home, Market, Launch, Chat, Wallet, and Profile—using Privy identity/wallets, Stream Chat/Video, and backend-mediated Hyperliquid Testnet trading.
+
+- Flutter 3.47.1 / Dart 3.13.1
+- Android API 28–36、AGP 8.13.2、Gradle 8.14、Kotlin 2.3.20、Java 17
+- iOS 17+、Xcode 26.6、CocoaPods 1.16.2
+- Privy 0.10.1；Stream Chat/Persistence 10.3.0；Stream Video/Push 1.4.3
+- Firebase Core 4.13.0 / Messaging 16.5.0
+- Riverpod 3.4.2 / go_router 17.5.0 / Dio 5.11.0
+- Decimal 3.2.6 / UUID 4.6.0
+
+`harness.json` 是可机器校验的工程画像，`AGENTS.md` 是开发与安全边界。任何依赖、原生工具链、主导航或安全边界变更都要同步更新决策和验证报告。
+
+Native release matrix：
+
+```bash
+bin/flutter build apk --release
+bin/flutter build ios --debug --no-codesign
+bin/flutter build ios --release --no-codesign
+```
+
+Harness validation：
+
+```bash
+python3 scripts/check_harness.py
+python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
 ## 不要重复建设
@@ -45,7 +94,7 @@ flutter build web --release
 - 不要启用 Hyperliquid HIP-3、builder fee 或非 Core 市场
 - Pay 保留首页 `Coming soon` 入口以表达产品位置，但 A / B / C 优先级不等于交付期；B5-B8 当前全部 deferred，落地页不得出现扫码、相机、金额或支付动作
 
-下一阶段应集中在真实 Privy、Hyperliquid、Stream、BFF、推送与行情数据接入，以及 testnet / 真机验证，而不是重复 UI 基础工程。
+下一阶段应补齐 Privy Mobile App Client ID 并做 Email OTP 真机验证；随后实现 Loop BFF bootstrap、Stream 短期 token、Firebase/Push 配置及私有 Hyperliquid Testnet 交易纵切，而不是重复 UI 基础工程。
 
 ## 仓库结构
 

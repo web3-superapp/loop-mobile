@@ -23,8 +23,10 @@ void main() {
       );
 
       expect(intent.validateAt(now), isNull);
-      expect(intent.authority, SigningAuthority.privy);
+      expect(intent.authority, SigningAuthority.loopBackend);
       expect(intent.provider, IntentProvider.hyperliquidCore);
+      expect(intent.requiresLoopBackend, isTrue);
+      expect(intent.allowsWalletHandoff, isFalse);
       expect(
         intent.fields.map((field) => field.label),
         containsAll(<String>[
@@ -68,6 +70,27 @@ void main() {
         'builder_fee_forbidden',
       );
       expect(candidate(expiresAt: now).validateAt(now), 'intent_stale');
+    });
+
+    test('keeps canonical fields immutable', () {
+      final intent = SigningIntent.transfer(
+        revision: 'transfer_1',
+        asset: 'ETH',
+        amount: '0.1',
+        recipient: '0x0000000000000000000000000000000000000001',
+        network: 'Ethereum',
+        fee: 'Unavailable',
+        observedAt: now,
+        expiresAt: now.add(const Duration(minutes: 1)),
+      );
+
+      expect(intent.isLocalPreview, isTrue);
+      expect(intent.allowsWalletHandoff, isFalse);
+      expect(
+        () =>
+            intent.fields.add(const IntentField(label: 'Injected', value: 'x')),
+        throwsUnsupportedError,
+      );
     });
   });
 }

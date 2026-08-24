@@ -10,8 +10,8 @@ class WalletScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return LoopPage(
       title: 'Wallet',
-      eyebrow: 'Embedded wallet',
-      subtitle: '0x71E4…6A09 · Privy protection enabled',
+      eyebrow: '开发预览 · Embedded wallet',
+      subtitle: 'No wallet address or Privy signing session is connected.',
       actions: <Widget>[
         IconButton(
           onPressed: () => context.push('/wallet/manage'),
@@ -26,6 +26,12 @@ class WalletScreen extends StatelessWidget {
         const SizedBox(width: 4),
       ],
       children: <Widget>[
+        const LoopStateCard(
+          title: '开发预览',
+          message: 'Balances, positions and approval warnings on this page are 演示数据. No wallet read or transaction request was made.',
+          icon: Icons.visibility_outlined,
+          tone: LoopTone.warning,
+        ),
         const Align(
           alignment: Alignment.centerLeft,
           child: LoopContextRail(stage: LoopStage.execute),
@@ -105,7 +111,7 @@ class WalletScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      r'Equity $15,566.25 · margin healthy',
+                      r'演示数据 · Equity $15,566.25',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -117,9 +123,8 @@ class WalletScreen extends StatelessWidget {
         ),
         const LoopSectionLabel('Review'),
         LoopStateCard(
-          title: '1 app can spend USDC',
-          message:
-              'Review the exact allowance and revoke it if you no longer use the app.',
+          title: '演示数据 · 1 app can spend USDC',
+          message: 'Review the exact allowance and revoke it if you no longer use the app.',
           icon: Icons.policy_outlined,
           tone: LoopTone.warning,
           action: OutlinedButton(
@@ -146,14 +151,11 @@ class _WalletBalanceCard extends StatelessWidget {
           Row(
             children: <Widget>[
               Text(
-                'AVAILABLE PORTFOLIO',
+                'DEMO PORTFOLIO',
                 style: Theme.of(context).textTheme.labelMedium,
               ),
               const Spacer(),
-              const LoopStatusPill(
-                label: '3 networks',
-                tone: LoopTone.positive,
-              ),
+              const LoopStatusPill(label: '演示数据'),
             ],
           ),
           const SizedBox(height: 12),
@@ -161,9 +163,8 @@ class _WalletBalanceCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             r'+$844.18 today',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: LoopColors.mint),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: LoopColors.mint),
           ),
           const SizedBox(height: 18),
           const Row(
@@ -264,8 +265,9 @@ class AssetDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return LoopPage(
       title: 'Ethereum',
-      eyebrow: 'ETH · across 2 networks',
-      subtitle: 'Balance and activity are a read-only provider projection.',
+      eyebrow: '开发预览 · ETH · across 2 networks',
+      subtitle:
+          'Balances and activity below are 演示数据, not a provider projection.',
       children: <Widget>[
         const Row(
           children: <Widget>[
@@ -386,7 +388,8 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
   Widget build(BuildContext context) {
     return LoopPage(
       title: 'Receive',
-      subtitle: 'Only send assets supported on the selected network.',
+      eyebrow: '开发预览',
+      subtitle: 'No deposit address is connected. Never send funds using this preview.',
       children: <Widget>[
         SegmentedButton<String>(
           segments: const <ButtonSegment<String>>[
@@ -405,25 +408,25 @@ class _ReceiveScreenState extends State<ReceiveScreen> {
               const _QrPreview(),
               const SizedBox(height: 20),
               Text(
-                '0x71E4…6A09',
+                'Provider address unavailable',
                 style: context.dataStyle.copyWith(fontSize: 17),
               ),
               const SizedBox(height: 5),
               Text(network, style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 14),
               OutlinedButton.icon(
-                onPressed: () {},
+                onPressed: null,
                 icon: const Icon(Icons.copy_rounded),
-                label: const Text('Copy address'),
+                label: const Text('No address to copy'),
               ),
             ],
           ),
         ),
         const SizedBox(height: 14),
         LoopStateCard(
-          title: 'Check the network',
+          title: '开发预览 · no deposit route',
           message:
-              'Sending on a different network may make funds unavailable. This address is shown for $network only.',
+              '$network is a layout selection only. A provider-backed full address and supported-asset policy are required before deposits.',
           icon: Icons.info_outline_rounded,
           tone: LoopTone.warning,
         ),
@@ -439,46 +442,27 @@ class _QrPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       image: true,
-      label: 'Wallet address QR code preview',
+      label: 'Development preview placeholder, not a wallet QR code',
       child: Container(
         width: 208,
         height: 208,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: LoopColors.chalk,
+          color: LoopColors.elevated,
           borderRadius: LoopRadius.medium,
+          border: Border.all(color: LoopColors.line),
         ),
-        child: CustomPaint(painter: const _QrPainter()),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Icon(Icons.qr_code_2_rounded, size: 64, color: LoopColors.vapor),
+            SizedBox(height: 14),
+            Text('开发预览'),
+            SizedBox(height: 4),
+            Text('NOT A DEPOSIT QR'),
+          ],
+        ),
       ),
     );
   }
-}
-
-class _QrPainter extends CustomPainter {
-  const _QrPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const cells = 17;
-    final cell = size.width / cells;
-    final paint = Paint()..color = LoopColors.abyss;
-    for (var row = 0; row < cells; row++) {
-      for (var column = 0; column < cells; column++) {
-        final corner =
-            (row < 5 && column < 5) ||
-            (row < 5 && column >= cells - 5) ||
-            (row >= cells - 5 && column < 5);
-        final fill = corner || ((row * 7 + column * 11 + row * column) % 5 < 2);
-        if (fill) {
-          canvas.drawRect(
-            Rect.fromLTWH(column * cell, row * cell, cell - 0.7, cell - 0.7),
-            paint,
-          );
-        }
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

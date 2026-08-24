@@ -40,8 +40,8 @@ final class MarketAssetPreview {
 }
 
 abstract final class MarketPreviewData {
-  static const String sourceLabel = 'LOOP preview · live feed not connected';
-  static const String observedLabel = 'Snapshot 08:42 UTC · 24 Aug';
+  static const String sourceLabel = 'LOOP 开发预览 · 未连接实时详情';
+  static const String observedLabel = '演示快照 · 非实时数据';
 
   static const List<MarketAssetPreview> coreAssets = <MarketAssetPreview>[
     MarketAssetPreview(

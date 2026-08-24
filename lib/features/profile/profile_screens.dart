@@ -57,6 +57,7 @@ class ProfileSurfaceScreen extends StatelessWidget {
     this.identity = const ProfileIdentity(),
     this.capabilities = const PrivyProfileCapabilities.unavailable(),
     this.onNavigate,
+    this.onSignOut,
     this.onAuthenticateSensitiveAction,
     this.recoveryWords,
   });
@@ -84,6 +85,7 @@ class ProfileSurfaceScreen extends StatelessWidget {
   final ProfileIdentity identity;
   final PrivyProfileCapabilities capabilities;
   final ProfileNavigation? onNavigate;
+  final Future<void> Function()? onSignOut;
   final SensitiveProfileAuthentication? onAuthenticateSensitiveAction;
 
   /// Injected only after a secure, freshly authorized recovery operation.
@@ -105,7 +107,11 @@ class ProfileSurfaceScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     void navigate(String destination) => _navigate(context, destination);
     return switch (_id) {
-      'profile' => _ProfileHome(identity: identity, onNavigate: navigate),
+      'profile' => _ProfileHome(
+        identity: identity,
+        onNavigate: navigate,
+        onSignOut: onSignOut,
+      ),
       'profile-edit' => _ProfileEdit(identity: identity),
       'privacy' => const _PrivacyCenter(),
       'copytrade-perms' => const _CopyTradePermissions(),
@@ -133,16 +139,14 @@ class ProfileSurfaceScreen extends StatelessWidget {
       'mining' => const _ComingLaterScreen(
         eyebrow: 'MINING & REWARDS',
         title: 'Rewards are coming later',
-        message:
-            'Tasks, contribution rewards, and daily claims are planned for Phase 2. No points are accruing yet.',
+        message: 'Tasks, contribution rewards, and daily claims are planned for Phase 2. No points are accruing yet.',
         icon: Icons.hexagon_outlined,
         accent: LoopColors.market,
       ),
       'referral' => const _ComingLaterScreen(
         eyebrow: 'INVITE FRIENDS',
         title: 'Referrals are coming later',
-        message:
-            'Invite codes and reward rules are planned for Phase 2. Sharing now will not create a referral.',
+        message: 'Invite codes and reward rules are planned for Phase 2. Sharing now will not create a referral.',
         icon: Icons.group_add_outlined,
         accent: LoopColors.chat,
       ),
@@ -152,15 +156,20 @@ class ProfileSurfaceScreen extends StatelessWidget {
 }
 
 class _ProfileHome extends StatelessWidget {
-  const _ProfileHome({required this.identity, required this.onNavigate});
+  const _ProfileHome({
+    required this.identity,
+    required this.onNavigate,
+    required this.onSignOut,
+  });
 
   final ProfileIdentity identity;
   final ValueChanged<String> onNavigate;
+  final Future<void> Function()? onSignOut;
 
   @override
   Widget build(BuildContext context) {
     return LoopPage(
-      eyebrow: 'YOUR IDENTITY',
+      eyebrow: '开发预览 · YOUR IDENTITY',
       title: 'Profile',
       actions: <Widget>[
         IconButton(
@@ -168,8 +177,19 @@ class _ProfileHome extends StatelessWidget {
           onPressed: () => onNavigate('profile-edit'),
           icon: const Icon(Icons.edit_outlined),
         ),
+        IconButton(
+          tooltip: 'Sign out of LOOP',
+          onPressed: onSignOut == null ? null : () => onSignOut!(),
+          icon: const Icon(Icons.logout_rounded),
+        ),
       ],
       children: <Widget>[
+        const LoopStateCard(
+          title: '开发预览',
+          message: 'Identity status comes from the current session. Social counts, groups and settings remain 演示数据 until backend bootstrap is connected.',
+          icon: Icons.visibility_outlined,
+          tone: LoopTone.warning,
+        ),
         _IdentityThreadCard(identity: identity),
         const LoopSectionLabel('Control'),
         _SettingsGroup(
@@ -309,8 +329,7 @@ class _ProfileEditState extends State<_ProfileEdit> {
     return LoopPage(
       eyebrow: 'PUBLIC PROFILE',
       title: 'Edit profile',
-      subtitle:
-          'Change what people recognize. Wallet addresses remain controlled separately in Privacy.',
+      subtitle: 'Change what people recognize. Wallet addresses remain controlled separately in Privacy.',
       bottom: LoopActionDock(
         child: SizedBox(
           width: double.infinity,
@@ -433,8 +452,7 @@ class _PrivacyCenterState extends State<_PrivacyCenter> {
     return LoopPage(
       eyebrow: 'PRIVACY',
       title: 'You decide what leaves',
-      subtitle:
-          'Your alias, wallet, activity, and positions have separate visibility controls.',
+      subtitle: 'Your alias, wallet, activity, and positions have separate visibility controls.',
       children: <Widget>[
         _SwitchSetting(
           icon: Icons.theater_comedy_outlined,
@@ -537,8 +555,7 @@ class _CopyTradePermissionsState extends State<_CopyTradePermissions> {
     return LoopPage(
       eyebrow: 'COPY TRADING',
       title: 'Permission starts at nobody',
-      subtitle:
-          'Changing this lets other people mirror trades you explicitly share. It never gives them wallet access.',
+      subtitle: 'Changing this lets other people mirror trades you explicitly share. It never gives them wallet access.',
       bottom: LoopActionDock(
         child: SizedBox(
           width: double.infinity,
@@ -578,8 +595,7 @@ class _CopyTradePermissionsState extends State<_CopyTradePermissions> {
         if (!active)
           const LoopStateCard(
             title: 'Copy trading is off',
-            message:
-                'No one can mirror your trades. Shared trade cards remain informational.',
+            message: 'No one can mirror your trades. Shared trade cards remain informational.',
             icon: Icons.lock_outline_rounded,
             tone: LoopTone.positive,
           )
@@ -641,8 +657,7 @@ class _SecurityCenter extends StatelessWidget {
     return LoopPage(
       eyebrow: 'SECURITY',
       title: 'Protect the account',
-      subtitle:
-          'Account checks protect sensitive actions. Trading limits and wallet permissions are managed separately.',
+      subtitle: 'Account checks protect sensitive actions. Trading limits and wallet permissions are managed separately.',
       children: <Widget>[
         _ProtectionSummary(
           enabled: <bool>[
@@ -720,8 +735,7 @@ class _SecurityCenter extends StatelessWidget {
           const SizedBox(height: 18),
           const LoopStateCard(
             title: 'Recovery is not set',
-            message:
-                'Review the methods available for this wallet before relying on this account for long-term access.',
+            message: 'Review the methods available for this wallet before relying on this account for long-term access.',
             icon: Icons.warning_amber_rounded,
             tone: LoopTone.warning,
           ),
@@ -794,8 +808,7 @@ class _DeviceManagementState extends State<_DeviceManagement> {
         if (!widget.capabilityAvailable)
           const LoopStateCard(
             title: 'Session controls unavailable',
-            message:
-                'Device access cannot be changed right now. Your current session is unchanged.',
+            message: 'Device access cannot be changed right now. Your current session is unchanged.',
             icon: Icons.phonelink_erase_outlined,
             tone: LoopTone.warning,
           )
@@ -912,13 +925,11 @@ class _RecoveryPhraseAccessState extends State<_RecoveryPhraseAccess>
     return LoopPage(
       eyebrow: 'RECOVERY',
       title: 'View recovery words',
-      subtitle:
-          'A fresh identity check is required every time. Words hide as soon as LOOP leaves the foreground.',
+      subtitle: 'A fresh identity check is required every time. Words hide as soon as LOOP leaves the foreground.',
       children: <Widget>[
         const LoopStateCard(
           title: 'Never share these words',
-          message:
-              'Anyone with the full phrase can control the wallet. Support will never ask you for it.',
+          message: 'Anyone with the full phrase can control the wallet. Support will never ask you for it.',
           icon: Icons.warning_amber_rounded,
           tone: LoopTone.danger,
         ),
@@ -969,9 +980,8 @@ class _RecoveryPhraseAccessState extends State<_RecoveryPhraseAccess>
             const SizedBox(height: 12),
             Text(
               _message!,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: LoopColors.danger),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: LoopColors.danger),
             ),
           ],
         ] else ...<Widget>[
@@ -1012,8 +1022,7 @@ class _SocialRecoveryState extends State<_SocialRecovery> {
     return LoopPage(
       eyebrow: 'SOCIAL RECOVERY',
       title: 'Two of three guardians',
-      subtitle:
-          'Recovery requires two trusted people. Guardians cannot see balances or move assets.',
+      subtitle: 'Recovery requires two trusted people. Guardians cannot see balances or move assets.',
       bottom: widget.capabilityAvailable
           ? LoopActionDock(
               child: SizedBox(
@@ -1042,8 +1051,7 @@ class _SocialRecoveryState extends State<_SocialRecovery> {
         if (!widget.capabilityAvailable)
           const LoopStateCard(
             title: 'Social recovery unavailable',
-            message:
-                'This wallet does not currently support guardian-based recovery. No invitations can be sent.',
+            message: 'This wallet does not currently support guardian-based recovery. No invitations can be sent.',
             icon: Icons.group_off_outlined,
             tone: LoopTone.warning,
           )
@@ -1088,8 +1096,7 @@ class _SocialRecoveryState extends State<_SocialRecovery> {
             const SizedBox(height: 10),
           ],
           const _PrivacyFootnote(
-            text:
-                'Choose people you can reach independently. Do not choose three contacts controlled by the same person or account.',
+            text: 'Choose people you can reach independently. Do not choose three contacts controlled by the same person or account.',
           ),
         ],
       ],
@@ -1119,13 +1126,11 @@ class _NotificationSettingsState extends State<_NotificationSettings> {
     return LoopPage(
       eyebrow: 'NOTIFICATIONS',
       title: 'Choose what interrupts you',
-      subtitle:
-          'Security notices stay prominent. Everything else can be tuned by category.',
+      subtitle: 'Security notices stay prominent. Everything else can be tuned by category.',
       children: <Widget>[
         const LoopStateCard(
           title: 'System notifications are off',
-          message:
-              'Enable notifications in device settings to receive alerts when LOOP is closed.',
+          message: 'Enable notifications in device settings to receive alerts when LOOP is closed.',
           icon: Icons.notifications_off_outlined,
           tone: LoopTone.warning,
           action: _OpenSettingsButton(),
@@ -1201,8 +1206,7 @@ class _ConnectionsScreenState extends State<_ConnectionsScreen> {
     return LoopPage(
       eyebrow: 'NETWORK',
       title: 'Connections',
-      subtitle:
-          'Connections belong to your LOOP account, not a wallet address. People see aliases unless you choose to share more.',
+      subtitle: 'Connections belong to your LOOP account, not a wallet address. People see aliases unless you choose to share more.',
       children: <Widget>[
         SegmentedButton<_ConnectionView>(
           showSelectedIcon: false,
@@ -1298,8 +1302,7 @@ class _BlocklistScreenState extends State<_BlocklistScreen> {
     return LoopPage(
       eyebrow: 'BLOCKED ITEMS',
       title: 'Control what you see',
-      subtitle:
-          'Blocked people cannot message you. Blocked contracts and domains are hidden from discovery surfaces.',
+      subtitle: 'Blocked people cannot message you. Blocked contracts and domains are hidden from discovery surfaces.',
       children: <Widget>[
         SegmentedButton<_BlockedKind>(
           showSelectedIcon: false,
@@ -1319,8 +1322,7 @@ class _BlocklistScreenState extends State<_BlocklistScreen> {
         if (items.isEmpty)
           const LoopStateCard(
             title: 'Nothing blocked',
-            message:
-                'Items you block will appear here so you can restore them later.',
+            message: 'Items you block will appear here so you can restore them later.',
             icon: Icons.block_outlined,
           )
         else
@@ -1413,8 +1415,7 @@ class _GeneralSettingsState extends State<_GeneralSettings> {
         ),
         const SizedBox(height: 18),
         const _PrivacyFootnote(
-          text:
-              'Language and display currency change presentation only. They do not change settlement assets or trading terms.',
+          text: 'Language and display currency change presentation only. They do not change settlement assets or trading terms.',
         ),
       ],
     );
@@ -1429,8 +1430,7 @@ class _AboutAndLegal extends StatelessWidget {
     return LoopPage(
       eyebrow: 'ABOUT LOOP',
       title: 'Clear terms, one place',
-      subtitle:
-          'Review the rules and risks that apply before using wallet or trading features.',
+      subtitle: 'Review the rules and risks that apply before using wallet or trading features.',
       children: <Widget>[
         LoopCard(
           accent: true,
@@ -1483,8 +1483,7 @@ class _AboutAndLegal extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         const _PrivacyFootnote(
-          text:
-              'Availability of wallet and trading features may vary by account, product, and region.',
+          text: 'Availability of wallet and trading features may vary by account, product, and region.',
         ),
       ],
     );
@@ -1499,8 +1498,7 @@ class _SupportScreen extends StatelessWidget {
     return LoopPage(
       eyebrow: 'HELP',
       title: 'Find an answer first',
-      subtitle:
-          'LOOP support will never ask for a recovery phrase, private key, or one-time code.',
+      subtitle: 'LOOP support will never ask for a recovery phrase, private key, or one-time code.',
       children: <Widget>[
         const TextField(
           decoration: InputDecoration(
@@ -1552,8 +1550,7 @@ class _SupportScreen extends StatelessWidget {
         const LoopSectionLabel('Contact'),
         const LoopStateCard(
           title: 'Support replies are slower right now',
-          message:
-              'You can still submit a request. Include the screen and time of the issue, but never include secret wallet information.',
+          message: 'You can still submit a request. Include the screen and time of the issue, but never include secret wallet information.',
           icon: Icons.schedule_rounded,
           tone: LoopTone.warning,
         ),
@@ -1633,8 +1630,7 @@ class _ComingLaterScreen extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         const _PrivacyFootnote(
-          text:
-              'This page is informational. No rewards, balances, codes, or eligibility are active.',
+          text: 'This page is informational. No rewards, balances, codes, or eligibility are active.',
         ),
       ],
     );
@@ -2019,8 +2015,7 @@ class _VisibilitySwitchRow extends StatelessWidget {
 
 class _PrivacyFootnote extends StatelessWidget {
   const _PrivacyFootnote({
-    this.text =
-        'Changing visibility affects future views. Content already shared in a conversation may remain visible to its participants.',
+    this.text = 'Changing visibility affects future views. Content already shared in a conversation may remain visible to its participants.',
   });
 
   final String text;
@@ -2390,9 +2385,8 @@ class _LoopMark extends StatelessWidget {
       ),
       child: Text(
         'L',
-        style: Theme.of(
-          context,
-        ).textTheme.headlineMedium?.copyWith(color: LoopColors.mint),
+        style: Theme.of(context).textTheme.headlineMedium
+            ?.copyWith(color: LoopColors.mint),
       ),
     );
   }

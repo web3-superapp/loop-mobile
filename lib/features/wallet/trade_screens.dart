@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:uuid/uuid.dart';
 
 class SwapScreen extends StatefulWidget {
   const SwapScreen({super.key});
@@ -25,8 +26,8 @@ class _SwapScreenState extends State<SwapScreen> {
   Widget build(BuildContext context) {
     return LoopPage(
       title: 'Swap',
-      subtitle:
-          'The active wallet provider supplies the final quote and transaction.',
+      eyebrow: '开发预览',
+      subtitle: 'All amounts below are 演示数据. No provider quote or transaction is connected.',
       bottom: LoopActionDock(
         child: FilledButton(
           onPressed: quoteCurrent
@@ -35,7 +36,7 @@ class _SwapScreenState extends State<SwapScreen> {
                   context.push(
                     '/preview/signing-review',
                     extra: SigningIntent.swap(
-                      revision: 'swap_eth_usdc_0001',
+                      revision: const Uuid().v4(),
                       pay: '0.50 ETH',
                       receive: '2,302.18 USDC',
                       rate: '1 ETH = 4,604.36 USDC',
@@ -46,7 +47,7 @@ class _SwapScreenState extends State<SwapScreen> {
                   );
                 }
               : () => setState(() => quoteCurrent = true),
-          child: Text(quoteCurrent ? 'Review swap' : 'Refresh quote'),
+          child: Text(quoteCurrent ? 'Review demo draft' : 'Reset preview'),
         ),
       ),
       children: <Widget>[
@@ -61,8 +62,8 @@ class _SwapScreenState extends State<SwapScreen> {
           offset: const Offset(0, -7),
           child: Center(
             child: IconButton.filledTonal(
-              onPressed: () {},
-              tooltip: 'Reverse assets',
+              onPressed: null,
+              tooltip: 'Asset reversal not connected',
               icon: const Icon(Icons.swap_vert_rounded),
             ),
           ),
@@ -71,11 +72,10 @@ class _SwapScreenState extends State<SwapScreen> {
         const SizedBox(height: 16),
         if (quoteCurrent)
           const LoopStateCard(
-            title: 'Quote valid for 20 seconds',
-            message:
-                'Expected receive 2,302.18 USDC · minimum 2,290.66 USDC at 0.5% slippage.',
+            title: '演示数据 · quote layout',
+            message: 'Sample output, minimum and slippage values are not provider facts and cannot be signed.',
             icon: Icons.timer_outlined,
-            tone: LoopTone.positive,
+            tone: LoopTone.warning,
           )
         else
           const LoopStateCard(
@@ -84,7 +84,7 @@ class _SwapScreenState extends State<SwapScreen> {
             icon: Icons.refresh_rounded,
             tone: LoopTone.warning,
           ),
-        const LoopSectionLabel('Quote'),
+        const LoopSectionLabel('Quote · 演示数据'),
         LoopCard(
           onTap: () => context.push('/wallet/swap/route'),
           semanticLabel: 'Open swap quote details',
@@ -199,13 +199,12 @@ class SwapRouteScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const LoopPage(
       title: 'Quote details',
-      subtitle:
-          'The provider does not expose split routing, so LOOP shows the final quote and fees only.',
+      eyebrow: '开发预览',
+      subtitle: 'No provider quote exists. These values demonstrate the intended review layout only.',
       children: <Widget>[
         LoopStateCard(
-          title: 'Provider-selected quote',
-          message:
-              'A route comparison is not shown when the provider does not supply verifiable route legs.',
+          title: '演示数据 · provider quote layout',
+          message: 'A route comparison is not shown when the provider does not supply verifiable route legs.',
           icon: Icons.route_outlined,
           tone: LoopTone.market,
         ),
@@ -236,8 +235,8 @@ class BridgeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return LoopPage(
       title: 'Bridge',
-      subtitle:
-          'Cross-chain routing will be supplied by the selected provider; LOOP does not operate a bridge.',
+      eyebrow: '开发预览',
+      subtitle: 'Cross-chain routing will be supplied by the selected provider; LOOP does not operate a bridge.',
       bottom: LoopActionDock(
         child: FilledButton(
           onPressed: () => context.push('/wallet/bridge/status'),
@@ -262,8 +261,7 @@ class BridgeScreen extends StatelessWidget {
         const SizedBox(height: 14),
         const LoopStateCard(
           title: 'Route preview only',
-          message:
-              'Production routing credentials are not configured. No bridge request will be submitted.',
+          message: 'Production routing credentials are not configured. No bridge request will be submitted.',
           icon: Icons.lock_outline_rounded,
           tone: LoopTone.warning,
         ),
@@ -286,8 +284,8 @@ class _BridgeStatusScreenState extends State<BridgeStatusScreen> {
   Widget build(BuildContext context) {
     return LoopPage(
       title: 'Bridge progress',
-      subtitle:
-          'A user can leave this screen and return without losing the provider reference.',
+      eyebrow: '开发预览',
+      subtitle: 'State transitions below are simulated. No provider reference exists.',
       children: <Widget>[
         Row(
           children: <Widget>[
@@ -329,15 +327,15 @@ class _BridgeStatusScreenState extends State<BridgeStatusScreen> {
         const SizedBox(height: 18),
         if (needsClaim)
           FilledButton.icon(
-            onPressed: () {},
+            onPressed: null,
             icon: const Icon(Icons.open_in_new_rounded),
-            label: const Text('Open verified claim flow'),
+            label: const Text('Claim provider not connected'),
           )
         else
           OutlinedButton.icon(
-            onPressed: () {},
+            onPressed: null,
             icon: const Icon(Icons.refresh_rounded),
-            label: const Text('Refresh status'),
+            label: const Text('No provider status'),
           ),
       ],
     );

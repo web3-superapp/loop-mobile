@@ -1,5 +1,6 @@
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_trading_gateway.dart';
+import 'package:uuid/uuid.dart';
 
 final class HyperliquidFixtureAdapter implements HyperliquidTradingGateway {
   const HyperliquidFixtureAdapter();
@@ -11,7 +12,7 @@ final class HyperliquidFixtureAdapter implements HyperliquidTradingGateway {
   Future<SigningIntent> prepareFixtureOrder() async {
     final now = DateTime.now().toUtc();
     return SigningIntent.perpOrder(
-      revision: 'intent_core_eth_0001',
+      revision: const Uuid().v4(),
       market: 'ETH',
       direction: OrderDirection.buy,
       orderType: PerpOrderType.market,

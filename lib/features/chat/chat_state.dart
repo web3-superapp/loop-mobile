@@ -101,6 +101,11 @@ class VoiceSessionController extends Notifier<VoiceSessionState> {
   VoiceSessionState build() => const VoiceSessionState.idle();
 
   Future<void> join([VoiceRoomSummary room = ChatContent.voiceRoom]) async {
+    final gateway = ref.read(communicationGatewayProvider);
+    // Until Stream CallState is projected directly into Riverpod, this local
+    // controller is strictly an offline-preview interaction model. Production
+    // must not invent joining/joined/reconnecting state.
+    if (gateway.mode != CommunicationMode.preview) return;
     if (state.phase == VoiceConnectionPhase.joining ||
         (state.phase == VoiceConnectionPhase.joined &&
             state.room?.id == room.id)) {
@@ -111,9 +116,10 @@ class VoiceSessionController extends Notifier<VoiceSessionState> {
       microphoneMuted: true,
       room: room,
     );
-    final result = await ref
-        .read(communicationGatewayProvider)
-        .joinVoiceRoom(roomId: room.id, microphoneMuted: true);
+    final result = await gateway.joinVoiceRoom(
+      roomId: room.id,
+      microphoneMuted: true,
+    );
     if (result.isSuccess) {
       state = VoiceSessionState(
         phase: VoiceConnectionPhase.joined,
@@ -130,32 +136,6 @@ class VoiceSessionController extends Notifier<VoiceSessionState> {
     );
   }
 
-  void markReconnecting() {
-    if (state.room == null) return;
-    state = state.copyWith(
-      phase: VoiceConnectionPhase.reconnecting,
-      microphoneMuted: true,
-      clearError: true,
-    );
-  }
-
-  void markReconnected() {
-    if (state.room == null) return;
-    state = state.copyWith(
-      phase: VoiceConnectionPhase.joined,
-      clearError: true,
-    );
-  }
-
-  void markConnectionError([String? message]) {
-    if (state.room == null) return;
-    state = state.copyWith(
-      phase: VoiceConnectionPhase.error,
-      microphoneMuted: true,
-      errorMessage: message ?? 'The room connection was interrupted.',
-    );
-  }
-
   Future<void> retry() async {
     final room = state.room;
     if (room == null) return;
@@ -163,12 +143,15 @@ class VoiceSessionController extends Notifier<VoiceSessionState> {
   }
 
   Future<void> toggleMicrophone() async {
+    final gateway = ref.read(communicationGatewayProvider);
+    if (gateway.mode != CommunicationMode.preview) return;
     final room = state.room;
     if (room == null || state.phase != VoiceConnectionPhase.joined) return;
     final nextMuted = !state.microphoneMuted;
-    final result = await ref
-        .read(communicationGatewayProvider)
-        .setMicrophoneMuted(roomId: room.id, muted: nextMuted);
+    final result = await gateway.setMicrophoneMuted(
+      roomId: room.id,
+      muted: nextMuted,
+    );
     if (result.isSuccess) {
       state = state.copyWith(microphoneMuted: nextMuted, clearError: true);
       return;
@@ -181,9 +164,11 @@ class VoiceSessionController extends Notifier<VoiceSessionState> {
   }
 
   Future<void> leave() async {
+    final gateway = ref.read(communicationGatewayProvider);
+    if (gateway.mode != CommunicationMode.preview) return;
     final room = state.room;
     if (room != null) {
-      await ref.read(communicationGatewayProvider).leaveVoiceRoom(room.id);
+      await gateway.leaveVoiceRoom(room.id);
     }
     state = const VoiceSessionState.idle();
   }

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/navigation/surface_catalog.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
+import 'package:loop_mobile/features/account/privy_login_screen.dart';
 import 'package:loop_mobile/features/catalog/catalog_surface_screen.dart';
 import 'package:loop_mobile/features/chat/chat.dart';
 import 'package:loop_mobile/features/home/home_screens.dart';
@@ -16,16 +19,26 @@ import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/features/wallet/wallet_screens.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:uuid/uuid.dart';
 
-class LoopApp extends StatefulWidget {
+class LoopApp extends ConsumerStatefulWidget {
   const LoopApp({super.key});
 
   @override
-  State<LoopApp> createState() => _LoopAppState();
+  ConsumerState<LoopApp> createState() => _LoopAppState();
 }
 
-class _LoopAppState extends State<LoopApp> {
-  late final GoRouter router = _buildRouter();
+class _LoopAppState extends ConsumerState<LoopApp> {
+  late final GoRouter router;
+
+  @override
+  void initState() {
+    super.initState();
+    router = _buildRouter(() => ref.read(loopSessionProvider));
+    ref.listenManual<LoopSessionState>(loopSessionProvider, (previous, next) {
+      if (previous?.mode != next.mode) router.refresh();
+    });
+  }
 
   @override
   void dispose() {
@@ -46,11 +59,25 @@ class _LoopAppState extends State<LoopApp> {
   }
 }
 
-GoRouter _buildRouter() {
+GoRouter _buildRouter(LoopSessionState Function() readSession) {
   return GoRouter(
-    initialLocation: '/home',
+    initialLocation: '/auth',
+    redirect: (context, state) {
+      final session = readSession();
+      final isAuthRoute = state.matchedLocation == '/auth';
+      if (!session.canEnterProduct) {
+        return isAuthRoute ? null : '/auth';
+      }
+      if (isAuthRoute) return '/home';
+      return null;
+    },
     routes: <RouteBase>[
       GoRoute(path: '/', redirect: (context, state) => '/home'),
+      GoRoute(
+        path: '/auth',
+        builder: (context, state) => const PrivyLoginScreen(),
+      ),
+      GoRoute(path: '/auth/otp', redirect: (context, state) => '/auth'),
       ShellRoute(
         builder: (context, state, child) =>
             LoopShell(location: state.uri.path, child: child),
@@ -77,7 +104,10 @@ GoRouter _buildRouter() {
           ),
           GoRoute(
             path: '/profile',
-            builder: (context, state) => _profileScreen(context, 'profile'),
+            builder: (context, state) => Consumer(
+              builder: (context, ref, child) =>
+                  _profileScreen(context, ref, 'profile'),
+            ),
           ),
         ],
       ),
@@ -248,11 +278,19 @@ GoRouter _buildRouter() {
       ),
       GoRoute(
         path: '/wallet/send/to',
-        builder: (context, state) => const SendRecipientScreen(),
+        builder: (context, state) => SendRecipientScreen(
+          draft: state.extra is TransferDraft
+              ? state.extra! as TransferDraft
+              : const TransferDraft(asset: 'ETH', network: 'Ethereum'),
+        ),
       ),
       GoRoute(
         path: '/wallet/send/confirm',
-        builder: (context, state) => const SendConfirmScreen(),
+        builder: (context, state) => SendConfirmScreen(
+          draft: state.extra is TransferDraft
+              ? state.extra! as TransferDraft
+              : const TransferDraft(asset: 'ETH', network: 'Ethereum'),
+        ),
       ),
       GoRoute(
         path: '/wallet/receive',
@@ -335,8 +373,6 @@ final List<RouteBase> _accountRoutes =
     <(String, String)>[
           ('/splash', 'splash'),
           ('/onboarding', 'onboarding'),
-          ('/auth', 'auth'),
-          ('/auth/otp', 'auth-otp'),
           ('/auth/wallet', 'auth-wallet'),
           ('/auth/wallet/create', 'wallet-create'),
           ('/auth/wallet/backup', 'wallet-backup'),
@@ -379,7 +415,10 @@ final List<RouteBase> _profileRoutes =
         .map((item) {
           return GoRoute(
             path: item.$1,
-            builder: (context, state) => _profileScreen(context, item.$2),
+            builder: (context, state) => Consumer(
+              builder: (context, ref, child) =>
+                  _profileScreen(context, ref, item.$2),
+            ),
           );
         })
         .toList(growable: false);
@@ -414,10 +453,24 @@ final List<RouteBase> _systemRoutes =
         })
         .toList(growable: false);
 
-Widget _profileScreen(BuildContext context, String id) {
+Widget _profileScreen(BuildContext context, WidgetRef ref, String id) {
+  final session = ref.watch(loopSessionProvider);
+  final account = session.account;
+  final identity = ProfileIdentity(
+    alias: account == null
+        ? (session.isPreview ? 'Development preview' : 'Restricted session')
+        : 'Privy session',
+    address: account?.wallet?.address ?? 'No wallet connected',
+    bio: 'Provider-backed profile bootstrap is not connected.',
+    connections: 0,
+    groups: 0,
+    watchlistItems: 0,
+  );
   return ProfileSurfaceScreen.fromId(
     id,
+    identity: identity,
     onNavigate: (destination) => context.push(_profilePath(destination)),
+    onSignOut: () => ref.read(loopSessionProvider.notifier).exit(),
   );
 }
 
@@ -573,12 +626,12 @@ final List<RouteBase> _catalogRoutes = SurfaceCatalog.all
 SigningIntent _previewIntent() {
   final now = DateTime.now().toUtc();
   return SigningIntent.transfer(
-    revision: 'preview_transfer_0001',
+    revision: const Uuid().v4(),
     asset: 'ETH',
-    amount: '0.25 ETH',
-    recipient: '0xA1c0F6B39D3b9B0C5e7A8426CF52AaFB1fA888C2',
-    network: 'Ethereum',
-    fee: '0.00042 ETH',
+    amount: 'Unavailable · no transfer draft',
+    recipient: 'Unavailable · no transfer draft',
+    network: 'Unavailable',
+    fee: 'Unavailable',
     observedAt: now,
     expiresAt: now.add(const Duration(minutes: 5)),
   );

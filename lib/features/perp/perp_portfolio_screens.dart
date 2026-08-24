@@ -20,8 +20,7 @@ class PerpPositionsScreen extends StatelessWidget {
     return LoopPage(
       eyebrow: 'D4 · Provider positions',
       title: 'Positions',
-      subtitle:
-          'PnL and liquidation values render only from a fresh, correlated Hyperliquid snapshot.',
+      subtitle: 'PnL and liquidation values render only from a fresh, correlated Hyperliquid snapshot.',
       actions: <Widget>[
         IconButton(
           onPressed: () => context.push('/perp/orders'),
@@ -88,8 +87,7 @@ class PerpPositionsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const PerpReadOnlyNotice(
-            message:
-                'Close and reduce actions are disabled. Open the position to inspect management controls and their execution boundary.',
+            message: 'Close and reduce actions are disabled. Open the position to inspect management controls and their execution boundary.',
           ),
         ],
       ],
@@ -200,8 +198,7 @@ class PerpPositionScreen extends StatelessWidget {
     return LoopPage(
       eyebrow: 'D5 · ${position.id}',
       title: '${position.symbol} position',
-      subtitle:
-          'Inspect liquidation and margin facts without exposing a production mutation path.',
+      subtitle: 'Inspect liquidation and margin facts without exposing a production mutation path.',
       children: <Widget>[
         PerpSnapshotBanner(state: snapshotState),
         if (!hasFacts) ...<Widget>[
@@ -353,8 +350,7 @@ class PerpPositionScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const PerpReadOnlyNotice(
-            message:
-                'TP/SL, leverage, margin, partial close, and full close are visible for product review but have no executable handler.',
+            message: 'TP/SL, leverage, margin, partial close, and full close are visible for product review but have no executable handler.',
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
@@ -399,8 +395,7 @@ class PerpOrdersScreen extends StatelessWidget {
     return LoopPage(
       eyebrow: 'D6 · Provider orders',
       title: 'Open orders',
-      subtitle:
-          'Order controls are intentionally inert until production mutation gates are complete.',
+      subtitle: 'Order controls are intentionally inert until production mutation gates are complete.',
       actions: <Widget>[
         IconButton(
           onPressed: () => context.push('/perp/history'),
@@ -443,15 +438,13 @@ class PerpOrdersScreen extends StatelessWidget {
           const LoopSectionLabel('Conditional orders'),
           const LoopStateCard(
             title: 'TP/SL execution disabled',
-            message:
-                'No trigger orders are created, edited, or inferred in preview. This section remains empty by design.',
+            message: 'No trigger orders are created, edited, or inferred in preview. This section remains empty by design.',
             icon: Icons.flag_outlined,
             tone: LoopTone.warning,
           ),
           const SizedBox(height: 12),
           const PerpReadOnlyNotice(
-            message:
-                'Cancel and modify buttons are disabled. Preview order IDs cannot be submitted.',
+            message: 'Cancel and modify buttons are disabled. Preview order IDs cannot be submitted.',
           ),
         ],
       ],
@@ -555,8 +548,7 @@ class PerpHistoryScreen extends StatelessWidget {
     return LoopPage(
       eyebrow: 'D7 · Provider history',
       title: 'Trade history',
-      subtitle:
-          'Preview fills and funding events demonstrate structure only; exports remain disabled.',
+      subtitle: 'Preview fills and funding events demonstrate structure only; exports remain disabled.',
       actions: <Widget>[
         IconButton(
           onPressed: null,
@@ -606,8 +598,7 @@ class PerpHistoryScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const PerpReadOnlyNotice(
-            message:
-                'History rows are preview records, not account statements. Production export and tax reporting are unavailable.',
+            message: 'History rows are preview records, not account statements. Production export and tax reporting are unavailable.',
           ),
         ],
       ],
@@ -679,9 +670,8 @@ class _HistoryEvent extends StatelessWidget {
             width: 64,
             child: Text(
               time,
-              style: Theme.of(
-                context,
-              ).textTheme.labelMedium?.copyWith(fontFamily: 'monospace'),
+              style: Theme.of(context).textTheme.labelMedium
+                  ?.copyWith(fontFamily: 'monospace'),
             ),
           ),
           LoopAssetMark(symbol: symbol, size: 34),

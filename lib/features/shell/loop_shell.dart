@@ -146,9 +146,8 @@ class _DesktopRail extends StatelessWidget {
               const SizedBox(width: 10),
               Text(
                 'LOOP',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(letterSpacing: 2.2),
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(letterSpacing: 2.2),
               ),
             ],
           ),

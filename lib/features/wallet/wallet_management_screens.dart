@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:uuid/uuid.dart';
 
 class TransactionHistoryScreen extends StatefulWidget {
   const TransactionHistoryScreen({super.key});
@@ -19,7 +20,8 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   Widget build(BuildContext context) {
     return LoopPage(
       title: 'Transaction history',
-      subtitle: 'Confirmed wallet activity, grouped by settlement date.',
+      eyebrow: '开发预览',
+      subtitle: 'All activity below is 演示数据; no wallet history was read.',
       children: <Widget>[
         Wrap(
           spacing: 8,
@@ -58,9 +60,8 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         ),
         const SizedBox(height: 12),
         const LoopStateCard(
-          title: 'History is settled data',
-          message:
-              'Pending submissions stay on their transaction result screen until the network receipt is known.',
+          title: 'History behavior preview',
+          message: 'Pending submissions stay on their transaction result screen until the network receipt is known.',
           icon: Icons.receipt_long_outlined,
         ),
       ],
@@ -113,14 +114,13 @@ class _WalletManagerScreenState extends State<WalletManagerScreen> {
   Widget build(BuildContext context) {
     return LoopPage(
       title: 'Manage wallets',
-      eyebrow: 'Privy account',
-      subtitle:
-          'Switch identities and inspect only the controls supported by each wallet.',
+      eyebrow: '开发预览 · Privy account',
+      subtitle: 'Wallet identities and policies below are 演示数据, not Privy account facts.',
       children: <Widget>[
         _WalletIdentity(
           title: 'Daily wallet',
           address: '0x71E4…6A09',
-          label: 'Embedded · active',
+          label: '演示数据 · embedded',
           selected: selected == 'Daily wallet',
           onTap: () => setState(() => selected = 'Daily wallet'),
         ),
@@ -128,7 +128,7 @@ class _WalletManagerScreenState extends State<WalletManagerScreen> {
         _WalletIdentity(
           title: 'Trading wallet',
           address: '0x88C2…F14B',
-          label: 'External · connected',
+          label: '演示数据 · external',
           selected: selected == 'Trading wallet',
           onTap: () => setState(() => selected = 'Trading wallet'),
         ),
@@ -138,12 +138,12 @@ class _WalletManagerScreenState extends State<WalletManagerScreen> {
             children: <Widget>[
               LoopKeyValueRow(
                 label: 'Signing policy',
-                value: r'MFA above $1,000',
+                value: '演示数据 · not verified',
               ),
-              LoopKeyValueRow(label: 'Recovery', value: 'Cloud + passkey'),
+              LoopKeyValueRow(label: 'Recovery', value: 'Not connected'),
               LoopKeyValueRow(
                 label: 'Last used',
-                value: 'Today, 09:18',
+                value: 'Unavailable',
                 last: true,
               ),
             ],
@@ -234,8 +234,8 @@ class _DappBrowserScreenState extends State<DappBrowserScreen> {
   Widget build(BuildContext context) {
     return LoopPage(
       title: 'DApp browser',
-      subtitle:
-          'Domain and wallet context remain visible before any permission request.',
+      eyebrow: '开发预览',
+      subtitle: 'Domain and wallet context remain visible before any permission request.',
       children: <Widget>[
         TextField(
           controller: controller,
@@ -248,8 +248,7 @@ class _DappBrowserScreenState extends State<DappBrowserScreen> {
         const SizedBox(height: 14),
         const LoopStateCard(
           title: 'Preview mode',
-          message:
-              'Embedded browsing and live wallet injection are unavailable until domain isolation is configured.',
+          message: 'Embedded browsing and live wallet injection are unavailable until domain isolation is configured.',
           icon: Icons.language_rounded,
           tone: LoopTone.warning,
         ),
@@ -288,8 +287,8 @@ class _ApprovalInterceptScreenState extends State<ApprovalInterceptScreen> {
   Widget build(BuildContext context) {
     return LoopPage(
       title: 'Approval request',
-      eyebrow: 'Wallet protection',
-      subtitle: 'Choose the allowance you intend to grant before signing.',
+      eyebrow: '开发预览 · Wallet protection',
+      subtitle: 'This is a local layout draft. No DApp request or wallet fact was received.',
       bottom: LoopActionDock(
         child: FilledButton(
           onPressed: unlimited
@@ -299,7 +298,7 @@ class _ApprovalInterceptScreenState extends State<ApprovalInterceptScreen> {
                   context.push(
                     '/preview/signing-review',
                     extra: SigningIntent.approval(
-                      revision: 'approval_usdc_0001',
+                      revision: const Uuid().v4(),
                       app: 'app.uniswap.org',
                       asset: 'USDC',
                       allowance: '250.00 USDC',
@@ -318,9 +317,8 @@ class _ApprovalInterceptScreenState extends State<ApprovalInterceptScreen> {
       ),
       children: <Widget>[
         const LoopStateCard(
-          title: 'This app wants to spend USDC',
-          message:
-              'An approval is permission, not a payment. It remains active until you revoke it.',
+          title: '演示数据 · approval request',
+          message: 'An approval is permission, not a payment. It remains active until you revoke it.',
           icon: Icons.policy_outlined,
           tone: LoopTone.warning,
         ),
@@ -376,13 +374,12 @@ class ApprovalsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return LoopPage(
       title: 'App permissions',
-      subtitle:
-          'Token allowances that are currently visible on supported networks.',
+      eyebrow: '开发预览',
+      subtitle: 'Allowances below are 演示数据; no supported network was queried.',
       children: <Widget>[
         const LoopStateCard(
-          title: '1 permission needs review',
-          message:
-              'The allowance is larger than the balance currently held in this wallet.',
+          title: '演示数据 · permission warning',
+          message: 'The allowance is larger than the balance currently held in this wallet.',
           icon: Icons.warning_amber_rounded,
           tone: LoopTone.warning,
         ),
@@ -433,11 +430,10 @@ class ApprovalsScreen extends StatelessWidget {
         ),
         const LoopSectionLabel('Arbitrum'),
         const LoopStateCard(
-          title: 'No active allowances',
-          message:
-              'Nothing can currently spend supported assets on your behalf.',
-          icon: Icons.verified_user_outlined,
-          tone: LoopTone.positive,
+          title: '演示数据 · empty allowance state',
+          message: 'This preview is not evidence that the connected account has no allowances.',
+          icon: Icons.visibility_outlined,
+          tone: LoopTone.neutral,
         ),
       ],
     );
@@ -452,13 +448,11 @@ class DappListScreen extends StatelessWidget {
     return const LoopPage(
       title: 'DApps',
       eyebrow: 'Later phase',
-      subtitle:
-          'Bookmarks and recent apps will appear after browser isolation and permission controls are production-ready.',
+      subtitle: 'Bookmarks and recent apps will appear after browser isolation and permission controls are production-ready.',
       children: <Widget>[
         LoopStateCard(
           title: 'Deliberately deferred',
-          message:
-              'The wallet can be completed without an embedded DApp directory. Direct domain connections remain the safer first release.',
+          message: 'The wallet can be completed without an embedded DApp directory. Direct domain connections remain the safer first release.',
           icon: Icons.apps_outlined,
         ),
       ],
@@ -480,21 +474,22 @@ class _NetworksScreenState extends State<NetworksScreen> {
   Widget build(BuildContext context) {
     return LoopPage(
       title: 'Networks',
-      subtitle: 'Enabled chains and the last known provider health.',
+      eyebrow: '开发预览',
+      subtitle: 'Network health rows below are 演示数据, not provider status.',
       children: <Widget>[
         const _NetworkRow(
           name: 'Ethereum',
-          detail: 'Healthy · block 20,742,191',
+          detail: '演示数据 · sample healthy state',
           tone: LoopTone.positive,
         ),
         const _NetworkRow(
           name: 'Arbitrum',
-          detail: 'Healthy · block 247,502,118',
+          detail: '演示数据 · sample healthy state',
           tone: LoopTone.positive,
         ),
         const _NetworkRow(
           name: 'Solana',
-          detail: 'Delayed · last refresh 42s ago',
+          detail: '演示数据 · sample delayed state',
           tone: LoopTone.warning,
         ),
         const LoopSectionLabel('Developer access'),
@@ -531,10 +526,7 @@ class _NetworkRow extends StatelessWidget {
       leading: Icon(Icons.hub_outlined, color: loopToneColor(tone)),
       title: Text(name, style: Theme.of(context).textTheme.titleMedium),
       subtitle: Text(detail, style: Theme.of(context).textTheme.bodyMedium),
-      trailing: LoopStatusPill(
-        label: tone == LoopTone.positive ? 'Online' : 'Stale',
-        tone: tone,
-      ),
+      trailing: LoopStatusPill(label: '演示数据', tone: LoopTone.neutral),
     );
   }
 }
@@ -547,13 +539,11 @@ class ProtectionScreen extends StatelessWidget {
     return const LoopPage(
       title: 'Transaction protection',
       eyebrow: 'Later phase',
-      subtitle:
-          'Protection will explain concrete simulation findings without inventing a risk score.',
+      subtitle: 'Protection will explain concrete simulation findings without inventing a risk score.',
       children: <Widget>[
         LoopStateCard(
           title: 'No third-party protection configured',
-          message:
-              'Privy policies and MFA protect signing authority. Contract simulation and malicious-domain detection require a separate verified data source.',
+          message: 'Privy policy and MFA protection require verified provider configuration. Contract simulation and malicious-domain detection require a separate trusted data source.',
           icon: Icons.shield_outlined,
           tone: LoopTone.warning,
         ),
@@ -561,14 +551,17 @@ class ProtectionScreen extends StatelessWidget {
         LoopCard(
           child: Column(
             children: <Widget>[
-              LoopKeyValueRow(label: 'High-value actions', value: 'MFA policy'),
+              LoopKeyValueRow(
+                label: 'High-value actions',
+                value: 'Provider policy not verified',
+              ),
               LoopKeyValueRow(
                 label: 'Exact transaction facts',
-                value: 'Single review',
+                value: 'Backend canonical review required',
               ),
               LoopKeyValueRow(
                 label: 'Provider result',
-                value: 'Read back after signing',
+                value: 'Not connected',
                 last: true,
               ),
             ],

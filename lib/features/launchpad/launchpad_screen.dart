@@ -10,8 +10,7 @@ class LaunchpadScreen extends StatelessWidget {
     return LoopPage(
       title: 'Launchpad',
       eyebrow: 'Future loop',
-      subtitle:
-          'Project discovery will open only when issuer facts, eligibility and participation controls are complete.',
+      subtitle: 'Project discovery will open only when issuer facts, eligibility and participation controls are complete.',
       children: <Widget>[
         const Align(
           alignment: Alignment.centerLeft,
@@ -61,20 +60,17 @@ class LaunchpadScreen extends StatelessWidget {
         const _LaunchGate(
           number: '02',
           title: 'Eligibility controls',
-          detail:
-              'Region and account checks must fail without blocking the rest of LOOP.',
+          detail: 'Region and account checks must fail without blocking the rest of LOOP.',
         ),
         const _LaunchGate(
           number: '03',
           title: 'Participation review',
-          detail:
-              'Exact amount, allocation rule and settlement path need one signing intent.',
+          detail: 'Exact amount, allocation rule and settlement path need one signing intent.',
         ),
         const SizedBox(height: 18),
         const LoopStateCard(
           title: 'No live launches',
-          message:
-              'Launch discovery, details and applications are intentionally deferred. Nothing on this page accepts funds.',
+          message: 'Launch discovery, details and applications are intentionally deferred. Nothing on this page accepts funds.',
           icon: Icons.schedule_rounded,
         ),
       ],

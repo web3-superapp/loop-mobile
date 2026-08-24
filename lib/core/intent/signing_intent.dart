@@ -1,4 +1,4 @@
-enum SigningAuthority { privy }
+enum SigningAuthority { loopBackend, privyWallet }
 
 enum IntentProvider { hyperliquidCore, wallet }
 
@@ -8,6 +8,8 @@ enum PerpOrderType { market, limit }
 
 enum IntentKind { perpOrder, transfer, swap, approval }
 
+enum IntentOrigin { localPreview, backendCanonical }
+
 final class IntentField {
   const IntentField({required this.label, required this.value});
 
@@ -16,16 +18,17 @@ final class IntentField {
 }
 
 final class SigningIntent {
-  const SigningIntent._({
+  SigningIntent._({
     required this.revision,
     required this.title,
     required this.kind,
     required this.authority,
     required this.provider,
+    required this.origin,
     required this.observedAt,
     required this.expiresAt,
-    required this.fields,
-  });
+    required List<IntentField> fields,
+  }) : fields = List<IntentField>.unmodifiable(fields);
 
   factory SigningIntent.perpOrder({
     required String revision,
@@ -46,8 +49,9 @@ final class SigningIntent {
       revision: revision,
       title: '$market perpetual order',
       kind: IntentKind.perpOrder,
-      authority: SigningAuthority.privy,
+      authority: SigningAuthority.loopBackend,
       provider: IntentProvider.hyperliquidCore,
+      origin: IntentOrigin.localPreview,
       observedAt: observedAt,
       expiresAt: expiresAt,
       fields: <IntentField>[
@@ -87,8 +91,9 @@ final class SigningIntent {
       revision: revision,
       title: 'Send $asset',
       kind: IntentKind.transfer,
-      authority: SigningAuthority.privy,
+      authority: SigningAuthority.privyWallet,
       provider: IntentProvider.wallet,
+      origin: IntentOrigin.localPreview,
       observedAt: observedAt,
       expiresAt: expiresAt,
       fields: <IntentField>[
@@ -114,8 +119,9 @@ final class SigningIntent {
       revision: revision,
       title: 'Swap assets',
       kind: IntentKind.swap,
-      authority: SigningAuthority.privy,
+      authority: SigningAuthority.privyWallet,
       provider: IntentProvider.wallet,
+      origin: IntentOrigin.localPreview,
       observedAt: observedAt,
       expiresAt: expiresAt,
       fields: <IntentField>[
@@ -140,8 +146,9 @@ final class SigningIntent {
       revision: revision,
       title: 'Approve token access',
       kind: IntentKind.approval,
-      authority: SigningAuthority.privy,
+      authority: SigningAuthority.privyWallet,
       provider: IntentProvider.wallet,
+      origin: IntentOrigin.localPreview,
       observedAt: observedAt,
       expiresAt: expiresAt,
       fields: <IntentField>[
@@ -158,9 +165,20 @@ final class SigningIntent {
   final IntentKind kind;
   final SigningAuthority authority;
   final IntentProvider provider;
+  final IntentOrigin origin;
   final DateTime observedAt;
   final DateTime expiresAt;
   final List<IntentField> fields;
+
+  /// Hyperliquid account mutations are relayed by LOOP's backend. The mobile
+  /// app must never send those intents to an embedded-wallet signing API.
+  bool get requiresLoopBackend => authority == SigningAuthority.loopBackend;
+
+  bool get isLocalPreview => origin == IntentOrigin.localPreview;
+
+  bool get allowsWalletHandoff =>
+      authority == SigningAuthority.privyWallet &&
+      origin == IntentOrigin.backendCanonical;
 
   String? validateAt(DateTime now) {
     if (kind == IntentKind.perpOrder) {

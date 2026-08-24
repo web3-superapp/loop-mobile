@@ -26,8 +26,7 @@ class PerpMarketScreen extends StatelessWidget {
     return LoopPage(
       eyebrow: 'D1 · Hyperliquid Core',
       title: 'Perpetual markets',
-      subtitle:
-          'BTC, ETH, and SOL only. Perpetuals live inside Market, never as a bottom tab.',
+      subtitle: 'BTC, ETH, and SOL only. Perpetuals live inside Market, never as a bottom tab.',
       actions: <Widget>[
         IconButton(
           onPressed: () => context.push('/perp/risk'),
@@ -75,8 +74,7 @@ class PerpMarketScreen extends StatelessWidget {
           const LoopSectionLabel('Product boundary'),
           const LoopStateCard(
             title: 'HIP-3 is disabled',
-            message:
-                'Builder-deployed and non-core markets are not listed, searched, signed, or routed in this build.',
+            message: 'Builder-deployed and non-core markets are not listed, searched, signed, or routed in this build.',
             icon: Icons.block_rounded,
             tone: LoopTone.warning,
           ),
@@ -137,8 +135,7 @@ class _PerpTradeScreenState extends ConsumerState<PerpTradeScreen> {
     return LoopPage(
       eyebrow: 'D2 · ${market.symbol}-PERP',
       title: 'Build an order',
-      subtitle:
-          'Simulate the order shape before entering the single Privy review boundary.',
+      subtitle: 'Simulate the order shape before a backend-mediated execution review.',
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 172),
       actions: <Widget>[
         IconButton(
@@ -336,8 +333,7 @@ class _PerpTradeScreenState extends ConsumerState<PerpTradeScreen> {
           ),
           const SizedBox(height: 12),
           const PerpReadOnlyNotice(
-            message:
-                'TP/SL execution, builder fees, HIP-3, and production submission are disabled. Preview intent uses a 0 USDC builder fee.',
+            message: 'TP/SL execution, builder fees, HIP-3, and production submission are disabled. Preview intent uses a 0 USDC builder fee.',
           ),
         ],
       ],
@@ -444,7 +440,7 @@ class _BookRow extends StatelessWidget {
   }
 }
 
-/// D3 — Exact, immutable preview before the shared signing review.
+/// D3 — Exact, immutable preview before the shared intent review.
 class PerpConfirmScreen extends StatefulWidget {
   const PerpConfirmScreen({
     super.key,
@@ -475,8 +471,7 @@ class _PerpConfirmScreenState extends State<PerpConfirmScreen> {
     return LoopPage(
       eyebrow: 'D3 · Immutable intent',
       title: 'Confirm order preview',
-      subtitle:
-          'Review every critical field. LOOP will not infer, refresh, or silently replace this intent.',
+      subtitle: 'Review every critical field. LOOP will not infer, refresh, or silently replace this intent.',
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 176),
       bottom: LoopActionDock(
         child: Column(
@@ -487,9 +482,8 @@ class _PerpConfirmScreenState extends State<PerpConfirmScreen> {
                 padding: const EdgeInsets.only(bottom: 9),
                 child: Text(
                   'Intent blocked: $validationError',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelMedium?.copyWith(color: LoopColors.danger),
+                  style: Theme.of(context).textTheme.labelMedium
+                      ?.copyWith(color: LoopColors.danger),
                 ),
               ),
             FilledButton.icon(
@@ -498,7 +492,7 @@ class _PerpConfirmScreenState extends State<PerpConfirmScreen> {
                         context.push('/preview/signing-review', extra: _intent)
                   : null,
               icon: const Icon(Icons.lock_outline_rounded),
-              label: const Text('Continue to Privy review'),
+              label: const Text('Continue to intent review'),
             ),
             const SizedBox(height: 7),
             Text(
@@ -522,9 +516,9 @@ class _PerpConfirmScreenState extends State<PerpConfirmScreen> {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: <Widget>[
               const LoopStatusPill(
-                label: 'PRIVY AUTHORITY',
-                tone: LoopTone.positive,
-                icon: Icons.verified_user_outlined,
+                label: 'LOOP BACKEND REQUIRED',
+                tone: LoopTone.warning,
+                icon: Icons.dns_outlined,
               ),
               const LoopStatusPill(
                 label: 'NO SUBMISSION',
@@ -533,9 +527,8 @@ class _PerpConfirmScreenState extends State<PerpConfirmScreen> {
               ),
               Text(
                 _intent.revision.split('-').take(2).join('-'),
-                style: Theme.of(
-                  context,
-                ).textTheme.labelMedium?.copyWith(fontFamily: 'monospace'),
+                style: Theme.of(context).textTheme.labelMedium
+                    ?.copyWith(fontFamily: 'monospace'),
               ),
             ],
           ),
@@ -560,8 +553,7 @@ class _PerpConfirmScreenState extends State<PerpConfirmScreen> {
           const SizedBox(height: 12),
           const LoopStateCard(
             title: 'Builder fee disabled',
-            message:
-                'This intent is accepted only when builder fee equals exactly 0 USDC. No builder code is attached.',
+            message: 'This intent is accepted only when builder fee equals exactly 0 USDC. No builder code is attached.',
             icon: Icons.money_off_csred_outlined,
             tone: LoopTone.warning,
           ),
