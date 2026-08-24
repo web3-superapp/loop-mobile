@@ -6,6 +6,26 @@ build_docs.py
 README.md
 _tmp/
 
+# Repository-only source, contracts, migration snapshots, and planning records.
+apps/
+contracts/
+server/
+packages/
+docs/
+docs_vendor/
+findings.md
+progress.md
+task_plan.md
+.flutter-version
+.gitignore
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+# macOS AppleDouble metadata can appear on the external drive and must never be deployed.
+._*
+**/._*
+
 # Markdown is already inlined into docs.html by build_docs.py, so these directories add nothing
 # to the deployment — and 调研/ holds vendor pricing and negotiation notes that should not be
 # reachable by URL guessing.
