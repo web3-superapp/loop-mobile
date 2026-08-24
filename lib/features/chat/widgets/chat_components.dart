@@ -28,14 +28,12 @@ class ChatAvatar extends StatelessWidget {
     this.size = 44,
     this.colorSeed = 0,
     this.icon,
-    this.online = false,
   });
 
   final String label;
   final double size;
   final int colorSeed;
   final IconData? icon;
-  final bool online;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +41,7 @@ class ChatAvatar extends StatelessWidget {
     final initials = _initials(label);
     return Semantics(
       image: true,
-      label: '$label avatar${online ? ', online' : ''}',
+      label: '$label avatar',
       child: SizedBox.square(
         dimension: size,
         child: Stack(
@@ -74,20 +72,6 @@ class ChatAvatar extends StatelessWidget {
                       ),
               ),
             ),
-            if (online)
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  width: math.max(10, size * 0.24),
-                  height: math.max(10, size * 0.24),
-                  decoration: BoxDecoration(
-                    color: LoopColors.mint,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: LoopColors.abyss, width: 2),
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -187,7 +171,6 @@ class ConversationRow extends StatelessWidget {
                       label: conversation.title,
                       colorSeed: conversation.accentSeed,
                       icon: icon,
-                      online: conversation.kind == ConversationKind.direct,
                     ),
                     if (conversation.kind == ConversationKind.voice)
                       Positioned(
@@ -309,8 +292,12 @@ class InlineVoiceRoomCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final gateway = ref.watch(communicationGatewayProvider);
+    final preview = gateway.mode == CommunicationMode.preview;
     final session = ref.watch(voiceSessionControllerProvider);
     final active = session.room?.id == room.id && session.showsMiniBar;
+    final connected =
+        !preview && active && session.phase == VoiceConnectionPhase.joined;
     return LoopCard(
       accent: true,
       tone: LoopTone.conversation,
@@ -332,7 +319,7 @@ class InlineVoiceRoomCard extends ConsumerWidget {
             ),
             child: Row(
               children: <Widget>[
-                const VoicePulseMark(size: 48),
+                VoicePulseMark(size: 48, active: connected),
                 const SizedBox(width: 13),
                 Expanded(
                   child: Column(
@@ -347,7 +334,11 @@ class InlineVoiceRoomCard extends ConsumerWidget {
                           ),
                           if (active) ...<Widget>[
                             const SizedBox(width: 7),
-                            VoicePhasePill(phase: session.phase),
+                            VoicePhasePill(
+                              phase: session.phase,
+                              mode: gateway.mode,
+                              configured: gateway.isConfigured,
+                            ),
                           ],
                         ],
                       ),
@@ -404,13 +395,19 @@ class InlineVoiceRoomCard extends ConsumerWidget {
                 ),
                 Expanded(
                   child: Text(
-                    '${room.speakerCount} speaking · ${room.listenerCount} listening',
+                    preview
+                        ? 'Offline preview · simulated participants'
+                        : connected
+                        ? '${session.room!.speakerCount} speakers · ${session.room!.listenerCount} listeners'
+                        : gateway.isConfigured
+                        ? 'Stream room · session not active'
+                        : 'Stream not connected',
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
                 ),
                 FilledButton.icon(
                   onPressed: () async {
-                    if (!active) {
+                    if ((preview || gateway.isConfigured) && !active) {
                       await ref
                           .read(voiceSessionControllerProvider.notifier)
                           .join(room);
@@ -421,7 +418,15 @@ class InlineVoiceRoomCard extends ConsumerWidget {
                     active ? Icons.open_in_full_rounded : Icons.mic_off_rounded,
                     size: 17,
                   ),
-                  label: Text(active ? 'Open' : 'Join muted'),
+                  label: Text(
+                    preview
+                        ? 'Open preview'
+                        : gateway.isConfigured
+                        ? active
+                              ? 'Open'
+                              : 'Join muted'
+                        : 'View status',
+                  ),
                   style: FilledButton.styleFrom(
                     backgroundColor: LoopColors.chat,
                     foregroundColor: LoopColors.abyss,
@@ -515,12 +520,33 @@ class _VoicePulsePainter extends CustomPainter {
 }
 
 class VoicePhasePill extends StatelessWidget {
-  const VoicePhasePill({required this.phase, super.key});
+  const VoicePhasePill({
+    required this.phase,
+    required this.mode,
+    required this.configured,
+    super.key,
+  });
 
   final VoiceConnectionPhase phase;
+  final CommunicationMode mode;
+  final bool configured;
 
   @override
   Widget build(BuildContext context) {
+    if (mode == CommunicationMode.preview) {
+      return const LoopStatusPill(
+        label: 'Offline preview',
+        tone: LoopTone.neutral,
+        icon: Icons.cloud_off_outlined,
+      );
+    }
+    if (!configured) {
+      return const LoopStatusPill(
+        label: 'Stream not connected',
+        tone: LoopTone.neutral,
+        icon: Icons.cloud_off_outlined,
+      );
+    }
     final (label, tone, icon) = switch (phase) {
       VoiceConnectionPhase.idle => (
         'Ready',
@@ -1069,6 +1095,8 @@ class ChatMiniVoiceBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final gateway = ref.watch(communicationGatewayProvider);
+    final preview = gateway.mode == CommunicationMode.preview;
     final session = ref.watch(voiceSessionControllerProvider);
     final room = session.room;
     if (!session.showsMiniBar || room == null) return const SizedBox.shrink();
@@ -1092,7 +1120,8 @@ class ChatMiniVoiceBar extends ConsumerWidget {
               children: <Widget>[
                 VoicePulseMark(
                   size: 38,
-                  active: session.phase == VoiceConnectionPhase.joined,
+                  active:
+                      !preview && session.phase == VoiceConnectionPhase.joined,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -1108,7 +1137,9 @@ class ChatMiniVoiceBar extends ConsumerWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _phaseDescription(session),
+                        preview
+                            ? 'Offline preview · not connected'
+                            : _phaseDescription(session),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.labelMedium
@@ -1122,7 +1153,8 @@ class ChatMiniVoiceBar extends ConsumerWidget {
                   ),
                 ),
                 IconButton(
-                  onPressed: session.phase == VoiceConnectionPhase.joined
+                  onPressed:
+                      !preview && session.phase == VoiceConnectionPhase.joined
                       ? () => ref
                             .read(voiceSessionControllerProvider.notifier)
                             .toggleMicrophone()

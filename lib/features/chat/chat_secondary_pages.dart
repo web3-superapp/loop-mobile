@@ -8,23 +8,29 @@ import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
-class GroupInfoPage extends StatefulWidget {
+class GroupInfoPage extends ConsumerStatefulWidget {
   const GroupInfoPage({super.key});
 
   @override
-  State<GroupInfoPage> createState() => _GroupInfoPageState();
+  ConsumerState<GroupInfoPage> createState() => _GroupInfoPageState();
 }
 
-class _GroupInfoPageState extends State<GroupInfoPage> {
+class _GroupInfoPageState extends ConsumerState<GroupInfoPage> {
   var _notifications = true;
   var _mentionsOnly = false;
 
   @override
   Widget build(BuildContext context) {
+    final gateway = ref.watch(communicationGatewayProvider);
+    final preview = gateway.mode == CommunicationMode.preview;
     return LoopPage(
       eyebrow: 'Group',
       title: 'Glyph Hunters',
-      subtitle: '842 members · 126 online',
+      subtitle: preview
+          ? 'Offline preview · simulated members and presence'
+          : gateway.isConfigured
+          ? 'Static member layout · Stream presence not verified'
+          : 'Stream not connected',
       actions: <Widget>[
         IconButton(
           onPressed: () => context.push('/chat/search'),
@@ -125,7 +131,7 @@ class _GroupInfoPageState extends State<GroupInfoPage> {
           ),
         ),
         LoopSectionLabel(
-          'Recently active',
+          'Preview members',
           trailing: TextButton(
             onPressed: () => _showMemberList(context),
             child: const Text('See more'),
@@ -135,26 +141,11 @@ class _GroupInfoPageState extends State<GroupInfoPage> {
           padding: EdgeInsets.zero,
           child: Column(
             children: <Widget>[
-              _MemberRow(
-                alias: 'NightOwl',
-                role: 'Moderator',
-                colorSeed: 2,
-                online: true,
-              ),
+              _MemberRow(alias: 'NightOwl', role: 'Moderator', colorSeed: 2),
               Divider(),
-              _MemberRow(
-                alias: '0xSable',
-                role: 'Member',
-                colorSeed: 4,
-                online: true,
-              ),
+              _MemberRow(alias: '0xSable', role: 'Member', colorSeed: 4),
               Divider(),
-              _MemberRow(
-                alias: 'AtlasLoop',
-                role: 'Member',
-                colorSeed: 3,
-                online: true,
-              ),
+              _MemberRow(alias: 'AtlasLoop', role: 'Member', colorSeed: 3),
               Divider(),
               _MemberRow(alias: 'Nori', role: 'Member', colorSeed: 6),
             ],
@@ -180,23 +171,16 @@ class _MemberRow extends StatelessWidget {
     required this.alias,
     required this.role,
     required this.colorSeed,
-    this.online = false,
   });
 
   final String alias;
   final String role;
   final int colorSeed;
-  final bool online;
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: ChatAvatar(
-        label: alias,
-        size: 40,
-        colorSeed: colorSeed,
-        online: online,
-      ),
+      leading: ChatAvatar(label: alias, size: 40, colorSeed: colorSeed),
       title: Text(alias),
       subtitle: Text(role),
       trailing: IconButton(
@@ -755,7 +739,7 @@ Future<void> _showMemberList(BuildContext context) {
                   children: <Widget>[
                     Expanded(
                       child: Text(
-                        'Recently active members',
+                        'Simulated preview members',
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                     ),
@@ -776,19 +760,12 @@ Future<void> _showMemberList(BuildContext context) {
                       alias: 'NightOwl',
                       role: 'Moderator',
                       colorSeed: 2,
-                      online: true,
                     ),
-                    _MemberRow(
-                      alias: '0xSable',
-                      role: 'Member',
-                      colorSeed: 4,
-                      online: true,
-                    ),
+                    _MemberRow(alias: '0xSable', role: 'Member', colorSeed: 4),
                     _MemberRow(
                       alias: 'AtlasLoop',
                       role: 'Member',
                       colorSeed: 3,
-                      online: true,
                     ),
                     _MemberRow(alias: 'Nori', role: 'Member', colorSeed: 6),
                     _MemberRow(alias: 'Mina.Ξ', role: 'Member', colorSeed: 7),

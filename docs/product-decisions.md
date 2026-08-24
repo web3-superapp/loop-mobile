@@ -16,15 +16,20 @@ This document applies to the Flutter source at the repository root. Material und
 
 Product priority and current delivery are separate:
 
-- B5 remains Core, B6 and B7 remain Phase one, and B8 remains Later.
+- Product priority uses A, B and C. It is not a release phase or delivery promise.
+- The catalog remains 47 A-priority, 46 B-priority and 10 C-priority surfaces.
+- B5 is A priority, B6 and B7 are B priority, and B8 is C priority.
 - B5 through B8 are all deferred from the current release.
 - Home keeps one Pay card labelled `Coming soon` so the planned product position remains visible.
 - Every Pay route is informational only. It must not open a scanner, request camera access, collect an amount or recipient, select a payment provider, or submit a transaction.
 
 ## Communication
 
-- Stream Chat plus Stream Video/voice is the selected communication integration.
-- The current Flutter code contains an unconfigured, fail-closed integration seam and preview memory data. It does not prove that a Stream SDK, token service, chat write or voice room is live.
+- Stream Chat + Stream Video/Audio Rooms is the selected communication integration.
+- `communicationGatewayProvider` defaults to the unconfigured production Stream seam and fails closed. Only the explicit preview composition root in `main.dart` injects memory data.
+- Communication mode is explicit: memory data is `preview`; the Stream seam is `production`. Preview UI continuously identifies itself as offline, simulated and not connected.
+- A production session authorizer must obtain or refresh a short-lived, server-issued user token and establish the SDK session before every bridge operation. Missing or failed authorization stops the operation before the bridge is invoked.
+- The current Flutter code does not contain a configured Stream SDK implementation or token service. It does not prove that chat writes, presence or voice rooms are live.
 - A persistent group with 200,000 members is not a verified Stream capability. LOOP must obtain written provider confirmation covering membership, message semantics, reactions, mentions, history, search and moderation before promising it.
 - Without that written confirmation, the product must adopt a sharded-group or channel model and update the information architecture before implementation.
 
@@ -37,6 +42,6 @@ Product priority and current delivery are separate:
 
 ## Delivery truth
 
-- Preview and memory adapters are UI evidence only.
+- Preview and memory adapters are UI evidence only. Their simulated writes and voice controls must never be presented as connected provider activity.
 - Production status requires configured SDKs, short-lived server-issued tokens, testnet or sandbox evidence, native-device verification and observable provider responses.
 - The production BFF remains responsible for server-only credentials, token issuance, stable error mapping, rate limits, audit events and request correlation.

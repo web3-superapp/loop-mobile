@@ -4,13 +4,8 @@ import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 
+/// Production-safe default. Preview data must be injected at a composition root.
 final communicationGatewayProvider = Provider<CommunicationGateway>(
-  (ref) => MemoryCommunicationGateway(),
-);
-
-/// Use this override at the application boundary once a Stream SDK bridge and
-/// short-lived-token endpoint have been supplied and verified.
-final streamProductionGatewayProvider = Provider<CommunicationGateway>(
   (ref) => const StreamCommunicationGateway.unconfigured(),
 );
 

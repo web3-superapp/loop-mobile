@@ -31,28 +31,28 @@ void main() {
         'B8',
       ]);
       expect(payments.every((surface) => surface.deferred), isTrue);
-      expect(payments.map((surface) => surface.tier), <DeliveryTier>[
-        DeliveryTier.core,
-        DeliveryTier.phaseOne,
-        DeliveryTier.phaseOne,
-        DeliveryTier.later,
+      expect(payments.map((surface) => surface.priority), <ProductPriority>[
+        ProductPriority.a,
+        ProductPriority.b,
+        ProductPriority.b,
+        ProductPriority.c,
       ]);
 
       expect(
         SurfaceCatalog.all.where(
-          (surface) => surface.tier == DeliveryTier.core,
+          (surface) => surface.priority == ProductPriority.a,
         ),
         hasLength(47),
       );
       expect(
         SurfaceCatalog.all.where(
-          (surface) => surface.tier == DeliveryTier.phaseOne,
+          (surface) => surface.priority == ProductPriority.b,
         ),
         hasLength(46),
       );
       expect(
         SurfaceCatalog.all.where(
-          (surface) => surface.tier == DeliveryTier.later,
+          (surface) => surface.priority == ProductPriority.c,
         ),
         hasLength(10),
       );

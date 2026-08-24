@@ -1,6 +1,17 @@
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 
-/// A narrow bridge for the selected Stream Chat and Stream Video/voice SDKs.
+enum StreamSessionAuthorization { authorized, unavailable }
+
+/// Establishes or refreshes the Stream user session before every SDK operation.
+///
+/// A production implementation obtains a short-lived user token from the BFF
+/// and connects that token through the SDK bridge. Token material is never
+/// returned to application UI code.
+abstract interface class StreamSessionAuthorizer {
+  Future<StreamSessionAuthorization> authorize();
+}
+
+/// A narrow bridge for the selected Stream Chat + Stream Video/Audio Rooms SDKs.
 ///
 /// No Stream API secret or user token belongs in the mobile repository. A
 /// production bridge may receive the public Stream API key from configuration,
@@ -46,19 +57,25 @@ abstract interface class StreamCommunicationBridge {
 }
 
 class StreamCommunicationGateway implements CommunicationGateway {
-  const StreamCommunicationGateway({this.bridge, this.tokenEndpoint});
+  const StreamCommunicationGateway({
+    required this.bridge,
+    required this.authorizer,
+  });
 
   /// The selected production seam. It intentionally performs no network work
-  /// until both an SDK bridge and a short-lived-token endpoint are configured.
+  /// until both an SDK bridge and a session authorizer are configured.
   const StreamCommunicationGateway.unconfigured()
     : bridge = null,
-      tokenEndpoint = null;
+      authorizer = null;
 
   final StreamCommunicationBridge? bridge;
-  final Uri? tokenEndpoint;
+  final StreamSessionAuthorizer? authorizer;
 
   @override
-  bool get isConfigured => bridge != null && tokenEndpoint != null;
+  CommunicationMode get mode => CommunicationMode.production;
+
+  @override
+  bool get isConfigured => bridge != null && authorizer != null;
 
   @override
   Future<CommunicationResult<void>> acceptMessageRequest(String requestId) {
@@ -154,6 +171,19 @@ class StreamCommunicationGateway implements CommunicationGateway {
   Future<CommunicationResult<T>> _run<T>(Future<T> Function() operation) async {
     if (!isConfigured) {
       return CommunicationResult<T>.failure(CommunicationFailure.notConfigured);
+    }
+    StreamSessionAuthorization authorization;
+    try {
+      authorization = await authorizer!.authorize();
+    } catch (_) {
+      return CommunicationResult<T>.failure(
+        CommunicationFailure.authorizationUnavailable,
+      );
+    }
+    if (authorization != StreamSessionAuthorization.authorized) {
+      return CommunicationResult<T>.failure(
+        CommunicationFailure.authorizationUnavailable,
+      );
     }
     try {
       return CommunicationResult<T>.success(await operation());

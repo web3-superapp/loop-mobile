@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/chat_state.dart';
+import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final gateway = ref.watch(communicationGatewayProvider);
+    final preview = gateway.mode == CommunicationMode.preview;
+    final communicationStatus = preview
+        ? 'Offline preview · not connected'
+        : gateway.isConfigured
+        ? 'Stream configured · open to verify session'
+        : 'Stream not connected';
     return LoopPage(
       title: 'Home overview',
       eyebrow: 'gm, Voyager 7',
@@ -68,15 +78,17 @@ class HomeScreen extends StatelessWidget {
           tone: LoopTone.positive,
           onTap: () => context.go('/wallet'),
         ),
-        const LoopSectionLabel('Live context'),
+        LoopSectionLabel(preview ? 'Communication preview' : 'Communication'),
         LoopCard(
           accent: true,
           tone: LoopTone.conversation,
           onTap: () => context.push('/chat/voice'),
-          semanticLabel: 'Open ETH Holders voice room',
+          semanticLabel: preview
+              ? 'Open the offline ETH Holders voice preview'
+              : 'Open ETH Holders communication status',
           child: Row(
             children: <Widget>[
-              const _LiveGlyph(),
+              const _VoicePreviewGlyph(),
               const SizedBox(width: 13),
               Expanded(
                 child: Column(
@@ -88,7 +100,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Voice room · connection required',
+                      communicationStatus,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -168,7 +180,7 @@ class _PayComingSoonCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  'Kept in the product map, unavailable in this release.',
+                  'A priority · Delivery status: Deferred',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
@@ -322,8 +334,8 @@ class _LoopStep extends StatelessWidget {
   }
 }
 
-class _LiveGlyph extends StatelessWidget {
-  const _LiveGlyph();
+class _VoicePreviewGlyph extends StatelessWidget {
+  const _VoicePreviewGlyph();
 
   @override
   Widget build(BuildContext context) {
@@ -616,7 +628,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
           icon: Icons.forum_outlined,
           tone: LoopTone.conversation,
           title: 'ETH Holders Lounge',
-          subtitle: 'Group · voice available',
+          subtitle: 'Group · offline voice preview',
           onTap: () => context.push('/chat/group'),
         ),
       ],
