@@ -18,12 +18,13 @@ Review date: 2026-08-24. Versions are locked by `pubspec.yaml` and `pubspec.lock
 | stream_chat_flutter | 10.3.0 | Stream Source Code License Agreement | Chat SDK and UI |
 | stream_chat_persistence | 10.3.0 | Stream Source Code License Agreement | Official bounded chat persistence |
 | stream_video_flutter | 1.4.3 | Stream Source Code License Agreement | Video/audio calling SDK |
-| stream_video_push_notification | 1.4.3 | Stream Source Code License Agreement | Incoming-call push integration |
 | uuid | 4.6.0 | MIT | Fresh call and idempotency identifiers |
 
 Flutter, Dart, `flutter_test`, and their SDK artifacts are governed by the licenses distributed with the pinned Flutter SDK.
 
 Stream's resolved packages contain a vendor source-code agreement rather than a standard permissive OSS license. Product/legal owners must confirm the applicable Stream commercial terms and ship required notices before distribution.
+
+`stream_video_push_notification` 1.4.3 was compatibility-tested in Phase 0 but is intentionally absent from the current resolved application. Its native plugin auto-registers Telecom/CallKit behavior before LOOP has approved push, VoIP, or incoming-call capabilities. Reintroducing it requires a new native/provider decision and an updated attribution review.
 
 ## Inspiration register
 

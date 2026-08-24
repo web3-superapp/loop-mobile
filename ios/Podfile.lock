@@ -5,7 +5,6 @@ PODS:
     - Flutter
   - connectivity_plus (0.0.1):
     - Flutter
-  - CryptoSwift (1.10.0)
   - device_info_plus (0.0.1):
     - Flutter
   - DKImagePickerController/Core (4.3.9):
@@ -150,9 +149,6 @@ PODS:
   - SDWebImage/Core (5.21.7)
   - share_plus (0.0.1):
     - Flutter
-  - shared_preferences_foundation (0.0.1):
-    - Flutter
-    - FlutterMacOS
   - sqflite_darwin (0.0.4):
     - Flutter
     - FlutterMacOS
@@ -187,9 +183,6 @@ PODS:
   - stream_video_flutter (1.4.3):
     - Flutter
     - stream_webrtc_flutter
-  - stream_video_push_notification (1.4.3):
-    - CryptoSwift (~> 1.8)
-    - Flutter
   - stream_webrtc_flutter (3.0.2):
     - Flutter
   - SwiftyGif (5.4.5)
@@ -222,12 +215,10 @@ DEPENDENCIES:
   - privy_flutter (from `.symlinks/plugins/privy_flutter/ios`)
   - record_ios (from `.symlinks/plugins/record_ios/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
-  - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
   - sqlite3_flutter_libs (from `.symlinks/plugins/sqlite3_flutter_libs/darwin`)
   - stream_thumbnail (from `.symlinks/plugins/stream_thumbnail/ios`)
   - stream_video_flutter (from `.symlinks/plugins/stream_video_flutter/ios`)
-  - stream_video_push_notification (from `.symlinks/plugins/stream_video_push_notification/ios`)
   - stream_webrtc_flutter (from `.symlinks/plugins/stream_webrtc_flutter/ios`)
   - thermal (from `.symlinks/plugins/thermal/ios`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
@@ -236,7 +227,6 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
-    - CryptoSwift
     - DKImagePickerController
     - DKPhotoGallery
     - Factory
@@ -292,8 +282,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/record_ios/ios"
   share_plus:
     :path: ".symlinks/plugins/share_plus/ios"
-  shared_preferences_foundation:
-    :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   sqflite_darwin:
     :path: ".symlinks/plugins/sqflite_darwin/darwin"
   sqlite3_flutter_libs:
@@ -302,8 +290,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/stream_thumbnail/ios"
   stream_video_flutter:
     :path: ".symlinks/plugins/stream_video_flutter/ios"
-  stream_video_push_notification:
-    :path: ".symlinks/plugins/stream_video_push_notification/ios"
   stream_webrtc_flutter:
     :path: ".symlinks/plugins/stream_webrtc_flutter/ios"
   thermal:
@@ -319,7 +305,6 @@ SPEC CHECKSUMS:
   audio_session: 9bb7f6c970f21241b19f5a3658097ae459681ba0
   battery_plus: b42253f6d2dde71712f8c36fef456d99121c5977
   connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
-  CryptoSwift: e2e7776512f250e66205955da748e7a4e4abffe0
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
@@ -350,13 +335,11 @@ SPEC CHECKSUMS:
   record_ios: 980fd386a97a35987d0fce3dfda4b26a38c90f4c
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
   share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
-  shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   sqlite3: a51c07cf16e023d6c48abd5e5791a61a47354921
   sqlite3_flutter_libs: b3e120efe9a82017e5552a620f696589ed4f62ab
   stream_thumbnail: 3a855669bba35a3dc394903adf691e65ddd873ec
   stream_video_flutter: b05a976eaaa2d0c8d77b32404cf776232f53c524
-  stream_video_push_notification: 7eb5687601e06977921d1b2681287bfd7d85b8f1
   stream_webrtc_flutter: 0bcfa9956e1fe6245a6d23fb5aca4e37c686e905
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
   thermal: 4af85650493d757113f1decbc792862e2272e0c0

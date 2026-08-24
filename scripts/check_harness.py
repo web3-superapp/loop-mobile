@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import json
+import plistlib
 import re
 import subprocess
 import sys
+import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +28,6 @@ PINNED_DEPENDENCIES = {
     "stream_chat_flutter": "10.3.0",
     "stream_chat_persistence": "10.3.0",
     "stream_video_flutter": "1.4.3",
-    "stream_video_push_notification": "1.4.3",
     "uuid": "4.6.0",
 }
 REQUIRED_FILES = (
@@ -65,6 +66,75 @@ ADOPTION_SECTIONS = (
     "Assumptions and follow-up",
     "Failure memory",
     "Effectiveness",
+)
+ANDROID_NAME = "{http://schemas.android.com/apk/res/android}name"
+ANDROID_TOOLS_NODE = "{http://schemas.android.com/tools}node"
+ANDROID_AUDIO_ROOM_PERMISSIONS = frozenset(
+    {
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+    }
+)
+ANDROID_AUDIO_ROOM_REMOVED_PERMISSIONS = frozenset(
+    {
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.USE_FULL_SCREEN_INTENT",
+        "android.permission.DISABLE_KEYGUARD",
+        "android.permission.VIBRATE",
+        "android.permission.WAKE_LOCK",
+        "android.permission.ACCESS_NOTIFICATION_POLICY",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.MANAGE_OWN_CALLS",
+        "android.permission.FOREGROUND_SERVICE_PHONE_CALL",
+        "android.permission.FOREGROUND_SERVICE_MICROPHONE",
+        "android.permission.FOREGROUND_SERVICE_CAMERA",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION",
+        "${applicationId}.PERMISSION_CALL",
+    }
+)
+ANDROID_AUDIO_ROOM_REMOVED_DECLARED_PERMISSIONS = frozenset(
+    {"${applicationId}.PERMISSION_CALL"}
+)
+ANDROID_AUDIO_ROOM_REMOVED_COMPONENTS = {
+    "activity": frozenset(
+        {
+            "io.getstream.video.flutter.stream_video_push_notification.IncomingCallActivity",
+            "io.getstream.video.flutter.stream_video_push_notification.TransparentActivity",
+        }
+    ),
+    "receiver": frozenset(
+        {
+            "io.getstream.video.flutter.stream_video_push_notification.IncomingCallBroadcastReceiver",
+        }
+    ),
+    "service": frozenset(
+        {
+            "io.getstream.video.flutter.stream_video_push_notification.IncomingCallNotificationService",
+            "io.getstream.video.flutter.stream_video_push_notification.IncomingCallConnectionService",
+            "io.getstream.video.flutter.stream_video_flutter.service.StreamCallService",
+            "io.getstream.video.flutter.stream_video_flutter.service.StreamScreenShareService",
+        }
+    ),
+}
+ANDROID_AUDIO_ROOM_FORBIDDEN_ACTIVE_PERMISSIONS = frozenset(
+    {*ANDROID_AUDIO_ROOM_REMOVED_PERMISSIONS, "android.permission.CAMERA"}
+)
+IOS_AUDIO_ROOM_FORBIDDEN_ENTITLEMENTS = frozenset(
+    {
+        "aps-environment",
+        "com.apple.developer.aps-environment",
+        "com.apple.developer.background-modes",
+        "com.apple.developer.usernotifications.communication",
+        "com.apple.developer.voip",
+    }
+)
+IOS_AUDIO_ROOM_FORBIDDEN_RUNNER_MARKERS = (
+    "import CallKit",
+    "import PushKit",
+    "CXProvider",
+    "CXCallController",
+    "PKPushRegistry",
 )
 
 
@@ -284,6 +354,168 @@ def check_native_matrix(root: Path) -> list[str]:
     return errors
 
 
+def _parse_xml(path: Path, label: str) -> tuple[ElementTree.Element | None, list[str]]:
+    if not path.is_file():
+        return None, [f"missing {label}: {path.relative_to(path.parents[3])}"]
+    try:
+        return ElementTree.parse(path).getroot(), []
+    except (OSError, ElementTree.ParseError) as error:
+        return None, [f"{label} is not valid XML: {error}"]
+
+
+def _parse_plist(path: Path, label: str) -> tuple[dict[str, Any] | None, list[str]]:
+    if not path.is_file():
+        return None, [f"missing {label}: {path}"]
+    try:
+        with path.open("rb") as stream:
+            value = plistlib.load(stream)
+    except (OSError, plistlib.InvalidFileException) as error:
+        return None, [f"{label} is not a valid property list: {error}"]
+    if not isinstance(value, dict):
+        return None, [f"{label} must contain a dictionary"]
+    return value, []
+
+
+def _require_android_removals(
+    elements: list[ElementTree.Element],
+    expected_names: frozenset[str],
+    label: str,
+) -> list[str]:
+    errors: list[str] = []
+    by_name: dict[str, list[ElementTree.Element]] = {}
+    for element in elements:
+        name = element.get(ANDROID_NAME)
+        if name:
+            by_name.setdefault(name, []).append(element)
+    for name in sorted(expected_names):
+        matches = by_name.get(name, [])
+        if not any(element.get(ANDROID_TOOLS_NODE) == "remove" for element in matches):
+            errors.append(f"Android foreground Audio Room must remove {label} `{name}` with tools:node=\"remove\"")
+        if any(element.get(ANDROID_TOOLS_NODE) != "remove" for element in matches):
+            errors.append(f"Android foreground Audio Room must not activate {label} `{name}`")
+    return errors
+
+
+def check_audio_room_native_contract(root: Path) -> list[str]:
+    """Keep the first Audio Room slice microphone-only and foreground-only."""
+
+    errors: list[str] = []
+    for relative in ("pubspec.yaml", "pubspec.lock"):
+        package_file = root / relative
+        if package_file.is_file() and "stream_video_push_notification" in read_text(package_file):
+            errors.append(
+                f"Foreground Audio Room must not link the auto-registering "
+                f"`stream_video_push_notification` plugin in {relative}"
+            )
+    manifest_path = root / "android/app/src/main/AndroidManifest.xml"
+    manifest, manifest_errors = _parse_xml(manifest_path, "Android main manifest")
+    errors.extend(manifest_errors)
+    if manifest is not None:
+        permissions = list(manifest.findall("uses-permission"))
+        by_name: dict[str, list[ElementTree.Element]] = {}
+        for permission in permissions:
+            name = permission.get(ANDROID_NAME)
+            if name:
+                by_name.setdefault(name, []).append(permission)
+
+        for name in sorted(ANDROID_AUDIO_ROOM_PERMISSIONS):
+            active = [
+                permission
+                for permission in by_name.get(name, [])
+                if permission.get(ANDROID_TOOLS_NODE) != "remove"
+            ]
+            if len(active) != 1:
+                errors.append(
+                    f"Android foreground Audio Room must explicitly declare active permission `{name}` exactly once"
+                )
+
+        for name in sorted(ANDROID_AUDIO_ROOM_FORBIDDEN_ACTIVE_PERMISSIONS):
+            if any(
+                permission.get(ANDROID_TOOLS_NODE) != "remove"
+                for permission in by_name.get(name, [])
+            ):
+                errors.append(f"Android foreground Audio Room must not activate permission `{name}`")
+
+        errors.extend(
+            _require_android_removals(
+                permissions,
+                ANDROID_AUDIO_ROOM_REMOVED_PERMISSIONS,
+                "permission",
+            )
+        )
+        errors.extend(
+            _require_android_removals(
+                list(manifest.findall("permission")),
+                ANDROID_AUDIO_ROOM_REMOVED_DECLARED_PERMISSIONS,
+                "declared permission",
+            )
+        )
+
+        for feature in manifest.findall("uses-feature"):
+            name = feature.get(ANDROID_NAME, "")
+            if name.startswith("android.hardware.camera") and feature.get(ANDROID_TOOLS_NODE) != "remove":
+                errors.append(f"Android foreground Audio Room must not activate camera feature `{name}`")
+
+        application = manifest.find("application")
+        if application is None:
+            errors.append("Android main manifest must contain an application element")
+        else:
+            for tag, names in ANDROID_AUDIO_ROOM_REMOVED_COMPONENTS.items():
+                errors.extend(
+                    _require_android_removals(
+                        list(application.findall(tag)),
+                        names,
+                        tag,
+                    )
+                )
+
+    info_path = root / "ios/Runner/Info.plist"
+    info, info_errors = _parse_plist(info_path, "iOS Runner Info.plist")
+    errors.extend(info_errors)
+    if info is not None:
+        microphone_description = info.get("NSMicrophoneUsageDescription")
+        if not isinstance(microphone_description, str) or not microphone_description.strip():
+            errors.append("iOS foreground Audio Room requires a non-empty NSMicrophoneUsageDescription")
+        if "NSCameraUsageDescription" in info:
+            errors.append("iOS foreground Audio Room must not declare NSCameraUsageDescription")
+        if "UIBackgroundModes" in info:
+            errors.append("iOS foreground Audio Room must not declare UIBackgroundModes")
+
+    ios_root = root / "ios"
+    if ios_root.is_dir():
+        for path in sorted(ios_root.rglob("*.entitlements")):
+            entitlements, entitlement_errors = _parse_plist(
+                path,
+                f"iOS entitlements {path.relative_to(root)}",
+            )
+            errors.extend(entitlement_errors)
+            if entitlements is None:
+                continue
+            for key in sorted(IOS_AUDIO_ROOM_FORBIDDEN_ENTITLEMENTS.intersection(entitlements)):
+                errors.append(
+                    f"iOS foreground Audio Room must not declare entitlement `{key}` in {path.relative_to(root)}"
+                )
+
+    runner_root = root / "ios/Runner"
+    if runner_root.is_dir():
+        for path in sorted(runner_root.rglob("*.swift")):
+            text = read_text(path)
+            for marker in IOS_AUDIO_ROOM_FORBIDDEN_RUNNER_MARKERS:
+                if marker in text:
+                    errors.append(
+                        f"iOS foreground Audio Room must not initialize CallKit/PushKit in "
+                        f"{path.relative_to(root)} (`{marker}`)"
+                    )
+
+    xcode_project = root / "ios/Runner.xcodeproj/project.pbxproj"
+    if xcode_project.is_file():
+        text = read_text(xcode_project)
+        for capability in ("com.apple.BackgroundModes", "com.apple.Push"):
+            if capability in text:
+                errors.append(f"iOS foreground Audio Room must not enable Xcode capability `{capability}`")
+    return errors
+
+
 def markdown_sections(path: Path) -> dict[str, str]:
     sections: dict[str, list[str]] = {}
     current: str | None = None
@@ -347,6 +579,38 @@ def check_product_contract(root: Path) -> list[str]:
                 "cmt2t8k4n00780cjsxjqk0dkq",
                 "client-WY6ctzX8CSMMKhbvz8exuLovn1dTJyq8hReY1x63pBFfd",
                 "qpwjdy8zjbdu",
+            ),
+            "lib/integrations/communication/stream_video_sdk_session.dart": (
+                "muteAudioWhenInBackground: false",
+                "muteVideoWhenInBackground: false",
+                "keepConnectionsAliveWhenInBackground: false",
+            ),
+            "lib/features/chat/calls/audio_room_call.dart": (
+                "Future<void> retireForBackground()",
+                "AudioRoomCallCommandCoordinator",
+                "unawaited(_suspendAudioIgnoringFailure())",
+                "unawaited(_muteIgnoringFailure())",
+                "await _leave()",
+                "await _microphoneTail",
+                "await _muteIgnoringFailure()",
+                "_microphoneEnableRequested",
+                "bool get retirementStarted",
+                "getTrack(trackIdPrefix, SfuTrackType.audio)",
+                "activeCalls.asStream().firstWhere",
+                "identical(candidate, _call)",
+                "return _commands.retire()",
+            ),
+            "lib/features/chat/calls/stream_voice_room_page.dart": (
+                "AppLifecycleState.paused",
+                "AppLifecycleState.hidden",
+                "AppLifecycleState.detached",
+                "_retireForBackground()",
+                "_resumeAfterBackgroundRetirement",
+                "Retry cleanup",
+            ),
+            "lib/features/chat/calls/stream_foreground_call_view.dart": (
+                "required this.retirementStarted",
+                "Leave retry required",
             ),
         },
     )
@@ -415,6 +679,7 @@ def validate(root: Path = ROOT) -> list[str]:
         errors.extend(check_profile(root, profile))
     errors.extend(check_dependency_pins(root))
     errors.extend(check_native_matrix(root))
+    errors.extend(check_audio_room_native_contract(root))
     errors.extend(check_product_contract(root))
     errors.extend(check_source_guards(root))
     errors.extend(check_records(root))

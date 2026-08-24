@@ -28,7 +28,7 @@ Stream SDK types may stay inside chat and calls to preserve official controllers
 - iOS 17+, Xcode 26.6, CocoaPods 1.16.2
 - Privy Flutter 0.10.1
 - Stream Chat/Persistence 10.3.0
-- Stream Video/Push 1.4.3
+- Stream Video 1.4.3; Stream Video Push 1.4.3 is compatibility-approved but not linked in foreground Audio Room v1
 - Firebase Core 4.13.0 / Messaging 16.5.0
 - Riverpod 3.4.2 / go_router 17.5.0 / Dio 5.11.0
 - Decimal 3.2.6 / UUID 4.6.0

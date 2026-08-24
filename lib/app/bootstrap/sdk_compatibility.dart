@@ -4,7 +4,6 @@ import 'package:privy_flutter/privy_flutter.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 import 'package:stream_chat_persistence/stream_chat_persistence.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
-import 'package:stream_video_push_notification/stream_video_push_notification.dart';
 
 /// Direct SDK pins exercised by the dependency and native build gates.
 const directSdkVersions = <String, String>{
@@ -14,7 +13,6 @@ const directSdkVersions = <String, String>{
   'stream_chat_flutter': '10.3.0',
   'stream_chat_persistence': '10.3.0',
   'stream_video_flutter': '1.4.3',
-  'stream_video_push_notification': '1.4.3',
 };
 
 /// Type references make the analyzer and compiler check every direct SDK API.
@@ -25,5 +23,4 @@ const phaseZeroSdkSurface = <Type>[
   StreamChatClient,
   StreamChatPersistenceClient,
   StreamVideo,
-  StreamVideoPushNotificationManager,
 ];

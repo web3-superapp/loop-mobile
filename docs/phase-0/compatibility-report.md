@@ -25,6 +25,8 @@ Before migration into the formal UI repository, the exact native dependency grap
 
 That evidence proves coexistence of the pinned native graph, not provider-backed runtime behavior. The formal repository must repeat the matrix after UI/foundation integration; current results belong in `docs/phase-1/frontend-integration-report.md`.
 
+Phase 1 foreground Audio Room refines, rather than invalidates, that evidence: Stream Video Push 1.4.3 remains the compatibility-tested future version but is not linked into the current application. Its native plugin auto-registers Telecom/CallKit behavior, which is outside the microphone-only foreground scope.
+
 ## Compatibility controls
 
 - Privy's published Android artifact requires minSdk 28.

@@ -29,11 +29,16 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 ## Stream Video, UUID, and push truth
 
 - Stream `Call`, `CallState`, and its push notification manager are the call source of truth. Map SDK state into UI; do not create a second authoritative call state machine or reimplement signaling.
+- Audio Room v1 uses only the fixed `audio_room` call type and a backend-authorized room ID. The backend pre-creates the room, assigns membership and a mobile role without `create-call`; Flutter never calls `getOrCreate` or accepts a client-selected call type/CID.
+- Every first Audio Room join explicitly disables camera, microphone and screen share. `Joined` means media is still connecting; only official `Connected` state may be presented as live or enable the microphone.
 - Generate a new UUID call ID for every outgoing call. Never reuse a call ID that has already rung.
 - Generate a new UUID for every idempotent backend request. Persist and reuse that request ID only while reconciling the same business intent; a retry is not a new intent.
 - MVP states include outgoing, ringing, accept, reject, cancel, timeout, missed, permission denial, and weak-network recovery.
 - Android chat and ringing use one centralized FCM router. iOS chat uses one ordinary notification path while ringing uses VoIP Push plus CallKit. A single call must never ring once from ordinary push and again from VoIP push.
 - Background ringing stays feature-flagged until provider credentials exist.
+- Foreground Audio Room v1 does not enable camera, background media, Telecom, full-screen incoming-call UI, PushKit, CallKit, or push entitlements. Those capabilities require a separate native/provider decision and device matrix.
+- `stream_video_push_notification` stays outside the foreground Audio Room dependency graph because version 1.4.3 auto-registers native Telecom/CallKit behavior. Do not restore it until the push/ringing decision enables and verifies those capabilities.
+- Any terminal cleanup, including `paused`, `hidden`, or `detached`, immediately starts native audio suspension, a terminal mute, and one single-flight leave without letting a possibly stuck media command delay leave. Resume or rejoin stays disabled until the old object disappears from the Stream client's `activeCalls`, every earlier microphone command settles, and a second post-command mute runs. Stream Video 1.4.3 Audio Room Calls allow only one Speak start; after Mute, leave and rejoin before speaking again so the SDK's stopped-track recreation path is never entered. Failure exposes only a cleanup retry. SDK auto-mute/auto-restore is not used, so an old Call never republishes the microphone or rejoins automatically.
 
 ## Hyperliquid trading boundary
 

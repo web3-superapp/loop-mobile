@@ -79,6 +79,12 @@ final class StreamVideoSdkClientFactory implements StreamVideoClientFactory {
       options: StreamVideoOptions(
         autoConnect: false,
         logPriority: Priority.none,
+        // Version 1.4.3 automatically restores tracks that it muted on pause.
+        // The foreground Audio Room owns an explicit mute-plus-leave retirement
+        // instead, so a fast resume can never republish an old Call's media.
+        muteAudioWhenInBackground: false,
+        muteVideoWhenInBackground: false,
+        keepConnectionsAliveWhenInBackground: false,
       ),
     );
     return StreamVideoSdkClientPort(client);

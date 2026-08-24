@@ -14,6 +14,8 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - Hyperliquid Testnet 公共只读永续行情；订单、仓位、账户和私有交易仅保留明确标注的开发预览 UI
 - Stream Chat 官方 client、按用户持久化、token-provider 会话、频道列表与消息页已接入；后端身份/token 未就绪时不连接、不声称在线
 - 原生 Privy Bearer `POST /v1/bootstrap` 客户端已接入；严格解析服务端 LOOP/Stream 身份、隔离账号切换并最多重试一次 401。未配置后端地址时零请求，Stream token 缺失时仍不连接
+- Audio Room 前端纵切已完成：后端授权房间接缝、默认静音单飞加入、官方 `CallState` 状态/成员/能力/麦克风 UI、失败清理和账号/房间/client 轮换；真实 Video token 与房间 locator 缺失时保持不可加入
+- Audio Room 首版只配置前台麦克风能力；任何退房或 App 退到后台都会立即发起原生音频暂停、终态关麦与 single-flight 退房，不让可能卡住的麦克风/原生命令延迟退房。大厅只在旧 `Call` 已从 Stream `activeCalls` 移除、在途麦克风命令已结束且命令后的第二次关麦已执行后开放。为避开 Stream Video 1.4.3 的迟到音轨重建缺陷，每个 `Call` 只允许一次 Speak 启动；Mute 后需离开并重进才能再次发言。失败可显式重试清理。会自动注册 Telecom/CallKit 的 Stream Push 插件不进入当前依赖图，Android 同时移除可选来电、后台通话、相机与推送项，iOS 不启用 Camera、PushKit、CallKit 或后台模式
 - Account、Wallet、Market、Perp、Chat、Profile 与系统状态组件
 - 深色 LOOP 设计系统、键盘焦点、语义标签、reduced-motion 与手机/桌面响应式布局
 
@@ -63,7 +65,7 @@ flutter build web --release
 - Flutter 3.47.1 / Dart 3.13.1
 - Android API 28–36、AGP 8.13.2、Gradle 8.14、Kotlin 2.3.20、Java 17
 - iOS 17+、Xcode 26.6、CocoaPods 1.16.2
-- Privy 0.10.1；Stream Chat/Persistence 10.3.0；Stream Video/Push 1.4.3
+- Privy 0.10.1；Stream Chat/Persistence 10.3.0；Stream Video 1.4.3（Push 1.4.3 已验证兼容但首版不链接）
 - Firebase Core 4.13.0 / Messaging 16.5.0
 - Riverpod 3.4.2 / go_router 17.5.0 / Dio 5.11.0
 - Decimal 3.2.6 / UUID 4.6.0
@@ -95,7 +97,7 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 - 不要启用 Hyperliquid HIP-3、builder fee 或非 Core 市场
 - Pay 保留首页 `Coming soon` 入口以表达产品位置，但 A / B / C 优先级不等于交付期；B5-B8 当前全部 deferred，落地页不得出现扫码、相机、金额或支付动作
 
-前端现已具备原生 LOOP identity bootstrap、Stream Chat 与前台 Stream Video 的主体轮换、后端 token 边界和失败关闭 UI。下一阶段采用前后端并行：移动端先完成前台 Audio Room 的麦克风权限、Lobby 与官方 `CallState` UI；后端实现 Stream Chat/Video 短期 token 和 Audio Room locator/角色契约。双方就绪后再做真机双端联调，Firebase/Push 与后台响铃随后单独启用。
+前端现已具备原生 LOOP identity bootstrap、Stream Chat 与前台 Audio Room 的主体轮换、后端 token/locator 边界、麦克风原生声明和失败关闭 UI。后端可并行实现 Stream Chat/Video 短期 token，以及“预创建房间 + 成员角色无 `create-call`”的 Audio Room locator 契约；双方就绪后再做真机双端联调。Firebase/Push、后台响铃、Camera、PushKit 与 CallKit 随后单独启用。
 
 ## 仓库结构
 
