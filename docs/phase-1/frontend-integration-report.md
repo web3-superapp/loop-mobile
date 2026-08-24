@@ -33,6 +33,7 @@ Completed on the integrated branch:
 - Android build-tools `apksigner verify --verbose app-release.apk`: returned `DOES NOT VERIFY`, the expected evidence that repository builds do not fall back to a debug signing key.
 - `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/flutter build ios --debug --no-codesign`: passed; generated `Runner.app`.
 - `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/flutter build ios --release --no-codesign`: passed; generated a 47.8 MB `Runner.app`.
+- After the supplied Privy Mobile App Client ID was wired as the Development default, the exact-identifier configuration test, all 55 Flutter tests, Android Debug build, and iOS Debug no-codesign build passed again.
 
 The first Flutter test/native-asset attempt was interrupted by a GitHub TLS error while downloading sqlite3 3.5.2. Verification resumed with an existing binary whose SHA-256 exactly matched the hash embedded in the resolved sqlite3 package; no dependency or application setting changed. The iOS Debug build then completed CocoaPods installation, including the StreamWebRTC artifact, before compiling successfully.
 
@@ -43,7 +44,7 @@ These builds prove the integrated dependency and native compile matrix. They do 
 | Capability | Current status |
 | --- | --- |
 | Privy App ID / API key | Client-safe identifier supplied |
-| Privy Mobile App Client ID | Dashboard client exists; final full value/configuration must be supplied to the build environment |
+| Privy Mobile App Client ID | Client-safe Development identifier supplied and wired; build-time override remains available |
 | Privy Email OTP | Guarded implementation; provider/device verification pending |
 | Stream API key | Client-safe identifier supplied |
 | Stream Chat/Video | Backend-derived user ID and short-lived token endpoints still required |
@@ -53,4 +54,4 @@ These builds prove the integrated dependency and native compile matrix. They do 
 
 ## Follow-up inputs
 
-Provide only client-safe Privy/Firebase mobile configuration through documented build inputs. Keep Privy/Stream secrets, Firebase service-account JSON, APNs `.p8`, and Hyperliquid agent keys in backend/provider secret managers. Backend bootstrap/token contracts and a two-device test setup are required before claiming communication or trading connectivity.
+Privy Email OTP still requires dashboard confirmation and physical-device evidence before it is called connected. Provide future Firebase mobile configuration only through documented client inputs. Keep Privy/Stream secrets, Firebase service-account JSON, APNs `.p8`, and Hyperliquid agent keys in backend/provider secret managers. Backend bootstrap/token contracts and a two-device test setup are required before claiming communication or trading connectivity.

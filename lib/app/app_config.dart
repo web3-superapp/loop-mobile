@@ -21,7 +21,10 @@ class AppConfig {
         'PRIVY_APP_ID',
         defaultValue: 'cmt2t8k4n00780cjsxjqk0dkq',
       ),
-      privyAppClientId: String.fromEnvironment('PRIVY_APP_CLIENT_ID'),
+      privyAppClientId: String.fromEnvironment(
+        'PRIVY_APP_CLIENT_ID',
+        defaultValue: 'client-WY6ctzX8CSMMKhbvz8exuLovn1dTJyq8hReY1x63pBFfd',
+      ),
       streamApiKey: String.fromEnvironment(
         'STREAM_API_KEY',
         defaultValue: 'qpwjdy8zjbdu',

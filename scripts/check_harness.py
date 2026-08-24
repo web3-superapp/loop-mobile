@@ -343,6 +343,11 @@ def check_product_contract(root: Path) -> list[str]:
                 "Stream `Call`, `CallState`, and its push notification manager are the call source of truth.",
                 "Generate a new UUID call ID for every outgoing call.",
             ),
+            "lib/app/app_config.dart": (
+                "cmt2t8k4n00780cjsxjqk0dkq",
+                "client-WY6ctzX8CSMMKhbvz8exuLovn1dTJyq8hReY1x63pBFfd",
+                "qpwjdy8zjbdu",
+            ),
         },
     )
     profile, profile_errors = load_profile(root)

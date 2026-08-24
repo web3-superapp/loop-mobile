@@ -33,13 +33,13 @@ bin/flutter build apk --debug
 bin/flutter run
 ```
 
-真实 Privy Email OTP 还需要把 Dashboard 中完整的 Mobile App Client ID 作为客户端安全的构建参数传入：
+你提供的 Privy App ID、Mobile App Client ID 与 Stream API key 都已作为客户端安全的 Development 默认值接入。需要切换 Privy Client 时仍可显式覆盖：
 
 ```bash
-bin/flutter run --dart-define=PRIVY_APP_CLIENT_ID=client-你的完整值
+bin/flutter run --dart-define=PRIVY_APP_CLIENT_ID=client-新的完整值
 ```
 
-仓库已内置你提供的 Privy App ID 与 Stream API key；不要把 Privy Secret、Stream Secret、Firebase service-account、APNs 私钥或 Hyperliquid 私钥放进 Flutter 或 Git。
+不要把 Privy Secret、Stream Secret、Firebase service-account、APNs 私钥或 Hyperliquid 私钥放进 Flutter 或 Git。
 
 离线 UI 目录与演示数据使用独立入口：
 

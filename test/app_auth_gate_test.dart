@@ -4,10 +4,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
+import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
 void main() {
   test('production session controller rejects direct preview entry', () {
-    final container = ProviderContainer();
+    final container = ProviderContainer(
+      overrides: [
+        privyAuthGatewayProvider.overrideWithValue(
+          const UnconfiguredPrivyAuthGateway(),
+        ),
+      ],
+    );
     addTearDown(container.dispose);
 
     final entered = container.read(loopSessionProvider.notifier).enterPreview();
@@ -19,11 +26,20 @@ void main() {
   testWidgets('signed-out users see real auth boundary before product routes', (
     tester,
   ) async {
-    await tester.pumpWidget(const ProviderScope(child: LoopApp()));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const UnconfiguredPrivyAuthGateway(),
+          ),
+        ],
+        child: const LoopApp(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Welcome to LOOP'), findsOneWidget);
-    expect(find.text('Login configuration incomplete'), findsOneWidget);
+    expect(find.text('Login configuration incomplete'), findsNothing);
     expect(find.text('Home overview'), findsNothing);
     expect(find.text('Enter development preview'), findsNothing);
   });
@@ -33,7 +49,12 @@ void main() {
   ) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [developmentPreviewEnabledProvider.overrideWithValue(true)],
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const UnconfiguredPrivyAuthGateway(),
+          ),
+          developmentPreviewEnabledProvider.overrideWithValue(true),
+        ],
         child: const LoopApp(),
       ),
     );
