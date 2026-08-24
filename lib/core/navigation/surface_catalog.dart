@@ -184,7 +184,7 @@ abstract final class SurfaceCatalog {
       path: '/pay',
       tier: DeliveryTier.core,
       module: SurfaceModule.home,
-      description: 'Payment is outside the current delivery scope.',
+      description: 'Core product priority, deferred from the current release.',
       deferred: true,
     ),
     AppSurface(
@@ -193,7 +193,7 @@ abstract final class SurfaceCatalog {
       path: '/pay/receive',
       tier: DeliveryTier.phaseOne,
       module: SurfaceModule.home,
-      description: 'Payment is outside the current delivery scope.',
+      description: 'Phase-one product priority, deferred from this release.',
       deferred: true,
     ),
     AppSurface(
@@ -202,7 +202,7 @@ abstract final class SurfaceCatalog {
       path: '/pay/confirm',
       tier: DeliveryTier.phaseOne,
       module: SurfaceModule.home,
-      description: 'Payment is outside the current delivery scope.',
+      description: 'Phase-one product priority, deferred from this release.',
       deferred: true,
     ),
     AppSurface(
@@ -211,7 +211,7 @@ abstract final class SurfaceCatalog {
       path: '/onramp',
       tier: DeliveryTier.later,
       module: SurfaceModule.home,
-      description: 'Fiat funding is deferred until the payment phase.',
+      description: 'Later product priority, deferred until the payment phase.',
       deferred: true,
     ),
     AppSurface(

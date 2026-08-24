@@ -1,17 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
-import 'package:loop_mobile/integrations/communication/agora_communication_gateway.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
+import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 
 final communicationGatewayProvider = Provider<CommunicationGateway>(
   (ref) => MemoryCommunicationGateway(),
 );
 
-/// Use this override at the application boundary once an Agora bridge and a
-/// short-lived-token endpoint have been supplied.
-final agoraProductionGatewayProvider = Provider<CommunicationGateway>(
-  (ref) => const AgoraCommunicationGateway.unconfigured(),
+/// Use this override at the application boundary once a Stream SDK bridge and
+/// short-lived-token endpoint have been supplied and verified.
+final streamProductionGatewayProvider = Provider<CommunicationGateway>(
+  (ref) => const StreamCommunicationGateway.unconfigured(),
 );
 
 final conversationListProvider = FutureProvider<List<ConversationSummary>>((

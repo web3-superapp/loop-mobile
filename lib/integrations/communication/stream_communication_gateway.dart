@@ -1,11 +1,12 @@
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 
-/// A narrow bridge for the future Agora Chat and RTC SDK packages.
+/// A narrow bridge for the selected Stream Chat and Stream Video/voice SDKs.
 ///
-/// No application ID, token, certificate, or user credential belongs in the
-/// mobile repository. A production bridge must receive short-lived tokens from
-/// the BFF and implement this interface in the application composition root.
-abstract interface class AgoraCommunicationBridge {
+/// No Stream API secret or user token belongs in the mobile repository. A
+/// production bridge may receive the public Stream API key from configuration,
+/// but user tokens must be short-lived and issued by the BFF. The selected
+/// provider is not live until that bridge is supplied and verified.
+abstract interface class StreamCommunicationBridge {
   Future<List<ConversationSummary>> loadConversations();
 
   Future<List<ConversationMessage>> loadMessages(String conversationId);
@@ -44,15 +45,16 @@ abstract interface class AgoraCommunicationBridge {
   });
 }
 
-class AgoraCommunicationGateway implements CommunicationGateway {
-  const AgoraCommunicationGateway({this.bridge, this.tokenEndpoint});
+class StreamCommunicationGateway implements CommunicationGateway {
+  const StreamCommunicationGateway({this.bridge, this.tokenEndpoint});
 
-  /// The default production seam. It intentionally performs no network work.
-  const AgoraCommunicationGateway.unconfigured()
+  /// The selected production seam. It intentionally performs no network work
+  /// until both an SDK bridge and a short-lived-token endpoint are configured.
+  const StreamCommunicationGateway.unconfigured()
     : bridge = null,
       tokenEndpoint = null;
 
-  final AgoraCommunicationBridge? bridge;
+  final StreamCommunicationBridge? bridge;
   final Uri? tokenEndpoint;
 
   @override

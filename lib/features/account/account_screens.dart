@@ -1433,7 +1433,7 @@ class _ProfileSetupScreenState extends State<_ProfileSetupScreen> {
       eyebrow: 'YOUR IDENTITY',
       title: 'Start private',
       subtitle:
-          'Your alias is what people see in chats. Your wallet address stays hidden unless you share it.',
+          'Your LOOP account stays stable when you add or replace a wallet. Chats show your alias, not a wallet address.',
       bottom: LoopActionDock(
         child: SizedBox(
           width: double.infinity,

@@ -36,6 +36,8 @@ class HomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         _PortfolioHero(onTap: () => context.push('/home/net-worth')),
+        const LoopSectionLabel('Pay'),
+        _PayComingSoonCard(onTap: () => context.push('/pay')),
         const LoopSectionLabel('Continue the loop'),
         _LoopStep(
           number: '01',
@@ -126,6 +128,60 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+class _PayComingSoonCard extends StatelessWidget {
+  const _PayComingSoonCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopCard(
+      key: const ValueKey<String>('home-pay-coming-soon'),
+      onTap: onTap,
+      semanticLabel: 'Open the Pay coming soon notice',
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: LoopColors.vapor.withValues(alpha: 0.08),
+              borderRadius: LoopRadius.small,
+            ),
+            child: const Icon(
+              Icons.account_balance_wallet_outlined,
+              color: LoopColors.vapor,
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Text('Pay', style: Theme.of(context).textTheme.titleMedium),
+                    const Spacer(),
+                    const LoopStatusPill(label: 'Coming soon'),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  'Kept in the product map, unavailable in this release.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.chevron_right_rounded, color: LoopColors.vapor),
+        ],
+      ),
+    );
+  }
+}
+
 class _PortfolioHero extends StatelessWidget {
   const _PortfolioHero({required this.onTap});
 
@@ -142,11 +198,13 @@ class _PortfolioHero extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Text(
-                'TOTAL NET WORTH',
-                style: Theme.of(context).textTheme.labelMedium,
+              Expanded(
+                child: Text(
+                  'TOTAL NET WORTH',
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               const LoopStatusPill(
                 label: '+2.6% today',
                 tone: LoopTone.positive,
@@ -231,13 +289,25 @@ class _LoopStep extends StatelessWidget {
               children: <Widget>[
                 Row(
                   children: <Widget>[
-                    Text(title, style: Theme.of(context).textTheme.titleMedium),
-                    const Spacer(),
-                    Text(
-                      meta,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelMedium?.copyWith(color: color),
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        meta,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.right,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.labelMedium?.copyWith(color: color),
+                      ),
                     ),
                   ],
                 ),
