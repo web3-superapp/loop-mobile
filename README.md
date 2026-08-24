@@ -2,7 +2,7 @@
 
 LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`web/` 仅用于本地 UI 自动化与响应式预览，不是独立网页产品，也不是生产交付目标。
 
-正式前端仓库：<https://github.com/web3-superapp/loop-mobile>。历史 HTML 原型和迁移记录仍保留在 <https://github.com/Doog-bot534/web3-superapp-prototype>，不再作为 Flutter 开发入口。
+正式前端仓库：<https://github.com/web3-superapp/loop-mobile>。原仓库中的 HTML 原型、调研、计划和验证脚本已迁入 [`reference/legacy-prototype/`](reference/legacy-prototype/README.md)，仅作为冻结参考，不再作为开发入口。后端契约与适配器位于 <https://github.com/web3-superapp/loop-api>。
 
 ## 当前已完成
 
@@ -42,3 +42,11 @@ flutter build web --release
 - 支付当前明确延期，不要把 Pay 重新放回首页主路径
 
 下一阶段应集中在真实 Privy、Hyperliquid、Agora、BFF、推送与行情数据接入，以及 testnet / 真机验证，而不是重复 UI 基础工程。
+
+## 仓库结构
+
+- `lib/`、`ios/`、`android/`、`test/`：当前 Flutter 客户端源码与测试
+- `reference/legacy-prototype/`：原仓迁入的冻结 HTML 原型、产品文档、调研与历史验证脚本
+- 后端的 `contracts/` 与 `server/`：已迁入 `web3-superapp/loop-api`
+
+迁移提交保留了原仓 Git 历史；追溯旧实现时可沿合并父提交查看，日常开发只应修改 Flutter 正式源码。
