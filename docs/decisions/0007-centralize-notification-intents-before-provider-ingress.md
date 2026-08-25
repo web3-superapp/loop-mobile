@@ -35,9 +35,11 @@ were local fixtures without a visible Preview boundary.
   future-skewed, unknown-version, provider-shaped, or malformed data fails
   closed.
 - Bind every valid interaction to the currently authenticated,
-  backend-derived Stream user ID. Restoring may be retried by a future
-  coordinator; signed-out, Preview, authenticated-unverified, malformed, and
-  other-recipient events never navigate or cross a later account switch.
+  backend-derived Stream user ID. The root coordinator derives eligibility from
+  the real LOOP session and derives the recipient identity only from the
+  verified bootstrap `streamUserId`; signed-out, Preview,
+  authenticated-unverified, malformed, and other-recipient events never
+  navigate or cross a later account switch.
 - Foreground and background delivery never navigate. Only an explicit user
   interaction may create a navigation intent.
 - Resolve only three fixed destinations: a validated and URI-encoded official
@@ -56,10 +58,18 @@ were local fixtures without a visible Preview boundary.
   this slice. Firebase initialization, permission prompts, device registration,
   push-provider registration, native capabilities, ringing, and provider
   payload mapping remain disabled.
-- Reserve `lib/app/notifications/loop_notification_coordinator.dart` as the only
-  future application consumer of the router. It must map actual session and
-  verified bootstrap state into the notification context. Feature modules may
-  not construct an authenticated context or a second router directly.
+- Install `lib/app/notifications/loop_notification_coordinator.dart` as the only
+  application consumer of the router. Production reads the
+  `loopNotificationEventSourceProvider`, whose default is the disabled source:
+  no initial interaction and an empty event stream. Feature modules may not
+  construct an authenticated context or a second router directly.
+- While a real session or bootstrap identity is restoring, the coordinator may
+  retain at most one interaction in memory. The default wait is 15 seconds and
+  construction rejects waits longer than one minute. A newer candidate replaces
+  the single slot only after invalidating prior identity work and cancelling its
+  timer; logout, an account switch, timeout, failed authorization, or disposal
+  clears it. The event is still revalidated and recipient-bound before any
+  navigation.
 - Show local notification cards only in the explicit Development Preview. A
   production session shows a provider-unavailable state and no fake badge,
   read state, risk, price, or mention activity.
@@ -69,6 +79,8 @@ were local fixtures without a visible Preview boundary.
 - The backend/provider configuration can proceed independently against a small
   client contract without prematurely connecting Firebase or guessing Stream
   payload fields.
+- Wiring the coordinator at the root does not enable delivery. Production emits
+  no events until a separately reviewed ingress replaces the disabled source.
 - Future ingress work must supply real Android/iOS Firebase configs, exact
   Stream Chat/Video provider names, captured provider payload fixtures, and the
   server event/expiry/account-binding contract before mapping any provider

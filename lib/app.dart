@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/app/notifications/loop_notification_coordinator.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/navigation/surface_catalog.dart';
@@ -18,7 +21,9 @@ import 'package:loop_mobile/features/review/signing_review_surface.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/features/wallet/wallet_screens.dart';
+import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
+import 'package:loop_mobile/integrations/notifications/loop_notification_event_source.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart'
     show
@@ -58,18 +63,33 @@ class LoopApp extends ConsumerStatefulWidget {
 
 class _LoopAppState extends ConsumerState<LoopApp> {
   late final GoRouter router;
+  late final LoopNotificationCoordinator notificationCoordinator;
 
   @override
   void initState() {
     super.initState();
     router = _buildRouter(() => ref.read(loopSessionProvider));
+    notificationCoordinator = LoopNotificationCoordinator(
+      source: ref.read(loopNotificationEventSourceProvider),
+      readSession: () => ref.read(loopSessionProvider),
+      readBootstrapSession: () => ref.read(loopBootstrapSessionProvider),
+      navigate: (intent) => router.go(intent.location),
+    );
     ref.listenManual<LoopSessionState>(loopSessionProvider, (previous, next) {
       if (previous?.mode != next.mode) router.refresh();
+      notificationCoordinator.onIdentityMayHaveChanged();
     });
+    ref.listenManual(loopBootstrapSessionProvider, (previous, next) {
+      if (!identical(previous, next)) {
+        notificationCoordinator.onIdentityMayHaveChanged();
+      }
+    });
+    notificationCoordinator.start();
   }
 
   @override
   void dispose() {
+    unawaited(notificationCoordinator.dispose());
     router.dispose();
     super.dispose();
   }

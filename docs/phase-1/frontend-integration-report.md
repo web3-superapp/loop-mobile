@@ -20,7 +20,7 @@ Keep the formal repository's existing UI/catalog and six primary destinations wh
 - Incoming Stream `token_card.v1` references render through official message UI with an exact identifier-only payload, malformed/unavailable states, no mutable facts or actions, and no per-message enrichment request. Compact message/draft previews use fixed safe labels for every raw Token Card. Legacy fixture conversation and token/facts routes mount only in explicit Preview mode.
 - Foreground Stream Video principal-bound lifecycle, pre-construction initial-token gate, refresh loader, explicit no-push connection, UUID call-ID generator, production/preview voice-page separation, and a fail-closed Audio Room lobby/join path driven by official `CallState`.
 - Native Privy Bearer bootstrap with an HTTPS-only production origin, exact no-body request, strict no-store response parsing, principal rotation, single-flight loading, and one bounded 401 refresh attempt. Chat and Video share only the validated server-derived Stream identity; neither may connect without its separate short-lived token contract.
-- Provider-neutral centralized notification classification with exact `notification.v1` envelopes, authenticated recipient binding, fixed Chat/Audio Room/notification-center intents, explicit foreground/background non-navigation, and bounded process-local interaction deduplication. Production notification fixtures now fail closed outside explicit Preview; Firebase/provider ingress remains disabled.
+- Provider-neutral centralized notification classification with exact `notification.v1` envelopes, authenticated recipient binding, fixed Chat/Audio Room/notification-center intents, explicit foreground/background non-navigation, and bounded process-local interaction deduplication. The root EventSource/Coordinator seam is wired with a production-disabled source; authenticated context comes only from the real LOOP session plus verified bootstrap Stream identity, and at most one time-bounded interaction may wait for restoration. Production notification fixtures now fail closed outside explicit Preview; Firebase/provider ingress remains disabled.
 
 ## Verification
 
@@ -123,6 +123,26 @@ The provider-neutral notification-routing slice was verified on 2026-08-25:
 - `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/flutter build ios --debug --no-codesign`: passed; generated `Runner.app` for `com.cywd.loop`.
 
 The behavior checks cover exact String-only `notification.v1` key sets, canonical UUID v4 event IDs, backend-derived recipient binding, canonical UTC lifetime and expiry, unknown/provider-shaped/extra/wrong-typed rejection, fixed URI-encoded Chat CID routing, Audio Room lobby-only routing, foreground/background non-navigation, interaction-only process-local deduplication, bounded receipt capacity, and production-versus-Preview notification truth. Harness mutation tests reject competing Firebase callbacks, provider SDK imports in the router, and payload-selected routes. Firebase was not initialized, no provider callback or device was registered, no raw Stream payload was interpreted, and no FCM/APNs delivery, notification display, badge/read state, background isolate, Video ringing, PushKit, or CallKit behavior was tested.
+
+The notification EventSource/Coordinator Harness contract was verified on 2026-08-25:
+
+- `python3 -m py_compile scripts/check_harness.py tests/test_check_harness.py`: passed.
+- The focused disabled-production-source, production-entrypoint override, forged-identity/deferred-slot, in-flight payload-retention, competing-coordinator, and repeated-navigation mutation suite passed; 6 tests.
+- `python3 scripts/check_harness.py`: passed.
+- `python3 -m unittest discover -s tests -p 'test_*.py' -v`: passed; 35 tests.
+
+The Harness now requires both application notification seam files, keeps the production provider directly bound to `DisabledLoopNotificationEventSource`, verifies its null initial interaction and empty stream, and checks root composition against the actual session and bootstrap providers. The coordinator can construct an authenticated router context only from `bootstrap.identity.streamUserId`. It has one in-memory deferred slot with a positive default wait no longer than one minute; replacing that slot cancels the prior timer and invalidates prior identity resolution. In-flight authorization cannot retain that payload, feature code cannot construct a second coordinator, and the root may execute exactly one typed navigation. Every retried event still passes the router's time, account, recipient, kind, and route checks. This does not initialize Firebase, register a callback/device, prove delivery, or provide cross-process persistence.
+
+The implemented notification composition was verified on 2026-08-25:
+
+- `bin/dart format --output=none --set-exit-if-changed lib test`: passed; 122 files, 0 changed.
+- `bin/flutter analyze`: passed; no issues.
+- `bin/flutter test test/loop_notification_coordinator_test.dart test/app_notification_coordinator_test.dart`: passed; 13 tests.
+- `bin/flutter test`: passed; 186 tests.
+- `bin/flutter build apk --debug`: passed; produced `build/app/outputs/flutter-apk/app-debug.apk`. Flutter repeated the already accepted future Gradle 8.14 / AGP 8.13.2 support warnings; the locked matrix was not changed.
+- `bin/flutter build ios --debug --no-codesign`: passed; produced `build/ios/iphoneos/Runner.app` for `com.cywd.loop`.
+
+The behavior suite covers initial and live interaction routing, delivery-only non-navigation, latest-interaction restore semantics, signed-out/Preview/unverified rejection, bootstrap authorization, hung-authorization timeout, account rotation, expiry, disposal, payload-safe diagnostics, and a real `LoopApp`/GoRouter integration. These are deterministic main-isolate tests with a fake EventSource; FCM/APNs delivery and device behavior remain unverified.
 
 ## Provider readiness
 

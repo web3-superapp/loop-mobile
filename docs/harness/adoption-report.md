@@ -22,7 +22,7 @@ Date: 2026-08-24
 - Home / Market / Launch / Chat / Wallet / Profile remain primary destinations; the checker fails if Launch is removed from the profile.
 - Harness source guards reject Privy debug/verbose logging, Stream dev tokens/guests, and premature Firebase initialization.
 - Notification guards reserve one future Firebase callback owner, reject competing Chat/Video handlers, and prevent the pure router from importing provider SDKs, logging payloads, accepting payload-selected routes, or carrying Audio Room locators.
-- The same guard reserves one future application coordinator as the sole router/identity consumer, preventing a feature module from forging a matching Stream user before bootstrap-bound composition exists.
+- The same guard requires the root application coordinator as the sole router/identity consumer, keeps its production EventSource disabled, binds authenticated context to the real session plus bootstrap Stream identity, and bounds restoration to one in-memory interaction.
 - Providerless application guards keep Dio and `/v1/` transport literals out of feature modules and reject known Preview fixture composition from `lib/main.dart`; controllers must depend on ports while fakes remain test/Preview-only.
 - Git-visible `.env`, private-key, service-account, and Firebase Admin credential paths fail validation. `.gitnexus/` and project-local SDK artifacts are ignored.
 
@@ -62,3 +62,16 @@ implementations when composed from `lib/main.dart`.
 tests -p 'test_*.py' -v` passed all 29 Harness mutation tests, including the two
 new providerless-layer checks. No failure-memory record was added because this
 change codifies a planned delivery policy rather than a reproduced failure.
+
+## Notification Coordinator Update
+
+On 2026-08-25, the provider-neutral EventSource/Coordinator seam was connected
+at the application root without enabling Firebase or any provider callback. The
+Harness requires the disabled production source, actual session/bootstrap
+binding, one bounded deferred slot, and both coordinator behavior-test files.
+
+`python3 scripts/check_harness.py` passed. `python3 -m unittest discover -s
+tests -p 'test_*.py' -v` passed all 35 Harness tests before the final Flutter and
+native verification recorded in the Phase 1 integration report. No
+failure-memory record was added because no provider delivery failure was
+reproduced.

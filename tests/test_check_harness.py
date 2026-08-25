@@ -270,6 +270,165 @@ class HarnessTests(unittest.TestCase):
             any("constructs notification routing identity directly" in error for error in result)
         )
 
+    def test_production_notification_source_cannot_be_enabled_by_default(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._copy_notification_application_contract(root)
+            source_path = root / check_harness.NOTIFICATION_EVENT_SOURCE_PATH
+            source = source_path.read_text(encoding="utf-8")
+            mutated = source.replace(
+                "(ref) => const DisabledLoopNotificationEventSource(),",
+                "(ref) => EnabledLoopNotificationEventSource(),",
+            )
+            self.assertNotEqual(source, mutated)
+            source_path.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_notification_contract(root)
+
+        self.assertTrue(
+            any("must default directly" in error for error in result),
+            msg=f"expected disabled production source guard: {result}",
+        )
+
+    def test_production_main_cannot_override_disabled_notification_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            main = root / "lib" / "main.dart"
+            main.parent.mkdir(parents=True)
+            main.write_text(
+                "final override = loopNotificationEventSourceProvider.overrideWithValue("
+                "EnabledNotificationSource());\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_notification_contract(root)
+
+        self.assertTrue(
+            any("must not override the disabled" in error for error in result),
+            msg=f"expected production entrypoint guard: {result}",
+        )
+
+    def test_notification_coordinator_rejects_forged_identity_and_second_slot(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._copy_notification_application_contract(root)
+            coordinator_path = root / check_harness.NOTIFICATION_COORDINATOR_PATH
+            source = coordinator_path.read_text(encoding="utf-8")
+            mutated = source.replace(
+                "LoopNotificationSessionContext.authenticated(identity.streamUserId)",
+                "LoopNotificationSessionContext.authenticated("
+                "session.account!.privyUserId)",
+            ).replace(
+                "_DeferredInteraction? _deferredInteraction;",
+                "_DeferredInteraction? _deferredInteraction;\n"
+                "  final List<_DeferredInteraction> _unsafeDeferredQueue = [];",
+            )
+            self.assertNotEqual(source, mutated)
+            coordinator_path.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_notification_contract(root)
+
+        self.assertTrue(
+            any("bootstrap-derived stream identity" in error for error in result),
+            msg=f"expected bootstrap identity guard: {result}",
+        )
+        self.assertTrue(
+            any("at most one deferred interaction" in error for error in result),
+            msg=f"expected single deferred slot guard: {result}",
+        )
+
+    def test_notification_coordinator_cannot_retain_payload_across_authorization(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._copy_notification_application_contract(root)
+            coordinator_path = root / check_harness.NOTIFICATION_COORDINATOR_PATH
+            source = coordinator_path.read_text(encoding="utf-8")
+            mutated = source.replace(
+                "Future<void> _resolveIdentity({\n"
+                "    required LoopBootstrapSession bootstrap,",
+                "Future<void> _resolveIdentity({\n"
+                "    required _DeferredInteraction deferred,\n"
+                "    required LoopBootstrapSession bootstrap,",
+            )
+            self.assertNotEqual(source, mutated)
+            coordinator_path.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_notification_contract(root)
+
+        self.assertTrue(
+            any("must not retain a deferred payload" in error for error in result),
+            msg=f"expected in-flight payload-retention guard: {result}",
+        )
+
+    def test_feature_cannot_construct_a_competing_notification_coordinator(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._copy_notification_application_contract(root)
+            feature = root / "lib" / "features" / "chat" / "unsafe_coordinator.dart"
+            feature.parent.mkdir(parents=True)
+            feature.write_text(
+                "import 'package:loop_mobile/app/notifications/"
+                "loop_notification_coordinator.dart';\n"
+                "final duplicate = LoopNotificationCoordinator();\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_notification_contract(root)
+
+        self.assertTrue(
+            any("imports the notification coordinator directly" in error for error in result),
+            msg=f"expected coordinator import guard: {result}",
+        )
+        self.assertTrue(
+            any("constructs a competing" in error for error in result),
+            msg=f"expected competing coordinator guard: {result}",
+        )
+
+    def test_root_notification_navigation_cannot_be_arbitrary_or_repeated(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._copy_notification_application_contract(root)
+            application_path = root / check_harness.NOTIFICATION_APPLICATION_PATH
+            source = application_path.read_text(encoding="utf-8")
+            mutated = source.replace(
+                "navigate: (intent) => router.go(intent.location),",
+                "navigate: (intent) {\n"
+                "        router.go('/wallet');\n"
+                "        router.go(intent.location);\n"
+                "      },",
+            )
+            self.assertNotEqual(source, mutated)
+            application_path.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_notification_contract(root)
+
+        self.assertTrue(
+            any("exactly one typed root navigation" in error for error in result),
+            msg=f"expected typed root navigation guard: {result}",
+        )
+
+    def _copy_notification_application_contract(self, root: Path) -> None:
+        for relative in (
+            check_harness.NOTIFICATION_ROUTER_PATH,
+            check_harness.NOTIFICATION_EVENT_SOURCE_PATH,
+            check_harness.NOTIFICATION_COORDINATOR_PATH,
+            check_harness.NOTIFICATION_APPLICATION_PATH,
+        ):
+            destination = root / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_text(
+                (REPOSITORY_ROOT / relative).read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+
     def test_preview_chat_route_without_guard_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

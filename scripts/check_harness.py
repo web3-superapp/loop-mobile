@@ -61,7 +61,11 @@ REQUIRED_FILES = (
     "docs/phase-0/compatibility-report.md",
     "docs/phase-1/frontend-integration-report.md",
     "lib/core/navigation/stream_channel_route.dart",
+    "lib/app/notifications/loop_notification_coordinator.dart",
+    "lib/integrations/notifications/loop_notification_event_source.dart",
     "lib/integrations/notifications/loop_notification_router.dart",
+    "test/app_notification_coordinator_test.dart",
+    "test/loop_notification_coordinator_test.dart",
     "test/loop_notification_router_test.dart",
     "test/notifications_screen_test.dart",
 )
@@ -209,12 +213,16 @@ IOS_AUDIO_ROOM_FORBIDDEN_RUNNER_MARKERS = (
 NOTIFICATION_ROUTER_PATH = Path(
     "lib/integrations/notifications/loop_notification_router.dart"
 )
+NOTIFICATION_EVENT_SOURCE_PATH = Path(
+    "lib/integrations/notifications/loop_notification_event_source.dart"
+)
 NOTIFICATION_PROVIDER_INGRESS_PATH = Path(
     "lib/integrations/notifications/firebase_notification_ingress.dart"
 )
 NOTIFICATION_COORDINATOR_PATH = Path(
     "lib/app/notifications/loop_notification_coordinator.dart"
 )
+NOTIFICATION_APPLICATION_PATH = Path("lib/app.dart")
 NOTIFICATION_GLOBAL_INGRESS_PATTERNS = (
     (re.compile(r"\bFirebaseMessaging\s*\.\s*instance\b"), "FirebaseMessaging.instance"),
     (
@@ -250,6 +258,9 @@ NOTIFICATION_PROVIDER_IMPORT_MARKERS = (
 NOTIFICATION_KIND_MEMBERS = frozenset(
     {"chatMessage", "audioRoomActivity", "systemNotice"}
 )
+NOTIFICATION_SOURCE_EVENT_KIND_MEMBERS = frozenset(
+    {"foreground", "background", "interaction"}
+)
 NOTIFICATION_INTENT_CLASSES = frozenset(
     {
         "LoopChatNotificationIntent",
@@ -270,8 +281,17 @@ NOTIFICATION_ROUTER_CONSUMER_PATHS = frozenset(
 NOTIFICATION_ROUTER_IMPORT = (
     "package:loop_mobile/integrations/notifications/loop_notification_router.dart"
 )
+NOTIFICATION_COORDINATOR_IMPORT = (
+    "package:loop_mobile/app/notifications/loop_notification_coordinator.dart"
+)
 NOTIFICATION_ROUTER_CONSTRUCTION_PATTERN = re.compile(
     r"\b(?:LoopNotificationRouter|LoopNotificationSessionContext\s*\.\s*authenticated)\s*\("
+)
+NOTIFICATION_COORDINATOR_CONSTRUCTION_PATTERN = re.compile(
+    r"\bLoopNotificationCoordinator\s*\("
+)
+NOTIFICATION_COORDINATOR_CONSUMER_PATHS = frozenset(
+    {NOTIFICATION_COORDINATOR_PATH, NOTIFICATION_APPLICATION_PATH}
 )
 FEATURE_TRANSPORT_FORBIDDEN_IMPORTS = (
     "package:dio/dio.dart",
@@ -1203,6 +1223,259 @@ def check_notification_contract(root: Path) -> list[str]:
                 f"found {sorted(route_literals)}"
             )
 
+    event_source_path = root / NOTIFICATION_EVENT_SOURCE_PATH
+    if not event_source_path.is_file():
+        errors.append(
+            f"missing production notification event source: {NOTIFICATION_EVENT_SOURCE_PATH}"
+        )
+    else:
+        source = strip_dart_comments(read_text(event_source_path))
+        source_code = strip_dart_comments_and_strings(read_text(event_source_path))
+        source_kind_match = re.search(
+            r"enum\s+LoopNotificationSourceEventKind\s*\{(?P<body>[^}]*)\}",
+            source_code,
+            re.DOTALL,
+        )
+        source_kind_members = (
+            frozenset(
+                member.strip()
+                for member in source_kind_match.group("body").split(",")
+                if member.strip()
+            )
+            if source_kind_match
+            else frozenset()
+        )
+        if source_kind_members != NOTIFICATION_SOURCE_EVENT_KIND_MEMBERS:
+            errors.append(
+                "notification source events must stay on the reviewed foreground, "
+                "background, and interaction allowlist"
+            )
+
+        if not re.search(
+            r"Map<String,\s*Object\?>\s*\.\s*unmodifiable\s*\(\s*data\s*\)",
+            source,
+        ):
+            errors.append(
+                "notification source events must defensively copy their untrusted data"
+            )
+
+        disabled_provider_pattern = re.compile(
+            r"final\s+loopNotificationEventSourceProvider\s*=\s*"
+            r"Provider<LoopNotificationEventSource>\s*\(\s*"
+            r"\(\s*ref\s*\)\s*=>\s*const\s+DisabledLoopNotificationEventSource\s*"
+            r"\(\s*\)\s*,?\s*\)\s*;",
+            re.DOTALL,
+        )
+        if disabled_provider_pattern.search(source) is None:
+            errors.append(
+                "production notification source provider must default directly to "
+                "DisabledLoopNotificationEventSource"
+            )
+
+        disabled_source_contracts = (
+            r"final\s+class\s+DisabledLoopNotificationEventSource\s+"
+            r"implements\s+LoopNotificationEventSource",
+            r"loadInitialInteraction\s*\(\s*\)\s*async\s*=>\s*null\s*;",
+            r"const\s+Stream<LoopNotificationSourceEvent>\s*\.\s*empty\s*\(\s*\)",
+        )
+        if any(
+            re.search(pattern, source, re.DOTALL) is None
+            for pattern in disabled_source_contracts
+        ):
+            errors.append(
+                "DisabledLoopNotificationEventSource must expose no initial interaction "
+                "and an empty event stream"
+            )
+
+    coordinator_path = root / NOTIFICATION_COORDINATOR_PATH
+    if not coordinator_path.is_file():
+        errors.append(
+            f"missing root notification coordinator: {NOTIFICATION_COORDINATOR_PATH}"
+        )
+    else:
+        coordinator = strip_dart_comments(read_text(coordinator_path))
+        coordinator_code = strip_dart_comments_and_strings(
+            read_text(coordinator_path)
+        )
+        context_match = re.search(
+            r"LoopNotificationSessionContext\s+_currentContext\s*\(\s*\)\s*\{"
+            r"(?P<body>.*?)\n\s*\}\s*\n\s*\n\s*void\s+_defer\s*\(",
+            coordinator,
+            re.DOTALL,
+        )
+        context_body = context_match.group("body") if context_match else ""
+        authenticated_context_pattern = re.compile(
+            r"return\s+LoopNotificationSessionContext\s*\.\s*authenticated\s*"
+            r"\(\s*identity\s*\.\s*streamUserId\s*\)\s*;"
+        )
+        authenticated_context_calls = tuple(
+            re.finditer(
+                r"LoopNotificationSessionContext\s*\.\s*authenticated\s*\(",
+                coordinator_code,
+            )
+        )
+        if (
+            context_match is None
+            or "_readSession()" not in context_body
+            or "session.mode != LoopSessionMode.authenticated" not in context_body
+            or "_readBootstrapSession()?.identity" not in context_body
+            or authenticated_context_pattern.search(context_body) is None
+            or len(authenticated_context_calls) != 1
+        ):
+            errors.append(
+                "notification coordinator authenticated context must come only from a "
+                "real authenticated session and bootstrap-derived stream identity"
+            )
+
+        resolution_match = re.search(
+            r"Future<void>\s+_resolveIdentity\s*\(\s*\{"
+            r"(?P<parameters>.*?)\}\s*\)\s*async\s*\{"
+            r"(?P<body>.*?)\n\s*\}\s*\n\s*\n\s*void\s+_retryDeferredInteraction",
+            coordinator,
+            re.DOTALL,
+        )
+        resolution_parameters = (
+            resolution_match.group("parameters") if resolution_match else ""
+        )
+        resolution_body = resolution_match.group("body") if resolution_match else ""
+        authorization_position = resolution_body.find(
+            "await bootstrap.authorize()"
+        )
+        current_slot_position = resolution_body.find(
+            "final deferred = _deferredInteraction;"
+        )
+        if (
+            resolution_match is None
+            or "_DeferredInteraction" in resolution_parameters
+            or "LoopNotificationSourceEvent" in resolution_parameters
+            or authorization_position < 0
+            or current_slot_position <= authorization_position
+        ):
+            errors.append(
+                "notification identity resolution must not retain a deferred payload "
+                "while authorization is in flight; it must read the current slot after await"
+            )
+
+        default_wait_match = re.search(
+            r"Duration\s+restoringWait\s*=\s*const\s+Duration\s*\(\s*"
+            r"(?P<unit>seconds|minutes)\s*:\s*(?P<value>\d+)\s*\)",
+            coordinator,
+        )
+        default_wait_seconds: int | None = None
+        if default_wait_match:
+            default_wait_seconds = int(default_wait_match.group("value"))
+            if default_wait_match.group("unit") == "minutes":
+                default_wait_seconds *= 60
+        bounded_wait = (
+            default_wait_seconds is not None
+            and 0 < default_wait_seconds <= 60
+            and re.search(
+                r"restoringWait\s*>\s*const\s+Duration\s*\(\s*minutes\s*:\s*1\s*\)",
+                coordinator,
+            )
+            is not None
+            and re.search(
+                r"Timer\s*\(\s*_restoringWait\s*,\s*_clearDeferredInteraction\s*\)",
+                coordinator,
+            )
+            is not None
+        )
+        single_deferred_slot = (
+            len(
+                re.findall(
+                    r"_DeferredInteraction\?\s+_deferredInteraction\s*;",
+                    coordinator_code,
+                )
+            )
+            == 1
+            and len(
+                re.findall(
+                    r"_deferredInteraction\s*=\s*_DeferredInteraction\s*\(",
+                    coordinator_code,
+                )
+            )
+            == 1
+            and re.search(
+                r"(?:List|Queue|Set|Map)\s*<[^>]*_DeferredInteraction",
+                coordinator_code,
+            )
+            is None
+            and (
+                re.search(
+                    r"if\s*\(\s*_deferredInteraction\s*!=\s*null\s*\)\s*return\s*;",
+                    coordinator_code,
+                )
+                is not None
+                or (
+                    "_identityGeneration += 1;" in coordinator_code
+                    and "_deferredTimer?.cancel();" in coordinator_code
+                )
+            )
+        )
+        if not bounded_wait or not single_deferred_slot:
+            errors.append(
+                "notification coordinator may retain at most one deferred interaction "
+                "for a positive wait no longer than one minute"
+            )
+
+    application_path = root / NOTIFICATION_APPLICATION_PATH
+    if not application_path.is_file():
+        errors.append(
+            f"missing production notification composition root: {NOTIFICATION_APPLICATION_PATH}"
+        )
+    else:
+        application = strip_dart_comments(read_text(application_path))
+        application_code = strip_dart_comments_and_strings(
+            read_text(application_path)
+        )
+        production_bindings = (
+            r"source\s*:\s*ref\s*\.\s*read\s*\(\s*"
+            r"loopNotificationEventSourceProvider\s*\)",
+            r"readSession\s*:\s*\(\s*\)\s*=>\s*ref\s*\.\s*read\s*"
+            r"\(\s*loopSessionProvider\s*\)",
+            r"readBootstrapSession\s*:\s*\(\s*\)\s*=>\s*ref\s*\.\s*read\s*"
+            r"\(\s*loopBootstrapSessionProvider\s*\)",
+        )
+        if any(
+            re.search(pattern, application, re.DOTALL) is None
+            for pattern in production_bindings
+        ):
+            errors.append(
+                "production notification coordinator must bind the disabled source and "
+                "real root session/bootstrap providers"
+            )
+        typed_navigation_pattern = re.compile(
+            r"navigate\s*:\s*\(\s*intent\s*\)\s*=>\s*router\s*\.\s*go\s*"
+            r"\(\s*intent\s*\.\s*location\s*\)\s*,"
+        )
+        if (
+            len(
+                NOTIFICATION_COORDINATOR_CONSTRUCTION_PATTERN.findall(
+                    application_code
+                )
+            )
+            != 1
+            or len(typed_navigation_pattern.findall(application)) != 1
+        ):
+            errors.append(
+                "production must construct exactly one notification coordinator and "
+                "perform exactly one typed root navigation"
+            )
+
+    production_entrypoint = root / "lib/main.dart"
+    if production_entrypoint.is_file():
+        production_code = strip_dart_comments_and_strings(
+            read_text(production_entrypoint)
+        )
+        if re.search(
+            r"\bloopNotificationEventSourceProvider\s*\.\s*override",
+            production_code,
+        ):
+            errors.append(
+                "lib/main.dart must not override the disabled production notification "
+                "source before provider ingress is reviewed"
+            )
+
     lib_root = root / "lib"
     if lib_root.is_dir():
         for path in sorted(lib_root.rglob("*.dart")):
@@ -1228,6 +1501,19 @@ def check_notification_contract(root: Path) -> list[str]:
                     errors.append(
                         f"{relative} constructs notification routing identity directly; only "
                         f"{NOTIFICATION_COORDINATOR_PATH} may derive it from verified bootstrap state"
+                    )
+            if relative not in NOTIFICATION_COORDINATOR_CONSUMER_PATHS:
+                if NOTIFICATION_COORDINATOR_IMPORT in executable:
+                    errors.append(
+                        f"{relative} imports the notification coordinator directly; only "
+                        f"{NOTIFICATION_APPLICATION_PATH} may consume it"
+                    )
+                if NOTIFICATION_COORDINATOR_CONSTRUCTION_PATTERN.search(
+                    executable_code
+                ):
+                    errors.append(
+                        f"{relative} constructs a competing notification coordinator; only "
+                        f"{NOTIFICATION_APPLICATION_PATH} may own it"
                     )
             for pattern, marker in NOTIFICATION_GLOBAL_INGRESS_PATTERNS:
                 if (
