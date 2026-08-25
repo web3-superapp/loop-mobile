@@ -25,6 +25,7 @@ Date: 2026-08-24
 - The same guard requires the root application coordinator as the sole router/identity consumer, keeps its production EventSource disabled, binds authenticated context to the real session plus bootstrap Stream identity, and bounds restoration to one in-memory interaction.
 - Providerless application guards keep Dio and `/v1/` transport literals out of feature modules and reject known Preview fixture composition from `lib/main.dart`; controllers must depend on ports while fakes remain test/Preview-only.
 - Profile guards require its exact domain/controller/UI tests, keep production directly unavailable, enforce the `ProfileValues` and `ProfileResource` field allowlists, confine every `MemoryProfileGateway` reference to its implementation and `lib/main_preview.dart`, and reject ad-hoc notifications or positive Profile-save language.
+- Privacy guards require the exact two-field preference contract and its domain/controller/UI tests, keep production directly unavailable, confine `MemoryPrivacyGateway` to its implementation and `lib/main_preview.dart`, reject legacy H3 controls and actionable Copy Trading permission claims, and preserve the distinction between a saved visibility preference and authorization or execution.
 - Git-visible `.env`, private-key, service-account, and Firebase Admin credential paths fail validation. `.gitnexus/` and project-local SDK artifacts are ignored.
 
 ## Verification
@@ -109,3 +110,22 @@ account persistence. `python3 scripts/check_harness.py` passed, and the
 complete mutation suite passed 48 tests. Flutter format, analyze, 34 focused
 Profile tests, 255 full tests, Android Debug, and iOS Debug no-codesign also
 passed; exact commands are recorded in the Phase 1 integration report.
+
+## Providerless Privacy Preferences Update
+
+On 2026-08-25, decision 0011 fixed the exact Privacy preference boundary before
+its authenticated HTTP adapter. The Harness requires the Privacy models,
+gateway, controller and UI behavior tests; production stays directly bound to
+an unavailable gateway, while the memory implementation is confined to the
+explicit Preview root. Exact model-field allowlists keep the contract at
+`discoverable` and `copyTradeVisibility`; a separate enum guard locks the
+reviewed `private`, `followers`, and `public` wire values in both directions.
+The UI must not present those preferences as follower, discovery, Copy Trading
+authorization or execution enforcement.
+
+The complete Harness mutation suite passed 55 tests. Flutter format covered
+144 files, the focused Privacy suite passed 26 tests, the full Flutter suite
+passed 281 tests, and analyze, Android Debug and iOS Debug no-codesign passed.
+No failure-memory record was added because this is a planned boundary and no
+production incident was reproduced. Exact commands and remaining provider
+inputs are recorded in the Phase 1 integration report.

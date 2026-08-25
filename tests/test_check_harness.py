@@ -136,6 +136,7 @@ class HarnessTests(unittest.TestCase):
             source.parent.mkdir(parents=True)
             source.write_text(
                 "final chat = MemoryCommunicationGateway();\n"
+                "final privacy = MemoryPrivacyGateway();\n"
                 "final profile = MemoryProfileGateway();\n"
                 "final watchlist = MemoryWatchlistGateway();\n"
                 "final market = HyperliquidFixtureAdapter();\n"
@@ -143,7 +144,7 @@ class HarnessTests(unittest.TestCase):
                 encoding="utf-8",
             )
             result = check_harness.check_providerless_application_contract(root)
-        self.assertEqual(5, len(result))
+        self.assertEqual(6, len(result))
         self.assertTrue(
             all("tests or lib/main_preview.dart" in error for error in result)
         )
@@ -428,6 +429,219 @@ class HarnessTests(unittest.TestCase):
             any("references MemoryProfileGateway" in error for error in result),
             msg=f"expected Preview-only Profile fake guard: {result}",
         )
+
+    def test_privacy_provider_must_default_unavailable(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            gateway = root / check_harness.PRIVACY_GATEWAY_PATH
+            gateway.parent.mkdir(parents=True)
+            gateway.write_text(
+                "final privacyGatewayProvider = Provider<PrivacyGateway>(\n"
+                "  (ref) => MemoryPrivacyGateway(),\n"
+                ");\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_privacy_application_contract(root)
+
+        self.assertTrue(
+            any("must default directly" in error for error in result),
+            msg=f"expected unavailable Privacy provider guard: {result}",
+        )
+
+    def test_privacy_models_must_match_exact_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            models = root / check_harness.PRIVACY_MODELS_PATH
+            models.parent.mkdir(parents=True)
+            models.write_text(
+                "enum CopyTradeVisibility {\n"
+                "  private, followers, public, friends;\n"
+                "  String get wireValue => switch (this) {\n"
+                "    CopyTradeVisibility.private => 'pri',\n"
+                "    CopyTradeVisibility.followers => 'fol',\n"
+                "    CopyTradeVisibility.public => 'pub',\n"
+                "    CopyTradeVisibility.friends => 'fri',\n"
+                "  };\n"
+                "  static CopyTradeVisibility fromWire(String value) => switch (value) {\n"
+                "    'pri' => CopyTradeVisibility.private,\n"
+                "    'fol' => CopyTradeVisibility.followers,\n"
+                "    'pub' => CopyTradeVisibility.public,\n"
+                "    _ => CopyTradeVisibility.private,\n"
+                "  };\n"
+                "}\n"
+                "final class PrivacyValues {\n"
+                "  final bool discoverable;\n"
+                "  final CopyTradeVisibility copyTradeVisibility;\n"
+                "  final bool activityVisible = false;\n"
+                "}\n"
+                "final class PrivacyResource {\n"
+                "  final int version;\n"
+                "  final PrivacyValues values;\n"
+                "  final DateTime? updatedAt;\n"
+                "  final String? etag = null;\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_privacy_application_contract(root)
+
+        self.assertTrue(
+            any("CopyTradeVisibility" in error for error in result),
+            msg=f"expected exact Privacy enum guard: {result}",
+        )
+        self.assertTrue(
+            any("PrivacyValues fields" in error for error in result),
+            msg=f"expected exact Privacy values guard: {result}",
+        )
+        self.assertTrue(
+            any("PrivacyResource fields" in error for error in result),
+            msg=f"expected exact Privacy resource guard: {result}",
+        )
+        self.assertTrue(
+            any("wire values" in error for error in result),
+            msg=f"expected exact Privacy wire-value guard: {result}",
+        )
+
+    def test_privacy_and_copy_surfaces_cannot_restore_fake_controls(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            surface = root / check_harness.PRIVACY_SURFACE_PATH
+            surface.parent.mkdir(parents=True)
+            surface.write_text(
+                "class _PrivacyCenter {\n"
+                "  final _portfolioBroadcast = false;\n"
+                "  final title = 'Portfolio Broadcast';\n"
+                "}\n"
+                "class _PrivacyModeBanner {}\n"
+                "class _CopyTradePermissions {\n"
+                "  void apply() => SnackBar(content: Text('Save permissions'));\n"
+                "}\n"
+                "class _SecurityCenter {}\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_privacy_application_contract(root)
+
+        self.assertTrue(
+            any("removed non-contract state" in error for error in result),
+            msg=f"expected legacy Privacy state guard: {result}",
+        )
+        self.assertTrue(
+            any("non-actionable truthful placeholder" in error for error in result),
+            msg=f"expected Copy-trade placeholder guard: {result}",
+        )
+        self.assertTrue(
+            any("unsupported permission UI" in error for error in result),
+            msg=f"expected fake Copy permission copy guard: {result}",
+        )
+
+    def test_privacy_memory_gateway_cannot_be_composed_by_a_feature(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "profile" / "fake_privacy.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "final gatewayFactory = MemoryPrivacyGateway.new;\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_privacy_application_contract(root)
+
+        self.assertTrue(
+            any("references MemoryPrivacyGateway" in error for error in result),
+            msg=f"expected Preview-only Privacy fake guard: {result}",
+        )
+
+    def test_copy_trade_placeholder_rejects_ordinary_interactions(self) -> None:
+        interactions = (
+            "FilledButton(onPressed: grantCopyAccess, child: Text('Grant'))",
+            "Listener(onPointerDown: grantCopyAccess, child: Text('Grant'))",
+        )
+        for interaction in interactions:
+            with self.subTest(interaction=interaction):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    surface = root / check_harness.PRIVACY_SURFACE_PATH
+                    surface.parent.mkdir(parents=True)
+                    surface.write_text(
+                        "class _PrivacyCenter {}\n"
+                        "class _PrivacyModeBanner {}\n"
+                        "class _CopyTradePermissions {\n"
+                        f"  final action = {interaction};\n"
+                        "}\n"
+                        "class _SecurityCenter {}\n",
+                        encoding="utf-8",
+                    )
+
+                    result = check_harness.check_privacy_application_contract(root)
+
+                self.assertTrue(
+                    any(
+                        "non-actionable truthful placeholder" in error
+                        for error in result
+                    ),
+                    msg=f"expected ordinary Copy-trade interaction guard: {result}",
+                )
+
+    def test_privacy_commit_language_requires_resource_evidence(self) -> None:
+        examples = (
+            ("final label = 'Preferences saved';\n", True),
+            ("final label = 'Update succeeded';\n", True),
+            ("final label = 'All changes are now live';\n", True),
+            ("final label = 'Success';\n", True),
+            ("final label = '设置已保存';\n", True),
+            ("final label = '保存成功';\n", True),
+            ("final label = 'Preferences were not committed';\n", False),
+        )
+        for source_text, rejected in examples:
+            with self.subTest(source=source_text):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    source = (
+                        root
+                        / "lib"
+                        / "features"
+                        / "profile"
+                        / "privacy_status.dart"
+                    )
+                    source.parent.mkdir(parents=True)
+                    source.write_text(source_text, encoding="utf-8")
+
+                    result = check_harness.check_privacy_application_contract(root)
+
+                detected = any(
+                    "positive Privacy commit language" in error
+                    for error in result
+                )
+                self.assertEqual(rejected, detected, msg=f"unexpected guard: {result}")
+
+    def test_privacy_behavior_tests_cannot_be_hollowed_out(self) -> None:
+        for relative, markers in check_harness.PRIVACY_BEHAVIOR_TEST_MARKERS.items():
+            forged_markers = ", ".join(repr(marker) for marker in markers)
+            hollow_sources = (
+                "void main() {}\n",
+                f"void main() {{ const markers = <String>[{forged_markers}]; }}\n",
+            )
+            for source_text in hollow_sources:
+                with self.subTest(path=str(relative), source=source_text):
+                    with tempfile.TemporaryDirectory() as temporary:
+                        root = Path(temporary)
+                        test_path = root / relative
+                        test_path.parent.mkdir(parents=True)
+                        test_path.write_text(source_text, encoding="utf-8")
+
+                        result = check_harness.check_privacy_application_contract(
+                            root
+                        )
+
+                    self.assertTrue(
+                        any(
+                            "missing required behavior evidence" in error
+                            for error in result
+                        ),
+                        msg=f"expected non-hollow Privacy behavior guard: {result}",
+                    )
 
     def test_notification_global_handler_must_be_centralized(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

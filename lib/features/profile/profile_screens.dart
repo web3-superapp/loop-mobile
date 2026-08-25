@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/profile/privacy/privacy_controller.dart';
+import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
+import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
@@ -287,14 +289,14 @@ class _ProfileHome extends StatelessWidget {
             _SettingsTile(
               icon: Icons.visibility_outlined,
               title: 'Privacy center',
-              detail: 'Aliases, visibility, and portfolio sharing',
+              detail: 'Discoverability and copy visibility preferences',
               tone: LoopTone.conversation,
               onTap: () => onNavigate('privacy'),
             ),
             _SettingsTile(
               icon: Icons.content_copy_rounded,
               title: 'Copy-trade permissions',
-              detail: 'Nobody can copy you by default',
+              detail: 'Unavailable; visibility alone grants nothing',
               onTap: () => onNavigate('copytrade-perms'),
             ),
             _SettingsTile(
@@ -810,238 +812,371 @@ String _profileFailureMessage(ProfileGatewayFailureKind? kind) =>
       null => 'The Profile operation could not be completed.',
     };
 
-class _PrivacyCenter extends StatefulWidget {
+class _PrivacyCenter extends ConsumerStatefulWidget {
   const _PrivacyCenter();
 
   @override
-  State<_PrivacyCenter> createState() => _PrivacyCenterState();
+  ConsumerState<_PrivacyCenter> createState() => _PrivacyCenterState();
 }
 
-class _PrivacyCenterState extends State<_PrivacyCenter> {
-  bool _anonymousAlias = true;
-  bool _portfolioBroadcast = false;
-  bool _activityVisible = false;
-  bool _positionsVisible = false;
-  final Set<String> _allowedGroups = <String>{'ETH Research'};
-
-  Future<void> _setBroadcast(bool enabled) async {
-    if (!enabled) {
-      setState(() => _portfolioBroadcast = false);
-      return;
+class _PrivacyCenterState extends ConsumerState<_PrivacyCenter> {
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(privacyControllerProvider);
+    if (state.phase == PrivacyPhase.initial) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(ref.read(privacyControllerProvider.notifier).load());
+        }
+      });
     }
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Share portfolio updates?'),
-        content: const Text(
-          'Chosen groups may see assets you buy and sell. Exact balances and private positions remain hidden unless you change their visibility.',
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Keep private'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Choose groups'),
-          ),
-        ],
+    final controller = ref.read(privacyControllerProvider.notifier);
+    final stackActions =
+        MediaQuery.sizeOf(context).width < 480 ||
+        MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    final discardButton = OutlinedButton(
+      key: const ValueKey<String>('privacy-discard'),
+      onPressed: state.isDirty && !state.isBusy && !state.requiresReload
+          ? controller.discard
+          : null,
+      child: Text(state.requiresReload ? 'Reload required' : 'Discard draft'),
+    );
+    final applyButton = FilledButton.icon(
+      key: const ValueKey<String>('privacy-apply'),
+      onPressed: state.canSave ? () => unawaited(controller.save()) : null,
+      icon: state.phase == PrivacyPhase.saving
+          ? const SizedBox.square(
+              dimension: 17,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.task_alt_rounded),
+      label: Text(
+        state.phase == PrivacyPhase.saving ? 'Applying…' : 'Apply draft',
       ),
     );
-    if (confirmed ?? false) setState(() => _portfolioBroadcast = true);
+    return LoopPage(
+      eyebrow: state.mode == PrivacyMode.preview ? '开发预览 · PRIVACY' : 'PRIVACY',
+      title: 'Privacy preferences',
+      subtitle: 'Review the two owner preferences defined by the LOOP backend contract. They do not expose wallet, activity, or position data.',
+      padding: EdgeInsets.fromLTRB(20, 12, 20, stackActions ? 210 : 120),
+      bottom: state.resource == null
+          ? null
+          : LoopActionDock(
+              child: stackActions
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        discardButton,
+                        const SizedBox(height: 10),
+                        applyButton,
+                      ],
+                    )
+                  : Row(
+                      children: <Widget>[
+                        Expanded(child: discardButton),
+                        const SizedBox(width: 12),
+                        Expanded(child: applyButton),
+                      ],
+                    ),
+            ),
+      children: <Widget>[
+        _PrivacyModeBanner(mode: state.mode),
+        const SizedBox(height: 16),
+        ..._privacyContent(state, controller),
+      ],
+    );
   }
+
+  List<Widget> _privacyContent(
+    PrivacyState state,
+    PrivacyController controller,
+  ) {
+    if (state.resource == null) {
+      return switch (state.phase) {
+        PrivacyPhase.initial ||
+        PrivacyPhase.loading => const <Widget>[_PrivacyLoadingCard()],
+        PrivacyPhase.unavailable => const <Widget>[
+          LoopStateCard(
+            title: 'Privacy preferences are not connected',
+            message: 'The production Privacy adapter is intentionally unavailable. No private request was sent and no demo preference is being shown.',
+            icon: Icons.link_off_rounded,
+            tone: LoopTone.warning,
+          ),
+        ],
+        _ => <Widget>[
+          LoopStateCard(
+            title: 'Privacy preferences could not be loaded',
+            message: _privacyFailureMessage(state.failureKind),
+            icon: Icons.sync_problem_rounded,
+            tone: LoopTone.danger,
+            action: OutlinedButton.icon(
+              key: const ValueKey<String>('privacy-retry-load'),
+              onPressed: state.isBusy
+                  ? null
+                  : () => unawaited(controller.reload()),
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Retry'),
+            ),
+          ),
+        ],
+      };
+    }
+
+    final content = <Widget>[_PrivacySummary(state: state)];
+    if (state.requiresReload) {
+      final reloadInProgress = state.phase == PrivacyPhase.loading;
+      final reloadFailed =
+          state.failureKind != null &&
+          state.failureKind != PrivacyGatewayFailureKind.versionConflict;
+      content.addAll(<Widget>[
+        const SizedBox(height: 14),
+        LoopStateCard(
+          key: const ValueKey<String>('privacy-conflict'),
+          title: reloadInProgress
+              ? 'Reloading the latest preferences…'
+              : reloadFailed
+              ? 'Latest preferences could not be reloaded'
+              : 'Version conflict — nothing was overwritten',
+          message: reloadFailed
+              ? '${_privacyFailureMessage(state.failureKind)} The local draft is still preserved.'
+              : 'This draft is based on an older account version. Reload before editing or applying it again; reload discards this local draft.',
+          icon: Icons.call_split_rounded,
+          tone: LoopTone.warning,
+          action: reloadInProgress
+              ? const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    SizedBox.square(
+                      dimension: 17,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 10),
+                    Text('Reloading…'),
+                  ],
+                )
+              : FilledButton.icon(
+                  key: const ValueKey<String>('privacy-conflict-reload'),
+                  onPressed: () => unawaited(controller.reload()),
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: Text(reloadFailed ? 'Retry reload' : 'Reload latest'),
+                ),
+        ),
+      ]);
+    } else if (state.phase == PrivacyPhase.failure ||
+        state.phase == PrivacyPhase.unavailable) {
+      content.addAll(<Widget>[
+        const SizedBox(height: 14),
+        LoopStateCard(
+          title: 'Preferences were not committed',
+          message: _privacyFailureMessage(state.failureKind),
+          icon: Icons.cloud_off_rounded,
+          tone: LoopTone.danger,
+          action: OutlinedButton.icon(
+            key: const ValueKey<String>('privacy-retry-apply'),
+            onPressed: state.canSave
+                ? () => unawaited(controller.save())
+                : null,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Retry apply'),
+          ),
+        ),
+      ]);
+    }
+
+    content.addAll(<Widget>[
+      const SizedBox(height: 24),
+      LoopCard(
+        child: Material(
+          type: MaterialType.transparency,
+          child: SwitchListTile(
+            key: const ValueKey<String>('privacy-discoverable-switch'),
+            contentPadding: EdgeInsets.zero,
+            value: state.draft.discoverable,
+            onChanged: state.canEdit ? controller.editDiscoverable : null,
+            title: const Text('Discoverability preference'),
+            subtitle: const Text(
+              'Records whether you want a future LOOP discovery surface to include this profile. No public discovery service is connected here.',
+            ),
+            secondary: const Icon(Icons.travel_explore_rounded),
+          ),
+        ),
+      ),
+      const LoopSectionLabel('Copy-trade presentation preference'),
+      LoopCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              'Choose the audience value stored with Privacy. This value cannot authorize followers, wallets, orders, or copy execution.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: CopyTradeVisibility.values
+                  .map(
+                    (visibility) => ChoiceChip(
+                      key: ValueKey<String>(
+                        'privacy-visibility-${visibility.wireValue}',
+                      ),
+                      label: Text(_copyTradeVisibilityLabel(visibility)),
+                      selected: state.draft.copyTradeVisibility == visibility,
+                      onSelected: state.canEdit
+                          ? (_) =>
+                                controller.editCopyTradeVisibility(visibility)
+                          : null,
+                    ),
+                  )
+                  .toList(growable: false),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 18),
+      const _PrivacyFootnote(
+        text: 'These are owner preferences only. LOOP has not connected public-profile discovery, a follower graph, copy-trade authorization, or copy execution.',
+      ),
+    ]);
+    return content;
+  }
+}
+
+class _PrivacyModeBanner extends StatelessWidget {
+  const _PrivacyModeBanner({required this.mode});
+
+  final PrivacyMode mode;
 
   @override
   Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: 'PRIVACY',
-      title: 'You decide what leaves',
-      subtitle: 'Your alias, wallet, activity, and positions have separate visibility controls.',
-      children: <Widget>[
-        _SwitchSetting(
-          icon: Icons.theater_comedy_outlined,
-          title: 'Anonymous chat alias',
-          detail: 'Hide wallet addresses in conversations',
-          value: _anonymousAlias,
-          onChanged: (value) => setState(() => _anonymousAlias = value),
-        ),
-        const SizedBox(height: 10),
-        _SwitchSetting(
-          icon: Icons.campaign_outlined,
-          title: 'Portfolio Broadcast',
-          detail: 'Share selected trades only in approved groups',
-          value: _portfolioBroadcast,
-          onChanged: _setBroadcast,
-        ),
-        if (_portfolioBroadcast) ...<Widget>[
-          const LoopSectionLabel('Allowed groups'),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children:
-                const <String>['ETH Research', 'Perp Desk', 'Solana Builders']
-                    .map((group) {
-                      final selected = _allowedGroups.contains(group);
-                      return FilterChip(
-                        label: Text(group),
-                        selected: selected,
-                        onSelected: (value) => setState(() {
-                          if (value) {
-                            _allowedGroups.add(group);
-                          } else {
-                            _allowedGroups.remove(group);
-                          }
-                        }),
-                      );
-                    })
-                    .toList(growable: false),
+    return LoopStateCard(
+      title: switch (mode) {
+        PrivacyMode.preview => '开发预览 · in-memory Privacy',
+        PrivacyMode.production => 'Account Privacy preferences',
+        PrivacyMode.unavailable => 'Production connection unavailable',
+      },
+      message: switch (mode) {
+        PrivacyMode.preview => 'Drafts persist only for this running Preview and do not change an account, social graph, or trading permission.',
+        PrivacyMode.production => 'The two owner preferences are synchronized through the authenticated LOOP boundary.',
+        PrivacyMode.unavailable => 'The app is fail-closed until the authenticated Privacy adapter is connected.',
+      },
+      icon: mode == PrivacyMode.preview
+          ? Icons.science_outlined
+          : Icons.visibility_outlined,
+      tone: mode == PrivacyMode.preview ? LoopTone.warning : LoopTone.neutral,
+    );
+  }
+}
+
+class _PrivacyLoadingCard extends StatelessWidget {
+  const _PrivacyLoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const LoopCard(
+      child: Row(
+        children: <Widget>[
+          SizedBox.square(
+            dimension: 22,
+            child: CircularProgressIndicator(strokeWidth: 2),
           ),
+          SizedBox(width: 14),
+          Expanded(child: Text('Loading Privacy preferences…')),
         ],
-        const LoopSectionLabel('Visibility matrix'),
-        LoopCard(
-          child: Column(
-            children: <Widget>[
-              const _VisibilityRow(
-                label: 'Chat alias',
-                audience: 'Everyone',
-                tone: LoopTone.conversation,
-              ),
-              const _VisibilityRow(
-                label: 'Wallet address',
-                audience: 'Private',
-              ),
-              _VisibilitySwitchRow(
-                label: 'Trading activity',
-                value: _activityVisible,
-                onChanged: (value) => setState(() => _activityVisible = value),
-              ),
-              _VisibilitySwitchRow(
-                label: 'Open positions',
-                value: _positionsVisible,
-                onChanged: (value) => setState(() => _positionsVisible = value),
-                last: true,
-              ),
-            ],
-          ),
+      ),
+    );
+  }
+}
+
+class _PrivacySummary extends StatelessWidget {
+  const _PrivacySummary({required this.state});
+
+  final PrivacyState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final resource = state.resource!;
+    final compactLabels =
+        MediaQuery.sizeOf(context).width < 480 ||
+        MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: <Widget>[
+        LoopStatusPill(
+          label: compactLabels
+              ? 'V${resource.version}'
+              : 'VERSION ${resource.version}',
+          tone: LoopTone.conversation,
         ),
-        const SizedBox(height: 18),
-        const _PrivacyFootnote(),
+        LoopStatusPill(
+          label: state.isDirty
+              ? (compactLabels ? 'DRAFT' : 'UNSAVED DRAFT')
+              : (compactLabels ? 'NO CHANGES' : 'NO LOCAL CHANGES'),
+          tone: state.isDirty ? LoopTone.warning : LoopTone.positive,
+        ),
+        LoopStatusPill(
+          label: state.draft.discoverable
+              ? (compactLabels ? 'DISC ON' : 'DISCOVERY PREFERENCE ON')
+              : (compactLabels ? 'DISC OFF' : 'DISCOVERY PREFERENCE OFF'),
+        ),
+        LoopStatusPill(
+          label: compactLabels
+              ? _compactCopyVisibilityLabel(state.draft.copyTradeVisibility)
+              : 'COPY ${state.draft.copyTradeVisibility.wireValue.toUpperCase()}',
+        ),
       ],
     );
   }
 }
 
-enum _CopyAudience { nobody, approved, followers }
+String _copyTradeVisibilityLabel(CopyTradeVisibility visibility) =>
+    switch (visibility) {
+      CopyTradeVisibility.private => 'Private',
+      CopyTradeVisibility.followers => 'Followers',
+      CopyTradeVisibility.public => 'Public',
+    };
 
-class _CopyTradePermissions extends StatefulWidget {
+String _compactCopyVisibilityLabel(CopyTradeVisibility visibility) =>
+    switch (visibility) {
+      CopyTradeVisibility.private => 'COPY PRI',
+      CopyTradeVisibility.followers => 'COPY FOL',
+      CopyTradeVisibility.public => 'COPY PUB',
+    };
+
+String _privacyFailureMessage(PrivacyGatewayFailureKind? kind) =>
+    switch (kind) {
+      PrivacyGatewayFailureKind.unavailable => 'The Privacy service is unavailable. No preference was presented as committed.',
+      PrivacyGatewayFailureKind.versionConflict => 'The account Privacy resource changed elsewhere. Reload is required before another apply.',
+      PrivacyGatewayFailureKind.invalidData => 'The Privacy source returned data outside the reviewed contract. Nothing was accepted.',
+      PrivacyGatewayFailureKind.unexpected =>
+        'The Privacy operation failed. Provider details were not exposed.',
+      null => 'The Privacy operation could not be completed.',
+    };
+
+class _CopyTradePermissions extends StatelessWidget {
   const _CopyTradePermissions();
 
   @override
-  State<_CopyTradePermissions> createState() => _CopyTradePermissionsState();
-}
-
-class _CopyTradePermissionsState extends State<_CopyTradePermissions> {
-  _CopyAudience _audience = _CopyAudience.nobody;
-  final TextEditingController _perTrade = TextEditingController(text: '100');
-  final TextEditingController _daily = TextEditingController(text: '500');
-  bool _pauseOnDrawdown = true;
-
-  @override
-  void dispose() {
-    _perTrade.dispose();
-    _daily.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final active = _audience != _CopyAudience.nobody;
-    return LoopPage(
+    return const LoopPage(
       eyebrow: 'COPY TRADING',
-      title: 'Permission starts at nobody',
-      subtitle: 'Changing this lets other people mirror trades you explicitly share. It never gives them wallet access.',
-      bottom: LoopActionDock(
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  active
-                      ? 'Copy-trade permissions saved.'
-                      : 'Copy trading remains off.',
-                ),
-              ),
-            ),
-            child: const Text('Save permissions'),
-          ),
-        ),
-      ),
+      title: 'Copy trading is not connected',
+      subtitle: 'No copy-trade authorization, limits, follower enforcement, or execution path is available in this app build.',
       children: <Widget>[
-        SegmentedButton<_CopyAudience>(
-          showSelectedIcon: false,
-          segments: const <ButtonSegment<_CopyAudience>>[
-            ButtonSegment(value: _CopyAudience.nobody, label: Text('Nobody')),
-            ButtonSegment(
-              value: _CopyAudience.approved,
-              label: Text('Approved'),
-            ),
-            ButtonSegment(
-              value: _CopyAudience.followers,
-              label: Text('Followers'),
-            ),
-          ],
-          selected: <_CopyAudience>{_audience},
-          onSelectionChanged: (selection) =>
-              setState(() => _audience = selection.first),
+        LoopStateCard(
+          title: 'No permission can be granted here',
+          message: 'The previous local controls were removed because they could not create a backend authorization or protect an order.',
+          icon: Icons.lock_outline_rounded,
+          tone: LoopTone.warning,
         ),
-        const SizedBox(height: 20),
-        if (!active)
-          const LoopStateCard(
-            title: 'Copy trading is off',
-            message: 'No one can mirror your trades. Shared trade cards remain informational.',
-            icon: Icons.lock_outline_rounded,
-            tone: LoopTone.positive,
-          )
-        else ...<Widget>[
-          TextField(
-            controller: _perTrade,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: <TextInputFormatter>[
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-            ],
-            decoration: const InputDecoration(
-              labelText: 'Maximum per copied trade',
-              prefixText: r'$ ',
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _daily,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: <TextInputFormatter>[
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-            ],
-            decoration: const InputDecoration(
-              labelText: 'Daily copied-trade limit',
-              prefixText: r'$ ',
-            ),
-          ),
-          const SizedBox(height: 12),
-          _SwitchSetting(
-            icon: Icons.pause_circle_outline_rounded,
-            title: 'Pause after a sharp loss',
-            detail: 'Stop new copied trades after your configured drawdown',
-            value: _pauseOnDrawdown,
-            onChanged: (value) => setState(() => _pauseOnDrawdown = value),
-          ),
-          const SizedBox(height: 16),
-          OutlinedButton.icon(
-            onPressed: () => setState(() => _audience = _CopyAudience.nobody),
-            icon: const Icon(Icons.block_outlined),
-            label: const Text('Revoke all copy permissions'),
-          ),
-        ],
+        SizedBox(height: 14),
+        LoopStateCard(
+          title: 'Visibility is not authorization',
+          message: 'The separate Privacy resource stores only a private, followers, or public presentation preference. It never lets another account trade or access a wallet.',
+          icon: Icons.rule_folder_outlined,
+        ),
       ],
     );
   }
@@ -2351,67 +2486,6 @@ class _SwitchSetting extends StatelessWidget {
           ),
           Switch(value: value, onChanged: onChanged),
         ],
-      ),
-    );
-  }
-}
-
-class _VisibilityRow extends StatelessWidget {
-  const _VisibilityRow({
-    required this.label,
-    required this.audience,
-    this.tone = LoopTone.neutral,
-  });
-
-  final String label;
-  final String audience;
-  final LoopTone tone;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 13),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: LoopColors.line)),
-      ),
-      child: Row(
-        children: <Widget>[
-          Expanded(child: Text(label)),
-          LoopStatusPill(label: audience, tone: tone),
-        ],
-      ),
-    );
-  }
-}
-
-class _VisibilitySwitchRow extends StatelessWidget {
-  const _VisibilitySwitchRow({
-    required this.label,
-    required this.value,
-    required this.onChanged,
-    this.last = false,
-  });
-
-  final String label;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-  final bool last;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      decoration: BoxDecoration(
-        border: last
-            ? null
-            : const Border(bottom: BorderSide(color: LoopColors.line)),
-      ),
-      child: SwitchListTile(
-        contentPadding: EdgeInsets.zero,
-        value: value,
-        title: Text(label),
-        subtitle: Text(value ? 'Visible to approved connections' : 'Private'),
-        onChanged: onChanged,
       ),
     );
   }

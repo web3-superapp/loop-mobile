@@ -6,10 +6,13 @@ import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
+import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
+import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_fixture_adapter.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_trading_gateway.dart';
+import 'package:loop_mobile/integrations/personalization/memory_privacy_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/memory_profile_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_fixture_adapter.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
@@ -36,6 +39,15 @@ void main() {
         developmentPreviewEnabledProvider.overrideWithValue(true),
         communicationGatewayProvider.overrideWithValue(
           MemoryCommunicationGateway(),
+        ),
+        privacyGatewayProvider.overrideWithValue(
+          MemoryPrivacyGateway(
+            initialResource: PrivacyResource(
+              version: 1,
+              values: const PrivacyValues.defaults(),
+              updatedAt: DateTime.utc(2026, 8, 25),
+            ),
+          ),
         ),
         profileGatewayProvider.overrideWithValue(
           MemoryProfileGateway(

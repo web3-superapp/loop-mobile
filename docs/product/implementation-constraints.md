@@ -69,6 +69,9 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 - A Profile save replaces the complete reviewed values using the committed version. A conflict preserves the local draft but freezes editing and saving until an explicit reload; no UI reports success without a matching resource whose version advanced.
 - A future authenticated Profile gateway is scoped to the immutable current owner. Account rotation replaces that gateway, immediately clears the prior resource/draft, retires late work, and reloads only the new owner; Flutter never reuses one owner's presentation across principals.
 - Until an authenticated Profile adapter and reviewed avatar-reference source exist, production Profile persistence is unavailable and avatar editing stays disabled. The deterministic memory implementation is limited to tests and the visibly labelled Preview root.
+- The separately versioned Privacy resource contains exactly `discoverable` and `copy_trade_visibility`; the latter accepts only `private`, `followers`, or `public`. Version-zero defaults are fail-closed (`false` and `private`) and a replacement always submits both values.
+- Privacy values are presentation preferences only. They never prove public discovery, follower membership, portfolio sharing, wallet/activity/position visibility, copy-trade authorization, limits, or execution. Those capabilities remain unavailable rather than being simulated locally.
+- Until an authenticated owner-scoped Privacy adapter exists, production Privacy uses an unavailable gateway. Only tests and the visibly labelled Preview root may compose its memory implementation; conflicts freeze and preserve the draft until explicit reload.
 
 ## Experience and acceptance
 

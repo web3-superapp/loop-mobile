@@ -53,6 +53,7 @@ REQUIRED_FILES = (
     "docs/decisions/0008-finish-app-logic-before-new-transports.md",
     "docs/decisions/0009-model-watchlist-before-http-adapter.md",
     "docs/decisions/0010-model-profile-presentation-before-http-adapter.md",
+    "docs/decisions/0011-model-privacy-preferences-before-http-adapter.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/providerless-notification-fixtures.md",
     "docs/failures/privy-android-compile-sdk.md",
@@ -74,6 +75,10 @@ REQUIRED_FILES = (
     "lib/features/profile/presentation/profile_gateway.dart",
     "lib/features/profile/presentation/profile_models.dart",
     "lib/integrations/personalization/memory_profile_gateway.dart",
+    "lib/features/profile/privacy/privacy_controller.dart",
+    "lib/features/profile/privacy/privacy_gateway.dart",
+    "lib/features/profile/privacy/privacy_models.dart",
+    "lib/integrations/personalization/memory_privacy_gateway.dart",
     "test/app_notification_coordinator_test.dart",
     "test/loop_notification_coordinator_test.dart",
     "test/loop_notification_router_test.dart",
@@ -84,6 +89,9 @@ REQUIRED_FILES = (
     "test/profile_controller_test.dart",
     "test/profile_models_test.dart",
     "test/profile_presentation_screen_test.dart",
+    "test/privacy_controller_test.dart",
+    "test/privacy_models_test.dart",
+    "test/privacy_presentation_screen_test.dart",
 )
 CHAT_PREVIEW_ONLY_ROUTES = (
     "/chat/group",
@@ -315,6 +323,7 @@ FEATURE_TRANSPORT_FORBIDDEN_IMPORTS = (
 FEATURE_BACKEND_ROUTE_PATTERN = re.compile(r"(?P<quote>['\"])/v1/")
 PRODUCTION_FIXTURE_MARKERS = (
     "MemoryCommunicationGateway(",
+    "MemoryPrivacyGateway",
     "MemoryProfileGateway",
     "MemoryWatchlistGateway(",
     "HyperliquidFixtureAdapter(",
@@ -369,6 +378,93 @@ PROFILE_POSITIVE_SAVE_PATTERN = re.compile(
     r"(?:profile|alias)\s+(?:save|update)\s+(?:complete|completed))\b",
     re.IGNORECASE,
 )
+PRIVACY_GATEWAY_PATH = Path(
+    "lib/features/profile/privacy/privacy_gateway.dart"
+)
+PRIVACY_MODELS_PATH = Path("lib/features/profile/privacy/privacy_models.dart")
+PRIVACY_MEMORY_GATEWAY_PATH = Path(
+    "lib/integrations/personalization/memory_privacy_gateway.dart"
+)
+PRIVACY_SURFACE_PATH = Path("lib/features/profile/profile_screens.dart")
+PRIVACY_PREVIEW_ROOT_PATH = Path("lib/main_preview.dart")
+PRIVACY_MEMORY_CONSTRUCTION_PATTERN = re.compile(
+    r"\bMemoryPrivacyGateway\s*\("
+)
+PRIVACY_MEMORY_REFERENCE_PATTERN = re.compile(r"\bMemoryPrivacyGateway\b")
+PRIVACY_LEGACY_MARKERS = (
+    "_anonymousAlias",
+    "_portfolioBroadcast",
+    "_allowedGroups",
+    "_activityVisible",
+    "_positionsVisible",
+    "Anonymous chat alias",
+    "Portfolio Broadcast",
+    "Allowed groups",
+    "Trading activity",
+    "Open positions",
+)
+PRIVACY_COPY_PERMISSION_MARKERS = (
+    "Save permissions",
+    "Revoke all copy permissions",
+    "Maximum per copied trade",
+    "Daily copied-trade limit",
+    "Pause after a sharp loss",
+)
+PRIVACY_COPY_INTERACTION_PATTERN = re.compile(
+    r"\b(?:FilledButton|OutlinedButton|TextButton|ElevatedButton|IconButton|"
+    r"FloatingActionButton|CupertinoButton|Switch|SwitchListTile|"
+    r"CupertinoSwitch|Checkbox|CheckboxListTile|Radio|RadioListTile|Slider|"
+    r"RangeSlider|ChoiceChip|FilterChip|ActionChip|InputChip|TextField|"
+    r"TextFormField|Form|SegmentedButton|DropdownButton|DropdownMenu|"
+    r"PopupMenuButton|MenuAnchor|GestureDetector|RawGestureDetector|InkWell|"
+    r"Dismissible|Listener|MouseRegion|FocusableActionDetector|Shortcuts|"
+    r"Actions|"
+    r"ScaffoldMessenger|SnackBar|FilteringTextInputFormatter)\b|"
+    r"\baction\s*:|\bon[A-Z]\w*\s*:"
+)
+PRIVACY_VISIBILITY_WIRE_VALUES = {
+    "private": "private",
+    "followers": "followers",
+    "public": "public",
+}
+PRIVACY_POSITIVE_COMMIT_PATTERN = re.compile(
+    r"\b(?:(?:settings?|privacy|preferences?|changes?)\s+(?:are\s+)?"
+    r"(?:now\s+)?(?:saved|committed|applied|updated|live)|"
+    r"(?:all\s+)?changes?\s+(?:are\s+)?(?:now\s+)?live|"
+    r"(?:save|commit|apply|update)\s+"
+    r"(?:complete|completed|successful|succeeded)|"
+    r"(?:saved|committed|applied|updated)\s+successfully)\b",
+    re.IGNORECASE,
+)
+PRIVACY_POSITIVE_COMMIT_CJK_PATTERN = re.compile(
+    r"(?:设置|隐私|偏好|更改|修改|变更).{0,8}"
+    r"(?:已保存|保存成功|已提交|提交成功|已应用|应用成功|已更新|更新成功|"
+    r"已生效|生效)"
+)
+PRIVACY_BEHAVIOR_TEST_MARKERS = {
+    Path("test/privacy_models_test.dart"): (
+        "uses the exact fail-closed backend defaults",
+        "round-trips only the reviewed copy-trade visibility values",
+        "enforces the version and timestamp biconditional",
+        "keeps contract failures sanitized",
+    ),
+    Path("test/privacy_controller_test.dart"): (
+        "mirrors first-write and identical-retry semantics",
+        "production defaults directly unavailable",
+        "load and save are single-flight and save complete values",
+        "version conflict freezes the draft until reload succeeds",
+        "an ambiguous save retries the same version and converges",
+        "invalidation and disposal retire late work safely",
+    ),
+    Path("test/privacy_presentation_screen_test.dart"): (
+        "production Privacy fails closed without controls or preview claims",
+        "Preview edits both exact preferences and commits only advanced evidence",
+        "version conflict preserves both draft fields until reload",
+        "mounted Privacy replaces the old owner after gateway rotation",
+        "Privacy supports a 390pt screen at 2x Dynamic Type",
+        "legacy H3 controls and fake Copy permission save are absent",
+    ),
+}
 
 
 def read_text(path: Path) -> str:
@@ -816,6 +912,28 @@ def contains_positive_profile_save_language(source: str) -> bool:
         if normalized.casefold().rstrip(".!?…") == "saved":
             return True
         if PROFILE_POSITIVE_SAVE_PATTERN.search(normalized):
+            return True
+    return False
+
+
+def contains_positive_privacy_commit_language(source: str) -> bool:
+    """Detect only positive, user-visible Privacy commit evidence strings."""
+
+    for content in dart_concatenated_string_contents(source):
+        normalized = " ".join(content.split())
+        normalized_word = normalized.casefold().rstrip(".!?…")
+        if normalized_word in {
+            "saved",
+            "committed",
+            "applied",
+            "success",
+            "successful",
+            "保存成功",
+        }:
+            return True
+        if PRIVACY_POSITIVE_COMMIT_PATTERN.search(normalized):
+            return True
+        if PRIVACY_POSITIVE_COMMIT_CJK_PATTERN.search(normalized):
             return True
     return False
 
@@ -2135,6 +2253,254 @@ def check_profile_application_contract(root: Path) -> list[str]:
     return errors
 
 
+def check_privacy_application_contract(root: Path) -> list[str]:
+    """Keep Privacy preferences exact, unavailable, and non-authoritative."""
+
+    errors: list[str] = []
+    gateway_path = root / PRIVACY_GATEWAY_PATH
+    if gateway_path.is_file():
+        gateway = strip_dart_comments(read_text(gateway_path))
+        default_pattern = re.compile(
+            r"final\s+privacyGatewayProvider\s*=\s*Provider<PrivacyGateway>\s*"
+            r"\(\s*\(\s*ref\s*\)\s*=>\s*const\s+UnavailablePrivacyGateway\s*"
+            r"\(\s*\)\s*,?\s*\)\s*;",
+            re.DOTALL,
+        )
+        if default_pattern.search(gateway) is None:
+            errors.append(
+                "Privacy production provider must default directly to "
+                "const UnavailablePrivacyGateway()"
+            )
+
+    models_path = root / PRIVACY_MODELS_PATH
+    if models_path.is_file():
+        models_source = strip_dart_comments(read_text(models_path))
+        models_code = strip_dart_comments_and_strings(models_source)
+        visibility_match = re.search(
+            r"enum\s+CopyTradeVisibility\s*\{(?P<body>.*?)\s*;",
+            models_code,
+            re.DOTALL,
+        )
+        visibility_members = (
+            {
+                member.strip()
+                for member in visibility_match.group("body").split(",")
+                if member.strip()
+            }
+            if visibility_match
+            else set()
+        )
+        if visibility_members != {"private", "followers", "public"}:
+            errors.append(
+                "CopyTradeVisibility must contain exactly private, followers, "
+                "and public"
+            )
+
+        wire_getter_match = re.search(
+            r"String\s+get\s+wireValue\s*=>\s*switch\s*\(\s*this\s*\)\s*"
+            r"\{(?P<body>.*?)\}\s*;",
+            models_source,
+            re.DOTALL,
+        )
+        forward_wire_values = (
+            {
+                member: wire_value
+                for member, _, wire_value in re.findall(
+                    r"\bCopyTradeVisibility\.(\w+)\s*=>\s*(['\"])([^'\"]*)\2",
+                    wire_getter_match.group("body"),
+                )
+            }
+            if wire_getter_match
+            else {}
+        )
+        from_wire_match = re.search(
+            r"static\s+CopyTradeVisibility\s+fromWire\s*\(\s*String\s+\w+\s*"
+            r"\)\s*=>\s*switch\s*\([^)]*\)\s*\{(?P<body>.*?)\}\s*;",
+            models_source,
+            re.DOTALL,
+        )
+        reverse_wire_values = (
+            {
+                wire_value: member
+                for _, wire_value, member in re.findall(
+                    r"(['\"])([^'\"]*)\1\s*=>\s*CopyTradeVisibility\.(\w+)\b",
+                    from_wire_match.group("body"),
+                )
+            }
+            if from_wire_match
+            else {}
+        )
+        expected_reverse_wire_values = {
+            wire_value: member
+            for member, wire_value in PRIVACY_VISIBILITY_WIRE_VALUES.items()
+        }
+        if (
+            forward_wire_values != PRIVACY_VISIBILITY_WIRE_VALUES
+            or reverse_wire_values != expected_reverse_wire_values
+        ):
+            errors.append(
+                "CopyTradeVisibility wire values must map exactly to private, "
+                "followers, and public in both directions"
+            )
+
+        actual_values_fields = dart_class_fields(models_code, "PrivacyValues")
+        expected_values_fields = {
+            ("final", "bool", "discoverable"),
+            ("final", "CopyTradeVisibility", "copyTradeVisibility"),
+        }
+        if actual_values_fields != expected_values_fields:
+            rendered_fields = ", ".join(
+                f"{modifiers} {field_type} {name}".strip()
+                for modifiers, field_type, name in sorted(
+                    actual_values_fields or set()
+                )
+            ) or "none"
+            errors.append(
+                "PrivacyValues fields must be exactly final bool discoverable "
+                "and final CopyTradeVisibility copyTradeVisibility; found: "
+                + rendered_fields
+            )
+
+        actual_resource_fields = dart_class_fields(
+            models_code, "PrivacyResource"
+        )
+        expected_resource_fields = {
+            ("final", "int", "version"),
+            ("final", "PrivacyValues", "values"),
+            ("final", "DateTime?", "updatedAt"),
+        }
+        if actual_resource_fields != expected_resource_fields:
+            rendered_fields = ", ".join(
+                f"{modifiers} {field_type} {name}".strip()
+                for modifiers, field_type, name in sorted(
+                    actual_resource_fields or set()
+                )
+            ) or "none"
+            errors.append(
+                "PrivacyResource fields must be exactly final int version, "
+                "final PrivacyValues values, and final nullable DateTime "
+                "updatedAt; found: "
+                + rendered_fields
+            )
+
+    surface_path = root / PRIVACY_SURFACE_PATH
+    if surface_path.is_file():
+        surface = strip_dart_comments(read_text(surface_path))
+        privacy_start = surface.find("class _PrivacyCenter")
+        privacy_end = surface.find("class _PrivacyModeBanner", privacy_start)
+        privacy_surface = (
+            surface[privacy_start:privacy_end]
+            if privacy_start >= 0 and privacy_end > privacy_start
+            else ""
+        )
+        for marker in PRIVACY_LEGACY_MARKERS:
+            if marker in privacy_surface:
+                errors.append(
+                    "Privacy Center contains removed non-contract state or copy: "
+                    + marker
+                )
+        if re.search(r"\b(?:ScaffoldMessenger|SnackBar)\b", privacy_surface):
+            errors.append(
+                "Privacy Center must derive commit evidence from PrivacyState "
+                "and must not emit ad-hoc SnackBar announcements"
+            )
+
+        copy_start = surface.find("class _CopyTradePermissions")
+        copy_end = surface.find("class _SecurityCenter", copy_start)
+        copy_surface = (
+            surface[copy_start:copy_end]
+            if copy_start >= 0 and copy_end > copy_start
+            else ""
+        )
+        copy_executable = strip_dart_comments_and_strings(copy_surface)
+        if PRIVACY_COPY_INTERACTION_PATTERN.search(copy_executable):
+            errors.append(
+                "Copy-trade permissions must remain a non-actionable truthful "
+                "placeholder until an authorization contract exists"
+            )
+        for marker in PRIVACY_COPY_PERMISSION_MARKERS:
+            if marker in copy_surface:
+                errors.append(
+                    "Copy-trade placeholder contains unsupported permission UI: "
+                    + marker
+                )
+
+    preview_root = root / PRIVACY_PREVIEW_ROOT_PATH
+    if preview_root.is_file():
+        preview_code = strip_dart_comments_and_strings(read_text(preview_root))
+        if len(PRIVACY_MEMORY_CONSTRUCTION_PATTERN.findall(preview_code)) != 1:
+            errors.append(
+                "lib/main_preview.dart must compose exactly one explicit "
+                "MemoryPrivacyGateway"
+            )
+
+    lib_root = root / "lib"
+    if lib_root.is_dir():
+        allowed = frozenset({
+            PRIVACY_MEMORY_GATEWAY_PATH,
+            PRIVACY_PREVIEW_ROOT_PATH,
+        })
+        for path in sorted(lib_root.rglob("*.dart")):
+            relative = path.relative_to(root)
+            if relative in allowed:
+                continue
+            executable_code = strip_dart_comments_and_strings(read_text(path))
+            if PRIVACY_MEMORY_REFERENCE_PATTERN.search(executable_code):
+                errors.append(
+                    f"{relative} references MemoryPrivacyGateway; the fake may "
+                    "only be defined by its integration and composed by "
+                    "lib/main_preview.dart"
+                )
+
+    profile_feature_root = root / "lib" / "features" / "profile"
+    if profile_feature_root.is_dir():
+        for path in sorted(profile_feature_root.rglob("*.dart")):
+            source = read_text(path)
+            if contains_positive_privacy_commit_language(source):
+                errors.append(
+                    f"{path.relative_to(root)} contains positive Privacy commit "
+                    "language; committed-resource state is the only allowed "
+                    "evidence"
+                )
+
+    for relative, markers in PRIVACY_BEHAVIOR_TEST_MARKERS.items():
+        path = root / relative
+        if not path.is_file():
+            continue
+        source = strip_dart_comments(read_text(path))
+        test_starts = [
+            match.start()
+            for match in re.finditer(r"\btest(?:Widgets)?\s*\(", source)
+        ]
+        missing: list[str] = []
+        for marker in markers:
+            declaration = re.search(
+                r"\btest(?:Widgets)?\s*\(\s*(['\"])"
+                + re.escape(marker)
+                + r"\1\s*,",
+                source,
+                re.DOTALL,
+            )
+            if declaration is None:
+                missing.append(marker)
+                continue
+            next_test = next(
+                (start for start in test_starts if start > declaration.start()),
+                len(source),
+            )
+            executable_test = strip_dart_comments_and_strings(
+                source[declaration.end() : next_test]
+            )
+            if re.search(r"\bexpect(?:Later)?\s*\(", executable_test) is None:
+                missing.append(marker + " (no assertion)")
+        if missing:
+            errors.append(
+                f"{relative} is missing required behavior evidence: "
+                + ", ".join(missing)
+            )
+    return errors
+
+
 def check_secret_paths(paths: list[Path]) -> list[str]:
     errors: list[str] = []
     for path in paths:
@@ -2179,6 +2545,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_providerless_application_contract(root))
     errors.extend(check_watchlist_application_contract(root))
     errors.extend(check_profile_application_contract(root))
+    errors.extend(check_privacy_application_contract(root))
     errors.extend(check_source_guards(root))
     errors.extend(check_records(root))
     visible, visible_error = git_visible_paths(root)

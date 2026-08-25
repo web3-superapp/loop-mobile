@@ -23,6 +23,7 @@ Keep the formal repository's existing UI/catalog and six primary destinations wh
 - Provider-neutral centralized notification classification with exact `notification.v1` envelopes, authenticated recipient binding, fixed Chat/Audio Room/notification-center intents, explicit foreground/background non-navigation, and bounded process-local interaction deduplication. The root EventSource/Coordinator seam is wired with a production-disabled source; authenticated context comes only from the real LOOP session plus verified bootstrap Stream identity, and at most one time-bounded interaction may wait for restoration. Production notification fixtures now fail closed outside explicit Preview; Firebase/provider ingress remains disabled.
 - Providerless Watchlist domain and application state with exact grouped/order limits, defensive immutable snapshots, draft editing, optimistic expected-version saves, one in-flight mutation, explicit discard/reload, and fail-closed conflict handling. Production uses an unavailable gateway; the labelled in-memory implementation is composed only by the explicit Preview entry point and carries asset references rather than market facts.
 - Providerless Profile presentation domain and application state with exact nullable Alias/opaque avatar-reference validation, defensive immutable resources, complete optimistic replacement, draft/discard/reload, single-flight loading and saving, conflict freezing, ambiguous-retry convergence, provider rotation, and late-result isolation. H1/H2 project only committed values, production stays unavailable without claiming persistence, and the labelled Preview fake is composed only by the explicit Preview root. Bio and Privacy are not smuggled into the Profile contract, and avatar editing remains disabled.
+- Providerless Privacy preference domain and application state with the exact `discoverable` Boolean and `copy_trade_visibility` enum values, version/timestamp invariants, complete optimistic replacement, draft/discard/reload, single-flight work, conflict freezing, ambiguous-retry convergence, gateway rotation, and late-result isolation. Production stays unavailable without claiming persistence; the labelled Preview fake is composed only by the explicit Preview root. Legacy H3 controls were removed, and Copy Trading remains a non-actionable placeholder because this preference neither grants authorization nor executes copying.
 
 ## Verification
 
@@ -172,6 +173,20 @@ The providerless Profile presentation slice was verified on 2026-08-25:
 
 The deterministic behavior suite covers the reviewed raw/normalized Alias limits, Unicode scalar and bidirectional safety, opaque avatar-reference grammar, version/timestamp biconditional, missing-row creation, stale-identical replay, complete-value replacement, invalid and non-advancing responses, single-flight work, optimistic conflicts, ambiguous save retry, gateway-owner rotation, disposal, and late-result isolation. Widget tests cover production unavailable truth, fixture-free default Home, labelled Preview editing, invalid-input retry gating, committed Home projection, conflict-only reload, pending/failed reload feedback with draft preservation, mounted gateway rotation, sanitized failure, and narrow-screen 2x Dynamic Type. No Dio route, Privy bearer request, backend response, avatar upload/reference source, Privacy persistence, provider account, or device persistence was exercised; those remain for later adapter slices.
 
+The providerless Privacy preferences slice was verified on 2026-08-25:
+
+- `bin/dart format --output=none --set-exit-if-changed lib test`: passed; 144 files, 0 changed.
+- `bin/flutter analyze`: passed; no issues.
+- `bin/flutter test test/privacy_models_test.dart test/privacy_controller_test.dart test/privacy_presentation_screen_test.dart`: passed; 26 tests.
+- `bin/flutter test`: passed; 281 tests.
+- `python3 -m py_compile scripts/check_harness.py tests/test_check_harness.py`: passed.
+- `python3 scripts/check_harness.py`: passed.
+- `python3 -m unittest discover -s tests -p 'test_*.py' -v`: passed; 55 tests.
+- `bin/flutter build apk --debug`: passed; produced `build/app/outputs/flutter-apk/app-debug.apk`. Flutter repeated the accepted future Gradle 8.14 / AGP 8.13.2 support warnings; the locked matrix was not changed.
+- `bin/flutter build ios --debug --no-codesign`: passed; produced `build/ios/iphoneos/Runner.app` for `com.cywd.loop`.
+
+The deterministic behavior suite covers exact field allowlists and enum wire values, rejection of unknown visibility values, defaults, version/timestamp invariants, missing-row creation, stale-identical convergence, complete expected-version replacement, invalid and non-advancing responses, single-flight work, conflicts, retryable failures, gateway rotation, disposal, and late-result isolation. Widget tests cover unavailable production truth, labelled Preview editing, committed evidence only after an advanced response, gateway rotation, conflict-preserving reload, removal of legacy H3/fake Copy permission controls, and a 390-point screen at 2x Dynamic Type. No Dio route, Privy bearer request, backend response, discovery enforcement, follower policy, Copy Trading authorization/execution, provider account, or device persistence was exercised; those remain outside this providerless slice.
+
 ## Provider readiness
 
 | Capability | Current status |
@@ -186,6 +201,7 @@ The deterministic behavior suite covers the reviewed raw/normalized Alias limits
 | Hyperliquid public markets | Direct Testnet read-only adapter available |
 | Watchlist | Providerless models/controller/UI complete; production adapter unavailable and no account persistence claimed |
 | Profile presentation | Providerless exact models/controller/H1-H2 UI complete; production adapter and avatar source unavailable, with no account persistence claimed |
+| Privacy preferences | Providerless exact models/controller/UI complete; production adapter unavailable, and the saved preference is not discovery, follower or Copy Trading authorization/execution evidence |
 | Private trading | Backend-only by design; not connected |
 
 ## Follow-up inputs
