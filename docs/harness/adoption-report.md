@@ -26,6 +26,7 @@ Date: 2026-08-24
 - Providerless application guards keep Dio and `/v1/` transport literals out of feature modules and reject known Preview fixture composition from `lib/main.dart`; controllers must depend on ports while fakes remain test/Preview-only.
 - Profile guards require its exact domain/controller/UI tests, keep production directly unavailable, enforce the `ProfileValues` and `ProfileResource` field allowlists, confine every `MemoryProfileGateway` reference to its implementation and `lib/main_preview.dart`, and reject ad-hoc notifications or positive Profile-save language.
 - Privacy guards require the exact two-field preference contract and its domain/controller/UI tests, keep production directly unavailable, confine `MemoryPrivacyGateway` to its implementation and `lib/main_preview.dart`, reject legacy H3 controls and actionable Copy Trading permission claims, and preserve the distinction between a saved visibility preference and authorization or execution.
+- Notification Preferences guards require the exact four-event Boolean contract and its domain/controller/UI tests, keep delivery permanently unavailable and production directly fail-closed, confine `MemoryNotificationPreferencesGateway` to its implementation and `lib/main_preview.dart`, and reject legacy H9 categories, fabricated operating-system state, Quiet hours, or positive delivery/save claims.
 - Git-visible `.env`, private-key, service-account, and Firebase Admin credential paths fail validation. `.gitnexus/` and project-local SDK artifacts are ignored.
 
 ## Verification
@@ -129,3 +130,22 @@ passed 281 tests, and analyze, Android Debug and iOS Debug no-codesign passed.
 No failure-memory record was added because this is a planned boundary and no
 production incident was reproduced. Exact commands and remaining provider
 inputs are recorded in the Phase 1 integration report.
+
+## Providerless Notification Preferences Update
+
+On 2026-08-25, decision 0012 fixed the exact Notification Preferences boundary
+before its authenticated HTTP adapter. The Harness requires the models,
+gateway, controller and UI behavior tests; locks the four reviewed event wire
+values and complete Boolean snapshot; keeps `delivery` limited to
+`unavailable`; and keeps production directly bound to an unavailable gateway.
+The memory implementation is confined to the explicit Preview root.
+
+The UI guard rejects the inherited six-category local state, fabricated
+operating-system permission, no-op device-settings action, Quiet hours, and
+positive save or delivery claims. The complete Harness mutation suite passed
+64 tests. Flutter format covered 151 files, the focused Notification
+Preferences suite passed 29 tests, the full Flutter suite passed 310 tests, and
+analyze, Android Debug and iOS Debug no-codesign passed. No failure-memory
+record was added because this is a planned boundary and no production incident
+was reproduced. Exact commands and remaining provider inputs are recorded in
+the Phase 1 integration report.

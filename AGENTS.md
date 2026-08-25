@@ -70,6 +70,7 @@ Never edit generated paths as application source. `.tooling` may hold an ignored
 15. Keep Watchlist models limited to versioned, grouped, ordered owner-local asset keys. Preview memory saves remain labelled `开发预览` and never supply prices, freshness, tradability, alert state, or other market facts.
 16. Keep Profile presentation models limited to nullable Alias and opaque `avatar:` reference values with the reviewed version contract. Bio and Privacy are separate resources; production Profile persistence stays unavailable until an authenticated, owner-scoped adapter exists, and UI must never announce a save without an advanced matching resource.
 17. Keep Privacy models limited to `discoverable` and the `private` / `followers` / `public` copy-trade visibility preference. This resource never proves discovery, follower membership, portfolio sharing, copy authorization, or execution; production remains unavailable until its authenticated adapter exists.
+18. Keep Notification Preferences limited to the exact four owner intents `price_alert_triggered`, `provider_activity_projected`, `security_notice`, and `support_update`. Delivery remains `unavailable` regardless of saved values; production stays unavailable until an authenticated adapter exists, and the UI must not infer Firebase/provider/device permission or delivery.
 
 ## Commands
 

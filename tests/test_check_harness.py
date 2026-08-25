@@ -136,6 +136,7 @@ class HarnessTests(unittest.TestCase):
             source.parent.mkdir(parents=True)
             source.write_text(
                 "final chat = MemoryCommunicationGateway();\n"
+                "final notifications = MemoryNotificationPreferencesGateway();\n"
                 "final privacy = MemoryPrivacyGateway();\n"
                 "final profile = MemoryProfileGateway();\n"
                 "final watchlist = MemoryWatchlistGateway();\n"
@@ -144,7 +145,7 @@ class HarnessTests(unittest.TestCase):
                 encoding="utf-8",
             )
             result = check_harness.check_providerless_application_contract(root)
-        self.assertEqual(6, len(result))
+        self.assertEqual(7, len(result))
         self.assertTrue(
             all("tests or lib/main_preview.dart" in error for error in result)
         )
@@ -642,6 +643,370 @@ class HarnessTests(unittest.TestCase):
                         ),
                         msg=f"expected non-hollow Privacy behavior guard: {result}",
                     )
+
+    def test_notification_preferences_paths_are_required(self) -> None:
+        expected = {
+            "docs/decisions/0012-model-notification-preferences-before-http-adapter.md",
+            "lib/features/profile/notification_preferences/notification_preferences_controller.dart",
+            "lib/features/profile/notification_preferences/notification_preferences_gateway.dart",
+            "lib/features/profile/notification_preferences/notification_preferences_models.dart",
+            "lib/integrations/personalization/memory_notification_preferences_gateway.dart",
+            "test/notification_preferences_controller_test.dart",
+            "test/notification_preferences_models_test.dart",
+            "test/notification_preferences_screen_test.dart",
+        }
+
+        self.assertTrue(expected.issubset(set(check_harness.REQUIRED_FILES)))
+
+    def test_notification_preferences_provider_must_default_unavailable(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            gateway = root / check_harness.NOTIFICATION_PREFERENCES_GATEWAY_PATH
+            gateway.parent.mkdir(parents=True)
+            gateway.write_text(
+                "final notificationPreferencesGatewayProvider = "
+                "Provider<NotificationPreferencesGateway>(\n"
+                "  (ref) => MemoryNotificationPreferencesGateway(),\n"
+                ");\n",
+                encoding="utf-8",
+            )
+
+            result = (
+                check_harness.check_notification_preferences_application_contract(
+                    root
+                )
+            )
+
+        self.assertTrue(
+            any("must default directly" in error for error in result),
+            msg=f"expected unavailable Notification Preferences guard: {result}",
+        )
+
+    def test_notification_preferences_models_must_match_exact_contract(
+        self,
+    ) -> None:
+        valid_source = self._notification_preferences_models_source()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            models = root / check_harness.NOTIFICATION_PREFERENCES_MODELS_PATH
+            models.parent.mkdir(parents=True)
+            models.write_text(valid_source, encoding="utf-8")
+            valid_result = (
+                check_harness.check_notification_preferences_application_contract(
+                    root
+                )
+            )
+
+            invalid_source = valid_source.replace(
+                "  supportUpdate;",
+                "  supportUpdate,\n  marketing;",
+            ).replace(
+                "    NotificationPreferenceEvent.supportUpdate => 'support_update',",
+                "    NotificationPreferenceEvent.supportUpdate => 'support_update',\n"
+                "    NotificationPreferenceEvent.marketing => 'marketing',",
+            ).replace(
+                "    'support_update' => NotificationPreferenceEvent.supportUpdate,",
+                "    'support_update' => NotificationPreferenceEvent.supportUpdate,\n"
+                "    'marketing' => NotificationPreferenceEvent.marketing,",
+            ).replace(
+                "  unavailable;",
+                "  unavailable,\n  available;",
+            ).replace(
+                "    NotificationDeliveryState.unavailable => 'unavailable',",
+                "    NotificationDeliveryState.unavailable => 'unavailable',\n"
+                "    NotificationDeliveryState.available => 'available',",
+            ).replace(
+                "    'unavailable' => NotificationDeliveryState.unavailable,",
+                "    'unavailable' => NotificationDeliveryState.unavailable,\n"
+                "    'available' => NotificationDeliveryState.available,",
+            ).replace(
+                "  final bool supportUpdate;",
+                "  final bool supportUpdate;\n  final bool marketing;",
+            ).replace(
+                "  final NotificationDeliveryState delivery;",
+                "  final NotificationDeliveryState delivery;\n"
+                "  final DateTime? updatedAt;",
+            )
+            models.write_text(invalid_source, encoding="utf-8")
+            invalid_result = (
+                check_harness.check_notification_preferences_application_contract(
+                    root
+                )
+            )
+
+        self.assertEqual([], valid_result)
+        self.assertTrue(
+            any("NotificationPreferenceEvent must contain exactly" in error for error in invalid_result)
+        )
+        self.assertTrue(
+            any("NotificationPreferenceEvent wire values" in error for error in invalid_result)
+        )
+        self.assertTrue(
+            any("NotificationDeliveryState must contain only" in error for error in invalid_result)
+        )
+        self.assertTrue(
+            any("NotificationDeliveryState wire values" in error for error in invalid_result)
+        )
+        self.assertTrue(
+            any("NotificationPreferenceValues fields" in error for error in invalid_result)
+        )
+        self.assertTrue(
+            any("NotificationPreferencesResource fields" in error for error in invalid_result)
+        )
+
+    def test_notification_preference_wire_parsers_must_fail_closed(self) -> None:
+        examples = (
+            (
+                "_ => throw Exception(),",
+                "_ => NotificationPreferenceEvent.priceAlertTriggered,",
+                "NotificationPreferenceEvent wire values",
+            ),
+            (
+                "_ => throw StateError('delivery'),",
+                "_ => NotificationDeliveryState.unavailable,",
+                "NotificationDeliveryState wire values",
+            ),
+        )
+        for original, replacement, expected_error in examples:
+            with self.subTest(expected_error=expected_error):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    models = (
+                        root / check_harness.NOTIFICATION_PREFERENCES_MODELS_PATH
+                    )
+                    models.parent.mkdir(parents=True)
+                    source = self._notification_preferences_models_source()
+                    self.assertIn(original, source)
+                    models.write_text(
+                        source.replace(original, replacement, 1),
+                        encoding="utf-8",
+                    )
+
+                    result = check_harness.check_notification_preferences_application_contract(
+                        root
+                    )
+
+                self.assertTrue(
+                    any(expected_error in error for error in result),
+                    msg=f"expected fail-closed wire guard: {result}",
+                )
+
+    def test_notification_preferences_memory_gateway_is_preview_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = (
+                root
+                / "lib"
+                / "features"
+                / "profile"
+                / "notification_preferences"
+                / "unsafe_fake.dart"
+            )
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "final gatewayFactory = MemoryNotificationPreferencesGateway.new;\n",
+                encoding="utf-8",
+            )
+
+            result = (
+                check_harness.check_notification_preferences_application_contract(
+                    root
+                )
+            )
+
+        self.assertTrue(
+            any(
+                "references MemoryNotificationPreferencesGateway" in error
+                for error in result
+            ),
+            msg=f"expected Preview-only Notification Preferences fake guard: {result}",
+        )
+
+    def test_notification_preferences_preview_requires_exactly_one_memory_gateway(
+        self,
+    ) -> None:
+        preview_sources = (
+            "void main() {}\n",
+            "final first = MemoryNotificationPreferencesGateway();\n"
+            "final second = MemoryNotificationPreferencesGateway();\n",
+        )
+        for preview_source in preview_sources:
+            with self.subTest(source=preview_source):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    preview = (
+                        root
+                        / check_harness.NOTIFICATION_PREFERENCES_PREVIEW_ROOT_PATH
+                    )
+                    preview.parent.mkdir(parents=True)
+                    preview.write_text(preview_source, encoding="utf-8")
+
+                    result = check_harness.check_notification_preferences_application_contract(
+                        root
+                    )
+
+                self.assertTrue(
+                    any("must compose exactly one" in error for error in result),
+                    msg=f"expected exact Preview construction guard: {result}",
+                )
+
+    def test_notification_preferences_surface_rejects_legacy_h9_state(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            surface = root / check_harness.NOTIFICATION_PREFERENCES_SURFACE_PATH
+            surface.parent.mkdir(parents=True)
+            surface.write_text(
+                "class _NotificationSettings {\n"
+                "  final _settings = <String, bool>{};\n"
+                "  final labels = <String>[\n"
+                "    'Orders ' 'and fills',\n"
+                "    'Liquidation risk',\n"
+                "    'Community activity',\n"
+                "    'System notices',\n"
+                "    'System notifications are off',\n"
+                "    'Open device settings',\n"
+                "    'Quiet hours',\n"
+                "  ];\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            result = (
+                check_harness.check_notification_preferences_application_contract(
+                    root
+                )
+            )
+
+        legacy_errors = [
+            error for error in result if "non-contract H9 state/copy" in error
+        ]
+        self.assertEqual(
+            len(check_harness.NOTIFICATION_PREFERENCES_LEGACY_MARKERS),
+            len(legacy_errors),
+            msg=f"expected every legacy H9 marker to fail: {result}",
+        )
+
+    def test_notification_preferences_rejects_positive_save_or_delivery_copy(
+        self,
+    ) -> None:
+        examples = (
+            ("final label = 'Preferences saved';\n", True),
+            ("final label = 'Preferences have been saved';\n", True),
+            ("final label = 'Successfully saved';\n", True),
+            ("final label = 'Notifications are now enabled';\n", True),
+            ("final label = 'Delivery is available';\n", True),
+            ("final label = '\\u0050references saved';\n", True),
+            ("final label = 'Notification ' 'delivery is connected';\n", True),
+            ("final label = '通知偏好已保存';\n", True),
+            (
+                "final label = 'Preferences were not saved. Delivery remains unavailable.';\n",
+                False,
+            ),
+        )
+        for source_text, rejected in examples:
+            with self.subTest(source=source_text):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    surface = (
+                        root / check_harness.NOTIFICATION_PREFERENCES_SURFACE_PATH
+                    )
+                    surface.parent.mkdir(parents=True)
+                    surface.write_text(source_text, encoding="utf-8")
+
+                    result = check_harness.check_notification_preferences_application_contract(
+                        root
+                    )
+
+                detected = any(
+                    "positive save or delivery language" in error
+                    for error in result
+                )
+                self.assertEqual(rejected, detected, msg=f"unexpected guard: {result}")
+
+    def test_notification_preferences_behavior_tests_cannot_be_hollowed_out(
+        self,
+    ) -> None:
+        for (
+            relative,
+            markers,
+        ) in check_harness.NOTIFICATION_PREFERENCES_BEHAVIOR_TEST_MARKERS.items():
+            forged_markers = ", ".join(repr(marker) for marker in markers)
+            hollow_tests = "\n".join(
+                f"test({marker!r}, () {{ final observed = true; }});"
+                for marker in markers
+            )
+            hollow_sources = (
+                "void main() {}\n",
+                f"void main() {{ const markers = <String>[{forged_markers}]; }}\n",
+                "void main() {\n" + hollow_tests + "\n}\n",
+            )
+            for source_text in hollow_sources:
+                with self.subTest(path=str(relative), source=source_text):
+                    with tempfile.TemporaryDirectory() as temporary:
+                        root = Path(temporary)
+                        test_path = root / relative
+                        test_path.parent.mkdir(parents=True)
+                        test_path.write_text(source_text, encoding="utf-8")
+
+                        result = check_harness.check_notification_preferences_application_contract(
+                            root
+                        )
+
+                    self.assertTrue(
+                        any(
+                            "missing required behavior evidence" in error
+                            for error in result
+                        ),
+                        msg=(
+                            "expected non-hollow Notification Preferences "
+                            f"behavior guard: {result}"
+                        ),
+                    )
+
+    @staticmethod
+    def _notification_preferences_models_source() -> str:
+        return (
+            "enum NotificationPreferenceEvent {\n"
+            "  priceAlertTriggered,\n"
+            "  providerActivityProjected,\n"
+            "  securityNotice,\n"
+            "  supportUpdate;\n"
+            "  String get wireValue => switch (this) {\n"
+            "    NotificationPreferenceEvent.priceAlertTriggered => 'price_alert_triggered',\n"
+            "    NotificationPreferenceEvent.providerActivityProjected => 'provider_activity_projected',\n"
+            "    NotificationPreferenceEvent.securityNotice => 'security_notice',\n"
+            "    NotificationPreferenceEvent.supportUpdate => 'support_update',\n"
+            "  };\n"
+            "  static NotificationPreferenceEvent fromWire(String value) => switch (value) {\n"
+            "    'price_alert_triggered' => NotificationPreferenceEvent.priceAlertTriggered,\n"
+            "    'provider_activity_projected' => NotificationPreferenceEvent.providerActivityProjected,\n"
+            "    'security_notice' => NotificationPreferenceEvent.securityNotice,\n"
+            "    'support_update' => NotificationPreferenceEvent.supportUpdate,\n"
+            "    _ => throw Exception(),\n"
+            "  };\n"
+            "}\n"
+            "enum NotificationDeliveryState {\n"
+            "  unavailable;\n"
+            "  String get wireValue => switch (this) {\n"
+            "    NotificationDeliveryState.unavailable => 'unavailable',\n"
+            "  };\n"
+            "  static NotificationDeliveryState fromWire(String value) => switch (value) {\n"
+            "    'unavailable' => NotificationDeliveryState.unavailable,\n"
+            "    _ => throw StateError('delivery'),\n"
+            "  };\n"
+            "}\n"
+            "final class NotificationPreferenceValues {\n"
+            "  final bool priceAlertTriggered;\n"
+            "  final bool providerActivityProjected;\n"
+            "  final bool securityNotice;\n"
+            "  final bool supportUpdate;\n"
+            "}\n"
+            "final class NotificationPreferencesResource {\n"
+            "  final int version;\n"
+            "  final NotificationPreferenceValues values;\n"
+            "  final NotificationDeliveryState delivery;\n"
+            "}\n"
+        )
 
     def test_notification_global_handler_must_be_centralized(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

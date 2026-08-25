@@ -72,6 +72,9 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 - The separately versioned Privacy resource contains exactly `discoverable` and `copy_trade_visibility`; the latter accepts only `private`, `followers`, or `public`. Version-zero defaults are fail-closed (`false` and `private`) and a replacement always submits both values.
 - Privacy values are presentation preferences only. They never prove public discovery, follower membership, portfolio sharing, wallet/activity/position visibility, copy-trade authorization, limits, or execution. Those capabilities remain unavailable rather than being simulated locally.
 - Until an authenticated owner-scoped Privacy adapter exists, production Privacy uses an unavailable gateway. Only tests and the visibly labelled Preview root may compose its memory implementation; conflicts freeze and preserve the draft until explicit reload.
+- Notification Preferences contains exactly the four Boolean owner intents `price_alert_triggered`, `provider_activity_projected`, `security_notice`, and `support_update`. Version-zero means all false, replacements submit the complete fixed set, and divergent stale writes preserve and freeze the draft until explicit reload.
+- Notification Preference delivery is always `unavailable` in this contract, including when one or more intents are enabled. The values never prove an alert exists, Firebase/APNs/FCM accepted anything, operating-system permission was granted, or a device displayed or received a notification.
+- Until an authenticated owner-scoped Notification Preferences adapter exists, production uses an unavailable gateway. Only tests and the visibly labelled Preview root may compose its memory implementation. Price Alert creation/evaluation, provider ingress, device registration, permission requests, quiet hours, and delivery remain separate unavailable capabilities.
 
 ## Experience and acceptance
 

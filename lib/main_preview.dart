@@ -6,12 +6,15 @@ import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
+import 'package:loop_mobile/features/profile/notification_preferences/notification_preferences_gateway.dart';
+import 'package:loop_mobile/features/profile/notification_preferences/notification_preferences_models.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_fixture_adapter.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_trading_gateway.dart';
+import 'package:loop_mobile/integrations/personalization/memory_notification_preferences_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/memory_privacy_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/memory_profile_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_fixture_adapter.dart';
@@ -39,6 +42,15 @@ void main() {
         developmentPreviewEnabledProvider.overrideWithValue(true),
         communicationGatewayProvider.overrideWithValue(
           MemoryCommunicationGateway(),
+        ),
+        notificationPreferencesGatewayProvider.overrideWithValue(
+          MemoryNotificationPreferencesGateway(
+            initialResource: NotificationPreferencesResource(
+              version: 1,
+              values: const NotificationPreferenceValues.disabled(),
+              delivery: NotificationDeliveryState.unavailable,
+            ),
+          ),
         ),
         privacyGatewayProvider.overrideWithValue(
           MemoryPrivacyGateway(

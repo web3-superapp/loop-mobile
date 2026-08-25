@@ -21,6 +21,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - Watchlist 已按后端现有版本化契约完成 providerless 应用逻辑：分组、资产顺序、草稿、保存单飞、显式丢弃与版本冲突恢复均在窄端口后建模。正式入口默认不可用，不发送私有请求；只有 `main_preview.dart` 注入明确标注的内存实现。Watchlist 只保存资产标识，不把价格、涨跌、可交易性或提醒状态伪装成账户事实
 - Profile presentation 已按后端现有契约完成 providerless 应用逻辑：只建模 nullable Alias、opaque `avatar:` reference、版本与更新时间；编辑、丢弃、保存单飞、冲突重载、失败重试与迟到结果隔离均已落地。Bio 不属于该契约，Visibility 仍归独立 Privacy 资源，Avatar 选择在来源契约确定前禁用。正式入口默认不可用且不再伪报保存成功；只有显式 Preview 使用带标签的内存实现
 - Privacy preferences 已按独立后端契约完成 providerless 应用逻辑：只建模 `discoverable` 与 `private/followers/public` copy-trade visibility 偏好，支持完整草稿替换、冲突冻结、显式重载与 owner/gateway 轮换。旧版 Portfolio Broadcast、群组白名单、活动/仓位可见性和 copy-trade 假授权表单已移除；偏好不代表发现、followers 或跟单执行已启用。正式入口默认不可用，只有显式 Preview 使用带标签的内存实现
+- Notification preferences 已按后端契约完成 providerless 应用逻辑：只建模 `price_alert_triggered`、`provider_activity_projected`、`security_notice` 与 `support_update` 四项 owner intent，支持完整草稿替换、冲突冻结、重载、单飞与 owner/gateway 轮换。`delivery` 始终为 `unavailable`；旧版六分类、伪系统权限、空的设备设置动作和 Quiet hours 已移除。正式入口默认不可用，只有显式 Preview 使用带标签的内存实现；这不代表 Firebase、APNs/FCM、系统权限、Price Alert 或任何通知送达已接通
 - Account、Wallet、Market、Perp、Chat、Profile 与系统状态组件
 - 深色 LOOP 设计系统、键盘焦点、语义标签、reduced-motion 与手机/桌面响应式布局
 

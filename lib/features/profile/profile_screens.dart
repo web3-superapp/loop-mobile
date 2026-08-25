@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/profile/notification_preferences/notification_preferences_controller.dart';
+import 'package:loop_mobile/features/profile/notification_preferences/notification_preferences_gateway.dart';
+import 'package:loop_mobile/features/profile/notification_preferences/notification_preferences_models.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_controller.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
@@ -321,7 +324,7 @@ class _ProfileHome extends StatelessWidget {
             _SettingsTile(
               icon: Icons.notifications_outlined,
               title: 'Notifications',
-              detail: 'Trades, prices, community, and security',
+              detail: 'Four owner intents; delivery unavailable',
               onTap: () => onNavigate('notif-settings'),
             ),
             _SettingsTile(
@@ -1643,75 +1646,402 @@ class _SocialRecoveryState extends State<_SocialRecovery> {
   }
 }
 
-class _NotificationSettings extends StatefulWidget {
+class _NotificationSettings extends ConsumerStatefulWidget {
   const _NotificationSettings();
 
   @override
-  State<_NotificationSettings> createState() => _NotificationSettingsState();
+  ConsumerState<_NotificationSettings> createState() =>
+      _NotificationSettingsState();
 }
 
-class _NotificationSettingsState extends State<_NotificationSettings> {
-  final Map<String, bool> _settings = <String, bool>{
-    'Price alerts': true,
-    'Orders and fills': true,
-    'Liquidation risk': true,
-    'Community activity': false,
-    'Security alerts': true,
-    'System notices': true,
-  };
+class _NotificationSettingsState extends ConsumerState<_NotificationSettings> {
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(notificationPreferencesControllerProvider);
+    if (state.phase == NotificationPreferencesPhase.initial) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref.read(notificationPreferencesControllerProvider.notifier).load(),
+          );
+        }
+      });
+    }
+    final controller = ref.read(
+      notificationPreferencesControllerProvider.notifier,
+    );
+    final stackActions =
+        MediaQuery.sizeOf(context).width < 480 ||
+        MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    final discardButton = OutlinedButton(
+      key: const ValueKey<String>('notification-preferences-discard'),
+      onPressed: state.isDirty && !state.isBusy && !state.requiresReload
+          ? controller.discard
+          : null,
+      child: Text(state.requiresReload ? 'Reload required' : 'Discard draft'),
+    );
+    final applyButton = FilledButton.icon(
+      key: const ValueKey<String>('notification-preferences-apply'),
+      onPressed: state.canSave ? () => unawaited(controller.save()) : null,
+      icon: state.phase == NotificationPreferencesPhase.saving
+          ? const SizedBox.square(
+              dimension: 17,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.task_alt_rounded),
+      label: Text(
+        state.phase == NotificationPreferencesPhase.saving
+            ? 'Applying…'
+            : 'Apply draft',
+      ),
+    );
+    return LoopPage(
+      eyebrow: state.mode == NotificationPreferencesMode.preview
+          ? '开发预览 · NOTIFICATIONS'
+          : 'NOTIFICATIONS',
+      title: 'Notification preferences',
+      subtitle: 'Store the four owner intents defined by the LOOP backend contract. A saved preference does not prove device permission or provider delivery.',
+      padding: EdgeInsets.fromLTRB(20, 12, 20, stackActions ? 210 : 120),
+      bottom: state.resource == null
+          ? null
+          : LoopActionDock(
+              child: stackActions
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        discardButton,
+                        const SizedBox(height: 10),
+                        applyButton,
+                      ],
+                    )
+                  : Row(
+                      children: <Widget>[
+                        Expanded(child: discardButton),
+                        const SizedBox(width: 12),
+                        Expanded(child: applyButton),
+                      ],
+                    ),
+            ),
+      children: <Widget>[
+        _NotificationPreferencesModeBanner(mode: state.mode),
+        const SizedBox(height: 16),
+        ..._notificationPreferencesContent(state, controller),
+      ],
+    );
+  }
+
+  List<Widget> _notificationPreferencesContent(
+    NotificationPreferencesState state,
+    NotificationPreferencesController controller,
+  ) {
+    if (state.resource == null) {
+      return switch (state.phase) {
+        NotificationPreferencesPhase.initial ||
+        NotificationPreferencesPhase.loading => const <Widget>[
+          _NotificationPreferencesLoadingCard(),
+        ],
+        NotificationPreferencesPhase.unavailable => const <Widget>[
+          LoopStateCard(
+            title: 'Notification preferences are not connected',
+            message: 'The production Notification Preferences adapter is intentionally unavailable. No account request was sent and no demo preference or delivery state is being shown.',
+            icon: Icons.link_off_rounded,
+            tone: LoopTone.warning,
+          ),
+        ],
+        _ => <Widget>[
+          LoopStateCard(
+            title: 'Notification preferences could not be loaded',
+            message: _notificationPreferencesFailureMessage(state.failureKind),
+            icon: Icons.sync_problem_rounded,
+            tone: LoopTone.danger,
+            action: OutlinedButton.icon(
+              key: const ValueKey<String>(
+                'notification-preferences-retry-load',
+              ),
+              onPressed: state.isBusy
+                  ? null
+                  : () => unawaited(controller.reload()),
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Retry'),
+            ),
+          ),
+        ],
+      };
+    }
+
+    final content = <Widget>[_NotificationPreferencesSummary(state: state)];
+    if (state.requiresReload) {
+      final reloadInProgress =
+          state.phase == NotificationPreferencesPhase.loading;
+      final reloadFailed =
+          state.failureKind != null &&
+          state.failureKind !=
+              NotificationPreferencesGatewayFailureKind.versionConflict;
+      content.addAll(<Widget>[
+        const SizedBox(height: 14),
+        LoopStateCard(
+          key: const ValueKey<String>('notification-preferences-conflict'),
+          title: reloadInProgress
+              ? 'Reloading the latest preferences…'
+              : reloadFailed
+              ? 'Latest preferences could not be reloaded'
+              : 'Version conflict — nothing was overwritten',
+          message: reloadFailed
+              ? '${_notificationPreferencesFailureMessage(state.failureKind)} The local draft is still preserved.'
+              : 'This draft is based on an older account version. Reload before editing or applying it again; reload discards this local draft.',
+          icon: Icons.call_split_rounded,
+          tone: LoopTone.warning,
+          action: reloadInProgress
+              ? const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    SizedBox.square(
+                      dimension: 17,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 10),
+                    Text('Reloading…'),
+                  ],
+                )
+              : FilledButton.icon(
+                  key: const ValueKey<String>(
+                    'notification-preferences-conflict-reload',
+                  ),
+                  onPressed: () => unawaited(controller.reload()),
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: Text(reloadFailed ? 'Retry reload' : 'Reload latest'),
+                ),
+        ),
+      ]);
+    } else if (state.phase == NotificationPreferencesPhase.failure ||
+        state.phase == NotificationPreferencesPhase.unavailable) {
+      content.addAll(<Widget>[
+        const SizedBox(height: 14),
+        LoopStateCard(
+          title: 'Preferences were not committed',
+          message: _notificationPreferencesFailureMessage(state.failureKind),
+          icon: Icons.cloud_off_rounded,
+          tone: LoopTone.danger,
+          action: OutlinedButton.icon(
+            key: const ValueKey<String>('notification-preferences-retry-apply'),
+            onPressed: state.canSave
+                ? () => unawaited(controller.save())
+                : null,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Retry apply'),
+          ),
+        ),
+      ]);
+    }
+
+    content.addAll(<Widget>[
+      const SizedBox(height: 18),
+      const LoopStateCard(
+        title: 'Delivery unavailable',
+        message: 'These switches record owner intent only. Firebase, APNs/FCM, operating-system permission, and background delivery are not connected by this resource.',
+        icon: Icons.notifications_paused_outlined,
+        tone: LoopTone.warning,
+      ),
+      const LoopSectionLabel('Owner preferences'),
+      for (final event in NotificationPreferenceEvent.values) ...<Widget>[
+        LoopCard(
+          child: Material(
+            type: MaterialType.transparency,
+            child: SwitchListTile(
+              key: ValueKey<String>(
+                'notification-preference-${event.wireValue}',
+              ),
+              contentPadding: EdgeInsets.zero,
+              value: state.draft.enabledFor(event),
+              onChanged: state.canEdit
+                  ? (enabled) => controller.edit(event, enabled)
+                  : null,
+              title: Text(_notificationPreferenceLabel(event)),
+              subtitle: Text(_notificationPreferenceDetail(event)),
+              secondary: Icon(_notificationPreferenceIcon(event)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+      ],
+      const _PrivacyFootnote(
+        text: 'Enabled means only that the owner intent is stored. It never proves that an alert exists, a provider accepted it, or a device received it.',
+      ),
+    ]);
+    return content;
+  }
+}
+
+class _NotificationPreferencesModeBanner extends StatelessWidget {
+  const _NotificationPreferencesModeBanner({required this.mode});
+
+  final NotificationPreferencesMode mode;
 
   @override
   Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: 'NOTIFICATIONS',
-      title: 'Choose what interrupts you',
-      subtitle: 'Security notices stay prominent. Everything else can be tuned by category.',
+    return LoopStateCard(
+      title: switch (mode) {
+        NotificationPreferencesMode.preview => '开发预览 · in-memory preferences',
+        NotificationPreferencesMode.production =>
+          'Account Notification preferences',
+        NotificationPreferencesMode.unavailable =>
+          'Production connection unavailable',
+      },
+      message: switch (mode) {
+        NotificationPreferencesMode.preview => 'Drafts persist only for this running Preview and do not change an account, provider, device permission, or delivery state.',
+        NotificationPreferencesMode.production => 'When the authenticated adapter is available, this boundary can synchronize only the four reviewed owner intents. Delivery remains unavailable.',
+        NotificationPreferencesMode.unavailable => 'The app is fail-closed until the authenticated Notification Preferences adapter is connected.',
+      },
+      icon: mode == NotificationPreferencesMode.preview
+          ? Icons.science_outlined
+          : Icons.notifications_outlined,
+      tone: mode == NotificationPreferencesMode.preview
+          ? LoopTone.warning
+          : LoopTone.neutral,
+    );
+  }
+}
+
+class _NotificationPreferencesLoadingCard extends StatelessWidget {
+  const _NotificationPreferencesLoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const LoopCard(
+      child: Row(
+        children: <Widget>[
+          SizedBox.square(
+            dimension: 22,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          SizedBox(width: 14),
+          Expanded(child: Text('Loading Notification preferences…')),
+        ],
+      ),
+    );
+  }
+}
+
+class _NotificationPreferencesSummary extends StatelessWidget {
+  const _NotificationPreferencesSummary({required this.state});
+
+  final NotificationPreferencesState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final resource = state.resource!;
+    final compactLabels =
+        MediaQuery.sizeOf(context).width < 480 ||
+        MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    final statePills = Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: <Widget>[
-        const LoopStateCard(
-          title: 'System notifications are off',
-          message: 'Enable notifications in device settings to receive alerts when LOOP is closed.',
-          icon: Icons.notifications_off_outlined,
-          tone: LoopTone.warning,
-          action: _OpenSettingsButton(),
+        LoopStatusPill(
+          label: compactLabels
+              ? 'V${resource.version}'
+              : 'VERSION ${resource.version}',
+          tone: LoopTone.conversation,
         ),
-        const LoopSectionLabel('Categories'),
-        LoopCard(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Column(
-            children: _settings.entries
-                .map((entry) {
-                  final security = entry.key == 'Security alerts';
-                  return SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    value: entry.value,
-                    title: Text(entry.key),
-                    subtitle: security
-                        ? const Text('Recommended for account protection')
-                        : null,
-                    onChanged: (value) =>
-                        setState(() => _settings[entry.key] = value),
-                  );
-                })
-                .toList(growable: false),
+        LoopStatusPill(
+          label: state.isDirty
+              ? (compactLabels ? 'DRAFT' : 'UNSAVED DRAFT')
+              : (compactLabels ? 'NO CHANGES' : 'NO LOCAL CHANGES'),
+          tone: state.isDirty ? LoopTone.warning : LoopTone.positive,
+        ),
+        LoopStatusPill(label: '${state.draft.enabledCount} OF 4 ENABLED'),
+      ],
+    );
+    if (!compactLabels) {
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: <Widget>[
+          statePills,
+          const LoopStatusPill(
+            label: 'DELIVERY UNAVAILABLE',
+            tone: LoopTone.warning,
           ),
-        ),
-        const LoopSectionLabel('Quiet hours'),
-        const LoopCard(
-          child: Row(
-            children: <Widget>[
-              Icon(Icons.bedtime_outlined, color: LoopColors.vapor),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text('23:00–08:00 · security alerts still arrive'),
-              ),
-              Icon(Icons.chevron_right_rounded, color: LoopColors.vapor),
-            ],
-          ),
-        ),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        statePills,
+        const SizedBox(height: 8),
+        const _NotificationDeliveryBadge(),
       ],
     );
   }
 }
+
+class _NotificationDeliveryBadge extends StatelessWidget {
+  const _NotificationDeliveryBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final color = loopToneColor(LoopTone.warning);
+    return Semantics(
+      label: 'DELIVERY UNAVAILABLE',
+      excludeSemantics: true,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: LoopRadius.pill,
+          border: Border.all(color: color.withValues(alpha: 0.26)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Text(
+            'DELIVERY UNAVAILABLE',
+            softWrap: true,
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: color),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _notificationPreferenceLabel(NotificationPreferenceEvent event) =>
+    switch (event) {
+      NotificationPreferenceEvent.priceAlertTriggered => 'Price alert events',
+      NotificationPreferenceEvent.providerActivityProjected =>
+        'Provider activity projections',
+      NotificationPreferenceEvent.securityNotice => 'Security notices',
+      NotificationPreferenceEvent.supportUpdate => 'Support updates',
+    };
+
+String _notificationPreferenceDetail(NotificationPreferenceEvent event) =>
+    switch (event) {
+      NotificationPreferenceEvent.priceAlertTriggered => 'Intent to receive a notification after a separately configured price alert is triggered.',
+      NotificationPreferenceEvent.providerActivityProjected => 'Intent to receive projections derived from supported provider activity; no provider feed is connected here.',
+      NotificationPreferenceEvent.securityNotice => 'Intent to receive account-security notices when a supported delivery path exists.',
+      NotificationPreferenceEvent.supportUpdate => 'Intent to receive updates for support activity associated with this account.',
+    };
+
+IconData _notificationPreferenceIcon(NotificationPreferenceEvent event) =>
+    switch (event) {
+      NotificationPreferenceEvent.priceAlertTriggered =>
+        Icons.price_change_outlined,
+      NotificationPreferenceEvent.providerActivityProjected =>
+        Icons.insights_outlined,
+      NotificationPreferenceEvent.securityNotice => Icons.shield_outlined,
+      NotificationPreferenceEvent.supportUpdate => Icons.support_agent_outlined,
+    };
+
+String _notificationPreferencesFailureMessage(
+  NotificationPreferencesGatewayFailureKind? kind,
+) => switch (kind) {
+  NotificationPreferencesGatewayFailureKind.unavailable => 'The Notification Preferences service is unavailable. No preference was presented as committed.',
+  NotificationPreferencesGatewayFailureKind.versionConflict => 'The account Notification Preferences resource changed elsewhere. Reload is required before another apply.',
+  NotificationPreferencesGatewayFailureKind.invalidData => 'The Notification Preferences source returned data outside the reviewed contract. Nothing was accepted.',
+  NotificationPreferencesGatewayFailureKind.unexpected => 'The Notification Preferences operation failed. Provider details were not exposed.',
+  null => 'The Notification Preferences operation could not be completed.',
+};
 
 enum _ConnectionView { following, followers }
 
@@ -2762,18 +3092,6 @@ class _GuardianProgress extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _OpenSettingsButton extends StatelessWidget {
-  const _OpenSettingsButton();
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: () {},
-      child: const Text('Open device settings'),
     );
   }
 }

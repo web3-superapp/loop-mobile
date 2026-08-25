@@ -54,6 +54,7 @@ REQUIRED_FILES = (
     "docs/decisions/0009-model-watchlist-before-http-adapter.md",
     "docs/decisions/0010-model-profile-presentation-before-http-adapter.md",
     "docs/decisions/0011-model-privacy-preferences-before-http-adapter.md",
+    "docs/decisions/0012-model-notification-preferences-before-http-adapter.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/providerless-notification-fixtures.md",
     "docs/failures/privy-android-compile-sdk.md",
@@ -79,6 +80,10 @@ REQUIRED_FILES = (
     "lib/features/profile/privacy/privacy_gateway.dart",
     "lib/features/profile/privacy/privacy_models.dart",
     "lib/integrations/personalization/memory_privacy_gateway.dart",
+    "lib/features/profile/notification_preferences/notification_preferences_controller.dart",
+    "lib/features/profile/notification_preferences/notification_preferences_gateway.dart",
+    "lib/features/profile/notification_preferences/notification_preferences_models.dart",
+    "lib/integrations/personalization/memory_notification_preferences_gateway.dart",
     "test/app_notification_coordinator_test.dart",
     "test/loop_notification_coordinator_test.dart",
     "test/loop_notification_router_test.dart",
@@ -92,6 +97,9 @@ REQUIRED_FILES = (
     "test/privacy_controller_test.dart",
     "test/privacy_models_test.dart",
     "test/privacy_presentation_screen_test.dart",
+    "test/notification_preferences_controller_test.dart",
+    "test/notification_preferences_models_test.dart",
+    "test/notification_preferences_screen_test.dart",
 )
 CHAT_PREVIEW_ONLY_ROUTES = (
     "/chat/group",
@@ -323,6 +331,7 @@ FEATURE_TRANSPORT_FORBIDDEN_IMPORTS = (
 FEATURE_BACKEND_ROUTE_PATTERN = re.compile(r"(?P<quote>['\"])/v1/")
 PRODUCTION_FIXTURE_MARKERS = (
     "MemoryCommunicationGateway(",
+    "MemoryNotificationPreferencesGateway",
     "MemoryPrivacyGateway",
     "MemoryProfileGateway",
     "MemoryWatchlistGateway(",
@@ -463,6 +472,89 @@ PRIVACY_BEHAVIOR_TEST_MARKERS = {
         "mounted Privacy replaces the old owner after gateway rotation",
         "Privacy supports a 390pt screen at 2x Dynamic Type",
         "legacy H3 controls and fake Copy permission save are absent",
+    ),
+}
+NOTIFICATION_PREFERENCES_GATEWAY_PATH = Path(
+    "lib/features/profile/notification_preferences/notification_preferences_gateway.dart"
+)
+NOTIFICATION_PREFERENCES_MODELS_PATH = Path(
+    "lib/features/profile/notification_preferences/notification_preferences_models.dart"
+)
+NOTIFICATION_PREFERENCES_MEMORY_GATEWAY_PATH = Path(
+    "lib/integrations/personalization/memory_notification_preferences_gateway.dart"
+)
+NOTIFICATION_PREFERENCES_SURFACE_PATH = Path(
+    "lib/features/profile/profile_screens.dart"
+)
+NOTIFICATION_PREFERENCES_PREVIEW_ROOT_PATH = Path("lib/main_preview.dart")
+NOTIFICATION_PREFERENCES_MEMORY_CONSTRUCTION_PATTERN = re.compile(
+    r"\bMemoryNotificationPreferencesGateway\s*\("
+)
+NOTIFICATION_PREFERENCES_MEMORY_REFERENCE_PATTERN = re.compile(
+    r"\bMemoryNotificationPreferencesGateway\b"
+)
+NOTIFICATION_PREFERENCE_EVENT_WIRE_VALUES = {
+    "priceAlertTriggered": "price_alert_triggered",
+    "providerActivityProjected": "provider_activity_projected",
+    "securityNotice": "security_notice",
+    "supportUpdate": "support_update",
+}
+NOTIFICATION_DELIVERY_STATE_WIRE_VALUES = {"unavailable": "unavailable"}
+NOTIFICATION_PREFERENCES_LEGACY_MARKERS = (
+    "_settings",
+    "Orders and fills",
+    "Liquidation risk",
+    "Community activity",
+    "System notices",
+    "System notifications are off",
+    "Open device settings",
+    "Quiet hours",
+)
+NOTIFICATION_PREFERENCES_POSITIVE_COMMIT_PATTERN = re.compile(
+    r"\b(?:(?:notification\s+)?preferences?|notification\s+settings?|changes?)\s+"
+    r"(?:(?:are|were)\s+|(?:have|has)\s+been\s+)?(?:now\s+)?"
+    r"(?:saved|committed|applied|updated|live)|"
+    r"\b(?:save|commit|apply|update)\s+"
+    r"(?:complete|completed|successful|succeeded)|"
+    r"\b(?:saved|committed|applied|updated)\s+successfully\b|"
+    r"\bsuccessfully\s+(?:saved|committed|applied|updated)\b",
+    re.IGNORECASE,
+)
+NOTIFICATION_PREFERENCES_POSITIVE_DELIVERY_PATTERN = re.compile(
+    r"\b(?:notification\s+delivery|delivery|notifications?|alerts?)\s+"
+    r"(?:is\s+|are\s+)?(?:now\s+)?"
+    r"(?:active|available|connected|delivered|enabled|live|working)|"
+    r"\b(?:you|users?)\s+(?:can|will)\s+(?:now\s+)?"
+    r"(?:receive|be\s+notified)|"
+    r"\b(?:notifications?|alerts?)\s+will\s+(?:arrive|be\s+delivered)\b",
+    re.IGNORECASE,
+)
+NOTIFICATION_PREFERENCES_POSITIVE_CJK_PATTERN = re.compile(
+    r"(?:通知偏好|通知设置|偏好|设置|修改|更改).{0,8}"
+    r"(?:已保存|保存成功|已提交|提交成功|已应用|应用成功|已生效)|"
+    r"(?:通知|提醒).{0,8}(?:已开启|已启用|已连接|将会送达|将收到)"
+)
+NOTIFICATION_PREFERENCES_BEHAVIOR_TEST_MARKERS = {
+    Path("test/notification_preferences_models_test.dart"): (
+        "uses the exact disabled backend defaults",
+        "round-trips only the four notification event wire values",
+        "keeps delivery permanently unavailable",
+        "enforces notification preference resource version bounds",
+    ),
+    Path("test/notification_preferences_controller_test.dart"): (
+        "production defaults directly unavailable",
+        "load and save are single-flight and save the complete fixed set",
+        "version conflict freezes the draft until reload succeeds",
+        "an ambiguous save retries the same version and converges",
+        "gateway rotation and disposal retire late work safely",
+    ),
+    Path("test/notification_preferences_screen_test.dart"): (
+        "production Notification Preferences fails closed without controls or preview claims",
+        "Preview edits the exact four preferences and commits only advanced evidence",
+        "version conflict preserves the preference draft until reload",
+        "mounted Notification Preferences replaces the old owner after gateway rotation",
+        "Notification Preferences supports a 390pt screen at 2x Dynamic Type",
+        "legacy H9 categories and fake delivery claims are absent",
     ),
 }
 
@@ -936,6 +1028,161 @@ def contains_positive_privacy_commit_language(source: str) -> bool:
         if PRIVACY_POSITIVE_COMMIT_CJK_PATTERN.search(normalized):
             return True
     return False
+
+
+def dart_enum_members(source: str, enum_name: str) -> set[str] | None:
+    """Return enhanced-enum members declared before the first semicolon."""
+
+    match = re.search(
+        rf"\benum\s+{re.escape(enum_name)}\s*\{{(?P<body>.*?)\s*;",
+        source,
+        re.DOTALL,
+    )
+    if match is None:
+        return None
+    members = {
+        member.strip()
+        for member in match.group("body").split(",")
+        if member.strip()
+    }
+    return members
+
+
+def dart_enum_wire_mappings(
+    source: str, enum_name: str
+) -> tuple[dict[str, str], dict[str, str], bool]:
+    """Read a fail-closed enhanced enum's forward and reverse wire switches."""
+
+    enum_match = re.search(rf"\benum\s+{re.escape(enum_name)}\b", source)
+    if enum_match is None:
+        return {}, {}, False
+    next_declaration = re.search(
+        r"\b(?:enum|class)\s+[A-Za-z_]\w*\b", source[enum_match.end() :]
+    )
+    section_end = (
+        enum_match.end() + next_declaration.start()
+        if next_declaration is not None
+        else len(source)
+    )
+    enum_source = source[enum_match.start() : section_end]
+    wire_getter_match = re.search(
+        r"String\s+get\s+wireValue\s*=>\s*switch\s*\(\s*this\s*\)\s*"
+        r"\{(?P<body>.*?)\}\s*;",
+        enum_source,
+        re.DOTALL,
+    )
+    if wire_getter_match is not None:
+        forward_wire_values = {
+            member: wire_value
+            for member, _, wire_value in re.findall(
+                rf"\b{re.escape(enum_name)}\.(\w+)\s*=>\s*(['\"])([^'\"]*)\2",
+                wire_getter_match.group("body"),
+            )
+        }
+    else:
+        direct_wire_match = re.search(
+            r"String\s+get\s+wireValue\s*=>\s*(['\"])([^'\"]*)\1\s*;",
+            enum_source,
+        )
+        members = dart_enum_members(
+            strip_dart_comments_and_strings(enum_source), enum_name
+        )
+        forward_wire_values = (
+            {next(iter(members)): direct_wire_match.group(2)}
+            if direct_wire_match is not None and members is not None and len(members) == 1
+            else {}
+        )
+    from_wire_match = re.search(
+        rf"static\s+{re.escape(enum_name)}\s+fromWire\s*"
+        r"\(\s*String\s+\w+\s*\)\s*=>\s*switch\s*\([^)]*\)\s*"
+        r"\{(?P<body>.*?)\}\s*;",
+        enum_source,
+        re.DOTALL,
+    )
+    reverse_wire_values = (
+        {
+            wire_value: member
+            for _, wire_value, member in re.findall(
+                rf"(['\"])([^'\"]*)\1\s*=>\s*{re.escape(enum_name)}\.(\w+)\b",
+                from_wire_match.group("body"),
+            )
+        }
+        if from_wire_match
+        else {}
+    )
+    rejects_unknown = bool(
+        from_wire_match
+        and re.search(r"\b_\s*=>\s*throw\b", from_wire_match.group("body"))
+    )
+    return forward_wire_values, reverse_wire_values, rejects_unknown
+
+
+def contains_positive_notification_preferences_language(source: str) -> bool:
+    """Reject save or delivery success claims unsupported by production evidence."""
+
+    for content in dart_concatenated_string_contents(source):
+        normalized = " ".join(content.split())
+        normalized_word = normalized.casefold().rstrip(".!?…")
+        if normalized_word in {
+            "saved",
+            "committed",
+            "applied",
+            "delivered",
+            "delivery connected",
+            "notifications enabled",
+            "保存成功",
+        }:
+            return True
+        if NOTIFICATION_PREFERENCES_POSITIVE_COMMIT_PATTERN.search(normalized):
+            return True
+        if NOTIFICATION_PREFERENCES_POSITIVE_DELIVERY_PATTERN.search(normalized):
+            return True
+        if NOTIFICATION_PREFERENCES_POSITIVE_CJK_PATTERN.search(normalized):
+            return True
+    return False
+
+
+def check_behavior_test_evidence(
+    root: Path, markers_by_path: dict[Path, tuple[str, ...]]
+) -> list[str]:
+    """Require named tests to contain executable assertions, not marker constants."""
+
+    errors: list[str] = []
+    for relative, markers in markers_by_path.items():
+        path = root / relative
+        if not path.is_file():
+            continue
+        source = strip_dart_comments(read_text(path))
+        test_starts = [
+            match.start() for match in re.finditer(r"\btest(?:Widgets)?\s*\(", source)
+        ]
+        missing: list[str] = []
+        for marker in markers:
+            declaration = re.search(
+                r"\btest(?:Widgets)?\s*\(\s*(['\"])"
+                + re.escape(marker)
+                + r"\1\s*,",
+                source,
+                re.DOTALL,
+            )
+            if declaration is None:
+                missing.append(marker)
+                continue
+            next_test = next(
+                (start for start in test_starts if start > declaration.start()),
+                len(source),
+            )
+            executable_test = strip_dart_comments_and_strings(
+                source[declaration.end() : next_test]
+            )
+            if re.search(r"\bexpect(?:Later)?\s*\(", executable_test) is None:
+                missing.append(marker + " (no assertion)")
+        if missing:
+            errors.append(
+                f"{relative} is missing required behavior evidence: "
+                + ", ".join(missing)
+            )
+    return errors
 
 
 def git_visible_paths(root: Path) -> tuple[list[Path], str | None]:
@@ -2463,41 +2710,206 @@ def check_privacy_application_contract(root: Path) -> list[str]:
                     "evidence"
                 )
 
-    for relative, markers in PRIVACY_BEHAVIOR_TEST_MARKERS.items():
-        path = root / relative
-        if not path.is_file():
-            continue
-        source = strip_dart_comments(read_text(path))
-        test_starts = [
-            match.start()
-            for match in re.finditer(r"\btest(?:Widgets)?\s*\(", source)
-        ]
-        missing: list[str] = []
-        for marker in markers:
-            declaration = re.search(
-                r"\btest(?:Widgets)?\s*\(\s*(['\"])"
-                + re.escape(marker)
-                + r"\1\s*,",
-                source,
-                re.DOTALL,
-            )
-            if declaration is None:
-                missing.append(marker)
-                continue
-            next_test = next(
-                (start for start in test_starts if start > declaration.start()),
-                len(source),
-            )
-            executable_test = strip_dart_comments_and_strings(
-                source[declaration.end() : next_test]
-            )
-            if re.search(r"\bexpect(?:Later)?\s*\(", executable_test) is None:
-                missing.append(marker + " (no assertion)")
-        if missing:
+    errors.extend(check_behavior_test_evidence(root, PRIVACY_BEHAVIOR_TEST_MARKERS))
+    return errors
+
+
+def check_notification_preferences_application_contract(root: Path) -> list[str]:
+    """Keep H9 preferences exact, fail-closed, and delivery-neutral."""
+
+    errors: list[str] = []
+    gateway_path = root / NOTIFICATION_PREFERENCES_GATEWAY_PATH
+    if gateway_path.is_file():
+        gateway = strip_dart_comments(read_text(gateway_path))
+        default_pattern = re.compile(
+            r"final\s+notificationPreferencesGatewayProvider\s*=\s*"
+            r"Provider<NotificationPreferencesGateway>\s*"
+            r"\(\s*\(\s*ref\s*\)\s*=>\s*const\s+"
+            r"UnavailableNotificationPreferencesGateway\s*"
+            r"\(\s*\)\s*,?\s*\)\s*;",
+            re.DOTALL,
+        )
+        if default_pattern.search(gateway) is None:
             errors.append(
-                f"{relative} is missing required behavior evidence: "
-                + ", ".join(missing)
+                "Notification Preferences production provider must default "
+                "directly to const UnavailableNotificationPreferencesGateway()"
             )
+
+    models_path = root / NOTIFICATION_PREFERENCES_MODELS_PATH
+    if models_path.is_file():
+        models_source = strip_dart_comments(read_text(models_path))
+        models_code = strip_dart_comments_and_strings(models_source)
+
+        event_members = dart_enum_members(
+            models_code, "NotificationPreferenceEvent"
+        )
+        expected_event_members = set(NOTIFICATION_PREFERENCE_EVENT_WIRE_VALUES)
+        if event_members != expected_event_members:
+            errors.append(
+                "NotificationPreferenceEvent must contain exactly "
+                "priceAlertTriggered, providerActivityProjected, "
+                "securityNotice, and supportUpdate"
+            )
+        event_forward, event_reverse, event_rejects_unknown = (
+            dart_enum_wire_mappings(models_source, "NotificationPreferenceEvent")
+        )
+        expected_event_reverse = {
+            wire_value: member
+            for member, wire_value in NOTIFICATION_PREFERENCE_EVENT_WIRE_VALUES.items()
+        }
+        if (
+            event_forward != NOTIFICATION_PREFERENCE_EVENT_WIRE_VALUES
+            or event_reverse != expected_event_reverse
+            or not event_rejects_unknown
+        ):
+            errors.append(
+                "NotificationPreferenceEvent wire values must map exactly in "
+                "both directions and reject unknown values"
+            )
+
+        delivery_members = dart_enum_members(
+            models_code, "NotificationDeliveryState"
+        )
+        if delivery_members != set(NOTIFICATION_DELIVERY_STATE_WIRE_VALUES):
+            errors.append(
+                "NotificationDeliveryState must contain only unavailable"
+            )
+        delivery_forward, delivery_reverse, delivery_rejects_unknown = (
+            dart_enum_wire_mappings(models_source, "NotificationDeliveryState")
+        )
+        expected_delivery_reverse = {
+            wire_value: member
+            for member, wire_value in NOTIFICATION_DELIVERY_STATE_WIRE_VALUES.items()
+        }
+        if (
+            delivery_forward != NOTIFICATION_DELIVERY_STATE_WIRE_VALUES
+            or delivery_reverse != expected_delivery_reverse
+            or not delivery_rejects_unknown
+        ):
+            errors.append(
+                "NotificationDeliveryState wire values must map only "
+                "unavailable in both directions and reject unknown values"
+            )
+
+        actual_values_fields = dart_class_fields(
+            models_code, "NotificationPreferenceValues"
+        )
+        expected_values_fields = {
+            ("final", "bool", member)
+            for member in NOTIFICATION_PREFERENCE_EVENT_WIRE_VALUES
+        }
+        if actual_values_fields != expected_values_fields:
+            rendered_fields = ", ".join(
+                f"{modifiers} {field_type} {name}".strip()
+                for modifiers, field_type, name in sorted(
+                    actual_values_fields or set()
+                )
+            ) or "none"
+            errors.append(
+                "NotificationPreferenceValues fields must be exactly four "
+                "final bool fields matching the fixed events; found: "
+                + rendered_fields
+            )
+
+        actual_resource_fields = dart_class_fields(
+            models_code, "NotificationPreferencesResource"
+        )
+        expected_resource_fields = {
+            ("final", "int", "version"),
+            ("final", "NotificationPreferenceValues", "values"),
+            ("final", "NotificationDeliveryState", "delivery"),
+        }
+        if actual_resource_fields != expected_resource_fields:
+            rendered_fields = ", ".join(
+                f"{modifiers} {field_type} {name}".strip()
+                for modifiers, field_type, name in sorted(
+                    actual_resource_fields or set()
+                )
+            ) or "none"
+            errors.append(
+                "NotificationPreferencesResource fields must be exactly final "
+                "int version, final NotificationPreferenceValues values, and "
+                "final NotificationDeliveryState delivery; found: "
+                + rendered_fields
+            )
+
+    surface_path = root / NOTIFICATION_PREFERENCES_SURFACE_PATH
+    if surface_path.is_file():
+        surface = strip_dart_comments(read_text(surface_path))
+        executable_surface = strip_dart_comments_and_strings(surface)
+        visible_strings = dart_concatenated_string_contents(surface)
+        for marker in NOTIFICATION_PREFERENCES_LEGACY_MARKERS:
+            present = (
+                marker in executable_surface
+                if marker.startswith("_")
+                else any(marker in content for content in visible_strings)
+            )
+            if present:
+                errors.append(
+                    "Notification Preferences contains removed local or "
+                    "non-contract H9 state/copy: " + marker
+                )
+        if contains_positive_notification_preferences_language(surface):
+            errors.append(
+                "Notification Preferences contains positive save or delivery "
+                "language; a stored intent never proves provider delivery"
+            )
+
+    feature_root = (
+        root / "lib" / "features" / "profile" / "notification_preferences"
+    )
+    if feature_root.is_dir():
+        for path in sorted(feature_root.rglob("*.dart")):
+            if contains_positive_notification_preferences_language(
+                read_text(path)
+            ):
+                errors.append(
+                    f"{path.relative_to(root)} contains positive save or "
+                    "delivery language; a stored intent never proves "
+                    "provider delivery"
+                )
+
+    preview_root = root / NOTIFICATION_PREFERENCES_PREVIEW_ROOT_PATH
+    if preview_root.is_file():
+        preview_code = strip_dart_comments_and_strings(read_text(preview_root))
+        if (
+            len(
+                NOTIFICATION_PREFERENCES_MEMORY_CONSTRUCTION_PATTERN.findall(
+                    preview_code
+                )
+            )
+            != 1
+        ):
+            errors.append(
+                "lib/main_preview.dart must compose exactly one explicit "
+                "MemoryNotificationPreferencesGateway"
+            )
+
+    lib_root = root / "lib"
+    if lib_root.is_dir():
+        allowed = frozenset({
+            NOTIFICATION_PREFERENCES_MEMORY_GATEWAY_PATH,
+            NOTIFICATION_PREFERENCES_PREVIEW_ROOT_PATH,
+        })
+        for path in sorted(lib_root.rglob("*.dart")):
+            relative = path.relative_to(root)
+            if relative in allowed:
+                continue
+            executable_code = strip_dart_comments_and_strings(read_text(path))
+            if NOTIFICATION_PREFERENCES_MEMORY_REFERENCE_PATTERN.search(
+                executable_code
+            ):
+                errors.append(
+                    f"{relative} references MemoryNotificationPreferencesGateway; "
+                    "the fake may only be defined by its integration and "
+                    "composed once by lib/main_preview.dart"
+                )
+
+    errors.extend(
+        check_behavior_test_evidence(
+            root, NOTIFICATION_PREFERENCES_BEHAVIOR_TEST_MARKERS
+        )
+    )
     return errors
 
 
@@ -2546,6 +2958,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_watchlist_application_contract(root))
     errors.extend(check_profile_application_contract(root))
     errors.extend(check_privacy_application_contract(root))
+    errors.extend(check_notification_preferences_application_contract(root))
     errors.extend(check_source_guards(root))
     errors.extend(check_records(root))
     visible, visible_error = git_visible_paths(root)
