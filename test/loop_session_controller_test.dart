@@ -75,12 +75,30 @@ void main() {
     expect(session.errorMessage, '退出登录失败，请稍后重试。');
     expect(container.read(loopBootstrapPrincipalKeyProvider), isNull);
   });
+
+  test('late wallet creation cannot attach to a rotated principal', () async {
+    final walletGate = Completer<PrivyWalletSummary>();
+    gateway.walletCreationOperation = walletGate.future;
+
+    final creation = container
+        .read(loopSessionProvider.notifier)
+        .createWallet();
+    gateway.emitAuthenticated('did:privy:new');
+    await Future<void>.delayed(Duration.zero);
+    walletGate.complete(const PrivyWalletSummary(address: '0x123'));
+
+    await expectLater(creation, throwsA(isA<PrivyGatewayException>()));
+    final account = container.read(loopSessionProvider).account;
+    expect(account?.privyUserId, 'did:privy:new');
+    expect(account?.wallet, isNull);
+  });
 }
 
 final class _LogoutGateway implements PrivyAuthGateway {
   final _snapshots = StreamController<PrivySessionSnapshot>.broadcast();
 
   Future<void> logoutOperation = Future<void>.value();
+  Future<PrivyWalletSummary>? walletCreationOperation;
   var logoutCalls = 0;
 
   Future<void> dispose() => _snapshots.close();
@@ -113,7 +131,10 @@ final class _LogoutGateway implements PrivyAuthGateway {
 
   @override
   Future<PrivyWalletSummary> createFirstEthereumWallet() {
-    throw UnsupportedError('Not used by this test.');
+    return walletCreationOperation ??
+        Future<PrivyWalletSummary>.value(
+          const PrivyWalletSummary(address: '0x123'),
+        );
   }
 
   @override

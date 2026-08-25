@@ -120,16 +120,38 @@ class LoopSessionController extends Notifier<LoopSessionState> {
   }
 
   Future<void> createWallet() async {
-    if (!state.canUseProviderBackedFeatures) {
+    final requestedState = state;
+    final requestedAccount = requestedState.account;
+    if (!requestedState.canUseProviderBackedFeatures ||
+        requestedAccount == null) {
       throw const PrivyGatewayException('开发预览或受限会话不会创建真实钱包。');
     }
-    final wallet = await ref
-        .read(privyAuthGatewayProvider)
-        .createFirstEthereumWallet();
-    final account = state.account;
-    if (account != null) {
-      state = state.copyWith(account: account.copyWith(wallet: wallet));
+
+    final gateway = ref.read(privyAuthGatewayProvider);
+    final requestedPrincipal = requestedAccount.privyUserId;
+    final requestedWalletAddress = requestedAccount.wallet?.address;
+    final wallet = await gateway.createFirstEthereumWallet();
+    if (!ref.mounted) return;
+
+    final currentState = state;
+    final currentAccount = currentState.account;
+    final currentGateway = ref.read(privyAuthGatewayProvider);
+    if (!currentState.canUseProviderBackedFeatures ||
+        currentAccount == null ||
+        currentAccount.privyUserId != requestedPrincipal ||
+        !identical(currentGateway, gateway)) {
+      throw const PrivyGatewayException('账号已变化，请重新检查钱包状态。');
     }
+
+    final currentWalletAddress = currentAccount.wallet?.address;
+    if (currentWalletAddress != requestedWalletAddress) {
+      if (currentWalletAddress == wallet.address) return;
+      throw const PrivyGatewayException('钱包状态已变化，请重新检查后再继续。');
+    }
+
+    state = currentState.copyWith(
+      account: currentAccount.copyWith(wallet: wallet),
+    );
   }
 
   Future<void> exit() async {

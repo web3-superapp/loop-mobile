@@ -14,13 +14,19 @@ enum LoopBackendFailureKind {
 ///
 /// Response bodies, access tokens, provider errors, and request headers are
 /// deliberately excluded. [code] is limited to the backend's stable public
-/// error code when one is available.
+/// error code and validated request ID when they are available.
 final class LoopBackendFailure implements Exception {
-  const LoopBackendFailure(this.kind, {this.statusCode, this.code});
+  const LoopBackendFailure(
+    this.kind, {
+    this.statusCode,
+    this.code,
+    this.requestId,
+  });
 
   final LoopBackendFailureKind kind;
   final int? statusCode;
   final String? code;
+  final String? requestId;
 
   @override
   String toString() {

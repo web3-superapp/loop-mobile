@@ -58,6 +58,17 @@ final class LoopBootstrapSession {
     return operation;
   }
 
+  /// Drops only the cached server-side bootstrap assertion.
+  ///
+  /// Provider sessions call this after an authenticated backend route proves
+  /// that its bootstrap mapping no longer exists. A later explicit operation
+  /// must then authorize through POST /v1/bootstrap again.
+  void invalidateAuthorization() {
+    if (_disposed) return;
+    _authorized = false;
+    _identity = null;
+  }
+
   Future<LoopBootstrapAuthorization> _authorize(
     Future<void> invalidated,
   ) async {
