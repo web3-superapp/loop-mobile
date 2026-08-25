@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/features/chat/stream_chat_inbox_page.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
@@ -12,14 +13,19 @@ import 'support/authenticated_test_privy_gateway.dart';
 
 void main() {
   test('channel route accepts only a well-formed messaging CID', () {
-    expect(
-      parseLoopStreamChannelCid('messaging:loop-room-42'),
-      const LoopStreamChannelAddress(type: 'messaging', id: 'loop-room-42'),
-    );
+    final address = parseLoopStreamChannelCid('messaging:loop-room-42');
+    expect(address?.type, 'messaging');
+    expect(address?.id, 'loop-room-42');
+    expect(address?.cid, 'messaging:loop-room-42');
     expect(parseLoopStreamChannelCid('livestream:loop-room-42'), isNull);
     expect(parseLoopStreamChannelCid('messaging:'), isNull);
     expect(parseLoopStreamChannelCid(':loop-room-42'), isNull);
     expect(parseLoopStreamChannelCid('messaging:bad/room'), isNull);
+    expect(parseLoopStreamChannelCid('messaging:bad\u0000room'), isNull);
+    expect(
+      parseLoopStreamChannelCid('messaging:${List.filled(256, 'a').join()}'),
+      isNull,
+    );
   });
 
   test(

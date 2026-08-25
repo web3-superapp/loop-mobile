@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
@@ -12,6 +13,9 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final gateway = ref.watch(communicationGatewayProvider);
+    final isSessionPreview = ref.watch(
+      loopSessionProvider.select((session) => session.isPreview),
+    );
     final preview = gateway.mode == CommunicationMode.preview;
     final communicationStatus = preview
         ? 'Offline preview · not connected'
@@ -31,11 +35,17 @@ class HomeScreen extends ConsumerWidget {
         IconButton(
           onPressed: () => context.push('/notifications'),
           tooltip: 'Notifications',
-          icon: Badge(
-            smallSize: 7,
-            backgroundColor: LoopColors.danger,
-            child: const Icon(Icons.notifications_none_rounded),
-          ),
+          icon: isSessionPreview
+              ? const Badge(
+                  key: ValueKey<String>('notifications-preview-badge'),
+                  smallSize: 7,
+                  backgroundColor: LoopColors.danger,
+                  child: Icon(Icons.notifications_none_rounded),
+                )
+              : const Icon(
+                  Icons.notifications_none_rounded,
+                  key: ValueKey<String>('notifications-production-icon'),
+                ),
         ),
         const SizedBox(width: 4),
       ],
@@ -474,19 +484,43 @@ class NetWorthScreen extends StatelessWidget {
   }
 }
 
-class NotificationsScreen extends StatelessWidget {
+class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isPreview = ref.watch(
+      loopSessionProvider.select((session) => session.isPreview),
+    );
+    if (!isPreview) {
+      return const LoopPage(
+        title: 'Notifications',
+        subtitle: 'Provider-backed updates will appear here after notification delivery is configured.',
+        children: <Widget>[
+          LoopStateCard(
+            key: ValueKey<String>('notifications-provider-unavailable'),
+            title: 'Notifications not connected',
+            message: 'The centralized Firebase and Stream ingress is not connected yet. LOOP is not showing fixture alerts, badges, or read state in this production session.',
+            icon: Icons.notifications_off_outlined,
+            tone: LoopTone.warning,
+          ),
+        ],
+      );
+    }
+
     return LoopPage(
       title: 'Notifications',
-      subtitle: 'Updates stay grouped by what changed, not by provider.',
-      actions: <Widget>[
-        TextButton(onPressed: () {}, child: const Text('Mark all read')),
-      ],
+      eyebrow: '开发预览',
+      subtitle: 'The cards below are 演示数据. They do not represent provider delivery, read state, or account activity.',
       children: <Widget>[
-        const LoopSectionLabel('New'),
+        const LoopStateCard(
+          key: ValueKey<String>('notifications-preview-fixtures'),
+          title: '开发预览',
+          message: 'Notification fixtures are local and have no effect on Stream, Firebase, wallets, or trading.',
+          icon: Icons.visibility_outlined,
+          tone: LoopTone.warning,
+        ),
+        const LoopSectionLabel('New · 演示数据'),
         _NotificationCard(
           tone: LoopTone.danger,
           icon: Icons.warning_amber_rounded,
@@ -504,7 +538,7 @@ class NotificationsScreen extends StatelessWidget {
           time: '8m',
           onTap: () => context.push('/market/token'),
         ),
-        const LoopSectionLabel('Earlier'),
+        const LoopSectionLabel('Earlier · 演示数据'),
         _NotificationCard(
           tone: LoopTone.conversation,
           icon: Icons.alternate_email_rounded,

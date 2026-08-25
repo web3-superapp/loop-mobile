@@ -11,7 +11,7 @@ Date: 2026-08-24
 - `AGENTS.md` is the repository-wide product, architecture, security, and workflow contract.
 - `harness.json` is the machine-readable active profile and preserves the six-destination navigation contract.
 - `bin/flutter`, `bin/dart`, and `bin/loop-sdk` reject Flutter/Dart version drift.
-- `scripts/check_harness.py` and `tests/test_check_harness.py` validate exact pins, lockfiles, native identity/toolchain, records, provider shortcuts, secret paths, and Launchpad retention.
+- `scripts/check_harness.py` and `tests/test_check_harness.py` validate exact pins, lockfiles, native identity/toolchain, records, provider shortcuts, centralized notification ingress, provider-neutral notification routing, secret paths, and Launchpad retention.
 - Numbered decisions, failure memory, product constraints, compatibility/integration reports, and the dependency/license register preserve rationale and evidence.
 
 ## Rules and checks
@@ -21,6 +21,8 @@ Date: 2026-08-24
 - Android/iOS IDs remain `com.cywd.loop`; iOS tests use `com.cywd.loop.RunnerTests`.
 - Home / Market / Launch / Chat / Wallet / Profile remain primary destinations; the checker fails if Launch is removed from the profile.
 - Harness source guards reject Privy debug/verbose logging, Stream dev tokens/guests, and premature Firebase initialization.
+- Notification guards reserve one future Firebase callback owner, reject competing Chat/Video handlers, and prevent the pure router from importing provider SDKs, logging payloads, accepting payload-selected routes, or carrying Audio Room locators.
+- The same guard reserves one future application coordinator as the sole router/identity consumer, preventing a feature module from forging a matching Stream user before bootstrap-bound composition exists.
 - Git-visible `.env`, private-key, service-account, and Firebase Admin credential paths fail validation. `.gitnexus/` and project-local SDK artifacts are ignored.
 
 ## Verification
@@ -41,7 +43,7 @@ Date: 2026-08-24
 
 ## Failure memory
 
-Three evidenced compatibility failures were migrated: Flutter 3.47's Gradle 8.14 floor, Privy 0.10.1's compileSdk mismatch with AndroidX Credentials, and file_picker 11's brittle SwiftPM cold-cache path. Each record names detection, prevention, and evidence; the Harness automates their durable controls.
+The Harness preserves the migrated native compatibility failures and the later production-truth failures, including preview Chat route leakage and providerless notification fixtures. Each record names detection, prevention, and evidence; executable checks and behavior tests automate their durable controls.
 
 ## Effectiveness
 

@@ -105,6 +105,10 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 - Android Release remains unsigned until approved store credentials are injected by release automation; never fall back to the development debug key.
 - Privy 0.10.1 requires both App ID and Mobile App Client ID. Initialize through `Privy.init`, keep `PrivyLogLevel.none`, and treat `AuthenticatedUnverified` as a restricted offline session rather than logout.
 - A Stream API key alone is not an authenticated connection. Do not construct Video or connect Chat until a validated backend bootstrap returns the server-derived Stream user ID and token providers. Firebase stays uninitialized until real mobile configs and exact push-provider names exist.
+- The current `notification.v1` router is a provider-neutral classifier only. It accepts exact LOOP-owned String envelopes, binds interactions to the backend-derived Stream user ID, and produces only official Chat CID, Audio Room lobby, or notification-center intents. It is not a raw Firebase/Stream payload parser and does not prove delivery.
+- Foreground/background notification delivery never navigates. Only an explicit interaction may resolve a fixed intent; Preview, signed-out, authenticated-unverified, wrong-recipient, expired, unknown, or provider-shaped data fails closed.
+- `lib/integrations/notifications/firebase_notification_ingress.dart` is the only future location allowed to own Firebase global callbacks. Do not create it or initialize Firebase until real mobile configs, exact provider names, captured payload fixtures, and the ordinary-push/VoIP routing decision exist.
+- `lib/app/notifications/loop_notification_coordinator.dart` is the only future application consumer of the normalized router. It must derive authenticated notification context from the verified bootstrap identity; feature modules must not construct a matching Stream user or router directly.
 
 ## Decisions and failure memory
 

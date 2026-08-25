@@ -3,40 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
-
-@immutable
-final class LoopStreamChannelAddress {
-  const LoopStreamChannelAddress({required this.type, required this.id});
-
-  final String type;
-  final String id;
-
-  @override
-  bool operator ==(Object other) {
-    return other is LoopStreamChannelAddress &&
-        other.type == type &&
-        other.id == id;
-  }
-
-  @override
-  int get hashCode => Object.hash(type, id);
-}
-
-/// Parses the only channel CID shape enabled by LOOP's current Chat product.
-LoopStreamChannelAddress? parseLoopStreamChannelCid(String cid) {
-  if (cid.isEmpty || cid != cid.trim() || cid.contains('/')) return null;
-  final separator = cid.indexOf(':');
-  if (separator <= 0 || separator == cid.length - 1) return null;
-  final type = cid.substring(0, separator);
-  final id = cid.substring(separator + 1);
-  if (type != 'messaging' || id.isEmpty || id.contains(':')) return null;
-  return LoopStreamChannelAddress(type: type, id: id);
-}
 
 /// Creates LOOP's official, bounded Stream channel-list controller.
 ///

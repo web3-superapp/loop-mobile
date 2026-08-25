@@ -49,7 +49,9 @@ REQUIRED_FILES = (
     "docs/product/implementation-constraints.md",
     "docs/decisions/0001-merge-verified-mobile-foundation.md",
     "docs/decisions/0006-use-identifier-only-stream-token-cards.md",
+    "docs/decisions/0007-centralize-notification-intents-before-provider-ingress.md",
     "docs/failures/flutter-gradle-version-floor.md",
+    "docs/failures/providerless-notification-fixtures.md",
     "docs/failures/privy-android-compile-sdk.md",
     "docs/failures/production-chat-preview-route-leak.md",
     "docs/failures/swiftpm-file-picker-cold-cache.md",
@@ -57,6 +59,10 @@ REQUIRED_FILES = (
     "docs/open-source-attribution.md",
     "docs/phase-0/compatibility-report.md",
     "docs/phase-1/frontend-integration-report.md",
+    "lib/core/navigation/stream_channel_route.dart",
+    "lib/integrations/notifications/loop_notification_router.dart",
+    "test/loop_notification_router_test.dart",
+    "test/notifications_screen_test.dart",
 )
 CHAT_PREVIEW_ONLY_ROUTES = (
     "/chat/group",
@@ -199,6 +205,73 @@ IOS_AUDIO_ROOM_FORBIDDEN_RUNNER_MARKERS = (
     "CXCallController",
     "PKPushRegistry",
 )
+NOTIFICATION_ROUTER_PATH = Path(
+    "lib/integrations/notifications/loop_notification_router.dart"
+)
+NOTIFICATION_PROVIDER_INGRESS_PATH = Path(
+    "lib/integrations/notifications/firebase_notification_ingress.dart"
+)
+NOTIFICATION_COORDINATOR_PATH = Path(
+    "lib/app/notifications/loop_notification_coordinator.dart"
+)
+NOTIFICATION_GLOBAL_INGRESS_PATTERNS = (
+    (re.compile(r"\bFirebaseMessaging\s*\.\s*instance\b"), "FirebaseMessaging.instance"),
+    (
+        re.compile(r"\bFirebaseMessaging\s*\.\s*onBackgroundMessage\s*\("),
+        "FirebaseMessaging.onBackgroundMessage",
+    ),
+    (
+        re.compile(r"\bFirebaseMessaging\s*\.\s*onMessageOpenedApp\b"),
+        "FirebaseMessaging.onMessageOpenedApp",
+    ),
+    (
+        re.compile(r"\bFirebaseMessaging\s*\.\s*onMessage\b"),
+        "FirebaseMessaging.onMessage",
+    ),
+    (re.compile(r"\.\s*getInitialMessage\s*\("), ".getInitialMessage("),
+)
+NOTIFICATION_ROUTER_IMPORTS = frozenset(
+    {
+        "'dart:collection'",
+        "'package:loop_mobile/core/navigation/stream_channel_route.dart'",
+    }
+)
+NOTIFICATION_PROVIDER_IMPORT_ALLOWED_PATHS = frozenset(
+    {
+        Path("lib/app/bootstrap/sdk_compatibility.dart"),
+        NOTIFICATION_PROVIDER_INGRESS_PATH,
+    }
+)
+NOTIFICATION_PROVIDER_IMPORT_MARKERS = (
+    "package:firebase_core/firebase_core.dart",
+    "package:firebase_messaging/firebase_messaging.dart",
+)
+NOTIFICATION_KIND_MEMBERS = frozenset(
+    {"chatMessage", "audioRoomActivity", "systemNotice"}
+)
+NOTIFICATION_INTENT_CLASSES = frozenset(
+    {
+        "LoopChatNotificationIntent",
+        "LoopAudioRoomNotificationIntent",
+        "LoopNotificationCenterIntent",
+    }
+)
+NOTIFICATION_ROUTE_LITERALS = frozenset(
+    {
+        "/chat/channel/${Uri.encodeComponent(channel.cid)}",
+        "/chat/voice",
+        "/notifications",
+    }
+)
+NOTIFICATION_ROUTER_CONSUMER_PATHS = frozenset(
+    {NOTIFICATION_ROUTER_PATH, NOTIFICATION_COORDINATOR_PATH}
+)
+NOTIFICATION_ROUTER_IMPORT = (
+    "package:loop_mobile/integrations/notifications/loop_notification_router.dart"
+)
+NOTIFICATION_ROUTER_CONSTRUCTION_PATTERN = re.compile(
+    r"\b(?:LoopNotificationRouter|LoopNotificationSessionContext\s*\.\s*authenticated)\s*\("
+)
 
 
 def read_text(path: Path) -> str:
@@ -269,6 +342,47 @@ def strip_dart_comments(text: str) -> str:
             index += 1
             continue
         output.append(text[index])
+        index += 1
+    return "".join(output)
+
+
+def strip_dart_comments_and_strings(text: str) -> str:
+    """Remove comments and string bodies before matching executable Dart."""
+
+    source = strip_dart_comments(text)
+    output: list[str] = []
+    index = 0
+    quote: str | None = None
+    triple = False
+    while index < len(source):
+        if quote is not None:
+            closing = quote * (3 if triple else 1)
+            if source.startswith(closing, index):
+                output.extend(" " * len(closing))
+                index += len(closing)
+                quote = None
+                triple = False
+                continue
+            character = source[index]
+            output.append("\n" if character == "\n" else " ")
+            index += 1
+            if not triple and character == "\\" and index < len(source):
+                output.append("\n" if source[index] == "\n" else " ")
+                index += 1
+            continue
+
+        if source.startswith("'''", index) or source.startswith('\"\"\"', index):
+            quote = source[index]
+            triple = True
+            output.extend("   ")
+            index += 3
+            continue
+        if source[index] in ("'", '"'):
+            quote = source[index]
+            output.append(" ")
+            index += 1
+            continue
+        output.append(source[index])
         index += 1
     return "".join(output)
 
@@ -946,6 +1060,177 @@ def check_source_guards(root: Path) -> list[str]:
     return errors
 
 
+def check_notification_contract(root: Path) -> list[str]:
+    """Keep provider callbacks behind one adapter and routing provider-neutral."""
+
+    errors: list[str] = []
+    router_path = root / NOTIFICATION_ROUTER_PATH
+    if not router_path.is_file():
+        errors.append(f"missing centralized notification router: {NOTIFICATION_ROUTER_PATH}")
+    else:
+        executable = strip_dart_comments(read_text(router_path))
+        executable_code = strip_dart_comments_and_strings(read_text(router_path))
+        directives = list(
+            re.finditer(
+                r"^\s*(?P<kind>import|export|part)\s+(?P<body>[^;]+);",
+                executable,
+                re.MULTILINE,
+            )
+        )
+        actual_imports: list[str] = []
+        invalid_directives: list[str] = []
+        for directive in directives:
+            body = " ".join(directive.group("body").split())
+            if directive.group("kind") != "import":
+                invalid_directives.append(directive.group(0).strip())
+                continue
+            actual_imports.append(body)
+        actual_import_set = frozenset(actual_imports)
+        if (
+            invalid_directives
+            or len(actual_imports) != len(actual_import_set)
+            or actual_import_set != NOTIFICATION_ROUTER_IMPORTS
+        ):
+            errors.append(
+                "notification routing imports must stay on the provider-neutral allowlist: "
+                f"expected {sorted(NOTIFICATION_ROUTER_IMPORTS)}, found {sorted(actual_imports)}"
+            )
+
+        required_fragments = (
+            "class LoopNotificationRouter",
+            "static const String schema = 'notification.v1'",
+            "static const String chatMessageKind = 'chat.message'",
+            "static const String audioRoomActivityKind = 'audio_room.activity'",
+            "static const String systemNoticeKind = 'system.notice'",
+            "'recipient_stream_user_id'",
+            "LoopNotificationIngress.foreground",
+            "LoopNotificationIngress.background",
+            "LoopNotificationIngress.interaction",
+            "LoopNotificationSessionMode.authenticated",
+            "LoopNotificationDisposition.duplicateInteraction",
+            "Uri.encodeComponent(channel.cid)",
+            "String get location => '/chat/voice'",
+            "String get location => '/notifications'",
+        )
+        for fragment in required_fragments:
+            if fragment not in executable:
+                errors.append(
+                    "centralized notification routing contract is missing reviewed fragment "
+                    f"`{fragment}`"
+                )
+
+        forbidden_fragments = (
+            "package:firebase",
+            "package:stream_chat",
+            "package:stream_video",
+            "package:go_router",
+            "FirebaseMessaging",
+            "RemoteMessage",
+            "BuildContext",
+            "Navigator",
+            "dart:io",
+            "debugPrint(",
+            "print(",
+            "data['route']",
+            'data["route"]',
+            "data['path']",
+            'data["path"]',
+            "deep_link",
+            "call_cid",
+            "room_id",
+        )
+        for fragment in forbidden_fragments:
+            if fragment in executable:
+                errors.append(
+                    "centralized notification routing must reject provider SDKs, payload "
+                    f"routes, room locators, and payload logging (`{fragment}`)"
+                )
+
+        kind_match = re.search(
+            r"enum\s+_LoopNotificationKind\s*\{(?P<body>[^}]*)\}",
+            executable_code,
+            re.DOTALL,
+        )
+        kind_members = (
+            frozenset(
+                member.strip()
+                for member in kind_match.group("body").split(",")
+                if member.strip()
+            )
+            if kind_match
+            else frozenset()
+        )
+        if kind_members != NOTIFICATION_KIND_MEMBERS:
+            errors.append(
+                "notification kinds must stay on the reviewed three-kind allowlist: "
+                f"expected {sorted(NOTIFICATION_KIND_MEMBERS)}, found {sorted(kind_members)}"
+            )
+
+        intent_classes = frozenset(
+            re.findall(
+                r"final\s+class\s+(\w+)\s+extends\s+LoopNotificationNavigationIntent\b",
+                executable_code,
+            )
+        )
+        if intent_classes != NOTIFICATION_INTENT_CLASSES:
+            errors.append(
+                "notification intents must stay on the reviewed three-class allowlist: "
+                f"expected {sorted(NOTIFICATION_INTENT_CLASSES)}, "
+                f"found {sorted(intent_classes)}"
+            )
+
+        route_literals = frozenset(
+            match.group("route")
+            for match in re.finditer(
+                r"(?P<quote>['\"])(?P<route>/[^'\"\r\n]*)(?P=quote)",
+                executable,
+            )
+        )
+        if route_literals != NOTIFICATION_ROUTE_LITERALS:
+            errors.append(
+                "notification route literals must stay on the reviewed three-route allowlist: "
+                f"expected {sorted(NOTIFICATION_ROUTE_LITERALS)}, "
+                f"found {sorted(route_literals)}"
+            )
+
+    lib_root = root / "lib"
+    if lib_root.is_dir():
+        for path in sorted(lib_root.rglob("*.dart")):
+            executable = strip_dart_comments(read_text(path))
+            executable_code = strip_dart_comments_and_strings(read_text(path))
+            relative = path.relative_to(root)
+            for marker in NOTIFICATION_PROVIDER_IMPORT_MARKERS:
+                if (
+                    marker in executable
+                    and relative not in NOTIFICATION_PROVIDER_IMPORT_ALLOWED_PATHS
+                ):
+                    errors.append(
+                        f"{relative} imports notification provider SDK `{marker}`; only the "
+                        "compatibility probe and centralized provider ingress may import it"
+                    )
+            if relative not in NOTIFICATION_ROUTER_CONSUMER_PATHS:
+                if NOTIFICATION_ROUTER_IMPORT in executable:
+                    errors.append(
+                        f"{relative} imports the notification router directly; only "
+                        f"{NOTIFICATION_COORDINATOR_PATH} may bind it to application identity"
+                    )
+                if NOTIFICATION_ROUTER_CONSTRUCTION_PATTERN.search(executable_code):
+                    errors.append(
+                        f"{relative} constructs notification routing identity directly; only "
+                        f"{NOTIFICATION_COORDINATOR_PATH} may derive it from verified bootstrap state"
+                    )
+            for pattern, marker in NOTIFICATION_GLOBAL_INGRESS_PATTERNS:
+                if (
+                    pattern.search(executable_code)
+                    and relative != NOTIFICATION_PROVIDER_INGRESS_PATH
+                ):
+                    errors.append(
+                        f"{relative} contains global notification ingress `{marker}`; "
+                        f"only {NOTIFICATION_PROVIDER_INGRESS_PATH} may own provider callbacks"
+                    )
+    return errors
+
+
 def check_secret_paths(paths: list[Path]) -> list[str]:
     errors: list[str] = []
     for path in paths:
@@ -986,6 +1271,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_audio_room_native_contract(root))
     errors.extend(check_product_contract(root))
     errors.extend(check_chat_attachment_contract(root))
+    errors.extend(check_notification_contract(root))
     errors.extend(check_source_guards(root))
     errors.extend(check_records(root))
     visible, visible_error = git_visible_paths(root)

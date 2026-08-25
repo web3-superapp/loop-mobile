@@ -115,6 +115,130 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_source_guards(root)
         self.assertEqual(3, len(result))
 
+    def test_notification_global_handler_must_be_centralized(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "chat" / "unsafe_push.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "FirebaseMessaging\n  .onBackgroundMessage(backgroundHandler);\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_notification_contract(root)
+        self.assertTrue(
+            any(
+                "only lib/integrations/notifications/firebase_notification_ingress.dart"
+                in error
+                for error in result
+            )
+        )
+
+    def test_notification_router_rejects_payload_selected_routes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            router = root / check_harness.NOTIFICATION_ROUTER_PATH
+            router.parent.mkdir(parents=True)
+            source = (
+                REPOSITORY_ROOT / check_harness.NOTIFICATION_ROUTER_PATH
+            ).read_text(encoding="utf-8")
+            router.write_text(
+                source + "\nfinal unsafeRoute = data['route'];\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_notification_contract(root)
+        self.assertTrue(
+            any("payload routes" in error and "data['route']" in error for error in result)
+        )
+
+    def test_notification_router_rejects_provider_sdk_imports(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            router = root / check_harness.NOTIFICATION_ROUTER_PATH
+            router.parent.mkdir(parents=True)
+            source = (
+                REPOSITORY_ROOT / check_harness.NOTIFICATION_ROUTER_PATH
+            ).read_text(encoding="utf-8")
+            router.write_text(
+                "import 'package:firebase_messaging/firebase_messaging.dart';\n" + source,
+                encoding="utf-8",
+            )
+            result = check_harness.check_notification_contract(root)
+        self.assertTrue(
+            any("provider-neutral allowlist" in error for error in result)
+        )
+
+    def test_notification_provider_import_cannot_hide_outside_ingress(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "chat" / "aliased_push.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "import 'package:firebase_messaging/firebase_messaging.dart' as messaging;\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_notification_contract(root)
+        self.assertTrue(
+            any("only the compatibility probe" in error for error in result)
+        )
+
+    def test_compatibility_probe_cannot_own_a_split_global_handler(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "app" / "bootstrap" / "sdk_compatibility.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "import 'package:firebase_messaging/firebase_messaging.dart';\n"
+                "FirebaseMessaging\n  .onBackgroundMessage(backgroundHandler);\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_notification_contract(root)
+        self.assertTrue(
+            any("global notification ingress" in error for error in result)
+        )
+
+    def test_notification_router_rejects_a_fourth_intent_and_route(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            router = root / check_harness.NOTIFICATION_ROUTER_PATH
+            router.parent.mkdir(parents=True)
+            source = (
+                REPOSITORY_ROOT / check_harness.NOTIFICATION_ROUTER_PATH
+            ).read_text(encoding="utf-8")
+            router.write_text(
+                source
+                + "\nfinal class WalletIntent extends LoopNotificationNavigationIntent {\n"
+                + "  const WalletIntent();\n"
+                + "  @override String get location => '/wallet';\n"
+                + "}\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_notification_contract(root)
+        self.assertTrue(
+            any("three-class allowlist" in error for error in result)
+        )
+        self.assertTrue(
+            any("three-route allowlist" in error for error in result)
+        )
+
+    def test_feature_cannot_forge_notification_identity_or_router(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "chat" / "unsafe_router.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "import 'package:loop_mobile/integrations/notifications/loop_notification_router.dart';\n"
+                "final router = LoopNotificationRouter();\n"
+                "const session = LoopNotificationSessionContext.authenticated('loop_forged123');\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_notification_contract(root)
+        self.assertTrue(
+            any("imports the notification router directly" in error for error in result)
+        )
+        self.assertTrue(
+            any("constructs notification routing identity directly" in error for error in result)
+        )
+
     def test_preview_chat_route_without_guard_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
