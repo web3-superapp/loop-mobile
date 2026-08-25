@@ -65,6 +65,13 @@
       "ios/Runner/GeneratedPluginRegistrant.m"
     ]
   },
+  "verification": {
+    "routine_native_gate": "bin/flutter build apk --debug",
+    "routine_build_frequency": "feature_checkpoint_only",
+    "release_matrix": "explicit_user_request_only",
+    "device_validation": "user_owned",
+    "retain_build_artifacts": false
+  },
   "commands": {
     "setup": "bin/flutter pub get",
     "lint": "bin/dart format --output=none --set-exit-if-changed lib test",
@@ -72,7 +79,8 @@
     "test": "bin/flutter test",
     "build": "bin/flutter build apk --debug",
     "run": "bin/flutter run",
-    "native_release_matrix": [
+    "cleanup": "bin/flutter clean",
+    "manual_release_matrix": [
       "bin/flutter build apk --release",
       "bin/flutter build ios --debug --no-codesign",
       "bin/flutter build ios --release --no-codesign"

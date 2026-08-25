@@ -71,27 +71,38 @@ Never edit generated paths as application source. `.tooling` may hold an ignored
 16. Keep Profile presentation models limited to nullable Alias and opaque `avatar:` reference values with the reviewed version contract. Bio and Privacy are separate resources; production Profile persistence stays unavailable until an authenticated, owner-scoped adapter exists, and UI must never announce a save without an advanced matching resource.
 17. Keep Privacy models limited to `discoverable` and the `private` / `followers` / `public` copy-trade visibility preference. This resource never proves discovery, follower membership, portfolio sharing, copy authorization, or execution; production remains unavailable until its authenticated adapter exists.
 18. Keep Notification Preferences limited to the exact four owner intents `price_alert_triggered`, `provider_activity_projected`, `security_notice`, and `support_update`. Delivery remains `unavailable` regardless of saved values; production stays unavailable until an authenticated adapter exists, and the UI must not infer Firebase/provider/device permission or delivery.
+19. Routine feature work uses format, analyze, and relevant/full tests. When native compilation evidence is needed, run Android Debug once at the feature checkpoint with `bin/flutter build apk --debug`; do not build after every intermediate edit.
+20. Release, iOS no-codesign, Web release, interactive `flutter run`, signing, provider, and physical-device checks are manual-only. Run them only when the user explicitly requests them or a later decision supersedes this policy. The user owns physical-device validation; skipped checks remain unverified.
+21. `build/` and native application bundles are generated evidence, not retained deliverables. Remove them with `bin/flutter clean` when cleanup is requested; never commit them.
 
 ## Commands
 
-The application command contract is:
+The routine application command contract is:
 
 ```sh
 bin/flutter pub get
 bin/dart format --output=none --set-exit-if-changed lib test
 bin/flutter analyze
 bin/flutter test
-bin/flutter build apk --debug
-bin/flutter run
 ```
 
-The native release matrix is:
+At a feature checkpoint, use only this native compilation gate when needed:
+
+```sh
+bin/flutter build apk --debug
+```
+
+The following matrix is manual-only and must not run without an explicit user
+request:
 
 ```sh
 bin/flutter build apk --release
 bin/flutter build ios --debug --no-codesign
 bin/flutter build ios --release --no-codesign
 ```
+
+Interactive `bin/flutter run` and physical-device validation are also
+user-requested activities, not routine agent verification.
 
 Harness validation is:
 

@@ -87,6 +87,52 @@ class HarnessTests(unittest.TestCase):
         result = check_harness.check_profile(REPOSITORY_ROOT, changed)
         self.assertTrue(any("preserve Home / Market / Launch" in error for error in result))
 
+    def test_routine_verification_is_android_debug_only(self) -> None:
+        profile, errors = check_harness.load_profile(REPOSITORY_ROOT)
+        self.assertEqual([], errors)
+        assert profile is not None
+        self.assertIn(
+            "docs/decisions/0015-use-debug-only-routine-verification.md",
+            check_harness.REQUIRED_FILES,
+        )
+        self.assertEqual(
+            {
+                "routine_native_gate": "bin/flutter build apk --debug",
+                "routine_build_frequency": "feature_checkpoint_only",
+                "release_matrix": "explicit_user_request_only",
+                "device_validation": "user_owned",
+                "retain_build_artifacts": False,
+            },
+            profile["verification"],
+        )
+
+        changed = copy.deepcopy(profile)
+        changed["verification"]["routine_native_gate"] = (
+            "bin/flutter build apk --release"
+        )
+        result = check_harness.check_profile(REPOSITORY_ROOT, changed)
+
+        self.assertTrue(
+            any("Android Debug-only" in error for error in result),
+            msg=f"expected routine Debug-only guard: {result}",
+        )
+
+    def test_release_matrix_cannot_become_automatic(self) -> None:
+        profile, errors = check_harness.load_profile(REPOSITORY_ROOT)
+        self.assertEqual([], errors)
+        assert profile is not None
+        changed = copy.deepcopy(profile)
+        changed["commands"]["native_release_matrix"] = changed["commands"].pop(
+            "manual_release_matrix"
+        )
+
+        result = check_harness.check_profile(REPOSITORY_ROOT, changed)
+
+        self.assertTrue(
+            any("must not expose an automatic" in error for error in result),
+            msg=f"expected manual release-matrix guard: {result}",
+        )
+
     def test_dependency_pin_drift_is_detected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

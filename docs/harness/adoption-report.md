@@ -43,7 +43,9 @@ Date: 2026-08-24
 - Flutter 3.47.1 revision `6655482ec06e547f90abf8ae7590466f4415978d`, Xcode 26.6, CocoaPods 1.16.2, Android SDK 36, and Java 17 remain available to CI/developers.
 - Provider compile success is not provider runtime proof. Real Privy, Stream, Firebase, push, call, wallet-signing, and private-trading tests remain gated by dashboard/backend/device inputs.
 - Add CI execution for the Harness and Flutter tests when the repository's deployment workflow is selected.
-- Re-run all four native release checks after any dependency or toolchain change.
+- Dependency, toolchain, platform, signing, or release changes may require the
+  manual native matrix, but the agent must obtain an explicit user request
+  before running it under decision 0015.
 
 ## Failure memory
 
@@ -51,7 +53,7 @@ The Harness preserves the migrated native compatibility failures and the later p
 
 ## Effectiveness
 
-Measure the Harness by zero repeated occurrences of the recorded native failures, zero committed privileged secrets, zero fake provider-connected states, exact lockfile/pin agreement, retention of all six primary destinations, and consistent completion of format/analyze/test plus the native matrix for structural changes. Update this report when a rule prevents a regression or creates a false positive.
+Measure the Harness by zero repeated occurrences of the recorded native failures, zero committed privileged secrets, zero fake provider-connected states, exact lockfile/pin agreement, retention of all six primary destinations, consistent format/analyze/test evidence, and Android Debug compilation at requested feature checkpoints. The manual Release/iOS matrix and device validation count only when explicitly requested. Update this report when a rule prevents a regression or creates a false positive.
 
 ## Providerless Application-Logic Update
 
@@ -200,3 +202,30 @@ provider/device gaps are recorded in the Phase 1 integration report. No failure
 memory was added because the stale-operation edge and Harness false-confidence
 gaps were caught and fixed during pre-commit review rather than reproduced in a
 released production path.
+
+## Debug-Only Routine Verification Update
+
+On 2026-08-25, decision 0015 changed the agent verification policy at the
+product owner's request. Routine feature work now stops at format, analyze, and
+relevant/full tests. When native compilation evidence is needed, the only
+routine gate is one Android Debug build at the completed feature checkpoint.
+Android Release, iOS no-codesign, Web release, interactive run, signing,
+provider runtime, and physical-device checks are manual-only and require an
+explicit user request. Device validation remains user-owned and skipped checks
+remain unverified.
+
+`harness.json` now separates the Debug gate from a clearly named
+`manual_release_matrix` and records that build artifacts are not retained. The
+Harness rejects the legacy automatic `native_release_matrix` key, a non-Debug
+routine gate, policy-field drift, or a missing decision record. The complete
+Harness mutation suite passed 77 tests, `scripts/check_harness.py` passed, and
+both Python files compiled successfully.
+
+`bin/flutter clean` removed the approximately 5.1 GB generated `build/` tree,
+`.dart_tool`, Flutter plugin metadata, and native ephemeral configuration. A
+follow-up scan found no APK, AAB, IPA, or `Runner.app` in the repository, and
+Git remained free of generated-file changes. No Flutter build was run after
+cleanup because this update changes only the agent verification policy and the
+user explicitly requested that no new package be produced. No failure-memory
+record was added because this is a deliberate workflow/cost policy rather than
+a runtime or released-product failure.

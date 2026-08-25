@@ -33,16 +33,22 @@ Stream 生产路径必须先通过 BFF 获取或刷新短期用户 token，并�
 
 当前产品决定以 [`docs/product-decisions.md`](docs/product-decisions.md) 为准。内部不可变 `user id` 是账户与社交关系的主身份，钱包地址只是可绑定、可替换的凭证。界面只陈述可验证的安全事实及来源时间，不使用 AI Guard 或风险分口径。
 
-## 开发入口
+## 开发入口与日常验证
 
 ```bash
 bin/flutter pub get
 bin/dart format --output=none --set-exit-if-changed lib test
 bin/flutter analyze
 bin/flutter test
-bin/flutter build apk --debug
-bin/flutter run
 ```
+
+日常功能开发不在每次中间修改后打包。需要确认原生侧能够编译时，只在功能检查点运行一次 Android Debug：
+
+```bash
+bin/flutter build apk --debug
+```
+
+Release、iOS no-codesign、Web release、`bin/flutter run`、签名和真机验证都不是日常自动检查；只有明确提出时才运行。真机结果由产品方验证，未执行时始终记录为未验证。
 
 你提供的 Privy App ID、Mobile App Client ID 与 Stream API key 都已作为客户端安全的 Development 默认值接入。需要切换 Privy Client 时仍可显式覆盖：
 
@@ -66,7 +72,7 @@ bin/flutter run -t lib/main_preview.dart
 
 该入口会清空供应商标识并显式开启 Development Preview，不会发送 OTP、连接 Stream、请求实时行情或发起钱包/交易操作。
 
-Web release build 只用于本地视觉验收：
+Web release build 只在明确要求本地视觉验收时运行：
 
 ```bash
 flutter build web --release
@@ -86,12 +92,18 @@ flutter build web --release
 
 `harness.json` 是可机器校验的工程画像，`AGENTS.md` 是开发与安全边界。任何依赖、原生工具链、主导航或安全边界变更都要同步更新决策和验证报告。
 
-Native release matrix：
+Manual-only native release matrix（仅在明确要求时运行）：
 
 ```bash
 bin/flutter build apk --release
 bin/flutter build ios --debug --no-codesign
 bin/flutter build ios --release --no-codesign
+```
+
+生成的 `build/`、APK、AAB、IPA 和 `Runner.app` 不作为仓库交付物保留。需要清理时运行：
+
+```bash
+bin/flutter clean
 ```
 
 Harness validation：

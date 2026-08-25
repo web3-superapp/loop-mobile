@@ -57,6 +57,7 @@ REQUIRED_FILES = (
     "docs/decisions/0012-model-notification-preferences-before-http-adapter.md",
     "docs/decisions/0013-connect-principal-bound-perp-private-reads.md",
     "docs/decisions/0014-connect-perp-positions-projection.md",
+    "docs/decisions/0015-use-debug-only-routine-verification.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/providerless-notification-fixtures.md",
     "docs/failures/privy-android-compile-sdk.md",
@@ -1403,11 +1404,14 @@ def check_profile(root: Path, profile: dict[str, Any]) -> list[str]:
 
     project = profile.get("project")
     application = profile.get("application")
+    verification = profile.get("verification")
     commands = profile.get("commands")
     if not isinstance(project, dict):
         return errors + ["harness.json `project` must be an object"]
     if not isinstance(application, dict):
         return errors + ["harness.json `application` must be an object"]
+    if not isinstance(verification, dict):
+        return errors + ["harness.json `verification` must be an object"]
     if not isinstance(commands, dict):
         return errors + ["harness.json `commands` must be an object"]
 
@@ -1443,18 +1447,36 @@ def check_profile(root: Path, profile: dict[str, Any]) -> list[str]:
         "test": "bin/flutter test",
         "build": "bin/flutter build apk --debug",
         "run": "bin/flutter run",
+        "cleanup": "bin/flutter clean",
     }
     for name, expected in expected_commands.items():
         if commands.get(name) != expected:
             errors.append(f"harness.json `commands.{name}` must equal `{expected}`")
 
-    expected_native = [
+    expected_verification = {
+        "routine_native_gate": "bin/flutter build apk --debug",
+        "routine_build_frequency": "feature_checkpoint_only",
+        "release_matrix": "explicit_user_request_only",
+        "device_validation": "user_owned",
+        "retain_build_artifacts": False,
+    }
+    if verification != expected_verification:
+        errors.append(
+            "harness.json verification policy must keep routine native "
+            "verification Android Debug-only and release/device checks manual"
+        )
+
+    expected_manual_native = [
         "bin/flutter build apk --release",
         "bin/flutter build ios --debug --no-codesign",
         "bin/flutter build ios --release --no-codesign",
     ]
-    if commands.get("native_release_matrix") != expected_native:
-        errors.append("harness.json native release matrix has drifted")
+    if "native_release_matrix" in commands:
+        errors.append(
+            "harness.json must not expose an automatic native release matrix"
+        )
+    if commands.get("manual_release_matrix") != expected_manual_native:
+        errors.append("harness.json manual release matrix has drifted")
     expected_harness = [
         "python3 scripts/check_harness.py",
         "python3 -m unittest discover -s tests -p 'test_*.py'",
@@ -3374,7 +3396,10 @@ def main() -> int:
         for error in errors:
             print(f"- {error}")
         return 1
-    print("Harness check passed: profile, six-destination contract, pins, native matrix, records, and secret rules are consistent.")
+    print(
+        "Harness check passed: profile, six-destination contract, pins, "
+        "Debug-only routine verification, records, and secret rules are consistent."
+    )
     return 0
 
 
