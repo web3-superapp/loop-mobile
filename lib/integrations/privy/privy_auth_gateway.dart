@@ -20,6 +20,17 @@ class PrivyWalletSummary {
 }
 
 @immutable
+class PrivyWalletCreationResult {
+  const PrivyWalletCreationResult({
+    required this.privyUserId,
+    required this.wallet,
+  });
+
+  final String privyUserId;
+  final PrivyWalletSummary wallet;
+}
+
+@immutable
 class PrivyAccountSummary {
   const PrivyAccountSummary({
     required this.privyUserId,
@@ -69,7 +80,9 @@ abstract interface class PrivyAuthGateway {
     required String code,
   });
 
-  Future<PrivyWalletSummary> createFirstEthereumWallet();
+  Future<PrivyWalletCreationResult> createFirstEthereumWallet({
+    required String expectedPrivyUserId,
+  });
 
   /// Returns the SDK's current short-lived access token for immediate backend
   /// use. The gateway never reads, stores, or refreshes a Privy refresh token.
@@ -100,7 +113,9 @@ class UnconfiguredPrivyAuthGateway implements PrivyAuthGateway {
   Stream<PrivySessionSnapshot> watchSession() => const Stream.empty();
 
   @override
-  Future<PrivyWalletSummary> createFirstEthereumWallet() {
+  Future<PrivyWalletCreationResult> createFirstEthereumWallet({
+    required String expectedPrivyUserId,
+  }) {
     throw const PrivyGatewayException(_message);
   }
 
@@ -146,7 +161,8 @@ class PrivySdkAuthGateway implements PrivyAuthGateway {
 
   final Privy _privy;
   PrivyUser? _currentUser;
-  Future<PrivyWalletSummary>? _walletCreation;
+  String? _walletCreationOwner;
+  Future<PrivyWalletCreationResult>? _walletCreation;
 
   @override
   Future<PrivySessionSnapshot> restoreSession() async {
@@ -189,53 +205,75 @@ class PrivySdkAuthGateway implements PrivyAuthGateway {
   }
 
   @override
-  Future<PrivyWalletSummary> createFirstEthereumWallet() async {
-    final existingOperation = _walletCreation;
-    if (existingOperation != null) return existingOperation;
+  Future<PrivyWalletCreationResult> createFirstEthereumWallet({
+    required String expectedPrivyUserId,
+  }) async {
+    final user = _currentUser;
+    if (user == null ||
+        expectedPrivyUserId.isEmpty ||
+        expectedPrivyUserId != expectedPrivyUserId.trim() ||
+        user.id != expectedPrivyUserId) {
+      throw const PrivyGatewayException('账号已变化，请重新检查钱包状态。');
+    }
 
-    final operation = _createFirstEthereumWallet();
+    final existingOperation = _walletCreation;
+    if (existingOperation != null) {
+      if (_walletCreationOwner != expectedPrivyUserId) {
+        throw const PrivyGatewayException('上一账号的钱包操作仍在结束，请稍后重试。');
+      }
+      return existingOperation;
+    }
+
+    final operation = _createFirstEthereumWallet(user);
+    _walletCreationOwner = expectedPrivyUserId;
     _walletCreation = operation;
     try {
       return await operation;
     } finally {
       if (identical(_walletCreation, operation)) {
         _walletCreation = null;
+        _walletCreationOwner = null;
       }
     }
   }
 
-  Future<PrivyWalletSummary> _createFirstEthereumWallet() async {
-    final user = _currentUser;
-    if (user == null) {
-      throw const PrivyGatewayException('请先完成 Privy 登录。');
-    }
-
+  Future<PrivyWalletCreationResult> _createFirstEthereumWallet(
+    PrivyUser user,
+  ) async {
     final existing = user.embeddedEthereumWallets;
     if (existing.isNotEmpty) {
-      return PrivyWalletSummary(address: existing.first.address);
+      return _walletCreationResult(user, existing.first.address);
     }
 
     await user.refresh();
     final refreshed = user.embeddedEthereumWallets;
     if (refreshed.isNotEmpty) {
-      return PrivyWalletSummary(address: refreshed.first.address);
+      return _walletCreationResult(user, refreshed.first.address);
     }
 
     final result = await user.createEthereumWallet(allowAdditional: false);
     switch (result) {
       case Success<EmbeddedEthereumWallet>(value: final wallet):
-        return PrivyWalletSummary(address: wallet.address);
+        return _walletCreationResult(user, wallet.address);
       case Failure<EmbeddedEthereumWallet>():
         // Creation may have succeeded remotely even when the response was
         // ambiguous. Reconcile once before allowing a future retry.
         await user.refresh();
         final reconciled = user.embeddedEthereumWallets;
         if (reconciled.isNotEmpty) {
-          return PrivyWalletSummary(address: reconciled.first.address);
+          return _walletCreationResult(user, reconciled.first.address);
         }
         throw const PrivyGatewayException('钱包创建状态未确认，请稍后刷新重试。');
     }
   }
+
+  PrivyWalletCreationResult _walletCreationResult(
+    PrivyUser user,
+    String address,
+  ) => PrivyWalletCreationResult(
+    privyUserId: user.id,
+    wallet: PrivyWalletSummary(address: address),
+  );
 
   @override
   Future<String> getCurrentAccessToken() async {

@@ -55,9 +55,11 @@ REQUIRED_FILES = (
     "docs/decisions/0010-model-profile-presentation-before-http-adapter.md",
     "docs/decisions/0011-model-privacy-preferences-before-http-adapter.md",
     "docs/decisions/0012-model-notification-preferences-before-http-adapter.md",
+    "docs/decisions/0013-connect-principal-bound-perp-private-reads.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/providerless-notification-fixtures.md",
     "docs/failures/privy-android-compile-sdk.md",
+    "docs/failures/principal-agnostic-wallet-single-flight.md",
     "docs/failures/production-chat-preview-route-leak.md",
     "docs/failures/swiftpm-file-picker-cold-cache.md",
     "docs/harness/adoption-report.md",
@@ -84,6 +86,12 @@ REQUIRED_FILES = (
     "lib/features/profile/notification_preferences/notification_preferences_gateway.dart",
     "lib/features/profile/notification_preferences/notification_preferences_models.dart",
     "lib/integrations/personalization/memory_notification_preferences_gateway.dart",
+    "lib/features/perp/account/perp_account_controller.dart",
+    "lib/features/perp/private/perp_private_gateway.dart",
+    "lib/features/perp/private/perp_private_models.dart",
+    "lib/integrations/backend/loop_perp_providers.dart",
+    "lib/integrations/backend/loop_perp_repository.dart",
+    "lib/integrations/backend/loop_perp_session.dart",
     "test/app_notification_coordinator_test.dart",
     "test/loop_notification_coordinator_test.dart",
     "test/loop_notification_router_test.dart",
@@ -100,6 +108,11 @@ REQUIRED_FILES = (
     "test/notification_preferences_controller_test.dart",
     "test/notification_preferences_models_test.dart",
     "test/notification_preferences_screen_test.dart",
+    "test/loop_perp_providers_test.dart",
+    "test/loop_perp_repository_test.dart",
+    "test/loop_perp_session_test.dart",
+    "test/perp_account_controller_test.dart",
+    "test/perp_account_screen_test.dart",
 )
 CHAT_PREVIEW_ONLY_ROUTES = (
     "/chat/group",
@@ -175,6 +188,7 @@ ADOPTION_SECTIONS = (
 )
 ANDROID_NAME = "{http://schemas.android.com/apk/res/android}name"
 ANDROID_TOOLS_NODE = "{http://schemas.android.com/tools}node"
+ANDROID_INTERNET_PERMISSION = "android.permission.INTERNET"
 ANDROID_AUDIO_ROOM_PERMISSIONS = frozenset(
     {
         "android.permission.RECORD_AUDIO",
@@ -1397,6 +1411,28 @@ def check_native_matrix(root: Path) -> list[str]:
     return errors
 
 
+def check_android_release_network_contract(root: Path) -> list[str]:
+    """Require Release networking for production HTTPS adapters."""
+
+    manifest_path = root / "android/app/src/main/AndroidManifest.xml"
+    manifest, errors = _parse_xml(manifest_path, "Android main manifest")
+    if manifest is None:
+        return errors
+
+    active = [
+        permission
+        for permission in manifest.findall("uses-permission")
+        if permission.get(ANDROID_NAME) == ANDROID_INTERNET_PERMISSION
+        and permission.get(ANDROID_TOOLS_NODE) != "remove"
+    ]
+    if len(active) != 1:
+        errors.append(
+            "Android Release must explicitly declare active permission "
+            f"`{ANDROID_INTERNET_PERMISSION}` exactly once"
+        )
+    return errors
+
+
 def _parse_xml(path: Path, label: str) -> tuple[ElementTree.Element | None, list[str]]:
     if not path.is_file():
         return None, [f"missing {label}: {path.relative_to(path.parents[3])}"]
@@ -1628,6 +1664,15 @@ def check_product_contract(root: Path) -> list[str]:
                 "muteVideoWhenInBackground: false",
                 "keepConnectionsAliveWhenInBackground: false",
             ),
+            "lib/integrations/privy/privy_auth_gateway.dart": (
+                "required String expectedPrivyUserId",
+                "_walletCreationOwner != expectedPrivyUserId",
+                "PrivyWalletCreationResult _walletCreationResult",
+            ),
+            "lib/app/session/loop_session_controller.dart": (
+                "expectedPrivyUserId: requestedPrincipal",
+                "creation.privyUserId != requestedPrincipal",
+            ),
             "lib/features/chat/calls/audio_room_call.dart": (
                 "Future<void> retireForBackground()",
                 "AudioRoomCallCommandCoordinator",
@@ -1665,6 +1710,16 @@ def check_product_contract(root: Path) -> list[str]:
             for relative in ("README.md", "AGENTS.md"):
                 if purpose not in read_text(root / relative):
                     errors.append(f"{relative} must mirror the harness project purpose")
+    errors.extend(
+        check_behavior_test_evidence(
+            root,
+            {
+                Path("test/loop_session_controller_test.dart"): (
+                    "a prior principal wallet future cannot attach to the current principal",
+                ),
+            },
+        )
+    )
     return errors
 
 
@@ -2950,6 +3005,7 @@ def validate(root: Path = ROOT) -> list[str]:
         errors.extend(check_profile(root, profile))
     errors.extend(check_dependency_pins(root))
     errors.extend(check_native_matrix(root))
+    errors.extend(check_android_release_network_contract(root))
     errors.extend(check_audio_room_native_contract(root))
     errors.extend(check_product_contract(root))
     errors.extend(check_chat_attachment_contract(root))

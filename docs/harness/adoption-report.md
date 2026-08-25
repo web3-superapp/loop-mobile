@@ -149,3 +149,27 @@ analyze, Android Debug and iOS Debug no-codesign passed. No failure-memory
 record was added because this is a planned boundary and no production incident
 was reproduced. Exact commands and remaining provider inputs are recorded in
 the Phase 1 integration report.
+
+## Principal-Bound Perp Private Reads Update
+
+On 2026-08-25, decision 0013 connected the first backend-mediated private Perp
+read slice without enabling trading mutations. The Harness now requires the
+Perp gateway, Decimal-safe models, session, strict repository, provider,
+controller, behavior tests, decision record, and associated failure memory.
+It also parses the Android main manifest and requires exactly one active
+`INTERNET` permission so production HTTPS adapters cannot silently work only
+in Debug/Profile builds.
+
+The merge review exposed a cross-principal wallet single-flight risk. Harness
+fragments now require an explicit expected Privy principal, an owner-keyed SDK
+operation, an owner-tagged result, and the controller's independent owner
+check. Named behavior evidence proves an old principal's wallet Future cannot
+attach to the current principal, while a Python mutation test proves removing
+the owner comparison fails the Harness.
+
+`python3 scripts/check_harness.py` passed and the complete Harness mutation
+suite passed 66 tests. Flutter format covered 162 files with no changes,
+analyze reported no issues, the full Flutter suite passed 358 tests, and
+Android Debug/Release plus iOS Debug/Release no-codesign builds passed. Exact
+commands, packaged Android permission evidence, and remaining provider/device
+gaps are recorded in the Phase 1 integration report.

@@ -133,6 +133,27 @@ void main() {
   });
 
   test(
+    'invalidating cached authorization requires a fresh bootstrap',
+    () async {
+      final tokens = _TokenSource(<Object>['first-token', 'second-token']);
+      final repository = _RecordingRepository((_) async => identity);
+      final session = LoopBootstrapSession(
+        principalKey: 'did:privy:user-a',
+        accessTokens: tokens,
+        repository: repository,
+      );
+
+      expect(await session.authorize(), LoopBootstrapAuthorization.authorized);
+      session.invalidateAuthorization();
+      expect(session.identity, isNull);
+      expect(await session.authorize(), LoopBootstrapAuthorization.authorized);
+
+      expect(repository.tokens, <String>['first-token', 'second-token']);
+      expect(tokens.calls, 2);
+    },
+  );
+
+  test(
     'dispose invalidates stuck and late work without publishing identity',
     () async {
       final tokenGate = Completer<String>();

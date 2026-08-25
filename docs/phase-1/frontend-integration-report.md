@@ -223,3 +223,58 @@ The deterministic behavior suite covers the exact four event wire values, unknow
 ## Follow-up inputs
 
 Privy Email OTP still requires dashboard confirmation and physical-device evidence before it is called connected. Provide future Firebase mobile configuration only through documented client inputs. Keep Privy/Stream secrets, Firebase service-account JSON, APNs `.p8`, and Hyperliquid agent keys in backend/provider secret managers. A deployed bootstrap endpoint, Stream Chat/Video token contracts, an attributable freshness-bounded Token Card facts projection, an Audio Room locator that returns a pre-created room with a mobile role lacking `create-call`, and a two-device test setup are required before claiming communication or trading connectivity.
+
+## Principal-bound Perp private reads merge
+
+The private Perp read branch was merged into the active integration line on
+2026-08-25. Production D8 now composes a lazy, verified-principal and
+wallet-rotated backend session for wallet-binding, config, and account reads.
+Positions, orders, fills, and funding have strict integration transports but
+remain unmounted from production product pages. Order, cancel, leverage,
+transfer, withdrawal, signing, Mainnet, and automated trading remain disabled.
+
+The merge review found and corrected one cross-principal wallet-creation race:
+an old principal's single-flight Future could otherwise be reused by a new
+principal. Creation now requires an expected Privy user ID, the SDK operation
+is owner-keyed, its result carries the creating owner, and the session
+controller independently rejects mismatched results. The deterministic A-to-B
+rotation test and Harness mutation guard preserve this boundary. Android's
+main manifest now declares the normal `INTERNET` permission required by the
+same HTTPS adapters in Release; it does not initialize Firebase or enable
+background call behavior.
+
+Final verification after the correction:
+
+- `bin/flutter pub get`: passed; the existing exact dependency graph remained
+  resolved and no pin or lockfile changed.
+- `bin/dart format --output=none --set-exit-if-changed lib test`: passed; 162
+  files, 0 changed.
+- `bin/flutter analyze`: passed; no issues.
+- The focused session/auth/Perp account screen regression command passed 15
+  tests.
+- `bin/flutter test`: passed; 358 tests.
+- `python3 -m py_compile scripts/check_harness.py
+  tests/test_check_harness.py`: passed.
+- `python3 scripts/check_harness.py`: passed.
+- `python3 -m unittest discover -s tests -p 'test_*.py'`: passed; 66 tests.
+- `bin/flutter build apk --debug`: passed; generated `app-debug.apk`.
+- `bin/flutter build apk --release`: passed; generated the intentionally
+  unsigned 135.3 MB `app-release.apk`. The accepted Gradle 8.14 / AGP 8.13.2
+  future-support warnings were unchanged.
+- Build-tools `aapt dump permissions` confirmed the packaged Release APK is
+  `com.cywd.loop` and contains `INTERNET`, `RECORD_AUDIO`, and
+  `MODIFY_AUDIO_SETTINGS`. It contains no `POST_NOTIFICATIONS`, camera,
+  full-screen incoming-call, Telecom, or foreground call-service permission.
+  The already-linked but uninitialized Firebase Messaging plugin still
+  contributes `com.google.android.c2dm.permission.RECEIVE`; no Firebase mobile
+  config, Dart initialization, provider callback, or device registration was
+  added.
+- `bin/flutter build ios --debug --no-codesign`: passed; generated
+  `Runner.app` for `com.cywd.loop`.
+- `bin/flutter build ios --release --no-codesign`: passed; generated a 56.5 MB
+  `Runner.app` for `com.cywd.loop`.
+
+These checks use deterministic gateways and native no-codesign builds. No live
+Privy OTP, wallet creation, deployed backend response, wallet binding,
+Hyperliquid account data, TLS tunnel, physical-device connectivity, or store
+signing was exercised; those remain unverified rather than passing.

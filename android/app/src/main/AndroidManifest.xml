@@ -1,5 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    <!-- Production HTTPS adapters require network access in Release builds. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- Foreground Audio Room v1 owns only these two audio permissions. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />

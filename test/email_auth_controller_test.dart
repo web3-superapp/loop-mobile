@@ -138,9 +138,14 @@ class _FakePrivyGateway implements PrivyAuthGateway {
   );
 
   @override
-  Future<PrivyWalletSummary> createFirstEthereumWallet() async {
+  Future<PrivyWalletCreationResult> createFirstEthereumWallet({
+    required String expectedPrivyUserId,
+  }) async {
     walletCreationCalls += 1;
-    return const PrivyWalletSummary(address: '0x123');
+    return PrivyWalletCreationResult(
+      privyUserId: expectedPrivyUserId,
+      wallet: const PrivyWalletSummary(address: '0x123'),
+    );
   }
 
   @override

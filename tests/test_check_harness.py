@@ -115,6 +115,34 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_source_guards(root)
         self.assertEqual(3, len(result))
 
+    def test_wallet_creation_must_remain_principal_bound(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for relative in (
+                "lib/integrations/privy/privy_auth_gateway.dart",
+                "lib/app/session/loop_session_controller.dart",
+                "test/loop_session_controller_test.dart",
+            ):
+                target = root / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(
+                    (REPOSITORY_ROOT / relative).read_text(encoding="utf-8"),
+                    encoding="utf-8",
+                )
+            gateway = root / "lib/integrations/privy/privy_auth_gateway.dart"
+            gateway.write_text(
+                gateway.read_text(encoding="utf-8").replace(
+                    "_walletCreationOwner != expectedPrivyUserId",
+                    "false",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_product_contract(root)
+        self.assertTrue(
+            any("_walletCreationOwner != expectedPrivyUserId" in error for error in result),
+            msg=f"expected principal-bound wallet guard: {result}",
+        )
+
     def test_feature_cannot_own_backend_transport(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -1515,6 +1543,21 @@ class HarnessTests(unittest.TestCase):
             )
             result = check_harness.check_native_matrix(root)
         self.assertTrue(any("debug signing key" in error for error in result))
+
+    def test_android_release_network_permission_is_required(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest = (
+                root / "android" / "app" / "src" / "main" / "AndroidManifest.xml"
+            )
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text(
+                '<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n'
+                "</manifest>\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_android_release_network_contract(root)
+        self.assertTrue(any("android.permission.INTERNET" in error for error in result))
 
     def test_foreground_audio_room_native_contract_accepts_minimum_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

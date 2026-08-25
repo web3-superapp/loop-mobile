@@ -1,12 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/perp/account/perp_account_controller.dart';
 import 'package:loop_mobile/features/perp/perp_models.dart';
 import 'package:loop_mobile/features/perp/perp_widgets.dart';
+import 'package:loop_mobile/features/perp/private/perp_private_gateway.dart';
+import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
 /// D8 — Hyperliquid margin account projection.
-class PerpAccountScreen extends StatelessWidget {
+class PerpAccountScreen extends ConsumerWidget {
   const PerpAccountScreen({
     super.key,
     this.snapshotState = PerpSnapshotState.preview,
@@ -15,10 +23,25 @@ class PerpAccountScreen extends StatelessWidget {
   final PerpSnapshotState snapshotState;
 
   @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(developmentPreviewEnabledProvider)) {
+      return _PerpAccountPreview(snapshotState: snapshotState);
+    }
+    return const _PerpAccountLive();
+  }
+}
+
+class _PerpAccountPreview extends StatelessWidget {
+  const _PerpAccountPreview({required this.snapshotState});
+
+  final PerpSnapshotState snapshotState;
+
+  @override
   Widget build(BuildContext context) {
     final hasFacts = snapshotState == PerpSnapshotState.preview;
     return LoopPage(
-      eyebrow: 'D8 · Margin account',
+      key: const ValueKey<String>('perp-preview-account'),
+      eyebrow: 'D8 · Margin account · 开发预览',
       title: 'Perp account',
       subtitle: 'A read-only account projection; LOOP does not maintain a second ledger.',
       actions: <Widget>[
@@ -166,6 +189,613 @@ class PerpAccountScreen extends StatelessWidget {
       ],
     );
   }
+}
+
+class _PerpAccountLive extends ConsumerStatefulWidget {
+  const _PerpAccountLive();
+
+  @override
+  ConsumerState<_PerpAccountLive> createState() => _PerpAccountLiveState();
+}
+
+class _PerpAccountLiveState extends ConsumerState<_PerpAccountLive>
+    with WidgetsBindingObserver {
+  var _creatingWallet = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.read(perpAccountControllerProvider.notifier).expireIfNeeded();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final session = ref.watch(loopSessionProvider);
+    final state = ref.watch(perpAccountControllerProvider);
+    final controller = ref.read(perpAccountControllerProvider.notifier);
+    final wallet = session.account?.wallet?.address;
+    final factsAreFresh = state.hasFreshFactsAt(
+      ref.read(perpAccountClockProvider)(),
+    );
+    if (state.phase == PerpAccountPhase.ready && !factsAreFresh) {
+      scheduleMicrotask(() {
+        if (mounted) controller.expireIfNeeded();
+      });
+    }
+    if (session.canUseProviderBackedFeatures &&
+        wallet != null &&
+        state.phase == PerpAccountPhase.initial) {
+      scheduleMicrotask(() {
+        if (mounted) unawaited(controller.load());
+      });
+    }
+
+    return LoopPage(
+      key: const ValueKey<String>('perp-live-account'),
+      eyebrow: 'D8 · Hyperliquid Testnet',
+      title: 'Perp account',
+      subtitle: 'A short-lived backend projection of your Hyperliquid account. LOOP does not maintain a second ledger.',
+      actions: <Widget>[
+        IconButton(
+          key: const ValueKey<String>('perp-refresh'),
+          onPressed: state.isBusy || wallet == null
+              ? null
+              : () => unawaited(controller.refresh()),
+          tooltip: 'Refresh account projection',
+          icon: const Icon(Icons.refresh_rounded),
+        ),
+        IconButton(
+          onPressed: () => context.push('/perp/risk'),
+          tooltip: 'Open risk notice',
+          icon: const Icon(Icons.shield_outlined),
+        ),
+      ],
+      children: <Widget>[
+        const _PerpLiveBanner(),
+        const SizedBox(height: 18),
+        if (!session.canUseProviderBackedFeatures)
+          const LoopStateCard(
+            title: 'Verified Privy session required',
+            message: 'Sign in online and complete verification before LOOP requests any private account fact.',
+            icon: Icons.person_off_outlined,
+            tone: LoopTone.warning,
+          )
+        else if (wallet == null)
+          _walletCreationCard()
+        else
+          ..._stateContent(context, state, controller, wallet, factsAreFresh),
+      ],
+    );
+  }
+
+  Widget _walletCreationCard() {
+    return LoopStateCard(
+      title: 'Create a Privy wallet first',
+      message: 'Wallet creation and Hyperliquid binding are separate actions. Creating a wallet does not bind it or enable trading.',
+      icon: Icons.account_balance_wallet_outlined,
+      action: FilledButton.icon(
+        key: const ValueKey<String>('perp-create-wallet'),
+        onPressed: _creatingWallet ? null : _createWallet,
+        icon: _creatingWallet
+            ? const SizedBox.square(
+                dimension: 17,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.add_rounded),
+        label: Text(
+          _creatingWallet ? 'Creating wallet…' : 'Create Privy wallet',
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _stateContent(
+    BuildContext context,
+    PerpAccountState state,
+    PerpAccountController controller,
+    String wallet,
+    bool factsAreFresh,
+  ) {
+    return switch (state.phase) {
+      PerpAccountPhase.initial ||
+      PerpAccountPhase.loadingBinding ||
+      PerpAccountPhase.loadingFacts => <Widget>[
+        _LoadingAccountCard(phase: state.phase),
+      ],
+      PerpAccountPhase.binding => const <Widget>[
+        _LoadingAccountCard(phase: PerpAccountPhase.binding),
+      ],
+      PerpAccountPhase.bindingRequired => <Widget>[
+        _bindingCard(
+          title: state.binding?.isBound ?? false
+              ? 'Wallet binding needs review'
+              : 'Wallet binding required',
+          message: state.binding?.isBound ?? false
+              ? 'A private read rejected the stored binding. Review an explicit refresh or rotation against the current Privy wallet before retrying.'
+              : 'LOOP will ask the backend to verify the current Privy wallet. No address or owner identifier is supplied by this screen.',
+          state: state,
+          controller: controller,
+          wallet: wallet,
+          buttonLabel: state.binding?.isBound ?? false
+              ? 'Review binding refresh'
+              : 'Review wallet binding',
+        ),
+      ],
+      PerpAccountPhase.conflict => <Widget>[
+        _bindingCard(
+          title: 'Binding changed elsewhere',
+          message: state.binding == null
+              ? 'The rejected version is no longer safe to reuse. Refresh the binding before any other action.'
+              : state.binding!.isBound
+              ? 'A newer binding is already active. Refresh before reading account facts.'
+              : 'The backend returned the latest unbound version. Review it before making another explicit request.',
+          state: state,
+          controller: controller,
+          wallet: wallet,
+          buttonLabel: 'Review latest binding',
+        ),
+      ],
+      PerpAccountPhase.mutationUnknown => <Widget>[
+        _bindingCard(
+          title: 'Binding result was uncertain',
+          message: state.binding == null
+              ? 'LOOP did not replay the write, and the reconciliation read also failed. Refresh the binding before any other action.'
+              : 'LOOP did not replay the write. The latest reconciliation still reports unbound; review before another attempt.',
+          state: state,
+          controller: controller,
+          wallet: wallet,
+          buttonLabel: 'Review before retry',
+        ),
+      ],
+      PerpAccountPhase.ready => <Widget>[
+        if (factsAreFresh)
+          ..._readyContent(context, state)
+        else
+          _failureCard(
+            title: 'Account projection expired',
+            message: 'The backend freshness window ended, so LOOP will clear every account value before rendering another frame.',
+            state: state,
+            controller: controller,
+            tone: LoopTone.warning,
+            icon: Icons.history_toggle_off_rounded,
+          ),
+      ],
+      PerpAccountPhase.stale => <Widget>[
+        _failureCard(
+          title: 'Account projection expired',
+          message: 'The backend freshness window ended, so LOOP cleared every account value instead of displaying stale facts.',
+          state: state,
+          controller: controller,
+          tone: LoopTone.warning,
+          icon: Icons.history_toggle_off_rounded,
+        ),
+      ],
+      PerpAccountPhase.unavailable => <Widget>[
+        _failureCard(
+          title: 'Private account unavailable',
+          message: 'The secure backend session is not available. Check the backend URL or try again after connectivity is restored.',
+          state: state,
+          controller: controller,
+        ),
+      ],
+      PerpAccountPhase.failure => <Widget>[
+        _failureCard(
+          title: 'Account projection unavailable',
+          message: _failureMessage(state.failureKind),
+          state: state,
+          controller: controller,
+        ),
+      ],
+    };
+  }
+
+  Widget _bindingCard({
+    required String title,
+    required String message,
+    required PerpAccountState state,
+    required PerpAccountController controller,
+    required String wallet,
+    required String buttonLabel,
+  }) {
+    final canBind = state.canBind;
+    return LoopStateCard(
+      title: title,
+      message:
+          '$message\n\nLocally observed Privy wallet: ${_shortWallet(wallet)} (not sent as binding authority)',
+      icon: Icons.link_rounded,
+      tone: LoopTone.warning,
+      action: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: <Widget>[
+          if (canBind)
+            FilledButton.icon(
+              key: const ValueKey<String>('perp-bind-wallet'),
+              onPressed: () => _confirmBinding(wallet),
+              icon: const Icon(Icons.link_rounded),
+              label: Text(buttonLabel),
+            ),
+          OutlinedButton.icon(
+            onPressed: state.isBusy
+                ? null
+                : () => unawaited(controller.refresh()),
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Refresh binding'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _readyContent(BuildContext context, PerpAccountState state) {
+    final account = state.account!;
+    final config = state.config!;
+    final summary = account.marginSummary;
+    final cross = account.crossMarginSummary;
+    final configSource = config.source;
+    final accountSource = account.source;
+    final projectionExpiresAt =
+        configSource.expiresAt.isBefore(accountSource.expiresAt)
+        ? configSource.expiresAt
+        : accountSource.expiresAt;
+    return <Widget>[
+      LoopCard(
+        key: const ValueKey<String>('perp-account-facts'),
+        accent: true,
+        tone: LoopTone.positive,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                const Expanded(
+                  child: LoopStatusPill(
+                    label: 'LIVE TESTNET · READ-ONLY',
+                    tone: LoopTone.positive,
+                    icon: Icons.verified_outlined,
+                  ),
+                ),
+                Text('USDC', style: Theme.of(context).textTheme.labelMedium),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'ACCOUNT VALUE',
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '\$${summary.accountValue}',
+              style: Theme.of(context).textTheme.displayMedium,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Hyperliquid account snapshot · not a LOOP balance',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+      const LoopSectionLabel('Margin summary'),
+      LoopCard(
+        child: Column(
+          children: <Widget>[
+            LoopKeyValueRow(
+              label: 'Withdrawable',
+              value: '${account.withdrawable} USDC',
+            ),
+            LoopKeyValueRow(
+              label: 'Total margin used',
+              value: '${summary.totalMarginUsed} USDC',
+            ),
+            LoopKeyValueRow(
+              label: 'Total position notional',
+              value: '${summary.totalNotionalPosition} USDC',
+            ),
+            LoopKeyValueRow(
+              label: 'Total raw USD',
+              value: '\$${summary.totalRawUsd}',
+            ),
+            LoopKeyValueRow(
+              label: 'Cross account value',
+              value: '${cross.accountValue} USDC',
+            ),
+            LoopKeyValueRow(
+              label: 'Cross margin used',
+              value: '${cross.totalMarginUsed} USDC',
+            ),
+            LoopKeyValueRow(
+              label: 'Cross maintenance margin',
+              value: account.crossMaintenanceMarginUsed == null
+                  ? 'Unavailable'
+                  : '${account.crossMaintenanceMarginUsed} USDC',
+              last: true,
+            ),
+          ],
+        ),
+      ),
+      const LoopSectionLabel('Backend scope'),
+      LoopCard(
+        child: Column(
+          children: <Widget>[
+            LoopKeyValueRow(label: 'Network', value: 'Hyperliquid Testnet'),
+            LoopKeyValueRow(label: 'Market', value: 'Core perpetuals'),
+            LoopKeyValueRow(
+              label: 'Assets',
+              value: config.scope.coins
+                  .map((coin) => coin.name.toUpperCase())
+                  .join(' · '),
+            ),
+            LoopKeyValueRow(
+              label: 'Private reads',
+              value: config.capabilities.privateReadsAvailable
+                  ? 'Available'
+                  : 'Unavailable',
+            ),
+            LoopKeyValueRow(
+              label: 'Trading mutations',
+              value: config.capabilities.tradingMutationsEnabled
+                  ? 'Enabled'
+                  : 'Disabled',
+              tone: config.capabilities.tradingMutationsEnabled
+                  ? LoopTone.danger
+                  : LoopTone.warning,
+              last: true,
+            ),
+          ],
+        ),
+      ),
+      const LoopSectionLabel('Freshness'),
+      LoopCard(
+        child: Column(
+          children: <Widget>[
+            LoopKeyValueRow(
+              label: 'Config fetched',
+              value: _formatTime(configSource.fetchedAt),
+            ),
+            LoopKeyValueRow(
+              label: 'Config expires',
+              value: _formatTime(configSource.expiresAt),
+            ),
+            LoopKeyValueRow(
+              label: 'Account fetched',
+              value: _formatTime(accountSource.fetchedAt),
+            ),
+            LoopKeyValueRow(
+              label: 'Account expires',
+              value: _formatTime(accountSource.expiresAt),
+            ),
+            LoopKeyValueRow(
+              label: 'Projection expires',
+              value: _formatTime(projectionExpiresAt),
+              last: true,
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 12),
+      const PerpReadOnlyNotice(
+        message: 'Only backend-mediated Testnet reads are connected. Order, leverage, transfer, withdrawal, and signing mutations remain disabled.',
+      ),
+    ];
+  }
+
+  Widget _failureCard({
+    required String title,
+    required String message,
+    required PerpAccountState state,
+    required PerpAccountController controller,
+    LoopTone tone = LoopTone.warning,
+    IconData icon = Icons.cloud_off_outlined,
+  }) {
+    final requestId = state.requestId;
+    return LoopStateCard(
+      title: title,
+      message: requestId == null
+          ? message
+          : '$message\n\nRequest ID: $requestId',
+      icon: icon,
+      tone: tone,
+      action: OutlinedButton.icon(
+        onPressed: state.isBusy ? null : () => unawaited(controller.refresh()),
+        icon: const Icon(Icons.refresh_rounded),
+        label: const Text('Try again'),
+      ),
+    );
+  }
+
+  Future<void> _createWallet() async {
+    if (_creatingWallet) return;
+    setState(() => _creatingWallet = true);
+    try {
+      await ref.read(loopSessionProvider.notifier).createWallet();
+    } on PrivyGatewayException catch (error) {
+      if (mounted) _showMessage(error.userMessage);
+    } catch (_) {
+      if (mounted) _showMessage('Wallet creation failed. Please try again.');
+    } finally {
+      if (mounted) setState(() => _creatingWallet = false);
+    }
+  }
+
+  Future<void> _confirmBinding(String wallet) async {
+    final requestedSession = ref.read(loopSessionProvider);
+    final requestedPrincipal = requestedSession.account?.privyUserId;
+    final requestedBinding = ref.read(perpAccountControllerProvider).binding;
+    final requestedBindingVersion = requestedBinding?.bindingVersion;
+    final refreshingExistingBinding = requestedBinding?.isBound ?? false;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          refreshingExistingBinding
+              ? 'Refresh or rotate this binding?'
+              : 'Bind this Privy wallet?',
+        ),
+        content: Text(
+          'The LOOP backend will freshly query Privy and verify the stored exact selection or the sole eligible embedded Ethereum wallet for Hyperliquid Testnet private reads. The locally observed wallet ${_shortWallet(wallet)} is not sent and is not selection authority. ${refreshingExistingBinding ? 'The backend may retain the exact authority or rotate after that verification.' : 'A first binding is created only when one eligible wallet can be selected safely.'} This does not enable trading.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const ValueKey<String>('perp-confirm-bind'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              refreshingExistingBinding
+                  ? 'Confirm binding refresh'
+                  : 'Bind for read-only access',
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final currentSession = ref.read(loopSessionProvider);
+    final currentState = ref.read(perpAccountControllerProvider);
+    final identityStillMatches =
+        currentSession.canUseProviderBackedFeatures &&
+        currentSession.account?.privyUserId == requestedPrincipal &&
+        currentSession.account?.wallet?.address == wallet;
+    final bindingStillMatches =
+        currentState.canBind &&
+        currentState.binding?.bindingVersion == requestedBindingVersion &&
+        currentState.binding?.isBound == refreshingExistingBinding;
+    if (!identityStillMatches || !bindingStillMatches) {
+      _showMessage(
+        'Identity, wallet, or binding changed. Review the latest state before binding.',
+      );
+      return;
+    }
+
+    unawaited(ref.read(perpAccountControllerProvider.notifier).bind());
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+class _PerpLiveBanner extends StatelessWidget {
+  const _PerpLiveBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Hyperliquid Testnet private account, read-only',
+      child: LoopCard(
+        child: Row(
+          children: <Widget>[
+            const Icon(Icons.lock_outline_rounded, color: LoopColors.mint),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'BACKEND-MEDIATED · TESTNET',
+                    style: Theme.of(context).textTheme.labelMedium
+                        ?.copyWith(color: LoopColors.mint, letterSpacing: 0.8),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Private facts expire quickly; trading writes stay locked.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LoadingAccountCard extends StatelessWidget {
+  const _LoadingAccountCard({required this.phase});
+
+  final PerpAccountPhase phase;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = switch (phase) {
+      PerpAccountPhase.binding => 'Verifying wallet binding',
+      PerpAccountPhase.loadingFacts => 'Loading fresh account facts',
+      _ => 'Checking wallet binding',
+    };
+    return Semantics(
+      key: const ValueKey<String>('perp-live-loading'),
+      liveRegion: true,
+      label: label,
+      child: LoopCard(
+        child: Row(
+          children: <Widget>[
+            const SizedBox.square(
+              dimension: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 13),
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _failureMessage(PerpGatewayFailureKind? kind) => switch (kind) {
+  PerpGatewayFailureKind.authentication ||
+  PerpGatewayFailureKind.bootstrapRequired => 'The verified backend session ended. Sign in again or retry after Privy reconnects.',
+  PerpGatewayFailureKind.walletBindingRequired => 'The backend no longer accepts the previous wallet binding. Refresh it before reading again.',
+  PerpGatewayFailureKind.versionConflict => 'The wallet-binding version changed. Refresh before another explicit action.',
+  PerpGatewayFailureKind.invalidRequest =>
+    'The request was rejected before any account fact was displayed.',
+  PerpGatewayFailureKind.timeout || PerpGatewayFailureKind.connection => 'LOOP could not obtain a fresh response. Previous account values were cleared.',
+  PerpGatewayFailureKind.cancelled =>
+    'The request was retired because the active identity or wallet changed.',
+  PerpGatewayFailureKind.invalidData => 'The backend response failed strict source, schema, or freshness validation.',
+  PerpGatewayFailureKind.unavailable =>
+    'The private-read backend is currently unavailable.',
+  PerpGatewayFailureKind.unexpected ||
+  null => 'The private account projection could not be completed safely.',
+};
+
+String _shortWallet(String wallet) {
+  if (wallet.length <= 14) return wallet;
+  return '${wallet.substring(0, 8)}…${wallet.substring(wallet.length - 6)}';
+}
+
+String _formatTime(DateTime value) {
+  final utc = value.toUtc();
+  String two(int part) => part.toString().padLeft(2, '0');
+  String three(int part) => part.toString().padLeft(3, '0');
+  return '${utc.year}-${two(utc.month)}-${two(utc.day)} '
+      '${two(utc.hour)}:${two(utc.minute)}:${two(utc.second)}.'
+      '${three(utc.millisecond)} UTC';
 }
 
 class _AccountRouteCard extends StatelessWidget {

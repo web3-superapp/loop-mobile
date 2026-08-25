@@ -16,7 +16,9 @@ class AuthenticatedTestPrivyGateway implements PrivyAuthGateway {
   Stream<PrivySessionSnapshot> watchSession() => const Stream.empty();
 
   @override
-  Future<PrivyWalletSummary> createFirstEthereumWallet() {
+  Future<PrivyWalletCreationResult> createFirstEthereumWallet({
+    required String expectedPrivyUserId,
+  }) {
     throw UnsupportedError('Widget test gateway does not create wallets.');
   }
 
