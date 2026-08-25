@@ -58,12 +58,17 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 - A client timeout is not a confirmed failure and must not trigger an automatic duplicate order. Reconcile the idempotent intent before enabling retry.
 - Networks, minimums, and fees come from the backend/configuration; do not hard-code them in Flutter.
 
-## Personalization and Watchlist boundary
+## Personalization boundaries
 
 - The Watchlist is one owner-bound, versioned, grouped, ordered snapshot. A save replaces the complete draft using the committed version; a conflict never silently overwrites either side and requires explicit reload or reconciliation.
 - Keep Watchlist records limited to canonical group keys, bounded display names, and ordered canonical asset keys. Asset references are preferences, not proof that a market exists, is fresh, or is tradable.
 - Price, change, volume, funding, liquidity, risk, alert status, provider payloads, wallet data, and trading actions never enter Watchlist persistence or its application port.
 - Until the authenticated backend adapter is implemented and verified, production uses the unavailable port. Only tests and `lib/main_preview.dart` may inject a deterministic memory implementation, and its saved state stays labelled `开发预览`.
+- The Profile presentation resource contains only a nullable Alias and nullable opaque `avatar:` reference, plus its version and update time. Bio is not part of this contract, while discoverability and copy-trade visibility belong to the separately versioned Privacy resource.
+- Alias handling matches the backend limits: at most 256 raw UTF-16 code units, 1–40 Unicode code points after trimming when non-null, and no control, surrogate, or bidirectional-override/isolate characters. Empty UI input means an explicit nullable Alias; arbitrary avatar URLs are never accepted.
+- A Profile save replaces the complete reviewed values using the committed version. A conflict preserves the local draft but freezes editing and saving until an explicit reload; no UI reports success without a matching resource whose version advanced.
+- A future authenticated Profile gateway is scoped to the immutable current owner. Account rotation replaces that gateway, immediately clears the prior resource/draft, retires late work, and reloads only the new owner; Flutter never reuses one owner's presentation across principals.
+- Until an authenticated Profile adapter and reviewed avatar-reference source exist, production Profile persistence is unavailable and avatar editing stays disabled. The deterministic memory implementation is limited to tests and the visibly labelled Preview root.
 
 ## Experience and acceptance
 

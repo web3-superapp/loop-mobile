@@ -68,6 +68,7 @@ Never edit generated paths as application source. `.tooling` may hold an ignored
 13. Keep production Stream `token_card.v1` attachments identifier-only and render them through the official message attachment builder. Never persist mutable facts or actions in the message, fetch once per historical card, or mount fixture conversation routes outside explicit Preview mode.
 14. During the providerless application-logic phase, keep Dio and `/v1/` route literals out of `lib/features/`. New controllers depend on narrow ports; production defaults stay unavailable, and deterministic fakes enter only tests or `lib/main_preview.dart`.
 15. Keep Watchlist models limited to versioned, grouped, ordered owner-local asset keys. Preview memory saves remain labelled `开发预览` and never supply prices, freshness, tradability, alert state, or other market facts.
+16. Keep Profile presentation models limited to nullable Alias and opaque `avatar:` reference values with the reviewed version contract. Bio and Privacy are separate resources; production Profile persistence stays unavailable until an authenticated, owner-scoped adapter exists, and UI must never announce a save without an advanced matching resource.
 
 ## Commands
 

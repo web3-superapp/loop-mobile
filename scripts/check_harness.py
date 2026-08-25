@@ -52,6 +52,7 @@ REQUIRED_FILES = (
     "docs/decisions/0007-centralize-notification-intents-before-provider-ingress.md",
     "docs/decisions/0008-finish-app-logic-before-new-transports.md",
     "docs/decisions/0009-model-watchlist-before-http-adapter.md",
+    "docs/decisions/0010-model-profile-presentation-before-http-adapter.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/providerless-notification-fixtures.md",
     "docs/failures/privy-android-compile-sdk.md",
@@ -69,6 +70,10 @@ REQUIRED_FILES = (
     "lib/features/market/watchlist/watchlist_gateway.dart",
     "lib/features/market/watchlist/watchlist_models.dart",
     "lib/integrations/personalization/memory_watchlist_gateway.dart",
+    "lib/features/profile/presentation/profile_controller.dart",
+    "lib/features/profile/presentation/profile_gateway.dart",
+    "lib/features/profile/presentation/profile_models.dart",
+    "lib/integrations/personalization/memory_profile_gateway.dart",
     "test/app_notification_coordinator_test.dart",
     "test/loop_notification_coordinator_test.dart",
     "test/loop_notification_router_test.dart",
@@ -76,6 +81,9 @@ REQUIRED_FILES = (
     "test/watchlist_controller_test.dart",
     "test/watchlist_editor_screen_test.dart",
     "test/watchlist_models_test.dart",
+    "test/profile_controller_test.dart",
+    "test/profile_models_test.dart",
+    "test/profile_presentation_screen_test.dart",
 )
 CHAT_PREVIEW_ONLY_ROUTES = (
     "/chat/group",
@@ -307,6 +315,7 @@ FEATURE_TRANSPORT_FORBIDDEN_IMPORTS = (
 FEATURE_BACKEND_ROUTE_PATTERN = re.compile(r"(?P<quote>['\"])/v1/")
 PRODUCTION_FIXTURE_MARKERS = (
     "MemoryCommunicationGateway(",
+    "MemoryProfileGateway",
     "MemoryWatchlistGateway(",
     "HyperliquidFixtureAdapter(",
     "PrivyFixtureAdapter(",
@@ -327,6 +336,38 @@ WATCHLIST_MEMORY_CONSTRUCTION_PATTERN = re.compile(
 WATCHLIST_VOLATILE_FACT_MEMBER_PATTERN = re.compile(
     r"\b(?:price|markPrice|indexPrice|fundingRate|volume|change|tradable|"
     r"liquidity|riskScore|alertEnabled)\b"
+)
+PROFILE_GATEWAY_PATH = Path(
+    "lib/features/profile/presentation/profile_gateway.dart"
+)
+PROFILE_MODELS_PATH = Path(
+    "lib/features/profile/presentation/profile_models.dart"
+)
+PROFILE_MEMORY_GATEWAY_PATH = Path(
+    "lib/integrations/personalization/memory_profile_gateway.dart"
+)
+PROFILE_SURFACE_PATH = Path("lib/features/profile/profile_screens.dart")
+PROFILE_PREVIEW_ROOT_PATH = Path("lib/main_preview.dart")
+PROFILE_MEMORY_CONSTRUCTION_PATTERN = re.compile(r"\bMemoryProfileGateway\s*\(")
+PROFILE_MEMORY_REFERENCE_PATTERN = re.compile(r"\bMemoryProfileGateway\b")
+PROFILE_CLASS_FIELD_LIST_PATTERN = re.compile(
+    r"^(?P<modifiers>(?:(?:static|late|final|const)\s+)*)"
+    r"(?P<type>[A-Za-z_]\w*(?:<[^;=]+>)?\??)\s+"
+    r"(?P<variables>[\s\S]+);$"
+)
+PROFILE_CLASS_FIELD_VARIABLE_PATTERN = re.compile(
+    r"^(?P<name>[A-Za-z_]\w*)\s*(?:=(?!=|>)[\s\S]*)?$"
+)
+PROFILE_CLASS_INFERRED_FIELD_PATTERN = re.compile(
+    r"^(?P<modifiers>(?:(?:static|late|final|const)\s+)+)"
+    r"(?P<name>[A-Za-z_]\w*)\s*=(?!=|>)[\s\S]*;$"
+)
+PROFILE_POSITIVE_SAVE_PATTERN = re.compile(
+    r"\b(?:saved\s+successfully|save\s+(?:successful|succeeded|complete)|"
+    r"profile\s+(?:changes?\s+)?(?:saved|updated)|"
+    r"alias\s+(?:saved|updated)|changes?\s+(?:saved|applied)|"
+    r"(?:profile|alias)\s+(?:save|update)\s+(?:complete|completed))\b",
+    re.IGNORECASE,
 )
 
 
@@ -441,6 +482,342 @@ def strip_dart_comments_and_strings(text: str) -> str:
         output.append(source[index])
         index += 1
     return "".join(output)
+
+
+def dart_class_fields(
+    source: str, class_name: str
+) -> set[tuple[str, str, str]] | None:
+    """Return class-level Dart field declarations without parsing method locals."""
+
+    class_match = re.search(rf"\bclass\s+{re.escape(class_name)}\b", source)
+    if class_match is None:
+        return None
+    opening = source.find("{", class_match.end())
+    if opening < 0:
+        return None
+
+    fields: set[tuple[str, str, str]] = set()
+    block_depth = 0
+    parenthesis_depth = 0
+    bracket_depth = 0
+    expression_brace_depth = 0
+    statement: list[str] = []
+    for character in source[opening + 1 :]:
+        if block_depth:
+            if character == "{":
+                block_depth += 1
+            elif character == "}":
+                block_depth -= 1
+            continue
+
+        if character == "(":
+            parenthesis_depth += 1
+            statement.append(character)
+            continue
+        if character == ")" and parenthesis_depth:
+            parenthesis_depth -= 1
+            statement.append(character)
+            continue
+        if character == "[":
+            bracket_depth += 1
+            statement.append(character)
+            continue
+        if character == "]" and bracket_depth:
+            bracket_depth -= 1
+            statement.append(character)
+            continue
+        if character == "{":
+            if (
+                parenthesis_depth
+                or bracket_depth
+                or expression_brace_depth
+                or _has_top_level_assignment("".join(statement))
+            ):
+                expression_brace_depth += 1
+                statement.append(character)
+            else:
+                block_depth = 1
+                statement.clear()
+            continue
+        if character == "}":
+            if expression_brace_depth:
+                expression_brace_depth -= 1
+                statement.append(character)
+                continue
+            if parenthesis_depth or bracket_depth:
+                statement.append(character)
+                continue
+            return fields
+        statement.append(character)
+        if (
+            character != ";"
+            or parenthesis_depth
+            or bracket_depth
+            or expression_brace_depth
+        ):
+            continue
+
+        declaration = _strip_leading_dart_metadata("".join(statement).strip())
+        statement.clear()
+        fields.update(_parse_dart_field_declaration(declaration))
+    return None
+
+
+def _has_top_level_assignment(source: str) -> bool:
+    """Return whether a class member prefix contains a field assignment."""
+
+    parenthesis_depth = 0
+    bracket_depth = 0
+    for index, character in enumerate(source):
+        if character == "(":
+            parenthesis_depth += 1
+        elif character == ")" and parenthesis_depth:
+            parenthesis_depth -= 1
+        elif character == "[":
+            bracket_depth += 1
+        elif character == "]" and bracket_depth:
+            bracket_depth -= 1
+        elif character == "=" and not parenthesis_depth and not bracket_depth:
+            before = source[index - 1] if index else ""
+            after = source[index + 1] if index + 1 < len(source) else ""
+            if before not in "=!<>" and after not in "=>":
+                return True
+    return False
+
+
+def _strip_leading_dart_metadata(declaration: str) -> str:
+    """Remove one or more Dart metadata annotations from a declaration."""
+
+    index = 0
+    while True:
+        while index < len(declaration) and declaration[index].isspace():
+            index += 1
+        if index >= len(declaration) or declaration[index] != "@":
+            return declaration[index:]
+        index += 1
+        if index >= len(declaration) or not (
+            declaration[index].isalpha() or declaration[index] == "_"
+        ):
+            return declaration
+        while index < len(declaration) and (
+            declaration[index].isalnum() or declaration[index] in "_."
+        ):
+            index += 1
+        while index < len(declaration) and declaration[index].isspace():
+            index += 1
+        if index >= len(declaration) or declaration[index] != "(":
+            continue
+        depth = 1
+        index += 1
+        while index < len(declaration) and depth:
+            if declaration[index] == "(":
+                depth += 1
+            elif declaration[index] == ")":
+                depth -= 1
+            index += 1
+        if depth:
+            return declaration
+
+
+def _parse_dart_field_declaration(
+    declaration: str,
+) -> set[tuple[str, str, str]]:
+    """Parse explicit or inferred class fields, including variable lists."""
+
+    match = PROFILE_CLASS_FIELD_LIST_PATTERN.fullmatch(declaration)
+    if match is not None:
+        variables = _split_top_level_commas(match.group("variables"))
+        parsed_variables = [
+            PROFILE_CLASS_FIELD_VARIABLE_PATTERN.fullmatch(variable.strip())
+            for variable in variables
+        ]
+        if parsed_variables and all(item is not None for item in parsed_variables):
+            modifiers = " ".join(match.group("modifiers").split())
+            return {
+                (modifiers, match.group("type"), item.group("name"))
+                for item in parsed_variables
+                if item is not None
+            }
+
+    inferred = PROFILE_CLASS_INFERRED_FIELD_PATTERN.fullmatch(declaration)
+    if inferred is not None:
+        return {
+            (
+                " ".join(inferred.group("modifiers").split()),
+                "<inferred>",
+                inferred.group("name"),
+            )
+        }
+    return set()
+
+
+def _split_top_level_commas(source: str) -> list[str]:
+    """Split a Dart variable list without splitting collection initializers."""
+
+    parts: list[str] = []
+    start = 0
+    parenthesis_depth = 0
+    bracket_depth = 0
+    brace_depth = 0
+    angle_depth = 0
+    for index, character in enumerate(source):
+        if character == "(":
+            parenthesis_depth += 1
+        elif character == ")" and parenthesis_depth:
+            parenthesis_depth -= 1
+        elif character == "[":
+            bracket_depth += 1
+        elif character == "]" and bracket_depth:
+            bracket_depth -= 1
+        elif character == "{":
+            brace_depth += 1
+        elif character == "}" and brace_depth:
+            brace_depth -= 1
+        elif character == "<":
+            angle_depth += 1
+        elif character == ">" and angle_depth:
+            angle_depth -= 1
+        elif (
+            character == ","
+            and not parenthesis_depth
+            and not bracket_depth
+            and not brace_depth
+            and not angle_depth
+        ):
+            parts.append(source[start:index])
+            start = index + 1
+    parts.append(source[start:])
+    return parts
+
+
+def dart_concatenated_string_contents(source: str) -> list[str]:
+    """Extract Dart string contents, joining compile-time adjacent literals."""
+
+    source = strip_dart_comments(source)
+    contents: list[str] = []
+    index = 0
+    while index < len(source):
+        parsed = _parse_dart_string_at(source, index)
+        if parsed is None:
+            index += 1
+            continue
+        content, index = parsed
+        while True:
+            candidate = index
+            while candidate < len(source) and source[candidate].isspace():
+                candidate += 1
+            adjacent = _parse_dart_string_at(source, candidate)
+            if adjacent is None:
+                break
+            adjacent_content, index = adjacent
+            content += adjacent_content
+        contents.append(content)
+    return contents
+
+
+def _parse_dart_string_at(source: str, index: int) -> tuple[str, int] | None:
+    """Parse one raw or regular Dart string literal at an exact offset."""
+
+    raw = False
+    if (
+        index + 1 < len(source)
+        and source[index] in "rR"
+        and source[index + 1] in "'\""
+        and (
+            index == 0
+            or not (source[index - 1].isalnum() or source[index - 1] == "_")
+        )
+    ):
+        raw = True
+        index += 1
+    if index >= len(source) or source[index] not in "'\"":
+        return None
+
+    quote = source[index]
+    triple = source.startswith(quote * 3, index)
+    closing = quote * (3 if triple else 1)
+    index += len(closing)
+    content: list[str] = []
+    while index < len(source):
+        if source.startswith(closing, index):
+            rendered = "".join(content)
+            if not raw:
+                rendered = _decode_dart_string_escapes(rendered)
+            return rendered, index + len(closing)
+        character = source[index]
+        if not raw and character == "\\" and index + 1 < len(source):
+            content.extend((character, source[index + 1]))
+            index += 2
+            continue
+        content.append(character)
+        index += 1
+    return None
+
+
+def _decode_dart_string_escapes(content: str) -> str:
+    """Decode the bounded Dart escapes relevant to visible guard language."""
+
+    decoded: list[str] = []
+    index = 0
+    simple = {
+        "n": "\n",
+        "r": "\r",
+        "t": "\t",
+        "b": "\b",
+        "f": "\f",
+        "v": "\v",
+        "\\": "\\",
+        "'": "'",
+        '"': '"',
+        "$": "$",
+    }
+    while index < len(content):
+        if content[index] != "\\" or index + 1 >= len(content):
+            decoded.append(content[index])
+            index += 1
+            continue
+        marker = content[index + 1]
+        if marker in simple:
+            decoded.append(simple[marker])
+            index += 2
+            continue
+        if marker == "x" and index + 3 < len(content):
+            digits = content[index + 2 : index + 4]
+            if re.fullmatch(r"[0-9A-Fa-f]{2}", digits):
+                decoded.append(chr(int(digits, 16)))
+                index += 4
+                continue
+        if marker == "u":
+            if index + 2 < len(content) and content[index + 2] == "{":
+                closing = content.find("}", index + 3)
+                digits = content[index + 3 : closing] if closing >= 0 else ""
+                if re.fullmatch(r"[0-9A-Fa-f]{1,6}", digits):
+                    code_point = int(digits, 16)
+                    if code_point <= 0x10FFFF:
+                        decoded.append(chr(code_point))
+                        index = closing + 1
+                        continue
+            elif index + 5 < len(content):
+                digits = content[index + 2 : index + 6]
+                if re.fullmatch(r"[0-9A-Fa-f]{4}", digits):
+                    decoded.append(chr(int(digits, 16)))
+                    index += 6
+                    continue
+        decoded.extend(("\\", marker))
+        index += 2
+    return "".join(decoded)
+
+
+def contains_positive_profile_save_language(source: str) -> bool:
+    """Detect only positive, user-visible Profile save evidence strings."""
+
+    for content in dart_concatenated_string_contents(source):
+        normalized = " ".join(content.split())
+        if normalized.casefold().rstrip(".!?…") == "saved":
+            return True
+        if PROFILE_POSITIVE_SAVE_PATTERN.search(normalized):
+            return True
+    return False
 
 
 def git_visible_paths(root: Path) -> tuple[list[Path], str | None]:
@@ -1646,6 +2023,118 @@ def check_watchlist_application_contract(root: Path) -> list[str]:
     return errors
 
 
+def check_profile_application_contract(root: Path) -> list[str]:
+    """Keep Profile presentation exact, unavailable, and evidence-backed."""
+
+    errors: list[str] = []
+    gateway_path = root / PROFILE_GATEWAY_PATH
+    if gateway_path.is_file():
+        gateway = strip_dart_comments(read_text(gateway_path))
+        default_pattern = re.compile(
+            r"final\s+profileGatewayProvider\s*=\s*Provider<ProfileGateway>\s*"
+            r"\(\s*\(\s*ref\s*\)\s*=>\s*const\s+UnavailableProfileGateway\s*"
+            r"\(\s*\)\s*,?\s*\)\s*;",
+            re.DOTALL,
+        )
+        if default_pattern.search(gateway) is None:
+            errors.append(
+                "Profile production provider must default directly to "
+                "const UnavailableProfileGateway()"
+            )
+
+    models_path = root / PROFILE_MODELS_PATH
+    if models_path.is_file():
+        models_code = strip_dart_comments_and_strings(read_text(models_path))
+        actual_values_fields = dart_class_fields(models_code, "ProfileValues")
+        expected_values_fields = {
+            ("final", "String?", "alias"),
+            ("final", "String?", "avatarRef"),
+        }
+        if actual_values_fields != expected_values_fields:
+            rendered_fields = ", ".join(
+                f"{modifiers} {field_type} {name}".strip()
+                for modifiers, field_type, name in sorted(
+                    actual_values_fields or set()
+                )
+            ) or "none"
+            errors.append(
+                "ProfileValues fields must be exactly nullable String alias "
+                "and nullable String avatarRef; found: " + rendered_fields
+            )
+        actual_resource_fields = dart_class_fields(
+            models_code, "ProfileResource"
+        )
+        expected_resource_fields = {
+            ("final", "int", "version"),
+            ("final", "ProfileValues", "values"),
+            ("final", "DateTime?", "updatedAt"),
+        }
+        if actual_resource_fields != expected_resource_fields:
+            rendered_fields = ", ".join(
+                f"{modifiers} {field_type} {name}".strip()
+                for modifiers, field_type, name in sorted(
+                    actual_resource_fields or set()
+                )
+            ) or "none"
+            errors.append(
+                "ProfileResource fields must be exactly final int version, "
+                "final ProfileValues values, and final nullable DateTime "
+                "updatedAt; found: " + rendered_fields
+            )
+
+    surface_path = root / PROFILE_SURFACE_PATH
+    if surface_path.is_file():
+        surface = strip_dart_comments(read_text(surface_path))
+        edit_start = surface.find("class _ProfileEdit")
+        privacy_start = surface.find("class _PrivacyCenter", edit_start)
+        edit_surface = (
+            surface[edit_start:privacy_start]
+            if edit_start >= 0 and privacy_start > edit_start
+            else ""
+        )
+        if re.search(r"\b(?:ScaffoldMessenger|SnackBar)\b", edit_surface):
+            errors.append(
+                "Profile edit must derive save evidence from ProfileState and "
+                "must not emit ad-hoc SnackBar success announcements"
+            )
+
+    preview_root = root / PROFILE_PREVIEW_ROOT_PATH
+    if preview_root.is_file():
+        preview_code = strip_dart_comments_and_strings(read_text(preview_root))
+        if len(PROFILE_MEMORY_CONSTRUCTION_PATTERN.findall(preview_code)) != 1:
+            errors.append(
+                "lib/main_preview.dart must compose exactly one explicit "
+                "MemoryProfileGateway"
+            )
+
+    lib_root = root / "lib"
+    if lib_root.is_dir():
+        allowed = frozenset({PROFILE_MEMORY_GATEWAY_PATH, PROFILE_PREVIEW_ROOT_PATH})
+        for path in sorted(lib_root.rglob("*.dart")):
+            relative = path.relative_to(root)
+            if relative in allowed:
+                continue
+            executable_code = strip_dart_comments_and_strings(read_text(path))
+            if PROFILE_MEMORY_REFERENCE_PATTERN.search(executable_code):
+                errors.append(
+                    f"{relative} references MemoryProfileGateway; the fake may "
+                    "only be defined by its integration and composed by "
+                    "lib/main_preview.dart"
+                )
+
+    profile_feature_root = root / "lib" / "features" / "profile"
+    if profile_feature_root.is_dir():
+        for path in sorted(profile_feature_root.rglob("*.dart")):
+            source = read_text(path)
+            if contains_positive_profile_save_language(source):
+                errors.append(
+                    f"{path.relative_to(root)} contains positive Profile save "
+                    "language; committed-resource state is the only allowed "
+                    "save evidence"
+                )
+    return errors
+
+
 def check_secret_paths(paths: list[Path]) -> list[str]:
     errors: list[str] = []
     for path in paths:
@@ -1689,6 +2178,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_notification_contract(root))
     errors.extend(check_providerless_application_contract(root))
     errors.extend(check_watchlist_application_contract(root))
+    errors.extend(check_profile_application_contract(root))
     errors.extend(check_source_guards(root))
     errors.extend(check_records(root))
     visible, visible_error = git_visible_paths(root)

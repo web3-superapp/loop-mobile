@@ -6,8 +6,11 @@ import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
+import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
+import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_fixture_adapter.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_trading_gateway.dart';
+import 'package:loop_mobile/integrations/personalization/memory_profile_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_fixture_adapter.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/personalization/memory_watchlist_gateway.dart';
@@ -33,6 +36,15 @@ void main() {
         developmentPreviewEnabledProvider.overrideWithValue(true),
         communicationGatewayProvider.overrideWithValue(
           MemoryCommunicationGateway(),
+        ),
+        profileGatewayProvider.overrideWithValue(
+          MemoryProfileGateway(
+            initialResource: ProfileResource(
+              version: 1,
+              values: ProfileValues(alias: 'QuietComet', avatarRef: null),
+              updatedAt: DateTime.utc(2026, 8, 25),
+            ),
+          ),
         ),
         watchlistGatewayProvider.overrideWithValue(
           MemoryWatchlistGateway(

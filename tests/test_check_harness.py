@@ -136,13 +136,14 @@ class HarnessTests(unittest.TestCase):
             source.parent.mkdir(parents=True)
             source.write_text(
                 "final chat = MemoryCommunicationGateway();\n"
+                "final profile = MemoryProfileGateway();\n"
                 "final watchlist = MemoryWatchlistGateway();\n"
                 "final market = HyperliquidFixtureAdapter();\n"
                 "final wallet = PrivyFixtureAdapter();\n",
                 encoding="utf-8",
             )
             result = check_harness.check_providerless_application_contract(root)
-        self.assertEqual(4, len(result))
+        self.assertEqual(5, len(result))
         self.assertTrue(
             all("tests or lib/main_preview.dart" in error for error in result)
         )
@@ -204,6 +205,228 @@ class HarnessTests(unittest.TestCase):
         self.assertTrue(
             any("constructs MemoryWatchlistGateway" in error for error in result),
             msg=f"expected Preview-only Watchlist fake guard: {result}",
+        )
+
+    def test_profile_provider_must_default_unavailable(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            gateway = root / check_harness.PROFILE_GATEWAY_PATH
+            gateway.parent.mkdir(parents=True)
+            gateway.write_text(
+                "final profileGatewayProvider = Provider<ProfileGateway>(\n"
+                "  (ref) => MemoryProfileGateway(),\n"
+                ");\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_profile_application_contract(root)
+
+        self.assertTrue(
+            any("must default directly" in error for error in result),
+            msg=f"expected unavailable Profile provider guard: {result}",
+        )
+
+    def test_profile_values_fields_must_match_exact_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            models = root / check_harness.PROFILE_MODELS_PATH
+            models.parent.mkdir(parents=True)
+            models.write_text(
+                "final class ProfileValues {\n"
+                "  final String? alias;\n"
+                "  final String? avatarRef;\n"
+                "  final String? displayName = null;\n"
+                "}\n"
+                "final class ProfileResource {\n"
+                "  final int version;\n"
+                "  final ProfileValues values;\n"
+                "  final DateTime? updatedAt;\n"
+                "  final String? etag = null;\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_profile_application_contract(root)
+
+        self.assertTrue(
+            any("fields must be exactly" in error for error in result),
+            msg=f"expected exact Profile field guard: {result}",
+        )
+        self.assertTrue(
+            any("ProfileResource fields" in error for error in result),
+            msg=f"expected exact Profile resource guard: {result}",
+        )
+
+    def test_profile_field_guard_sees_collection_initializer(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            models = root / check_harness.PROFILE_MODELS_PATH
+            models.parent.mkdir(parents=True)
+            models.write_text(
+                "final class ProfileValues {\n"
+                "  final String? alias;\n"
+                "  final String? avatarRef;\n"
+                "  final Map<String, Object?> metadata = {};\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_profile_application_contract(root)
+
+        self.assertTrue(
+            any("ProfileValues fields" in error for error in result),
+            msg=f"expected collection-initializer field guard: {result}",
+        )
+
+    def test_profile_field_guard_sees_annotated_field(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            models = root / check_harness.PROFILE_MODELS_PATH
+            models.parent.mkdir(parents=True)
+            models.write_text(
+                "final class ProfileValues {\n"
+                "  final String? alias;\n"
+                "  final String? avatarRef;\n"
+                "  @Deprecated('not in the contract')\n"
+                "  final String? bio;\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_profile_application_contract(root)
+
+        self.assertTrue(
+            any("ProfileValues fields" in error for error in result),
+            msg=f"expected annotated field guard: {result}",
+        )
+
+    def test_profile_field_guard_sees_multi_variable_declaration(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            models = root / check_harness.PROFILE_MODELS_PATH
+            models.parent.mkdir(parents=True)
+            models.write_text(
+                "final class ProfileValues {\n"
+                "  final String? alias;\n"
+                "  final String? avatarRef;\n"
+                "  final String? bio, displayName;\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_profile_application_contract(root)
+
+        self.assertTrue(
+            any("ProfileValues fields" in error for error in result),
+            msg=f"expected multi-variable field guard: {result}",
+        )
+
+    def test_profile_ui_cannot_claim_an_unverified_save(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            surface = root / check_harness.PROFILE_SURFACE_PATH
+            surface.parent.mkdir(parents=True)
+            surface.write_text(
+                "class _ProfileEdit {\n"
+                "  void save() => SnackBar(content: Text('All set'));\n"
+                "}\n"
+                "class _PrivacyCenter {}\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_profile_application_contract(root)
+
+        self.assertTrue(
+            any("ad-hoc SnackBar" in error for error in result),
+            msg=f"expected false Profile save guard: {result}",
+        )
+
+    def test_profile_feature_cannot_use_positive_save_language(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = (
+                root / "lib" / "features" / "profile" / "success_helper.dart"
+            )
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "final card = LoopStateCard(title: 'Saved successfully');\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_profile_application_contract(root)
+
+        self.assertTrue(
+            any("positive Profile save language" in error for error in result),
+            msg=f"expected positive Profile save guard: {result}",
+        )
+
+    def test_profile_save_guard_detects_exact_and_adjacent_saved_strings(self) -> None:
+        examples = (
+            "final label = 'Saved';\n",
+            "final label = 'Saved!';\n",
+            "final label = '\\u0053aved';\n",
+            "final label = 'Profile changes ' 'saved';\n",
+        )
+        for source_text in examples:
+            with self.subTest(source=source_text):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    source = (
+                        root
+                        / "lib"
+                        / "features"
+                        / "profile"
+                        / "success_helper.dart"
+                    )
+                    source.parent.mkdir(parents=True)
+                    source.write_text(source_text, encoding="utf-8")
+
+                    result = check_harness.check_profile_application_contract(root)
+
+                self.assertTrue(
+                    any(
+                        "positive Profile save language" in error
+                        for error in result
+                    ),
+                    msg=f"expected positive Profile save guard: {result}",
+                )
+
+    def test_profile_save_guard_allows_reload_status_language(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = (
+                root / "lib" / "features" / "profile" / "reload_status.dart"
+            )
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "final complete = 'Reload successful';\n"
+                "final incomplete = 'Reload was not successful';\n"
+                "final update = 'Reload update complete';\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_profile_application_contract(root)
+
+        self.assertFalse(
+            any("positive Profile save language" in error for error in result),
+            msg=f"unexpected reload-language rejection: {result}",
+        )
+
+    def test_profile_memory_gateway_cannot_be_composed_by_a_feature(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "profile" / "unsafe_profile.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "final gatewayFactory = MemoryProfileGateway.new;\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_profile_application_contract(root)
+
+        self.assertTrue(
+            any("references MemoryProfileGateway" in error for error in result),
+            msg=f"expected Preview-only Profile fake guard: {result}",
         )
 
     def test_notification_global_handler_must_be_centralized(self) -> None:

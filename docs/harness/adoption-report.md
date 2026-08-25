@@ -24,6 +24,7 @@ Date: 2026-08-24
 - Notification guards reserve one future Firebase callback owner, reject competing Chat/Video handlers, and prevent the pure router from importing provider SDKs, logging payloads, accepting payload-selected routes, or carrying Audio Room locators.
 - The same guard requires the root application coordinator as the sole router/identity consumer, keeps its production EventSource disabled, binds authenticated context to the real session plus bootstrap Stream identity, and bounds restoration to one in-memory interaction.
 - Providerless application guards keep Dio and `/v1/` transport literals out of feature modules and reject known Preview fixture composition from `lib/main.dart`; controllers must depend on ports while fakes remain test/Preview-only.
+- Profile guards require its exact domain/controller/UI tests, keep production directly unavailable, enforce the `ProfileValues` and `ProfileResource` field allowlists, confine every `MemoryProfileGateway` reference to its implementation and `lib/main_preview.dart`, and reject ad-hoc notifications or positive Profile-save language.
 - Git-visible `.env`, private-key, service-account, and Firebase Admin credential paths fail validation. `.gitnexus/` and project-local SDK artifacts are ignored.
 
 ## Verification
@@ -92,3 +93,19 @@ passed, and the complete mutation suite passed 38 tests. Flutter format,
 analyze, 35 focused Watchlist tests, 221 full tests, Android Debug, and iOS
 Debug no-codesign also passed; exact commands are recorded in the Phase 1
 integration report.
+
+## Providerless Profile Presentation Update
+
+On 2026-08-25, decision 0010 fixed the exact Profile presentation boundary
+before its authenticated HTTP adapter. The Harness requires the Profile
+models, gateway, controller, UI behavior tests and explicit Preview memory
+implementation; production must remain directly unavailable. It enforces the
+exact values/resource field allowlists, rejects feature-owned references to the
+memory fake, and rejects ad-hoc notifications or positive Profile-save UI.
+
+The slice models only nullable Alias, opaque avatar reference, version and
+update time. Preview saves demonstrate application behavior rather than
+account persistence. `python3 scripts/check_harness.py` passed, and the
+complete mutation suite passed 48 tests. Flutter format, analyze, 34 focused
+Profile tests, 255 full tests, Android Debug, and iOS Debug no-codesign also
+passed; exact commands are recorded in the Phase 1 integration report.

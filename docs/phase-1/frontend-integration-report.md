@@ -22,6 +22,7 @@ Keep the formal repository's existing UI/catalog and six primary destinations wh
 - Native Privy Bearer bootstrap with an HTTPS-only production origin, exact no-body request, strict no-store response parsing, principal rotation, single-flight loading, and one bounded 401 refresh attempt. Chat and Video share only the validated server-derived Stream identity; neither may connect without its separate short-lived token contract.
 - Provider-neutral centralized notification classification with exact `notification.v1` envelopes, authenticated recipient binding, fixed Chat/Audio Room/notification-center intents, explicit foreground/background non-navigation, and bounded process-local interaction deduplication. The root EventSource/Coordinator seam is wired with a production-disabled source; authenticated context comes only from the real LOOP session plus verified bootstrap Stream identity, and at most one time-bounded interaction may wait for restoration. Production notification fixtures now fail closed outside explicit Preview; Firebase/provider ingress remains disabled.
 - Providerless Watchlist domain and application state with exact grouped/order limits, defensive immutable snapshots, draft editing, optimistic expected-version saves, one in-flight mutation, explicit discard/reload, and fail-closed conflict handling. Production uses an unavailable gateway; the labelled in-memory implementation is composed only by the explicit Preview entry point and carries asset references rather than market facts.
+- Providerless Profile presentation domain and application state with exact nullable Alias/opaque avatar-reference validation, defensive immutable resources, complete optimistic replacement, draft/discard/reload, single-flight loading and saving, conflict freezing, ambiguous-retry convergence, provider rotation, and late-result isolation. H1/H2 project only committed values, production stays unavailable without claiming persistence, and the labelled Preview fake is composed only by the explicit Preview root. Bio and Privacy are not smuggled into the Profile contract, and avatar editing remains disabled.
 
 ## Verification
 
@@ -158,6 +159,19 @@ The providerless Watchlist slice was verified on 2026-08-25:
 
 The deterministic behavior suite covers exact backend-aligned validation limits, immutable ordered copies, unavailable production composition, labelled Preview memory state, complete draft replacement, group/item editing and ordering, single-flight load/save, expected-version propagation, ambiguous-save retry convergence, fail-closed mismatched responses, explicit conflict reload, provider rotation, disposal, and sanitized unexpected/unavailable UI failures. No Dio route, Privy bearer request, backend response, provider account, or device persistence was exercised; those remain for the later authenticated adapter slice.
 
+The providerless Profile presentation slice was verified on 2026-08-25:
+
+- `bin/dart format --output=none --set-exit-if-changed lib test`: passed; 137 files, 0 changed.
+- `bin/flutter analyze`: passed; no issues.
+- `bin/flutter test test/profile_models_test.dart test/profile_controller_test.dart test/profile_presentation_screen_test.dart`: passed; 34 tests.
+- `bin/flutter test`: passed; 255 tests.
+- `python3 scripts/check_harness.py`: passed.
+- `python3 -m unittest discover -s tests -p 'test_*.py' -v`: passed; 48 tests.
+- `bin/flutter build apk --debug`: passed; produced `build/app/outputs/flutter-apk/app-debug.apk`. Flutter repeated the accepted future Gradle 8.14 / AGP 8.13.2 support warnings; the locked matrix was not changed.
+- `bin/flutter build ios --debug --no-codesign`: passed; produced `build/ios/iphoneos/Runner.app` for `com.cywd.loop`.
+
+The deterministic behavior suite covers the reviewed raw/normalized Alias limits, Unicode scalar and bidirectional safety, opaque avatar-reference grammar, version/timestamp biconditional, missing-row creation, stale-identical replay, complete-value replacement, invalid and non-advancing responses, single-flight work, optimistic conflicts, ambiguous save retry, gateway-owner rotation, disposal, and late-result isolation. Widget tests cover production unavailable truth, fixture-free default Home, labelled Preview editing, invalid-input retry gating, committed Home projection, conflict-only reload, pending/failed reload feedback with draft preservation, mounted gateway rotation, sanitized failure, and narrow-screen 2x Dynamic Type. No Dio route, Privy bearer request, backend response, avatar upload/reference source, Privacy persistence, provider account, or device persistence was exercised; those remain for later adapter slices.
+
 ## Provider readiness
 
 | Capability | Current status |
@@ -171,6 +185,7 @@ The deterministic behavior suite covers exact backend-aligned validation limits,
 | Firebase/push | Provider-neutral intent contract and fail-closed UI verified; no mobile configs, exact Stream push-provider names, or captured payload fixtures, so initialization/handlers/device registration remain disabled and the auto-registering Stream Video Push plugin is not linked |
 | Hyperliquid public markets | Direct Testnet read-only adapter available |
 | Watchlist | Providerless models/controller/UI complete; production adapter unavailable and no account persistence claimed |
+| Profile presentation | Providerless exact models/controller/H1-H2 UI complete; production adapter and avatar source unavailable, with no account persistence claimed |
 | Private trading | Backend-only by design; not connected |
 
 ## Follow-up inputs

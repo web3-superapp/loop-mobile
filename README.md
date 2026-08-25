@@ -19,6 +19,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - Audio Room 首版只配置前台麦克风能力；任何退房或 App 退到后台都会立即发起原生音频暂停、终态关麦与 single-flight 退房，不让可能卡住的麦克风/原生命令延迟退房。大厅只在旧 `Call` 已从 Stream `activeCalls` 移除、在途麦克风命令已结束且命令后的第二次关麦已执行后开放。为避开 Stream Video 1.4.3 的迟到音轨重建缺陷，每个 `Call` 只允许一次 Speak 启动；Mute 后需离开并重进才能再次发言。失败可显式重试清理。会自动注册 Telecom/CallKit 的 Stream Push 插件不进入当前依赖图，Android 同时移除可选来电、后台通话、相机与推送项，iOS 不启用 Camera、PushKit、CallKit 或后台模式
 - 通知导航的 EventSource / Coordinator 纵切已接入根组合：生产 source 默认是无初始点击、无事件的 disabled 实现；协调器只从真实 LOOP session 与已验证 bootstrap identity 取得 Stream 身份。恢复期间最多暂存一个、默认 15 秒且硬上限一分钟的点击，账号切换、超时或授权失败即丢弃；通过完整重验后也只能落到官方 Chat CID、Audio Room 大厅或通知中心。生产通知页不展示伪实时卡片，演示卡仅在显式 `开发预览` 中可见
 - Watchlist 已按后端现有版本化契约完成 providerless 应用逻辑：分组、资产顺序、草稿、保存单飞、显式丢弃与版本冲突恢复均在窄端口后建模。正式入口默认不可用，不发送私有请求；只有 `main_preview.dart` 注入明确标注的内存实现。Watchlist 只保存资产标识，不把价格、涨跌、可交易性或提醒状态伪装成账户事实
+- Profile presentation 已按后端现有契约完成 providerless 应用逻辑：只建模 nullable Alias、opaque `avatar:` reference、版本与更新时间；编辑、丢弃、保存单飞、冲突重载、失败重试与迟到结果隔离均已落地。Bio 不属于该契约，Visibility 仍归独立 Privacy 资源，Avatar 选择在来源契约确定前禁用。正式入口默认不可用且不再伪报保存成功；只有显式 Preview 使用带标签的内存实现
 - Account、Wallet、Market、Perp、Chat、Profile 与系统状态组件
 - 深色 LOOP 设计系统、键盘焦点、语义标签、reduced-motion 与手机/桌面响应式布局
 

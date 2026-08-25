@@ -1,17 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
+import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
+import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
 @immutable
 class ProfileIdentity {
   const ProfileIdentity({
-    this.alias = 'QuietComet',
-    this.address = '0x7c4e…9f21',
-    this.bio = 'Reading markets, sharing carefully.',
-    this.connections = 128,
-    this.groups = 7,
-    this.watchlistItems = 12,
+    this.alias = 'Profile unavailable',
+    this.address = 'No wallet connected',
+    this.bio = 'Profile presentation is not connected.',
+    this.connections = 0,
+    this.groups = 0,
+    this.watchlistItems = 0,
   });
 
   final String alias;
@@ -107,12 +113,18 @@ class ProfileSurfaceScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     void navigate(String destination) => _navigate(context, destination);
     return switch (_id) {
-      'profile' => _ProfileHome(
+      'profile' => _ProfilePresentationSurface(
+        editing: false,
         identity: identity,
         onNavigate: navigate,
         onSignOut: onSignOut,
       ),
-      'profile-edit' => _ProfileEdit(identity: identity),
+      'profile-edit' => _ProfilePresentationSurface(
+        editing: true,
+        identity: identity,
+        onNavigate: navigate,
+        onSignOut: onSignOut,
+      ),
       'privacy' => const _PrivacyCenter(),
       'copytrade-perms' => const _CopyTradePermissions(),
       'security' => _SecurityCenter(
@@ -155,21 +167,102 @@ class ProfileSurfaceScreen extends StatelessWidget {
   }
 }
 
-class _ProfileHome extends StatelessWidget {
-  const _ProfileHome({
+/// Owns the providerless Profile-presentation lifecycle for H1 and H2 only.
+///
+/// Other Profile settings remain independent; opening Security or Privacy does
+/// not start a Profile request. Production stays unavailable until an
+/// authenticated integration adapter replaces the default gateway.
+class _ProfilePresentationSurface extends ConsumerStatefulWidget {
+  const _ProfilePresentationSurface({
+    required this.editing,
     required this.identity,
     required this.onNavigate,
     required this.onSignOut,
   });
 
+  final bool editing;
   final ProfileIdentity identity;
+  final ValueChanged<String> onNavigate;
+  final Future<void> Function()? onSignOut;
+
+  @override
+  ConsumerState<_ProfilePresentationSurface> createState() =>
+      _ProfilePresentationSurfaceState();
+}
+
+class _ProfilePresentationSurfaceState
+    extends ConsumerState<_ProfilePresentationSurface> {
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(profileControllerProvider);
+    if (state.phase == ProfilePhase.initial) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(ref.read(profileControllerProvider.notifier).load());
+        }
+      });
+    }
+    final controller = ref.read(profileControllerProvider.notifier);
+    final projectedIdentity = _projectIdentity(widget.identity, state);
+
+    if (widget.editing) {
+      return _ProfileEdit(
+        identity: projectedIdentity,
+        state: state,
+        controller: controller,
+        onOpenPrivacy: () => widget.onNavigate('privacy'),
+      );
+    }
+    return _ProfileHome(
+      identity: projectedIdentity,
+      state: state,
+      controller: controller,
+      onNavigate: widget.onNavigate,
+      onSignOut: widget.onSignOut,
+    );
+  }
+
+  ProfileIdentity _projectIdentity(
+    ProfileIdentity sessionIdentity,
+    ProfileState state,
+  ) {
+    final resource = state.resource;
+    return ProfileIdentity(
+      alias: resource == null
+          ? sessionIdentity.alias
+          : resource.values.alias ?? 'No alias set',
+      address: sessionIdentity.address,
+      bio: resource == null
+          ? sessionIdentity.bio
+          : 'Bio is not part of the reviewed Profile presentation contract.',
+      connections: sessionIdentity.connections,
+      groups: sessionIdentity.groups,
+      watchlistItems: sessionIdentity.watchlistItems,
+    );
+  }
+}
+
+class _ProfileHome extends StatelessWidget {
+  const _ProfileHome({
+    required this.identity,
+    required this.state,
+    required this.controller,
+    required this.onNavigate,
+    required this.onSignOut,
+  });
+
+  final ProfileIdentity identity;
+  final ProfileState state;
+  final ProfileController controller;
   final ValueChanged<String> onNavigate;
   final Future<void> Function()? onSignOut;
 
   @override
   Widget build(BuildContext context) {
     return LoopPage(
-      eyebrow: '开发预览 · YOUR IDENTITY',
+      eyebrow: state.mode == ProfileMode.preview
+          ? '开发预览 · YOUR IDENTITY'
+          : 'YOUR IDENTITY',
       title: 'Profile',
       actions: <Widget>[
         IconButton(
@@ -184,12 +277,9 @@ class _ProfileHome extends StatelessWidget {
         ),
       ],
       children: <Widget>[
-        const LoopStateCard(
-          title: '开发预览',
-          message: 'Identity status comes from the current session. Social counts, groups and settings remain 演示数据 until backend bootstrap is connected.',
-          icon: Icons.visibility_outlined,
-          tone: LoopTone.warning,
-        ),
+        _ProfileModeBanner(mode: state.mode),
+        const SizedBox(height: 14),
+        ..._profileHomeStatus(state, controller),
         _IdentityThreadCard(identity: identity),
         const LoopSectionLabel('Control'),
         _SettingsGroup(
@@ -288,12 +378,64 @@ class _ProfileHome extends StatelessWidget {
       ],
     );
   }
+
+  List<Widget> _profileHomeStatus(
+    ProfileState state,
+    ProfileController controller,
+  ) {
+    if (state.resource != null) {
+      return <Widget>[
+        _ProfileSummary(state: state),
+        const SizedBox(height: 14),
+      ];
+    }
+    return switch (state.phase) {
+      ProfilePhase.initial || ProfilePhase.loading => const <Widget>[
+        _ProfileLoadingCard(),
+        SizedBox(height: 14),
+      ],
+      ProfilePhase.unavailable => const <Widget>[
+        LoopStateCard(
+          title: 'Profile presentation is not connected',
+          message: 'The current session identity remains visible, but no saved Alias or avatar is being claimed and no private request was sent.',
+          icon: Icons.link_off_rounded,
+          tone: LoopTone.warning,
+        ),
+        SizedBox(height: 14),
+      ],
+      _ => <Widget>[
+        LoopStateCard(
+          title: 'Profile presentation could not be loaded',
+          message: _profileFailureMessage(state.failureKind),
+          icon: Icons.sync_problem_rounded,
+          tone: LoopTone.danger,
+          action: OutlinedButton.icon(
+            key: const ValueKey<String>('profile-home-retry-load'),
+            onPressed: state.isBusy
+                ? null
+                : () => unawaited(controller.reload()),
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Retry'),
+          ),
+        ),
+        const SizedBox(height: 14),
+      ],
+    };
+  }
 }
 
 class _ProfileEdit extends StatefulWidget {
-  const _ProfileEdit({required this.identity});
+  const _ProfileEdit({
+    required this.identity,
+    required this.state,
+    required this.controller,
+    required this.onOpenPrivacy,
+  });
 
   final ProfileIdentity identity;
+  final ProfileState state;
+  final ProfileController controller;
+  final VoidCallback onOpenPrivacy;
 
   @override
   State<_ProfileEdit> createState() => _ProfileEditState();
@@ -307,104 +449,366 @@ class _ProfileEditState extends State<_ProfileEdit> {
     'ClearCurrent',
   ];
   late final TextEditingController _alias;
-  late final TextEditingController _bio;
-  String _visibility = 'Connections';
+  String? _validationMessage;
 
   @override
   void initState() {
     super.initState();
-    _alias = TextEditingController(text: widget.identity.alias);
-    _bio = TextEditingController(text: widget.identity.bio);
+    _alias = TextEditingController(text: _draftAlias(widget.state));
+  }
+
+  @override
+  void didUpdateWidget(covariant _ProfileEdit oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final resourceChanged = oldWidget.state.resource != widget.state.resource;
+    final draftWasDiscarded = oldWidget.state.isDirty && !widget.state.isDirty;
+    if (resourceChanged || draftWasDiscarded) {
+      _replaceAliasText(_draftAlias(widget.state));
+      _validationMessage = null;
+    }
   }
 
   @override
   void dispose() {
     _alias.dispose();
-    _bio.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final stackActions =
+        MediaQuery.sizeOf(context).width < 480 ||
+        MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    final discardButton = OutlinedButton(
+      key: const ValueKey<String>('profile-discard'),
+      onPressed:
+          widget.state.isDirty &&
+              !widget.state.isBusy &&
+              !widget.state.requiresReload
+          ? widget.controller.discard
+          : null,
+      child: Text(widget.state.requiresReload ? 'Reload required' : 'Discard'),
+    );
+    final saveButton = FilledButton.icon(
+      key: const ValueKey<String>('profile-save'),
+      onPressed: widget.state.canSave && _validationMessage == null
+          ? () => unawaited(widget.controller.save())
+          : null,
+      icon: widget.state.phase == ProfilePhase.saving
+          ? const SizedBox.square(
+              dimension: 17,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.save_outlined),
+      label: Text(
+        widget.state.phase == ProfilePhase.saving ? 'Saving…' : 'Save changes',
+      ),
+    );
     return LoopPage(
       eyebrow: 'PUBLIC PROFILE',
       title: 'Edit profile',
-      subtitle: 'Change what people recognize. Wallet addresses remain controlled separately in Privacy.',
-      bottom: LoopActionDock(
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Profile changes saved.')),
+      subtitle: 'Edit the reviewed Profile presentation resource. Wallet addresses and visibility remain separate.',
+      padding: EdgeInsets.fromLTRB(20, 12, 20, stackActions ? 210 : 120),
+      bottom: widget.state.resource == null
+          ? null
+          : LoopActionDock(
+              child: stackActions
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        discardButton,
+                        const SizedBox(height: 10),
+                        saveButton,
+                      ],
+                    )
+                  : Row(
+                      children: <Widget>[
+                        Expanded(child: discardButton),
+                        const SizedBox(width: 12),
+                        Expanded(child: saveButton),
+                      ],
+                    ),
             ),
-            child: const Text('Save changes'),
+      children: <Widget>[
+        _ProfileModeBanner(mode: widget.state.mode),
+        const SizedBox(height: 16),
+        ..._stateContent(context),
+      ],
+    );
+  }
+
+  List<Widget> _stateContent(BuildContext context) {
+    final state = widget.state;
+    if (state.resource == null) {
+      return switch (state.phase) {
+        ProfilePhase.initial ||
+        ProfilePhase.loading => const <Widget>[_ProfileLoadingCard()],
+        ProfilePhase.unavailable => const <Widget>[
+          LoopStateCard(
+            title: 'Profile editing is not connected',
+            message: 'The production Profile adapter is intentionally unavailable. No private request was sent and no demo profile is being shown.',
+            icon: Icons.link_off_rounded,
+            tone: LoopTone.warning,
+          ),
+        ],
+        _ => <Widget>[
+          LoopStateCard(
+            title: 'Profile could not be loaded',
+            message: _profileFailureMessage(state.failureKind),
+            icon: Icons.sync_problem_rounded,
+            tone: LoopTone.danger,
+            action: OutlinedButton.icon(
+              key: const ValueKey<String>('profile-retry-load'),
+              onPressed: state.isBusy
+                  ? null
+                  : () => unawaited(widget.controller.reload()),
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Retry'),
+            ),
+          ),
+        ],
+      };
+    }
+
+    final content = <Widget>[_ProfileSummary(state: state)];
+    if (state.requiresReload) {
+      final reloadInProgress = state.phase == ProfilePhase.loading;
+      final reloadFailed =
+          state.failureKind != null &&
+          state.failureKind != ProfileGatewayFailureKind.versionConflict;
+      content.addAll(<Widget>[
+        const SizedBox(height: 14),
+        LoopStateCard(
+          key: const ValueKey<String>('profile-conflict'),
+          title: reloadInProgress
+              ? 'Reloading the latest Profile…'
+              : reloadFailed
+              ? 'Latest Profile could not be reloaded'
+              : 'Version conflict — nothing was overwritten',
+          message: reloadFailed
+              ? '${_profileFailureMessage(state.failureKind)} The local Alias draft is still preserved.'
+              : 'This Alias draft is based on an older account version. Reload the latest Profile before editing or saving again; reload discards this local draft.',
+          icon: Icons.call_split_rounded,
+          tone: LoopTone.warning,
+          action: reloadInProgress
+              ? const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    SizedBox.square(
+                      dimension: 17,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 10),
+                    Text('Reloading…'),
+                  ],
+                )
+              : FilledButton.icon(
+                  key: const ValueKey<String>('profile-conflict-reload'),
+                  onPressed: () => unawaited(widget.controller.reload()),
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: Text(reloadFailed ? 'Retry reload' : 'Reload latest'),
+                ),
+        ),
+      ]);
+    } else if (state.phase == ProfilePhase.failure ||
+        state.phase == ProfilePhase.unavailable) {
+      content.addAll(<Widget>[
+        const SizedBox(height: 14),
+        LoopStateCard(
+          title: 'Changes were not saved',
+          message: _profileFailureMessage(state.failureKind),
+          icon: Icons.cloud_off_rounded,
+          tone: LoopTone.danger,
+          action: OutlinedButton.icon(
+            key: const ValueKey<String>('profile-retry-save'),
+            onPressed: state.canSave && _validationMessage == null
+                ? () => unawaited(widget.controller.save())
+                : null,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Retry save'),
+          ),
+        ),
+      ]);
+    }
+
+    content.addAll(<Widget>[
+      const SizedBox(height: 24),
+      Center(
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: <Widget>[
+            const _ProfileAvatar(size: 92),
+            Positioned(
+              right: -6,
+              bottom: -6,
+              child: IconButton.filled(
+                tooltip: 'Avatar source unavailable',
+                onPressed: null,
+                icon: const Icon(Icons.camera_alt_outlined, size: 19),
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 30),
+      Text('Alias', style: Theme.of(context).textTheme.labelLarge),
+      const SizedBox(height: 8),
+      TextField(
+        key: const ValueKey<String>('profile-alias-input'),
+        controller: _alias,
+        enabled: state.canEdit,
+        maxLength: 256,
+        onChanged: _editAlias,
+        decoration: InputDecoration(
+          errorText: _validationMessage,
+          helperText: '1–40 visible Unicode characters after trimming. Empty removes the Alias.',
+          suffixIcon: IconButton(
+            tooltip: 'Generate another alias',
+            onPressed: state.canEdit
+                ? () {
+                    final current = _aliases.indexOf(_alias.text);
+                    _replaceAliasText(
+                      _aliases[(current + 1) % _aliases.length],
+                    );
+                    _editAlias(_alias.text);
+                  }
+                : null,
+            icon: const Icon(Icons.shuffle_rounded),
           ),
         ),
       ),
+      const SizedBox(height: 18),
+      LoopStateCard(
+        title: 'Only Alias is editable here',
+        message: 'Bio is not part of the reviewed Profile contract. Profile visibility belongs to the separate Privacy resource, and avatar changes wait for an approved reference source.',
+        icon: Icons.rule_folder_outlined,
+        action: OutlinedButton.icon(
+          key: const ValueKey<String>('profile-open-privacy'),
+          onPressed: widget.onOpenPrivacy,
+          icon: const Icon(Icons.visibility_outlined),
+          label: const Text('Open Privacy'),
+        ),
+      ),
+    ]);
+    return content;
+  }
+
+  String _draftAlias(ProfileState state) =>
+      state.resource == null ? '' : state.draft.alias ?? '';
+
+  void _replaceAliasText(String value) {
+    _alias.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
+  }
+
+  void _editAlias(String rawAlias) {
+    try {
+      widget.controller.editAlias(rawAlias.trim().isEmpty ? null : rawAlias);
+      if (_validationMessage != null) {
+        setState(() => _validationMessage = null);
+      }
+    } on InvalidProfileContractException {
+      setState(() {
+        _validationMessage = 'Use 1–40 visible characters. Control and text-direction override characters are not accepted.';
+      });
+    } on StateError {
+      // The field is disabled while loading, saving, or resolving a conflict.
+    }
+  }
+}
+
+class _ProfileModeBanner extends StatelessWidget {
+  const _ProfileModeBanner({required this.mode});
+
+  final ProfileMode mode;
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopStateCard(
+      title: switch (mode) {
+        ProfileMode.preview => '开发预览 · in-memory Profile',
+        ProfileMode.production => 'Account Profile',
+        ProfileMode.unavailable => 'Production connection unavailable',
+      },
+      message: switch (mode) {
+        ProfileMode.preview => 'Edits persist only for this running Preview and do not update an account or provider.',
+        ProfileMode.production => 'Alias and opaque avatar references are synchronized through the authenticated LOOP boundary.',
+        ProfileMode.unavailable => 'The app is fail-closed until the authenticated Profile adapter is connected.',
+      },
+      icon: mode == ProfileMode.preview
+          ? Icons.science_outlined
+          : Icons.badge_outlined,
+      tone: mode == ProfileMode.preview ? LoopTone.warning : LoopTone.neutral,
+    );
+  }
+}
+
+class _ProfileLoadingCard extends StatelessWidget {
+  const _ProfileLoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const LoopCard(
+      child: Row(
+        children: <Widget>[
+          SizedBox.square(
+            dimension: 22,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          SizedBox(width: 14),
+          Expanded(child: Text('Loading Profile presentation…')),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileSummary extends StatelessWidget {
+  const _ProfileSummary({required this.state});
+
+  final ProfileState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final resource = state.resource!;
+    final compactLabels =
+        MediaQuery.sizeOf(context).width < 480 ||
+        MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: <Widget>[
-        Center(
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: <Widget>[
-              const _ProfileAvatar(size: 92),
-              Positioned(
-                right: -6,
-                bottom: -6,
-                child: IconButton.filled(
-                  tooltip: 'Change avatar',
-                  onPressed: () {},
-                  icon: const Icon(Icons.camera_alt_outlined, size: 19),
-                ),
-              ),
-            ],
-          ),
+        LoopStatusPill(
+          label: 'VERSION ${resource.version}',
+          tone: LoopTone.conversation,
         ),
-        const SizedBox(height: 30),
-        Text('Alias', style: Theme.of(context).textTheme.labelLarge),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _alias,
-          maxLength: 24,
-          decoration: InputDecoration(
-            suffixIcon: IconButton(
-              tooltip: 'Generate another alias',
-              onPressed: () {
-                final current = _aliases.indexOf(_alias.text);
-                _alias.text = _aliases[(current + 1) % _aliases.length];
-              },
-              icon: const Icon(Icons.shuffle_rounded),
-            ),
-          ),
+        LoopStatusPill(
+          label: state.isDirty
+              ? (compactLabels ? 'DRAFT' : 'UNSAVED DRAFT')
+              : (compactLabels ? 'NO CHANGES' : 'NO LOCAL CHANGES'),
+          tone: state.isDirty ? LoopTone.warning : LoopTone.positive,
         ),
-        const SizedBox(height: 14),
-        Text('Bio', style: Theme.of(context).textTheme.labelLarge),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _bio,
-          minLines: 3,
-          maxLines: 4,
-          maxLength: 120,
-          decoration: const InputDecoration(
-            hintText: 'What should people know about you?',
-          ),
-        ),
-        const SizedBox(height: 14),
-        DropdownButtonFormField<String>(
-          initialValue: _visibility,
-          decoration: const InputDecoration(labelText: 'Profile visibility'),
-          items: const <String>['Private', 'Connections', 'Everyone']
-              .map(
-                (value) =>
-                    DropdownMenuItem<String>(value: value, child: Text(value)),
-              )
-              .toList(growable: false),
-          onChanged: (value) =>
-              setState(() => _visibility = value ?? _visibility),
+        LoopStatusPill(
+          label: state.draft.alias == null ? 'ALIAS NOT SET' : 'ALIAS SET',
         ),
       ],
     );
   }
 }
+
+String _profileFailureMessage(ProfileGatewayFailureKind? kind) =>
+    switch (kind) {
+      ProfileGatewayFailureKind.unavailable =>
+        'The Profile service is unavailable. No change was presented as saved.',
+      ProfileGatewayFailureKind.versionConflict => 'The account Profile changed elsewhere. Reload is required before another save.',
+      ProfileGatewayFailureKind.invalidData => 'The Profile source returned data outside the reviewed contract. Nothing was accepted.',
+      ProfileGatewayFailureKind.unexpected =>
+        'The Profile operation failed. Provider details were not exposed.',
+      null => 'The Profile operation could not be completed.',
+    };
 
 class _PrivacyCenter extends StatefulWidget {
   const _PrivacyCenter();
