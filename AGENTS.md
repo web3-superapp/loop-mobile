@@ -65,6 +65,7 @@ Never edit generated paths as application source. `.tooling` may hold an ignored
 10. Keep preview fixtures visibly labeled `演示数据` or `开发预览`. They must not enter Stream persistence or claim sent, read, presence, typing, ringing, or connected state.
 11. Keep the direct Hyperliquid mobile adapter public and Testnet read-only. Any account, position, order, cancellation, leverage, transfer, or withdrawal path uses the Loop backend.
 12. Generate a new UUID for every outgoing call and idempotent request; never reuse an identifier that has already rung or been submitted.
+13. Keep production Stream `token_card.v1` attachments identifier-only and render them through the official message attachment builder. Never persist mutable facts or actions in the message, fetch once per historical card, or mount fixture conversation routes outside explicit Preview mode.
 
 ## Commands
 

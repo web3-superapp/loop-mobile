@@ -1,6 +1,6 @@
 # LOOP current product decisions
 
-> Canonical current scope. Updated 2026-08-24.
+> Canonical current scope. Updated 2026-08-25.
 
 This document applies to the Flutter source at the repository root. Material under `reference/legacy-prototype/` is frozen history and does not override these decisions.
 
@@ -32,6 +32,10 @@ Product priority and current delivery are separate:
 - The official client may be constructed from the public API key without connecting. A production session source must obtain a backend-derived Stream user ID and short-lived server-issued token; missing or failed authorization prevents controller/message UI from mounting.
 - Privy user ID is only an opaque logout/account-switch key in Flutter. It is never converted into the Stream user ID. Each principal gets an isolated Stream client/persistence pair; logout and account switches retire the old pair, invalidate in-flight authorization, and disconnect without deleting per-user offline history.
 - Text chat composition is wired through official UI. Attachments and voice recording remain disabled until platform permissions, upload policy and provider/device verification are complete.
+- Incoming Stream `token_card.v1` attachments are the narrow exception to disabled attachment composition: official Stream message rendering may display their strict identifier-only reference. A compliant producer/server contract forbids persisting price, liquidity, risk, ownership, provider links, watch state, or trading actions; the receiver hides violations without claiming they were never stored.
+- The Token Card renderer is synchronous and fail-closed. Missing, extra, malformed, repeated, mixed, or unknown-version payloads show no supplied facts. Valid cards remain `Current facts unavailable` until a separately freshness-bounded backend facts projection exists; preview facts stay visibly marked `开发预览` and cannot mutate a watchlist or trade.
+- Raw Token Cards are intercepted before Stream's computed link/media type can select a default renderer, and standard top-level URL/action/display fields are rejected. Compact message and draft previews replace every raw Token Card with a fixed safe label so captions, titles, URLs, and mutable facts cannot escape through channel, reply, thread, or search previews. Outgoing Token Card composition remains disabled until a backend or Stream before-send policy enforces the same complete wire shape; Flutter receive validation alone cannot guarantee stored data.
+- The legacy group, direct-message, group-information, request, search, and token/facts preview routes remain preview-only. Production navigation cannot mount their fixture conversations; authenticated production chat continues through Stream's server-authorized inbox and CID route.
 - Stream Video now has a foreground-only, principal-bound SDK lifecycle and a narrow backend identity/token seam. The SDK is constructed only after an initial backend token is available, connects with push registration disabled, and is retired on route disposal, logout, or account change.
 - Production voice surfaces never render preview room/member data. Audio Room now has a foreground lobby, backend-authorized target seam, muted single-flight join, official `CallState` participant/capability/media UI, explicit Speak action and principal/target/client cleanup. Missing Video tokens or room locator keep the join action disabled.
 - Audio Room uses only Stream's `audio_room` type. The backend must pre-create the room, add the server-derived Stream user and assign a role without `create-call`; the app never calls `getOrCreate`. This server permission is mandatory because Stream Video 1.4.3 internally sends `create: true` during `join()`.

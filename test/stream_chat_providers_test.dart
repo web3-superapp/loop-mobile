@@ -8,6 +8,8 @@ import 'package:loop_mobile/integrations/communication/stream_chat_providers.dar
 import 'package:loop_mobile/integrations/communication/stream_chat_sdk_session.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
+import 'package:loop_mobile/features/chat/attachments/stream_token_card_attachment_builder.dart';
+import 'package:loop_mobile/features/chat/attachments/stream_token_card_message_preview_formatter.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
@@ -101,6 +103,14 @@ void main() {
     expect(find.byType(StreamChat), findsOneWidget);
     final streamChat = tester.widget<StreamChat>(find.byType(StreamChat));
     expect(streamChat.key, ObjectKey(streamChat.client));
+    expect(
+      streamChat.configData?.attachmentBuilders,
+      contains(isA<LoopStreamTokenCardAttachmentBuilder>()),
+    );
+    expect(
+      streamChat.configData?.messagePreviewFormatter,
+      isA<LoopStreamTokenCardMessagePreviewFormatter>(),
+    );
     final composerBuilder = streamChat.componentBuilders
         ?.extension<MessageComposerProps>();
     expect(composerBuilder, isNotNull);

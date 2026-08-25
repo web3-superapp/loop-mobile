@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
+import 'package:loop_mobile/features/chat/attachments/token_card_attachment.dart';
+import 'package:loop_mobile/features/chat/widgets/token_card_view.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
@@ -701,113 +703,34 @@ class TokenMessageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LoopCard(
-      tone: LoopTone.warning,
-      accent: true,
-      padding: const EdgeInsets.all(15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              const LoopAssetMark(
-                symbol: 'GLYPH',
-                size: 42,
-                color: LoopColors.warning,
-              ),
-              const SizedBox(width: 11),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'GLYPH / USDC',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'Snapshot at share time · 14:07',
-                      style: Theme.of(context).textTheme.labelMedium,
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: <Widget>[
-                  Text(r'$0.0842', style: context.dataStyle),
-                  const SizedBox(height: 3),
-                  Text(
-                    '+8.4% 24h',
-                    style: Theme.of(context).textTheme.labelMedium
-                        ?.copyWith(color: LoopColors.mint),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: const <Widget>[
-              LoopStatusPill(
-                label: 'LP unlocks in 3 days',
-                tone: LoopTone.warning,
-                icon: Icons.lock_clock_outlined,
-              ),
-              LoopStatusPill(
-                label: 'Top holders 61%',
-                tone: LoopTone.warning,
-                icon: Icons.pie_chart_outline_rounded,
-              ),
-              LoopStatusPill(
-                label: 'Ownership renounced',
-                tone: LoopTone.neutral,
-                icon: Icons.verified_user_outlined,
-              ),
-            ],
-          ),
-          const SizedBox(height: 13),
-          Text(
-            'Review the liquidity and holder facts before taking any action.',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 13),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => showTokenFactsSheet(context),
-                  icon: const Icon(Icons.fact_check_outlined, size: 17),
-                  label: const Text('View facts'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 9),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () =>
-                      _showNotice(context, 'GLYPH added to your watchlist.'),
-                  icon: const Icon(Icons.bookmark_add_outlined, size: 17),
-                  label: const Text('Watch'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    final reference = LoopTokenCardAttachment.tryParse(
+      type: LoopTokenCardAttachment.attachmentType,
+      extraData: const <String, Object?>{
+        'loop_schema': LoopTokenCardAttachment.schema,
+        'asset_id': 'GLYPH',
+        'chain_id': 'base',
+        'contract_id': '0x71e4000000000000000000000000000000009a2c',
+        'snapshot_at': '2026-08-23T14:07:00.000Z',
+      },
+    )!;
+    return LoopTokenCardView(
+      state: LoopTokenCardViewState.previewReady,
+      reference: reference,
+      previewPrice: r'$0.0842',
+      previewChange: '+8.4% · 演示数据',
+      previewSource: '开发预览事实 · 非 provider 响应 · 14:06 UTC',
+      previewFacts: const <LoopTokenCardPreviewFact>[
+        LoopTokenCardPreviewFact(
+          label: 'LP unlocks in 3 days',
+          tone: LoopTokenCardTone.warning,
+          icon: Icons.lock_clock_outlined,
+        ),
+        LoopTokenCardPreviewFact(
+          label: 'Top holders 61%',
+          tone: LoopTokenCardTone.warning,
+          icon: Icons.pie_chart_outline_rounded,
+        ),
+      ],
     );
   }
 }
@@ -902,72 +825,6 @@ class AssetSnapshotMessageCard extends StatelessWidget {
       ),
     );
   }
-}
-
-Future<void> showTokenFactsSheet(BuildContext context) {
-  return showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
-    builder: (sheetContext) {
-      return SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                'GLYPH contract facts',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 7),
-              Text(
-                'Facts captured with the shared snapshot. Check current data before acting.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 18),
-              const LoopCard(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: Column(
-                  children: <Widget>[
-                    LoopKeyValueRow(
-                      label: 'Liquidity lock',
-                      value: 'Unlocks in 3 days',
-                      tone: LoopTone.warning,
-                    ),
-                    LoopKeyValueRow(
-                      label: 'Top 10 holders',
-                      value: '61%',
-                      tone: LoopTone.warning,
-                    ),
-                    LoopKeyValueRow(label: 'Owner control', value: 'Renounced'),
-                    LoopKeyValueRow(
-                      label: 'Transfer restrictions',
-                      value: 'None found',
-                    ),
-                    LoopKeyValueRow(
-                      label: 'Checked',
-                      value: '14:06 UTC',
-                      last: true,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () => Navigator.of(sheetContext).pop(),
-                  child: const Text('Done'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
 }
 
 class ChatComposer extends StatefulWidget {

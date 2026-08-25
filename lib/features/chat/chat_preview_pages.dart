@@ -11,7 +11,7 @@ class TokenCardPreviewPage extends StatelessWidget {
     return LoopPage(
       eyebrow: 'Shared in chat',
       title: 'Token context',
-      subtitle: 'A token mention keeps its price snapshot and contract facts together.',
+      subtitle: '开发预览：消息只保存资产标识；当前价格与事实必须在展示时重新验证。',
       children: <Widget>[
         const LoopContextRail(stage: LoopStage.discuss),
         const SizedBox(height: 20),
@@ -21,8 +21,14 @@ class TokenCardPreviewPage extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Column(
             children: <Widget>[
-              LoopKeyValueRow(label: 'Price', value: 'Captured when shared'),
-              LoopKeyValueRow(label: 'Contract facts', value: 'Time-stamped'),
+              LoopKeyValueRow(
+                label: 'Message payload',
+                value: 'Identifiers only',
+              ),
+              LoopKeyValueRow(
+                label: 'Price and facts',
+                value: 'Fresh projection',
+              ),
               LoopKeyValueRow(
                 label: 'Critical conditions',
                 value: 'Action limited',
@@ -30,7 +36,7 @@ class TokenCardPreviewPage extends StatelessWidget {
               ),
               LoopKeyValueRow(
                 label: 'Next step',
-                value: 'Review or watch',
+                value: 'No production action',
                 last: true,
               ),
             ],
@@ -39,7 +45,7 @@ class TokenCardPreviewPage extends StatelessWidget {
         const SizedBox(height: 14),
         const LoopStateCard(
           title: 'Shared context is not a recommendation',
-          message: 'Prices and contract conditions can change after a message is sent. Check current facts before acting.',
+          message: '演示价格和事实不是 provider 响应。生产卡片缺少新鲜事实时不会显示价格、Buy 或 Watch。',
           icon: Icons.schedule_rounded,
           tone: LoopTone.conversation,
         ),
@@ -134,7 +140,7 @@ class ContractFactsPreviewPage extends StatelessWidget {
               ),
               const SizedBox(height: 7),
               Text(
-                'Ethereum · verified source code',
+                'Base · example contract reference',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 14),
@@ -142,21 +148,17 @@ class ContractFactsPreviewPage extends StatelessWidget {
                 children: <Widget>[
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () =>
-                          _showNotice(context, 'Contract address copied.'),
+                      onPressed: null,
                       icon: const Icon(Icons.copy_rounded, size: 17),
-                      label: const Text('Copy address'),
+                      label: const Text('Copy unavailable'),
                     ),
                   ),
                   const SizedBox(width: 9),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => _showNotice(
-                        context,
-                        'Explorer links open outside LOOP.',
-                      ),
+                      onPressed: null,
                       icon: const Icon(Icons.open_in_new_rounded, size: 17),
-                      label: const Text('Explorer'),
+                      label: const Text('Explorer unavailable'),
                     ),
                   ),
                 ],
@@ -168,10 +170,9 @@ class ContractFactsPreviewPage extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: () =>
-                _showNotice(context, 'GLYPH added to your watchlist.'),
+            onPressed: null,
             icon: const Icon(Icons.bookmark_add_outlined),
-            label: const Text('Add to watchlist'),
+            label: const Text('Watch unavailable in development preview'),
           ),
         ),
       ],
@@ -219,10 +220,4 @@ class AssetMessagePreviewPage extends StatelessWidget {
       ],
     );
   }
-}
-
-void _showNotice(BuildContext context, String message) {
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message)));
 }

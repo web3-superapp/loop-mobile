@@ -24,6 +24,7 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart'
     show
         DefaultStreamMessageComposer,
         StreamChat,
+        StreamChatConfigurationData,
         StreamComponentBuilders,
         streamChatComponentBuilders;
 import 'package:uuid/uuid.dart';
@@ -39,6 +40,13 @@ final _loopStreamComponentBuilders = StreamComponentBuilders(
       ),
     ),
   ),
+);
+
+final _loopStreamConfiguration = StreamChatConfigurationData(
+  messagePreviewFormatter: const LoopStreamTokenCardMessagePreviewFormatter(),
+  attachmentBuilders: const <LoopStreamTokenCardAttachmentBuilder>[
+    LoopStreamTokenCardAttachmentBuilder(),
+  ],
 );
 
 class LoopApp extends ConsumerStatefulWidget {
@@ -81,6 +89,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
           : (context, child) => StreamChat(
               key: ObjectKey(streamSession.client),
               client: streamSession.client,
+              configData: _loopStreamConfiguration,
               componentBuilders: _loopStreamComponentBuilders,
               child: child,
             ),
@@ -255,11 +264,17 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
       ),
       GoRoute(
         path: '/chat/group',
-        builder: (context, state) => const GroupChatPage(),
+        builder: (context, state) => const ChatPreviewRouteGuard(
+          surfaceLabel: 'Group conversation',
+          child: GroupChatPage(),
+        ),
       ),
       GoRoute(
         path: '/chat/dm',
-        builder: (context, state) => const DirectMessagePage(),
+        builder: (context, state) => const ChatPreviewRouteGuard(
+          surfaceLabel: 'Direct conversation',
+          child: DirectMessagePage(),
+        ),
       ),
       GoRoute(
         path: '/chat/voice',
@@ -271,15 +286,24 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
       ),
       GoRoute(
         path: '/chat/group-info',
-        builder: (context, state) => const GroupInfoPage(),
+        builder: (context, state) => const ChatPreviewRouteGuard(
+          surfaceLabel: 'Group information',
+          child: GroupInfoPage(),
+        ),
       ),
       GoRoute(
         path: '/chat/requests',
-        builder: (context, state) => const MessageRequestsPage(),
+        builder: (context, state) => const ChatPreviewRouteGuard(
+          surfaceLabel: 'Message requests',
+          child: MessageRequestsPage(),
+        ),
       ),
       GoRoute(
         path: '/chat/search',
-        builder: (context, state) => const MessageSearchPage(),
+        builder: (context, state) => const ChatPreviewRouteGuard(
+          surfaceLabel: 'Message search',
+          child: MessageSearchPage(),
+        ),
       ),
       GoRoute(
         path: '/chat/channel/:cid',
@@ -292,15 +316,24 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
       ),
       GoRoute(
         path: '/preview/token-card',
-        builder: (context, state) => const TokenCardPreviewPage(),
+        builder: (context, state) => const ChatPreviewRouteGuard(
+          surfaceLabel: 'Token card preview',
+          child: TokenCardPreviewPage(),
+        ),
       ),
       GoRoute(
         path: '/preview/contract-facts',
-        builder: (context, state) => const ContractFactsPreviewPage(),
+        builder: (context, state) => const ChatPreviewRouteGuard(
+          surfaceLabel: 'Contract facts preview',
+          child: ContractFactsPreviewPage(),
+        ),
       ),
       GoRoute(
         path: '/preview/asset-message',
-        builder: (context, state) => const AssetMessagePreviewPage(),
+        builder: (context, state) => const ChatPreviewRouteGuard(
+          surfaceLabel: 'Asset message preview',
+          child: AssetMessagePreviewPage(),
+        ),
       ),
       GoRoute(
         path: '/wallet/asset',

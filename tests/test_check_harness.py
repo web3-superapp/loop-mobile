@@ -115,6 +115,197 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_source_guards(root)
         self.assertEqual(3, len(result))
 
+    def test_preview_chat_route_without_guard_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            app = root / "lib" / "app.dart"
+            app.parent.mkdir(parents=True)
+            app.write_text(
+                "GoRoute(\n"
+                "  path: '/chat/group',\n"
+                "  // ChatPreviewRouteGuard( must not satisfy the policy.\n"
+                "  /* builder: (context, state) => const ChatPreviewRouteGuard( */\n"
+                "  builder: (context, state) => const GroupChatPage(),\n"
+                "),\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_chat_attachment_contract(root)
+        self.assertTrue(
+            any(
+                "preview-only route `/chat/group` must be wrapped by ChatPreviewRouteGuard"
+                in error
+                for error in result
+            )
+        )
+
+    def test_duplicate_preview_chat_route_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            app = root / "lib" / "app.dart"
+            app.parent.mkdir(parents=True)
+            app.write_text(
+                "GoRoute(\n"
+                "  path: '/chat/group',\n"
+                "  builder: (context, state) => const ChatPreviewRouteGuard(\n"
+                "    child: GroupChatPage(),\n"
+                "  ),\n"
+                "),\n"
+                "GoRoute(\n"
+                "  path: '/chat/group',\n"
+                "  builder: (context, state) => const GroupChatPage(),\n"
+                "),\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_chat_attachment_contract(root)
+        self.assertTrue(
+            any(
+                "preview-only route `/chat/group` must be declared exactly once"
+                in error
+                for error in result
+            )
+        )
+
+    def test_token_card_mutable_payload_key_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            model = root / "lib" / "features" / "chat" / "attachments" / "token_card_attachment.dart"
+            model.parent.mkdir(parents=True)
+            model.write_text(
+                "static const Set<String> extraDataKeys = <String>{\n"
+                "  'loop_schema',\n"
+                "  'asset_id',\n"
+                "  'chain_id',\n"
+                "  'contract_id',\n"
+                "  'snapshot_at',\n"
+                "  'price',\n"
+                "};\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_chat_attachment_contract(root)
+        self.assertTrue(
+            any("token_card.v1 extraDataKeys must be exactly identifier-only" in error for error in result)
+        )
+
+    def test_token_card_key_spread_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            model = root / "lib" / "features" / "chat" / "attachments" / "token_card_attachment.dart"
+            model.parent.mkdir(parents=True)
+            model.write_text(
+                "static const Set<String> extraDataKeys = <String>{\n"
+                "  'loop_schema',\n"
+                "  'asset_id',\n"
+                "  'chain_id',\n"
+                "  'contract_id',\n"
+                "  'snapshot_at',\n"
+                "  ...mutableKeys,\n"
+                "};\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_chat_attachment_contract(root)
+        self.assertTrue(any("spreads and computed entries are forbidden" in error for error in result))
+
+    def test_token_card_view_network_source_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            view = root / "lib" / "features" / "chat" / "widgets" / "token_card_view.dart"
+            view.parent.mkdir(parents=True)
+            view.write_text("import 'dart:io';\nfinal client = HttpClient();\n", encoding="utf-8")
+            result = check_harness.check_chat_attachment_contract(root)
+        self.assertTrue(any("token_card_view.dart (`dart:io`)" in error for error in result))
+
+    def test_token_card_renderer_helper_import_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            builder = (
+                root
+                / "lib"
+                / "features"
+                / "chat"
+                / "attachments"
+                / "stream_token_card_attachment_builder.dart"
+            )
+            builder.parent.mkdir(parents=True)
+            expected_imports = sorted(
+                check_harness.TOKEN_CARD_RENDER_IMPORTS[
+                    "lib/features/chat/attachments/stream_token_card_attachment_builder.dart"
+                ]
+            )
+            builder.write_text(
+                "".join(f"import {directive};\n" for directive in expected_imports)
+                + "import 'token_card_network_helper.dart' as helper;\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_chat_attachment_contract(root)
+        self.assertTrue(
+            any(
+                "stream_token_card_attachment_builder.dart imports must stay"
+                in error
+                for error in result
+            )
+        )
+
+    def test_token_card_renderer_stream_client_access_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            builder = (
+                root
+                / "lib"
+                / "features"
+                / "chat"
+                / "attachments"
+                / "stream_token_card_attachment_builder.dart"
+            )
+            builder.parent.mkdir(parents=True)
+            expected_imports = sorted(
+                check_harness.TOKEN_CARD_RENDER_IMPORTS[
+                    "lib/features/chat/attachments/stream_token_card_attachment_builder.dart"
+                ]
+            )
+            builder.write_text(
+                "".join(f"import {directive};\n" for directive in expected_imports)
+                + "final request = StreamChat.maybeOf(context)?.client.getMessage(message.id);\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_chat_attachment_contract(root)
+        self.assertTrue(
+            any(
+                "stream_token_card_attachment_builder.dart (`StreamChat.`)"
+                in error
+                for error in result
+            )
+        )
+
+    def test_token_card_renderer_flutter_network_image_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            view = (
+                root
+                / "lib"
+                / "features"
+                / "chat"
+                / "widgets"
+                / "token_card_view.dart"
+            )
+            view.parent.mkdir(parents=True)
+            expected_imports = sorted(
+                check_harness.TOKEN_CARD_RENDER_IMPORTS[
+                    "lib/features/chat/widgets/token_card_view.dart"
+                ]
+            )
+            view.write_text(
+                "".join(f"import {directive};\n" for directive in expected_imports)
+                + "final image = Image.network('https://attacker.example/token.png');\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_chat_attachment_contract(root)
+        self.assertTrue(
+            any(
+                "token_card_view.dart (`Image.network(`)" in error
+                for error in result
+            )
+        )
+
     def test_privileged_secret_paths_are_rejected(self) -> None:
         result = check_harness.check_secret_paths(
             [Path(".env.local"), Path("AuthKey_example.p8"), Path("firebase-adminsdk.json")]

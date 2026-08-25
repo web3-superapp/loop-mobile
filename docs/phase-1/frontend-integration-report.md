@@ -17,6 +17,7 @@ Keep the formal repository's existing UI/catalog and six primary destinations wh
 - Provider shortcuts fail closed; public Hyperliquid mobile access stays Testnet read-only.
 - Official Stream Chat principal-bound client/persistence ownership, backend identity/token seam, root session rotation, bounded channel list, CID route, and official message UI.
 - Stream text composition is structurally enabled; attachment and voice-recording entry points remain disabled pending platform policy and device verification.
+- Incoming Stream `token_card.v1` references render through official message UI with an exact identifier-only payload, malformed/unavailable states, no mutable facts or actions, and no per-message enrichment request. Compact message/draft previews use fixed safe labels for every raw Token Card. Legacy fixture conversation and token/facts routes mount only in explicit Preview mode.
 - Foreground Stream Video principal-bound lifecycle, pre-construction initial-token gate, refresh loader, explicit no-push connection, UUID call-ID generator, production/preview voice-page separation, and a fail-closed Audio Room lobby/join path driven by official `CallState`.
 - Native Privy Bearer bootstrap with an HTTPS-only production origin, exact no-body request, strict no-store response parsing, principal rotation, single-flight loading, and one bounded 401 refresh attempt. Chat and Video share only the validated server-derived Stream identity; neither may connect without its separate short-lived token contract.
 
@@ -94,6 +95,20 @@ The foreground Audio Room app-side slice was re-verified on 2026-08-25:
 
 The behavior checks cover a fixed `audio_room` target parser, explicit camera/microphone/screen-share-disabled join options, speaker playback policy, single-flight commands and leave, one Speak start per Call, failed/late Call cleanup, sanitized errors, `Joined` versus `Connected` status presentation, mute availability during reconnection and after a failed leave, removal of the Speak affordance after retirement starts, immediate leave despite stuck Speak/native-suspension futures, explicit old-Call removal plus post-command terminal mute before fast resume/rejoin, cleanup failure/retry, and no automatic rejoin. Source guards and compilation additionally verify the principal-bound locator/client seams and that the foreground widget reads official participant, capability, and microphone fields directly from `CallState`; those projections were not rendered against a synthetic or live connected Call. The tests use fake room targets and call handles; no production target source is installed. No deployed Video-token endpoint, Stream Dashboard role inspection, backend room pre-creation, live join, operating-system permission prompt, audio route, two-device media, weak-network recovery, or provider capability test was run.
 
+The fail-closed Stream Token Card slice was verified on 2026-08-25:
+
+- `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/dart format --output=none --set-exit-if-changed lib test`: passed; 114 files, 0 changed.
+- `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/flutter analyze`: passed; no issues.
+- The focused preview-route, token-contract, attachment-builder, compact-preview and root-provider suite passed; 23 tests.
+- `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/flutter test`: passed; 161 tests.
+- `python3 -m py_compile scripts/check_harness.py tests/test_check_harness.py`: passed.
+- `python3 scripts/check_harness.py`: passed.
+- `python3 -m unittest discover -s tests -p 'test_*.py' -v`: passed; 20 tests.
+- `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/flutter build apk --debug`: passed; generated `app-debug.apk`. Flutter repeated the accepted Gradle 8.14/AGP 8.13.2 future-support warnings; the compatibility matrix was not changed.
+- `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/flutter build ios --debug --no-codesign`: passed; generated `Runner.app` for `com.cywd.loop`.
+
+The behavior checks cover exact `token_card.v1` identifier parsing and round-trip encoding, rejection of missing/additional/malformed/mutable fields, interception of raw Token Cards whose computed Stream type becomes a link preview, rejection of standard top-level URL/display fields and mixed/repeated cards, sanitization of compact message and draft previews, no production price/risk/Buy/Watch claim, narrow layout and 2x Dynamic Type for both production and Preview, explicit Preview labelling, disabled prototype Chart/Watch/Buy controls, root Stream configuration, and selection of the custom builder by the official `StreamMessageItem` renderer. Production widget tests also deep-link through every legacy conversation and token/facts route and prove that fixtures cannot mount outside explicit Preview mode. The renderer performs no enrichment request and no live provider or backend facts projection was tested. Price, liquidity, ownership, attributable contract facts, risk signals, watch state and trading actions remain intentionally unavailable in production; outgoing Token Card composition also remains disabled pending server-side wire-shape enforcement.
+
 ## Provider readiness
 
 | Capability | Current status |
@@ -102,7 +117,7 @@ The behavior checks cover a fixed `audio_room` target parser, explicit camera/mi
 | Privy Mobile App Client ID | Client-safe Development identifier supplied and wired; build-time override remains available |
 | Privy Email OTP | Guarded implementation; provider/device verification pending |
 | Stream API key | Client-safe identifier supplied |
-| Stream Chat | Official client, persistence, lifecycle, controller and UI integrated; backend-derived identity bootstrap is wired, while the short-lived Chat token source is still required |
+| Stream Chat | Official client, persistence, lifecycle, controller and UI integrated; strict identifier-only `token_card.v1` receive rendering is wired, while the short-lived Chat token source and fresh token-facts projection are still required |
 | Stream Video | Delayed foreground SDK lifecycle and Audio Room lobby/join/official-state UI integrated; backend-derived identity bootstrap and native microphone declarations are wired, while initial/refresh Video tokens, an authorized pre-created room target, no-`create-call` role evidence, and device verification are still required |
 | Firebase/push | No mobile configs or exact Stream push-provider names; initialization remains disabled and the auto-registering Stream Video Push plugin is not linked |
 | Hyperliquid public markets | Direct Testnet read-only adapter available |
@@ -110,4 +125,4 @@ The behavior checks cover a fixed `audio_room` target parser, explicit camera/mi
 
 ## Follow-up inputs
 
-Privy Email OTP still requires dashboard confirmation and physical-device evidence before it is called connected. Provide future Firebase mobile configuration only through documented client inputs. Keep Privy/Stream secrets, Firebase service-account JSON, APNs `.p8`, and Hyperliquid agent keys in backend/provider secret managers. A deployed bootstrap endpoint, Stream Chat/Video token contracts, an Audio Room locator that returns a pre-created room with a mobile role lacking `create-call`, and a two-device test setup are required before claiming communication or trading connectivity.
+Privy Email OTP still requires dashboard confirmation and physical-device evidence before it is called connected. Provide future Firebase mobile configuration only through documented client inputs. Keep Privy/Stream secrets, Firebase service-account JSON, APNs `.p8`, and Hyperliquid agent keys in backend/provider secret managers. A deployed bootstrap endpoint, Stream Chat/Video token contracts, an attributable freshness-bounded Token Card facts projection, an Audio Room locator that returns a pre-created room with a mobile role lacking `create-call`, and a two-device test setup are required before claiming communication or trading connectivity.

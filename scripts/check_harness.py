@@ -48,14 +48,77 @@ REQUIRED_FILES = (
     "docs/product-decisions.md",
     "docs/product/implementation-constraints.md",
     "docs/decisions/0001-merge-verified-mobile-foundation.md",
+    "docs/decisions/0006-use-identifier-only-stream-token-cards.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/privy-android-compile-sdk.md",
+    "docs/failures/production-chat-preview-route-leak.md",
     "docs/failures/swiftpm-file-picker-cold-cache.md",
     "docs/harness/adoption-report.md",
     "docs/open-source-attribution.md",
     "docs/phase-0/compatibility-report.md",
     "docs/phase-1/frontend-integration-report.md",
 )
+CHAT_PREVIEW_ONLY_ROUTES = (
+    "/chat/group",
+    "/chat/dm",
+    "/chat/group-info",
+    "/chat/requests",
+    "/chat/search",
+    "/preview/token-card",
+    "/preview/contract-facts",
+    "/preview/asset-message",
+)
+TOKEN_CARD_EXTRA_DATA_KEYS = frozenset(
+    {
+        "loop_schema",
+        "asset_id",
+        "chain_id",
+        "contract_id",
+        "snapshot_at",
+    }
+)
+TOKEN_CARD_RENDER_IMPORTS = {
+    "lib/features/chat/attachments/token_card_attachment.dart": frozenset(
+        {"'package:flutter/foundation.dart' show immutable"}
+    ),
+    "lib/features/chat/attachments/stream_token_card_attachment_policy.dart": frozenset(
+        {
+            "'package:loop_mobile/features/chat/attachments/token_card_attachment.dart'",
+            "'package:stream_chat_flutter/stream_chat_flutter.dart' show Attachment",
+        }
+    ),
+    "lib/features/chat/attachments/stream_token_card_attachment_builder.dart": frozenset(
+        {
+            "'package:flutter/widgets.dart' show BuildContext, Widget",
+            "'package:loop_mobile/features/chat/attachments/stream_token_card_attachment_policy.dart'",
+            "'package:loop_mobile/features/chat/widgets/token_card_view.dart'",
+            "'package:stream_chat_flutter/stream_chat_flutter.dart' show Attachment, Message, StreamAttachmentWidgetBuilder",
+        }
+    ),
+    "lib/features/chat/attachments/stream_token_card_message_preview_formatter.dart": frozenset(
+        {
+            "'package:flutter/widgets.dart' show BuildContext, TextSpan",
+            "'package:loop_mobile/features/chat/attachments/stream_token_card_attachment_policy.dart'",
+            "'package:stream_chat_flutter/stream_chat_flutter.dart' show ChannelModel, DraftMessage, Message, MessageState, StreamMessagePreviewFormatter, User",
+        }
+    ),
+    "lib/features/chat/widgets/token_card_view.dart": frozenset(
+        {
+            (
+                "'package:flutter/material.dart' show Alignment, Border, BoxDecoration, BoxShape, "
+                "BuildContext, ClipRRect, Column, Color, Container, CrossAxisAlignment, "
+                "DecoratedBox, EdgeInsets, Expanded, FontWeight, Icon, IconData, Icons, "
+                "MainAxisSize, OutlinedButton, Padding, Positioned, Row, Semantics, SizedBox, "
+                "Stack, StatelessWidget, Text, TextOverflow, Theme, ValueKey, Widget, immutable"
+            ),
+            (
+                "'package:loop_mobile/core/theme/loop_theme.dart' show "
+                "LoopColors, LoopRadius"
+            ),
+            "'package:loop_mobile/features/chat/attachments/token_card_attachment.dart'",
+        }
+    ),
+}
 DECISION_SECTIONS = ("Status", "Context", "Decision", "Consequences")
 FAILURE_SECTIONS = ("Summary", "Root Cause", "Detection", "Prevention", "Evidence")
 ADOPTION_SECTIONS = (
@@ -140,6 +203,74 @@ IOS_AUDIO_ROOM_FORBIDDEN_RUNNER_MARKERS = (
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def strip_dart_comments(text: str) -> str:
+    """Remove Dart comments while preserving strings and line boundaries."""
+
+    output: list[str] = []
+    index = 0
+    quote: str | None = None
+    triple = False
+    while index < len(text):
+        if quote is not None:
+            closing = quote * (3 if triple else 1)
+            if text.startswith(closing, index):
+                output.append(closing)
+                index += len(closing)
+                quote = None
+                triple = False
+                continue
+            character = text[index]
+            output.append(character)
+            index += 1
+            if not triple and character == "\\" and index < len(text):
+                output.append(text[index])
+                index += 1
+            continue
+
+        if text.startswith("//", index):
+            newline = text.find("\n", index + 2)
+            if newline < 0:
+                output.extend(" " * (len(text) - index))
+                break
+            output.extend(" " * (newline - index))
+            output.append("\n")
+            index = newline + 1
+            continue
+
+        if text.startswith("/*", index):
+            depth = 1
+            output.extend("  ")
+            index += 2
+            while index < len(text) and depth:
+                if text.startswith("/*", index):
+                    depth += 1
+                    output.extend("  ")
+                    index += 2
+                elif text.startswith("*/", index):
+                    depth -= 1
+                    output.extend("  ")
+                    index += 2
+                else:
+                    output.append("\n" if text[index] == "\n" else " ")
+                    index += 1
+            continue
+
+        if text.startswith("'''", index) or text.startswith('\"\"\"', index):
+            quote = text[index]
+            triple = True
+            output.append(quote * 3)
+            index += 3
+            continue
+        if text[index] in ("'", '"'):
+            quote = text[index]
+            output.append(text[index])
+            index += 1
+            continue
+        output.append(text[index])
+        index += 1
+    return "".join(output)
 
 
 def git_visible_paths(root: Path) -> tuple[list[Path], str | None]:
@@ -625,6 +756,179 @@ def check_product_contract(root: Path) -> list[str]:
     return errors
 
 
+def check_chat_attachment_contract(root: Path) -> list[str]:
+    """Keep preview conversations out of production and token cards fail-closed."""
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/app.dart": (
+                "LoopStreamTokenCardAttachmentBuilder()",
+                "LoopStreamTokenCardMessagePreviewFormatter()",
+                "configData: _loopStreamConfiguration",
+            ),
+            "lib/features/chat/chat_preview_route_guard.dart": (
+                "gateway.mode == CommunicationMode.preview",
+                "chat-preview-route-blocked",
+                "Offline preview only",
+            ),
+            "lib/features/chat/attachments/token_card_attachment.dart": (
+                "static const String attachmentType = 'token_card';",
+                "static const String schema = 'token_card.v1';",
+                "extraData.length != extraDataKeys.length",
+                "!extraData.keys.every(extraDataKeys.contains)",
+            ),
+            "lib/features/chat/attachments/stream_token_card_attachment_builder.dart": (
+                "extends StreamAttachmentWidgetBuilder",
+                "LoopStreamTokenCardAttachmentPolicy.containsRawTokenCard",
+                "LoopStreamTokenCardAttachmentPolicy.tryParse",
+                "LoopTokenCardViewState.unavailable",
+                "LoopTokenCardViewState.malformed",
+                "This builder performs no network request",
+            ),
+            "lib/features/chat/attachments/stream_token_card_attachment_policy.dart": (
+                "attachment.rawType == LoopTokenCardAttachment.attachmentType",
+                "_hasIdentifierOnlyTopLevelFields",
+                "materialized.length != 1",
+            ),
+            "lib/features/chat/attachments/stream_token_card_message_preview_formatter.dart": (
+                "extends StreamMessagePreviewFormatter",
+                "LoopStreamTokenCardAttachmentPolicy.containsRawTokenCard",
+                "unsupportedTokenCardLabel",
+                "formatMessageSemanticsLabel",
+                "formatDraftMessageSemanticsLabel",
+            ),
+            "lib/features/chat/widgets/token_card_view.dart": (
+                "Current facts unavailable",
+                "The message stores identifiers only",
+                "开发预览",
+            ),
+            "test/stream_token_card_attachment_builder_test.dart": (
+                "official Stream message renderer uses the configured builder",
+                "raw token card cannot escape into the default link renderer",
+                "find.byType(StreamLinkPreviewAttachment), findsNothing",
+                "find.text('Buy'), findsNothing",
+            ),
+            "test/stream_token_card_message_preview_formatter_test.dart": (
+                "compact Stream preview hides malicious token-card fields",
+                "draft preview also strips token-card attachment fields",
+                "find.textContaining('attacker.example'), findsNothing",
+            ),
+        },
+    )
+
+    app_path = root / "lib/app.dart"
+    if app_path.is_file():
+        app_text = strip_dart_comments(read_text(app_path))
+        for route in CHAT_PREVIEW_ONLY_ROUTES:
+            route_marker = f"path: '{route}'"
+            starts = [match.start() for match in re.finditer(re.escape(route_marker), app_text)]
+            if not starts:
+                errors.append(f"lib/app.dart must preserve preview-only route `{route}`")
+                continue
+            if len(starts) != 1:
+                errors.append(
+                    f"lib/app.dart preview-only route `{route}` must be declared exactly once"
+                )
+                continue
+            start = starts[0]
+            next_route = app_text.find("GoRoute(", start + len(route_marker))
+            route_block = app_text[start : next_route if next_route >= 0 else len(app_text)]
+            first_builder = re.search(r"\bbuilder\s*:", route_block)
+            guarded_builder = re.match(
+                r"builder\s*:\s*\([^)]*\)\s*=>\s*const\s+ChatPreviewRouteGuard\s*\(",
+                route_block[first_builder.start() :] if first_builder else "",
+            )
+            if guarded_builder is None:
+                errors.append(
+                    f"lib/app.dart preview-only route `{route}` must be wrapped by ChatPreviewRouteGuard"
+                )
+
+    model_path = root / "lib/features/chat/attachments/token_card_attachment.dart"
+    if model_path.is_file():
+        model_text = read_text(model_path)
+        match = re.search(
+            r"static const Set<String> extraDataKeys\s*=\s*<String>\{(?P<body>.*?)\};",
+            model_text,
+            re.DOTALL,
+        )
+        if match is None:
+            errors.append("token_card.v1 must declare a static exact extraDataKeys set")
+        else:
+            actual_keys = frozenset(re.findall(r"'([^']+)'", match.group("body")))
+            if actual_keys != TOKEN_CARD_EXTRA_DATA_KEYS:
+                errors.append(
+                    "token_card.v1 extraDataKeys must be exactly identifier-only: "
+                    f"expected {sorted(TOKEN_CARD_EXTRA_DATA_KEYS)}, found {sorted(actual_keys)}"
+                )
+            residual = re.sub(r"'[^']+'", "", match.group("body"))
+            if re.sub(r"[\s,]", "", residual):
+                errors.append(
+                    "token_card.v1 extraDataKeys must contain only the five literal keys; "
+                    "spreads and computed entries are forbidden"
+                )
+
+    for relative, allowed_imports in TOKEN_CARD_RENDER_IMPORTS.items():
+        render_path = root / relative
+        if not render_path.is_file():
+            continue
+        render_text = read_text(render_path)
+        executable_text = strip_dart_comments(render_text)
+        directives = tuple(
+            re.finditer(
+                r"^\s*(?P<kind>import|export|part)\b(?P<body>.*?);",
+                executable_text,
+                re.MULTILINE | re.DOTALL,
+            )
+        )
+        actual_imports: list[str] = []
+        invalid_directives: list[str] = []
+        for directive in directives:
+            body = " ".join(directive.group("body").split())
+            if directive.group("kind") != "import":
+                invalid_directives.append(directive.group(0).strip())
+                continue
+            actual_imports.append(body)
+        actual_import_set = frozenset(actual_imports)
+        if (
+            invalid_directives
+            or len(actual_imports) != len(actual_import_set)
+            or actual_import_set != allowed_imports
+        ):
+            errors.append(
+                f"{relative} imports must stay on the reviewed synchronous allowlist: "
+                f"expected {sorted(allowed_imports)}, found {sorted(actual_imports)}"
+            )
+        forbidden_builder_fragments = (
+            "Future<",
+            " async",
+            "await ",
+            "Dio",
+            "package:http",
+            "dart:io",
+            "HttpClient",
+            "StreamMessageListView",
+            "StreamChat.",
+            "StreamChatCore",
+            "StreamChatClient",
+            "StreamChannel.",
+            ".client",
+            "getMessage(",
+            "queryChannels(",
+            "Image.network(",
+            "NetworkImage",
+            "FadeInImage",
+            "NetworkAssetBundle",
+        )
+        for fragment in forbidden_builder_fragments:
+            if fragment in executable_text:
+                errors.append(
+                    "Stream token-card rendering must stay synchronous and must not create a "
+                    f"second message/network source in {render_path.relative_to(root)} (`{fragment}`)"
+                )
+    return errors
+
+
 def check_source_guards(root: Path) -> list[str]:
     forbidden = {
         "PrivyLogLevel.debug": "Privy debug logging can expose OTPs and access tokens",
@@ -681,6 +985,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_native_matrix(root))
     errors.extend(check_audio_room_native_contract(root))
     errors.extend(check_product_contract(root))
+    errors.extend(check_chat_attachment_contract(root))
     errors.extend(check_source_guards(root))
     errors.extend(check_records(root))
     visible, visible_error = git_visible_paths(root)
