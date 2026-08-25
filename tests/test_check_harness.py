@@ -1641,6 +1641,275 @@ class HarnessTests(unittest.TestCase):
                 msg=f"expected foreground Audio Room guard error containing {fragment!r}: {result}",
             )
 
+    def test_perp_positions_paths_are_required(self) -> None:
+        expected = {
+            "docs/decisions/0014-connect-perp-positions-projection.md",
+            "lib/features/perp/perp_portfolio_screens.dart",
+            "lib/features/perp/positions/perp_positions_controller.dart",
+            "test/perp_positions_controller_test.dart",
+            "test/perp_positions_screen_test.dart",
+        }
+
+        self.assertTrue(expected.issubset(set(check_harness.REQUIRED_FILES)))
+
+    def test_perp_positions_behavior_tests_cannot_be_hollowed_out(self) -> None:
+        for relative, markers in check_harness.PERP_POSITIONS_BEHAVIOR_TEST_MARKERS.items():
+            forged_markers = ", ".join(repr(marker) for marker in markers)
+            hollow_tests = "\n".join(
+                f"test({marker!r}, () {{ final observed = true; }});"
+                for marker in markers
+            )
+            dummy_assertions = "\n".join(
+                f"test({marker!r}, () {{ expect(true, isTrue); }});"
+                for marker in markers
+            )
+            hollow_sources = (
+                "void main() {}\n",
+                f"void main() {{ const markers = <String>[{forged_markers}]; }}\n",
+                "void main() {\n" + hollow_tests + "\n}\n",
+                "void main() {\n" + dummy_assertions + "\n}\n",
+            )
+            for source_text in hollow_sources:
+                with self.subTest(path=str(relative), source=source_text):
+                    with tempfile.TemporaryDirectory() as temporary:
+                        root = Path(temporary)
+                        test_path = root / relative
+                        test_path.parent.mkdir(parents=True)
+                        test_path.write_text(source_text, encoding="utf-8")
+
+                        result = check_harness.check_perp_positions_application_contract(
+                            root
+                        )
+
+                    self.assertTrue(
+                        any(
+                            "missing required behavior evidence" in error
+                            or "lacks executable contract evidence" in error
+                            for error in result
+                        ),
+                        msg=f"expected non-hollow Perp Positions guard: {result}",
+                    )
+
+    def test_perp_positions_every_marker_has_executable_evidence(self) -> None:
+        for relative, markers in check_harness.PERP_POSITIONS_BEHAVIOR_TEST_MARKERS.items():
+            configured = check_harness.PERP_POSITIONS_EXECUTABLE_TEST_EVIDENCE.get(
+                relative,
+                {},
+            )
+            self.assertEqual(set(markers), set(configured), msg=str(relative))
+
+    def test_perp_positions_dummy_assertions_fail_for_every_marker(self) -> None:
+        for relative, markers in check_harness.PERP_POSITIONS_BEHAVIOR_TEST_MARKERS.items():
+            source_text = "void main() {\n" + "\n".join(
+                f"test({marker!r}, () {{ expect(true, isTrue); }});"
+                for marker in markers
+            ) + "\n}\n"
+            with tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                test_path = root / relative
+                test_path.parent.mkdir(parents=True)
+                test_path.write_text(source_text, encoding="utf-8")
+
+                result = check_harness.check_named_executable_test_evidence(
+                    root,
+                    check_harness.PERP_POSITIONS_EXECUTABLE_TEST_EVIDENCE,
+                )
+
+            for marker in markers:
+                self.assertTrue(
+                    any(f"test `{marker}` lacks" in error for error in result),
+                    msg=f"expected evidence failure for {relative} / {marker}: {result}",
+                )
+
+    def test_perp_positions_malformed_cursor_cases_are_independently_guarded(
+        self,
+    ) -> None:
+        source = (
+            REPOSITORY_ROOT
+            / "test"
+            / "perp_positions_controller_test.dart"
+        ).read_text(encoding="utf-8")
+        mutations = (
+            (
+                "empty page with cursor",
+                "items: const <PerpPosition>[],\n"
+                "              nextCursor: 'cursor-without-progress',",
+                "items: <PerpPosition>[_position(PerpCoin.btc)],",
+            ),
+            (
+                "repeated cursor",
+                "items: <PerpPosition>[_position(PerpCoin.sol)],\n"
+                "                    nextCursor: 'same-cursor',",
+                "items: <PerpPosition>[_position(PerpCoin.sol)],",
+            ),
+        )
+        for name, before, after in mutations:
+            with self.subTest(case=name):
+                self.assertIn(before, source)
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    test_path = root / "test" / "perp_positions_controller_test.dart"
+                    test_path.parent.mkdir(parents=True)
+                    test_path.write_text(
+                        source.replace(before, after, 1),
+                        encoding="utf-8",
+                    )
+
+                    result = check_harness.check_named_executable_test_evidence(
+                        root,
+                        check_harness.PERP_POSITIONS_EXECUTABLE_TEST_EVIDENCE,
+                    )
+
+                self.assertTrue(
+                    any(
+                        "malformed dataset coverage and cursor pages clear all facts"
+                        in error
+                        for error in result
+                    ),
+                    msg=f"expected independent {name} evidence guard: {result}",
+                )
+
+    def test_perp_positions_contract_rejects_auto_bind_and_preview_leaks(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            controller = root / check_harness.PERP_POSITIONS_CONTROLLER_PATH
+            controller.parent.mkdir(parents=True)
+            controller_source = (
+                REPOSITORY_ROOT / check_harness.PERP_POSITIONS_CONTROLLER_PATH
+            ).read_text(encoding="utf-8")
+            controller.write_text(
+                controller_source.replace(
+                    "final page = await gateway.listPositions(limit: initialLimit);",
+                    "await gateway.bindWallet();\n"
+                    "      final page = await gateway.listPositions(limit: initialLimit);",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            surface = root / check_harness.PERP_POSITIONS_SURFACE_PATH
+            surface.parent.mkdir(parents=True, exist_ok=True)
+            surface_source = (
+                REPOSITORY_ROOT / check_harness.PERP_POSITIONS_SURFACE_PATH
+            ).read_text(encoding="utf-8")
+            surface.write_text(
+                surface_source.replace(
+                    "        const _PerpPositionsLiveBanner(),",
+                    "        Text(PerpPreviewData.ethPosition.toString()),\n"
+                    "        const _PerpPositionsLiveBanner(),",
+                    1,
+                ).replace(
+                    "No ETH fixture, mark price",
+                    "ETH-PERP fixture, mark price",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_perp_positions_application_contract(root)
+
+        self.assertTrue(
+            any("must never perform wallet binding" in error for error in result),
+            msg=f"expected wallet-binding guard: {result}",
+        )
+        self.assertTrue(
+            any("PerpPreviewData" in error for error in result),
+            msg=f"expected live-preview guard: {result}",
+        )
+        self.assertTrue(
+            any("Production D5" in error and "ETH-PERP" in error for error in result),
+            msg=f"expected D5 fail-closed guard: {result}",
+        )
+
+    def test_perp_positions_selectors_cannot_invert_preview_and_production(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            surface = root / check_harness.PERP_POSITIONS_SURFACE_PATH
+            surface.parent.mkdir(parents=True)
+            source = (
+                REPOSITORY_ROOT / check_harness.PERP_POSITIONS_SURFACE_PATH
+            ).read_text(encoding="utf-8")
+            surface.write_text(
+                source.replace(
+                    "if (!ref.watch(developmentPreviewEnabledProvider)) {",
+                    "if (ref.watch(developmentPreviewEnabledProvider)) {",
+                    1,
+                ).replace(
+                    "if (ref.watch(developmentPreviewEnabledProvider)) {",
+                    "if (!ref.watch(developmentPreviewEnabledProvider)) {",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_perp_positions_application_contract(root)
+
+        self.assertTrue(
+            any("PerpPositionsScreen must select Preview only" in error for error in result),
+            msg=f"expected D4 selector guard: {result}",
+        )
+        self.assertTrue(
+            any("PerpPositionScreen must fail closed" in error for error in result),
+            msg=f"expected D5 selector guard: {result}",
+        )
+
+    def test_perp_positions_continuation_must_remain_cursor_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            controller = root / check_harness.PERP_POSITIONS_CONTROLLER_PATH
+            controller.parent.mkdir(parents=True)
+            source = (
+                REPOSITORY_ROOT / check_harness.PERP_POSITIONS_CONTROLLER_PATH
+            ).read_text(encoding="utf-8")
+            controller.write_text(
+                source.replace(
+                    "gateway.listPositions(cursor: cursor)",
+                    "gateway.listPositions(limit: initialLimit, cursor: cursor)",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_perp_positions_application_contract(root)
+
+        self.assertTrue(
+            any("cursor-only call site" in error for error in result),
+            msg=f"expected cursor-only continuation guard: {result}",
+        )
+
+    def test_perp_positions_expiry_releases_retired_single_flight(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            controller = root / check_harness.PERP_POSITIONS_CONTROLLER_PATH
+            controller.parent.mkdir(parents=True)
+            source = (
+                REPOSITORY_ROOT / check_harness.PERP_POSITIONS_CONTROLLER_PATH
+            ).read_text(encoding="utf-8")
+            controller.write_text(
+                source.replace(
+                    "    _generation += 1;\n"
+                    "    _operation = null;\n"
+                    "    _cancelExpiry();\n"
+                    "    state = PerpPositionsState._(\n"
+                    "      mode: state.mode,\n"
+                    "      phase: PerpPositionsPhase.stale,",
+                    "    _generation += 1;\n"
+                    "    _cancelExpiry();\n"
+                    "    state = PerpPositionsState._(\n"
+                    "      mode: state.mode,\n"
+                    "      phase: PerpPositionsPhase.stale,",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_perp_positions_application_contract(root)
+
+        self.assertTrue(
+            any("release a retired logical single-flight" in error for error in result),
+            msg=f"expected expiry single-flight guard: {result}",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

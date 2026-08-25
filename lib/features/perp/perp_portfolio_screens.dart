@@ -1,12 +1,21 @@
+import 'dart:async';
+
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/perp/perp_models.dart';
 import 'package:loop_mobile/features/perp/perp_widgets.dart';
+import 'package:loop_mobile/features/perp/positions/perp_positions_controller.dart';
+import 'package:loop_mobile/features/perp/private/perp_private_gateway.dart';
+import 'package:loop_mobile/features/perp/private/perp_private_models.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
 /// D4 — Current position projection.
-class PerpPositionsScreen extends StatelessWidget {
+class PerpPositionsScreen extends ConsumerWidget {
   const PerpPositionsScreen({
     super.key,
     this.snapshotState = PerpSnapshotState.preview,
@@ -15,10 +24,25 @@ class PerpPositionsScreen extends StatelessWidget {
   final PerpSnapshotState snapshotState;
 
   @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(developmentPreviewEnabledProvider)) {
+      return _PerpPositionsPreview(snapshotState: snapshotState);
+    }
+    return const _PerpPositionsLive();
+  }
+}
+
+class _PerpPositionsPreview extends StatelessWidget {
+  const _PerpPositionsPreview({required this.snapshotState});
+
+  final PerpSnapshotState snapshotState;
+
+  @override
   Widget build(BuildContext context) {
     final hasFacts = snapshotState == PerpSnapshotState.preview;
     return LoopPage(
-      eyebrow: 'D4 · Provider positions',
+      key: const ValueKey<String>('perp-preview-positions'),
+      eyebrow: 'D4 · Provider positions · 开发预览',
       title: 'Positions',
       subtitle: 'PnL and liquidation values render only from a fresh, correlated Hyperliquid snapshot.',
       actions: <Widget>[
@@ -93,6 +117,522 @@ class PerpPositionsScreen extends StatelessWidget {
       ],
     );
   }
+}
+
+class _PerpPositionsLive extends ConsumerStatefulWidget {
+  const _PerpPositionsLive();
+
+  @override
+  ConsumerState<_PerpPositionsLive> createState() => _PerpPositionsLiveState();
+}
+
+class _PerpPositionsLiveState extends ConsumerState<_PerpPositionsLive>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.read(perpPositionsControllerProvider.notifier).expireIfNeeded();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final session = ref.watch(loopSessionProvider);
+    final state = ref.watch(perpPositionsControllerProvider);
+    final controller = ref.read(perpPositionsControllerProvider.notifier);
+    final wallet = session.account?.wallet?.address;
+    final factsAreFresh = state.hasFreshFactsAt(
+      ref.read(perpPositionsClockProvider)(),
+    );
+    if (state.phase == PerpPositionsPhase.ready && !factsAreFresh) {
+      scheduleMicrotask(() {
+        if (mounted) controller.expireIfNeeded();
+      });
+    }
+    if (session.canUseProviderBackedFeatures &&
+        wallet != null &&
+        state.phase == PerpPositionsPhase.initial) {
+      scheduleMicrotask(() {
+        if (mounted) unawaited(controller.load());
+      });
+    }
+
+    return LoopPage(
+      key: const ValueKey<String>('perp-live-positions'),
+      eyebrow: 'D4 · Hyperliquid Testnet',
+      title: 'Positions',
+      subtitle: 'Short-lived Core Perp positions read through the LOOP backend. Continuation pages are live keyset reads, not one point-in-time snapshot.',
+      actions: <Widget>[
+        IconButton(
+          key: const ValueKey<String>('perp-positions-refresh'),
+          onPressed:
+              state.isBusy ||
+                  !session.canUseProviderBackedFeatures ||
+                  wallet == null
+              ? null
+              : () => unawaited(controller.refresh()),
+          tooltip: 'Refresh position projection',
+          icon: const Icon(Icons.refresh_rounded),
+        ),
+        IconButton(
+          onPressed: () => context.push('/perp/account'),
+          tooltip: 'Open Perp account',
+          icon: const Icon(Icons.account_balance_wallet_outlined),
+        ),
+      ],
+      children: <Widget>[
+        const _PerpPositionsLiveBanner(),
+        const SizedBox(height: 18),
+        if (!session.canUseProviderBackedFeatures)
+          const LoopStateCard(
+            title: 'Verified Privy session required',
+            message: 'Sign in online and complete verification before LOOP requests any private position fact.',
+            icon: Icons.person_off_outlined,
+            tone: LoopTone.warning,
+          )
+        else if (wallet == null)
+          LoopStateCard(
+            title: 'Perp account setup required',
+            message: 'Create a Privy wallet from the Perp account page first. Wallet creation never binds it automatically.',
+            icon: Icons.account_balance_wallet_outlined,
+            tone: LoopTone.warning,
+            action: FilledButton.icon(
+              onPressed: () => context.push('/perp/account'),
+              icon: const Icon(Icons.arrow_forward_rounded),
+              label: const Text('Open Perp account'),
+            ),
+          )
+        else
+          ..._stateContent(context, state, controller, factsAreFresh),
+      ],
+    );
+  }
+
+  List<Widget> _stateContent(
+    BuildContext context,
+    PerpPositionsState state,
+    PerpPositionsController controller,
+    bool factsAreFresh,
+  ) {
+    return switch (state.phase) {
+      PerpPositionsPhase.initial ||
+      PerpPositionsPhase.loading => const <Widget>[_LoadingPositionsCard()],
+      PerpPositionsPhase.ready => <Widget>[
+        if (factsAreFresh)
+          ..._readyContent(context, state, controller)
+        else
+          _positionsFailureCard(
+            title: 'Position projection expired',
+            message: 'The backend freshness window ended, so LOOP will clear every position value before rendering another frame.',
+            state: state,
+            controller: controller,
+            icon: Icons.history_toggle_off_rounded,
+          ),
+      ],
+      PerpPositionsPhase.bindingRequired => <Widget>[
+        LoopStateCard(
+          key: const ValueKey<String>('perp-positions-binding-required'),
+          title: 'Wallet binding required',
+          message: _appendRequestId(
+            'The LOOP backend requires a freshly reviewed Privy wallet binding before private positions can be read. This page never binds automatically.',
+            state.requestId,
+          ),
+          icon: Icons.link_rounded,
+          tone: LoopTone.warning,
+          action: FilledButton.icon(
+            onPressed: () async {
+              await context.push<void>('/perp/account');
+              if (mounted) unawaited(controller.refresh());
+            },
+            icon: const Icon(Icons.arrow_forward_rounded),
+            label: const Text('Review in Perp account'),
+          ),
+        ),
+      ],
+      PerpPositionsPhase.stale => <Widget>[
+        _positionsFailureCard(
+          title: 'Position projection expired',
+          message: 'The backend freshness window ended, so LOOP cleared size, PnL, margin, and liquidation facts.',
+          state: state,
+          controller: controller,
+          icon: Icons.history_toggle_off_rounded,
+        ),
+      ],
+      PerpPositionsPhase.unavailable => <Widget>[
+        _positionsFailureCard(
+          title: 'Private positions unavailable',
+          message: 'The secure backend session is unavailable. No preview position is substituted in production.',
+          state: state,
+          controller: controller,
+          icon: Icons.cloud_off_outlined,
+        ),
+      ],
+      PerpPositionsPhase.failure => <Widget>[
+        _positionsFailureCard(
+          title: 'Position projection unavailable',
+          message: _positionsFailureMessage(state.failureKind),
+          state: state,
+          controller: controller,
+          icon: Icons.cloud_off_outlined,
+        ),
+      ],
+    };
+  }
+
+  List<Widget> _readyContent(
+    BuildContext context,
+    PerpPositionsState state,
+    PerpPositionsController controller,
+  ) {
+    return <Widget>[
+      LoopSectionLabel(
+        'Open Core Perp positions',
+        trailing: LoopStatusPill(
+          label: state.items.isEmpty
+              ? 'EMPTY · FRESH'
+              : '${state.items.length} LOADED · FRESH',
+          tone: state.items.isEmpty ? LoopTone.neutral : LoopTone.positive,
+        ),
+      ),
+      if (state.items.isEmpty)
+        LoopStateCard(
+          key: const ValueKey<String>('perp-positions-empty'),
+          title: 'No open Core Perp positions',
+          message: 'The current fresh Testnet response contains no BTC, ETH, or SOL position.',
+          icon: Icons.layers_clear_outlined,
+          action: OutlinedButton.icon(
+            onPressed: () => unawaited(controller.refresh()),
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Refresh'),
+          ),
+        )
+      else
+        for (var index = 0; index < state.items.length; index++) ...<Widget>[
+          _LivePositionCard(position: state.items[index]),
+          if (index != state.items.length - 1) const SizedBox(height: 10),
+        ],
+      if (state.pageFailureKind != null) ...<Widget>[
+        const SizedBox(height: 12),
+        LoopStateCard(
+          key: const ValueKey<String>('perp-positions-page-failure'),
+          title: 'More positions could not be loaded',
+          message: _appendRequestId(
+            'The already displayed page remains fresh. LOOP did not hide it or claim the continuation is complete.',
+            state.pageRequestId,
+          ),
+          icon: Icons.sync_problem_rounded,
+          tone: LoopTone.warning,
+          action: OutlinedButton.icon(
+            key: const ValueKey<String>('perp-positions-retry-more'),
+            onPressed: () => unawaited(controller.loadMore()),
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Retry more'),
+          ),
+        ),
+      ] else if (state.isLoadingMore) ...<Widget>[
+        const SizedBox(height: 12),
+        const _LoadingMorePositionsCard(),
+      ] else if (state.nextCursor != null) ...<Widget>[
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          key: const ValueKey<String>('perp-positions-load-more'),
+          onPressed: () => unawaited(controller.loadMore()),
+          icon: const Icon(Icons.expand_more_rounded),
+          label: const Text('Load more positions'),
+        ),
+      ],
+      const LoopSectionLabel('Freshness'),
+      LoopCard(
+        key: const ValueKey<String>('perp-positions-freshness'),
+        child: Column(
+          children: <Widget>[
+            LoopKeyValueRow(
+              label: 'Last page fetched',
+              value: _formatPositionTime(state.lastFetchedAt!),
+            ),
+            LoopKeyValueRow(
+              label: 'Projection expires',
+              value: _formatPositionTime(state.expiresAt!),
+            ),
+            LoopKeyValueRow(label: 'Pages loaded', value: '${state.pageCount}'),
+            const LoopKeyValueRow(
+              label: 'Pagination',
+              value: 'Live keyset · not a frozen snapshot',
+              last: true,
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 12),
+      const PerpReadOnlyNotice(
+        message: 'This screen reads positions only. Close, reduce, leverage, margin, TP/SL, transfer, withdrawal, signing, and every trading mutation remain unavailable.',
+      ),
+    ];
+  }
+
+  Widget _positionsFailureCard({
+    required String title,
+    required String message,
+    required PerpPositionsState state,
+    required PerpPositionsController controller,
+    required IconData icon,
+  }) {
+    return Semantics(
+      key: const ValueKey<String>('perp-positions-status-live-region'),
+      liveRegion: true,
+      child: LoopStateCard(
+        title: title,
+        message: _appendRequestId(message, state.requestId),
+        icon: icon,
+        tone: LoopTone.warning,
+        action: OutlinedButton.icon(
+          onPressed: state.isBusy
+              ? null
+              : () => unawaited(controller.refresh()),
+          icon: const Icon(Icons.refresh_rounded),
+          label: const Text('Try again'),
+        ),
+      ),
+    );
+  }
+}
+
+class _PerpPositionsLiveBanner extends StatelessWidget {
+  const _PerpPositionsLiveBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Hyperliquid Testnet private positions, backend mediated and read-only',
+      child: LoopCard(
+        child: Row(
+          children: <Widget>[
+            const Icon(Icons.lock_outline_rounded, color: LoopColors.mint),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'BACKEND-MEDIATED · TESTNET',
+                    style: Theme.of(context).textTheme.labelMedium
+                        ?.copyWith(color: LoopColors.mint, letterSpacing: 0.8),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Private position facts expire quickly; trading writes stay locked.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LoadingPositionsCard extends StatelessWidget {
+  const _LoadingPositionsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      key: const ValueKey<String>('perp-live-positions-loading'),
+      liveRegion: true,
+      label: 'Loading fresh positions',
+      child: LoopCard(
+        child: Row(
+          children: <Widget>[
+            const SizedBox.square(
+              dimension: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 13),
+            Expanded(
+              child: Text(
+                'Loading fresh positions',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LoadingMorePositionsCard extends StatelessWidget {
+  const _LoadingMorePositionsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      liveRegion: true,
+      label: 'Loading more positions',
+      child: const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: SizedBox.square(
+            dimension: 22,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LivePositionCard extends StatelessWidget {
+  const _LivePositionCard({required this.position});
+
+  final PerpPosition position;
+
+  @override
+  Widget build(BuildContext context) {
+    final symbol = position.coin.name.toUpperCase();
+    final side = switch (position.side) {
+      PerpPositionSide.long => 'Long',
+      PerpPositionSide.short => 'Short',
+    };
+    final leverageMode = switch (position.leverage.mode) {
+      PerpLeverageMode.cross => 'Cross',
+      PerpLeverageMode.isolated => 'Isolated',
+    };
+    final pnlTone = _positionDecimalTone(position.unrealizedPnl);
+    final roePercent = position.returnOnEquity * Decimal.fromInt(100);
+    return LoopCard(
+      key: ValueKey<String>('perp-live-position-${position.coin.name}'),
+      accent: position.unrealizedPnl != Decimal.zero,
+      tone: pnlTone,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              LoopAssetMark(symbol: symbol, size: 44),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      '$symbol-PERP',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      '$side · ${position.leverage.value}× $leverageMode · One-way',
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          LoopKeyValueRow(
+            label: 'Unrealized PnL',
+            value: '${_signedPositionDecimal(position.unrealizedPnl)} USDC',
+            tone: pnlTone,
+          ),
+          LoopKeyValueRow(
+            label: 'Return on equity',
+            value: '${_signedPositionDecimal(roePercent)}%',
+            tone: _positionDecimalTone(roePercent),
+          ),
+          LoopKeyValueRow(
+            label: 'Position size',
+            value: '${position.size} $symbol',
+          ),
+          LoopKeyValueRow(
+            label: 'Entry price',
+            value: position.entryPrice == null
+                ? 'Unavailable'
+                : '${position.entryPrice} USDC',
+          ),
+          LoopKeyValueRow(
+            label: 'Liquidation estimate',
+            value: position.liquidationPrice == null
+                ? 'Unavailable'
+                : '${position.liquidationPrice} USDC',
+            tone: position.liquidationPrice == null
+                ? LoopTone.neutral
+                : LoopTone.warning,
+          ),
+          LoopKeyValueRow(
+            label: 'Margin used',
+            value: '${position.marginUsed} USDC',
+          ),
+          LoopKeyValueRow(
+            label: 'Position value',
+            value: '${position.positionValue} USDC',
+          ),
+          LoopKeyValueRow(
+            label: 'Leverage raw USD',
+            value: position.leverage.rawUsd == null
+                ? 'Unavailable'
+                : '${position.leverage.rawUsd} USDC',
+            last: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+LoopTone _positionDecimalTone(Decimal value) {
+  final comparison = value.compareTo(Decimal.zero);
+  if (comparison > 0) return LoopTone.positive;
+  if (comparison < 0) return LoopTone.danger;
+  return LoopTone.neutral;
+}
+
+String _signedPositionDecimal(Decimal value) {
+  return value.compareTo(Decimal.zero) > 0 ? '+$value' : '$value';
+}
+
+String _appendRequestId(String message, String? requestId) {
+  return requestId == null ? message : '$message\n\nRequest ID: $requestId';
+}
+
+String _positionsFailureMessage(PerpGatewayFailureKind? kind) => switch (kind) {
+  PerpGatewayFailureKind.authentication ||
+  PerpGatewayFailureKind.bootstrapRequired => 'The verified backend session ended. Sign in again or retry after Privy reconnects.',
+  PerpGatewayFailureKind.walletBindingRequired =>
+    'Review the wallet binding in Perp account before reading positions again.',
+  PerpGatewayFailureKind.versionConflict => 'The wallet-binding version changed, so the previous projection was cleared.',
+  PerpGatewayFailureKind.invalidRequest =>
+    'The bounded position request or its continuation cursor was rejected.',
+  PerpGatewayFailureKind.timeout || PerpGatewayFailureKind.connection => 'LOOP could not obtain a fresh response. Previous position values were cleared.',
+  PerpGatewayFailureKind.cancelled => 'The request was retired because the active identity, wallet, or backend changed.',
+  PerpGatewayFailureKind.invalidData => 'The response failed strict source, ordering, pagination, schema, or freshness validation.',
+  PerpGatewayFailureKind.unavailable =>
+    'The private-read backend is currently unavailable.',
+  PerpGatewayFailureKind.unexpected ||
+  null => 'The private position projection could not be completed safely.',
+};
+
+String _formatPositionTime(DateTime value) {
+  final utc = value.toUtc();
+  String two(int part) => part.toString().padLeft(2, '0');
+  String three(int part) => part.toString().padLeft(3, '0');
+  return '${utc.year}-${two(utc.month)}-${two(utc.day)} '
+      '${two(utc.hour)}:${two(utc.minute)}:${two(utc.second)}.'
+      '${three(utc.millisecond)} UTC';
 }
 
 class _PositionCard extends StatelessWidget {
@@ -183,7 +723,7 @@ class _PositionCard extends StatelessWidget {
 }
 
 /// D5 — Position detail and disabled management actions.
-class PerpPositionScreen extends StatelessWidget {
+class PerpPositionScreen extends ConsumerWidget {
   const PerpPositionScreen({
     super.key,
     this.snapshotState = PerpSnapshotState.preview,
@@ -192,11 +732,15 @@ class PerpPositionScreen extends StatelessWidget {
   final PerpSnapshotState snapshotState;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(developmentPreviewEnabledProvider)) {
+      return const _PerpPositionLiveUnavailable();
+    }
     final hasFacts = snapshotState == PerpSnapshotState.preview;
     const position = PerpPreviewData.ethPosition;
     return LoopPage(
-      eyebrow: 'D5 · ${position.id}',
+      key: const ValueKey<String>('perp-preview-position-detail'),
+      eyebrow: 'D5 · ${position.id} · 开发预览',
       title: '${position.symbol} position',
       subtitle: 'Inspect liquidation and margin facts without exposing a production mutation path.',
       children: <Widget>[
@@ -359,6 +903,35 @@ class PerpPositionScreen extends StatelessWidget {
             label: const Text('Inspect funding history'),
           ),
         ],
+      ],
+    );
+  }
+}
+
+class _PerpPositionLiveUnavailable extends StatelessWidget {
+  const _PerpPositionLiveUnavailable();
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopPage(
+      key: const ValueKey<String>('perp-position-live-unavailable'),
+      eyebrow: 'D5 · Hyperliquid Testnet',
+      title: 'Position detail',
+      subtitle: 'The production detail projection is intentionally unavailable until it can share a fresh D4 position without adding a second source of truth.',
+      children: <Widget>[
+        const _PerpPositionsLiveBanner(),
+        const SizedBox(height: 18),
+        LoopStateCard(
+          title: 'Live position detail unavailable',
+          message: 'No ETH fixture, mark price, liquidation distance, or management control is substituted here. Return to the fresh read-only Positions page.',
+          icon: Icons.lock_outline_rounded,
+          tone: LoopTone.warning,
+          action: FilledButton.icon(
+            onPressed: () => context.go('/perp/positions'),
+            icon: const Icon(Icons.arrow_back_rounded),
+            label: const Text('Back to Positions'),
+          ),
+        ),
       ],
     );
   }

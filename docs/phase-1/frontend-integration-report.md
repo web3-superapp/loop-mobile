@@ -214,6 +214,7 @@ The deterministic behavior suite covers the exact four event wire values, unknow
 | Stream Video | Delayed foreground SDK lifecycle and Audio Room lobby/join/official-state UI integrated; backend-derived identity bootstrap and native microphone declarations are wired, while initial/refresh Video tokens, an authorized pre-created room target, no-`create-call` role evidence, and device verification are still required |
 | Firebase/push | Provider-neutral intent contract and fail-closed UI verified; no mobile configs, exact Stream push-provider names, or captured payload fixtures, so initialization/handlers/device registration remain disabled and the auto-registering Stream Video Push plugin is not linked |
 | Hyperliquid public markets | Direct Testnet read-only adapter available |
+| Hyperliquid private reads | D8 account and D4 positions use the principal/wallet-rotated LOOP backend session; D4 is short-lived, bounded, cursor-only on continuation, Decimal-safe, and read-only. D5, orders, fills, and funding production projections remain unavailable |
 | Watchlist | Providerless models/controller/UI complete; production adapter unavailable and no account persistence claimed |
 | Profile presentation | Providerless exact models/controller/H1-H2 UI complete; production adapter and avatar source unavailable, with no account persistence claimed |
 | Privacy preferences | Providerless exact models/controller/UI complete; production adapter unavailable, and the saved preference is not discovery, follower or Copy Trading authorization/execution evidence |
@@ -229,8 +230,9 @@ Privy Email OTP still requires dashboard confirmation and physical-device eviden
 The private Perp read branch was merged into the active integration line on
 2026-08-25. Production D8 now composes a lazy, verified-principal and
 wallet-rotated backend session for wallet-binding, config, and account reads.
-Positions, orders, fills, and funding have strict integration transports but
-remain unmounted from production product pages. Order, cancel, leverage,
+At that merge, positions, orders, fills, and funding had strict integration
+transports but remained unmounted from production product pages. Order,
+cancel, leverage,
 transfer, withdrawal, signing, Mainnet, and automated trading remain disabled.
 
 The merge review found and corrected one cross-principal wallet-creation race:
@@ -278,3 +280,60 @@ These checks use deterministic gateways and native no-codesign builds. No live
 Privy OTP, wallet creation, deployed backend response, wallet binding,
 Hyperliquid account data, TLS tunnel, physical-device connectivity, or store
 signing was exercised; those remain unverified rather than passing.
+
+## Perp Positions production projection
+
+Decision 0014 mounts D4 Positions through the existing principal/wallet-rotated
+private Perp gateway. The first request is bounded to two Core positions and
+one explicit continuation at a time uses only the opaque backend cursor. The
+controller validates dataset, coverage absence, strict coin ordering, cursor
+progress, and non-empty continuation progress. It takes the earliest expiry
+across loaded pages, clears both non-empty and empty facts at that deadline,
+checks the clock again on app resume, and retires late results after owner
+rotation or expiry.
+
+Production renders only strict `Decimal` position fields and labels the count
+as loaded/fresh rather than a total. It does not synthesize mark price,
+portfolio risk, or liquidation distance. Binding-required state routes to the
+explicit D8 account flow and retries when that route returns, but D4 never
+binds a wallet. D5 production detail now fails closed instead of falling back
+to its ETH fixture; the original D4/D5 fixtures remain only in the visibly
+labelled Development Preview branch. Every close, reduce, leverage, margin,
+TP/SL, transfer, withdrawal, signing, and trading mutation remains unavailable.
+
+Review found and corrected a stale single-flight edge: if a continuation stayed
+physically pending beyond the projection expiry, the old Future could prevent
+an immediate fresh read. Expiry now releases that retired logical operation,
+while generation checks still prevent its late result from changing the fresh
+projection. The UI also announces expiry/failure through a semantic live region
+and avoids presenting a loaded page count as the complete live total.
+
+Final verification on 2026-08-25:
+
+- `bin/flutter pub get`: passed; the exact dependency graph and lockfiles did
+  not change.
+- `bin/dart format --output=none --set-exit-if-changed lib test`: passed; 165
+  files, 0 changed.
+- `bin/flutter analyze`: passed; no issues.
+- `bin/flutter test test/perp_positions_controller_test.dart
+  test/perp_positions_screen_test.dart`: passed; 21 tests.
+- `bin/flutter test`: passed; 379 tests.
+- `python3 -m py_compile scripts/check_harness.py
+  tests/test_check_harness.py`: passed.
+- `python3 scripts/check_harness.py`: passed.
+- `python3 -m unittest discover -s tests -p 'test_*.py'`: passed; 75 tests.
+- `bin/flutter build apk --debug`: passed; generated `app-debug.apk`.
+- `bin/flutter build apk --release`: passed; generated the intentionally
+  unsigned 135.4 MB `app-release.apk`. The accepted Gradle 8.14 / AGP 8.13.2
+  future-support warnings were unchanged.
+- `bin/flutter build ios --debug --no-codesign`: passed; generated
+  `Runner.app` for `com.cywd.loop`.
+- `bin/flutter build ios --release --no-codesign`: passed; generated a 56.6 MB
+  `Runner.app` for `com.cywd.loop`.
+
+The behavior suite uses deterministic gateways and simulated lifecycle time.
+It does not prove live Privy OTP, wallet creation or binding, a deployed backend
+response, non-empty Hyperliquid Testnet account data, TLS/device connectivity,
+provider pagination behavior, or store signing. D5 detail, orders, fills,
+funding, trading writes, Firebase, and background delivery remain separate
+unverified slices.

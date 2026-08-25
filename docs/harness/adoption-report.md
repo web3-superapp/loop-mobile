@@ -173,3 +173,30 @@ analyze reported no issues, the full Flutter suite passed 358 tests, and
 Android Debug/Release plus iOS Debug/Release no-codesign builds passed. Exact
 commands, packaged Android permission evidence, and remaining provider/device
 gaps are recorded in the Phase 1 integration report.
+
+## Perp Positions Projection Update
+
+On 2026-08-25, decision 0014 mounted D4 through the existing backend-mediated
+private gateway without enabling a trading mutation. The Harness now requires
+the Positions controller, production/Preview surface, behavior tests, and
+decision record. It locks the bounded initial call, cursor-only continuation,
+logical single-flight release on expiry, dataset/coverage/order/cursor
+validation, Decimal-only live rendering, explicit binding route, D5
+fail-closed boundary, and semantic expiry announcement.
+
+The guard parses the executable D4 and D5 selectors so reversing the
+Development Preview condition fails validation. Each named behavior test has a
+one-to-one domain-specific executable evidence map; marker constants and dummy
+`expect(true, isTrue)` bodies fail. Mutation tests independently remove the
+empty-page cursor case, repeated-cursor case, cursor-only request, expired
+single-flight release, selector boundary, wallet-binding boundary, and live
+fixture isolation to prove that these regressions are detected.
+
+The complete Harness mutation suite passed 75 tests. Flutter format covered
+165 files with no changes, the focused Positions suite passed 21 tests, the
+full Flutter suite passed 379 tests, and analyze, Android Debug/Release, and
+iOS Debug/Release no-codesign builds passed. Exact commands and the remaining
+provider/device gaps are recorded in the Phase 1 integration report. No failure
+memory was added because the stale-operation edge and Harness false-confidence
+gaps were caught and fixed during pre-commit review rather than reproduced in a
+released production path.

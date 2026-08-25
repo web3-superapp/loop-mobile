@@ -56,6 +56,7 @@ REQUIRED_FILES = (
     "docs/decisions/0011-model-privacy-preferences-before-http-adapter.md",
     "docs/decisions/0012-model-notification-preferences-before-http-adapter.md",
     "docs/decisions/0013-connect-principal-bound-perp-private-reads.md",
+    "docs/decisions/0014-connect-perp-positions-projection.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/providerless-notification-fixtures.md",
     "docs/failures/privy-android-compile-sdk.md",
@@ -87,6 +88,8 @@ REQUIRED_FILES = (
     "lib/features/profile/notification_preferences/notification_preferences_models.dart",
     "lib/integrations/personalization/memory_notification_preferences_gateway.dart",
     "lib/features/perp/account/perp_account_controller.dart",
+    "lib/features/perp/perp_portfolio_screens.dart",
+    "lib/features/perp/positions/perp_positions_controller.dart",
     "lib/features/perp/private/perp_private_gateway.dart",
     "lib/features/perp/private/perp_private_models.dart",
     "lib/integrations/backend/loop_perp_providers.dart",
@@ -113,6 +116,8 @@ REQUIRED_FILES = (
     "test/loop_perp_session_test.dart",
     "test/perp_account_controller_test.dart",
     "test/perp_account_screen_test.dart",
+    "test/perp_positions_controller_test.dart",
+    "test/perp_positions_screen_test.dart",
 )
 CHAT_PREVIEW_ONLY_ROUTES = (
     "/chat/group",
@@ -570,6 +575,120 @@ NOTIFICATION_PREFERENCES_BEHAVIOR_TEST_MARKERS = {
         "Notification Preferences supports a 390pt screen at 2x Dynamic Type",
         "legacy H9 categories and fake delivery claims are absent",
     ),
+}
+PERP_POSITIONS_CONTROLLER_PATH = Path(
+    "lib/features/perp/positions/perp_positions_controller.dart"
+)
+PERP_POSITIONS_SURFACE_PATH = Path(
+    "lib/features/perp/perp_portfolio_screens.dart"
+)
+PERP_POSITIONS_BEHAVIOR_TEST_MARKERS = {
+    Path("test/perp_positions_controller_test.dart"): (
+        "all position reads share one single-flight",
+        "initial read uses bounded limit and continuation uses cursor only",
+        "malformed dataset coverage and cursor pages clear all facts",
+        "expiry clears nonempty and empty position facts",
+        "gateway rotation retires late positions from the previous owner",
+        "expired load-more releases single-flight for a fresh initial read",
+        "wallet binding rejection never attempts a binding mutation",
+    ),
+    Path("test/perp_positions_screen_test.dart"): (
+        "explicit Preview is labelled and performs no private read",
+        "production renders Decimal-backed positions without fixture facts",
+        "production binding failure links to Perp account without binding",
+        "returning from Perp account retries positions without binding",
+        "resume clears expired position facts",
+        "production D5 fails closed without an ETH fixture",
+    ),
+}
+PERP_POSITIONS_EXECUTABLE_TEST_EVIDENCE = {
+    Path("test/perp_positions_controller_test.dart"): {
+        "all position reads share one single-flight": (
+            r"\bidentical\s*\(\s*first\s*,\s*second\s*\)",
+            r"\bidentical\s*\(\s*first\s*,\s*refresh\s*\)",
+            r"\bidentical\s*\(\s*firstMore\s*,\s*secondMore\s*\)",
+            r"\bidentical\s*\(\s*firstMore\s*,\s*refreshDuringMore\s*\)",
+            r"\bexpect\s*\(\s*gateway\.requests\s*,\s*hasLength\s*\(\s*2\s*\)",
+        ),
+        "initial read uses bounded limit and continuation uses cursor only": (
+            r"\bawait\s+fixture\.controller\.load\s*\(",
+            r"\bawait\s+fixture\.controller\.loadMore\s*\(",
+            r"\bexpect\s*\(\s*gateway\.requests\b",
+            r"\blimit\s*:\s*PerpPositionsController\.initialLimit\b",
+            r"\blimit\s*:\s*null\b",
+        ),
+        "malformed dataset coverage and cursor pages clear all facts": (
+            r"\bPerpSourceDataset\.account\b",
+            r"\bPerpRecentWindowCoverage\s*\(",
+            r"\bitems\s*:\s*const\s*<PerpPosition>\[\]\s*,\s*nextCursor\s*:",
+            r"\bcursor\s*==\s*null\s*\?[\s\S]*?\bnextCursor\s*:[\s\S]*?"
+            r":\s*_page\s*\([\s\S]*?\bnextCursor\s*:",
+            r"\.controller\.loadMore\s*\(",
+            r"\bPerpGatewayFailureKind\.invalidData\b",
+            r"\.state\.items\s*,\s*isEmpty\b",
+        ),
+        "expiry clears nonempty and empty position facts": (
+            r"\bfor\s*\(\s*final\s+items\b",
+            r"\bscheduler\.fireNext\s*\(",
+            r"\bPerpPositionsPhase\.stale\b",
+            r"\.state\.items\s*,\s*isEmpty\b",
+            r"\.state\.nextCursor\s*,\s*isNull\b",
+        ),
+        "gateway rotation retires late positions from the previous owner": (
+            r"\.container\.updateOverrides\s*\(",
+            r"\boldPage\.complete\s*\(",
+            r"\bawait\s+retired\b",
+            r"\bPerpCoin\.sol\b",
+        ),
+        "expired load-more releases single-flight for a fresh initial read": (
+            r"\bretiredLoadMore\b",
+            r"\.controller\.expireIfNeeded\s*\(",
+            r"\.controller\.refresh\s*\(",
+            r"\bexpect\s*\(\s*initialCalls\s*,\s*2\s*\)",
+            r"\bawait\s+retiredLoadMore\b",
+        ),
+        "wallet binding rejection never attempts a binding mutation": (
+            r"\bPerpGatewayFailureKind\.walletBindingRequired\b",
+            r"\bPerpPositionsPhase\.bindingRequired\b",
+            r"\bexpect\s*\(\s*gateway\.bindCalls\s*,\s*0\s*\)",
+        ),
+    },
+    Path("test/perp_positions_screen_test.dart"): {
+        "explicit Preview is labelled and performs no private read": (
+            r"\bpreview\s*:\s*true\b",
+            r"\bfind\.byKey\s*\(",
+            r"\bexpect\s*\(\s*gateway\.requests\s*,\s*isEmpty\s*\)",
+        ),
+        "production renders Decimal-backed positions without fixture facts": (
+            r"\b_AuthenticatedSession\.new\b",
+            r"\b_position\s*\(\s*PerpCoin\.eth\s*\)",
+            r"\bPerpPositionsController\.initialLimit\b",
+            r"\bfindsOne\b",
+            r"\bfindsNothing\b",
+        ),
+        "production binding failure links to Perp account without binding": (
+            r"\bPerpGatewayFailureKind\.walletBindingRequired\b",
+            r"\bfind\.byKey\s*\(",
+            r"\bexpect\s*\(\s*gateway\.bindCalls\s*,\s*0\s*\)",
+        ),
+        "returning from Perp account retries positions without binding": (
+            r"\bGoRouter\s*\(",
+            r"\btester\.tap\s*\(",
+            r"\bexpect\s*\(\s*calls\s*,\s*2\s*\)",
+            r"\bexpect\s*\(\s*gateway\.bindCalls\s*,\s*0\s*\)",
+        ),
+        "resume clears expired position facts": (
+            r"\bhandleAppLifecycleStateChanged\s*\(\s*AppLifecycleState\.paused",
+            r"\bhandleAppLifecycleStateChanged\s*\(\s*AppLifecycleState\.resumed",
+            r"\btester\.widget<Semantics>\s*\(",
+            r"\.properties\.liveRegion\b",
+        ),
+        "production D5 fails closed without an ETH fixture": (
+            r"\bscreen\s*:\s*const\s+PerpPositionScreen\s*\(",
+            r"\bfindsNothing\b",
+            r"\bexpect\s*\(\s*gateway\.requests\s*,\s*isEmpty\s*\)",
+        ),
+    },
 }
 
 
@@ -1196,6 +1315,52 @@ def check_behavior_test_evidence(
                 f"{relative} is missing required behavior evidence: "
                 + ", ".join(missing)
             )
+    return errors
+
+
+def check_named_executable_test_evidence(
+    root: Path,
+    patterns_by_path: dict[Path, dict[str, tuple[str, ...]]],
+) -> list[str]:
+    """Require each named test to execute domain-specific contract evidence."""
+
+    errors: list[str] = []
+    for relative, patterns_by_marker in patterns_by_path.items():
+        path = root / relative
+        if not path.is_file():
+            continue
+        source = strip_dart_comments(read_text(path))
+        test_starts = [
+            match.start() for match in re.finditer(r"\btest(?:Widgets)?\s*\(", source)
+        ]
+        for marker, patterns in patterns_by_marker.items():
+            declaration = re.search(
+                r"\btest(?:Widgets)?\s*\(\s*(['\"])"
+                + re.escape(marker)
+                + r"\1\s*,",
+                source,
+                re.DOTALL,
+            )
+            if declaration is None:
+                continue
+            next_test = next(
+                (start for start in test_starts if start > declaration.start()),
+                len(source),
+            )
+            executable_test = strip_dart_comments_and_strings(
+                source[declaration.end() : next_test]
+            )
+            missing = [
+                pattern
+                for pattern in patterns
+                if re.search(pattern, executable_test, re.DOTALL) is None
+            ]
+            if missing:
+                errors.append(
+                    f"{relative} test `{marker}` lacks executable contract "
+                    "evidence: "
+                    + ", ".join(missing)
+                )
     return errors
 
 
@@ -2968,6 +3133,181 @@ def check_notification_preferences_application_contract(root: Path) -> list[str]
     return errors
 
 
+def check_perp_positions_application_contract(root: Path) -> list[str]:
+    """Keep production D4 principal-bound, short-lived, and preview-free."""
+
+    errors: list[str] = []
+    for relative, markers in PERP_POSITIONS_BEHAVIOR_TEST_MARKERS.items():
+        configured = PERP_POSITIONS_EXECUTABLE_TEST_EVIDENCE.get(relative, {})
+        missing = sorted(set(markers).difference(configured))
+        unexpected = sorted(set(configured).difference(markers))
+        if missing or unexpected:
+            errors.append(
+                f"{relative} Perp Positions behavior/evidence keys differ: "
+                f"missing={missing}, unexpected={unexpected}"
+            )
+
+    errors.extend(require_fragments(
+        root,
+        {
+            str(PERP_POSITIONS_CONTROLLER_PATH): (
+                "static const int initialLimit = 2;",
+                "gateway.listPositions(limit: initialLimit)",
+                "gateway.listPositions(cursor: cursor)",
+                "PerpGatewayFailureKind.walletBindingRequired",
+                "void expireIfNeeded()",
+                "_generation += 1;",
+            ),
+            str(PERP_POSITIONS_SURFACE_PATH): (
+                "ref.watch(developmentPreviewEnabledProvider)",
+                "perp-preview-positions",
+                "开发预览",
+                "perp-live-positions",
+                "perp-position-live-unavailable",
+                "Review in Perp account",
+                "await context.push<void>('/perp/account');",
+                "LOADED · FRESH",
+                "perp-positions-status-live-region",
+                "No preview position is substituted in production.",
+            ),
+        },
+    ))
+
+    controller_path = root / PERP_POSITIONS_CONTROLLER_PATH
+    if controller_path.is_file():
+        controller_source = strip_dart_comments(read_text(controller_path))
+        controller_code = strip_dart_comments_and_strings(controller_source)
+        if re.search(r"\bbindWallet\s*\(", controller_code):
+            errors.append(
+                "Perp Positions controller must never perform wallet binding"
+            )
+        if "package:dio/" in controller_source or re.search(
+            r"(['\"])/v1/", controller_source
+        ):
+            errors.append(
+                "Perp Positions controller must use PerpPrivateGateway, not a direct transport"
+            )
+        initial_calls = re.findall(
+            r"\.listPositions\s*\(\s*limit\s*:\s*initialLimit\s*\)",
+            controller_code,
+        )
+        continuation_calls = re.findall(
+            r"\.listPositions\s*\(\s*cursor\s*:\s*cursor\s*\)",
+            controller_code,
+        )
+        if len(initial_calls) != 1:
+            errors.append(
+                "Perp Positions must issue exactly one bounded initial-read call site"
+            )
+        if len(continuation_calls) != 1:
+            errors.append(
+                "Perp Positions continuation must have exactly one cursor-only call site"
+            )
+        expire_start = controller_code.find("void _expireProjection()")
+        expire_end = controller_code.find("bool _isCurrent", expire_start)
+        expire_body = controller_code[expire_start:expire_end]
+        if (
+            expire_start < 0
+            or expire_end < 0
+            or re.search(r"\b_operation\s*=\s*null\s*;", expire_body) is None
+        ):
+            errors.append(
+                "Perp Positions expiry must release a retired logical single-flight"
+            )
+
+    surface_path = root / PERP_POSITIONS_SURFACE_PATH
+    if surface_path.is_file():
+        surface_source = strip_dart_comments(read_text(surface_path))
+        surface_code = strip_dart_comments_and_strings(surface_source)
+        d4_start = surface_code.find("class PerpPositionsScreen")
+        d4_end = surface_code.find("class _PerpPositionsPreview", d4_start)
+        d4_selector = surface_code[d4_start:d4_end]
+        if d4_start < 0 or d4_end < 0 or re.search(
+            r"if\s*\(\s*ref\.watch\s*\(\s*"
+            r"developmentPreviewEnabledProvider\s*\)\s*\)\s*\{\s*"
+            r"return\s+_PerpPositionsPreview\s*\([^;]*;\s*\}\s*"
+            r"return\s+const\s+_PerpPositionsLive\s*\(\s*\)\s*;",
+            d4_selector,
+            re.DOTALL,
+        ) is None:
+            errors.append(
+                "PerpPositionsScreen must select Preview only when the explicit "
+                "development flag is true"
+            )
+
+        d5_start = surface_code.find("class PerpPositionScreen")
+        d5_end = surface_code.find("class _PerpPositionLiveUnavailable", d5_start)
+        d5_selector = surface_code[d5_start:d5_end]
+        if d5_start < 0 or d5_end < 0 or re.search(
+            r"if\s*\(\s*!\s*ref\.watch\s*\(\s*"
+            r"developmentPreviewEnabledProvider\s*\)\s*\)\s*\{\s*"
+            r"return\s+const\s+_PerpPositionLiveUnavailable\s*\(\s*\)\s*;\s*\}",
+            d5_selector,
+            re.DOTALL,
+        ) is None:
+            errors.append(
+                "PerpPositionScreen must fail closed unless the explicit "
+                "development Preview flag is true"
+            )
+
+        live_start = surface_source.find("class _PerpPositionsLive")
+        live_end = surface_source.find("class _PositionCard", live_start)
+        if live_start < 0 or live_end < 0:
+            errors.append(
+                "Perp Positions surface must preserve separate production and Preview classes"
+            )
+        else:
+            live_source = surface_source[live_start:live_end]
+            for marker in (
+                "PerpPreviewData",
+                "_PositionCard(",
+                "context.push('/perp/position')",
+                "bindWallet(",
+                "32.4%",
+                "Mark price",
+                "Close position unavailable",
+            ):
+                if marker in live_source:
+                    errors.append(
+                        "Live Perp Positions must not reference preview, detail, or "
+                        f"binding marker: {marker}"
+                    )
+            if ".toDouble(" in strip_dart_comments_and_strings(live_source):
+                errors.append(
+                    "Live Perp Positions must render Decimal values without double conversion"
+                )
+
+        detail_start = surface_source.find("class _PerpPositionLiveUnavailable")
+        detail_end = surface_source.find("class _DisabledPositionAction", detail_start)
+        if detail_start < 0 or detail_end < 0:
+            errors.append(
+                "Production D5 must preserve its explicit unavailable boundary"
+            )
+        else:
+            detail_source = surface_source[detail_start:detail_end]
+            for marker in (
+                "PerpPreviewData",
+                "ETH-PERP",
+                "4,630.50",
+                "Close position unavailable",
+            ):
+                if marker in detail_source:
+                    errors.append(
+                        "Production D5 must fail closed without preview marker: "
+                        f"{marker}"
+                    )
+
+    errors.extend(
+        check_behavior_test_evidence(root, PERP_POSITIONS_BEHAVIOR_TEST_MARKERS)
+    )
+    errors.extend(
+        check_named_executable_test_evidence(
+            root, PERP_POSITIONS_EXECUTABLE_TEST_EVIDENCE
+        )
+    )
+    return errors
+
+
 def check_secret_paths(paths: list[Path]) -> list[str]:
     errors: list[str] = []
     for path in paths:
@@ -3015,6 +3355,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_profile_application_contract(root))
     errors.extend(check_privacy_application_contract(root))
     errors.extend(check_notification_preferences_application_contract(root))
+    errors.extend(check_perp_positions_application_contract(root))
     errors.extend(check_source_guards(root))
     errors.extend(check_records(root))
     visible, visible_error = git_visible_paths(root)
