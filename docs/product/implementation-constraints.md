@@ -58,6 +58,13 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 - A client timeout is not a confirmed failure and must not trigger an automatic duplicate order. Reconcile the idempotent intent before enabling retry.
 - Networks, minimums, and fees come from the backend/configuration; do not hard-code them in Flutter.
 
+## Personalization and Watchlist boundary
+
+- The Watchlist is one owner-bound, versioned, grouped, ordered snapshot. A save replaces the complete draft using the committed version; a conflict never silently overwrites either side and requires explicit reload or reconciliation.
+- Keep Watchlist records limited to canonical group keys, bounded display names, and ordered canonical asset keys. Asset references are preferences, not proof that a market exists, is fresh, or is tradable.
+- Price, change, volume, funding, liquidity, risk, alert status, provider payloads, wallet data, and trading actions never enter Watchlist persistence or its application port.
+- Until the authenticated backend adapter is implemented and verified, production uses the unavailable port. Only tests and `lib/main_preview.dart` may inject a deterministic memory implementation, and its saved state stays labelled `开发预览`.
+
 ## Experience and acceptance
 
 - Preserve the current 103-surface catalog, dark design direction, Dynamic Type, accessibility semantics, Reduce Motion, platform conventions, keyboard behavior, and smooth message scrolling.

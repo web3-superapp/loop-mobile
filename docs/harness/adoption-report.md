@@ -75,3 +75,20 @@ tests -p 'test_*.py' -v` passed all 35 Harness tests before the final Flutter an
 native verification recorded in the Phase 1 integration report. No
 failure-memory record was added because no provider delivery failure was
 reproduced.
+
+## Providerless Watchlist Update
+
+On 2026-08-25, decision 0009 fixed the Watchlist application boundary before
+its authenticated HTTP adapter. The Harness requires the feature models,
+gateway, controller and behavior tests; keeps production directly bound to an
+unavailable gateway; confines `MemoryWatchlistGateway` composition to the
+explicit Preview root; and rejects volatile market-fact fields in the
+Watchlist model.
+
+The providerless slice models only versioned, grouped and ordered asset
+references. Successful Preview saves are development evidence, not proof of
+account persistence or market availability. `python3 scripts/check_harness.py`
+passed, and the complete mutation suite passed 38 tests. Flutter format,
+analyze, 35 focused Watchlist tests, 221 full tests, Android Debug, and iOS
+Debug no-codesign also passed; exact commands are recorded in the Phase 1
+integration report.

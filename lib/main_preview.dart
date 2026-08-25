@@ -4,10 +4,13 @@ import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
+import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
+import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_fixture_adapter.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_trading_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_fixture_adapter.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
+import 'package:loop_mobile/integrations/personalization/memory_watchlist_gateway.dart';
 
 /// Explicit offline UI catalog entry point.
 ///
@@ -30,6 +33,25 @@ void main() {
         developmentPreviewEnabledProvider.overrideWithValue(true),
         communicationGatewayProvider.overrideWithValue(
           MemoryCommunicationGateway(),
+        ),
+        watchlistGatewayProvider.overrideWithValue(
+          MemoryWatchlistGateway(
+            initialSnapshot: WatchlistSnapshot(
+              version: 1,
+              groups: <WatchlistGroup>[
+                WatchlistGroup(
+                  key: 'core',
+                  name: 'Core',
+                  items: <WatchlistItem>[
+                    WatchlistItem(assetKey: 'BTC'),
+                    WatchlistItem(assetKey: 'ETH'),
+                    WatchlistItem(assetKey: 'SOL'),
+                  ],
+                ),
+              ],
+              updatedAt: DateTime.utc(2026, 8, 25),
+            ),
+          ),
         ),
         hyperliquidTradingGatewayProvider.overrideWithValue(
           const HyperliquidFixtureAdapter(),

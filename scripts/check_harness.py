@@ -51,6 +51,7 @@ REQUIRED_FILES = (
     "docs/decisions/0006-use-identifier-only-stream-token-cards.md",
     "docs/decisions/0007-centralize-notification-intents-before-provider-ingress.md",
     "docs/decisions/0008-finish-app-logic-before-new-transports.md",
+    "docs/decisions/0009-model-watchlist-before-http-adapter.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/providerless-notification-fixtures.md",
     "docs/failures/privy-android-compile-sdk.md",
@@ -64,10 +65,17 @@ REQUIRED_FILES = (
     "lib/app/notifications/loop_notification_coordinator.dart",
     "lib/integrations/notifications/loop_notification_event_source.dart",
     "lib/integrations/notifications/loop_notification_router.dart",
+    "lib/features/market/watchlist/watchlist_controller.dart",
+    "lib/features/market/watchlist/watchlist_gateway.dart",
+    "lib/features/market/watchlist/watchlist_models.dart",
+    "lib/integrations/personalization/memory_watchlist_gateway.dart",
     "test/app_notification_coordinator_test.dart",
     "test/loop_notification_coordinator_test.dart",
     "test/loop_notification_router_test.dart",
     "test/notifications_screen_test.dart",
+    "test/watchlist_controller_test.dart",
+    "test/watchlist_editor_screen_test.dart",
+    "test/watchlist_models_test.dart",
 )
 CHAT_PREVIEW_ONLY_ROUTES = (
     "/chat/group",
@@ -299,8 +307,26 @@ FEATURE_TRANSPORT_FORBIDDEN_IMPORTS = (
 FEATURE_BACKEND_ROUTE_PATTERN = re.compile(r"(?P<quote>['\"])/v1/")
 PRODUCTION_FIXTURE_MARKERS = (
     "MemoryCommunicationGateway(",
+    "MemoryWatchlistGateway(",
     "HyperliquidFixtureAdapter(",
     "PrivyFixtureAdapter(",
+)
+WATCHLIST_GATEWAY_PATH = Path(
+    "lib/features/market/watchlist/watchlist_gateway.dart"
+)
+WATCHLIST_MODELS_PATH = Path(
+    "lib/features/market/watchlist/watchlist_models.dart"
+)
+WATCHLIST_MEMORY_GATEWAY_PATH = Path(
+    "lib/integrations/personalization/memory_watchlist_gateway.dart"
+)
+WATCHLIST_PREVIEW_ROOT_PATH = Path("lib/main_preview.dart")
+WATCHLIST_MEMORY_CONSTRUCTION_PATTERN = re.compile(
+    r"\bMemoryWatchlistGateway\s*\("
+)
+WATCHLIST_VOLATILE_FACT_MEMBER_PATTERN = re.compile(
+    r"\b(?:price|markPrice|indexPrice|fundingRate|volume|change|tradable|"
+    r"liquidity|riskScore|alertEnabled)\b"
 )
 
 
@@ -1560,6 +1586,66 @@ def check_providerless_application_contract(root: Path) -> list[str]:
     return errors
 
 
+def check_watchlist_application_contract(root: Path) -> list[str]:
+    """Keep providerless Watchlist state owner-local and fail-closed."""
+
+    errors: list[str] = []
+    gateway_path = root / WATCHLIST_GATEWAY_PATH
+    if gateway_path.is_file():
+        gateway = strip_dart_comments(read_text(gateway_path))
+        default_pattern = re.compile(
+            r"final\s+watchlistGatewayProvider\s*=\s*Provider<WatchlistGateway>\s*"
+            r"\(\s*\(\s*ref\s*\)\s*=>\s*const\s+UnavailableWatchlistGateway\s*"
+            r"\(\s*\)\s*,?\s*\)\s*;",
+            re.DOTALL,
+        )
+        if default_pattern.search(gateway) is None:
+            errors.append(
+                "Watchlist production provider must default directly to "
+                "const UnavailableWatchlistGateway()"
+            )
+
+    models_path = root / WATCHLIST_MODELS_PATH
+    if models_path.is_file():
+        models_code = strip_dart_comments_and_strings(read_text(models_path))
+        volatile_members = sorted(
+            set(WATCHLIST_VOLATILE_FACT_MEMBER_PATTERN.findall(models_code))
+        )
+        if volatile_members:
+            errors.append(
+                "Watchlist models may contain only owner-local ordered asset "
+                "references, not volatile market facts: "
+                + ", ".join(volatile_members)
+            )
+
+    preview_root = root / WATCHLIST_PREVIEW_ROOT_PATH
+    if preview_root.is_file():
+        preview_code = strip_dart_comments_and_strings(read_text(preview_root))
+        if len(WATCHLIST_MEMORY_CONSTRUCTION_PATTERN.findall(preview_code)) != 1:
+            errors.append(
+                "lib/main_preview.dart must compose exactly one explicit "
+                "MemoryWatchlistGateway"
+            )
+
+    lib_root = root / "lib"
+    if lib_root.is_dir():
+        allowed = frozenset(
+            {WATCHLIST_MEMORY_GATEWAY_PATH, WATCHLIST_PREVIEW_ROOT_PATH}
+        )
+        for path in sorted(lib_root.rglob("*.dart")):
+            relative = path.relative_to(root)
+            if relative in allowed:
+                continue
+            executable_code = strip_dart_comments_and_strings(read_text(path))
+            if WATCHLIST_MEMORY_CONSTRUCTION_PATTERN.search(executable_code):
+                errors.append(
+                    f"{relative} constructs MemoryWatchlistGateway; the fake may "
+                    "only be defined by its integration and composed by "
+                    "lib/main_preview.dart"
+                )
+    return errors
+
+
 def check_secret_paths(paths: list[Path]) -> list[str]:
     errors: list[str] = []
     for path in paths:
@@ -1602,6 +1688,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_chat_attachment_contract(root))
     errors.extend(check_notification_contract(root))
     errors.extend(check_providerless_application_contract(root))
+    errors.extend(check_watchlist_application_contract(root))
     errors.extend(check_source_guards(root))
     errors.extend(check_records(root))
     visible, visible_error = git_visible_paths(root)

@@ -136,14 +136,74 @@ class HarnessTests(unittest.TestCase):
             source.parent.mkdir(parents=True)
             source.write_text(
                 "final chat = MemoryCommunicationGateway();\n"
+                "final watchlist = MemoryWatchlistGateway();\n"
                 "final market = HyperliquidFixtureAdapter();\n"
                 "final wallet = PrivyFixtureAdapter();\n",
                 encoding="utf-8",
             )
             result = check_harness.check_providerless_application_contract(root)
-        self.assertEqual(3, len(result))
+        self.assertEqual(4, len(result))
         self.assertTrue(
             all("tests or lib/main_preview.dart" in error for error in result)
+        )
+
+    def test_watchlist_provider_must_default_unavailable(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            gateway = root / check_harness.WATCHLIST_GATEWAY_PATH
+            gateway.parent.mkdir(parents=True)
+            gateway.write_text(
+                "final watchlistGatewayProvider = Provider<WatchlistGateway>(\n"
+                "  (ref) => MemoryWatchlistGateway(),\n"
+                ");\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_watchlist_application_contract(root)
+
+        self.assertTrue(
+            any("must default directly" in error for error in result),
+            msg=f"expected unavailable Watchlist provider guard: {result}",
+        )
+
+    def test_watchlist_model_cannot_store_market_facts(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            models = root / check_harness.WATCHLIST_MODELS_PATH
+            models.parent.mkdir(parents=True)
+            models.write_text(
+                "final class WatchlistItem {\n"
+                "  const WatchlistItem(this.assetKey, this.markPrice);\n"
+                "  final String assetKey;\n"
+                "  final String markPrice;\n"
+                "}\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_watchlist_application_contract(root)
+
+        self.assertTrue(
+            any("volatile market facts" in error for error in result),
+            msg=f"expected Watchlist fact-boundary guard: {result}",
+        )
+
+    def test_watchlist_memory_gateway_cannot_be_composed_by_a_feature(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = (
+                root / "lib" / "features" / "market" / "unsafe_watchlist.dart"
+            )
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "final gateway = MemoryWatchlistGateway();\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_watchlist_application_contract(root)
+
+        self.assertTrue(
+            any("constructs MemoryWatchlistGateway" in error for error in result),
+            msg=f"expected Preview-only Watchlist fake guard: {result}",
         )
 
     def test_notification_global_handler_must_be_centralized(self) -> None:

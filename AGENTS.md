@@ -4,7 +4,7 @@ Repository phase: `active`.
 
 Build Loop, a Flutter iOS/Android app with six primary destinations—Home, Market, Launch, Chat, Wallet, and Profile—using Privy identity/wallets, Stream Chat/Video, and backend-mediated Hyperliquid Testnet trading.
 
-These instructions apply to the entire repository. Preserve the accepted UI catalog and six-destination shell while replacing preview-only provider seams through narrow, verified vertical slices. Never imply that Privy, Stream, Firebase push, wallet signing, or private trading is connected when its required dashboard, backend, or device inputs are absent.
+These instructions apply to the entire repository. Preserve the accepted UI catalog and six-destination shell while replacing preview-only provider seams through narrow, verified vertical slices. Never imply that Privy, Stream, Firebase push, account Watchlist persistence, wallet signing, or private trading is connected when its required dashboard, backend, or device inputs are absent.
 
 Read `docs/product/implementation-constraints.md` and `docs/product-decisions.md` before planning or implementing product behavior. The former owns security and truth-source constraints; the latter owns the current 103-surface catalog, six primary destinations, and delivery decisions. Material below `reference/legacy-prototype/` is frozen history and must not override current Flutter product decisions.
 
@@ -67,6 +67,7 @@ Never edit generated paths as application source. `.tooling` may hold an ignored
 12. Generate a new UUID for every outgoing call and idempotent request; never reuse an identifier that has already rung or been submitted.
 13. Keep production Stream `token_card.v1` attachments identifier-only and render them through the official message attachment builder. Never persist mutable facts or actions in the message, fetch once per historical card, or mount fixture conversation routes outside explicit Preview mode.
 14. During the providerless application-logic phase, keep Dio and `/v1/` route literals out of `lib/features/`. New controllers depend on narrow ports; production defaults stay unavailable, and deterministic fakes enter only tests or `lib/main_preview.dart`.
+15. Keep Watchlist models limited to versioned, grouped, ordered owner-local asset keys. Preview memory saves remain labelled `开发预览` and never supply prices, freshness, tradability, alert state, or other market facts.
 
 ## Commands
 
