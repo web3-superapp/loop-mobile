@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/app/notifications/loop_notification_coordinator.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
@@ -97,6 +98,11 @@ class _LoopAppState extends ConsumerState<LoopApp> {
   @override
   Widget build(BuildContext context) {
     final streamSession = ref.watch(streamChatSdkSessionProvider);
+    final reduceMotion = ref.watch(
+      loopDisplayPreferencesProvider.select(
+        (preferences) => preferences.reduceMotion,
+      ),
+    );
     return MaterialApp.router(
       title: 'LOOP',
       debugShowCheckedModeBanner: false,
@@ -104,15 +110,25 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       darkTheme: LoopTheme.dark,
       themeMode: ThemeMode.dark,
       routerConfig: router,
-      builder: streamSession == null
-          ? null
-          : (context, child) => StreamChat(
-              key: ObjectKey(streamSession.client),
-              client: streamSession.client,
-              configData: _loopStreamConfiguration,
-              componentBuilders: _loopStreamComponentBuilders,
-              child: child,
-            ),
+      builder: (context, child) {
+        Widget content = child ?? const SizedBox.shrink();
+        if (reduceMotion && !MediaQuery.disableAnimationsOf(context)) {
+          content = MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: content,
+          );
+        }
+        if (streamSession != null) {
+          content = StreamChat(
+            key: ObjectKey(streamSession.client),
+            client: streamSession.client,
+            configData: _loopStreamConfiguration,
+            componentBuilders: _loopStreamComponentBuilders,
+            child: content,
+          );
+        }
+        return content;
+      },
     );
   }
 }

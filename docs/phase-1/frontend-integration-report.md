@@ -213,13 +213,13 @@ The deterministic behavior suite covers the exact four event wire values, unknow
 | Stream Chat | Official client, persistence, lifecycle, controller and UI integrated; strict identifier-only `token_card.v1` receive rendering is wired, while the short-lived Chat token source and fresh token-facts projection are still required |
 | Stream Video | Delayed foreground SDK lifecycle and Audio Room lobby/join/official-state UI integrated; backend-derived identity bootstrap and native microphone declarations are wired, while initial/refresh Video tokens, an authorized pre-created room target, no-`create-call` role evidence, and device verification are still required |
 | Firebase/push | Provider-neutral intent contract and fail-closed UI verified; no mobile configs, exact Stream push-provider names, or captured payload fixtures, so initialization/handlers/device registration remain disabled and the auto-registering Stream Video Push plugin is not linked |
-| Hyperliquid public markets | Direct Testnet read-only adapter available |
-| Hyperliquid private reads | D8 account and D4 positions use the principal/wallet-rotated LOOP backend session; D4 is short-lived, bounded, cursor-only on continuation, Decimal-safe, and read-only. D5, orders, fills, and funding production projections remain unavailable |
+| Hyperliquid public markets | Direct Testnet Spot read-only adapter mounted; exact Decimal discovery facts only, never executable quotes |
+| Hyperliquid private reads | No private Spot read is connected. Retained Perp D8/D4 code is disabled, unmounted implementation history and no longer in product scope |
 | Watchlist | Providerless models/controller/UI complete; production adapter unavailable and no account persistence claimed |
 | Profile presentation | Providerless exact models/controller/H1-H2 UI complete; production adapter and avatar source unavailable, with no account persistence claimed |
 | Privacy preferences | Providerless exact models/controller/UI complete; production adapter unavailable, and the saved preference is not discovery, follower or Copy Trading authorization/execution evidence |
 | Notification preferences | Providerless exact four-intent models/controller/H9 UI complete; production adapter and delivery remain unavailable, with no Firebase/provider/device-permission claim |
-| Private trading | Backend-only by design; not connected |
+| Private trading | Future Spot execution is backend-only by design and not connected; Perp is out of product scope |
 
 ## Follow-up inputs
 
@@ -337,3 +337,60 @@ response, non-empty Hyperliquid Testnet account data, TLS/device connectivity,
 provider pagination behavior, or store signing. D5 detail, orders, fills,
 funding, trading writes, Firebase, and background delivery remain separate
 unverified slices.
+
+## Spot-only public market, local settings, and communication preview
+
+Decisions 0016 and 0017 make the mounted product Spot-only. The Market tab now
+uses a separate public Hyperliquid Testnet `spotMetaAndAssetCtxs` adapter. It
+indexes sparse token metadata by declared index, resolves universe token
+references through that map, and joins contexts by exact provider coin instead
+of array position. Wire numeric facts stay String plus Decimal; the displayed
+time is explicitly the client's complete-response receipt time. Default rows
+have positive exact 24-hour notional volume, are sorted descending, and are
+bounded to 50. Search, refresh, loading, error, restricted-session, no-activity,
+and no-match behavior are explicit. No account, balance, Buy, Sell, order,
+signing, transfer, or withdrawal capability was mounted.
+
+The explicit Development Preview root now has IDE launch configuration and an
+end-to-end behavior test covering public Spot, the offline Chat cell list, a
+group room, and process-local message composition. It does not supply a fixed
+Stream user ID or token and never writes Preview messages into Stream
+persistence. Real Chat remains unavailable until the LOOP backend validates
+Privy and issues a server-derived Stream identity and short-lived token.
+
+Provider-independent Settings work now includes a global app-run Reduce Motion
+preference, local searchable Help, and Flutter's license page. Missing account
+connections, sessions, blocklist, recovery, legal documents, and support
+channels are truthful unavailable states instead of fixtures or no-op controls.
+
+Verification on 2026-08-25:
+
+- `bin/flutter pub get`: passed with the existing exact lockfile; no dependency
+  version changed.
+- The focused Spot/Market/Preview/Settings/navigation/Chat guard suite passed;
+  the Spot repository subset passed all 4 tests, including capture of receipt
+  time before response parsing.
+- `bin/flutter test --no-pub`: passed all 394 tests after updating the stale
+  notification Preview assertion to require the Spot alert and reject the
+  removed Perp-risk card.
+- `python3 -m py_compile scripts/check_harness.py
+  tests/test_check_harness.py`: passed.
+- `python3 scripts/check_harness.py`: passed.
+- `python3 -m unittest discover -s tests -p 'test_*.py' -v`: passed all 82
+  Harness mutation tests.
+- Full analyze reached application analysis and reported only two existing
+  info-level lints in separately modified `lib/widgets/loop_ui.dart` and
+  `test/loop_perp_providers_test.dart`; no error or warning came from this
+  slice. The focused changed-file analysis had no issues.
+- `bin/flutter build apk --debug --no-pub`: passed from clean generated state
+  in 36.7 seconds. APK inspection found `libsqlite3.so` for arm64-v8a,
+  armeabi-v7a, and x86_64.
+- `bin/flutter clean` removed the 248 MB Debug APK and all generated build
+  output; no APK, AAB, IPA, or Runner.app remains in the repository.
+
+The sqlite3 system-source hook is recorded by decision 0018 and failure memory
+because the default hook repeatedly failed while downloading GitHub native
+artifacts before compilation. The clean Debug pass proves compilation and
+packaging only. No physical-device run, live Privy OTP, real Stream Chat/Video
+authorization, Stream persistence open/migration, Firebase delivery, private
+Spot backend, or execution behavior was exercised; those remain unverified.

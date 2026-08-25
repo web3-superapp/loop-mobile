@@ -141,6 +141,92 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_dependency_pins(root)
         self.assertIn("pubspec.yaml must pin `dio` exactly to `5.11.0`", result)
 
+    def test_sqlite3_system_source_hook_is_required(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            text = (REPOSITORY_ROOT / "pubspec.yaml").read_text(
+                encoding="utf-8"
+            )
+            (root / "pubspec.yaml").write_text(
+                text.replace("      source: system", "      source: sqlite3"),
+                encoding="utf-8",
+            )
+            result = check_harness.check_dependency_pins(root)
+
+        self.assertIn(
+            "pubspec.yaml must use the locked sqlite3 system-source hook",
+            result,
+        )
+
+    def test_sqlite_compatibility_lock_graph_cannot_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "pubspec.yaml").write_text(
+                (REPOSITORY_ROOT / "pubspec.yaml").read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            lock = (REPOSITORY_ROOT / "pubspec.lock").read_text(
+                encoding="utf-8"
+            )
+            (root / "pubspec.lock").write_text(
+                lock.replace('    version: "3.5.2"', '    version: "3.6.0"'),
+                encoding="utf-8",
+            )
+            result = check_harness.check_dependency_pins(root)
+
+        self.assertIn(
+            "pubspec.lock must preserve sqlite compatibility package `sqlite3` at `3.5.2`, found `3.6.0`",
+            result,
+        )
+
+    def test_spot_only_paths_are_required(self) -> None:
+        expected = {
+            "docs/decisions/0016-make-primary-market-spot-only.md",
+            "docs/decisions/0017-use-public-testnet-spot-market-data.md",
+            "docs/decisions/0018-use-system-sqlite-for-cold-builds.md",
+            "docs/failures/sqlite3-native-hook-download.md",
+            "lib/app/loop_display_preferences.dart",
+            "lib/integrations/hyperliquid/hyperliquid_spot_market.dart",
+            "lib/integrations/hyperliquid/hyperliquid_spot_market_providers.dart",
+            "lib/integrations/hyperliquid/hyperliquid_spot_market_repository.dart",
+            "test/development_preview_experience_test.dart",
+            "test/hyperliquid_spot_market_repository_test.dart",
+            "test/local_settings_and_help_test.dart",
+            "test/market_screen_test.dart",
+        }
+
+        self.assertTrue(expected.issubset(set(check_harness.REQUIRED_FILES)))
+
+    def test_perpetual_policy_cannot_be_reenabled(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "lib/app/app_environment.dart"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "static const perpetualsEnabled = true;\n"
+                "static const spotExecutionEnabled = false;\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_spot_only_product_contract(root)
+
+        self.assertTrue(
+            any("perpetualsEnabled = false" in error for error in result),
+            msg=f"expected disabled perpetual policy guard: {result}",
+        )
+
+    def test_primary_feature_cannot_mount_perp_route(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "lib/features/home/home_screens.dart"
+            path.parent.mkdir(parents=True)
+            path.write_text("context.push('/perp/account');\n", encoding="utf-8")
+            result = check_harness.check_spot_only_product_contract(root)
+
+        self.assertIn(
+            "lib/features/home/home_screens.dart must not mount a retained Perp product route",
+            result,
+        )
+
     def test_lock_parser_reads_exact_versions(self) -> None:
         versions = check_harness.lockfile_versions(
             'packages:\n  dio:\n    dependency: "direct main"\n    version: "5.11.0"\n'

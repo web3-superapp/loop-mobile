@@ -3,7 +3,7 @@
   "project": {
     "name": "Loop Mobile",
     "phase": "active",
-    "purpose": "Build Loop, a Flutter iOS/Android app with six primary destinations—Home, Market, Launch, Chat, Wallet, and Profile—using Privy identity/wallets, Stream Chat/Video, and backend-mediated Hyperliquid Testnet trading.",
+    "purpose": "Build Loop, a Flutter iOS/Android app with six primary destinations—Home, Market, Launch, Chat, Wallet, and Profile—using Privy identity/wallets, Stream Chat/Video, public Hyperliquid Testnet spot discovery, and future backend-mediated spot execution.",
     "primary_destinations": [
       "Home",
       "Market",

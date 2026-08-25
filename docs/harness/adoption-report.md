@@ -229,3 +229,44 @@ cleanup because this update changes only the agent verification policy and the
 user explicitly requested that no new package be produced. No failure-memory
 record was added because this is a deliberate workflow/cost policy rather than
 a runtime or released-product failure.
+
+## Spot-Only Frontend and Offline Communication Preview Update
+
+On 2026-08-25, decisions 0016 and 0017 removed Perp from mounted product
+navigation and connected the Market tab to the separate public Hyperliquid
+Testnet Spot discovery contract. The Harness now requires both decisions, the
+Decimal-safe Spot model/repository/provider, the primary Market and Preview
+behavior tests, disabled perpetual and spot-execution policy flags, and the
+absence of `/perp` navigation from primary Home, Wallet, Profile, and the
+mounted portion of Market.
+
+The explicit `main_preview.dart` root remains the only place that composes the
+memory communication gateway. It allows Chat cells, group/direct rooms, and
+process-local message composition to be inspected without a Stream connection;
+production still requires a backend-derived Stream user ID and short-lived
+token. The Preview Market exception is public and identity-free, so it may read
+live Testnet Spot facts while authenticated provider work stays offline.
+
+Settings now includes an app-run Reduce Motion preference, a local searchable
+Help catalog, and the real Flutter license page. Missing account, legal,
+connection, recovery, and support capabilities render unavailable rather than
+fabricating records or accepting no-op actions. The complete Flutter suite
+passed 394 tests. A stale notification fixture assertion was corrected to
+require the Spot price-alert card and reject the removed Perp-risk card.
+
+## SQLite Cold-Build Reliability Update
+
+On 2026-08-25, repeated cold tests and Android Debug builds exposed that the
+sqlite3 v3 default hook downloaded a native artifact from GitHub before Dart
+compilation. Decision 0018 selects the supported `source: system` hook for the
+current exact Stream persistence graph, whose transitional
+`sqlite3_flutter_libs` dependency already packages Android libraries. The new
+failure-memory record separates hook/download failure from application test
+failure, and the Harness rejects source drift.
+
+The complete Harness mutation suite passed 82 tests. A clean Android Debug
+build passed in 36.7 seconds without the GitHub native download. APK inspection
+confirmed `libsqlite3.so` for arm64-v8a, armeabi-v7a, and x86_64. The 248 MB
+Debug APK and all generated `build/` output were then removed. Compilation is
+not Stream persistence runtime proof; device database open, offline history,
+account rotation, and iOS/Android provider behavior remain unverified.

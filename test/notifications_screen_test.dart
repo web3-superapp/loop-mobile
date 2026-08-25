@@ -55,7 +55,9 @@ void main() {
     );
     expect(find.text('开发预览'), findsWidgets);
     expect(find.textContaining('演示数据'), findsWidgets);
-    expect(find.text('ETH position risk increased'), findsOneWidget);
+    expect(find.text('ETH position risk increased'), findsNothing);
+    expect(find.text(r'ETH crossed $4,600'), findsOneWidget);
+    expect(find.text('Mentioned in Glyph Hunters'), findsOneWidget);
     expect(find.text('Mark all read'), findsNothing);
   });
 

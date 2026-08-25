@@ -69,7 +69,7 @@ class HomeScreen extends ConsumerWidget {
           number: '01',
           icon: Icons.radar_rounded,
           title: 'Discover',
-          body: 'ETH funding eased while BTC open interest held steady.',
+          body: 'ETH spot volume rose while BTC held its weekly range.',
           meta: '3 watchlist moves',
           tone: LoopTone.market,
           onTap: () => context.go('/market'),
@@ -142,14 +142,6 @@ class HomeScreen extends ConsumerWidget {
           subtitle: 'Review the app and exact allowance',
           time: '1h',
           onTap: () => context.push('/wallet/approvals'),
-        ),
-        _ActivityRow(
-          icon: Icons.swap_horiz_rounded,
-          color: LoopColors.mint,
-          title: 'Spot to perp transfer settled',
-          subtitle: '250.00 USDC · Hyperliquid account',
-          time: '4h',
-          onTap: () => context.push('/perp/account'),
         ),
       ],
     );
@@ -254,7 +246,7 @@ class _PortfolioHero extends StatelessWidget {
                 child: LoopMetric(label: 'WALLET', value: r'$31,240'),
               ),
               Expanded(
-                child: LoopMetric(label: 'PERP EQUITY', value: r'$15,566'),
+                child: LoopMetric(label: 'STABLECOINS', value: r'$15,566'),
               ),
               Icon(Icons.chevron_right_rounded, color: LoopColors.vapor),
             ],
@@ -436,7 +428,7 @@ class NetWorthScreen extends StatelessWidget {
     return LoopPage(
       title: 'Net worth',
       eyebrow: 'Portfolio',
-      subtitle: 'A read-only view across connected wallets and the active trading account.',
+      subtitle: 'A read-only development preview across wallet assets.',
       children: <Widget>[
         const LoopCard(
           accent: true,
@@ -465,17 +457,17 @@ class NetWorthScreen extends StatelessWidget {
               LoopKeyValueRow(label: 'Ethereum wallets', value: r'$24,844.20'),
               LoopKeyValueRow(label: 'Solana wallets', value: r'$6,396.10'),
               LoopKeyValueRow(
-                label: 'Hyperliquid equity',
+                label: 'Stablecoin assets',
                 value: r'$15,566.25',
                 last: true,
               ),
             ],
           ),
         ),
-        const LoopSectionLabel('Data health'),
+        const LoopSectionLabel('Data status'),
         const LoopStateCard(
-          title: 'All sources current',
-          message: 'Wallet balances refreshed 14 seconds ago. Hyperliquid equity refreshed 6 seconds ago.',
+          title: 'Development preview only',
+          message: 'All values on this development preview are static wallet fixtures, not refreshed provider facts.',
           icon: Icons.cloud_done_outlined,
           tone: LoopTone.positive,
         ),
@@ -521,15 +513,6 @@ class NotificationsScreen extends ConsumerWidget {
           tone: LoopTone.warning,
         ),
         const LoopSectionLabel('New · 演示数据'),
-        _NotificationCard(
-          tone: LoopTone.danger,
-          icon: Icons.warning_amber_rounded,
-          title: 'ETH position risk increased',
-          body: 'Margin ratio moved to 18.4%. Review before placing another order.',
-          time: 'Now',
-          onTap: () => context.push('/perp/position'),
-        ),
-        const SizedBox(height: 10),
         _NotificationCard(
           tone: LoopTone.market,
           icon: Icons.show_chart_rounded,
@@ -626,7 +609,7 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
   Widget build(BuildContext context) {
     return LoopPage(
       title: 'Search',
-      subtitle: 'Assets, Core perpetuals, groups and people.',
+      subtitle: 'Spot assets, groups and people.',
       children: <Widget>[
         TextField(
           controller: controller,
@@ -651,13 +634,6 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
           title: 'ETH',
           subtitle: r'Token · $4,630.50',
           onTap: () => context.push('/market/token'),
-        ),
-        _SearchResult(
-          icon: Icons.candlestick_chart_rounded,
-          tone: LoopTone.positive,
-          title: 'ETH-PERP',
-          subtitle: 'Hyperliquid Core · funding 0.0081%',
-          onTap: () => context.push('/perp/trade'),
         ),
         _SearchResult(
           icon: Icons.forum_outlined,

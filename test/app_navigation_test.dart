@@ -7,12 +7,12 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/catalog/catalog_surface_screen.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
-import 'package:loop_mobile/features/review/signing_review_surface.dart';
-import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_fixture_adapter.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_providers.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_repository.dart';
-import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_trading_gateway.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_providers.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_repository.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
@@ -29,6 +29,9 @@ void main() {
           ),
           hyperliquidMarketRepositoryProvider.overrideWithValue(
             const _EmptyMarketRepository(),
+          ),
+          hyperliquidSpotMarketRepositoryProvider.overrideWithValue(
+            const _EmptySpotMarketRepository(),
           ),
         ],
         child: const LoopApp(),
@@ -51,7 +54,7 @@ void main() {
     expect(find.text('Home overview'), findsOneWidget);
   });
 
-  testWidgets('fixture Perp order opens exactly one shared F11 surface', (
+  testWidgets('spot-only primary navigation exposes no Perp entry', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -63,35 +66,35 @@ void main() {
           hyperliquidMarketRepositoryProvider.overrideWithValue(
             const _EmptyMarketRepository(),
           ),
-          hyperliquidTradingGatewayProvider.overrideWithValue(
-            const HyperliquidFixtureAdapter(),
+          hyperliquidSpotMarketRepositoryProvider.overrideWithValue(
+            const _EmptySpotMarketRepository(),
           ),
         ],
         child: const LoopApp(),
       ),
     );
     await tester.pumpAndSettle();
+
     await tester.tap(find.widgetWithText(NavigationDestination, 'Market'));
     await tester.pumpAndSettle();
-    final perpEntry = find.widgetWithText(ActionChip, 'Perp trading · 开发预览');
-    await tester.ensureVisible(perpEntry);
-    await tester.pumpAndSettle();
-    await tester.tap(perpEntry);
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('ETH-PERP'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('ETH-PERP'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Review preview order'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Continue to intent review'));
-    await tester.pumpAndSettle();
+    expect(find.text('Spot market'), findsOneWidget);
+    expect(find.textContaining('Perp trading'), findsNothing);
+    expect(find.textContaining('Live perpetual markets'), findsNothing);
 
-    expect(find.byType(SigningReviewSurface), findsOneWidget);
-    expect(find.text('Transaction intent review'), findsOneWidget);
-    expect(find.text('Backend execution unavailable'), findsWidgets);
-    expect(find.text('1.25'), findsOneWidget);
-    expect(find.text('20×'), findsOneWidget);
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Wallet'));
+    await tester.pumpAndSettle();
+    expect(find.text('Trading account'), findsNothing);
+    expect(find.textContaining('Hyperliquid margin'), findsNothing);
+
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Home'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('PERP EQUITY'), findsNothing);
+    expect(find.textContaining('Spot to perp'), findsNothing);
+
+    await tester.tap(find.byTooltip('Search'));
+    await tester.pumpAndSettle();
+    expect(find.text('Spot assets, groups and people.'), findsOneWidget);
+    expect(find.text('ETH-PERP'), findsNothing);
   });
 
   testWidgets('home Pay card opens an informational Coming soon route', (
@@ -277,4 +280,17 @@ final class _EmptyMarketRepository implements HyperliquidMarketRepository {
 
   @override
   Future<List<HyperliquidMarket>> fetchMarkets() async => const [];
+}
+
+final class _EmptySpotMarketRepository
+    implements HyperliquidSpotMarketRepository {
+  const _EmptySpotMarketRepository();
+
+  @override
+  Future<HyperliquidSpotSnapshot> fetchMarkets() async {
+    return HyperliquidSpotSnapshot(
+      receivedAt: DateTime.utc(2026, 8, 25),
+      markets: const <HyperliquidSpotMarket>[],
+    );
+  }
 }

@@ -10,4 +10,6 @@ abstract final class BuildPolicy {
   static const mainnetEnabled = false;
   static const withdrawalsEnabled = false;
   static const automatedTradingEnabled = false;
+  static const perpetualsEnabled = false;
+  static const spotExecutionEnabled = false;
 }

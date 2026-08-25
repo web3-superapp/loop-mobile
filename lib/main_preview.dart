@@ -24,7 +24,9 @@ import 'package:loop_mobile/integrations/personalization/memory_watchlist_gatewa
 /// Explicit offline UI catalog entry point.
 ///
 /// Run with `bin/flutter run -t lib/main_preview.dart`, then choose
-/// Development Preview on the login screen. No provider operation is enabled.
+/// Development Preview on the login screen. Chat, wallet, trading, and owner
+/// settings stay in labelled memory-only Preview adapters. The Market tab may
+/// still read public, identity-free Hyperliquid Testnet spot facts.
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(

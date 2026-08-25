@@ -27,6 +27,14 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: 6.0.0
 
+# sqlite3 v3 otherwise downloads a native artifact from GitHub during each
+# cold build. Stream's pinned persistence graph already packages libsqlite3
+# for Android, while Apple platforms provide it through the operating system.
+hooks:
+  user_defines:
+    sqlite3:
+      source: system
+
 flutter:
   config:
     enable-swift-package-manager: false

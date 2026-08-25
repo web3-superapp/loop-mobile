@@ -4,7 +4,7 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 
 ## Product shape and environments
 
-- Home, Market, Launch, Chat, Wallet, and Profile remain the six primary destinations. Launchpad is first-class; Perp stays inside Market rather than becoming a seventh destination.
+- Home, Market, Launch, Chat, Wallet, and Profile remain the six primary destinations. Launchpad is first-class. The product is spot-only; Perp is disabled and has no primary-feature entry.
 - Development and Hyperliquid Testnet are the only enabled environments. Mainnet, real deposits/withdrawals, and automated trading remain feature-flagged off.
 - Prefer runnable vertical slices and current official Privy/Stream Flutter SDKs. Do not add a second identity, messaging, calling, state-management, routing, or HTTP stack.
 - Preview content is always labelled `演示数据` or `开发预览`; it never claims provider delivery, read state, presence, ringing, signing, or execution.
@@ -50,7 +50,13 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 
 ## Hyperliquid trading boundary
 
-- The direct mobile Hyperliquid adapter is public, Testnet-only, and read-only.
+- The retained direct mobile Hyperliquid perpetual adapter is public, Testnet-only, read-only, and unmounted from product navigation. It must never be presented as spot data.
+- The mounted direct mobile spot adapter is a separate public, Hyperliquid Testnet-only, read-only path. It may request only `POST /info` with `{"type":"spotMetaAndAssetCtxs"}`; it has no account, balance, order, cancellation, leverage, transfer, withdrawal, key, nonce, signing, or execution capability.
+- Do not request public spot data on the login/restoring boundary. Once the user enters the product, authenticated, cached-unverified, and explicit Development Preview sessions may read it because no identity or account input is sent. This narrow exception does not authorize any other provider-backed feature.
+- Parse `spotMetaAndAssetCtxs` structurally rather than positionally. Token indices are sparse, so universe token references must resolve through a token-index map. Asset contexts may contain additional rows and must resolve to universe rows by the exact provider `coin`; array position is never identity. User-facing pairs come from resolved token symbols, while opaque `@<index>` names remain provider identifiers.
+- Preserve every spot price and volume as its exact non-negative wire String plus `Decimal`; never parse those facts through `double`. The public response does not provide a snapshot timestamp, so freshness attribution is the client's UTC receipt time and must never be labelled as exchange, block, trade, or provider event time.
+- The default Market ledger includes only pairs with non-zero exact 24-hour notional volume, sorts them by that exact value descending, and displays at most 50. Search may match every pair returned by the accepted response using token symbols, pair, provider coin, or spot index, but still displays at most 50. This is a mobile presentation bound, not a claim that other markets do not exist.
+- Public spot prices are discovery facts only. They are not executable quotes, proof of liquidity, proof of tradability, balances, or authorization. `BuildPolicy.spotExecutionEnabled` remains false, and no Buy, Sell, order, signing, transfer, or withdrawal action may be derived from this adapter.
 - Flutter submits private business intents only. The backend owns account/order/position queries, order/modify/cancel/leverage operations, Agent/API wallet management and L1 signing, nonce allocation, policy/risk checks, idempotency, relay, and reconciliation.
 - User-signed actions use an allowlisted canonical operation intent. Flutter displays network, asset, amount, destination, expiry, and risk, rejects changed or unknown typed data, and never blindly signs arbitrary payloads from a URL.
 - Represent price, amount, quantity, fees, and PnL with decimal/string-safe types. Never use `double` for trading calculations.

@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Loop",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "flutterMode": "debug"
+    },
+    {
+      "name": "Loop (Preview)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main_preview.dart",
+      "cwd": "${workspaceFolder}",
+      "flutterMode": "debug"
+    }
+  ]
+}

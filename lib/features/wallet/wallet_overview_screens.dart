@@ -28,7 +28,7 @@ class WalletScreen extends StatelessWidget {
       children: <Widget>[
         const LoopStateCard(
           title: '开发预览',
-          message: 'Balances, positions and approval warnings on this page are 演示数据. No wallet read or transaction request was made.',
+          message: 'Balances, assets and approval warnings on this page are 演示数据. No wallet read or transaction request was made.',
           icon: Icons.visibility_outlined,
           tone: LoopTone.warning,
         ),
@@ -90,36 +90,6 @@ class WalletScreen extends StatelessWidget {
           value: r'$2,110.79',
           change: '-1.2%',
           onTap: () => context.push('/wallet/asset'),
-        ),
-        const LoopSectionLabel('Trading account'),
-        LoopCard(
-          onTap: () => context.push('/perp/account'),
-          accent: true,
-          tone: LoopTone.market,
-          semanticLabel: 'Open Hyperliquid margin account',
-          child: Row(
-            children: <Widget>[
-              const LoopAssetMark(symbol: 'H', color: LoopColors.market),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'Hyperliquid',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      r'演示数据 · Equity $15,566.25',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded, color: LoopColors.vapor),
-            ],
-          ),
         ),
         const LoopSectionLabel('Review'),
         LoopStateCard(

@@ -2,9 +2,9 @@
 
 Repository phase: `active`.
 
-Build Loop, a Flutter iOS/Android app with six primary destinations—Home, Market, Launch, Chat, Wallet, and Profile—using Privy identity/wallets, Stream Chat/Video, and backend-mediated Hyperliquid Testnet trading.
+Build Loop, a Flutter iOS/Android app with six primary destinations—Home, Market, Launch, Chat, Wallet, and Profile—using Privy identity/wallets, Stream Chat/Video, public Hyperliquid Testnet spot discovery, and future backend-mediated spot execution.
 
-These instructions apply to the entire repository. Preserve the accepted UI catalog and six-destination shell while replacing preview-only provider seams through narrow, verified vertical slices. The current private Perp UI boundary is backend-mediated, read-only D8 account plus short-lived D4 positions; D5 detail, orders, fills, funding, and every trading mutation remain unmounted or unavailable. Never imply that Privy, Stream, Firebase push, account Watchlist persistence, wallet signing, or private trading is connected when its required dashboard, backend, or device inputs are absent.
+These instructions apply to the entire repository. Preserve the accepted UI catalog and six-destination shell while replacing preview-only provider seams through narrow, verified vertical slices. The current mounted market slice is public, Testnet, read-only Spot discovery; retained Perp routes and adapters are disabled implementation history and must not return to product navigation. Never imply that Privy, Stream, Firebase push, account Watchlist persistence, wallet signing, or private spot execution is connected when its required dashboard, backend, or device inputs are absent.
 
 Read `docs/product/implementation-constraints.md` and `docs/product-decisions.md` before planning or implementing product behavior. The former owns security and truth-source constraints; the latter owns the current 103-surface catalog, six primary destinations, and delivery decisions. Material below `reference/legacy-prototype/` is frozen history and must not override current Flutter product decisions.
 
@@ -54,7 +54,7 @@ Never edit generated paths as application source. `.tooling` may hold an ignored
 ## Required workflow
 
 1. Read `README.md`, `harness.json`, relevant decisions, this file, `docs/product/implementation-constraints.md`, and every file being changed.
-2. Preserve Home / Market / Launch / Chat / Wallet / Profile as the six primary destinations. Perp stays within Market; Launchpad remains a first-class destination.
+2. Preserve Home / Market / Launch / Chat / Wallet / Profile as the six primary destinations. Market stays Spot-only and Launchpad remains a first-class destination; do not mount retained Perp history.
 3. Keep Development and Hyperliquid Testnet as the only enabled environments. Mainnet, withdrawals, and automated trading remain false until an explicit security decision changes them.
 4. Keep provider secrets, Stream server tokens, Firebase service-account credentials, APNs private keys, and Hyperliquid agent private keys out of Flutter, fixtures, logs, and Git.
 5. Use Privy as the identity source. Flutter may request a current access token from the SDK but never reads, stores, refreshes, or forwards a Privy refresh token.
@@ -121,6 +121,7 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 - Android Release remains unsigned until approved store credentials are injected by release automation; never fall back to the development debug key.
 - Privy 0.10.1 requires both App ID and Mobile App Client ID. Initialize through `Privy.init`, keep `PrivyLogLevel.none`, and treat `AuthenticatedUnverified` as a restricted offline session rather than logout.
 - A Stream API key alone is not an authenticated connection. Do not construct Video or connect Chat until a validated backend bootstrap returns the server-derived Stream user ID and token providers. Firebase stays uninitialized until real mobile configs and exact push-provider names exist.
+- Keep the top-level `hooks.user_defines.sqlite3.source: system` manifest override while the pinned Stream persistence graph still packages `libsqlite3` on Android. It prevents cold Debug builds and tests from depending on a GitHub native-artifact download. Revisit it only with a dependency decision, clean Debug build, and runtime database evidence on supported Android/iOS devices.
 - The current `notification.v1` router is a provider-neutral classifier only. It accepts exact LOOP-owned String envelopes, binds interactions to the backend-derived Stream user ID, and produces only official Chat CID, Audio Room lobby, or notification-center intents. It is not a raw Firebase/Stream payload parser and does not prove delivery.
 - Foreground/background notification delivery never navigates. Only an explicit interaction may resolve a fixed intent; Preview, signed-out, authenticated-unverified, wrong-recipient, expired, unknown, or provider-shaped data fails closed.
 - `lib/integrations/notifications/firebase_notification_ingress.dart` is the only future location allowed to own Firebase global callbacks. Do not create it or initialize Firebase until real mobile configs, exact provider names, captured payload fixtures, and the ordinary-push/VoIP routing decision exist.

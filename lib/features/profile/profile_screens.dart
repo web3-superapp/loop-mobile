@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/profile/notification_preferences/notification_preferences_controller.dart';
 import 'package:loop_mobile/features/profile/notification_preferences/notification_preferences_gateway.dart';
@@ -1283,111 +1284,41 @@ class _SecurityCenter extends StatelessWidget {
           ),
         ],
         const LoopSectionLabel('Recent sign-ins'),
-        const LoopCard(
-          child: Column(
-            children: <Widget>[
-              _LoginRow(
-                device: 'iPhone 16 Pro',
-                place: 'Shanghai · now',
-                current: true,
-              ),
-              _LoginRow(
-                device: 'Safari on Mac',
-                place: 'Shanghai · 2 days ago',
-                current: false,
-                last: true,
-              ),
-            ],
-          ),
+        const LoopStateCard(
+          key: ValueKey<String>('recent-sign-ins-unavailable'),
+          title: 'Recent sign-ins are not connected',
+          message: 'No device or location history was loaded, so this screen does not show sample sessions as account activity.',
+          icon: Icons.devices_other_outlined,
+          tone: LoopTone.warning,
         ),
       ],
     );
   }
 }
 
-class _DeviceManagement extends StatefulWidget {
+class _DeviceManagement extends StatelessWidget {
   const _DeviceManagement({required this.capabilityAvailable});
 
   final bool capabilityAvailable;
-
-  @override
-  State<_DeviceManagement> createState() => _DeviceManagementState();
-}
-
-class _DeviceManagementState extends State<_DeviceManagement> {
-  final Set<String> _revoked = <String>{};
-
-  Future<void> _remove(String device) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Sign out $device?'),
-        content: const Text(
-          'That device will need to sign in and complete account protection again.',
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sign out device'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed ?? false) setState(() => _revoked.add(device));
-  }
 
   @override
   Widget build(BuildContext context) {
     return LoopPage(
       eyebrow: 'SESSIONS',
       title: 'Devices with access',
-      subtitle: 'Sign out a device you no longer recognize or use.',
+      subtitle: 'Session history and revocation require provider-backed account data.',
       children: <Widget>[
-        if (!widget.capabilityAvailable)
-          const LoopStateCard(
-            title: 'Session controls unavailable',
-            message: 'Device access cannot be changed right now. Your current session is unchanged.',
-            icon: Icons.phonelink_erase_outlined,
-            tone: LoopTone.warning,
-          )
-        else ...<Widget>[
-          const _DeviceCard(
-            icon: Icons.phone_iphone_rounded,
-            title: 'iPhone 16 Pro',
-            detail: 'Shanghai · active now',
-            current: true,
-          ),
-          const SizedBox(height: 10),
-          if (!_revoked.contains('Safari on Mac'))
-            _DeviceCard(
-              icon: Icons.laptop_mac_rounded,
-              title: 'Safari on Mac',
-              detail: 'Shanghai · 2 days ago',
-              onRemove: () => _remove('Safari on Mac'),
-            ),
-          if (!_revoked.contains('Safari on Mac')) const SizedBox(height: 10),
-          if (!_revoked.contains('Chrome on Windows'))
-            _DeviceCard(
-              icon: Icons.computer_rounded,
-              title: 'Chrome on Windows',
-              detail: 'Singapore · 18 days ago',
-              tone: LoopTone.warning,
-              onRemove: () => _remove('Chrome on Windows'),
-            ),
-          if (_revoked.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 14),
-            LoopStateCard(
-              title: '${_revoked.length} device signed out',
-              message: 'Its session can no longer open this account.',
-              icon: Icons.check_circle_outline_rounded,
-              tone: LoopTone.positive,
-            ),
-          ],
-        ],
+        LoopStateCard(
+          key: const ValueKey<String>('device-management-unavailable'),
+          title: capabilityAvailable
+              ? 'Session data is not connected'
+              : 'Session controls unavailable',
+          message: capabilityAvailable
+              ? 'The account may support session management, but no reviewed device list or revocation adapter is available in this build.'
+              : 'Device access cannot be read or changed right now. Your current session is unchanged.',
+          icon: Icons.phonelink_erase_outlined,
+          tone: LoopTone.warning,
+        ),
       ],
     );
   }
@@ -1543,104 +1474,29 @@ class _RecoveryPhraseAccessState extends State<_RecoveryPhraseAccess>
   }
 }
 
-class _SocialRecovery extends StatefulWidget {
+class _SocialRecovery extends StatelessWidget {
   const _SocialRecovery({required this.capabilityAvailable});
 
   final bool capabilityAvailable;
-
-  @override
-  State<_SocialRecovery> createState() => _SocialRecoveryState();
-}
-
-class _SocialRecoveryState extends State<_SocialRecovery> {
-  final List<({String name, String detail, bool confirmed})> _guardians =
-      <({String name, String detail, bool confirmed})>[
-        (name: 'Guardian one', detail: 'Confirmed', confirmed: true),
-        (name: 'Guardian two', detail: 'Invitation sent', confirmed: false),
-      ];
 
   @override
   Widget build(BuildContext context) {
     return LoopPage(
       eyebrow: 'SOCIAL RECOVERY',
       title: 'Two of three guardians',
-      subtitle: 'Recovery requires two trusted people. Guardians cannot see balances or move assets.',
-      bottom: widget.capabilityAvailable
-          ? LoopActionDock(
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _guardians.length < 3
-                      ? () => setState(
-                          () => _guardians.add((
-                            name: 'Guardian three',
-                            detail: 'Invitation ready',
-                            confirmed: false,
-                          )),
-                        )
-                      : null,
-                  icon: const Icon(Icons.person_add_alt_1_rounded),
-                  label: Text(
-                    _guardians.length < 3
-                        ? 'Add guardian'
-                        : 'Three guardians added',
-                  ),
-                ),
-              ),
-            )
-          : null,
+      subtitle: 'Guardian configuration requires provider-backed wallet recovery data.',
       children: <Widget>[
-        if (!widget.capabilityAvailable)
-          const LoopStateCard(
-            title: 'Social recovery unavailable',
-            message: 'This wallet does not currently support guardian-based recovery. No invitations can be sent.',
-            icon: Icons.group_off_outlined,
-            tone: LoopTone.warning,
-          )
-        else ...<Widget>[
-          _GuardianProgress(
-            confirmed: _guardians
-                .where((guardian) => guardian.confirmed)
-                .length,
-          ),
-          const LoopSectionLabel('Guardians'),
-          for (final guardian in _guardians) ...<Widget>[
-            LoopCard(
-              child: Row(
-                children: <Widget>[
-                  _ProfileAvatar(size: 42, muted: !guardian.confirmed),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          guardian.name,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          guardian.detail,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  ),
-                  LoopStatusPill(
-                    label: guardian.confirmed ? 'Confirmed' : 'Waiting',
-                    tone: guardian.confirmed
-                        ? LoopTone.positive
-                        : LoopTone.warning,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
-          const _PrivacyFootnote(
-            text: 'Choose people you can reach independently. Do not choose three contacts controlled by the same person or account.',
-          ),
-        ],
+        LoopStateCard(
+          key: const ValueKey<String>('social-recovery-unavailable'),
+          title: capabilityAvailable
+              ? 'Guardian data is not connected'
+              : 'Social recovery unavailable',
+          message: capabilityAvailable
+              ? 'The wallet may support social recovery, but no reviewed guardian list or invitation adapter is available in this build.'
+              : 'This wallet has not confirmed guardian-based recovery. No invitations can be sent.',
+          icon: Icons.group_off_outlined,
+          tone: LoopTone.warning,
+        ),
       ],
     );
   }
@@ -2043,248 +1899,99 @@ String _notificationPreferencesFailureMessage(
   null => 'The Notification Preferences operation could not be completed.',
 };
 
-enum _ConnectionView { following, followers }
-
-class _ConnectionsScreen extends StatefulWidget {
+class _ConnectionsScreen extends StatelessWidget {
   const _ConnectionsScreen();
 
   @override
-  State<_ConnectionsScreen> createState() => _ConnectionsScreenState();
-}
-
-class _ConnectionsScreenState extends State<_ConnectionsScreen> {
-  _ConnectionView _view = _ConnectionView.following;
-  final Set<String> _unfollowed = <String>{};
-
-  static const _following = <(String, String)>[
-    ('NorthSignal', 'ETH · market structure'),
-    ('BlockHarbor', 'BTC · macro'),
-    ('SableDesk', 'Perps · risk management'),
-  ];
-  static const _followers = <(String, String)>[
-    ('CopperField', 'Follows your shared watchlist'),
-    ('QuietVector', 'Met in ETH Research'),
-  ];
-
-  @override
   Widget build(BuildContext context) {
-    final people = _view == _ConnectionView.following ? _following : _followers;
-    final visible = people
-        .where((person) => !_unfollowed.contains(person.$1))
-        .toList(growable: false);
-    return LoopPage(
+    return const LoopPage(
       eyebrow: 'NETWORK',
       title: 'Connections',
-      subtitle: 'Connections belong to your LOOP account, not a wallet address. People see aliases unless you choose to share more.',
+      subtitle:
+          'Connections belong to your LOOP account, not a wallet address.',
       children: <Widget>[
-        SegmentedButton<_ConnectionView>(
-          showSelectedIcon: false,
-          segments: const <ButtonSegment<_ConnectionView>>[
-            ButtonSegment(
-              value: _ConnectionView.following,
-              label: Text('Following'),
-            ),
-            ButtonSegment(
-              value: _ConnectionView.followers,
-              label: Text('Followers'),
-            ),
-          ],
-          selected: <_ConnectionView>{_view},
-          onSelectionChanged: (selection) =>
-              setState(() => _view = selection.first),
+        LoopStateCard(
+          key: ValueKey<String>('connections-unavailable'),
+          title: 'Connections are not connected',
+          message: 'No follower graph was loaded and no sample people are being presented as account data.',
+          icon: Icons.people_outline_rounded,
+          tone: LoopTone.warning,
         ),
-        const SizedBox(height: 18),
-        if (visible.isEmpty)
-          const LoopStateCard(
-            title: 'No connections here',
-            message: 'People you follow or approve will appear in this list.',
-            icon: Icons.people_outline_rounded,
-          )
-        else
-          for (final person in visible) ...<Widget>[
-            LoopCard(
-              child: Row(
-                children: <Widget>[
-                  const _ProfileAvatar(size: 44),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          person.$1,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          person.$2,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => setState(() => _unfollowed.add(person.$1)),
-                    child: Text(
-                      _view == _ConnectionView.following
-                          ? 'Unfollow'
-                          : 'Remove',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
       ],
     );
   }
 }
 
-enum _BlockedKind { people, contracts, domains }
-
-class _BlocklistScreen extends StatefulWidget {
+class _BlocklistScreen extends StatelessWidget {
   const _BlocklistScreen();
 
   @override
-  State<_BlocklistScreen> createState() => _BlocklistScreenState();
-}
-
-class _BlocklistScreenState extends State<_BlocklistScreen> {
-  _BlockedKind _kind = _BlockedKind.people;
-  final Map<_BlockedKind, List<(String, String)>> _items =
-      <_BlockedKind, List<(String, String)>>{
-        _BlockedKind.people: <(String, String)>[
-          ('LoudOrbit', 'Blocked 12 Aug'),
-        ],
-        _BlockedKind.contracts: <(String, String)>[
-          ('0x90a2…e114', 'Hidden from discovery'),
-        ],
-        _BlockedKind.domains: <(String, String)>[
-          ('claim-example.xyz', 'Links blocked'),
-        ],
-      };
-
-  @override
   Widget build(BuildContext context) {
-    final items = _items[_kind]!;
-    return LoopPage(
+    return const LoopPage(
       eyebrow: 'BLOCKED ITEMS',
       title: 'Control what you see',
-      subtitle: 'Blocked people cannot message you. Blocked contracts and domains are hidden from discovery surfaces.',
+      subtitle: 'A future account service will own blocked people, contracts, and domains.',
       children: <Widget>[
-        SegmentedButton<_BlockedKind>(
-          showSelectedIcon: false,
-          segments: const <ButtonSegment<_BlockedKind>>[
-            ButtonSegment(value: _BlockedKind.people, label: Text('People')),
-            ButtonSegment(
-              value: _BlockedKind.contracts,
-              label: Text('Contracts'),
-            ),
-            ButtonSegment(value: _BlockedKind.domains, label: Text('Domains')),
-          ],
-          selected: <_BlockedKind>{_kind},
-          onSelectionChanged: (selection) =>
-              setState(() => _kind = selection.first),
+        LoopStateCard(
+          key: ValueKey<String>('blocklist-unavailable'),
+          title: 'Blocklist is not connected',
+          message: 'No block records were loaded and this build will not pretend a local removal changed an account-level rule.',
+          icon: Icons.block_outlined,
+          tone: LoopTone.warning,
         ),
-        const SizedBox(height: 18),
-        if (items.isEmpty)
-          const LoopStateCard(
-            title: 'Nothing blocked',
-            message: 'Items you block will appear here so you can restore them later.',
-            icon: Icons.block_outlined,
-          )
-        else
-          for (final item in List<(String, String)>.of(items)) ...<Widget>[
-            LoopCard(
-              child: Row(
-                children: <Widget>[
-                  const Icon(Icons.block_outlined, color: LoopColors.danger),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          item.$1,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          item.$2,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => setState(() => items.remove(item)),
-                    child: const Text('Unblock'),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
       ],
     );
   }
 }
 
-class _GeneralSettings extends StatefulWidget {
+class _GeneralSettings extends ConsumerWidget {
   const _GeneralSettings();
 
   @override
-  State<_GeneralSettings> createState() => _GeneralSettingsState();
-}
-
-class _GeneralSettingsState extends State<_GeneralSettings> {
-  String _language = 'English';
-  String _currency = 'USD';
-  String _theme = 'Dark';
-  bool _reduceData = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final preferences = ref.watch(loopDisplayPreferencesProvider);
     return LoopPage(
       eyebrow: 'GENERAL',
       title: 'Settings',
-      subtitle: 'Choose how LOOP looks, reads, and uses mobile data.',
+      subtitle: 'Local display controls that work without an account service.',
       children: <Widget>[
-        _SelectSetting(
-          icon: Icons.language_rounded,
-          label: 'Language',
-          value: _language,
-          values: const <String>['English', '简体中文', '繁體中文'],
-          onChanged: (value) => setState(() => _language = value),
-        ),
-        const SizedBox(height: 10),
-        _SelectSetting(
-          icon: Icons.attach_money_rounded,
-          label: 'Display currency',
-          value: _currency,
-          values: const <String>['USD', 'CNY', 'EUR', 'USDC'],
-          onChanged: (value) => setState(() => _currency = value),
-        ),
-        const SizedBox(height: 10),
-        _SelectSetting(
-          icon: Icons.dark_mode_outlined,
-          label: 'Theme',
-          value: _theme,
-          values: const <String>['Dark', 'Use device setting'],
-          onChanged: (value) => setState(() => _theme = value),
-        ),
-        const SizedBox(height: 10),
         _SwitchSetting(
-          icon: Icons.data_saver_on_rounded,
-          title: 'Reduce mobile data',
-          detail: 'Load charts on demand and lower media quality',
-          value: _reduceData,
-          onChanged: (value) => setState(() => _reduceData = value),
+          key: const ValueKey<String>('reduce-motion-setting'),
+          icon: Icons.motion_photos_off_outlined,
+          title: 'Reduce motion',
+          detail: 'Disable nonessential LOOP transitions for this app run',
+          value: preferences.reduceMotion,
+          onChanged: ref
+              .read(loopDisplayPreferencesProvider.notifier)
+              .setReduceMotion,
+        ),
+        const LoopSectionLabel('Current build'),
+        const _SettingsGroup(
+          children: <Widget>[
+            _SettingsTile(
+              icon: Icons.language_rounded,
+              title: 'Language',
+              detail: 'Build-defined copy; localization is not connected',
+              onTap: null,
+            ),
+            _SettingsTile(
+              icon: Icons.attach_money_rounded,
+              title: 'Display currency',
+              detail: 'No conversion; markets show their actual quote asset',
+              onTap: null,
+            ),
+            _SettingsTile(
+              icon: Icons.dark_mode_outlined,
+              title: 'Theme',
+              detail: 'Dark design system only in this build',
+              onTap: null,
+              last: true,
+            ),
+          ],
         ),
         const SizedBox(height: 18),
         const _PrivacyFootnote(
-          text: 'Language and display currency change presentation only. They do not change settlement assets or trading terms.',
+          text: 'Reduce motion is kept in memory for this app run and always respects a stricter system accessibility setting. No account or backend request is made.',
         ),
       ],
     );
@@ -2329,23 +2036,28 @@ class _AboutAndLegal extends StatelessWidget {
           ),
         ),
         const LoopSectionLabel('Legal'),
-        const _SettingsGroup(
+        _SettingsGroup(
           children: <Widget>[
-            _DocumentTile(
+            const _DocumentTile(
               title: 'Terms of use',
-              detail: 'Last updated 18 Aug 2026',
+              detail: 'Document not included in this build',
             ),
-            _DocumentTile(
+            const _DocumentTile(
               title: 'Privacy policy',
-              detail: 'How identity and activity data are handled',
+              detail: 'Document not included in this build',
             ),
-            _DocumentTile(
+            const _DocumentTile(
               title: 'Trading risk disclosure',
-              detail: 'Leverage, liquidation, and market risk',
+              detail: 'Document not included; Spot execution is disabled',
             ),
             _DocumentTile(
               title: 'Open-source licenses',
-              detail: 'Libraries used by this app',
+              detail: 'Licenses registered by the running Flutter build',
+              onTap: () => showLicensePage(
+                context: context,
+                applicationName: 'LOOP',
+                applicationVersion: '0.1.0 (1)',
+              ),
               last: true,
             ),
           ],
@@ -2359,68 +2071,103 @@ class _AboutAndLegal extends StatelessWidget {
   }
 }
 
-class _SupportScreen extends StatelessWidget {
+class _SupportScreen extends StatefulWidget {
   const _SupportScreen();
 
   @override
+  State<_SupportScreen> createState() => _SupportScreenState();
+}
+
+class _SupportScreenState extends State<_SupportScreen> {
+  static const _articles = <({String title, String answer, String keywords})>[
+    (
+      title: 'Why does Chat say Stream not connected?',
+      answer: 'A Stream API key is public configuration, not user authorization. Production Chat needs the LOOP backend to validate Privy and issue a server-derived Stream user ID plus short-lived user token. Use Loop (Preview) to inspect labelled offline cells and rooms.',
+      keywords: 'chat stream token preview user id 聊天 未连接',
+    ),
+    (
+      title: 'What does the Spot market show?',
+      answer: 'It shows public, read-only Hyperliquid Testnet spot marks and 24-hour volume. These discovery facts are not executable quotes and the app cannot place an order from this feed.',
+      keywords: 'spot market hyperliquid testnet price volume 现货 行情',
+    ),
+    (
+      title: 'Why can’t I access a wallet action?',
+      answer: 'Wallet creation and signing require an authenticated Privy capability for the current account and device. Preview never creates a real wallet or signs an action.',
+      keywords: 'wallet privy sign preview 钱包 签名',
+    ),
+    (
+      title: 'How do I recover my account?',
+      answer: 'Open Security center to see only the recovery capabilities confirmed for the current wallet. LOOP does not invent a recovery phrase or guardian state.',
+      keywords: 'security recover account phrase guardian 安全 恢复',
+    ),
+    (
+      title: 'How do I report a suspicious message?',
+      answer: 'Production reporting is unavailable until server-authorized Stream moderation is connected. Do not share a recovery phrase, private key, or one-time code with anyone claiming to be support.',
+      keywords: 'report suspicious message scam moderation 举报 可疑 消息',
+    ),
+  ];
+
+  String _query = '';
+
+  @override
   Widget build(BuildContext context) {
+    final normalized = _query.trim().toLowerCase();
+    final articles = _articles
+        .where((article) {
+          if (normalized.isEmpty) return true;
+          return '${article.title} ${article.answer} ${article.keywords}'
+              .toLowerCase()
+              .contains(normalized);
+        })
+        .toList(growable: false);
     return LoopPage(
-      eyebrow: 'HELP',
+      eyebrow: 'HELP · BUNDLED LOCALLY',
       title: 'Find an answer first',
       subtitle: 'LOOP support will never ask for a recovery phrase, private key, or one-time code.',
       children: <Widget>[
-        const TextField(
-          decoration: InputDecoration(
-            hintText: 'Search help',
+        TextField(
+          key: const ValueKey<String>('local-help-search'),
+          onChanged: (value) => setState(() => _query = value),
+          decoration: const InputDecoration(
+            hintText: 'Search local help',
             prefixIcon: Icon(Icons.search_rounded),
           ),
         ),
-        const LoopSectionLabel('Common questions'),
-        const LoopCard(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Column(
-            children: <Widget>[
-              ExpansionTile(
-                title: Text('Why can’t I access a wallet action?'),
-                children: <Widget>[
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Text(
-                      'Some actions depend on your wallet type, account protection, device, and region.',
+        LoopSectionLabel('Local answers · ${articles.length}'),
+        if (articles.isEmpty)
+          const LoopStateCard(
+            key: ValueKey<String>('local-help-empty'),
+            title: 'No local answer found',
+            message: 'Try Stream, Spot, wallet, recovery, or report. Online support is not connected.',
+            icon: Icons.search_off_rounded,
+          )
+        else
+          LoopCard(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Column(
+              children: <Widget>[
+                for (final article in articles)
+                  Material(
+                    type: MaterialType.transparency,
+                    child: ExpansionTile(
+                      key: ValueKey<String>('help-${article.title}'),
+                      title: Text(article.title),
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: Text(article.answer),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-              ExpansionTile(
-                title: Text('How do I recover my account?'),
-                children: <Widget>[
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Text(
-                      'Open Security center to see the recovery methods available for your wallet.',
-                    ),
-                  ),
-                ],
-              ),
-              ExpansionTile(
-                title: Text('How do I report a suspicious message?'),
-                children: <Widget>[
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Text(
-                      'Open the message menu, choose Report, and block the sender if needed.',
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
         const LoopSectionLabel('Contact'),
         const LoopStateCard(
-          title: 'Support replies are slower right now',
-          message: 'You can still submit a request. Include the screen and time of the issue, but never include secret wallet information.',
-          icon: Icons.schedule_rounded,
+          title: 'Online support is not connected',
+          message: 'No request will be submitted from this build. Never put secret wallet information into an unverified support channel.',
+          icon: Icons.support_agent_rounded,
           tone: LoopTone.warning,
         ),
         const SizedBox(height: 12),
@@ -2429,7 +2176,7 @@ class _SupportScreen extends StatelessWidget {
           child: FilledButton.icon(
             onPressed: null,
             icon: const Icon(Icons.support_agent_rounded),
-            label: const Text('Support temporarily offline'),
+            label: const Text('Contact unavailable'),
           ),
         ),
       ],
@@ -2700,7 +2447,7 @@ class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String detail;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final LoopTone tone;
   final Widget? trailing;
   final bool last;
@@ -2709,7 +2456,8 @@ class _SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = loopToneColor(tone);
     return Semantics(
-      button: true,
+      button: onTap != null,
+      enabled: onTap != null,
       label: '$title. $detail',
       child: InkWell(
         onTap: onTap,
@@ -2741,10 +2489,15 @@ class _SettingsTile extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               trailing ??
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    color: LoopColors.vapor,
-                  ),
+                  (onTap == null
+                      ? const LoopStatusPill(
+                          label: 'Unavailable',
+                          tone: LoopTone.neutral,
+                        )
+                      : const Icon(
+                          Icons.chevron_right_rounded,
+                          color: LoopColors.vapor,
+                        )),
             ],
           ),
         ),
@@ -2784,6 +2537,7 @@ class _LaterTile extends StatelessWidget {
 
 class _SwitchSetting extends StatelessWidget {
   const _SwitchSetting({
+    super.key,
     required this.icon,
     required this.title,
     required this.detail,
@@ -2917,99 +2671,6 @@ class _CapabilityPill extends StatelessWidget {
   }
 }
 
-class _LoginRow extends StatelessWidget {
-  const _LoginRow({
-    required this.device,
-    required this.place,
-    required this.current,
-    this.last = false,
-  });
-
-  final String device;
-  final String place;
-  final bool current;
-  final bool last;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 13),
-      decoration: BoxDecoration(
-        border: last
-            ? null
-            : const Border(bottom: BorderSide(color: LoopColors.line)),
-      ),
-      child: Row(
-        children: <Widget>[
-          Icon(
-            current ? Icons.phone_iphone_rounded : Icons.laptop_mac_rounded,
-            color: LoopColors.vapor,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(device, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 3),
-                Text(place, style: Theme.of(context).textTheme.bodyMedium),
-              ],
-            ),
-          ),
-          if (current)
-            const LoopStatusPill(label: 'This device', tone: LoopTone.positive),
-        ],
-      ),
-    );
-  }
-}
-
-class _DeviceCard extends StatelessWidget {
-  const _DeviceCard({
-    required this.icon,
-    required this.title,
-    required this.detail,
-    this.current = false,
-    this.tone = LoopTone.neutral,
-    this.onRemove,
-  });
-
-  final IconData icon;
-  final String title;
-  final String detail;
-  final bool current;
-  final LoopTone tone;
-  final VoidCallback? onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopCard(
-      accent: tone != LoopTone.neutral,
-      tone: tone,
-      child: Row(
-        children: <Widget>[
-          Icon(icon, color: loopToneColor(tone)),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 3),
-                Text(detail, style: Theme.of(context).textTheme.bodyMedium),
-              ],
-            ),
-          ),
-          if (current)
-            const LoopStatusPill(label: 'Current', tone: LoopTone.positive)
-          else
-            TextButton(onPressed: onRemove, child: const Text('Sign out')),
-        ],
-      ),
-    );
-  }
-}
-
 class _RecoveryWordGrid extends StatelessWidget {
   const _RecoveryWordGrid({required this.words});
 
@@ -3049,109 +2710,17 @@ class _RecoveryWordGrid extends StatelessWidget {
   }
 }
 
-class _GuardianProgress extends StatelessWidget {
-  const _GuardianProgress({required this.confirmed});
-
-  final int confirmed;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopCard(
-      accent: true,
-      tone: confirmed >= 2 ? LoopTone.positive : LoopTone.warning,
-      child: Row(
-        children: <Widget>[
-          for (var index = 0; index < 3; index++) ...<Widget>[
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: index < confirmed
-                    ? LoopColors.mint.withValues(alpha: 0.12)
-                    : LoopColors.elevated,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: index < confirmed ? LoopColors.mint : LoopColors.line,
-                ),
-              ),
-              child: Icon(
-                index < confirmed
-                    ? Icons.check_rounded
-                    : Icons.person_outline_rounded,
-                color: index < confirmed ? LoopColors.mint : LoopColors.vapor,
-                size: 19,
-              ),
-            ),
-            if (index < 2)
-              Expanded(child: Container(height: 1, color: LoopColors.line)),
-          ],
-          const SizedBox(width: 14),
-          Text(
-            '$confirmed confirmed',
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SelectSetting extends StatelessWidget {
-  const _SelectSetting({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.values,
-    required this.onChanged,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-  final List<String> values;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopCard(
-      child: Row(
-        children: <Widget>[
-          Icon(icon, color: LoopColors.vapor),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Text(label, style: Theme.of(context).textTheme.titleMedium),
-          ),
-          DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: value,
-              items: values
-                  .map(
-                    (item) => DropdownMenuItem<String>(
-                      value: item,
-                      child: Text(item),
-                    ),
-                  )
-                  .toList(growable: false),
-              onChanged: (next) {
-                if (next != null) onChanged(next);
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _DocumentTile extends StatelessWidget {
   const _DocumentTile({
     required this.title,
     required this.detail,
+    this.onTap,
     this.last = false,
   });
 
   final String title;
   final String detail;
+  final VoidCallback? onTap;
   final bool last;
 
   @override
@@ -3160,7 +2729,7 @@ class _DocumentTile extends StatelessWidget {
       icon: Icons.description_outlined,
       title: title,
       detail: detail,
-      onTap: () {},
+      onTap: onTap,
       last: last,
     );
   }
@@ -3189,10 +2758,9 @@ class _LoopMark extends StatelessWidget {
 }
 
 class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar({required this.size, this.muted = false});
+  const _ProfileAvatar({required this.size});
 
   final double size;
-  final bool muted;
 
   @override
   Widget build(BuildContext context) {
@@ -3201,24 +2769,17 @@ class _ProfileAvatar extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: muted
-            ? null
-            : const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: <Color>[LoopColors.market, LoopColors.chat],
-              ),
-        color: muted ? LoopColors.elevated : null,
-        border: Border.all(
-          color: muted
-              ? LoopColors.line
-              : LoopColors.chalk.withValues(alpha: 0.18),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[LoopColors.market, LoopColors.chat],
         ),
+        border: Border.all(color: LoopColors.chalk.withValues(alpha: 0.18)),
       ),
       alignment: Alignment.center,
       child: Icon(
         Icons.blur_on_rounded,
-        color: muted ? LoopColors.vapor : LoopColors.abyss,
+        color: LoopColors.abyss,
         size: size * 0.48,
       ),
     );

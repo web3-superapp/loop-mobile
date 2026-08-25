@@ -30,6 +30,11 @@ PINNED_DEPENDENCIES = {
     "stream_video_flutter": "1.4.3",
     "uuid": "4.6.0",
 }
+PINNED_SQLITE_GRAPH = {
+    "drift": "2.34.3",
+    "sqlite3": "3.5.2",
+    "sqlite3_flutter_libs": "0.5.42",
+}
 REQUIRED_FILES = (
     ".gitignore",
     ".metadata",
@@ -58,20 +63,28 @@ REQUIRED_FILES = (
     "docs/decisions/0013-connect-principal-bound-perp-private-reads.md",
     "docs/decisions/0014-connect-perp-positions-projection.md",
     "docs/decisions/0015-use-debug-only-routine-verification.md",
+    "docs/decisions/0016-make-primary-market-spot-only.md",
+    "docs/decisions/0017-use-public-testnet-spot-market-data.md",
+    "docs/decisions/0018-use-system-sqlite-for-cold-builds.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/providerless-notification-fixtures.md",
     "docs/failures/privy-android-compile-sdk.md",
     "docs/failures/principal-agnostic-wallet-single-flight.md",
     "docs/failures/production-chat-preview-route-leak.md",
+    "docs/failures/sqlite3-native-hook-download.md",
     "docs/failures/swiftpm-file-picker-cold-cache.md",
     "docs/harness/adoption-report.md",
     "docs/open-source-attribution.md",
     "docs/phase-0/compatibility-report.md",
     "docs/phase-1/frontend-integration-report.md",
     "lib/core/navigation/stream_channel_route.dart",
+    "lib/app/loop_display_preferences.dart",
     "lib/app/notifications/loop_notification_coordinator.dart",
     "lib/integrations/notifications/loop_notification_event_source.dart",
     "lib/integrations/notifications/loop_notification_router.dart",
+    "lib/integrations/hyperliquid/hyperliquid_spot_market.dart",
+    "lib/integrations/hyperliquid/hyperliquid_spot_market_providers.dart",
+    "lib/integrations/hyperliquid/hyperliquid_spot_market_repository.dart",
     "lib/features/market/watchlist/watchlist_controller.dart",
     "lib/features/market/watchlist/watchlist_gateway.dart",
     "lib/features/market/watchlist/watchlist_models.dart",
@@ -99,6 +112,10 @@ REQUIRED_FILES = (
     "test/app_notification_coordinator_test.dart",
     "test/loop_notification_coordinator_test.dart",
     "test/loop_notification_router_test.dart",
+    "test/development_preview_experience_test.dart",
+    "test/hyperliquid_spot_market_repository_test.dart",
+    "test/local_settings_and_help_test.dart",
+    "test/market_screen_test.dart",
     "test/notifications_screen_test.dart",
     "test/watchlist_controller_test.dart",
     "test/watchlist_editor_screen_test.dart",
@@ -1515,12 +1532,93 @@ def check_dependency_pins(root: Path) -> list[str]:
         errors.append("pubspec.yaml must require Dart >=3.13.1 <4.0.0")
     if "enable-swift-package-manager: false" not in text:
         errors.append("pubspec.yaml must disable Swift Package Manager per project")
+    sqlite_system_hook = re.compile(
+        r"^hooks:\n"
+        r"  user_defines:\n"
+        r"    sqlite3:\n"
+        r"      source: system$",
+        re.MULTILINE,
+    )
+    if not sqlite_system_hook.search(text):
+        errors.append(
+            "pubspec.yaml must use the locked sqlite3 system-source hook"
+        )
 
     if lockfile.is_file():
         versions = lockfile_versions(read_text(lockfile))
         for package, version in PINNED_DEPENDENCIES.items():
             if versions.get(package) != version:
                 errors.append(f"pubspec.lock must resolve `{package}` to `{version}`, found `{versions.get(package)}`")
+        for package, version in PINNED_SQLITE_GRAPH.items():
+            if versions.get(package) != version:
+                errors.append(
+                    "pubspec.lock must preserve sqlite compatibility package "
+                    f"`{package}` at `{version}`, found `{versions.get(package)}`"
+                )
+    return errors
+
+
+SPOT_ONLY_PRIMARY_PATHS = (
+    "lib/features/home/home_screens.dart",
+    "lib/features/wallet/wallet_overview_screens.dart",
+    "lib/features/profile/profile_screens.dart",
+)
+
+
+def check_spot_only_product_contract(root: Path) -> list[str]:
+    errors = require_fragments(
+        root,
+        {
+            "lib/app/app_environment.dart": (
+                "static const perpetualsEnabled = false;",
+                "static const spotExecutionEnabled = false;",
+            ),
+            "lib/features/market/market_screens.dart": (
+                "hyperliquidSpotMarketsProvider",
+                "TESTNET · SPOT · 实时公共数据 · 只读",
+                "class LegacyPerpetualMarketScreen",
+            ),
+            "lib/integrations/hyperliquid/hyperliquid_spot_market_repository.dart": (
+                "api.hyperliquid-testnet.xyz",
+                "'type': 'spotMetaAndAssetCtxs'",
+            ),
+            "lib/main_preview.dart": (
+                "developmentPreviewEnabledProvider.overrideWithValue(true)",
+                "MemoryCommunicationGateway()",
+            ),
+            "test/development_preview_experience_test.dart": (
+                "explicit Preview shows live public Spot and an interactive offline Chat",
+            ),
+            "test/hyperliquid_spot_market_repository_test.dart": (
+                "joins sparse tokens and shuffled",
+                "contexts by provider coin",
+            ),
+        },
+    )
+
+    for relative in SPOT_ONLY_PRIMARY_PATHS:
+        path = root / relative
+        if path.is_file() and "/perp" in read_text(path):
+            errors.append(
+                f"{relative} must not mount a retained Perp product route"
+            )
+
+    market_path = root / "lib/features/market/market_screens.dart"
+    if market_path.is_file():
+        source = read_text(market_path)
+        boundary = source.find("class LegacyPerpetualMarketScreen")
+        if boundary < 0:
+            errors.append(
+                "Market must keep retained Perp history behind an explicit legacy boundary"
+            )
+        else:
+            mounted_source = source[:boundary]
+            for marker in ("/perp", "hyperliquidMarketsProvider"):
+                if marker in mounted_source:
+                    errors.append(
+                        "Mounted Market must remain Spot-only without legacy marker "
+                        f"`{marker}`"
+                    )
     return errors
 
 
@@ -3366,6 +3464,7 @@ def validate(root: Path = ROOT) -> list[str]:
     if profile:
         errors.extend(check_profile(root, profile))
     errors.extend(check_dependency_pins(root))
+    errors.extend(check_spot_only_product_contract(root))
     errors.extend(check_native_matrix(root))
     errors.extend(check_android_release_network_contract(root))
     errors.extend(check_audio_room_native_contract(root))
@@ -3398,7 +3497,8 @@ def main() -> int:
         return 1
     print(
         "Harness check passed: profile, six-destination contract, pins, "
-        "Debug-only routine verification, records, and secret rules are consistent."
+        "Spot-only product boundary, Debug-only routine verification, records, "
+        "and secret rules are consistent."
     )
     return 0
 

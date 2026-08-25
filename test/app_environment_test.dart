@@ -13,6 +13,8 @@ void main() {
       expect(BuildPolicy.mainnetEnabled, isFalse);
       expect(BuildPolicy.withdrawalsEnabled, isFalse);
       expect(BuildPolicy.automatedTradingEnabled, isFalse);
+      expect(BuildPolicy.perpetualsEnabled, isFalse);
+      expect(BuildPolicy.spotExecutionEnabled, isFalse);
     },
   );
 }
