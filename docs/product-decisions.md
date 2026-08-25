@@ -61,3 +61,4 @@ Product priority and current delivery are separate:
 - Preview and memory adapters are UI evidence only. Their simulated writes and voice controls must never be presented as connected provider activity.
 - Production status requires configured SDKs, short-lived server-issued tokens, testnet or sandbox evidence, native-device verification and observable provider responses.
 - The production BFF remains responsible for server-only credentials, token issuance, stable error mapping, rate limits, audit events and request correlation.
+- The current frontend sequence finishes application models, controllers, ports, failure states and deterministic tests before adding new private HTTP adapters. Feature modules do not own Dio or backend route literals; production keeps unconnected ports unavailable while tests and `main_preview.dart` may inject visibly labelled fakes.

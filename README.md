@@ -23,6 +23,8 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 
 所有供应商写入默认 fail-closed。正式入口 `lib/main.dart` 不注入 fixture；只有 `lib/main_preview.dart` 的显式离线 Preview 组合根注入 memory/fixture gateway。Preview 中的聊天、语音、钱包和交易状态都标注为 offline / simulated 或 `开发预览`，不代表生产登录、签名、下单、聊天或语音已经接通。
 
+当前开发顺序先完成不依赖新接口的应用逻辑：页面状态、Riverpod controller、业务 port、账号轮换、幂等/对账行为和确定性测试。`lib/features/` 不直接依赖 Dio 或保存 `/v1/` 路由；后续联调只在 `lib/integrations/` 增加真实 adapter。正式入口继续使用 unavailable 实现，Fake 仅允许测试与显式 Preview 注入。
+
 Stream 生产路径必须先通过 BFF 获取或刷新短期用户 token，并由 session authorizer 建立 SDK 会话。每个 Privy principal 使用独立的 Stream client/persistence 实例，账号切换会废弃旧实例，避免不可取消的旧连接污染新账号。正式 Chat 页面直接使用 Stream 官方 controller/UI 作为消息、分页、已读、输入状态与离线历史的真相源；缺少授权时保持 fail-closed，也不会把本地 preview 伪装成在线能力。附件与语音录制会等平台权限和产品策略正式配置后再开放。
 
 当前产品决定以 [`docs/product-decisions.md`](docs/product-decisions.md) 为准。内部不可变 `user id` 是账户与社交关系的主身份，钱包地址只是可绑定、可替换的凭证。界面只陈述可验证的安全事实及来源时间，不使用 AI Guard 或风险分口径。

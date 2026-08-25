@@ -50,6 +50,7 @@ REQUIRED_FILES = (
     "docs/decisions/0001-merge-verified-mobile-foundation.md",
     "docs/decisions/0006-use-identifier-only-stream-token-cards.md",
     "docs/decisions/0007-centralize-notification-intents-before-provider-ingress.md",
+    "docs/decisions/0008-finish-app-logic-before-new-transports.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/providerless-notification-fixtures.md",
     "docs/failures/privy-android-compile-sdk.md",
@@ -271,6 +272,15 @@ NOTIFICATION_ROUTER_IMPORT = (
 )
 NOTIFICATION_ROUTER_CONSTRUCTION_PATTERN = re.compile(
     r"\b(?:LoopNotificationRouter|LoopNotificationSessionContext\s*\.\s*authenticated)\s*\("
+)
+FEATURE_TRANSPORT_FORBIDDEN_IMPORTS = (
+    "package:dio/dio.dart",
+)
+FEATURE_BACKEND_ROUTE_PATTERN = re.compile(r"(?P<quote>['\"])/v1/")
+PRODUCTION_FIXTURE_MARKERS = (
+    "MemoryCommunicationGateway(",
+    "HyperliquidFixtureAdapter(",
+    "PrivyFixtureAdapter(",
 )
 
 
@@ -1231,6 +1241,39 @@ def check_notification_contract(root: Path) -> list[str]:
     return errors
 
 
+def check_providerless_application_contract(root: Path) -> list[str]:
+    """Keep transport and deterministic fakes outside production features."""
+
+    errors: list[str] = []
+    features_root = root / "lib" / "features"
+    if features_root.is_dir():
+        for path in sorted(features_root.rglob("*.dart")):
+            executable = strip_dart_comments(read_text(path))
+            relative = path.relative_to(root)
+            for marker in FEATURE_TRANSPORT_FORBIDDEN_IMPORTS:
+                if marker in executable:
+                    errors.append(
+                        f"{relative} imports transport `{marker}`; providerless feature "
+                        "logic must depend on a narrow port"
+                    )
+            if FEATURE_BACKEND_ROUTE_PATTERN.search(executable):
+                errors.append(
+                    f"{relative} contains a LOOP backend route literal; `/v1/` paths "
+                    "belong only in integration adapters"
+                )
+
+    production_main = root / "lib" / "main.dart"
+    if production_main.is_file():
+        executable = strip_dart_comments(read_text(production_main))
+        for marker in PRODUCTION_FIXTURE_MARKERS:
+            if marker in executable:
+                errors.append(
+                    f"lib/main.dart composes preview fixture `{marker}`; deterministic "
+                    "fakes belong only in tests or lib/main_preview.dart"
+                )
+    return errors
+
+
 def check_secret_paths(paths: list[Path]) -> list[str]:
     errors: list[str] = []
     for path in paths:
@@ -1272,6 +1315,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_product_contract(root))
     errors.extend(check_chat_attachment_contract(root))
     errors.extend(check_notification_contract(root))
+    errors.extend(check_providerless_application_contract(root))
     errors.extend(check_source_guards(root))
     errors.extend(check_records(root))
     visible, visible_error = git_visible_paths(root)

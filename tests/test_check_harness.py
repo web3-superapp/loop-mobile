@@ -115,6 +115,37 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_source_guards(root)
         self.assertEqual(3, len(result))
 
+    def test_feature_cannot_own_backend_transport(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "wallet" / "unsafe_api.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "import 'package:dio/dio.dart';\n"
+                "const route = '/v1/transfer/reviews';\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_providerless_application_contract(root)
+        self.assertTrue(any("imports transport" in error for error in result))
+        self.assertTrue(any("backend route literal" in error for error in result))
+
+    def test_production_main_cannot_compose_preview_fixtures(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "main.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "final chat = MemoryCommunicationGateway();\n"
+                "final market = HyperliquidFixtureAdapter();\n"
+                "final wallet = PrivyFixtureAdapter();\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_providerless_application_contract(root)
+        self.assertEqual(3, len(result))
+        self.assertTrue(
+            all("tests or lib/main_preview.dart" in error for error in result)
+        )
+
     def test_notification_global_handler_must_be_centralized(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
