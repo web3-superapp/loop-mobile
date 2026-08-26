@@ -446,3 +446,40 @@ all 131 tests, the focused Wallet draft/navigation/signing suite passed all 31
 tests, changed-file analysis passed, and the complete Flutter suite passed all
 459 tests. No API request,
 APK, application bundle, iOS build, package, or device run was performed.
+
+## Wallet Providerless Control Closure
+
+On 2026-08-26, decision 0023 closed the remaining misleading behavior in the
+mounted providerless Wallet previews. Transaction History now uses typed
+activity categories and removes nonmatching rows and empty date groups.
+Networks' testnet switch changes only a labelled display row and explicitly
+states that public Hyperliquid Testnet Market reads are not Wallet network
+support. App Permissions no longer exposes an enabled snackbar placeholder or
+claims that the current allowance or balance was read.
+
+Bridge route, fee and all three progress-step facts now come from one closed immutable
+`BridgePreviewSnapshot.demo`. The progress route accepts only that typed
+process-local origin state; naked and wrong-type deep links return to Bridge.
+Its pending and claim variants remain local layout demonstrations with disabled
+provider actions. Transaction Result retains four explicit layout examples,
+but every state says no request was submitted and no receipt or reconciliation
+exists; the explorer action remains disabled.
+
+The failure memory under
+`docs/failures/providerless-wallet-controls-without-effects.md` records why an
+enabled no-op control or URL-owned progress must not return. Harness mutations
+now reject an inactive History or Networks filter, an enabled revocation,
+untyped or dropped Bridge state, a builder fallback, a no-op Bridge switch,
+route/progress literals outside the snapshot, additive enabled actions, and
+positive transaction-result claims.
+Named executable-evidence checks also reject empty, marker-only, or dummy-
+assertion replacements for every Wallet control behavior test.
+
+`python3 scripts/check_harness.py` passed, the complete Python mutation suite
+passed all 147 tests, the focused Wallet controls/navigation/Send suite passed
+all 28 tests, changed-file analysis passed, and the complete Flutter suite
+passed all 467 tests. Full-repository analysis reported only the two separately
+owned info findings in `lib/widgets/loop_ui.dart` and
+`test/loop_perp_providers_test.dart`; this slice did not edit either file. No
+HTTP/provider request, APK, application bundle, iOS build, package, or device
+run was performed.

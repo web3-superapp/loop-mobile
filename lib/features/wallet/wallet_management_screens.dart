@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/wallet/wallet_preview_activity.dart';
 import 'package:loop_mobile/features/wallet/wallet_readiness.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:uuid/uuid.dart';
@@ -17,10 +18,14 @@ class TransactionHistoryScreen extends StatefulWidget {
 }
 
 class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
-  String filter = 'All';
+  WalletPreviewActivityFilter filter = WalletPreviewActivityFilter.all;
 
   @override
   Widget build(BuildContext context) {
+    final activities = WalletPreviewActivity.filteredBy(filter);
+    final sections = <String>{
+      for (final activity in activities) activity.section,
+    };
     return LoopPage(
       title: 'Transaction history',
       eyebrow: '开发预览',
@@ -29,38 +34,23 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: <String>['All', 'Sent', 'Received', 'Swaps']
+          children: WalletPreviewActivityFilter.values
               .map((item) {
                 return ChoiceChip(
-                  label: Text(item),
+                  label: Text(item.label),
                   selected: filter == item,
                   onSelected: (_) => setState(() => filter = item),
                 );
               })
               .toList(growable: false),
         ),
-        const LoopSectionLabel('Today'),
-        const _HistoryRow(
-          icon: Icons.south_west_rounded,
-          title: 'Received USDC',
-          detail: '+1,250.00 USDC',
-          meta: 'Arbitrum · confirmed',
-          tone: LoopTone.positive,
-        ),
-        const _HistoryRow(
-          icon: Icons.swap_horiz_rounded,
-          title: 'Swapped ETH to USDC',
-          detail: '-0.12 ETH',
-          meta: 'Ethereum · confirmed',
-          tone: LoopTone.market,
-        ),
-        const LoopSectionLabel('August 21'),
-        const _HistoryRow(
-          icon: Icons.north_east_rounded,
-          title: 'Sent ETH',
-          detail: '-0.08 ETH',
-          meta: 'Ethereum · 0x71e4…c02a',
-        ),
+        for (final section in sections) ...<Widget>[
+          LoopSectionLabel(section),
+          for (final activity in activities.where(
+            (candidate) => candidate.section == section,
+          ))
+            _HistoryRow(activity: activity),
+        ],
         const SizedBox(height: 12),
         const LoopStateCard(
           title: 'History behavior preview',
@@ -73,22 +63,26 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
 }
 
 class _HistoryRow extends StatelessWidget {
-  const _HistoryRow({
-    required this.icon,
-    required this.title,
-    required this.detail,
-    required this.meta,
-    this.tone = LoopTone.neutral,
-  });
+  const _HistoryRow({required this.activity});
 
-  final IconData icon;
-  final String title;
-  final String detail;
-  final String meta;
-  final LoopTone tone;
+  final WalletPreviewActivity activity;
 
   @override
   Widget build(BuildContext context) {
+    final (icon, tone) = switch (activity.kind) {
+      WalletPreviewActivityKind.sent => (
+        Icons.north_east_rounded,
+        LoopTone.neutral,
+      ),
+      WalletPreviewActivityKind.received => (
+        Icons.south_west_rounded,
+        LoopTone.positive,
+      ),
+      WalletPreviewActivityKind.swap => (
+        Icons.swap_horiz_rounded,
+        LoopTone.market,
+      ),
+    };
     return ListTile(
       contentPadding: EdgeInsets.zero,
       minTileHeight: 68,
@@ -96,9 +90,15 @@ class _HistoryRow extends StatelessWidget {
         backgroundColor: loopToneColor(tone).withValues(alpha: 0.12),
         child: Icon(icon, color: loopToneColor(tone)),
       ),
-      title: Text(title, style: Theme.of(context).textTheme.titleMedium),
-      subtitle: Text(meta, style: Theme.of(context).textTheme.bodyMedium),
-      trailing: Text(detail, style: context.dataStyle),
+      title: Text(
+        activity.title,
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+      subtitle: Text(
+        activity.meta,
+        style: Theme.of(context).textTheme.bodyMedium,
+      ),
+      trailing: Text(activity.detail, style: context.dataStyle),
     );
   }
 }
@@ -419,7 +419,7 @@ class ApprovalsScreen extends StatelessWidget {
       children: <Widget>[
         const LoopStateCard(
           title: '演示数据 · permission warning',
-          message: 'The allowance is larger than the balance currently held in this wallet.',
+          message: 'This is a warning-layout example. No allowance or wallet balance was read.',
           icon: Icons.warning_amber_rounded,
           tone: LoopTone.warning,
         ),
@@ -455,14 +455,8 @@ class ApprovalsScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Revocation requires a configured wallet provider.',
-                      ),
-                    ),
-                  ),
-                  child: const Text('Review revocation'),
+                  onPressed: null,
+                  child: const Text('Revocation unavailable'),
                 ),
               ),
             ],
@@ -532,6 +526,12 @@ class _NetworksScreenState extends State<NetworksScreen> {
           detail: '演示数据 · sample delayed state',
           tone: LoopTone.warning,
         ),
+        if (testnets)
+          const _NetworkRow(
+            name: 'Hyperliquid Testnet',
+            detail: 'Market public reads only · not wallet network support',
+            tone: LoopTone.neutral,
+          ),
         const LoopSectionLabel('Developer access'),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
@@ -539,7 +539,7 @@ class _NetworksScreenState extends State<NetworksScreen> {
           onChanged: (value) => setState(() => testnets = value),
           title: const Text('Show testnets'),
           subtitle: const Text(
-            'Test assets never contribute to portfolio value.',
+            'Display-only filter; it does not enable wallet support.',
           ),
         ),
       ],

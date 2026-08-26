@@ -208,7 +208,10 @@ void main() {
       MaterialApp(theme: LoopTheme.dark, home: const TransactionResultScreen()),
     );
 
-    expect(find.textContaining('No wallet request occurred'), findsOneWidget);
+    expect(
+      find.text('No request was sent or submitted. No pending receipt exists.'),
+      findsOneWidget,
+    );
     expect(find.textContaining('wallet submitted'), findsNothing);
     expect(find.textContaining('reached 0x'), findsNothing);
     expect(find.text('Not submitted'), findsOneWidget);

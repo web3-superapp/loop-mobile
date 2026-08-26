@@ -377,7 +377,10 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
       ),
       GoRoute(
         path: '/wallet/bridge/status',
-        builder: (context, state) => const BridgeStatusScreen(),
+        redirect: (context, state) =>
+            state.extra is BridgePreviewSnapshot ? null : '/wallet/bridge',
+        builder: (context, state) =>
+            BridgeStatusScreen(snapshot: state.extra! as BridgePreviewSnapshot),
       ),
       GoRoute(
         path: '/wallet/transaction',

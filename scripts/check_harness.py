@@ -67,8 +67,10 @@ REQUIRED_FILES = (
     "docs/decisions/0017-use-public-testnet-spot-market-data.md",
     "docs/decisions/0018-use-system-sqlite-for-cold-builds.md",
     "docs/decisions/0019-use-public-testnet-spot-candles.md",
+    "docs/decisions/0023-close-providerless-wallet-controls.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/providerless-notification-fixtures.md",
+    "docs/failures/providerless-wallet-controls-without-effects.md",
     "docs/failures/privy-android-compile-sdk.md",
     "docs/failures/principal-agnostic-wallet-single-flight.md",
     "docs/failures/production-chat-preview-route-leak.md",
@@ -602,6 +604,94 @@ NOTIFICATION_PREFERENCES_BEHAVIOR_TEST_MARKERS = {
         "Notification Preferences supports a 390pt screen at 2x Dynamic Type",
         "legacy H9 categories and fake delivery claims are absent",
     ),
+}
+WALLET_PROVIDERLESS_CONTROL_BEHAVIOR_TEST_MARKERS = {
+    Path("test/bridge_preview_snapshot_test.dart"): (
+        "Bridge progress variants preserve one immutable route snapshot",
+    ),
+    Path("test/wallet_preview_activity_test.dart"): (
+        "each history filter returns only its labelled Preview category",
+    ),
+    Path("test/wallet_providerless_controls_test.dart"): (
+        "history chips filter the labelled Preview activity rows",
+        "network testnet switch changes only visible Preview rows",
+        "permission Preview exposes no fake revocation action",
+        "Bridge status consumes one snapshot and changes local layout",
+        "transaction result remains an explicit state-layout Preview",
+    ),
+    Path("test/app_navigation_test.dart"): (
+        "Bridge status route requires the exact typed snapshot",
+    ),
+    Path("test/send_flow_truthfulness_test.dart"): (
+        "transaction result catalog never claims a transfer occurred",
+    ),
+}
+WALLET_PROVIDERLESS_CONTROL_EXECUTABLE_TEST_EVIDENCE = {
+    Path("test/bridge_preview_snapshot_test.dart"): {
+        "Bridge progress variants preserve one immutable route snapshot": (
+            r"\bpending\.withNeedsClaim\s*\(",
+            r"\bclaim\.sourceLabel\b",
+            r"\bpending\.progressSteps\b",
+            r"\bpendingSteps\.first\.complete\b",
+            r"\bpendingSteps\[\s*1\s*\]\.complete\b",
+            r"\bclaimSteps\.last\.warning\b",
+            r"\bexpect\s*\(",
+        ),
+    },
+    Path("test/wallet_preview_activity_test.dart"): {
+        "each history filter returns only its labelled Preview category": (
+            r"\bWalletPreviewActivity\.filteredBy\s*\(",
+            r"\bhasLength\s*\(",
+            r"\.single\.kind\b",
+        ),
+    },
+    Path("test/wallet_providerless_controls_test.dart"): {
+        "history chips filter the labelled Preview activity rows": (
+            r"\btester\.tap\s*\(\s*find\.widgetWithText\s*\(\s*ChoiceChip\b",
+            r"\bfindsOneWidget\b",
+            r"\bfindsNothing\b",
+        ),
+        "network testnet switch changes only visible Preview rows": (
+            r"\btester\.tap\s*\(\s*find\.text\s*\(",
+            r"\bfindsOneWidget\b",
+            r"\bfindsNothing\b",
+        ),
+        "permission Preview exposes no fake revocation action": (
+            r"\btester\.widget<OutlinedButton>\s*\(",
+            r"\b_expectAllButtonStyleActionsDisabled\s*\(",
+            r"\bbutton\.onPressed\b",
+            r"\bisNull\b",
+            r"\bfindsNothing\b",
+        ),
+        "Bridge status consumes one snapshot and changes local layout": (
+            r"\bBridgeStatusScreen\s*\(\s*snapshot\s*:\s*BridgePreviewSnapshot\.demo",
+            r"\btester\.tap\s*\(\s*find\.byType\s*\(\s*Switch\b",
+            r"\b_expectAllButtonStyleActionsDisabled\s*\(",
+            r"\bclaim\.onPressed\b",
+            r"\bisNull\b",
+        ),
+        "transaction result remains an explicit state-layout Preview": (
+            r"\bTransactionResultScreen\s*\(",
+            r"(?:\btester\.tap\s*\([\s\S]*?){3}",
+            r"\bexplorer\.onPressed\b",
+            r"\bfindsNothing\b",
+        ),
+    },
+    Path("test/app_navigation_test.dart"): {
+        "Bridge status route requires the exact typed snapshot": (
+            r"\brouter\.go\s*\(",
+            r"\bBridgePreviewSnapshot\.demo\.withNeedsClaim\s*\(",
+            r"\bextra\s*:\s*claimSnapshot\b",
+            r"\bfindsOneWidget\b",
+        ),
+    },
+    Path("test/send_flow_truthfulness_test.dart"): {
+        "transaction result catalog never claims a transfer occurred": (
+            r"\bTransactionResultScreen\s*\(",
+            r"\bfindsOneWidget\b",
+            r"\bfindsNothing\b",
+        ),
+    },
 }
 PERP_POSITIONS_CONTROLLER_PATH = Path(
     "lib/features/perp/positions/perp_positions_controller.dart"
@@ -2484,6 +2574,205 @@ def check_wallet_local_draft_contract(root: Path) -> list[str]:
     return errors
 
 
+def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
+    """Keep mounted Wallet Preview controls observable and fail-closed."""
+
+    errors = require_fragments(
+        root,
+        {
+            "docs/decisions/0023-close-providerless-wallet-controls.md": (
+                "A selected filter renders only",
+                "allowance examples visible, but disable revocation",
+                "`BridgePreviewSnapshot.demo`. The status route requires",
+                "Transaction Result as an explicit state-layout Preview",
+            ),
+            "docs/failures/providerless-wallet-controls-without-effects.md": (
+                "## Summary",
+                "## Root Cause",
+                "## Detection",
+                "## Prevention",
+                "## Evidence",
+            ),
+            "lib/features/wallet/bridge_preview_snapshot.dart": (
+                "enum BridgePreviewProgress",
+                "final class BridgePreviewStep",
+                "final class BridgePreviewSnapshot",
+                "const BridgePreviewSnapshot._",
+                "static const demo = BridgePreviewSnapshot._",
+                "BridgePreviewSnapshot withNeedsClaim(bool value)",
+                "List<BridgePreviewStep> get progressSteps",
+                "title: 'Source confirmed'",
+                "title: 'Relay processing'",
+                "Verified provider claim flow is unavailable",
+                "演示数据 · no destination receipt was queried",
+            ),
+            "lib/features/wallet/wallet_preview_activity.dart": (
+                "enum WalletPreviewActivityKind",
+                "enum WalletPreviewActivityFilter",
+                "activity.kind == WalletPreviewActivityKind.sent",
+                "activity.kind == WalletPreviewActivityKind.received",
+                "activity.kind == WalletPreviewActivityKind.swap",
+                "static const all = <WalletPreviewActivity>",
+                "List<WalletPreviewActivity>.unmodifiable(all.where(filter.includes))",
+            ),
+            "lib/features/wallet/trade_screens.dart": (
+                "const snapshot = BridgePreviewSnapshot.demo;",
+                "extra: snapshot",
+                "BridgeStatusScreen({required this.snapshot",
+                "snapshot.sourceLabel",
+                "snapshot.destinationLabel",
+                "for (final step in snapshot.progressSteps)",
+                "index: step.index",
+                "title: step.title",
+                "detail: step.detail",
+                "complete: step.complete",
+                "warning: step.warning",
+                "snapshot.withNeedsClaim(value)",
+            ),
+            "lib/features/wallet/wallet_management_screens.dart": (
+                "WalletPreviewActivity.filteredBy(filter)",
+                "WalletPreviewActivityFilter.values",
+                "if (testnets)",
+                "setState(() => testnets = value)",
+                "name: 'Hyperliquid Testnet'",
+                "Market public reads only · not wallet network support",
+                "child: const Text('Revocation unavailable')",
+                "No allowance or wallet balance was read",
+            ),
+            "lib/features/wallet/send_screens.dart": (
+                "'Pending state example'",
+                "'Success state example'",
+                "'Failure state example'",
+                "'Unknown state example'",
+                "'No request was sent or submitted. No pending receipt exists.'",
+                "'No transfer occurred or was submitted. No success receipt exists.'",
+                "'No request was sent or submitted. No verified failure receipt exists.'",
+                "'No request was sent or submitted. No reconciliation is running.'",
+                "value: 'Not submitted'",
+                "label: const Text('No transaction to inspect')",
+            ),
+            "lib/app.dart": (
+                "state.extra is BridgePreviewSnapshot ? null : '/wallet/bridge'",
+                "snapshot: state.extra! as BridgePreviewSnapshot",
+            ),
+            "test/bridge_preview_snapshot_test.dart": (
+                "Bridge progress variants preserve one immutable route snapshot",
+            ),
+            "test/wallet_preview_activity_test.dart": (
+                "each history filter returns only its labelled Preview category",
+            ),
+            "test/wallet_providerless_controls_test.dart": (
+                "history chips filter the labelled Preview activity rows",
+                "network testnet switch changes only visible Preview rows",
+                "permission Preview exposes no fake revocation action",
+                "Bridge status consumes one snapshot and changes local layout",
+                "transaction result remains an explicit state-layout Preview",
+            ),
+            "test/send_flow_truthfulness_test.dart": (
+                "transaction result catalog never claims a transfer occurred",
+                "No request was sent or submitted. No pending receipt exists.",
+            ),
+            "test/app_navigation_test.dart": (
+                "Bridge status route requires the exact typed snapshot",
+                "wrong Bridge snapshot type",
+            ),
+        },
+    )
+
+    management_path = root / "lib/features/wallet/wallet_management_screens.dart"
+    if management_path.is_file():
+        source = read_text(management_path)
+        history_start = source.find("class TransactionHistoryScreen")
+        history_end = source.find("class WalletManagerScreen", history_start)
+        history_source = source[history_start:history_end]
+        if "WalletPreviewActivity.filteredBy(filter)" not in history_source:
+            errors.append("Wallet History selection must drive the rendered rows")
+
+        approvals_start = source.find("class ApprovalsScreen")
+        approvals_end = source.find("class DappListScreen", approvals_start)
+        approvals_source = source[approvals_start:approvals_end]
+        if not re.search(
+            r"onPressed:\s*null,\s*child:\s*const Text\('Revocation unavailable'\)",
+            approvals_source,
+            re.DOTALL,
+        ):
+            errors.append("Wallet allowance revocation must remain visibly disabled")
+        if "ScaffoldMessenger" in approvals_source:
+            errors.append(
+                "Wallet allowance revocation cannot use an enabled snackbar placeholder"
+            )
+        if re.search(r"\bonPressed\s*:(?!\s*null\b)", approvals_source):
+            errors.append("Wallet allowance Preview cannot add an enabled action")
+
+        networks_start = source.find("class NetworksScreen")
+        networks_end = source.find("class ProtectionScreen", networks_start)
+        networks_source = source[networks_start:networks_end]
+        if "if (testnets)" not in networks_source:
+            errors.append("Wallet testnet selection must drive only its Preview row")
+
+    trade_path = root / "lib/features/wallet/trade_screens.dart"
+    if trade_path.is_file():
+        source = read_text(trade_path)
+        bridge_start = source.find("class BridgeScreen")
+        bridge_source = source[bridge_start:]
+        for marker in (
+            "'Ethereum · 250 USDC'",
+            "'Arbitrum · 248.92 USDC'",
+            "'2–5 minutes'",
+            "'1.08 USDC'",
+            "'Ethereum · 14 confirmations'",
+            "'Provider is preparing the destination transfer'",
+            "'Source confirmed'",
+            "'Relay processing'",
+            "complete: true",
+        ):
+            if marker in bridge_source:
+                errors.append(
+                    "Bridge Preview facts belong only to BridgePreviewSnapshot: "
+                    f"{marker}"
+                )
+        if "extra: snapshot" not in bridge_source:
+            errors.append("Bridge progress navigation must carry its typed snapshot")
+        status_start = bridge_source.find("class BridgeStatusScreen")
+        status_end = bridge_source.find("class _BridgeStep", status_start)
+        status_source = bridge_source[status_start:status_end]
+        if re.search(r"\bonPressed\s*:(?!\s*null\b)", status_source):
+            errors.append("Bridge progress Preview cannot add an enabled action")
+
+    result_path = root / "lib/features/wallet/send_screens.dart"
+    if result_path.is_file():
+        source = read_text(result_path)
+        result_start = source.find("class TransactionResultScreen")
+        result_source = source[result_start:]
+        for marker in (
+            "Transfer completed",
+            "Transaction confirmed",
+            "submitted successfully",
+            "Transaction hash",
+            "Retry transaction",
+        ):
+            if marker in result_source:
+                errors.append(
+                    "Transaction Result Preview must not claim provider activity: "
+                    f"{marker}"
+                )
+
+    errors.extend(
+        check_behavior_test_evidence(
+            root,
+            WALLET_PROVIDERLESS_CONTROL_BEHAVIOR_TEST_MARKERS,
+        )
+    )
+    errors.extend(
+        check_named_executable_test_evidence(
+            root,
+            WALLET_PROVIDERLESS_CONTROL_EXECUTABLE_TEST_EVIDENCE,
+        )
+    )
+
+    return errors
+
+
 def require_fragments(root: Path, contracts: dict[str, tuple[str, ...]]) -> list[str]:
     errors: list[str] = []
     for relative, fragments in contracts.items():
@@ -4331,6 +4620,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_wallet_identity_readiness_contract(root))
     errors.extend(check_wallet_preview_route_contract(root))
     errors.extend(check_wallet_local_draft_contract(root))
+    errors.extend(check_wallet_providerless_controls_contract(root))
     errors.extend(check_native_matrix(root))
     errors.extend(check_android_release_network_contract(root))
     errors.extend(check_audio_room_native_contract(root))
@@ -4363,7 +4653,7 @@ def main() -> int:
         return 1
     print(
         "Harness check passed: profile, six-destination contract, pins, "
-        "Spot-only product, bounded candle, Wallet identity, Wallet route, and local draft boundaries, Debug-only routine "
+        "Spot-only product, bounded candle, Wallet identity, Wallet route, local draft, and providerless control boundaries, Debug-only routine "
         "verification, records, and secret rules are consistent."
     )
     return 0

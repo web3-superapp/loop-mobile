@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/wallet/bridge_preview_snapshot.dart';
 import 'package:loop_mobile/features/wallet/swap_preview_snapshot.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:uuid/uuid.dart';
@@ -300,26 +301,31 @@ class BridgeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const snapshot = BridgePreviewSnapshot.demo;
     return LoopPage(
       title: 'Bridge',
       eyebrow: '开发预览',
       subtitle: 'Cross-chain routing will be supplied by the selected provider; LOOP does not operate a bridge.',
       bottom: LoopActionDock(
         child: FilledButton(
-          onPressed: () => context.push('/wallet/bridge/status'),
+          onPressed: () =>
+              context.push('/wallet/bridge/status', extra: snapshot),
           child: const Text('Preview route status'),
         ),
       ),
       children: <Widget>[
-        const LoopCard(
+        LoopCard(
           child: Column(
             children: <Widget>[
-              LoopKeyValueRow(label: 'From', value: 'Ethereum · 250 USDC'),
-              LoopKeyValueRow(label: 'To', value: 'Arbitrum · 248.92 USDC'),
-              LoopKeyValueRow(label: 'Estimated time', value: '2–5 minutes'),
+              LoopKeyValueRow(label: 'From', value: snapshot.sourceLabel),
+              LoopKeyValueRow(label: 'To', value: snapshot.destinationLabel),
+              LoopKeyValueRow(
+                label: 'Estimated time',
+                value: snapshot.estimatedTimeLabel,
+              ),
               LoopKeyValueRow(
                 label: 'Estimated fees',
-                value: '1.08 USDC',
+                value: snapshot.estimatedFeesLabel,
                 last: true,
               ),
             ],
@@ -338,14 +344,30 @@ class BridgeScreen extends StatelessWidget {
 }
 
 class BridgeStatusScreen extends StatefulWidget {
-  const BridgeStatusScreen({super.key});
+  const BridgeStatusScreen({required this.snapshot, super.key});
+
+  final BridgePreviewSnapshot snapshot;
 
   @override
   State<BridgeStatusScreen> createState() => _BridgeStatusScreenState();
 }
 
 class _BridgeStatusScreenState extends State<BridgeStatusScreen> {
-  bool needsClaim = false;
+  late BridgePreviewSnapshot snapshot;
+
+  @override
+  void initState() {
+    super.initState();
+    snapshot = widget.snapshot;
+  }
+
+  @override
+  void didUpdateWidget(BridgeStatusScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.snapshot, widget.snapshot)) {
+      snapshot = widget.snapshot;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -363,36 +385,24 @@ class _BridgeStatusScreenState extends State<BridgeStatusScreen> {
               ),
             ),
             Switch(
-              value: needsClaim,
-              onChanged: (value) => setState(() => needsClaim = value),
+              value: snapshot.needsClaim,
+              onChanged: (value) =>
+                  setState(() => snapshot = snapshot.withNeedsClaim(value)),
             ),
             Text('Needs claim', style: Theme.of(context).textTheme.bodyMedium),
           ],
         ),
         const SizedBox(height: 14),
-        const _BridgeStep(
-          index: '01',
-          title: 'Source confirmed',
-          detail: 'Ethereum · 14 confirmations',
-          complete: true,
-        ),
-        const _BridgeStep(
-          index: '02',
-          title: 'Relay processing',
-          detail: 'Provider is preparing the destination transfer',
-          complete: true,
-        ),
-        _BridgeStep(
-          index: '03',
-          title: needsClaim ? 'Manual claim required' : 'Destination pending',
-          detail: needsClaim
-              ? 'Open the verified provider claim flow'
-              : 'Waiting for Arbitrum receipt',
-          complete: false,
-          warning: needsClaim,
-        ),
+        for (final step in snapshot.progressSteps)
+          _BridgeStep(
+            index: step.index,
+            title: step.title,
+            detail: step.detail,
+            complete: step.complete,
+            warning: step.warning,
+          ),
         const SizedBox(height: 18),
-        if (needsClaim)
+        if (snapshot.needsClaim)
           FilledButton.icon(
             onPressed: null,
             icon: const Icon(Icons.open_in_new_rounded),

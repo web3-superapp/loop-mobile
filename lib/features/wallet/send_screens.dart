@@ -361,25 +361,25 @@ class _TransactionResultScreenState extends State<TransactionResultScreen> {
         Icons.hourglass_top_rounded,
         LoopTone.warning,
         'Pending state example',
-        'No wallet request occurred. This demonstrates where a provider-backed pending status would appear.',
+        'No request was sent or submitted. No pending receipt exists.',
       ),
       TransactionPreviewState.succeeded => (
         Icons.check_circle_rounded,
         LoopTone.positive,
         'Success state example',
-        'No transfer occurred. This demonstrates a future provider-confirmed success layout.',
+        'No transfer occurred or was submitted. No success receipt exists.',
       ),
       TransactionPreviewState.failed => (
         Icons.error_outline_rounded,
         LoopTone.danger,
         'Failure state example',
-        'No network request occurred. This demonstrates how a verified failure would be explained.',
+        'No request was sent or submitted. No verified failure receipt exists.',
       ),
       TransactionPreviewState.unknown => (
         Icons.help_outline_rounded,
         LoopTone.warning,
         'Unknown state example',
-        'No request was sent. Production unknown states will require provider reconciliation before retry.',
+        'No request was sent or submitted. No reconciliation is running.',
       ),
     };
     return LoopPage(

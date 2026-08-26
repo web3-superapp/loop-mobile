@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/catalog/catalog_surface_screen.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
+import 'package:loop_mobile/features/wallet/bridge_preview_snapshot.dart';
 import 'package:loop_mobile/features/wallet/swap_preview_snapshot.dart';
 import 'package:loop_mobile/features/wallet/wallet_preview_asset.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market.dart';
@@ -403,6 +404,42 @@ void main() {
     );
     expect(find.text(SwapPreviewSnapshot.demo.payLabel), findsOneWidget);
     expect(find.text(SwapPreviewSnapshot.demo.receiveLabel), findsOneWidget);
+  });
+
+  testWidgets('Bridge status route requires the exact typed snapshot', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
+        ],
+        child: const LoopApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    router.go('/wallet/bridge/status');
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/wallet/bridge');
+
+    router.go('/wallet/bridge/status', extra: 'wrong Bridge snapshot type');
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/wallet/bridge');
+
+    final claimSnapshot = BridgePreviewSnapshot.demo.withNeedsClaim(true);
+    router.go('/wallet/bridge/status', extra: claimSnapshot);
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/wallet/bridge/status',
+    );
+    expect(find.text(claimSnapshot.sourceConfirmationLabel), findsOneWidget);
+    expect(find.text(claimSnapshot.destinationStepDetail), findsOneWidget);
+    expect(find.text('Manual claim required'), findsOneWidget);
   });
 
   testWidgets('every Pay surface renders the same non-actionable placeholder', (
