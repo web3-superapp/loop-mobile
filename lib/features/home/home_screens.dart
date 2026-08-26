@@ -133,7 +133,7 @@ class HomeScreen extends ConsumerWidget {
           title: 'ETH moved above your alert',
           subtitle: r'$4,630.50 · source refreshed 12s ago',
           time: '2m',
-          onTap: () => context.push('/market/token'),
+          onTap: () => context.go('/market'),
         ),
         _ActivityRow(
           icon: Icons.shield_outlined,
@@ -519,7 +519,7 @@ class NotificationsScreen extends ConsumerWidget {
           title: r'ETH crossed $4,600',
           body: 'Your price alert triggered once. The alert is now paused.',
           time: '8m',
-          onTap: () => context.push('/market/token'),
+          onTap: () => context.go('/market'),
         ),
         const LoopSectionLabel('Earlier · 演示数据'),
         _NotificationCard(
@@ -627,13 +627,19 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
                   ),
           ),
         ),
+        const LoopStateCard(
+          title: '开发预览',
+          message: 'Suggested results and prices are static examples. Search is not connected.',
+          icon: Icons.science_outlined,
+          tone: LoopTone.warning,
+        ),
         const LoopSectionLabel('Suggested'),
         _SearchResult(
           icon: Icons.currency_bitcoin,
           tone: LoopTone.market,
           title: 'ETH',
           subtitle: r'Token · $4,630.50',
-          onTap: () => context.push('/market/token'),
+          onTap: () => context.go('/market'),
         ),
         _SearchResult(
           icon: Icons.forum_outlined,

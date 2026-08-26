@@ -25,7 +25,8 @@ final class AppSurface {
     required this.description,
     this.kind = SurfaceKind.screen,
     this.deferred = false,
-  });
+    this.retainedHistory = false,
+  }) : assert(!(deferred && retainedHistory));
 
   final String id;
   final String title;
@@ -35,6 +36,7 @@ final class AppSurface {
   final String description;
   final SurfaceKind kind;
   final bool deferred;
+  final bool retainedHistory;
 }
 
 abstract final class SurfaceCatalog {
@@ -177,7 +179,7 @@ abstract final class SurfaceCatalog {
       path: '/search',
       priority: ProductPriority.a,
       module: SurfaceModule.home,
-      description: 'Search assets, Core perp markets, groups and people.',
+      description: 'Search spot assets, groups and people.',
     ),
     AppSurface(
       id: 'B5',
@@ -231,7 +233,7 @@ abstract final class SurfaceCatalog {
       path: '/market',
       priority: ProductPriority.a,
       module: SurfaceModule.market,
-      description: 'Spot discovery with a separate Core perp mode.',
+      description: 'Public Testnet spot discovery and read-only market facts.',
     ),
     AppSurface(
       id: 'C2',
@@ -306,6 +308,7 @@ abstract final class SurfaceCatalog {
       priority: ProductPriority.a,
       module: SurfaceModule.perp,
       description: 'BTC, ETH and SOL Core markets.',
+      retainedHistory: true,
     ),
     AppSurface(
       id: 'D2',
@@ -314,6 +317,7 @@ abstract final class SurfaceCatalog {
       priority: ProductPriority.a,
       module: SurfaceModule.perp,
       description: 'Chart, order book and order ticket.',
+      retainedHistory: true,
     ),
     AppSurface(
       id: 'D3',
@@ -322,6 +326,7 @@ abstract final class SurfaceCatalog {
       priority: ProductPriority.a,
       module: SurfaceModule.perp,
       description: 'Exact order, margin and liquidation context.',
+      retainedHistory: true,
     ),
     AppSurface(
       id: 'D4',
@@ -330,6 +335,7 @@ abstract final class SurfaceCatalog {
       priority: ProductPriority.a,
       module: SurfaceModule.perp,
       description: 'Current positions, PnL, leverage and liquidation price.',
+      retainedHistory: true,
     ),
     AppSurface(
       id: 'D5',
@@ -338,6 +344,7 @@ abstract final class SurfaceCatalog {
       priority: ProductPriority.a,
       module: SurfaceModule.perp,
       description: 'Margin, leverage and reduce-only position actions.',
+      retainedHistory: true,
     ),
     AppSurface(
       id: 'D6',
@@ -346,6 +353,7 @@ abstract final class SurfaceCatalog {
       priority: ProductPriority.a,
       module: SurfaceModule.perp,
       description: 'Current orders with amend and cancel states.',
+      retainedHistory: true,
     ),
     AppSurface(
       id: 'D7',
@@ -354,6 +362,7 @@ abstract final class SurfaceCatalog {
       priority: ProductPriority.b,
       module: SurfaceModule.perp,
       description: 'Fills, realized PnL and funding history.',
+      retainedHistory: true,
     ),
     AppSurface(
       id: 'D8',
@@ -362,6 +371,7 @@ abstract final class SurfaceCatalog {
       priority: ProductPriority.a,
       module: SurfaceModule.perp,
       description: 'Equity, available margin and liquidation risk.',
+      retainedHistory: true,
     ),
     AppSurface(
       id: 'D9',
@@ -370,6 +380,7 @@ abstract final class SurfaceCatalog {
       priority: ProductPriority.b,
       module: SurfaceModule.perp,
       description: 'Move value between spot and perp accounts.',
+      retainedHistory: true,
     ),
     AppSurface(
       id: 'D10',
@@ -378,6 +389,7 @@ abstract final class SurfaceCatalog {
       priority: ProductPriority.b,
       module: SurfaceModule.perp,
       description: 'Official Hyperliquid bridge context only.',
+      retainedHistory: true,
     ),
     AppSurface(
       id: 'D11',
@@ -386,6 +398,7 @@ abstract final class SurfaceCatalog {
       priority: ProductPriority.b,
       module: SurfaceModule.perp,
       description: 'Funding history and next settlement.',
+      retainedHistory: true,
     ),
     AppSurface(
       id: 'D12',
@@ -394,6 +407,7 @@ abstract final class SurfaceCatalog {
       priority: ProductPriority.b,
       module: SurfaceModule.perp,
       description: 'First-use leverage and liquidation acknowledgement.',
+      retainedHistory: true,
     ),
 
     // E · Chat and voice (13)

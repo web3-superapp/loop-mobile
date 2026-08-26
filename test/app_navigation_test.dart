@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/core/navigation/surface_catalog.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -95,6 +96,127 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Spot assets, groups and people.'), findsOneWidget);
     expect(find.text('ETH-PERP'), findsNothing);
+  });
+
+  testWidgets('retained Perp deep links redirect to the Spot market', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
+          hyperliquidSpotMarketRepositoryProvider.overrideWithValue(
+            const _EmptySpotMarketRepository(),
+          ),
+        ],
+        child: const LoopApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    for (final path in LoopRouteRegistry.retainedPerpPaths) {
+      router.go(path);
+      await tester.pumpAndSettle();
+
+      expect(router.routeInformationProvider.value.uri.path, '/market');
+      expect(find.text('Spot market'), findsOneWidget, reason: path);
+      expect(find.text('Perpetuals'), findsNothing, reason: path);
+      expect(find.text('Positions'), findsNothing, reason: path);
+    }
+  });
+
+  testWidgets('providerless token links return to the live Spot ledger', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
+          hyperliquidSpotMarketRepositoryProvider.overrideWithValue(
+            const _EmptySpotMarketRepository(),
+          ),
+        ],
+        child: const LoopApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final activity = find.text('ETH moved above your alert');
+    await tester.ensureVisible(activity);
+    await tester.pumpAndSettle();
+    await tester.tap(activity);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Spot market'), findsOneWidget);
+    expect(find.textContaining('开发预览 K 线'), findsNothing);
+
+    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    router.go('/search');
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+        'Suggested results and prices are static examples. Search is not connected.',
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('ETH'));
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, '/market');
+    expect(find.text('Spot market'), findsOneWidget);
+
+    router.go('/market/token');
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, '/market');
+    expect(find.text('Spot market'), findsOneWidget);
+    expect(find.textContaining('开发预览 K 线'), findsNothing);
+
+    router.go('/market/new');
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('BTC / USDC'), 200);
+    final newPair = find.bySemanticsLabel(
+      RegExp('Open live Spot market after reviewing BTC preview'),
+    );
+    expect(newPair, findsOneWidget);
+    await tester.tap(newPair);
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, '/market');
+
+    router.go('/market/smart-money');
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Atlas 07'),
+      200,
+      scrollable: find
+          .byWidgetPredicate(
+            (widget) =>
+                widget is Scrollable &&
+                widget.axisDirection == AxisDirection.down,
+          )
+          .last,
+    );
+    final walletActivity = find.bySemanticsLabel(
+      RegExp('Open live Spot market after reviewing Atlas 07 activity'),
+    );
+    expect(walletActivity, findsOneWidget);
+    await tester.tap(walletActivity);
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, '/market');
+    semantics.dispose();
   });
 
   testWidgets('home Pay card opens an informational Coming soon route', (

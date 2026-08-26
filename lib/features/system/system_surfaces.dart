@@ -30,7 +30,7 @@ class SystemSurfaceScreen extends StatelessWidget {
     this.supportCode = 'L-2048',
     this.maintenanceWindow = '01:00–01:30 UTC',
     this.restrictedFeatures = const <String>[
-      'Perpetual trading',
+      'Spot order execution',
       'Deposits and withdrawals',
     ],
   });
@@ -1010,7 +1010,7 @@ _permissionContent(LoopPermissionKind kind) {
     LoopPermissionKind.notifications => (
       shortName: 'Notification',
       title: 'Receive time-sensitive alerts',
-      message: 'Allow notifications for fills, liquidation risk, security events, and selected community activity.',
+      message: 'Allow notifications for price alerts, provider activity, security events, and selected community activity.',
       deniedMessage: 'Alerts cannot reach you while LOOP is closed until notifications are enabled in device settings.',
       usedFor: 'Used for the categories you enable in Notification settings.',
       icon: Icons.notifications_active_outlined,

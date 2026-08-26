@@ -642,6 +642,100 @@ class HarnessTests(unittest.TestCase):
             result,
         )
 
+    def test_application_router_cannot_remount_retained_perp_screen(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "lib/app.dart"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "import 'package:loop_mobile/features/perp/perp.dart';\n"
+                "final page = PerpPositionsScreen();\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_spot_only_product_contract(root)
+
+        self.assertTrue(
+            any("must redirect retained Perp" in error for error in result),
+            msg=f"expected retained Perp router guard: {result}",
+        )
+
+    def test_production_entrypoint_cannot_compose_perp_gateway(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "lib/main.dart"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "final gateway = ref.watch(loopPerpSessionProvider);\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_spot_only_product_contract(root)
+
+        self.assertTrue(
+            any("must not compose retained Perp" in error for error in result),
+            msg=f"expected production Perp composition guard: {result}",
+        )
+
+    def test_providerless_token_preview_cannot_return_to_app_router(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "lib/app.dart"
+            path.parent.mkdir(parents=True)
+            path.write_text("return TokenDetailScreen();\n", encoding="utf-8")
+            result = check_harness.check_spot_only_product_contract(root)
+
+        self.assertTrue(
+            any("providerless token routes" in error for error in result),
+            msg=f"expected providerless token route guard: {result}",
+        )
+
+    def test_providerless_source_cannot_build_raw_token_detail_route(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "lib/features/home/home_screens.dart"
+            path.parent.mkdir(parents=True)
+            path.write_text("context.go('/market/token');\n", encoding="utf-8")
+            result = check_harness.check_spot_only_product_contract(root)
+
+        self.assertTrue(
+            any("providerless token Preview routes" in error for error in result),
+            msg=f"expected raw providerless route guard: {result}",
+        )
+
+    def test_providerless_source_cannot_invent_spot_index(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "lib/features/market/market_secondary_screens.dart"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "final route = SpotMarketRoute.location(1035);\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_spot_only_product_contract(root)
+
+        self.assertTrue(
+            any("providerless token Preview routes" in error for error in result),
+            msg=f"expected invented Spot index guard: {result}",
+        )
+
+    def test_mounted_market_cannot_add_a_second_detail_route(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "lib/features/market/market_screens.dart"
+            path.parent.mkdir(parents=True)
+            source = (
+                REPOSITORY_ROOT / "lib/features/market/market_screens.dart"
+            ).read_text(encoding="utf-8")
+            path.write_text(
+                source + "\nfinal unsafeRoute = SpotMarketRoute.location(1035);\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_spot_only_product_contract(root)
+
+        self.assertTrue(
+            any("exactly one token-detail route" in error for error in result),
+            msg=f"expected duplicate Spot route guard: {result}",
+        )
+
     def test_spot_detail_navigation_cannot_be_removed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

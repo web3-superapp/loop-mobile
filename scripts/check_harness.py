@@ -1585,13 +1585,32 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
             "lib/features/market/market_screens.dart": (
                 "hyperliquidSpotMarketsProvider",
                 "TESTNET · SPOT · 实时公共数据 · 只读",
-                "'spotIndex': market.spotIndex.toString()",
+                "SpotMarketRoute.location(market.spotIndex)",
+                "Open live Spot market after reviewing ${asset.symbol} preview",
                 "class SpotMarketDetailScreen",
                 "class LegacyPerpetualMarketScreen",
             ),
+            "lib/features/market/market_secondary_screens.dart": (
+                "semanticLabel: 'Open live Spot market after reviewing $alias activity'",
+            ),
+            "lib/core/navigation/spot_market_route.dart": (
+                "static const String path = '/market/token';",
+                "static const String indexParameter = 'spotIndex';",
+                "throw ArgumentError.value",
+            ),
             "lib/app.dart": (
-                "state.uri.queryParameters['spotIndex']",
-                "spotIndex: int.tryParse(rawSpotIndex)",
+                "SpotMarketRoute.indexParameter",
+                "spotIndex: int.tryParse(rawSpotIndex ?? '')",
+                "_retainedPerpRedirectRoutes",
+                "redirect: (context, state) => '/market'",
+            ),
+            "lib/main.dart": (
+                "runApp(const ProviderScope(child: LoopApp()));",
+            ),
+            "lib/features/catalog/catalog_surface_screen.dart": (
+                "surface.retainedHistory",
+                "Outside the current product",
+                "label: 'Out of scope'",
             ),
             "lib/integrations/hyperliquid/hyperliquid_spot_market_repository.dart": (
                 "api.hyperliquid-testnet.xyz",
@@ -1614,6 +1633,18 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
                 "spot detail never substitutes another market when index is absent",
                 "invalid spot detail index fails closed without a request",
                 "spot detail supports a narrow screen at 200 percent text",
+            ),
+            "test/app_navigation_test.dart": (
+                "retained Perp deep links redirect to the Spot market",
+                "providerless token links return to the live Spot ledger",
+            ),
+            "test/surface_catalog_test.dart": (
+                "retainedPerpSurfaces.every((surface) => surface.retainedHistory)",
+                "inventory keeps retained Perp history out of scope",
+            ),
+            "test/spot_market_route_test.dart": (
+                "builds the canonical detail location",
+                "rejects a negative Spot index",
             ),
         },
     )
@@ -1641,6 +1672,82 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
                         "Mounted Market must remain Spot-only without legacy marker "
                         f"`{marker}`"
                     )
+
+    app_path = root / "lib/app.dart"
+    if app_path.is_file():
+        source = read_text(app_path)
+        for marker in (
+            "features/perp/perp.dart",
+            "PerpMarketScreen(",
+            "PerpTradeScreen(",
+            "PerpConfirmScreen(",
+            "PerpPositionsScreen(",
+            "PerpPositionScreen(",
+            "PerpOrdersScreen(",
+            "PerpHistoryScreen(",
+            "PerpAccountScreen(",
+            "PerpTransferScreen(",
+            "PerpDepositScreen(",
+            "PerpFundingScreen(",
+            "PerpRiskScreen(",
+            "return TokenDetailScreen(",
+        ):
+            if marker in source:
+                errors.append(
+                    "lib/app.dart must redirect retained Perp and providerless "
+                    f"token routes without mounting `{marker}`"
+                )
+
+    main_path = root / "lib/main.dart"
+    if main_path.is_file():
+        source = read_text(main_path)
+        for marker in (
+            "perpPrivateGatewayProvider",
+            "loopPerpSessionProvider",
+            "features/perp/",
+            "loop_perp_providers.dart",
+        ):
+            if marker in source:
+                errors.append(
+                    "lib/main.dart must not compose retained Perp capability "
+                    f"`{marker}`"
+                )
+
+    catalog_path = root / "lib/core/navigation/surface_catalog.dart"
+    if catalog_path.is_file():
+        retained_count = read_text(catalog_path).count("retainedHistory: true")
+        if retained_count != 12:
+            errors.append(
+                "Surface catalog must mark exactly 12 retained Perp surfaces "
+                f"as history, found {retained_count}"
+            )
+
+    providerless_sources = (
+        "lib/features/home/home_screens.dart",
+        "lib/features/market/market_secondary_screens.dart",
+    )
+    for relative in providerless_sources:
+        path = root / relative
+        if not path.is_file():
+            continue
+        source = read_text(path)
+        if "/market/token" in source or "SpotMarketRoute.location(" in source:
+            errors.append(f"{relative} must not open providerless token Preview routes")
+
+    market_path = root / "lib/features/market/market_screens.dart"
+    if market_path.is_file():
+        source = read_text(market_path)
+        exact_location = "SpotMarketRoute.location(market.spotIndex)"
+        if "/market/token" in source:
+            errors.append(
+                "lib/features/market/market_screens.dart must not construct raw "
+                "token-detail routes"
+            )
+        if source.count("SpotMarketRoute.location(") != 1 or exact_location not in source:
+            errors.append(
+                "Mounted Market must construct exactly one token-detail route "
+                "from the admitted row's exact spotIndex"
+            )
     return errors
 
 

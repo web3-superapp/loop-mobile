@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/navigation/spot_market_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/market/market_models.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
@@ -157,14 +158,8 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
                 _SpotMarketRow(
                   rank: index + 1,
                   market: market,
-                  onTap: () => context.push(
-                    Uri(
-                      path: '/market/token',
-                      queryParameters: <String, String>{
-                        'spotIndex': market.spotIndex.toString(),
-                      },
-                    ).toString(),
-                  ),
+                  onTap: () =>
+                      context.push(SpotMarketRoute.location(market.spotIndex)),
                 ),
                 if (index != visible.length - 1) const SizedBox(height: 10),
               ],
@@ -961,10 +956,7 @@ class _LegacyPerpetualMarketScreenState
                       MarketPreviewData.coreAssets.any(
                         (asset) => asset.symbol == visible[index].symbol,
                       )
-                      ? () => context.push(
-                          '/market/token',
-                          extra: visible[index].symbol,
-                        )
+                      ? () => context.go('/market')
                       : null,
                 ),
                 if (index != visible.length - 1) const SizedBox(height: 10),
@@ -1740,7 +1732,7 @@ class NewPairsScreen extends StatelessWidget {
         MarketSnapshotBanner(state: snapshotState),
         const SizedBox(height: 16),
         const LoopStateCard(
-          title: 'Core-only preview',
+          title: 'Sample-only preview',
           message: 'This build shows BTC, ETH, and SOL pairs only. No score implies safety, and missing facts render as —.',
           icon: Icons.filter_alt_outlined,
           tone: LoopTone.market,
@@ -1759,14 +1751,11 @@ class NewPairsScreen extends StatelessWidget {
               asset: MarketPreviewData.coreAssets[index],
               age: const <String>['18 min', '42 min', '1 hr'][index],
               venue: const <String>[
-                'Core spot',
-                'Core spot',
-                'Core spot',
+                'Spot preview',
+                'Spot preview',
+                'Spot preview',
               ][index],
-              onTap: () => context.push(
-                '/market/token',
-                extra: MarketPreviewData.coreAssets[index].symbol,
-              ),
+              onTap: () => context.go('/market'),
             ),
             if (index != MarketPreviewData.coreAssets.length - 1)
               const SizedBox(height: 11),
@@ -1801,7 +1790,8 @@ class _NewPairCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LoopCard(
       onTap: onTap,
-      semanticLabel: 'Open ${asset.symbol} pair facts',
+      semanticLabel:
+          'Open live Spot market after reviewing ${asset.symbol} preview',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[

@@ -322,3 +322,32 @@ Full-repository formatting and analysis remain blocked only by separately
 modified `lib/widgets/loop_ui.dart` and `test/loop_perp_providers_test.dart`;
 the candle slice did not edit either file. No physical-device K-line run was
 performed, so rendered provider/device behavior remains unverified.
+
+## Spot-Only Product Route Closure
+
+On 2026-08-26, the retained Perp implementation was closed at every production
+entry point without deleting its regression history. All twelve `/perp*`
+paths redirect to the live Spot Market, production `main.dart` no longer
+composes the Perp private gateway, and catalog surfaces D1-D12 are visibly
+`Out of scope` and non-interactive. Static Preview assets enter the live Spot
+ledger; only an admitted market row from the current provider snapshot can
+construct a detail route using its exact non-negative `spotIndex`. A naked
+token-detail route fails closed to the ledger and cannot mount legacy Preview
+facts or K-line data.
+
+The Harness now requires the canonical Spot route helper, exact route parsing,
+the twelve retained redirects, clean production composition, non-interactive
+catalog history, and navigation behavior tests. Dedicated mutation tests prove
+that a retained Perp screen, production Perp gateway composition, raw token
+route, invented Spot index, or second detail-route constructor cannot silently
+return. No separate
+failure-memory record was added because decision 0016 already recorded the
+product boundary and executable guards now cover the reproduced gap.
+
+`python3 scripts/check_harness.py` passed, the Python mutation suite passed all
+104 tests, the focused Flutter navigation/catalog/Market suite passed all 37
+tests, and the complete Flutter suite passed all 426 tests. Analysis of every
+Dart file in this slice passed with no issues. Full-repository analysis still reports
+only the two separately owned lint findings in `lib/widgets/loop_ui.dart` and
+`test/loop_perp_providers_test.dart`; this slice did not edit either file. No
+APK, application bundle, iOS build, or physical-device run was produced.

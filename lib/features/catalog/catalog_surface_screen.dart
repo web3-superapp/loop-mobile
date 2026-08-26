@@ -28,7 +28,14 @@ class CatalogSurfaceScreen extends StatelessWidget {
         const SizedBox(width: 4),
       ],
       children: <Widget>[
-        if (surface.deferred)
+        if (surface.retainedHistory)
+          const LoopStateCard(
+            title: 'Outside the current product',
+            message: 'This surface is retained only as implementation history. LOOP is Spot-only and does not mount perpetual product behavior.',
+            icon: Icons.archive_outlined,
+            tone: LoopTone.warning,
+          )
+        else if (surface.deferred)
           LoopStateCard(
             title: 'Outside the current release',
             message: _deferredMessage(surface),
@@ -257,8 +264,12 @@ class _UiInventoryScreenState extends State<UiInventoryScreen> {
           return Padding(
             padding: const EdgeInsets.only(bottom: 9),
             child: LoopCard(
-              onTap: () => context.push(surface.path),
-              semanticLabel: 'Open ${surface.title}',
+              onTap: surface.retainedHistory
+                  ? null
+                  : () => context.push(surface.path),
+              semanticLabel: surface.retainedHistory
+                  ? '${surface.title} is outside the current product'
+                  : 'Open ${surface.title}',
               child: Row(
                 children: <Widget>[
                   SizedBox(
@@ -285,7 +296,12 @@ class _UiInventoryScreenState extends State<UiInventoryScreen> {
                       ],
                     ),
                   ),
-                  if (surface.deferred)
+                  if (surface.retainedHistory)
+                    const LoopStatusPill(
+                      label: 'Out of scope',
+                      tone: LoopTone.warning,
+                    )
+                  else if (surface.deferred)
                     const LoopStatusPill(label: 'Deferred')
                   else
                     const Icon(

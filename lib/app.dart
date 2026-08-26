@@ -7,6 +7,7 @@ import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/app/notifications/loop_notification_coordinator.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
+import 'package:loop_mobile/core/navigation/spot_market_route.dart';
 import 'package:loop_mobile/core/navigation/surface_catalog.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
@@ -16,7 +17,6 @@ import 'package:loop_mobile/features/chat/chat.dart';
 import 'package:loop_mobile/features/home/home_screens.dart';
 import 'package:loop_mobile/features/launchpad/launchpad_screen.dart';
 import 'package:loop_mobile/features/market/market.dart';
-import 'package:loop_mobile/features/perp/perp.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/review/signing_review_surface.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
@@ -203,16 +203,18 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
         builder: (context, state) => const SecurityActivityScreen(),
       ),
       GoRoute(
-        path: '/market/token',
+        path: SpotMarketRoute.path,
+        redirect: (context, state) =>
+            state.uri.queryParameters.containsKey(
+              SpotMarketRoute.indexParameter,
+            )
+            ? null
+            : '/market',
         builder: (context, state) {
-          final rawSpotIndex = state.uri.queryParameters['spotIndex'];
-          if (rawSpotIndex != null) {
-            return SpotMarketDetailScreen(
-              spotIndex: int.tryParse(rawSpotIndex),
-            );
-          }
-          return TokenDetailScreen(
-            symbol: state.extra is String ? state.extra! as String : 'ETH',
+          final rawSpotIndex =
+              state.uri.queryParameters[SpotMarketRoute.indexParameter];
+          return SpotMarketDetailScreen(
+            spotIndex: int.tryParse(rawSpotIndex ?? ''),
           );
         },
       ),
@@ -252,60 +254,7 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
         path: '/market/smart-money',
         builder: (context, state) => const SmartMoneyScreen(),
       ),
-      GoRoute(
-        path: '/perp',
-        builder: (context, state) => const PerpMarketScreen(),
-      ),
-      GoRoute(
-        path: '/perp/trade',
-        builder: (context, state) => PerpTradeScreen(
-          symbol: state.extra is String ? state.extra! as String : 'ETH',
-        ),
-      ),
-      GoRoute(
-        path: '/perp/confirm',
-        builder: (context, state) => PerpConfirmScreen(
-          intent: state.extra is SigningIntent
-              ? state.extra! as SigningIntent
-              : null,
-        ),
-      ),
-      GoRoute(
-        path: '/perp/positions',
-        builder: (context, state) => const PerpPositionsScreen(),
-      ),
-      GoRoute(
-        path: '/perp/position',
-        builder: (context, state) => const PerpPositionScreen(),
-      ),
-      GoRoute(
-        path: '/perp/orders',
-        builder: (context, state) => const PerpOrdersScreen(),
-      ),
-      GoRoute(
-        path: '/perp/history',
-        builder: (context, state) => const PerpHistoryScreen(),
-      ),
-      GoRoute(
-        path: '/perp/account',
-        builder: (context, state) => const PerpAccountScreen(),
-      ),
-      GoRoute(
-        path: '/perp/transfer',
-        builder: (context, state) => const PerpTransferScreen(),
-      ),
-      GoRoute(
-        path: '/perp/deposit',
-        builder: (context, state) => const PerpDepositScreen(),
-      ),
-      GoRoute(
-        path: '/perp/funding',
-        builder: (context, state) => const PerpFundingScreen(),
-      ),
-      GoRoute(
-        path: '/perp/risk',
-        builder: (context, state) => const PerpRiskScreen(),
-      ),
+      ..._retainedPerpRedirectRoutes,
       GoRoute(
         path: '/chat/group',
         builder: (context, state) => const ChatPreviewRouteGuard(
@@ -623,6 +572,21 @@ String _profilePath(String id) => switch (id) {
 };
 
 abstract final class LoopRouteRegistry {
+  static const Set<String> retainedPerpPaths = <String>{
+    '/perp',
+    '/perp/trade',
+    '/perp/confirm',
+    '/perp/positions',
+    '/perp/position',
+    '/perp/orders',
+    '/perp/history',
+    '/perp/account',
+    '/perp/transfer',
+    '/perp/deposit',
+    '/perp/funding',
+    '/perp/risk',
+  };
+
   static const Set<String> customSurfacePaths = <String>{
     '/splash',
     '/onboarding',
@@ -642,7 +606,7 @@ abstract final class LoopRouteRegistry {
     '/search',
     '/home/security',
     '/market',
-    '/market/token',
+    SpotMarketRoute.path,
     '/market/chart',
     '/market/new',
     '/market/holders',
@@ -650,18 +614,7 @@ abstract final class LoopRouteRegistry {
     '/market/watchlist',
     '/market/alerts',
     '/market/smart-money',
-    '/perp',
-    '/perp/trade',
-    '/perp/confirm',
-    '/perp/positions',
-    '/perp/position',
-    '/perp/orders',
-    '/perp/history',
-    '/perp/account',
-    '/perp/transfer',
-    '/perp/deposit',
-    '/perp/funding',
-    '/perp/risk',
+    ...retainedPerpPaths,
     '/chat',
     '/chat/group',
     '/chat/voice',
@@ -721,6 +674,11 @@ abstract final class LoopRouteRegistry {
     '/preview/loading',
   };
 }
+
+final List<RouteBase> _retainedPerpRedirectRoutes = LoopRouteRegistry
+    .retainedPerpPaths
+    .map((path) => GoRoute(path: path, redirect: (context, state) => '/market'))
+    .toList(growable: false);
 
 final List<RouteBase> _catalogRoutes = SurfaceCatalog.all
     .where(

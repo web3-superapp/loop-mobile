@@ -618,7 +618,7 @@ class PriceAlertsScreen extends StatelessWidget {
           const SizedBox(height: 18),
           const LoopStateCard(
             title: 'Notifications are off',
-            message: 'Allow notifications in system settings before expecting price or liquidation reminders.',
+            message: 'Allow notifications in system settings before expecting price or provider-activity reminders.',
             icon: Icons.notifications_off_outlined,
             tone: LoopTone.warning,
           ),
@@ -860,7 +860,7 @@ class _SmartMoneyScreenState extends State<SmartMoneyScreen> {
             time: '2 min ago',
             symbol: 'ETH',
             tone: LoopTone.positive,
-            onOpen: () => context.push('/market/token', extra: 'ETH'),
+            onOpen: () => context.go('/market'),
           ),
           const SizedBox(height: 10),
           _WalletActivityCard(
@@ -871,7 +871,7 @@ class _SmartMoneyScreenState extends State<SmartMoneyScreen> {
             time: '18 min ago',
             symbol: 'BTC',
             tone: LoopTone.warning,
-            onOpen: () => context.push('/market/token', extra: 'BTC'),
+            onOpen: () => context.go('/market'),
           ),
           const SizedBox(height: 10),
           _WalletActivityCard(
@@ -882,7 +882,7 @@ class _SmartMoneyScreenState extends State<SmartMoneyScreen> {
             time: '41 min ago',
             symbol: 'SOL',
             tone: LoopTone.danger,
-            onOpen: () => context.push('/market/token', extra: 'SOL'),
+            onOpen: () => context.go('/market'),
           ),
           const LoopSectionLabel('Following'),
           const LoopCard(
@@ -942,7 +942,7 @@ class _WalletActivityCard extends StatelessWidget {
       accent: true,
       tone: tone,
       onTap: onOpen,
-      semanticLabel: 'Open $symbol after reviewing $alias activity',
+      semanticLabel: 'Open live Spot market after reviewing $alias activity',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[

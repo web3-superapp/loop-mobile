@@ -1256,7 +1256,7 @@ class _ProfileSetupScreenState extends State<_ProfileSetupScreen> {
     'BTC',
     'ETH',
     'Solana',
-    'Perps',
+    'Stablecoins',
     'DeFi',
     'Memes',
   ];

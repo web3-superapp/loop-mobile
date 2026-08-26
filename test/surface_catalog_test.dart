@@ -1,6 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/core/navigation/surface_catalog.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/catalog/catalog_surface_screen.dart';
 
 void main() {
   test('catalog keeps all 103 product surfaces addressable', () {
@@ -67,6 +70,24 @@ void main() {
       ]);
       expect(SurfaceCatalog.primaryPaths, isNot(contains('/perp')));
       expect(SurfaceCatalog.byPath('/perp').module, SurfaceModule.perp);
+
+      final retainedPerpSurfaces = SurfaceCatalog.all
+          .where((surface) => surface.module == SurfaceModule.perp)
+          .toList(growable: false);
+      expect(
+        retainedPerpSurfaces.map((surface) => surface.path).toSet(),
+        LoopRouteRegistry.retainedPerpPaths,
+      );
+      expect(
+        retainedPerpSurfaces.every((surface) => surface.retainedHistory),
+        isTrue,
+      );
+      expect(
+        SurfaceCatalog.all
+            .where((surface) => surface.module != SurfaceModule.perp)
+            .every((surface) => !surface.retainedHistory),
+        isTrue,
+      );
     },
   );
 
@@ -77,5 +98,24 @@ void main() {
 
     expect(genericSurfaces, isNotEmpty);
     expect(genericSurfaces.every((surface) => surface.deferred), isTrue);
+  });
+
+  testWidgets('inventory keeps retained Perp history out of scope', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(theme: LoopTheme.dark, home: const UiInventoryScreen()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Out of scope'), findsNWidgets(12));
+    expect(find.text('Perpetuals'), findsOneWidget);
+    expect(
+      find.ancestor(
+        of: find.text('Perpetuals'),
+        matching: find.byType(InkWell),
+      ),
+      findsNothing,
+    );
   });
 }
