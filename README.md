@@ -20,7 +20,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - Stream Chat 官方 client、按用户持久化、token-provider 会话、频道列表与消息页已接入；后端身份/token 未就绪时不连接、不声称在线
 - Stream `token_card.v1` 只读消息卡已接入官方消息渲染链路：生产消息只接受严格的资产/链/合约/时间标识，不固化价格或风险事实；后端新鲜事实投影未接入前显示不可用，也不提供 Buy / Watch。旧版群聊、私聊、搜索与卡片 fixture 路由已限制为显式离线 Preview
 - 原生 Privy Bearer `POST /v1/bootstrap` 客户端已接入；严格解析服务端 LOOP/Stream 身份、隔离账号切换并最多重试一次 401。未配置后端地址时零请求，Stream token 缺失时仍不连接
-- Audio Room 前端纵切已完成：后端授权房间接缝、默认静音单飞加入、官方 `CallState` 状态/成员/能力/麦克风 UI、失败清理和账号/房间/client 轮换；真实 Video token 与房间 locator 缺失时保持不可加入
+- Audio Room 前端纵切已完成，并从正式 Chat 顶部提供唯一可见入口：入口只打开生产 Lobby，不发起 provider 操作，也不会回退演示房间。后端授权房间接缝、默认静音单飞加入、官方 `CallState` 状态/成员/能力/麦克风 UI、失败清理和账号/房间/client 轮换均已落地；真实 Video token 与房间 locator 缺失时保持不可加入
 - Audio Room 首版只配置前台麦克风能力；任何退房或 App 退到后台都会立即发起原生音频暂停、终态关麦与 single-flight 退房，不让可能卡住的麦克风/原生命令延迟退房。大厅只在旧 `Call` 已从 Stream `activeCalls` 移除、在途麦克风命令已结束且命令后的第二次关麦已执行后开放。为避开 Stream Video 1.4.3 的迟到音轨重建缺陷，每个 `Call` 只允许一次 Speak 启动；Mute 后需离开并重进才能再次发言。失败可显式重试清理。会自动注册 Telecom/CallKit 的 Stream Push 插件不进入当前依赖图，Android 同时移除可选来电、后台通话、相机与推送项，iOS 不启用 Camera、PushKit、CallKit 或后台模式
 - 通知导航的 EventSource / Coordinator 纵切已接入根组合：生产 source 默认是无初始点击、无事件的 disabled 实现；协调器只从真实 LOOP session 与已验证 bootstrap identity 取得 Stream 身份。恢复期间最多暂存一个、默认 15 秒且硬上限一分钟的点击，账号切换、超时或授权失败即丢弃；通过完整重验后也只能落到官方 Chat CID、Audio Room 大厅或通知中心。生产通知页不展示伪实时卡片，演示卡仅在显式 `开发预览` 中可见
 - Watchlist 已按后端现有版本化契约完成 providerless 应用逻辑：分组、资产顺序、草稿、保存单飞、显式丢弃与版本冲突恢复均在窄端口后建模。正式入口默认不可用，不发送私有请求；只有 `main_preview.dart` 注入明确标注的内存实现。Watchlist 只保存资产标识，不把价格、涨跌、可交易性或提醒状态伪装成账户事实

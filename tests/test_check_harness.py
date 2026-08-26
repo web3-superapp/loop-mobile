@@ -2915,6 +2915,75 @@ class HarnessTests(unittest.TestCase):
             )
         )
 
+    def test_production_chat_audio_room_entry_cannot_point_elsewhere(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/features/chat/stream_chat_inbox_page.dart")
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            mutated = source.replace(
+                "context.push<void>('/chat/voice')",
+                "context.push<void>('/chat/meeting')",
+            )
+            self.assertNotEqual(source, mutated)
+            destination = root / relative
+            destination.parent.mkdir(parents=True)
+            destination.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_production_chat_audio_room_entry(root)
+
+        self.assertTrue(
+            any(
+                "Audio Room entry must open `/chat/voice` exactly once" in error
+                for error in result
+            ),
+            msg=f"expected production Audio Room route guard: {result}",
+        )
+
+    def test_production_chat_audio_room_behavior_evidence_cannot_be_hollow(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("test/stream_chat_inbox_page_test.dart")
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            mutated = source.replace(
+                "expect(find.byType(StreamVoiceRoomPage), findsOneWidget);",
+                "find.byType(StreamVoiceRoomPage);\n"
+                "      expect(true, isTrue);",
+            )
+            self.assertNotEqual(source, mutated)
+            destination = root / relative
+            destination.parent.mkdir(parents=True)
+            destination.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_production_chat_audio_room_entry(root)
+
+        self.assertTrue(
+            any("lacks exact Audio Room assertions" in error for error in result),
+            msg=f"expected production Audio Room behavior guard: {result}",
+        )
+
+    def test_production_chat_audio_room_entry_cannot_be_authorization_gated(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/features/chat/stream_chat_inbox_page.dart")
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            mutated = source.replace(
+                "        actions: <Widget>[\n          Padding(",
+                "        actions: <Widget>[\n"
+                "          if (!authorization.isLoading)\n"
+                "            Padding(",
+            )
+            self.assertNotEqual(source, mutated)
+            destination = root / relative
+            destination.parent.mkdir(parents=True)
+            destination.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_production_chat_audio_room_entry(root)
+
+        self.assertTrue(
+            any("must not depend on inbox authorization state" in error for error in result),
+            msg=f"expected production Audio Room state-independence guard: {result}",
+        )
+
     def test_duplicate_preview_chat_route_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

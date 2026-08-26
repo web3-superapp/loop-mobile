@@ -81,7 +81,21 @@ class StreamChatInboxPage extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(automaticallyImplyLeading: false),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        actions: <Widget>[
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: TextButton.icon(
+              key: const ValueKey<String>('stream-audio-room-entry'),
+              onPressed: () => unawaited(context.push<void>('/chat/voice')),
+              icon: const Icon(Icons.graphic_eq_rounded),
+              label: const Text('Audio Room'),
+              style: TextButton.styleFrom(foregroundColor: LoopColors.chat),
+            ),
+          ),
+        ],
+      ),
       body: Stack(
         children: <Widget>[
           const Positioned.fill(child: LoopBackdrop()),

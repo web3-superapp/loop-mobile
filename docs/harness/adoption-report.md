@@ -483,3 +483,22 @@ owned info findings in `lib/widgets/loop_ui.dart` and
 `test/loop_perp_providers_test.dart`; this slice did not edit either file. No
 HTTP/provider request, APK, application bundle, iOS build, package, or device
 run was performed.
+
+## Production Chat Audio Room Entry
+
+On 2026-08-26, decision 0024 connected the already implemented foreground
+Audio Room lobby to the normal production Chat interface. One visible app-bar
+action now opens `/chat/voice` in every inbox state, including when Chat
+authorization is unavailable. The action itself performs no Stream request and
+the destination remains gated independently by the production Video session
+and backend-owned room target; it never falls back to the named Preview room or
+members.
+
+The Harness requires the entry inside `StreamChatInboxPage`, its exact
+production route, the production `StreamVoiceRoomPage` composition, and widget
+evidence that the unavailable lobby contains no Preview room or connected-state
+claim. Mutation tests reject route drift and hollow behavior evidence. No
+provider request, build, package, or device run is part of this slice.
+`scripts/check_harness.py` passed, all 150 Python mutation tests passed, the eight
+focused Chat inbox tests passed, changed-file analysis reported no issues, and
+the complete Flutter suite passed all 470 tests.

@@ -68,6 +68,7 @@ REQUIRED_FILES = (
     "docs/decisions/0018-use-system-sqlite-for-cold-builds.md",
     "docs/decisions/0019-use-public-testnet-spot-candles.md",
     "docs/decisions/0023-close-providerless-wallet-controls.md",
+    "docs/decisions/0024-expose-production-audio-room-from-chat.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/providerless-notification-fixtures.md",
     "docs/failures/providerless-wallet-controls-without-effects.md",
@@ -3332,6 +3333,140 @@ def check_chat_attachment_contract(root: Path) -> list[str]:
     return errors
 
 
+def check_production_chat_audio_room_entry(root: Path) -> list[str]:
+    """Keep the production Audio Room reachable without inventing room state."""
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/features/chat/stream_chat_inbox_page.dart": (
+                "class StreamChatInboxPage extends ConsumerWidget",
+                "ValueKey<String>('stream-audio-room-entry')",
+                "context.push<void>('/chat/voice')",
+                "label: const Text('Audio Room')",
+            ),
+            "lib/features/chat/voice_room_page.dart": (
+                "gateway.mode == CommunicationMode.production",
+                "return const StreamVoiceRoomPage();",
+            ),
+            "test/stream_chat_inbox_page_test.dart": (
+                "production Chat opens the truthful Audio Room lobby without preview fallback",
+                "production Audio Room entry remains visible while Chat loads",
+                "production Audio Room entry remains visible after Chat error",
+                "find.byType(StreamVoiceRoomPage), findsOneWidget",
+                "find.text('ETH Macro Room'), findsNothing",
+                "find.text('Connected'), findsNothing",
+            ),
+            "docs/decisions/0024-expose-production-audio-room-from-chat.md": (
+                "The entry performs no provider operation",
+                "No authorized room assigned",
+            ),
+        },
+    )
+
+    inbox_path = root / "lib/features/chat/stream_chat_inbox_page.dart"
+    if inbox_path.is_file():
+        inbox = strip_dart_comments(read_text(inbox_path))
+        class_start = inbox.find("class StreamChatInboxPage")
+        class_end = inbox.find("class StreamChatChannelRoutePage", class_start + 1)
+        class_body = inbox[
+            class_start : class_end if class_end >= 0 else len(inbox)
+        ]
+        scaffold_start = class_body.find("return Scaffold(")
+        app_bar_start = class_body.find("appBar: AppBar(", scaffold_start)
+        body_start = class_body.find("body: Stack(", app_bar_start)
+        app_bar = class_body[
+            app_bar_start : body_start if body_start >= 0 else len(class_body)
+        ]
+        if (
+            class_start < 0
+            or scaffold_start < 0
+            or app_bar_start < 0
+            or body_start < 0
+            or app_bar.count("'stream-audio-room-entry'") != 1
+        ):
+            errors.append(
+                "production StreamChatInboxPage app bar must own exactly one Audio Room entry"
+            )
+        if app_bar.count("context.push<void>('/chat/voice')") != 1:
+            errors.append(
+                "production StreamChatInboxPage Audio Room entry must open `/chat/voice` exactly once"
+            )
+        if re.search(r"\bif\s*(?:\(|\b)", app_bar) or "onPressed: null" in app_bar:
+            errors.append(
+                "production StreamChatInboxPage Audio Room entry must not depend on inbox authorization state"
+            )
+
+    errors.extend(
+        check_behavior_test_evidence(
+            root,
+            {
+                Path("test/stream_chat_inbox_page_test.dart"): (
+                    "production Chat opens the truthful Audio Room lobby without preview fallback",
+                    "production Audio Room entry remains visible while Chat loads",
+                    "production Audio Room entry remains visible after Chat error",
+                ),
+            },
+        )
+    )
+
+    test_path = root / "test/stream_chat_inbox_page_test.dart"
+    if test_path.is_file():
+        test_source = strip_dart_comments(read_text(test_path))
+        test_starts = [
+            match.start()
+            for match in re.finditer(r"\btest(?:Widgets)?\s*\(", test_source)
+        ]
+
+        def named_test_body(marker: str) -> str | None:
+            declaration = re.search(
+                r"\btest(?:Widgets)?\s*\(\s*(['\"])"
+                + re.escape(marker)
+                + r"\1\s*,",
+                test_source,
+                re.DOTALL,
+            )
+            if declaration is None:
+                return None
+            next_test = next(
+                (start for start in test_starts if start > declaration.start()),
+                len(test_source),
+            )
+            return test_source[declaration.end() : next_test]
+
+        exact_assertions = {
+            "production Chat opens the truthful Audio Room lobby without preview fallback": (
+                r"expect\s*\(\s*find\.byType\s*\(\s*StreamVoiceRoomPage\s*\)\s*,\s*findsOneWidget\s*\)",
+                r"expect\s*\(\s*find\.text\s*\(\s*'ETH Macro Room'\s*\)\s*,\s*findsNothing\s*\)",
+                r"expect\s*\(\s*find\.textContaining\s*\(\s*'preview participant'\s*\)\s*,\s*findsNothing\s*\)",
+                r"expect\s*\(\s*find\.text\s*\(\s*'Connected'\s*\)\s*,\s*findsNothing\s*\)",
+            ),
+            "production Audio Room entry remains visible while Chat loads": (
+                r"expect\s*\(\s*find\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(\s*'stream-chat-connecting'\s*\)\s*\)\s*,\s*findsOneWidget\s*,?\s*\)",
+                r"expect\s*\(\s*find\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(\s*'stream-audio-room-entry'\s*\)\s*\)\s*,\s*findsOneWidget\s*,?\s*\)",
+            ),
+            "production Audio Room entry remains visible after Chat error": (
+                r"expect\s*\(\s*find\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(\s*'stream-chat-unavailable'\s*\)\s*\)\s*,\s*findsOneWidget\s*,?\s*\)",
+                r"expect\s*\(\s*find\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(\s*'stream-audio-room-entry'\s*\)\s*\)\s*,\s*findsOneWidget\s*,?\s*\)",
+            ),
+        }
+        for marker, patterns in exact_assertions.items():
+            body = named_test_body(marker)
+            if body is None:
+                continue
+            missing = [
+                pattern
+                for pattern in patterns
+                if re.search(pattern, body, re.DOTALL) is None
+            ]
+            if missing:
+                errors.append(
+                    "test/stream_chat_inbox_page_test.dart test "
+                    f"`{marker}` lacks exact Audio Room assertions"
+                )
+    return errors
+
+
 def check_source_guards(root: Path) -> list[str]:
     forbidden = {
         "PrivyLogLevel.debug": "Privy debug logging can expose OTPs and access tokens",
@@ -4626,6 +4761,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_audio_room_native_contract(root))
     errors.extend(check_product_contract(root))
     errors.extend(check_chat_attachment_contract(root))
+    errors.extend(check_production_chat_audio_room_entry(root))
     errors.extend(check_notification_contract(root))
     errors.extend(check_providerless_application_contract(root))
     errors.extend(check_watchlist_application_contract(root))
@@ -4653,7 +4789,8 @@ def main() -> int:
         return 1
     print(
         "Harness check passed: profile, six-destination contract, pins, "
-        "Spot-only product, bounded candle, Wallet identity, Wallet route, local draft, and providerless control boundaries, Debug-only routine "
+        "Spot-only product, bounded candle, Wallet identity, Wallet route, local draft, "
+        "providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, records, and secret rules are consistent."
     )
     return 0

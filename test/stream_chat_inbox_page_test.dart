@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,7 +7,10 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
+import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
 import 'package:loop_mobile/features/chat/stream_chat_inbox_page.dart';
+import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
+import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
@@ -88,8 +93,101 @@ void main() {
       );
       expect(find.text('Stream not connected'), findsOneWidget);
       expect(find.byType(StreamChannelListView), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('stream-audio-room-entry')),
+        findsOneWidget,
+      );
     },
   );
+
+  testWidgets(
+    'production Chat opens the truthful Audio Room lobby without preview fallback',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appConfigProvider.overrideWithValue(_config()),
+            privyAuthGatewayProvider.overrideWithValue(
+              const AuthenticatedTestPrivyGateway(),
+            ),
+          ],
+          child: const LoopApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(NavigationDestination, 'Chat'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('stream-audio-room-entry')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(StreamVoiceRoomPage), findsOneWidget);
+      expect(find.text('Stream session unavailable'), findsOneWidget);
+      expect(find.text('ETH Macro Room'), findsNothing);
+      expect(find.textContaining('preview participant'), findsNothing);
+      expect(find.text('Connected'), findsNothing);
+    },
+  );
+
+  testWidgets('production Audio Room entry remains visible while Chat loads', (
+    tester,
+  ) async {
+    final authorization = Completer<StreamSessionAuthorization>();
+    addTearDown(() {
+      if (!authorization.isCompleted) {
+        authorization.complete(StreamSessionAuthorization.unavailable);
+      }
+    });
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          streamChatAuthorizationProvider.overrideWith(
+            (ref) => authorization.future,
+          ),
+        ],
+        child: const MaterialApp(home: StreamChatInboxPage()),
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey<String>('stream-chat-connecting')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('stream-audio-room-entry')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('production Audio Room entry remains visible after Chat error', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          streamChatAuthorizationProvider.overrideWith(
+            (ref) => Future<StreamSessionAuthorization>.error(
+              StateError('test authorization failure'),
+            ),
+          ),
+        ],
+        child: const MaterialApp(home: StreamChatInboxPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('stream-chat-unavailable')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('stream-audio-room-entry')),
+      findsOneWidget,
+    );
+  });
 
   testWidgets('channel route stays fail-closed without authorization', (
     tester,

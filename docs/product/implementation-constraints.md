@@ -39,6 +39,7 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 
 - Stream `Call`, `CallState`, and its push notification manager are the call source of truth. Map SDK state into UI; do not create a second authoritative call state machine or reimplement signaling.
 - Audio Room v1 uses only the fixed `audio_room` call type and a backend-authorized room ID. The backend pre-creates the room, assigns membership and a mobile role without `create-call`; Flutter never calls `getOrCreate` or accepts a client-selected call type/CID.
+- Keep one visible production Audio Room entry in Chat. It may only open the foreground lobby; authorization, the backend room locator, and Join remain independent fail-closed gates, with no Preview fallback.
 - Every first Audio Room join explicitly disables camera, microphone and screen share. `Joined` means media is still connecting; only official `Connected` state may be presented as live or enable the microphone.
 - Generate a new UUID call ID for every outgoing call. Never reuse a call ID that has already rung.
 - Generate a new UUID for every idempotent backend request. Persist and reuse that request ID only while reconciling the same business intent; a retry is not a new intent.
