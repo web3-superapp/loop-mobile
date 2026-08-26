@@ -227,6 +227,32 @@ class HarnessTests(unittest.TestCase):
             result,
         )
 
+    def test_spot_detail_navigation_cannot_be_removed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "lib/features/market/market_screens.dart"
+            path.parent.mkdir(parents=True)
+            source = (
+                REPOSITORY_ROOT / "lib/features/market/market_screens.dart"
+            ).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "class SpotMarketDetailScreen",
+                    "class RemovedSpotMarketDetailScreen",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_only_product_contract(root)
+
+        self.assertTrue(
+            any(
+                "class SpotMarketDetailScreen" in error
+                for error in result
+            ),
+            msg=f"expected Spot detail navigation guard: {result}",
+        )
+
     def test_lock_parser_reads_exact_versions(self) -> None:
         versions = check_harness.lockfile_versions(
             'packages:\n  dio:\n    dependency: "direct main"\n    version: "5.11.0"\n'

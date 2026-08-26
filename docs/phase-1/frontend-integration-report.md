@@ -394,3 +394,35 @@ artifacts before compilation. The clean Debug pass proves compilation and
 packaging only. No physical-device run, live Privy OTP, real Stream Chat/Video
 authorization, Stream persistence open/migration, Firebase delivery, private
 Spot backend, or execution behavior was exercised; those remain unverified.
+
+## Public Spot row-to-detail slice
+
+On 2026-08-26, a deterministic Widget repro confirmed that every mounted Spot
+row was a visual-only `LoopCard`: it had no tap callback, while the retained C2
+route still resolved symbol-based Preview fixtures. The same repro failed twice
+before the fix and passed afterward.
+
+Each accepted row now opens the existing C2 surface with its exact provider
+`spotIndex`. The production route parses that index, and the detail resolves the
+same public `spotMetaAndAssetCtxs` snapshot rather than a symbol fixture. It
+shows exact mark/mid/previous-day values, exact 24h notional/base volume,
+provider and token identity, Decimal-derived change, source attribution, and
+the client UTC receipt time. Missing, malformed, negative, or absent indices
+fail closed without substituting ETH, Preview, or Perp data. Historical candles
+remain explicitly unavailable, and no Buy, Sell, balance, order, signing, or
+execution action is mounted.
+
+Verification on 2026-08-26:
+
+- The focused Market and real `LoopApp` Preview route suite passed all 18 tests,
+  including exact row navigation, absent/invalid index behavior, no execution
+  actions, and a 390 × 844 layout at 200% text scale.
+- `bin/flutter test --no-pub`: passed all 399 tests.
+- Changed-file Flutter analysis passed with no issues. Full analysis still
+  reports only the two unrelated info-level lints in separately modified
+  `lib/widgets/loop_ui.dart` and `test/loop_perp_providers_test.dart`.
+- `python3 scripts/check_harness.py`: passed. The mutation suite passed all 83
+  tests and now rejects removal of the Spot detail projection.
+- Pixel 7a Android 16 Debug installation passed. Accessibility navigation from
+  Market opened public `HYPE/USDC` Spot #1035, and the rendered page displayed
+  current public Testnet facts with the expected read-only boundary.

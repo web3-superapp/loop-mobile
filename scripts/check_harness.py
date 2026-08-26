@@ -1576,7 +1576,13 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
             "lib/features/market/market_screens.dart": (
                 "hyperliquidSpotMarketsProvider",
                 "TESTNET · SPOT · 实时公共数据 · 只读",
+                "'spotIndex': market.spotIndex.toString()",
+                "class SpotMarketDetailScreen",
                 "class LegacyPerpetualMarketScreen",
+            ),
+            "lib/app.dart": (
+                "state.uri.queryParameters['spotIndex']",
+                "spotIndex: int.tryParse(rawSpotIndex)",
             ),
             "lib/integrations/hyperliquid/hyperliquid_spot_market_repository.dart": (
                 "api.hyperliquid-testnet.xyz",
@@ -1592,6 +1598,13 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
             "test/hyperliquid_spot_market_repository_test.dart": (
                 "joins sparse tokens and shuffled",
                 "contexts by provider coin",
+            ),
+            "test/market_screen_test.dart": (
+                "tapping a spot row opens that exact market detail",
+                "spot detail renders exact public facts without preview or execution",
+                "spot detail never substitutes another market when index is absent",
+                "invalid spot detail index fails closed without a request",
+                "spot detail supports a narrow screen at 200 percent text",
             ),
         },
     )

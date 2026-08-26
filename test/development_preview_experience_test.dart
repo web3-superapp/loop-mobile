@@ -48,6 +48,28 @@ void main() {
       expect(find.textContaining('Buy'), findsNothing);
       expect(find.textContaining('Sell'), findsNothing);
 
+      final spotRow = find.byKey(const ValueKey<String>('spot-market-1035'));
+      await tester.ensureVisible(spotRow);
+      await tester.pumpAndSettle();
+      await tester.tap(spotRow);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('C2 · HYPERLIQUID TESTNET · SPOT #1035'),
+        findsOneWidget,
+      );
+      expect(find.text('HYPE/USDC'), findsOneWidget);
+      expect(find.text('46.25 USDC'), findsWidgets);
+      expect(
+        find.text('Client received 2026-08-25 12:30:00 UTC'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Buy'), findsNothing);
+      expect(find.textContaining('Sell'), findsNothing);
+
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pumpAndSettle();
+
       await tester.tap(find.widgetWithText(NavigationDestination, 'Chat'));
       await tester.pumpAndSettle();
 

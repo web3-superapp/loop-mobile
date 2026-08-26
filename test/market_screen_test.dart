@@ -4,6 +4,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/market/market_screens.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market.dart';
@@ -41,6 +42,98 @@ void main() {
       expect(find.textContaining('Live perpetual markets'), findsNothing);
     },
   );
+
+  testWidgets('tapping a spot row opens that exact market detail', (
+    tester,
+  ) async {
+    final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
+    await _pumpRoutableSpotMarket(tester, repository);
+
+    await tester.tap(find.byKey(const ValueKey<String>('spot-market-1')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('spot-detail-route-1'), findsOneWidget);
+  });
+
+  testWidgets(
+    'spot detail renders exact public facts without preview or execution',
+    (tester) async {
+      final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
+      await _pumpSpotDetail(tester, repository, spotIndex: 1);
+
+      expect(find.text('PURR/USDC'), findsOneWidget);
+      expect(find.text('0.50000001 USDC'), findsWidgets);
+      expect(find.text('0.625 USDC'), findsOneWidget);
+      expect(find.text('987654.321 USDC'), findsOneWidget);
+      expect(find.text('1975308.62 PURR'), findsOneWidget);
+      expect(find.text('@1'), findsOneWidget);
+      expect(
+        find.text('Client received 2026-08-25 03:04:05 UTC'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('历史图表尚不可用'), findsOneWidget);
+      expect(find.textContaining('开发预览'), findsNothing);
+      expect(find.textContaining('Buy'), findsNothing);
+      expect(find.textContaining('Sell'), findsNothing);
+      expect(find.textContaining('Perpetual'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'spot detail never substitutes another market when index is absent',
+    (tester) async {
+      final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
+      await _pumpSpotDetail(tester, repository, spotIndex: 9999);
+
+      expect(find.text('找不到这个现货市场'), findsOneWidget);
+      expect(find.text('PURR/USDC'), findsNothing);
+      expect(find.text('HYPE/USDC'), findsNothing);
+    },
+  );
+
+  testWidgets('invalid spot detail index fails closed without a request', (
+    tester,
+  ) async {
+    final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
+    await _pumpSpotDetail(tester, repository, spotIndex: null);
+
+    expect(repository.fetchCount, 0);
+    expect(find.text('Invalid spot market'), findsOneWidget);
+    expect(find.textContaining('未加载行情或回退到演示币种'), findsOneWidget);
+    expect(find.text('Ethereum'), findsNothing);
+  });
+
+  testWidgets('spot detail supports a narrow screen at 200 percent text', (
+    tester,
+  ) async {
+    final repository = _FakeSpotMarketRepository(
+      snapshot: HyperliquidSpotSnapshot(
+        receivedAt: DateTime.utc(2026, 8, 25, 3, 4, 5),
+        markets: <HyperliquidSpotMarket>[
+          _spotMarket(
+            spotIndex: 77,
+            providerCoin: '@77',
+            baseSymbol: 'NARROW',
+            markPrice: '123456.78900001',
+            previousDayPrice: '0',
+            dayNotionalVolume: '987654.321',
+            dayBaseVolume: '1975308.62',
+          ),
+        ],
+      ),
+    );
+
+    await _pumpSpotDetail(
+      tester,
+      repository,
+      spotIndex: 77,
+      size: const Size(390, 844),
+      textScaler: const TextScaler.linear(2),
+    );
+
+    expect(find.text('24h change unavailable'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('primary spot Market searches protocol and token identities', (
     tester,
@@ -315,6 +408,77 @@ Future<void> _pumpSpotMarket(
         ],
       ],
       child: MaterialApp(theme: LoopTheme.dark, home: const MarketScreen()),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<void> _pumpRoutableSpotMarket(
+  WidgetTester tester,
+  HyperliquidSpotMarketRepository repository,
+) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = const Size(800, 1600);
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
+
+  final router = GoRouter(
+    initialLocation: '/market',
+    routes: <RouteBase>[
+      GoRoute(
+        path: '/market',
+        builder: (context, state) => const MarketScreen(),
+      ),
+      GoRoute(
+        path: '/market/token',
+        builder: (context, state) => Scaffold(
+          body: Text(
+            'spot-detail-route-${state.uri.queryParameters['spotIndex']}',
+          ),
+        ),
+      ),
+    ],
+  );
+  addTearDown(router.dispose);
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        hyperliquidSpotMarketNetworkAllowedProvider.overrideWithValue(true),
+        hyperliquidSpotMarketRepositoryProvider.overrideWithValue(repository),
+      ],
+      child: MaterialApp.router(theme: LoopTheme.dark, routerConfig: router),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<void> _pumpSpotDetail(
+  WidgetTester tester,
+  HyperliquidSpotMarketRepository repository, {
+  required int? spotIndex,
+  Size size = const Size(800, 1600),
+  TextScaler textScaler = TextScaler.noScaling,
+}) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = size;
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        hyperliquidSpotMarketNetworkAllowedProvider.overrideWithValue(true),
+        hyperliquidSpotMarketRepositoryProvider.overrideWithValue(repository),
+      ],
+      child: MaterialApp(
+        theme: LoopTheme.dark,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+          child: child!,
+        ),
+        home: SpotMarketDetailScreen(spotIndex: spotIndex),
+      ),
     ),
   );
   await tester.pumpAndSettle();

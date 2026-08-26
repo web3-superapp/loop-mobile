@@ -270,3 +270,16 @@ confirmed `libsqlite3.so` for arm64-v8a, armeabi-v7a, and x86_64. The 248 MB
 Debug APK and all generated `build/` output were then removed. Compilation is
 not Stream persistence runtime proof; device database open, offline history,
 account rotation, and iOS/Android provider behavior remain unverified.
+
+## Spot Detail Navigation Guard
+
+On 2026-08-26, a widget repro proved that mounted Spot rows were visual cards
+without a tap callback. The implementation now routes the accepted row by
+exact `spotIndex` into the existing C2 token-detail surface and resolves that
+same public snapshot. The Harness requires the row-to-index projection, the
+production route parser, the dedicated read-only Spot detail screen, and tests
+covering exact navigation, exact public facts, and an absent index that must
+not fall back to another asset or Preview data. Private execution remains off.
+The complete Flutter suite passed 399 tests, the Harness mutation suite passed
+83 tests, and a Pixel 7a Debug checkpoint opened HYPE/USDC Spot #1035 through
+the mounted interaction path.

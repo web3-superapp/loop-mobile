@@ -150,8 +150,19 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
                 matched: matches.length,
               ),
               const SizedBox(height: 10),
-              for (var index = 0; index < visible.length; index++) ...<Widget>[
-                _SpotMarketRow(rank: index + 1, market: visible[index]),
+              for (final (index, market) in visible.indexed) ...<Widget>[
+                _SpotMarketRow(
+                  rank: index + 1,
+                  market: market,
+                  onTap: () => context.push(
+                    Uri(
+                      path: '/market/token',
+                      queryParameters: <String, String>{
+                        'spotIndex': market.spotIndex.toString(),
+                      },
+                    ).toString(),
+                  ),
+                ),
                 if (index != visible.length - 1) const SizedBox(height: 10),
               ],
             ];
@@ -301,10 +312,15 @@ class _SpotMarketLedgerHeader extends StatelessWidget {
 }
 
 class _SpotMarketRow extends StatelessWidget {
-  const _SpotMarketRow({required this.rank, required this.market});
+  const _SpotMarketRow({
+    required this.rank,
+    required this.market,
+    required this.onTap,
+  });
 
   final int rank;
   final HyperliquidSpotMarket market;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -321,8 +337,9 @@ class _SpotMarketRow extends StatelessWidget {
 
     return LoopCard(
       key: ValueKey<String>('spot-market-${market.spotIndex}'),
+      onTap: onTap,
       semanticLabel:
-          '${market.pair}, mark ${market.markPrice.source} ${market.quoteSymbol}, $changeLabel',
+          '${market.pair}, mark ${market.markPrice.source} ${market.quoteSymbol}, $changeLabel, 打开详情',
       child: Row(
         children: <Widget>[
           SizedBox(
@@ -385,10 +402,404 @@ class _SpotMarketRow extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 8),
+          const Icon(
+            Icons.chevron_right_rounded,
+            size: 20,
+            color: LoopColors.vapor,
+          ),
         ],
       ),
     );
   }
+}
+
+/// Public, read-only detail projection for one Hyperliquid Testnet spot pair.
+///
+/// The route resolves the pair from the same accepted `spotMetaAndAssetCtxs`
+/// snapshot as the primary ledger. It deliberately exposes no account,
+/// execution, signing, or provider-history capability.
+class SpotMarketDetailScreen extends ConsumerWidget {
+  const SpotMarketDetailScreen({required this.spotIndex, super.key});
+
+  final int? spotIndex;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final resolvedSpotIndex = spotIndex;
+    if (resolvedSpotIndex == null || resolvedSpotIndex < 0) {
+      return const LoopPage(
+        eyebrow: 'C2 · Hyperliquid Testnet · Spot',
+        title: 'Invalid spot market',
+        subtitle: 'Spot 详情必须使用有效的非负 provider index。',
+        children: <Widget>[
+          LoopStateCard(
+            title: '无法打开这个现货市场',
+            message: '路由中的 Spot index 无效，未加载行情或回退到演示币种。',
+            icon: Icons.link_off_rounded,
+            tone: LoopTone.neutral,
+          ),
+        ],
+      );
+    }
+    final snapshot = ref.watch(hyperliquidSpotMarketsProvider);
+    return snapshot.when(
+      skipLoadingOnReload: false,
+      skipLoadingOnRefresh: false,
+      loading: () => const LoopPage(
+        eyebrow: 'C2 · Hyperliquid Testnet · Spot',
+        title: 'Spot market detail',
+        subtitle: '正在读取公共现货发现数据。',
+        children: <Widget>[_SpotMarketLoading()],
+      ),
+      error: (error, stackTrace) => LoopPage(
+        eyebrow: 'C2 · Hyperliquid Testnet · Spot',
+        title: 'Spot market detail',
+        subtitle: '公共现货详情保持只读，不会回退到演示价格或永续行情。',
+        children: <Widget>[
+          _SpotMarketError(
+            message: _marketFailureMessage(error),
+            onRetry: _isRestrictedSessionFailure(error)
+                ? null
+                : () => ref.invalidate(hyperliquidSpotMarketsProvider),
+          ),
+        ],
+      ),
+      data: (value) {
+        final market = _findSpotMarket(value.markets, resolvedSpotIndex);
+        if (market == null) {
+          return LoopPage(
+            eyebrow: 'C2 · Hyperliquid Testnet · Spot #$resolvedSpotIndex',
+            title: 'Spot market unavailable',
+            subtitle: '这次公共响应中没有该 Spot index，未使用其他币种或演示数据替代。',
+            actions: <Widget>[
+              IconButton(
+                key: const ValueKey<String>('refresh-spot-market-detail'),
+                onPressed: () => ref.invalidate(hyperliquidSpotMarketsProvider),
+                tooltip: '刷新 Hyperliquid Testnet 现货详情',
+                icon: const Icon(Icons.refresh_rounded),
+              ),
+            ],
+            children: const <Widget>[
+              LoopStateCard(
+                title: '找不到这个现货市场',
+                message: '它可能暂时未被 Testnet 返回，请刷新后重试。',
+                icon: Icons.search_off_rounded,
+                tone: LoopTone.neutral,
+              ),
+            ],
+          );
+        }
+        return _SpotMarketDetailContent(
+          market: market,
+          receivedAt: value.receivedAt,
+          onRefresh: () => ref.invalidate(hyperliquidSpotMarketsProvider),
+        );
+      },
+    );
+  }
+}
+
+HyperliquidSpotMarket? _findSpotMarket(
+  List<HyperliquidSpotMarket> markets,
+  int spotIndex,
+) {
+  for (final market in markets) {
+    if (market.spotIndex == spotIndex) return market;
+  }
+  return null;
+}
+
+class _SpotMarketDetailContent extends StatelessWidget {
+  const _SpotMarketDetailContent({
+    required this.market,
+    required this.receivedAt,
+    required this.onRefresh,
+  });
+
+  final HyperliquidSpotMarket market;
+  final DateTime receivedAt;
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    final change = market.dayChangePercent;
+    final changeIsNegative = change != null && change < Decimal.zero;
+    final changeLabel = change == null
+        ? '24h change unavailable'
+        : '${changeIsNegative ? '' : '+'}${change.toStringAsFixed(2)}% · 24h';
+    final changeTone = change == null
+        ? LoopTone.neutral
+        : changeIsNegative
+        ? LoopTone.danger
+        : LoopTone.positive;
+
+    return LoopPage(
+      key: ValueKey<String>('spot-market-detail-${market.spotIndex}'),
+      eyebrow: 'C2 · Hyperliquid Testnet · Spot #${market.spotIndex}',
+      title: market.pair,
+      subtitle: '公共现货发现详情，只读且不是可执行报价。余额、买卖、签名与订单仍不可用。',
+      actions: <Widget>[
+        IconButton(
+          key: const ValueKey<String>('refresh-spot-market-detail'),
+          onPressed: onRefresh,
+          tooltip: '刷新 Hyperliquid Testnet 现货详情',
+          icon: const Icon(Icons.refresh_rounded),
+        ),
+      ],
+      children: <Widget>[
+        const _SpotMarketBanner(),
+        const SizedBox(height: 18),
+        LoopCard(
+          accent: true,
+          tone: LoopTone.market,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              LoopAssetMark(symbol: market.baseSymbol, size: 52),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      '${_groupIntegerPart(market.markPrice.source)} ${market.quoteSymbol}',
+                      style: Theme.of(context).textTheme.displayMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    _SpotChangeBadge(
+                      label: changeLabel,
+                      tone: changeTone,
+                      icon: change == null
+                          ? Icons.remove_rounded
+                          : changeIsNegative
+                          ? Icons.south_east_rounded
+                          : Icons.north_east_rounded,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Public mark · not an executable quote',
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const LoopSectionLabel('Public market facts'),
+        LoopCard(
+          child: Column(
+            children: <Widget>[
+              _SpotDetailFact(
+                label: 'Mark price',
+                value: '${market.markPrice.source} ${market.quoteSymbol}',
+                detail: 'Exact public wire value',
+              ),
+              _SpotDetailFact(
+                label: 'Mid price',
+                value: market.midPrice == null
+                    ? '—'
+                    : '${market.midPrice!.source} ${market.quoteSymbol}',
+                detail: market.midPrice == null
+                    ? 'Not present in this response'
+                    : 'Exact public wire value',
+              ),
+              _SpotDetailFact(
+                label: 'Previous-day price',
+                value:
+                    '${market.previousDayPrice.source} ${market.quoteSymbol}',
+                detail: 'Provider comparison input',
+              ),
+              _SpotDetailFact(
+                label: '24h notional volume',
+                value:
+                    '${market.dayNotionalVolume.source} ${market.quoteSymbol}',
+                detail: 'Exact public wire value',
+              ),
+              _SpotDetailFact(
+                label: '24h base volume',
+                value: '${market.dayBaseVolume.source} ${market.baseSymbol}',
+                detail: 'Exact public wire value',
+                last: true,
+              ),
+            ],
+          ),
+        ),
+        const LoopSectionLabel('Provider identity'),
+        LoopCard(
+          child: Column(
+            children: <Widget>[
+              _SpotDetailFact(
+                label: 'Provider coin',
+                value: market.providerCoin,
+                detail: 'Hyperliquid protocol identifier',
+              ),
+              _SpotDetailFact(
+                label: 'Spot index',
+                value: market.spotIndex.toString(),
+                detail: 'Hyperliquid Testnet',
+              ),
+              _SpotDetailFact(
+                label: 'Base token',
+                value: '${market.baseSymbol} · index ${market.baseTokenIndex}',
+                detail: market.baseTokenId,
+              ),
+              _SpotDetailFact(
+                label: 'Quote token',
+                value:
+                    '${market.quoteSymbol} · index ${market.quoteTokenIndex}',
+                detail: market.quoteTokenId,
+              ),
+              _SpotDetailFact(
+                label: 'Base size decimals',
+                value: market.baseSizeDecimals.toString(),
+                detail: market.isCanonical
+                    ? 'Canonical spot universe entry'
+                    : 'Non-canonical spot universe entry',
+                last: true,
+              ),
+            ],
+          ),
+        ),
+        const LoopSectionLabel('Freshness and coverage'),
+        LoopCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Text(
+                HyperliquidSpotSnapshot.sourceLabel,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Client received ${_formatSpotReceivedAt(receivedAt)}',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '这是客户端收到完整响应的时间，不是交易所快照、成交或区块时间。',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        const LoopStateCard(
+          title: '历史图表尚不可用',
+          message: '当前公开端点只返回现货市场快照，不包含 K 线历史；详情页不会用演示图表替代。',
+          icon: Icons.candlestick_chart_outlined,
+          tone: LoopTone.neutral,
+        ),
+      ],
+    );
+  }
+}
+
+class _SpotChangeBadge extends StatelessWidget {
+  const _SpotChangeBadge({
+    required this.label,
+    required this.tone,
+    required this.icon,
+  });
+
+  final String label;
+  final LoopTone tone;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = loopToneColor(tone);
+    return Semantics(
+      label: label,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: LoopRadius.pill,
+          border: Border.all(color: color.withValues(alpha: 0.26)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Wrap(
+            spacing: 5,
+            runSpacing: 2,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: <Widget>[
+              Icon(icon, color: color, size: 14),
+              Text(
+                label,
+                softWrap: true,
+                style: Theme.of(context).textTheme.labelMedium
+                    ?.copyWith(color: color),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SpotDetailFact extends StatelessWidget {
+  const _SpotDetailFact({
+    required this.label,
+    required this.value,
+    required this.detail,
+    this.last = false,
+  });
+
+  final String label;
+  final String value;
+  final String detail;
+  final bool last;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 13),
+      decoration: BoxDecoration(
+        border: last
+            ? null
+            : const Border(bottom: BorderSide(color: LoopColors.line)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Expanded(
+            flex: 4,
+            child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 6,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                SelectableText(
+                  value,
+                  textAlign: TextAlign.end,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  detail,
+                  textAlign: TextAlign.end,
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _formatSpotReceivedAt(DateTime value) {
+  final utc = value.toUtc();
+  String twoDigits(int part) => part.toString().padLeft(2, '0');
+  return '${utc.year}-${twoDigits(utc.month)}-${twoDigits(utc.day)} '
+      '${twoDigits(utc.hour)}:${twoDigits(utc.minute)}:${twoDigits(utc.second)} UTC';
 }
 
 /// Retained only as read-only regression coverage for the former Testnet feed.

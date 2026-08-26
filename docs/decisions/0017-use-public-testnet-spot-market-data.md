@@ -54,6 +54,11 @@ universe. It also provides no exchange snapshot timestamp.
   and explicit Development Preview sessions may read it; this exception does
   not enable any other provider-backed capability. Do not silently substitute
   perpetual or Preview prices when this public source is unavailable.
+- Let every accepted ledger row open the existing C2 token-detail surface by
+  its exact non-negative spot index. The detail resolves the same accepted
+  public snapshot, fails closed when that index is absent, and may display only
+  facts already admitted by this decision. It does not fall back to a Preview
+  symbol, fabricate candles, or mount an execution action.
 
 ## Consequences
 
@@ -61,6 +66,11 @@ The Market tab can show live public Hyperliquid Testnet spot discovery data
 without waiting for the private trading backend. The adapter has a deliberately
 narrow capability surface, exact Decimal-safe parsing, deterministic sparse-key
 joins, and truthful client-side freshness attribution.
+
+The C2 detail route now preserves the selected provider identity and exact wire
+values. Current `spotMetaAndAssetCtxs` coverage does not include historical
+candles, so the chart is explicitly unavailable instead of being populated by
+the retained Preview fixture.
 
 This decision does not connect a user account or make spot trading available.
 Balances, fees, executable price protection, intent review, authentication,

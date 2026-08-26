@@ -204,9 +204,17 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
       ),
       GoRoute(
         path: '/market/token',
-        builder: (context, state) => TokenDetailScreen(
-          symbol: state.extra is String ? state.extra! as String : 'ETH',
-        ),
+        builder: (context, state) {
+          final rawSpotIndex = state.uri.queryParameters['spotIndex'];
+          if (rawSpotIndex != null) {
+            return SpotMarketDetailScreen(
+              spotIndex: int.tryParse(rawSpotIndex),
+            );
+          }
+          return TokenDetailScreen(
+            symbol: state.extra is String ? state.extra! as String : 'ETH',
+          );
+        },
       ),
       GoRoute(
         path: '/market/chart',
