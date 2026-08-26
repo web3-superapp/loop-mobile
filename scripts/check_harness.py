@@ -2238,6 +2238,252 @@ def check_wallet_preview_route_contract(root: Path) -> list[str]:
     return errors
 
 
+def check_wallet_local_draft_contract(root: Path) -> list[str]:
+    """Keep local transfer syntax and Swap projections exact and unsignable."""
+
+    errors = require_fragments(
+        root,
+        {
+            "docs/decisions/0022-bind-wallet-local-drafts-to-exact-snapshots.md": (
+                "exact positive decimal String",
+                "closed-set immutable `SwapPreviewSnapshot.demo`",
+                "synchronous single-flight gate",
+                "`IntentOrigin.backendCanonical`",
+            ),
+            "docs/failures/swap-preview-draft-divergence.md": (
+                "## Summary",
+                "## Root Cause",
+                "## Detection",
+                "## Prevention",
+                "## Evidence",
+            ),
+            "lib/features/wallet/transfer_amount.dart": (
+                "final class TransferAmount",
+                "maxWireLength = 128",
+                r"r'^(?:[1-9][0-9]*(?:\.[0-9]+)?|0\.[0-9]*[1-9][0-9]*)$'",
+                "final match = _wirePattern.firstMatch(source)",
+                "match.start != 0 || match.end != source.length",
+                "Decimal.tryParse(source)",
+                "TransferAmount._(wire: source)",
+                "String displayWithAsset(String asset)",
+            ),
+            "lib/features/wallet/send_screens.dart": (
+                "TransferAmount.tryParse(controller.text)",
+                "maxLength: TransferAmount.maxWireLength",
+                "maxLengthEnforcement: MaxLengthEnforcement.none",
+                "if (reviewOpening) return;",
+                "setState(() => reviewOpening = true);",
+                "amount.displayWithAsset(widget.draft.asset)",
+                "Complete recipient address",
+            ),
+            "lib/features/wallet/swap_preview_snapshot.dart": (
+                "final class SwapPreviewSnapshot",
+                "const SwapPreviewSnapshot._",
+                "static const demo = SwapPreviewSnapshot._",
+                "SigningIntent toLocalSigningIntent",
+                "pay: payLabel",
+                "receive: receiveLabel",
+                "rate: rate",
+                "fee: providerFee",
+            ),
+            "lib/features/wallet/trade_screens.dart": (
+                "SwapPreviewSnapshot? snapshot = SwapPreviewSnapshot.demo",
+                "setState(() => snapshot = null);",
+                "payController.value = TextEditingValue",
+                "snapshot = restored;",
+                "extra: currentSnapshot",
+                "no quote will be requested",
+                "if (reviewOpening || !identical(snapshot, currentSnapshot)) return;",
+                "currentSnapshot.toLocalSigningIntent",
+                "SwapRouteScreen({required this.snapshot",
+            ),
+            "lib/app.dart": (
+                "state.extra is SwapPreviewSnapshot ? null : '/wallet/swap'",
+                "snapshot: state.extra! as SwapPreviewSnapshot",
+            ),
+            "test/transfer_amount_test.dart": (
+                "accepts the exact maximum length and rejects longer values",
+                "preserves trailing zeros in the display and future wire value",
+                "rejects noncanonical, zero, signed, exponent, and spaced input",
+            ),
+            "test/send_flow_truthfulness_test.dart": (
+                "opens one local review per tap burst",
+                "preserves and rejects an overlong pasted amount",
+                "'1.2500 ETH'",
+            ),
+            "test/swap_preview_snapshot_test.dart": (
+                "one immutable demo snapshot derives every local review fact",
+            ),
+            "test/swap_preview_flow_test.dart": (
+                "editing invalidates every derived Swap fact until atomic restore",
+                "rapid review taps derive one intent from the current snapshot",
+                "quote details consume only the typed snapshot",
+            ),
+            "test/app_navigation_test.dart": (
+                "Swap quote route requires the exact typed snapshot",
+                "wrong snapshot type",
+                "wrong draft type",
+                "recipient: '   '",
+            ),
+            "test/signing_review_boundary_test.dart": (
+                "local Swap snapshot cannot invoke even an available wallet gateway",
+                "expect(gateway.handoffCalls, 0);",
+            ),
+        },
+    )
+
+    amount_path = root / "lib/features/wallet/transfer_amount.dart"
+    if amount_path.is_file():
+        source = strip_dart_comments(read_text(amount_path))
+        if "maxWireLength = 128" not in source:
+            errors.append("Transfer amount wire values must remain bounded to 128 characters")
+        if (
+            r"r'^(?:[1-9][0-9]*(?:\.[0-9]+)?|0\.[0-9]*[1-9][0-9]*)$'"
+            not in source
+        ):
+            errors.append("Transfer amount must retain the exact positive-decimal regex")
+        if "TransferAmount._(wire: source)" not in source:
+            errors.append(
+                "Transfer amount must preserve the accepted source String without normalization"
+            )
+        if (
+            "final match = _wirePattern.firstMatch(source)" not in source
+            or "match.start != 0 || match.end != source.length" not in source
+        ):
+            errors.append(
+                "Transfer amount regex must consume the complete source String"
+            )
+        for marker in ("double.parse", ".toDouble()", "wire: value.toString()"):
+            if marker in source:
+                errors.append(
+                    "Transfer amount must never round-trip through another numeric "
+                    f"representation: {marker}"
+                )
+
+    send_path = root / "lib/features/wallet/send_screens.dart"
+    if send_path.is_file():
+        source = read_text(send_path)
+        confirm_start = source.find("class SendConfirmScreen")
+        confirm_end = source.find("enum TransactionPreviewState", confirm_start)
+        confirm_source = source[confirm_start:confirm_end]
+        if "if (reviewOpening) return;" not in confirm_source:
+            errors.append("Transfer review navigation must remain single-flight")
+        if (
+            "maxLength: TransferAmount.maxWireLength" not in confirm_source
+            or "maxLengthEnforcement: MaxLengthEnforcement.none"
+            not in confirm_source
+        ):
+            errors.append(
+                "Transfer input must preserve overlong source text for explicit rejection"
+            )
+        for marker in (
+            "TransferAmount.tryParse(controller.text.trim())",
+            "amount: '${controller.text",
+            "IntentOrigin.backendCanonical",
+            "walletSigningGatewayProvider",
+            ".handoff(",
+        ):
+            if marker in confirm_source:
+                errors.append(
+                    "Local transfer review must preserve exact unsignable draft state: "
+                    f"{marker}"
+                )
+
+    snapshot_path = root / "lib/features/wallet/swap_preview_snapshot.dart"
+    if snapshot_path.is_file():
+        source = strip_dart_comments(read_text(snapshot_path))
+        for fragment in (
+            "pay: payLabel",
+            "receive: receiveLabel",
+            "rate: rate",
+            "fee: providerFee",
+        ):
+            if fragment not in source:
+                errors.append(
+                    "Swap local review must derive every field from one snapshot: "
+                    f"{fragment}"
+                )
+        for marker in (
+            "IntentOrigin.backendCanonical",
+            "walletSigningGatewayProvider",
+            "package:dio/",
+            "'/v1/",
+        ):
+            if marker in source:
+                errors.append(
+                    "Swap preview snapshots must remain providerless and unsignable: "
+                    f"{marker}"
+                )
+
+    trade_path = root / "lib/features/wallet/trade_screens.dart"
+    if trade_path.is_file():
+        source = read_text(trade_path)
+        swap_start = source.find("class SwapScreen")
+        swap_end = source.find("class BridgeScreen", swap_start)
+        swap_source = source[swap_start:swap_end]
+        for marker in (
+            "bool quoteCurrent",
+            "SigningIntent.swap(",
+            "context.push('/wallet/swap/route')",
+            "IntentOrigin.backendCanonical",
+            "walletSigningGatewayProvider",
+        ):
+            if marker in swap_source:
+                errors.append(
+                    "Swap UI must consume one typed local snapshot without a second "
+                    f"truth source: {marker}"
+                )
+        for marker in (
+            "'0.50'",
+            "'2,302.18'",
+            "'2302.18'",
+            "'1 ETH = 4,604.36 USDC'",
+            "'1 ETH = 4604.36 USDC'",
+            "'2.30 USDC'",
+            "'0.00031 ETH'",
+            "'0.08%'",
+            "'3.73 USDC'",
+            "'2,290.66 USDC'",
+            "'2290.66 USDC'",
+        ):
+            if marker in swap_source:
+                errors.append(
+                    "Swap quote literals belong only to SwapPreviewSnapshot: "
+                    f"{marker}"
+                )
+        for fragment, message in (
+            (
+                "setState(() => snapshot = null);",
+                "Swap edits must invalidate the complete snapshot",
+            ),
+            (
+                "payController.value = TextEditingValue",
+                "Swap restore must restore its input controller atomically",
+            ),
+            (
+                "snapshot = restored;",
+                "Swap restore must restore the same immutable snapshot atomically",
+            ),
+            (
+                "if (reviewOpening || !identical(snapshot, currentSnapshot)) return;",
+                "Swap review navigation must remain snapshot-bound and single-flight",
+            ),
+        ):
+            if fragment not in swap_source:
+                errors.append(message)
+
+    intent_path = root / "lib/core/intent/signing_intent.dart"
+    if intent_path.is_file():
+        source = read_text(intent_path)
+        swap_start = source.find("factory SigningIntent.swap")
+        swap_end = source.find("factory SigningIntent.approval", swap_start)
+        swap_source = source[swap_start:swap_end]
+        if "origin: IntentOrigin.localPreview" not in swap_source:
+            errors.append("SigningIntent.swap must remain a local Preview intent")
+
+    return errors
+
+
 def require_fragments(root: Path, contracts: dict[str, tuple[str, ...]]) -> list[str]:
     errors: list[str] = []
     for relative, fragments in contracts.items():
@@ -4084,6 +4330,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_spot_candle_contract(root))
     errors.extend(check_wallet_identity_readiness_contract(root))
     errors.extend(check_wallet_preview_route_contract(root))
+    errors.extend(check_wallet_local_draft_contract(root))
     errors.extend(check_native_matrix(root))
     errors.extend(check_android_release_network_contract(root))
     errors.extend(check_audio_room_native_contract(root))
@@ -4116,7 +4363,7 @@ def main() -> int:
         return 1
     print(
         "Harness check passed: profile, six-destination contract, pins, "
-        "Spot-only product, bounded candle, Wallet identity, and Wallet route boundaries, Debug-only routine "
+        "Spot-only product, bounded candle, Wallet identity, Wallet route, and local draft boundaries, Debug-only routine "
         "verification, records, and secret rules are consistent."
     )
     return 0

@@ -366,7 +366,10 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
       ),
       GoRoute(
         path: '/wallet/swap/route',
-        builder: (context, state) => const SwapRouteScreen(),
+        redirect: (context, state) =>
+            state.extra is SwapPreviewSnapshot ? null : '/wallet/swap',
+        builder: (context, state) =>
+            SwapRouteScreen(snapshot: state.extra! as SwapPreviewSnapshot),
       ),
       GoRoute(
         path: '/wallet/bridge',

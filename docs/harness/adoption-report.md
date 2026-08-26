@@ -410,3 +410,39 @@ changed-file analysis passed, and the complete Flutter suite passed all 446
 tests. No build, package, provider request, or device run was performed.
 Transfer, Swap, signing, wallet injection, balances, and activity remain
 unavailable outside their explicitly labelled local layouts.
+
+## Wallet Exact Local Draft Guard
+
+On 2026-08-26, decision 0022 narrowed Send to the one stable transfer amount
+rule without inventing the rest of the backend contract. `TransferAmount`
+accepts only the exact positive-decimal String grammar up to 128 characters,
+uses Decimal as a defensive admission check, and preserves the accepted source
+unchanged. Values such as signs, zero, leading-zero forms, exponent notation,
+partial decimals, spaces, and overlong input cannot open Review, while
+`1.2500` remains exactly `1.2500`. The regex must consume the entire source,
+including rejecting trailing line separators, and the input widget retains an
+overlong paste for explicit rejection instead of silently truncating it into a
+different value. Recipient resolution, network rules,
+balances, precision, minimums, fees, screening, canonical review, and
+submission remain unavailable.
+
+The same slice repaired the evidenced Swap Preview divergence recorded under
+`docs/failures/swap-preview-draft-divergence.md`. One closed immutable
+`SwapPreviewSnapshot.demo` now owns every displayed input, output, fee, route,
+and local review fact. Any edit removes the complete snapshot and every
+derived action; manually retyping the old amount does not recreate it.
+Explicit restore updates the controller and snapshot together. Quote details
+require the exact typed object, and both Send and Swap review navigation are
+single-flight. Their intents remain local Preview values that cannot reach an
+available wallet handoff.
+
+The Harness rejects relaxed amount grammar or length, numeric normalization,
+removed navigation single-flight, partial Swap invalidation or restore,
+parallel quote-validity state, quote literals outside the snapshot, missing
+typed route state, divergent review fields, or a locally backend-canonical
+Swap. It also rejects partial regex consumption and default TextField length
+enforcement that would truncate pasted input. The Python mutation suite passed
+all 131 tests, the focused Wallet draft/navigation/signing suite passed all 31
+tests, changed-file analysis passed, and the complete Flutter suite passed all
+459 tests. No API request,
+APK, application bundle, iOS build, package, or device run was performed.

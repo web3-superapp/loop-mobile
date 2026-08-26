@@ -1031,6 +1031,334 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected Wallet catalog truth guard: {result}",
         )
 
+    def test_transfer_amount_cannot_relax_its_exact_regex(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/transfer_amount.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    r"r'^(?:[1-9][0-9]*(?:\.[0-9]+)?|0\.[0-9]*[1-9][0-9]*)$'",
+                    r"r'^[0-9.]+$'",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_local_draft_contract(root)
+
+        self.assertTrue(
+            any("exact positive-decimal regex" in error for error in result),
+            msg=f"expected exact transfer regex guard: {result}",
+        )
+
+    def test_transfer_amount_regex_must_consume_the_complete_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/transfer_amount.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "match == null || match.start != 0 || match.end != source.length",
+                    "match == null",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_local_draft_contract(root)
+
+        self.assertTrue(
+            any("consume the complete source String" in error for error in result),
+            msg=f"expected full transfer regex consumption guard: {result}",
+        )
+
+    def test_transfer_amount_cannot_expand_its_wire_bound(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/transfer_amount.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace("maxWireLength = 128", "maxWireLength = 129"),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_local_draft_contract(root)
+
+        self.assertTrue(
+            any("bounded to 128" in error for error in result),
+            msg=f"expected transfer length guard: {result}",
+        )
+
+    def test_transfer_amount_cannot_normalize_accepted_trailing_zeros(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/transfer_amount.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "TransferAmount._(wire: source)",
+                    "TransferAmount._(wire: value.toString())",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_local_draft_contract(root)
+
+        self.assertTrue(
+            any("preserve the accepted source String" in error for error in result),
+            msg=f"expected exact transfer wire guard: {result}",
+        )
+
+    def test_transfer_review_cannot_remove_single_flight(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/send_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace("if (reviewOpening) return;", ""),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_local_draft_contract(root)
+
+        self.assertTrue(
+            any("Transfer review navigation must remain single-flight" in error for error in result),
+            msg=f"expected transfer review single-flight guard: {result}",
+        )
+
+    def test_transfer_input_cannot_silently_truncate_overlong_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/send_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "maxLengthEnforcement: MaxLengthEnforcement.none,",
+                    "",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_local_draft_contract(root)
+
+        self.assertTrue(
+            any("preserve overlong source text" in error for error in result),
+            msg=f"expected non-truncating transfer input guard: {result}",
+        )
+
+    def test_swap_edit_cannot_keep_a_stale_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/trade_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace("setState(() => snapshot = null);", "return;"),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_local_draft_contract(root)
+
+        self.assertTrue(
+            any("edits must invalidate" in error for error in result),
+            msg=f"expected Swap invalidation guard: {result}",
+        )
+
+    def test_swap_restore_cannot_leave_the_edited_controller(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/trade_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "payController.value = TextEditingValue",
+                    "final ignored = TextEditingValue",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_local_draft_contract(root)
+
+        self.assertTrue(
+            any("restore its input controller" in error for error in result),
+            msg=f"expected Swap controller restore guard: {result}",
+        )
+
+    def test_swap_restore_cannot_leave_the_snapshot_invalid(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/trade_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace("snapshot = restored;", "snapshot = null;"),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_local_draft_contract(root)
+
+        self.assertTrue(
+            any("restore the same immutable snapshot" in error for error in result),
+            msg=f"expected Swap snapshot restore guard: {result}",
+        )
+
+    def test_swap_route_cannot_accept_missing_typed_state(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/app.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "state.extra is SwapPreviewSnapshot ? null : '/wallet/swap'",
+                    "true ? null : '/wallet/swap'",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_local_draft_contract(root)
+
+        self.assertTrue(
+            any("state.extra is SwapPreviewSnapshot" in error for error in result),
+            msg=f"expected typed Swap route guard: {result}",
+        )
+
+    def test_swap_review_cannot_diverge_from_snapshot_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/swap_preview_snapshot.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "receive: receiveLabel",
+                    "receive: 'stale fixture'",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_local_draft_contract(root)
+
+        self.assertTrue(
+            any("derive every field from one snapshot" in error for error in result),
+            msg=f"expected Swap snapshot-source guard: {result}",
+        )
+
+    def test_swap_review_cannot_remove_snapshot_single_flight(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/trade_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "if (reviewOpening || !identical(snapshot, currentSnapshot)) return;",
+                    "if (!identical(snapshot, currentSnapshot)) return;",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_local_draft_contract(root)
+
+        self.assertTrue(
+            any("snapshot-bound and single-flight" in error for error in result),
+            msg=f"expected Swap review single-flight guard: {result}",
+        )
+
+    def test_swap_quote_navigation_cannot_drop_typed_extra(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/trade_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "context.push('/wallet/swap/route', extra: currentSnapshot)",
+                    "context.push('/wallet/swap/route')",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_local_draft_contract(root)
+
+        self.assertTrue(
+            any("second truth source" in error for error in result),
+            msg=f"expected typed Swap navigation guard: {result}",
+        )
+
+    def test_swap_cannot_restore_a_parallel_quote_boolean(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/trade_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "SwapPreviewSnapshot? snapshot = SwapPreviewSnapshot.demo;",
+                    "bool quoteCurrent = true;\n"
+                    "  SwapPreviewSnapshot? snapshot = SwapPreviewSnapshot.demo;",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_local_draft_contract(root)
+
+        self.assertTrue(
+            any("bool quoteCurrent" in error for error in result),
+            msg=f"expected single Swap validity-state guard: {result}",
+        )
+
+    def test_swap_route_cannot_restore_a_static_amount(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/trade_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "value: snapshot.receiveLabel",
+                    "value: '2302.18'",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_local_draft_contract(root)
+
+        self.assertTrue(
+            any("quote literals belong only" in error for error in result),
+            msg=f"expected Swap route literal guard: {result}",
+        )
+
+    def test_swap_intent_cannot_become_backend_canonical_locally(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/core/intent/signing_intent.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            swap_start = source.index("factory SigningIntent.swap")
+            swap_end = source.index("factory SigningIntent.approval", swap_start)
+            swap_source = source[swap_start:swap_end].replace(
+                "origin: IntentOrigin.localPreview",
+                "origin: IntentOrigin.backendCanonical",
+            )
+            target.write_text(
+                source[:swap_start] + swap_source + source[swap_end:],
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_local_draft_contract(root)
+
+        self.assertTrue(
+            any("must remain a local Preview intent" in error for error in result),
+            msg=f"expected local Swap intent guard: {result}",
+        )
+
     def test_feature_cannot_own_backend_transport(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

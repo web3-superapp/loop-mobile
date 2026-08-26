@@ -18,6 +18,7 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 - Wallet MFA protects embedded-wallet private-key operations and is not generic login MFA.
 - A complete Embedded Ethereum wallet address is a current-session identity fact only. It does not prove balances, supported deposits, networks, assets, signing, or transaction readiness. Preview and unverified sessions cannot create or copy one; no QR or funding instruction is inferred without a separately accepted policy.
 - Wallet asset, quote, and review routes require explicit typed process-local state. Missing state fails closed to the owning Wallet step and never constructs a default asset, wallet, quote, intent, UUID, expiry, or transaction fact.
+- The one currently known transfer amount rule is an exact positive decimal String of at most 128 characters. Flutter may reject values outside that lexical envelope and retain the accepted String unchanged, but it cannot infer asset precision, balance, minimum, recipient, network, fee, screening, canonical review, or submission. Providerless Swap facts must share one immutable labelled snapshot; editing invalidates every derived value and never produces a new quote locally.
 - Provider secrets, Firebase service accounts, APNs private keys, backend signing keys, and Hyperliquid agent private keys never enter Flutter, fixtures, logs, or Git.
 
 ## Stream Chat truth and history

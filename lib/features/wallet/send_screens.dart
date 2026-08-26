@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:decimal/decimal.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/wallet/transfer_amount.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:uuid/uuid.dart';
+
+String _newPreviewRevision() => const Uuid().v4();
+
+DateTime _currentUtcTime() => DateTime.now().toUtc();
 
 @immutable
 final class TransferDraft {
@@ -161,7 +166,7 @@ class _SendRecipientScreenState extends State<SendRecipientScreen> {
           controller: controller,
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
-            labelText: 'Address or name',
+            labelText: 'Complete recipient address',
             prefixIcon: const Icon(Icons.alternate_email_rounded),
             suffixIcon: IconButton(
               onPressed: null,
@@ -204,9 +209,16 @@ class _SendRecipientScreenState extends State<SendRecipientScreen> {
 }
 
 class SendConfirmScreen extends StatefulWidget {
-  const SendConfirmScreen({required this.draft, super.key});
+  const SendConfirmScreen({
+    required this.draft,
+    this.revisionFactory,
+    this.clock,
+    super.key,
+  });
 
   final TransferDraft draft;
+  final String Function()? revisionFactory;
+  final DateTime Function()? clock;
 
   @override
   State<SendConfirmScreen> createState() => _SendConfirmScreenState();
@@ -214,6 +226,7 @@ class SendConfirmScreen extends StatefulWidget {
 
 class _SendConfirmScreenState extends State<SendConfirmScreen> {
   final controller = TextEditingController();
+  bool reviewOpening = false;
 
   @override
   void dispose() {
@@ -223,31 +236,20 @@ class _SendConfirmScreenState extends State<SendConfirmScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final amount = Decimal.tryParse(controller.text.trim());
-    final hasValidAmount = amount != null && amount > Decimal.zero;
+    final amount = TransferAmount.tryParse(controller.text);
     return LoopPage(
       title: 'Confirm transfer',
       eyebrow: '开发预览 · Send ${widget.draft.asset} · 3 of 3',
       subtitle: 'Draft review only. No quote, simulation, signing or submission has run.',
       bottom: LoopActionDock(
         child: FilledButton(
-          onPressed: !hasValidAmount || widget.draft.recipient.trim().isEmpty
+          onPressed:
+              amount == null ||
+                  widget.draft.recipient.trim().isEmpty ||
+                  reviewOpening
               ? null
-              : () {
-                  final now = DateTime.now().toUtc();
-                  final intent = SigningIntent.transfer(
-                    revision: const Uuid().v4(),
-                    asset: widget.draft.asset,
-                    amount: '${controller.text.trim()} ${widget.draft.asset}',
-                    recipient: widget.draft.recipient,
-                    network: widget.draft.network,
-                    fee: 'Unavailable · backend quote required',
-                    observedAt: now,
-                    expiresAt: now.add(const Duration(seconds: 30)),
-                  );
-                  context.push('/preview/signing-review', extra: intent);
-                },
-          child: const Text('Review draft'),
+              : () => _openReview(amount),
+          child: Text(reviewOpening ? 'Opening review…' : 'Review draft'),
         ),
       ),
       children: <Widget>[
@@ -268,8 +270,18 @@ class _SendConfirmScreenState extends State<SendConfirmScreen> {
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
                   suffixText: widget.draft.asset,
-                  helperText: 'Spendable balance unavailable',
+                  helperText: controller.text.isEmpty
+                      ? 'Exact positive decimal · spendable balance unavailable'
+                      : amount == null
+                      ? null
+                      : 'Exact local amount · backend checks unavailable',
+                  errorText: controller.text.isNotEmpty && amount == null
+                      ? 'Use canonical positive decimal syntax (max 128 characters)'
+                      : null,
+                  counterText: '',
                 ),
+                maxLength: TransferAmount.maxWireLength,
+                maxLengthEnforcement: MaxLengthEnforcement.none,
               ),
             ],
           ),
@@ -279,6 +291,12 @@ class _SendConfirmScreenState extends State<SendConfirmScreen> {
           child: Column(
             children: <Widget>[
               LoopKeyValueRow(label: 'To', value: widget.draft.recipient),
+              LoopKeyValueRow(
+                label: 'Draft amount',
+                value: amount == null
+                    ? 'Unavailable'
+                    : amount.displayWithAsset(widget.draft.asset),
+              ),
               LoopKeyValueRow(label: 'Network', value: widget.draft.network),
               const LoopKeyValueRow(label: 'Network fee', value: 'Unavailable'),
               const LoopKeyValueRow(
@@ -299,6 +317,27 @@ class _SendConfirmScreenState extends State<SendConfirmScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _openReview(TransferAmount amount) async {
+    if (reviewOpening) return;
+    setState(() => reviewOpening = true);
+    try {
+      final now = (widget.clock ?? _currentUtcTime)().toUtc();
+      final intent = SigningIntent.transfer(
+        revision: (widget.revisionFactory ?? _newPreviewRevision)(),
+        asset: widget.draft.asset,
+        amount: amount.displayWithAsset(widget.draft.asset),
+        recipient: widget.draft.recipient,
+        network: widget.draft.network,
+        fee: 'Unavailable · backend quote required',
+        observedAt: now,
+        expiresAt: now.add(const Duration(seconds: 30)),
+      );
+      await context.push('/preview/signing-review', extra: intent);
+    } finally {
+      if (mounted) setState(() => reviewOpening = false);
+    }
   }
 }
 

@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/review/signing_review_surface.dart';
+import 'package:loop_mobile/features/wallet/swap_preview_snapshot.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 
@@ -66,6 +67,43 @@ void main() {
         recipient: '0x1111111111111111111111111111111111111111',
         network: 'Ethereum',
         fee: 'Unavailable · backend quote required',
+        observedAt: now,
+        expiresAt: now.add(const Duration(minutes: 1)),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [walletSigningGatewayProvider.overrideWithValue(gateway)],
+          child: MaterialApp(
+            theme: LoopTheme.dark,
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: SigningReviewSurface(intent: intent),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.ensureVisible(find.byType(Checkbox));
+      await tester.tap(find.byType(Checkbox));
+      await tester.pump();
+
+      final action = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Canonical intent required'),
+      );
+      expect(action.onPressed, isNull);
+      expect(gateway.handoffCalls, 0);
+    },
+  );
+
+  testWidgets(
+    'local Swap snapshot cannot invoke even an available wallet gateway',
+    (tester) async {
+      final gateway = _RecordingAvailableWalletGateway();
+      final now = DateTime.now().toUtc();
+      final intent = SwapPreviewSnapshot.demo.toLocalSigningIntent(
+        revision: 'local-swap-preview',
         observedAt: now,
         expiresAt: now.add(const Duration(minutes: 1)),
       );

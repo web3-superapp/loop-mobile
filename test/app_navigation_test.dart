@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/catalog/catalog_surface_screen.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
+import 'package:loop_mobile/features/wallet/swap_preview_snapshot.dart';
 import 'package:loop_mobile/features/wallet/wallet_preview_asset.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_providers.dart';
@@ -282,6 +283,18 @@ void main() {
     expect(router.routeInformationProvider.value.uri.path, '/wallet/send');
     expect(find.text('Choose asset'), findsOneWidget);
 
+    router.go('/wallet/send/to', extra: 'wrong draft type');
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/wallet/send');
+
+    router.go('/wallet/send/confirm');
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/wallet/send');
+
+    router.go('/wallet/send/confirm', extra: 'wrong draft type');
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/wallet/send');
+
     router.go(
       '/wallet/send/confirm',
       extra: const TransferDraft(asset: 'ETH', network: 'Ethereum'),
@@ -290,6 +303,17 @@ void main() {
 
     expect(router.routeInformationProvider.value.uri.path, '/wallet/send');
     expect(find.text('Choose asset'), findsOneWidget);
+
+    router.go(
+      '/wallet/send/confirm',
+      extra: const TransferDraft(
+        asset: 'ETH',
+        network: 'Ethereum',
+        recipient: '   ',
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/wallet/send');
   });
 
   testWidgets('orphan Wallet review and asset routes fail closed', (
@@ -345,6 +369,40 @@ void main() {
     expect(find.text('6,810.20 USDC'), findsWidgets);
     expect(find.text('Asset activity unavailable'), findsOneWidget);
     expect(find.text('4.82 ETH'), findsNothing);
+  });
+
+  testWidgets('Swap quote route requires the exact typed snapshot', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
+        ],
+        child: const LoopApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    router.go('/wallet/swap/route');
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/wallet/swap');
+
+    router.go('/wallet/swap/route', extra: 'wrong snapshot type');
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/wallet/swap');
+
+    router.go('/wallet/swap/route', extra: SwapPreviewSnapshot.demo);
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/wallet/swap/route',
+    );
+    expect(find.text(SwapPreviewSnapshot.demo.payLabel), findsOneWidget);
+    expect(find.text(SwapPreviewSnapshot.demo.receiveLabel), findsOneWidget);
   });
 
   testWidgets('every Pay surface renders the same non-actionable placeholder', (
