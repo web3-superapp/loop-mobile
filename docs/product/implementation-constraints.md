@@ -16,6 +16,7 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 - Application code never reads, persists, refreshes, logs, or forwards the Privy refresh token. Obtain a current access token through Privy for backend calls and retry one authentication failure at most once with a newly requested token.
 - Privy DID, email, phone, and wallet addresses are external identifiers, not Loop's business primary key. The backend bootstrap returns the immutable internal user ID and backend-derived Stream user ID.
 - Wallet MFA protects embedded-wallet private-key operations and is not generic login MFA.
+- A complete Embedded Ethereum wallet address is a current-session identity fact only. It does not prove balances, supported deposits, networks, assets, signing, or transaction readiness. Preview and unverified sessions cannot create or copy one; no QR or funding instruction is inferred without a separately accepted policy.
 - Provider secrets, Firebase service accounts, APNs private keys, backend signing keys, and Hyperliquid agent private keys never enter Flutter, fixtures, logs, or Git.
 
 ## Stream Chat truth and history

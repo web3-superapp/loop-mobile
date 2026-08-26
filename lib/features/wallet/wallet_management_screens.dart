@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/wallet/wallet_readiness.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:uuid/uuid.dart';
 
@@ -100,60 +103,65 @@ class _HistoryRow extends StatelessWidget {
   }
 }
 
-class WalletManagerScreen extends StatefulWidget {
+class WalletManagerScreen extends ConsumerWidget {
   const WalletManagerScreen({super.key});
 
   @override
-  State<WalletManagerScreen> createState() => _WalletManagerScreenState();
-}
-
-class _WalletManagerScreenState extends State<WalletManagerScreen> {
-  String selected = 'Daily wallet';
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final readiness = WalletReadiness.fromSession(
+      ref.watch(loopSessionProvider),
+    );
     return LoopPage(
       title: 'Manage wallets',
-      eyebrow: '开发预览 · Privy account',
-      subtitle: 'Wallet identities and policies below are 演示数据, not Privy account facts.',
+      eyebrow: readiness.canCopy
+          ? 'Privy · Current session'
+          : 'Wallet identity unavailable',
+      subtitle: 'Only the first Embedded Ethereum wallet from the current Privy session can appear here.',
       children: <Widget>[
-        _WalletIdentity(
-          title: 'Daily wallet',
-          address: '0x71E4…6A09',
-          label: '演示数据 · embedded',
-          selected: selected == 'Daily wallet',
-          onTap: () => setState(() => selected = 'Daily wallet'),
-        ),
-        const SizedBox(height: 10),
-        _WalletIdentity(
-          title: 'Trading wallet',
-          address: '0x88C2…F14B',
-          label: '演示数据 · external',
-          selected: selected == 'Trading wallet',
-          onTap: () => setState(() => selected = 'Trading wallet'),
-        ),
-        const LoopSectionLabel('Selected wallet'),
+        if (readiness.canCopy)
+          _WalletIdentity(
+            title: 'Embedded Ethereum wallet',
+            address: readiness.ethereumAddress!,
+            label: 'Privy provider fact · current session',
+          )
+        else
+          LoopStateCard(
+            title: _managerUnavailableTitle(readiness.mode),
+            message: _managerUnavailableMessage(readiness.mode),
+            icon: Icons.account_balance_wallet_outlined,
+            tone: readiness.mode == WalletReadinessMode.invalidAddress
+                ? LoopTone.danger
+                : LoopTone.warning,
+            action: readiness.canCreate
+                ? OutlinedButton(
+                    onPressed: () => context.go('/wallet'),
+                    child: const Text('Create from Wallet'),
+                  )
+                : null,
+          ),
+        const LoopSectionLabel('Wallet capabilities'),
         const LoopCard(
           child: Column(
             children: <Widget>[
               LoopKeyValueRow(
                 label: 'Signing policy',
-                value: '演示数据 · not verified',
+                value: 'Unavailable · provider policy not verified',
               ),
               LoopKeyValueRow(label: 'Recovery', value: 'Not connected'),
               LoopKeyValueRow(
-                label: 'Last used',
-                value: 'Unavailable',
+                label: 'Additional wallets',
+                value: 'Unavailable in the first release',
                 last: true,
               ),
             ],
           ),
         ),
         const SizedBox(height: 14),
-        OutlinedButton.icon(
-          onPressed: null,
-          icon: const Icon(Icons.add_rounded),
-          label: const Text('Add wallet when provider is connected'),
+        const LoopStateCard(
+          title: 'Wallet identity is not signing authority',
+          message: 'Showing a Privy address does not enable Send, Swap, approvals, recovery, or transaction signing.',
+          icon: Icons.policy_outlined,
+          tone: LoopTone.warning,
         ),
       ],
     );
@@ -165,21 +173,16 @@ class _WalletIdentity extends StatelessWidget {
     required this.title,
     required this.address,
     required this.label,
-    required this.selected,
-    required this.onTap,
   });
 
   final String title;
   final String address;
   final String label;
-  final bool selected;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return LoopCard(
-      onTap: onTap,
-      accent: selected,
+      accent: true,
       tone: LoopTone.positive,
       child: Row(
         children: <Widget>[
@@ -198,21 +201,42 @@ class _WalletIdentity extends StatelessWidget {
                 Text(title, style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 3),
                 Text(
-                  '$address · $label',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  address,
+                  key: const ValueKey<String>('managed-wallet-address'),
+                  style: context.dataStyle.copyWith(fontSize: 14),
+                  softWrap: true,
                 ),
+                const SizedBox(height: 5),
+                Text(label, style: Theme.of(context).textTheme.bodyMedium),
               ],
             ),
           ),
-          Icon(
-            selected ? Icons.check_circle_rounded : Icons.circle_outlined,
-            color: selected ? LoopColors.mint : LoopColors.vapor,
-          ),
+          const Icon(Icons.check_circle_rounded, color: LoopColors.mint),
         ],
       ),
     );
   }
 }
+
+String _managerUnavailableTitle(WalletReadinessMode mode) => switch (mode) {
+  WalletReadinessMode.needsWallet => 'No embedded wallet yet',
+  WalletReadinessMode.preview => 'Unavailable in 开发预览',
+  WalletReadinessMode.restricted => 'Verified session required',
+  WalletReadinessMode.invalidAddress => 'Wallet address unavailable',
+  WalletReadinessMode.ready => throw StateError('ready address handled above'),
+};
+
+String _managerUnavailableMessage(WalletReadinessMode mode) => switch (mode) {
+  WalletReadinessMode.needsWallet =>
+    'Create the first Embedded Ethereum wallet from the Wallet tab.',
+  WalletReadinessMode.preview =>
+    'Offline Preview does not invent embedded or external wallet identities.',
+  WalletReadinessMode.restricted =>
+    'Finish Privy verification before reading wallet identity.',
+  WalletReadinessMode.invalidAddress =>
+    'The provider value is not a complete Ethereum address and remains hidden.',
+  WalletReadinessMode.ready => throw StateError('ready address handled above'),
+};
 
 class DappBrowserScreen extends StatefulWidget {
   const DappBrowserScreen({super.key});

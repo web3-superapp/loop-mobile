@@ -810,6 +810,123 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected principal-bound wallet guard: {result}",
         )
 
+    def test_wallet_readiness_must_keep_verified_session_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/wallet_readiness.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace("!session.canUseProviderBackedFeatures", "false"),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_identity_readiness_contract(root)
+
+        self.assertTrue(
+            any("!session.canUseProviderBackedFeatures" in error for error in result),
+            msg=f"expected verified Wallet gate: {result}",
+        )
+
+    def test_wallet_clipboard_must_keep_the_exact_current_address(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/wallet_overview_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "ClipboardData(text: address)",
+                    "ClipboardData(text: shortenedAddress)",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_identity_readiness_contract(root)
+
+        self.assertTrue(
+            any("copy only the exact current address" in error for error in result),
+            msg=f"expected exact Wallet clipboard guard: {result}",
+        )
+
+    def test_wallet_identity_cannot_bypass_the_guarded_clipboard_flow(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/wallet_overview_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "Text(\n              readiness.ethereumAddress!",
+                    "SelectableText(\n              readiness.ethereumAddress!",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_identity_readiness_contract(root)
+
+        self.assertTrue(
+            any("session-revalidated clipboard buttons" in error for error in result),
+            msg=f"expected Wallet selection-copy bypass guard: {result}",
+        )
+
+    def test_wallet_clipboard_must_revalidate_after_the_platform_write(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/wallet_overview_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "final latest = WalletReadiness.fromSession("
+                    "ref.read(loopSessionProvider));",
+                    "final latest = current;",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_identity_readiness_contract(root)
+
+        self.assertTrue(
+            any("before and after every platform write" in error for error in result),
+            msg=f"expected Wallet clipboard revalidation guard: {result}",
+        )
+
+    def test_receive_cannot_infer_a_qr_code_from_wallet_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/wallet_overview_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source + "\nfinal unsafeQr = Icons.qr_code_2_rounded;\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_identity_readiness_contract(root)
+
+        self.assertTrue(
+            any("must not infer a QR code" in error for error in result),
+            msg=f"expected Receive QR guard: {result}",
+        )
+
+    def test_wallet_feature_cannot_import_privy_sdk_directly(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            target = root / "lib/features/wallet/unsafe.dart"
+            target.parent.mkdir(parents=True)
+            target.write_text(
+                "import 'package:privy_flutter/privy_flutter.dart';\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_identity_readiness_contract(root)
+
+        self.assertTrue(
+            any("must use the session boundary" in error for error in result),
+            msg=f"expected Privy SDK ownership guard: {result}",
+        )
+
     def test_feature_cannot_own_backend_transport(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

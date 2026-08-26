@@ -11,6 +11,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - 六个固定主入口：Home / Market / Launch / Chat / Wallet / Profile
 - 全量 103 个产品 surface 的路由目录；产品优先级独立采用 A / B / C（47 / 46 / 10），`deferred` 单独表达本期不交付
 - 受 Privy 会话保护的 Email OTP 实现；缺少 Mobile App Client ID 时保持不可登录，真机验证待补
+- Privy Embedded Ethereum wallet readiness 已挂到正式 Wallet：完整认证且无钱包时可走现有 principal-bound SDK 创建链路，已有钱包时只展示并复制当前会话的完整地址。Manage wallets 不再显示假钱包；Receive 不生成二维码或声称支持入金。余额、资产、Send、Swap、签名与交易结果仍明确为演示或不可用
 - Hyperliquid Testnet 公共只读 Spot 行情：独立读取 `spotMetaAndAssetCtxs`，按稀疏 token index 和精确 coin 关联，金额与涨跌使用 Decimal，Market 展示最多 50 个有成交量的交易对并支持搜索、刷新、错误与空状态。每一行可按精确 `spotIndex` 打开实时只读详情，展示当前响应中的价格、24h 成交量、provider/token identity 和客户端 UTC 收取时间。详情页另以该已验收市场的 provider coin 读取真实 `candleSnapshot`，支持精确映射的 1H / 4H / 1D / 1W / 1M、最多最近 120 根、手动刷新以及加载/空/错误状态；还会按 1h / 4h / 1d / 7d / 30d 固定周期严格校验每根 `T-t`。OHLCV 保持 String + Decimal，末根未收盘时明确标记，不回退演示 K 线或其他币种。它们都只是公共发现数据，不是可执行报价；买卖、余额、订单、签名、转账与提现仍全部关闭。旧 Perp 代码仅保留为未挂载的历史实现，不再属于产品范围
 - Spot-only 产品边界已经在正式入口闭合：旧 `/perp*` 深链统一返回 Spot Market，正式 `main.dart` 不再装配 Perp 私有网关，目录中的 D1-D12 只作为不可点击的 `Out of scope` 历史记录。静态演示币种先进入实时 Spot 列表，只有当前 provider 快照已验收的市场才携带精确 `spotIndex` 打开详情；裸 `/market/token` 不再回退演示行情或 K 线
 - Stream Chat 官方 client、按用户持久化、token-provider 会话、频道列表与消息页已接入；后端身份/token 未就绪时不连接、不声称在线

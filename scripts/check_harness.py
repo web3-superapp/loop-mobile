@@ -1985,6 +1985,136 @@ def check_spot_candle_contract(root: Path) -> list[str]:
     return errors
 
 
+def check_wallet_identity_readiness_contract(root: Path) -> list[str]:
+    """Keep real Privy wallet identity separate from funding and signing."""
+
+    errors = require_fragments(
+        root,
+        {
+            "docs/decisions/0020-mount-privy-wallet-readiness.md": (
+                "wallet identity is not deposit or signing authority",
+                "complete Embedded Ethereum wallet address",
+                "No QR code",
+            ),
+            "lib/features/wallet/wallet_readiness.dart": (
+                "enum WalletReadinessMode",
+                "!session.canUseProviderBackedFeatures",
+                "r'^0x[0-9a-fA-F]{40}$'",
+                "WalletReadinessMode.invalidAddress",
+            ),
+            "lib/features/wallet/wallet_overview_screens.dart": (
+                "ref.watch(loopSessionProvider)",
+                "ref.read(loopSessionProvider.notifier).createWallet()",
+                "ClipboardData(text: address)",
+                "Portfolio remains 开发预览",
+                "label: 'Send preview'",
+                "label: 'Swap preview'",
+                "title: 'Receiving is not enabled'",
+                "label: const Text('No wallet address to copy')",
+            ),
+            "lib/features/wallet/wallet_management_screens.dart": (
+                "WalletReadiness.fromSession",
+                "Wallet identity is not signing authority",
+                "Additional wallets",
+            ),
+            "lib/app.dart": (
+                "state.extra is TransferDraft ? null : '/wallet/send'",
+                "draft.recipient.trim().isNotEmpty",
+            ),
+            "test/wallet_readiness_screen_test.dart": (
+                "authenticated Wallet creates one embedded Ethereum wallet and publishes the exact address",
+                "existing wallet never exposes a create action",
+                "restricted Wallet never invokes wallet creation",
+                "wallet creation failure stays retryable and never fabricates an address",
+                "Receive copies the exact current Privy address",
+                "Receive disables copy when no current address exists",
+                "Receive clipboard failure never claims success",
+                "Receive warns when the account changes during a clipboard write",
+                "Manage wallets shows only the current provider wallet",
+            ),
+            "test/signing_review_boundary_test.dart": (
+                "local transfer draft cannot invoke even an available wallet gateway",
+            ),
+            "test/app_navigation_test.dart": (
+                "incomplete Send deep links return to asset selection",
+            ),
+        },
+    )
+
+    wallet_root = root / "lib/features/wallet"
+    if wallet_root.is_dir():
+        for path in wallet_root.rglob("*.dart"):
+            if "package:privy_flutter" in read_text(path):
+                errors.append(
+                    f"{path.relative_to(root)} must use the session boundary, "
+                    "not import the Privy SDK"
+                )
+
+    overview_path = root / "lib/features/wallet/wallet_overview_screens.dart"
+    if overview_path.is_file():
+        source = read_text(overview_path)
+        if "SelectableText(" in source:
+            errors.append(
+                "Wallet and Receive addresses must copy only through the "
+                "session-revalidated clipboard buttons"
+            )
+        if source.count(
+            "WalletReadiness.fromSession(ref.read(loopSessionProvider))"
+        ) != 4:
+            errors.append(
+                "Wallet and Receive clipboard flows must revalidate the current "
+                "session before and after every platform write"
+            )
+        if source.count("ClipboardData(text: address)") != 2:
+            errors.append(
+                "Wallet and Receive must copy only the exact current address"
+            )
+        clipboard_writes = re.findall(r"ClipboardData\(text:\s*([^\)]+)\)", source)
+        if any(value.strip() != "address" for value in clipboard_writes):
+            errors.append(
+                "Wallet clipboard writes must not use shortened or fixture values"
+            )
+        receive_start = source.find("class ReceiveScreen")
+        if receive_start < 0:
+            errors.append("Receive must preserve its wallet identity boundary")
+        else:
+            receive_source = source[receive_start:]
+            for marker in (
+                "_QrPreview",
+                "qr_code_2_rounded",
+                "SegmentedButton",
+                "ButtonSegment",
+            ):
+                if marker in receive_source:
+                    errors.append(
+                        "Receive must not infer a QR code or supported network "
+                        f"from wallet identity: {marker}"
+                    )
+        if "walletSigningGatewayProvider" in source:
+            errors.append(
+                "Wallet existence must not enable the signing gateway"
+            )
+
+    manager_path = root / "lib/features/wallet/wallet_management_screens.dart"
+    if manager_path.is_file():
+        source = read_text(manager_path)
+        if "SelectableText(" in source:
+            errors.append(
+                "Manage wallet identity must not expose a native selection-copy bypass"
+            )
+        manager_start = source.find("class WalletManagerScreen")
+        manager_end = source.find("class DappBrowserScreen", manager_start)
+        manager_source = source[manager_start:manager_end]
+        for marker in ("Daily wallet", "Trading wallet", "0x71E4", "0x88C2"):
+            if marker in manager_source:
+                errors.append(
+                    "Manage wallets must not mix fixture identities with the "
+                    f"current Privy wallet: {marker}"
+                )
+
+    return errors
+
+
 def require_fragments(root: Path, contracts: dict[str, tuple[str, ...]]) -> list[str]:
     errors: list[str] = []
     for relative, fragments in contracts.items():
@@ -3829,6 +3959,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_dependency_pins(root))
     errors.extend(check_spot_only_product_contract(root))
     errors.extend(check_spot_candle_contract(root))
+    errors.extend(check_wallet_identity_readiness_contract(root))
     errors.extend(check_native_matrix(root))
     errors.extend(check_android_release_network_contract(root))
     errors.extend(check_audio_room_native_contract(root))
@@ -3861,7 +3992,7 @@ def main() -> int:
         return 1
     print(
         "Harness check passed: profile, six-destination contract, pins, "
-        "Spot-only product and bounded candle boundaries, Debug-only routine "
+        "Spot-only product, bounded candle, and Wallet identity boundaries, Debug-only routine "
         "verification, records, and secret rules are consistent."
     )
     return 0

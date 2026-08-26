@@ -53,6 +53,48 @@ void main() {
     expect(action.onPressed, isNull);
     expect(gateway.handoffCalls, 0);
   });
+
+  testWidgets(
+    'local transfer draft cannot invoke even an available wallet gateway',
+    (tester) async {
+      final gateway = _RecordingAvailableWalletGateway();
+      final now = DateTime.now().toUtc();
+      final intent = SigningIntent.transfer(
+        revision: 'local-transfer-preview',
+        asset: 'ETH',
+        amount: '0.1 ETH',
+        recipient: '0x1111111111111111111111111111111111111111',
+        network: 'Ethereum',
+        fee: 'Unavailable · backend quote required',
+        observedAt: now,
+        expiresAt: now.add(const Duration(minutes: 1)),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [walletSigningGatewayProvider.overrideWithValue(gateway)],
+          child: MaterialApp(
+            theme: LoopTheme.dark,
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: SigningReviewSurface(intent: intent),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.ensureVisible(find.byType(Checkbox));
+      await tester.tap(find.byType(Checkbox));
+      await tester.pump();
+
+      final action = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Canonical intent required'),
+      );
+      expect(action.onPressed, isNull);
+      expect(gateway.handoffCalls, 0);
+    },
+  );
 }
 
 final class _RecordingAvailableWalletGateway implements WalletSigningGateway {

@@ -351,3 +351,35 @@ Dart file in this slice passed with no issues. Full-repository analysis still re
 only the two separately owned lint findings in `lib/widgets/loop_ui.dart` and
 `test/loop_perp_providers_test.dart`; this slice did not edit either file. No
 APK, application bundle, iOS build, or physical-device run was produced.
+
+## Privy Wallet Readiness Guard
+
+On 2026-08-26, decision 0020 mounted the first real Wallet identity fact
+without enabling a funds path. A fully verified current Privy session may use
+the existing principal-bound controller to create its first Embedded Ethereum
+wallet. Wallet, Receive, and Manage then project only an exact complete
+provider address; balances, assets, activity, approvals, Send, Swap, deposits,
+QR codes, supported networks, signing, and transaction results remain
+unavailable or visibly labelled `演示数据` / `开发预览`.
+
+The clipboard boundary is deliberately narrower than ordinary selectable
+text. Complete addresses render as non-selectable text and can be copied only
+through a guarded button that checks the current session before and after the
+platform write. A platform failure never reports success, and an account or
+wallet change during the write produces a warning. Independent review found
+and closed the native selection-menu bypass before commit. Incomplete Send
+deep links return to asset selection, and even an injected available signing
+gateway cannot accept a local transfer draft.
+
+The Harness now rejects a removed verified-session gate, direct Privy SDK
+imports from Wallet, shortened or fixture clipboard values, native
+selection-copy bypasses, missing pre/post-write session validation, inferred
+Receive QR/network capability, restored fixture wallets, signing-gateway
+coupling, and incomplete Send-route defaults. The Python Harness mutation
+suite passed all 110 tests, the Wallet readiness suite passed all 12 tests,
+and the complete Flutter suite passed all 440 tests. Full-repository analysis
+reported only the two separately owned info findings in
+`lib/widgets/loop_ui.dart` and `test/loop_perp_providers_test.dart`; this slice
+did not edit either file. No APK, application bundle, iOS build, or device run
+was produced. Real Privy wallet creation and platform clipboard behavior remain
+physical-device verification items.

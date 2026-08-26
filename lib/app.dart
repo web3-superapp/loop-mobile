@@ -338,19 +338,21 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
       ),
       GoRoute(
         path: '/wallet/send/to',
-        builder: (context, state) => SendRecipientScreen(
-          draft: state.extra is TransferDraft
-              ? state.extra! as TransferDraft
-              : const TransferDraft(asset: 'ETH', network: 'Ethereum'),
-        ),
+        redirect: (context, state) =>
+            state.extra is TransferDraft ? null : '/wallet/send',
+        builder: (context, state) =>
+            SendRecipientScreen(draft: state.extra! as TransferDraft),
       ),
       GoRoute(
         path: '/wallet/send/confirm',
-        builder: (context, state) => SendConfirmScreen(
-          draft: state.extra is TransferDraft
-              ? state.extra! as TransferDraft
-              : const TransferDraft(asset: 'ETH', network: 'Ethereum'),
-        ),
+        redirect: (context, state) {
+          final draft = state.extra;
+          return draft is TransferDraft && draft.recipient.trim().isNotEmpty
+              ? null
+              : '/wallet/send';
+        },
+        builder: (context, state) =>
+            SendConfirmScreen(draft: state.extra! as TransferDraft),
       ),
       GoRoute(
         path: '/wallet/receive',

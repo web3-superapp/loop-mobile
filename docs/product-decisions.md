@@ -53,6 +53,7 @@ Product priority and current delivery are separate:
 - The native client now has a principal-bound adapter for the implemented `POST /v1/bootstrap` boundary. It sends one current Privy Bearer access token, accepts only the backend-derived LOOP and Stream identities, retries one HTTP 401 at most once with a newly requested token, and keeps the validated identity in memory only.
 - Chat and Video share that trusted `stream_user_id` projection, but remain disconnected while the separately owned Stream token contract is unavailable.
 - Wallet addresses are bindable and replaceable credentials. They are not database primary keys, public chat identities or communication user IDs.
+- Wallet readiness is mounted directly from the current verified Privy session. The app may create the first Embedded Ethereum wallet and display/copy only a complete address, while malformed, Preview, or unverified values fail closed. Address presence never enables balances, deposits, QR funding instructions, Send, Swap, signing, or transaction claims; Manage wallets contains no fixture identities.
 - LOOP does not present an AI Guard brand or a proprietary risk score.
 - Safety UI may show concrete, attributable facts such as simulation asset changes, allowance scope, malicious-domain signals, policy state and source time. Missing or stale evidence fails closed.
 

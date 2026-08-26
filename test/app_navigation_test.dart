@@ -8,6 +8,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/catalog/catalog_surface_screen.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
+import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_providers.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_repository.dart';
@@ -256,6 +257,38 @@ void main() {
     expect(find.byType(OutlinedButton), findsNothing);
     expect(find.byType(TextField), findsNothing);
     expect(find.byIcon(Icons.qr_code_scanner_rounded), findsNothing);
+  });
+
+  testWidgets('incomplete Send deep links return to asset selection', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
+        ],
+        child: const LoopApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    router.go('/wallet/send/to');
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, '/wallet/send');
+    expect(find.text('Choose asset'), findsOneWidget);
+
+    router.go(
+      '/wallet/send/confirm',
+      extra: const TransferDraft(asset: 'ETH', network: 'Ethereum'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, '/wallet/send');
+    expect(find.text('Choose asset'), findsOneWidget);
   });
 
   testWidgets('every Pay surface renders the same non-actionable placeholder', (
