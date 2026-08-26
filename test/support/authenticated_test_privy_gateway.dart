@@ -2,13 +2,20 @@ import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
 /// Test-only session seam for widget tests that exercise post-login routes.
 class AuthenticatedTestPrivyGateway implements PrivyAuthGateway {
-  const AuthenticatedTestPrivyGateway();
+  const AuthenticatedTestPrivyGateway({this.walletAddress});
+
+  final String? walletAddress;
 
   @override
   Future<PrivySessionSnapshot> restoreSession() async {
-    return const PrivySessionSnapshot(
+    return PrivySessionSnapshot(
       PrivySessionKind.authenticated,
-      account: PrivyAccountSummary(privyUserId: 'did:privy:test-widget'),
+      account: PrivyAccountSummary(
+        privyUserId: 'did:privy:test-widget',
+        wallet: walletAddress == null
+            ? null
+            : PrivyWalletSummary(address: walletAddress!),
+      ),
     );
   }
 

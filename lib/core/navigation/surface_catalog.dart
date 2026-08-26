@@ -529,7 +529,7 @@ abstract final class SurfaceCatalog {
       path: '/wallet',
       priority: ProductPriority.a,
       module: SurfaceModule.wallet,
-      description: 'Portfolio and wallet actions across supported accounts.',
+      description: 'Current Privy wallet identity plus labelled portfolio fixtures; balances and funds actions remain unavailable.',
     ),
     AppSurface(
       id: 'F2',
@@ -537,7 +537,7 @@ abstract final class SurfaceCatalog {
       path: '/wallet/asset',
       priority: ProductPriority.a,
       module: SurfaceModule.wallet,
-      description: 'Holdings, cost basis and activity by chain.',
+      description: 'A typed labelled asset fixture with no provider balance, cost basis or activity read.',
     ),
     AppSurface(
       id: 'F3',
@@ -545,7 +545,7 @@ abstract final class SurfaceCatalog {
       path: '/wallet/send',
       priority: ProductPriority.a,
       module: SurfaceModule.wallet,
-      description: 'Select an available asset to send.',
+      description: 'Labelled asset-selection preview; real assets and balances require the transfer backend.',
     ),
     AppSurface(
       id: 'F4',
@@ -553,7 +553,7 @@ abstract final class SurfaceCatalog {
       path: '/wallet/send/to',
       priority: ProductPriority.a,
       module: SurfaceModule.wallet,
-      description: 'Address, name, scan and recipient facts.',
+      description: 'Local recipient input only; resolution, history, validation and screening remain unavailable.',
     ),
     AppSurface(
       id: 'F5',
@@ -561,7 +561,7 @@ abstract final class SurfaceCatalog {
       path: '/wallet/send/confirm',
       priority: ProductPriority.a,
       module: SurfaceModule.wallet,
-      description: 'Amount, fee and simulated asset changes.',
+      description: 'Local amount draft only; fee, simulation and canonical transfer intent remain unavailable.',
     ),
     AppSurface(
       id: 'F6',
@@ -569,7 +569,7 @@ abstract final class SurfaceCatalog {
       path: '/wallet/receive',
       priority: ProductPriority.a,
       module: SurfaceModule.wallet,
-      description: 'Address, QR and network warning.',
+      description: 'Current Privy wallet identity only; no QR code or supported receiving policy is inferred.',
     ),
     AppSurface(
       id: 'F7',
@@ -577,7 +577,7 @@ abstract final class SurfaceCatalog {
       path: '/wallet/swap',
       priority: ProductPriority.a,
       module: SurfaceModule.wallet,
-      description: 'Provider quote, slippage and simulation.',
+      description: 'Labelled static swap layout; no provider quote, simulation or signing capability.',
     ),
     AppSurface(
       id: 'F8',
@@ -585,7 +585,8 @@ abstract final class SurfaceCatalog {
       path: '/wallet/swap/route',
       priority: ProductPriority.b,
       module: SurfaceModule.wallet,
-      description: 'Final quote and fee composition when available.',
+      description:
+          'Labelled demo route and fee composition; no provider quote exists.',
     ),
     AppSurface(
       id: 'F9',
@@ -593,7 +594,7 @@ abstract final class SurfaceCatalog {
       path: '/wallet/bridge',
       priority: ProductPriority.b,
       module: SurfaceModule.wallet,
-      description: 'Provider-selected cross-chain route.',
+      description: 'Labelled bridge route layout only; no provider route or funds request exists.',
     ),
     AppSurface(
       id: 'F10',
@@ -601,7 +602,8 @@ abstract final class SurfaceCatalog {
       path: '/wallet/bridge/status',
       priority: ProductPriority.b,
       module: SurfaceModule.wallet,
-      description: 'Source confirmation, relay and destination progress.',
+      description:
+          'Simulated bridge progress states with no provider reference.',
     ),
     AppSurface(
       id: 'F11',
@@ -609,7 +611,7 @@ abstract final class SurfaceCatalog {
       path: '/preview/signing-review',
       priority: ProductPriority.a,
       module: SurfaceModule.wallet,
-      description: 'The single app-owned intent review surface.',
+      description: 'Single app-owned review surface; local drafts fail closed until a backend canonical intent exists.',
       kind: SurfaceKind.sheet,
     ),
     AppSurface(
@@ -618,7 +620,7 @@ abstract final class SurfaceCatalog {
       path: '/wallet/transaction',
       priority: ProductPriority.b,
       module: SurfaceModule.wallet,
-      description: 'Pending, successful, failed and unknown submission states.',
+      description: 'Labelled result-state examples only; no transaction or receipt is claimed.',
     ),
     AppSurface(
       id: 'F13',
@@ -626,7 +628,7 @@ abstract final class SurfaceCatalog {
       path: '/wallet/history',
       priority: ProductPriority.b,
       module: SurfaceModule.wallet,
-      description: 'Filter and inspect wallet activity.',
+      description: 'Labelled history layout only; no provider wallet activity is loaded.',
     ),
     AppSurface(
       id: 'F14',
@@ -634,7 +636,7 @@ abstract final class SurfaceCatalog {
       path: '/wallet/manage',
       priority: ProductPriority.b,
       module: SurfaceModule.wallet,
-      description: 'Switch, rename and manage wallet capabilities.',
+      description: 'Read the first current Privy wallet identity; extra wallets, recovery and signing remain unavailable.',
     ),
     AppSurface(
       id: 'F15',
@@ -642,7 +644,7 @@ abstract final class SurfaceCatalog {
       path: '/wallet/dapp',
       priority: ProductPriority.b,
       module: SurfaceModule.wallet,
-      description: 'Wallet-aware browser with domain context.',
+      description: 'Typed-domain layout preview; browsing, trust and wallet injection remain disabled.',
     ),
     AppSurface(
       id: 'F16',
@@ -650,7 +652,7 @@ abstract final class SurfaceCatalog {
       path: '/preview/approval',
       priority: ProductPriority.a,
       module: SurfaceModule.wallet,
-      description: 'Unlimited approval warning with a limited option.',
+      description: 'Local approval-warning layout only; no DApp or provider request exists.',
       kind: SurfaceKind.sheet,
     ),
     AppSurface(
@@ -659,7 +661,7 @@ abstract final class SurfaceCatalog {
       path: '/wallet/approvals',
       priority: ProductPriority.b,
       module: SurfaceModule.wallet,
-      description: 'Review and revoke token permissions.',
+      description: 'Labelled permission fixtures; allowance reads and revocation remain unavailable.',
     ),
     AppSurface(
       id: 'F18',
@@ -667,7 +669,8 @@ abstract final class SurfaceCatalog {
       path: '/wallet/dapps',
       priority: ProductPriority.c,
       module: SurfaceModule.wallet,
-      description: 'Bookmarks and recent apps.',
+      description:
+          'Future DApp bookmarks and recents; no embedded browsing is enabled.',
       deferred: true,
     ),
     AppSurface(
@@ -676,7 +679,7 @@ abstract final class SurfaceCatalog {
       path: '/wallet/networks',
       priority: ProductPriority.b,
       module: SurfaceModule.wallet,
-      description: 'Enabled chains, testnets and RPC health.',
+      description: 'Labelled network fixtures only; no provider support or RPC health is claimed.',
     ),
     AppSurface(
       id: 'F20',
@@ -684,7 +687,7 @@ abstract final class SurfaceCatalog {
       path: '/wallet/protection',
       priority: ProductPriority.c,
       module: SurfaceModule.wallet,
-      description: 'Plain-language wallet protection controls.',
+      description: 'Future plain-language wallet protection controls.',
       deferred: true,
     ),
 

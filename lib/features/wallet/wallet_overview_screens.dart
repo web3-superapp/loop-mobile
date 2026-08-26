@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/wallet/wallet_readiness.dart';
+import 'package:loop_mobile/features/wallet/wallet_preview_asset.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
@@ -95,30 +96,11 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           ],
         ),
         const LoopSectionLabel('Assets'),
-        _AssetRow(
-          symbol: 'ETH',
-          name: 'Ethereum',
-          amount: '4.82 ETH',
-          value: r'$22,319.01',
-          change: '+3.8%',
-          onTap: () => context.push('/wallet/asset'),
-        ),
-        _AssetRow(
-          symbol: 'USDC',
-          name: 'USD Coin',
-          amount: '6,810.20 USDC',
-          value: r'$6,810.20',
-          change: '0.0%',
-          onTap: () => context.push('/wallet/asset'),
-        ),
-        _AssetRow(
-          symbol: 'SOL',
-          name: 'Solana',
-          amount: '13.44 SOL',
-          value: r'$2,110.79',
-          change: '-1.2%',
-          onTap: () => context.push('/wallet/asset'),
-        ),
+        for (final asset in WalletPreviewAsset.all)
+          _AssetRow(
+            asset: asset,
+            onTap: () => context.push('/wallet/asset', extra: asset),
+          ),
         const LoopSectionLabel('Review'),
         LoopStateCard(
           title: '演示数据 · 1 app can spend USDC',
@@ -399,40 +381,32 @@ class _WalletAction extends StatelessWidget {
 }
 
 class _AssetRow extends StatelessWidget {
-  const _AssetRow({
-    required this.symbol,
-    required this.name,
-    required this.amount,
-    required this.value,
-    required this.change,
-    required this.onTap,
-  });
+  const _AssetRow({required this.asset, required this.onTap});
 
-  final String symbol;
-  final String name;
-  final String amount;
-  final String value;
-  final String change;
+  final WalletPreviewAsset asset;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final positive = !change.startsWith('-');
+    final positive = !asset.change.startsWith('-');
     return ListTile(
       onTap: onTap,
       minTileHeight: 68,
       contentPadding: EdgeInsets.zero,
-      leading: LoopAssetMark(symbol: symbol),
-      title: Text(name, style: Theme.of(context).textTheme.titleMedium),
-      subtitle: Text(amount, style: Theme.of(context).textTheme.bodyMedium),
+      leading: LoopAssetMark(symbol: asset.symbol),
+      title: Text(asset.name, style: Theme.of(context).textTheme.titleMedium),
+      subtitle: Text(
+        asset.amount,
+        style: Theme.of(context).textTheme.bodyMedium,
+      ),
       trailing: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
-          Text(value, style: context.dataStyle),
+          Text(asset.value, style: context.dataStyle),
           const SizedBox(height: 3),
           Text(
-            change,
+            asset.change,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: positive ? LoopColors.mint : LoopColors.danger,
             ),
@@ -444,42 +418,47 @@ class _AssetRow extends StatelessWidget {
 }
 
 class AssetDetailScreen extends StatelessWidget {
-  const AssetDetailScreen({super.key});
+  const AssetDetailScreen({required this.asset, super.key});
+
+  final WalletPreviewAsset asset;
 
   @override
   Widget build(BuildContext context) {
     return LoopPage(
-      title: 'Ethereum',
-      eyebrow: '开发预览 · ETH · across 2 networks',
-      subtitle:
-          'Balances and activity below are 演示数据, not a provider projection.',
+      title: asset.name,
+      eyebrow: '开发预览 · ${asset.symbol} · ${asset.networkLabel}',
+      subtitle: 'This typed asset fixture is not a provider balance or activity projection.',
       children: <Widget>[
-        const Row(
+        Row(
           children: <Widget>[
-            LoopAssetMark(symbol: 'ETH', size: 52),
-            SizedBox(width: 13),
+            LoopAssetMark(symbol: asset.symbol, size: 52),
+            const SizedBox(width: 13),
             Expanded(
               child: LoopMetric(
-                label: 'HOLDING',
-                value: '4.82 ETH',
-                detail: r'$22,319.01',
-                tone: LoopTone.positive,
+                label: '演示数据 · HOLDING',
+                value: asset.amount,
+                detail: asset.value,
               ),
             ),
           ],
         ),
         const SizedBox(height: 20),
-        const LoopCard(
+        LoopCard(
           child: Column(
             children: <Widget>[
-              LoopKeyValueRow(label: 'Average cost', value: r'$3,844.20'),
+              LoopKeyValueRow(label: 'Asset', value: asset.symbol),
+              LoopKeyValueRow(label: 'Fixture amount', value: asset.amount),
+              LoopKeyValueRow(label: 'Fixture value', value: asset.value),
               LoopKeyValueRow(
-                label: 'Unrealized PnL',
-                value: r'+$3,786.39',
-                tone: LoopTone.positive,
+                label: 'Network label',
+                value: asset.networkLabel,
               ),
-              LoopKeyValueRow(label: 'Ethereum', value: '3.90 ETH'),
-              LoopKeyValueRow(label: 'Arbitrum', value: '0.92 ETH', last: true),
+              const LoopKeyValueRow(
+                label: 'Provider read',
+                value: 'Not performed',
+                tone: LoopTone.warning,
+                last: true,
+              ),
             ],
           ),
         ),
@@ -490,7 +469,7 @@ class AssetDetailScreen extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: () => context.push('/wallet/send'),
                 icon: const Icon(Icons.north_east_rounded),
-                label: const Text('Send'),
+                label: const Text('Send preview'),
               ),
             ),
             const SizedBox(width: 10),
@@ -498,63 +477,19 @@ class AssetDetailScreen extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: () => context.push('/wallet/receive'),
                 icon: const Icon(Icons.south_west_rounded),
-                label: const Text('Receive'),
+                label: const Text('Wallet address'),
               ),
             ),
           ],
         ),
         const LoopSectionLabel('Activity'),
-        const _AssetActivity(
-          title: 'Received',
-          detail: '+0.40 ETH',
-          time: 'Today, 09:18',
-          positive: true,
-        ),
-        const _AssetActivity(
-          title: 'Swapped ETH to USDC',
-          detail: '-0.12 ETH',
-          time: 'Yesterday, 21:44',
-        ),
-        const _AssetActivity(
-          title: 'Sent',
-          detail: '-0.08 ETH',
-          time: 'Aug 21, 15:02',
+        const LoopStateCard(
+          title: 'Asset activity unavailable',
+          message: 'No provider balance or transaction-history request was made for this asset.',
+          icon: Icons.history_toggle_off_rounded,
+          tone: LoopTone.warning,
         ),
       ],
-    );
-  }
-}
-
-class _AssetActivity extends StatelessWidget {
-  const _AssetActivity({
-    required this.title,
-    required this.detail,
-    required this.time,
-    this.positive = false,
-  });
-
-  final String title;
-  final String detail;
-  final String time;
-  final bool positive;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      minTileHeight: 62,
-      leading: Icon(
-        positive ? Icons.south_west_rounded : Icons.north_east_rounded,
-        color: positive ? LoopColors.mint : LoopColors.vapor,
-      ),
-      title: Text(title, style: Theme.of(context).textTheme.titleMedium),
-      subtitle: Text(time, style: Theme.of(context).textTheme.bodyMedium),
-      trailing: Text(
-        detail,
-        style: context.dataStyle.copyWith(
-          color: positive ? LoopColors.mint : LoopColors.chalk,
-        ),
-      ),
     );
   }
 }

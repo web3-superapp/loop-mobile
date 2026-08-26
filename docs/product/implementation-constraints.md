@@ -17,6 +17,7 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 - Privy DID, email, phone, and wallet addresses are external identifiers, not Loop's business primary key. The backend bootstrap returns the immutable internal user ID and backend-derived Stream user ID.
 - Wallet MFA protects embedded-wallet private-key operations and is not generic login MFA.
 - A complete Embedded Ethereum wallet address is a current-session identity fact only. It does not prove balances, supported deposits, networks, assets, signing, or transaction readiness. Preview and unverified sessions cannot create or copy one; no QR or funding instruction is inferred without a separately accepted policy.
+- Wallet asset, quote, and review routes require explicit typed process-local state. Missing state fails closed to the owning Wallet step and never constructs a default asset, wallet, quote, intent, UUID, expiry, or transaction fact.
 - Provider secrets, Firebase service accounts, APNs private keys, backend signing keys, and Hyperliquid agent private keys never enter Flutter, fixtures, logs, or Git.
 
 ## Stream Chat truth and history

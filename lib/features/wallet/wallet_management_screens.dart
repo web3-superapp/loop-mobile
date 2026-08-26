@@ -238,14 +238,14 @@ String _managerUnavailableMessage(WalletReadinessMode mode) => switch (mode) {
   WalletReadinessMode.ready => throw StateError('ready address handled above'),
 };
 
-class DappBrowserScreen extends StatefulWidget {
+class DappBrowserScreen extends ConsumerStatefulWidget {
   const DappBrowserScreen({super.key});
 
   @override
-  State<DappBrowserScreen> createState() => _DappBrowserScreenState();
+  ConsumerState<DappBrowserScreen> createState() => _DappBrowserScreenState();
 }
 
-class _DappBrowserScreenState extends State<DappBrowserScreen> {
+class _DappBrowserScreenState extends ConsumerState<DappBrowserScreen> {
   final controller = TextEditingController(text: 'app.uniswap.org');
 
   @override
@@ -256,13 +256,18 @@ class _DappBrowserScreenState extends State<DappBrowserScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final readiness = WalletReadiness.fromSession(
+      ref.watch(loopSessionProvider),
+    );
+    final typedDomain = controller.text.trim();
     return LoopPage(
       title: 'DApp browser',
       eyebrow: '开发预览',
-      subtitle: 'Domain and wallet context remain visible before any permission request.',
+      subtitle: 'Local domain layout only. Embedded browsing and wallet injection remain disabled.',
       children: <Widget>[
         TextField(
           controller: controller,
+          onChanged: (_) => setState(() {}),
           keyboardType: TextInputType.url,
           decoration: const InputDecoration(
             prefixIcon: Icon(Icons.lock_outline_rounded),
@@ -271,19 +276,30 @@ class _DappBrowserScreenState extends State<DappBrowserScreen> {
         ),
         const SizedBox(height: 14),
         const LoopStateCard(
-          title: 'Preview mode',
-          message: 'Embedded browsing and live wallet injection are unavailable until domain isolation is configured.',
+          title: 'Browser and injection unavailable',
+          message: 'The typed domain is not trusted, opened, resolved, or connected to a wallet.',
           icon: Icons.language_rounded,
           tone: LoopTone.warning,
         ),
         const LoopSectionLabel('Before connecting'),
-        const LoopCard(
+        LoopCard(
           child: Column(
             children: <Widget>[
-              LoopKeyValueRow(label: 'Domain', value: 'app.uniswap.org'),
-              LoopKeyValueRow(label: 'Selected wallet', value: '0x71E4…6A09'),
-              LoopKeyValueRow(label: 'Network', value: 'Ethereum'),
               LoopKeyValueRow(
+                label: 'Typed preview domain',
+                value: typedDomain.isEmpty ? 'Unavailable' : typedDomain,
+              ),
+              LoopKeyValueRow(
+                label: 'Current wallet identity',
+                value: readiness.canCopy
+                    ? readiness.ethereumAddress!
+                    : 'Unavailable',
+              ),
+              const LoopKeyValueRow(
+                label: 'Wallet injection',
+                value: 'Unavailable',
+              ),
+              const LoopKeyValueRow(
                 label: 'Granted permissions',
                 value: 'None',
                 last: true,

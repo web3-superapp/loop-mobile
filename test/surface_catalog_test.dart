@@ -100,6 +100,58 @@ void main() {
     expect(genericSurfaces.every((surface) => surface.deferred), isTrue);
   });
 
+  test('Wallet catalog describes current delivery truth', () {
+    final wallet = <String, AppSurface>{
+      for (final surface in SurfaceCatalog.all.where(
+        (surface) => surface.module == SurfaceModule.wallet,
+      ))
+        surface.id: surface,
+    };
+
+    expect(wallet, hasLength(20));
+    expect(
+      wallet['F1']!.description,
+      contains('balances and funds actions remain unavailable'),
+    );
+    expect(wallet['F2']!.description, contains('typed labelled asset fixture'));
+    expect(wallet['F6']!.description, contains('no QR code'));
+    expect(wallet['F7']!.description, contains('no provider quote'));
+    expect(wallet['F11']!.description, contains('local drafts fail closed'));
+    expect(
+      wallet['F14']!.description,
+      contains('first current Privy wallet identity'),
+    );
+    expect(
+      wallet['F15']!.description,
+      contains('wallet injection remain disabled'),
+    );
+    expect(
+      wallet['F17']!.description,
+      contains('revocation remain unavailable'),
+    );
+    expect(
+      wallet['F19']!.description,
+      contains('no provider support or RPC health'),
+    );
+
+    const obsoleteClaims = <String>[
+      'supported accounts',
+      'Holdings, cost basis and activity by chain',
+      'Address, QR and network warning',
+      'Provider quote, slippage and simulation',
+      'Switch, rename and manage wallet capabilities',
+      'Wallet-aware browser',
+      'Review and revoke token permissions',
+      'Enabled chains, testnets and RPC health',
+    ];
+    expect(
+      wallet.values.expand(
+        (surface) => obsoleteClaims.where(surface.description.contains),
+      ),
+      isEmpty,
+    );
+  });
+
   testWidgets('inventory keeps retained Perp history out of scope', (
     tester,
   ) async {

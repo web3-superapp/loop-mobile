@@ -383,3 +383,30 @@ reported only the two separately owned info findings in
 did not edit either file. No APK, application bundle, iOS build, or device run
 was produced. Real Privy wallet creation and platform clipboard behavior remain
 physical-device verification items.
+
+## Wallet Orphan-Route Truth Guard
+
+On 2026-08-26, decision 0021 removed four prototype fallbacks that could look
+like provider facts. Wallet asset rows now carry one closed-set immutable
+`WalletPreviewAsset`; a missing or restored detail route returns to Wallet
+instead of defaulting to ETH. Signing Review requires an originating
+`SigningIntent` object and a naked route creates no UUID, expiry, transfer, or
+review fact. The disabled DApp layout removed its fixture wallet and may show
+only the current complete Privy wallet identity admitted by Wallet readiness;
+otherwise it reports unavailable.
+
+F1-F20 catalog descriptions now distinguish current Privy readiness, labelled
+Preview layouts, unavailable provider capabilities, and deferred surfaces.
+Asset detail no longer displays ETH balances or activity for USDC and SOL, and
+it makes no balance or transaction-history request.
+
+The Harness rejects an untyped asset route, a generated Signing Review
+fallback, every complete DApp Ethereum address literal, obsolete Wallet
+capability claims, unbound portfolio activity, and naked asset navigation.
+Behavior tests prove that wallet rotation, restricted state, and logout remove
+the prior DApp identity immediately. The Python mutation suite passed all 115
+tests, the focused route/catalog/readiness suite passed all 32 tests,
+changed-file analysis passed, and the complete Flutter suite passed all 446
+tests. No build, package, provider request, or device run was performed.
+Transfer, Swap, signing, wallet injection, balances, and activity remain
+unavailable outside their explicitly labelled local layouts.

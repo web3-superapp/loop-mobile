@@ -927,6 +927,110 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected Privy SDK ownership guard: {result}",
         )
 
+    def test_wallet_asset_route_cannot_default_to_an_unbound_asset(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/app.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "state.extra is WalletPreviewAsset ? null : '/wallet'",
+                    "true ? null : '/wallet'",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_preview_route_contract(root)
+
+        self.assertTrue(
+            any("state.extra is WalletPreviewAsset" in error for error in result),
+            msg=f"expected typed Wallet asset route guard: {result}",
+        )
+
+    def test_signing_review_route_cannot_restore_a_fallback_intent(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/app.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "state.extra is SigningIntent ? null : '/wallet'",
+                    "true ? null : '/wallet'",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_preview_route_contract(root)
+
+        self.assertTrue(
+            any("state.extra is SigningIntent" in error for error in result),
+            msg=f"expected Signing Review origin guard: {result}",
+        )
+
+    def test_dapp_preview_cannot_restore_a_fixture_wallet(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/wallet_management_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace("Current wallet identity", "Selected wallet"),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_preview_route_contract(root)
+
+        self.assertTrue(
+            any("must not invent a wallet identity" in error for error in result),
+            msg=f"expected DApp wallet identity guard: {result}",
+        )
+
+    def test_dapp_preview_cannot_use_any_address_literal(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/wallet_management_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "class ApprovalInterceptScreen",
+                    "const unsafeDappWallet = "
+                    "'0x6666666666666666666666666666666666666666';\n\n"
+                    "class ApprovalInterceptScreen",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_preview_route_contract(root)
+
+        self.assertTrue(
+            any("never an address literal" in error for error in result),
+            msg=f"expected generic DApp address-literal guard: {result}",
+        )
+
+    def test_wallet_catalog_cannot_restore_planned_capability_claims(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/core/navigation/surface_catalog.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "Current Privy wallet identity plus labelled portfolio fixtures; balances and funds actions remain unavailable.",
+                    "Portfolio and wallet actions across supported accounts.",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_preview_route_contract(root)
+
+        self.assertTrue(
+            any("must report delivery truth" in error for error in result),
+            msg=f"expected Wallet catalog truth guard: {result}",
+        )
+
     def test_feature_cannot_own_backend_transport(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

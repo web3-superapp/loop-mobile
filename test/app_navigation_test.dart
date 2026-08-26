@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/catalog/catalog_surface_screen.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
+import 'package:loop_mobile/features/wallet/wallet_preview_asset.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_providers.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_repository.dart';
@@ -289,6 +290,61 @@ void main() {
 
     expect(router.routeInformationProvider.value.uri.path, '/wallet/send');
     expect(find.text('Choose asset'), findsOneWidget);
+  });
+
+  testWidgets('orphan Wallet review and asset routes fail closed', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
+        ],
+        child: const LoopApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    router.go('/wallet/asset');
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, '/wallet');
+    expect(find.text('Wallet'), findsWidgets);
+
+    router.go('/preview/signing-review');
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, '/wallet');
+    expect(find.text('Transaction intent review'), findsNothing);
+  });
+
+  testWidgets('asset detail consumes the exact typed preview asset', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
+        ],
+        child: const LoopApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    router.go('/wallet/asset', extra: WalletPreviewAsset.usdCoin);
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, '/wallet/asset');
+    expect(find.text('USD Coin'), findsOneWidget);
+    expect(find.text('6,810.20 USDC'), findsWidgets);
+    expect(find.text('Asset activity unavailable'), findsOneWidget);
+    expect(find.text('4.82 ETH'), findsNothing);
   });
 
   testWidgets('every Pay surface renders the same non-actionable placeholder', (

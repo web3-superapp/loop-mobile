@@ -54,6 +54,7 @@ Product priority and current delivery are separate:
 - Chat and Video share that trusted `stream_user_id` projection, but remain disconnected while the separately owned Stream token contract is unavailable.
 - Wallet addresses are bindable and replaceable credentials. They are not database primary keys, public chat identities or communication user IDs.
 - Wallet readiness is mounted directly from the current verified Privy session. The app may create the first Embedded Ethereum wallet and display/copy only a complete address, while malformed, Preview, or unverified values fail closed. Address presence never enables balances, deposits, QR funding instructions, Send, Swap, signing, or transaction claims; Manage wallets contains no fixture identities.
+- Wallet prototype routes never fill missing context with ETH, a fixture wallet, or a generated signing intent. Asset details consume one typed labelled fixture, Signing Review requires an originating intent object, and the disabled DApp layout can project only the current verified Privy wallet identity. Catalog descriptions report Preview and unavailable capabilities rather than product priority as delivery evidence.
 - LOOP does not present an AI Guard brand or a proprietary risk score.
 - Safety UI may show concrete, attributable facts such as simulation asset changes, allowance scope, malicious-domain signals, policy state and source time. Missing or stale evidence fails closed.
 

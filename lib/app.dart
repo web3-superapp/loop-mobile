@@ -33,7 +33,6 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart'
         StreamChatConfigurationData,
         StreamComponentBuilders,
         streamChatComponentBuilders;
-import 'package:uuid/uuid.dart';
 
 final _loopStreamComponentBuilders = StreamComponentBuilders(
   extensions: streamChatComponentBuilders(
@@ -330,7 +329,10 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
       ),
       GoRoute(
         path: '/wallet/asset',
-        builder: (context, state) => const AssetDetailScreen(),
+        redirect: (context, state) =>
+            state.extra is WalletPreviewAsset ? null : '/wallet',
+        builder: (context, state) =>
+            AssetDetailScreen(asset: state.extra! as WalletPreviewAsset),
       ),
       GoRoute(
         path: '/wallet/send',
@@ -412,11 +414,10 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
       ),
       GoRoute(
         path: '/preview/signing-review',
-        builder: (context, state) => SigningReviewPage(
-          intent: state.extra is SigningIntent
-              ? state.extra! as SigningIntent
-              : _previewIntent(),
-        ),
+        redirect: (context, state) =>
+            state.extra is SigningIntent ? null : '/wallet',
+        builder: (context, state) =>
+            SigningReviewPage(intent: state.extra! as SigningIntent),
       ),
       ..._profileRoutes,
       ..._systemRoutes,
@@ -693,20 +694,6 @@ final List<RouteBase> _catalogRoutes = SurfaceCatalog.all
       ),
     )
     .toList(growable: false);
-
-SigningIntent _previewIntent() {
-  final now = DateTime.now().toUtc();
-  return SigningIntent.transfer(
-    revision: const Uuid().v4(),
-    asset: 'ETH',
-    amount: 'Unavailable · no transfer draft',
-    recipient: 'Unavailable · no transfer draft',
-    network: 'Unavailable',
-    fee: 'Unavailable',
-    observedAt: now,
-    expiresAt: now.add(const Duration(minutes: 5)),
-  );
-}
 
 class UnknownRouteScreen extends StatelessWidget {
   const UnknownRouteScreen({required this.location, super.key});

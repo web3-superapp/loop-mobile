@@ -2115,6 +2115,129 @@ def check_wallet_identity_readiness_contract(root: Path) -> list[str]:
     return errors
 
 
+def check_wallet_preview_route_contract(root: Path) -> list[str]:
+    """Reject fabricated Wallet route context and capability claims."""
+
+    errors = require_fragments(
+        root,
+        {
+            "docs/decisions/0021-close-wallet-preview-orphan-routes.md": (
+                "typed, immutable `WalletPreviewAsset`",
+                "A naked or restored route returns to Wallet",
+                "Remove the DApp fixture wallet",
+            ),
+            "lib/features/wallet/wallet_preview_asset.dart": (
+                "final class WalletPreviewAsset",
+                "static const ethereum",
+                "static const usdCoin",
+                "static const solana",
+                "static const all = <WalletPreviewAsset>",
+            ),
+            "lib/app.dart": (
+                "state.extra is WalletPreviewAsset ? null : '/wallet'",
+                "AssetDetailScreen(asset: state.extra! as WalletPreviewAsset)",
+                "state.extra is SigningIntent ? null : '/wallet'",
+                "SigningReviewPage(intent: state.extra! as SigningIntent)",
+            ),
+            "lib/features/wallet/wallet_overview_screens.dart": (
+                "for (final asset in WalletPreviewAsset.all)",
+                "context.push('/wallet/asset', extra: asset)",
+                "Asset activity unavailable",
+                "No provider balance or transaction-history request was made",
+            ),
+            "lib/features/wallet/wallet_management_screens.dart": (
+                "class DappBrowserScreen extends ConsumerStatefulWidget",
+                "WalletReadiness.fromSession",
+                "Current wallet identity",
+                "Wallet injection",
+                "typed domain is not trusted",
+            ),
+            "test/app_navigation_test.dart": (
+                "orphan Wallet review and asset routes fail closed",
+                "asset detail consumes the exact typed preview asset",
+            ),
+            "test/wallet_preview_route_truthfulness_test.dart": (
+                "DApp preview uses only the current wallet identity and typed domain",
+                "DApp preview never invents a wallet for a verified account",
+            ),
+            "test/surface_catalog_test.dart": (
+                "Wallet catalog describes current delivery truth",
+            ),
+        },
+    )
+
+    app_path = root / "lib/app.dart"
+    if app_path.is_file():
+        source = read_text(app_path)
+        for marker in ("SigningIntent _previewIntent()", "_previewIntent()"):
+            if marker in source:
+                errors.append(
+                    "Signing Review must never fabricate a fallback intent: "
+                    f"{marker}"
+                )
+
+    overview_path = root / "lib/features/wallet/wallet_overview_screens.dart"
+    if overview_path.is_file():
+        source = read_text(overview_path)
+        if "context.push('/wallet/asset')" in source:
+            errors.append(
+                "Wallet asset rows must carry the exact typed Preview asset"
+            )
+        detail_start = source.find("class AssetDetailScreen")
+        detail_end = source.find("class ReceiveScreen", detail_start)
+        detail_source = source[detail_start:detail_end]
+        for marker in ("_AssetActivity", "Average cost", "Unrealized PnL"):
+            if marker in detail_source:
+                errors.append(
+                    "Asset detail must not restore unbound portfolio fixtures: "
+                    f"{marker}"
+                )
+
+    management_path = (
+        root / "lib/features/wallet/wallet_management_screens.dart"
+    )
+    if management_path.is_file():
+        source = read_text(management_path)
+        dapp_start = source.find("class DappBrowserScreen")
+        dapp_end = source.find("class ApprovalInterceptScreen", dapp_start)
+        dapp_source = source[dapp_start:dapp_end]
+        for marker in ("0x71E4", "Selected wallet"):
+            if marker in dapp_source:
+                errors.append(
+                    "DApp preview must not invent a wallet identity: "
+                    f"{marker}"
+                )
+        if re.search(r"(?i)0x[0-9a-f]{40}", dapp_source):
+            errors.append(
+                "DApp preview wallet identity must come from "
+                "readiness.ethereumAddress, never an address literal"
+            )
+
+    catalog_path = root / "lib/core/navigation/surface_catalog.dart"
+    if catalog_path.is_file():
+        source = read_text(catalog_path)
+        wallet_start = source.find("// F · Wallet (20)")
+        wallet_end = source.find("// G · Launchpad", wallet_start)
+        wallet_source = source[wallet_start:wallet_end]
+        for marker in (
+            "supported accounts",
+            "Holdings, cost basis and activity by chain",
+            "Address, QR and network warning",
+            "Provider quote, slippage and simulation",
+            "Switch, rename and manage wallet capabilities",
+            "Wallet-aware browser",
+            "Review and revoke token permissions",
+            "Enabled chains, testnets and RPC health",
+        ):
+            if marker in wallet_source:
+                errors.append(
+                    "Wallet catalog must report delivery truth, not a planned "
+                    f"capability: {marker}"
+                )
+
+    return errors
+
+
 def require_fragments(root: Path, contracts: dict[str, tuple[str, ...]]) -> list[str]:
     errors: list[str] = []
     for relative, fragments in contracts.items():
@@ -3960,6 +4083,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_spot_only_product_contract(root))
     errors.extend(check_spot_candle_contract(root))
     errors.extend(check_wallet_identity_readiness_contract(root))
+    errors.extend(check_wallet_preview_route_contract(root))
     errors.extend(check_native_matrix(root))
     errors.extend(check_android_release_network_contract(root))
     errors.extend(check_audio_room_native_contract(root))
@@ -3992,7 +4116,7 @@ def main() -> int:
         return 1
     print(
         "Harness check passed: profile, six-destination contract, pins, "
-        "Spot-only product, bounded candle, and Wallet identity boundaries, Debug-only routine "
+        "Spot-only product, bounded candle, Wallet identity, and Wallet route boundaries, Debug-only routine "
         "verification, records, and secret rules are consistent."
     )
     return 0
