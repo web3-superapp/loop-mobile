@@ -11,7 +11,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - 六个固定主入口：Home / Market / Launch / Chat / Wallet / Profile
 - 全量 103 个产品 surface 的路由目录；产品优先级独立采用 A / B / C（47 / 46 / 10），`deferred` 单独表达本期不交付
 - 受 Privy 会话保护的 Email OTP 实现；缺少 Mobile App Client ID 时保持不可登录，真机验证待补
-- Hyperliquid Testnet 公共只读 Spot 行情：独立读取 `spotMetaAndAssetCtxs`，按稀疏 token index 和精确 coin 关联，金额与涨跌使用 Decimal，Market 展示最多 50 个有成交量的交易对并支持搜索、刷新、错误与空状态。每一行可按精确 `spotIndex` 打开实时只读详情，展示当前响应中的价格、24h 成交量、provider/token identity 和客户端 UTC 收取时间；没有可信历史数据时明确禁用图表，不回退到演示币种。它只是公共发现数据，不是可执行报价；买卖、余额、订单、签名、转账与提现仍全部关闭。旧 Perp 代码仅保留为未挂载的历史实现，不再属于产品范围
+- Hyperliquid Testnet 公共只读 Spot 行情：独立读取 `spotMetaAndAssetCtxs`，按稀疏 token index 和精确 coin 关联，金额与涨跌使用 Decimal，Market 展示最多 50 个有成交量的交易对并支持搜索、刷新、错误与空状态。每一行可按精确 `spotIndex` 打开实时只读详情，展示当前响应中的价格、24h 成交量、provider/token identity 和客户端 UTC 收取时间。详情页另以该已验收市场的 provider coin 读取真实 `candleSnapshot`，支持精确映射的 1H / 4H / 1D / 1W / 1M、最多最近 120 根、手动刷新以及加载/空/错误状态；还会按 1h / 4h / 1d / 7d / 30d 固定周期严格校验每根 `T-t`。OHLCV 保持 String + Decimal，末根未收盘时明确标记，不回退演示 K 线或其他币种。它们都只是公共发现数据，不是可执行报价；买卖、余额、订单、签名、转账与提现仍全部关闭。旧 Perp 代码仅保留为未挂载的历史实现，不再属于产品范围
 - Stream Chat 官方 client、按用户持久化、token-provider 会话、频道列表与消息页已接入；后端身份/token 未就绪时不连接、不声称在线
 - Stream `token_card.v1` 只读消息卡已接入官方消息渲染链路：生产消息只接受严格的资产/链/合约/时间标识，不固化价格或风险事实；后端新鲜事实投影未接入前显示不可用，也不提供 Buy / Watch。旧版群聊、私聊、搜索与卡片 fixture 路由已限制为显式离线 Preview
 - 原生 Privy Bearer `POST /v1/bootstrap` 客户端已接入；严格解析服务端 LOOP/Stream 身份、隔离账号切换并最多重试一次 401。未配置后端地址时零请求，Stream token 缺失时仍不连接
@@ -66,7 +66,7 @@ IDE 顶部 Run 可直接选择 `Loop`（正式入口）或 `Loop (Preview)`（�
 bin/flutter run -t lib/main_preview.dart
 ```
 
-该入口会清空需要鉴权的供应商标识并显式开启 Development Preview：不会发送 OTP、连接 Stream 或发起钱包/交易操作；Chat cell、群聊/私聊和消息发送只写入进程内演示网关，并持续标注 `开发预览`。Market 是唯一例外，可读取无需身份的 Hyperliquid Testnet 公共 Spot 行情。
+该入口会清空需要鉴权的供应商标识并显式开启 Development Preview：不会发送 OTP、连接 Stream 或发起钱包/交易操作；Chat cell、群聊/私聊和消息发送只写入进程内演示网关，并持续标注 `开发预览`。Market 是唯一例外，可读取无需身份的 Hyperliquid Testnet 公共 Spot 快照与有界 `candleSnapshot`；Preview 不会为它们提供伪实时回退。
 
 Web release build 只在明确要求本地视觉验收时运行：
 

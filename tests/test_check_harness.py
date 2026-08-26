@@ -197,6 +197,421 @@ class HarnessTests(unittest.TestCase):
 
         self.assertTrue(expected.issubset(set(check_harness.REQUIRED_FILES)))
 
+    def test_spot_candle_paths_are_required(self) -> None:
+        expected = {
+            "docs/decisions/0019-use-public-testnet-spot-candles.md",
+            "lib/features/market/spot_candle_chart.dart",
+            "lib/features/market/spot_candle_section.dart",
+            "lib/integrations/hyperliquid/hyperliquid_spot_candle.dart",
+            "lib/integrations/hyperliquid/hyperliquid_spot_candle_providers.dart",
+            "lib/integrations/hyperliquid/hyperliquid_spot_candle_repository.dart",
+            "test/hyperliquid_spot_candle_providers_test.dart",
+            "test/hyperliquid_spot_candle_repository_test.dart",
+            "test/spot_candle_chart_test.dart",
+        }
+
+        self.assertTrue(expected.issubset(set(check_harness.REQUIRED_FILES)))
+
+    def test_monthly_spot_candle_cannot_collapse_to_minutes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/integrations/hyperliquid/hyperliquid_spot_candle.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace("wireValue: '1M'", "wireValue: '1m'"),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertTrue(
+            any("wire periods must remain exactly" in error for error in result),
+            msg=f"expected case-sensitive monthly candle guard: {result}",
+        )
+
+    def test_spot_candle_fixed_durations_cannot_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/integrations/hyperliquid/hyperliquid_spot_candle.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "candleDuration: Duration(days: 30)",
+                    "candleDuration: Duration(minutes: 1)",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertTrue(
+            any("fixed durations must remain exactly" in error for error in result),
+            msg=f"expected fixed candle-duration guard: {result}",
+        )
+
+    def test_spot_candle_row_duration_validation_cannot_be_removed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            repository_relative = (
+                "lib/integrations/hyperliquid/hyperliquid_spot_candle_repository.dart"
+            )
+            repository = root / repository_relative
+            repository.parent.mkdir(parents=True)
+            repository.write_text(
+                (REPOSITORY_ROOT / repository_relative)
+                .read_text(encoding="utf-8")
+                .replace(
+                    "closeTimeMilliseconds != expectedCloseTimeMilliseconds",
+                    "closeTimeMilliseconds < openTimeMilliseconds",
+                ),
+                encoding="utf-8",
+            )
+            test_relative = "test/hyperliquid_spot_candle_repository_test.dart"
+            behavior_test = root / test_relative
+            behavior_test.parent.mkdir(parents=True, exist_ok=True)
+            behavior_test.write_text(
+                (REPOSITORY_ROOT / test_relative)
+                .read_text(encoding="utf-8")
+                .replace(
+                    "rejects short and long durations for every mounted interval",
+                    "accepts arbitrary row durations",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertTrue(
+            any(
+                "closeTimeMilliseconds != expectedCloseTimeMilliseconds" in error
+                for error in result
+            ),
+            msg=f"expected exact row-duration parser guard: {result}",
+        )
+        self.assertTrue(
+            any("short and long durations" in error for error in result),
+            msg=f"expected malformed-duration behavior-evidence guard: {result}",
+        )
+
+    def test_spot_candle_window_and_retention_bound_cannot_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            model_relative = (
+                "lib/integrations/hyperliquid/hyperliquid_spot_candle.dart"
+            )
+            model = root / model_relative
+            model.parent.mkdir(parents=True)
+            model.write_text(
+                (REPOSITORY_ROOT / model_relative)
+                .read_text(encoding="utf-8")
+                .replace("lookback: Duration(days: 3600)", "lookback: Duration(days: 30)"),
+                encoding="utf-8",
+            )
+            repository_relative = (
+                "lib/integrations/hyperliquid/hyperliquid_spot_candle_repository.dart"
+            )
+            repository = root / repository_relative
+            repository.parent.mkdir(parents=True, exist_ok=True)
+            repository.write_text(
+                (REPOSITORY_ROOT / repository_relative)
+                .read_text(encoding="utf-8")
+                .replace("static const maximumCandles = 120;", "static const maximumCandles = 5000;"),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertTrue(
+            any("approximately 120 rows" in error for error in result),
+            msg=f"expected candle request-window guard: {result}",
+        )
+        self.assertTrue(
+            any("maximumCandles = 120" in error for error in result),
+            msg=f"expected candle retention guard: {result}",
+        )
+
+    def test_spot_candles_must_remain_public_testnet_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = (
+                "lib/integrations/hyperliquid/hyperliquid_spot_candle_repository.dart"
+            )
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "api.hyperliquid-testnet.xyz",
+                    "api.hyperliquid.xyz",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertTrue(
+            any("Testnet-only" in error for error in result),
+            msg=f"expected public Testnet candle transport guard: {result}",
+        )
+
+    def test_overlapping_first_spot_candle_must_remain_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = (
+                "lib/integrations/hyperliquid/hyperliquid_spot_candle_repository.dart"
+            )
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "closeTimeMilliseconds < requestedFrom.millisecondsSinceEpoch",
+                    "openTimeMilliseconds < requestedFrom.millisecondsSinceEpoch",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertTrue(
+            any("overlapping, empty-history semantics" in error for error in result),
+            msg=f"expected overlapping-first-candle guard: {result}",
+        )
+
+    def test_spot_candle_provider_edge_behavior_tests_are_required(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            repository_relative = (
+                "test/hyperliquid_spot_candle_repository_test.dart"
+            )
+            repository_test = root / repository_relative
+            repository_test.parent.mkdir(parents=True)
+            repository_test.write_text(
+                (REPOSITORY_ROOT / repository_relative)
+                .read_text(encoding="utf-8")
+                .replace(
+                    "accepts an overlapping first candle and gaps without fabrication",
+                    "rejects an overlapping first candle and fills every gap",
+                ),
+                encoding="utf-8",
+            )
+            market_relative = "test/market_screen_test.dart"
+            market_test = root / market_relative
+            market_test.parent.mkdir(parents=True, exist_ok=True)
+            market_test.write_text(
+                (REPOSITORY_ROOT / market_relative)
+                .read_text(encoding="utf-8")
+                .replace(
+                    "marks a final candle still forming at receipt time",
+                    "always marks the final candle closed",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertTrue(
+            any("overlapping first candle and gaps" in error for error in result),
+            msg=f"expected overlap/gap behavior-evidence guard: {result}",
+        )
+        self.assertTrue(
+            any("final candle still forming" in error for error in result),
+            msg=f"expected forming-candle behavior-evidence guard: {result}",
+        )
+
+    def test_spot_candle_exact_decimal_fields_cannot_become_double(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/integrations/hyperliquid/hyperliquid_spot_candle.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "final HyperliquidSpotDecimal open;",
+                    "final double open;",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertTrue(
+            any("HyperliquidSpotDecimal open" in error for error in result),
+            msg=f"expected exact Decimal OHLCV guard: {result}",
+        )
+
+    def test_spot_candle_chart_time_gap_projection_cannot_be_removed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            chart_relative = "lib/features/market/spot_candle_chart.dart"
+            chart = root / chart_relative
+            chart.parent.mkdir(parents=True)
+            chart.write_text(
+                (REPOSITORY_ROOT / chart_relative)
+                .read_text(encoding="utf-8")
+                .replace(
+                    "final centerX = xFor(candle);",
+                    "final centerX = plot.center.dx;",
+                ),
+                encoding="utf-8",
+            )
+            test_relative = "test/spot_candle_chart_test.dart"
+            behavior_test = root / test_relative
+            behavior_test.parent.mkdir(parents=True, exist_ok=True)
+            behavior_test.write_text(
+                (REPOSITORY_ROOT / test_relative)
+                .read_text(encoding="utf-8")
+                .replace(
+                    "projects missing candle intervals as a visible time-axis gap",
+                    "projects every candle at an equal slot",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertTrue(
+            any("final centerX = xFor(candle);" in error for error in result),
+            msg=f"expected time-axis projection implementation guard: {result}",
+        )
+        self.assertTrue(
+            any("visible time-axis gap" in error for error in result),
+            msg=f"expected time-gap behavior-evidence guard: {result}",
+        )
+
+    def test_spot_candle_lowest_doji_visibility_cannot_be_removed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            chart_relative = "lib/features/market/spot_candle_chart.dart"
+            chart = root / chart_relative
+            chart.parent.mkdir(parents=True)
+            chart.write_text(
+                (REPOSITORY_ROOT / chart_relative)
+                .read_text(encoding="utf-8")
+                .replace(
+                    ".clamp(plot.top, plot.bottom - minimumBodyHeight)",
+                    ".clamp(plot.top, plot.bottom)",
+                ),
+                encoding="utf-8",
+            )
+            test_relative = "test/spot_candle_chart_test.dart"
+            behavior_test = root / test_relative
+            behavior_test.parent.mkdir(parents=True, exist_ok=True)
+            behavior_test.write_text(
+                (REPOSITORY_ROOT / test_relative)
+                .read_text(encoding="utf-8")
+                .replace(
+                    "keeps a lowest-price doji body inside the plot",
+                    "allows a lowest-price doji body outside the plot",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertTrue(
+            any(
+                ".clamp(plot.top, plot.bottom - minimumBodyHeight)" in error
+                for error in result
+            ),
+            msg=f"expected lowest-bound doji implementation guard: {result}",
+        )
+        self.assertTrue(
+            any("lowest-price doji body inside" in error for error in result),
+            msg=f"expected lowest-bound doji behavior-evidence guard: {result}",
+        )
+
+    def test_spot_candle_polling_and_automatic_retry_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = (
+                "lib/integrations/hyperliquid/hyperliquid_spot_candle_providers.dart"
+            )
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "retry: (retryCount, error) => null",
+                    "retry: (retryCount, error) => const Duration(seconds: 1)",
+                )
+                + "\nfinal unsafePoll = Timer.periodic;\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertTrue(
+            any("retry: (retryCount, error) => null" in error for error in result),
+            msg=f"expected no-auto-retry guard: {result}",
+        )
+        self.assertTrue(
+            any("must not poll" in error for error in result),
+            msg=f"expected no-polling guard: {result}",
+        )
+
+    def test_preview_cannot_replace_public_spot_candles(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "lib/main_preview.dart"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "hyperliquidSpotCandleRepositoryProvider.overrideWithValue(fake);\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertIn(
+            "lib/main_preview.dart must not replace public Spot candles with a Preview repository",
+            result,
+        )
+
+    def test_invalid_and_absent_spot_indices_keep_zero_candle_requests(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "test/market_screen_test.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "expect(candleRepository.requests, isEmpty);",
+                    "expect(candleRepository.requests, isNotEmpty);",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertTrue(
+            any("zero candle requests" in error for error in result),
+            msg=f"expected invalid/absent-index request guard: {result}",
+        )
+
+    def test_spot_candle_execution_navigation_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "lib/features/market/spot_candle_section.dart"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "FilledButton(onPressed: () => context.push('/trade'));\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertTrue(
+            any("read-only without execution navigation" in error for error in result),
+            msg=f"expected candle execution-boundary guard: {result}",
+        )
+
     def test_perpetual_policy_cannot_be_reenabled(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

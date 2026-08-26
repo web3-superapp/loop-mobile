@@ -11,6 +11,9 @@ import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_failure.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_providers.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_repository.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle_providers.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle_repository.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_providers.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_repository.dart';
@@ -59,7 +62,13 @@ void main() {
     'spot detail renders exact public facts without preview or execution',
     (tester) async {
       final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
-      await _pumpSpotDetail(tester, repository, spotIndex: 1);
+      final candleRepository = _FakeSpotCandleRepository();
+      await _pumpSpotDetail(
+        tester,
+        repository,
+        spotIndex: 1,
+        candleRepository: candleRepository,
+      );
 
       expect(find.text('PURR/USDC'), findsOneWidget);
       expect(find.text('0.50000001 USDC'), findsWidgets);
@@ -71,7 +80,16 @@ void main() {
         find.text('Client received 2026-08-25 03:04:05 UTC'),
         findsOneWidget,
       );
-      expect(find.textContaining('历史图表尚不可用'), findsOneWidget);
+      expect(find.text('真实 K 线'), findsOneWidget);
+      expect(find.text('4H'), findsWidgets);
+      expect(find.text('2 candles'), findsOneWidget);
+      expect(candleRepository.requests, <HyperliquidSpotCandleRequest>[
+        const HyperliquidSpotCandleRequest(
+          providerCoin: '@1',
+          interval: HyperliquidSpotCandleInterval.fourHours,
+        ),
+      ]);
+      expect(find.textContaining('历史图表尚不可用'), findsNothing);
       expect(find.textContaining('开发预览'), findsNothing);
       expect(find.textContaining('Buy'), findsNothing);
       expect(find.textContaining('Sell'), findsNothing);
@@ -83,11 +101,18 @@ void main() {
     'spot detail never substitutes another market when index is absent',
     (tester) async {
       final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
-      await _pumpSpotDetail(tester, repository, spotIndex: 9999);
+      final candleRepository = _FakeSpotCandleRepository();
+      await _pumpSpotDetail(
+        tester,
+        repository,
+        spotIndex: 9999,
+        candleRepository: candleRepository,
+      );
 
       expect(find.text('找不到这个现货市场'), findsOneWidget);
       expect(find.text('PURR/USDC'), findsNothing);
       expect(find.text('HYPE/USDC'), findsNothing);
+      expect(candleRepository.requests, isEmpty);
     },
   );
 
@@ -95,12 +120,19 @@ void main() {
     tester,
   ) async {
     final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
-    await _pumpSpotDetail(tester, repository, spotIndex: null);
+    final candleRepository = _FakeSpotCandleRepository();
+    await _pumpSpotDetail(
+      tester,
+      repository,
+      spotIndex: null,
+      candleRepository: candleRepository,
+    );
 
     expect(repository.fetchCount, 0);
     expect(find.text('Invalid spot market'), findsOneWidget);
     expect(find.textContaining('未加载行情或回退到演示币种'), findsOneWidget);
     expect(find.text('Ethereum'), findsNothing);
+    expect(candleRepository.requests, isEmpty);
   });
 
   testWidgets('spot detail supports a narrow screen at 200 percent text', (
@@ -133,6 +165,130 @@ void main() {
 
     expect(find.text('24h change unavailable'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('marks a final candle still forming at receipt time', (
+    tester,
+  ) async {
+    final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
+    await _pumpSpotDetail(tester, repository, spotIndex: 1);
+
+    expect(find.text('最后一根形成中'), findsOneWidget);
+    expect(find.textContaining('刷新后 OHLCV 可能变化'), findsOneWidget);
+  });
+
+  testWidgets('spot detail switches exact candle periods and refreshes both', (
+    tester,
+  ) async {
+    final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
+    final candleRepository = _FakeSpotCandleRepository();
+    await _pumpSpotDetail(
+      tester,
+      repository,
+      spotIndex: 1,
+      candleRepository: candleRepository,
+    );
+
+    final oneDay = find.byKey(const ValueKey<String>('spot-candle-period-1D'));
+    await tester.ensureVisible(oneDay);
+    await tester.tap(oneDay);
+    await tester.pumpAndSettle();
+
+    expect(candleRepository.requests, <HyperliquidSpotCandleRequest>[
+      const HyperliquidSpotCandleRequest(
+        providerCoin: '@1',
+        interval: HyperliquidSpotCandleInterval.fourHours,
+      ),
+      const HyperliquidSpotCandleRequest(
+        providerCoin: '@1',
+        interval: HyperliquidSpotCandleInterval.oneDay,
+      ),
+    ]);
+    expect(tester.widget<ChoiceChip>(oneDay).selected, isTrue);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('refresh-spot-market-detail')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repository.fetchCount, 2);
+    expect(
+      candleRepository.requests.last.interval,
+      HyperliquidSpotCandleInterval.oneDay,
+    );
+    expect(candleRepository.requests, hasLength(3));
+    expect(tester.widget<ChoiceChip>(oneDay).selected, isTrue);
+  });
+
+  testWidgets('candle failure keeps spot facts visible and retries safely', (
+    tester,
+  ) async {
+    final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
+    final candleRepository = _FakeSpotCandleRepository(
+      failure: const HyperliquidMarketFailure(
+        HyperliquidMarketFailureKind.connection,
+      ),
+    );
+    await _pumpSpotDetail(
+      tester,
+      repository,
+      spotIndex: 1,
+      candleRepository: candleRepository,
+    );
+
+    expect(find.text('K 线暂不可用'), findsOneWidget);
+    expect(find.text('无法连接 Testnet，请检查网络。'), findsOneWidget);
+    expect(find.text('987654.321 USDC'), findsOneWidget);
+    expect(find.textContaining('演示 K 线'), findsNothing);
+
+    candleRepository.failure = null;
+    final retry = find.byKey(const ValueKey<String>('retry-live-spot-candles'));
+    await tester.ensureVisible(retry);
+    await tester.tap(retry);
+    await tester.pumpAndSettle();
+
+    expect(candleRepository.requests, hasLength(2));
+    expect(find.text('2 candles'), findsOneWidget);
+  });
+
+  testWidgets('empty candle history never falls back to preview data', (
+    tester,
+  ) async {
+    final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
+    final candleRepository = _FakeSpotCandleRepository(empty: true);
+    await _pumpSpotDetail(
+      tester,
+      repository,
+      spotIndex: 1,
+      candleRepository: candleRepository,
+    );
+
+    expect(find.text('这个时间窗口没有 K 线'), findsOneWidget);
+    expect(find.textContaining('未用演示 K 线或其他币种补齐'), findsOneWidget);
+    expect(find.text('2 candles'), findsNothing);
+  });
+
+  testWidgets('candle loading hides all chart facts until data arrives', (
+    tester,
+  ) async {
+    final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
+    final candleRepository = _CompletingSpotCandleRepository();
+    await _pumpSpotDetail(
+      tester,
+      repository,
+      spotIndex: 1,
+      candleRepository: candleRepository,
+      settle: false,
+    );
+
+    expect(find.text('正在加载 4H 真实 K 线'), findsOneWidget);
+    expect(find.text('2 candles'), findsNothing);
+    expect(find.textContaining('Latest O'), findsNothing);
+
+    candleRepository.complete();
+    await tester.pumpAndSettle();
+
+    expect(find.text('2 candles'), findsOneWidget);
   });
 
   testWidgets('primary spot Market searches protocol and token identities', (
@@ -457,8 +613,10 @@ Future<void> _pumpSpotDetail(
   WidgetTester tester,
   HyperliquidSpotMarketRepository repository, {
   required int? spotIndex,
+  HyperliquidSpotCandleRepository? candleRepository,
   Size size = const Size(800, 1600),
   TextScaler textScaler = TextScaler.noScaling,
+  bool settle = true,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -470,6 +628,9 @@ Future<void> _pumpSpotDetail(
       overrides: [
         hyperliquidSpotMarketNetworkAllowedProvider.overrideWithValue(true),
         hyperliquidSpotMarketRepositoryProvider.overrideWithValue(repository),
+        hyperliquidSpotCandleRepositoryProvider.overrideWithValue(
+          candleRepository ?? _FakeSpotCandleRepository(),
+        ),
       ],
       child: MaterialApp(
         theme: LoopTheme.dark,
@@ -481,7 +642,12 @@ Future<void> _pumpSpotDetail(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+    await tester.pump();
+  }
 }
 
 Future<void> _pumpMarket(
@@ -655,4 +821,129 @@ final class _FakeSpotMarketRepository
     if (currentFailure != null) throw currentFailure;
     return snapshot;
   }
+}
+
+final class _FakeSpotCandleRepository
+    implements HyperliquidSpotCandleRepository {
+  _FakeSpotCandleRepository({this.failure, this.empty = false});
+
+  HyperliquidMarketFailure? failure;
+  final bool empty;
+  final List<HyperliquidSpotCandleRequest> requests =
+      <HyperliquidSpotCandleRequest>[];
+
+  @override
+  Future<HyperliquidSpotCandleSnapshot> fetchCandles({
+    required String providerCoin,
+    required HyperliquidSpotCandleInterval interval,
+  }) async {
+    requests.add(
+      HyperliquidSpotCandleRequest(
+        providerCoin: providerCoin,
+        interval: interval,
+      ),
+    );
+    final currentFailure = failure;
+    if (currentFailure != null) throw currentFailure;
+    return _spotCandleSnapshot(
+      providerCoin: providerCoin,
+      interval: interval,
+      empty: empty,
+    );
+  }
+}
+
+final class _CompletingSpotCandleRepository
+    implements HyperliquidSpotCandleRepository {
+  final Completer<void> _completion = Completer<void>();
+  String? _providerCoin;
+  HyperliquidSpotCandleInterval? _interval;
+
+  void complete() => _completion.complete();
+
+  @override
+  Future<HyperliquidSpotCandleSnapshot> fetchCandles({
+    required String providerCoin,
+    required HyperliquidSpotCandleInterval interval,
+  }) async {
+    _providerCoin = providerCoin;
+    _interval = interval;
+    await _completion.future;
+    return _spotCandleSnapshot(
+      providerCoin: _providerCoin!,
+      interval: _interval!,
+    );
+  }
+}
+
+HyperliquidSpotCandleSnapshot _spotCandleSnapshot({
+  required String providerCoin,
+  required HyperliquidSpotCandleInterval interval,
+  bool empty = false,
+}) {
+  final receivedAt = DateTime.utc(2026, 8, 25, 3, 4, 5);
+  return HyperliquidSpotCandleSnapshot(
+    providerCoin: providerCoin,
+    interval: interval,
+    requestedFrom: receivedAt.subtract(interval.lookback),
+    requestedUntil: receivedAt,
+    receivedAt: receivedAt,
+    candles: empty
+        ? <HyperliquidSpotCandle>[]
+        : <HyperliquidSpotCandle>[
+            _spotCandle(
+              providerCoin: providerCoin,
+              interval: interval,
+              openTime: DateTime.utc(2026, 8, 25),
+              closeTime: DateTime.utc(2026, 8, 25, 1, 59, 59, 999),
+              open: '0.5',
+              close: '0.75',
+              high: '0.8',
+              low: '0.45',
+              volume: '120.5',
+              trades: 12,
+            ),
+            _spotCandle(
+              providerCoin: providerCoin,
+              interval: interval,
+              openTime: DateTime.utc(2026, 8, 25, 2),
+              closeTime: DateTime.utc(2026, 8, 25, 3, 59, 59, 999),
+              open: '0.75',
+              close: '0.625',
+              high: '0.9',
+              low: '0.6',
+              volume: '80.25',
+              trades: 7,
+            ),
+          ],
+  );
+}
+
+HyperliquidSpotCandle _spotCandle({
+  required String providerCoin,
+  required HyperliquidSpotCandleInterval interval,
+  required DateTime openTime,
+  required DateTime closeTime,
+  required String open,
+  required String close,
+  required String high,
+  required String low,
+  required String volume,
+  required int trades,
+}) {
+  return HyperliquidSpotCandle(
+    openTime: openTime,
+    closeTime: closeTime,
+    providerCoin: providerCoin,
+    interval: interval,
+    open: HyperliquidSpotDecimal(source: open, value: Decimal.parse(open)),
+    close: HyperliquidSpotDecimal(source: close, value: Decimal.parse(close)),
+    high: HyperliquidSpotDecimal(source: high, value: Decimal.parse(high)),
+    low: HyperliquidSpotDecimal(source: low, value: Decimal.parse(low)),
+    volume: HyperliquidSpotDecimal(
+      source: volume,
+      value: Decimal.parse(volume),
+    ),
+    tradeCount: trades,
+  );
 }

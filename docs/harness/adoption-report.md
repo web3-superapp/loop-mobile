@@ -283,3 +283,42 @@ not fall back to another asset or Preview data. Private execution remains off.
 The complete Flutter suite passed 399 tests, the Harness mutation suite passed
 83 tests, and a Pixel 7a Debug checkpoint opened HYPE/USDC Spot #1035 through
 the mounted interaction path.
+
+## Public Testnet Spot Candle Guard
+
+On 2026-08-26, decision 0019 added a second narrow public Testnet information
+read for bounded Spot candles. The Harness now requires the candle model,
+repository, provider, section, chart, repository/provider/widget tests, and the
+decision record. It locks the Testnet-only `POST /info` + `candleSnapshot`
+transport, exact provider coin projected from an accepted Spot market, the
+case-sensitive `1H/1h`, `4H/4h`, `1D/1d`, `1W/1w`, and `1M/1M` mappings, the
+fixed 1h/4h/1d/7d/30d row durations, the approximately/latest-120 bound, and
+String-plus-Decimal OHLCV. Every admitted row must satisfy
+`T = t + duration - 1ms`; a separate overlap check still admits a valid first
+row that begins before the request start and intersects the window.
+
+Source and evidence guards also preserve legitimate provider boundaries: a
+first row may overlap the requested start, empty/gapped history is accepted,
+rows are sorted and deduplicated, and the final row may be visibly forming.
+Polling, automatic retry, Preview/other-asset fallback, and account or execution
+paths remain forbidden. Invalid or absent Spot indices must retain zero candle
+requests. No failure-memory record was added because this is a planned public
+read capability rather than a reproduced production failure.
+
+`python3 -m py_compile scripts/check_harness.py tests/test_check_harness.py`
+passed, `python3 scripts/check_harness.py` passed, and the complete Python
+mutation suite passed all 98 tests. The final implementation checkpoint also
+passed all 421 Flutter tests, changed-file analysis, live Testnet
+`candleSnapshot` contract probes, and an Android Debug build after the
+duration/time-gap/doji review fixes. The generated APK and build metadata were
+removed immediately with `bin/flutter clean`.
+
+The review-specific subsets passed all 10 repository tests and all 4 chart
+tests. Harness mutations now prove that exact durations, real-time gap
+projection, and boundary doji visibility cannot be silently removed together
+with their behavior evidence.
+
+Full-repository formatting and analysis remain blocked only by separately
+modified `lib/widgets/loop_ui.dart` and `test/loop_perp_providers_test.dart`;
+the candle slice did not edit either file. No physical-device K-line run was
+performed, so rendered provider/device behavior remains unverified.

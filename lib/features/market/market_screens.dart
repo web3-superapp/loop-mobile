@@ -5,9 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/market/market_models.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
+import 'package:loop_mobile/features/market/spot_candle_section.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_failure.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_providers.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle_providers.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_providers.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
@@ -419,14 +422,24 @@ class _SpotMarketRow extends StatelessWidget {
 /// The route resolves the pair from the same accepted `spotMetaAndAssetCtxs`
 /// snapshot as the primary ledger. It deliberately exposes no account,
 /// execution, signing, or provider-history capability.
-class SpotMarketDetailScreen extends ConsumerWidget {
+class SpotMarketDetailScreen extends ConsumerStatefulWidget {
   const SpotMarketDetailScreen({required this.spotIndex, super.key});
 
   final int? spotIndex;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final resolvedSpotIndex = spotIndex;
+  ConsumerState<SpotMarketDetailScreen> createState() =>
+      _SpotMarketDetailScreenState();
+}
+
+class _SpotMarketDetailScreenState
+    extends ConsumerState<SpotMarketDetailScreen> {
+  HyperliquidSpotCandleInterval _interval =
+      HyperliquidSpotCandleInterval.fourHours;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolvedSpotIndex = widget.spotIndex;
     if (resolvedSpotIndex == null || resolvedSpotIndex < 0) {
       return const LoopPage(
         eyebrow: 'C2 · Hyperliquid Testnet · Spot',
@@ -493,7 +506,19 @@ class SpotMarketDetailScreen extends ConsumerWidget {
         return _SpotMarketDetailContent(
           market: market,
           receivedAt: value.receivedAt,
-          onRefresh: () => ref.invalidate(hyperliquidSpotMarketsProvider),
+          interval: _interval,
+          onIntervalChanged: (value) => setState(() => _interval = value),
+          onRefresh: () {
+            ref.invalidate(
+              hyperliquidSpotCandlesProvider(
+                HyperliquidSpotCandleRequest(
+                  providerCoin: market.providerCoin,
+                  interval: _interval,
+                ),
+              ),
+            );
+            ref.invalidate(hyperliquidSpotMarketsProvider);
+          },
         );
       },
     );
@@ -514,11 +539,15 @@ class _SpotMarketDetailContent extends StatelessWidget {
   const _SpotMarketDetailContent({
     required this.market,
     required this.receivedAt,
+    required this.interval,
+    required this.onIntervalChanged,
     required this.onRefresh,
   });
 
   final HyperliquidSpotMarket market;
   final DateTime receivedAt;
+  final HyperliquidSpotCandleInterval interval;
+  final ValueChanged<HyperliquidSpotCandleInterval> onIntervalChanged;
   final VoidCallback onRefresh;
 
   @override
@@ -586,6 +615,11 @@ class _SpotMarketDetailContent extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        SpotCandleSection(
+          market: market,
+          interval: interval,
+          onIntervalChanged: onIntervalChanged,
         ),
         const LoopSectionLabel('Public market facts'),
         LoopCard(
@@ -683,13 +717,6 @@ class _SpotMarketDetailContent extends StatelessWidget {
               ),
             ],
           ),
-        ),
-        const SizedBox(height: 16),
-        const LoopStateCard(
-          title: '历史图表尚不可用',
-          message: '当前公开端点只返回现货市场快照，不包含 K 线历史；详情页不会用演示图表替代。',
-          icon: Icons.candlestick_chart_outlined,
-          tone: LoopTone.neutral,
         ),
       ],
     );

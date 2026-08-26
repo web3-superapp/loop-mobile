@@ -6,6 +6,9 @@ import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle_providers.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle_repository.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_providers.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_repository.dart';
@@ -16,6 +19,7 @@ void main() {
     'explicit Preview shows live public Spot and an interactive offline Chat',
     (tester) async {
       final spotRepository = _PreviewSpotRepository();
+      final candleRepository = _PreviewSpotCandleRepository();
       final communicationGateway = MemoryCommunicationGateway();
       await tester.pumpWidget(
         ProviderScope(
@@ -29,6 +33,9 @@ void main() {
             ),
             hyperliquidSpotMarketRepositoryProvider.overrideWithValue(
               spotRepository,
+            ),
+            hyperliquidSpotCandleRepositoryProvider.overrideWithValue(
+              candleRepository,
             ),
           ],
           child: const LoopApp(),
@@ -64,6 +71,9 @@ void main() {
         find.text('Client received 2026-08-25 12:30:00 UTC'),
         findsOneWidget,
       );
+      expect(find.text('真实 K 线'), findsOneWidget);
+      expect(find.text('1 candle'), findsOneWidget);
+      expect(candleRepository.fetchCount, 1);
       expect(find.textContaining('Buy'), findsNothing);
       expect(find.textContaining('Sell'), findsNothing);
 
@@ -143,6 +153,56 @@ final class _PreviewSpotRepository implements HyperliquidSpotMarketRepository {
             source: '27000.10',
             value: Decimal.parse('27000.10'),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+final class _PreviewSpotCandleRepository
+    implements HyperliquidSpotCandleRepository {
+  var fetchCount = 0;
+
+  @override
+  Future<HyperliquidSpotCandleSnapshot> fetchCandles({
+    required String providerCoin,
+    required HyperliquidSpotCandleInterval interval,
+  }) async {
+    fetchCount += 1;
+    final receivedAt = DateTime.utc(2026, 8, 25, 12, 30);
+    return HyperliquidSpotCandleSnapshot(
+      providerCoin: providerCoin,
+      interval: interval,
+      requestedFrom: receivedAt.subtract(interval.lookback),
+      requestedUntil: receivedAt,
+      receivedAt: receivedAt,
+      candles: <HyperliquidSpotCandle>[
+        HyperliquidSpotCandle(
+          openTime: DateTime.utc(2026, 8, 25, 8),
+          closeTime: DateTime.utc(2026, 8, 25, 11, 59, 59, 999),
+          providerCoin: providerCoin,
+          interval: interval,
+          open: HyperliquidSpotDecimal(
+            source: '45.00',
+            value: Decimal.parse('45.00'),
+          ),
+          close: HyperliquidSpotDecimal(
+            source: '46.25',
+            value: Decimal.parse('46.25'),
+          ),
+          high: HyperliquidSpotDecimal(
+            source: '47.00',
+            value: Decimal.parse('47.00'),
+          ),
+          low: HyperliquidSpotDecimal(
+            source: '44.50',
+            value: Decimal.parse('44.50'),
+          ),
+          volume: HyperliquidSpotDecimal(
+            source: '1000.25',
+            value: Decimal.parse('1000.25'),
+          ),
+          tradeCount: 32,
         ),
       ],
     );

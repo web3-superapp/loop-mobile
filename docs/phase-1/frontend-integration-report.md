@@ -213,7 +213,7 @@ The deterministic behavior suite covers the exact four event wire values, unknow
 | Stream Chat | Official client, persistence, lifecycle, controller and UI integrated; strict identifier-only `token_card.v1` receive rendering is wired, while the short-lived Chat token source and fresh token-facts projection are still required |
 | Stream Video | Delayed foreground SDK lifecycle and Audio Room lobby/join/official-state UI integrated; backend-derived identity bootstrap and native microphone declarations are wired, while initial/refresh Video tokens, an authorized pre-created room target, no-`create-call` role evidence, and device verification are still required |
 | Firebase/push | Provider-neutral intent contract and fail-closed UI verified; no mobile configs, exact Stream push-provider names, or captured payload fixtures, so initialization/handlers/device registration remain disabled and the auto-registering Stream Video Push plugin is not linked |
-| Hyperliquid public markets | Direct Testnet Spot read-only adapter mounted; exact Decimal discovery facts only, never executable quotes |
+| Hyperliquid public markets | Direct Testnet Spot read-only snapshot and bounded candle adapters mounted; exact Decimal discovery/OHLCV facts only, never executable quotes |
 | Hyperliquid private reads | No private Spot read is connected. Retained Perp D8/D4 code is disabled, unmounted implementation history and no longer in product scope |
 | Watchlist | Providerless models/controller/UI complete; production adapter unavailable and no account persistence claimed |
 | Profile presentation | Providerless exact models/controller/H1-H2 UI complete; production adapter and avatar source unavailable, with no account persistence claimed |
@@ -426,3 +426,72 @@ Verification on 2026-08-26:
 - Pixel 7a Android 16 Debug installation passed. Accessibility navigation from
   Market opened public `HYPE/USDC` Spot #1035, and the rendered page displayed
   current public Testnet facts with the expected read-only boundary.
+
+## Public Testnet Spot candleSnapshot slice
+
+On 2026-08-26, decision 0019 replaced the truthful unavailable-chart state on
+an already resolved Spot detail with a second narrow public Testnet read. The
+detail copies the exact provider coin from the market admitted by
+`spotMetaAndAssetCtxs` and sends `POST /info` with `type: candleSnapshot` only
+after that resolution. Invalid and absent Spot indices never mount the candle
+provider and therefore issue zero candle requests.
+
+The mounted periods map case-sensitively as `1H/1h`, `4H/4h`, `1D/1d`,
+`1W/1w`, and `1M/1M`. Each request covers approximately 120 periods and the
+repository sorts, deduplicates by open time, and retains at most the latest 120
+rows. OHLCV remains exact wire String plus Decimal; floating point is confined
+to normalized canvas coordinates. Empty and gapped history remains valid, an
+overlapping first candle may open before the requested start, and the final
+candle is labelled forming when client receipt time has not passed its close.
+The UI provides explicit loading, empty, sanitized failure, retry, refresh, and
+period states without polling, automatic retry, recursive backfill, Preview
+fixtures, another asset, or Perp fallback.
+
+This slice remains public discovery only. It adds no account, balance, Buy,
+Sell, order, signing, transfer, withdrawal, or execution capability.
+
+Verification on 2026-08-26:
+
+- Direct official Testnet `candleSnapshot` probes for the resolved
+  `HYPE/USDC` provider coin `@1035` returned real `1h` and `1M` OHLCV rows
+  with the documented wire fields and fixed durations.
+- The focused repository, provider, chart, Market, and Preview behavior suites
+  passed, including interval switching, overlapping/gapped rows, malformed
+  wire data, forming-candle state, refresh, and zero requests for invalid or
+  absent Spot indices.
+- `bin/flutter test --no-pub` passed all 421 Flutter tests after the
+  interval-duration and chart-projection review fixes.
+- Changed-file Flutter analysis passed with no issues. Full formatting and
+  analysis remain blocked only by the two separately modified files
+  `lib/widgets/loop_ui.dart` and `test/loop_perp_providers_test.dart`; neither
+  belongs to or was changed by this slice.
+- Both Harness Python files compiled, `python3 scripts/check_harness.py`
+  passed, and the complete mutation suite passed all 98 tests.
+- `bin/flutter build apk --debug --no-pub` passed against the final code in
+  46.8 seconds. `bin/flutter clean` then removed the APK, `build/`,
+  `.dart_tool`, and Flutter-generated metadata.
+
+The live REST contract and Android Debug compilation are verified. The K-line
+screen itself was not exercised on a physical device, in accordance with the
+user-owned device-validation policy, so rendered provider/device behavior
+remains unverified.
+
+### Interval-duration review follow-up
+
+A post-checkpoint review found that the first parser version verified the wire
+interval identity but not each row's exact `T - t`, while its retention test
+used artificial 1–2 millisecond `1h` rows. The interval model now fixes row
+durations at 1h, 4h, 1d, 7d, and 30d and rejects any row whose close is not
+exactly `open + duration - 1ms`. Window admission still uses time-range
+intersection, so an exact-duration first row that opens before `startTime`
+remains valid when it closes in the requested window.
+
+The retention fixture now uses 121 genuine one-hour rows intersecting the
+120-hour request boundary and proves that sorting/deduplication retains the
+latest 120. A table-driven malformed-duration test exercises both one
+millisecond short and one millisecond long rows for all five mounted intervals.
+
+The review regressions are included in the final evidence above: all 10
+repository tests and all 4 chart tests pass, the Harness now mutation-locks
+exact interval durations, visible time gaps, and boundary doji rendering, and
+the full Flutter suite plus final Android Debug build were rerun afterward.

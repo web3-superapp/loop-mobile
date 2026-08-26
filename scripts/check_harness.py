@@ -66,6 +66,7 @@ REQUIRED_FILES = (
     "docs/decisions/0016-make-primary-market-spot-only.md",
     "docs/decisions/0017-use-public-testnet-spot-market-data.md",
     "docs/decisions/0018-use-system-sqlite-for-cold-builds.md",
+    "docs/decisions/0019-use-public-testnet-spot-candles.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/providerless-notification-fixtures.md",
     "docs/failures/privy-android-compile-sdk.md",
@@ -85,6 +86,11 @@ REQUIRED_FILES = (
     "lib/integrations/hyperliquid/hyperliquid_spot_market.dart",
     "lib/integrations/hyperliquid/hyperliquid_spot_market_providers.dart",
     "lib/integrations/hyperliquid/hyperliquid_spot_market_repository.dart",
+    "lib/integrations/hyperliquid/hyperliquid_spot_candle.dart",
+    "lib/integrations/hyperliquid/hyperliquid_spot_candle_providers.dart",
+    "lib/integrations/hyperliquid/hyperliquid_spot_candle_repository.dart",
+    "lib/features/market/spot_candle_chart.dart",
+    "lib/features/market/spot_candle_section.dart",
     "lib/features/market/watchlist/watchlist_controller.dart",
     "lib/features/market/watchlist/watchlist_gateway.dart",
     "lib/features/market/watchlist/watchlist_models.dart",
@@ -113,9 +119,12 @@ REQUIRED_FILES = (
     "test/loop_notification_coordinator_test.dart",
     "test/loop_notification_router_test.dart",
     "test/development_preview_experience_test.dart",
+    "test/hyperliquid_spot_candle_providers_test.dart",
+    "test/hyperliquid_spot_candle_repository_test.dart",
     "test/hyperliquid_spot_market_repository_test.dart",
     "test/local_settings_and_help_test.dart",
     "test/market_screen_test.dart",
+    "test/spot_candle_chart_test.dart",
     "test/notifications_screen_test.dart",
     "test/watchlist_controller_test.dart",
     "test/watchlist_editor_screen_test.dart",
@@ -1632,6 +1641,240 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
                         "Mounted Market must remain Spot-only without legacy marker "
                         f"`{marker}`"
                     )
+    return errors
+
+
+def check_spot_candle_contract(root: Path) -> list[str]:
+    """Keep the mounted candle read bounded, exact, and discovery-only."""
+
+    errors = require_fragments(
+        root,
+        {
+            "docs/product/implementation-constraints.md": (
+                "`1H/1h`, `4H/4h`, `1D/1d`, `1W/1w`, and `1M/1M`",
+                "invalid or absent route index causes zero candle requests",
+                "retains at most the latest 120 distinct rows",
+                "`T - t` must equal that fixed duration minus one millisecond",
+            ),
+            "docs/decisions/0019-use-public-testnet-spot-candles.md": (
+                "type: candleSnapshot",
+                "`1M -> 1M`",
+                "overlaps the requested window",
+                "final candle can still be forming",
+                "For every accepted row, `T - t` equals",
+            ),
+            "lib/integrations/hyperliquid/hyperliquid_spot_candle.dart": (
+                "enum HyperliquidSpotCandleInterval",
+                "final class HyperliquidSpotCandleRequest",
+                "final class HyperliquidSpotCandle",
+                "final class HyperliquidSpotCandleSnapshot",
+                "final HyperliquidSpotDecimal open;",
+                "final HyperliquidSpotDecimal close;",
+                "final HyperliquidSpotDecimal high;",
+                "final HyperliquidSpotDecimal low;",
+                "final HyperliquidSpotDecimal volume;",
+                "final Duration candleDuration;",
+            ),
+            "lib/integrations/hyperliquid/hyperliquid_spot_candle_repository.dart": (
+                "api.hyperliquid-testnet.xyz",
+                "'/info'",
+                "'type': 'candleSnapshot'",
+                "'coin': providerCoin",
+                "'interval': interval.wireValue",
+                "'startTime': requestedFromMilliseconds",
+                "'endTime': requestedUntilMilliseconds",
+                "static const maximumCandles = 120;",
+                "final receivedAt = _now();",
+                "final candlesByOpenTime = <int, HyperliquidSpotCandle>{};",
+                "candlesByOpenTime[candle.openTime.millisecondsSinceEpoch] = candle;",
+                "..sort((left, right) => left.openTime.compareTo(right.openTime));",
+                "ordered.sublist(ordered.length - maximumCandles)",
+                "closeTimeMilliseconds < requestedFrom.millisecondsSinceEpoch",
+                "openTimeMilliseconds > requestedUntil.millisecondsSinceEpoch",
+                "sourceCoin != providerCoin || sourceInterval != interval.wireValue",
+                "openTimeMilliseconds + interval.candleDuration.inMilliseconds - 1",
+                "closeTimeMilliseconds != expectedCloseTimeMilliseconds",
+                "if (wireValue is! String) throw _invalidPayload();",
+                "final value = Decimal.tryParse(wireValue);",
+            ),
+            "lib/integrations/hyperliquid/hyperliquid_spot_candle_providers.dart": (
+                "hyperliquidSpotMarketNetworkAllowedProvider",
+                "FutureProvider.autoDispose",
+                "HyperliquidSpotCandleRequest",
+                "retry: (retryCount, error) => null",
+            ),
+            "lib/features/market/market_screens.dart": (
+                "final market = _findSpotMarket(value.markets, resolvedSpotIndex);",
+                "if (market == null)",
+                "SpotCandleSection(",
+                "market: market",
+            ),
+            "lib/features/market/spot_candle_section.dart": (
+                "providerCoin: market.providerCoin",
+                "for (final candidate in HyperliquidSpotCandleInterval.values)",
+                "hyperliquidSpotCandlesProvider(request)",
+                "未用演示 K 线或其他币种补齐",
+                "加载完成前不显示任何预览蜡烛",
+                "final isForming = !snapshot.receivedAt.isAfter(latest.closeTime);",
+                "最后一根在客户端收取时尚未结束",
+                "SpotCandleChart(",
+            ),
+            "lib/features/market/spot_candle_chart.dart": (
+                "The candle model remains Decimal-backed",
+                "dimensionless visual ratio",
+                "(value - lowest) / priceSpan",
+                "final firstOpenTime = candles.first.openTime;",
+                "final timeSpan = candles.last.openTime.difference(firstOpenTime);",
+                "final elapsed = candle.openTime.difference(firstOpenTime).inMicroseconds;",
+                "elapsed.clamp(0, timeSpan.inMicroseconds) / timeSpan.inMicroseconds",
+                "final centerX = xFor(candle);",
+                "final minimumBodyHeight = math.min(2.25, plot.height);",
+                ".clamp(plot.top, plot.bottom - minimumBodyHeight)",
+                "visibleTop + minimumBodyHeight",
+            ),
+            "test/hyperliquid_spot_candle_repository_test.dart": (
+                "posts one bounded public Testnet request and preserves exact OHLCV",
+                "uses the reviewed bounded window for every mounted period",
+                "captures receipt time before parsing response rows",
+                "accepts an overlapping first candle and gaps without fabrication",
+                "rejects short and long durations for every mounted interval",
+                "rejects numeric values and inconsistent candle identity",
+                "sorts, deduplicates, and retains only the latest bounded rows",
+                "rejects identifiers before issuing a provider request",
+            ),
+            "test/hyperliquid_spot_candle_providers_test.dart": (
+                "restricted sessions never request public candle history",
+                "equal provider coin and interval readers share one in-flight request",
+                "different periods remain isolated family requests",
+            ),
+            "test/market_screen_test.dart": (
+                "spot detail switches exact candle periods and refreshes both",
+                "candle failure keeps spot facts visible and retries safely",
+                "empty candle history never falls back to preview data",
+                "candle loading hides all chart facts until data arrives",
+                "marks a final candle still forming at receipt time",
+                "expect(candleRepository.requests, isEmpty);",
+            ),
+            "test/spot_candle_chart_test.dart": (
+                "projects fractional exact candles and exposes chart semantics",
+                "keeps a flat candle visible at 390px and 200 percent text",
+                "projects missing candle intervals as a visible time-axis gap",
+                "keeps a lowest-price doji body inside the plot",
+            ),
+            "test/development_preview_experience_test.dart": (
+                "expect(candleRepository.fetchCount, 1);",
+                "expect(find.textContaining('Buy'), findsNothing);",
+                "expect(find.textContaining('Sell'), findsNothing);",
+            ),
+        },
+    )
+
+    interval_path = root / "lib/integrations/hyperliquid/hyperliquid_spot_candle.dart"
+    if interval_path.is_file():
+        source = read_text(interval_path)
+        wire_values = re.findall(r"wireValue:\s*'([^']+)'", source)
+        display_labels = re.findall(r"displayLabel:\s*'([^']+)'", source)
+        candle_durations = re.findall(
+            r"candleDuration:\s*Duration\(([^)]+)\)", source
+        )
+        if wire_values != ["1h", "4h", "1d", "1w", "1M"]:
+            errors.append(
+                "Spot candle wire periods must remain exactly 1h / 4h / 1d / 1w / 1M"
+            )
+        if display_labels != ["1H", "4H", "1D", "1W", "1M"]:
+            errors.append(
+                "Spot candle display periods must remain exactly 1H / 4H / 1D / 1W / 1M"
+            )
+        if candle_durations != [
+            "hours: 1",
+            "hours: 4",
+            "days: 1",
+            "days: 7",
+            "days: 30",
+        ]:
+            errors.append(
+                "Spot candle fixed durations must remain exactly 1h / 4h / 1d / 7d / 30d"
+            )
+        for fragment in (
+            "lookback: Duration(hours: 120)",
+            "lookback: Duration(hours: 480)",
+            "lookback: Duration(days: 120)",
+            "lookback: Duration(days: 840)",
+            "lookback: Duration(days: 3600)",
+        ):
+            if fragment not in source:
+                errors.append(
+                    "Spot candle periods must preserve approximately 120 rows; "
+                    f"missing `{fragment}`"
+                )
+
+    repository_path = (
+        root
+        / "lib/integrations/hyperliquid/hyperliquid_spot_candle_repository.dart"
+    )
+    if repository_path.is_file():
+        source = read_text(repository_path)
+        if source.count("_dio.post<Object?>(") != 1:
+            errors.append(
+                "Spot candle repository must own exactly one public POST transport"
+            )
+        for forbidden in (
+            "api.hyperliquid.xyz",
+            "'type': 'spotMetaAndAssetCtxs'",
+            "openTimeMilliseconds < requestedFrom.millisecondsSinceEpoch",
+            "if (payload.isEmpty",
+            "if (candlesByOpenTime.isEmpty",
+            "if (ordered.isEmpty",
+        ):
+            if forbidden in source:
+                errors.append(
+                    "Spot candle repository must preserve Testnet-only, overlapping, "
+                    f"empty-history semantics; found `{forbidden}`"
+                )
+
+    provider_path = (
+        root
+        / "lib/integrations/hyperliquid/hyperliquid_spot_candle_providers.dart"
+    )
+    if provider_path.is_file():
+        source = read_text(provider_path)
+        for forbidden in ("Timer.periodic", "ref.invalidateSelf("):
+            if forbidden in source:
+                errors.append(
+                    "Spot candles must not poll or automatically refresh; "
+                    f"found `{forbidden}`"
+                )
+
+    preview_path = root / "lib/main_preview.dart"
+    if preview_path.is_file() and (
+        "hyperliquidSpotCandleRepositoryProvider.override" in read_text(preview_path)
+    ):
+        errors.append(
+            "lib/main_preview.dart must not replace public Spot candles with a Preview repository"
+        )
+
+    market_test_path = root / "test/market_screen_test.dart"
+    if market_test_path.is_file() and read_text(market_test_path).count(
+        "expect(candleRepository.requests, isEmpty);"
+    ) < 2:
+        errors.append(
+            "Spot detail tests must prove zero candle requests for both absent and invalid indices"
+        )
+
+    for relative in (
+        "lib/features/market/spot_candle_section.dart",
+        "lib/features/market/spot_candle_chart.dart",
+    ):
+        path = root / relative
+        if not path.is_file():
+            continue
+        source = read_text(path)
+        for forbidden in ("context.push(", "SigningReviewSurface", "FilledButton"):
+            if forbidden in source:
+                errors.append(
+                    f"{relative} must remain read-only without execution navigation `{forbidden}`"
+                )
+
     return errors
 
 
@@ -3478,6 +3721,7 @@ def validate(root: Path = ROOT) -> list[str]:
         errors.extend(check_profile(root, profile))
     errors.extend(check_dependency_pins(root))
     errors.extend(check_spot_only_product_contract(root))
+    errors.extend(check_spot_candle_contract(root))
     errors.extend(check_native_matrix(root))
     errors.extend(check_android_release_network_contract(root))
     errors.extend(check_audio_room_native_contract(root))
@@ -3510,8 +3754,8 @@ def main() -> int:
         return 1
     print(
         "Harness check passed: profile, six-destination contract, pins, "
-        "Spot-only product boundary, Debug-only routine verification, records, "
-        "and secret rules are consistent."
+        "Spot-only product and bounded candle boundaries, Debug-only routine "
+        "verification, records, and secret rules are consistent."
     )
     return 0
 
