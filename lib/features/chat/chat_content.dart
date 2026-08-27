@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 
 abstract final class ChatContent {
@@ -209,13 +210,18 @@ abstract final class ChatContent {
 
 class MemoryCommunicationGateway implements CommunicationGateway {
   MemoryCommunicationGateway()
-    : _requests = List<MessageRequestSummary>.of(ChatContent.requests),
+    : _requestRecords = <String, _PreviewMessageRequestRecord>{
+        for (final request in ChatContent.requests)
+          request.id: _PreviewMessageRequestRecord.pending(request),
+      },
       _groupMessages = List<ConversationMessage>.of(ChatContent.groupMessages),
       _directMessages = List<ConversationMessage>.of(
         ChatContent.directMessages,
       );
 
-  final List<MessageRequestSummary> _requests;
+  static const _reportReasons = <String>{'Spam', 'Scam attempt', 'Harassment'};
+
+  final Map<String, _PreviewMessageRequestRecord> _requestRecords;
   final List<ConversationMessage> _groupMessages;
   final List<ConversationMessage> _directMessages;
 
@@ -229,16 +235,20 @@ class MemoryCommunicationGateway implements CommunicationGateway {
   Future<CommunicationResult<void>> acceptMessageRequest(
     String requestId,
   ) async {
-    _requests.removeWhere((item) => item.id == requestId);
-    return const CommunicationResult<void>.success(null);
+    return _resolvePreviewRequest(
+      requestId,
+      resolution: _PreviewMessageRequestResolution.acceptedLocally,
+    );
   }
 
   @override
   Future<CommunicationResult<void>> ignoreMessageRequest(
     String requestId,
   ) async {
-    _requests.removeWhere((item) => item.id == requestId);
-    return const CommunicationResult<void>.success(null);
+    return _resolvePreviewRequest(
+      requestId,
+      resolution: _PreviewMessageRequestResolution.ignoredLocally,
+    );
   }
 
   @override
@@ -268,7 +278,11 @@ class MemoryCommunicationGateway implements CommunicationGateway {
   Future<CommunicationResult<List<MessageRequestSummary>>>
   loadMessageRequests() async {
     return CommunicationResult<List<MessageRequestSummary>>.success(
-      List<MessageRequestSummary>.unmodifiable(_requests),
+      List<MessageRequestSummary>.unmodifiable(
+        _requestRecords.values
+            .where((record) => record.isPending)
+            .map((record) => record.summary),
+      ),
     );
   }
 
@@ -309,8 +323,16 @@ class MemoryCommunicationGateway implements CommunicationGateway {
     required String requestId,
     required String reason,
   }) async {
-    _requests.removeWhere((item) => item.id == requestId);
-    return const CommunicationResult<void>.success(null);
+    if (!_reportReasons.contains(reason)) {
+      return const CommunicationResult<void>.failure(
+        CommunicationFailure.previewRequestReasonInvalid,
+      );
+    }
+    return _resolvePreviewRequest(
+      requestId,
+      resolution: _PreviewMessageRequestResolution.removedAsUnsafeLocally,
+      reportReason: reason,
+    );
   }
 
   @override
@@ -341,5 +363,63 @@ class MemoryCommunicationGateway implements CommunicationGateway {
     required bool muted,
   }) async {
     return const CommunicationResult<void>.success(null);
+  }
+
+  CommunicationResult<void> _resolvePreviewRequest(
+    String requestId, {
+    required _PreviewMessageRequestResolution resolution,
+    String? reportReason,
+  }) {
+    final current = _requestRecords[requestId];
+    if (current == null || !current.isPending) {
+      return const CommunicationResult<void>.failure(
+        CommunicationFailure.previewRequestNotPending,
+      );
+    }
+    _requestRecords[requestId] = current.resolve(
+      resolution,
+      reportReason: reportReason,
+    );
+    return const CommunicationResult<void>.success(null);
+  }
+}
+
+enum _PreviewMessageRequestResolution {
+  pending,
+  acceptedLocally,
+  ignoredLocally,
+  removedAsUnsafeLocally,
+}
+
+@immutable
+class _PreviewMessageRequestRecord {
+  const _PreviewMessageRequestRecord._({
+    required this.summary,
+    required this.resolution,
+    this.reportReason,
+  });
+
+  const _PreviewMessageRequestRecord.pending(MessageRequestSummary summary)
+    : this._(
+        summary: summary,
+        resolution: _PreviewMessageRequestResolution.pending,
+      );
+
+  final MessageRequestSummary summary;
+  final _PreviewMessageRequestResolution resolution;
+  final String? reportReason;
+
+  bool get isPending => resolution == _PreviewMessageRequestResolution.pending;
+
+  _PreviewMessageRequestRecord resolve(
+    _PreviewMessageRequestResolution next, {
+    String? reportReason,
+  }) {
+    assert(next != _PreviewMessageRequestResolution.pending);
+    return _PreviewMessageRequestRecord._(
+      summary: summary,
+      resolution: next,
+      reportReason: reportReason,
+    );
   }
 }

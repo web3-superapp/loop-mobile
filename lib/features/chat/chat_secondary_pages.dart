@@ -191,20 +191,29 @@ class _MemberRow extends StatelessWidget {
   }
 }
 
-class MessageRequestsPage extends ConsumerWidget {
+class MessageRequestsPage extends ConsumerStatefulWidget {
   const MessageRequestsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MessageRequestsPage> createState() =>
+      _MessageRequestsPageState();
+}
+
+class _MessageRequestsPageState extends ConsumerState<MessageRequestsPage> {
+  final Set<String> _resolvingRequestIds = <String>{};
+
+  @override
+  Widget build(BuildContext context) {
     final requests = ref.watch(messageRequestsProvider);
     return LoopPage(
       eyebrow: 'Inbox',
       title: 'Message requests',
-      subtitle: 'People outside your conversations appear here first.',
+      subtitle:
+          'Process-local simulated requests for this Development Preview.',
       children: <Widget>[
         const LoopStateCard(
-          title: 'You stay in control',
-          message: 'Accepting a request starts a conversation. Ignoring it does not notify the sender.',
+          title: 'Development Preview only · 开发预览',
+          message: 'These actions only update process-local Preview state. Accept does not create a Stream conversation, Ignore does not notify the sender, and Report does not submit a moderation report.',
           icon: Icons.mark_email_unread_outlined,
           tone: LoopTone.conversation,
         ),
@@ -213,8 +222,9 @@ class MessageRequestsPage extends ConsumerWidget {
           data: (items) {
             if (items.isEmpty) {
               return const LoopStateCard(
-                title: 'No pending requests',
-                message: 'New requests from people you do not know will appear here.',
+                key: ValueKey<String>('chat-preview-message-requests-empty'),
+                title: 'No simulated requests remain',
+                message: 'No simulated requests remain in this Development Preview. Restarting the preview restores the fixtures.',
                 icon: Icons.inbox_outlined,
               );
             }
@@ -225,19 +235,10 @@ class MessageRequestsPage extends ConsumerWidget {
                       padding: const EdgeInsets.only(bottom: 12),
                       child: _RequestCard(
                         request: request,
-                        onAccept: () => _resolveRequest(
-                          context,
-                          ref,
-                          request,
-                          accept: true,
-                        ),
-                        onIgnore: () => _resolveRequest(
-                          context,
-                          ref,
-                          request,
-                          accept: false,
-                        ),
-                        onReport: () => _reportRequest(context, ref, request),
+                        resolving: _resolvingRequestIds.contains(request.id),
+                        onAccept: () => _resolveRequest(request, accept: true),
+                        onIgnore: () => _resolveRequest(request, accept: false),
+                        onReport: () => _reportRequest(request),
                       ),
                     );
                   })
@@ -248,7 +249,7 @@ class MessageRequestsPage extends ConsumerWidget {
               const Center(child: CircularProgressIndicator(strokeWidth: 2)),
           error: (error, stackTrace) => LoopStateCard(
             title: 'Requests are unavailable',
-            message: 'Check your connection, then try again.',
+            message: 'This Development Preview could not load its process-local request state.',
             icon: Icons.cloud_off_outlined,
             tone: LoopTone.warning,
             action: OutlinedButton.icon(
@@ -263,113 +264,128 @@ class MessageRequestsPage extends ConsumerWidget {
   }
 
   Future<void> _resolveRequest(
-    BuildContext context,
-    WidgetRef ref,
     MessageRequestSummary request, {
     required bool accept,
   }) async {
+    if (!_beginResolving(request.id)) return;
     final gateway = ref.read(communicationGatewayProvider);
-    final result = accept
-        ? await gateway.acceptMessageRequest(request.id)
-        : await gateway.ignoreMessageRequest(request.id);
-    if (!context.mounted) return;
-    if (result.isSuccess) {
-      ref.invalidate(messageRequestsProvider);
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              accept
-                  ? 'Request accepted. You can now reply to ${request.alias}.'
-                  : 'Request ignored.',
-            ),
-          ),
+    try {
+      final result = accept
+          ? await gateway.acceptMessageRequest(request.id)
+          : await gateway.ignoreMessageRequest(request.id);
+      if (!mounted) return;
+      if (result.isSuccess) {
+        ref.invalidate(messageRequestsProvider);
+        _showRequestNotice(
+          accept
+              ? 'Marked accepted in 开发预览 and removed locally. No Stream conversation was created.'
+              : 'Removed from 开发预览 only. No sender interaction occurred.',
         );
-    } else {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(content: Text('Request not updated. Try again.')),
+      } else {
+        _showRequestNotice(
+          'Preview request was not updated. It may already have been handled.',
         );
+      }
+    } finally {
+      _finishResolving(request.id);
     }
   }
 
-  Future<void> _reportRequest(
-    BuildContext context,
-    WidgetRef ref,
-    MessageRequestSummary request,
-  ) async {
-    final reason = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  child: Text(
-                    'Report ${request.alias}',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
+  Future<void> _reportRequest(MessageRequestSummary request) async {
+    if (!_beginResolving(request.id)) return;
+    try {
+      final reason = await showModalBottomSheet<String>(
+        context: context,
+        showDragHandle: true,
+        builder: (sheetContext) {
+          return SafeArea(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      child: Text(
+                        'Report ${request.alias}',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      child: Text(
+                        'Development Preview only. Choosing a reason removes this simulated request locally; no report is submitted.',
+                      ),
+                    ),
+                    for (final reason in <String>[
+                      'Spam',
+                      'Scam attempt',
+                      'Harassment',
+                    ])
+                      ListTile(
+                        leading: const Icon(Icons.flag_outlined),
+                        title: Text(reason),
+                        onTap: () => Navigator.of(sheetContext).pop(reason),
+                      ),
+                  ],
                 ),
-                for (final reason in <String>[
-                  'Spam',
-                  'Scam attempt',
-                  'Harassment',
-                ])
-                  ListTile(
-                    leading: const Icon(Icons.flag_outlined),
-                    title: Text(reason),
-                    onTap: () => Navigator.of(sheetContext).pop(reason),
-                  ),
-              ],
+              ),
             ),
-          ),
+          );
+        },
+      );
+      if (reason == null || !mounted) return;
+      final result = await ref
+          .read(communicationGatewayProvider)
+          .reportMessageRequest(requestId: request.id, reason: reason);
+      if (!mounted) return;
+      if (result.isSuccess) {
+        ref.invalidate(messageRequestsProvider);
+        _showRequestNotice('Removed from 开发预览. No report was submitted.');
+      } else {
+        _showRequestNotice(
+          'Preview request was not updated. No report was submitted.',
         );
-      },
-    );
-    if (reason == null || !context.mounted) return;
-    final result = await ref
-        .read(communicationGatewayProvider)
-        .reportMessageRequest(requestId: request.id, reason: reason);
-    if (!context.mounted) return;
-    if (result.isSuccess) {
-      ref.invalidate(messageRequestsProvider);
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(
-            content: Text('Report submitted and request removed.'),
-          ),
-        );
-    } else {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(content: Text('Report not submitted. Try again.')),
-        );
+      }
+    } finally {
+      _finishResolving(request.id);
     }
+  }
+
+  bool _beginResolving(String requestId) {
+    if (_resolvingRequestIds.contains(requestId)) return false;
+    setState(() => _resolvingRequestIds.add(requestId));
+    return true;
+  }
+
+  void _finishResolving(String requestId) {
+    if (!mounted || !_resolvingRequestIds.contains(requestId)) return;
+    setState(() => _resolvingRequestIds.remove(requestId));
+  }
+
+  void _showRequestNotice(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
 class _RequestCard extends StatelessWidget {
   const _RequestCard({
     required this.request,
+    required this.resolving,
     required this.onAccept,
     required this.onIgnore,
     required this.onReport,
   });
 
   final MessageRequestSummary request;
+  final bool resolving;
   final VoidCallback onAccept;
   final VoidCallback onIgnore;
   final VoidCallback onReport;
@@ -377,6 +393,7 @@ class _RequestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LoopCard(
+      key: ValueKey<String>('chat-preview-request-${request.id}'),
       padding: const EdgeInsets.all(15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -413,7 +430,10 @@ class _RequestCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                onPressed: onReport,
+                key: ValueKey<String>(
+                  'chat-preview-request-report-${request.id}',
+                ),
+                onPressed: resolving ? null : onReport,
                 tooltip: 'Report request',
                 icon: const Icon(Icons.flag_outlined, size: 19),
               ),
@@ -422,18 +442,31 @@ class _RequestCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(request.preview, style: Theme.of(context).textTheme.bodyLarge),
           const SizedBox(height: 14),
+          if (resolving) ...<Widget>[
+            const LinearProgressIndicator(
+              key: ValueKey<String>('chat-preview-request-progress'),
+              value: 0.5,
+            ),
+            const SizedBox(height: 12),
+          ],
           Row(
             children: <Widget>[
               Expanded(
                 child: OutlinedButton(
-                  onPressed: onIgnore,
+                  key: ValueKey<String>(
+                    'chat-preview-request-ignore-${request.id}',
+                  ),
+                  onPressed: resolving ? null : onIgnore,
                   child: const Text('Ignore'),
                 ),
               ),
               const SizedBox(width: 9),
               Expanded(
                 child: FilledButton(
-                  onPressed: onAccept,
+                  key: ValueKey<String>(
+                    'chat-preview-request-accept-${request.id}',
+                  ),
+                  onPressed: resolving ? null : onAccept,
                   child: const Text('Accept'),
                 ),
               ),

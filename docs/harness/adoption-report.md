@@ -531,3 +531,30 @@ focused Chat/Preview/catalog/production-inbox suite passed all 19 tests,
 changed-file analysis reported no issues, and the complete Flutter suite passed
 all 473 tests. No HTTP/provider request, APK, application bundle, iOS build,
 package, simulator or physical-device run was performed.
+
+## Chat Preview Message Request Truth
+
+On 2026-08-27, the legacy E11 Message Requests surface was reduced to an exact
+process-local Development Preview state machine. Accept, Ignore and Report each
+resolve one pending fixture at most once. Accept does not create or open a
+Stream conversation, Ignore causes no sender interaction, and Report records
+only a local terminal resolution without submitting moderation. Unknown,
+already resolved and invalid-reason requests fail closed. Every action on an
+in-flight card is disabled, and the Chat Inbox badge and label now derive from
+the current pending projection instead of a fixed two.
+
+The Harness rejects the former Accept and Report success claims, fixed request
+counts, unconditional unknown-ID success and any conversation navigation from
+request resolution. Normalized source fingerprints close the reviewed request
+page, memory gateway and Inbox projection against equivalent wording, fallback
+records, computed fixed counts and helper-hidden navigation. The dedicated
+behavior-evidence file is also fingerprinted so hollow or unreachable
+assertions cannot retain a passing contract. Eleven new mutations prove each
+guard, while the existing production Preview-route test continues to block
+`/chat/requests` outside the explicit memory composition.
+
+`scripts/check_harness.py` passed, all 182 Python mutation tests passed, the
+focused Message Requests/production-guard suite passed all 7 tests,
+changed-file analysis reported no issues, and the complete Flutter suite passed
+all 478 tests. No HTTP/provider request, APK, application bundle, iOS build,
+package, simulator or physical-device run was performed.

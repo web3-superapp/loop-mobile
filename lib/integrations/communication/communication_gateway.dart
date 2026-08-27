@@ -158,6 +158,16 @@ class CommunicationFailure {
     code: 'communication_authorization_unavailable',
     message: 'Communication authorization is not available.',
   );
+
+  static const previewRequestNotPending = CommunicationFailure(
+    code: 'preview_request_not_pending',
+    message: 'The Preview message request is not pending.',
+  );
+
+  static const previewRequestReasonInvalid = CommunicationFailure(
+    code: 'preview_request_reason_invalid',
+    message: 'The Preview report reason is invalid.',
+  );
 }
 
 @immutable

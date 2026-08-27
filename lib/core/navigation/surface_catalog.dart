@@ -492,7 +492,7 @@ abstract final class SurfaceCatalog {
       path: '/chat/requests',
       priority: ProductPriority.b,
       module: SurfaceModule.chat,
-      description: 'Accept, ignore or report new direct messages.',
+      description: 'Development Preview-only local request triage; no Stream conversation or moderation submission.',
     ),
     AppSurface(
       id: 'E12',

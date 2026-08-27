@@ -1276,6 +1276,290 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected markTestSkipped guard: {result}",
         )
 
+    def test_chat_preview_request_rejects_fake_accept_success(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_secondary_pages.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "Marked accepted in 开发预览 and removed locally. No Stream conversation was created.",
+                    "Request accepted. You can now reply to onchain.mia.",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_message_request_contract(root)
+
+        self.assertTrue(
+            any("unsupported provider effect" in error for error in result),
+            msg=f"expected truthful Preview Accept guard: {result}",
+        )
+
+    def test_chat_preview_request_rejects_fake_report_submission(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_secondary_pages.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "Removed from 开发预览. No report was submitted.",
+                    "Report submitted and request removed.",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_message_request_contract(root)
+
+        self.assertTrue(
+            any("unsupported provider effect" in error for error in result),
+            msg=f"expected truthful Preview Report guard: {result}",
+        )
+
+    def test_chat_preview_request_count_cannot_return_to_fixed_two(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_inbox_page.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "label: Text(requestLabel),",
+                    "label: const Text('2 requests'),",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_message_request_contract(root)
+
+        self.assertTrue(
+            any("never a fixed 2" in error for error in result),
+            msg=f"expected dynamic Preview request-count guard: {result}",
+        )
+
+    def test_chat_preview_request_unknown_id_cannot_succeed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_content.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "if (current == null || !current.isPending) {",
+                    "if (false) {",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_message_request_contract(root)
+
+        self.assertTrue(
+            any(
+                "current == null || !current.isPending" in error
+                for error in result
+            ),
+            msg=f"expected exact pending-ID transition guard: {result}",
+        )
+
+    def test_chat_preview_request_accept_cannot_open_a_dm(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_secondary_pages.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "    final gateway = ref.read(communicationGatewayProvider);",
+                    "    context.push('/chat/dm');\n"
+                    "    final gateway = ref.read(communicationGatewayProvider);",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_message_request_contract(root)
+
+        self.assertTrue(
+            any("cannot navigate" in error for error in result),
+            msg=f"expected non-navigating Preview Accept guard: {result}",
+        )
+
+    def test_chat_preview_request_evidence_cannot_be_hollowed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "test/chat_preview_message_requests_test.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "expect(accepted.isSuccess, isTrue);",
+                    "expect(true, isTrue);",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_message_request_contract(root)
+
+        self.assertTrue(
+            any("executable evidence fingerprint" in error for error in result),
+            msg=f"expected non-hollow Preview request evidence: {result}",
+        )
+
+    def test_chat_preview_request_evidence_cannot_hide_in_dead_branch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "test/chat_preview_message_requests_test.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "      expect(find.text('2 preview requests'), findsOneWidget);",
+                    "      if (tester.view.physicalSize.width < 0) {\n"
+                    "        expect(find.text('2 preview requests'), findsOneWidget);\n"
+                    "      }",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_message_request_contract(root)
+
+        self.assertTrue(
+            any("executable evidence fingerprint" in error for error in result),
+            msg=f"expected reachable Preview request evidence: {result}",
+        )
+
+    def test_chat_preview_request_rejects_equivalent_fake_success_copy(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_secondary_pages.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "Marked accepted in 开发预览 and removed locally. No Stream conversation was created.",
+                    "Accepted, you may message now",
+                    1,
+                ).replace(
+                    "    final gateway = ref.read(communicationGatewayProvider);",
+                    "    if (false) {\n"
+                    "      _showRequestNotice('No Stream conversation was created.');\n"
+                    "    }\n"
+                    "    final gateway = ref.read(communicationGatewayProvider);",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_message_request_contract(root)
+
+        self.assertTrue(
+            any("truth-source fingerprint" in error for error in result),
+            msg=f"expected closed Preview request-copy boundary: {result}",
+        )
+
+    def test_chat_preview_request_rejects_fallback_record_success(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_content.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            old = (
+                "    if (current == null || !current.isPending) {\n"
+                "      return const CommunicationResult<void>.failure(\n"
+                "        CommunicationFailure.previewRequestNotPending,\n"
+                "      );\n"
+                "    }\n"
+                "    _requestRecords[requestId] = current.resolve("
+            )
+            new = (
+                "    if (false) {\n"
+                "      if (current == null || !current.isPending) {\n"
+                "        return const CommunicationResult<void>.failure(\n"
+                "          CommunicationFailure.previewRequestNotPending,\n"
+                "        );\n"
+                "      }\n"
+                "    }\n"
+                "    final admitted = current ?? _requestRecords.values.first;\n"
+                "    _requestRecords[requestId] = admitted.resolve("
+            )
+            path.write_text(source.replace(old, new, 1), encoding="utf-8")
+
+            result = check_harness.check_chat_preview_message_request_contract(root)
+
+        self.assertTrue(
+            any("exact-transition fingerprint" in error for error in result),
+            msg=f"expected closed Preview request-transition boundary: {result}",
+        )
+
+    def test_chat_preview_request_rejects_computed_fixed_badge(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_inbox_page.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "label: Text(requestLabel),",
+                    "label: Text('${1 + 1}'),",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_message_request_contract(root)
+
+        self.assertTrue(
+            any("dynamic-source fingerprint" in error for error in result),
+            msg=f"expected closed dynamic Preview badge boundary: {result}",
+        )
+
+    def test_chat_preview_request_rejects_navigation_hidden_in_helper(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_secondary_pages.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            source = source.replace(
+                "      if (result.isSuccess) {",
+                "      if (result.isSuccess) {\n"
+                "        if (accept) _openAcceptedPreviewDm(context);",
+                1,
+            ).replace(
+                "enum _SearchFilter { all, groups, direct }",
+                "enum _SearchFilter { all, groups, direct }\n\n"
+                "void _openAcceptedPreviewDm(BuildContext context) {\n"
+                "  context.push('/chat/dm');\n"
+                "}",
+                1,
+            )
+            path.write_text(source, encoding="utf-8")
+
+            result = check_harness.check_chat_preview_message_request_contract(root)
+
+        self.assertTrue(
+            any("truth-source fingerprint" in error for error in result),
+            msg=f"expected transitive Preview request-navigation guard: {result}",
+        )
+
     def test_lock_parser_reads_exact_versions(self) -> None:
         versions = check_harness.lockfile_versions(
             'packages:\n  dio:\n    dependency: "direct main"\n    version: "5.11.0"\n'

@@ -77,6 +77,7 @@ REQUIRED_FILES = (
     "docs/failures/principal-agnostic-wallet-single-flight.md",
     "docs/failures/production-chat-preview-route-leak.md",
     "docs/failures/perp-semantics-in-chat-preview.md",
+    "docs/failures/preview-message-request-fake-success.md",
     "docs/failures/sqlite3-native-hook-download.md",
     "docs/failures/swiftpm-file-picker-cold-cache.md",
     "docs/harness/adoption-report.md",
@@ -122,6 +123,7 @@ REQUIRED_FILES = (
     "lib/integrations/backend/loop_perp_session.dart",
     "test/app_notification_coordinator_test.dart",
     "test/chat_spot_snapshot_test.dart",
+    "test/chat_preview_message_requests_test.dart",
     "test/loop_notification_coordinator_test.dart",
     "test/loop_notification_router_test.dart",
     "test/development_preview_experience_test.dart",
@@ -2385,6 +2387,180 @@ def check_chat_spot_snapshot_contract(root: Path) -> list[str]:
                     "test/chat_spot_snapshot_test.dart test "
                     f"`{marker}` must execute its exact Spot-only assertions directly"
                 )
+    return errors
+
+
+CHAT_PREVIEW_REQUEST_TEST_MARKERS = {
+    Path("test/chat_preview_message_requests_test.dart"): (
+        "Preview requests transition once without changing conversations or messages",
+        "Accept removes one Preview request without creating a Stream conversation",
+        "Report removes a simulated request but never claims submission",
+        "Ignore reaches a truthful empty state and clears the Inbox badge",
+        "a request card disables every action while resolution is pending",
+    ),
+}
+CHAT_PREVIEW_REQUEST_TEST_FINGERPRINT = (
+    "14e84c3c559d0bcce692fd50f7fb41b8bcaa1796145df79a39a43c22bb0e50f8"
+)
+CHAT_PREVIEW_REQUEST_SOURCE_FINGERPRINTS = {
+    "page": "7816c49c960272acff1caa32f824a6edd5b55ec22b982a41f739c143a421f7e8",
+    "gateway": "b1a069d91578592e29eb9c6d8eb34808eed0f1c374713821a938f92f08d459eb",
+    "inbox": "91d49c8c86f755e5bccfd60dd995dd307546a8d7ee7bbd3618fce8e45d8d1023",
+}
+
+
+def check_chat_preview_message_request_contract(root: Path) -> list[str]:
+    """Keep legacy request triage process-local, exact-ID, and truthfully labelled."""
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/integrations/communication/communication_gateway.dart": (
+                "code: 'preview_request_not_pending'",
+                "code: 'preview_request_reason_invalid'",
+            ),
+            "lib/features/chat/chat_content.dart": (
+                "_PreviewMessageRequestResolution.acceptedLocally",
+                "_PreviewMessageRequestResolution.ignoredLocally",
+                "_PreviewMessageRequestResolution.removedAsUnsafeLocally",
+                "if (current == null || !current.isPending)",
+                "CommunicationFailure.previewRequestNotPending",
+                "CommunicationFailure.previewRequestReasonInvalid",
+            ),
+            "lib/features/chat/chat_inbox_page.dart": (
+                "final requests = ref.watch(messageRequestsProvider);",
+                "final requestCount = requests.hasValue ? requests.value!.length : null;",
+                "'No preview requests'",
+                "'1 preview request'",
+                "'chat-preview-message-request-badge'",
+            ),
+            "lib/features/chat/chat_secondary_pages.dart": (
+                "Development Preview only · 开发预览",
+                "Accept does not create a Stream conversation",
+                "Report does not submit a moderation report",
+                "No simulated requests remain in this Development Preview.",
+                "No Stream conversation was created.",
+                "No sender interaction occurred.",
+                "no report is submitted.",
+                "No report was submitted.",
+                "resolving ? null : onAccept",
+                "resolving ? null : onIgnore",
+                "resolving ? null : onReport",
+            ),
+            "lib/core/navigation/surface_catalog.dart": (
+                "Development Preview-only local request triage; no Stream conversation or moderation submission.",
+            ),
+            "test/chat_preview_message_requests_test.dart": (
+                "CommunicationFailure.previewRequestNotPending.code",
+                "CommunicationFailure.previewRequestReasonInvalid.code",
+                "No Stream conversation was created.",
+                "No report was submitted.",
+                "find.text('No preview requests')",
+                "chat-preview-message-request-badge",
+                "chat-preview-request-progress",
+            ),
+            "test/chat_preview_route_guard_test.dart": (
+                "production legacy Chat routes never mount preview fixtures",
+                "'/chat/requests'",
+                "find.byKey(const ValueKey<String>('chat-preview-route-blocked'))",
+            ),
+            "docs/product/implementation-constraints.md": (
+                "Legacy Message Requests are process-local Development Preview fixtures only.",
+                "unknown and already resolved IDs fail.",
+            ),
+            "docs/failures/preview-message-request-fake-success.md": (
+                "## Root Cause",
+                "## Detection",
+                "## Prevention",
+                "## Evidence",
+            ),
+        },
+    )
+
+    page_path = root / "lib/features/chat/chat_secondary_pages.dart"
+    if page_path.is_file():
+        source = strip_dart_comments(read_text(page_path))
+        start = source.find("class MessageRequestsPage")
+        end = source.find("enum _SearchFilter", start + 1)
+        if start < 0 or end < 0:
+            errors.append("Chat Message Requests must retain one bounded Preview page")
+        else:
+            request_page = source[start:end]
+            if normalized_dart_source_fingerprint(request_page) != (
+                CHAT_PREVIEW_REQUEST_SOURCE_FINGERPRINTS["page"]
+            ):
+                errors.append(
+                    "Chat Message Requests page must match its reviewed truth-source fingerprint"
+                )
+            forbidden_claims = (
+                "Accepting a request starts a conversation",
+                "Request accepted. You can now reply",
+                "Report submitted and request removed",
+                "New requests from people you do not know will appear here",
+            )
+            for claim in forbidden_claims:
+                if claim in request_page:
+                    errors.append(
+                        f"Chat Message Requests cannot claim unsupported provider effect: `{claim}`"
+                    )
+            if re.search(r"['\"]/chat/", request_page) or any(
+                marker in request_page
+                for marker in ("StreamChannelRoute", "StreamChatChannelRoutePage")
+            ):
+                errors.append(
+                    "Preview request resolution cannot navigate to a Chat conversation or Stream channel"
+                )
+
+    inbox_path = root / "lib/features/chat/chat_inbox_page.dart"
+    if inbox_path.is_file():
+        source = strip_dart_comments(read_text(inbox_path))
+        start = source.find("class ChatInboxPage")
+        end = source.find("class _ConversationLoading", start + 1)
+        inbox = source[start:end] if start >= 0 and end >= 0 else source
+        if start < 0 or end < 0:
+            errors.append("Chat Inbox must retain one bounded Preview request-count slice")
+        elif normalized_dart_source_fingerprint(inbox) != (
+            CHAT_PREVIEW_REQUEST_SOURCE_FINGERPRINTS["inbox"]
+        ):
+            errors.append(
+                "Chat Inbox request count must match its reviewed dynamic-source fingerprint"
+            )
+        if re.search(r"(?:const\s+)?Text\s*\(\s*['\"]2(?: requests)?['\"]", inbox):
+            errors.append(
+                "Chat Inbox request count must derive from messageRequestsProvider, never a fixed 2"
+            )
+
+    gateway_path = root / "lib/features/chat/chat_content.dart"
+    if gateway_path.is_file():
+        source = strip_dart_comments(read_text(gateway_path))
+        start = source.find("class MemoryCommunicationGateway")
+        end = source.find("enum _PreviewMessageRequestResolution", start + 1)
+        if start < 0 or end < 0:
+            errors.append(
+                "MemoryCommunicationGateway must retain one bounded Preview request-state slice"
+            )
+        elif normalized_dart_source_fingerprint(source[start:end]) != (
+            CHAT_PREVIEW_REQUEST_SOURCE_FINGERPRINTS["gateway"]
+        ):
+            errors.append(
+                "Preview request gateway must match its reviewed exact-transition fingerprint"
+            )
+        if "_requests.removeWhere" in source:
+            errors.append(
+                "Preview request resolution must use exact pending-state transitions, not removeWhere success"
+            )
+
+    test_path = root / "test/chat_preview_message_requests_test.dart"
+    if test_path.is_file() and normalized_dart_source_fingerprint(
+        read_text(test_path)
+    ) != CHAT_PREVIEW_REQUEST_TEST_FINGERPRINT:
+        errors.append(
+            "test/chat_preview_message_requests_test.dart must match its reviewed executable evidence fingerprint"
+        )
+
+    errors.extend(
+        check_behavior_test_evidence(root, CHAT_PREVIEW_REQUEST_TEST_MARKERS)
+    )
     return errors
 
 
@@ -5298,6 +5474,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_dependency_pins(root))
     errors.extend(check_spot_only_product_contract(root))
     errors.extend(check_chat_spot_snapshot_contract(root))
+    errors.extend(check_chat_preview_message_request_contract(root))
     errors.extend(check_spot_candle_contract(root))
     errors.extend(check_wallet_identity_readiness_contract(root))
     errors.extend(check_wallet_preview_route_contract(root))
@@ -5336,7 +5513,7 @@ def main() -> int:
         return 1
     print(
         "Harness check passed: profile, six-destination contract, pins, "
-        "Spot-only product and Chat snapshot, bounded candle, Wallet identity, Wallet route, local draft, "
+        "Spot-only product, Chat snapshot and Preview request truth, bounded candle, Wallet identity, Wallet route, local draft, "
         "providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, records, and secret rules are consistent."
     )

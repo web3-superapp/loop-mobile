@@ -36,6 +36,14 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
     if (!preview) return const StreamChatInboxPage();
 
     final conversations = ref.watch(conversationListProvider);
+    final requests = ref.watch(messageRequestsProvider);
+    final requestCount = requests.hasValue ? requests.value!.length : null;
+    final requestLabel = switch (requestCount) {
+      null => 'Preview requests',
+      0 => 'No preview requests',
+      1 => '1 preview request',
+      final count => '$count preview requests',
+    };
     return LoopPage(
       eyebrow: 'Discuss',
       title: 'Chats',
@@ -50,12 +58,17 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
         IconButton(
           onPressed: () => context.push('/chat/requests'),
           tooltip: 'Message requests',
-          icon: Badge(
-            label: const Text('2'),
-            backgroundColor: LoopColors.chat,
-            textColor: LoopColors.abyss,
-            child: const Icon(Icons.person_add_alt_1_outlined),
-          ),
+          icon: requestCount != null && requestCount > 0
+              ? Badge(
+                  key: const ValueKey<String>(
+                    'chat-preview-message-request-badge',
+                  ),
+                  label: Text('$requestCount'),
+                  backgroundColor: LoopColors.chat,
+                  textColor: LoopColors.abyss,
+                  child: const Icon(Icons.person_add_alt_1_outlined),
+                )
+              : const Icon(Icons.person_add_alt_1_outlined),
         ),
       ],
       bottom: const ChatMiniVoiceBar(),
@@ -96,7 +109,7 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
           trailing: TextButton.icon(
             onPressed: () => context.push('/chat/requests'),
             icon: const Icon(Icons.mail_outline_rounded, size: 16),
-            label: const Text('2 requests'),
+            label: Text(requestLabel),
           ),
         ),
         SegmentedButton<_InboxFilter>(
