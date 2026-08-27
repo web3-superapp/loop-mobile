@@ -179,7 +179,7 @@ abstract final class SurfaceCatalog {
       path: '/search',
       priority: ProductPriority.a,
       module: SurfaceModule.home,
-      description: 'Search spot assets, groups and people.',
+      description: 'Labelled local Preview filtering; production cross-product search remains unavailable.',
     ),
     AppSurface(
       id: 'B5',
@@ -223,7 +223,7 @@ abstract final class SurfaceCatalog {
       path: '/home/security',
       priority: ProductPriority.b,
       module: SurfaceModule.home,
-      description: 'Concrete wallet and account events without a risk score.',
+      description: 'Production remains unavailable until verified wallet and account event sources exist.',
     ),
 
     // C · Spot market (9)

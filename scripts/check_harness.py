@@ -70,8 +70,10 @@ REQUIRED_FILES = (
     "docs/decisions/0019-use-public-testnet-spot-candles.md",
     "docs/decisions/0023-close-providerless-wallet-controls.md",
     "docs/decisions/0024-expose-production-audio-room-from-chat.md",
+    "docs/decisions/0026-bound-home-discovery-and-security-facts.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/providerless-notification-fixtures.md",
+    "docs/failures/providerless-security-activity-facts.md",
     "docs/failures/providerless-wallet-controls-without-effects.md",
     "docs/failures/privy-android-compile-sdk.md",
     "docs/failures/principal-agnostic-wallet-single-flight.md",
@@ -98,6 +100,7 @@ REQUIRED_FILES = (
     "lib/features/market/spot_candle_chart.dart",
     "lib/features/market/spot_candle_section.dart",
     "lib/features/market/watchlist/watchlist_controller.dart",
+    "test/home_discovery_and_security_test.dart",
     "lib/features/market/watchlist/watchlist_gateway.dart",
     "lib/features/market/watchlist/watchlist_models.dart",
     "lib/integrations/personalization/memory_watchlist_gateway.dart",
@@ -2591,7 +2594,6 @@ CHAT_PREVIEW_CONVERSATION_ID_SOURCE_FINGERPRINTS = {
     "inbox_navigation": "e854a63e6871f7c56b14a0671617413c3191670b656ccef4fa13fe8b0abe72fe",
     "gateway": "a2ed73bcb1f80ac4110aa8f48fcb5f3c68d2d2270028dbf246e37af43df24701",
     "home_notification": "7dacb554dd1ad92063d87548c5f0a34069b5643bf69dc2de83c7da820658ed85",
-    "home_search": "6d33f04963534c18d82b29a40f6024b2b3afb37cb6fe82492cc3c8ad21ae7f7c",
     "production_cid": "4348e875f73b80a338085fa567f1500e99cd26754bee9d7320a6f3da30258ae5",
     "unavailable_page": "3476f8d0a2ad8d4e0e2922a926fc2177bfcfa88fceca55dbb39189c8ed3351ff",
 }
@@ -2759,13 +2761,6 @@ def check_chat_preview_conversation_id_contract(root: Path) -> list[str]:
             "Home Preview notification target",
         ),
         (
-            "lib/features/home/home_screens.dart",
-            "class GlobalSearchScreen",
-            "class _SearchResult",
-            "home_search",
-            "Home Preview global search",
-        ),
-        (
             "lib/app.dart",
             "path: '/chat/channel/:cid'",
             "path: '/chat/meeting'",
@@ -2811,6 +2806,182 @@ def check_chat_preview_conversation_id_contract(root: Path) -> list[str]:
         check_behavior_test_evidence(
             root, CHAT_PREVIEW_CONVERSATION_ID_TEST_MARKERS
         )
+    )
+    return errors
+
+
+HOME_DISCOVERY_SECURITY_TEST_MARKERS = {
+    Path("test/home_discovery_and_security_test.dart"): (
+        "production Search is unavailable and contains no Preview facts",
+        "query filters local suggestions and Clear restores them",
+        "no-match never restores unrelated suggestions",
+        "ETH opens bare Spot ledger and person opens exact Preview ID",
+        "production Security is unavailable and contains no fixture facts or actions",
+        "production LoopApp security route mounts the unavailable surface",
+        "explicit Preview Security is visibly labelled and has no score or provider action",
+        "Home security activity opens the bounded security surface",
+    ),
+}
+HOME_DISCOVERY_SECURITY_TEST_FINGERPRINT = (
+    "ab4fa880f7391f5edb6733ef00049e4a71f2f793eea630f68bdb2959dc1f163d"
+)
+HOME_DISCOVERY_SECURITY_SOURCE_FINGERPRINTS = {
+    "entry": "421bd4be7cf8adeb87f4bac46f3af849d41c7685db318703b232811b844f7394",
+    "search": "0129124fee63ea30efdc2979ce131b43a23652fd018d41eb0eb8518915d90af8",
+    "security": "4ead4f824e2cb3c2794442ec18490c587f05f8303da5d0cdbbfe212ad7b0685b",
+    "route": "517ab16d36ba9f128a00bb0ba14e88964cbe1798135426d4f541eadd1e1abab1",
+}
+
+
+def check_home_discovery_and_security_contract(root: Path) -> list[str]:
+    """Keep local Home discovery interactive and production security truthful."""
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/features/home/home_screens.dart": (
+                "onTap: () => context.push('/home/security')",
+                "session.mode == LoopSessionMode.preview",
+                "global-search-provider-unavailable",
+                "global-search-preview-fixtures",
+                "global-search-preview-empty",
+                "target.matchesEvery(queryTokens)",
+                "controller.clear",
+                "PreviewConversationIdentity.group.location",
+                "PreviewConversationIdentity.direct.location",
+                "location: '/market'",
+                "security-activity-provider-unavailable",
+                "security-activity-preview-fixtures",
+                "Example week · 演示数据",
+            ),
+            "lib/app.dart": (
+                "path: '/home/security'",
+                "builder: (context, state) => const SecurityActivityScreen()",
+            ),
+            "test/home_discovery_and_security_test.dart": tuple(
+                marker
+                for markers in HOME_DISCOVERY_SECURITY_TEST_MARKERS.values()
+                for marker in markers
+            ),
+            "lib/core/navigation/surface_catalog.dart": (
+                "Labelled local Preview filtering; production cross-product search remains unavailable.",
+                "Production remains unavailable until verified wallet and account event sources exist.",
+            ),
+            "AGENTS.md": (
+                "Keep Home Search and Security Activity source-scoped.",
+                "production Security must not infer all-clear, MFA, device, approval, severity, count, or risk facts",
+            ),
+            "README.md": (
+                "Home Global Search 已闭合 providerless 前端行为",
+                "Home Security Activity 已关闭无来源的安全结论",
+            ),
+            "docs/product/implementation-constraints.md": (
+                "Home Global Search may filter only its bounded, process-local examples in explicit Preview mode.",
+                "Security Activity is unknown when its wallet and account event sources are absent.",
+            ),
+            "docs/product-decisions.md": (
+                "Home Global Search has one bounded providerless Preview projection",
+                "Home Security Activity has no approved production event source or schema.",
+            ),
+            "docs/decisions/0026-bound-home-discovery-and-security-facts.md": (
+                "## Status",
+                "## Context",
+                "## Decision",
+                "## Consequences",
+                "## Evidence",
+            ),
+            "docs/failures/providerless-security-activity-facts.md": (
+                "## Summary",
+                "## Root Cause",
+                "## Detection",
+                "## Prevention",
+                "## Evidence",
+            ),
+            "docs/harness/adoption-report.md": (
+                "## Home Discovery and Security Truth Boundary",
+            ),
+            "docs/phase-1/frontend-integration-report.md": (
+                "## Home Discovery and Security Truth Boundary",
+            ),
+        },
+    )
+
+    source_path = root / "lib/features/home/home_screens.dart"
+    if source_path.is_file():
+        source = read_text(source_path)
+        entry_start = source.find(
+            "        _ActivityRow(\n          icon: Icons.shield_outlined,"
+        )
+        entry_end = source.find("      ],\n    );\n  }\n}", entry_start)
+        if entry_start < 0 or entry_end < 0:
+            errors.append("Home Security entry must retain one bounded reviewed slice")
+        elif normalized_dart_source_fingerprint(source[entry_start:entry_end]) != (
+            HOME_DISCOVERY_SECURITY_SOURCE_FINGERPRINTS["entry"]
+        ):
+            errors.append(
+                "Home Security entry must match its reviewed bounded-route fingerprint"
+            )
+        search_start = source.find("class GlobalSearchScreen")
+        security_start = source.find("class SecurityActivityScreen", search_start + 1)
+        if search_start < 0 or security_start < 0:
+            errors.append(
+                "Home Search and Security must retain two bounded reviewed source slices"
+            )
+        else:
+            search_source = source[search_start:security_start]
+            security_source = source[security_start:]
+            if normalized_dart_source_fingerprint(search_source) != (
+                HOME_DISCOVERY_SECURITY_SOURCE_FINGERPRINTS["search"]
+            ):
+                errors.append(
+                    "Home Global Search must match its reviewed providerless truth fingerprint"
+                )
+            if normalized_dart_source_fingerprint(security_source) != (
+                HOME_DISCOVERY_SECURITY_SOURCE_FINGERPRINTS["security"]
+            ):
+                errors.append(
+                    "Home Security Activity must match its reviewed production-truth fingerprint"
+                )
+            if r"$4,630.50" in search_source:
+                errors.append(
+                    "Home Global Search must not restore a source-less static asset price"
+                )
+            for forbidden in ("No urgent action", "MFA is active"):
+                if forbidden in security_source:
+                    errors.append(
+                        "Home Security Activity must not restore providerless positive security facts"
+                    )
+            if "onPressed:" in security_source:
+                errors.append(
+                    "Home Security Activity must not expose a providerless account action"
+                )
+
+    app_path = root / "lib/app.dart"
+    if app_path.is_file():
+        app_source = read_text(app_path)
+        route_start = app_source.find("      GoRoute(\n        path: '/home/security',")
+        route_end = app_source.find(
+            "      GoRoute(\n        path: SpotMarketRoute.path,", route_start
+        )
+        if route_start < 0 or route_end < 0:
+            errors.append("Home Security route must retain one bounded reviewed slice")
+        elif normalized_dart_source_fingerprint(
+            app_source[route_start:route_end]
+        ) != HOME_DISCOVERY_SECURITY_SOURCE_FINGERPRINTS["route"]:
+            errors.append(
+                "Home Security route must match its reviewed unavailable-surface fingerprint"
+            )
+
+    test_path = root / "test/home_discovery_and_security_test.dart"
+    if test_path.is_file() and normalized_dart_source_fingerprint(
+        read_text(test_path)
+    ) != HOME_DISCOVERY_SECURITY_TEST_FINGERPRINT:
+        errors.append(
+            "test/home_discovery_and_security_test.dart must match its reviewed executable evidence fingerprint"
+        )
+
+    errors.extend(
+        check_behavior_test_evidence(root, HOME_DISCOVERY_SECURITY_TEST_MARKERS)
     )
     return errors
 
@@ -5727,6 +5898,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_chat_spot_snapshot_contract(root))
     errors.extend(check_chat_preview_message_request_contract(root))
     errors.extend(check_chat_preview_conversation_id_contract(root))
+    errors.extend(check_home_discovery_and_security_contract(root))
     errors.extend(check_spot_candle_contract(root))
     errors.extend(check_wallet_identity_readiness_contract(root))
     errors.extend(check_wallet_preview_route_contract(root))

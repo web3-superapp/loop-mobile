@@ -71,9 +71,10 @@ Never edit generated paths as application source. `.tooling` may hold an ignored
 16. Keep Profile presentation models limited to nullable Alias and opaque `avatar:` reference values with the reviewed version contract. Bio and Privacy are separate resources; production Profile persistence stays unavailable until an authenticated, owner-scoped adapter exists, and UI must never announce a save without an advanced matching resource.
 17. Keep Privacy models limited to `discoverable` and the `private` / `followers` / `public` copy-trade visibility preference. This resource never proves discovery, follower membership, portfolio sharing, copy authorization, or execution; production remains unavailable until its authenticated adapter exists.
 18. Keep Notification Preferences limited to the exact four owner intents `price_alert_triggered`, `provider_activity_projected`, `security_notice`, and `support_update`. Delivery remains `unavailable` regardless of saved values; production stays unavailable until an authenticated adapter exists, and the UI must not infer Firebase/provider/device permission or delivery.
-19. Routine feature work uses format, analyze, and relevant/full tests. When native compilation evidence is needed, run Android Debug once at the feature checkpoint with `bin/flutter build apk --debug`; do not build after every intermediate edit.
-20. Release, iOS no-codesign, Web release, interactive `flutter run`, signing, provider, and physical-device checks are manual-only. Run them only when the user explicitly requests them or a later decision supersedes this policy. The user owns physical-device validation; skipped checks remain unverified.
-21. `build/` and native application bundles are generated evidence, not retained deliverables. Remove them with `bin/flutter clean` when cleanup is requested; never commit them.
+19. Keep Home Search and Security Activity source-scoped. Production Search must not expose local Preview assets, groups, or people, and production Security must not infer all-clear, MFA, device, approval, severity, count, or risk facts while its verified sources are absent. Preview filtering and security layouts remain visibly labelled and non-provider-backed.
+20. Routine feature work uses format, analyze, and relevant/full tests. When native compilation evidence is needed, run Android Debug once at the feature checkpoint with `bin/flutter build apk --debug`; do not build after every intermediate edit.
+21. Release, iOS no-codesign, Web release, interactive `flutter run`, signing, provider, and physical-device checks are manual-only. Run them only when the user explicitly requests them or a later decision supersedes this policy. The user owns physical-device validation; skipped checks remain unverified.
+22. `build/` and native application bundles are generated evidence, not retained deliverables. Remove them with `bin/flutter clean` when cleanup is requested; never commit them.
 
 ## Commands
 
@@ -135,7 +136,7 @@ Record changes to runtime, dependency manager, primary navigation, architecture,
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **loop-mobile** (19844 symbols, 87509 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **loop-mobile** (22882 symbols, 83329 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 

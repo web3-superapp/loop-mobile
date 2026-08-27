@@ -1,6 +1,6 @@
 # LOOP current product decisions
 
-> Canonical current scope. Updated 2026-08-26.
+> Canonical current scope. Updated 2026-08-27.
 
 This document applies to the Flutter source at the repository root. Material under `reference/legacy-prototype/` is frozen history and does not override these decisions.
 
@@ -67,6 +67,8 @@ Product priority and current delivery are separate:
 ## Delivery truth
 
 - Preview and memory adapters are UI evidence only. Their simulated writes and voice controls must never be presented as connected provider activity.
+- Home Global Search has one bounded providerless Preview projection for ETH, the exact registered group, and the exact registered direct-message person. It performs case-insensitive, whitespace-normalized local filtering with a truthful no-match state. Production renders the search source as unavailable and never exposes those fixtures; the ETH example opens `/market` without inventing a provider market identity.
+- Home Security Activity has no approved production event source or schema. Production therefore renders one unavailable state and no MFA, device, approval, count, severity, or all-clear claim. Its explicit Preview may demonstrate a labelled facts layout, but it has no risk score, provider request, revoke/block action, event detail, or account authority.
 - Production status requires configured SDKs, short-lived server-issued tokens, testnet or sandbox evidence, native-device verification and observable provider responses.
 - The production BFF remains responsible for server-only credentials, token issuance, stable error mapping, rate limits, audit events and request correlation.
 - Decision 0016 is enforced at every production entry point: the application root does not compose a Perp private gateway, all twelve retained `/perp*` paths redirect to `/market`, and catalog surfaces D1-D12 are non-interactive implementation history marked `Out of scope`. Providerless Preview assets navigate to the live Spot ledger instead of inventing a provider index; only an admitted row from the current public Spot snapshot may construct `/market/token?spotIndex=...`. A missing index fails closed to `/market`, so production cannot substitute the legacy fixture detail.

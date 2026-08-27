@@ -586,3 +586,31 @@ focused exact-ID and adjacent Preview/production suite passed all 35 tests,
 changed-file analysis reported no issues, and the complete Flutter suite passed
 all 488 tests. No HTTP/provider request, APK, application bundle, iOS build,
 package, simulator or physical-device run was performed.
+
+## Home Discovery and Security Truth Boundary
+
+On 2026-08-27, decision 0026 moved the bounded providerless Preview slice of
+Home Global Search out of the Chat exact-ID fingerprint and into a dedicated
+Home contract. The new guard keeps production free of local asset/group/person
+fixtures, preserves the bounded Preview query/no-match/Clear behavior, prevents
+an invented Spot detail identity or static price, and continues to require
+exact registered Preview conversation locations.
+
+The same contract fingerprints Security Activity separately. It rejects a
+production fallback to fixture MFA/device/approval facts, loss of Preview truth
+labels, providerless account actions, restoration of the old wallet-fixture
+entry, and hollow behavior evidence. Failure memory records why missing
+production security evidence can never be displayed as zero, safe, blocked, or
+all clear.
+
+`python3 scripts/check_harness.py` passed. The complete Python suite passed all
+209 tests; 14 Home-specific mutations cover exact Preview session selection,
+production leakage, ignored query, missing no-match/Clear behavior, stale or
+invented asset identity, exact Preview conversation location, Security
+leakage/labels/actions/live entry and app route, and hollow evidence. The
+focused Flutter suite passed 32/32 and the full suite passed 496/496.
+Changed-file analysis reported no issues. Full analysis reached all
+application code and reported only the two pre-existing info-level findings in
+the separately modified `lib/widgets/loop_ui.dart` and
+`test/loop_perp_providers_test.dart`. No HTTP/provider request, build, package,
+simulator, or physical-device run was performed.

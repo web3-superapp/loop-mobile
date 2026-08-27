@@ -142,7 +142,7 @@ class HomeScreen extends ConsumerWidget {
           title: 'One approval can spend your USDC',
           subtitle: 'Review the app and exact allowance',
           time: '1h',
-          onTap: () => context.push('/wallet/approvals'),
+          onTap: () => context.push('/home/security'),
         ),
       ],
     );
@@ -590,14 +590,14 @@ class _NotificationCard extends StatelessWidget {
   }
 }
 
-class GlobalSearchScreen extends StatefulWidget {
+class GlobalSearchScreen extends ConsumerStatefulWidget {
   const GlobalSearchScreen({super.key});
 
   @override
-  State<GlobalSearchScreen> createState() => _GlobalSearchScreenState();
+  ConsumerState<GlobalSearchScreen> createState() => _GlobalSearchScreenState();
 }
 
-class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
+class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   final controller = TextEditingController();
 
   @override
@@ -608,11 +608,81 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isPreview = ref.watch(
+      loopSessionProvider.select(
+        (session) => session.mode == LoopSessionMode.preview,
+      ),
+    );
+    if (!isPreview) {
+      return const LoopPage(
+        title: 'Search',
+        subtitle: 'Provider-backed search will appear here after its asset, community and account sources are connected.',
+        children: <Widget>[
+          LoopStateCard(
+            key: ValueKey<String>('global-search-provider-unavailable'),
+            title: 'Search not connected',
+            message: 'LOOP has no production cross-product search index yet. Preview assets, groups and people are not shown in this session.',
+            icon: Icons.search_off_rounded,
+            tone: LoopTone.warning,
+          ),
+        ],
+      );
+    }
+
+    final targets = <_PreviewSearchTarget>[
+      const _PreviewSearchTarget(
+        key: ValueKey<String>('global-search-preview-eth'),
+        icon: Icons.currency_bitcoin,
+        tone: LoopTone.market,
+        title: 'ETH',
+        subtitle: 'Spot asset example · opens public Testnet markets',
+        searchTerms: <String>[
+          'eth',
+          'ethereum',
+          'spot',
+          'asset',
+          'token',
+          'market',
+        ],
+        location: '/market',
+        replacesLocation: true,
+      ),
+      _PreviewSearchTarget(
+        key: const ValueKey<String>('global-search-preview-group'),
+        icon: Icons.forum_outlined,
+        tone: LoopTone.conversation,
+        title: PreviewConversationIdentity.group.title,
+        subtitle: 'Group · offline conversation preview · 演示数据',
+        searchTerms: const <String>['glyph', 'hunters', 'group', 'community'],
+        location: PreviewConversationIdentity.group.location,
+      ),
+      _PreviewSearchTarget(
+        key: const ValueKey<String>('global-search-preview-person'),
+        icon: Icons.person_outline_rounded,
+        tone: LoopTone.conversation,
+        title: PreviewConversationIdentity.direct.title,
+        subtitle: 'Person · offline conversation preview · 演示数据',
+        searchTerms: const <String>['0xsable', 'sable', 'person', 'direct'],
+        location: PreviewConversationIdentity.direct.location,
+      ),
+    ];
+    final queryTokens = controller.text
+        .trim()
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((token) => token.isNotEmpty)
+        .toList(growable: false);
+    final matches = targets
+        .where((target) => target.matchesEvery(queryTokens))
+        .toList(growable: false);
+
     return LoopPage(
       title: 'Search',
-      subtitle: 'Spot assets, groups and people.',
+      eyebrow: '开发预览',
+      subtitle: 'Filter a bounded set of local 演示数据 for spot assets, groups and people. No provider or account search runs here.',
       children: <Widget>[
         TextField(
+          key: const ValueKey<String>('global-search-preview-input'),
           controller: controller,
           autofocus: true,
           onChanged: (_) => setState(() {}),
@@ -629,33 +699,70 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
           ),
         ),
         const LoopStateCard(
+          key: ValueKey<String>('global-search-preview-fixtures'),
           title: '开发预览',
-          message: 'Suggested results and prices are static examples. Search is not connected.',
+          message: 'These local suggestions are 演示数据. They do not come from Stream, a user directory, an account index or a live asset search.',
           icon: Icons.science_outlined,
           tone: LoopTone.warning,
         ),
-        const LoopSectionLabel('Suggested'),
-        _SearchResult(
-          icon: Icons.currency_bitcoin,
-          tone: LoopTone.market,
-          title: 'ETH',
-          subtitle: r'Token · $4,630.50',
-          onTap: () => context.go('/market'),
+        LoopSectionLabel(
+          queryTokens.isEmpty ? 'Suggested · 演示数据' : 'Results · 演示数据',
         ),
-        _SearchResult(
-          icon: Icons.forum_outlined,
-          tone: LoopTone.conversation,
-          title: PreviewConversationIdentity.group.title,
-          subtitle: 'Group · offline conversation preview',
-          onTap: () => context.push(PreviewConversationIdentity.group.location),
-        ),
+        if (matches.isEmpty)
+          const LoopStateCard(
+            key: ValueKey<String>('global-search-preview-empty'),
+            title: 'No local preview matches',
+            message: 'Try ETH, Glyph Hunters or 0xSable. No provider search was performed.',
+            icon: Icons.search_off_rounded,
+          )
+        else
+          for (final target in matches)
+            _SearchResult(
+              key: target.key,
+              icon: target.icon,
+              tone: target.tone,
+              title: target.title,
+              subtitle: target.subtitle,
+              onTap: () => target.replacesLocation
+                  ? context.go(target.location)
+                  : context.push(target.location),
+            ),
       ],
     );
   }
 }
 
+class _PreviewSearchTarget {
+  const _PreviewSearchTarget({
+    required this.key,
+    required this.icon,
+    required this.tone,
+    required this.title,
+    required this.subtitle,
+    required this.searchTerms,
+    required this.location,
+    this.replacesLocation = false,
+  });
+
+  final Key key;
+  final IconData icon;
+  final LoopTone tone;
+  final String title;
+  final String subtitle;
+  final List<String> searchTerms;
+  final String location;
+  final bool replacesLocation;
+
+  bool matchesEvery(List<String> queryTokens) {
+    if (queryTokens.isEmpty) return true;
+    final searchable = <String>[title, ...searchTerms].join(' ').toLowerCase();
+    return queryTokens.every(searchable.contains);
+  }
+}
+
 class _SearchResult extends StatelessWidget {
   const _SearchResult({
+    super.key,
     required this.icon,
     required this.tone,
     required this.title,
@@ -695,22 +802,51 @@ class _SearchResult extends StatelessWidget {
   }
 }
 
-class SecurityActivityScreen extends StatelessWidget {
+class SecurityActivityScreen extends ConsumerWidget {
   const SecurityActivityScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isPreview = ref.watch(
+      loopSessionProvider.select(
+        (session) => session.mode == LoopSessionMode.preview,
+      ),
+    );
+    if (!isPreview) {
+      return const LoopPage(
+        title: 'Security activity',
+        subtitle: 'Verified wallet policy and account events will appear here after a source is connected.',
+        children: <Widget>[
+          LoopStateCard(
+            key: ValueKey<String>('security-activity-provider-unavailable'),
+            title: 'Security activity not connected',
+            message: 'LOOP has no verified account or wallet event source for this page. It will not infer MFA, device, approval or risk status from missing data.',
+            icon: Icons.shield_outlined,
+            tone: LoopTone.warning,
+          ),
+        ],
+      );
+    }
+
     return const LoopPage(
       title: 'Security activity',
-      subtitle: 'Facts from wallet policy and account events. No score is calculated.',
+      eyebrow: '开发预览',
+      subtitle: 'The examples below are 演示数据 for layout only. They are not wallet, Privy, device or account facts.',
       children: <Widget>[
         LoopStateCard(
-          title: 'No urgent action',
-          message: 'MFA is active and no new device signed in during the last seven days.',
-          icon: Icons.verified_user_outlined,
-          tone: LoopTone.positive,
+          key: ValueKey<String>('security-activity-preview-fixtures'),
+          title: '开发预览',
+          message: 'No provider was queried and no risk score, safety conclusion or account action is available.',
+          icon: Icons.visibility_outlined,
+          tone: LoopTone.warning,
         ),
-        LoopSectionLabel('This week'),
+        LoopStateCard(
+          title: 'Example summary · 演示数据',
+          message: 'Sample layout only. The placeholder policy and device rows below are not your account status.',
+          icon: Icons.verified_user_outlined,
+          tone: LoopTone.warning,
+        ),
+        LoopSectionLabel('Example week · 演示数据'),
         LoopCard(
           child: Column(
             children: <Widget>[

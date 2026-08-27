@@ -8,6 +8,8 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 - Development and Hyperliquid Testnet are the only enabled environments. Mainnet, real deposits/withdrawals, and automated trading remain feature-flagged off.
 - Prefer runnable vertical slices and current official Privy/Stream Flutter SDKs. Do not add a second identity, messaging, calling, state-management, routing, or HTTP stack.
 - Preview content is always labelled `演示数据` or `开发预览`; it never claims provider delivery, read state, presence, ringing, signing, or execution.
+- Home Global Search may filter only its bounded, process-local examples in explicit Preview mode. Production shows no Preview asset, group, or person results until a reviewed source exists; local asset examples open the public Spot ledger and never invent a provider `spotIndex`.
+- Security Activity is unknown when its wallet and account event sources are absent. Production must not infer an all-clear, MFA, device, approval count, severity, risk score, or action from missing data; any retained layout examples stay visibly labelled Preview and expose no provider action.
 
 ## Identity, wallet, and secrets
 

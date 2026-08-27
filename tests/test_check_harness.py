@@ -1744,7 +1744,7 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected exact Preview Inbox navigation guard: {result}",
         )
 
-    def test_chat_preview_global_search_cannot_restore_mismatched_group(self) -> None:
+    def test_home_global_search_cannot_restore_mismatched_group(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             relative = "lib/features/home/home_screens.dart"
@@ -1753,21 +1753,17 @@ class HarnessTests(unittest.TestCase):
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
                 source.replace(
-                    "title: PreviewConversationIdentity.group.title,",
-                    "title: 'ETH Holders Lounge',",
-                    1,
-                ).replace(
-                    "onTap: () => context.push(PreviewConversationIdentity.group.location),",
-                    "onTap: () => context.push('/chat/group'),",
+                    "location: PreviewConversationIdentity.group.location,",
+                    "location: '/chat/group',",
                     1,
                 ),
                 encoding="utf-8",
             )
 
-            result = check_harness.check_chat_preview_conversation_id_contract(root)
+            result = check_harness.check_home_discovery_and_security_contract(root)
 
         self.assertTrue(
-            any("global search" in error and "exact-ID fingerprint" in error for error in result),
+            any("Global Search" in error and "truth fingerprint" in error for error in result),
             msg=f"expected truthful Home Preview search guard: {result}",
         )
 
@@ -1892,6 +1888,294 @@ class HarnessTests(unittest.TestCase):
         self.assertTrue(
             any("executable evidence fingerprint" in error for error in result),
             msg=f"expected non-hollow exact-ID evidence: {result}",
+        )
+
+    def test_home_global_search_cannot_leak_preview_into_production(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            start = source.index("class GlobalSearchScreen")
+            end = source.index("class SecurityActivityScreen", start)
+            changed = source[start:end].replace(
+                "if (!isPreview) {", "if (false && !isPreview) {", 1
+            )
+            path.write_text(source[:start] + changed + source[end:], encoding="utf-8")
+
+            result = check_harness.check_home_discovery_and_security_contract(root)
+
+        self.assertTrue(
+            any("Global Search" in error and "truth fingerprint" in error for error in result),
+            msg=f"expected production Search Preview-leak guard: {result}",
+        )
+
+    def test_home_preview_session_mode_cannot_be_broadened(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            start = source.index("class GlobalSearchScreen")
+            changed = source[start:].replace(
+                "session.mode == LoopSessionMode.preview",
+                "session.mode != LoopSessionMode.signedOut",
+                2,
+            )
+            path.write_text(source[:start] + changed, encoding="utf-8")
+
+            result = check_harness.check_home_discovery_and_security_contract(root)
+
+        self.assertTrue(
+            any("Global Search" in error and "truth fingerprint" in error for error in result),
+            msg=f"expected exact Preview Search session guard: {result}",
+        )
+        self.assertTrue(
+            any("Security Activity" in error and "truth fingerprint" in error for error in result),
+            msg=f"expected exact Preview Security session guard: {result}",
+        )
+
+    def test_home_global_search_query_cannot_be_ignored(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    ".where((target) => target.matchesEvery(queryTokens))",
+                    ".where((target) => true)",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_home_discovery_and_security_contract(root)
+
+        self.assertTrue(
+            any("Global Search" in error and "truth fingerprint" in error for error in result),
+            msg=f"expected executable local-filter guard: {result}",
+        )
+
+    def test_home_global_search_no_match_cannot_disappear(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace("if (matches.isEmpty)", "if (false)", 1),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_home_discovery_and_security_contract(root)
+
+        self.assertTrue(
+            any("Global Search" in error and "truth fingerprint" in error for error in result),
+            msg=f"expected truthful no-match guard: {result}",
+        )
+
+    def test_home_global_search_clear_cannot_become_no_op(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "onPressed: () => setState(controller.clear)",
+                    "onPressed: () => setState(() {})",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_home_discovery_and_security_contract(root)
+
+        self.assertTrue(
+            any("Global Search" in error and "truth fingerprint" in error for error in result),
+            msg=f"expected Search Clear behavior guard: {result}",
+        )
+
+    def test_home_global_search_cannot_invent_spot_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "location: '/market',",
+                    "location: '/market/token?spotIndex=0',",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_home_discovery_and_security_contract(root)
+
+        self.assertTrue(
+            any("Global Search" in error and "truth fingerprint" in error for error in result),
+            msg=f"expected no-invented-Spot-identity guard: {result}",
+        )
+
+    def test_home_global_search_cannot_restore_static_price(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "Spot asset example · opens public Testnet markets",
+                    r"Token · $4,630.50",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_home_discovery_and_security_contract(root)
+
+        self.assertTrue(
+            any("static asset price" in error for error in result),
+            msg=f"expected source-less Search price guard: {result}",
+        )
+
+    def test_home_security_cannot_leak_fixtures_into_production(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            start = source.index("class SecurityActivityScreen")
+            changed = source[start:].replace(
+                "if (!isPreview) {", "if (false && !isPreview) {", 1
+            )
+            path.write_text(source[:start] + changed, encoding="utf-8")
+
+            result = check_harness.check_home_discovery_and_security_contract(root)
+
+        self.assertTrue(
+            any("Security Activity" in error and "truth fingerprint" in error for error in result),
+            msg=f"expected production Security fixture-leak guard: {result}",
+        )
+
+    def test_home_security_preview_cannot_lose_truth_label(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            start = source.index("class SecurityActivityScreen")
+            changed = source[start:].replace(
+                "eyebrow: '开发预览',", "eyebrow: null,", 1
+            )
+            path.write_text(source[:start] + changed, encoding="utf-8")
+
+            result = check_harness.check_home_discovery_and_security_contract(root)
+
+        self.assertTrue(
+            any("Security Activity" in error and "truth fingerprint" in error for error in result),
+            msg=f"expected Security Preview-label guard: {result}",
+        )
+
+    def test_home_security_cannot_add_providerless_action(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            start = source.index("class SecurityActivityScreen")
+            changed = source[start:].replace(
+                "children: <Widget>[",
+                "children: <Widget>[FilledButton(onPressed: () {}, child: const Text('Block')) ,",
+                1,
+            )
+            path.write_text(source[:start] + changed, encoding="utf-8")
+
+            result = check_harness.check_home_discovery_and_security_contract(root)
+
+        self.assertTrue(
+            any("providerless account action" in error for error in result),
+            msg=f"expected Security fake-action guard: {result}",
+        )
+
+    def test_home_security_entry_cannot_return_to_wallet_approval_fixture(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "onTap: () => context.push('/home/security')",
+                    "onTap: () => context.push('/wallet/approvals'),\n"
+                    "          // Dead evidence: onTap: () => context.push('/home/security')",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_home_discovery_and_security_contract(root)
+
+        self.assertTrue(
+            any("Home Security entry" in error and "fingerprint" in error for error in result),
+            msg=f"expected live bounded Home Security entry guard: {result}",
+        )
+
+    def test_home_security_app_route_cannot_hide_builder_in_dead_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/app.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            old = "builder: (context, state) => const SecurityActivityScreen(),"
+            new = (
+                "builder: (context, state) => const NetWorthScreen(),\n"
+                "        // Dead evidence: builder: (context, state) => const SecurityActivityScreen(),"
+            )
+            path.write_text(source.replace(old, new, 1), encoding="utf-8")
+
+            result = check_harness.check_home_discovery_and_security_contract(root)
+
+        self.assertTrue(
+            any("Home Security route" in error and "fingerprint" in error for error in result),
+            msg=f"expected live Home Security app-route guard: {result}",
+        )
+
+    def test_home_discovery_security_evidence_cannot_be_hollowed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "test/home_discovery_and_security_test.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "expect(find.text('Search not connected'), findsOneWidget);",
+                    "expect(true, isTrue);",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_home_discovery_and_security_contract(root)
+
+        self.assertTrue(
+            any("executable evidence fingerprint" in error for error in result),
+            msg=f"expected non-hollow Home discovery/security evidence: {result}",
         )
 
     def test_lock_parser_reads_exact_versions(self) -> None:

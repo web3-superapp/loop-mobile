@@ -496,3 +496,40 @@ The review regressions are included in the final evidence above: all 10
 repository tests and all 4 chart tests pass, the Harness now mutation-locks
 exact interval durations, visible time gaps, and boundary doji rendering, and
 the full Flutter suite plus final Android Debug build were rerun afterward.
+
+## Home Discovery and Security Truth Boundary
+
+On 2026-08-27, decision 0026 completed the providerless behavior of Home Global
+Search without inventing a production index. Explicit Development Preview now
+filters one fixed local set using trimmed, case-insensitive whitespace tokens,
+shows a truthful no-match state, and restores suggestions through Clear. Its
+group and person use the exact registered Preview identities. The ETH example
+contains no price or provider index and opens only the public Spot ledger.
+Authenticated production sessions show an unavailable state and no fixture.
+
+Security Activity now fails closed in production: without an approved wallet or
+account event source it shows no MFA, device, approval, count, severity, risk, or
+all-clear fact. The explicit Preview keeps only a continuously labelled layout
+example with no provider request or account action. Home's security activity row
+now opens this bounded B9 surface rather than skipping directly to the wallet
+approval fixture.
+
+This slice added no HTTP route, provider adapter, persistence, SDK, dependency,
+native capability, account action, or production event schema. Production
+global group/person search and real Security Activity remain unimplemented
+until their exact sources and contracts are reviewed.
+
+Verification on 2026-08-27:
+
+- The Home/Search/Security, application-navigation, and exact Preview identity
+  focused suite passed all 32 tests.
+- `bin/flutter test` passed all 496 Flutter tests.
+- `python3 scripts/check_harness.py` passed, and the complete Harness mutation
+  suite passed all 209 tests, including 14 Home-specific adversarial changes.
+- Changed-file Flutter analysis passed with no issues. Full analysis reported
+  only the two pre-existing info-level findings in separately modified
+  `lib/widgets/loop_ui.dart` and `test/loop_perp_providers_test.dart`.
+- The repository-wide format check identified only the separately modified
+  `lib/widgets/loop_ui.dart`; every file owned by this slice was formatted.
+- No HTTP/provider request, APK, application bundle, iOS build, package,
+  simulator, interactive run, or physical-device validation was performed.

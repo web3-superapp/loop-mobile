@@ -98,7 +98,8 @@ void main() {
 
     await tester.tap(find.byTooltip('Search'));
     await tester.pumpAndSettle();
-    expect(find.text('Spot assets, groups and people.'), findsOneWidget);
+    expect(find.text('Search not connected'), findsOneWidget);
+    expect(find.text('ETH'), findsNothing);
     expect(find.text('ETH-PERP'), findsNothing);
   });
 
@@ -168,17 +169,8 @@ void main() {
     final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
     router.go('/search');
     await tester.pumpAndSettle();
-    expect(
-      find.text(
-        'Suggested results and prices are static examples. Search is not connected.',
-      ),
-      findsOneWidget,
-    );
-    await tester.tap(find.text('ETH'));
-    await tester.pumpAndSettle();
-
-    expect(router.routeInformationProvider.value.uri.path, '/market');
-    expect(find.text('Spot market'), findsOneWidget);
+    expect(find.text('Search not connected'), findsOneWidget);
+    expect(find.text('ETH'), findsNothing);
 
     router.go('/market/token');
     await tester.pumpAndSettle();
