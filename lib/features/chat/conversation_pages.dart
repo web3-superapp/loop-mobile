@@ -2,51 +2,55 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
+import 'package:loop_mobile/features/chat/preview_conversation_identity.dart';
+import 'package:loop_mobile/features/chat/preview_conversation_unavailable_page.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
 class GroupChatPage extends StatelessWidget {
-  const GroupChatPage({super.key});
+  const GroupChatPage({required this.conversationId, super.key});
+
+  final String conversationId;
 
   @override
   Widget build(BuildContext context) {
-    return const _ConversationPage(
-      conversationId: ChatContent.groupId,
-      title: 'Glyph Hunters',
-      direct: false,
+    final target = PreviewConversationIdentity.resolve(
+      conversationId: conversationId,
+      kind: ConversationKind.group,
     );
+    if (target == null) return const PreviewConversationUnavailablePage();
+    return _ConversationPage(target: target);
   }
 }
 
 class DirectMessagePage extends StatelessWidget {
-  const DirectMessagePage({super.key});
+  const DirectMessagePage({required this.conversationId, super.key});
+
+  final String conversationId;
 
   @override
   Widget build(BuildContext context) {
-    return const _ConversationPage(
-      conversationId: ChatContent.directId,
-      title: '0xSable',
-      direct: true,
+    final target = PreviewConversationIdentity.resolve(
+      conversationId: conversationId,
+      kind: ConversationKind.direct,
     );
+    if (target == null) return const PreviewConversationUnavailablePage();
+    return _ConversationPage(target: target);
   }
 }
 
 class _ConversationPage extends ConsumerWidget {
-  const _ConversationPage({
-    required this.conversationId,
-    required this.title,
-    required this.direct,
-  });
+  const _ConversationPage({required this.target});
 
-  final String conversationId;
-  final String title;
-  final bool direct;
+  final PreviewConversationTarget target;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final conversationId = target.id;
+    final title = target.title;
+    final direct = target.kind == ConversationKind.direct;
     final gateway = ref.watch(communicationGatewayProvider);
     final preview = gateway.mode == CommunicationMode.preview;
     final connectionLabel = preview
@@ -103,14 +107,16 @@ class _ConversationPage extends ConsumerWidget {
               icon: const Icon(Icons.graphic_eq_rounded),
             ),
           IconButton(
-            onPressed: () => context.push('/chat/search'),
+            onPressed: () => context.push(target.searchLocation),
             tooltip: 'Search this conversation',
             icon: const Icon(Icons.search_rounded),
           ),
           IconButton(
             onPressed: direct
                 ? () => _showDirectActions(context)
-                : () => context.push('/chat/group-info'),
+                : () => context.push(
+                    PreviewConversationIdentity.groupInfoLocation(target.id)!,
+                  ),
             tooltip: direct ? 'Conversation settings' : 'Group information',
             icon: const Icon(Icons.more_horiz_rounded),
           ),

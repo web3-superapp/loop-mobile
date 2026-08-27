@@ -2404,8 +2404,8 @@ CHAT_PREVIEW_REQUEST_TEST_FINGERPRINT = (
 )
 CHAT_PREVIEW_REQUEST_SOURCE_FINGERPRINTS = {
     "page": "7816c49c960272acff1caa32f824a6edd5b55ec22b982a41f739c143a421f7e8",
-    "gateway": "b1a069d91578592e29eb9c6d8eb34808eed0f1c374713821a938f92f08d459eb",
-    "inbox": "91d49c8c86f755e5bccfd60dd995dd307546a8d7ee7bbd3618fce8e45d8d1023",
+    "gateway": "a2ed73bcb1f80ac4110aa8f48fcb5f3c68d2d2270028dbf246e37af43df24701",
+    "inbox": "5fe03396b626edcd896068830d1aedee9c9af1ebe4208d64ae9202fff536b10a",
 }
 
 
@@ -2560,6 +2560,257 @@ def check_chat_preview_message_request_contract(root: Path) -> list[str]:
 
     errors.extend(
         check_behavior_test_evidence(root, CHAT_PREVIEW_REQUEST_TEST_MARKERS)
+    )
+    return errors
+
+
+CHAT_PREVIEW_CONVERSATION_ID_TEST_MARKERS = {
+    Path("test/chat_preview_conversation_identity_test.dart"): (
+        "Preview identity resolves only exact registered message targets",
+        "Preview route query rejects missing duplicate control and overlong IDs",
+        "Preview gateway rejects unknown read send and scoped search without mutation",
+        "Preview deep links require an exact ID and never mount a fallback composer",
+        "Conversation search keeps the exact Preview scope",
+        "Group information preserves the exact Preview search scope",
+        "Unknown or kind-mismatched search results are not navigable",
+        "Inbox refuses an unregistered same-kind Preview conversation",
+        "Global Search names and opens the exact registered group",
+        "Preview notification opens the exact registered group",
+    ),
+}
+CHAT_PREVIEW_CONVERSATION_ID_TEST_FINGERPRINT = (
+    "9ac7715c24461c35eaaa2fd264b15b75d2a3fa9835fe34224f089fda758fa1b4"
+)
+CHAT_PREVIEW_CONVERSATION_ID_SOURCE_FINGERPRINTS = {
+    "resolver": "f5bde23d09275447183ba03c3dab6a0d9d865d134bfd54710b6a9d704c0b8597",
+    "primary_routes": "2cfd47ba25ac99a4435fd913b50d56decae3bc5d235549f240d11ef27a0c4ec9",
+    "secondary_routes": "8b6fd9d4bce7e380e4fcf0bf3d5e54691b1e9cbaf9618784ddc7a8354b45023c",
+    "conversation_pages": "4d71552865ef9c3f872da63d4cdcb9299468e3f07e0bafdf40f7e72f97f51a11",
+    "group_info": "e7153dd61f1829d8fcc696c011b08a405604734dad37eeb2ac43b68e5a6baf10",
+    "search": "6684f9a8aae999ba5a780340283fee75a1df0bfba701e7f94652e8ccba02b96a",
+    "inbox_navigation": "e854a63e6871f7c56b14a0671617413c3191670b656ccef4fa13fe8b0abe72fe",
+    "gateway": "a2ed73bcb1f80ac4110aa8f48fcb5f3c68d2d2270028dbf246e37af43df24701",
+    "home_notification": "7dacb554dd1ad92063d87548c5f0a34069b5643bf69dc2de83c7da820658ed85",
+    "home_search": "6d33f04963534c18d82b29a40f6024b2b3afb37cb6fe82492cc3c8ad21ae7f7c",
+    "production_cid": "4348e875f73b80a338085fa567f1500e99cd26754bee9d7320a6f3da30258ae5",
+    "unavailable_page": "3476f8d0a2ad8d4e0e2922a926fc2177bfcfa88fceca55dbb39189c8ed3351ff",
+}
+
+
+def check_chat_preview_conversation_id_contract(root: Path) -> list[str]:
+    """Keep local Preview message targets exact without altering Stream CIDs."""
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/features/chat/preview_conversation_identity.dart": (
+                "final values = uri.queryParametersAll['conversationId'];",
+                "if (values == null || values.length != 1) return null;",
+                "return target?.kind == kind ? target : null;",
+                "ChatContent.groupId => group",
+                "ChatContent.directId => direct",
+                "_ => null",
+                "Uri(",
+                "queryParameters: <String, String>{'conversationId': id}",
+            ),
+            "lib/integrations/communication/communication_gateway.dart": (
+                "code: 'preview_conversation_not_found'",
+                "The exact Preview conversation is not available.",
+            ),
+            "lib/features/chat/chat_content.dart": (
+                "ChatContent.groupId => _groupMessages",
+                "ChatContent.directId => _directMessages",
+                "CommunicationFailure.conversationNotFound",
+                "conversationId != ChatContent.groupId",
+                "conversationId != ChatContent.directId",
+            ),
+            "lib/features/chat/chat_inbox_page.dart": (
+                "PreviewConversationIdentity.locationForSummary(",
+                "conversationId: conversation.id",
+                "kind: conversation.kind",
+                "No fallback was opened.",
+            ),
+            "lib/features/chat/conversation_pages.dart": (
+                "PreviewConversationIdentity.resolve(",
+                "conversationId: conversationId",
+                "PreviewConversationUnavailablePage",
+                "context.push(target.searchLocation)",
+                "conversationMessagesProvider(conversationId)",
+                ".sendText(conversationId: conversationId, text: text)",
+            ),
+            "lib/features/chat/preview_conversation_unavailable_page.dart": (
+                "key: const ValueKey<String>('preview-conversation-unavailable')",
+                "The Preview did not substitute another group",
+                "onPressed: () => context.go('/chat')",
+            ),
+            "lib/features/chat/chat_secondary_pages.dart": (
+                "conversationId: widget.conversationId",
+                "kind: ConversationKind.group",
+                "if (target == null) return const PreviewConversationUnavailablePage();",
+                "onPressed: () => context.push(target.searchLocation)",
+                "PreviewConversationIdentity.resolveMessage(conversationId)",
+                "result.conversationId == scope.id",
+                "conversationId: _scope?.id",
+                "resolvedTarget?.kind == result.kind ? resolvedTarget : null",
+                "target == null ? null : () => context.push(target.location)",
+                "Preview conversation unavailable",
+            ),
+            "lib/app.dart": (
+                "PreviewConversationIdentity.readSingleConversationId(",
+                "PreviewConversationIdentity.hasConversationIdQuery(state.uri)",
+                "path: '/chat/channel/:cid'",
+                "StreamChatChannelRoutePage(cid: state.pathParameters['cid'] ?? '')",
+            ),
+            "lib/features/home/home_screens.dart": (
+                "title: PreviewConversationIdentity.group.title",
+                "PreviewConversationIdentity.group.location",
+                "Group · offline conversation preview",
+            ),
+            "test/chat_preview_conversation_identity_test.dart": (
+                "CommunicationFailure.conversationNotFound.code",
+                "another-group",
+                "glyph-hunters&conversationId=sable-direct",
+                "find.byTooltip('Send message'), findsNothing",
+                "lastSearchConversationId, ChatContent.groupId",
+                "Preview conversation unavailable. No fallback was opened.",
+            ),
+            "docs/product/implementation-constraints.md": (
+                "Legacy Preview group and direct-message routes require one exact registered `conversationId`.",
+                "The memory gateway never substitutes another fixture",
+            ),
+            "docs/decisions/0025-require-exact-preview-conversation-identity.md": (
+                "## Status",
+                "## Context",
+                "## Decision",
+                "## Consequences",
+                "## Evidence",
+            ),
+            "docs/failures/preview-conversation-id-fallback.md": (
+                "## Root Cause",
+                "## Detection",
+                "## Prevention",
+                "## Evidence",
+            ),
+        },
+    )
+
+    fingerprints = (
+        (
+            "lib/features/chat/preview_conversation_identity.dart",
+            None,
+            None,
+            "resolver",
+            "Preview conversation resolver",
+        ),
+        (
+            "lib/app.dart",
+            "path: '/chat/group'",
+            "path: '/chat/voice'",
+            "primary_routes",
+            "Preview group/direct routes",
+        ),
+        (
+            "lib/app.dart",
+            "path: '/chat/group-info'",
+            "path: '/chat/channel/:cid'",
+            "secondary_routes",
+            "Preview group-info/search routes",
+        ),
+        (
+            "lib/features/chat/conversation_pages.dart",
+            "class GroupChatPage",
+            "class _PinnedMessageBanner",
+            "conversation_pages",
+            "Preview conversation pages",
+        ),
+        (
+            "lib/features/chat/chat_secondary_pages.dart",
+            "class GroupInfoPage",
+            "Future<void> _showMemberList",
+            "group_info",
+            "Preview group information",
+        ),
+        (
+            "lib/features/chat/chat_secondary_pages.dart",
+            "enum _SearchFilter",
+            "class MeetingPlaceholderPage",
+            "search",
+            "Preview message search",
+        ),
+        (
+            "lib/features/chat/chat_inbox_page.dart",
+            "static void _openConversation",
+            "class _ConversationLoading",
+            "inbox_navigation",
+            "Preview Inbox navigation",
+        ),
+        (
+            "lib/features/chat/chat_content.dart",
+            "class MemoryCommunicationGateway",
+            "enum _PreviewMessageRequestResolution",
+            "gateway",
+            "Preview memory gateway",
+        ),
+        (
+            "lib/features/home/home_screens.dart",
+            "class NotificationsScreen",
+            "class _NotificationCard",
+            "home_notification",
+            "Home Preview notification target",
+        ),
+        (
+            "lib/features/home/home_screens.dart",
+            "class GlobalSearchScreen",
+            "class _SearchResult",
+            "home_search",
+            "Home Preview global search",
+        ),
+        (
+            "lib/app.dart",
+            "path: '/chat/channel/:cid'",
+            "path: '/chat/meeting'",
+            "production_cid",
+            "Production Stream CID route",
+        ),
+        (
+            "lib/features/chat/preview_conversation_unavailable_page.dart",
+            None,
+            None,
+            "unavailable_page",
+            "Preview unavailable page",
+        ),
+    )
+    for relative, start_marker, end_marker, key, label in fingerprints:
+        path = root / relative
+        if not path.is_file():
+            continue
+        source = read_text(path)
+        if start_marker is None:
+            reviewed = source
+        else:
+            start = source.find(start_marker)
+            end = source.find(end_marker, start + 1)
+            if start < 0 or end < 0:
+                errors.append(f"{label} must retain one bounded reviewed source slice")
+                continue
+            reviewed = source[start:end]
+        if normalized_dart_source_fingerprint(reviewed) != (
+            CHAT_PREVIEW_CONVERSATION_ID_SOURCE_FINGERPRINTS[key]
+        ):
+            errors.append(f"{label} must match its reviewed exact-ID fingerprint")
+
+    test_path = root / "test/chat_preview_conversation_identity_test.dart"
+    if test_path.is_file() and normalized_dart_source_fingerprint(
+        read_text(test_path)
+    ) != CHAT_PREVIEW_CONVERSATION_ID_TEST_FINGERPRINT:
+        errors.append(
+            "test/chat_preview_conversation_identity_test.dart must match its reviewed executable evidence fingerprint"
+        )
+
+    errors.extend(
+        check_behavior_test_evidence(
+            root, CHAT_PREVIEW_CONVERSATION_ID_TEST_MARKERS
+        )
     )
     return errors
 
@@ -3962,7 +4213,7 @@ def check_chat_attachment_contract(root: Path) -> list[str]:
             route_block = app_text[start : next_route if next_route >= 0 else len(app_text)]
             first_builder = re.search(r"\bbuilder\s*:", route_block)
             guarded_builder = re.match(
-                r"builder\s*:\s*\([^)]*\)\s*=>\s*const\s+ChatPreviewRouteGuard\s*\(",
+                r"builder\s*:\s*\([^)]*\)\s*=>\s*(?:const\s+)?ChatPreviewRouteGuard\s*\(",
                 route_block[first_builder.start() :] if first_builder else "",
             )
             if guarded_builder is None:
@@ -5475,6 +5726,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_spot_only_product_contract(root))
     errors.extend(check_chat_spot_snapshot_contract(root))
     errors.extend(check_chat_preview_message_request_contract(root))
+    errors.extend(check_chat_preview_conversation_id_contract(root))
     errors.extend(check_spot_candle_contract(root))
     errors.extend(check_wallet_identity_readiness_contract(root))
     errors.extend(check_wallet_preview_route_contract(root))
@@ -5513,7 +5765,7 @@ def main() -> int:
         return 1
     print(
         "Harness check passed: profile, six-destination contract, pins, "
-        "Spot-only product, Chat snapshot and Preview request truth, bounded candle, Wallet identity, Wallet route, local draft, "
+        "Spot-only product, Chat snapshot, Preview request truth and exact conversation identity, bounded candle, Wallet identity, Wallet route, local draft, "
         "providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, records, and secret rules are consistent."
     )

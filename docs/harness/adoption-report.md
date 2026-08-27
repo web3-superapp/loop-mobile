@@ -558,3 +558,31 @@ focused Message Requests/production-guard suite passed all 7 tests,
 changed-file analysis reported no issues, and the complete Flutter suite passed
 all 478 tests. No HTTP/provider request, APK, application bundle, iOS build,
 package, simulator or physical-device run was performed.
+
+## Chat Preview Exact Conversation Identity
+
+On 2026-08-27, decision 0025 removed the legacy kind-only routing and unknown-ID
+fallback from Preview message conversations. Group, direct-message, group-info,
+Inbox, Home suggestion, notification, and scoped-search flows now carry or
+resolve the exact registered local identity. Missing, repeated, empty,
+control-containing, overlong, unknown, and ID/kind-mismatched targets fail
+closed. An unavailable target mounts neither fixture messages nor a composer,
+and an unknown memory-gateway read, send, or scoped search cannot expose or
+mutate Glyph Hunters.
+
+The Harness fingerprints the bounded resolver, route builders, conversation
+pages, group information, unavailable state, search, Inbox navigation, memory
+gateway, Home notification/suggestion, production CID builder, and dedicated
+behavior evidence. Fourteen new mutations restore kind-only navigation,
+duplicate query admission, a default group route, read/send fallback, dropped
+search scope, mismatch admission, stale Home targets, Group Info/unavailable
+fallbacks, a dead production CID builder, or hollow evidence and prove that each
+regression is rejected. Production Stream inbox, full-CID channel routing,
+persistence, and backend-owned Audio Room targeting remain outside the Preview
+registry and unchanged.
+
+`scripts/check_harness.py` passed, all 196 Python mutation tests passed, the
+focused exact-ID and adjacent Preview/production suite passed all 35 tests,
+changed-file analysis reported no issues, and the complete Flutter suite passed
+all 488 tests. No HTTP/provider request, APK, application bundle, iOS build,
+package, simulator or physical-device run was performed.

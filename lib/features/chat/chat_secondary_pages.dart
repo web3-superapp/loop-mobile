@@ -4,12 +4,16 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
+import 'package:loop_mobile/features/chat/preview_conversation_identity.dart';
+import 'package:loop_mobile/features/chat/preview_conversation_unavailable_page.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
 class GroupInfoPage extends ConsumerStatefulWidget {
-  const GroupInfoPage({super.key});
+  const GroupInfoPage({required this.conversationId, super.key});
+
+  final String conversationId;
 
   @override
   ConsumerState<GroupInfoPage> createState() => _GroupInfoPageState();
@@ -21,11 +25,16 @@ class _GroupInfoPageState extends ConsumerState<GroupInfoPage> {
 
   @override
   Widget build(BuildContext context) {
+    final target = PreviewConversationIdentity.resolve(
+      conversationId: widget.conversationId,
+      kind: ConversationKind.group,
+    );
+    if (target == null) return const PreviewConversationUnavailablePage();
     final gateway = ref.watch(communicationGatewayProvider);
     final preview = gateway.mode == CommunicationMode.preview;
     return LoopPage(
       eyebrow: 'Group',
-      title: 'Glyph Hunters',
+      title: target.title,
       subtitle: preview
           ? 'Offline preview · simulated members and presence'
           : gateway.isConfigured
@@ -33,7 +42,7 @@ class _GroupInfoPageState extends ConsumerState<GroupInfoPage> {
           : 'Stream not connected',
       actions: <Widget>[
         IconButton(
-          onPressed: () => context.push('/chat/search'),
+          onPressed: () => context.push(target.searchLocation),
           tooltip: 'Search group messages',
           icon: const Icon(Icons.search_rounded),
         ),
@@ -67,7 +76,7 @@ class _GroupInfoPageState extends ConsumerState<GroupInfoPage> {
                 children: <Widget>[
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => context.push('/chat/search'),
+                      onPressed: () => context.push(target.searchLocation),
                       icon: const Icon(Icons.search_rounded, size: 17),
                       label: const Text('Search'),
                     ),
@@ -481,7 +490,9 @@ class _RequestCard extends StatelessWidget {
 enum _SearchFilter { all, groups, direct }
 
 class MessageSearchPage extends ConsumerStatefulWidget {
-  const MessageSearchPage({super.key});
+  const MessageSearchPage({this.conversationId, super.key});
+
+  final String? conversationId;
 
   @override
   ConsumerState<MessageSearchPage> createState() => _MessageSearchPageState();
@@ -489,9 +500,27 @@ class MessageSearchPage extends ConsumerStatefulWidget {
 
 class _MessageSearchPageState extends ConsumerState<MessageSearchPage> {
   final _controller = TextEditingController(text: 'unlock');
-  var _results = ChatContent.searchResults;
+  late final PreviewConversationTarget? _scope;
+  late List<MessageSearchResult> _results;
   var _loading = false;
   var _filter = _SearchFilter.all;
+
+  @override
+  void initState() {
+    super.initState();
+    final conversationId = widget.conversationId;
+    _scope = conversationId == null
+        ? null
+        : PreviewConversationIdentity.resolveMessage(conversationId);
+    final scope = _scope;
+    _results = conversationId == null
+        ? List<MessageSearchResult>.of(ChatContent.searchResults)
+        : scope == null
+        ? <MessageSearchResult>[]
+        : ChatContent.searchResults
+              .where((result) => result.conversationId == scope.id)
+              .toList(growable: false);
+  }
 
   @override
   void dispose() {
@@ -501,6 +530,10 @@ class _MessageSearchPageState extends ConsumerState<MessageSearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scope = _scope;
+    if (widget.conversationId != null && scope == null) {
+      return const PreviewConversationUnavailablePage();
+    }
     final filtered = _results
         .where((result) {
           return switch (_filter) {
@@ -512,8 +545,10 @@ class _MessageSearchPageState extends ConsumerState<MessageSearchPage> {
         .toList(growable: false);
     return LoopPage(
       eyebrow: 'Chats',
-      title: 'Search messages',
-      subtitle: 'Find a source, ticker, address, or earlier conversation.',
+      title: scope == null ? 'Search messages' : 'Search ${scope.title}',
+      subtitle: scope == null
+          ? 'Find a source, ticker, address, or earlier conversation.'
+          : 'Results stay inside this exact Preview conversation.',
       children: <Widget>[
         TextField(
           controller: _controller,
@@ -542,26 +577,29 @@ class _MessageSearchPageState extends ConsumerState<MessageSearchPage> {
           ),
         ),
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          children: <Widget>[
-            ChoiceChip(
-              label: const Text('All'),
-              selected: _filter == _SearchFilter.all,
-              onSelected: (_) => setState(() => _filter = _SearchFilter.all),
-            ),
-            ChoiceChip(
-              label: const Text('Groups'),
-              selected: _filter == _SearchFilter.groups,
-              onSelected: (_) => setState(() => _filter = _SearchFilter.groups),
-            ),
-            ChoiceChip(
-              label: const Text('Direct'),
-              selected: _filter == _SearchFilter.direct,
-              onSelected: (_) => setState(() => _filter = _SearchFilter.direct),
-            ),
-          ],
-        ),
+        if (scope == null)
+          Wrap(
+            spacing: 8,
+            children: <Widget>[
+              ChoiceChip(
+                label: const Text('All'),
+                selected: _filter == _SearchFilter.all,
+                onSelected: (_) => setState(() => _filter = _SearchFilter.all),
+              ),
+              ChoiceChip(
+                label: const Text('Groups'),
+                selected: _filter == _SearchFilter.groups,
+                onSelected: (_) =>
+                    setState(() => _filter = _SearchFilter.groups),
+              ),
+              ChoiceChip(
+                label: const Text('Direct'),
+                selected: _filter == _SearchFilter.direct,
+                onSelected: (_) =>
+                    setState(() => _filter = _SearchFilter.direct),
+              ),
+            ],
+          ),
         LoopSectionLabel('${filtered.length} results'),
         if (!_loading && filtered.isEmpty)
           const LoopStateCard(
@@ -583,7 +621,7 @@ class _MessageSearchPageState extends ConsumerState<MessageSearchPage> {
     setState(() => _loading = true);
     final result = await ref
         .read(communicationGatewayProvider)
-        .searchMessages(query: _controller.text);
+        .searchMessages(query: _controller.text, conversationId: _scope?.id);
     if (!mounted) return;
     setState(() {
       _loading = false;
@@ -607,9 +645,16 @@ class _SearchResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final direct = result.kind == ConversationKind.direct;
+    final resolvedTarget = PreviewConversationIdentity.resolveMessage(
+      result.conversationId,
+    );
+    final target = resolvedTarget?.kind == result.kind ? resolvedTarget : null;
     return LoopCard(
-      onTap: () => context.push(direct ? '/chat/dm' : '/chat/group'),
-      semanticLabel: 'Open result from ${result.conversationTitle}',
+      key: ValueKey<String>('chat-preview-search-result-${result.id}'),
+      onTap: target == null ? null : () => context.push(target.location),
+      semanticLabel: target == null
+          ? null
+          : 'Open result from ${result.conversationTitle}',
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -650,6 +695,14 @@ class _SearchResultCard extends StatelessWidget {
                   result.snippet,
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
+                if (target == null) ...<Widget>[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Preview conversation unavailable',
+                    style: Theme.of(context).textTheme.labelMedium
+                        ?.copyWith(color: LoopColors.warning),
+                  ),
+                ],
               ],
             ),
           ),

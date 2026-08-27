@@ -8,6 +8,8 @@ export 'chat_preview_route_guard.dart';
 export 'chat_secondary_pages.dart';
 export 'chat_state.dart';
 export 'conversation_pages.dart';
+export 'preview_conversation_identity.dart';
+export 'preview_conversation_unavailable_page.dart';
 export 'stream_chat_inbox_page.dart';
 export 'voice_room_page.dart';
 export 'widgets/chat_components.dart'

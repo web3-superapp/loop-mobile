@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
+import 'package:loop_mobile/features/chat/preview_conversation_identity.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/stream_chat_inbox_page.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
@@ -207,16 +208,23 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
     BuildContext context,
     ConversationSummary conversation,
   ) {
-    switch (conversation.kind) {
-      case ConversationKind.group:
-        context.push('/chat/group');
-      case ConversationKind.direct:
-        context.push('/chat/dm');
-      case ConversationKind.voice:
-        context.push('/chat/voice');
-      case ConversationKind.meeting:
-        context.push('/chat/meeting');
+    final location = PreviewConversationIdentity.locationForSummary(
+      conversationId: conversation.id,
+      kind: conversation.kind,
+    );
+    if (location == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Preview conversation unavailable. No fallback was opened.',
+            ),
+          ),
+        );
+      return;
     }
+    context.push(location);
   }
 }
 

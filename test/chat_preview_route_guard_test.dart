@@ -29,10 +29,14 @@ void main() {
     final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
     for (final route in <String>[
       '/chat/group',
+      '/chat/group?conversationId=glyph-hunters',
       '/chat/dm',
+      '/chat/dm?conversationId=sable-direct',
       '/chat/group-info',
+      '/chat/group-info?conversationId=glyph-hunters',
       '/chat/requests',
       '/chat/search',
+      '/chat/search?conversationId=glyph-hunters',
       '/preview/token-card',
       '/preview/contract-facts',
       '/preview/asset-message',

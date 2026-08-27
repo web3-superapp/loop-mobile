@@ -425,7 +425,7 @@ abstract final class SurfaceCatalog {
       path: '/chat/group',
       priority: ProductPriority.a,
       module: SurfaceModule.chat,
-      description: 'Replies, reactions, mentions and pinned context.',
+      description: 'Preview requires an exact registered group ID; production opens the official Stream CID.',
     ),
     AppSurface(
       id: 'E3',
@@ -441,7 +441,7 @@ abstract final class SurfaceCatalog {
       path: '/chat/dm',
       priority: ProductPriority.a,
       module: SurfaceModule.chat,
-      description: 'Private conversation without an E2EE claim.',
+      description: 'Preview requires an exact registered direct ID; production opens the official Stream CID.',
     ),
     AppSurface(
       id: 'E5',
@@ -467,7 +467,8 @@ abstract final class SurfaceCatalog {
       path: '/chat/group-info',
       priority: ProductPriority.b,
       module: SurfaceModule.chat,
-      description: 'Group summary, announcement and members.',
+      description:
+          'Preview group information bound to the same exact conversation ID.',
     ),
     AppSurface(
       id: 'E9',
@@ -500,7 +501,7 @@ abstract final class SurfaceCatalog {
       path: '/chat/search',
       priority: ProductPriority.b,
       module: SurfaceModule.chat,
-      description: 'Search by person, group and date.',
+      description: 'Global Preview search or exact conversation-scoped search without ID fallback.',
     ),
     AppSurface(
       id: 'E13',

@@ -256,16 +256,28 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
       ..._retainedPerpRedirectRoutes,
       GoRoute(
         path: '/chat/group',
-        builder: (context, state) => const ChatPreviewRouteGuard(
+        builder: (context, state) => ChatPreviewRouteGuard(
           surfaceLabel: 'Group conversation',
-          child: GroupChatPage(),
+          child: GroupChatPage(
+            conversationId:
+                PreviewConversationIdentity.readSingleConversationId(
+                  state.uri,
+                ) ??
+                '',
+          ),
         ),
       ),
       GoRoute(
         path: '/chat/dm',
-        builder: (context, state) => const ChatPreviewRouteGuard(
+        builder: (context, state) => ChatPreviewRouteGuard(
           surfaceLabel: 'Direct conversation',
-          child: DirectMessagePage(),
+          child: DirectMessagePage(
+            conversationId:
+                PreviewConversationIdentity.readSingleConversationId(
+                  state.uri,
+                ) ??
+                '',
+          ),
         ),
       ),
       GoRoute(
@@ -278,9 +290,15 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
       ),
       GoRoute(
         path: '/chat/group-info',
-        builder: (context, state) => const ChatPreviewRouteGuard(
+        builder: (context, state) => ChatPreviewRouteGuard(
           surfaceLabel: 'Group information',
-          child: GroupInfoPage(),
+          child: GroupInfoPage(
+            conversationId:
+                PreviewConversationIdentity.readSingleConversationId(
+                  state.uri,
+                ) ??
+                '',
+          ),
         ),
       ),
       GoRoute(
@@ -292,9 +310,18 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
       ),
       GoRoute(
         path: '/chat/search',
-        builder: (context, state) => const ChatPreviewRouteGuard(
+        builder: (context, state) => ChatPreviewRouteGuard(
           surfaceLabel: 'Message search',
-          child: MessageSearchPage(),
+          child: MessageSearchPage(
+            key: ValueKey<String>('preview-message-search-${state.uri}'),
+            conversationId:
+                PreviewConversationIdentity.hasConversationIdQuery(state.uri)
+                ? PreviewConversationIdentity.readSingleConversationId(
+                        state.uri,
+                      ) ??
+                      ''
+                : null,
+          ),
         ),
       ),
       GoRoute(

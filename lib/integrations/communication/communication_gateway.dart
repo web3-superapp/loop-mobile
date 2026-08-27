@@ -159,6 +159,11 @@ class CommunicationFailure {
     message: 'Communication authorization is not available.',
   );
 
+  static const conversationNotFound = CommunicationFailure(
+    code: 'preview_conversation_not_found',
+    message: 'The exact Preview conversation is not available.',
+  );
+
   static const previewRequestNotPending = CommunicationFailure(
     code: 'preview_request_not_pending',
     message: 'The Preview message request is not pending.',

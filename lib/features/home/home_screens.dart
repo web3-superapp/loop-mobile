@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
+import 'package:loop_mobile/features/chat/preview_conversation_identity.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
@@ -79,7 +80,7 @@ class HomeScreen extends ConsumerWidget {
           number: '02',
           icon: Icons.forum_outlined,
           title: 'Discuss',
-          body: 'ETH Holders Lounge is comparing this week’s positioning.',
+          body: 'Glyph Hunters is comparing this week’s spot market structure.',
           meta: '18 unread',
           tone: LoopTone.conversation,
           onTap: () => context.go('/chat'),
@@ -100,8 +101,8 @@ class HomeScreen extends ConsumerWidget {
           tone: LoopTone.conversation,
           onTap: () => context.push('/chat/voice'),
           semanticLabel: preview
-              ? 'Open the offline ETH Holders voice preview'
-              : 'Open ETH Holders communication status',
+              ? 'Open the offline ETH Macro Room voice preview'
+              : 'Open ETH Macro Room communication status',
           child: Row(
             children: <Widget>[
               const _VoicePreviewGlyph(),
@@ -111,7 +112,7 @@ class HomeScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      'ETH Holders Lounge',
+                      'ETH Macro Room',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 4),
@@ -528,7 +529,7 @@ class NotificationsScreen extends ConsumerWidget {
           title: 'Mentioned in Glyph Hunters',
           body: 'NightOwl mentioned your alias in a reply.',
           time: '2h',
-          onTap: () => context.push('/chat/group'),
+          onTap: () => context.push(PreviewConversationIdentity.group.location),
         ),
       ],
     );
@@ -644,9 +645,9 @@ class _GlobalSearchScreenState extends State<GlobalSearchScreen> {
         _SearchResult(
           icon: Icons.forum_outlined,
           tone: LoopTone.conversation,
-          title: 'ETH Holders Lounge',
-          subtitle: 'Group · offline voice preview',
-          onTap: () => context.push('/chat/group'),
+          title: PreviewConversationIdentity.group.title,
+          subtitle: 'Group · offline conversation preview',
+          onTap: () => context.push(PreviewConversationIdentity.group.location),
         ),
       ],
     );

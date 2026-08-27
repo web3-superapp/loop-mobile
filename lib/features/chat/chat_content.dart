@@ -256,6 +256,11 @@ class MemoryCommunicationGateway implements CommunicationGateway {
     required String roomId,
     required bool microphoneMuted,
   }) async {
+    if (roomId != ChatContent.voiceRoomId) {
+      return const CommunicationResult<VoiceRoomSummary>.failure(
+        CommunicationFailure.conversationNotFound,
+      );
+    }
     return const CommunicationResult<VoiceRoomSummary>.success(
       ChatContent.voiceRoom,
     );
@@ -263,6 +268,11 @@ class MemoryCommunicationGateway implements CommunicationGateway {
 
   @override
   Future<CommunicationResult<void>> leaveVoiceRoom(String roomId) async {
+    if (roomId != ChatContent.voiceRoomId) {
+      return const CommunicationResult<void>.failure(
+        CommunicationFailure.conversationNotFound,
+      );
+    }
     return const CommunicationResult<void>.success(null);
   }
 
@@ -290,9 +300,16 @@ class MemoryCommunicationGateway implements CommunicationGateway {
   Future<CommunicationResult<List<ConversationMessage>>> loadMessages(
     String conversationId,
   ) async {
-    final source = conversationId == ChatContent.directId
-        ? _directMessages
-        : _groupMessages;
+    final source = switch (conversationId) {
+      ChatContent.groupId => _groupMessages,
+      ChatContent.directId => _directMessages,
+      _ => null,
+    };
+    if (source == null) {
+      return const CommunicationResult<List<ConversationMessage>>.failure(
+        CommunicationFailure.conversationNotFound,
+      );
+    }
     return CommunicationResult<List<ConversationMessage>>.success(
       List<ConversationMessage>.unmodifiable(source),
     );
@@ -303,6 +320,13 @@ class MemoryCommunicationGateway implements CommunicationGateway {
     required String query,
     String? conversationId,
   }) async {
+    if (conversationId != null &&
+        conversationId != ChatContent.groupId &&
+        conversationId != ChatContent.directId) {
+      return const CommunicationResult<List<MessageSearchResult>>.failure(
+        CommunicationFailure.conversationNotFound,
+      );
+    }
     final normalized = query.trim().toLowerCase();
     final matches = ChatContent.searchResults
         .where((item) {
@@ -340,9 +364,16 @@ class MemoryCommunicationGateway implements CommunicationGateway {
     required String conversationId,
     required String text,
   }) async {
-    final target = conversationId == ChatContent.directId
-        ? _directMessages
-        : _groupMessages;
+    final target = switch (conversationId) {
+      ChatContent.groupId => _groupMessages,
+      ChatContent.directId => _directMessages,
+      _ => null,
+    };
+    if (target == null) {
+      return const CommunicationResult<ConversationMessage>.failure(
+        CommunicationFailure.conversationNotFound,
+      );
+    }
     final message = ConversationMessage(
       id: 'local-${target.length + 1}',
       conversationId: conversationId,
@@ -362,6 +393,11 @@ class MemoryCommunicationGateway implements CommunicationGateway {
     required String roomId,
     required bool muted,
   }) async {
+    if (roomId != ChatContent.voiceRoomId) {
+      return const CommunicationResult<void>.failure(
+        CommunicationFailure.conversationNotFound,
+      );
+    }
     return const CommunicationResult<void>.success(null);
   }
 

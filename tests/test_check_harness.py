@@ -1560,6 +1560,340 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected transitive Preview request-navigation guard: {result}",
         )
 
+    def test_chat_preview_conversation_id_cannot_ignore_kind(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/preview_conversation_identity.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "return target?.kind == kind ? target : null;",
+                    "return target;",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("resolver" in error and "exact-ID fingerprint" in error for error in result),
+            msg=f"expected exact Preview ID/kind resolver guard: {result}",
+        )
+
+    def test_chat_preview_conversation_id_rejects_duplicate_query_values(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/preview_conversation_identity.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "if (values == null || values.length != 1) return null;",
+                    "if (values == null || values.isEmpty) return null;",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("values.length != 1" in error for error in result),
+            msg=f"expected duplicate Preview query guard: {result}",
+        )
+
+    def test_chat_preview_conversation_route_cannot_default_to_group(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/app.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    ") ??\n                '',",
+                    ") ??\n                'glyph-hunters',",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("group/direct routes" in error and "exact-ID fingerprint" in error for error in result),
+            msg=f"expected missing-ID route guard: {result}",
+        )
+
+    def test_chat_preview_conversation_load_cannot_fallback_to_group(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_content.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace("_ => null,", "_ => _groupMessages,", 1),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("memory gateway" in error and "exact-ID fingerprint" in error for error in result),
+            msg=f"expected unknown Preview read guard: {result}",
+        )
+
+    def test_chat_preview_conversation_send_cannot_fallback_to_group(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_content.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            send_start = source.find("final target = switch (conversationId)")
+            mutated_tail = source[send_start:].replace(
+                "_ => null,", "_ => _groupMessages,", 1
+            )
+            path.write_text(
+                source[:send_start] + mutated_tail,
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("memory gateway" in error and "exact-ID fingerprint" in error for error in result),
+            msg=f"expected unknown Preview send guard: {result}",
+        )
+
+    def test_chat_preview_conversation_search_cannot_drop_scope(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_secondary_pages.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "conversationId: _scope?.id",
+                    "conversationId: null",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("message search" in error and "exact-ID fingerprint" in error for error in result),
+            msg=f"expected scoped Preview search guard: {result}",
+        )
+
+    def test_chat_preview_search_result_cannot_ignore_kind_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_secondary_pages.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "final target = resolvedTarget?.kind == result.kind ? resolvedTarget : null;",
+                    "final target = resolvedTarget;",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("message search" in error and "exact-ID fingerprint" in error for error in result),
+            msg=f"expected Preview search-result kind guard: {result}",
+        )
+
+    def test_chat_preview_inbox_cannot_route_by_kind_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_inbox_page.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            old = (
+                "final location = PreviewConversationIdentity.locationForSummary(\n"
+                "      conversationId: conversation.id,\n"
+                "      kind: conversation.kind,\n"
+                "    );"
+            )
+            new = (
+                "final location = conversation.kind == ConversationKind.direct\n"
+                "        ? '/chat/dm'\n"
+                "        : '/chat/group';"
+            )
+            path.write_text(source.replace(old, new, 1), encoding="utf-8")
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("Inbox navigation" in error and "exact-ID fingerprint" in error for error in result),
+            msg=f"expected exact Preview Inbox navigation guard: {result}",
+        )
+
+    def test_chat_preview_global_search_cannot_restore_mismatched_group(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "title: PreviewConversationIdentity.group.title,",
+                    "title: 'ETH Holders Lounge',",
+                    1,
+                ).replace(
+                    "onTap: () => context.push(PreviewConversationIdentity.group.location),",
+                    "onTap: () => context.push('/chat/group'),",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("global search" in error and "exact-ID fingerprint" in error for error in result),
+            msg=f"expected truthful Home Preview search guard: {result}",
+        )
+
+    def test_chat_preview_notification_cannot_drop_exact_group_id(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "onTap: () => context.push(PreviewConversationIdentity.group.location),",
+                    "onTap: () => context.push('/chat/group'),",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("notification target" in error and "exact-ID fingerprint" in error for error in result),
+            msg=f"expected exact Preview notification target guard: {result}",
+        )
+
+    def test_chat_preview_group_info_cannot_default_to_registered_group(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_secondary_pages.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            old = (
+                "final target = PreviewConversationIdentity.resolve(\n"
+                "      conversationId: widget.conversationId,\n"
+                "      kind: ConversationKind.group,\n"
+                "    );"
+            )
+            path.write_text(
+                source.replace(
+                    old,
+                    "final target = PreviewConversationIdentity.group;",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("group information" in error and "exact-ID fingerprint" in error for error in result),
+            msg=f"expected exact Preview Group Info guard: {result}",
+        )
+
+    def test_chat_preview_unavailable_page_cannot_offer_group_fallback(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/preview_conversation_unavailable_page.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "onPressed: () => context.go('/chat')",
+                    "onPressed: () => context.go('/chat/group?conversationId=glyph-hunters')",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("unavailable page" in error and "exact-ID fingerprint" in error for error in result),
+            msg=f"expected no-fallback Preview unavailable page guard: {result}",
+        )
+
+    def test_production_stream_cid_route_cannot_hide_correct_builder_in_dead_branch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/app.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            old = (
+                "builder: (context, state) =>\n"
+                "            StreamChatChannelRoutePage(cid: state.pathParameters['cid'] ?? ''),"
+            )
+            new = (
+                "builder: (context, state) => false\n"
+                "            ? StreamChatChannelRoutePage(cid: state.pathParameters['cid'] ?? '')\n"
+                "            : const StreamChatChannelRoutePage(cid: ''),"
+            )
+            path.write_text(source.replace(old, new, 1), encoding="utf-8")
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("Production Stream CID route" in error and "exact-ID fingerprint" in error for error in result),
+            msg=f"expected live production Stream CID route guard: {result}",
+        )
+
+    def test_chat_preview_conversation_id_evidence_cannot_be_hollowed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "test/chat_preview_conversation_identity_test.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "expect(read.isSuccess, isFalse);",
+                    "expect(true, isTrue);",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("executable evidence fingerprint" in error for error in result),
+            msg=f"expected non-hollow exact-ID evidence: {result}",
+        )
+
     def test_lock_parser_reads_exact_versions(self) -> None:
         versions = check_harness.lockfile_versions(
             'packages:\n  dio:\n    dependency: "direct main"\n    version: "5.11.0"\n'
