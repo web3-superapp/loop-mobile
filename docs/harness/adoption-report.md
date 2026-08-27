@@ -502,3 +502,32 @@ provider request, build, package, or device run is part of this slice.
 `scripts/check_harness.py` passed, all 150 Python mutation tests passed, the eight
 focused Chat inbox tests passed, changed-file analysis reported no issues, and
 the complete Flutter suite passed all 470 tests.
+
+## Chat Spot-Only Snapshot Closure
+
+On 2026-08-26, decision 0016 was extended to the reachable E9 Chat Preview.
+The former ETH position, LONG, Entry, Size, Return, copy-position and fake
+`Save setup` presentation is now one visibly labelled Spot market fixture. Its
+only enabled action opens `/market`; it cannot invent a Spot index, open a
+trade flow or degrade into a notice-only control. Watch remains disabled.
+Preview conversation and catalog copy also stop claiming that an address,
+transfer alert or shared trade was saved or active.
+
+The Harness bounds the E9 card, page, fixture content and evidence file with
+normalized reviewed-source fingerprints. It also closes the card over an
+approved non-interactive component set, allowlists the reviewed Spot Preview
+facts, requires exactly one Market action plus one disabled Watch control, and
+retains the production Preview-route guard. Exact widget assertions prove the
+fixture labels, absent legacy language, disabled Watch, `/market` navigation
+and 390-point layout at 2x Dynamic Type. Twenty-one new mutations cover old and
+alternate position language, literal or external buy-price/ROI facts, fake
+save, enabled Watch, no-op and drifting Market routes, direct, card-helper and
+page-helper gesture actions, English, localized and imported
+saved-address/alert claims, missing Preview attribution, hollow or unreachable
+evidence, both skip mechanisms and both assertion-shadowing forms.
+
+`scripts/check_harness.py` passed, all 171 Python mutation tests passed, the
+focused Chat/Preview/catalog/production-inbox suite passed all 19 tests,
+changed-file analysis reported no issues, and the complete Flutter suite passed
+all 473 tests. No HTTP/provider request, APK, application bundle, iOS build,
+package, simulator or physical-device run was performed.

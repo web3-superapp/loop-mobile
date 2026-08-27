@@ -55,3 +55,35 @@ the spot architecture is accepted. Before spot can be called connected, LOOP
 still needs decimal-safe spot models, a reviewed market-data source, an
 authenticated backend intent contract, balance and fee facts, idempotency and
 reconciliation behavior, and provider/device evidence.
+
+## Chat Preview Closure
+
+On 2026-08-26 the E9 asset-message Preview was brought under this decision.
+Its former position direction, entry, size, return, copy-position and fake
+`Save setup` language was not a harmless fixture: it kept an out-of-scope Perp
+product concept reachable from the normal offline Chat demonstration. The card
+now exposes only visibly labelled Spot fixture facts. Its single enabled action
+opens the public Spot market ledger at `/market`; it does not invent a provider
+index, open an order flow, or persist a Watch preference. Watch stays disabled.
+
+The same closure removes fixture conversation claims that an address was saved
+or a transfer alert was activated. Neither Watch persistence, Price Alerts nor
+provider activity delivery is connected by the Chat memory gateway. Generic
+class, enum, and route names containing `assetSnapshot` remain because they do
+not encode a Perp capability.
+
+Widget evidence covers the Spot-only language, disabled Watch control, exact
+Market navigation and 390-point layout at 2x Dynamic Type. Production still
+blocks `/preview/asset-message` through the existing Preview route guard.
+Harness mutations reject restored or alternate position language, literal or
+externally supplied buy-price/ROI facts, fake saved actions and localized or
+imported active-alert claims, route drift or a no-op Market action, direct,
+card-helper or page-helper interaction, removed Preview attribution, an enabled
+Watch control, and hollow, unreachable, skipped or assertion-shadowed behavior
+evidence. Normalized source fingerprints close the reviewed component, page,
+fixture-content and evidence boundaries against cross-file substitution.
+
+The focused Chat/Preview/catalog/production-inbox suite passed all 19 tests,
+the complete Flutter suite passed all 473 tests, changed-file analysis passed,
+the Harness passed, and all 171 Python mutation tests passed. No HTTP/provider
+request, build, package, simulator or physical-device run was performed.

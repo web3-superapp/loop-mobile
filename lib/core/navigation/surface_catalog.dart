@@ -475,7 +475,7 @@ abstract final class SurfaceCatalog {
       path: '/preview/asset-message',
       priority: ProductPriority.b,
       module: SurfaceModule.chat,
-      description: 'A shared trade snapshot without live-price persistence.',
+      description: 'A labelled Spot market Preview with no account, position, or execution meaning.',
       kind: SurfaceKind.component,
     ),
     AppSurface(

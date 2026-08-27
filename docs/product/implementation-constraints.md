@@ -34,6 +34,7 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 - The Stream attachment builder is synchronous and read-only. It must not fetch per historical message, build a second message/history source, or show stale cached facts as current. Until a separately bounded fresh backend facts projection exists, a valid production card displays `Current facts unavailable` with no Buy or Watch action.
 - A future facts projection must be independently freshness-bounded, attributable, cached outside Stream persistence, and cleared on stale/error. A future Buy entry must open the canonical backend-mediated review/intent flow; it never executes from attachment data.
 - Before production Token Card sending is enabled, the backend or Stream before-send policy must enforce the entire wire shape: one non-mixed card, no standard Attachment title/text/media/URL/action fields, and exactly the five v1 `extraData` keys. Flutter intercepts every raw `token_card` and hides malformed or mixed input, but a receiver cannot by itself guarantee what Stream stored.
+- The legacy E9 asset-message fixture is a visibly labelled Spot market Preview only. It may show fixture reference price, 24-hour change, and volume, but never position direction, entry, size, leverage, margin, PnL, return, copy-trading, order execution, saved-watch, or active-alert claims. Its only enabled action opens the public Spot market ledger; Watch remains disabled until a real owner-bound adapter is connected.
 
 ## Stream Video, UUID, and push truth
 

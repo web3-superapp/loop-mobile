@@ -186,17 +186,17 @@ class AssetMessagePreviewPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LoopPage(
-      eyebrow: 'Shared in chat',
-      title: 'Position snapshot',
-      subtitle: 'A compact view of a position at the moment someone shares it.',
+      eyebrow: 'Shared in chat · 开发预览',
+      title: 'Spot market snapshot',
+      subtitle: 'A labelled point-in-time fixture. Open Market for current public Testnet facts.',
       children: <Widget>[
-        const LoopContextRail(stage: LoopStage.discuss),
+        const LoopContextRail(stage: LoopStage.discuss, compact: true),
         const SizedBox(height: 20),
         const AssetSnapshotMessageCard(),
         const LoopSectionLabel('Snapshot boundaries'),
         const LoopStateCard(
-          title: 'The position does not update after sharing',
-          message: 'Entry, size, and return reflect the time on the card. Opening the market does not copy the position.',
+          title: 'Preview facts are not live',
+          message: 'Reference price, 24h change, and volume are labelled 演示数据. Opening Market loads a separate current public Spot snapshot.',
           icon: Icons.camera_alt_outlined,
           tone: LoopTone.market,
         ),
@@ -205,11 +205,11 @@ class AssetMessagePreviewPage extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Column(
             children: <Widget>[
-              LoopKeyValueRow(label: 'Direction', value: 'Long'),
-              LoopKeyValueRow(label: 'Entry', value: r'$3,428'),
-              LoopKeyValueRow(label: 'Size', value: '0.72 ETH'),
+              LoopKeyValueRow(label: 'Market type', value: 'Spot'),
+              LoopKeyValueRow(label: 'Reference price', value: r'$3,428'),
+              LoopKeyValueRow(label: '24h volume at share', value: r'$128.4M'),
               LoopKeyValueRow(
-                label: 'Return when shared',
+                label: '24h change at share',
                 value: '+3.8%',
                 tone: LoopTone.positive,
                 last: true,

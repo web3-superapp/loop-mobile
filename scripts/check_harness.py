@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import plistlib
 import re
@@ -75,6 +76,7 @@ REQUIRED_FILES = (
     "docs/failures/privy-android-compile-sdk.md",
     "docs/failures/principal-agnostic-wallet-single-flight.md",
     "docs/failures/production-chat-preview-route-leak.md",
+    "docs/failures/perp-semantics-in-chat-preview.md",
     "docs/failures/sqlite3-native-hook-download.md",
     "docs/failures/swiftpm-file-picker-cold-cache.md",
     "docs/harness/adoption-report.md",
@@ -119,6 +121,7 @@ REQUIRED_FILES = (
     "lib/integrations/backend/loop_perp_repository.dart",
     "lib/integrations/backend/loop_perp_session.dart",
     "test/app_notification_coordinator_test.dart",
+    "test/chat_spot_snapshot_test.dart",
     "test/loop_notification_coordinator_test.dart",
     "test/loop_notification_router_test.dart",
     "test/development_preview_experience_test.dart",
@@ -880,6 +883,13 @@ def strip_dart_comments(text: str) -> str:
         output.append(text[index])
         index += 1
     return "".join(output)
+
+
+def normalized_dart_source_fingerprint(text: str) -> str:
+    """Fingerprint a reviewed Dart slice without comment or layout noise."""
+
+    normalized = re.sub(r"\s+", " ", strip_dart_comments(text)).strip()
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
 def strip_dart_comments_and_strings(text: str) -> str:
@@ -1839,6 +1849,542 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
                 "Mounted Market must construct exactly one token-detail route "
                 "from the admitted row's exact spotIndex"
             )
+    return errors
+
+
+CHAT_SPOT_SNAPSHOT_TEST_MARKERS = {
+    Path("test/chat_spot_snapshot_test.dart"): (
+        "chat preview asset snapshot is spot-only and labels fixture facts",
+        "chat preview spot card opens the public Spot market ledger",
+        "chat Spot snapshot supports 390pt at 2x Dynamic Type",
+    ),
+}
+CHAT_SPOT_SNAPSHOT_SOURCE_FINGERPRINTS = {
+    "card": "e2adf5c9590d6c07bcc023439952cbbe9317ec642eeddef8a4ca9f3b6de7634c",
+    "page": "3ef6f193083f4c829553570849783cf9fa515a8d721fc3f1ebf93dd3d8c69e7d",
+    "content": "3137b2ee53f05f1399452dc235a3ead721603cd7f86e46300fecad9aa33044cd",
+    "test": "e86591e57116d3249f25f8e2571d0ceffa29024cfe7d58b9985765cccff9648e",
+}
+
+
+def check_chat_spot_snapshot_contract(root: Path) -> list[str]:
+    """Keep the reachable E9 Chat fixture labelled, Spot-only, and non-mutating."""
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/features/chat/widgets/chat_components.dart": (
+                "ValueKey<String>('chat-spot-snapshot-semantics')",
+                "ValueKey<String>('chat-spot-snapshot-card')",
+                "label: 'ETH Spot market snapshot · 开发预览'",
+                "'ETH spot market snapshot'",
+                "'Shared at 14:12 · 演示数据'",
+                "label: 'SPOT PREVIEW'",
+                "ValueKey<String>('chat-spot-market-entry')",
+                "onPressed: () => context.go('/market')",
+                "label: const Text('Open Spot markets')",
+                "ValueKey<String>('chat-spot-watch-unavailable')",
+                "label: const Text('Watch unavailable')",
+            ),
+            "lib/features/chat/chat_preview_pages.dart": (
+                "title: 'Spot market snapshot'",
+                "Shared in chat · 开发预览",
+                "const LoopContextRail(stage: LoopStage.discuss, compact: true)",
+                "Reference price, 24h change, and volume are labelled 演示数据.",
+                "LoopKeyValueRow(label: 'Market type', value: 'Spot')",
+            ),
+            "lib/features/chat/chat_content.dart": (
+                "Weekly spot market roundtable",
+                "transfer alerts are not connected in this preview.",
+            ),
+            "lib/core/navigation/surface_catalog.dart": (
+                "A labelled Spot market Preview with no account, position, or execution meaning.",
+            ),
+            "test/chat_spot_snapshot_test.dart": (
+                "chat preview asset snapshot is spot-only and labels fixture facts",
+                "chat preview spot card opens the public Spot market ledger",
+                "chat Spot snapshot supports 390pt at 2x Dynamic Type",
+                "find.text('ETH position snapshot'), findsNothing",
+                "find.text('Save setup'), findsNothing",
+                "expect(semantics.properties.label, 'ETH Spot market snapshot · 开发预览')",
+                "expect(watchButton.onPressed, isNull)",
+                "find.byKey(const ValueKey<String>('public-spot-market-ledger'))",
+                "TextScaler.linear(textScale)",
+                "expect(tester.takeException(), isNull)",
+            ),
+            "test/chat_preview_route_guard_test.dart": (
+                "production legacy Chat routes never mount preview fixtures",
+                "'/preview/asset-message'",
+                "find.byKey(const ValueKey<String>('chat-preview-route-blocked'))",
+            ),
+            "docs/product/implementation-constraints.md": (
+                "The legacy E9 asset-message fixture is a visibly labelled Spot market Preview only.",
+                "Its only enabled action opens the public Spot market ledger",
+            ),
+            "docs/decisions/0016-make-primary-market-spot-only.md": (
+                "## Chat Preview Closure",
+                "opens the public Spot market ledger at `/market`",
+            ),
+            "docs/failures/perp-semantics-in-chat-preview.md": (
+                "## Root Cause",
+                "## Detection",
+                "## Prevention",
+                "## Evidence",
+            ),
+        },
+    )
+
+    component_path = root / "lib/features/chat/widgets/chat_components.dart"
+    page_path = root / "lib/features/chat/chat_preview_pages.dart"
+    guarded_slices: list[tuple[str, str]] = []
+    card_source = ""
+    if component_path.is_file():
+        source = strip_dart_comments(read_text(component_path))
+        start = source.find("class AssetSnapshotMessageCard")
+        end = source.find("class ChatComposer", start + 1)
+        if start < 0 or end < 0:
+            errors.append(
+                "Chat E9 must retain one bounded AssetSnapshotMessageCard implementation"
+            )
+        else:
+            card_source = source[start:end]
+            guarded_slices.append((str(component_path.relative_to(root)), card_source))
+            if normalized_dart_source_fingerprint(card_source) != (
+                CHAT_SPOT_SNAPSHOT_SOURCE_FINGERPRINTS["card"]
+            ):
+                errors.append(
+                    "Chat Spot Preview card must match its reviewed closed-source fingerprint"
+                )
+
+            executable_card = strip_dart_comments_and_strings(card_source)
+            expected_component_calls = frozenset(
+                {
+                    "AssetSnapshotMessageCard",
+                    "Column",
+                    "EdgeInsets.all",
+                    "Expanded",
+                    "Icon",
+                    "LayoutBuilder",
+                    "LoopAssetMark",
+                    "LoopCard",
+                    "LoopMetric",
+                    "LoopMiniChart",
+                    "LoopStatusPill",
+                    "MediaQuery.textScalerOf",
+                    "OutlinedButton.icon",
+                    "Row",
+                    "Semantics",
+                    "SizedBox",
+                    "Text",
+                    "Theme.of",
+                    "ValueKey",
+                    "_SpotSnapshotMetrics",
+                }
+            )
+            component_calls = frozenset(
+                re.findall(
+                    r"\b([A-Z_]\w*(?:\.[A-Za-z_]\w*)?)"
+                    r"\s*(?:<[^(){};]+>)?\s*\(",
+                    executable_card,
+                )
+            )
+            bare_lower_calls = frozenset(
+                re.findall(
+                    r"(?<![.\w])([a-z_]\w*)\s*(?:<[^(){};]+>)?\s*\(",
+                    executable_card,
+                )
+            )
+            qualified_lower_calls = frozenset(
+                re.findall(
+                    r"\b([a-z_]\w*\.[a-z_]\w*)\s*\(", executable_card
+                )
+            )
+            chained_calls = frozenset(
+                re.findall(r"\)\s*\.\s*([a-z_]\w*)\s*\(", executable_card)
+            )
+            if (
+                component_calls != expected_component_calls
+                or not bare_lower_calls.issubset(
+                    {"build", "for", "if", "_SpotSnapshotMetrics"}
+                )
+                or not qualified_lower_calls.issubset({"context.go"})
+                or not chained_calls.issubset({"scale"})
+            ):
+                errors.append(
+                    "Chat Spot Preview composition must stay closed over its approved non-interactive component set"
+                )
+            callback_properties = re.findall(
+                r"\b(on[A-Z]\w*)\s*:", executable_card
+            )
+            if callback_properties != ["onPressed", "onPressed"]:
+                errors.append(
+                    "Chat Spot Preview must own exactly one Market action and one disabled Watch control without another interaction callback"
+                )
+            forbidden_interactive_widgets = (
+                "GestureDetector(",
+                "InkWell(",
+                "InkResponse(",
+                "Listener(",
+                "MouseRegion(",
+                "Dismissible(",
+                "Draggable(",
+                "LongPressDraggable(",
+                "Shortcuts(",
+                "Actions(",
+                "FocusableActionDetector(",
+            )
+            if any(
+                marker in executable_card for marker in forbidden_interactive_widgets
+            ):
+                errors.append(
+                    "Chat Spot Preview cannot add a second gesture, keyboard, pointer, or dismiss action"
+                )
+            if card_source.count("context.go('/market')") != 1:
+                errors.append(
+                    "Chat Spot Preview must navigate to the public `/market` ledger exactly once"
+                )
+            if any(
+                marker in card_source
+                for marker in (
+                    "context.push(",
+                    "context.push<",
+                    "SpotMarketRoute.location(",
+                    "/market/token",
+                    "_showNotice(",
+                )
+            ):
+                errors.append(
+                    "Chat Spot Preview Market entry cannot invent a detail route, execute, or become a notice-only action"
+                )
+            watch_pattern = re.compile(
+                r"ValueKey<String>\('chat-spot-watch-unavailable'\)"
+                r"[\s\S]{0,180}?onPressed:\s*null\b"
+            )
+            if watch_pattern.search(card_source) is None:
+                errors.append(
+                    "Chat Spot Preview Watch control must remain explicitly disabled"
+                )
+
+    if page_path.is_file():
+        source = strip_dart_comments(read_text(page_path))
+        start = source.find("class AssetMessagePreviewPage")
+        if start < 0:
+            errors.append("Chat E9 must retain its guarded Preview page")
+        else:
+            next_class = re.search(r"\nclass\s+[A-Za-z_]\w*", source[start + 1 :])
+            end = (
+                start + 1 + next_class.start()
+                if next_class is not None
+                else len(source)
+            )
+            page_source = source[start:end]
+            guarded_slices.append((str(page_path.relative_to(root)), page_source))
+            if normalized_dart_source_fingerprint(page_source) != (
+                CHAT_SPOT_SNAPSHOT_SOURCE_FINGERPRINTS["page"]
+            ):
+                errors.append(
+                    "Chat E9 page must match its reviewed closed-source fingerprint"
+                )
+            page_callbacks = re.findall(
+                r"\b(on[A-Z]\w*)\s*:",
+                strip_dart_comments_and_strings(page_source),
+            )
+            if page_callbacks:
+                errors.append(
+                    "Chat E9 Preview page cannot wrap the Spot card in another interaction callback"
+                )
+
+    internal_string_values = frozenset(
+        {
+            "chat-spot-market-entry",
+            "chat-spot-watch-unavailable",
+            "chat-spot-snapshot-card",
+            "chat-spot-snapshot-semantics",
+        }
+    )
+    allowed_visible_values = {
+        "lib/features/chat/widgets/chat_components.dart": frozenset(
+            {
+                "chat-spot-snapshot-semantics",
+                "ETH Spot market snapshot · 开发预览",
+                "chat-spot-snapshot-card",
+                "ETH",
+                "ETH spot market snapshot",
+                "Shared at 14:12 · 演示数据",
+                "SPOT PREVIEW",
+                "ETH spot preview trend at the time it was shared",
+                "chat-spot-market-entry",
+                "/market",
+                "Open Spot markets",
+                "chat-spot-watch-unavailable",
+                "Watch unavailable",
+                "Reference",
+                "$3,428",
+                "24h change",
+                "+3.8%",
+                "24h volume",
+                "$128.4M",
+            }
+        ),
+        "lib/features/chat/chat_preview_pages.dart": frozenset(
+            {
+                "Shared in chat · 开发预览",
+                "Spot market snapshot",
+                "A labelled point-in-time fixture. Open Market for current public Testnet facts.",
+                "Snapshot boundaries",
+                "Preview facts are not live",
+                "Reference price, 24h change, and volume are labelled 演示数据. Opening Market loads a separate current public Spot snapshot.",
+                "Market type",
+                "Spot",
+                "Reference price",
+                "$3,428",
+                "24h volume at share",
+                "$128.4M",
+                "24h change at share",
+                "+3.8%",
+            }
+        ),
+    }
+    prohibited_visible_patterns = (
+        re.compile(
+            r"\b(?:perp(?:etuals?)?|positions?|leverage|margin|pnl|roe|"
+            r"liquidation|entry|size|returns?|profit|loss|orders?|"
+            r"copy[- ]?trad(?:e|ing))\b",
+            re.IGNORECASE,
+        ),
+        re.compile(
+            r"^(?:long|short)$|\b(?:go|going|went)\s+(?:long|short)\b|"
+            r"\b(?:long|short)\s+(?:position|setup|trade)\b",
+            re.IGNORECASE,
+        ),
+        re.compile(
+            r"持仓|仓位|做多|做空|杠杆|保证金|盈亏|收益率|爆仓|强平|"
+            r"跟单|开仓|平仓|入场价"
+        ),
+        re.compile(
+            r"\b(?:save setup|setup saved|order submitted|trade executed)\b",
+            re.IGNORECASE,
+        ),
+    )
+    for relative, guarded_source in guarded_slices:
+        for content in dart_concatenated_string_contents(guarded_source):
+            normalized = " ".join(content.split())
+            if normalized not in allowed_visible_values[relative]:
+                errors.append(
+                    f"{relative} E9 visible content must use the reviewed Spot Preview fact allowlist, not `{normalized}`"
+                )
+            if normalized in internal_string_values:
+                continue
+            if any(pattern.search(normalized) for pattern in prohibited_visible_patterns):
+                errors.append(
+                    f"{relative} E9 visible content must remain Spot-only without `{normalized}`"
+                )
+
+    content_path = root / "lib/features/chat/chat_content.dart"
+    if content_path.is_file():
+        content_source = read_text(content_path)
+        content_start = content_source.find("abstract final class ChatContent")
+        content_end = content_source.find(
+            "class MemoryCommunicationGateway", content_start + 1
+        )
+        if content_start < 0 or content_end < 0:
+            errors.append("Chat fixture content must retain one bounded source slice")
+        elif normalized_dart_source_fingerprint(
+            content_source[content_start:content_end]
+        ) != CHAT_SPOT_SNAPSHOT_SOURCE_FINGERPRINTS["content"]:
+            errors.append(
+                "Chat fixture content must match its reviewed closed-source fingerprint"
+            )
+        sensitive_fixture_topic = re.compile(
+            r"\baddress(?:es)?\b|\balerts?\b|\bmonitor(?:ing|ed)?\b|"
+            r"地址|提醒|监(?:控|测)|收藏",
+            re.IGNORECASE,
+        )
+        approved_sensitive_fixture_copy = frozenset(
+            {
+                "I’m reviewing the address manually; transfer alerts are not connected in this preview.",
+                "I found the same treasury movement. Want the address?",
+            }
+        )
+        saved_address_claim = re.compile(
+            r"\b(?:saved|stored|bookmarked)\b.{0,40}\baddress\b|"
+            r"\baddress\b.{0,40}\b(?:saved|stored|bookmarked)\b",
+            re.IGNORECASE,
+        )
+        positive_alert_claim = re.compile(
+            r"\b(?:set|saved|enabled|activated)\b.{0,40}"
+            r"\b(?:alerts?|monitoring)\b|"
+            r"\b(?:alerts?|monitoring)\b.{0,40}"
+            r"\b(?:active|enabled|connected|saved|set)\b",
+            re.IGNORECASE,
+        )
+        negative_alert_state = re.compile(
+            r"\b(?:alerts?|monitoring)\b.{0,24}\b(?:not|never)\b.{0,24}"
+            r"\b(?:active|available|connected|enabled|saved|set)\b",
+            re.IGNORECASE,
+        )
+        positioning_claim = re.compile(r"\bpositioning roundtable\b", re.IGNORECASE)
+        for content in dart_concatenated_string_contents(read_text(content_path)):
+            normalized = " ".join(content.split())
+            claims_capability = bool(
+                (
+                    sensitive_fixture_topic.search(normalized)
+                    and normalized not in approved_sensitive_fixture_copy
+                )
+                or saved_address_claim.search(normalized)
+                or positioning_claim.search(normalized)
+                or (
+                    positive_alert_claim.search(normalized)
+                    and not negative_alert_state.search(normalized)
+                )
+            )
+            if claims_capability:
+                errors.append(
+                    "Chat Preview conversation cannot claim Perp positioning, saved addresses, or active alerts: "
+                    f"`{normalized}`"
+                )
+
+    errors.extend(check_behavior_test_evidence(root, CHAT_SPOT_SNAPSHOT_TEST_MARKERS))
+
+    test_path = root / "test/chat_spot_snapshot_test.dart"
+    if test_path.is_file():
+        raw_test_source = read_text(test_path)
+        if normalized_dart_source_fingerprint(raw_test_source) != (
+            CHAT_SPOT_SNAPSHOT_SOURCE_FINGERPRINTS["test"]
+        ):
+            errors.append(
+                "test/chat_spot_snapshot_test.dart must match its reviewed executable evidence fingerprint"
+            )
+        test_source = strip_dart_comments(raw_test_source)
+        executable_test_source = strip_dart_comments_and_strings(test_source)
+        if re.search(
+            r"\b(?:skip\s*:|markTestSkipped\s*\()", executable_test_source
+        ):
+            errors.append(
+                "test/chat_spot_snapshot_test.dart contract tests cannot be skipped"
+            )
+
+        protected_test_symbols = frozenset({"expect", "test", "testWidgets"})
+        shadowed_functions: set[str] = set()
+        for match in re.finditer(
+            r"\b(" + "|".join(sorted(protected_test_symbols)) + r")\s*\(",
+            executable_test_source,
+        ):
+            opening = executable_test_source.find("(", match.start())
+            depth = 0
+            closing = -1
+            for index in range(opening, len(executable_test_source)):
+                character = executable_test_source[index]
+                if character == "(":
+                    depth += 1
+                elif character == ")":
+                    depth -= 1
+                    if depth == 0:
+                        closing = index
+                        break
+            if closing < 0:
+                continue
+            tail = executable_test_source[closing + 1 :].lstrip()
+            if tail.startswith("async"):
+                tail = tail[len("async") :].lstrip()
+            if tail.startswith("{") or tail.startswith("=>"):
+                shadowed_functions.add(match.group(1))
+        shadowed_bindings = set(
+            re.findall(
+                r"\b(expect|test|testWidgets)\s*=",
+                executable_test_source,
+            )
+        )
+        shadowed_getters = set(
+            re.findall(
+                r"\bget\s+(expect|test|testWidgets)\b", executable_test_source
+            )
+        )
+        shadowed_symbols = shadowed_functions | shadowed_bindings | shadowed_getters
+        if shadowed_symbols:
+            errors.append(
+                "test/chat_spot_snapshot_test.dart cannot shadow flutter_test evidence symbols: "
+                + ", ".join(sorted(shadowed_symbols))
+            )
+        test_starts = [
+            match.start()
+            for match in re.finditer(r"\btest(?:Widgets)?\s*\(", test_source)
+        ]
+
+        def named_test_body(marker: str) -> str | None:
+            declaration = re.search(
+                r"\btest(?:Widgets)?\s*\(\s*(['\"])"
+                + re.escape(marker)
+                + r"\1\s*,",
+                test_source,
+                re.DOTALL,
+            )
+            if declaration is None:
+                return None
+            next_test = next(
+                (start for start in test_starts if start > declaration.start()),
+                len(test_source),
+            )
+            segment = test_source[declaration.end() : next_test]
+            executable_segment = strip_dart_comments_and_strings(segment)
+            opening = executable_segment.find("{")
+            if opening < 0:
+                return segment
+            depth = 0
+            for index in range(opening, len(executable_segment)):
+                character = executable_segment[index]
+                if character == "{":
+                    depth += 1
+                elif character == "}":
+                    depth -= 1
+                    if depth == 0:
+                        return segment[opening + 1 : index]
+            return segment[opening + 1 :]
+
+        exact_assertions = {
+            "chat preview asset snapshot is spot-only and labels fixture facts": (
+                r"expect\s*\(\s*find\.text\s*\(\s*'SPOT PREVIEW'\s*\)\s*,\s*findsOneWidget\s*\)",
+                r"expect\s*\(\s*find\.text\s*\(\s*'Shared at 14:12 · 演示数据'\s*\)\s*,\s*findsOneWidget\s*\)",
+                r"tester\.widget<Semantics>\s*\(\s*find\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(\s*'chat-spot-snapshot-semantics'\s*\)",
+                r"expect\s*\(\s*semantics\.properties\.label\s*,\s*'ETH Spot market snapshot · 开发预览'\s*\)",
+                r"expect\s*\(\s*find\.text\s*\(\s*'ETH position snapshot'\s*\)\s*,\s*findsNothing\s*\)",
+                r"expect\s*\(\s*find\.text\s*\(\s*'LONG'\s*\)\s*,\s*findsNothing\s*\)",
+                r"expect\s*\(\s*find\.text\s*\(\s*'Entry'\s*\)\s*,\s*findsNothing\s*\)",
+                r"expect\s*\(\s*find\.text\s*\(\s*'Save setup'\s*\)\s*,\s*findsNothing\s*\)",
+                r"expect\s*\(\s*watchButton\.onPressed\s*,\s*isNull\s*\)",
+            ),
+            "chat preview spot card opens the public Spot market ledger": (
+                r"tester\.tap\s*\(\s*find\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(\s*'chat-spot-market-entry'\s*\)",
+                r"expect\s*\(\s*find\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(\s*'public-spot-market-ledger'\s*\)\s*\)\s*,\s*findsOneWidget",
+            ),
+            "chat Spot snapshot supports 390pt at 2x Dynamic Type": (
+                r"_pumpSpotPreview\s*\(\s*tester\s*,\s*textScale:\s*2\s*\)",
+                r"expect\s*\(\s*tester\.takeException\s*\(\s*\)\s*,\s*isNull\s*\)",
+            ),
+        }
+        for marker, patterns in exact_assertions.items():
+            body = named_test_body(marker)
+            if body is None:
+                continue
+            missing_assertion = any(
+                re.search(pattern, body, re.DOTALL) is None for pattern in patterns
+            )
+            executable_body = strip_dart_comments_and_strings(body)
+            has_nested_or_conditional_evidence = bool(
+                re.search(
+                    r"\b(?:if|for|while|switch|try|catch|return|throw)\b",
+                    executable_body,
+                )
+                or "{" in executable_body
+                or "}" in executable_body
+                or "=>" in executable_body
+                or "?" in executable_body
+            )
+            if missing_assertion or has_nested_or_conditional_evidence:
+                errors.append(
+                    "test/chat_spot_snapshot_test.dart test "
+                    f"`{marker}` must execute its exact Spot-only assertions directly"
+                )
     return errors
 
 
@@ -4751,6 +5297,7 @@ def validate(root: Path = ROOT) -> list[str]:
         errors.extend(check_profile(root, profile))
     errors.extend(check_dependency_pins(root))
     errors.extend(check_spot_only_product_contract(root))
+    errors.extend(check_chat_spot_snapshot_contract(root))
     errors.extend(check_spot_candle_contract(root))
     errors.extend(check_wallet_identity_readiness_contract(root))
     errors.extend(check_wallet_preview_route_contract(root))
@@ -4789,7 +5336,7 @@ def main() -> int:
         return 1
     print(
         "Harness check passed: profile, six-destination contract, pins, "
-        "Spot-only product, bounded candle, Wallet identity, Wallet route, local draft, "
+        "Spot-only product and Chat snapshot, bounded candle, Wallet identity, Wallet route, local draft, "
         "providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, records, and secret rules are consistent."
     )

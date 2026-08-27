@@ -740,89 +740,116 @@ class AssetSnapshotMessageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LoopCard(
-      tone: LoopTone.market,
-      accent: true,
-      padding: const EdgeInsets.all(15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              const LoopAssetMark(symbol: 'ETH'),
-              const SizedBox(width: 11),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'ETH position snapshot',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'Shared at 14:12',
-                      style: Theme.of(context).textTheme.labelMedium,
-                    ),
-                  ],
-                ),
-              ),
-              const LoopStatusPill(
-                label: 'LONG',
-                tone: LoopTone.positive,
-                icon: Icons.north_east_rounded,
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-          const Row(
-            children: <Widget>[
-              Expanded(
-                child: LoopMetric(label: 'Entry', value: r'$3,428'),
-              ),
-              Expanded(
-                child: LoopMetric(label: 'Size', value: '0.72 ETH'),
-              ),
-              Expanded(
-                child: LoopMetric(
-                  label: 'At share',
-                  value: '+3.8%',
-                  tone: LoopTone.positive,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-          const LoopMiniChart(
-            points: <double>[42, 43, 42.4, 44, 45.8, 45.1, 47.3, 48.2],
-            color: LoopColors.market,
-            height: 42,
-            semanticLabel: 'ETH position trend at the time it was shared',
-          ),
-          const SizedBox(height: 13),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => _showNotice(
-                    context,
-                    'Opening the market does not copy this position.',
+    return Semantics(
+      key: const ValueKey<String>('chat-spot-snapshot-semantics'),
+      container: true,
+      label: 'ETH Spot market snapshot · 开发预览',
+      child: LoopCard(
+        key: const ValueKey<String>('chat-spot-snapshot-card'),
+        tone: LoopTone.market,
+        accent: true,
+        padding: const EdgeInsets.all(15),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const LoopAssetMark(symbol: 'ETH'),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'ETH spot market snapshot',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Shared at 14:12 · 演示数据',
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
+                    ],
                   ),
-                  child: const Text('View market'),
                 ),
-              ),
-              const SizedBox(width: 9),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () =>
-                      _showNotice(context, 'Setup saved for review.'),
-                  child: const Text('Save setup'),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const LoopStatusPill(
+              label: 'SPOT PREVIEW',
+              tone: LoopTone.conversation,
+              icon: Icons.visibility_outlined,
+            ),
+            const SizedBox(height: 15),
+            const _SpotSnapshotMetrics(),
+            const SizedBox(height: 15),
+            const LoopMiniChart(
+              points: <double>[42, 43, 42.4, 44, 45.8, 45.1, 47.3, 48.2],
+              color: LoopColors.market,
+              height: 42,
+              semanticLabel: 'ETH spot preview trend at the time it was shared',
+            ),
+            const SizedBox(height: 13),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                OutlinedButton.icon(
+                  key: const ValueKey<String>('chat-spot-market-entry'),
+                  onPressed: () => context.go('/market'),
+                  icon: const Icon(Icons.candlestick_chart_outlined, size: 18),
+                  label: const Text('Open Spot markets'),
                 ),
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(height: 9),
+                OutlinedButton.icon(
+                  key: const ValueKey<String>('chat-spot-watch-unavailable'),
+                  onPressed: null,
+                  icon: const Icon(Icons.bookmark_add_outlined, size: 18),
+                  label: const Text('Watch unavailable'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _SpotSnapshotMetrics extends StatelessWidget {
+  const _SpotSnapshotMetrics();
+
+  static const _metrics = <Widget>[
+    LoopMetric(label: 'Reference', value: r'$3,428'),
+    LoopMetric(label: '24h change', value: '+3.8%'),
+    LoopMetric(label: '24h volume', value: r'$128.4M'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final usesVerticalLayout =
+            constraints.maxWidth < 320 ||
+            MediaQuery.textScalerOf(context).scale(16) > 24;
+        if (usesVerticalLayout) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              for (var index = 0; index < _metrics.length; index++) ...<Widget>[
+                _metrics[index],
+                if (index != _metrics.length - 1) const SizedBox(height: 12),
+              ],
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            for (final metric in _metrics) Expanded(child: metric),
+          ],
+        );
+      },
     );
   }
 }

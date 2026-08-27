@@ -20,7 +20,7 @@ abstract final class ChatContent {
     ConversationSummary(
       id: voiceRoomId,
       title: 'ETH Macro Room',
-      preview: 'Weekly positioning roundtable',
+      preview: 'Weekly spot market roundtable',
       timeLabel: 'Preview',
       kind: ConversationKind.voice,
       unreadCount: 3,
@@ -108,7 +108,7 @@ abstract final class ChatContent {
       senderAlias: currentAlias,
       timeLabel: '13:44',
       kind: MessageKind.text,
-      text: 'Yes. I saved the address and set an alert for outbound transfers.',
+      text: 'I’m reviewing the address manually; transfer alerts are not connected in this preview.',
       isMine: true,
     ),
     ConversationMessage(
@@ -126,7 +126,7 @@ abstract final class ChatContent {
     id: voiceRoomId,
     groupId: groupId,
     title: 'ETH Macro Room',
-    topic: 'Weekly positioning roundtable',
+    topic: 'Weekly spot market roundtable',
     listenerCount: 84,
     speakerCount: 4,
     participants: <VoiceParticipant>[

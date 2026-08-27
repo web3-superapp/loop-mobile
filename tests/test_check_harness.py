@@ -762,6 +762,520 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected Spot detail navigation guard: {result}",
         )
 
+    def test_chat_spot_snapshot_cannot_restore_position_language(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/widgets/chat_components.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "ETH spot market snapshot",
+                    "ETH position snapshot",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("visible content must remain Spot-only" in error for error in result),
+            msg=f"expected Chat position-language guard: {result}",
+        )
+
+    def test_chat_spot_snapshot_rejects_alternate_position_terms(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/widgets/chat_components.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace("label: 'Reference'", "label: 'Entry price'")
+                .replace("label: '24h change'", "label: 'Total return'"),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("visible content must remain Spot-only" in error for error in result),
+            msg=f"expected alternate Chat position-language guard: {result}",
+        )
+
+    def test_chat_spot_snapshot_cannot_restore_fake_save(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/widgets/chat_components.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            watch_key = "ValueKey<String>('chat-spot-watch-unavailable')"
+            start = source.index(watch_key)
+            before = source[:start]
+            watch = source[start:]
+            watch = watch.replace(
+                "onPressed: null",
+                "onPressed: () => _showNotice(context, 'Setup saved for review.')",
+                1,
+            ).replace("Watch unavailable", "Save setup", 1)
+            path.write_text(before + watch, encoding="utf-8")
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any(
+                "notice-only action" in error
+                or "visible content must remain Spot-only" in error
+                for error in result
+            ),
+            msg=f"expected Chat fake-save guard: {result}",
+        )
+
+    def test_chat_spot_snapshot_watch_must_remain_disabled(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/widgets/chat_components.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            watch_key = "ValueKey<String>('chat-spot-watch-unavailable')"
+            start = source.index(watch_key)
+            before = source[:start]
+            watch = source[start:].replace("onPressed: null", "onPressed: () {}", 1)
+            path.write_text(before + watch, encoding="utf-8")
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("Watch control must remain explicitly disabled" in error for error in result),
+            msg=f"expected disabled Chat Watch guard: {result}",
+        )
+
+    def test_chat_spot_snapshot_market_action_cannot_become_noop(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/widgets/chat_components.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "onPressed: () => context.go('/market')",
+                    "onPressed: () {}",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("public `/market` ledger exactly once" in error for error in result),
+            msg=f"expected exact Chat Market action guard: {result}",
+        )
+
+    def test_chat_spot_snapshot_market_route_cannot_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/widgets/chat_components.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace("context.go('/market')", "context.go('/market/token')"),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any(
+                "public `/market` ledger exactly once" in error
+                or "invent a detail route" in error
+                for error in result
+            ),
+            msg=f"expected Chat Market route-drift guard: {result}",
+        )
+
+    def test_chat_spot_snapshot_rejects_a_second_gesture_action(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/widgets/chat_components.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "const SizedBox(height: 9),",
+                    "GestureDetector(\n"
+                    "  onTap: () => context.go('/market/trade'),\n"
+                    "  child: const Text('Trade ETH'),\n"
+                    "),\n"
+                    "const SizedBox(height: 9),",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any(
+                "another interaction callback" in error
+                or "second gesture" in error
+                for error in result
+            ),
+            msg=f"expected additive Chat gesture guard: {result}",
+        )
+
+    def test_chat_spot_snapshot_rejects_interaction_hidden_in_helper(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/widgets/chat_components.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            source = source.replace(
+                "class AssetSnapshotMessageCard extends StatelessWidget {",
+                "class _ExtraTapSurface extends StatelessWidget {\n"
+                "  const _ExtraTapSurface();\n"
+                "  @override\n"
+                "  Widget build(BuildContext context) => GestureDetector(\n"
+                "    onTap: () => context.go('/market/trade'),\n"
+                "    child: const Text('Trade ETH'),\n"
+                "  );\n"
+                "}\n\n"
+                "class AssetSnapshotMessageCard extends StatelessWidget {",
+            ).replace(
+                "            const SizedBox(height: 13),",
+                "            const _ExtraTapSurface(),\n"
+                "            const SizedBox(height: 13),",
+                1,
+            )
+            path.write_text(source, encoding="utf-8")
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("composition must stay closed" in error for error in result),
+            msg=f"expected transitive Chat interaction guard: {result}",
+        )
+
+    def test_chat_spot_snapshot_rejects_interaction_hidden_from_page(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_preview_pages.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            source = source.replace(
+                "class AssetMessagePreviewPage extends StatelessWidget {",
+                "class _PageTapSurface extends StatelessWidget {\n"
+                "  const _PageTapSurface();\n"
+                "  @override\n"
+                "  Widget build(BuildContext context) => GestureDetector(\n"
+                "    onTap: () => context.go('/market/trade'),\n"
+                "    child: const Text('Trade ETH'),\n"
+                "  );\n"
+                "}\n\n"
+                "class AssetMessagePreviewPage extends StatelessWidget {",
+            ).replace(
+                "        const AssetSnapshotMessageCard(),",
+                "        const AssetSnapshotMessageCard(),\n"
+                "        const _PageTapSurface(),",
+                1,
+            )
+            path.write_text(source, encoding="utf-8")
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("page must match its reviewed closed-source" in error for error in result),
+            msg=f"expected closed E9 page interaction guard: {result}",
+        )
+
+    def test_chat_spot_snapshot_rejects_buy_price_and_roi_terms(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/widgets/chat_components.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace("label: 'Reference'", "label: 'Average buy price'")
+                .replace("label: '24h change'", "label: 'ROI'"),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("reviewed Spot Preview fact allowlist" in error for error in result),
+            msg=f"expected positive Chat fact allowlist guard: {result}",
+        )
+
+    def test_chat_spot_snapshot_rejects_external_fact_constants(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/widgets/chat_components.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "label: 'Reference'",
+                    "label: unsupportedAverageBuyPriceLabel",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("card must match its reviewed closed-source" in error for error in result),
+            msg=f"expected external Chat fact-constant guard: {result}",
+        )
+
+    def test_chat_preview_cannot_claim_saved_address_or_active_alert(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_content.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "I’m reviewing the address manually; transfer alerts are not connected in this preview.",
+                    "Address saved; transfer monitoring is active.",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("saved addresses, or active alerts" in error for error in result),
+            msg=f"expected Chat fixture capability-claim guard: {result}",
+        )
+
+    def test_chat_preview_rejects_unreviewed_localized_capability_claim(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_content.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "  static const voiceRoom = VoiceRoomSummary(",
+                    "  static const unsupportedClaim = '地址已收藏，转账提醒已开启。';\n\n"
+                    "  static const voiceRoom = VoiceRoomSummary(",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("saved addresses, or active alerts" in error for error in result),
+            msg=f"expected localized Chat capability-claim guard: {result}",
+        )
+
+    def test_chat_preview_rejects_capability_copy_imported_from_another_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_content.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "text: 'That unlock schedule is worth watching.',",
+                    "text: unsupportedActiveAlertCopy,",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("content must match its reviewed closed-source" in error for error in result),
+            msg=f"expected imported Chat capability-copy guard: {result}",
+        )
+
+    def test_chat_spot_snapshot_requires_visible_preview_attribution(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/widgets/chat_components.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "Shared at 14:12 · 演示数据",
+                    "Shared at 14:12",
+                ).replace("SPOT PREVIEW", "SPOT"),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("Shared at 14:12 · 演示数据" in error for error in result),
+            msg=f"expected Chat Preview attribution guard: {result}",
+        )
+
+    def test_chat_spot_snapshot_behavior_evidence_cannot_be_hollowed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "test/chat_spot_snapshot_test.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "expect(find.text('SPOT PREVIEW'), findsOneWidget);",
+                    "final ignoredPreview = find.text('SPOT PREVIEW');\n"
+                    "      expect(true, isTrue);",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("must execute its exact Spot-only assertions directly" in error for error in result),
+            msg=f"expected non-hollow Chat Spot evidence guard: {result}",
+        )
+
+    def test_chat_spot_snapshot_assertions_cannot_hide_in_dead_branch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "test/chat_spot_snapshot_test.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            source = source.replace(
+                "      expect(\n"
+                "        find.byKey(const ValueKey<String>('chat-spot-snapshot-card')),",
+                "      if (tester.view.physicalSize.width < 0) {\n"
+                "        expect(\n"
+                "          find.byKey(const ValueKey<String>('chat-spot-snapshot-card')),",
+                1,
+            )
+            source = source.replace(
+                "      expect(watchButton.onPressed, isNull);",
+                "        expect(watchButton.onPressed, isNull);\n"
+                "      }\n"
+                "      expect(true, isTrue);",
+                1,
+            )
+            path.write_text(source, encoding="utf-8")
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("must execute its exact Spot-only assertions directly" in error for error in result),
+            msg=f"expected reachable Chat Spot evidence guard: {result}",
+        )
+
+    def test_chat_spot_snapshot_behavior_tests_cannot_be_skipped(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "test/chat_spot_snapshot_test.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "    },\n  );",
+                    "    },\n    skip: true,\n  );",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("contract tests cannot be skipped" in error for error in result),
+            msg=f"expected non-skipped Chat Spot evidence guard: {result}",
+        )
+
+    def test_chat_spot_snapshot_cannot_shadow_expect(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "test/chat_spot_snapshot_test.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "void main() {",
+                    "expect(actual, matcher) {}\n\nvoid main() {",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("cannot shadow flutter_test evidence symbols" in error for error in result),
+            msg=f"expected non-shadowed Chat Spot evidence guard: {result}",
+        )
+
+    def test_chat_spot_snapshot_cannot_shadow_expect_with_callable_type(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "test/chat_spot_snapshot_test.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "void main() {",
+                    "NoopExpect expect = const NoopExpect();\n\nvoid main() {",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("cannot shadow flutter_test evidence symbols" in error for error in result),
+            msg=f"expected typed callable-shadow guard: {result}",
+        )
+
+    def test_chat_spot_snapshot_cannot_call_mark_test_skipped(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "test/chat_spot_snapshot_test.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "      await _pumpSpotPreview(tester);",
+                    "      markTestSkipped('disabled');\n"
+                    "      await _pumpSpotPreview(tester);",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_spot_snapshot_contract(root)
+
+        self.assertTrue(
+            any("contract tests cannot be skipped" in error for error in result),
+            msg=f"expected markTestSkipped guard: {result}",
+        )
+
     def test_lock_parser_reads_exact_versions(self) -> None:
         versions = check_harness.lockfile_versions(
             'packages:\n  dio:\n    dependency: "direct main"\n    version: "5.11.0"\n'
