@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/wallet/transfer_amount.dart';
+import 'package:loop_mobile/features/wallet/wallet_preview_asset.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:uuid/uuid.dart';
 
@@ -30,95 +31,191 @@ final class TransferDraft {
   );
 }
 
-class SendAssetScreen extends StatelessWidget {
+class SendAssetScreen extends StatefulWidget {
   const SendAssetScreen({super.key});
 
   @override
+  State<SendAssetScreen> createState() => _SendAssetScreenState();
+}
+
+class _SendAssetScreenState extends State<SendAssetScreen> {
+  static final _previewAssets = List<_SendPreviewAsset>.unmodifiable(
+    <_SendPreviewAsset>[
+      for (final asset in WalletPreviewAsset.all)
+        _SendPreviewAsset.available(asset),
+      const _SendPreviewAsset.unavailable(
+        symbol: 'ARB',
+        name: 'Arbitrum',
+        amount: '0 ARB',
+        value: r'$0.00',
+        networkLabel: 'Arbitrum',
+      ),
+    ],
+  );
+
+  final controller = TextEditingController();
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final queryTokens = controller.text
+        .trim()
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((token) => token.isNotEmpty)
+        .toList(growable: false);
+    final matchingAssets = _previewAssets
+        .where((asset) => asset.matchesEvery(queryTokens))
+        .toList(growable: false);
+
     return LoopPage(
       title: 'Choose asset',
       eyebrow: '开发预览 · Send · 1 of 3',
       subtitle: 'Balances below are layout fixtures. A wallet provider is not connected.',
       children: <Widget>[
-        const TextField(
+        TextField(
+          key: const ValueKey<String>('send-asset-preview-search'),
+          controller: controller,
+          onChanged: (_) => setState(() {}),
+          autocorrect: false,
+          enableSuggestions: false,
+          textInputAction: TextInputAction.search,
           decoration: InputDecoration(
+            labelText: 'Search preview assets',
             hintText: 'Search assets',
-            prefixIcon: Icon(Icons.search_rounded),
+            prefixIcon: const Icon(Icons.search_rounded),
+            suffixIcon: controller.text.isEmpty
+                ? null
+                : IconButton(
+                    onPressed: () => setState(controller.clear),
+                    tooltip: 'Clear asset search',
+                    icon: const Icon(Icons.close_rounded),
+                  ),
           ),
         ),
-        const LoopSectionLabel('Available · 演示数据'),
-        _SendAssetRow(
-          symbol: 'ETH',
-          name: 'Ethereum',
-          balance: '4.82 ETH',
-          value: r'$22,319.01',
-          onTap: () => context.push(
-            '/wallet/send/to',
-            extra: const TransferDraft(asset: 'ETH', network: 'Ethereum'),
-          ),
+        LoopSectionLabel(
+          queryTokens.isEmpty ? 'Available · 演示数据' : 'Results · 演示数据',
         ),
-        _SendAssetRow(
-          symbol: 'USDC',
-          name: 'USD Coin',
-          balance: '6,810.20 USDC',
-          value: r'$6,810.20',
-          onTap: () => context.push(
-            '/wallet/send/to',
-            extra: const TransferDraft(asset: 'USDC', network: 'Ethereum'),
-          ),
-        ),
-        _SendAssetRow(
-          symbol: 'SOL',
-          name: 'Solana',
-          balance: '13.44 SOL',
-          value: r'$2,110.79',
-          onTap: () => context.push(
-            '/wallet/send/to',
-            extra: const TransferDraft(asset: 'SOL', network: 'Solana'),
-          ),
-        ),
-        const LoopSectionLabel('Unavailable · 演示数据'),
-        const LoopStateCard(
-          title: '演示数据 · ARB zero-balance state',
-          message: 'The asset remains visible so a zero balance is not confused with a loading error.',
-          icon: Icons.account_balance_wallet_outlined,
-        ),
+        if (matchingAssets.isEmpty)
+          const LoopStateCard(
+            key: ValueKey<String>('send-asset-preview-empty'),
+            title: 'No local preview assets match',
+            message: 'Try ETH, USDC, SOL or ARB. No wallet provider search was performed.',
+            icon: Icons.search_off_rounded,
+          )
+        else ...<Widget>[
+          for (final asset in matchingAssets.where((asset) => asset.selectable))
+            _SendAssetRow(
+              key: ValueKey<String>(
+                'send-asset-preview-${asset.symbol.toLowerCase()}',
+              ),
+              asset: asset,
+              onTap: () => context.push(
+                '/wallet/send/to',
+                extra: TransferDraft(
+                  asset: asset.symbol,
+                  network: asset.networkLabel,
+                ),
+              ),
+            ),
+          if (matchingAssets.any((asset) => !asset.selectable))
+            const LoopSectionLabel('Unavailable · 演示数据'),
+          for (final asset in matchingAssets.where(
+            (asset) => !asset.selectable,
+          ))
+            LoopStateCard(
+              key: ValueKey<String>(
+                'send-asset-preview-${asset.symbol.toLowerCase()}-unavailable',
+              ),
+              title: '演示数据 · ${asset.symbol} zero-balance state',
+              message:
+                  '${asset.name} · ${asset.amount} · ${asset.value} on ${asset.networkLabel}. This is an unavailable layout fixture; no wallet balance was read.',
+              icon: Icons.account_balance_wallet_outlined,
+            ),
+        ],
       ],
     );
   }
 }
 
-class _SendAssetRow extends StatelessWidget {
-  const _SendAssetRow({
+@immutable
+final class _SendPreviewAsset {
+  _SendPreviewAsset.available(WalletPreviewAsset asset)
+    : symbol = asset.symbol,
+      name = asset.name,
+      amount = asset.amount,
+      value = asset.value,
+      networkLabel = asset.networkLabel,
+      selectable = true;
+
+  const _SendPreviewAsset.unavailable({
     required this.symbol,
     required this.name,
-    required this.balance,
+    required this.amount,
     required this.value,
-    required this.onTap,
-  });
+    required this.networkLabel,
+  }) : selectable = false;
 
   final String symbol;
   final String name;
-  final String balance;
+  final String amount;
   final String value;
+  final String networkLabel;
+  final bool selectable;
+
+  bool matchesEvery(List<String> queryTokens) {
+    final searchText = '$symbol $name $networkLabel'.toLowerCase();
+    return queryTokens.every(searchText.contains);
+  }
+}
+
+class _SendAssetRow extends StatelessWidget {
+  const _SendAssetRow({required this.asset, required this.onTap, super.key});
+
+  final _SendPreviewAsset asset;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
+    return Semantics(
+      label:
+          '${asset.name}, ${asset.symbol}, ${asset.amount}, ${asset.value}, ${asset.networkLabel}, 演示数据',
+      button: true,
       onTap: onTap,
-      minTileHeight: 68,
-      contentPadding: EdgeInsets.zero,
-      leading: LoopAssetMark(symbol: symbol),
-      title: Text(name, style: Theme.of(context).textTheme.titleMedium),
-      subtitle: Text(balance, style: Theme.of(context).textTheme.bodyMedium),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Text(value, style: context.dataStyle),
-          const SizedBox(width: 6),
-          const Icon(Icons.chevron_right_rounded, color: LoopColors.vapor),
-        ],
+      child: ExcludeSemantics(
+        child: ListTile(
+          onTap: onTap,
+          minTileHeight: 68,
+          contentPadding: EdgeInsets.zero,
+          leading: LoopAssetMark(symbol: asset.symbol),
+          title: Text(
+            asset.name,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 3),
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 3,
+              children: <Widget>[
+                Text(
+                  asset.amount,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                Text(asset.value, style: context.dataStyle),
+              ],
+            ),
+          ),
+          trailing: const Icon(
+            Icons.chevron_right_rounded,
+            color: LoopColors.vapor,
+          ),
+        ),
       ),
     );
   }

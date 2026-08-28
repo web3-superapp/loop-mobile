@@ -110,6 +110,7 @@ REQUIRED_FILES = (
     "test/home_discovery_and_security_test.dart",
     "test/home_portfolio_truthfulness_test.dart",
     "test/new_pairs_truthfulness_test.dart",
+    "test/send_asset_search_test.dart",
     "lib/features/market/watchlist/watchlist_gateway.dart",
     "lib/features/market/watchlist/watchlist_models.dart",
     "lib/integrations/personalization/memory_watchlist_gateway.dart",
@@ -643,6 +644,12 @@ WALLET_PROVIDERLESS_CONTROL_BEHAVIOR_TEST_MARKERS = {
     Path("test/send_flow_truthfulness_test.dart"): (
         "transaction result catalog never claims a transfer occurred",
     ),
+    Path("test/send_asset_search_test.dart"): (
+        "Send asset search filters labelled Preview assets and restores canonical order",
+        "filtered Send asset selection carries the exact asset and network",
+        "Send asset no-match remains local Preview evidence",
+        "Send asset Preview supports 390pt at 2x Dynamic Type",
+    ),
 }
 WALLET_PROVIDERLESS_CONTROL_EXECUTABLE_TEST_EVIDENCE = {
     Path("test/bridge_preview_snapshot_test.dart"): {
@@ -708,6 +715,35 @@ WALLET_PROVIDERLESS_CONTROL_EXECUTABLE_TEST_EVIDENCE = {
             r"\bTransactionResultScreen\s*\(",
             r"\bfindsOneWidget\b",
             r"\bfindsNothing\b",
+        ),
+    },
+    Path("test/send_asset_search_test.dart"): {
+        "Send asset search filters labelled Preview assets and restores canonical order": (
+            r"\btester\.enterText\s*\(",
+            r"\btester\.getTopLeft\s*\(",
+            r"\bfind\.byTooltip\s*\(",
+            r"\bfindsNothing\b",
+        ),
+        "filtered Send asset selection carries the exact asset and network": (
+            r"\btester\.enterText\s*\(",
+            r"\btester\.tap\s*\(",
+            r"\btester\.pumpAndSettle\s*\(",
+            r"\bfindsOneWidget\b",
+            r"\bfindsNothing\b",
+        ),
+        "Send asset no-match remains local Preview evidence": (
+            r"(?:\btester\.enterText\s*\([\s\S]*?){2}",
+            r"\bfind\.textContaining\s*\(",
+            r"\bfindsOneWidget\b",
+            r"\bfindsNothing\b",
+        ),
+        "Send asset Preview supports 390pt at 2x Dynamic Type": (
+            r"\bTextScaler\.linear\s*\(\s*2\s*\)",
+            r"\btester\.widget<TextField>\s*\(",
+            r"\btester\.widget<Semantics>\s*\(",
+            r"\bassetSemantics\.properties\.onTap\b",
+            r"\btester\.ensureVisible\s*\(",
+            r"\btester\.takeException\s*\(",
         ),
     },
 }
@@ -4511,6 +4547,16 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
                 "No allowance or wallet balance was read",
             ),
             "lib/features/wallet/send_screens.dart": (
+                "WalletPreviewAsset.all",
+                "_SendPreviewAsset.available(asset)",
+                "const _SendPreviewAsset.unavailable(",
+                "asset.matchesEvery(queryTokens)",
+                "queryTokens.every(searchText.contains)",
+                "matchingAssets.any((asset) => !asset.selectable)",
+                "asset: asset.symbol",
+                "network: asset.networkLabel",
+                "'No local preview assets match'",
+                "'Try ETH, USDC, SOL or ARB. No wallet provider search was performed.'",
                 "'Pending state example'",
                 "'Success state example'",
                 "'Failure state example'",
@@ -4610,9 +4656,57 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
         if re.search(r"\bonPressed\s*:(?!\s*null\b)", status_source):
             errors.append("Bridge progress Preview cannot add an enabled action")
 
-    result_path = root / "lib/features/wallet/send_screens.dart"
-    if result_path.is_file():
-        source = read_text(result_path)
+    send_path = root / "lib/features/wallet/send_screens.dart"
+    if send_path.is_file():
+        source = read_text(send_path)
+        send_start = source.find("class SendAssetScreen")
+        send_end = source.find("class SendRecipientScreen", send_start)
+        send_source = source[send_start:send_end]
+        for fragment, message in (
+            (
+                "WalletPreviewAsset.all",
+                "Send asset search must derive from the canonical Preview assets",
+            ),
+            (
+                "const _SendPreviewAsset.unavailable(",
+                "Unavailable Send asset must remain in the typed Preview collection",
+            ),
+            (
+                "asset.matchesEvery(queryTokens)",
+                "Send asset search must filter every typed Preview asset",
+            ),
+            (
+                "queryTokens.every(searchText.contains)",
+                "Send asset query tokens must drive the rendered Preview rows",
+            ),
+            (
+                "onChanged: (_) => setState(() {}),",
+                "Send asset search input must update visible local results",
+            ),
+            (
+                "matchingAssets.any((asset) => !asset.selectable)",
+                "Unavailable Send Preview must follow the local search query",
+            ),
+            (
+                "asset: asset.symbol",
+                "Send asset navigation must carry the selected Preview asset",
+            ),
+            (
+                "network: asset.networkLabel",
+                "Send asset navigation must carry the selected Preview network",
+            ),
+            (
+                "No local preview assets match",
+                "Send asset no-match must remain local Preview evidence",
+            ),
+            (
+                "No wallet provider search was performed.",
+                "Send asset no-match must not claim a provider result",
+            ),
+        ):
+            if fragment not in send_source:
+                errors.append(message)
+
         result_start = source.find("class TransactionResultScreen")
         result_source = source[result_start:]
         for marker in (

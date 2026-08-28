@@ -695,3 +695,37 @@ edits `lib/widgets/loop_ui.dart` and `test/loop_perp_providers_test.dart`; the
 repository-wide format check likewise reported only `loop_ui.dart`. No build,
 simulator, interactive run, device validation, or package artifact was
 produced.
+
+## Wallet Send Asset Local Search Closure
+
+On 2026-08-28, the F3 Send asset selector stopped exposing an enabled no-op
+search control. Its available rows now derive from the existing immutable
+`WalletPreviewAsset.all` fixtures, normalize case and whitespace, require every
+query token to match symbol, name, or network, and restore canonical fixture
+order through an explicit Clear action. The unavailable ARB layout example is
+also query-bound and remains non-actionable.
+
+Every value remains continuously labelled `开发预览` or `演示数据`; no wallet
+asset, balance, or search provider is implied. A local no-match explicitly says
+that no provider search ran, and selecting a filtered row carries that exact
+fixture's symbol and network into the existing `TransferDraft`. Asset values
+move into a wrapping subtitle, and one explicit actionable semantics node keeps
+the row usable at 390pt and 200% text without modifying the separately owned
+design-system file.
+
+The existing providerless-Wallet Harness and failure memory now cover this
+slice. Six new mutations reject a bypassed query, a no-op input callback, an
+ETH fallback draft, an always-visible or independently sourced unavailable
+fixture, and a false empty-wallet claim. Four named widget tests bind
+filtering/Clear behavior, exact draft
+identity, truthful no-match/ARB behavior, large-text layout, and actionable
+semantics.
+
+Harness validation passed, the Python mutation suite passed 234/234, the
+focused Wallet/Send/navigation suite passed 35/35, and the complete Flutter
+suite passed 602/602. Targeted analysis of the changed Dart files reported no
+issues. Repository-wide format and analysis checks reached all Dart files but
+remain non-clean only for the preserved user edits in
+`lib/widgets/loop_ui.dart` and `test/loop_perp_providers_test.dart`; this slice
+did not edit either file. No backend/provider request, build, simulator,
+interactive run, physical-device validation, or package artifact was produced.

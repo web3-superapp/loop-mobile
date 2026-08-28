@@ -3274,6 +3274,129 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected local Swap intent guard: {result}",
         )
 
+    def test_send_asset_search_must_filter_rendered_preview_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/send_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "return queryTokens.every(searchText.contains);",
+                    "return true;",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_providerless_controls_contract(root)
+
+        self.assertTrue(
+            any("query tokens must drive" in error for error in result),
+            msg=f"expected active Send asset filter guard: {result}",
+        )
+
+    def test_send_asset_search_callback_cannot_become_noop(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/send_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "onChanged: (_) => setState(() {}),",
+                    "onChanged: (_) {},",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_providerless_controls_contract(root)
+
+        self.assertTrue(
+            any("search input must update" in error for error in result),
+            msg=f"expected active Send asset input guard: {result}",
+        )
+
+    def test_send_asset_navigation_cannot_fall_back_to_eth(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/send_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace("asset: asset.symbol,", "asset: 'ETH',"),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_providerless_controls_contract(root)
+
+        self.assertTrue(
+            any("selected Preview asset" in error for error in result),
+            msg=f"expected exact Send asset draft guard: {result}",
+        )
+
+    def test_send_asset_unavailable_preview_must_follow_search(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/send_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "matchingAssets.any((asset) => !asset.selectable)",
+                    "true",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_providerless_controls_contract(root)
+
+        self.assertTrue(
+            any("Send Preview must follow" in error for error in result),
+            msg=f"expected filtered unavailable-asset guard: {result}",
+        )
+
+    def test_send_asset_unavailable_preview_must_share_typed_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/send_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "const _SendPreviewAsset.unavailable(",
+                    "const _UnrelatedUnavailableAsset(",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_providerless_controls_contract(root)
+
+        self.assertTrue(
+            any("typed Preview collection" in error for error in result),
+            msg=f"expected one typed Send asset source guard: {result}",
+        )
+
+    def test_send_asset_no_match_cannot_claim_wallet_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/send_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "No local preview assets match",
+                    "No assets in wallet",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_providerless_controls_contract(root)
+
+        self.assertTrue(
+            any("no-match must remain local Preview" in error for error in result),
+            msg=f"expected truthful Send asset no-match guard: {result}",
+        )
+
     def test_wallet_history_filter_must_drive_rendered_rows(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
