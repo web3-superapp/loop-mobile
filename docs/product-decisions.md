@@ -1,6 +1,6 @@
 # LOOP current product decisions
 
-> Canonical current scope. Updated 2026-08-27.
+> Canonical current scope. Updated 2026-08-28.
 
 This document applies to the Flutter source at the repository root. Material under `reference/legacy-prototype/` is frozen history and does not override these decisions.
 
@@ -22,6 +22,13 @@ Product priority and current delivery are separate:
 - B5 through B8 are all deferred from the current release.
 - Home keeps one Pay card labelled `Coming soon` so the planned product position remains visible.
 - Every Pay route is informational only. It must not open a scanner, request camera access, collect an amount or recipient, select a payment provider, or submit a transaction.
+
+## Launchpad delivery
+
+- Launchpad remains the third first-class destination, but only G1 is in the current release as a non-actionable placeholder.
+- G2 project discovery, G3 project details/participation and G4 project applications remain deferred. Production and Development Preview do not fabricate projects, eligibility, allocations or applications for them.
+- Without a reviewed launch source, G1 does not claim that launches are live, absent, approved, eligible or complete. Issuer facts, eligibility and participation prerequisites remain explicitly not connected.
+- G1 exposes no amount, allocation, funding, wallet, signing, claim or submission action. Any future participation requires its own backend/compliance contract and the shared canonical wallet review boundary.
 
 ## Communication
 

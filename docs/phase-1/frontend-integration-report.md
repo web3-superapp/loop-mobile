@@ -533,3 +533,32 @@ Verification on 2026-08-27:
   `lib/widgets/loop_ui.dart`; every file owned by this slice was formatted.
 - No HTTP/provider request, APK, application bundle, iOS build, package,
   simulator, interactive run, or physical-device validation was performed.
+
+## Launchpad Placeholder Truth Boundary
+
+On 2026-08-28, decision 0027 kept Launchpad in its fixed third-tab product
+position while making its current delivery boundary explicit. G1 no longer
+marks issuer facts complete or claims there are no live launches without a
+source. Issuer facts, eligibility and participation review are all shown as not
+connected, and the page exposes no amount, allocation, application, funding,
+wallet, signing, claim or submission control.
+
+G2 project discovery, G3 project details/participation and G4 applications stay
+deferred. Production and Development Preview use the same non-actionable G1
+placeholder and do not fabricate projects or simulated participation. This
+slice adds no HTTP/provider request, persistence, wallet action, SDK,
+dependency, native capability or new route.
+
+Verification on 2026-08-28:
+
+- The focused Launchpad, application-navigation and surface-catalog suite
+  passed all 22 tests, including the 390 × 844 layout at 2× text scale.
+- `bin/flutter test --no-pub` passed all 499 Flutter tests.
+- Changed-file formatting and analysis passed with no issues.
+- `python3 scripts/check_harness.py` passed, and the complete Harness mutation
+  suite passed all 209 tests.
+- Repository-wide format and analysis reached all current source. They reported
+  only the two pre-existing user changes in `lib/widgets/loop_ui.dart` and
+  `test/loop_perp_providers_test.dart`; no Launchpad file was reported.
+- No HTTP/provider request, APK, application bundle, iOS build, simulator,
+  interactive run or physical-device validation was performed.
