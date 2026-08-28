@@ -719,3 +719,49 @@ Verification on 2026-08-28:
   status destination, APK, application bundle, iOS build, simulator,
   interactive run, physical-device validation or package artifact was added or
   exercised.
+
+## Feature Availability Truth Boundary
+
+On 2026-08-28, decision 0032 removed the fabricated regional conclusion from
+the routed I5 system surface. A naked `/system/region` route now says that no
+current eligibility decision is connected. It does not claim that LOOP
+observed a location, evaluated account information or region-blocked Spot order
+execution, deposits or withdrawals.
+
+An app-level composition may explicitly supply one
+`LoopFeatureAvailabilityRestriction` only while an approved current decision
+limits some feature access. The marker carries no location, reason, policy
+identity or affected-capability list, so the presentation claims none. It also
+does not invent a list of Market, Wallet or Chat capabilities that remain
+available. Continue and policy navigation are independent exact callbacks;
+generic route actions cannot authorize either label.
+
+The backend OpenAPI currently exposes no eligibility-policy route, and the
+integration catalog marks `regional_gate` as `PENDING`. A richer future
+projection still needs exact subject/application/environment binding, bounded
+decision identity/revision, attributable source, observation time, expiry and
+a closed capability vocabulary. This slice adds no eligibility request, IP or
+device-location lookup, polling, persistence, policy URL, SDK, dependency or
+native capability.
+
+Verification on 2026-08-28:
+
+- All 8 I5 tests passed, covering the formal `/system/region` route, unknown
+  and explicit-restriction states, independent dedicated actions, generic
+  action isolation, removal of every former fabricated claim, semantics and
+  both 390 × 844 layouts at 2× text scale with their rendered actions invoked.
+- The focused I1-I5, application-navigation and surface-catalog suite passed
+  all 57 tests. Changed-file formatting reported 0 changes, and changed-file
+  analysis passed with no issues.
+- `bin/flutter test` passed all 537 Flutter tests.
+- `python3 scripts/check_harness.py` passed, and all 209 Harness mutation tests
+  passed.
+- Repository-wide formatting reported only the pre-existing user change in
+  `lib/widgets/loop_ui.dart`. Repository-wide analysis reported only its
+  pre-existing `use_null_aware_elements` info and the pre-existing
+  `prefer_initializing_formals` info in
+  `test/loop_perp_providers_test.dart`; no I5 file was reported.
+- No production eligibility source/provider, policy decision endpoint, IP or
+  device-location lookup, policy destination, native build, simulator,
+  interactive run, physical-device validation or package artifact was added or
+  exercised.

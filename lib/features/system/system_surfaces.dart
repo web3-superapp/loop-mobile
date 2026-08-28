@@ -43,6 +43,15 @@ final class LoopMaintenanceNotice {
   const LoopMaintenanceNotice();
 }
 
+/// Evidence that an approved current decision restricts feature availability.
+///
+/// The future app-level source owns decision identity, freshness, location,
+/// reason, and affected capabilities. This presentation marker carries none.
+@immutable
+final class LoopFeatureAvailabilityRestriction {
+  const LoopFeatureAvailabilityRestriction();
+}
+
 /// Single routing surface for global system UI I1-I8.
 class SystemSurfaceScreen extends StatelessWidget {
   const SystemSurfaceScreen.fromId(
@@ -56,16 +65,15 @@ class SystemSurfaceScreen extends StatelessWidget {
     this.onForceUpdate,
     this.onMaintenanceRecheck,
     this.onMaintenanceStatus,
+    this.onRegionContinue,
+    this.onRegionPolicy,
     this.connectivityScope,
     this.serviceErrorObservation,
     this.forceUpdateRequirement,
     this.maintenanceNotice,
+    this.featureAvailabilityRestriction,
     this.permissionKind = LoopPermissionKind.camera,
     this.permissionDenied = false,
-    this.restrictedFeatures = const <String>[
-      'Spot order execution',
-      'Deposits and withdrawals',
-    ],
   });
 
   static const supportedIds = <String>{
@@ -88,13 +96,15 @@ class SystemSurfaceScreen extends StatelessWidget {
   final SystemAction? onForceUpdate;
   final SystemAction? onMaintenanceRecheck;
   final SystemAction? onMaintenanceStatus;
+  final SystemAction? onRegionContinue;
+  final SystemAction? onRegionPolicy;
   final LoopConnectivityScope? connectivityScope;
   final LoopServiceErrorObservation? serviceErrorObservation;
   final LoopForceUpdateRequirement? forceUpdateRequirement;
   final LoopMaintenanceNotice? maintenanceNotice;
+  final LoopFeatureAvailabilityRestriction? featureAvailabilityRestriction;
   final LoopPermissionKind permissionKind;
   final bool permissionDenied;
-  final List<String> restrictedFeatures;
 
   String get _id => surfaceId.replaceFirst('#', '').toLowerCase();
 
@@ -127,10 +137,15 @@ class SystemSurfaceScreen extends StatelessWidget {
                 onRecheck: onMaintenanceRecheck,
                 onStatus: onMaintenanceStatus,
               ),
-      'region-restricted' => _RegionRestrictedScreen(
-        features: restrictedFeatures,
-        onContinue: onSecondaryAction,
-      ),
+      'region-restricted' =>
+        featureAvailabilityRestriction == null
+            ? _FeatureAvailabilityStatusUnavailableScreen(
+                onContinue: onSecondaryAction,
+              )
+            : _FeatureAvailabilityRestrictedScreen(
+                onContinue: onRegionContinue,
+                onPolicy: onRegionPolicy,
+              ),
       'permission' => _PermissionScreen(
         kind: permissionKind,
         denied: permissionDenied,
@@ -558,81 +573,48 @@ class _MaintenanceStatusUnavailableScreen extends StatelessWidget {
   }
 }
 
-class _RegionRestrictedScreen extends StatelessWidget {
-  const _RegionRestrictedScreen({
-    required this.features,
+class _FeatureAvailabilityRestrictedScreen extends StatelessWidget {
+  const _FeatureAvailabilityRestrictedScreen({
     required this.onContinue,
+    required this.onPolicy,
   });
 
-  final List<String> features;
+  final VoidCallback? onContinue;
+  final VoidCallback? onPolicy;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SystemStateScaffold(
+      eyebrow: 'FEATURE AVAILABILITY',
+      title: 'Some features are unavailable',
+      message: 'Feature access is currently limited. Check each feature for its current availability.',
+      icon: Icons.public_off_outlined,
+      tone: LoopColors.warning,
+      primaryLabel: onContinue == null ? null : 'Continue to LOOP',
+      onPrimary: onContinue,
+      secondaryLabel: onPolicy == null ? null : 'View eligibility policy',
+      onSecondary: onPolicy,
+      detail: 'This page does not provide a location, reason, or affected features. It does not confirm that any other feature is available.',
+    );
+  }
+}
+
+class _FeatureAvailabilityStatusUnavailableScreen extends StatelessWidget {
+  const _FeatureAvailabilityStatusUnavailableScreen({required this.onContinue});
+
   final VoidCallback? onContinue;
 
   @override
   Widget build(BuildContext context) {
-    return LoopPage(
+    return _SystemStateScaffold(
       eyebrow: 'FEATURE AVAILABILITY',
-      title: 'Some features aren’t available here',
-      subtitle: 'Availability is based on the location and account information currently on record.',
-      bottom: LoopActionDock(
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: onContinue,
-            child: const Text('Continue to LOOP'),
-          ),
-        ),
-      ),
-      children: <Widget>[
-        const Center(
-          child: _SystemGlyph(
-            icon: Icons.public_off_outlined,
-            color: LoopColors.warning,
-          ),
-        ),
-        const SizedBox(height: 28),
-        LoopCard(
-          accent: true,
-          tone: LoopTone.warning,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                'Unavailable features',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 12),
-              for (final feature in features)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Row(
-                    children: <Widget>[
-                      const Icon(
-                        Icons.block_rounded,
-                        color: LoopColors.warning,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(child: Text(feature)),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-        const LoopStateCard(
-          title: 'What still works',
-          message: 'You can review supported markets, use eligible wallet views, and continue permitted conversations.',
-          icon: Icons.check_circle_outline_rounded,
-          tone: LoopTone.positive,
-        ),
-        const SizedBox(height: 16),
-        TextButton.icon(
-          onPressed: null,
-          icon: const Icon(Icons.help_outline_rounded),
-          label: const Text('Read availability policy'),
-        ),
-      ],
+      title: 'Availability status unavailable',
+      message: 'LOOP cannot confirm feature availability from this page. Opening it does not mean that this account or location is restricted.',
+      icon: Icons.help_outline_rounded,
+      tone: LoopColors.warning,
+      secondaryLabel: onContinue == null ? null : 'Return to LOOP',
+      onSecondary: onContinue,
+      detail: 'No current availability details are available here.',
     );
   }
 }
