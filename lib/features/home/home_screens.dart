@@ -5,6 +5,7 @@ import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/preview_conversation_identity.dart';
+import 'package:loop_mobile/features/wallet/wallet_readiness.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
@@ -14,19 +15,20 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final gateway = ref.watch(communicationGatewayProvider);
-    final isSessionPreview = ref.watch(
-      loopSessionProvider.select((session) => session.isPreview),
-    );
-    final preview = gateway.mode == CommunicationMode.preview;
-    final communicationStatus = preview
+    final session = ref.watch(loopSessionProvider);
+    final isSessionPreview = session.isPreview;
+    final communicationPreview = gateway.mode == CommunicationMode.preview;
+    final communicationStatus = communicationPreview
         ? 'Offline preview · not connected'
         : gateway.isConfigured
-        ? 'Stream configured · session adapter pending'
+        ? 'Stream configured · open Chat to check authorization'
         : 'Stream not connected';
     return LoopPage(
       title: 'Home overview',
-      eyebrow: '开发预览 · gm, Voyager 7',
-      subtitle: 'Static portfolio and activity cards demonstrate layout; they are not account facts.',
+      eyebrow: isSessionPreview ? '开发预览 · gm, Voyager 7' : 'LOOP',
+      subtitle: isSessionPreview
+          ? 'Static portfolio and activity cards demonstrate layout; they are not account facts.'
+          : 'Only current provider availability is shown. Missing portfolio and activity sources stay unavailable.',
       actions: <Widget>[
         IconButton(
           onPressed: () => context.push('/search'),
@@ -51,15 +53,121 @@ class HomeScreen extends ConsumerWidget {
         const SizedBox(width: 4),
       ],
       children: <Widget>[
+        if (isSessionPreview)
+          _HomePreviewContent(communicationStatus: communicationStatus)
+        else
+          _HomeProductionContent(
+            walletReadiness: WalletReadiness.fromSession(session),
+            communicationStatus: communicationStatus,
+          ),
+      ],
+    );
+  }
+}
+
+class _HomeProductionContent extends StatelessWidget {
+  const _HomeProductionContent({
+    required this.walletReadiness,
+    required this.communicationStatus,
+  });
+
+  final WalletReadiness walletReadiness;
+  final String communicationStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const ValueKey<String>('home-production-truth-boundary'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LoopStateCard(
+          title: 'Provider facts only',
+          message: 'LOOP has no connected portfolio or cross-product activity source. No balance, change, alert, unread count, approval, or all-clear state is inferred.',
+          icon: Icons.verified_outlined,
+          tone: LoopTone.warning,
+        ),
+        const SizedBox(height: 16),
+        _PortfolioUnavailableHero(
+          readiness: walletReadiness,
+          onTap: () => context.push('/home/net-worth'),
+        ),
+        const LoopSectionLabel('Pay'),
+        _PayComingSoonCard(onTap: () => context.push('/pay')),
+        const LoopSectionLabel('Continue the loop'),
+        _LoopStep(
+          key: const ValueKey<String>('home-open-public-market'),
+          number: '01',
+          icon: Icons.radar_rounded,
+          title: 'Discover',
+          body: 'Browse public Hyperliquid Testnet Spot markets.',
+          meta: 'Public read-only',
+          tone: LoopTone.market,
+          onTap: () => context.go('/market'),
+        ),
+        const SizedBox(height: 10),
+        _LoopStep(
+          number: '02',
+          icon: Icons.forum_outlined,
+          title: 'Discuss',
+          body: 'Open Chat to check the current Stream authorization state.',
+          meta: 'Check status',
+          tone: LoopTone.conversation,
+          onTap: () => context.go('/chat'),
+        ),
+        const SizedBox(height: 10),
+        _LoopStep(
+          number: '03',
+          icon: Icons.account_balance_wallet_outlined,
+          title: 'Wallet',
+          body: 'Review the current Privy embedded-wallet identity state.',
+          meta: 'Check status',
+          tone: LoopTone.positive,
+          onTap: () => context.go('/wallet'),
+        ),
+        const LoopSectionLabel('Communication'),
+        _CommunicationStatusCard(
+          preview: false,
+          status: communicationStatus,
+          onTap: () => context.push('/chat/voice'),
+        ),
+        const LoopSectionLabel('Activity'),
+        const LoopStateCard(
+          key: ValueKey<String>('home-production-activity-unavailable'),
+          title: 'Activity not connected',
+          message: 'No portfolio, notification, wallet approval, or conversation activity source was loaded. Open each destination to inspect its own current status.',
+          icon: Icons.inbox_outlined,
+          tone: LoopTone.warning,
+        ),
+      ],
+    );
+  }
+}
+
+class _HomePreviewContent extends StatelessWidget {
+  const _HomePreviewContent({required this.communicationStatus});
+
+  final String communicationStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const ValueKey<String>('home-preview-fixtures'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
         const LoopStateCard(
           title: '开发预览',
           message: 'Balances, alerts, unread counts and activity below are 演示数据. Provider-backed sections identify their own connection state.',
           icon: Icons.visibility_outlined,
           tone: LoopTone.warning,
         ),
-        const Align(
-          alignment: Alignment.centerLeft,
-          child: LoopContextRail(stage: LoopStage.discover),
+        const SizedBox(height: 14),
+        const SingleChildScrollView(
+          key: ValueKey<String>('home-preview-loop-stage-scroll'),
+          scrollDirection: Axis.horizontal,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: LoopContextRail(stage: LoopStage.discover),
+          ),
         ),
         const SizedBox(height: 24),
         _PortfolioHero(onTap: () => context.push('/home/net-worth')),
@@ -95,37 +203,11 @@ class HomeScreen extends ConsumerWidget {
           tone: LoopTone.positive,
           onTap: () => context.go('/wallet'),
         ),
-        LoopSectionLabel(preview ? 'Communication preview' : 'Communication'),
-        LoopCard(
-          accent: true,
-          tone: LoopTone.conversation,
+        const LoopSectionLabel('Communication preview'),
+        _CommunicationStatusCard(
+          preview: true,
+          status: communicationStatus,
           onTap: () => context.push('/chat/voice'),
-          semanticLabel: preview
-              ? 'Open the offline ETH Macro Room voice preview'
-              : 'Open ETH Macro Room communication status',
-          child: Row(
-            children: <Widget>[
-              const _VoicePreviewGlyph(),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'ETH Macro Room',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      communicationStatus,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded, color: LoopColors.vapor),
-            ],
-          ),
         ),
         const LoopSectionLabel('Today · 演示数据'),
         _ActivityRow(
@@ -145,6 +227,70 @@ class HomeScreen extends ConsumerWidget {
           onTap: () => context.push('/home/security'),
         ),
       ],
+    );
+  }
+}
+
+class _PortfolioUnavailableHero extends StatelessWidget {
+  const _PortfolioUnavailableHero({
+    required this.readiness,
+    required this.onTap,
+  });
+
+  final WalletReadiness readiness;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = readiness.mode == WalletReadinessMode.restricted
+        ? 'Portfolio unavailable in restricted session'
+        : 'Portfolio data not connected';
+    final identityLabel = switch (readiness.mode) {
+      WalletReadinessMode.ready => 'Wallet identity available',
+      WalletReadinessMode.needsWallet => 'No wallet identity',
+      WalletReadinessMode.restricted => 'Restricted session',
+      WalletReadinessMode.invalidAddress => 'Wallet identity invalid',
+      WalletReadinessMode.preview => 'Preview unavailable',
+    };
+    final message = switch (readiness.mode) {
+      WalletReadinessMode.ready => 'A verified Privy wallet identity exists for this session, but no balance or asset source is connected. LOOP cannot calculate net worth.',
+      WalletReadinessMode.needsWallet => 'This verified Privy session has no embedded wallet identity. No balance or portfolio request was made.',
+      WalletReadinessMode.restricted => 'The cached session is not verified for provider-backed wallet identity. No balance or portfolio request was made.',
+      WalletReadinessMode.invalidAddress => 'The current wallet identity is incomplete or invalid. No balance or portfolio request was made.',
+      WalletReadinessMode.preview =>
+        'Preview identity cannot authorize a production portfolio request.',
+    };
+    return LoopCard(
+      key: const ValueKey<String>('home-open-net-worth'),
+      onTap: onTap,
+      semanticLabel: '$title. $message. Open net worth availability.',
+      accent: true,
+      tone: LoopTone.warning,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: <Widget>[
+              Text(title, style: Theme.of(context).textTheme.titleLarge),
+              _HomeStatusLabel(
+                key: const ValueKey<String>('home-wallet-identity-status'),
+                label: identityLabel,
+                tone: LoopTone.warning,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(message, style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 12),
+          const Align(
+            alignment: Alignment.centerRight,
+            child: Icon(Icons.chevron_right_rounded, color: LoopColors.vapor),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -180,11 +326,13 @@ class _PayComingSoonCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Row(
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: <Widget>[
                     Text('Pay', style: Theme.of(context).textTheme.titleMedium),
-                    const Spacer(),
-                    const LoopStatusPill(label: 'Coming soon'),
+                    const _HomeStatusLabel(label: 'Coming soon'),
                   ],
                 ),
                 const SizedBox(height: 5),
@@ -211,22 +359,23 @@ class _PortfolioHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LoopCard(
+      key: const ValueKey<String>('home-open-net-worth'),
       onTap: onTap,
       semanticLabel: 'Open net worth details',
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: <Widget>[
-              Expanded(
-                child: Text(
-                  'TOTAL NET WORTH',
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
+              Text(
+                'TOTAL NET WORTH',
+                style: Theme.of(context).textTheme.labelMedium,
               ),
-              const SizedBox(width: 8),
-              const LoopStatusPill(
+              const _HomeStatusLabel(
                 label: '+2.6% today',
                 tone: LoopTone.positive,
               ),
@@ -241,12 +390,17 @@ class _PortfolioHero extends StatelessWidget {
             semanticLabel: 'Net worth increased 2.6 percent today',
           ),
           const SizedBox(height: 12),
-          const Row(
+          const Wrap(
+            spacing: 24,
+            runSpacing: 14,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: <Widget>[
-              Expanded(
+              SizedBox(
+                width: 132,
                 child: LoopMetric(label: 'WALLET', value: r'$31,240'),
               ),
-              Expanded(
+              SizedBox(
+                width: 150,
                 child: LoopMetric(label: 'STABLECOINS', value: r'$15,566'),
               ),
               Icon(Icons.chevron_right_rounded, color: LoopColors.vapor),
@@ -267,6 +421,7 @@ class _LoopStep extends StatelessWidget {
     required this.meta,
     required this.tone,
     required this.onTap,
+    super.key,
   });
 
   final String number;
@@ -335,6 +490,82 @@ class _LoopStep extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeStatusLabel extends StatelessWidget {
+  const _HomeStatusLabel({
+    required this.label,
+    super.key,
+    this.tone = LoopTone.neutral,
+  });
+
+  final String label;
+  final LoopTone tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = loopToneColor(tone);
+    return Semantics(
+      label: label,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: LoopRadius.pill,
+          border: Border.all(color: color.withValues(alpha: 0.26)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: color),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CommunicationStatusCard extends StatelessWidget {
+  const _CommunicationStatusCard({
+    required this.preview,
+    required this.status,
+    required this.onTap,
+  });
+
+  final bool preview;
+  final String status;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = preview ? 'ETH Macro Room' : 'Audio Room';
+    return LoopCard(
+      accent: true,
+      tone: LoopTone.conversation,
+      onTap: onTap,
+      semanticLabel: preview
+          ? 'Open the offline ETH Macro Room voice preview'
+          : 'Open Audio Room connection status',
+      child: Row(
+        children: <Widget>[
+          const _VoicePreviewGlyph(),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 4),
+                Text(status, style: Theme.of(context).textTheme.bodyMedium),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: LoopColors.vapor),
         ],
       ),
     );
@@ -421,19 +652,53 @@ class _ActivityRow extends StatelessWidget {
   }
 }
 
-class NetWorthScreen extends StatelessWidget {
+class NetWorthScreen extends ConsumerWidget {
   const NetWorthScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(loopSessionProvider);
+    if (!session.isPreview) {
+      final readiness = WalletReadiness.fromSession(session);
+      return LoopPage(
+        title: 'Net worth',
+        eyebrow: 'Portfolio',
+        subtitle: 'No balance, asset, allocation, history, or PnL source is connected.',
+        children: <Widget>[
+          LoopStateCard(
+            key: const ValueKey<String>('net-worth-production-unavailable'),
+            title: 'Net worth not connected',
+            message: _netWorthUnavailableMessage(readiness),
+            icon: Icons.account_balance_wallet_outlined,
+            tone: LoopTone.warning,
+          ),
+          const SizedBox(height: 14),
+          const LoopStateCard(
+            key: ValueKey<String>('net-worth-production-content-end'),
+            title: 'No portfolio request was made',
+            message: 'LOOP will not synthesize a total from wallet identity, public market prices, Preview assets, or another account. A future owner-scoped portfolio source must provide its own freshness and attribution.',
+            icon: Icons.data_usage_outlined,
+          ),
+        ],
+      );
+    }
+
     return LoopPage(
       title: 'Net worth',
-      eyebrow: 'Portfolio',
-      subtitle: 'A read-only development preview across wallet assets.',
+      eyebrow: '开发预览 · Portfolio',
+      subtitle: 'The static allocation below is 演示数据 and is not a provider-backed account total.',
       children: <Widget>[
+        const LoopStateCard(
+          key: ValueKey<String>('net-worth-preview-fixtures'),
+          title: '开发预览 · 演示数据',
+          message: 'No wallet balance, trading account, allocation, history, or PnL request produced these values.',
+          icon: Icons.visibility_outlined,
+          tone: LoopTone.warning,
+        ),
+        const SizedBox(height: 14),
         const LoopCard(
           accent: true,
-          tone: LoopTone.positive,
+          tone: LoopTone.warning,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -451,7 +716,7 @@ class NetWorthScreen extends StatelessWidget {
             ],
           ),
         ),
-        const LoopSectionLabel('Allocation'),
+        const LoopSectionLabel('Allocation · 演示数据'),
         const LoopCard(
           child: Column(
             children: <Widget>[
@@ -467,14 +732,26 @@ class NetWorthScreen extends StatelessWidget {
         ),
         const LoopSectionLabel('Data status'),
         const LoopStateCard(
+          key: ValueKey<String>('net-worth-preview-content-end'),
           title: 'Development preview only',
           message: 'All values on this development preview are static wallet fixtures, not refreshed provider facts.',
-          icon: Icons.cloud_done_outlined,
-          tone: LoopTone.positive,
+          icon: Icons.cloud_off_outlined,
+          tone: LoopTone.warning,
         ),
       ],
     );
   }
+}
+
+String _netWorthUnavailableMessage(WalletReadiness readiness) {
+  return switch (readiness.mode) {
+    WalletReadinessMode.ready => 'A verified Privy wallet identity is available for this session, but identity alone cannot prove balances or calculate a portfolio total.',
+    WalletReadinessMode.needsWallet => 'This verified Privy session has no embedded wallet identity. It also has no connected balance or asset source.',
+    WalletReadinessMode.restricted => 'The current cached session is restricted and cannot establish provider-backed wallet identity or portfolio facts.',
+    WalletReadinessMode.invalidAddress => 'The current wallet identity is incomplete or invalid, and no portfolio facts are available.',
+    WalletReadinessMode.preview =>
+      'Preview identity cannot authorize a production portfolio request.',
+  };
 }
 
 class NotificationsScreen extends ConsumerWidget {

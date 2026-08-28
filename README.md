@@ -27,6 +27,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - 通知导航的 EventSource / Coordinator 纵切已接入根组合：生产 source 默认是无初始点击、无事件的 disabled 实现；协调器只从真实 LOOP session 与已验证 bootstrap identity 取得 Stream 身份。恢复期间最多暂存一个、默认 15 秒且硬上限一分钟的点击，账号切换、超时或授权失败即丢弃；通过完整重验后也只能落到官方 Chat CID、Audio Room 大厅或通知中心。生产通知页不展示伪实时卡片，演示卡仅在显式 `开发预览` 中可见
 - Home Global Search 已闭合 providerless 前端行为：只有显式 Preview 会显示并本地筛选一组有界的 `演示数据`，支持大小写/空白归一化、无结果与清空；群组和用户沿用精确注册的 Preview conversation ID，ETH 示例只进入公共 Spot 列表而不猜 `spotIndex`。正式会话在真实跨产品索引接入前显示不可用，不泄漏 Preview 结果
 - Home Security Activity 已关闭无来源的安全结论：正式会话不再伪报 MFA、设备登录、审批次数或 `No urgent action`，没有已审核事件源时保持不可用。显式 Preview 只保留持续标注的布局示例，不计算风险分、不发请求，也不提供 Revoke/Block 等账户操作
+- Home 与 Net Worth 已关闭无来源的资产和活动结论：正式会话在 owner-scoped portfolio/activity 来源接入前只显示不可用与当前 Privy wallet identity 状态，不再展示静态总额、涨跌、图表、分配、未读数、提醒或授权记录。钱包身份不等于余额证据；原布局数据只保留在明确标注 `开发预览` / `演示数据` 的 Preview 中，本切片不新增接口、provider 请求或刷新动作
 - Launchpad 继续作为第 3 个一级入口保留，但当前只交付不可操作的 G1 占位：无项目来源时不声称项目正在进行、为空、已审核或满足资格，三个必要条件全部明确为未连接；G2–G4 继续 deferred，正式与 Preview 均不伪造项目、额度、申请、资金、签名或领取动作
 - I1 连通性页面已取消默认离线结论：裸 `/system/offline` 只显示状态来源未连接，不再把路由名当成设备断网或服务故障证据；只有组合根显式提供一个已观察的 scope 才能显示离线、公共行情故障或私有 LOOP 服务中断。全局横幅仍未挂载，也未新增连通性插件、健康轮询或自动重试
 - I2 服务错误页已取消默认失败与假追踪码：裸 `/system/error` 只显示错误上下文未连接，不再生成 `L-2048`，也不再把回首页伪装成重试或联系客服。只有精确请求返回错误或结果不可确认时，所属 feature 才能显式提供 presentation-safe observation；页面不会把超时说成确定失败。在后端 reference 的来源与精确语法完成审核前不显示任何 reference，Retry / Support 分别要求真实绑定的专用回调

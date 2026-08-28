@@ -932,3 +932,35 @@ Close fallback to Market. The full Flutter suite passed all 579 tests, Harness
 validation passed, and the Python mutation suite passed all 214 tests. No
 native build, simulator, interactive run, physical-device validation or package
 artifact was produced.
+
+## Home Portfolio and Net Worth Truth Boundary
+
+On 2026-08-28, decision 0037 separated B1 Home and B2 Net Worth from their
+static portfolio and cross-product activity fixtures. Production now treats
+portfolio, balance, allocation, net worth, and aggregate activity as
+unavailable because no reviewed owner-scoped source exists. A fully verified
+Privy session may confirm only whether a valid current-session Embedded
+Ethereum wallet identity is available. Wallet identity is not balance evidence
+and does not authorize an amount, gain, chart, allocation, alert, approval,
+count, activity time, freshness, or all-clear state.
+
+The existing totals, gains, charts, allocation rows, Watchlist movement, unread
+counts, alerts, approvals, activity times, and named Preview communication
+targets remain available only in exact Development Preview and stay visibly
+labelled `开发预览` / `演示数据`. B2 independently applies the boundary when
+opened directly rather than relying on navigation through B1. Production keeps
+only neutral navigation and provider-availability copy.
+
+This slice adds no portfolio, balance, allocation, or cross-product activity
+interface, provider request, backend route, SDK, dependency, refresh, retry,
+polling, persistence, or inferred loading/empty/error state. A future real
+portfolio flow still requires its own authenticated contract, freshness model,
+decimal-safe values, and state policy.
+
+Focused Home, Net Worth, navigation, notification, security, and catalog tests
+passed, followed by all 590 Flutter tests. Harness validation passed and all
+221 Python mutation tests passed. Analyze passed for the Dart files changed by
+this slice. Repository-wide analyze and format checks remained unclaimed
+because two pre-existing out-of-scope user edits were intentionally preserved;
+neither file is part of this change. No native build, simulator, interactive
+run, physical-device validation, or package artifact was produced.

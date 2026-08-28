@@ -2292,6 +2292,193 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected non-hollow Home discovery/security evidence: {result}",
         )
 
+    def test_home_portfolio_preview_gate_cannot_be_broadened(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "if (isSessionPreview)",
+                    "if (false && isSessionPreview)",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_home_portfolio_truth_contract(root)
+
+        self.assertTrue(
+            any(
+                "Home session selector" in error
+                and "truth fingerprint" in error
+                for error in result
+            ),
+            msg=f"expected exact Home Preview-session guard: {result}",
+        )
+
+    def test_home_portfolio_wallet_identity_cannot_bypass_readiness(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "WalletReadiness.fromSession(session)",
+                    "WalletReadiness.fromSession(const LoopSessionState.preview())",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_home_portfolio_truth_contract(root)
+
+        self.assertTrue(
+            any(
+                "Home session selector" in error
+                and "truth fingerprint" in error
+                for error in result
+            ),
+            msg=f"expected WalletReadiness current-session guard: {result}",
+        )
+
+    def test_home_portfolio_production_cannot_restore_static_facts(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "title: 'Activity not connected'",
+                    "title: r'Activity $46,806.55'",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_home_portfolio_truth_contract(root)
+
+        self.assertTrue(
+            any(
+                "Production B1" in error and "46,806.55" in error
+                for error in result
+            ),
+            msg=f"expected production Home static-fact guard: {result}",
+        )
+
+    def test_net_worth_production_cannot_restore_static_facts(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "title: 'Net worth not connected'",
+                    "title: r'Net worth $46,806.55'",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_home_portfolio_truth_contract(root)
+
+        self.assertTrue(
+            any(
+                "Production B2" in error and "46,806.55" in error
+                for error in result
+            ),
+            msg=f"expected production Net Worth static-fact guard: {result}",
+        )
+
+    def test_home_portfolio_previews_cannot_lose_truth_labels(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/home/home_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace("开发预览", "Preview"),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_home_portfolio_truth_contract(root)
+
+        self.assertTrue(
+            any(
+                "Preview B1" in error and "truth fingerprint" in error
+                for error in result
+            ),
+            msg=f"expected B1 Preview truth-label guard: {result}",
+        )
+        self.assertTrue(
+            any(
+                "B2 Net Worth" in error
+                and (
+                    "truth fingerprint" in error
+                    or "labelled Preview slices" in error
+                )
+                for error in result
+            ),
+            msg=f"expected B2 Preview truth-label guard: {result}",
+        )
+
+    def test_home_net_worth_route_cannot_hide_real_builder_in_dead_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/app.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            old = "builder: (context, state) => const NetWorthScreen(),"
+            new = (
+                "builder: (context, state) => const NotificationsScreen(),\n"
+                "        // Dead evidence: builder: (context, state) => const NetWorthScreen(),"
+            )
+            path.write_text(source.replace(old, new, 1), encoding="utf-8")
+
+            result = check_harness.check_home_portfolio_truth_contract(root)
+
+        self.assertTrue(
+            any(
+                "B2 Net Worth route" in error
+                and "production-route fingerprint" in error
+                for error in result
+            ),
+            msg=f"expected live B2 production-route guard: {result}",
+        )
+
+    def test_home_portfolio_evidence_cannot_be_hollowed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "test/home_portfolio_truthfulness_test.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "expect(find.text('Portfolio data not connected'), findsOneWidget);",
+                    "expect(true, isTrue);",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_home_portfolio_truth_contract(root)
+
+        self.assertTrue(
+            any("executable evidence fingerprint" in error for error in result),
+            msg=f"expected non-hollow Home portfolio evidence: {result}",
+        )
+
     def test_lock_parser_reads_exact_versions(self) -> None:
         versions = check_harness.lockfile_versions(
             'packages:\n  dio:\n    dependency: "direct main"\n    version: "5.11.0"\n'

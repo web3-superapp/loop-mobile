@@ -100,6 +100,17 @@ void main() {
     expect(genericSurfaces.every((surface) => surface.deferred), isTrue);
   });
 
+  test('Home catalog describes the bounded portfolio truth', () {
+    expect(
+      SurfaceCatalog.byPath('/home').description,
+      contains('fixtures remain inside a labelled Preview'),
+    );
+    expect(
+      SurfaceCatalog.byPath('/home/net-worth').description,
+      contains('Production portfolio facts are unavailable'),
+    );
+  });
+
   test('Wallet catalog describes current delivery truth', () {
     final wallet = <String, AppSurface>{
       for (final surface in SurfaceCatalog.all.where(

@@ -73,9 +73,11 @@ REQUIRED_FILES = (
     "docs/decisions/0024-expose-production-audio-room-from-chat.md",
     "docs/decisions/0026-bound-home-discovery-and-security-facts.md",
     "docs/decisions/0036-mount-public-spot-full-chart.md",
+    "docs/decisions/0037-bound-home-portfolio-and-net-worth-facts.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/gitnexus-generated-source-pollution.md",
     "docs/failures/providerless-notification-fixtures.md",
+    "docs/failures/providerless-home-portfolio-facts.md",
     "docs/failures/providerless-security-activity-facts.md",
     "docs/failures/providerless-wallet-controls-without-effects.md",
     "docs/failures/privy-android-compile-sdk.md",
@@ -104,6 +106,7 @@ REQUIRED_FILES = (
     "lib/features/market/spot_candle_section.dart",
     "lib/features/market/watchlist/watchlist_controller.dart",
     "test/home_discovery_and_security_test.dart",
+    "test/home_portfolio_truthfulness_test.dart",
     "lib/features/market/watchlist/watchlist_gateway.dart",
     "lib/features/market/watchlist/watchlist_models.dart",
     "lib/integrations/personalization/memory_watchlist_gateway.dart",
@@ -2986,6 +2989,246 @@ def check_home_discovery_and_security_contract(root: Path) -> list[str]:
     errors.extend(
         check_behavior_test_evidence(root, HOME_DISCOVERY_SECURITY_TEST_MARKERS)
     )
+    return errors
+
+
+HOME_PORTFOLIO_TEST_MARKERS = {
+    Path("test/home_portfolio_truthfulness_test.dart"): (
+        "production B1 contains no portfolio or activity fixtures",
+        "restricted B1 never upgrades cached identity into wallet facts",
+        "verified B1 without a wallet stays unavailable",
+        "invalid B1 wallet identity never implies portfolio facts",
+        "explicit Preview B1 keeps every fixture visibly labelled",
+        "production B2 exposes availability without invented allocation",
+        "production B2 fails closed for every non-ready identity",
+        "explicit Preview B2 labels its static portfolio before values",
+        "real LoopApp carries the production boundary from B1 to B2",
+        "B1 and B2 remain scrollable at 200 percent text",
+    ),
+}
+HOME_PORTFOLIO_TEST_FINGERPRINT = (
+    "90bec67494ae77690896be77d08b4b942fb9becfc2d49e2a2d7c7104683aa0b0"
+)
+HOME_PORTFOLIO_SOURCE_FINGERPRINTS = {
+    "selector": "86dbf9882a3666b0856e00b3124d01d1c338f0288f279600727cf7f966b9827a",
+    "production": "a9a0597d545713f7d417ae01d1fb086315f58523f07e748b802e7ecca5cd80ba",
+    "preview": "81b170bfb97defe23e816b2861647f2278d6edfec86abee32bc72e23551ec695",
+    "identity": "e93b2652095e01c3e339d39e0c05647825b4962277a808c2fb16107b1a8d7ab1",
+    "communication": "377d8b039926c66a740bdaa212cb930b5a17e39433fda7c135e27ed716eb93f5",
+    "net_worth": "da4c932af0f5dfc8a0df53e7034a1bde302f0db914ad2404d6dd8663d7110e82",
+    "route": "6f07003372e39ee7f478d59e5ac71a520392b2cab53645e9bef8975c7afbaef6",
+}
+
+
+def check_home_portfolio_truth_contract(root: Path) -> list[str]:
+    """Keep B1/B2 portfolio fixtures inside exact Development Preview."""
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/features/home/home_screens.dart": (
+                "final isSessionPreview = session.isPreview;",
+                "WalletReadiness.fromSession(session)",
+                "home-production-truth-boundary",
+                "home-preview-fixtures",
+                "home-production-activity-unavailable",
+                "home-open-net-worth",
+                "final title = preview ? 'ETH Macro Room' : 'Audio Room';",
+                "if (!session.isPreview)",
+                "net-worth-production-unavailable",
+                "net-worth-preview-fixtures",
+                "Allocation · 演示数据",
+            ),
+            "lib/app.dart": (
+                "path: '/home/net-worth'",
+                "builder: (context, state) => const NetWorthScreen()",
+            ),
+            "lib/core/navigation/surface_catalog.dart": (
+                "Provider-scoped availability; portfolio and activity fixtures remain inside a labelled Preview.",
+                "Production portfolio facts are unavailable; static allocation remains inside a labelled Preview.",
+            ),
+            "test/home_portfolio_truthfulness_test.dart": tuple(
+                marker
+                for markers in HOME_PORTFOLIO_TEST_MARKERS.values()
+                for marker in markers
+            ),
+            "AGENTS.md": (
+                "Keep Home Portfolio and Net Worth source-scoped.",
+                "A verified Privy wallet proves current-session wallet identity only, never balance or net worth.",
+            ),
+            "README.md": (
+                "Home 与 Net Worth 已关闭无来源的资产和活动结论",
+                "钱包身份不等于余额证据",
+            ),
+            "docs/product/implementation-constraints.md": (
+                "Home Portfolio, Net Worth, allocation, and cross-product activity are unknown",
+                "wallet identity is not balance evidence",
+                "No refresh, retry, loading, empty, or error behavior exists without an actual request owner.",
+            ),
+            "docs/product-decisions.md": (
+                "Home Portfolio and Net Worth have no approved production balance, allocation, or cross-product activity source.",
+                "wallet identity is not balance evidence",
+            ),
+            "docs/decisions/0037-bound-home-portfolio-and-net-worth-facts.md": (
+                "# 0037 Bound Home Portfolio and Net Worth Facts",
+                "## Status",
+                "## Context",
+                "## Decision",
+                "## Consequences",
+                "## Evidence",
+                "Wallet identity is not balance evidence.",
+                "No portfolio, balance, allocation, or cross-product activity request is",
+                "added. This slice adds no gateway, backend route, SDK, dependency, refresh,",
+            ),
+            "docs/failures/providerless-home-portfolio-facts.md": (
+                "# Providerless Home Portfolio Facts",
+                "## Summary",
+                "## Root Cause",
+                "## Detection",
+                "## Prevention",
+                "## Evidence",
+                "Production B1 and B2 render unavailable states",
+                "No refresh, retry, loading, empty, or failure state is inferred",
+            ),
+            "docs/harness/adoption-report.md": (
+                "## Home Portfolio and Net Worth Truth Boundary",
+            ),
+            "docs/phase-1/frontend-integration-report.md": (
+                "## Home Portfolio and Net Worth Truth Boundary",
+            ),
+        },
+    )
+
+    source_path = root / "lib/features/home/home_screens.dart"
+    if source_path.is_file():
+        source = read_text(source_path)
+        slices = {
+            "selector": (
+                "class HomeScreen",
+                "class _HomeProductionContent",
+                "Home session selector",
+            ),
+            "production": (
+                "class _HomeProductionContent",
+                "class _HomePreviewContent",
+                "Production B1",
+            ),
+            "preview": (
+                "class _HomePreviewContent",
+                "class _PortfolioUnavailableHero",
+                "Preview B1",
+            ),
+            "identity": (
+                "class _PortfolioUnavailableHero",
+                "class _PayComingSoonCard",
+                "Home wallet-identity projection",
+            ),
+            "communication": (
+                "class _CommunicationStatusCard",
+                "class _VoicePreviewGlyph",
+                "Home communication title boundary",
+            ),
+            "net_worth": (
+                "class NetWorthScreen",
+                "class NotificationsScreen",
+                "B2 Net Worth",
+            ),
+        }
+        reviewed: dict[str, str] = {}
+        for key, (start_marker, end_marker, label) in slices.items():
+            start = source.find(start_marker)
+            end = source.find(end_marker, start + 1)
+            if start < 0 or end < 0:
+                errors.append(f"{label} must retain one bounded reviewed source slice")
+                continue
+            reviewed[key] = source[start:end]
+            if normalized_dart_source_fingerprint(reviewed[key]) != (
+                HOME_PORTFOLIO_SOURCE_FINGERPRINTS[key]
+            ):
+                errors.append(
+                    f"{label} must match its reviewed Home portfolio truth fingerprint"
+                )
+
+        production_source = strip_dart_comments(reviewed.get("production", ""))
+        for forbidden in (
+            "46,806.55",
+            "+2.6% today",
+            "3 watchlist moves",
+            "18 unread",
+            "Wallet ready",
+            "Glyph Hunters",
+            "ETH Macro Room",
+            "ETH moved above your alert",
+            "One approval can spend your USDC",
+            "_PortfolioHero(",
+            "_ActivityRow(",
+            "LoopMiniChart(",
+        ):
+            if forbidden in production_source:
+                errors.append(
+                    "Production B1 must not restore static portfolio or activity "
+                    f"fact `{forbidden}`"
+                )
+
+        net_worth_source = reviewed.get("net_worth", "")
+        preview_marker = (
+            "    return LoopPage(\n"
+            "      title: 'Net worth',\n"
+            "      eyebrow: '开发预览 · Portfolio',"
+        )
+        preview_start = net_worth_source.find(preview_marker)
+        if preview_start < 0:
+            errors.append(
+                "B2 Net Worth must retain separate Production and labelled Preview slices"
+            )
+        else:
+            production_net_worth = strip_dart_comments(
+                net_worth_source[:preview_start]
+            )
+            for forbidden in (
+                "46,806.55",
+                "+$1,186.40 today",
+                "Ethereum wallets",
+                "Solana wallets",
+                "Stablecoin assets",
+                "LoopMetric(",
+                "LoopMiniChart(",
+                "LoopKeyValueRow(",
+                "Refresh",
+            ):
+                if forbidden in production_net_worth:
+                    errors.append(
+                        "Production B2 must not restore static net-worth or "
+                        f"allocation fact `{forbidden}`"
+                    )
+
+    app_path = root / "lib/app.dart"
+    if app_path.is_file():
+        app_source = read_text(app_path)
+        route_start = app_source.find(
+            "      GoRoute(\n        path: '/home/net-worth',"
+        )
+        route_end = app_source.find(
+            "      GoRoute(\n        path: '/notifications',", route_start + 1
+        )
+        if route_start < 0 or route_end < 0:
+            errors.append("B2 Net Worth route must retain one bounded reviewed slice")
+        elif normalized_dart_source_fingerprint(
+            app_source[route_start:route_end]
+        ) != HOME_PORTFOLIO_SOURCE_FINGERPRINTS["route"]:
+            errors.append(
+                "B2 Net Worth route must match its reviewed production-route fingerprint"
+            )
+
+    test_path = root / "test/home_portfolio_truthfulness_test.dart"
+    if test_path.is_file() and normalized_dart_source_fingerprint(
+        read_text(test_path)
+    ) != HOME_PORTFOLIO_TEST_FINGERPRINT:
+        errors.append(
+            "test/home_portfolio_truthfulness_test.dart must match its reviewed executable evidence fingerprint"
+        )
+
+    errors.extend(check_behavior_test_evidence(root, HOME_PORTFOLIO_TEST_MARKERS))
     return errors
 
 
@@ -6042,6 +6285,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_chat_preview_message_request_contract(root))
     errors.extend(check_chat_preview_conversation_id_contract(root))
     errors.extend(check_home_discovery_and_security_contract(root))
+    errors.extend(check_home_portfolio_truth_contract(root))
     errors.extend(check_spot_candle_contract(root))
     errors.extend(check_wallet_identity_readiness_contract(root))
     errors.extend(check_wallet_preview_route_contract(root))
@@ -6081,7 +6325,7 @@ def main() -> int:
         return 1
     print(
         "Harness check passed: profile, six-destination contract, pins, "
-        "Spot-only product, Chat snapshot, Preview request truth and exact conversation identity, bounded candle, Wallet identity, Wallet route, local draft, "
+        "Spot-only product, Chat snapshot, Preview request truth and exact conversation identity, Home portfolio truth, bounded candle, Wallet identity, Wallet route, local draft, "
         "providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, records, and secret rules are consistent."
     )

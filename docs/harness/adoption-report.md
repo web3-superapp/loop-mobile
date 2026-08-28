@@ -638,3 +638,34 @@ root-link Close fallback. The full Flutter suite passed all 579 tests, Harness
 validation passed, and the Python mutation suite passed all 214 tests. No
 backend/private provider route, dependency, native build, simulator, interactive
 run, physical-device validation or package artifact was added or exercised.
+
+## Home Portfolio and Net Worth Truth Boundary
+
+Decision 0037 separates the labelled B1/B2 portfolio layout from ordinary
+authenticated sessions. Production owns unavailable Portfolio, Net Worth, and
+cross-product Activity presentations while no reviewed owner-scoped source
+exists. The only reusable account projection is current-session Privy wallet
+identity availability; wallet identity is not balance evidence and cannot
+authorize a total, gain, chart, allocation, alert, approval, count, activity
+time, freshness, or all-clear claim.
+
+Static portfolio and activity facts remain behind the exact Development Preview
+session and must be visibly labelled before their values appear. B2 enforces
+the same boundary on a direct route. The Harness owns the production/Preview
+split, restricted-session behavior, wallet-identity non-escalation, removal of
+named Preview communication targets from Production, B1-to-B2 routing, and
+dedicated behavior evidence. Failure memory records why authentication and a
+wallet address cannot substitute for a portfolio source.
+
+No portfolio, balance, allocation, or cross-product activity adapter, backend
+route, SDK, dependency, refresh, retry, polling, persistence, or inferred
+loading/empty/error state is added by this boundary.
+
+The focused Home, Net Worth, navigation, notification, security, and catalog
+tests passed; the full Flutter suite passed all 590 tests. Harness validation
+passed and the Python mutation suite passed all 221 tests. Analyze passed for
+every Dart file changed by this slice. Repository-wide analyze and format
+checks were not claimed clean because the working tree already contained two
+out-of-scope user edits; those files remain unmodified and uncommitted. No
+native build, simulator, interactive run, device validation, or package
+artifact was produced.

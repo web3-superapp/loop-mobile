@@ -155,7 +155,7 @@ abstract final class SurfaceCatalog {
       path: '/home',
       priority: ProductPriority.a,
       module: SurfaceModule.home,
-      description: 'Portfolio context and the cross-product activity feed.',
+      description: 'Provider-scoped availability; portfolio and activity fixtures remain inside a labelled Preview.',
     ),
     AppSurface(
       id: 'B2',
@@ -163,7 +163,7 @@ abstract final class SurfaceCatalog {
       path: '/home/net-worth',
       priority: ProductPriority.b,
       module: SurfaceModule.home,
-      description: 'Asset history split across chains and trading accounts.',
+      description: 'Production portfolio facts are unavailable; static allocation remains inside a labelled Preview.',
     ),
     AppSurface(
       id: 'B3',

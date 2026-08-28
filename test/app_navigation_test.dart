@@ -162,10 +162,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final activity = find.text('ETH moved above your alert');
-    await tester.ensureVisible(activity);
+    final discover = find.byKey(
+      const ValueKey<String>('home-open-public-market'),
+    );
+    await tester.ensureVisible(discover);
     await tester.pumpAndSettle();
-    await tester.tap(activity);
+    await tester.tap(discover);
     await tester.pumpAndSettle();
 
     expect(find.text('Spot market'), findsOneWidget);
@@ -595,6 +597,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Offline preview · not connected'), findsOneWidget);
+    expect(find.text('Audio Room'), findsOneWidget);
+    expect(find.text('ETH Macro Room'), findsNothing);
     await tester.tap(find.widgetWithText(NavigationDestination, 'Chat'));
     await tester.pumpAndSettle();
 
