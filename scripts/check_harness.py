@@ -75,6 +75,7 @@ REQUIRED_FILES = (
     "docs/decisions/0036-mount-public-spot-full-chart.md",
     "docs/decisions/0037-bound-home-portfolio-and-net-worth-facts.md",
     "docs/decisions/0038-bound-new-pairs-to-exact-preview.md",
+    "docs/decisions/0039-close-preview-group-info-controls.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/gitnexus-generated-source-pollution.md",
     "docs/failures/providerless-notification-fixtures.md",
@@ -87,6 +88,7 @@ REQUIRED_FILES = (
     "docs/failures/production-chat-preview-route-leak.md",
     "docs/failures/perp-semantics-in-chat-preview.md",
     "docs/failures/preview-message-request-fake-success.md",
+    "docs/failures/preview-group-info-controls-without-effects.md",
     "docs/failures/sqlite3-native-hook-download.md",
     "docs/failures/swiftpm-file-picker-cold-cache.md",
     "docs/harness/adoption-report.md",
@@ -2978,6 +2980,8 @@ CHAT_PREVIEW_CONVERSATION_ID_TEST_MARKERS = {
         "Preview deep links require an exact ID and never mount a fallback composer",
         "Conversation search keeps the exact Preview scope",
         "Group information preserves the exact Preview search scope",
+        "Group information labels preferences as process-local Preview state",
+        "Group information disables unsupported member and leave actions",
         "Unknown or kind-mismatched search results are not navigable",
         "Inbox refuses an unregistered same-kind Preview conversation",
         "Global Search names and opens the exact registered group",
@@ -2985,14 +2989,15 @@ CHAT_PREVIEW_CONVERSATION_ID_TEST_MARKERS = {
     ),
 }
 CHAT_PREVIEW_CONVERSATION_ID_TEST_FINGERPRINT = (
-    "9ac7715c24461c35eaaa2fd264b15b75d2a3fa9835fe34224f089fda758fa1b4"
+    "46011bed6be61b89d134fa4f58fc2bbe6fee0917b80f833fd33e7a60397e5ec1"
 )
 CHAT_PREVIEW_CONVERSATION_ID_SOURCE_FINGERPRINTS = {
     "resolver": "f5bde23d09275447183ba03c3dab6a0d9d865d134bfd54710b6a9d704c0b8597",
     "primary_routes": "2cfd47ba25ac99a4435fd913b50d56decae3bc5d235549f240d11ef27a0c4ec9",
     "secondary_routes": "8b6fd9d4bce7e380e4fcf0bf3d5e54691b1e9cbaf9618784ddc7a8354b45023c",
     "conversation_pages": "4d71552865ef9c3f872da63d4cdcb9299468e3f07e0bafdf40f7e72f97f51a11",
-    "group_info": "e7153dd61f1829d8fcc696c011b08a405604734dad37eeb2ac43b68e5a6baf10",
+    "group_info": "d967998206d33611981bbd5107e9b51975cbfbf2c69a121800b0584731a0b54c",
+    "member_list": "9e34dccc196b4237baba7ea8a6b1ece71c297d010b1a5a8c7cd264d9419350bd",
     "search": "6684f9a8aae999ba5a780340283fee75a1df0bfba701e7f94652e8ccba02b96a",
     "inbox_navigation": "e854a63e6871f7c56b14a0671617413c3191670b656ccef4fa13fe8b0abe72fe",
     "gateway": "a2ed73bcb1f80ac4110aa8f48fcb5f3c68d2d2270028dbf246e37af43df24701",
@@ -3053,6 +3058,14 @@ def check_chat_preview_conversation_id_contract(root: Path) -> list[str]:
                 "kind: ConversationKind.group",
                 "if (target == null) return const PreviewConversationUnavailablePage();",
                 "onPressed: () => context.push(target.searchLocation)",
+                "Preview controls only",
+                "do not read or write Stream notification settings",
+                "if (!value) _mentionsOnly = false;",
+                "preview-group-notifications",
+                "preview-group-mentions-only",
+                "No member actions",
+                "preview-group-leave-unavailable",
+                "Membership actions unavailable",
                 "PreviewConversationIdentity.resolveMessage(conversationId)",
                 "result.conversationId == scope.id",
                 "conversationId: _scope?.id",
@@ -3082,6 +3095,8 @@ def check_chat_preview_conversation_id_contract(root: Path) -> list[str]:
             "docs/product/implementation-constraints.md": (
                 "Legacy Preview group and direct-message routes require one exact registered `conversationId`.",
                 "The memory gateway never substitutes another fixture",
+                "Legacy Preview group-information preferences are process-local layout state only.",
+                "Member management and leaving remain disabled",
             ),
             "docs/decisions/0025-require-exact-preview-conversation-identity.md": (
                 "## Status",
@@ -3096,8 +3111,79 @@ def check_chat_preview_conversation_id_contract(root: Path) -> list[str]:
                 "## Prevention",
                 "## Evidence",
             ),
+            "docs/decisions/0039-close-preview-group-info-controls.md": (
+                "## Status",
+                "## Context",
+                "## Decision",
+                "## Consequences",
+                "## Evidence",
+            ),
+            "docs/failures/preview-group-info-controls-without-effects.md": (
+                "## Root Cause",
+                "## Detection",
+                "## Prevention",
+                "## Evidence",
+            ),
+            "lib/core/navigation/surface_catalog.dart": (
+                "Exact-ID Preview group layout; preferences are process-local and membership actions are disabled.",
+            ),
         },
     )
+
+    page_path = root / "lib/features/chat/chat_secondary_pages.dart"
+    if page_path.is_file():
+        source = strip_dart_comments(read_text(page_path))
+        start = source.find("class GroupInfoPage")
+        end = source.find("class MessageRequestsPage", start + 1)
+        if start < 0 or end < 0:
+            errors.append(
+                "Preview group information must retain one bounded control slice"
+            )
+        else:
+            group_info = source[start:end]
+            if "onPressed: () {}" in group_info or "Member options" in group_info:
+                errors.append(
+                    "Preview group member rows cannot expose an enabled placeholder action"
+                )
+            if "_confirmLeaveGroup" in group_info or "Leave group" in group_info:
+                errors.append(
+                    "Preview group membership cannot use a dialog-only Leave action"
+                )
+            if not re.search(
+                r"key:\s*const ValueKey<String>\('preview-group-leave-unavailable'\)"
+                r"[\s\S]{0,160}?onPressed:\s*null",
+                group_info,
+            ):
+                errors.append(
+                    "Preview group Leave must remain explicitly disabled without a Stream mutation"
+                )
+            if "if (!value) _mentionsOnly = false;" not in group_info:
+                errors.append(
+                    "Preview group preferences must clear dependent mentions-only local state"
+                )
+            if (
+                "do not read or write Stream notification settings"
+                not in group_info
+            ):
+                errors.append(
+                    "Preview group preferences must disclose that no Stream setting is read or written"
+                )
+            if "New messages and group activity" in group_info:
+                errors.append(
+                    "Preview group preferences cannot imply provider notification delivery"
+                )
+
+        member_list_start = source.find("Future<void> _showMemberList")
+        if member_list_start < 0:
+            errors.append(
+                "Preview group member list must retain one bounded control slice"
+            )
+        else:
+            member_list = source[member_list_start:]
+            if "onPressed: () {}" in member_list or "Member options" in member_list:
+                errors.append(
+                    "Preview group member list cannot expose an enabled placeholder action"
+                )
 
     fingerprints = (
         (
@@ -3134,6 +3220,13 @@ def check_chat_preview_conversation_id_contract(root: Path) -> list[str]:
             "Future<void> _showMemberList",
             "group_info",
             "Preview group information",
+        ),
+        (
+            "lib/features/chat/chat_secondary_pages.dart",
+            "Future<void> _showMemberList",
+            None,
+            "member_list",
+            "Preview group member list",
         ),
         (
             "lib/features/chat/chat_secondary_pages.dart",
@@ -3187,8 +3280,12 @@ def check_chat_preview_conversation_id_contract(root: Path) -> list[str]:
             reviewed = source
         else:
             start = source.find(start_marker)
-            end = source.find(end_marker, start + 1)
-            if start < 0 or end < 0:
+            end = (
+                len(source)
+                if end_marker is None
+                else source.find(end_marker, start + 1)
+            )
+            if start < 0 or (end_marker is not None and end < 0):
                 errors.append(f"{label} must retain one bounded reviewed source slice")
                 continue
             reviewed = source[start:end]

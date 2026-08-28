@@ -23,6 +23,13 @@ class _GroupInfoPageState extends ConsumerState<GroupInfoPage> {
   var _notifications = true;
   var _mentionsOnly = false;
 
+  void _setNotifications(bool value) {
+    setState(() {
+      _notifications = value;
+      if (!value) _mentionsOnly = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final target = PreviewConversationIdentity.resolve(
@@ -36,7 +43,7 @@ class _GroupInfoPageState extends ConsumerState<GroupInfoPage> {
       eyebrow: 'Group',
       title: target.title,
       subtitle: preview
-          ? 'Offline preview · simulated members and presence'
+          ? 'Offline preview · simulated member layout'
           : gateway.isConfigured
           ? 'Static member layout · Stream presence not verified'
           : 'Stream not connected',
@@ -105,7 +112,14 @@ class _GroupInfoPageState extends ConsumerState<GroupInfoPage> {
           icon: Icons.campaign_outlined,
           tone: LoopTone.conversation,
         ),
-        const LoopSectionLabel('Preferences'),
+        const LoopSectionLabel('Preferences · 开发预览'),
+        const LoopStateCard(
+          title: 'Preview controls only',
+          message: 'These switches change only this process-local page state. They do not read or write Stream notification settings.',
+          icon: Icons.tune_rounded,
+          tone: LoopTone.warning,
+        ),
+        const SizedBox(height: 12),
         LoopCard(
           padding: EdgeInsets.zero,
           child: Column(
@@ -113,10 +127,13 @@ class _GroupInfoPageState extends ConsumerState<GroupInfoPage> {
               Material(
                 color: Colors.transparent,
                 child: SwitchListTile.adaptive(
+                  key: const ValueKey<String>('preview-group-notifications'),
                   value: _notifications,
-                  onChanged: (value) => setState(() => _notifications = value),
-                  title: const Text('Notifications'),
-                  subtitle: const Text('New messages and group activity'),
+                  onChanged: _setNotifications,
+                  title: const Text('Notification layout'),
+                  subtitle: const Text(
+                    'Process-local example; no Stream setting is changed',
+                  ),
                   secondary: const Icon(Icons.notifications_outlined),
                 ),
               ),
@@ -124,13 +141,14 @@ class _GroupInfoPageState extends ConsumerState<GroupInfoPage> {
               Material(
                 color: Colors.transparent,
                 child: SwitchListTile.adaptive(
+                  key: const ValueKey<String>('preview-group-mentions-only'),
                   value: _mentionsOnly,
                   onChanged: _notifications
                       ? (value) => setState(() => _mentionsOnly = value)
                       : null,
-                  title: const Text('Mentions only'),
+                  title: const Text('Mentions-only layout'),
                   subtitle: const Text(
-                    'Quiet everything except direct mentions',
+                    'Local dependent-state example for this page',
                   ),
                   secondary: const Icon(Icons.alternate_email_rounded),
                 ),
@@ -160,12 +178,20 @@ class _GroupInfoPageState extends ConsumerState<GroupInfoPage> {
           ),
         ),
         const SizedBox(height: 28),
+        const LoopStateCard(
+          title: 'Membership actions unavailable',
+          message: 'No Stream membership mutation is connected. Preview members remain unchanged.',
+          icon: Icons.group_off_outlined,
+          tone: LoopTone.warning,
+        ),
+        const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: () => _confirmLeaveGroup(context),
-            icon: const Icon(Icons.logout_rounded, color: LoopColors.danger),
-            label: const Text('Leave group'),
+            key: const ValueKey<String>('preview-group-leave-unavailable'),
+            onPressed: null,
+            icon: const Icon(Icons.logout_rounded),
+            label: const Text('Leave unavailable'),
             style: OutlinedButton.styleFrom(foregroundColor: LoopColors.danger),
           ),
         ),
@@ -190,12 +216,7 @@ class _MemberRow extends StatelessWidget {
     return ListTile(
       leading: ChatAvatar(label: alias, size: 40, colorSeed: colorSeed),
       title: Text(alias),
-      subtitle: Text(role),
-      trailing: IconButton(
-        onPressed: () {},
-        tooltip: 'Member options',
-        icon: const Icon(Icons.more_horiz_rounded),
-      ),
+      subtitle: Text('$role · No member actions'),
     );
   }
 }
@@ -862,34 +883,6 @@ Future<void> _showMemberList(BuildContext context) {
             ],
           ),
         ),
-      );
-    },
-  );
-}
-
-Future<void> _confirmLeaveGroup(BuildContext context) {
-  return showDialog<void>(
-    context: context,
-    builder: (dialogContext) {
-      return AlertDialog(
-        title: const Text('Leave Glyph Hunters?'),
-        content: const Text(
-          'You will stop receiving messages and must be invited again to return.',
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Stay'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            style: FilledButton.styleFrom(
-              backgroundColor: LoopColors.danger,
-              foregroundColor: LoopColors.abyss,
-            ),
-            child: const Text('Leave'),
-          ),
-        ],
       );
     },
   );

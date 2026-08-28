@@ -1933,6 +1933,129 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected exact Preview Group Info guard: {result}",
         )
 
+    def test_chat_preview_group_member_cannot_restore_empty_action(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_secondary_pages.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "subtitle: Text('$role · No member actions'),",
+                    "subtitle: Text(role),\n"
+                    "      trailing: IconButton(\n"
+                    "        onPressed: () {},\n"
+                    "        icon: const Icon(Icons.more_horiz_rounded),\n"
+                    "      ),",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("member rows" in error and "placeholder action" in error for error in result),
+            msg=f"expected disabled Preview member-action guard: {result}",
+        )
+
+    def test_chat_preview_group_member_sheet_cannot_restore_empty_action(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_secondary_pages.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "onPressed: () => Navigator.of(sheetContext).pop(),",
+                    "onPressed: () {},",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any(
+                "member list" in error and "placeholder action" in error
+                for error in result
+            ),
+            msg=f"expected disabled Preview member-sheet guard: {result}",
+        )
+
+    def test_chat_preview_group_leave_cannot_be_enabled_without_stream(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_secondary_pages.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            old = (
+                "key: const ValueKey<String>('preview-group-leave-unavailable'),\n"
+                "            onPressed: null,"
+            )
+            new = (
+                "key: const ValueKey<String>('preview-group-leave-unavailable'),\n"
+                "            onPressed: () {},"
+            )
+            path.write_text(source.replace(old, new, 1), encoding="utf-8")
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("Leave must remain explicitly disabled" in error for error in result),
+            msg=f"expected disabled Preview Leave guard: {result}",
+        )
+
+    def test_chat_preview_group_preferences_must_clear_dependent_state(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_secondary_pages.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "if (!value) _mentionsOnly = false;",
+                    "if (!value) _mentionsOnly = _mentionsOnly;",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("clear dependent mentions-only" in error for error in result),
+            msg=f"expected dependent Preview preference guard: {result}",
+        )
+
+    def test_chat_preview_group_preferences_must_disclose_no_stream_write(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/chat/chat_secondary_pages.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "do not read or write Stream notification settings",
+                    "are now enabled for this group",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_chat_preview_conversation_id_contract(root)
+
+        self.assertTrue(
+            any("no Stream setting is read or written" in error for error in result),
+            msg=f"expected Preview notification-truth guard: {result}",
+        )
+
     def test_chat_preview_unavailable_page_cannot_offer_group_fallback(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

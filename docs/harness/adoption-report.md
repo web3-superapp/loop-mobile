@@ -729,3 +729,33 @@ remain non-clean only for the preserved user edits in
 `lib/widgets/loop_ui.dart` and `test/loop_perp_providers_test.dart`; this slice
 did not edit either file. No backend/provider request, build, simulator,
 interactive run, physical-device validation, or package artifact was produced.
+
+## Preview Group Information Control Closure
+
+On 2026-08-28, decision 0039 removed the remaining enabled placeholders from
+the exact-ID Development Preview group-information page. Notification switches
+now state that they change process-local layout state only, and disabling the
+parent example clears its mentions-only dependent state. They do not read or
+write a Stream notification setting.
+
+Member rows no longer expose empty option callbacks, and Leave remains
+explicitly disabled while no official Stream membership mutation exists. The
+page no longer treats closing a dialog as evidence that the user left a group.
+Exact conversation resolution, scoped local search, the labelled member-list
+layout, production Stream CID routing, and the production Audio Room lobby are
+unchanged.
+
+The existing exact-conversation Harness now fingerprints the reviewed controls,
+the separate member-list sheet, and executable evidence. Five new mutations
+reject an enabled empty member action on either member surface, enabled Leave,
+loss of the dependent-state reset, and removal of the no-Stream-write
+disclosure. No provider request, persistence, Chat state machine, backend
+route, build, simulator, interactive run, physical-device validation, or
+package artifact was added.
+
+Harness validation passed, the Python mutation suite passed 239/239, the
+focused Chat Preview suite passed 20/20, and the complete Flutter suite passed
+604/604. Targeted analysis of the changed Dart files reported no issues.
+Repository-wide format and analysis reached all Dart files but remain
+non-clean only for the preserved user edits in `lib/widgets/loop_ui.dart` and
+`test/loop_perp_providers_test.dart`; this slice did not edit either file.

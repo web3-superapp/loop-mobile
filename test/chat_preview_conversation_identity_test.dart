@@ -210,6 +210,91 @@ void main() {
     expect(gateway.lastSearchConversationId, ChatContent.groupId);
   });
 
+  testWidgets(
+    'Group information labels preferences as process-local Preview state',
+    (tester) async {
+      final router = await _pumpPreviewApp(
+        tester,
+        gateway: MemoryCommunicationGateway(),
+      );
+
+      router.go(
+        PreviewConversationIdentity.groupInfoLocation(ChatContent.groupId)!,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Preview controls only'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'do not read or write Stream notification settings',
+        ),
+        findsOneWidget,
+      );
+
+      final notifications = find.byKey(
+        const ValueKey<String>('preview-group-notifications'),
+      );
+      final mentions = find.byKey(
+        const ValueKey<String>('preview-group-mentions-only'),
+      );
+      expect(tester.widget<SwitchListTile>(notifications).value, isTrue);
+      expect(tester.widget<SwitchListTile>(mentions).onChanged, isNotNull);
+
+      await tester.ensureVisible(mentions);
+      await tester.pumpAndSettle();
+      await tester.tap(mentions);
+      await tester.pump();
+      expect(tester.widget<SwitchListTile>(mentions).value, isTrue);
+
+      await tester.ensureVisible(notifications);
+      await tester.pumpAndSettle();
+      await tester.tap(notifications);
+      await tester.pump();
+
+      expect(tester.widget<SwitchListTile>(notifications).value, isFalse);
+      expect(tester.widget<SwitchListTile>(mentions).value, isFalse);
+      expect(tester.widget<SwitchListTile>(mentions).onChanged, isNull);
+    },
+  );
+
+  testWidgets(
+    'Group information disables unsupported member and leave actions',
+    (tester) async {
+      final router = await _pumpPreviewApp(
+        tester,
+        gateway: MemoryCommunicationGateway(),
+      );
+
+      router.go(
+        PreviewConversationIdentity.groupInfoLocation(ChatContent.groupId)!,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Member options'), findsNothing);
+      expect(find.textContaining('No member actions'), findsNWidgets(4));
+
+      final leave = find.byKey(
+        const ValueKey<String>('preview-group-leave-unavailable'),
+      );
+      await tester.ensureVisible(leave);
+      expect(tester.widget<OutlinedButton>(leave).onPressed, isNull);
+      expect(find.text('Leave unavailable'), findsOneWidget);
+      expect(find.text('Leave Glyph Hunters?'), findsNothing);
+
+      final seeMore = find.text('See more');
+      await tester.ensureVisible(seeMore);
+      await tester.pumpAndSettle();
+      await tester.tap(seeMore);
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Member options'), findsNothing);
+      final visibleSheetMembers = find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.textContaining('No member actions'),
+      );
+      expect(visibleSheetMembers.evaluate().length, greaterThanOrEqualTo(5));
+    },
+  );
+
   testWidgets('Unknown or kind-mismatched search results are not navigable', (
     tester,
   ) async {

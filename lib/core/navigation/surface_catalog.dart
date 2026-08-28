@@ -468,8 +468,7 @@ abstract final class SurfaceCatalog {
       path: '/chat/group-info',
       priority: ProductPriority.b,
       module: SurfaceModule.chat,
-      description:
-          'Preview group information bound to the same exact conversation ID.',
+      description: 'Exact-ID Preview group layout; preferences are process-local and membership actions are disabled.',
     ),
     AppSurface(
       id: 'E9',
