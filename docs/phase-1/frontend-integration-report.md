@@ -811,3 +811,51 @@ Verification on 2026-08-28:
   OS-state mapping, Firebase or Camera configuration, native build, simulator,
   interactive run, physical-device validation or package artifact was added or
   exercised.
+
+## Global Feedback Truth Boundary
+
+On 2026-08-28, decision 0034 removed the three fabricated result examples from
+the routed I7 component surface. A naked `/preview/toast` route now says that no
+current feedback context is connected. Opening the route no longer claims that
+Notification Preferences were saved, Market prices are delayed or a Spot order
+has an unconfirmed status.
+
+An exact owning feature may explicitly supply one presentation-safe
+`LoopGlobalFeedback` with success, warning or error semantics, reviewed display
+copy and an optional action label. Empty and whitespace-only messages fail
+closed at runtime; empty or whitespace-only action labels never create a
+button. The action also requires its dedicated callback, Dismiss requires a
+separate callback, and generic route actions cannot authorize either behavior.
+The renderer announces exact kind and copy as a live region, uses icon plus
+text, and stacks controls at large text sizes.
+
+The owning feature remains the state authority and retains raw errors,
+identifiers, sensitive values and retry semantics. A confirmed committed
+outcome is required before success; timeout and ambiguous writes remain
+outcome-neutral under I2. This slice adds no event bus, queue, automatic
+timeout, persistence, analytics or root overlay host, and it does not replace
+the independently sourced I1 connectivity banner. Existing feature SnackBars
+were not migrated.
+
+Verification on 2026-08-28:
+
+- All 11 I7 tests passed, covering the formal `/preview/toast` route, unknown
+  and three explicit semantic states, runtime empty/whitespace failure closure,
+  exact action pairing, independent Dismiss, generic action isolation,
+  live-region and button semantics, removal of every former fabricated claim,
+  and both unknown and long active 390 × 844 layouts at 2× text scale with all
+  rendered actions invoked.
+- The focused I1-I7, application-navigation and surface-catalog suite passed
+  all 78 tests. Changed-file formatting reported 0 changes, and changed-file
+  analysis passed with no issues.
+- `bin/flutter test` passed all 558 Flutter tests.
+- `python3 scripts/check_harness.py` passed, and all 209 Harness mutation tests
+  passed.
+- Repository-wide formatting reported only the pre-existing user change in
+  `lib/widgets/loop_ui.dart`. Repository-wide analysis reported only its
+  pre-existing `use_null_aware_elements` info and the pre-existing
+  `prefer_initializing_formals` info in
+  `test/loop_perp_providers_test.dart`; no I7 file was reported.
+- No production feedback source, host, event bus, queue, timer, persistence,
+  backend route, SDK, dependency, native build, simulator, interactive run,
+  physical-device validation or package artifact was added or exercised.

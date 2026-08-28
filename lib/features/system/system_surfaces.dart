@@ -66,6 +66,34 @@ final class LoopPermissionPrompt {
   final LoopPermissionPromptMode mode;
 }
 
+/// Presentation-safe feedback supplied by the exact feature that observed it.
+///
+/// The owning feature keeps raw exceptions, request identifiers, provider
+/// payloads, retry semantics, and any sensitive values. This projection carries
+/// only reviewed display copy and an optional exact action label.
+@immutable
+final class LoopGlobalFeedback {
+  const LoopGlobalFeedback({
+    required this.kind,
+    required this.message,
+    this.actionLabel,
+  });
+
+  final LoopNoticeKind kind;
+  final String message;
+  final String? actionLabel;
+
+  String? get presentationMessage {
+    final value = message.trim();
+    return value.isEmpty ? null : value;
+  }
+
+  String? get presentationActionLabel {
+    final value = actionLabel?.trim();
+    return value == null || value.isEmpty ? null : value;
+  }
+}
+
 /// Single routing surface for global system UI I1-I8.
 class SystemSurfaceScreen extends StatelessWidget {
   const SystemSurfaceScreen.fromId(
@@ -84,12 +112,15 @@ class SystemSurfaceScreen extends StatelessWidget {
     this.onPermissionRequest,
     this.onPermissionOpenSettings,
     this.onPermissionNotNow,
+    this.onFeedbackAction,
+    this.onFeedbackDismiss,
     this.connectivityScope,
     this.serviceErrorObservation,
     this.forceUpdateRequirement,
     this.maintenanceNotice,
     this.featureAvailabilityRestriction,
     this.permissionPrompt,
+    this.globalFeedback,
   });
 
   static const supportedIds = <String>{
@@ -117,12 +148,15 @@ class SystemSurfaceScreen extends StatelessWidget {
   final SystemAction? onPermissionRequest;
   final SystemAction? onPermissionOpenSettings;
   final SystemAction? onPermissionNotNow;
+  final SystemAction? onFeedbackAction;
+  final SystemAction? onFeedbackDismiss;
   final LoopConnectivityScope? connectivityScope;
   final LoopServiceErrorObservation? serviceErrorObservation;
   final LoopForceUpdateRequirement? forceUpdateRequirement;
   final LoopMaintenanceNotice? maintenanceNotice;
   final LoopFeatureAvailabilityRestriction? featureAvailabilityRestriction;
   final LoopPermissionPrompt? permissionPrompt;
+  final LoopGlobalFeedback? globalFeedback;
 
   String get _id => surfaceId.replaceFirst('#', '').toLowerCase();
 
@@ -173,7 +207,14 @@ class SystemSurfaceScreen extends StatelessWidget {
                 onOpenSettings: onPermissionOpenSettings,
                 onNotNow: onPermissionNotNow,
               ),
-      'toast' => const _NoticeGallery(),
+      'toast' =>
+        globalFeedback?.presentationMessage == null
+            ? _FeedbackStatusUnavailableScreen(onContinue: onSecondaryAction)
+            : _GlobalFeedbackScreen(
+                feedback: globalFeedback!,
+                onAction: onFeedbackAction,
+                onDismiss: onFeedbackDismiss,
+              ),
       'loading' => const _SkeletonGallery(),
       _ => const _UnknownSystemScreen(),
     };
@@ -261,26 +302,28 @@ class LoopConnectivityBanner extends StatelessWidget {
   }
 }
 
-/// I7 success/warning/error notice. Suitable for Overlay or Snackbar hosts.
+/// I7 success/warning/error notice. Its host owns placement and lifetime.
 class LoopGlobalNotice extends StatelessWidget {
   const LoopGlobalNotice({
-    required this.kind,
-    required this.message,
+    required this.feedback,
     super.key,
-    this.actionLabel,
     this.onAction,
     this.onDismiss,
   });
 
-  final LoopNoticeKind kind;
-  final String message;
-  final String? actionLabel;
+  final LoopGlobalFeedback feedback;
   final VoidCallback? onAction;
   final VoidCallback? onDismiss;
 
   @override
   Widget build(BuildContext context) {
-    final (color, icon, label) = switch (kind) {
+    final message = feedback.presentationMessage;
+    if (message == null) {
+      return const SizedBox.shrink(
+        key: ValueKey<String>('invalid-global-feedback'),
+      );
+    }
+    final (color, icon, label) = switch (feedback.kind) {
       LoopNoticeKind.success => (
         LoopColors.mint,
         Icons.check_circle_outline_rounded,
@@ -297,7 +340,28 @@ class LoopGlobalNotice extends StatelessWidget {
         'Error',
       ),
     };
+    final useStackedLayout = MediaQuery.textScalerOf(context).scale(10) > 15;
+    final actionLabel = feedback.presentationActionLabel;
+    final actions = <Widget>[
+      if (actionLabel != null && onAction != null)
+        TextButton(onPressed: onAction, child: Text(actionLabel)),
+      if (onDismiss != null)
+        Semantics(
+          button: true,
+          label: 'Dismiss',
+          onTap: onDismiss,
+          child: ExcludeSemantics(
+            child: IconButton(
+              tooltip: 'Dismiss',
+              onPressed: onDismiss,
+              icon: const Icon(Icons.close_rounded, size: 19),
+            ),
+          ),
+        ),
+    ];
     return Semantics(
+      container: true,
+      explicitChildNodes: true,
       liveRegion: true,
       label: '$label. $message',
       child: Material(
@@ -317,26 +381,52 @@ class LoopGlobalNotice extends StatelessWidget {
               ),
             ],
           ),
-          child: Row(
-            children: <Widget>[
-              Icon(icon, color: color, size: 21),
-              const SizedBox(width: 11),
-              Expanded(
-                child: Text(
-                  message,
-                  style: Theme.of(context).textTheme.bodyLarge,
+          child: useStackedLayout
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        ExcludeSemantics(
+                          child: Icon(icon, color: color, size: 21),
+                        ),
+                        const SizedBox(width: 11),
+                        Expanded(
+                          child: ExcludeSemantics(
+                            child: Text(
+                              message,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (actions.isNotEmpty)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: actions,
+                        ),
+                      ),
+                  ],
+                )
+              : Row(
+                  children: <Widget>[
+                    ExcludeSemantics(child: Icon(icon, color: color, size: 21)),
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: ExcludeSemantics(
+                        child: Text(
+                          message,
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ),
+                    ),
+                    ...actions,
+                  ],
                 ),
-              ),
-              if (actionLabel != null && onAction != null)
-                TextButton(onPressed: onAction, child: Text(actionLabel!)),
-              if (onDismiss != null)
-                IconButton(
-                  tooltip: 'Dismiss',
-                  onPressed: onDismiss,
-                  icon: const Icon(Icons.close_rounded, size: 19),
-                ),
-            ],
-          ),
         ),
       ),
     );
@@ -703,31 +793,51 @@ class _PermissionStatusUnavailableScreen extends StatelessWidget {
   }
 }
 
-class _NoticeGallery extends StatelessWidget {
-  const _NoticeGallery();
+class _GlobalFeedbackScreen extends StatelessWidget {
+  const _GlobalFeedbackScreen({
+    required this.feedback,
+    required this.onAction,
+    required this.onDismiss,
+  });
+
+  final LoopGlobalFeedback feedback;
+  final VoidCallback? onAction;
+  final VoidCallback? onDismiss;
 
   @override
   Widget build(BuildContext context) {
-    return const LoopPage(
-      eyebrow: 'GLOBAL NOTICES',
-      title: 'Short, specific feedback',
-      subtitle: 'Notices state exactly what happened and preserve a clear next action.',
-      children: <Widget>[
-        LoopGlobalNotice(
-          kind: LoopNoticeKind.success,
-          message: 'Notification preferences saved.',
-        ),
-        SizedBox(height: 12),
-        LoopGlobalNotice(
-          kind: LoopNoticeKind.warning,
-          message: 'Market prices may be delayed.',
-        ),
-        SizedBox(height: 12),
-        LoopGlobalNotice(
-          kind: LoopNoticeKind.error,
-          message: 'The order status could not be confirmed.',
-        ),
-      ],
+    return _SystemStateScaffold(
+      eyebrow: 'GLOBAL FEEDBACK',
+      title: 'Feature feedback',
+      message: 'This notice was supplied by the feature that observed the current outcome.',
+      icon: Icons.campaign_outlined,
+      tone: LoopColors.vapor,
+      content: LoopGlobalNotice(
+        feedback: feedback,
+        onAction: onAction,
+        onDismiss: onDismiss,
+      ),
+      detail: 'The owning feature keeps raw errors, identifiers, sensitive values, and retry semantics out of this feedback.',
+    );
+  }
+}
+
+class _FeedbackStatusUnavailableScreen extends StatelessWidget {
+  const _FeedbackStatusUnavailableScreen({required this.onContinue});
+
+  final VoidCallback? onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SystemStateScaffold(
+      eyebrow: 'GLOBAL FEEDBACK',
+      title: 'Feedback context unavailable',
+      message: 'No feature supplied a current success, warning, or error outcome for this page.',
+      icon: Icons.help_outline_rounded,
+      tone: LoopColors.warning,
+      secondaryLabel: onContinue == null ? null : 'Return to LOOP',
+      onSecondary: onContinue,
+      detail: 'Opening this route does not mean that an action succeeded, a warning was observed, or an error occurred.',
     );
   }
 }
@@ -781,6 +891,7 @@ class _SystemStateScaffold extends StatelessWidget {
     this.onPrimary,
     this.secondaryLabel,
     this.onSecondary,
+    this.content,
     this.blocking = false,
   });
 
@@ -794,6 +905,7 @@ class _SystemStateScaffold extends StatelessWidget {
   final VoidCallback? onPrimary;
   final String? secondaryLabel;
   final VoidCallback? onSecondary;
+  final Widget? content;
   final bool blocking;
 
   @override
@@ -848,6 +960,10 @@ class _SystemStateScaffold extends StatelessWidget {
                               style: Theme.of(context).textTheme.bodyLarge
                                   ?.copyWith(color: LoopColors.vapor),
                             ),
+                            if (content != null) ...<Widget>[
+                              const SizedBox(height: 20),
+                              content!,
+                            ],
                             const SizedBox(height: 20),
                             Container(
                               width: double.infinity,
