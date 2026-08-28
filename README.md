@@ -30,6 +30,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - Launchpad 继续作为第 3 个一级入口保留，但当前只交付不可操作的 G1 占位：无项目来源时不声称项目正在进行、为空、已审核或满足资格，三个必要条件全部明确为未连接；G2–G4 继续 deferred，正式与 Preview 均不伪造项目、额度、申请、资金、签名或领取动作
 - I1 连通性页面已取消默认离线结论：裸 `/system/offline` 只显示状态来源未连接，不再把路由名当成设备断网或服务故障证据；只有组合根显式提供一个已观察的 scope 才能显示离线、公共行情故障或私有 LOOP 服务中断。全局横幅仍未挂载，也未新增连通性插件、健康轮询或自动重试
 - I2 服务错误页已取消默认失败与假追踪码：裸 `/system/error` 只显示错误上下文未连接，不再生成 `L-2048`，也不再把回首页伪装成重试或联系客服。只有精确请求返回错误或结果不可确认时，所属 feature 才能显式提供 presentation-safe observation；页面不会把超时说成确定失败。在后端 reference 的来源与精确语法完成审核前不显示任何 reference，Retry / Support 分别要求真实绑定的专用回调
+- I3 强更页已取消默认阻断与假更新动作：裸 `/system/update` 只显示版本策略未连接，可以返回 LOOP，不再声称当前版本不安全或不可跳过。只有未来 app-level 策略边界显式提供 verified requirement 才进入阻断态，`Update now` 还必须绑定独立的已审核商店动作；当前没有版本策略源、整数 build 比较、登录前根 gate 或真实 App Store / Play Store 目标
 - Watchlist 已按后端现有版本化契约完成 providerless 应用逻辑：分组、资产顺序、草稿、保存单飞、显式丢弃与版本冲突恢复均在窄端口后建模。正式入口默认不可用，不发送私有请求；只有 `main_preview.dart` 注入明确标注的内存实现。Watchlist 只保存资产标识，不把价格、涨跌、可交易性或提醒状态伪装成账户事实
 - Profile presentation 已按后端现有契约完成 providerless 应用逻辑：只建模 nullable Alias、opaque `avatar:` reference、版本与更新时间；编辑、丢弃、保存单飞、冲突重载、失败重试与迟到结果隔离均已落地。Bio 不属于该契约，Visibility 仍归独立 Privacy 资源，Avatar 选择在来源契约确定前禁用。正式入口默认不可用且不再伪报保存成功；只有显式 Preview 使用带标签的内存实现
 - Privacy preferences 已按独立后端契约完成 providerless 应用逻辑：只建模 `discoverable` 与 `private/followers/public` copy-trade visibility 偏好，支持完整草稿替换、冲突冻结、显式重载与 owner/gateway 轮换。旧版 Portfolio Broadcast、群组白名单、活动/仓位可见性和 copy-trade 假授权表单已移除；偏好不代表发现、followers 或跟单执行已启用。正式入口默认不可用，只有显式 Preview 使用带标签的内存实现

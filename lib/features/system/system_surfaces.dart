@@ -25,6 +25,15 @@ final class LoopServiceErrorObservation {
   const LoopServiceErrorObservation();
 }
 
+/// Evidence that an approved minimum-version policy blocks this build.
+///
+/// Version, platform, policy freshness, and store-destination facts remain at
+/// the future app-level policy boundary. This marker carries none of them.
+@immutable
+final class LoopForceUpdateRequirement {
+  const LoopForceUpdateRequirement();
+}
+
 /// Single routing surface for global system UI I1-I8.
 class SystemSurfaceScreen extends StatelessWidget {
   const SystemSurfaceScreen.fromId(
@@ -35,8 +44,10 @@ class SystemSurfaceScreen extends StatelessWidget {
     this.onSecondaryAction,
     this.onServiceRetry,
     this.onServiceSupport,
+    this.onForceUpdate,
     this.connectivityScope,
     this.serviceErrorObservation,
+    this.forceUpdateRequirement,
     this.permissionKind = LoopPermissionKind.camera,
     this.permissionDenied = false,
     this.maintenanceWindow = '01:00–01:30 UTC',
@@ -63,8 +74,10 @@ class SystemSurfaceScreen extends StatelessWidget {
   final SystemAction? onSecondaryAction;
   final SystemAction? onServiceRetry;
   final SystemAction? onServiceSupport;
+  final SystemAction? onForceUpdate;
   final LoopConnectivityScope? connectivityScope;
   final LoopServiceErrorObservation? serviceErrorObservation;
+  final LoopForceUpdateRequirement? forceUpdateRequirement;
   final LoopPermissionKind permissionKind;
   final bool permissionDenied;
   final String maintenanceWindow;
@@ -90,7 +103,10 @@ class SystemSurfaceScreen extends StatelessWidget {
                 onRetry: onServiceRetry,
                 onSupport: onServiceSupport,
               ),
-      'force-update' => _ForceUpdateScreen(onUpdate: onPrimaryAction),
+      'force-update' =>
+        forceUpdateRequirement == null
+            ? _UpdateStatusUnavailableScreen(onContinue: onSecondaryAction)
+            : _ForceUpdateScreen(onUpdate: onForceUpdate),
       'maintenance' => _MaintenanceScreen(
         window: maintenanceWindow,
         onRetry: onRetry,
@@ -303,6 +319,7 @@ class LoopSkeletonView extends StatelessWidget {
 
 Future<void> showLoopForceUpdateDialog(
   BuildContext context, {
+  required LoopForceUpdateRequirement requirement,
   required VoidCallback onUpdate,
 }) {
   return showDialog<void>(
@@ -318,7 +335,7 @@ Future<void> showLoopForceUpdateDialog(
         ),
         title: const Text('Update LOOP to continue'),
         content: const Text(
-          'This version can no longer protect account and trading flows correctly. Install the latest version before using the app.',
+          'An approved version policy requires a supported build before you can continue. Install a supported version before returning to LOOP.',
         ),
         actions: <Widget>[
           FilledButton(onPressed: onUpdate, child: const Text('Update now')),
@@ -450,13 +467,35 @@ class _ForceUpdateScreen extends StatelessWidget {
     return _SystemStateScaffold(
       eyebrow: 'UPDATE REQUIRED',
       title: 'Update LOOP to continue',
-      message: 'This version can no longer protect account and trading flows correctly.',
+      message: 'An approved version policy requires a supported build before you can continue.',
       icon: Icons.system_update_alt_rounded,
       tone: LoopColors.mint,
-      primaryLabel: 'Update now',
+      primaryLabel: onUpdate == null ? null : 'Update now',
       onPrimary: onUpdate,
-      detail: 'Install the latest version before returning to LOOP. This update cannot be skipped.',
+      detail: onUpdate == null
+          ? 'A verified update requirement is present, but no reviewed store action is connected.'
+          : 'Install a supported version before returning to LOOP. This requirement cannot be skipped.',
       blocking: true,
+    );
+  }
+}
+
+class _UpdateStatusUnavailableScreen extends StatelessWidget {
+  const _UpdateStatusUnavailableScreen({required this.onContinue});
+
+  final VoidCallback? onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SystemStateScaffold(
+      eyebrow: 'VERSION STATUS',
+      title: 'Update status unavailable',
+      message: 'Opening this route does not mean that this build is unsupported or unsafe. An approved minimum-version policy must explicitly require an update before LOOP can block access.',
+      icon: Icons.help_outline_rounded,
+      tone: LoopColors.warning,
+      secondaryLabel: onContinue == null ? null : 'Return to LOOP',
+      onSecondary: onContinue,
+      detail: 'No minimum-version policy is connected to this surface.',
     );
   }
 }
@@ -726,6 +765,9 @@ class _SystemStateScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopScope(
+      key: ValueKey<String>(
+        blocking ? 'system-state-blocking' : 'system-state-dismissible',
+      ),
       canPop: !blocking,
       child: Scaffold(
         body: Stack(

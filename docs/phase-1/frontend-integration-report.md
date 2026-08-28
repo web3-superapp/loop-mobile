@@ -632,3 +632,47 @@ Verification on 2026-08-28:
   `test/loop_perp_providers_test.dart`; no I2 file was reported.
 - No error provider, HTTP request, APK, application bundle, iOS build,
   simulator, interactive run or physical-device validation was performed.
+
+## Force Update Policy Truth Boundary
+
+On 2026-08-28, decision 0030 removed the implicit blocking requirement from
+the routed I3 system surface. A naked `/system/update` route now says that no
+minimum-version policy is connected, remains dismissible and exposes only an
+accurate return-to-LOOP action. It no longer claims that the installed build is
+unsafe, unsupported or unskippable, and the route's generic placeholder action
+cannot appear as `Update now`.
+
+An explicit `LoopForceUpdateRequirement` can render the retained blocking
+presentation. Its store action is independent and remains absent until an exact
+reviewed callback is supplied. The reusable force-update dialog requires the
+same marker. This is only a frontend presentation boundary: no production
+policy source or requirement is mounted, and the current authenticated route
+is not the future pre-auth whole-app gate.
+
+The marker carries no policy reason or target version. Both retained blocking
+presentations therefore request only a supported build; they do not invent an
+account/trading security defect or demand an unspecified latest version.
+
+A later authoritative gate still needs exact application/platform/channel
+matching, installed integer build input, attributable and fresh policy data,
+integer minimum-build comparison and an allowlisted App Store/Play Store
+destination. This slice adds no version/package plugin, HTTP request, polling,
+persistence, store launch, SDK, dependency or native capability.
+
+Verification on 2026-08-28:
+
+- All 8 I3 tests passed, including the formal `/system/update` route,
+  dismissible and blocking states, dedicated action isolation, the retained
+  nondismissible dialog, accessibility semantics and both 390 × 844 layouts at
+  2× text scale.
+- The focused I1-I3, application-navigation and surface-catalog suite passed
+  all 42 tests; changed-file formatting and analysis passed with no issues.
+- `bin/flutter test` passed all 522 Flutter tests.
+- `python3 scripts/check_harness.py` passed, and all 209 Harness mutation tests
+  passed.
+- Repository-wide format and analysis reported only the two pre-existing user
+  changes in `lib/widgets/loop_ui.dart` and
+  `test/loop_perp_providers_test.dart`; no I3 file was reported.
+- No minimum-version policy/provider, package metadata read, integer build
+  comparison, store launch, APK, application bundle, iOS build, simulator,
+  interactive run or physical-device validation was performed.
