@@ -34,6 +34,15 @@ final class LoopForceUpdateRequirement {
   const LoopForceUpdateRequirement();
 }
 
+/// Evidence that an approved maintenance notice is currently active.
+///
+/// The future app-level source owns notice identity, freshness, timing, and
+/// affected services. This presentation marker intentionally carries none.
+@immutable
+final class LoopMaintenanceNotice {
+  const LoopMaintenanceNotice();
+}
+
 /// Single routing surface for global system UI I1-I8.
 class SystemSurfaceScreen extends StatelessWidget {
   const SystemSurfaceScreen.fromId(
@@ -45,12 +54,14 @@ class SystemSurfaceScreen extends StatelessWidget {
     this.onServiceRetry,
     this.onServiceSupport,
     this.onForceUpdate,
+    this.onMaintenanceRecheck,
+    this.onMaintenanceStatus,
     this.connectivityScope,
     this.serviceErrorObservation,
     this.forceUpdateRequirement,
+    this.maintenanceNotice,
     this.permissionKind = LoopPermissionKind.camera,
     this.permissionDenied = false,
-    this.maintenanceWindow = '01:00–01:30 UTC',
     this.restrictedFeatures = const <String>[
       'Spot order execution',
       'Deposits and withdrawals',
@@ -75,12 +86,14 @@ class SystemSurfaceScreen extends StatelessWidget {
   final SystemAction? onServiceRetry;
   final SystemAction? onServiceSupport;
   final SystemAction? onForceUpdate;
+  final SystemAction? onMaintenanceRecheck;
+  final SystemAction? onMaintenanceStatus;
   final LoopConnectivityScope? connectivityScope;
   final LoopServiceErrorObservation? serviceErrorObservation;
   final LoopForceUpdateRequirement? forceUpdateRequirement;
+  final LoopMaintenanceNotice? maintenanceNotice;
   final LoopPermissionKind permissionKind;
   final bool permissionDenied;
-  final String maintenanceWindow;
   final List<String> restrictedFeatures;
 
   String get _id => surfaceId.replaceFirst('#', '').toLowerCase();
@@ -107,11 +120,13 @@ class SystemSurfaceScreen extends StatelessWidget {
         forceUpdateRequirement == null
             ? _UpdateStatusUnavailableScreen(onContinue: onSecondaryAction)
             : _ForceUpdateScreen(onUpdate: onForceUpdate),
-      'maintenance' => _MaintenanceScreen(
-        window: maintenanceWindow,
-        onRetry: onRetry,
-        onStatus: onSecondaryAction,
-      ),
+      'maintenance' =>
+        maintenanceNotice == null
+            ? _MaintenanceStatusUnavailableScreen(onContinue: onSecondaryAction)
+            : _MaintenanceScreen(
+                onRecheck: onMaintenanceRecheck,
+                onStatus: onMaintenanceStatus,
+              ),
       'region-restricted' => _RegionRestrictedScreen(
         features: restrictedFeatures,
         onContinue: onSecondaryAction,
@@ -501,29 +516,44 @@ class _UpdateStatusUnavailableScreen extends StatelessWidget {
 }
 
 class _MaintenanceScreen extends StatelessWidget {
-  const _MaintenanceScreen({
-    required this.window,
-    required this.onRetry,
-    required this.onStatus,
-  });
+  const _MaintenanceScreen({required this.onRecheck, required this.onStatus});
 
-  final String window;
-  final VoidCallback? onRetry;
+  final VoidCallback? onRecheck;
   final VoidCallback? onStatus;
 
   @override
   Widget build(BuildContext context) {
     return _SystemStateScaffold(
-      eyebrow: 'SCHEDULED MAINTENANCE',
-      title: 'LOOP is taking a short pause',
-      message: 'Account, wallet, trading, and chat actions are temporarily unavailable while maintenance completes.',
+      eyebrow: 'MAINTENANCE NOTICE',
+      title: 'Maintenance notice is active',
+      message: 'An approved maintenance notice is active. Feature availability still comes from each feature’s own current state.',
       icon: Icons.construction_rounded,
       tone: LoopColors.warning,
-      primaryLabel: 'Check again',
-      onPrimary: onRetry,
-      secondaryLabel: 'View service status',
+      primaryLabel: onRecheck == null ? null : 'Check again',
+      onPrimary: onRecheck,
+      secondaryLabel: onStatus == null ? null : 'View service status',
       onSecondary: onStatus,
-      detail: 'Maintenance window · $window',
+      detail: 'This notice does not include a maintenance window or affected services.',
+    );
+  }
+}
+
+class _MaintenanceStatusUnavailableScreen extends StatelessWidget {
+  const _MaintenanceStatusUnavailableScreen({required this.onContinue});
+
+  final VoidCallback? onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SystemStateScaffold(
+      eyebrow: 'MAINTENANCE STATUS',
+      title: 'Maintenance status unavailable',
+      message: 'Opening this route does not mean that maintenance is planned, active, or affecting a LOOP service. An approved current notice must be supplied before this page can report maintenance.',
+      icon: Icons.help_outline_rounded,
+      tone: LoopColors.warning,
+      secondaryLabel: onContinue == null ? null : 'Return to LOOP',
+      onSecondary: onContinue,
+      detail: 'No maintenance notice is connected to this surface.',
     );
   }
 }

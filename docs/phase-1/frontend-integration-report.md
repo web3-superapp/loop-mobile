@@ -676,3 +676,46 @@ Verification on 2026-08-28:
 - No minimum-version policy/provider, package metadata read, integer build
   comparison, store launch, APK, application bundle, iOS build, simulator,
   interactive run or physical-device validation was performed.
+
+## Maintenance Notice Truth Boundary
+
+On 2026-08-28, decision 0031 removed the fabricated active notice and fixed
+`01:00–01:30 UTC` window from the routed I4 system surface. A naked
+`/system/maintenance` route now says that no maintenance notice is connected.
+It does not claim that maintenance is planned or active, does not disable a
+feature and exposes neither recheck nor service-status actions.
+
+An app-level composition may explicitly supply one `LoopMaintenanceNotice`
+only while an approved current notice is active. The current marker carries no
+window, countdown or affected-service list, so the presentation claims none;
+each feature continues to own its current availability state. Recheck and
+service status are independent exact callbacks, and generic return-to-Home
+navigation cannot authorize either label.
+
+A richer future projection still needs a bounded notice identity/revision,
+attributable source, issue/observation time, UTC start/end, expiry, explicit
+affected-service vocabulary and an allowlisted status destination. This slice
+adds no notice/health request, timer, countdown, polling, automatic retry,
+persistence, status URL, SDK, dependency or native capability.
+
+Verification on 2026-08-28:
+
+- All 7 I4 tests passed, covering the formal `/system/maintenance` route,
+  unknown and explicit-notice states, generic/dedicated action isolation,
+  accessibility semantics, truthful copy and both 390 × 844 layouts at 2×
+  text scale with their rendered actions scrolled to and invoked.
+- The focused I1-I4, application-navigation and surface-catalog suite passed
+  all 49 tests. Changed-file formatting reported 0 changes, and changed-file
+  analysis passed with no issues.
+- `bin/flutter test` passed all 529 Flutter tests.
+- `python3 scripts/check_harness.py` passed, and all 209 Harness mutation tests
+  passed.
+- Repository-wide formatting reported only the pre-existing user change in
+  `lib/widgets/loop_ui.dart`. Repository-wide analysis reported only its
+  pre-existing `use_null_aware_elements` info and the pre-existing
+  `prefer_initializing_formals` info in
+  `test/loop_perp_providers_test.dart`; no I4 file was reported.
+- No production maintenance notice/provider, health endpoint, timer, polling,
+  status destination, APK, application bundle, iOS build, simulator,
+  interactive run, physical-device validation or package artifact was added or
+  exercised.
