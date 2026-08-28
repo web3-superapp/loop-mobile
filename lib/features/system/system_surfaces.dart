@@ -340,7 +340,7 @@ class _ConnectivityUnavailableScreen extends StatelessWidget {
           key: ValueKey<String>('connectivity-source-unavailable'),
           title: 'No connectivity source connected',
           message: 'Opening this route does not mean the device is offline or that a LOOP service failed. Live status remains unknown until an approved source reports it.',
-          icon: Icons.signal_wifi_statusbar_connected_no_internet_4_outlined,
+          icon: Icons.help_outline_rounded,
           tone: LoopTone.warning,
         ),
       ],

@@ -52,6 +52,11 @@ void main() {
       find.byKey(const ValueKey<String>('connectivity-source-unavailable')),
       findsOneWidget,
     );
+    expect(find.byIcon(Icons.help_outline_rounded), findsOneWidget);
+    expect(
+      find.byIcon(Icons.signal_wifi_statusbar_connected_no_internet_4_outlined),
+      findsNothing,
+    );
     expect(find.text('You’re offline'), findsNothing);
     expect(find.text('Market data is unavailable'), findsNothing);
     expect(find.text('Trading is temporarily unavailable'), findsNothing);
