@@ -1,8 +1,10 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/core/navigation/spot_market_route.dart';
 import 'package:loop_mobile/core/navigation/surface_catalog.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/catalog/catalog_surface_screen.dart';
@@ -16,6 +18,9 @@ import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_providers.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_repository.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle_providers.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle_repository.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_providers.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_repository.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
@@ -213,6 +218,103 @@ void main() {
 
     expect(router.routeInformationProvider.value.uri.path, '/market');
     semantics.dispose();
+  });
+
+  testWidgets(
+    'production C3 rejects legacy extras and malformed query before requests',
+    (tester) async {
+      final marketRepository = _TrackingSpotMarketRepository(
+        HyperliquidSpotSnapshot(
+          receivedAt: DateTime.utc(2026, 8, 28),
+          markets: const <HyperliquidSpotMarket>[],
+        ),
+      );
+      final candleRepository = _TrackingSpotCandleRepository();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            privyAuthGatewayProvider.overrideWithValue(
+              const AuthenticatedTestPrivyGateway(),
+            ),
+            hyperliquidSpotMarketRepositoryProvider.overrideWithValue(
+              marketRepository,
+            ),
+            hyperliquidSpotCandleRepositoryProvider.overrideWithValue(
+              candleRepository,
+            ),
+          ],
+          child: const LoopApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+      final malformed = <(String, Object?)>[
+        ('/market/chart', 'ETH'),
+        ('/market/chart?spotIndex=1&spotIndex=2', null),
+        ('/market/chart?spotIndex=1&source=preview', null),
+        ('/market/chart?spotIndex=1#fragment', null),
+      ];
+      for (final (location, extra) in malformed) {
+        router.go(location, extra: extra);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Invalid spot chart'),
+          findsOneWidget,
+          reason: location,
+        );
+        expect(find.byType(NavigationBar), findsNothing, reason: location);
+      }
+
+      expect(marketRepository.fetchCount, 0);
+      expect(candleRepository.requests, isEmpty);
+    },
+  );
+
+  testWidgets('production C3 is full-screen and closes a root link to Market', (
+    tester,
+  ) async {
+    final marketRepository = _TrackingSpotMarketRepository(_singleSpotSnapshot);
+    final candleRepository = _TrackingSpotCandleRepository();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
+          hyperliquidSpotMarketRepositoryProvider.overrideWithValue(
+            marketRepository,
+          ),
+          hyperliquidSpotCandleRepositoryProvider.overrideWithValue(
+            candleRepository,
+          ),
+        ],
+        child: const LoopApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    router.go(SpotMarketRoute.chartLocation(7));
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, '/market/chart');
+    expect(find.text('SEVEN/USDC'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
+    expect(candleRepository.requests, <HyperliquidSpotCandleRequest>[
+      const HyperliquidSpotCandleRequest(
+        providerCoin: '@7',
+        interval: HyperliquidSpotCandleInterval.fourHours,
+      ),
+    ]);
+
+    await tester.tap(find.byTooltip('关闭全屏 K 线'));
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, '/market');
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.text('Spot market'), findsOneWidget);
   });
 
   testWidgets('home Pay card opens an informational Coming soon route', (
@@ -589,6 +691,82 @@ final class _EmptySpotMarketRepository
     return HyperliquidSpotSnapshot(
       receivedAt: DateTime.utc(2026, 8, 25),
       markets: const <HyperliquidSpotMarket>[],
+    );
+  }
+}
+
+final HyperliquidSpotSnapshot _singleSpotSnapshot = HyperliquidSpotSnapshot(
+  receivedAt: DateTime.utc(2026, 8, 28, 6),
+  markets: <HyperliquidSpotMarket>[
+    HyperliquidSpotMarket(
+      spotIndex: 7,
+      providerCoin: '@7',
+      baseTokenIndex: 7,
+      quoteTokenIndex: 0,
+      baseTokenId: '0x77777777777777777777777777777777',
+      quoteTokenId: '0x00000000000000000000000000000000',
+      baseSymbol: 'SEVEN',
+      quoteSymbol: 'USDC',
+      baseSizeDecimals: 4,
+      isCanonical: true,
+      markPrice: HyperliquidSpotDecimal(
+        source: '7.25',
+        value: Decimal.parse('7.25'),
+      ),
+      previousDayPrice: HyperliquidSpotDecimal(
+        source: '7',
+        value: Decimal.parse('7'),
+      ),
+      dayNotionalVolume: HyperliquidSpotDecimal(
+        source: '7000',
+        value: Decimal.parse('7000'),
+      ),
+      dayBaseVolume: HyperliquidSpotDecimal(
+        source: '1000',
+        value: Decimal.parse('1000'),
+      ),
+    ),
+  ],
+);
+
+final class _TrackingSpotMarketRepository
+    implements HyperliquidSpotMarketRepository {
+  _TrackingSpotMarketRepository(this.snapshot);
+
+  final HyperliquidSpotSnapshot snapshot;
+  int fetchCount = 0;
+
+  @override
+  Future<HyperliquidSpotSnapshot> fetchMarkets() async {
+    fetchCount += 1;
+    return snapshot;
+  }
+}
+
+final class _TrackingSpotCandleRepository
+    implements HyperliquidSpotCandleRepository {
+  final List<HyperliquidSpotCandleRequest> requests =
+      <HyperliquidSpotCandleRequest>[];
+
+  @override
+  Future<HyperliquidSpotCandleSnapshot> fetchCandles({
+    required String providerCoin,
+    required HyperliquidSpotCandleInterval interval,
+  }) async {
+    requests.add(
+      HyperliquidSpotCandleRequest(
+        providerCoin: providerCoin,
+        interval: interval,
+      ),
+    );
+    final receivedAt = DateTime.utc(2026, 8, 28, 6);
+    return HyperliquidSpotCandleSnapshot(
+      providerCoin: providerCoin,
+      interval: interval,
+      requestedFrom: receivedAt.subtract(interval.lookback),
+      requestedUntil: receivedAt,
+      receivedAt: receivedAt,
+      candles: const <HyperliquidSpotCandle>[],
     );
   }
 }

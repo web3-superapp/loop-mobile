@@ -7,6 +7,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/market/market_models.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/features/market/spot_candle_section.dart';
+import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_failure.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_providers.dart';
@@ -615,6 +616,14 @@ class _SpotMarketDetailContent extends StatelessWidget {
           market: market,
           interval: interval,
           onIntervalChanged: onIntervalChanged,
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          key: ValueKey<String>('open-full-spot-chart-${market.spotIndex}'),
+          onPressed: () =>
+              context.push(SpotMarketRoute.chartLocation(market.spotIndex)),
+          icon: const Icon(Icons.open_in_full_rounded),
+          label: const Text('打开真实全屏 K 线'),
         ),
         const LoopSectionLabel('Public market facts'),
         LoopCard(
@@ -1562,150 +1571,242 @@ class _SourcedFact extends StatelessWidget {
   }
 }
 
-class FullChartScreen extends StatefulWidget {
-  const FullChartScreen({
-    super.key,
-    this.symbol = 'ETH',
-    this.snapshotState = MarketSnapshotState.preview,
-  });
+/// C3 full-screen projection of one admitted public Testnet Spot market.
+///
+/// Route identity is the provider's exact non-negative Spot index. Market
+/// admission always precedes the candle request, so malformed or stale links
+/// cannot substitute ETH, another market, Preview fixtures, or Perp data.
+class FullChartScreen extends ConsumerStatefulWidget {
+  const FullChartScreen({required this.spotIndex, super.key});
 
-  final String symbol;
-  final MarketSnapshotState snapshotState;
+  final int? spotIndex;
 
   @override
-  State<FullChartScreen> createState() => _FullChartScreenState();
+  ConsumerState<FullChartScreen> createState() => _FullChartScreenState();
 }
 
-class _FullChartScreenState extends State<FullChartScreen> {
-  String _period = '4H';
-  String _indicator = 'MA';
+class _FullChartScreenState extends ConsumerState<FullChartScreen> {
+  HyperliquidSpotCandleInterval _interval =
+      HyperliquidSpotCandleInterval.fourHours;
 
   @override
   Widget build(BuildContext context) {
-    final asset = MarketPreviewData.asset(widget.symbol);
-    final hasFacts = widget.snapshotState == MarketSnapshotState.preview;
+    final resolvedSpotIndex = widget.spotIndex;
+    if (resolvedSpotIndex == null || resolvedSpotIndex < 0) {
+      return const _SpotFullChartFrame(
+        title: 'Invalid spot chart',
+        subtitle: 'C3 · Hyperliquid Testnet · Spot',
+        children: <Widget>[
+          LoopStateCard(
+            title: '无法打开这张全屏 K 线',
+            message: '路由必须只携带一个规范的非负 spotIndex。未请求行情、K 线或演示币种。',
+            icon: Icons.link_off_rounded,
+            tone: LoopTone.neutral,
+          ),
+        ],
+      );
+    }
+
+    final snapshot = ref.watch(hyperliquidSpotMarketsProvider);
+    return snapshot.when(
+      skipLoadingOnReload: false,
+      skipLoadingOnRefresh: false,
+      loading: () => const _SpotFullChartFrame(
+        title: 'Spot chart',
+        subtitle: 'C3 · Hyperliquid Testnet · Spot',
+        children: <Widget>[
+          LoopSkeletonView(presentation: LoopLoadingPresentation.chart()),
+          SizedBox(height: 12),
+          Text('正在用路由中的精确 spotIndex 解析公共现货市场。', textAlign: TextAlign.center),
+        ],
+      ),
+      error: (error, stackTrace) => _SpotFullChartFrame(
+        title: 'Spot chart unavailable',
+        subtitle: 'C3 · Hyperliquid Testnet · Spot #$resolvedSpotIndex',
+        children: <Widget>[
+          LoopStateCard(
+            title: '无法确认这个现货市场',
+            message: _marketFailureMessage(error),
+            icon: Icons.candlestick_chart_outlined,
+            tone: LoopTone.warning,
+            action: _isRestrictedSessionFailure(error)
+                ? null
+                : OutlinedButton.icon(
+                    key: const ValueKey<String>('retry-full-spot-chart-market'),
+                    onPressed: () =>
+                        ref.invalidate(hyperliquidSpotMarketsProvider),
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('重试公共现货市场'),
+                  ),
+          ),
+        ],
+      ),
+      data: (value) {
+        final market = _findSpotMarket(value.markets, resolvedSpotIndex);
+        if (market == null) {
+          return _SpotFullChartFrame(
+            title: 'Spot chart unavailable',
+            subtitle: 'C3 · Hyperliquid Testnet · Spot #$resolvedSpotIndex',
+            children: <Widget>[
+              LoopStateCard(
+                title: '找不到这个现货市场',
+                message: '当前公共响应未接纳该 spotIndex，未请求 K 线，也未回退到其他币种。',
+                icon: Icons.search_off_rounded,
+                tone: LoopTone.neutral,
+                action: OutlinedButton.icon(
+                  key: const ValueKey<String>('refresh-missing-spot-chart'),
+                  onPressed: () =>
+                      ref.invalidate(hyperliquidSpotMarketsProvider),
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('刷新市场'),
+                ),
+              ),
+            ],
+          );
+        }
+        return _SpotFullChartData(
+          market: market,
+          marketReceivedAt: value.receivedAt,
+          interval: _interval,
+          onIntervalChanged: (value) => setState(() => _interval = value),
+        );
+      },
+    );
+  }
+}
+
+class _SpotFullChartData extends StatelessWidget {
+  const _SpotFullChartData({
+    required this.market,
+    required this.marketReceivedAt,
+    required this.interval,
+    required this.onIntervalChanged,
+  });
+
+  final HyperliquidSpotMarket market;
+  final DateTime marketReceivedAt;
+  final HyperliquidSpotCandleInterval interval;
+  final ValueChanged<HyperliquidSpotCandleInterval> onIntervalChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final change = market.dayChangePercent;
+    final changeIsNegative = change != null && change < Decimal.zero;
+    final chartHeight =
+        MediaQuery.orientationOf(context) == Orientation.landscape
+        ? 240.0
+        : 340.0;
+
+    return _SpotFullChartFrame(
+      key: ValueKey<String>('full-spot-chart-${market.spotIndex}'),
+      title: market.pair,
+      subtitle: 'C3 · Hyperliquid Testnet · Spot #${market.spotIndex}',
+      children: <Widget>[
+        const _SpotMarketBanner(),
+        const SizedBox(height: 14),
+        LoopCard(
+          accent: true,
+          tone: LoopTone.market,
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: <Widget>[
+              LoopAssetMark(symbol: market.baseSymbol, size: 46),
+              Text(
+                '${_groupIntegerPart(market.markPrice.source)} ${market.quoteSymbol}',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              _SpotChangeBadge(
+                label: change == null
+                    ? '24h change unavailable'
+                    : '${changeIsNegative ? '' : '+'}${change.toStringAsFixed(2)}% · 24h',
+                tone: change == null
+                    ? LoopTone.neutral
+                    : changeIsNegative
+                    ? LoopTone.danger
+                    : LoopTone.positive,
+                icon: change == null
+                    ? Icons.remove_rounded
+                    : changeIsNegative
+                    ? Icons.south_east_rounded
+                    : Icons.north_east_rounded,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        SpotCandleSection(
+          market: market,
+          interval: interval,
+          onIntervalChanged: onIntervalChanged,
+          chartHeight: chartHeight,
+        ),
+        const SizedBox(height: 12),
+        LoopStateCard(
+          title: '公共只读图表',
+          message:
+              'Market 快照由客户端于 ${_formatSpotReceivedAt(marketReceivedAt)} 收取。画线、计算指标、余额与买卖均未开放。',
+          icon: Icons.visibility_outlined,
+          tone: LoopTone.market,
+        ),
+      ],
+    );
+  }
+}
+
+class _SpotFullChartFrame extends StatelessWidget {
+  const _SpotFullChartFrame({
+    required this.title,
+    required this.subtitle,
+    required this.children,
+    super.key,
+  });
+
+  final String title;
+  final String subtitle;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          onPressed: () => context.pop(),
-          tooltip: 'Back',
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/market');
+            }
+          },
+          tooltip: '关闭全屏 K 线',
           icon: const Icon(Icons.close_rounded),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
-              '${asset.symbol} / USDC',
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             Text(
-              'C3 · chart preview',
+              subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelMedium,
             ),
           ],
         ),
-        actions: <Widget>[
-          IconButton(
-            onPressed: null,
-            tooltip: 'Drawing tools are disabled in preview',
-            icon: const Icon(Icons.draw_outlined),
-          ),
-        ],
       ),
       body: SafeArea(
         child: DecoratedBox(
           decoration: const BoxDecoration(color: LoopColors.abyss),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                MarketSnapshotBanner(
-                  state: widget.snapshotState,
-                  compact: true,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: <Widget>[
-                    Text(
-                      hasFacts ? asset.price : '—',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(width: 10),
-                    if (hasFacts)
-                      LoopStatusPill(
-                        label: asset.change,
-                        tone: asset.isPositive
-                            ? LoopTone.positive
-                            : LoopTone.danger,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 43,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: <Widget>[
-                      for (final period in <String>[
-                        '15M',
-                        '1H',
-                        '4H',
-                        '1D',
-                        '1W',
-                      ])
-                        Padding(
-                          padding: const EdgeInsets.only(right: 7),
-                          child: ChoiceChip(
-                            label: Text(period),
-                            selected: period == _period,
-                            onSelected: hasFacts
-                                ? (_) => setState(() => _period = period)
-                                : null,
-                          ),
-                        ),
-                      const SizedBox(width: 7),
-                      for (final indicator in <String>['MA', 'MACD', 'RSI'])
-                        Padding(
-                          padding: const EdgeInsets.only(right: 7),
-                          child: FilterChip(
-                            label: Text(indicator),
-                            selected: indicator == _indicator,
-                            onSelected: hasFacts
-                                ? (_) => setState(() => _indicator = indicator)
-                                : null,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: hasFacts
-                      ? LoopCard(
-                          padding: const EdgeInsets.fromLTRB(10, 18, 8, 8),
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              return MarketCandleChart(
-                                height: constraints.maxHeight,
-                                semanticLabel:
-                                    '${asset.symbol} $_period chart with $_indicator, simulated preview',
-                              );
-                            },
-                          ),
-                        )
-                      : Center(
-                          child: MarketStatePanel(state: widget.snapshotState),
-                        ),
-                ),
-                const SizedBox(height: 9),
-                Text(
-                  'Simulated candles · no live history · pinch, drawing, and execution disabled',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
-              ],
-            ),
+          child: ListView(
+            key: const ValueKey<String>('full-spot-chart-scroll'),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            children: children,
           ),
         ),
       ),

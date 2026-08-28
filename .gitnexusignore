@@ -1,0 +1,3 @@
+# Native dependencies and frozen reference code are not application source.
+ios/Pods/
+reference/legacy-prototype/

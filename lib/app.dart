@@ -218,9 +218,9 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
         },
       ),
       GoRoute(
-        path: '/market/chart',
+        path: SpotMarketRoute.chartPath,
         builder: (context, state) => FullChartScreen(
-          symbol: state.extra is String ? state.extra! as String : 'ETH',
+          spotIndex: SpotMarketRoute.parseChartSpotIndex(state.uri),
         ),
       ),
       GoRoute(

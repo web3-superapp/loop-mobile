@@ -249,7 +249,8 @@ abstract final class SurfaceCatalog {
       path: '/market/chart',
       priority: ProductPriority.a,
       module: SurfaceModule.market,
-      description: 'Landscape-ready chart with periods and indicators.',
+      description:
+          'Exact-index public Testnet Spot candles in portrait or landscape.',
     ),
     AppSurface(
       id: 'C5',

@@ -141,6 +141,22 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_dependency_pins(root)
         self.assertIn("pubspec.yaml must pin `dio` exactly to `5.11.0`", result)
 
+    def test_gitnexus_generated_and_frozen_sources_stay_excluded(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / ".gitnexusignore").write_text(
+                "ios/Pods/\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_gitnexusignore(root)
+
+        self.assertIn(
+            ".gitnexusignore must exclude generated or frozen source tree "
+            "`reference/legacy-prototype/`",
+            result,
+        )
+
     def test_sqlite3_system_source_hook_is_required(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -583,7 +599,6 @@ class HarnessTests(unittest.TestCase):
                 source.replace(
                     "expect(candleRepository.requests, isEmpty);",
                     "expect(candleRepository.requests, isNotEmpty);",
-                    1,
                 ),
                 encoding="utf-8",
             )
@@ -610,6 +625,105 @@ class HarnessTests(unittest.TestCase):
         self.assertTrue(
             any("read-only without execution navigation" in error for error in result),
             msg=f"expected candle execution-boundary guard: {result}",
+        )
+
+    def test_c3_route_cannot_restore_symbol_extra_or_default_eth(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/app.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "spotIndex: SpotMarketRoute.parseChartSpotIndex(state.uri)",
+                    "spotIndex: state.extra is int ? state.extra! as int : 0",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertTrue(
+            any("navigation extras or a default asset" in error for error in result),
+            msg=f"expected exact C3 route identity guard: {result}",
+        )
+
+    def test_c3_cannot_restore_preview_candles_or_fake_indicators(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/market/market_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "class _FullChartScreenState",
+                    "final unsafeChart = MarketCandleChart();\n"
+                    "final unsafeIndicator = 'MACD';\n"
+                    "class _FullChartScreenState",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertTrue(
+            any("fake-indicator fallback" in error for error in result),
+            msg=f"expected real C3 chart guard: {result}",
+        )
+
+    def test_c3_cannot_move_back_inside_the_primary_shell(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/app.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            route_path = source.index("        path: SpotMarketRoute.chartPath,")
+            route_start = source.rfind("      GoRoute(", 0, route_path)
+            route_end = source.index(
+                "      GoRoute(\n        path: '/market/new',",
+                route_path,
+            )
+            route = source[route_start:route_end]
+            without_route = source[:route_start] + source[route_end:]
+            shell_end = without_route.index(
+                "        ],\n      ),\n      ..._accountRoutes,"
+            )
+            path.write_text(
+                without_route[:shell_end] + route + without_route[shell_end:],
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertIn(
+            "C3 must remain a root full-screen route outside the six-destination Shell",
+            result,
+        )
+
+    def test_c3_root_close_cannot_become_an_enabled_noop(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/market/market_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "context.go('/market');",
+                    "Navigator.of(context).maybePop();",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_spot_candle_contract(root)
+
+        self.assertTrue(
+            any("C3 Close must pop" in error for error in result),
+            msg=f"expected C3 root-close guard: {result}",
         )
 
     def test_perpetual_policy_cannot_be_reenabled(self) -> None:

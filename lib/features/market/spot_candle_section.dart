@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/market/spot_candle_chart.dart';
+import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_failure.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle_providers.dart';
@@ -18,11 +19,13 @@ class SpotCandleSection extends ConsumerWidget {
     required this.interval,
     required this.onIntervalChanged,
     super.key,
+    this.chartHeight = 220,
   });
 
   final HyperliquidSpotMarket market;
   final HyperliquidSpotCandleInterval interval;
   final ValueChanged<HyperliquidSpotCandleInterval> onIntervalChanged;
+  final double chartHeight;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -138,7 +141,11 @@ class SpotCandleSection extends ConsumerWidget {
                     label: const Text('重新请求'),
                   ),
                 )
-              : _SpotCandleDataCard(market: market, snapshot: value),
+              : _SpotCandleDataCard(
+                  market: market,
+                  snapshot: value,
+                  chartHeight: chartHeight,
+                ),
         ),
       ],
     );
@@ -152,42 +159,36 @@ class _SpotCandleLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      liveRegion: true,
-      label: '正在加载 ${interval.displayLabel} 真实 K 线',
-      child: LoopCard(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 220),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                const CircularProgressIndicator(),
-                const SizedBox(height: 14),
-                Text(
-                  '正在加载 ${interval.displayLabel} 真实 K 线',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  '加载完成前不显示任何预览蜡烛。',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
-              ],
-            ),
-          ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LoopSkeletonView(presentation: LoopLoadingPresentation.chart()),
+        const SizedBox(height: 12),
+        Text(
+          '正在加载 ${interval.displayLabel} 真实 K 线',
+          textAlign: TextAlign.center,
         ),
-      ),
+        const SizedBox(height: 5),
+        Text(
+          '加载完成前不显示任何预览蜡烛。',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.labelMedium,
+        ),
+      ],
     );
   }
 }
 
 class _SpotCandleDataCard extends StatelessWidget {
-  const _SpotCandleDataCard({required this.market, required this.snapshot});
+  const _SpotCandleDataCard({
+    required this.market,
+    required this.snapshot,
+    required this.chartHeight,
+  });
 
   final HyperliquidSpotMarket market;
   final HyperliquidSpotCandleSnapshot snapshot;
+  final double chartHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -232,6 +233,7 @@ class _SpotCandleDataCard extends StatelessWidget {
           const SizedBox(height: 14),
           SpotCandleChart(
             candles: candles,
+            height: chartHeight,
             semanticLabel:
                 '${market.pair} ${snapshot.interval.displayLabel} public Testnet candlestick chart, '
                 '${candles.length} candles, exact low ${lowest.low.source}, '

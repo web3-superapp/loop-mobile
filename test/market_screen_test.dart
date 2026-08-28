@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/navigation/spot_market_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/market/market_screens.dart';
+import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_failure.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_providers.dart';
@@ -282,6 +284,7 @@ void main() {
     );
 
     expect(find.text('正在加载 4H 真实 K 线'), findsOneWidget);
+    expect(find.byType(LoopSkeletonView), findsOneWidget);
     expect(find.text('2 candles'), findsNothing);
     expect(find.textContaining('Latest O'), findsNothing);
 
@@ -290,6 +293,205 @@ void main() {
 
     expect(find.text('2 candles'), findsOneWidget);
   });
+
+  testWidgets('spot detail opens C3 with the exact admitted Spot index', (
+    tester,
+  ) async {
+    final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
+    await _pumpRoutableSpotDetail(tester, repository, spotIndex: 1);
+
+    final openChart = find.byKey(
+      const ValueKey<String>('open-full-spot-chart-1'),
+    );
+    await tester.ensureVisible(openChart);
+    await tester.tap(openChart);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('full-spot-chart-1')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byTooltip('关闭全屏 K 线'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('spot-market-detail-1')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+    'C3 renders exact public Spot candles without preview or execution',
+    (tester) async {
+      final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
+      final candleRepository = _FakeSpotCandleRepository();
+      await _pumpFullSpotChart(
+        tester,
+        repository,
+        spotIndex: 1,
+        candleRepository: candleRepository,
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('full-spot-chart-1')),
+        findsOneWidget,
+      );
+      expect(find.text('PURR/USDC'), findsOneWidget);
+      expect(find.text('0.50000001 USDC'), findsOneWidget);
+      expect(find.text('2 candles'), findsOneWidget);
+      expect(
+        find.text(
+          'Client received 2026-08-25 03:04:05 UTC · 最多保留最近 120 根 · 不自动轮询',
+        ),
+        findsOneWidget,
+      );
+      expect(candleRepository.requests, <HyperliquidSpotCandleRequest>[
+        const HyperliquidSpotCandleRequest(
+          providerCoin: '@1',
+          interval: HyperliquidSpotCandleInterval.fourHours,
+        ),
+      ]);
+      for (final interval in HyperliquidSpotCandleInterval.values) {
+        expect(
+          find.byKey(
+            ValueKey<String>('spot-candle-period-${interval.displayLabel}'),
+          ),
+          findsOneWidget,
+        );
+      }
+      expect(find.text('15M'), findsNothing);
+      expect(find.text('MA'), findsNothing);
+      expect(find.text('MACD'), findsNothing);
+      expect(find.text('RSI'), findsNothing);
+      expect(find.textContaining('Simulated'), findsNothing);
+      expect(find.textContaining('开发预览'), findsNothing);
+      expect(find.textContaining('Buy'), findsNothing);
+      expect(find.textContaining('Sell'), findsNothing);
+      expect(find.textContaining('Perpetual'), findsNothing);
+    },
+  );
+
+  testWidgets('invalid C3 identity issues zero market and candle requests', (
+    tester,
+  ) async {
+    final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
+    final candleRepository = _FakeSpotCandleRepository();
+    await _pumpFullSpotChart(
+      tester,
+      repository,
+      spotIndex: null,
+      candleRepository: candleRepository,
+    );
+
+    expect(repository.fetchCount, 0);
+    expect(candleRepository.requests, isEmpty);
+    expect(find.text('Invalid spot chart'), findsOneWidget);
+    expect(find.textContaining('未请求行情、K 线或演示币种'), findsOneWidget);
+    expect(find.textContaining('ETH'), findsNothing);
+  });
+
+  testWidgets('C3 never substitutes another market for a stale Spot index', (
+    tester,
+  ) async {
+    final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
+    final candleRepository = _FakeSpotCandleRepository();
+    await _pumpFullSpotChart(
+      tester,
+      repository,
+      spotIndex: 9999,
+      candleRepository: candleRepository,
+    );
+
+    expect(repository.fetchCount, 1);
+    expect(candleRepository.requests, isEmpty);
+    expect(find.text('找不到这个现货市场'), findsOneWidget);
+    expect(find.text('PURR/USDC'), findsNothing);
+    expect(find.text('HYPE/USDC'), findsNothing);
+  });
+
+  testWidgets('C3 switches one exact public candle family at a time', (
+    tester,
+  ) async {
+    final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
+    final candleRepository = _FakeSpotCandleRepository();
+    await _pumpFullSpotChart(
+      tester,
+      repository,
+      spotIndex: 1035,
+      candleRepository: candleRepository,
+    );
+
+    final oneMonth = find.byKey(
+      const ValueKey<String>('spot-candle-period-1M'),
+    );
+    await tester.ensureVisible(oneMonth);
+    await tester.tap(oneMonth);
+    await tester.pumpAndSettle();
+
+    expect(candleRepository.requests, <HyperliquidSpotCandleRequest>[
+      const HyperliquidSpotCandleRequest(
+        providerCoin: '@1035',
+        interval: HyperliquidSpotCandleInterval.fourHours,
+      ),
+      const HyperliquidSpotCandleRequest(
+        providerCoin: '@1035',
+        interval: HyperliquidSpotCandleInterval.oneMonth,
+      ),
+    ]);
+    expect(tester.widget<ChoiceChip>(oneMonth).selected, isTrue);
+  });
+
+  testWidgets('C3 market loading uses one truthful chart presentation', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final repository = _CompletingSpotMarketRepository();
+    final candleRepository = _FakeSpotCandleRepository();
+    await _pumpFullSpotChart(
+      tester,
+      repository,
+      spotIndex: 1,
+      candleRepository: candleRepository,
+      settle: false,
+    );
+
+    expect(repository.fetchCount, 1);
+    expect(candleRepository.requests, isEmpty);
+    expect(find.byType(LoopSkeletonView), findsOneWidget);
+    expect(find.bySemanticsLabel('Loading chart content'), findsOneWidget);
+    expect(find.textContaining('精确 spotIndex'), findsOneWidget);
+
+    repository.complete(_spotSnapshot);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LoopSkeletonView), findsNothing);
+    expect(find.bySemanticsLabel('Loading chart content'), findsNothing);
+    expect(candleRepository.requests, hasLength(1));
+    semantics.dispose();
+  });
+
+  testWidgets(
+    'C3 remains scrollable at 200 percent text in both orientations',
+    (tester) async {
+      for (final size in <Size>[const Size(390, 844), const Size(844, 390)]) {
+        final repository = _FakeSpotMarketRepository(snapshot: _spotSnapshot);
+        await _pumpFullSpotChart(
+          tester,
+          repository,
+          spotIndex: 1,
+          size: size,
+          textScaler: const TextScaler.linear(2),
+        );
+
+        expect(
+          find.byKey(const ValueKey<String>('full-spot-chart-scroll')),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull, reason: size.toString());
+      }
+    },
+  );
 
   testWidgets('primary spot Market searches protocol and token identities', (
     tester,
@@ -650,6 +852,93 @@ Future<void> _pumpSpotDetail(
   }
 }
 
+Future<void> _pumpRoutableSpotDetail(
+  WidgetTester tester,
+  HyperliquidSpotMarketRepository repository, {
+  required int spotIndex,
+}) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = const Size(800, 1600);
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
+
+  final router = GoRouter(
+    initialLocation: SpotMarketRoute.location(spotIndex),
+    routes: <RouteBase>[
+      GoRoute(
+        path: SpotMarketRoute.path,
+        builder: (context, state) => SpotMarketDetailScreen(
+          spotIndex: int.tryParse(
+            state.uri.queryParameters[SpotMarketRoute.indexParameter] ?? '',
+          ),
+        ),
+      ),
+      GoRoute(
+        path: SpotMarketRoute.chartPath,
+        builder: (context, state) => FullChartScreen(
+          spotIndex: SpotMarketRoute.parseChartSpotIndex(state.uri),
+        ),
+      ),
+    ],
+  );
+  addTearDown(router.dispose);
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        hyperliquidSpotMarketNetworkAllowedProvider.overrideWithValue(true),
+        hyperliquidSpotMarketRepositoryProvider.overrideWithValue(repository),
+        hyperliquidSpotCandleRepositoryProvider.overrideWithValue(
+          _FakeSpotCandleRepository(),
+        ),
+      ],
+      child: MaterialApp.router(theme: LoopTheme.dark, routerConfig: router),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<void> _pumpFullSpotChart(
+  WidgetTester tester,
+  HyperliquidSpotMarketRepository repository, {
+  required int? spotIndex,
+  HyperliquidSpotCandleRepository? candleRepository,
+  Size size = const Size(800, 1600),
+  TextScaler textScaler = TextScaler.noScaling,
+  bool settle = true,
+}) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = size;
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        hyperliquidSpotMarketNetworkAllowedProvider.overrideWithValue(true),
+        hyperliquidSpotMarketRepositoryProvider.overrideWithValue(repository),
+        hyperliquidSpotCandleRepositoryProvider.overrideWithValue(
+          candleRepository ?? _FakeSpotCandleRepository(),
+        ),
+      ],
+      child: MaterialApp(
+        theme: LoopTheme.dark,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+          child: child!,
+        ),
+        home: FullChartScreen(spotIndex: spotIndex),
+      ),
+    ),
+  );
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+    await tester.pump();
+  }
+}
+
 Future<void> _pumpMarket(
   WidgetTester tester,
   HyperliquidMarketRepository repository,
@@ -820,6 +1109,22 @@ final class _FakeSpotMarketRepository
     final currentFailure = failure;
     if (currentFailure != null) throw currentFailure;
     return snapshot;
+  }
+}
+
+final class _CompletingSpotMarketRepository
+    implements HyperliquidSpotMarketRepository {
+  final Completer<HyperliquidSpotSnapshot> _completer =
+      Completer<HyperliquidSpotSnapshot>();
+  int fetchCount = 0;
+
+  void complete(HyperliquidSpotSnapshot snapshot) =>
+      _completer.complete(snapshot);
+
+  @override
+  Future<HyperliquidSpotSnapshot> fetchMarkets() {
+    fetchCount += 1;
+    return _completer.future;
   }
 }
 

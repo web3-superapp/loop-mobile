@@ -38,6 +38,7 @@ PINNED_SQLITE_GRAPH = {
 }
 REQUIRED_FILES = (
     ".gitignore",
+    ".gitnexusignore",
     ".metadata",
     "README.md",
     "AGENTS.md",
@@ -71,7 +72,9 @@ REQUIRED_FILES = (
     "docs/decisions/0023-close-providerless-wallet-controls.md",
     "docs/decisions/0024-expose-production-audio-room-from-chat.md",
     "docs/decisions/0026-bound-home-discovery-and-security-facts.md",
+    "docs/decisions/0036-mount-public-spot-full-chart.md",
     "docs/failures/flutter-gradle-version-floor.md",
+    "docs/failures/gitnexus-generated-source-pollution.md",
     "docs/failures/providerless-notification-fixtures.md",
     "docs/failures/providerless-security-activity-facts.md",
     "docs/failures/providerless-wallet-controls-without-effects.md",
@@ -3005,6 +3008,36 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                 "final candle can still be forming",
                 "For every accepted row, `T - t` equals",
             ),
+            "docs/decisions/0036-mount-public-spot-full-chart.md": (
+                "C3 uses only `/market/chart?spotIndex=<canonical non-negative integer>`",
+                "causes zero candle requests and never substitutes ETH",
+                "display symbols are not identity",
+                "Drawing, calculated",
+                "Pending chart work selects one I8",
+                "C3 stays outside the six-destination Shell",
+                "a root deep link with no history returns explicitly to `/market`",
+            ),
+            "lib/core/navigation/spot_market_route.dart": (
+                "static const String chartPath = '/market/chart';",
+                "static String chartLocation(int spotIndex)",
+                "static int? parseChartSpotIndex(Uri uri)",
+                "uri.queryParametersAll.length != 1",
+                "uri.hasScheme",
+                "uri.hasAuthority",
+                "uri.fragment.isNotEmpty",
+                "values.length != 1",
+                "RegExp(r'^(0|[1-9][0-9]*)$')",
+                "parsed.toString() != raw",
+                "uri.toString() != chartLocation(parsed)",
+            ),
+            "lib/app.dart": (
+                "path: SpotMarketRoute.chartPath",
+                "spotIndex: SpotMarketRoute.parseChartSpotIndex(state.uri)",
+            ),
+            "lib/core/navigation/surface_catalog.dart": (
+                "id: 'C3'",
+                "Exact-index public Testnet Spot candles in portrait or landscape.",
+            ),
             "lib/integrations/hyperliquid/hyperliquid_spot_candle.dart": (
                 "enum HyperliquidSpotCandleInterval",
                 "final class HyperliquidSpotCandleRequest",
@@ -3050,6 +3083,13 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                 "if (market == null)",
                 "SpotCandleSection(",
                 "market: market",
+                "SpotMarketRoute.chartLocation(market.spotIndex)",
+                "class FullChartScreen extends ConsumerStatefulWidget",
+                "class _SpotFullChartData extends StatelessWidget",
+                "LoopSkeletonView(presentation: LoopLoadingPresentation.chart())",
+                "chartHeight: chartHeight",
+                "if (context.canPop())",
+                "context.go('/market')",
             ),
             "lib/features/market/spot_candle_section.dart": (
                 "providerCoin: market.providerCoin",
@@ -3060,6 +3100,8 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                 "final isForming = !snapshot.receivedAt.isAfter(latest.closeTime);",
                 "最后一根在客户端收取时尚未结束",
                 "SpotCandleChart(",
+                "final double chartHeight;",
+                "presentation: LoopLoadingPresentation.chart()",
             ),
             "lib/features/market/spot_candle_chart.dart": (
                 "The candle model remains Decimal-backed",
@@ -3096,6 +3138,27 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                 "candle loading hides all chart facts until data arrives",
                 "marks a final candle still forming at receipt time",
                 "expect(candleRepository.requests, isEmpty);",
+                "spot detail opens C3 with the exact admitted Spot index",
+                "C3 renders exact public Spot candles without preview or execution",
+                "invalid C3 identity issues zero market and candle requests",
+                "C3 never substitutes another market for a stale Spot index",
+                "C3 switches one exact public candle family at a time",
+                "C3 market loading uses one truthful chart presentation",
+                "C3 remains scrollable at 200 percent text in both orientations",
+            ),
+            "test/spot_market_route_test.dart": (
+                "builds the canonical full-chart location from the exact Spot index",
+                "parses only one canonical full-chart Spot index",
+                "spotIndex=1&spotIndex=2",
+                "spotIndex=1&source=preview",
+                "spotIndex=1#fragment",
+                "https://loop.invalid/market/chart?spotIndex=1",
+            ),
+            "test/app_navigation_test.dart": (
+                "production C3 rejects legacy extras and malformed query before requests",
+                "production C3 is full-screen and closes a root link to Market",
+                "expect(find.byType(NavigationBar), findsNothing)",
+                "find.byTooltip('关闭全屏 K 线')",
             ),
             "test/spot_candle_chart_test.dart": (
                 "projects fractional exact candles and exposes chart semantics",
@@ -3202,6 +3265,65 @@ def check_spot_candle_contract(root: Path) -> list[str]:
         errors.append(
             "Spot detail tests must prove zero candle requests for both absent and invalid indices"
         )
+
+    app_path = root / "lib/app.dart"
+    if app_path.is_file():
+        source = read_text(app_path)
+        route_start = source.find("        path: SpotMarketRoute.chartPath,")
+        route_end = source.find("      GoRoute(\n        path: '/market/new',", route_start)
+        if route_start < 0 or route_end < 0:
+            errors.append("C3 must retain its exact reviewed application route")
+        else:
+            route_source = source[route_start:route_end]
+            for forbidden in ("state.extra", "'ETH'", '"ETH"'):
+                if forbidden in route_source:
+                    errors.append(
+                        "C3 application route must not recover identity from "
+                        f"navigation extras or a default asset: `{forbidden}`"
+                    )
+            shell_start = source.find("      ShellRoute(")
+            shell_end = source.find("      ..._accountRoutes,", shell_start)
+            if shell_start < route_start < shell_end:
+                errors.append(
+                    "C3 must remain a root full-screen route outside the six-destination Shell"
+                )
+
+    market_surface_path = root / "lib/features/market/market_screens.dart"
+    if market_surface_path.is_file():
+        source = read_text(market_surface_path)
+        chart_start = source.find("class FullChartScreen")
+        chart_end = source.find("class NewPairsScreen", chart_start)
+        if chart_start < 0 or chart_end < 0:
+            errors.append("C3 must retain one bounded full-chart source slice")
+        else:
+            chart_source = source[chart_start:chart_end]
+            for forbidden in (
+                "MarketPreviewData",
+                "MarketCandleChart",
+                "MarketSnapshotState",
+                "snapshotState",
+                "state.extra",
+                "15M",
+                "MACD",
+                "RSI",
+                "SigningReviewSurface",
+                "FilledButton",
+            ):
+                if forbidden in chart_source:
+                    errors.append(
+                        "C3 must remain real, read-only and free of Preview or "
+                        f"fake-indicator fallback: `{forbidden}`"
+                    )
+            for required in (
+                "if (context.canPop())",
+                "context.pop();",
+                "context.go('/market');",
+            ):
+                if required not in chart_source:
+                    errors.append(
+                        "C3 Close must pop a pushed chart or return a root deep "
+                        f"link to Market; missing `{required}`"
+                    )
 
     for relative in (
         "lib/features/market/spot_candle_section.dart",
@@ -5887,6 +6009,27 @@ def check_gitignore(root: Path) -> list[str]:
     return errors
 
 
+def check_gitnexusignore(root: Path) -> list[str]:
+    """Keep generated native and frozen reference trees out of code impact."""
+
+    path = root / ".gitnexusignore"
+    if not path.is_file():
+        return ["missing GitNexus source-boundary file: .gitnexusignore"]
+    rules = {
+        line.strip()
+        for line in read_text(path).splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+    errors: list[str] = []
+    for required in ("ios/Pods/", "reference/legacy-prototype/"):
+        if required not in rules:
+            errors.append(
+                ".gitnexusignore must exclude generated or frozen source tree "
+                f"`{required}`"
+            )
+    return errors
+
+
 def validate(root: Path = ROOT) -> list[str]:
     errors = check_required_files(root)
     profile, profile_errors = load_profile(root)
@@ -5925,6 +6068,7 @@ def validate(root: Path = ROOT) -> list[str]:
     else:
         errors.extend(check_secret_paths(visible))
     errors.extend(check_gitignore(root))
+    errors.extend(check_gitnexusignore(root))
     return errors
 
 

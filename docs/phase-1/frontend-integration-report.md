@@ -904,3 +904,31 @@ Verification on 2026-08-28:
 - No backend/provider request, SDK, dependency, native build, simulator,
   interactive run, physical-device validation or package artifact was added or
   exercised.
+
+## Public Spot Full Chart
+
+On 2026-08-28, decision 0036 replaced C3's simulated chart with the existing
+bounded public Testnet Spot candle projection. C2 now constructs
+`/market/chart` from its admitted market's exact `spotIndex`. C3 accepts only
+one canonical non-negative index, re-resolves it from the current
+`spotMetaAndAssetCtxs` snapshot, and mounts `candleSnapshot` only with that
+market's exact provider coin. Missing, repeated, extra, malformed, negative,
+overflowing, or stale identities issue zero candle requests and never recover
+ETH, another market, Preview fixtures, or Perp data.
+
+The full chart exposes only the reviewed 1H / 4H / 1D / 1W / 1M families and
+the same exact String-plus-Decimal OHLCV projection. The old 15M period,
+simulated candles, and label-only MA/MACD/RSI controls are removed. Loading uses
+one explicit I8 chart presentation; empty, sanitized error, forming-candle,
+client-receipt-time, retry and refresh states remain truthful. The surface is
+scrollable in portrait and landscape and contains no balance, Buy, Sell,
+order, signing, transfer, withdrawal, or execution action.
+
+The focused route, Market, and application-navigation files passed all 50
+tests, including exact C2-to-C3 identity, zero-request closure, exact provider
+family, all five periods, I8 loading, Preview/execution absence, both
+orientations at 200% text, real root routing without the Shell, and direct-link
+Close fallback to Market. The full Flutter suite passed all 579 tests, Harness
+validation passed, and the Python mutation suite passed all 214 tests. No
+native build, simulator, interactive run, physical-device validation or package
+artifact was produced.

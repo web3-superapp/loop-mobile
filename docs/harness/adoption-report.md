@@ -614,3 +614,27 @@ application code and reported only the two pre-existing info-level findings in
 the separately modified `lib/widgets/loop_ui.dart` and
 `test/loop_perp_providers_test.dart`. No HTTP/provider request, build, package,
 simulator, or physical-device run was performed.
+
+## Public Spot Full Chart and Graph Source Boundary
+
+Decision 0036 closes C3 over one canonical `spotIndex`, current public-market
+admission, and the existing bounded `candleSnapshot` provider family. Harness
+checks require the exact C2-to-C3 constructor, strict parser, zero-request
+failure closure, five reviewed periods, real Decimal-backed chart, truthful I8
+loading, absence of Preview/default-ETH/fake-indicator/execution fallbacks, and
+dedicated widget evidence for identity, request, state and layout behavior.
+
+The same checkpoint records the GitNexus failure that initially mixed CocoaPods
+and the frozen web prototype into application impact results. A required root
+`.gitnexusignore` now excludes both trees, a mutation check prevents either rule
+from disappearing, and recovery uses clean `--index-only` analysis so user-owned
+agent files are not rewritten. The clean graph dropped from 23,085 nodes and
+83,642 edges to 6,060 nodes and 13,004 edges while retaining current Flutter
+application source.
+
+The focused route, Market, and application-navigation files passed all 50
+tests, including the real root route, absent Shell, malformed-query closure and
+root-link Close fallback. The full Flutter suite passed all 579 tests, Harness
+validation passed, and the Python mutation suite passed all 214 tests. No
+backend/private provider route, dependency, native build, simulator, interactive
+run, physical-device validation or package artifact was added or exercised.
