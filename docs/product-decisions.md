@@ -71,6 +71,12 @@ Product priority and current delivery are separate:
 - LOOP does not present an AI Guard brand or a proprietary risk score.
 - Safety UI may show concrete, attributable facts such as simulation asset changes, allowance scope, malicious-domain signals, policy state and source time. Missing or stale evidence fails closed.
 
+## System status truth
+
+- I1 distinguishes complete device network loss, public market-data failure and private LOOP service interruption only after the composition root supplies one explicit observed scope.
+- A naked `/system/offline` route renders connectivity as unknown. It does not default to offline, show retry/offline-mode actions or imply that any provider was queried.
+- The reusable connectivity banner also requires an explicit scope and is not mounted globally until an approved source exists. This phase adds no connectivity plugin, health polling, automatic retry or persistence.
+
 ## Delivery truth
 
 - Preview and memory adapters are UI evidence only. Their simulated writes and voice controls must never be presented as connected provider activity.

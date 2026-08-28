@@ -28,6 +28,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - Home Global Search 已闭合 providerless 前端行为：只有显式 Preview 会显示并本地筛选一组有界的 `演示数据`，支持大小写/空白归一化、无结果与清空；群组和用户沿用精确注册的 Preview conversation ID，ETH 示例只进入公共 Spot 列表而不猜 `spotIndex`。正式会话在真实跨产品索引接入前显示不可用，不泄漏 Preview 结果
 - Home Security Activity 已关闭无来源的安全结论：正式会话不再伪报 MFA、设备登录、审批次数或 `No urgent action`，没有已审核事件源时保持不可用。显式 Preview 只保留持续标注的布局示例，不计算风险分、不发请求，也不提供 Revoke/Block 等账户操作
 - Launchpad 继续作为第 3 个一级入口保留，但当前只交付不可操作的 G1 占位：无项目来源时不声称项目正在进行、为空、已审核或满足资格，三个必要条件全部明确为未连接；G2–G4 继续 deferred，正式与 Preview 均不伪造项目、额度、申请、资金、签名或领取动作
+- I1 连通性页面已取消默认离线结论：裸 `/system/offline` 只显示状态来源未连接，不再把路由名当成设备断网或服务故障证据；只有组合根显式提供一个已观察的 scope 才能显示离线、公共行情故障或私有 LOOP 服务中断。全局横幅仍未挂载，也未新增连通性插件、健康轮询或自动重试
 - Watchlist 已按后端现有版本化契约完成 providerless 应用逻辑：分组、资产顺序、草稿、保存单飞、显式丢弃与版本冲突恢复均在窄端口后建模。正式入口默认不可用，不发送私有请求；只有 `main_preview.dart` 注入明确标注的内存实现。Watchlist 只保存资产标识，不把价格、涨跌、可交易性或提醒状态伪装成账户事实
 - Profile presentation 已按后端现有契约完成 providerless 应用逻辑：只建模 nullable Alias、opaque `avatar:` reference、版本与更新时间；编辑、丢弃、保存单飞、冲突重载、失败重试与迟到结果隔离均已落地。Bio 不属于该契约，Visibility 仍归独立 Privacy 资源，Avatar 选择在来源契约确定前禁用。正式入口默认不可用且不再伪报保存成功；只有显式 Preview 使用带标签的内存实现
 - Privacy preferences 已按独立后端契约完成 providerless 应用逻辑：只建模 `discoverable` 与 `private/followers/public` copy-trade visibility 偏好，支持完整草稿替换、冲突冻结、显式重载与 owner/gateway 轮换。旧版 Portfolio Broadcast、群组白名单、活动/仓位可见性和 copy-trade 假授权表单已移除；偏好不代表发现、followers 或跟单执行已启用。正式入口默认不可用，只有显式 Preview 使用带标签的内存实现

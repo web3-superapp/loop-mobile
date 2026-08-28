@@ -24,7 +24,7 @@ class SystemSurfaceScreen extends StatelessWidget {
     this.onRetry,
     this.onPrimaryAction,
     this.onSecondaryAction,
-    this.connectivityScope = LoopConnectivityScope.fullyOffline,
+    this.connectivityScope,
     this.permissionKind = LoopPermissionKind.camera,
     this.permissionDenied = false,
     this.supportCode = 'L-2048',
@@ -50,7 +50,7 @@ class SystemSurfaceScreen extends StatelessWidget {
   final SystemAction? onRetry;
   final SystemAction? onPrimaryAction;
   final SystemAction? onSecondaryAction;
-  final LoopConnectivityScope connectivityScope;
+  final LoopConnectivityScope? connectivityScope;
   final LoopPermissionKind permissionKind;
   final bool permissionDenied;
   final String supportCode;
@@ -62,11 +62,14 @@ class SystemSurfaceScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (_id) {
-      'offline' => _ConnectivityScreen(
-        scope: connectivityScope,
-        onRetry: onRetry,
-        onContinue: onSecondaryAction,
-      ),
+      'offline' =>
+        connectivityScope == null
+            ? _ConnectivityUnavailableScreen(onContinue: onSecondaryAction)
+            : _ConnectivityScreen(
+                scope: connectivityScope!,
+                onRetry: onRetry,
+                onContinue: onSecondaryAction,
+              ),
       'server-error' => _ServerErrorScreen(
         supportCode: supportCode,
         onRetry: onRetry,
@@ -105,6 +108,7 @@ class LoopConnectivityBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = _connectivityContent(scope);
+    final useStackedLayout = MediaQuery.textScalerOf(context).scale(10) > 15;
     return Material(
       color: content.color.withValues(alpha: 0.12),
       child: SafeArea(
@@ -122,21 +126,52 @@ class LoopConnectivityBanner extends StatelessWidget {
                 ),
               ),
             ),
-            child: Row(
-              children: <Widget>[
-                Icon(content.icon, color: content.color, size: 19),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    content.banner,
-                    style: Theme.of(context).textTheme.labelLarge
-                        ?.copyWith(color: content.color),
+            child: useStackedLayout
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Icon(content.icon, color: content.color, size: 19),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              content.banner,
+                              style: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(color: content.color),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (onRetry != null)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: onRetry,
+                            child: const Text('Retry'),
+                          ),
+                        ),
+                    ],
+                  )
+                : Row(
+                    children: <Widget>[
+                      Icon(content.icon, color: content.color, size: 19),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          content.banner,
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(color: content.color),
+                        ),
+                      ),
+                      if (onRetry != null)
+                        TextButton(
+                          onPressed: onRetry,
+                          child: const Text('Retry'),
+                        ),
+                    ],
                   ),
-                ),
-                if (onRetry != null)
-                  TextButton(onPressed: onRetry, child: const Text('Retry')),
-              ],
-            ),
           ),
         ),
       ),
@@ -276,6 +311,41 @@ Future<void> showLoopForceUpdateDialog(
       ),
     ),
   );
+}
+
+class _ConnectivityUnavailableScreen extends StatelessWidget {
+  const _ConnectivityUnavailableScreen({required this.onContinue});
+
+  final VoidCallback? onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopPage(
+      eyebrow: 'CONNECTIVITY',
+      title: 'Connectivity status unavailable',
+      subtitle: 'LOOP did not receive a verified device or service connectivity signal for this page.',
+      bottom: onContinue == null
+          ? null
+          : LoopActionDock(
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: onContinue,
+                  child: const Text('Return to LOOP'),
+                ),
+              ),
+            ),
+      children: const <Widget>[
+        LoopStateCard(
+          key: ValueKey<String>('connectivity-source-unavailable'),
+          title: 'No connectivity source connected',
+          message: 'Opening this route does not mean the device is offline or that a LOOP service failed. Live status remains unknown until an approved source reports it.',
+          icon: Icons.signal_wifi_statusbar_connected_no_internet_4_outlined,
+          tone: LoopTone.warning,
+        ),
+      ],
+    );
+  }
 }
 
 class _ConnectivityScreen extends StatelessWidget {
@@ -632,68 +702,82 @@ class _SystemStateScaffold extends StatelessWidget {
           children: <Widget>[
             const Positioned.fill(child: LoopBackdrop()),
             SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 26, 24, 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      eyebrow,
-                      style: Theme.of(context).textTheme.labelMedium
-                          ?.copyWith(color: tone, letterSpacing: 1.4),
-                    ),
-                    const Spacer(),
-                    Center(
-                      child: _SystemGlyph(icon: icon, color: tone),
-                    ),
-                    const SizedBox(height: 38),
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.displayMedium,
-                    ),
-                    const SizedBox(height: 13),
-                    Text(
-                      message,
-                      style: Theme.of(context).textTheme.bodyLarge
-                          ?.copyWith(color: LoopColors.vapor),
-                    ),
-                    const SizedBox(height: 20),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(14),
-                      decoration: const BoxDecoration(
-                        color: LoopColors.basalt,
-                        borderRadius: LoopRadius.medium,
-                        border: Border.fromBorderSide(
-                          BorderSide(color: LoopColors.line),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  const verticalPadding = 46.0;
+                  final minContentHeight =
+                      constraints.maxHeight > verticalPadding
+                      ? constraints.maxHeight - verticalPadding
+                      : 0.0;
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 26, 24, 20),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: minContentHeight),
+                      child: IntrinsicHeight(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              eyebrow,
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(color: tone, letterSpacing: 1.4),
+                            ),
+                            const Spacer(),
+                            Center(
+                              child: _SystemGlyph(icon: icon, color: tone),
+                            ),
+                            const SizedBox(height: 38),
+                            Text(
+                              title,
+                              style: Theme.of(context).textTheme.displayMedium,
+                            ),
+                            const SizedBox(height: 13),
+                            Text(
+                              message,
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(color: LoopColors.vapor),
+                            ),
+                            const SizedBox(height: 20),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(14),
+                              decoration: const BoxDecoration(
+                                color: LoopColors.basalt,
+                                borderRadius: LoopRadius.medium,
+                                border: Border.fromBorderSide(
+                                  BorderSide(color: LoopColors.line),
+                                ),
+                              ),
+                              child: Text(
+                                detail,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ),
+                            const Spacer(),
+                            if (primaryLabel != null)
+                              SizedBox(
+                                width: double.infinity,
+                                child: FilledButton(
+                                  onPressed: onPrimary,
+                                  child: Text(primaryLabel!),
+                                ),
+                              ),
+                            if (secondaryLabel != null) ...<Widget>[
+                              const SizedBox(height: 10),
+                              SizedBox(
+                                width: double.infinity,
+                                child: TextButton(
+                                  onPressed: onSecondary,
+                                  child: Text(secondaryLabel!),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-                      child: Text(
-                        detail,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
                     ),
-                    const Spacer(),
-                    if (primaryLabel != null)
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: onPrimary,
-                          child: Text(primaryLabel!),
-                        ),
-                      ),
-                    if (secondaryLabel != null) ...<Widget>[
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        width: double.infinity,
-                        child: TextButton(
-                          onPressed: onSecondary,
-                          child: Text(secondaryLabel!),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+                  );
+                },
               ),
             ),
           ],

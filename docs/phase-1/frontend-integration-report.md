@@ -562,3 +562,38 @@ Verification on 2026-08-28:
   `test/loop_perp_providers_test.dart`; no Launchpad file was reported.
 - No HTTP/provider request, APK, application bundle, iOS build, simulator,
   interactive run or physical-device validation was performed.
+
+## Connectivity Status Truth Boundary
+
+On 2026-08-28, decision 0028 removed the implicit `fullyOffline` state from
+the routed I1 system surface. A naked `/system/offline` route now says that no
+connectivity source was supplied and does not infer device network loss, public
+market-data failure or private LOOP service interruption. Only an explicit
+scope can render one of those outage states and its retry/continue controls.
+
+The reusable connectivity banner still requires an explicit scope and remains
+unmounted in the production root. Its retry control moves below the message at
+large text sizes to avoid horizontal overflow. This slice adds no connectivity
+plugin, health request, polling, automatic retry, persistence, dependency or
+native capability.
+
+The I1 review also exposed a 588-pixel vertical overflow in the shared system
+state scaffold at 390 × 844 and 2× text scale. The scaffold now preserves its
+blocking and action semantics inside a bounded scroll layout, so explicit I1
+outage states remain readable instead of overflowing.
+
+Verification on 2026-08-28:
+
+- All 8 I1 tests passed, including the formal `LoopApp` route, all three
+  explicit scopes, the unmounted global banner assertion and both large-text
+  layouts.
+- The focused I1, auth, navigation and surface-catalog suite passed all 30
+  tests; changed-file formatting and analysis passed with no issues.
+- `bin/flutter test --no-pub` passed all 507 Flutter tests.
+- `python3 scripts/check_harness.py` passed, and all 209 Harness mutation tests
+  passed.
+- Repository-wide format and analysis again reported only the two pre-existing
+  user changes in `lib/widgets/loop_ui.dart` and
+  `test/loop_perp_providers_test.dart`; no I1 file was reported.
+- No connectivity provider, HTTP request, APK, application bundle, iOS build,
+  simulator, interactive run or physical-device validation was performed.

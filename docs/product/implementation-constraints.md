@@ -10,6 +10,7 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 - Preview content is always labelled `演示数据` or `开发预览`; it never claims provider delivery, read state, presence, ringing, signing, or execution.
 - Home Global Search may filter only its bounded, process-local examples in explicit Preview mode. Production shows no Preview asset, group, or person results until a reviewed source exists; local asset examples open the public Spot ledger and never invent a provider `spotIndex`.
 - Security Activity is unknown when its wallet and account event sources are absent. Production must not infer an all-clear, MFA, device, approval count, severity, risk score, or action from missing data; any retained layout examples stay visibly labelled Preview and expose no provider action.
+- Connectivity is unknown when no observed device or service source is supplied. A system route name never proves that the device is offline, public market data failed or a private LOOP service is interrupted; I1 outage screens and banners require one explicit scope from an approved composition-boundary source.
 
 ## Identity, wallet, and secrets
 
