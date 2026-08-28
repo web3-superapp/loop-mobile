@@ -597,3 +597,38 @@ Verification on 2026-08-28:
   `test/loop_perp_providers_test.dart`; no I1 file was reported.
 - No connectivity provider, HTTP request, APK, application bundle, iOS build,
   simulator, interactive run or physical-device validation was performed.
+
+## Service Error Truth Boundary
+
+On 2026-08-28, decision 0029 removed the fabricated request outcome and fixed
+`L-2048` reference from the routed I2 system surface. A naked `/system/error`
+route now says that no request-error context is connected. It does not claim
+that a request returned an error and exposes no retry or support action.
+
+An owning feature may explicitly supply one `LoopServiceErrorObservation`
+after its exact request returns an error or unconfirmed outcome. The copy
+assumes neither success nor failure, including after a timeout. That projection
+is currently an empty marker: no support-reference source or exact grammar has
+been reviewed, so I2 displays no reference. Retry and support are independent
+exact callbacks and remain absent when they are not connected; generic
+return-to-Home navigation cannot authorize either label. Raw errors,
+identifiers and provider payloads stay with their owning feature/integration,
+and ambiguous writes still require reconciliation before retry.
+
+This slice adds no error bus, HTTP/provider request, automatic retry, support
+integration, persistence, SDK, dependency or native capability.
+
+Verification on 2026-08-28:
+
+- The focused I1/I2 suite passed all 15 tests, including the formal
+  `/system/error` route, both directions of the dedicated callback boundary,
+  accessibility semantics and both 390 × 844 layouts at 2× text scale.
+- Changed-file formatting and analysis passed with no issues.
+- `bin/flutter test` passed all 514 Flutter tests.
+- `python3 scripts/check_harness.py` passed, and all 209 Harness mutation tests
+  passed.
+- Repository-wide format and analysis reported only the two pre-existing user
+  changes in `lib/widgets/loop_ui.dart` and
+  `test/loop_perp_providers_test.dart`; no I2 file was reported.
+- No error provider, HTTP request, APK, application bundle, iOS build,
+  simulator, interactive run or physical-device validation was performed.

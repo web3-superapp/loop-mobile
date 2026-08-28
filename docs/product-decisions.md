@@ -76,6 +76,8 @@ Product priority and current delivery are separate:
 - I1 distinguishes complete device network loss, public market-data failure and private LOOP service interruption only after the composition root supplies one explicit observed scope.
 - A naked `/system/offline` route renders connectivity as unknown. It does not default to offline, show retry/offline-mode actions or imply that any provider was queried.
 - The reusable connectivity banner also requires an explicit scope and is not mounted globally until an approved source exists. This phase adds no connectivity plugin, health polling, automatic retry or persistence.
+- I2 requires one explicit `LoopServiceErrorObservation` owned by the feature whose exact request returned an error or unconfirmed outcome. The screen remains outcome-neutral and never turns a timeout into confirmed success or failure. A naked `/system/error` route reports the error source as unavailable and never manufactures an error, support reference, retry or support action.
+- The I2 projection currently carries no support reference because no exact source or grammar has been reviewed; raw exceptions, identifiers and provider payloads never enter the global surface. Retry and support are separate exact callbacks; the old generic navigation-to-Home behavior is not a retry or a support connection and cannot authorize either label.
 
 ## Delivery truth
 

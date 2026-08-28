@@ -16,6 +16,15 @@ enum LoopSkeletonKind { list, detail, chart }
 
 typedef SystemAction = void Function();
 
+/// Presentation-safe evidence of an error or unconfirmed request outcome.
+///
+/// The owning feature keeps the raw exception, response, retry semantics, and
+/// every provider/support identifier. This marker intentionally carries none.
+@immutable
+final class LoopServiceErrorObservation {
+  const LoopServiceErrorObservation();
+}
+
 /// Single routing surface for global system UI I1-I8.
 class SystemSurfaceScreen extends StatelessWidget {
   const SystemSurfaceScreen.fromId(
@@ -24,10 +33,12 @@ class SystemSurfaceScreen extends StatelessWidget {
     this.onRetry,
     this.onPrimaryAction,
     this.onSecondaryAction,
+    this.onServiceRetry,
+    this.onServiceSupport,
     this.connectivityScope,
+    this.serviceErrorObservation,
     this.permissionKind = LoopPermissionKind.camera,
     this.permissionDenied = false,
-    this.supportCode = 'L-2048',
     this.maintenanceWindow = '01:00–01:30 UTC',
     this.restrictedFeatures = const <String>[
       'Spot order execution',
@@ -50,10 +61,12 @@ class SystemSurfaceScreen extends StatelessWidget {
   final SystemAction? onRetry;
   final SystemAction? onPrimaryAction;
   final SystemAction? onSecondaryAction;
+  final SystemAction? onServiceRetry;
+  final SystemAction? onServiceSupport;
   final LoopConnectivityScope? connectivityScope;
+  final LoopServiceErrorObservation? serviceErrorObservation;
   final LoopPermissionKind permissionKind;
   final bool permissionDenied;
-  final String supportCode;
   final String maintenanceWindow;
   final List<String> restrictedFeatures;
 
@@ -70,11 +83,13 @@ class SystemSurfaceScreen extends StatelessWidget {
                 onRetry: onRetry,
                 onContinue: onSecondaryAction,
               ),
-      'server-error' => _ServerErrorScreen(
-        supportCode: supportCode,
-        onRetry: onRetry,
-        onSupport: onSecondaryAction,
-      ),
+      'server-error' =>
+        serviceErrorObservation == null
+            ? _ServiceErrorUnavailableScreen(onContinue: onSecondaryAction)
+            : _ServerErrorScreen(
+                onRetry: onServiceRetry,
+                onSupport: onServiceSupport,
+              ),
       'force-update' => _ForceUpdateScreen(onUpdate: onPrimaryAction),
       'maintenance' => _MaintenanceScreen(
         window: maintenanceWindow,
@@ -383,13 +398,8 @@ class _ConnectivityScreen extends StatelessWidget {
 }
 
 class _ServerErrorScreen extends StatelessWidget {
-  const _ServerErrorScreen({
-    required this.supportCode,
-    required this.onRetry,
-    required this.onSupport,
-  });
+  const _ServerErrorScreen({required this.onRetry, required this.onSupport});
 
-  final String supportCode;
   final VoidCallback? onRetry;
   final VoidCallback? onSupport;
 
@@ -397,15 +407,35 @@ class _ServerErrorScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return _SystemStateScaffold(
       eyebrow: 'SERVICE ERROR',
-      title: 'LOOP couldn’t finish that',
-      message: 'Your request did not complete. No account or wallet change should be assumed until the latest status is confirmed.',
+      title: 'LOOP couldn’t confirm the result',
+      message: 'The request did not return a confirmed outcome. Do not assume success or failure; check the latest state before trying again.',
       icon: Icons.cloud_off_outlined,
       tone: LoopColors.danger,
-      primaryLabel: 'Try again',
+      primaryLabel: onRetry == null ? null : 'Try again',
       onPrimary: onRetry,
-      secondaryLabel: 'Contact support',
+      secondaryLabel: onSupport == null ? null : 'Contact support',
       onSecondary: onSupport,
-      detail: 'Support code · $supportCode',
+      detail: 'Support references remain hidden until their exact source and format are reviewed.',
+    );
+  }
+}
+
+class _ServiceErrorUnavailableScreen extends StatelessWidget {
+  const _ServiceErrorUnavailableScreen({required this.onContinue});
+
+  final VoidCallback? onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SystemStateScaffold(
+      eyebrow: 'SERVICE STATUS',
+      title: 'Service error status unavailable',
+      message: 'Opening this route does not mean that a LOOP request or provider returned an error or an unconfirmed outcome. A feature must supply one exact observation before this page can report it.',
+      icon: Icons.help_outline_rounded,
+      tone: LoopColors.warning,
+      secondaryLabel: onContinue == null ? null : 'Return to LOOP',
+      onSecondary: onContinue,
+      detail: 'No request-error context is connected to this surface.',
     );
   }
 }
@@ -727,9 +757,14 @@ class _SystemStateScaffold extends StatelessWidget {
                               child: _SystemGlyph(icon: icon, color: tone),
                             ),
                             const SizedBox(height: 38),
-                            Text(
-                              title,
-                              style: Theme.of(context).textTheme.displayMedium,
+                            Semantics(
+                              header: true,
+                              child: Text(
+                                title,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .displayMedium,
+                              ),
                             ),
                             const SizedBox(height: 13),
                             Text(
