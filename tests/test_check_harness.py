@@ -2479,6 +2479,204 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected non-hollow Home portfolio evidence: {result}",
         )
 
+    def test_new_pairs_preview_gate_cannot_be_broadened(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/market/market_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            selector_start = source.index("class NewPairsScreen")
+            mutated = source[:selector_start] + source[selector_start:].replace(
+                "session.isPreview",
+                "session.canEnterProduct",
+                1,
+            )
+            path.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_new_pairs_preview_truth_contract(root)
+
+        self.assertTrue(
+            any(
+                "C10 fixtures require the exact current Preview session" in error
+                or "C10 session selector" in error
+                for error in result
+            ),
+            msg=f"expected exact C10 Preview-session guard: {result}",
+        )
+
+    def test_new_pairs_route_cannot_inject_preview_state(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/app.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "builder: (context, state) => const NewPairsScreen(),",
+                    """builder: (context, state) => Consumer(
+          builder: (context, ref, child) {
+            unawaited(Future<void>.microtask(() {
+              ref.read(loopSessionProvider.notifier).enterPreview();
+            }));
+            return const NewPairsScreen();
+          },
+        ),""",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_new_pairs_preview_truth_contract(root)
+
+        self.assertTrue(
+            any(
+                "C10 route" in error
+                and (
+                    "exact-session fingerprint" in error
+                    or "must not inject Preview" in error
+                )
+                for error in result
+            ),
+            msg=f"expected C10 route Preview-injection guard: {result}",
+        )
+
+    def test_new_pairs_production_cannot_restore_fixture_facts(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/market/market_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "title: 'New pairs not connected'",
+                    "title: 'New pairs not connected · BTC / USDC'",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_new_pairs_preview_truth_contract(root)
+
+        self.assertTrue(
+            any(
+                "Production C10" in error and "BTC / USDC" in error
+                for error in result
+            ),
+            msg=f"expected Production C10 fixture-fact guard: {result}",
+        )
+
+    def test_new_pairs_preview_cannot_lose_truth_labels(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/market/market_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            preview_start = source.index("class _NewPairsPreviewScreen")
+            preview_source = source[preview_start:]
+            for original, replacement in (
+                ("C10 · 开发预览 · Discovery feed", "C10 · Discovery feed"),
+                (
+                    "const MarketSnapshotBanner(state: MarketSnapshotState.preview)",
+                    "const SizedBox.shrink()",
+                ),
+                ("Recently observed · 演示数据", "Recently observed"),
+                ("Folded candidates · 演示数据", "Folded candidates"),
+                ("label: 'PREVIEW'", "label: 'SAMPLE'"),
+            ):
+                preview_source = preview_source.replace(original, replacement, 1)
+            mutated = source[:preview_start] + preview_source
+            path.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_new_pairs_preview_truth_contract(root)
+
+        for label in ("开发预览", "演示数据", "MarketSnapshotState.preview", "PREVIEW"):
+            self.assertTrue(
+                any(f"missing `{label}`" in error for error in result),
+                msg=f"expected C10 Preview `{label}` attribution guard: {result}",
+            )
+
+    def test_new_pairs_unavailable_cannot_claim_empty_results(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/market/market_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "title: 'New pairs not connected'",
+                    "title: 'No new pairs'",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_new_pairs_preview_truth_contract(root)
+
+        self.assertTrue(
+            any(
+                "Production C10" in error and "No new pairs" in error
+                for error in result
+            ),
+            msg=f"expected C10 no-fake-empty guard: {result}",
+        )
+
+    def test_new_pairs_preview_cannot_invent_spot_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/market/market_screens.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            preview_start = source.index("class _NewPairsPreviewScreen")
+            mutated = source[:preview_start] + source[preview_start:].replace(
+                "context.go('/market')",
+                "context.go('/market/token')",
+                1,
+            )
+            path.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_new_pairs_preview_truth_contract(root)
+
+        self.assertTrue(
+            any(
+                "C10 Preview" in error
+                and (
+                    "truth fingerprint" in error
+                    or "invent provider identity" in error
+                )
+                for error in result
+            ),
+            msg=f"expected C10 invented-Spot-identity guard: {result}",
+        )
+
+    def test_new_pairs_evidence_cannot_be_hollowed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "test/new_pairs_truthfulness_test.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "expect(evidence.$1.fetchCount, 0);",
+                    "expect(true, isTrue);",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_new_pairs_preview_truth_contract(root)
+
+        self.assertTrue(
+            any("executable evidence fingerprint" in error for error in result),
+            msg=f"expected non-hollow C10 executable evidence: {result}",
+        )
+
     def test_lock_parser_reads_exact_versions(self) -> None:
         versions = check_harness.lockfile_versions(
             'packages:\n  dio:\n    dependency: "direct main"\n    version: "5.11.0"\n'

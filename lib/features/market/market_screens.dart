@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/navigation/spot_market_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/market/market_models.dart';
@@ -39,6 +40,9 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
   @override
   Widget build(BuildContext context) {
     final snapshot = ref.watch(hyperliquidSpotMarketsProvider);
+    final isPreview = ref.watch(
+      loopSessionProvider.select((session) => session.isPreview),
+    );
     return LoopPage(
       eyebrow: 'C1 · Hyperliquid Testnet · Spot',
       title: 'Spot market',
@@ -83,29 +87,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
                   ),
           ),
         ),
-        const SizedBox(height: 15),
-        const LoopSectionLabel('Frontend previews'),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children:
-                <(String, String)>[
-                      ('Watchlist · 开发预览', '/market/watchlist'),
-                      ('New · 开发预览', '/market/new'),
-                      ('Smart money · 开发预览', '/market/smart-money'),
-                    ]
-                    .map(
-                      (destination) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ActionChip(
-                          label: Text(destination.$1),
-                          onPressed: () => context.push(destination.$2),
-                        ),
-                      ),
-                    )
-                    .toList(growable: false),
-          ),
-        ),
+        if (isPreview) const _MarketPreviewQuickActions(),
         ...snapshot.when(
           skipLoadingOnReload: false,
           skipLoadingOnRefresh: false,
@@ -172,6 +154,50 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
   }
 
   void _retry() => ref.invalidate(hyperliquidSpotMarketsProvider);
+}
+
+class _MarketPreviewQuickActions extends StatelessWidget {
+  const _MarketPreviewQuickActions();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const ValueKey<String>('market-preview-quick-actions'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const SizedBox(height: 15),
+        const LoopSectionLabel('Frontend previews'),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children:
+                <(String, String, Key?)>[
+                      ('Watchlist · 开发预览', '/market/watchlist', null),
+                      (
+                        'New · 开发预览',
+                        '/market/new',
+                        const ValueKey<String>(
+                          'market-new-pairs-preview-entry',
+                        ),
+                      ),
+                      ('Smart money · 开发预览', '/market/smart-money', null),
+                    ]
+                    .map(
+                      (destination) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ActionChip(
+                          key: destination.$3,
+                          label: Text(destination.$1),
+                          onPressed: () => context.push(destination.$2),
+                        ),
+                      ),
+                    )
+                    .toList(growable: false),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _SpotMarketBanner extends StatelessWidget {
@@ -1814,23 +1840,66 @@ class _SpotFullChartFrame extends StatelessWidget {
   }
 }
 
-class NewPairsScreen extends StatelessWidget {
-  const NewPairsScreen({
-    super.key,
-    this.snapshotState = MarketSnapshotState.preview,
-  });
+class NewPairsScreen extends ConsumerWidget {
+  const NewPairsScreen({super.key});
 
-  final MarketSnapshotState snapshotState;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isPreview = ref.watch(
+      loopSessionProvider.select((session) => session.isPreview),
+    );
+    return isPreview
+        ? const _NewPairsPreviewScreen()
+        : const _NewPairsUnavailableScreen();
+  }
+}
+
+class _NewPairsUnavailableScreen extends StatelessWidget {
+  const _NewPairsUnavailableScreen();
 
   @override
   Widget build(BuildContext context) {
-    final hasFacts = snapshotState == MarketSnapshotState.preview;
     return LoopPage(
-      eyebrow: 'C10 · Discovery feed',
+      key: const ValueKey<String>('market-new-pairs-production-unavailable'),
+      eyebrow: 'C10 · Data source required',
       title: 'New pairs',
-      subtitle: 'A factual, source-labelled preview. High-risk and non-core candidates remain folded away.',
+      subtitle: 'New-pair discovery needs an attributable listing-time source. The public Spot snapshot cannot prove when a pair was listed.',
       children: <Widget>[
-        MarketSnapshotBanner(state: snapshotState),
+        const LoopStateCard(
+          title: 'New pairs not connected',
+          message: 'No listing-time source is connected. Price, client receipt time, first local observation, volume, and canonical status do not prove that a pair is new.',
+          icon: Icons.link_off_rounded,
+          tone: LoopTone.neutral,
+        ),
+        const SizedBox(height: 16),
+        Align(
+          key: const ValueKey<String>(
+            'market-new-pairs-production-content-end',
+          ),
+          alignment: Alignment.centerLeft,
+          child: OutlinedButton.icon(
+            onPressed: () => context.go('/market'),
+            icon: const Icon(Icons.show_chart_rounded),
+            label: const Text('Open public Spot market'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NewPairsPreviewScreen extends StatelessWidget {
+  const _NewPairsPreviewScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopPage(
+      key: const ValueKey<String>('market-new-pairs-preview-fixtures'),
+      eyebrow: 'C10 · 开发预览 · Discovery feed',
+      title: 'New pairs',
+      subtitle: 'A labelled fictional preview. It does not establish listing time, liquidity, ownership, or safety.',
+      children: <Widget>[
+        const MarketSnapshotBanner(state: MarketSnapshotState.preview),
         const SizedBox(height: 16),
         const LoopStateCard(
           title: 'Sample-only preview',
@@ -1838,37 +1907,33 @@ class NewPairsScreen extends StatelessWidget {
           icon: Icons.filter_alt_outlined,
           tone: LoopTone.market,
         ),
-        if (!hasFacts) ...<Widget>[
-          const SizedBox(height: 16),
-          MarketStatePanel(state: snapshotState),
-        ] else ...<Widget>[
-          const LoopSectionLabel('Recently observed'),
-          for (
-            var index = 0;
-            index < MarketPreviewData.coreAssets.length;
-            index++
-          ) ...<Widget>[
-            _NewPairCard(
-              asset: MarketPreviewData.coreAssets[index],
-              age: const <String>['18 min', '42 min', '1 hr'][index],
-              venue: const <String>[
-                'Spot preview',
-                'Spot preview',
-                'Spot preview',
-              ][index],
-              onTap: () => context.go('/market'),
-            ),
-            if (index != MarketPreviewData.coreAssets.length - 1)
-              const SizedBox(height: 11),
-          ],
-          const LoopSectionLabel('Folded candidates'),
-          const LoopStateCard(
-            title: 'Non-core results hidden',
-            message: '3 preview candidates are withheld because identity, liquidity, or ownership facts are unavailable.',
-            icon: Icons.visibility_off_outlined,
-            tone: LoopTone.warning,
+        const LoopSectionLabel('Recently observed · 演示数据'),
+        for (
+          var index = 0;
+          index < MarketPreviewData.coreAssets.length;
+          index++
+        ) ...<Widget>[
+          _NewPairCard(
+            asset: MarketPreviewData.coreAssets[index],
+            age: const <String>['18 min', '42 min', '1 hr'][index],
+            venue: const <String>[
+              'Spot preview',
+              'Spot preview',
+              'Spot preview',
+            ][index],
+            onTap: () => context.go('/market'),
           ),
+          if (index != MarketPreviewData.coreAssets.length - 1)
+            const SizedBox(height: 11),
         ],
+        const LoopSectionLabel('Folded candidates · 演示数据'),
+        const LoopStateCard(
+          key: ValueKey<String>('market-new-pairs-preview-content-end'),
+          title: 'Non-core results hidden',
+          message: '3 preview candidates are withheld because identity, liquidity, or ownership facts are unavailable.',
+          icon: Icons.visibility_off_outlined,
+          tone: LoopTone.warning,
+        ),
       ],
     );
   }
@@ -1910,7 +1975,7 @@ class _NewPairCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '$venue · observed $age ago',
+                      '$venue · Fixture age · $age',
                       style: Theme.of(context).textTheme.labelMedium,
                     ),
                   ],
@@ -1952,3 +2017,5 @@ class _NewPairCard extends StatelessWidget {
     );
   }
 }
+
+// End of the C10 Preview source boundary reviewed by the repository Harness.

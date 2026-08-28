@@ -964,3 +964,33 @@ this slice. Repository-wide analyze and format checks remained unclaimed
 because two pre-existing out-of-scope user edits were intentionally preserved;
 neither file is part of this change. No native build, simulator, interactive
 run, physical-device validation, or package artifact was produced.
+
+## New Pairs Exact-Preview Truth Boundary
+
+On 2026-08-28, decision 0038 separated C10 New Pairs from the public Spot
+discovery source. `spotMetaAndAssetCtxs` does not expose listing time, and the
+client receipt instant, first local observation, volume, or canonical flag are
+not reinterpreted as evidence that a pair is new. Authenticated and
+authenticated-unverified sessions now render one neutral source-unavailable
+state, with no inferred empty/loading/offline/region status and no Market or
+Candle request.
+
+BTC, ETH, SOL, fixture ages, and the folded-candidate example remain only in the
+exact Development Preview session and are labelled `开发预览`, `演示数据`, and
+`PREVIEW`. Their cards return to bare `/market` without inventing a Spot index.
+The C1 Preview shortcut rail is also exact-session gated, so its still-fixture
+C11 destination is no longer reachable from the production Market path. C5,
+C6, C9, and C11 remain separately unimplemented.
+
+The five-file focused C10, Market, Preview, navigation, and catalog suite passed
+60/60, including verified/unverified truth boundaries, mounted session rotation,
+zero-request evidence, exact Preview entry, bare-Market navigation,
+portrait/landscape layout, and 200% text. The full Flutter suite passed 598/598;
+Harness validation passed and the full Python mutation suite passed 228/228.
+Changed-file analysis was clean.
+Repository-wide analysis reported only the two pre-existing info-level findings
+in the preserved user edits `lib/widgets/loop_ui.dart` and
+`test/loop_perp_providers_test.dart`; the repository-wide format check likewise
+reported only `loop_ui.dart`. No backend/provider request, SDK, dependency,
+native build, simulator, interactive run, physical-device validation, or
+package artifact was added or exercised.

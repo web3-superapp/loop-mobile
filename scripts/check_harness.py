@@ -74,10 +74,12 @@ REQUIRED_FILES = (
     "docs/decisions/0026-bound-home-discovery-and-security-facts.md",
     "docs/decisions/0036-mount-public-spot-full-chart.md",
     "docs/decisions/0037-bound-home-portfolio-and-net-worth-facts.md",
+    "docs/decisions/0038-bound-new-pairs-to-exact-preview.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/gitnexus-generated-source-pollution.md",
     "docs/failures/providerless-notification-fixtures.md",
     "docs/failures/providerless-home-portfolio-facts.md",
+    "docs/failures/providerless-new-pairs-facts.md",
     "docs/failures/providerless-security-activity-facts.md",
     "docs/failures/providerless-wallet-controls-without-effects.md",
     "docs/failures/privy-android-compile-sdk.md",
@@ -107,6 +109,7 @@ REQUIRED_FILES = (
     "lib/features/market/watchlist/watchlist_controller.dart",
     "test/home_discovery_and_security_test.dart",
     "test/home_portfolio_truthfulness_test.dart",
+    "test/new_pairs_truthfulness_test.dart",
     "lib/features/market/watchlist/watchlist_gateway.dart",
     "lib/features/market/watchlist/watchlist_models.dart",
     "lib/integrations/personalization/memory_watchlist_gateway.dart",
@@ -1860,6 +1863,364 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
                 "Mounted Market must construct exactly one token-detail route "
                 "from the admitted row's exact spotIndex"
             )
+    return errors
+
+
+NEW_PAIRS_TEST_MARKERS = {
+    Path("test/new_pairs_truthfulness_test.dart"): (
+        "authenticated C10 hides every unobserved new-pair fact",
+        "authenticated-unverified C10 hides every unobserved new-pair fact",
+        "only exact Preview renders continuously labelled C10 fixtures",
+        "production Market hides the Preview quick-action rail",
+        "exact Preview keeps C10 entry visibly labelled",
+        "Preview pair returns only to the bare public Spot ledger",
+        "mounted Market and C10 remove Preview facts after session rotation",
+        "C10 remains scrollable at compact sizes and 200% text",
+    ),
+}
+NEW_PAIRS_TEST_FINGERPRINT = (
+    "acecb2a0db36fbc7b8b0801eb2d323c832ee0e0fa5f8dd9f8bc75e64075dc8ce"
+)
+NEW_PAIRS_SOURCE_FINGERPRINTS = {
+    "entry": "337ae91203db2d995f6edfcf4fae483e4179fef74a320460bd9b2d7c55be706b",
+    "quick_actions": "cfb43f2abe00657049f89bc6e94886bd4eb42bd1ea8f4ec5ffe641f806c78cc7",
+    "selector": "6ff6b8e4565a2c7f014bb4811787be702f1c86ef667c9ec91316ed683f6cd346",
+    "production": "eb508a6bbcbb810f5b30a80d9fc8c2ab41fb7fc3ade620633def995e60793e97",
+    "preview": "9f06e16d5805cf92d30e306480fad039721ffc094232125a17dd35102eb6d6df",
+    "card": "f38f3fcbf7d8bb5a3270fab143178d3e75a853a894cbc72c4c342073beeab995",
+    "route": "55dac0895cc08b82982d76341ebf339f4be2a6859a572b72fde81770a1354f5b",
+    "app_test": "c9b0499822fbf15b756aa82b87a8cd6151ac527de67a3a550a1820cdc81956b1",
+}
+
+
+def check_new_pairs_preview_truth_contract(root: Path) -> list[str]:
+    """Keep C10 facts inside the exact current Development Preview session."""
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/features/market/market_screens.dart": (
+                "loopSessionProvider.select((session) => session.isPreview)",
+                "if (isPreview) const _MarketPreviewQuickActions()",
+                "market-preview-quick-actions",
+                "market-new-pairs-preview-entry",
+                "market-new-pairs-production-unavailable",
+                "market-new-pairs-preview-fixtures",
+                "New pairs not connected",
+                "No listing-time source is connected.",
+                "Recently observed · 演示数据",
+                "Fixture age · $age",
+                "onTap: () => context.go('/market')",
+            ),
+            "lib/app.dart": (
+                "path: '/market/new'",
+                "builder: (context, state) => const NewPairsScreen()",
+            ),
+            "lib/core/navigation/surface_catalog.dart": (
+                "id: 'C10'",
+                "Production waits for a reviewed listing-time source; static pairs remain exact-Preview only.",
+            ),
+            "test/new_pairs_truthfulness_test.dart": tuple(
+                marker
+                for markers in NEW_PAIRS_TEST_MARKERS.values()
+                for marker in markers
+            ),
+            "test/app_navigation_test.dart": (
+                "market-new-pairs-production-unavailable",
+                "market-new-pairs-preview-fixtures",
+                "final fetchCountBeforeNewPairs = spotRepository.fetchCount;",
+                "expect(spotRepository.fetchCount, fetchCountBeforeNewPairs);",
+            ),
+            "AGENTS.md": (
+                "Keep C10 New Pairs source-scoped.",
+                "Client receipt time, first local observation, volume, and canonical status never prove listing time or newness.",
+            ),
+            "README.md": (
+                "C10 New Pairs 已关闭正式会话中的演示事实泄漏",
+                "公开 Spot 快照不包含 listing time",
+            ),
+            "docs/product/implementation-constraints.md": (
+                "C10 New Pairs is unknown without a reviewed listing-time source.",
+                "Only the exact Development Preview session may render its static pair and fixture-age examples.",
+            ),
+            "docs/product-decisions.md": (
+                "C10 New Pairs has no approved listing-time source.",
+                "The public Spot snapshot cannot establish that a pair is new.",
+            ),
+            "docs/decisions/0038-bound-new-pairs-to-exact-preview.md": (
+                "# 0038 Bound New Pairs to Exact Preview",
+                "## Status",
+                "## Context",
+                "## Decision",
+                "## Consequences",
+                "## Evidence",
+                "does not include listing time",
+                "zero market and candle repository requests",
+            ),
+            "docs/failures/providerless-new-pairs-facts.md": (
+                "# Providerless New Pairs Facts",
+                "## Summary",
+                "## Root Cause",
+                "## Detection",
+                "## Prevention",
+                "## Evidence",
+                "authenticated production sessions",
+                "exact Preview session",
+            ),
+            "docs/harness/adoption-report.md": (
+                "## New Pairs Exact-Preview Truth Boundary",
+            ),
+            "docs/phase-1/frontend-integration-report.md": (
+                "## New Pairs Exact-Preview Truth Boundary",
+            ),
+        },
+    )
+
+    source_path = root / "lib/features/market/market_screens.dart"
+    if source_path.is_file():
+        source = read_text(source_path)
+        market_start = source.find("class MarketScreen")
+        market_end = source.find("class _SpotMarketBanner", market_start)
+        reviewed: dict[str, str] = {}
+
+        selector_start = source.find(
+            "    final isPreview = ref.watch(", market_start, market_end
+        )
+        selector_end = source.find(
+            "    return LoopPage(", selector_start, market_end
+        )
+        mount_marker = "        if (isPreview) const _MarketPreviewQuickActions(),"
+        mount_start = source.find(mount_marker, selector_end, market_end)
+        if min(selector_start, selector_end, mount_start) < 0:
+            errors.append(
+                "Market Preview entry must retain its narrow selector and mount guard"
+            )
+        else:
+            reviewed["entry"] = (
+                source[selector_start:selector_end]
+                + source[mount_start : mount_start + len(mount_marker)]
+            )
+            if normalized_dart_source_fingerprint(reviewed["entry"]) != (
+                NEW_PAIRS_SOURCE_FINGERPRINTS["entry"]
+            ):
+                errors.append(
+                    "Market Preview entry must match its reviewed selector-and-mount fingerprint"
+                )
+
+        quick_start = source.find("class _MarketPreviewQuickActions")
+        quick_end = source.find("class _SpotMarketBanner", quick_start)
+        quick_source = source[quick_start:quick_end]
+        rail_marker = (
+            "key: const ValueKey<String>('market-preview-quick-actions'),"
+        )
+        pair_marker = (
+            "                      (\n"
+            "                        'New · 开发预览',"
+        )
+        pair_start = quick_source.find(pair_marker)
+        pair_end_marker = "\n                      ),"
+        pair_end = quick_source.find(pair_end_marker, pair_start)
+        if (
+            quick_start < 0
+            or quick_end < 0
+            or rail_marker not in quick_source
+            or pair_start < 0
+            or pair_end < 0
+        ):
+            errors.append(
+                "Market Preview quick actions must retain the rail key and bounded C10 chip"
+            )
+        else:
+            pair_end += len(pair_end_marker)
+            reviewed["quick_actions"] = (
+                rail_marker + "\n" + quick_source[pair_start:pair_end]
+            )
+            if normalized_dart_source_fingerprint(reviewed["quick_actions"]) != (
+                NEW_PAIRS_SOURCE_FINGERPRINTS["quick_actions"]
+            ):
+                errors.append(
+                    "Market Preview C10 action must match its reviewed rail-and-chip fingerprint"
+                )
+
+        slices = {
+            "selector": (
+                "class NewPairsScreen",
+                "class _NewPairsUnavailableScreen",
+                0,
+                "C10 session selector",
+            ),
+            "production": (
+                "class _NewPairsUnavailableScreen",
+                "class _NewPairsPreviewScreen",
+                0,
+                "C10 Production boundary",
+            ),
+            "preview": (
+                "class _NewPairsPreviewScreen",
+                "class _NewPairCard",
+                0,
+                "C10 Preview boundary",
+            ),
+        }
+        for key, (start_marker, end_marker, offset, label) in slices.items():
+            start = source.find(start_marker, offset)
+            end = source.find(end_marker, start + 1)
+            if start < 0 or end < 0:
+                errors.append(f"{label} must retain one bounded reviewed source slice")
+                continue
+            reviewed[key] = source[start:end]
+            if normalized_dart_source_fingerprint(reviewed[key]) != (
+                NEW_PAIRS_SOURCE_FINGERPRINTS[key]
+            ):
+                errors.append(
+                    f"{label} must match its reviewed exact-Preview truth fingerprint"
+                )
+
+        card_start = source.find("class _NewPairCard")
+        card_end = source.find("// End of the C10 Preview source boundary", card_start)
+        if card_start < 0 or card_end < 0:
+            errors.append("C10 Preview card must retain one bounded reviewed source slice")
+        else:
+            reviewed["card"] = source[card_start:card_end]
+            if normalized_dart_source_fingerprint(reviewed["card"]) != (
+                NEW_PAIRS_SOURCE_FINGERPRINTS["card"]
+            ):
+                errors.append(
+                    "C10 Preview card must match its reviewed read-only fingerprint"
+                )
+
+        selector_source = strip_dart_comments(reviewed.get("selector", ""))
+        for forbidden in (
+            "canEnterProduct",
+            "developmentPreviewEnabledProvider",
+            "MarketSnapshotState",
+            "snapshotState",
+        ):
+            if forbidden in selector_source:
+                errors.append(
+                    "C10 fixtures require the exact current Preview session; "
+                    f"selector contains `{forbidden}`"
+                )
+
+        production_source = strip_dart_comments(reviewed.get("production", ""))
+        for forbidden in (
+            "MarketPreviewData",
+            "_NewPairCard",
+            "MarketSnapshotState",
+            "MarketStatePanel",
+            "BTC / USDC",
+            "ETH / USDC",
+            "SOL / USDC",
+            "18 min",
+            "42 min",
+            "1 hr",
+            "Recently observed",
+            "Non-core results hidden",
+            "preview candidates",
+            "No new pairs",
+            "Nothing in this view",
+            "Refresh",
+            "Retry",
+            "regionBlocked",
+        ):
+            if forbidden in production_source:
+                errors.append(
+                    "Production C10 must not infer provider state or restore "
+                    f"fixture fact `{forbidden}`"
+                )
+
+        preview_source = strip_dart_comments(reviewed.get("preview", ""))
+        for required in (
+            "开发预览",
+            "演示数据",
+            "MarketSnapshotState.preview",
+            "context.go('/market')",
+        ):
+            if required not in preview_source:
+                errors.append(
+                    "C10 Preview must retain labelled, read-only fixture evidence; "
+                    f"missing `{required}`"
+                )
+        for forbidden in (
+            "SpotMarketRoute.location(",
+            "/market/token",
+            "Risk score",
+            "AI Guard",
+        ):
+            if forbidden in preview_source:
+                errors.append(
+                    "C10 Preview must not invent provider identity or risk fact "
+                    f"`{forbidden}`"
+                )
+
+        card_source = strip_dart_comments(reviewed.get("card", ""))
+        for required in ("Fixture age", "PREVIEW"):
+            if required not in card_source:
+                errors.append(
+                    "C10 Preview card must retain static-age and Preview attribution; "
+                    f"missing `{required}`"
+                )
+
+    app_path = root / "lib/app.dart"
+    if app_path.is_file():
+        source = read_text(app_path)
+        route_start = source.find("      GoRoute(\n        path: '/market/new',")
+        route_end = source.find(
+            "      GoRoute(\n        path: '/market/holders',", route_start + 1
+        )
+        if route_start < 0 or route_end < 0:
+            errors.append("C10 must retain one bounded reviewed application route")
+        else:
+            route_source = source[route_start:route_end]
+            if normalized_dart_source_fingerprint(route_source) != (
+                NEW_PAIRS_SOURCE_FINGERPRINTS["route"]
+            ):
+                errors.append(
+                    "C10 route must match its reviewed exact-session fingerprint"
+                )
+            for forbidden in (
+                "state.extra",
+                "queryParameters",
+                "snapshotState",
+                "MarketSnapshotState",
+                "enterPreview(",
+            ):
+                if forbidden in route_source:
+                    errors.append(
+                        "C10 route must not inject Preview or recover fixture "
+                        f"identity from `{forbidden}`"
+                    )
+
+    test_path = root / "test/new_pairs_truthfulness_test.dart"
+    if test_path.is_file() and normalized_dart_source_fingerprint(
+        read_text(test_path)
+    ) != NEW_PAIRS_TEST_FINGERPRINT:
+        errors.append(
+            "test/new_pairs_truthfulness_test.dart must match its reviewed executable evidence fingerprint"
+        )
+
+    app_test_path = root / "test/app_navigation_test.dart"
+    if app_test_path.is_file():
+        source = read_text(app_test_path)
+        test_start = source.find(
+            "    final fetchCountBeforeNewPairs = spotRepository.fetchCount;"
+        )
+        test_end = source.find(
+            "    // End of the authenticated C10 application-navigation evidence.",
+            test_start + 1,
+        )
+        if test_start < 0 or test_end < 0:
+            errors.append(
+                "Authenticated C10 application navigation must retain one bounded reviewed test slice"
+            )
+        elif normalized_dart_source_fingerprint(source[test_start:test_end]) != (
+            NEW_PAIRS_SOURCE_FINGERPRINTS["app_test"]
+        ):
+            errors.append(
+                "Authenticated C10 application navigation must match its reviewed executable evidence fingerprint"
+            )
+
+    errors.extend(check_behavior_test_evidence(root, NEW_PAIRS_TEST_MARKERS))
     return errors
 
 
@@ -6281,6 +6642,7 @@ def validate(root: Path = ROOT) -> list[str]:
         errors.extend(check_profile(root, profile))
     errors.extend(check_dependency_pins(root))
     errors.extend(check_spot_only_product_contract(root))
+    errors.extend(check_new_pairs_preview_truth_contract(root))
     errors.extend(check_chat_spot_snapshot_contract(root))
     errors.extend(check_chat_preview_message_request_contract(root))
     errors.extend(check_chat_preview_conversation_id_contract(root))
@@ -6325,7 +6687,7 @@ def main() -> int:
         return 1
     print(
         "Harness check passed: profile, six-destination contract, pins, "
-        "Spot-only product, Chat snapshot, Preview request truth and exact conversation identity, Home portfolio truth, bounded candle, Wallet identity, Wallet route, local draft, "
+        "Spot-only product, New Pairs exact-Preview truth, Chat snapshot, Preview request truth and exact conversation identity, Home portfolio truth, bounded candle, Wallet identity, Wallet route, local draft, "
         "providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, records, and secret rules are consistent."
     )

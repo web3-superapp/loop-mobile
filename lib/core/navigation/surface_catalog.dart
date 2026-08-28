@@ -290,7 +290,7 @@ abstract final class SurfaceCatalog {
       path: '/market/new',
       priority: ProductPriority.a,
       module: SurfaceModule.market,
-      description: 'Fresh pools with concrete contract facts.',
+      description: 'Production waits for a reviewed listing-time source; static pairs remain exact-Preview only.',
     ),
     AppSurface(
       id: 'C11',

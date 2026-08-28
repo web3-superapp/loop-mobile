@@ -142,6 +142,12 @@ void main() {
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
+    final spotRepository = _TrackingSpotMarketRepository(
+      HyperliquidSpotSnapshot(
+        receivedAt: DateTime.utc(2026, 8, 28),
+        markets: const <HyperliquidSpotMarket>[],
+      ),
+    );
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -154,7 +160,7 @@ void main() {
             const AuthenticatedTestPrivyGateway(),
           ),
           hyperliquidSpotMarketRepositoryProvider.overrideWithValue(
-            const _EmptySpotMarketRepository(),
+            spotRepository,
           ),
         ],
         child: const LoopApp(),
@@ -186,18 +192,29 @@ void main() {
     expect(find.text('Spot market'), findsOneWidget);
     expect(find.textContaining('开发预览 K 线'), findsNothing);
 
+    final fetchCountBeforeNewPairs = spotRepository.fetchCount;
     router.go('/market/new');
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('BTC / USDC'), 200);
-    final newPair = find.bySemanticsLabel(
-      RegExp('Open live Spot market after reviewing BTC preview'),
+    expect(router.routeInformationProvider.value.uri.path, '/market/new');
+    expect(router.routeInformationProvider.value.uri.query, isEmpty);
+    expect(
+      find.byKey(
+        const ValueKey<String>('market-new-pairs-production-unavailable'),
+      ),
+      findsOneWidget,
     );
-    expect(newPair, findsOneWidget);
-    await tester.tap(newPair);
-    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey<String>('market-new-pairs-preview-fixtures')),
+      findsNothing,
+    );
+    expect(find.text('BTC / USDC'), findsNothing);
+    expect(find.text('ETH / USDC'), findsNothing);
+    expect(find.text('SOL / USDC'), findsNothing);
+    expect(find.textContaining('开发预览'), findsNothing);
+    expect(find.textContaining('演示数据'), findsNothing);
+    expect(spotRepository.fetchCount, fetchCountBeforeNewPairs);
 
-    expect(router.routeInformationProvider.value.uri.path, '/market');
-
+    // End of the authenticated C10 application-navigation evidence.
     router.go('/market/smart-money');
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(

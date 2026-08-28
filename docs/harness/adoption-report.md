@@ -669,3 +669,29 @@ checks were not claimed clean because the working tree already contained two
 out-of-scope user edits; those files remain unmodified and uncommitted. No
 native build, simulator, interactive run, device validation, or package
 artifact was produced.
+
+## New Pairs Exact-Preview Truth Boundary
+
+On 2026-08-28, decision 0038 closed C10's providerless fact leak. The Harness
+now requires `session.isPreview` as the sole fixture selector, fingerprints the
+production and Preview branches independently, keeps the C1 fixture shortcut
+rail out of production, and rejects route-injected Preview state. Production
+cannot restore static pair identity, relative age, candidate counts, or inferred
+loading/empty/offline/region state while no reviewed listing-time source exists.
+
+The guard also keeps Preview truth labels and bare `/market` navigation, while
+the behavior evidence proves authenticated, cached-unverified, and exact
+Preview modes all issue zero C10 Market/Candle requests. A mounted-session
+rotation test also proves Preview actions and facts disappear without remounting
+the application. Seven new Harness mutations cover selector broadening, route
+injection, fixture restoration, label loss, false empty state, invented Spot
+identity, and hollowed tests.
+
+Harness validation passed and the full Python mutation suite passed 228/228.
+The five-file focused Flutter suite passed 60/60 and the full Flutter suite
+passed 598/598. Changed-file analysis was clean. Repository-wide analysis
+reported only the two pre-existing info-level findings in the preserved user
+edits `lib/widgets/loop_ui.dart` and `test/loop_perp_providers_test.dart`; the
+repository-wide format check likewise reported only `loop_ui.dart`. No build,
+simulator, interactive run, device validation, or package artifact was
+produced.
