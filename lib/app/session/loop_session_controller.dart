@@ -53,31 +53,69 @@ class LoopSessionState {
 
 class LoopSessionController extends Notifier<LoopSessionState> {
   StreamSubscription<PrivySessionSnapshot>? _subscription;
+  var _gatewayGeneration = 0;
+  var _streamRevision = 0;
+  int? _readyGeneration;
   var _localSignOutBarrier = false;
 
   @override
   LoopSessionState build() {
     final gateway = ref.watch(privyAuthGatewayProvider);
+    final generation = ++_gatewayGeneration;
     _subscription?.cancel();
-    _subscription = gateway.watchSession().listen(_receiveSnapshot);
+    _subscription = gateway.watchSession().listen(
+      (snapshot) => _queueStreamSnapshot(snapshot, generation),
+    );
+    final restoreStreamRevision = _streamRevision;
     ref.onDispose(() => _subscription?.cancel());
-    Future<void>.microtask(() => _restore(gateway));
+    unawaited(
+      Future<void>.microtask(() async {
+        if (!ref.mounted || generation != _gatewayGeneration) return;
+        _readyGeneration = generation;
+        await _restore(gateway, generation, restoreStreamRevision);
+      }),
+    );
     return const LoopSessionState.restoring();
   }
 
-  Future<void> _restore(PrivyAuthGateway gateway) async {
+  void _queueStreamSnapshot(PrivySessionSnapshot snapshot, int generation) {
+    if (!ref.mounted || generation != _gatewayGeneration) return;
+    final streamRevision = ++_streamRevision;
+    if (_readyGeneration == generation) {
+      _receiveSnapshot(snapshot);
+      return;
+    }
+    unawaited(
+      Future<void>.microtask(() {
+        if (!ref.mounted ||
+            generation != _gatewayGeneration ||
+            streamRevision != _streamRevision) {
+          return;
+        }
+        _receiveSnapshot(snapshot);
+      }),
+    );
+  }
+
+  Future<void> _restore(
+    PrivyAuthGateway gateway,
+    int generation,
+    int streamRevision,
+  ) async {
     try {
       final snapshot = await gateway.restoreSession();
-      if (!ref.mounted) return;
-      // Never let a stale unauthenticated restore overwrite a session that
-      // completed while restoration was in flight.
-      if (state.mode == LoopSessionMode.restoring ||
-          snapshot.kind == PrivySessionKind.authenticated) {
-        _receiveSnapshot(snapshot);
+      if (!ref.mounted ||
+          generation != _gatewayGeneration ||
+          streamRevision != _streamRevision ||
+          state.mode != LoopSessionMode.restoring) {
+        return;
       }
+      _receiveSnapshot(snapshot);
     } on PrivyGatewayException catch (error) {
-      if (!ref.mounted) return;
-      if (state.mode == LoopSessionMode.restoring) {
+      if (ref.mounted &&
+          generation == _gatewayGeneration &&
+          streamRevision == _streamRevision &&
+          state.mode == LoopSessionMode.restoring) {
         state = LoopSessionState.signedOut(errorMessage: error.userMessage);
       }
     }
@@ -107,11 +145,13 @@ class LoopSessionController extends Notifier<LoopSessionState> {
 
   bool enterPreview() {
     if (!ref.read(developmentPreviewEnabledProvider)) return false;
+    _streamRevision += 1;
     state = const LoopSessionState.preview();
     return true;
   }
 
   void acceptAuthenticated(PrivyAccountSummary account) {
+    _streamRevision += 1;
     _localSignOutBarrier = false;
     state = LoopSessionState(
       mode: LoopSessionMode.authenticated,
@@ -153,6 +193,7 @@ class LoopSessionController extends Notifier<LoopSessionState> {
       throw const PrivyGatewayException('钱包状态已变化，请重新检查后再继续。');
     }
 
+    _streamRevision += 1;
     state = currentState.copyWith(
       account: currentAccount.copyWith(wallet: wallet),
     );
@@ -162,6 +203,7 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     final shouldLogout =
         state.mode == LoopSessionMode.authenticated ||
         state.mode == LoopSessionMode.authenticatedUnverified;
+    _streamRevision += 1;
     _localSignOutBarrier = true;
     state = const LoopSessionState.signedOut();
     if (!shouldLogout) return;

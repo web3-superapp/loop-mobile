@@ -144,6 +144,9 @@ class UnconfiguredPrivyAuthGateway implements PrivyAuthGateway {
 class PrivySdkAuthGateway implements PrivyAuthGateway {
   PrivySdkAuthGateway._(this._privy);
 
+  @visibleForTesting
+  PrivySdkAuthGateway.testing(this._privy);
+
   factory PrivySdkAuthGateway.create(AppConfig config) {
     if (!config.canInitializePrivy) {
       throw StateError('Privy requires both App ID and Mobile App Client ID.');
@@ -161,13 +164,43 @@ class PrivySdkAuthGateway implements PrivyAuthGateway {
 
   final Privy _privy;
   PrivyUser? _currentUser;
+  PrivySessionSnapshot? _latestSnapshot;
+  _AuthObservationSource? _latestObservationSource;
+  var _authStateRevision = 0;
+  var _hasObservedResolvedSdkState = false;
   String? _walletCreationOwner;
   Future<PrivyWalletCreationResult>? _walletCreation;
 
   @override
   Future<PrivySessionSnapshot> restoreSession() async {
+    if (_latestObservationSource == _AuthObservationSource.explicit) {
+      return _latestSnapshot!;
+    }
+    final currentState = _privy.currentAuthState;
+    if (currentState is! NotReady || _hasObservedResolvedSdkState) {
+      return _recordAuthState(currentState, source: _AuthObservationSource.sdk);
+    }
+    final revision = _authStateRevision;
     try {
-      return _mapAuthState(await _privy.getAuthState());
+      final restoredState = await _privy.getAuthState();
+      if (_latestObservationSource == _AuthObservationSource.explicit) {
+        return _latestSnapshot!;
+      }
+      final latestState = _privy.currentAuthState;
+      if (latestState is! NotReady || _hasObservedResolvedSdkState) {
+        return _recordAuthState(
+          latestState,
+          source: _AuthObservationSource.sdk,
+        );
+      }
+      if (revision != _authStateRevision) {
+        return _latestSnapshot ??
+            const PrivySessionSnapshot(PrivySessionKind.notReady);
+      }
+      return _recordAuthState(
+        restoredState,
+        source: _AuthObservationSource.restore,
+      );
     } on PrivyException {
       throw const PrivyGatewayException('无法恢复登录状态，请检查网络后重试。');
     }
@@ -175,7 +208,9 @@ class PrivySdkAuthGateway implements PrivyAuthGateway {
 
   @override
   Stream<PrivySessionSnapshot> watchSession() {
-    return _privy.authStateStream.map(_mapAuthState);
+    return _privy.authStateStream.map(
+      (state) => _recordAuthState(state, source: _AuthObservationSource.sdk),
+    );
   }
 
   @override
@@ -197,8 +232,11 @@ class PrivySdkAuthGateway implements PrivyAuthGateway {
     final result = await _privy.email.loginWithCode(code: code, email: email);
     switch (result) {
       case Success<PrivyUser>(value: final user):
-        _currentUser = user;
-        return _summarize(user);
+        final snapshot = _recordAuthState(
+          Authenticated(user),
+          source: _AuthObservationSource.explicit,
+        );
+        return snapshot.account!;
       case Failure<PrivyUser>():
         throw const PrivyGatewayException('验证码无效或已过期，请重新检查。');
     }
@@ -294,7 +332,10 @@ class PrivySdkAuthGateway implements PrivyAuthGateway {
   Future<void> logout() async {
     try {
       await _privy.logout();
-      _currentUser = null;
+      _recordAuthState(
+        const Unauthenticated(),
+        source: _AuthObservationSource.explicit,
+      );
     } on PrivyException {
       throw const PrivyGatewayException('退出登录失败，请稍后重试。');
     }
@@ -302,13 +343,27 @@ class PrivySdkAuthGateway implements PrivyAuthGateway {
 
   PrivySessionSnapshot _mapAuthState(AuthState state) {
     return switch (state) {
-      NotReady() => const PrivySessionSnapshot(PrivySessionKind.notReady),
+      NotReady() => _clearCurrentUser(PrivySessionKind.notReady),
       Unauthenticated() => _clearCurrentUser(PrivySessionKind.unauthenticated),
       AuthenticatedUnverified() => _clearCurrentUser(
         PrivySessionKind.authenticatedUnverified,
       ),
       Authenticated(user: final user) => _authenticatedSnapshot(user),
     };
+  }
+
+  PrivySessionSnapshot _recordAuthState(
+    AuthState state, {
+    required _AuthObservationSource source,
+  }) {
+    if (source == _AuthObservationSource.sdk && state is! NotReady) {
+      _hasObservedResolvedSdkState = true;
+    }
+    final snapshot = _mapAuthState(state);
+    _latestSnapshot = snapshot;
+    _latestObservationSource = source;
+    _authStateRevision += 1;
+    return snapshot;
   }
 
   PrivySessionSnapshot _clearCurrentUser(PrivySessionKind kind) {
@@ -342,3 +397,5 @@ class PrivySdkAuthGateway implements PrivyAuthGateway {
     );
   }
 }
+
+enum _AuthObservationSource { sdk, explicit, restore }
