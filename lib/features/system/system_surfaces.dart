@@ -8,7 +8,9 @@ enum LoopConnectivityScope {
   tradingServiceUnavailable,
 }
 
-enum LoopPermissionKind { camera, notifications, biometrics }
+enum LoopPermissionKind { camera, notifications, microphone }
+
+enum LoopPermissionPromptMode { education, settingsRecovery }
 
 enum LoopNoticeKind { success, warning, error }
 
@@ -52,6 +54,18 @@ final class LoopFeatureAvailabilityRestriction {
   const LoopFeatureAvailabilityRestriction();
 }
 
+/// Presentation-safe permission context selected by the exact owning feature.
+///
+/// The future platform adapter owns OS status reads and native requests. This
+/// value carries only the reviewed permission kind and next presentation mode.
+@immutable
+final class LoopPermissionPrompt {
+  const LoopPermissionPrompt({required this.kind, required this.mode});
+
+  final LoopPermissionKind kind;
+  final LoopPermissionPromptMode mode;
+}
+
 /// Single routing surface for global system UI I1-I8.
 class SystemSurfaceScreen extends StatelessWidget {
   const SystemSurfaceScreen.fromId(
@@ -67,13 +81,15 @@ class SystemSurfaceScreen extends StatelessWidget {
     this.onMaintenanceStatus,
     this.onRegionContinue,
     this.onRegionPolicy,
+    this.onPermissionRequest,
+    this.onPermissionOpenSettings,
+    this.onPermissionNotNow,
     this.connectivityScope,
     this.serviceErrorObservation,
     this.forceUpdateRequirement,
     this.maintenanceNotice,
     this.featureAvailabilityRestriction,
-    this.permissionKind = LoopPermissionKind.camera,
-    this.permissionDenied = false,
+    this.permissionPrompt,
   });
 
   static const supportedIds = <String>{
@@ -98,13 +114,15 @@ class SystemSurfaceScreen extends StatelessWidget {
   final SystemAction? onMaintenanceStatus;
   final SystemAction? onRegionContinue;
   final SystemAction? onRegionPolicy;
+  final SystemAction? onPermissionRequest;
+  final SystemAction? onPermissionOpenSettings;
+  final SystemAction? onPermissionNotNow;
   final LoopConnectivityScope? connectivityScope;
   final LoopServiceErrorObservation? serviceErrorObservation;
   final LoopForceUpdateRequirement? forceUpdateRequirement;
   final LoopMaintenanceNotice? maintenanceNotice;
   final LoopFeatureAvailabilityRestriction? featureAvailabilityRestriction;
-  final LoopPermissionKind permissionKind;
-  final bool permissionDenied;
+  final LoopPermissionPrompt? permissionPrompt;
 
   String get _id => surfaceId.replaceFirst('#', '').toLowerCase();
 
@@ -146,12 +164,15 @@ class SystemSurfaceScreen extends StatelessWidget {
                 onContinue: onRegionContinue,
                 onPolicy: onRegionPolicy,
               ),
-      'permission' => _PermissionScreen(
-        kind: permissionKind,
-        denied: permissionDenied,
-        onContinue: onPrimaryAction,
-        onNotNow: onSecondaryAction,
-      ),
+      'permission' =>
+        permissionPrompt == null
+            ? _PermissionStatusUnavailableScreen(onContinue: onSecondaryAction)
+            : _PermissionScreen(
+                prompt: permissionPrompt!,
+                onRequest: onPermissionRequest,
+                onOpenSettings: onPermissionOpenSettings,
+                onNotNow: onPermissionNotNow,
+              ),
       'toast' => const _NoticeGallery(),
       'loading' => const _SkeletonGallery(),
       _ => const _UnknownSystemScreen(),
@@ -621,62 +642,63 @@ class _FeatureAvailabilityStatusUnavailableScreen extends StatelessWidget {
 
 class _PermissionScreen extends StatelessWidget {
   const _PermissionScreen({
-    required this.kind,
-    required this.denied,
-    required this.onContinue,
+    required this.prompt,
+    required this.onRequest,
+    required this.onOpenSettings,
     required this.onNotNow,
   });
 
-  final LoopPermissionKind kind;
-  final bool denied;
-  final VoidCallback? onContinue;
+  final LoopPermissionPrompt prompt;
+  final VoidCallback? onRequest;
+  final VoidCallback? onOpenSettings;
   final VoidCallback? onNotNow;
 
   @override
   Widget build(BuildContext context) {
-    final content = _permissionContent(kind);
-    return LoopPage(
-      eyebrow: denied ? 'PERMISSION OFF' : 'BEFORE YOU CONTINUE',
-      title: denied ? '${content.shortName} access is off' : content.title,
-      subtitle: denied ? content.deniedMessage : content.message,
-      bottom: LoopActionDock(
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: OutlinedButton(
-                onPressed: onNotNow,
-                child: const Text('Not now'),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: FilledButton(
-                onPressed: onContinue,
-                child: Text(denied ? 'Open settings' : 'Continue'),
-              ),
-            ),
-          ],
-        ),
-      ),
-      children: <Widget>[
-        Center(
-          child: _SystemGlyph(icon: content.icon, color: content.color),
-        ),
-        const SizedBox(height: 28),
-        LoopCard(
-          child: Column(
-            children: <Widget>[
-              _PermissionFact(icon: Icons.check_rounded, text: content.usedFor),
-              const _PermissionFact(
-                icon: Icons.close_rounded,
-                text:
-                    'LOOP will not use this permission for unrelated activity.',
-                last: true,
-              ),
-            ],
-          ),
-        ),
-      ],
+    final content = _permissionContent(prompt.kind);
+    final settings = prompt.mode == LoopPermissionPromptMode.settingsRecovery;
+    final primaryAction = settings ? onOpenSettings : onRequest;
+    return _SystemStateScaffold(
+      eyebrow: settings ? 'PERMISSION SETTINGS' : 'BEFORE YOU CONTINUE',
+      title: settings
+          ? 'Review ${content.shortName.toLowerCase()} access in settings'
+          : content.title,
+      message: settings
+          ? 'To change ${content.shortName.toLowerCase()} access, review LOOP in device settings.'
+          : content.message,
+      icon: content.icon,
+      tone: content.color,
+      primaryLabel: primaryAction == null
+          ? null
+          : settings
+          ? 'Open settings'
+          : 'Continue',
+      onPrimary: primaryAction,
+      secondaryLabel: onNotNow == null ? null : 'Not now',
+      onSecondary: onNotNow,
+      detail: settings
+          ? 'Returning to LOOP does not prove that this permission changed.'
+          : content.detail,
+    );
+  }
+}
+
+class _PermissionStatusUnavailableScreen extends StatelessWidget {
+  const _PermissionStatusUnavailableScreen({required this.onContinue});
+
+  final VoidCallback? onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SystemStateScaffold(
+      eyebrow: 'PERMISSION STATUS',
+      title: 'Permission status unavailable',
+      message: 'LOOP has not received a permission request or device status for this page. Opening it does not mean that a permission is needed or denied.',
+      icon: Icons.help_outline_rounded,
+      tone: LoopColors.warning,
+      secondaryLabel: onContinue == null ? null : 'Return to LOOP',
+      onSecondary: onContinue,
+      detail: 'Start from the feature you want to use so LOOP can explain the exact request.',
     );
   }
 }
@@ -946,46 +968,6 @@ class _GlyphNode extends StatelessWidget {
   }
 }
 
-class _PermissionFact extends StatelessWidget {
-  const _PermissionFact({
-    required this.icon,
-    required this.text,
-    this.last = false,
-  });
-
-  final IconData icon;
-  final String text;
-  final bool last;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 13),
-      decoration: BoxDecoration(
-        border: last
-            ? null
-            : const Border(bottom: BorderSide(color: LoopColors.line)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Icon(
-            icon,
-            color: icon == Icons.check_rounded
-                ? LoopColors.mint
-                : LoopColors.vapor,
-            size: 19,
-          ),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ListSkeleton extends StatelessWidget {
   const _ListSkeleton({required this.itemCount});
 
@@ -1164,8 +1146,7 @@ _connectivityContent(LoopConnectivityScope scope) {
   String shortName,
   String title,
   String message,
-  String deniedMessage,
-  String usedFor,
+  String detail,
   IconData icon,
   Color color,
 })
@@ -1173,29 +1154,27 @@ _permissionContent(LoopPermissionKind kind) {
   return switch (kind) {
     LoopPermissionKind.camera => (
       shortName: 'Camera',
-      title: 'Use the camera to scan',
-      message: 'LOOP needs camera access only while you scan a QR code.',
-      deniedMessage: 'Scanning stays unavailable until camera access is enabled in device settings.',
-      usedFor: 'Used to read a QR code while the scanner is open.',
+      title: 'Allow camera access to scan',
+      message: 'This permission request is for QR scanning.',
+      detail: 'The device controls the final permission choice. This page does not start a scanner.',
       icon: Icons.qr_code_scanner_rounded,
       color: LoopColors.market,
     ),
     LoopPermissionKind.notifications => (
       shortName: 'Notification',
-      title: 'Receive time-sensitive alerts',
-      message: 'Allow notifications for price alerts, provider activity, security events, and selected community activity.',
-      deniedMessage: 'Alerts cannot reach you while LOOP is closed until notifications are enabled in device settings.',
-      usedFor: 'Used for the categories you enable in Notification settings.',
+      title: 'Choose whether LOOP can notify you',
+      message: 'This permission controls whether the operating system may show LOOP notifications.',
+      detail: 'Notification preferences and operating-system permission are separate. Allowing access does not enable a category or prove delivery.',
       icon: Icons.notifications_active_outlined,
       color: LoopColors.chat,
     ),
-    LoopPermissionKind.biometrics => (
-      shortName: 'Biometric',
-      title: 'Confirm sensitive actions locally',
-      message: 'Use device biometrics for app lock, recovery, and other protected account changes.',
-      deniedMessage: 'Biometric confirmation is unavailable. Use another configured account check or enable it in settings.',
-      usedFor: 'The device returns only whether the check succeeded. Biometric data stays on the device.',
-      icon: Icons.fingerprint_rounded,
+    LoopPermissionKind.microphone => (
+      shortName: 'Microphone',
+      title: 'Allow microphone access?',
+      message:
+          'LOOP uses the microphone only after you tap Speak in an audio room.',
+      detail: 'Joining an audio room starts with the microphone off. The device controls the final permission choice.',
+      icon: Icons.mic_none_rounded,
       color: LoopColors.mint,
     ),
   };

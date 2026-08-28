@@ -765,3 +765,49 @@ Verification on 2026-08-28:
   device-location lookup, policy destination, native build, simulator,
   interactive run, physical-device validation or package artifact was added or
   exercised.
+
+## Permission Prompt Truth Boundary
+
+On 2026-08-28, decision 0033 removed the fabricated default Camera request from
+the routed I6 system surface. A naked `/system/permission` route now says that
+no permission context is available. It does not claim that access is needed,
+requestable, denied or recoverable through settings, and its only action is an
+accurate return to LOOP.
+
+An originating feature may explicitly supply one `LoopPermissionPrompt` for
+Camera, Notifications or Microphone. Education and settings recovery remain
+separate modes. Request, open-settings and not-now are independent exact
+callbacks; generic route actions and a callback for the wrong mode cannot
+authorize their labels. Camera copy does not start a scanner, Notification copy
+does not claim category enablement or delivery, and Microphone copy remains
+bounded to Audio Room's deliberate Speak action and muted first join.
+
+This slice adds no platform adapter or direct permission dependency. Camera and
+Notifications have no production composition or complete native/provider
+configuration. Audio Room keeps its existing Stream-owned microphone capture
+path; no second permission manager or call-lifecycle change was introduced. No
+system prompt, settings launch/return, OS-state mapping or device behavior is
+implemented by I6.
+
+Verification on 2026-08-28:
+
+- All 10 I6 tests passed, covering the formal `/system/permission` route,
+  unknown, education and settings-recovery states for Camera, Notifications and
+  Microphone, exact mode-specific actions, generic and wrong-mode action
+  isolation, removal of the former fabricated claims, accessibility semantics
+  and all three 390 × 844 layouts at 2× text scale.
+- The focused I1-I6, application-navigation and surface-catalog suite passed
+  all 67 tests. Changed-file formatting reported 0 changes, and changed-file
+  analysis passed with no issues.
+- `bin/flutter test` passed all 547 Flutter tests.
+- `python3 scripts/check_harness.py` passed, and all 209 Harness mutation tests
+  passed.
+- Repository-wide formatting reported only the pre-existing user change in
+  `lib/widgets/loop_ui.dart`. Repository-wide analysis reported only its
+  pre-existing `use_null_aware_elements` info and the pre-existing
+  `prefer_initializing_formals` info in
+  `test/loop_perp_providers_test.dart`; no I6 file was reported.
+- No platform adapter, permission dependency, system prompt, settings launch,
+  OS-state mapping, Firebase or Camera configuration, native build, simulator,
+  interactive run, physical-device validation or package artifact was added or
+  exercised.
