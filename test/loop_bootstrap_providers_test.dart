@@ -8,6 +8,7 @@ import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
+import 'package:loop_mobile/integrations/backend/loop_stream_token_repository.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
@@ -54,9 +55,10 @@ void main() {
   });
 
   test(
-    'Chat and Video share one trusted bootstrap identity but no token shortcut',
+    'Chat and Video share identity while only Chat uses its token contract',
     () async {
       final repository = _Repository(identity);
+      final streamTokens = _StreamTokenRepository(identity.streamUserId);
       final tokens = _RecordingTokens();
       final container = ProviderContainer(
         overrides: [
@@ -66,6 +68,7 @@ void main() {
           loopSessionProvider.overrideWith(_AuthenticatedSession.new),
           loopBootstrapRepositoryProvider.overrideWithValue(repository),
           loopBackendAccessTokenSourceProvider.overrideWithValue(tokens),
+          loopStreamChatTokenRepositoryProvider.overrideWithValue(streamTokens),
         ],
       );
       addTearDown(container.dispose);
@@ -86,11 +89,11 @@ void main() {
       expect(videoIdentity?.userId, identity.streamUserId);
       expect(repository.calls, 1);
       expect(tokens.calls, 1);
-      await expectLater(
-        container
+      expect(
+        await container
             .read(streamChatSessionSourceProvider)
             .loadToken(identity.streamUserId),
-        throwsA(_unavailableTokenFailure()),
+        'abcdefghijklmnopqrstuvwxyz123456',
       );
       await expectLater(
         container
@@ -98,6 +101,8 @@ void main() {
             .loadToken(identity.streamUserId),
         throwsA(_unavailableTokenFailure()),
       );
+      expect(streamTokens.calls, 1);
+      expect(tokens.calls, 2);
     },
   );
 
@@ -176,6 +181,24 @@ final class _Repository implements LoopBootstrapRepository {
   Future<LoopBootstrapIdentity> bootstrap({required String accessToken}) {
     calls += 1;
     return _handler(accessToken);
+  }
+}
+
+final class _StreamTokenRepository implements LoopStreamTokenRepository {
+  _StreamTokenRepository(this.userId);
+
+  final String userId;
+  int calls = 0;
+
+  @override
+  Future<LoopStreamToken> issueChatToken({required String accessToken}) async {
+    calls += 1;
+    return LoopStreamToken(
+      apiKey: 'public-stream-key',
+      token: 'abcdefghijklmnopqrstuvwxyz123456',
+      expiresAt: DateTime.utc(2026, 8, 28, 1),
+      userId: userId,
+    );
   }
 }
 

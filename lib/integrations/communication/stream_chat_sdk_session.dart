@@ -156,7 +156,8 @@ final class StreamChatSdkSessionAuthorizer
   Future<void> _lifecycleTail = Future<void>.value();
   Future<StreamSessionAuthorization>? _authorization;
   int? _authorizationGeneration;
-  Completer<void> _generationInvalidated = Completer<void>();
+  _StreamSessionGenerationSignal _generationInvalidated =
+      _StreamSessionGenerationSignal();
   Future<void>? _disposeOperation;
   String? _boundPrincipalKey;
   String? _principalKey;
@@ -185,7 +186,7 @@ final class StreamChatSdkSessionAuthorizer
       return _authorizeAfterStaleOperation(active, generation);
     }
 
-    final invalidated = _generationInvalidated.future;
+    final invalidated = _generationInvalidated;
     late final Future<StreamSessionAuthorization> operation;
     operation = _enqueue(() => _authorize(generation, invalidated))
         .whenComplete(() {
@@ -216,7 +217,7 @@ final class StreamChatSdkSessionAuthorizer
 
   Future<StreamSessionAuthorization> _authorize(
     int generation,
-    Future<void> invalidated,
+    _StreamSessionGenerationSignal invalidated,
   ) async {
     if (!_isCurrent(generation)) {
       return StreamSessionAuthorization.unavailable;
@@ -382,24 +383,66 @@ final class StreamChatSdkSessionAuthorizer
   Future<T> _untilInvalidated<T>(
     Future<T> operation, {
     required int generation,
-    required Future<void> invalidated,
+    required _StreamSessionGenerationSignal invalidated,
   }) {
-    if (!_isCurrent(generation)) {
+    if (!_isCurrent(generation) || invalidated.isInvalidated) {
       return Future<T>.error(const _StreamSessionGenerationInvalidated());
     }
-    return Future.any(<Future<T>>[
-      operation,
-      invalidated.then<T>(
-        (_) => throw const _StreamSessionGenerationInvalidated(),
+
+    final result = Completer<T>();
+    var settled = false;
+    late final StreamSubscription<void> subscription;
+    subscription = invalidated.events.listen((_) {
+      if (settled) return;
+      settled = true;
+      result.completeError(const _StreamSessionGenerationInvalidated());
+      unawaited(_cancelIgnoringFailure(subscription));
+    });
+
+    if (invalidated.isInvalidated) {
+      settled = true;
+      result.completeError(const _StreamSessionGenerationInvalidated());
+      unawaited(_cancelIgnoringFailure(subscription));
+    }
+
+    unawaited(
+      operation.then<void>(
+        (value) {
+          if (settled) return;
+          settled = true;
+          unawaited(_cancelIgnoringFailure(subscription));
+          if (!_isCurrent(generation) || invalidated.isInvalidated) {
+            result.completeError(const _StreamSessionGenerationInvalidated());
+            return;
+          }
+          result.complete(value);
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          if (settled) return;
+          settled = true;
+          unawaited(_cancelIgnoringFailure(subscription));
+          result.completeError(error, stackTrace);
+        },
       ),
-    ]);
+    );
+    return result.future;
+  }
+
+  Future<void> _cancelIgnoringFailure(
+    StreamSubscription<void> subscription,
+  ) async {
+    try {
+      await subscription.cancel();
+    } catch (_) {
+      // Cancellation is only listener cleanup; authorization still resolves.
+    }
   }
 
   void _invalidateGeneration() {
     _generation += 1;
     final invalidated = _generationInvalidated;
-    _generationInvalidated = Completer<void>();
-    if (!invalidated.isCompleted) invalidated.complete();
+    _generationInvalidated = _StreamSessionGenerationSignal();
+    invalidated.invalidate();
   }
 
   Future<T> _enqueue<T>(Future<T> Function() operation) {
@@ -439,4 +482,23 @@ final class StreamChatSdkSessionAuthorizer
 
 final class _StreamSessionGenerationInvalidated implements Exception {
   const _StreamSessionGenerationInvalidated();
+}
+
+final class _StreamSessionGenerationSignal {
+  final StreamController<void> _controller = StreamController<void>.broadcast(
+    sync: true,
+  );
+
+  var _invalidated = false;
+
+  bool get isInvalidated => _invalidated;
+
+  Stream<void> get events => _controller.stream;
+
+  void invalidate() {
+    if (_invalidated) return;
+    _invalidated = true;
+    _controller.add(null);
+    unawaited(_controller.close());
+  }
 }
