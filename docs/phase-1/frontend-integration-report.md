@@ -859,3 +859,48 @@ Verification on 2026-08-28:
 - No production feedback source, host, event bus, queue, timer, persistence,
   backend route, SDK, dependency, native build, simulator, interactive run,
   physical-device validation or package artifact was added or exercised.
+
+## Loading Presentation Truth Boundary
+
+On 2026-08-28, decision 0035 removed the unconditional list, detail and chart
+gallery from the routed I8 component surface. A naked `/preview/loading` route
+now says that no loading context is connected. Opening it no longer claims
+that content is being requested, exists, will arrive or is “on the way”, and
+it emits no false loading announcement.
+
+An exact owning feature may explicitly supply one `LoopLoadingPresentation`
+only for its current pending state. It selects exactly one static list, detail
+or chart skeleton and one kind-specific live region. List placeholder count is
+compile-time non-null and runtime-bounded to 1–8; it controls visual density
+only and predicts neither a provider result count nor an outcome. Missing or
+invalid presentations fail closed, while decorative geometry remains excluded
+from accessibility semantics. Generic system actions cannot make an active
+loading presentation interactive.
+
+The owning feature remains responsible for request identity, cancellation,
+success, empty, stale, offline and error transitions. This slice deliberately
+does not compose I8 into Market, Chat, Profile, Watchlist, Privy, Wallet or
+Audio Room and adds no production loading source/controller, shimmer,
+animation, timer, polling, event bus, persistence or global overlay host.
+
+Verification on 2026-08-28:
+
+- All 9 I8 tests passed, covering the formal `/preview/loading` route, unknown
+  and all three explicit skeleton kinds, compile-time non-null construction,
+  runtime list-density bounds, direct-render failure closure, kind-specific
+  live-region semantics, decorative exclusion, generic action isolation and
+  every 390 × 844 layout at 2× text scale.
+- The focused I1-I8, application-navigation and surface-catalog suite passed
+  all 87 tests. Changed-file formatting reported 0 changes, and changed-file
+  analysis passed with no issues.
+- `bin/flutter test` passed all 567 Flutter tests.
+- `python3 scripts/check_harness.py` passed, and all 209 Harness mutation tests
+  passed.
+- Repository-wide formatting reported only the pre-existing user change in
+  `lib/widgets/loop_ui.dart`. Repository-wide analysis reported only its
+  pre-existing `use_null_aware_elements` info and the pre-existing
+  `prefer_initializing_formals` info in
+  `test/loop_perp_providers_test.dart`; no I8 file was reported.
+- No backend/provider request, SDK, dependency, native build, simulator,
+  interactive run, physical-device validation or package artifact was added or
+  exercised.

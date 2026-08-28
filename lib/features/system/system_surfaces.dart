@@ -94,6 +94,37 @@ final class LoopGlobalFeedback {
   }
 }
 
+/// A bounded skeleton selected by the exact feature that currently owns load.
+///
+/// List placeholder count controls visual density only. It never predicts a
+/// provider result count or proves that a request was sent.
+@immutable
+final class LoopLoadingPresentation {
+  const LoopLoadingPresentation.list({this.placeholderCount = 4})
+    : kind = LoopSkeletonKind.list;
+
+  const LoopLoadingPresentation.detail()
+    : kind = LoopSkeletonKind.detail,
+      placeholderCount = 0;
+
+  const LoopLoadingPresentation.chart()
+    : kind = LoopSkeletonKind.chart,
+      placeholderCount = 0;
+
+  static const minListPlaceholders = 1;
+  static const maxListPlaceholders = 8;
+
+  final LoopSkeletonKind kind;
+  final int placeholderCount;
+
+  bool get isPresentable => switch (kind) {
+    LoopSkeletonKind.list =>
+      placeholderCount >= minListPlaceholders &&
+          placeholderCount <= maxListPlaceholders,
+    LoopSkeletonKind.detail || LoopSkeletonKind.chart => true,
+  };
+}
+
 /// Single routing surface for global system UI I1-I8.
 class SystemSurfaceScreen extends StatelessWidget {
   const SystemSurfaceScreen.fromId(
@@ -121,6 +152,7 @@ class SystemSurfaceScreen extends StatelessWidget {
     this.featureAvailabilityRestriction,
     this.permissionPrompt,
     this.globalFeedback,
+    this.loadingPresentation,
   });
 
   static const supportedIds = <String>{
@@ -157,6 +189,7 @@ class SystemSurfaceScreen extends StatelessWidget {
   final LoopFeatureAvailabilityRestriction? featureAvailabilityRestriction;
   final LoopPermissionPrompt? permissionPrompt;
   final LoopGlobalFeedback? globalFeedback;
+  final LoopLoadingPresentation? loadingPresentation;
 
   String get _id => surfaceId.replaceFirst('#', '').toLowerCase();
 
@@ -215,7 +248,10 @@ class SystemSurfaceScreen extends StatelessWidget {
                 onAction: onFeedbackAction,
                 onDismiss: onFeedbackDismiss,
               ),
-      'loading' => const _SkeletonGallery(),
+      'loading' =>
+        loadingPresentation == null || !loadingPresentation!.isPresentable
+            ? _LoadingContextUnavailableScreen(onContinue: onSecondaryAction)
+            : _LoadingScreen(presentation: loadingPresentation!),
       _ => const _UnknownSystemScreen(),
     };
   }
@@ -436,20 +472,31 @@ class LoopGlobalNotice extends StatelessWidget {
 /// I8 reusable skeleton. It intentionally does not shimmer, so reduced-motion
 /// users and ordinary users receive the same calm loading state.
 class LoopSkeletonView extends StatelessWidget {
-  const LoopSkeletonView({required this.kind, super.key, this.itemCount = 4});
+  const LoopSkeletonView({required this.presentation, super.key});
 
-  final LoopSkeletonKind kind;
-  final int itemCount;
+  final LoopLoadingPresentation presentation;
 
   @override
   Widget build(BuildContext context) {
+    if (!presentation.isPresentable) {
+      return const SizedBox.shrink(
+        key: ValueKey<String>('invalid-loading-presentation'),
+      );
+    }
+    final semanticLabel = switch (presentation.kind) {
+      LoopSkeletonKind.list => 'Loading list content',
+      LoopSkeletonKind.detail => 'Loading detail content',
+      LoopSkeletonKind.chart => 'Loading chart content',
+    };
     return Semantics(
       container: true,
       liveRegion: true,
-      label: 'Loading content',
+      label: semanticLabel,
       child: ExcludeSemantics(
-        child: switch (kind) {
-          LoopSkeletonKind.list => _ListSkeleton(itemCount: itemCount),
+        child: switch (presentation.kind) {
+          LoopSkeletonKind.list => _ListSkeleton(
+            itemCount: presentation.placeholderCount,
+          ),
           LoopSkeletonKind.detail => const _DetailSkeleton(),
           LoopSkeletonKind.chart => const _ChartSkeleton(),
         },
@@ -842,23 +889,56 @@ class _FeedbackStatusUnavailableScreen extends StatelessWidget {
   }
 }
 
-class _SkeletonGallery extends StatelessWidget {
-  const _SkeletonGallery();
+class _LoadingScreen extends StatelessWidget {
+  const _LoadingScreen({required this.presentation});
+
+  final LoopLoadingPresentation presentation;
 
   @override
   Widget build(BuildContext context) {
-    return const LoopPage(
+    final (name, detail) = switch (presentation.kind) {
+      LoopSkeletonKind.list => (
+        'list',
+        'Placeholder rows set visual density only. They do not predict a result count, identity, freshness, or success.',
+      ),
+      LoopSkeletonKind.detail => (
+        'detail',
+        'This placeholder does not prove that an object exists, is accessible, or will load successfully.',
+      ),
+      LoopSkeletonKind.chart => (
+        'chart',
+        'This placeholder does not prove that prices, candles, provider history, freshness, continuity, or success exist.',
+      ),
+    };
+    return _SystemStateScaffold(
       eyebrow: 'LOADING',
-      title: 'Content is on the way',
-      subtitle: 'Skeletons preserve the shape of each surface without implying that data has loaded.',
-      children: <Widget>[
-        LoopSectionLabel('List'),
-        LoopSkeletonView(kind: LoopSkeletonKind.list, itemCount: 3),
-        LoopSectionLabel('Detail'),
-        LoopSkeletonView(kind: LoopSkeletonKind.detail),
-        LoopSectionLabel('Chart'),
-        LoopSkeletonView(kind: LoopSkeletonKind.chart),
-      ],
+      title: 'Loading in progress',
+      message:
+          'The owning feature selected a $name placeholder for its current pending state.',
+      icon: Icons.hourglass_top_rounded,
+      tone: LoopColors.vapor,
+      content: LoopSkeletonView(presentation: presentation),
+      detail: detail,
+    );
+  }
+}
+
+class _LoadingContextUnavailableScreen extends StatelessWidget {
+  const _LoadingContextUnavailableScreen({required this.onContinue});
+
+  final VoidCallback? onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SystemStateScaffold(
+      eyebrow: 'LOADING',
+      title: 'Loading context unavailable',
+      message: 'No feature supplied an active loading state for this page.',
+      icon: Icons.help_outline_rounded,
+      tone: LoopColors.warning,
+      secondaryLabel: onContinue == null ? null : 'Return to LOOP',
+      onSecondary: onContinue,
+      detail: 'Opening this route does not mean that content is being requested, exists, or will arrive.',
     );
   }
 }
