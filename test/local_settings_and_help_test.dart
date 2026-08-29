@@ -11,12 +11,108 @@ import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'support/authenticated_test_privy_gateway.dart';
 
 void main() {
-  testWidgets('Reduce motion is a real app-run setting', (tester) async {
+  testWidgets(
+    'Reduce motion remains truthful when local saving is unavailable',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            privyAuthGatewayProvider.overrideWithValue(
+              const AuthenticatedTestPrivyGateway(),
+            ),
+          ],
+          child: const LoopApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+      router.go('/profile/settings');
+      await tester.pumpAndSettle();
+
+      final setting = find.byKey(
+        const ValueKey<String>('reduce-motion-setting'),
+      );
+      final providerContainer = ProviderScope.containerOf(
+        tester.element(setting),
+      );
+      expect(
+        providerContainer.read(loopDisplayPreferencesProvider).reduceMotion,
+        isFalse,
+      );
+      expect(
+        find.text('Build-defined copy; localization is not connected'),
+        findsOneWidget,
+      );
+      expect(find.text('Unavailable'), findsNWidgets(3));
+      expect(find.text('Local storage unavailable'), findsOneWidget);
+
+      await tester.tap(
+        find.descendant(of: setting, matching: find.byType(Switch)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        providerContainer.read(loopDisplayPreferencesProvider).reduceMotion,
+        isTrue,
+      );
+      expect(MediaQuery.disableAnimationsOf(tester.element(setting)), isTrue);
+      expect(
+        find.text('Applied for this app run; local saving is unavailable'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets('Retry reads the existing device preference after load failure', (
+    tester,
+  ) async {
+    final store = _RecoveringDisplayStore();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           privyAuthGatewayProvider.overrideWithValue(
             const AuthenticatedTestPrivyGateway(),
+          ),
+          loopDisplayPreferencesStoreProvider.overrideWithValue(store),
+        ],
+        child: const LoopApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    router.go('/profile/settings');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Retry local storage'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('retry-display-preferences')),
+    );
+    await tester.pumpAndSettle();
+
+    final setting = find.byKey(const ValueKey<String>('reduce-motion-setting'));
+    final container = ProviderScope.containerOf(tester.element(setting));
+    expect(container.read(loopDisplayPreferencesProvider).reduceMotion, isTrue);
+    expect(store.writes, isEmpty);
+    expect(MediaQuery.disableAnimationsOf(tester.element(setting)), isTrue);
+    expect(find.text('Local storage unavailable'), findsNothing);
+  });
+
+  testWidgets('restored device preference disables animations globally', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
+          loopDisplayPreferencesInitialProvider.overrideWithValue(
+            const LoopDisplayPreferences(
+              reduceMotion: true,
+              persistence: LoopDisplayPreferencesPersistence.available,
+            ),
           ),
         ],
         child: const LoopApp(),
@@ -29,27 +125,49 @@ void main() {
     await tester.pumpAndSettle();
 
     final setting = find.byKey(const ValueKey<String>('reduce-motion-setting'));
-    final providerContainer = ProviderScope.containerOf(
-      tester.element(setting),
-    );
+    expect(MediaQuery.disableAnimationsOf(tester.element(setting)), isTrue);
     expect(
-      providerContainer.read(loopDisplayPreferencesProvider).reduceMotion,
-      isFalse,
-    );
-    expect(
-      find.text('Build-defined copy; localization is not connected'),
+      find.text('Stored locally when changed; no account or backend is used'),
       findsOneWidget,
     );
+    expect(find.byType(Switch), findsOneWidget);
     expect(find.text('Unavailable'), findsNWidgets(3));
+  });
 
-    await tester.tap(
-      find.descendant(of: setting, matching: find.byType(Switch)),
+  testWidgets('system animation setting remains stricter than stored false', (
+    tester,
+  ) async {
+    tester.binding.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(
+      tester.binding.platformDispatcher.clearAccessibilityFeaturesTestValue,
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
+          loopDisplayPreferencesInitialProvider.overrideWithValue(
+            const LoopDisplayPreferences(
+              persistence: LoopDisplayPreferencesPersistence.available,
+            ),
+          ),
+        ],
+        child: const LoopApp(),
+      ),
     );
     await tester.pumpAndSettle();
 
+    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    router.go('/profile/settings');
+    await tester.pumpAndSettle();
+
+    final setting = find.byKey(const ValueKey<String>('reduce-motion-setting'));
+    final container = ProviderScope.containerOf(tester.element(setting));
     expect(
-      providerContainer.read(loopDisplayPreferencesProvider).reduceMotion,
-      isTrue,
+      container.read(loopDisplayPreferencesProvider).reduceMotion,
+      isFalse,
     );
     expect(MediaQuery.disableAnimationsOf(tester.element(setting)), isTrue);
   });
@@ -140,4 +258,16 @@ Future<void> _pumpSurface(WidgetTester tester, String surfaceId) async {
     ),
   );
   await tester.pumpAndSettle();
+}
+
+class _RecoveringDisplayStore implements LoopDisplayPreferencesStore {
+  final List<bool> writes = <bool>[];
+
+  @override
+  Future<bool?> readReduceMotion() async => true;
+
+  @override
+  Future<void> writeReduceMotion(bool value) async {
+    writes.add(value);
+  }
 }

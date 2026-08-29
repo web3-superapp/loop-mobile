@@ -5876,6 +5876,268 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected security behavior-evidence guard: {result}",
         )
 
+    def test_local_display_preferences_paths_are_required(self) -> None:
+        expected = {
+            "docs/decisions/0042-persist-only-device-display-preferences.md",
+            "lib/app/loop_display_preferences.dart",
+            "lib/integrations/personalization/shared_preferences_display_store.dart",
+            "test/local_settings_and_help_test.dart",
+            "test/loop_display_preferences_test.dart",
+        }
+
+        self.assertTrue(expected.issubset(set(check_harness.REQUIRED_FILES)))
+
+    def test_shared_preferences_dependency_must_stay_exact(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            text = (REPOSITORY_ROOT / "pubspec.yaml").read_text(encoding="utf-8")
+            (root / "pubspec.yaml").write_text(
+                text.replace(
+                    "  shared_preferences: 2.5.5",
+                    "  shared_preferences: ^2.5.5",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_dependency_pins(root)
+
+        self.assertIn(
+            "pubspec.yaml must pin `shared_preferences` exactly to `2.5.5`",
+            result,
+        )
+
+    def test_shared_preferences_import_cannot_escape_display_adapter(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "lib/features/profile/unsafe_settings.dart"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "import 'package:shared_preferences/shared_preferences.dart';\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_local_display_preferences_contract(root)
+
+        self.assertTrue(
+            any("must stay behind the reviewed display store adapter" in error for error in result),
+            msg=f"expected Shared Preferences import boundary: {result}",
+        )
+
+    def test_display_store_cannot_add_clear_or_remove(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path(
+                "lib/integrations/personalization/shared_preferences_display_store.dart"
+            )
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source
+                + "\nFuture<void> unsafe(SharedPreferencesAsync value) => value.clear();\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_local_display_preferences_contract(root)
+
+        self.assertTrue(
+            any("may only read or write its exact Reduce motion key" in error for error in result),
+            msg=f"expected one-key operation boundary: {result}",
+        )
+
+    def test_display_store_cannot_add_a_second_preference_key(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path(
+                "lib/integrations/personalization/shared_preferences_display_store.dart"
+            )
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "static const String reduceMotionKey =",
+                    "static const String unsafeIdentityKey = 'loop.identity';\n"
+                    "  static const String reduceMotionKey =",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_local_display_preferences_contract(root)
+
+        self.assertIn(
+            "The display store must declare exactly one preference key",
+            result,
+        )
+
+    def test_display_store_cannot_add_non_boolean_sensitive_storage(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path(
+                "lib/integrations/personalization/shared_preferences_display_store.dart"
+            )
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source
+                + "\nFuture<void> unsafe(SharedPreferencesAsync preferences) => "
+                "preferences.setString('loop.token', 'secret');\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_local_display_preferences_contract(root)
+
+        self.assertTrue(
+            any("getBool/setBool" in error for error in result),
+            msg=f"expected Boolean API allowlist: {result}",
+        )
+        self.assertTrue(
+            any("exact Reduce motion key literal" in error for error in result),
+            msg=f"expected key-literal allowlist: {result}",
+        )
+
+    def test_display_store_callbacks_cannot_use_a_literal_second_key(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path(
+                "lib/integrations/personalization/shared_preferences_display_store.dart"
+            )
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "_writeBool(reduceMotionKey, value)",
+                    "_writeBool('loop.display.v1.other', value)",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_local_display_preferences_contract(root)
+
+        self.assertTrue(
+            any("write must use only" in error for error in result),
+            msg=f"expected exact callback-key guard: {result}",
+        )
+
+    def test_native_lockfile_must_include_shared_preferences_pod(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("ios/Podfile.lock")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "shared_preferences_foundation",
+                    "removed_preferences_foundation",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_native_matrix(root)
+
+        self.assertTrue(
+            any(
+                "ios/Podfile.lock" in error
+                and "shared_preferences_foundation" in error
+                for error in result
+            ),
+            msg=f"expected iOS plugin lock guard: {result}",
+        )
+
+    def test_display_store_cannot_gain_unreviewed_imports(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path(
+                "lib/integrations/personalization/shared_preferences_display_store.dart"
+            )
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "import 'package:shared_preferences/shared_preferences.dart';",
+                    "import 'package:flutter_secure_storage/flutter_secure_storage.dart';\n"
+                    "import 'package:shared_preferences/shared_preferences.dart';",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_local_display_preferences_contract(root)
+
+        self.assertTrue(
+            any("imports only Flutter annotations" in error for error in result),
+            msg=f"expected display-store import allowlist: {result}",
+        )
+
+    def test_display_adapter_cannot_be_composed_inside_a_feature(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "lib/features/profile/unsafe_settings.dart"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "final store = SharedPreferencesLoopDisplayStore();\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_local_display_preferences_contract(root)
+
+        self.assertTrue(
+            any("may only be composed by reviewed app roots" in error for error in result),
+            msg=f"expected display-store composition boundary: {result}",
+        )
+
+    def test_general_settings_cannot_enable_unimplemented_language(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/features/profile/profile_screens.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            language = """title: 'Language',
+              detail: 'Build-defined copy; localization is not connected',
+              onTap: null,"""
+            path.write_text(
+                source.replace(language, language.replace("onTap: null", "onTap: () {}")),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_local_display_preferences_contract(root)
+
+        self.assertIn("H12 `Language` must remain disabled", result)
+
+    def test_display_behavior_cannot_drop_latest_rapid_write(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("test/loop_display_preferences_test.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "final disable = controller.setReduceMotion(false);",
+                    "final disable = Future<void>.value();",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_local_display_preferences_contract(root)
+
+        self.assertTrue(
+            any("lacks executable contract evidence" in error for error in result),
+            msg=f"expected serialized latest-write evidence: {result}",
+        )
+
+    def test_every_display_preferences_marker_has_executable_evidence(self) -> None:
+        for relative, markers in check_harness.LOCAL_DISPLAY_PREFERENCES_TEST_MARKERS.items():
+            configured = check_harness.LOCAL_DISPLAY_PREFERENCES_EXECUTABLE_TEST_EVIDENCE.get(
+                relative,
+                {},
+            )
+            self.assertEqual(set(markers), set(configured), msg=str(relative))
+
     def test_network_dio_policy_paths_are_required(self) -> None:
         expected = {
             "docs/decisions/0041-centralize-dio-trust-boundaries.md",

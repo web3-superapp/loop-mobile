@@ -1,6 +1,6 @@
 # Open-Source Attribution and Dependency Register
 
-Review date: 2026-08-24. Versions are locked by `pubspec.yaml` and `pubspec.lock`; bundled license texts in resolved packages remain the legal source of truth.
+Review date: 2026-08-29. Versions are locked by `pubspec.yaml` and `pubspec.lock`; bundled license texts in resolved packages remain the legal source of truth.
 
 ## Direct Flutter dependencies
 
@@ -15,6 +15,7 @@ Review date: 2026-08-24. Versions are locked by `pubspec.yaml` and `pubspec.lock
 | flutter_riverpod | 3.4.2 | MIT | State management |
 | go_router | 17.5.0 | BSD-3-Clause-style Flutter license | Navigation |
 | privy_flutter | 0.10.1 | MIT | Identity and embedded wallets |
+| shared_preferences | 2.5.5 | BSD-3-Clause | Non-sensitive device-local display preference |
 | stream_chat_flutter | 10.3.0 | Stream Source Code License Agreement | Chat SDK and UI |
 | stream_chat_persistence | 10.3.0 | Stream Source Code License Agreement | Official bounded chat persistence |
 | stream_video_flutter | 1.4.3 | Stream Source Code License Agreement | Video/audio calling SDK |

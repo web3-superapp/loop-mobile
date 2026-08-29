@@ -1938,6 +1938,14 @@ class _GeneralSettings extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final preferences = ref.watch(loopDisplayPreferencesProvider);
+    final persistenceDetail = switch (preferences.persistence) {
+      LoopDisplayPreferencesPersistence.available =>
+        'Stored locally when changed; no account or backend is used',
+      LoopDisplayPreferencesPersistence.saving =>
+        'Applied now and saving locally on this device',
+      LoopDisplayPreferencesPersistence.unavailable =>
+        'Applied for this app run; local saving is unavailable',
+    };
     return LoopPage(
       eyebrow: 'GENERAL',
       title: 'Settings',
@@ -1947,12 +1955,28 @@ class _GeneralSettings extends ConsumerWidget {
           key: const ValueKey<String>('reduce-motion-setting'),
           icon: Icons.motion_photos_off_outlined,
           title: 'Reduce motion',
-          detail: 'Disable nonessential LOOP transitions for this app run',
+          detail: persistenceDetail,
           value: preferences.reduceMotion,
           onChanged: ref
               .read(loopDisplayPreferencesProvider.notifier)
               .setReduceMotion,
         ),
+        if (preferences.persistence ==
+            LoopDisplayPreferencesPersistence.unavailable)
+          LoopStateCard(
+            key: const ValueKey<String>('display-preferences-unavailable'),
+            title: 'Local storage unavailable',
+            message: 'Reduce motion still applies for this app run. Retry checks local storage again without using an account or backend.',
+            icon: Icons.save_outlined,
+            tone: LoopTone.warning,
+            action: OutlinedButton(
+              key: const ValueKey<String>('retry-display-preferences'),
+              onPressed: ref
+                  .read(loopDisplayPreferencesProvider.notifier)
+                  .retryPersistence,
+              child: const Text('Retry local storage'),
+            ),
+          ),
         const LoopSectionLabel('Current build'),
         const _SettingsGroup(
           children: <Widget>[
@@ -1979,7 +2003,7 @@ class _GeneralSettings extends ConsumerWidget {
         ),
         const SizedBox(height: 18),
         const _PrivacyFootnote(
-          text: 'Reduce motion is kept in memory for this app run and always respects a stricter system accessibility setting. No account or backend request is made.',
+          text: 'Reduce motion is a non-sensitive device preference and always respects a stricter system accessibility setting. It is not tied to an account, and no backend request is made.',
         ),
       ],
     );

@@ -30,6 +30,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - Home Global Search 已闭合 providerless 前端行为：只有显式 Preview 会显示并本地筛选一组有界的 `演示数据`，支持大小写/空白归一化、无结果与清空；群组和用户沿用精确注册的 Preview conversation ID，ETH 示例只进入公共 Spot 列表而不猜 `spotIndex`。正式会话在真实跨产品索引接入前显示不可用，不泄漏 Preview 结果
 - Home Security Activity 已关闭无来源的安全结论：正式会话不再伪报 MFA、设备登录、审批次数或 `No urgent action`，没有已审核事件源时保持不可用。显式 Preview 只保留持续标注的布局示例，不计算风险分、不发请求，也不提供 Revoke/Block 等账户操作
 - Account/Profile 安全页已分离能力可用性与配置状态：A11 不再提供未接适配器的 Passkey、Biometrics、PIN 开关或伪保存，只能明确“不做修改”地继续；H5 不再用 capability 计算保护分数、ready/recovery 结论，Wallet MFA 与 App lock 在真实 setup adapter 接入前禁用。当前未引入 Secure Storage，也没有存储或校验 app PIN
+- General Settings 的 Reduce motion 已使用设备本地非敏感偏好持久化，并在首个应用页面前恢复；构造、读取与写入均有一秒上限，快速连续切换和迟到写入保持顺序。读取失败后的重试会先重新读取，写入失败才重试当前明确选择；任何失败都只说明本次运行生效。它不绑定账号、不发送后端请求，也不会覆盖更严格的系统 Reduce Motion。Language、Display currency 与 Theme 在真实能力具备前继续禁用，Shared Preferences 不保存 Profile、Privacy、通知、钱包、token、PIN 或安全状态
 - Home 与 Net Worth 已关闭无来源的资产和活动结论：正式会话在 owner-scoped portfolio/activity 来源接入前只显示不可用与当前 Privy wallet identity 状态，不再展示静态总额、涨跌、图表、分配、未读数、提醒或授权记录。钱包身份不等于余额证据；原布局数据只保留在明确标注 `开发预览` / `演示数据` 的 Preview 中，本切片不新增接口、provider 请求或刷新动作
 - C10 New Pairs 已关闭正式会话中的演示事实泄漏：公开 Spot 快照不包含 listing time，客户端收取时间、首次本地观察、成交量与 canonical 标记也不能证明“新上线”。正式和缓存未验证会话仅显示数据源未连接且不发 Market/Candle 请求；BTC/ETH/SOL 与 fixture age 仅在精确 `开发预览` 会话中显示，并只能返回裸 `/market`
 - Launchpad 继续作为第 3 个一级入口保留，但当前只交付不可操作的 G1 占位：无项目来源时不声称项目正在进行、为空、已审核或满足资格，三个必要条件全部明确为未连接；G2–G4 继续 deferred，正式与 Preview 均不伪造项目、额度、申请、资金、签名或领取动作

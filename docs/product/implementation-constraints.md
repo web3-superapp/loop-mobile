@@ -102,6 +102,12 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 
 ## Personalization boundaries
 
+- Device-local display persistence contains only the non-sensitive `reduceMotion` Boolean under the versioned `loop.display.v1.reduce_motion` key. It uses `SharedPreferencesAsync`, loads before the first `LoopApp` frame, survives account rotation, and never becomes an owner-scoped resource or backend truth source.
+- Missing device state defaults to false. Read or write failure keeps a truthful run-local value and cannot be presented as durable success; writes are serialized so an older completion cannot overwrite the latest choice. A stricter operating-system Reduce Motion setting always wins.
+- The display-preference store never contains user or Stream identity, Profile, Privacy, Notification Preferences, wallet data, tokens, PINs, protection state, provider facts, or arbitrary feature data, and application code never clears the shared preference store. Language, display-currency conversion, and theme selection remain disabled until their real capabilities and contracts exist.
+- Device display-preference construction, reads, and writes are bounded to one second. Startup failures fail open to a visibly run-local default; read retry reads before writing, while an explicit failed write retries only the current user choice. Timed-out underlying writes remain ordered so an older operation cannot overwrite a newer selection if it completes late.
+- Shared Preferences is not Secure Storage and is never used for credentials or critical state. Secure Storage and app-lock/PIN behavior remain subject to the separate account-bound credential-lifecycle decision; raw PIN storage remains forbidden.
+
 - The Watchlist is one owner-bound, versioned, grouped, ordered snapshot. A save replaces the complete draft using the committed version; a conflict never silently overwrites either side and requires explicit reload or reconciliation.
 - Keep Watchlist records limited to canonical group keys, bounded display names, and ordered canonical asset keys. Asset references are preferences, not proof that a market exists, is fresh, or is tradable.
 - Price, change, volume, funding, liquidity, risk, alert status, provider payloads, wallet data, and trading actions never enter Watchlist persistence or its application port.

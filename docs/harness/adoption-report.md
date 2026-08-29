@@ -1,5 +1,38 @@
 # Harness Adoption Report
 
+## Device-Local Display Preferences
+
+Decision 0042 upgrades the only implemented H12 control, Reduce motion, from
+process memory to one installation-scoped, non-sensitive Boolean. Both formal
+and Preview composition roots load the value before mounting `LoopApp`, so a
+stored reduced-motion choice cannot be preceded by an ordinary LOOP
+transition. The app still preserves a stricter operating-system accessibility
+setting.
+
+The narrow application port exposes only read/write Reduce motion operations.
+The production adapter uses `SharedPreferencesAsync` and the single versioned
+`loop.display.v1.reduce_motion` key. Construction, reads, and writes are bounded
+to one second. Writes remain serialized across controller reconstruction so the
+latest rapid selection wins even if an older operation completes late. A read
+retry reads again; only a failed explicit write retries the current run-local
+choice. Failures remain truthful instead of claiming persistence. Language,
+Display currency, and Theme remain disabled.
+
+The Harness locks the exact dependency, one-key adapter, both bootstrap roots,
+serialized controller behavior, failure copy, system precedence, and disabled
+H12 options. Shared Preferences remains outside Profile, Privacy, Notification
+Preferences, wallet, identity, token, PIN, protection, and provider state. No
+Secure Storage, generic database, account mirror, backend route, or provider
+request is introduced.
+
+Verification results: the focused Settings suite passed 19/19, the full Flutter
+suite passed 631/631, analysis reported no issues, format checked 220 Dart files
+unchanged, Harness validation passed, and the Python mutation suite passed
+272/272. Native Debug compilation passed for Android (`app-debug.apk`) and iOS
+without codesigning (`Runner.app`); the generated application bundles were
+cleaned after verification. No simulator, interactive run, or physical-device
+validation is part of this slice.
+
 Date: 2026-08-24
 
 ## Baseline

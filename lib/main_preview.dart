@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
@@ -17,6 +18,7 @@ import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_trading_gateway
 import 'package:loop_mobile/integrations/personalization/memory_notification_preferences_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/memory_privacy_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/memory_profile_gateway.dart';
+import 'package:loop_mobile/integrations/personalization/shared_preferences_display_store.dart';
 import 'package:loop_mobile/integrations/privy/privy_fixture_adapter.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/personalization/memory_watchlist_gateway.dart';
@@ -27,11 +29,18 @@ import 'package:loop_mobile/integrations/personalization/memory_watchlist_gatewa
 /// Development Preview on the login screen. Chat, wallet, trading, and owner
 /// settings stay in labelled memory-only Preview adapters. The Market tab may
 /// still read public, identity-free Hyperliquid Testnet spot facts.
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final displayBootstrap = await bootstrapSharedPreferencesDisplayPreferences();
   runApp(
     ProviderScope(
       overrides: [
+        loopDisplayPreferencesStoreProvider.overrideWithValue(
+          displayBootstrap.store,
+        ),
+        loopDisplayPreferencesInitialProvider.overrideWithValue(
+          displayBootstrap.initial,
+        ),
         appConfigProvider.overrideWithValue(
           const AppConfig(
             privyAppId: '',

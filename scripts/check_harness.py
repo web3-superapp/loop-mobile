@@ -26,6 +26,7 @@ PINNED_DEPENDENCIES = {
     "flutter_riverpod": "3.4.2",
     "go_router": "17.5.0",
     "privy_flutter": "0.10.1",
+    "shared_preferences": "2.5.5",
     "stream_chat_flutter": "10.3.0",
     "stream_chat_persistence": "10.3.0",
     "stream_video_flutter": "1.4.3",
@@ -78,6 +79,7 @@ REQUIRED_FILES = (
     "docs/decisions/0039-close-preview-group-info-controls.md",
     "docs/decisions/0040-separate-security-capability-from-enrollment.md",
     "docs/decisions/0041-centralize-dio-trust-boundaries.md",
+    "docs/decisions/0042-persist-only-device-display-preferences.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/gitnexus-generated-source-pollution.md",
     "docs/failures/providerless-notification-fixtures.md",
@@ -101,6 +103,7 @@ REQUIRED_FILES = (
     "lib/core/navigation/stream_channel_route.dart",
     "lib/core/network/loop_dio_factory.dart",
     "lib/app/loop_display_preferences.dart",
+    "lib/integrations/personalization/shared_preferences_display_store.dart",
     "lib/app/notifications/loop_notification_coordinator.dart",
     "lib/integrations/notifications/loop_notification_event_source.dart",
     "lib/integrations/notifications/loop_notification_router.dart",
@@ -153,6 +156,7 @@ REQUIRED_FILES = (
     "test/hyperliquid_spot_candle_repository_test.dart",
     "test/hyperliquid_spot_market_repository_test.dart",
     "test/local_settings_and_help_test.dart",
+    "test/loop_display_preferences_test.dart",
     "test/market_screen_test.dart",
     "test/spot_candle_chart_test.dart",
     "test/notifications_screen_test.dart",
@@ -1765,7 +1769,7 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
                 "redirect: (context, state) => '/market'",
             ),
             "lib/main.dart": (
-                "runApp(const ProviderScope(child: LoopApp()));",
+                "child: const LoopApp(),",
             ),
             "lib/features/catalog/catalog_surface_screen.dart": (
                 "surface.retainedHistory",
@@ -3527,6 +3531,354 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
     errors.extend(
         check_named_executable_test_evidence(
             root, SECURITY_CAPABILITY_TRUTH_EXECUTABLE_TEST_EVIDENCE
+        )
+    )
+    return errors
+
+
+LOCAL_DISPLAY_PREFERENCES_TEST_MARKERS = {
+    Path("test/loop_display_preferences_test.dart"): (
+        "shared-preferences adapter uses one namespaced Boolean key",
+        "missing device value starts disabled with persistence available",
+        "read failure stays run-local without claiming persistence",
+        "bootstrap catches a synchronous platform-store failure",
+        "read retry restores an existing value instead of overwriting it",
+        "read timeout fails open without blocking application startup",
+        "persisted Reduce motion survives a controller reconstruction",
+        "rapid changes serialize writes and retain the latest value",
+        "write failure keeps the run value and exposes an exact retry",
+        "write timeout leaves run-local truth while preserving write order",
+        "controller rebuild queues behind an older in-flight write",
+        "setting the current value does not issue a duplicate write",
+    ),
+    Path("test/local_settings_and_help_test.dart"): (
+        "Reduce motion remains truthful when local saving is unavailable",
+        "Retry reads the existing device preference after load failure",
+        "restored device preference disables animations globally",
+        "system animation setting remains stricter than stored false",
+    ),
+}
+LOCAL_DISPLAY_PREFERENCES_EXECUTABLE_TEST_EVIDENCE = {
+    Path("test/loop_display_preferences_test.dart"): {
+        "shared-preferences adapter uses one namespaced Boolean key": (
+            r"\bSharedPreferencesLoopDisplayStore\.forTesting\s*\(",
+            r"\bawait\s+store\.readReduceMotion\s*\(",
+            r"\bawait\s+store\.writeReduceMotion\s*\(",
+            r"\bSharedPreferencesLoopDisplayStore\.reduceMotionKey\b",
+        ),
+        "missing device value starts disabled with persistence available": (
+            r"\bloadLoopDisplayPreferences\s*\(",
+            r"\bexpect\s*\(\s*loaded\.reduceMotion\s*,\s*isFalse",
+            r"\bLoopDisplayPreferencesPersistence\.available\b",
+        ),
+        "read failure stays run-local without claiming persistence": (
+            r"\bfailingReads\s*:\s*1\b",
+            r"\bLoopDisplayPreferencesPersistence\.unavailable\b",
+        ),
+        "bootstrap catches a synchronous platform-store failure": (
+            r"\bbootstrapSharedPreferencesDisplayPreferencesForTesting\s*\(",
+            r"\bthrow\s+StateError\s*\(",
+            r"\bisA<UnavailableLoopDisplayPreferencesStore>\s*\(",
+        ),
+        "read retry restores an existing value instead of overwriting it": (
+            r"\bvalue\s*:\s*true\s*,\s*failingReads\s*:\s*1\b",
+            r"\bretryPersistence\s*\(",
+            r"\bexpect\s*\(\s*store\.writes\s*,\s*isEmpty",
+        ),
+        "read timeout fails open without blocking application startup": (
+            r"\bCompleter<bool\?>\s*\(",
+            r"\btimeout\s*:\s*Duration\.zero\b",
+            r"\bLoopDisplayPreferencesPersistence\.unavailable\b",
+        ),
+        "persisted Reduce motion survives a controller reconstruction": (
+            r"\bfirst\.dispose\s*\(",
+            r"\bfinal\s+second\s*=\s*await\s+_containerFor\s*\(",
+            r"\bsecond\.read\s*\(\s*loopDisplayPreferencesProvider\s*\)\.reduceMotion",
+        ),
+        "rapid changes serialize writes and retain the latest value": (
+            r"\bCompleter<void>\s*\(",
+            r"\bcontroller\.setReduceMotion\s*\(\s*true\s*\)",
+            r"\bcontroller\.setReduceMotion\s*\(\s*false\s*\)",
+            r"\bexpect\s*\(\s*store\.writes\s*,\s*<bool>\[\s*true\s*,\s*false\s*\]",
+            r"\bFuture\.wait\s*\(",
+        ),
+        "write failure keeps the run value and exposes an exact retry": (
+            r"\bfailingWrites\s*:\s*1\b",
+            r"\bcontroller\.setReduceMotion\s*\(\s*true\s*\)",
+            r"\bcontroller\.retryPersistence\s*\(",
+            r"\bLoopDisplayPreferencesPersistence\.unavailable\b",
+            r"\bLoopDisplayPreferencesPersistence\.available\b",
+        ),
+        "write timeout leaves run-local truth while preserving write order": (
+            r"\bioTimeout\s*:\s*Duration\.zero\b",
+            r"\bcontroller\.setReduceMotion\s*\(\s*true\s*\)",
+            r"\bcontroller\.setReduceMotion\s*\(\s*false\s*\)",
+            r"\bexpect\s*\(\s*store\.writes\s*,\s*<bool>\[\s*true\s*,\s*false\s*\]",
+        ),
+        "controller rebuild queues behind an older in-flight write": (
+            r"\bcontainer\.invalidate\s*\(\s*loopDisplayPreferencesProvider\s*\)",
+            r"\bfinal\s+newController\s*=\s*container\.read",
+            r"\bexpect\s*\(\s*store\.writes\s*,\s*<bool>\[\s*true\s*,\s*true\s*,\s*false\s*\]",
+        ),
+        "setting the current value does not issue a duplicate write": (
+            r"\bsetReduceMotion\s*\(\s*false\s*\)",
+            r"\bexpect\s*\(\s*store\.writes\s*,\s*isEmpty",
+        ),
+    },
+    Path("test/local_settings_and_help_test.dart"): {
+        "Reduce motion remains truthful when local saving is unavailable": (
+            r"\bfind\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(",
+            r"\btester\.tap\s*\(",
+            r"\bproviderContainer\.read\s*\(\s*loopDisplayPreferencesProvider\s*\)\.reduceMotion",
+            r"\bMediaQuery\.disableAnimationsOf\s*\(",
+            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsOneWidget",
+        ),
+        "Retry reads the existing device preference after load failure": (
+            r"\b_RecoveringDisplayStore\s*\(",
+            r"\btester\.tap\s*\(",
+            r"\bexpect\s*\(\s*store\.writes\s*,\s*isEmpty",
+        ),
+        "restored device preference disables animations globally": (
+            r"\bLoopDisplayPreferences\s*\(\s*reduceMotion\s*:\s*true",
+            r"\bMediaQuery\.disableAnimationsOf\s*\(",
+            r"\bfind\.byType\s*\(\s*Switch\s*\)\s*,\s*findsOneWidget",
+            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*3\s*\)",
+        ),
+        "system animation setting remains stricter than stored false": (
+            r"\bFakeAccessibilityFeatures\s*\(\s*disableAnimations\s*:\s*true",
+            r"\bcontainer\.read\s*\(\s*loopDisplayPreferencesProvider\s*\)\.reduceMotion\s*,\s*isFalse",
+            r"\bMediaQuery\.disableAnimationsOf\s*\(",
+        ),
+    },
+}
+
+
+def check_local_display_preferences_contract(root: Path) -> list[str]:
+    """Keep device persistence narrow, non-sensitive, and truthful."""
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/app/loop_display_preferences.dart": (
+                "enum LoopDisplayPreferencesPersistence",
+                "abstract interface class LoopDisplayPreferencesStore",
+                "Future<bool?> readReduceMotion()",
+                "Future<void> writeReduceMotion(bool value)",
+                "Future<LoopDisplayPreferences> loadLoopDisplayPreferences(",
+                "const loopDisplayPreferencesIoTimeout = Duration(seconds: 1)",
+                "Future<void> setReduceMotion(bool value)",
+                "Future<void> retryPersistence()",
+                "final previous = _writeTail",
+            ),
+            "lib/integrations/personalization/shared_preferences_display_store.dart": (
+                "class SharedPreferencesLoopDisplayStore",
+                "SharedPreferencesAsync()",
+                "loop.display.v1.reduce_motion",
+                "readReduceMotion()",
+                "writeReduceMotion(bool value)",
+                "bootstrapSharedPreferencesDisplayPreferences(",
+                "bootstrapSharedPreferencesDisplayPreferencesForTesting(",
+            ),
+            "lib/main.dart": (
+                "await bootstrapSharedPreferencesDisplayPreferences()",
+                "loopDisplayPreferencesStoreProvider.overrideWithValue(",
+                "displayBootstrap.store",
+                "loopDisplayPreferencesInitialProvider.overrideWithValue(",
+                "displayBootstrap.initial",
+            ),
+            "lib/main_preview.dart": (
+                "await bootstrapSharedPreferencesDisplayPreferences()",
+                "loopDisplayPreferencesStoreProvider.overrideWithValue(",
+                "displayBootstrap.store",
+                "loopDisplayPreferencesInitialProvider.overrideWithValue(",
+                "displayBootstrap.initial",
+            ),
+            "lib/app.dart": (
+                "preferences.reduceMotion",
+                "MediaQuery.disableAnimationsOf(context)",
+                "copyWith(disableAnimations: true)",
+            ),
+            "lib/features/profile/profile_screens.dart": (
+                "reduce-motion-setting",
+                "Local storage unavailable",
+                "Retry local storage",
+                "Build-defined copy; localization is not connected",
+                "No conversion; markets show their actual quote asset",
+                "Dark design system only in this build",
+            ),
+            "test/loop_display_preferences_test.dart": tuple(
+                marker
+                for marker in LOCAL_DISPLAY_PREFERENCES_TEST_MARKERS[
+                    Path("test/loop_display_preferences_test.dart")
+                ]
+            ),
+            "AGENTS.md": (
+                "Keep device-local display persistence limited to the non-sensitive `reduceMotion` Boolean",
+            ),
+            "README.md": (
+                "General Settings 的 Reduce motion 已使用设备本地非敏感偏好持久化",
+            ),
+            "docs/product/implementation-constraints.md": (
+                "Device-local display persistence contains only the non-sensitive `reduceMotion` Boolean",
+            ),
+            "docs/product-decisions.md": (
+                "H12 persists only Reduce motion as one installation-scoped, non-sensitive Boolean",
+            ),
+            "docs/decisions/0042-persist-only-device-display-preferences.md": (
+                "## Status",
+                "## Context",
+                "## Decision",
+                "## Consequences",
+                "## Evidence",
+            ),
+            "docs/harness/adoption-report.md": (
+                "## Device-Local Display Preferences",
+            ),
+            "docs/phase-1/frontend-integration-report.md": (
+                "## Device-Local Display Preferences",
+            ),
+        },
+    )
+
+    allowed_importer = Path(
+        "lib/integrations/personalization/shared_preferences_display_store.dart"
+    )
+    lib_root = root / "lib"
+    if lib_root.is_dir():
+        for path in lib_root.rglob("*.dart"):
+            relative = path.relative_to(root)
+            source = strip_dart_comments(read_text(path))
+            if "package:shared_preferences/shared_preferences.dart" in source:
+                if relative != allowed_importer:
+                    errors.append(
+                        "Shared Preferences must stay behind the reviewed display store adapter: "
+                        + str(relative)
+                    )
+
+    adapter_path = root / allowed_importer
+    if adapter_path.is_file():
+        adapter_source = strip_dart_comments(read_text(adapter_path))
+        adapter = strip_dart_comments_and_strings(adapter_source)
+        imports = re.findall(
+            r"^import\s+['\"]([^'\"]+)['\"](?:\s+show\s+[^;]+)?\s*;",
+            adapter_source,
+            flags=re.MULTILINE,
+        )
+        if imports != [
+            "package:flutter/foundation.dart",
+            "package:loop_mobile/app/loop_display_preferences.dart",
+            "package:shared_preferences/shared_preferences.dart",
+        ]:
+            errors.append(
+                "The display store adapter imports only Flutter annotations, its narrow port, and Shared Preferences"
+            )
+        if len(re.findall(r"\bstatic\s+const\s+String\s+\w+Key\s*=", adapter)) != 1:
+            errors.append("The display store must declare exactly one preference key")
+        expected_key_declaration = (
+            "static const String reduceMotionKey = "
+            "'loop.display.v1.reduce_motion';"
+        )
+        if expected_key_declaration not in adapter_source:
+            errors.append(
+                "The display store must retain its exact namespaced Boolean key"
+            )
+        adapter_without_imports = re.sub(
+            r"^import\s+['\"][^'\"]+['\"](?:\s+show\s+[^;]+)?\s*;\s*",
+            "",
+            strip_dart_comments(adapter_source),
+            flags=re.MULTILINE,
+        )
+        string_literals = [
+            single or double
+            for single, double in re.findall(
+                r"'([^'\\]*(?:\\.[^'\\]*)*)'|\"([^\"\\]*(?:\\.[^\"\\]*)*)\"",
+                adapter_without_imports,
+            )
+        ]
+        if string_literals != ["loop.display.v1.reduce_motion"]:
+            errors.append(
+                "The display store may contain only the exact Reduce motion key literal"
+            )
+        preference_members = re.findall(r"\bpreferences\.(\w+)\b", adapter)
+        if preference_members != ["getBool", "setBool"]:
+            errors.append(
+                "The display store may call only SharedPreferencesAsync getBool/setBool"
+            )
+        if len(re.findall(r"\bSharedPreferencesAsync\s*\(\s*\)", adapter)) != 1:
+            errors.append(
+                "The display store must create exactly one SharedPreferencesAsync adapter"
+            )
+        if len(re.findall(r"\b_readBool\s*\(\s*reduceMotionKey\s*\)", adapter)) != 1:
+            errors.append(
+                "The display store read must use only the exact Reduce motion key"
+            )
+        if len(
+            re.findall(
+                r"\b_writeBool\s*\(\s*reduceMotionKey\s*,\s*value\s*\)",
+                adapter,
+            )
+        ) != 1:
+            errors.append(
+                "The display store write must use only the exact Reduce motion key"
+            )
+        if re.search(
+            r"\b(?:clear|remove|getAll|getKeys|getString|setString|getInt|setInt|getDouble|setDouble|getStringList|setStringList)\s*\(",
+            adapter,
+        ):
+            errors.append(
+                "The display store may only read or write its exact Reduce motion key"
+            )
+
+    reviewed_consumers = {
+        allowed_importer,
+        Path("lib/main.dart"),
+        Path("lib/main_preview.dart"),
+    }
+    if lib_root.is_dir():
+        for path in lib_root.rglob("*.dart"):
+            relative = path.relative_to(root)
+            source = strip_dart_comments_and_strings(read_text(path))
+            if (
+                "SharedPreferencesLoopDisplayStore" in source
+                and relative not in reviewed_consumers
+            ):
+                errors.append(
+                    "The device display adapter may only be composed by reviewed app roots: "
+                    + str(relative)
+                )
+
+    profile_path = root / "lib/features/profile/profile_screens.dart"
+    if profile_path.is_file():
+        source = strip_dart_comments(read_text(profile_path))
+        start = source.find("class _GeneralSettings")
+        end = source.find("class _AboutAndLegal", start + 1)
+        if start < 0 or end < 0:
+            errors.append("H12 Settings must retain one bounded reviewed slice")
+        else:
+            settings = source[start:end]
+            executable = strip_dart_comments_and_strings(settings)
+            if len(re.findall(r"\b_SwitchSetting\s*\(", executable)) != 1:
+                errors.append("H12 must expose exactly one implemented display switch")
+            for title in ("Language", "Display currency", "Theme"):
+                title_position = settings.find(f"title: '{title}'")
+                tile_start = settings.rfind("_SettingsTile(", 0, title_position)
+                tile_end = settings.find("_SettingsTile(", title_position + 1)
+                if tile_end < 0:
+                    tile_end = len(settings)
+                tile = (
+                    settings[tile_start:tile_end]
+                    if title_position >= 0 and tile_start >= 0
+                    else ""
+                )
+                if re.search(r"\bonTap\s*:\s*null\s*,", tile) is None:
+                    errors.append(f"H12 `{title}` must remain disabled")
+
+    errors.extend(
+        check_behavior_test_evidence(root, LOCAL_DISPLAY_PREFERENCES_TEST_MARKERS)
+    )
+    errors.extend(
+        check_named_executable_test_evidence(
+            root, LOCAL_DISPLAY_PREFERENCES_EXECUTABLE_TEST_EVIDENCE
         )
     )
     return errors
@@ -5369,7 +5721,10 @@ def check_native_matrix(root: Path) -> list[str]:
             ),
             "android/app/src/main/kotlin/com/cywd/loop/MainActivity.kt": ("package com.cywd.loop",),
             "ios/Podfile": ("platform :ios, '17.0'",),
-            "ios/Podfile.lock": ("COCOAPODS: 1.16.2",),
+            "ios/Podfile.lock": (
+                "shared_preferences_foundation",
+                "COCOAPODS: 1.16.2",
+            ),
             "ios/Runner.xcodeproj/project.pbxproj": (
                 "PRODUCT_BUNDLE_IDENTIFIER = com.cywd.loop;",
                 "PRODUCT_BUNDLE_IDENTIFIER = com.cywd.loop.RunnerTests;",
@@ -7326,6 +7681,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_chat_preview_conversation_id_contract(root))
     errors.extend(check_home_discovery_and_security_contract(root))
     errors.extend(check_security_capability_truth_contract(root))
+    errors.extend(check_local_display_preferences_contract(root))
     errors.extend(check_network_dio_policy_contract(root))
     errors.extend(check_home_portfolio_truth_contract(root))
     errors.extend(check_spot_candle_contract(root))
@@ -7367,7 +7723,7 @@ def main() -> int:
         return 1
     print(
         "Harness check passed: profile, six-destination contract, pins, "
-        "Spot-only product, New Pairs exact-Preview truth, Chat snapshot, Preview request truth and exact conversation identity, Home portfolio truth, security capability truth, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
+        "Spot-only product, New Pairs exact-Preview truth, Chat snapshot, Preview request truth and exact conversation identity, Home portfolio truth, security capability truth, device-local display preferences, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
         "providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, records, and secret rules are consistent."
     )
