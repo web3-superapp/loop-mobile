@@ -759,3 +759,33 @@ focused Chat Preview suite passed 20/20, and the complete Flutter suite passed
 Repository-wide format and analysis reached all Dart files but remain
 non-clean only for the preserved user edits in `lib/widgets/loop_ui.dart` and
 `test/loop_perp_providers_test.dart`; this slice did not edit either file.
+
+## Security Capability and Enrollment Truth Boundary
+
+On 2026-08-29, decision 0040 separated security-method availability from
+enrollment, enforcement, and stored state. A11 no longer exposes process-local
+Passkey, Biometrics, or PIN switches, no longer starts with an enabled PIN, and
+no longer claims that navigation saved a Secure Storage-backed protection. Its
+only continuation says that it makes no change.
+
+H5 no longer converts capability flags into a protection score, ready state,
+or recovery-set conclusion. Wallet MFA and App lock remain disabled without
+typed setup adapters. Devices, recovery phrase, and social recovery retain
+their existing bounded information routes, whose destination surfaces fail
+closed without provider evidence. Capability pills are neutral and never say
+Enabled or Configured.
+
+The Harness scans the bounded A11 and H5 slices, locks their catalog truth, and
+requires executable widget evidence. Its mutations reject restored switches,
+storage/save claims, capability-derived summaries, enabled Wallet MFA/App lock,
+and hollow tests. This slice deliberately adds no Secure Storage dependency,
+credential gateway, PIN, provider request, backend route, build, simulator,
+interactive run, physical-device validation, or package artifact. A real local
+protection slice first requires the account-bound lifecycle and lockout/storage
+decision recorded by 0040.
+
+Harness validation passed, the Python mutation suite passed 246/246, and the
+complete Flutter suite passed 609/609. Repository-wide format checked all 215
+Dart files with no change, and repository-wide analysis reported no issues. No
+native build, simulator, interactive run, physical-device validation, or
+package artifact was produced.

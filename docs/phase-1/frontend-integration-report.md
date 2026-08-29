@@ -994,3 +994,22 @@ in the preserved user edits `lib/widgets/loop_ui.dart` and
 reported only `loop_ui.dart`. No backend/provider request, SDK, dependency,
 native build, simulator, interactive run, physical-device validation, or
 package artifact was added or exercised.
+
+## Security Capability and Enrollment Truth Boundary
+
+Decision 0040 closes the A11/H5 providerless security-state gap. A11 now
+reports method availability only, exposes no enrollment Switch or Save action,
+and explicitly states that Secure Storage and app-PIN verification are not
+connected. Continuing advances the catalog journey without claiming a change.
+
+H5 no longer treats Privy capability availability as enrollment or protection
+status. It shows no score, ready state, recovery-set conclusion, or providerless
+sign-in activity. Wallet MFA and App lock are disabled until exact setup
+adapters exist; Devices and recovery destinations continue to use their
+existing fail-closed information surfaces. This slice adds no storage package,
+PIN, provider request, backend route, or native capability.
+
+Harness validation passed, the Python mutation suite passed 246/246, and the
+complete Flutter suite passed 609/609. Repository-wide format and analysis were
+clean. No native build, simulator, interactive run, physical-device validation,
+or package artifact was produced.

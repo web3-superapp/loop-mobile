@@ -76,12 +76,14 @@ REQUIRED_FILES = (
     "docs/decisions/0037-bound-home-portfolio-and-net-worth-facts.md",
     "docs/decisions/0038-bound-new-pairs-to-exact-preview.md",
     "docs/decisions/0039-close-preview-group-info-controls.md",
+    "docs/decisions/0040-separate-security-capability-from-enrollment.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/gitnexus-generated-source-pollution.md",
     "docs/failures/providerless-notification-fixtures.md",
     "docs/failures/providerless-home-portfolio-facts.md",
     "docs/failures/providerless-new-pairs-facts.md",
     "docs/failures/providerless-security-activity-facts.md",
+    "docs/failures/providerless-protection-status-and-setup.md",
     "docs/failures/providerless-wallet-controls-without-effects.md",
     "docs/failures/privy-android-compile-sdk.md",
     "docs/failures/principal-agnostic-wallet-single-flight.md",
@@ -112,6 +114,7 @@ REQUIRED_FILES = (
     "test/home_discovery_and_security_test.dart",
     "test/home_portfolio_truthfulness_test.dart",
     "test/new_pairs_truthfulness_test.dart",
+    "test/security_capability_truthfulness_test.dart",
     "test/send_asset_search_test.dart",
     "lib/features/market/watchlist/watchlist_gateway.dart",
     "lib/features/market/watchlist/watchlist_models.dart",
@@ -3305,6 +3308,221 @@ def check_chat_preview_conversation_id_contract(root: Path) -> list[str]:
     errors.extend(
         check_behavior_test_evidence(
             root, CHAT_PREVIEW_CONVERSATION_ID_TEST_MARKERS
+        )
+    )
+    return errors
+
+
+SECURITY_CAPABILITY_TRUTH_TEST_MARKERS = {
+    Path("test/security_capability_truthfulness_test.dart"): (
+        "A11 exposes no providerless protection switch or secure-storage claim",
+        "H5 keeps capability availability separate from configured protection",
+        "production LoopApp A11 keeps every setup method unavailable",
+        "production LoopApp H5 keeps protection status unavailable",
+        "A11 and H5 catalog copy reports current delivery truth",
+    ),
+}
+SECURITY_CAPABILITY_TRUTH_EXECUTABLE_TEST_EVIDENCE = {
+    Path("test/security_capability_truthfulness_test.dart"): {
+        "A11 exposes no providerless protection switch or secure-storage claim": (
+            r"\bfind\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(",
+            r"\bfind\.byType\s*\(\s*Switch\s*\)\s*,\s*findsNothing",
+            r"\bfind\.textContaining\s*\([\s\S]*?\)\s*,\s*findsNothing",
+            r"\bfinal\s+continueWithoutChanges\s*=\s*find\.text\s*\(",
+            r"\b_tap\s*\(\s*tester\s*,\s*continueWithoutChanges\s*\)",
+            r"\bexpect\s*\(\s*destinations\s*,\s*<String>\s*\[",
+        ),
+        "H5 keeps capability availability separate from configured protection": (
+            r"\bfind\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(",
+            r"\bfinal\s+walletMfa\s*=\s*find\.text\s*\(",
+            r"\bfinal\s+appLock\s*=\s*find\.text\s*\(",
+            r"\bfinal\s+walletMfaSemantics\s*=\s*_settingsSemantics\s*\(",
+            r"\bfinal\s+appLockSemantics\s*=\s*_settingsSemantics\s*\(",
+            r"\bexpect\s*\(\s*walletMfaSemantics\.properties\.enabled\s*,\s*isFalse",
+            r"\bexpect\s*\(\s*appLockSemantics\.properties\.enabled\s*,\s*isFalse",
+            r"\b_tap\s*\(\s*tester\s*,\s*walletMfa\s*\)",
+            r"\b_tap\s*\(\s*tester\s*,\s*appLock\s*\)",
+            r"\bexpect\s*\(\s*destinations\s*,\s*<String>\s*\[",
+        ),
+        "production LoopApp A11 keeps every setup method unavailable": (
+            r"\bfinal\s+router\s*=\s*await\s+_pumpAuthenticatedLoopApp\s*\(",
+            r"\brouter\.go\s*\(",
+            r"\bfind\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(",
+            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNothing",
+            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*3\s*\)",
+            r"\bfind\.byType\s*\(\s*Switch\s*\)\s*,\s*findsNothing",
+        ),
+        "production LoopApp H5 keeps protection status unavailable": (
+            r"\bfinal\s+router\s*=\s*await\s+_pumpAuthenticatedLoopApp\s*\(",
+            r"\brouter\.go\s*\(",
+            r"\bfind\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(",
+            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNothing",
+            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*5\s*\)",
+        ),
+        "A11 and H5 catalog copy reports current delivery truth": (
+            r"\bfinal\s+a11\s*=\s*SurfaceCatalog\.byPath\s*\(",
+            r"\bfinal\s+h5\s*=\s*SurfaceCatalog\.byPath\s*\(",
+            r"\bexpect\s*\(\s*a11\.description\s*,\s*contains\s*\(",
+            r"\bexpect\s*\(\s*h5\.description\s*,\s*contains\s*\(",
+        ),
+    },
+}
+
+
+def check_security_capability_truth_contract(root: Path) -> list[str]:
+    """Keep method availability separate from enrollment and stored state."""
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/features/account/account_screens.dart": (
+                "protection-setup-unavailable",
+                "Continue without changes",
+                "No app PIN is stored or checked",
+            ),
+            "lib/features/profile/profile_screens.dart": (
+                "protection-status-unavailable",
+                "Wallet multi-factor authentication",
+                "enrollment status is unknown",
+            ),
+            "lib/core/navigation/surface_catalog.dart": (
+                "no protection setting is saved until reviewed enrollment and storage adapters exist",
+                "availability without claiming enrollment, recovery setup, or sign-in activity",
+            ),
+            "test/security_capability_truthfulness_test.dart": tuple(
+                marker
+                for markers in SECURITY_CAPABILITY_TRUTH_TEST_MARKERS.values()
+                for marker in markers
+            ),
+            "AGENTS.md": (
+                "Capability availability never proves enrollment, configuration, enforcement, or secure persistence.",
+            ),
+            "README.md": (
+                "Account/Profile 安全页已分离能力可用性与配置状态",
+            ),
+            "docs/product/implementation-constraints.md": (
+                "Capability availability never proves that MFA, app lock, recovery, biometrics, passkeys, or an app PIN is enrolled, configured, enforced, or stored.",
+            ),
+            "docs/product-decisions.md": (
+                "A11 and H5 distinguish capability availability from enrollment and stored protection state.",
+            ),
+            "docs/decisions/0040-separate-security-capability-from-enrollment.md": (
+                "## Status",
+                "## Context",
+                "## Decision",
+                "## Consequences",
+                "## Evidence",
+            ),
+            "docs/failures/providerless-protection-status-and-setup.md": (
+                "## Summary",
+                "## Root Cause",
+                "## Detection",
+                "## Prevention",
+                "## Evidence",
+            ),
+            "docs/harness/adoption-report.md": (
+                "## Security Capability and Enrollment Truth Boundary",
+            ),
+            "docs/phase-1/frontend-integration-report.md": (
+                "## Security Capability and Enrollment Truth Boundary",
+            ),
+        },
+    )
+
+    account_path = root / "lib/features/account/account_screens.dart"
+    if account_path.is_file():
+        source = strip_dart_comments(read_text(account_path))
+        start = source.find("class _SecuritySetupScreen")
+        end = source.find("class _ProfileSetupScreen", start + 1)
+        if start < 0 or end < 0:
+            errors.append("A11 security setup must retain one bounded reviewed slice")
+        else:
+            setup = source[start:end]
+            executable = strip_dart_comments_and_strings(setup)
+            for marker in (
+                "Save protection",
+                "stored by the app",
+                "Fallback protection",
+            ):
+                if marker in setup:
+                    errors.append(
+                        "A11 must not claim providerless protection persistence or save: "
+                        + marker
+                    )
+            for pattern, label in (
+                (r"\bStatefulWidget\b", "Stateful protection setup"),
+                (r"\b_SecurityToggle\s*\(", "local protection toggle"),
+                (r"\bSwitch\s*\(", "local protection switch"),
+            ):
+                if re.search(pattern, executable):
+                    errors.append(f"A11 must not restore a providerless {label}")
+            on_pressed = re.findall(r"\bonPressed\s*:", executable)
+            if (
+                len(on_pressed) != 1
+                or re.search(r"\bonPressed\s*:\s*onContinue\b", executable)
+                is None
+            ):
+                errors.append(
+                    "A11 must preserve exactly one truthful Continue without changes action"
+                )
+
+    profile_path = root / "lib/features/profile/profile_screens.dart"
+    if profile_path.is_file():
+        source = strip_dart_comments(read_text(profile_path))
+        start = source.find("class _SecurityCenter")
+        end = source.find("class _DeviceManagement", start + 1)
+        if start < 0 or end < 0:
+            errors.append("H5 Security Center must retain one bounded reviewed slice")
+        else:
+            security = source[start:end]
+            for marker in (
+                "_ProtectionSummary(",
+                "Core protections ready",
+                "Add another protection",
+                "Recovery is not set",
+            ):
+                if marker in security:
+                    errors.append(
+                        "H5 must not infer configured protection from capability availability: "
+                        + marker
+                    )
+            if re.search(r"['\"]\s*\$?\w*\s*/\s*3", security):
+                errors.append("H5 must not restore a capability-derived protection score")
+            if "onNavigate('security-setup')" in security:
+                errors.append(
+                    "H5 must not route MFA or App lock into providerless A11 setup"
+                )
+            for title in ("Wallet multi-factor authentication", "App lock"):
+                title_position = security.find(f"title: '{title}'")
+                tile_start = security.rfind(
+                    "_SettingsTile(", 0, title_position
+                )
+                tile_end = security.find(
+                    "_SettingsTile(", title_position + len(title)
+                )
+                if tile_end < 0:
+                    tile_end = len(security)
+                tile = (
+                    security[tile_start:tile_end]
+                    if title_position >= 0 and tile_start >= 0
+                    else ""
+                )
+                if re.search(r"\bonTap\s*:\s*null\s*,", tile) is None:
+                    errors.append(
+                        f"H5 `{title}` must remain disabled until a typed setup adapter exists"
+                    )
+            for destination in ("devices", "seed-backup", "social-recovery"):
+                if f"onNavigate('{destination}')" not in security:
+                    errors.append(
+                        f"H5 must preserve its truthful `{destination}` information route"
+                    )
+
+    errors.extend(
+        check_behavior_test_evidence(root, SECURITY_CAPABILITY_TRUTH_TEST_MARKERS)
+    )
+    errors.extend(
+        check_named_executable_test_evidence(
+            root, SECURITY_CAPABILITY_TRUTH_EXECUTABLE_TEST_EVIDENCE
         )
     )
     return errors
@@ -6838,6 +7056,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_chat_preview_message_request_contract(root))
     errors.extend(check_chat_preview_conversation_id_contract(root))
     errors.extend(check_home_discovery_and_security_contract(root))
+    errors.extend(check_security_capability_truth_contract(root))
     errors.extend(check_home_portfolio_truth_contract(root))
     errors.extend(check_spot_candle_contract(root))
     errors.extend(check_wallet_identity_readiness_contract(root))
@@ -6878,7 +7097,7 @@ def main() -> int:
         return 1
     print(
         "Harness check passed: profile, six-destination contract, pins, "
-        "Spot-only product, New Pairs exact-Preview truth, Chat snapshot, Preview request truth and exact conversation identity, Home portfolio truth, bounded candle, Wallet identity, Wallet route, local draft, "
+        "Spot-only product, New Pairs exact-Preview truth, Chat snapshot, Preview request truth and exact conversation identity, Home portfolio truth, security capability truth, bounded candle, Wallet identity, Wallet route, local draft, "
         "providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, records, and secret rules are consistent."
     )

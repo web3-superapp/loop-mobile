@@ -5713,6 +5713,169 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected expiry single-flight guard: {result}",
         )
 
+    def test_a11_cannot_restore_a_providerless_protection_switch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/features/account/account_screens.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            start = source.index("class _SecuritySetupScreen")
+            changed = source[start:].replace(
+                "children: <Widget>[",
+                "children: <Widget>[Switch(value: false, onChanged: (_) {}),",
+                1,
+            )
+            path.write_text(source[:start] + changed, encoding="utf-8")
+
+            result = check_harness.check_security_capability_truth_contract(root)
+
+        self.assertTrue(
+            any("local protection switch" in error for error in result),
+            msg=f"expected A11 switch guard: {result}",
+        )
+
+    def test_a11_cannot_claim_an_unconnected_secure_storage_save(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/features/account/account_screens.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "Secure Storage is not connected. No app PIN is stored or checked.",
+                    "Fallback protection stored by the app",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_security_capability_truth_contract(root)
+
+        self.assertTrue(
+            any("protection persistence or save" in error for error in result),
+            msg=f"expected A11 storage-claim guard: {result}",
+        )
+
+    def test_a11_cannot_add_a_second_protection_action(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/features/account/account_screens.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            start = source.index("class _SecuritySetupScreen")
+            changed = source[start:].replace(
+                "children: <Widget>[",
+                "children: <Widget>[FilledButton(onPressed: () {}, child: const Text('Apply')),",
+                1,
+            )
+            path.write_text(source[:start] + changed, encoding="utf-8")
+
+            result = check_harness.check_security_capability_truth_contract(root)
+
+        self.assertTrue(
+            any("exactly one truthful" in error for error in result),
+            msg=f"expected A11 single-action guard: {result}",
+        )
+
+    def test_h5_cannot_restore_a_capability_derived_ready_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/features/profile/profile_screens.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            start = source.index("class _SecurityCenter")
+            changed = source[start:].replace(
+                "Protection status is not connected",
+                "Core protections ready",
+                1,
+            )
+            path.write_text(source[:start] + changed, encoding="utf-8")
+
+            result = check_harness.check_security_capability_truth_contract(root)
+
+        self.assertTrue(
+            any("configured protection" in error for error in result),
+            msg=f"expected H5 ready-summary guard: {result}",
+        )
+
+    def test_h5_wallet_mfa_must_remain_disabled_without_an_adapter(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/features/profile/profile_screens.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            start = source.index("class _SecurityCenter")
+            changed = source[start:].replace(
+                "onTap: null,",
+                "onTap: () {},",
+                1,
+            )
+            path.write_text(source[:start] + changed, encoding="utf-8")
+
+            result = check_harness.check_security_capability_truth_contract(root)
+
+        self.assertTrue(
+            any(
+                "Wallet multi-factor authentication" in error
+                and "must remain disabled" in error
+                for error in result
+            ),
+            msg=f"expected H5 Wallet MFA adapter guard: {result}",
+        )
+
+    def test_h5_app_lock_must_remain_disabled_without_an_adapter(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/features/profile/profile_screens.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            start = source.index("class _SecurityCenter")
+            security = source[start:]
+            first = security.index("onTap: null,")
+            second = security.index("onTap: null,", first + 1)
+            security = (
+                security[:second]
+                + "onTap: () {},"
+                + security[second + len("onTap: null,") :]
+            )
+            path.write_text(source[:start] + security, encoding="utf-8")
+
+            result = check_harness.check_security_capability_truth_contract(root)
+
+        self.assertTrue(
+            any("App lock" in error and "must remain disabled" in error for error in result),
+            msg=f"expected H5 App lock adapter guard: {result}",
+        )
+
+    def test_security_truth_behavior_test_cannot_be_hollowed_out(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("test/security_capability_truthfulness_test.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "expect(find.byType(Switch), findsNothing);",
+                    "expect(true, isTrue);",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_security_capability_truth_contract(root)
+
+        self.assertTrue(
+            any("lacks executable contract evidence" in error for error in result),
+            msg=f"expected security behavior-evidence guard: {result}",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

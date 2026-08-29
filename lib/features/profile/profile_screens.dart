@@ -1194,50 +1194,47 @@ class _SecurityCenter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final recoveryReady =
-        capabilities.recoveryPhraseRevealAvailable ||
-        capabilities.socialRecoveryAvailable;
     return LoopPage(
       eyebrow: 'SECURITY',
       title: 'Protect the account',
-      subtitle: 'Account checks protect sensitive actions. Trading limits and wallet permissions are managed separately.',
+      subtitle: 'Capability availability is shown separately from enrollment and account status.',
       children: <Widget>[
-        _ProtectionSummary(
-          enabled: <bool>[
-            capabilities.mfaAvailable,
-            capabilities.appLockAvailable,
-            recoveryReady,
-          ].where((value) => value).length,
+        const LoopStateCard(
+          key: ValueKey<String>('protection-status-unavailable'),
+          title: 'Protection status is not connected',
+          message: 'No provider-backed enrollment state was loaded. This page does not claim that MFA, app lock, or a recovery method is configured.',
+          icon: Icons.policy_outlined,
+          tone: LoopTone.warning,
         ),
         const LoopSectionLabel('Account protection'),
         _SettingsGroup(
           children: <Widget>[
             _SettingsTile(
               icon: Icons.verified_user_outlined,
-              title: 'Multi-factor authentication',
+              title: 'Wallet multi-factor authentication',
               detail: capabilities.mfaAvailable
-                  ? 'Available for this account'
-                  : 'Not available for this account',
+                  ? 'Wallet capability is available; enrollment status is unknown.'
+                  : 'Wallet capability is not available in this build.',
               trailing: _CapabilityPill(available: capabilities.mfaAvailable),
-              onTap: () => onNavigate('security-setup'),
+              onTap: null,
             ),
             _SettingsTile(
               icon: Icons.lock_outline_rounded,
               title: 'App lock',
               detail: capabilities.appLockAvailable
-                  ? 'Require a local check when LOOP opens'
-                  : 'Not available on this device',
+                  ? 'Capability is available; enrollment status is unknown.'
+                  : 'Capability is not available on this device.',
               trailing: _CapabilityPill(
                 available: capabilities.appLockAvailable,
               ),
-              onTap: () => onNavigate('security-setup'),
+              onTap: null,
             ),
             _SettingsTile(
               icon: Icons.devices_other_outlined,
               title: 'Devices & sessions',
               detail: capabilities.deviceManagementAvailable
-                  ? 'Review active sessions'
-                  : 'Session management unavailable',
+                  ? 'Capability is available; session data is not connected.'
+                  : 'Session management is unavailable.',
               trailing: _CapabilityPill(
                 available: capabilities.deviceManagementAvailable,
               ),
@@ -1253,8 +1250,8 @@ class _SecurityCenter extends StatelessWidget {
               icon: Icons.password_rounded,
               title: 'Recovery phrase',
               detail: capabilities.recoveryPhraseRevealAvailable
-                  ? 'Requires a fresh identity check'
-                  : 'Not available for this wallet',
+                  ? 'Capability is available; enrollment status is unknown.'
+                  : 'Capability is not available for this wallet.',
               trailing: _CapabilityPill(
                 available: capabilities.recoveryPhraseRevealAvailable,
               ),
@@ -1264,8 +1261,8 @@ class _SecurityCenter extends StatelessWidget {
               icon: Icons.group_outlined,
               title: 'Social recovery',
               detail: capabilities.socialRecoveryAvailable
-                  ? 'Configure two of three guardians'
-                  : 'Not available for this wallet',
+                  ? 'Capability is available; enrollment status is unknown.'
+                  : 'Capability is not available for this wallet.',
               trailing: _CapabilityPill(
                 available: capabilities.socialRecoveryAvailable,
               ),
@@ -1274,15 +1271,6 @@ class _SecurityCenter extends StatelessWidget {
             ),
           ],
         ),
-        if (!recoveryReady) ...<Widget>[
-          const SizedBox(height: 18),
-          const LoopStateCard(
-            title: 'Recovery is not set',
-            message: 'Review the methods available for this wallet before relying on this account for long-term access.',
-            icon: Icons.warning_amber_rounded,
-            tone: LoopTone.warning,
-          ),
-        ],
         const LoopSectionLabel('Recent sign-ins'),
         const LoopStateCard(
           key: ValueKey<String>('recent-sign-ins-unavailable'),
@@ -2601,62 +2589,6 @@ class _PrivacyFootnote extends StatelessWidget {
   }
 }
 
-class _ProtectionSummary extends StatelessWidget {
-  const _ProtectionSummary({required this.enabled});
-
-  final int enabled;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = enabled >= 2 ? LoopColors.mint : LoopColors.warning;
-    return LoopCard(
-      accent: true,
-      tone: enabled >= 2 ? LoopTone.positive : LoopTone.warning,
-      child: Row(
-        children: <Widget>[
-          SizedBox.square(
-            dimension: 72,
-            child: Stack(
-              alignment: Alignment.center,
-              children: <Widget>[
-                CircularProgressIndicator(
-                  value: enabled / 3,
-                  strokeWidth: 6,
-                  color: color,
-                  backgroundColor: LoopColors.line,
-                ),
-                Text(
-                  '$enabled/3',
-                  style: context.dataStyle.copyWith(color: color),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  enabled >= 2
-                      ? 'Core protections ready'
-                      : 'Add another protection',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  'MFA, app lock, and recovery each protect a different failure point.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _CapabilityPill extends StatelessWidget {
   const _CapabilityPill({required this.available});
 
@@ -2666,7 +2598,7 @@ class _CapabilityPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return LoopStatusPill(
       label: available ? 'Available' : 'Unavailable',
-      tone: available ? LoopTone.positive : LoopTone.neutral,
+      tone: LoopTone.neutral,
     );
   }
 }

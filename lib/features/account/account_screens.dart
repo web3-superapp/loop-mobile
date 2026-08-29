@@ -1160,7 +1160,7 @@ class _WalletImportScreenState extends State<_WalletImportScreen> {
   }
 }
 
-class _SecuritySetupScreen extends StatefulWidget {
+class _SecuritySetupScreen extends StatelessWidget {
   const _SecuritySetupScreen({
     required this.capabilities,
     required this.onContinue,
@@ -1170,66 +1170,58 @@ class _SecuritySetupScreen extends StatefulWidget {
   final VoidCallback onContinue;
 
   @override
-  State<_SecuritySetupScreen> createState() => _SecuritySetupScreenState();
-}
-
-class _SecuritySetupScreenState extends State<_SecuritySetupScreen> {
-  bool _passkey = false;
-  bool _biometric = false;
-  bool _pin = true;
-
-  @override
   Widget build(BuildContext context) {
     return LoopPage(
       eyebrow: 'ACCOUNT PROTECTION',
-      title: 'Protect sensitive actions',
-      subtitle: 'Choose at least one local check for wallet recovery, withdrawals, and account changes.',
+      title: 'Protection setup is not connected',
+      subtitle: 'This build can report method availability, but it has no reviewed enrollment or local credential-storage adapter.',
       bottom: LoopActionDock(
         child: SizedBox(
           width: double.infinity,
           child: FilledButton(
-            onPressed: _passkey || _biometric || _pin
-                ? widget.onContinue
-                : null,
-            child: const Text('Save protection'),
+            key: const ValueKey<String>('continue-without-protection-changes'),
+            onPressed: onContinue,
+            child: const Text('Continue without changes'),
           ),
         ),
       ),
       children: <Widget>[
-        _SecurityToggle(
+        const LoopStateCard(
+          key: ValueKey<String>('protection-setup-unavailable'),
+          title: 'Protection setup is not connected',
+          message: 'No passkey, biometric, or app PIN enrollment is performed here. Existing account and device protection remains unchanged.',
+          icon: Icons.lock_outline_rounded,
+          tone: LoopTone.warning,
+        ),
+        const LoopSectionLabel('Method availability'),
+        _SecurityAvailability(
           icon: Icons.key_rounded,
           title: 'Passkey',
-          detail: widget.capabilities.canUsePasskey
-              ? 'Confirm with this device or a synced passkey'
-              : 'Not available for this account',
-          value: _passkey,
-          enabled: widget.capabilities.canUsePasskey,
-          onChanged: (value) => setState(() => _passkey = value),
+          detail: capabilities.canUsePasskey
+              ? 'Capability reported available; enrollment is not connected.'
+              : 'Capability is not available for this account.',
+          available: capabilities.canUsePasskey,
         ),
         const SizedBox(height: 10),
-        _SecurityToggle(
+        _SecurityAvailability(
           icon: Icons.fingerprint_rounded,
           title: 'Biometrics',
-          detail: widget.capabilities.canUseBiometrics
-              ? 'Use Face ID, Touch ID, or device biometrics'
-              : 'This device does not support biometrics',
-          value: _biometric,
-          enabled: widget.capabilities.canUseBiometrics,
-          onChanged: (value) => setState(() => _biometric = value),
+          detail: capabilities.canUseBiometrics
+              ? 'Device capability reported available; enrollment is not connected.'
+              : 'Capability is not available on this device.',
+          available: capabilities.canUseBiometrics,
         ),
         const SizedBox(height: 10),
-        _SecurityToggle(
+        const _SecurityAvailability(
           icon: Icons.pin_outlined,
           title: 'Six-digit app PIN',
-          detail:
-              'Fallback protection stored by the app’s secure storage layer',
-          value: _pin,
-          onChanged: (value) => setState(() => _pin = value),
+          detail: 'Secure Storage is not connected. No app PIN is stored or checked.',
+          available: false,
         ),
         const SizedBox(height: 18),
         const _PlainDisclosure(
           icon: Icons.info_outline_rounded,
-          text: 'Device biometrics never leave your phone. LOOP receives only the success or failure of the device check.',
+          text: 'Continuing leaves every existing protection unchanged. A later security adapter must own enrollment, verification, retry limits, and storage before these controls can be enabled.',
         ),
       ],
     );
@@ -1908,48 +1900,42 @@ class _SeedWordGrid extends StatelessWidget {
   }
 }
 
-class _SecurityToggle extends StatelessWidget {
-  const _SecurityToggle({
+class _SecurityAvailability extends StatelessWidget {
+  const _SecurityAvailability({
     required this.icon,
     required this.title,
     required this.detail,
-    required this.value,
-    required this.onChanged,
-    this.enabled = true,
+    required this.available,
   });
 
   final IconData icon;
   final String title;
   final String detail;
-  final bool value;
-  final bool enabled;
-  final ValueChanged<bool> onChanged;
+  final bool available;
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: enabled ? 1 : 0.55,
-      child: LoopCard(
-        child: Row(
-          children: <Widget>[
-            Icon(
-              icon,
-              color: value && enabled ? LoopColors.mint : LoopColors.vapor,
+    return LoopCard(
+      child: Row(
+        children: <Widget>[
+          Icon(icon, color: available ? LoopColors.mint : LoopColors.vapor),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 4),
+                Text(detail, style: Theme.of(context).textTheme.bodyMedium),
+              ],
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(title, style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 4),
-                  Text(detail, style: Theme.of(context).textTheme.bodyMedium),
-                ],
-              ),
-            ),
-            Switch(value: value, onChanged: enabled ? onChanged : null),
-          ],
-        ),
+          ),
+          const SizedBox(width: 12),
+          LoopStatusPill(
+            label: available ? 'Available' : 'Unavailable',
+            tone: LoopTone.neutral,
+          ),
+        ],
       ),
     );
   }

@@ -137,7 +137,7 @@ abstract final class SurfaceCatalog {
       path: '/auth/security',
       priority: ProductPriority.b,
       module: SurfaceModule.account,
-      description: 'Configure MFA, passkey and device lock.',
+      description: 'Reports method availability; no protection setting is saved until reviewed enrollment and storage adapters exist.',
     ),
     AppSurface(
       id: 'A12',
@@ -768,7 +768,7 @@ abstract final class SurfaceCatalog {
       path: '/profile/security',
       priority: ProductPriority.a,
       module: SurfaceModule.profile,
-      description: 'MFA, lock, recovery and login activity.',
+      description: 'Reports capability availability without claiming enrollment, recovery setup, or sign-in activity.',
     ),
     AppSurface(
       id: 'H6',
