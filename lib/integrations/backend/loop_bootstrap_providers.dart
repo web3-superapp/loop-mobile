@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
+import 'package:loop_mobile/core/network/loop_dio_factory.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_repository.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
@@ -17,14 +18,7 @@ final loopBackendEndpointProvider = Provider<LoopBackendEndpoint?>((ref) {
 final loopBackendDioProvider = Provider<Dio?>((ref) {
   final endpoint = ref.watch(loopBackendEndpointProvider);
   if (endpoint == null) return null;
-  final dio = Dio(
-    BaseOptions(
-      baseUrl: endpoint.baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      sendTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 15),
-    ),
-  );
+  final dio = LoopDioFactory.createLoopBackend(origin: endpoint.uri);
   ref.onDispose(() => dio.close(force: true));
   return dio;
 });

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_market_failure.dart';
+import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_http_providers.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle_repository.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_providers.dart';
@@ -9,7 +10,7 @@ import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_market_pro
 final hyperliquidSpotCandleRepositoryProvider =
     Provider<HyperliquidSpotCandleRepository>((ref) {
       return DioHyperliquidSpotCandleRepository(
-        ref.watch(hyperliquidSpotMarketDioProvider),
+        ref.watch(hyperliquidPublicDioProvider),
       );
     });
 

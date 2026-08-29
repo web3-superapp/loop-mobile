@@ -1013,3 +1013,31 @@ Harness validation passed, the Python mutation suite passed 246/246, and the
 complete Flutter suite passed 609/609. Repository-wide format and analysis were
 clean. No native build, simulator, interactive run, physical-device validation,
 or package artifact was produced.
+
+## Dio Trust-Boundary Foundation
+
+Decision 0041 establishes the mobile network construction seam without waiting
+for additional backend routes. `LoopDioFactory` now creates separate
+exact-origin public and backend profiles. Public Hyperliquid Testnet traffic is
+HTTPS-only and cannot carry Authorization; both profiles reject Cookie,
+Proxy-Authorization, and `X-Api-Key`, disable every redirect, and use bounded
+10/10/15-second connection defaults. Backend Bearer injection remains local to
+the exact repository request.
+
+Spot discovery and candle history share one public Testnet client. LOOP
+bootstrap and the retained private adapter continue through the distinct
+backend client; the unmounted legacy perpetual public adapter keeps an isolated
+public lifecycle. Request shapes, 401 refresh, strict response parsing, domain
+failures, idempotency, ambiguous-write reconciliation, and product availability
+remain with their existing owners.
+
+Focused behavior covers defaults, exact-origin confinement, credentials,
+request-local Bearer use, redirects, unsafe origins, and loopback Development.
+Harness mutations cover construction bypass, profile drift, retry/logger
+insertion, default drift, and hollow tests. Harness validation passed, the
+Python mutation suite passed 259/259, the focused network suite passed 39/39,
+and the complete Flutter suite passed 616/616. Repository-wide format checked
+all 218 Dart files without changes, analysis reported no issues, and
+`git diff --check` was clean. This slice adds no route, provider call, backend
+call, persistence layer, Secure Storage, native build, simulator, interactive
+run, device validation, or package artifact.

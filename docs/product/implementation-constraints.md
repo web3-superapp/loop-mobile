@@ -34,6 +34,13 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 - Providerless Wallet controls must either produce their exact labelled local display change or remain disabled. History and network filters never imply provider reads; allowance revocation remains disabled; Bridge progress requires one typed immutable Preview snapshot and a missing snapshot returns to Bridge. A Preview result state never proves submission, receipt, success, failure, or reconciliation.
 - Provider secrets, Firebase service accounts, APNs private keys, backend signing keys, and Hyperliquid agent private keys never enter Flutter, fixtures, logs, or Git.
 
+## Network trust boundaries
+
+- Construct production Dio instances only through `LoopDioFactory`. Public Hyperliquid Testnet facts and authenticated LOOP backend requests use separate clients and can never be silently merged into one credential-bearing singleton.
+- Every client is confined to one exact root origin and rejects redirects before dispatch. Public clients require HTTPS and also reject Authorization. LOOP backend clients require HTTPS except for explicit Development loopback, and Bearer values remain attached by the owning adapter to one request only. Both profiles reject Proxy-Authorization, Cookie, and `X-Api-Key` request headers.
+- A credential-free public profile grants no provider capability by itself. Direct Hyperliquid mobile adapters remain Testnet `/info`-only and must never call `/exchange`; private reads and every mutation remain LOOP-backend owned. The LOOP backend client rejects a persistent default Authorization value so a Bearer cannot silently outlive its exact request.
+- The shared factory owns bounded connection defaults only. It never logs headers or bodies, persists cookies, refreshes a token, generates an idempotency key, retries a request, interprets a provider payload, or maps a domain failure. A timeout on a private write remains outcome-unknown until its owning intent is reconciled.
+
 ## Stream Chat truth and history
 
 - Use Stream Chat's official client, controllers, UI, token provider, and persistence. Stream remains the source of truth for messages, ACK/read state, presence, typing, pagination, and offline synchronization.

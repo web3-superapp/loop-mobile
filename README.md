@@ -23,6 +23,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - Chat 的 Message Requests 已收敛为进程内 `开发预览` 状态：Accept 只从模拟 pending 列表移除且不创建 Stream 会话，Ignore 不通知对方，Report 不提交 moderation 举报；未知或重复处理的 ID 会失败，处理中的卡片禁止重复动作，Chat 首页数量随当前模拟 pending 列表变化
 - Chat 的 Preview 群资料页不再暴露空操作：通知选项只改变持续标注的进程内布局状态，关闭主选项会同步清理 mentions-only 示例；成员操作与退群在没有官方 Stream 写入能力时保持禁用，不再用空按钮或只关闭弹窗伪装成功
 - 原生 Privy Bearer `POST /v1/bootstrap` 客户端已接入；严格解析服务端 LOOP/Stream 身份、隔离账号切换并最多重试一次 401。未配置后端地址时零请求，Stream token 缺失时仍不连接
+- Dio 构造已收敛到双信任边界：公开 Hyperliquid Testnet 只读请求与携带 Privy Bearer 的 LOOP backend 请求使用不同 profile；两者都限制精确 Origin、关闭重定向并保持无自动重试/无日志，公开客户端还会在发送前拒绝 Authorization，两种客户端都会拒绝 Cookie、Proxy-Authorization 与 `X-Api-Key`。仓库仍由各自窄 adapter 负责请求契约、错误映射、鉴权刷新与幂等语义
 - Audio Room 前端纵切已完成，并从正式 Chat 顶部提供唯一可见入口：入口只打开生产 Lobby，不发起 provider 操作，也不会回退演示房间。后端授权房间接缝、默认静音单飞加入、官方 `CallState` 状态/成员/能力/麦克风 UI、失败清理和账号/房间/client 轮换均已落地；真实 Video token 与房间 locator 缺失时保持不可加入
 - Audio Room 首版只配置前台麦克风能力；任何退房或 App 退到后台都会立即发起原生音频暂停、终态关麦与 single-flight 退房，不让可能卡住的麦克风/原生命令延迟退房。大厅只在旧 `Call` 已从 Stream `activeCalls` 移除、在途麦克风命令已结束且命令后的第二次关麦已执行后开放。为避开 Stream Video 1.4.3 的迟到音轨重建缺陷，每个 `Call` 只允许一次 Speak 启动；Mute 后需离开并重进才能再次发言。失败可显式重试清理。会自动注册 Telecom/CallKit 的 Stream Push 插件不进入当前依赖图，Android 同时移除可选来电、后台通话、相机与推送项，iOS 不启用 Camera、PushKit、CallKit 或后台模式
 - 通知导航的 EventSource / Coordinator 纵切已接入根组合：生产 source 默认是无初始点击、无事件的 disabled 实现；协调器只从真实 LOOP session 与已验证 bootstrap identity 取得 Stream 身份。恢复期间最多暂存一个、默认 15 秒且硬上限一分钟的点击，账号切换、超时或授权失败即丢弃；通过完整重验后也只能落到官方 Chat CID、Audio Room 大厅或通知中心。生产通知页不展示伪实时卡片，演示卡仅在显式 `开发预览` 中可见

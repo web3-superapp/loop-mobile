@@ -789,3 +789,31 @@ complete Flutter suite passed 609/609. Repository-wide format checked all 215
 Dart files with no change, and repository-wide analysis reported no issues. No
 native build, simulator, interactive run, physical-device validation, or
 package artifact was produced.
+
+## Dio Trust-Boundary Foundation
+
+On 2026-08-29, decision 0041 moved production Dio construction into one core
+factory with two explicit profiles. Public Hyperliquid Testnet reads require one
+exact HTTPS origin and reject Authorization; both public and LOOP backend
+clients reject Cookie, Proxy-Authorization, and `X-Api-Key`. The authenticated
+backend profile permits only request-local Authorization on its exact HTTPS or
+Development-loopback origin. Both profiles use the reviewed 10/10/15-second
+timeouts, JSON decoding, and globally disabled redirects with zero redirect
+hops.
+
+The mounted Spot market and bounded candle adapters share their public client.
+The retained, unmounted perpetual-history adapter keeps a separate public
+client lifecycle, while the bootstrap and retained private repository share the
+separate backend client. The factory adds no token, UUID, automatic retry,
+cookie persistence, logger, payload transformation, or domain-error mapping.
+
+The Harness rejects production `Dio` or `BaseOptions` construction outside the
+factory, a wrong provider profile, retry/logger interceptors, missing safety
+defaults, and hollow behavior evidence. Harness validation passed, the Python
+mutation suite passed 259/259, the focused network/repository/provider suite
+passed 39/39, and the complete Flutter suite passed 616/616. Repository-wide
+format checked all 218 Dart files with no change, repository-wide analysis
+reported no issues, and `git diff --check` was clean. No backend/provider
+request, database, Secure Storage dependency, native build, simulator,
+interactive run, physical-device validation, or package artifact is part of
+this slice.

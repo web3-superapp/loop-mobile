@@ -5876,6 +5876,286 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected security behavior-evidence guard: {result}",
         )
 
+    def test_network_dio_policy_paths_are_required(self) -> None:
+        expected = {
+            "docs/decisions/0041-centralize-dio-trust-boundaries.md",
+            "lib/core/network/loop_dio_factory.dart",
+            "lib/integrations/hyperliquid/hyperliquid_http_providers.dart",
+            "test/loop_dio_factory_test.dart",
+        }
+
+        self.assertTrue(expected.issubset(set(check_harness.REQUIRED_FILES)))
+
+    def test_production_dio_construction_cannot_bypass_factory(self) -> None:
+        examples = (
+            "final client = Dio();\n",
+            "final client = Dio.new();\n",
+            "final options = BaseOptions();\n",
+            "final options = BaseOptions.new();\n",
+        )
+        for source_text in examples:
+            with self.subTest(source=source_text):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    source = root / "lib/integrations/unsafe_client.dart"
+                    source.parent.mkdir(parents=True)
+                    source.write_text(source_text, encoding="utf-8")
+
+                    result = check_harness.check_network_dio_policy_contract(root)
+
+                self.assertTrue(
+                    any(
+                        "construction must stay inside LoopDioFactory" in error
+                        for error in result
+                    ),
+                    msg=f"expected centralized Dio construction guard: {result}",
+                )
+
+    def test_backend_provider_cannot_use_public_dio_profile(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path(
+                "lib/integrations/backend/loop_bootstrap_providers.dart"
+            )
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "LoopDioFactory.createLoopBackend(origin: endpoint.uri)",
+                    "LoopDioFactory.createCredentialFreePublic(origin: endpoint.uri)",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_network_dio_policy_contract(root)
+
+        self.assertTrue(
+            any(
+                "loop_bootstrap_providers.dart is missing locked value"
+                in error
+                for error in result
+            ),
+            msg=f"expected backend trust-profile guard: {result}",
+        )
+
+    def test_public_provider_cannot_use_backend_dio_profile(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path(
+                "lib/integrations/hyperliquid/hyperliquid_http_providers.dart"
+            )
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "LoopDioFactory.createCredentialFreePublic(",
+                    "LoopDioFactory.createLoopBackend(",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_network_dio_policy_contract(root)
+
+        self.assertTrue(
+            any(
+                "hyperliquid_http_providers.dart is missing locked value"
+                in error
+                for error in result
+            ),
+            msg=f"expected public trust-profile guard: {result}",
+        )
+
+    def test_network_layer_rejects_retry_and_raw_logging_hooks(self) -> None:
+        examples = (
+            "final interceptor = LogInterceptor();\n",
+            "final interceptor = RetryInterceptor();\n",
+            "import 'package:pretty_dio_logger/pretty_dio_logger.dart';\n",
+            "import 'package:dio_smart_retry/dio_smart_retry.dart';\n",
+        )
+        for source_text in examples:
+            with self.subTest(source=source_text):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    source = root / "lib/integrations/unsafe_network_hook.dart"
+                    source.parent.mkdir(parents=True)
+                    source.write_text(source_text, encoding="utf-8")
+
+                    result = check_harness.check_network_dio_policy_contract(root)
+
+                self.assertTrue(
+                    any(
+                        "must not add automatic retry or raw HTTP logging"
+                        in error
+                        for error in result
+                    ),
+                    msg=f"expected retry/logger guard: {result}",
+                )
+
+    def test_network_composition_cannot_add_post_guard_interceptors(self) -> None:
+        examples = (
+            (
+                "client.interceptors.add(InterceptorsWrapper());\n",
+                "Production Dio interceptors must stay inside LoopDioFactory",
+            ),
+            (
+                "final client = LoopDioFactory.createCredentialFreePublic(\n"
+                "  origin: Uri.parse('https://public.example.com/'),\n"
+                ");\n",
+                "Production network composition must stay in reviewed providers",
+            ),
+        )
+        for source_text, expected in examples:
+            with self.subTest(source=source_text):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    source = root / "lib/features/unsafe_network_composition.dart"
+                    source.parent.mkdir(parents=True)
+                    source.write_text(source_text, encoding="utf-8")
+
+                    result = check_harness.check_network_dio_policy_contract(root)
+
+                self.assertTrue(
+                    any(expected in error for error in result),
+                    msg=f"expected network composition guard: {result}",
+                )
+
+    def test_network_guard_ignores_forbidden_names_inside_comments(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib/integrations/network_policy_note.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "// Do not add LogInterceptor or RetryInterceptor.\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_network_dio_policy_contract(root)
+
+        self.assertFalse(
+            any(
+                "must not add automatic retry or raw HTTP logging" in error
+                for error in result
+            ),
+            msg=f"comments must not trigger the executable network guard: {result}",
+        )
+
+    def test_network_factory_cannot_restore_redirects(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/core/network/loop_dio_factory.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace("followRedirects: false", "followRedirects: true"),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_network_dio_policy_contract(root)
+
+        self.assertTrue(
+            any("followRedirects: false" in error for error in result),
+            msg=f"expected no-redirect default guard: {result}",
+        )
+
+    def test_network_behavior_test_cannot_drop_cross_origin_dispatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("test/loop_dio_factory_test.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "client.get<Object?>(location)",
+                    "Future<Object?>.error(const LoopHttpBoundaryViolation())",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_network_dio_policy_contract(root)
+
+        self.assertTrue(
+            any("lacks executable contract evidence" in error for error in result),
+            msg=f"expected cross-origin behavior-evidence guard: {result}",
+        )
+
+    def test_network_behavior_requires_scheme_and_port_cases(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("test/loop_dio_factory_test.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            for location in (
+                "http://public.example.com:443/info",
+                "https://public.example.com:444/info",
+                "http://api.example.com:443/v1/bootstrap",
+                "https://api.example.com:444/v1/bootstrap",
+            ):
+                source = source.replace(f"          '{location}',\n", "")
+
+            path.write_text(source, encoding="utf-8")
+            result = check_harness.check_network_dio_policy_contract(root)
+
+        self.assertTrue(
+            any("missing locked value" in error for error in result),
+            msg=f"expected exact scheme/port evidence guard: {result}",
+        )
+
+    def test_network_behavior_requires_persistent_bearer_rejection(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("test/loop_dio_factory_test.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "client.options.headers['authorization'] = "
+                    "'Bearer persisted-token';",
+                    "final persistedToken = 'Bearer persisted-token';",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_network_dio_policy_contract(root)
+
+        self.assertTrue(
+            any("lacks executable contract evidence" in error for error in result),
+            msg=f"expected persistent-authorization evidence guard: {result}",
+        )
+
+    def test_direct_hyperliquid_exchange_path_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = (
+                root
+                / "lib/integrations/hyperliquid/unsafe_exchange_repository.dart"
+            )
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "const endpoint = '/exchange';\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_network_dio_policy_contract(root)
+
+        self.assertTrue(
+            any("must remain public /info-only" in error for error in result),
+            msg=f"expected direct Hyperliquid exchange guard: {result}",
+        )
+
+    def test_every_network_policy_marker_has_executable_evidence(self) -> None:
+        for relative, markers in check_harness.NETWORK_DIO_POLICY_TEST_MARKERS.items():
+            configured = check_harness.NETWORK_DIO_POLICY_EXECUTABLE_TEST_EVIDENCE.get(
+                relative,
+                {},
+            )
+            self.assertEqual(set(markers), set(configured), msg=str(relative))
+
 
 if __name__ == "__main__":
     unittest.main()

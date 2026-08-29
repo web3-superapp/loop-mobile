@@ -77,6 +77,7 @@ REQUIRED_FILES = (
     "docs/decisions/0038-bound-new-pairs-to-exact-preview.md",
     "docs/decisions/0039-close-preview-group-info-controls.md",
     "docs/decisions/0040-separate-security-capability-from-enrollment.md",
+    "docs/decisions/0041-centralize-dio-trust-boundaries.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/gitnexus-generated-source-pollution.md",
     "docs/failures/providerless-notification-fixtures.md",
@@ -98,11 +99,13 @@ REQUIRED_FILES = (
     "docs/phase-0/compatibility-report.md",
     "docs/phase-1/frontend-integration-report.md",
     "lib/core/navigation/stream_channel_route.dart",
+    "lib/core/network/loop_dio_factory.dart",
     "lib/app/loop_display_preferences.dart",
     "lib/app/notifications/loop_notification_coordinator.dart",
     "lib/integrations/notifications/loop_notification_event_source.dart",
     "lib/integrations/notifications/loop_notification_router.dart",
     "lib/integrations/hyperliquid/hyperliquid_spot_market.dart",
+    "lib/integrations/hyperliquid/hyperliquid_http_providers.dart",
     "lib/integrations/hyperliquid/hyperliquid_spot_market_providers.dart",
     "lib/integrations/hyperliquid/hyperliquid_spot_market_repository.dart",
     "lib/integrations/hyperliquid/hyperliquid_spot_candle.dart",
@@ -115,6 +118,7 @@ REQUIRED_FILES = (
     "test/home_portfolio_truthfulness_test.dart",
     "test/new_pairs_truthfulness_test.dart",
     "test/security_capability_truthfulness_test.dart",
+    "test/loop_dio_factory_test.dart",
     "test/send_asset_search_test.dart",
     "lib/features/market/watchlist/watchlist_gateway.dart",
     "lib/features/market/watchlist/watchlist_models.dart",
@@ -3523,6 +3527,271 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
     errors.extend(
         check_named_executable_test_evidence(
             root, SECURITY_CAPABILITY_TRUTH_EXECUTABLE_TEST_EVIDENCE
+        )
+    )
+    return errors
+
+
+NETWORK_DIO_POLICY_TEST_MARKERS = {
+    Path("test/loop_dio_factory_test.dart"): (
+        "common clients use bounded defaults without credential headers",
+        "credential-free public client accepts only its exact HTTPS origin",
+        "credential-free public client rejects credential headers before dispatch",
+        "backend client accepts request-local bearer only on its exact origin",
+        "backend client rejects persistent authorization defaults",
+        "every client rejects per-request redirect enablement",
+        "factory rejects unsafe or non-origin configuration",
+    ),
+}
+NETWORK_DIO_POLICY_EXECUTABLE_TEST_EVIDENCE = {
+    Path("test/loop_dio_factory_test.dart"): {
+        "common clients use bounded defaults without credential headers": (
+            r"\bLoopDioFactory\.createCredentialFreePublic\s*\(",
+            r"\bLoopDioFactory\.createLoopBackend\s*\(",
+            r"\bexpect\s*\(\s*client\.options\.connectTimeout\s*,",
+            r"\bexpect\s*\(\s*client\.options\.followRedirects\s*,\s*isFalse",
+            r"\bexpect\s*\(\s*client\.options\.maxRedirects\s*,\s*0",
+            r"\bclient\.options\.headers\.keys\.map\s*\(",
+            r"\bisNot\s*\(\s*contains\s*\(",
+        ),
+        "credential-free public client accepts only its exact HTTPS origin": (
+            r"\bLoopDioFactory\.createCredentialFreePublic\s*\(",
+            r"\bawait\s+client\.post<Object\?>\s*\(",
+            r"\bclient\.get<Object\?>\s*\(",
+            r"\bthrowsA\s*\(\s*_boundaryViolation\s*\(\s*\)\s*\)",
+            r"\bexpect\s*\(\s*dispatched\s*,\s*hasLength\s*\(\s*1\s*\)",
+        ),
+        "credential-free public client rejects credential headers before dispatch": (
+            r"\bfor\s*\(\s*final\s+headers\s+in\s+<Map<String,\s*String>>\s*\[",
+            r"\bclient\.get<Object\?>\s*\(.*?Options\s*\(\s*headers\s*:\s*headers\s*\)",
+            r"\bthrowsA\s*\(\s*_boundaryViolation\s*\(\s*\)\s*\)",
+            r"\bexpect\s*\(\s*dispatched\s*,\s*isEmpty",
+        ),
+        "backend client accepts request-local bearer only on its exact origin": (
+            r"\bLoopDioFactory\.createLoopBackend\s*\(",
+            r"\bclient\.post<Object\?>\s*\(",
+            r"\bOptions\s*\(\s*headers\s*:\s*const\s+<String,\s*String>",
+            r"\bthrowsA\s*\(\s*_boundaryViolation\s*\(\s*\)\s*\)",
+            r"\bexpect\s*\(\s*dispatched\s*,\s*hasLength\s*\(\s*1\s*\)",
+        ),
+        "backend client rejects persistent authorization defaults": (
+            r"\bLoopDioFactory\.createLoopBackend\s*\(",
+            r"\bclient\.options\.headers\s*\[",
+            r"\bclient\.post<Object\?>\s*\(",
+            r"\bthrowsA\s*\(\s*_boundaryViolation\s*\(\s*\)\s*\)",
+            r"\bexpect\s*\(\s*dispatched\s*,\s*isEmpty",
+        ),
+        "every client rejects per-request redirect enablement": (
+            r"\bOptions\s*\(\s*followRedirects\s*:\s*true\s*\)",
+            r"\bthrowsA\s*\(\s*_boundaryViolation\s*\(\s*\)\s*\)",
+            r"\bexpect\s*\(\s*dispatched\s*,\s*isEmpty",
+        ),
+        "factory rejects unsafe or non-origin configuration": (
+            r"\bfinal\s+invalidPublicOrigins\s*=\s*<Uri>\s*\[",
+            r"\bfor\s*\(\s*final\s+origin\s+in\s+invalidPublicOrigins\s*\)",
+            r"\bLoopDioFactory\.createCredentialFreePublic\s*\(\s*origin\s*:\s*origin\s*\)",
+            r"\bthrowsArgumentError\b",
+            r"\bfinal\s+loopback\s*=\s*LoopDioFactory\.createLoopBackend\s*\(",
+            r"\bexpect\s*\(\s*loopback\.options\.baseUrl\s*,",
+        ),
+    },
+}
+
+
+def check_network_dio_policy_contract(root: Path) -> list[str]:
+    """Keep production Dio construction separated by exact trust boundary."""
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/core/network/loop_dio_factory.dart": (
+                "abstract final class LoopDioFactory",
+                "static Dio createCredentialFreePublic",
+                "static Dio createLoopBackend",
+                "connectTimeout: connectTimeout",
+                "sendTimeout: sendTimeout",
+                "receiveTimeout: receiveTimeout",
+                "followRedirects: false",
+                "maxRedirects: 0",
+                "'proxy-authorization'",
+                "'cookie'",
+                "'x-api-key'",
+            ),
+            "lib/integrations/backend/loop_bootstrap_providers.dart": (
+                "LoopDioFactory.createLoopBackend(origin: endpoint.uri)",
+            ),
+            "lib/integrations/hyperliquid/hyperliquid_http_providers.dart": (
+                "final hyperliquidPublicDioProvider = Provider<Dio>",
+                "LoopDioFactory.createCredentialFreePublic(",
+                "api.hyperliquid-testnet.xyz",
+            ),
+            "lib/integrations/hyperliquid/hyperliquid_spot_market_providers.dart": (
+                "ref.watch(hyperliquidPublicDioProvider)",
+            ),
+            "lib/integrations/hyperliquid/hyperliquid_spot_candle_providers.dart": (
+                "ref.watch(hyperliquidPublicDioProvider)",
+            ),
+            "lib/integrations/hyperliquid/hyperliquid_market_providers.dart": (
+                "LoopDioFactory.createCredentialFreePublic(",
+            ),
+            "test/loop_dio_factory_test.dart": tuple(
+                marker
+                for markers in NETWORK_DIO_POLICY_TEST_MARKERS.values()
+                for marker in markers
+            )
+            + (
+                "https://other.example.com/info",
+                "http://public.example.com:443/info",
+                "https://public.example.com:444/info",
+                "Authorization': 'Bearer private-token",
+                "Cookie': 'session=private-cookie",
+                "X-Api-Key': 'private-api-key",
+                "authorization': 'Bearer current-access-token",
+                "Bearer persisted-token",
+                "https://other.example.com/v1/bootstrap",
+                "http://api.example.com:443/v1/bootstrap",
+                "https://api.example.com:444/v1/bootstrap",
+                "idempotency-key",
+                "http://public.example.com/",
+                "https://user@public.example.com/",
+                "http://api.example.com/",
+                "http://127.0.0.1:3000/",
+            ),
+            "AGENTS.md": (
+                "Construct production Dio clients only through `LoopDioFactory`",
+            ),
+            "README.md": (
+                "Dio 构造已收敛到双信任边界",
+            ),
+            "docs/product/implementation-constraints.md": (
+                "Construct production Dio instances only through `LoopDioFactory`.",
+            ),
+            "docs/product-decisions.md": (
+                "Production Dio construction uses two exact-origin profiles rather than one universal client.",
+            ),
+            "docs/decisions/0041-centralize-dio-trust-boundaries.md": (
+                "## Status",
+                "## Context",
+                "## Decision",
+                "## Consequences",
+                "## Evidence",
+            ),
+            "docs/harness/adoption-report.md": (
+                "## Dio Trust-Boundary Foundation",
+            ),
+            "docs/phase-1/frontend-integration-report.md": (
+                "## Dio Trust-Boundary Foundation",
+            ),
+        },
+    )
+
+    factory_path = root / "lib/core/network/loop_dio_factory.dart"
+    factory_source = ""
+    if factory_path.is_file():
+        factory_source = strip_dart_comments_and_strings(read_text(factory_path))
+        if len(re.findall(r"\bDio\s*(?:\.new)?\s*\(", factory_source)) != 1:
+            errors.append("LoopDioFactory must own exactly one production Dio constructor")
+        if len(re.findall(r"\bBaseOptions\s*(?:\.new)?\s*\(", factory_source)) != 1:
+            errors.append(
+                "LoopDioFactory must own exactly one production BaseOptions constructor"
+            )
+        factory_imports = re.findall(
+            r"^import\s+['\"]([^'\"]+)['\"]\s*;",
+            strip_dart_comments(read_text(factory_path)),
+            flags=re.MULTILINE,
+        )
+        if factory_imports != ["package:dio/dio.dart"]:
+            errors.append(
+                "LoopDioFactory imports only Dio; token, UUID, retry, and logging stay with their owners"
+            )
+
+    lib_root = root / "lib"
+    if lib_root.is_dir():
+        factory_consumers = {
+            Path("lib/core/network/loop_dio_factory.dart"),
+            Path("lib/integrations/backend/loop_bootstrap_providers.dart"),
+            Path(
+                "lib/integrations/hyperliquid/hyperliquid_http_providers.dart"
+            ),
+            Path(
+                "lib/integrations/hyperliquid/hyperliquid_market_providers.dart"
+            ),
+        }
+        for path in lib_root.rglob("*.dart"):
+            relative = path.relative_to(root)
+            source = strip_dart_comments_and_strings(read_text(path))
+            if relative != Path("lib/core/network/loop_dio_factory.dart"):
+                if re.search(r"\bDio\s*(?:\.new)?\s*\(", source):
+                    errors.append(
+                        f"Production Dio construction must stay inside LoopDioFactory: {relative}"
+                    )
+                if re.search(r"\bBaseOptions\s*(?:\.new)?\s*\(", source):
+                    errors.append(
+                        f"Production BaseOptions construction must stay inside LoopDioFactory: {relative}"
+                    )
+                if re.search(
+                    r"\binterceptors\s*\.\s*(?:add|addAll|insert)\s*\(",
+                    source,
+                ):
+                    errors.append(
+                        f"Production Dio interceptors must stay inside LoopDioFactory: {relative}"
+                    )
+            if "LoopDioFactory" in source and relative not in factory_consumers:
+                errors.append(
+                    f"Production network composition must stay in reviewed providers: {relative}"
+                )
+            guarded_source = strip_dart_comments(read_text(path))
+            for forbidden in (
+                "LogInterceptor",
+                "PrettyDioLogger",
+                "RetryInterceptor",
+                "DioRetryInterceptor",
+                "dio_smart_retry",
+                "pretty_dio_logger",
+            ):
+                if forbidden in guarded_source:
+                    errors.append(
+                        f"Production networking must not add automatic retry or raw HTTP logging: {relative} contains {forbidden}"
+                    )
+
+        provider_profiles = {
+            Path("lib/integrations/backend/loop_bootstrap_providers.dart"): (
+                "createLoopBackend",
+                "createCredentialFreePublic",
+            ),
+            Path(
+                "lib/integrations/hyperliquid/hyperliquid_http_providers.dart"
+            ): ("createCredentialFreePublic", "createLoopBackend"),
+            Path(
+                "lib/integrations/hyperliquid/hyperliquid_market_providers.dart"
+            ): ("createCredentialFreePublic", "createLoopBackend"),
+        }
+        for relative, (required_profile, forbidden_profile) in provider_profiles.items():
+            path = root / relative
+            if not path.is_file():
+                continue
+            source = strip_dart_comments_and_strings(read_text(path))
+            if source.count(f"LoopDioFactory.{required_profile}(") != 1 or (
+                f"LoopDioFactory.{forbidden_profile}(" in source
+            ):
+                errors.append(
+                    f"{relative} must use only the reviewed {required_profile} Dio profile"
+                )
+
+        hyperliquid_root = root / "lib/integrations/hyperliquid"
+        if hyperliquid_root.is_dir():
+            for path in hyperliquid_root.rglob("*.dart"):
+                source = strip_dart_comments(read_text(path))
+                if "'/exchange'" in source or '"/exchange"' in source:
+                    errors.append(
+                        "Direct Hyperliquid mobile adapters must remain public /info-only; "
+                        f"found /exchange in {path.relative_to(root)}"
+                    )
+
+    errors.extend(check_behavior_test_evidence(root, NETWORK_DIO_POLICY_TEST_MARKERS))
+    errors.extend(
+        check_named_executable_test_evidence(
+            root, NETWORK_DIO_POLICY_EXECUTABLE_TEST_EVIDENCE
         )
     )
     return errors
@@ -7057,6 +7326,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_chat_preview_conversation_id_contract(root))
     errors.extend(check_home_discovery_and_security_contract(root))
     errors.extend(check_security_capability_truth_contract(root))
+    errors.extend(check_network_dio_policy_contract(root))
     errors.extend(check_home_portfolio_truth_contract(root))
     errors.extend(check_spot_candle_contract(root))
     errors.extend(check_wallet_identity_readiness_contract(root))
@@ -7097,7 +7367,7 @@ def main() -> int:
         return 1
     print(
         "Harness check passed: profile, six-destination contract, pins, "
-        "Spot-only product, New Pairs exact-Preview truth, Chat snapshot, Preview request truth and exact conversation identity, Home portfolio truth, security capability truth, bounded candle, Wallet identity, Wallet route, local draft, "
+        "Spot-only product, New Pairs exact-Preview truth, Chat snapshot, Preview request truth and exact conversation identity, Home portfolio truth, security capability truth, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
         "providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, records, and secret rules are consistent."
     )
