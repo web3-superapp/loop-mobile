@@ -74,6 +74,33 @@ def write_audio_room_native_fixture(
     (info_path.parent / "AppDelegate.swift").write_text("import UIKit\n", encoding="utf-8")
 
 
+REOWN_IDENTITY_FIXTURE_FILES = (
+    "lib/app/app_config.dart",
+    "lib/integrations/privy/privy_auth_gateway.dart",
+    "lib/integrations/reown/external_wallet_credential_gateway.dart",
+    "lib/integrations/reown/reown_external_wallet_connector.dart",
+    "docs/decisions/0043-use-reown-only-for-privy-external-evm-credentials.md",
+    "docs/open-source-attribution.md",
+    "android/app/src/main/AndroidManifest.xml",
+    "ios/Runner/Info.plist",
+    "ios/Runner/Runner.entitlements",
+    "ios/Runner.xcodeproj/project.pbxproj",
+    "test/app_config_test.dart",
+    "test/external_wallet_credential_gateway_test.dart",
+    "test/identity_auth_controller_test.dart",
+    "test/post_auth_bootstrap_coordinator_test.dart",
+    "test/privy_login_screen_test.dart",
+)
+
+
+def write_reown_identity_fixture(root: Path) -> None:
+    for relative in REOWN_IDENTITY_FIXTURE_FILES:
+        source = REPOSITORY_ROOT / relative
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(source.read_bytes())
+
+
 class HarnessTests(unittest.TestCase):
     def test_current_repository_passes(self) -> None:
         self.assertEqual([], check_harness.validate(REPOSITORY_ROOT))
@@ -140,6 +167,288 @@ class HarnessTests(unittest.TestCase):
             (root / "pubspec.yaml").write_text(text.replace("  dio: 5.11.0", "  dio: ^5.11.0"), encoding="utf-8")
             result = check_harness.check_dependency_pins(root)
         self.assertIn("pubspec.yaml must pin `dio` exactly to `5.11.0`", result)
+
+    def test_reown_identity_contract_accepts_reviewed_configuration(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_reown_identity_fixture(root)
+
+            result = check_harness.check_reown_identity_contract(root)
+
+        self.assertEqual([], result)
+
+    def test_reown_dependency_must_stay_exact(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = (REPOSITORY_ROOT / "pubspec.yaml").read_text(
+                encoding="utf-8"
+            )
+            (root / "pubspec.yaml").write_text(
+                source.replace("  reown_appkit: 1.8.4", "  reown_appkit: ^1.8.4"),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_dependency_pins(root)
+
+        self.assertIn(
+            "pubspec.yaml must pin `reown_appkit` exactly to `1.8.4`",
+            result,
+        )
+
+    def test_reown_public_configuration_cannot_gain_defaults_or_secrets(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_reown_identity_fixture(root)
+            path = root / "lib/app/app_config.dart"
+            source = path.read_text(encoding="utf-8")
+            source = source.replace(
+                "reownProjectId: String.fromEnvironment('REOWN_PROJECT_ID'),",
+                "reownProjectId: String.fromEnvironment(\n"
+                "        'REOWN_PROJECT_ID',\n"
+                "        defaultValue: 'compiled-project-id',\n"
+                "      ),",
+            )
+            source += "\nconst GOOGLE_CLIENT_SECRET = 'must-not-ship';\n"
+            path.write_text(source, encoding="utf-8")
+
+            result = check_harness.check_reown_identity_contract(root)
+
+        self.assertTrue(
+            any("REOWN_PROJECT_ID" in error and "compiled default" in error for error in result),
+            msg=f"expected dart-define default guard: {result}",
+        )
+        self.assertTrue(
+            any("GOOGLE_CLIENT_SECRET" in error for error in result),
+            msg=f"expected client-secret guard: {result}",
+        )
+
+    def test_reown_provider_auth_and_transaction_methods_cannot_be_enabled(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_reown_identity_fixture(root)
+            path = (
+                root
+                / "lib/integrations/reown/reown_external_wallet_connector.dart"
+            )
+            source = path.read_text(encoding="utf-8")
+            replacements = {
+                "namespace: NetworkUtils.eip155": "namespace: NetworkUtils.solana",
+                "NetworkUtils.eip155: RequiredNamespace(": (
+                    "'solana': RequiredNamespace("
+                ),
+                "siweConfig: null": "siweConfig: unsafeSiweConfig",
+                "email: false": "email: true",
+                "socials: const <AppKitSocialOption>[]": (
+                    "socials: const <AppKitSocialOption>[AppKitSocialOption.google]"
+                ),
+                "enableAnalytics: false": "enableAnalytics: true",
+                "linkMode: false": "linkMode: true",
+                "methods: const <String>['personal_sign']": (
+                    "methods: const <String>['personal_sign', 'eth_sendTransaction']"
+                ),
+                "method: 'personal_sign'": "method: 'eth_sendTransaction'",
+                (
+                    "a797aa35c0fadbfc1a53e7f675162ed5226968b44a19ee3d24385c64d1d3c393"
+                ): "0" * 64,
+                "        _phantomWalletId,\n": "",
+            }
+            for old, new in replacements.items():
+                self.assertIn(old, source)
+                source = source.replace(old, new, 1)
+            path.write_text(source, encoding="utf-8")
+
+            result = check_harness.check_reown_identity_contract(root)
+
+        for marker in (
+            "siweConfig: null",
+            "email: false",
+            "socials: const <AppKitSocialOption>[]",
+            "enableAnalytics: false",
+            "linkMode: false",
+            "exactly `personal_sign`",
+            "only the `eip155` namespace",
+            "exactly one `NetworkUtils.eip155` namespace",
+            "_phantomWalletId",
+            "WalletGuide id",
+        ):
+            self.assertTrue(
+                any(marker in error for error in result),
+                msg=f"expected Reown feature guard for {marker}: {result}",
+            )
+
+    def test_reown_sdk_cannot_enter_market_or_signing_boundaries(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_reown_identity_fixture(root)
+            path = root / "lib/features/market/unsafe_reown.dart"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                "import 'package:reown_appkit/reown_appkit.dart';\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_reown_identity_contract(root)
+
+        self.assertTrue(
+            any("SDK import must stay inside" in error for error in result),
+            msg=f"expected SDK ownership guard: {result}",
+        )
+        self.assertTrue(
+            any("must not enter wallet signing" in error for error in result),
+            msg=f"expected transaction-boundary guard: {result}",
+        )
+
+    def test_reown_android_callbacks_and_package_queries_cannot_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_reown_identity_fixture(root)
+            path = root / "android/app/src/main/AndroidManifest.xml"
+            source = path.read_text(encoding="utf-8")
+            source = source.replace(
+                '<data android:scheme="com.cywd.loop.wallet" />',
+                '<data android:scheme="com.cywd.loop.privy" />',
+                1,
+            )
+            source = source.replace(
+                'android:name="flutter_deeplinking_enabled"\n'
+                '                android:value="false"',
+                'android:name="flutter_deeplinking_enabled"\n'
+                '                android:value="true"',
+                1,
+            )
+            source = source.replace(
+                '        <package android:name="me.rainbow" />\n',
+                "",
+                1,
+            )
+            path.write_text(source, encoding="utf-8")
+
+            result = check_harness.check_reown_identity_contract(root)
+
+        self.assertTrue(
+            any("com.cywd.loop.wallet" in error and "MainActivity" in error for error in result),
+            msg=f"expected Android callback-owner guard: {result}",
+        )
+        self.assertTrue(
+            any("flutter_deeplinking_enabled" in error for error in result),
+            msg=f"expected Android deep-link guard: {result}",
+        )
+        self.assertTrue(
+            any("Android wallet package queries" in error for error in result),
+            msg=f"expected Android package-query guard: {result}",
+        )
+
+    def test_reown_ios_callbacks_and_apple_capability_cannot_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_reown_identity_fixture(root)
+
+            info_path = root / "ios/Runner/Info.plist"
+            with info_path.open("rb") as stream:
+                info = plistlib.load(stream)
+            url_types = info["CFBundleURLTypes"]
+            url_types[0]["CFBundleURLSchemes"].append(
+                check_harness.REOWN_WALLET_SCHEME
+            )
+            info["LSApplicationQueriesSchemes"].remove("rainbow")
+            with info_path.open("wb") as stream:
+                plistlib.dump(info, stream)
+
+            entitlement_path = root / "ios/Runner/Runner.entitlements"
+            with entitlement_path.open("rb") as stream:
+                entitlements = plistlib.load(stream)
+            entitlements["com.apple.developer.applesignin"] = []
+            with entitlement_path.open("wb") as stream:
+                plistlib.dump(entitlements, stream)
+
+            project_path = root / "ios/Runner.xcodeproj/project.pbxproj"
+            project = project_path.read_text(encoding="utf-8")
+            project = project.replace(
+                "com.apple.SignInWithApple = {",
+                "com.apple.DisabledSignInWithApple = {",
+                1,
+            ).replace(
+                "CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;",
+                "CODE_SIGN_ENTITLEMENTS = Runner/Missing.entitlements;",
+                1,
+            )
+            project_path.write_text(project, encoding="utf-8")
+
+            result = check_harness.check_reown_identity_contract(root)
+
+        for marker in (
+            "separate URL types",
+            "iOS wallet query schemes",
+            "Sign in with Apple as `Default`",
+            "enable the Sign in with Apple capability",
+            "Every Runner Debug, Release, and Profile configuration",
+        ):
+            self.assertTrue(
+                any(marker in error for error in result),
+                msg=f"expected iOS guard for {marker}: {result}",
+            )
+
+    def test_reown_behavior_evidence_cannot_be_removed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_reown_identity_fixture(root)
+            path = root / "test/identity_auth_controller_test.dart"
+            source = path.read_text(encoding="utf-8")
+            marker = "wallet ownership and cancellation errors stay explicit"
+            self.assertIn(marker, source)
+            path.write_text(source.replace(marker, "weakened assertion"), encoding="utf-8")
+
+            result = check_harness.check_reown_identity_contract(root)
+
+        self.assertTrue(
+            any(marker in error and "missing locked value" in error for error in result),
+            msg=f"expected Reown behavior-evidence guard: {result}",
+        )
+
+    def test_reown_initialization_timeout_and_owner_reuse_cannot_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_reown_identity_fixture(root)
+            connector_path = (
+                root
+                / "lib/integrations/reown/reown_external_wallet_connector.dart"
+            )
+            connector = connector_path.read_text(encoding="utf-8")
+            connector = connector.replace(
+                "this.initializationTimeout = const Duration(seconds: 30)",
+                "this.initializationTimeout = const Duration(minutes: 30)",
+                1,
+            ).replace(
+                "reconnect: (owner) => owner.reconnectRelay()",
+                "reconnect: (owner) async {}",
+                1,
+            )
+            connector_path.write_text(connector, encoding="utf-8")
+
+            evidence_path = root / "test/external_wallet_credential_gateway_test.dart"
+            evidence = evidence_path.read_text(encoding="utf-8")
+            evidence_path.write_text(
+                evidence.replace(
+                    "initialization timeout reuses one owner and reconnects on retry",
+                    "weakened initialization test",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_reown_identity_contract(root)
+
+        for marker in (
+            "this.initializationTimeout = const Duration(seconds: 30)",
+            "reconnect: (owner) => owner.reconnectRelay()",
+            "initialization timeout reuses one owner and reconnects on retry",
+        ):
+            self.assertTrue(
+                any(marker in error for error in result),
+                msg=f"expected Reown initialization guard for {marker}: {result}",
+            )
 
     def test_gitnexus_generated_and_frozen_sources_stay_excluded(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

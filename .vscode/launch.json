@@ -7,7 +7,11 @@
       "request": "launch",
       "program": "lib/main.dart",
       "cwd": "${workspaceFolder}",
-      "flutterMode": "debug"
+      "flutterMode": "debug",
+      "toolArgs": [
+        "--dart-define=PRIVY_APP_CLIENT_ID=client-WY6ctzX8CSMMKhbvz8exuLovn1dTJyq8hReY1x63pBFfd",
+        "--dart-define=REOWN_PROJECT_ID=26a5cc1adad234fcdf7762b8d2a2b28d"
+      ]
     },
     {
       "name": "Loop (Preview)",

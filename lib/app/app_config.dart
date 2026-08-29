@@ -10,6 +10,7 @@ class AppConfig {
   const AppConfig({
     required this.privyAppId,
     required this.privyAppClientId,
+    this.reownProjectId = '',
     required this.streamApiKey,
     required this.backendBaseUrl,
     required this.firebaseConfigured,
@@ -21,10 +22,8 @@ class AppConfig {
         'PRIVY_APP_ID',
         defaultValue: 'cmt2t8k4n00780cjsxjqk0dkq',
       ),
-      privyAppClientId: String.fromEnvironment(
-        'PRIVY_APP_CLIENT_ID',
-        defaultValue: 'client-WY6ctzX8CSMMKhbvz8exuLovn1dTJyq8hReY1x63pBFfd',
-      ),
+      privyAppClientId: String.fromEnvironment('PRIVY_APP_CLIENT_ID'),
+      reownProjectId: String.fromEnvironment('REOWN_PROJECT_ID'),
       streamApiKey: String.fromEnvironment(
         'STREAM_API_KEY',
         defaultValue: 'qpwjdy8zjbdu',
@@ -36,15 +35,30 @@ class AppConfig {
 
   final String privyAppId;
   final String privyAppClientId;
+  final String reownProjectId;
   final String streamApiKey;
   final String backendBaseUrl;
   final bool firebaseConfigured;
+
+  static const String privyOAuthScheme = 'com.cywd.loop.privy';
+  static const String reownWalletScheme = 'com.cywd.loop.wallet';
+  static const String reownMetadataUrl = 'https://quant-dinger.cc';
+  static const String reownIconUrl =
+      'https://placehold.co/512x512/111827/FFFFFF.png?text=LOOP';
 
   bool get hasPrivyAppId => privyAppId.trim().isNotEmpty;
 
   bool get hasPrivyAppClientId => privyAppClientId.trim().isNotEmpty;
 
   bool get canInitializePrivy => hasPrivyAppId && hasPrivyAppClientId;
+
+  bool get hasReownProjectId => reownProjectId.trim().isNotEmpty;
+
+  bool get hasValidReownProjectId =>
+      RegExp(r'^[0-9a-fA-F]{32}$').hasMatch(reownProjectId.trim());
+
+  bool get canConnectExternalWallet =>
+      canInitializePrivy && hasValidReownProjectId;
 
   bool get hasStreamApiKey => streamApiKey.trim().isNotEmpty;
 

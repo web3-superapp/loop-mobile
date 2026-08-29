@@ -45,6 +45,7 @@ Future<void> main() async {
           const AppConfig(
             privyAppId: '',
             privyAppClientId: '',
+            reownProjectId: '',
             streamApiKey: '',
             backendBaseUrl: '',
             firebaseConfigured: false,

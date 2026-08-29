@@ -10,7 +10,8 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 
 - 六个固定主入口：Home / Market / Launch / Chat / Wallet / Profile
 - 全量 103 个产品 surface 的路由目录；产品优先级独立采用 A / B / C（47 / 46 / 10），`deferred` 单独表达本期不交付
-- 受 Privy 会话保护的 Email OTP 实现；缺少 Mobile App Client ID 时保持不可登录，真机验证待补
+- Privy 身份入口现支持 Email OTP、Google OAuth、iOS-only Apple OAuth，以及外部 EVM 钱包的 SIWE 登录/绑定。它们复用同一个 Privy 0.10.1 实例和单飞身份操作边界；缺少 Mobile App Client ID 时全部保持不可登录，缺少有效 Reown Project ID 时只关闭外部钱包入口。供应商 Dashboard、回跳、签名钱包与真机行为仍未验证
+- Reown AppKit 1.8.4 只负责连接 canonical `eip155` 账号并转发 Privy 生成消息的 `personal_sign`。AppKit 自带的认证、Email、Social、Embedded Wallet、SIWE、analytics、Link Mode 与 Solana 均未启用；会话完成后释放。外部地址只显示为 Privy 登录凭据，不进入 Embedded wallet、余额、签名或 LOOP 交易权限
 - Privy Embedded Ethereum wallet readiness 已挂到正式 Wallet：完整认证且无钱包时可走现有 principal-bound SDK 创建链路，已有钱包时只展示并复制当前会话的完整地址。Manage wallets 不再显示假钱包；Receive 不生成二维码或声称支持入金。余额、资产、Send、Swap、签名与交易结果仍明确为演示或不可用
 - Wallet 原型路由不再补造默认上下文：资产详情必须携带对应的强类型演示资产，Signing Review 必须携带来源 intent，DApp 预览只允许显示当前 Privy 钱包身份且浏览/注入保持关闭；裸深链统一失败关闭
 - Wallet 本地草稿保持精确且不可执行：Send 金额只接受已知后端词法规则并原样保留尾零，Swap 的输入、输出、报价详情与 Review 只来自同一个不可变演示快照；编辑会撤销全部派生值，恢复与快速点击不会制造分叉 intent。HTTP、canonical intent、签名与交易结果仍未启用
@@ -22,14 +23,14 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - Chat 的 E9 资产快照已收敛为明确标注 `演示数据` 的 Spot market Preview：不再展示 Position、LONG、Entry、收益、跟单或假保存；唯一可用动作只打开公共 Spot 行情列表，Watch 在真实持久化接入前保持禁用
 - Chat 的 Message Requests 已收敛为进程内 `开发预览` 状态：Accept 只从模拟 pending 列表移除且不创建 Stream 会话，Ignore 不通知对方，Report 不提交 moderation 举报；未知或重复处理的 ID 会失败，处理中的卡片禁止重复动作，Chat 首页数量随当前模拟 pending 列表变化
 - Chat 的 Preview 群资料页不再暴露空操作：通知选项只改变持续标注的进程内布局状态，关闭主选项会同步清理 mentions-only 示例；成员操作与退群在没有官方 Stream 写入能力时保持禁用，不再用空按钮或只关闭弹窗伪装成功
-- 原生 Privy Bearer `POST /v1/bootstrap` 客户端已接入；严格解析服务端 LOOP/Stream 身份、隔离账号切换并最多重试一次 401。未配置后端地址时零请求，Stream token 缺失时仍不连接
+- 原生 Privy Bearer `POST /v1/bootstrap` 客户端已接入；严格解析服务端 LOOP/Stream 身份、隔离账号切换并最多重试一次 401。每次新接受的完整 Privy 登录会在安全后端 Origin 已配置时非阻塞地预热一次 bootstrap；请求缺失或失败不会否定登录。未配置后端地址时零请求，Stream token 缺失时仍不连接
 - Dio 构造已收敛到双信任边界：公开 Hyperliquid Testnet 只读请求与携带 Privy Bearer 的 LOOP backend 请求使用不同 profile；两者都限制精确 Origin、关闭重定向并保持无自动重试/无日志，公开客户端还会在发送前拒绝 Authorization，两种客户端都会拒绝 Cookie、Proxy-Authorization 与 `X-Api-Key`。仓库仍由各自窄 adapter 负责请求契约、错误映射、鉴权刷新与幂等语义
 - Audio Room 前端纵切已完成，并从正式 Chat 顶部提供唯一可见入口：入口只打开生产 Lobby，不发起 provider 操作，也不会回退演示房间。后端授权房间接缝、默认静音单飞加入、官方 `CallState` 状态/成员/能力/麦克风 UI、失败清理和账号/房间/client 轮换均已落地；真实 Video token 与房间 locator 缺失时保持不可加入
 - Audio Room 首版只配置前台麦克风能力；任何退房或 App 退到后台都会立即发起原生音频暂停、终态关麦与 single-flight 退房，不让可能卡住的麦克风/原生命令延迟退房。大厅只在旧 `Call` 已从 Stream `activeCalls` 移除、在途麦克风命令已结束且命令后的第二次关麦已执行后开放。为避开 Stream Video 1.4.3 的迟到音轨重建缺陷，每个 `Call` 只允许一次 Speak 启动；Mute 后需离开并重进才能再次发言。失败可显式重试清理。会自动注册 Telecom/CallKit 的 Stream Push 插件不进入当前依赖图，Android 同时移除可选来电、后台通话、相机与推送项，iOS 不启用 Camera、PushKit、CallKit 或后台模式
 - 通知导航的 EventSource / Coordinator 纵切已接入根组合：生产 source 默认是无初始点击、无事件的 disabled 实现；协调器只从真实 LOOP session 与已验证 bootstrap identity 取得 Stream 身份。恢复期间最多暂存一个、默认 15 秒且硬上限一分钟的点击，账号切换、超时或授权失败即丢弃；通过完整重验后也只能落到官方 Chat CID、Audio Room 大厅或通知中心。生产通知页不展示伪实时卡片，演示卡仅在显式 `开发预览` 中可见
 - Home Global Search 已闭合 providerless 前端行为：只有显式 Preview 会显示并本地筛选一组有界的 `演示数据`，支持大小写/空白归一化、无结果与清空；群组和用户沿用精确注册的 Preview conversation ID，ETH 示例只进入公共 Spot 列表而不猜 `spotIndex`。正式会话在真实跨产品索引接入前显示不可用，不泄漏 Preview 结果
 - Home Security Activity 已关闭无来源的安全结论：正式会话不再伪报 MFA、设备登录、审批次数或 `No urgent action`，没有已审核事件源时保持不可用。显式 Preview 只保留持续标注的布局示例，不计算风险分、不发请求，也不提供 Revoke/Block 等账户操作
-- Account/Profile 安全页已分离能力可用性与配置状态：A11 不再提供未接适配器的 Passkey、Biometrics、PIN 开关或伪保存，只能明确“不做修改”地继续；H5 不再用 capability 计算保护分数、ready/recovery 结论，Wallet MFA 与 App lock 在真实 setup adapter 接入前禁用。当前未引入 Secure Storage，也没有存储或校验 app PIN
+- Account/Profile 安全页已分离能力可用性与配置状态：A11 不再提供未接适配器的 Passkey、Biometrics、PIN 开关或伪保存，只能明确“不做修改”地继续；H5 不再用 capability 计算保护分数、ready/recovery 结论，Wallet MFA 与 App lock 在真实 setup adapter 接入前禁用。LOOP 未引入或使用应用自有 Secure Storage，Reown 的传递内部存储也不作为 LOOP store；当前没有存储或校验 app PIN
 - General Settings 的 Reduce motion 已使用设备本地非敏感偏好持久化，并在首个应用页面前恢复；构造、读取与写入均有一秒上限，快速连续切换和迟到写入保持顺序。读取失败后的重试会先重新读取，写入失败才重试当前明确选择；任何失败都只说明本次运行生效。它不绑定账号、不发送后端请求，也不会覆盖更严格的系统 Reduce Motion。Language、Display currency 与 Theme 在真实能力具备前继续禁用，Shared Preferences 不保存 Profile、Privacy、通知、钱包、token、PIN 或安全状态
 - Home 与 Net Worth 已关闭无来源的资产和活动结论：正式会话在 owner-scoped portfolio/activity 来源接入前只显示不可用与当前 Privy wallet identity 状态，不再展示静态总额、涨跌、图表、分配、未读数、提醒或授权记录。钱包身份不等于余额证据；原布局数据只保留在明确标注 `开发预览` / `演示数据` 的 Preview 中，本切片不新增接口、provider 请求或刷新动作
 - C10 New Pairs 已关闭正式会话中的演示事实泄漏：公开 Spot 快照不包含 listing time，客户端收取时间、首次本地观察、成交量与 canonical 标记也不能证明“新上线”。正式和缓存未验证会话仅显示数据源未连接且不发 Market/Candle 请求；BTC/ETH/SOL 与 fixture age 仅在精确 `开发预览` 会话中显示，并只能返回裸 `/market`
@@ -74,13 +75,15 @@ bin/flutter build apk --debug
 
 Release、iOS no-codesign、Web release、`bin/flutter run`、签名和真机验证都不是日常自动检查；只有明确提出时才运行。真机结果由产品方验证，未执行时始终记录为未验证。
 
-你提供的 Privy App ID、Mobile App Client ID 与 Stream API key 都已作为客户端安全的 Development 默认值接入。需要切换 Privy Client 时仍可显式覆盖：
+Privy Mobile App Client ID 和 Reown Project ID 没有 Dart 默认值，只通过 `--dart-define` 注入。它们是公开客户端标识，不是 Privy Secret、OAuth Client Secret 或钱包私钥：
 
 ```bash
-bin/flutter run --dart-define=PRIVY_APP_CLIENT_ID=client-新的完整值
+bin/flutter run \
+  --dart-define=PRIVY_APP_CLIENT_ID=client-完整值 \
+  --dart-define=REOWN_PROJECT_ID=32位十六进制项目ID
 ```
 
-不要把 Privy Secret、Stream Secret、Firebase service-account、APNs 私钥或 Hyperliquid 私钥放进 Flutter 或 Git。
+不要把 Privy Secret、Google/Apple OAuth Secret、Apple `.p8`、Stream Secret、Firebase service-account、APNs 私钥、钱包私钥或 Hyperliquid 私钥放进 Flutter 或 Git。
 
 IDE 顶部 Run 可直接选择 `Loop`（正式入口）或 `Loop (Preview)`（前端体验入口），设备仍以 IDE 右下角当前选择为准，不固定 Pixel 7a。
 
@@ -100,17 +103,19 @@ flutter build web --release
 
 ## 已锁定工程基线
 
-本仓库的目的为：Build Loop, a Flutter iOS/Android app with six primary destinations—Home, Market, Launch, Chat, Wallet, and Profile—using Privy identity/wallets, Stream Chat/Video, public Hyperliquid Testnet spot discovery, and future backend-mediated spot execution.
+本仓库的目的为：Build Loop, a Flutter iOS/Android app with six primary destinations—Home, Market, Launch, Chat, Wallet, and Profile—using Privy identity/wallets, Reown only for external EVM credential proofs, Stream Chat/Video, public Hyperliquid Testnet spot discovery, and future backend-mediated spot execution.
 
 - Flutter 3.47.1 / Dart 3.13.1
 - Android API 28–36、AGP 8.13.2、Gradle 8.14、Kotlin 2.3.20、Java 17
 - iOS 17+、Xcode 26.6、CocoaPods 1.16.2
-- Privy 0.10.1；Stream Chat/Persistence 10.3.0；Stream Video 1.4.3（Push 1.4.3 已验证兼容但首版不链接）
+- Privy 0.10.1；Reown AppKit 1.8.4（lock 实际解析 Core 1.5.0 / Sign 1.4.0）；Stream Chat/Persistence 10.3.0；Stream Video 1.4.3（Push 1.4.3 已验证兼容但首版不链接）
 - Firebase Core 4.13.0 / Messaging 16.5.0
 - Riverpod 3.4.2 / go_router 17.5.0 / Dio 5.11.0
 - Decimal 3.2.6 / UUID 4.6.0
 
 `harness.json` 是可机器校验的工程画像，`AGENTS.md` 是开发与安全边界。任何依赖、原生工具链、主导航或安全边界变更都要同步更新决策和验证报告。
+
+本次 Reown/身份切片改变了 Flutter 与原生依赖图。2026-08-29 已用当前锁定工具链通过 Android Debug/Release 和 iOS Debug/Release no-codesign 四项编译，详见 [`docs/phase-1/initialization-report.md`](docs/phase-1/initialization-report.md)。Email OTP、Google、Apple、钱包 App 回跳、SIWE 和真实 bootstrap 仍必须保持“供应商/物理设备未验证”，直到对应 Dashboard 与设备矩阵产生证据。
 
 Manual-only native release matrix（仅在明确要求时运行）：
 

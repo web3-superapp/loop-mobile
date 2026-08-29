@@ -18,6 +18,29 @@
 	<string>loop</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>privy.oauth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.cywd.loop.privy</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>reown.wallet</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.cywd.loop.wallet</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleShortVersionString</key>
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
@@ -26,6 +49,12 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>metamask</string>
+		<string>trust</string>
+		<string>rainbow</string>
+	</array>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>用于在 Loop 语音房中发言</string>
 	<key>UIApplicationSceneManifest</key>

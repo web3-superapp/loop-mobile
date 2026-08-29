@@ -39,7 +39,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Welcome to LOOP'), findsOneWidget);
-    expect(find.text('Login configuration incomplete'), findsNothing);
+    expect(find.text('Login configuration incomplete'), findsOneWidget);
     expect(find.text('Home overview'), findsNothing);
     expect(find.text('Enter development preview'), findsNothing);
   });
@@ -60,7 +60,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Enter development preview'));
+    final previewButton = find.text('Enter development preview');
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
+    await tester.pump();
+    await tester.tap(previewButton);
     await tester.pumpAndSettle();
 
     expect(find.text('Home overview'), findsOneWidget);

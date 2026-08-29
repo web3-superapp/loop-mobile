@@ -17,6 +17,7 @@ dependencies:
   flutter_riverpod: 3.4.2
   go_router: 17.5.0
   privy_flutter: 0.10.1
+  reown_appkit: 1.8.4
   shared_preferences: 2.5.5
   stream_chat_flutter: 10.3.0
   stream_chat_persistence: 10.3.0

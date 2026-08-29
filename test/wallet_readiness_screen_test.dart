@@ -337,6 +337,36 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets(
+    'Manage wallets separates linked credentials from the trading wallet',
+    (tester) async {
+      final gateway = _WalletGateway(
+        restoreSnapshot: const PrivySessionSnapshot(
+          PrivySessionKind.authenticated,
+          account: PrivyAccountSummary(
+            privyUserId: 'did:privy:wallet-test',
+            wallet: PrivyWalletSummary(address: firstAddress),
+            externalEvmCredentials: <PrivyExternalEvmCredentialSummary>[
+              PrivyExternalEvmCredentialSummary(
+                address: secondAddress,
+                chainId: '1',
+                walletClientType: 'metamask',
+              ),
+            ],
+          ),
+        ),
+      );
+      addTearDown(gateway.dispose);
+      await _pump(tester, gateway, const WalletManagerScreen());
+
+      expect(find.text(firstAddress), findsOneWidget);
+      expect(find.text(secondAddress), findsOneWidget);
+      expect(find.text('1 linked'), findsOneWidget);
+      expect(find.textContaining('not a LOOP trading wallet'), findsOneWidget);
+      expect(find.text('Additional transaction wallets'), findsOneWidget);
+    },
+  );
 }
 
 PrivySessionSnapshot _authenticatedSnapshot({String? walletAddress}) {

@@ -119,6 +119,25 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     );
   }
 
+  void acceptLinkedAccount(
+    PrivyAccountSummary account, {
+    required String expectedPrivyUserId,
+  }) {
+    final current = state;
+    final currentAccount = current.account;
+    if (!current.canUseProviderBackedFeatures ||
+        currentAccount == null ||
+        expectedPrivyUserId.isEmpty ||
+        currentAccount.privyUserId != expectedPrivyUserId ||
+        account.privyUserId != expectedPrivyUserId) {
+      throw const PrivyGatewayException('账号已变化，钱包未绑定，请重新尝试。');
+    }
+    state = LoopSessionState(
+      mode: LoopSessionMode.authenticated,
+      account: account,
+    );
+  }
+
   Future<void> createWallet() async {
     final requestedState = state;
     final requestedAccount = requestedState.account;

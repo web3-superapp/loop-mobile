@@ -7,7 +7,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/email_auth_controller.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
-/// Production authentication surface backed by Privy Email OTP.
+/// Production authentication surface backed by Privy credentials.
 ///
 /// Development preview is an explicit offline/read-only mode. Entering it does
 /// not create a wallet, connect Stream, bootstrap a backend session, or trade.
@@ -40,6 +40,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
     final previewEnabled = ref.watch(developmentPreviewEnabledProvider);
     final authState = ref.watch(emailAuthProvider);
     final authController = ref.read(emailAuthProvider.notifier);
+    final showApple = ref.watch(isIosIdentityPlatformProvider);
 
     return LoopPage(
       eyebrow: 'PRIVY IDENTITY',
@@ -50,7 +51,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
           ? 'Use a one-time email code to enter. Wallet creation remains a separate, explicit action.'
           : 'A 6-digit code was sent to ${authState.submittedEmail}. This address stays fixed until you choose to change it.',
       children: <Widget>[
-        if (!config.canInitializePrivy) ...<Widget>[
+        if (!config.canInitializePrivy && !previewEnabled) ...<Widget>[
           const LoopStateCard(
             title: 'Login configuration incomplete',
             message: 'The Privy App ID is present, but the Mobile App Client ID is missing. Real OTP calls remain disabled.',
@@ -192,7 +193,87 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
                 ?.copyWith(color: LoopColors.vapor),
           ),
         ],
+        if (authState.step == EmailAuthStep.enterEmail) ...<Widget>[
+          const SizedBox(height: 16),
+          LoopCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Text(
+                  'Other sign-in methods',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 14),
+                OutlinedButton.icon(
+                  key: const ValueKey('privy-google-login-button'),
+                  onPressed: authState.isBusy
+                      ? null
+                      : authController.loginWithGoogle,
+                  icon:
+                      authState.activeOperation == IdentityAuthOperation.google
+                      ? const _IdentityButtonProgress()
+                      : const Icon(Icons.g_mobiledata_rounded),
+                  label: const Text('Continue with Google'),
+                ),
+                if (showApple) ...<Widget>[
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    key: const ValueKey('privy-apple-login-button'),
+                    onPressed: authState.isBusy
+                        ? null
+                        : authController.loginWithApple,
+                    icon:
+                        authState.activeOperation == IdentityAuthOperation.apple
+                        ? const _IdentityButtonProgress()
+                        : const Icon(Icons.apple_rounded),
+                    label: const Text('Continue with Apple'),
+                  ),
+                ],
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  key: const ValueKey('privy-wallet-login-button'),
+                  onPressed:
+                      authState.isBusy || !config.canConnectExternalWallet
+                      ? null
+                      : () => authController.connectExternalWallet(context),
+                  icon:
+                      authState.activeOperation ==
+                          IdentityAuthOperation.externalWalletLogin
+                      ? const _IdentityButtonProgress()
+                      : const Icon(Icons.account_balance_wallet_outlined),
+                  label: const Text('Connect wallet'),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'External EVM wallets are Privy sign-in credentials only. They are not LOOP trading wallets and cannot authorize trades.',
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: LoopColors.vapor),
+                ),
+                if (!config.hasValidReownProjectId) ...<Widget>[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Reown Project ID is missing or invalid; wallet connection remains unavailable.',
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: LoopColors.warning),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ],
+    );
+  }
+}
+
+class _IdentityButtonProgress extends StatelessWidget {
+  const _IdentityButtonProgress();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox.square(
+      dimension: 18,
+      child: CircularProgressIndicator(strokeWidth: 2),
     );
   }
 }

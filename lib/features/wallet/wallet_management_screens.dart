@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/account/email_auth_controller.dart';
 import 'package:loop_mobile/features/wallet/wallet_preview_activity.dart';
 import 'package:loop_mobile/features/wallet/wallet_readiness.dart';
+import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:uuid/uuid.dart';
 
@@ -108,15 +111,19 @@ class WalletManagerScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final readiness = WalletReadiness.fromSession(
-      ref.watch(loopSessionProvider),
-    );
+    final session = ref.watch(loopSessionProvider);
+    final readiness = WalletReadiness.fromSession(session);
+    final config = ref.watch(appConfigProvider);
+    final identityOperation = ref.watch(emailAuthProvider);
+    final credentials =
+        session.account?.externalEvmCredentials ??
+        const <PrivyExternalEvmCredentialSummary>[];
     return LoopPage(
       title: 'Manage wallets',
       eyebrow: readiness.canCopy
           ? 'Privy · Current session'
           : 'Wallet identity unavailable',
-      subtitle: 'Only the first Embedded Ethereum wallet from the current Privy session can appear here.',
+      subtitle: 'The Embedded Ethereum wallet and linked sign-in credentials have separate authority.',
       children: <Widget>[
         if (readiness.canCopy)
           _WalletIdentity(
@@ -140,22 +147,87 @@ class WalletManagerScreen extends ConsumerWidget {
                 : null,
           ),
         const LoopSectionLabel('Wallet capabilities'),
-        const LoopCard(
+        LoopCard(
           child: Column(
             children: <Widget>[
-              LoopKeyValueRow(
+              const LoopKeyValueRow(
                 label: 'Signing policy',
                 value: 'Unavailable · provider policy not verified',
               ),
-              LoopKeyValueRow(label: 'Recovery', value: 'Not connected'),
+              const LoopKeyValueRow(label: 'Recovery', value: 'Not connected'),
               LoopKeyValueRow(
-                label: 'Additional wallets',
-                value: 'Unavailable in the first release',
+                label: 'External sign-in credentials',
+                value: '${credentials.length} linked',
+              ),
+              const LoopKeyValueRow(
+                label: 'Additional transaction wallets',
+                value: 'Unavailable',
                 last: true,
               ),
             ],
           ),
         ),
+        const LoopSectionLabel('External EVM credentials'),
+        for (final credential in credentials) ...<Widget>[
+          _ExternalCredentialIdentity(credential: credential),
+          const SizedBox(height: 10),
+        ],
+        if (credentials.isEmpty)
+          const LoopStateCard(
+            key: ValueKey<String>('external-wallet-credentials-empty'),
+            title: 'No external credential linked',
+            message: 'You can link an EVM wallet to the current Privy account. It will not become a LOOP trading wallet.',
+            icon: Icons.link_off_rounded,
+          ),
+        OutlinedButton.icon(
+          key: const ValueKey<String>('link-external-wallet-button'),
+          onPressed:
+              identityOperation.isBusy ||
+                  !session.canUseProviderBackedFeatures ||
+                  !config.canConnectExternalWallet
+              ? null
+              : () => ref
+                    .read(emailAuthProvider.notifier)
+                    .connectExternalWallet(context),
+          icon:
+              identityOperation.activeOperation ==
+                  IdentityAuthOperation.externalWalletLink
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.add_link_rounded),
+          label: const Text('Link external wallet credential'),
+        ),
+        if (!config.canConnectExternalWallet) ...<Widget>[
+          const SizedBox(height: 10),
+          const LoopStateCard(
+            title: 'External connection unavailable',
+            message: 'Privy Client ID and a valid Reown Project ID must be supplied through --dart-define.',
+            icon: Icons.key_off_outlined,
+            tone: LoopTone.warning,
+          ),
+        ],
+        if (identityOperation.errorMessage != null) ...<Widget>[
+          const SizedBox(height: 10),
+          LoopStateCard(
+            key: const ValueKey<String>('external-wallet-link-error'),
+            title: 'Wallet credential not linked',
+            message: identityOperation.errorMessage!,
+            icon: Icons.error_outline_rounded,
+            tone: LoopTone.danger,
+          ),
+        ],
+        if (identityOperation.successMessage != null) ...<Widget>[
+          const SizedBox(height: 10),
+          LoopStateCard(
+            key: const ValueKey<String>('external-wallet-link-success'),
+            title: 'Credential linked',
+            message: identityOperation.successMessage!,
+            icon: Icons.check_circle_outline_rounded,
+            tone: LoopTone.positive,
+          ),
+        ],
         const SizedBox(height: 14),
         const LoopStateCard(
           title: 'Wallet identity is not signing authority',
@@ -164,6 +236,39 @@ class WalletManagerScreen extends ConsumerWidget {
           tone: LoopTone.warning,
         ),
       ],
+    );
+  }
+}
+
+class _ExternalCredentialIdentity extends StatelessWidget {
+  const _ExternalCredentialIdentity({required this.credential});
+
+  final PrivyExternalEvmCredentialSummary credential;
+
+  @override
+  Widget build(BuildContext context) {
+    final walletType = credential.walletClientType ?? 'External EVM wallet';
+    final chain = credential.chainId == null
+        ? 'EVM chain reported by Privy'
+        : 'EVM chain ${credential.chainId}';
+    return LoopCard(
+      key: ValueKey<String>('external-wallet-credential-${credential.address}'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(walletType, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 6),
+          Text(
+            credential.address,
+            style: context.dataStyle.copyWith(fontSize: 14),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '$chain · Privy linked sign-in credential · not a LOOP trading wallet',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
     );
   }
 }

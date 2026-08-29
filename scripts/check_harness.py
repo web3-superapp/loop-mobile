@@ -26,6 +26,7 @@ PINNED_DEPENDENCIES = {
     "flutter_riverpod": "3.4.2",
     "go_router": "17.5.0",
     "privy_flutter": "0.10.1",
+    "reown_appkit": "1.8.4",
     "shared_preferences": "2.5.5",
     "stream_chat_flutter": "10.3.0",
     "stream_chat_persistence": "10.3.0",
@@ -51,6 +52,7 @@ REQUIRED_FILES = (
     "bin/loop-sdk",
     "ios/Podfile",
     "ios/Podfile.lock",
+    "ios/Runner/Runner.entitlements",
     "scripts/check_harness.py",
     "tests/test_check_harness.py",
     "docs/product-decisions.md",
@@ -80,6 +82,7 @@ REQUIRED_FILES = (
     "docs/decisions/0040-separate-security-capability-from-enrollment.md",
     "docs/decisions/0041-centralize-dio-trust-boundaries.md",
     "docs/decisions/0042-persist-only-device-display-preferences.md",
+    "docs/decisions/0043-use-reown-only-for-privy-external-evm-credentials.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/gitnexus-generated-source-pollution.md",
     "docs/failures/providerless-notification-fixtures.md",
@@ -105,6 +108,8 @@ REQUIRED_FILES = (
     "lib/app/loop_display_preferences.dart",
     "lib/integrations/personalization/shared_preferences_display_store.dart",
     "lib/app/notifications/loop_notification_coordinator.dart",
+    "lib/integrations/reown/external_wallet_credential_gateway.dart",
+    "lib/integrations/reown/reown_external_wallet_connector.dart",
     "lib/integrations/notifications/loop_notification_event_source.dart",
     "lib/integrations/notifications/loop_notification_router.dart",
     "lib/integrations/hyperliquid/hyperliquid_spot_market.dart",
@@ -147,6 +152,7 @@ REQUIRED_FILES = (
     "lib/integrations/backend/loop_perp_repository.dart",
     "lib/integrations/backend/loop_perp_session.dart",
     "test/app_notification_coordinator_test.dart",
+    "test/app_config_test.dart",
     "test/chat_spot_snapshot_test.dart",
     "test/chat_preview_message_requests_test.dart",
     "test/loop_notification_coordinator_test.dart",
@@ -160,6 +166,10 @@ REQUIRED_FILES = (
     "test/market_screen_test.dart",
     "test/spot_candle_chart_test.dart",
     "test/notifications_screen_test.dart",
+    "test/external_wallet_credential_gateway_test.dart",
+    "test/identity_auth_controller_test.dart",
+    "test/post_auth_bootstrap_coordinator_test.dart",
+    "test/privy_login_screen_test.dart",
     "test/watchlist_controller_test.dart",
     "test/watchlist_editor_screen_test.dart",
     "test/watchlist_models_test.dart",
@@ -253,8 +263,51 @@ ADOPTION_SECTIONS = (
     "Effectiveness",
 )
 ANDROID_NAME = "{http://schemas.android.com/apk/res/android}name"
+ANDROID_EXPORTED = "{http://schemas.android.com/apk/res/android}exported"
+ANDROID_SCHEME = "{http://schemas.android.com/apk/res/android}scheme"
+ANDROID_VALUE = "{http://schemas.android.com/apk/res/android}value"
 ANDROID_TOOLS_NODE = "{http://schemas.android.com/tools}node"
 ANDROID_INTERNET_PERMISSION = "android.permission.INTERNET"
+PRIVY_OAUTH_SCHEME = "com.cywd.loop.privy"
+REOWN_WALLET_SCHEME = "com.cywd.loop.wallet"
+ANDROID_REOWN_WALLET_PACKAGES = frozenset(
+    {
+        "io.metamask",
+        "com.wallet.crypto.trustapp",
+        "me.rainbow",
+    }
+)
+IOS_REOWN_WALLET_SCHEMES = frozenset({"metamask", "trust", "rainbow"})
+REOWN_CONNECTOR_PATH = Path(
+    "lib/integrations/reown/reown_external_wallet_connector.dart"
+)
+REOWN_SDK_IMPORT = "package:reown_appkit/reown_appkit.dart"
+REOWN_EXCLUDED_WALLET_IDS = {
+    "_phantomWalletId": (
+        "a797aa35c0fadbfc1a53e7f675162ed5226968b44a19ee3d24385c64d1d3c393"
+    ),
+    "_solflareWalletId": (
+        "1ca0bdd4747578705b1939af023d120677c64fe6ca76add81fda36e350605e79"
+    ),
+    "_coinbaseWalletId": (
+        "fd20dc426fb37566d803205b19bbc1d4096b248ac04548e3cfb6b3a38bd033aa"
+    ),
+}
+REOWN_FORBIDDEN_IMPORT_ROOTS = (
+    Path("lib/features/market"),
+    Path("lib/features/perp"),
+    Path("lib/features/review"),
+    Path("lib/integrations/hyperliquid"),
+)
+REOWN_FORBIDDEN_IMPORT_FILES = frozenset(
+    {
+        Path("lib/features/wallet/send_screens.dart"),
+        Path("lib/features/wallet/trade_screens.dart"),
+        Path("lib/integrations/privy/privy_production_adapter.dart"),
+        Path("lib/integrations/privy/privy_provider.dart"),
+        Path("lib/integrations/privy/wallet_signing_gateway.dart"),
+    }
+)
 ANDROID_AUDIO_ROOM_PERMISSIONS = frozenset(
     {
         "android.permission.RECORD_AUDIO",
@@ -4948,7 +5001,9 @@ def check_wallet_identity_readiness_contract(root: Path) -> list[str]:
             "lib/features/wallet/wallet_management_screens.dart": (
                 "WalletReadiness.fromSession",
                 "Wallet identity is not signing authority",
-                "Additional wallets",
+                "Additional transaction wallets",
+                "External EVM credentials",
+                "not a LOOP trading wallet",
             ),
             "lib/app.dart": (
                 "state.extra is TransferDraft ? null : '/wallet/send'",
@@ -5795,6 +5850,399 @@ def _parse_plist(path: Path, label: str) -> tuple[dict[str, Any] | None, list[st
     return value, []
 
 
+def check_reown_identity_contract(root: Path) -> list[str]:
+    """Keep Reown an EVM-only signer for Privy credentials, never identity."""
+
+    errors: list[str] = []
+
+    config_path = root / "lib/app/app_config.dart"
+    if not config_path.is_file():
+        errors.append("missing Reown identity config: lib/app/app_config.dart")
+    else:
+        config = read_text(config_path)
+        for field, define in (
+            ("privyAppClientId", "PRIVY_APP_CLIENT_ID"),
+            ("reownProjectId", "REOWN_PROJECT_ID"),
+        ):
+            match = re.search(
+                rf"\b{field}\s*:\s*String\.fromEnvironment\(\s*"
+                rf"['\"]{define}['\"](?P<tail>[^)]*)\)",
+                config,
+                re.DOTALL,
+            )
+            tail = match.group("tail").strip() if match else None
+            if match is None or tail not in ("", ","):
+                errors.append(
+                    f"AppConfig `{field}` must read `{define}` directly from "
+                    "--dart-define without a compiled default"
+                )
+
+        expected_constants = {
+            "privyOAuthScheme": PRIVY_OAUTH_SCHEME,
+            "reownWalletScheme": REOWN_WALLET_SCHEME,
+            "reownMetadataUrl": "https://quant-dinger.cc",
+            "reownIconUrl": (
+                "https://placehold.co/512x512/111827/FFFFFF.png?text=LOOP"
+            ),
+        }
+        for name, value in expected_constants.items():
+            if not re.search(
+                rf"\b{re.escape(name)}\s*=\s*['\"]{re.escape(value)}['\"]",
+                config,
+                re.DOTALL,
+            ):
+                errors.append(
+                    f"AppConfig must preserve `{name}` as client-safe value `{value}`"
+                )
+
+        for forbidden in (
+            "PRIVY_APP_SECRET",
+            "PRIVY_SECRET",
+            "APPLE_CLIENT_SECRET",
+            "APPLE_PRIVATE_KEY",
+            "GOOGLE_CLIENT_SECRET",
+            "REOWN_SECRET",
+        ):
+            if forbidden in config:
+                errors.append(
+                    f"AppConfig must not contain privileged credential `{forbidden}`"
+                )
+
+    connector_path = root / REOWN_CONNECTOR_PATH
+    if not connector_path.is_file():
+        errors.append(f"missing Reown connector: {REOWN_CONNECTOR_PATH}")
+        connector = ""
+    else:
+        connector = read_text(connector_path)
+
+    if connector and REOWN_SDK_IMPORT not in connector:
+        errors.append("The reviewed Reown connector must own the AppKit SDK import")
+
+    required_connector_fragments = (
+        "this.initializationTimeout = const Duration(seconds: 30)",
+        "ExternalWalletInitializationGate(",
+        "bool get hasRetainedOwner => _owner != null",
+        "on TimeoutException",
+        "reconnect: (owner) => owner.reconnectRelay()",
+        "namespace: NetworkUtils.eip155",
+        "NetworkUtils.eip155: RequiredNamespace(",
+        "method: 'personal_sign'",
+        "chainId: 'eip155:${identity.chainId}'",
+        "url: AppConfig.reownMetadataUrl",
+        "icons: <String>[AppConfig.reownIconUrl]",
+        "native: '${AppConfig.reownWalletScheme}://'",
+        "siweConfig: null",
+        "email: false",
+        "socials: const <AppKitSocialOption>[]",
+        "enableAnalytics: false",
+        "linkMode: false",
+    )
+    for fragment in required_connector_fragments:
+        if fragment not in connector:
+            errors.append(
+                "Reown must remain EVM-only with provider auth, analytics, "
+                f"SIWE and Link Mode disabled (`{fragment}`)"
+            )
+
+    method_blocks = re.findall(
+        r"\bmethods:\s*const\s*<String>\s*\[(?P<body>.*?)\]",
+        connector,
+        re.DOTALL,
+    )
+    method_sets = [
+        re.findall(r"['\"]([^'\"]+)['\"]", body) for body in method_blocks
+    ]
+    if not method_sets or any(methods != ["personal_sign"] for methods in method_sets):
+        errors.append(
+            "Every Reown namespace proposal must allow exactly `personal_sign`"
+        )
+
+    namespace_proposals = re.findall(
+        r"(NetworkUtils\.[A-Za-z_]\w*|['\"][^'\"]+['\"]):\s*"
+        r"RequiredNamespace\s*\(",
+        connector,
+    )
+    if namespace_proposals != ["NetworkUtils.eip155"]:
+        errors.append(
+            "Reown must propose exactly one `NetworkUtils.eip155` namespace"
+        )
+
+    request_methods = re.findall(
+        r"\bmethod:\s*['\"]([^'\"]+)['\"]",
+        connector,
+    )
+    if request_methods != ["personal_sign"]:
+        errors.append("Every Reown wallet request must use exactly `personal_sign`")
+
+    network_namespaces = set(
+        re.findall(r"\bNetworkUtils\.([A-Za-z_]\w*)", connector)
+    )
+    if network_namespaces != {"eip155"} or re.search(
+        r"['\"]solana:", connector
+    ):
+        errors.append(
+            "The Reown connector must use only the `eip155` namespace and never Solana"
+        )
+
+    excluded = re.search(
+        r"excludedWalletIds:\s*const\s*<String>\s*\{(?P<body>.*?)\}",
+        connector,
+        re.DOTALL,
+    )
+    excluded_body = excluded.group("body") if excluded else ""
+    for wallet_id, expected_value in REOWN_EXCLUDED_WALLET_IDS.items():
+        if wallet_id not in excluded_body:
+            errors.append(
+                "Reown's initial EVM-only wallet list must exclude "
+                f"the reviewed Solana-capable wallet id `{wallet_id}`"
+            )
+        if not re.search(
+            rf"\b{re.escape(wallet_id)}\s*=\s*['\"]{expected_value}['\"]",
+            connector,
+        ):
+            errors.append(
+                "Reown's excluded-wallet constants must preserve the reviewed "
+                f"WalletGuide id for `{wallet_id}`"
+            )
+
+    lib_root = root / "lib"
+    if lib_root.is_dir():
+        for path in sorted(lib_root.rglob("*.dart")):
+            source = read_text(path)
+            relative = path.relative_to(root)
+            if "package:reown_appkit/" in source and relative != REOWN_CONNECTOR_PATH:
+                errors.append(
+                    "The Reown SDK import must stay inside the reviewed connector, "
+                    f"found in {relative}"
+                )
+            is_forbidden_boundary = (
+                relative in REOWN_FORBIDDEN_IMPORT_FILES
+                or any(parent in relative.parents for parent in REOWN_FORBIDDEN_IMPORT_ROOTS)
+            )
+            if is_forbidden_boundary and (
+                "package:reown_appkit/" in source
+                or "loop_mobile/integrations/reown/" in source
+            ):
+                errors.append(
+                    "Reown must not enter wallet signing, trading, Perp, Market, "
+                    f"or Hyperliquid boundaries: {relative}"
+                )
+
+    errors.extend(
+        require_fragments(
+            root,
+            {
+                "lib/integrations/privy/privy_auth_gateway.dart": (
+                    "PrivyOAuthLoginProvider.google => OAuthProvider.google",
+                    "PrivyOAuthLoginProvider.apple => OAuthProvider.apple",
+                    "appUrlScheme: AppConfig.privyOAuthScheme",
+                ),
+                "lib/integrations/reown/external_wallet_credential_gateway.dart": (
+                    "_privy.generateSiweMessage(request)",
+                    "ExternalWalletCredentialIntent.login => _privy.loginWithSiwe(",
+                    "ExternalWalletCredentialIntent.link => _privy.linkWithSiwe(",
+                ),
+                "docs/decisions/0043-use-reown-only-for-privy-external-evm-credentials.md": (
+                    "Pin `reown_appkit` exactly at 1.8.4.",
+                    "EVM connection and `personal_sign` transport",
+                    "Disable AppKit Email, Social, Embedded Wallet, AppKit SIWE, analytics, and",
+                    "Link Mode.",
+                    "credentials; they are not LOOP trading",
+                ),
+                "docs/open-source-attribution.md": (
+                    "reown_appkit",
+                    "1.8.4",
+                    "Reown Community License",
+                ),
+                "test/app_config_test.dart": (
+                    "external wallet requires an exact public Reown project ID",
+                ),
+                "test/external_wallet_credential_gateway_test.dart": (
+                    "parses only canonical EVM CAIP-10 accounts",
+                    "encodes the exact UTF-8 SIWE message for personal_sign",
+                    "maps concrete Reown rejection installation and callback errors",
+                    "initialization timeout reuses one owner and reconnects on retry",
+                    "signed-out intent signs and forwards exact params to SIWE login",
+                    "authenticated intent can only link to the expected principal",
+                    "link without a principal never opens the wallet connector",
+                ),
+                "test/identity_auth_controller_test.dart": (
+                    "Google OAuth uses the shared lease and accepts the Privy account",
+                    "Apple login remains unavailable outside iOS",
+                    "signed-out wallet connection always selects SIWE login",
+                    "authenticated wallet connection only links current principal",
+                    "a cross-account link result is rejected without rotating session",
+                    "wallet ownership and cancellation errors stay explicit",
+                    "OTP in flight suppresses OAuth and wallet operations",
+                ),
+                "test/privy_login_screen_test.dart": (
+                    "keeps Email and exposes Google plus external EVM wallet login",
+                    "shows Apple only for the iOS composition",
+                    "one OAuth operation disables every authentication action",
+                ),
+                "test/post_auth_bootstrap_coordinator_test.dart": (
+                    "requests once per login principal but not for a credential link",
+                    "logout permits a later login by the same principal to bootstrap",
+                    "restricted and preview sessions never request bootstrap",
+                    "temporary restoring or unverified state does not duplicate bootstrap",
+                ),
+            },
+        )
+    )
+
+    manifest_path = root / "android/app/src/main/AndroidManifest.xml"
+    manifest, manifest_errors = _parse_xml(manifest_path, "Android main manifest")
+    errors.extend(manifest_errors)
+    if manifest is not None:
+        application = manifest.find("application")
+        if application is None:
+            errors.append("Android main manifest must contain an application element")
+        else:
+            activities = list(application.findall("activity"))
+            by_name: dict[str, list[ElementTree.Element]] = {}
+            scheme_owners: dict[str, list[str]] = {}
+            for activity in activities:
+                name = activity.get(ANDROID_NAME, "")
+                by_name.setdefault(name, []).append(activity)
+                for intent_filter in activity.findall("intent-filter"):
+                    for data in intent_filter.findall("data"):
+                        scheme = data.get(ANDROID_SCHEME)
+                        if scheme:
+                            scheme_owners.setdefault(scheme, []).append(name)
+
+            expected_owners = {
+                PRIVY_OAUTH_SCHEME: "io.privy.sdk.oAuth.PrivyRedirectActivity",
+                REOWN_WALLET_SCHEME: ".MainActivity",
+            }
+            for scheme, owner in expected_owners.items():
+                if scheme_owners.get(scheme) != [owner]:
+                    errors.append(
+                        f"Android scheme `{scheme}` must belong exactly once to `{owner}`, "
+                        f"found {scheme_owners.get(scheme, [])}"
+                    )
+
+            privy_activities = by_name.get(
+                "io.privy.sdk.oAuth.PrivyRedirectActivity", []
+            )
+            if len(privy_activities) != 1 or privy_activities[0].get(
+                ANDROID_EXPORTED
+            ) != "true":
+                errors.append(
+                    "Android must expose exactly one PrivyRedirectActivity for OAuth callbacks"
+                )
+
+            main_activities = by_name.get(".MainActivity", [])
+            if len(main_activities) != 1:
+                errors.append("Android must contain exactly one LOOP MainActivity")
+            else:
+                deep_link_flags = [
+                    item.get(ANDROID_VALUE)
+                    for item in main_activities[0].findall("meta-data")
+                    if item.get(ANDROID_NAME) == "flutter_deeplinking_enabled"
+                ]
+                if deep_link_flags != ["false"]:
+                    errors.append(
+                        "Android MainActivity must set `flutter_deeplinking_enabled` "
+                        "to false exactly once"
+                    )
+
+        queries = manifest.find("queries")
+        packages = (
+            [item.get(ANDROID_NAME, "") for item in queries.findall("package")]
+            if queries is not None
+            else []
+        )
+        if len(packages) != len(ANDROID_REOWN_WALLET_PACKAGES) or frozenset(
+            packages
+        ) != ANDROID_REOWN_WALLET_PACKAGES:
+            errors.append(
+                "Android wallet package queries must be exactly MetaMask, Trust, "
+                f"and Rainbow: {sorted(ANDROID_REOWN_WALLET_PACKAGES)}"
+            )
+
+    info_path = root / "ios/Runner/Info.plist"
+    info, info_errors = _parse_plist(info_path, "iOS Runner Info.plist")
+    errors.extend(info_errors)
+    if info is not None:
+        raw_url_types = info.get("CFBundleURLTypes")
+        url_types = raw_url_types if isinstance(raw_url_types, list) else []
+        scheme_groups: list[list[str]] = []
+        for item in url_types:
+            if not isinstance(item, dict):
+                continue
+            schemes = item.get("CFBundleURLSchemes")
+            if isinstance(schemes, list) and all(
+                isinstance(scheme, str) for scheme in schemes
+            ):
+                scheme_groups.append(schemes)
+
+        for scheme in (PRIVY_OAUTH_SCHEME, REOWN_WALLET_SCHEME):
+            owners = [group for group in scheme_groups if scheme in group]
+            if len(owners) != 1:
+                errors.append(
+                    f"iOS URL scheme `{scheme}` must be registered exactly once"
+                )
+        if any(
+            PRIVY_OAUTH_SCHEME in group and REOWN_WALLET_SCHEME in group
+            for group in scheme_groups
+        ):
+            errors.append("iOS Privy and Reown schemes must use separate URL types")
+
+        query_schemes = info.get("LSApplicationQueriesSchemes")
+        if (
+            not isinstance(query_schemes, list)
+            or len(query_schemes) != len(IOS_REOWN_WALLET_SCHEMES)
+            or frozenset(query_schemes) != IOS_REOWN_WALLET_SCHEMES
+        ):
+            errors.append(
+                "iOS wallet query schemes must be exactly MetaMask, Trust, and Rainbow"
+            )
+
+    entitlements_path = root / "ios/Runner/Runner.entitlements"
+    entitlements, entitlement_errors = _parse_plist(
+        entitlements_path, "iOS Runner entitlements"
+    )
+    errors.extend(entitlement_errors)
+    if entitlements is not None and entitlements.get(
+        "com.apple.developer.applesignin"
+    ) != ["Default"]:
+        errors.append(
+            "Runner entitlements must enable Sign in with Apple as `Default`"
+        )
+
+    project_path = root / "ios/Runner.xcodeproj/project.pbxproj"
+    if not project_path.is_file():
+        errors.append("missing iOS Xcode project for Sign in with Apple")
+    else:
+        project = read_text(project_path)
+        if not re.search(
+            r"com\.apple\.SignInWithApple\s*=\s*\{\s*enabled\s*=\s*1;\s*\};",
+            project,
+            re.DOTALL,
+        ):
+            errors.append("Runner target must enable the Sign in with Apple capability")
+        build_settings = re.findall(
+            r"buildSettings\s*=\s*\{(?P<body>.*?)\n\s*\};",
+            project,
+            re.DOTALL,
+        )
+        runner_settings = [
+            body
+            for body in build_settings
+            if "INFOPLIST_FILE = Runner/Info.plist;" in body
+        ]
+        if len(runner_settings) != 3 or any(
+            "CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;" not in body
+            for body in runner_settings
+        ):
+            errors.append(
+                "Every Runner Debug, Release, and Profile configuration must "
+                "use Runner/Runner.entitlements"
+            )
+
+    return errors
+
+
 def _require_android_removals(
     elements: list[ElementTree.Element],
     expected_names: frozenset[str],
@@ -5996,7 +6444,7 @@ def check_product_contract(root: Path) -> list[str]:
             ),
             "lib/app/app_config.dart": (
                 "cmt2t8k4n00780cjsxjqk0dkq",
-                "client-WY6ctzX8CSMMKhbvz8exuLovn1dTJyq8hReY1x63pBFfd",
+                "String.fromEnvironment('PRIVY_APP_CLIENT_ID')",
                 "qpwjdy8zjbdu",
             ),
             "lib/integrations/communication/stream_video_sdk_session.dart": (
@@ -7691,6 +8139,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_wallet_providerless_controls_contract(root))
     errors.extend(check_native_matrix(root))
     errors.extend(check_android_release_network_contract(root))
+    errors.extend(check_reown_identity_contract(root))
     errors.extend(check_audio_room_native_contract(root))
     errors.extend(check_product_contract(root))
     errors.extend(check_chat_attachment_contract(root))

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/app/notifications/loop_notification_coordinator.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
+import 'package:loop_mobile/app/session/post_auth_bootstrap_coordinator.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/navigation/spot_market_route.dart';
 import 'package:loop_mobile/core/navigation/surface_catalog.dart';
@@ -64,6 +65,7 @@ class LoopApp extends ConsumerStatefulWidget {
 class _LoopAppState extends ConsumerState<LoopApp> {
   late final GoRouter router;
   late final LoopNotificationCoordinator notificationCoordinator;
+  late final PostAuthBootstrapCoordinator postAuthBootstrapCoordinator;
 
   @override
   void initState() {
@@ -75,9 +77,18 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       readBootstrapSession: () => ref.read(loopBootstrapSessionProvider),
       navigate: (intent) => router.go(intent.location),
     );
+    postAuthBootstrapCoordinator = PostAuthBootstrapCoordinator(() async {
+      // Riverpod invalidates principal-dependent providers after publishing
+      // the session state. Yield once so this read cannot observe the retired
+      // signed-out bootstrap owner.
+      await Future<void>.delayed(Duration.zero);
+      if (!mounted) return;
+      await ref.read(loopBootstrapSessionProvider)?.authorize();
+    });
     ref.listenManual<LoopSessionState>(loopSessionProvider, (previous, next) {
       if (previous?.mode != next.mode) router.refresh();
       notificationCoordinator.onIdentityMayHaveChanged();
+      postAuthBootstrapCoordinator.onSessionChanged(previous, next);
     });
     ref.listenManual(loopBootstrapSessionProvider, (previous, next) {
       if (!identical(previous, next)) {
