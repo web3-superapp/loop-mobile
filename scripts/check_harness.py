@@ -83,6 +83,8 @@ REQUIRED_FILES = (
     "docs/decisions/0041-centralize-dio-trust-boundaries.md",
     "docs/decisions/0042-persist-only-device-display-preferences.md",
     "docs/decisions/0043-use-reown-only-for-privy-external-evm-credentials.md",
+    "docs/decisions/0044-separate-build-profiles-from-product-environments.md",
+    "docs/decisions/0045-connect-bounded-stream-user-token-loader.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/gitnexus-generated-source-pollution.md",
     "docs/failures/providerless-notification-fixtures.md",
@@ -103,13 +105,22 @@ REQUIRED_FILES = (
     "docs/open-source-attribution.md",
     "docs/phase-0/compatibility-report.md",
     "docs/phase-1/frontend-integration-report.md",
+    ".vscode/launch.json",
+    "config/README.md",
+    "config/debug.json",
+    "config/release.example.json",
     "lib/core/navigation/stream_channel_route.dart",
     "lib/core/network/loop_dio_factory.dart",
+    "lib/app/app_config.dart",
     "lib/app/loop_display_preferences.dart",
     "lib/integrations/personalization/shared_preferences_display_store.dart",
     "lib/app/notifications/loop_notification_coordinator.dart",
     "lib/integrations/reown/external_wallet_credential_gateway.dart",
     "lib/integrations/reown/reown_external_wallet_connector.dart",
+    "lib/integrations/backend/loop_stream_token.dart",
+    "lib/integrations/backend/loop_stream_token_providers.dart",
+    "lib/integrations/backend/loop_stream_token_repository.dart",
+    "lib/integrations/backend/loop_stream_token_session.dart",
     "lib/integrations/notifications/loop_notification_event_source.dart",
     "lib/integrations/notifications/loop_notification_router.dart",
     "lib/integrations/hyperliquid/hyperliquid_spot_market.dart",
@@ -153,6 +164,9 @@ REQUIRED_FILES = (
     "lib/integrations/backend/loop_perp_session.dart",
     "test/app_notification_coordinator_test.dart",
     "test/app_config_test.dart",
+    "test/loop_stream_token_repository_test.dart",
+    "test/loop_stream_token_session_test.dart",
+    "test/privy_provider_test.dart",
     "test/chat_spot_snapshot_test.dart",
     "test/chat_preview_message_requests_test.dart",
     "test/loop_notification_coordinator_test.dart",
@@ -3937,6 +3951,356 @@ def check_local_display_preferences_contract(root: Path) -> list[str]:
     return errors
 
 
+BUILD_PROFILE_TEST_MARKERS = {
+    Path("test/app_config_test.dart"): (
+        "missing build profile and identifiers fail closed",
+        "declared build profile must match Debug or Release runtime",
+        "a profile mismatch gates every provider-backed capability",
+        "build profile never widens the locked product security policy",
+    ),
+    Path("test/loop_bootstrap_providers_test.dart"): (
+        "a build-profile mismatch gates backend and Stream composition",
+    ),
+    Path("test/privy_provider_test.dart"): (
+        "wallet signing adapter reads the centralized matching AppConfig",
+        "a build-profile mismatch strips Privy provider inputs",
+    ),
+}
+
+
+def check_build_profile_configuration_contract(root: Path) -> list[str]:
+    """Keep Debug/Release client values centralized and fail-closed."""
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/app/app_config.dart": (
+                "enum LoopBuildMode { debug, release }",
+                "const String.fromEnvironment('LOOP_BUILD_MODE')",
+                "const String.fromEnvironment('PRIVY_APP_ID')",
+                "const String.fromEnvironment('PRIVY_APP_CLIENT_ID')",
+                "const String.fromEnvironment('REOWN_PROJECT_ID')",
+                "const String.fromEnvironment('STREAM_API_KEY')",
+                "const String.fromEnvironment('LOOP_BACKEND_BASE_URL')",
+                "const bool.fromEnvironment('FIREBASE_CONFIGURED')",
+                "configuredBuildMode == expectedBuildMode",
+                "backendBaseUrlForCurrentBuild",
+                "streamApiKeyForCurrentBuild",
+                "canInitializeFirebase",
+            ),
+            ".vscode/launch.json": (
+                '"name": "Loop"',
+                '"flutterMode": "debug"',
+                "--dart-define-from-file=config/debug.json",
+            ),
+            ".gitignore": (
+                "/config/release.json",
+                "/config/*.local.json",
+            ),
+            "lib/integrations/backend/loop_bootstrap_providers.dart": (
+                "config.backendBaseUrlForCurrentBuild",
+            ),
+            "lib/integrations/communication/stream_chat_providers.dart": (
+                "config.streamApiKeyForCurrentBuild",
+            ),
+            "lib/integrations/communication/stream_video_providers.dart": (
+                "config.streamApiKeyForCurrentBuild",
+            ),
+            "lib/integrations/privy/privy_provider.dart": (
+                "ref.watch(appConfigProvider)",
+                "config.canInitializePrivy",
+            ),
+            "lib/app/app_environment.dart": (
+                "static const appEnvironment = AppEnvironment.development",
+                "static const hyperliquidEnvironment = HyperliquidEnvironment.testnet",
+                "static const mainnetEnabled = false",
+                "static const withdrawalsEnabled = false",
+                "static const automatedTradingEnabled = false",
+                "static const spotExecutionEnabled = false",
+            ),
+            "docs/decisions/0044-separate-build-profiles-from-product-environments.md": (
+                "## Status",
+                "## Context",
+                "## Decision",
+                "## Consequences",
+                "LOOP_BUILD_MODE",
+                "Debug versus Release is a distribution profile, not a product environment",
+            ),
+            "config/README.md": (
+                "--dart-define-from-file=config/release.json",
+                "Sentry DSN",
+                "AppsFlyer Dev Key",
+                "compiled into the application binary",
+            ),
+            "README.md": (
+                "--dart-define-from-file=config/debug.json",
+                "Debug/Release 只是构建配置轴",
+            ),
+            "docs/product/implementation-constraints.md": (
+                "Debug/Profile versus Release is only a client build-profile axis",
+            ),
+            "docs/product-decisions.md": (
+                "This profile is not a Production/Mainnet switch",
+            ),
+            "docs/harness/adoption-report.md": (
+                "## Build Profile and Stream Token Client Update",
+            ),
+            "docs/phase-1/frontend-integration-report.md": (
+                "## Build-Profile Configuration and Stream Token Loading",
+            ),
+        },
+    )
+
+    expected_profiles = {
+        Path("config/debug.json"): {
+            "LOOP_BUILD_MODE": "debug",
+            "PRIVY_APP_ID": "cmt2t8k4n00780cjsxjqk0dkq",
+            "PRIVY_APP_CLIENT_ID": "client-WY6ctzX8CSMMKhbvz8exuLovn1dTJyq8hReY1x63pBFfd",
+            "REOWN_PROJECT_ID": "26a5cc1adad234fcdf7762b8d2a2b28d",
+            "STREAM_API_KEY": "qpwjdy8zjbdu",
+            "LOOP_BACKEND_BASE_URL": "https://api-dev.quant-dinger.cc",
+            "FIREBASE_CONFIGURED": "false",
+        },
+        Path("config/release.example.json"): {
+            "LOOP_BUILD_MODE": "release",
+            "PRIVY_APP_ID": "",
+            "PRIVY_APP_CLIENT_ID": "",
+            "REOWN_PROJECT_ID": "",
+            "STREAM_API_KEY": "",
+            "LOOP_BACKEND_BASE_URL": "",
+            "FIREBASE_CONFIGURED": "false",
+        },
+    }
+    forbidden_key_markers = (
+        "SECRET",
+        "PRIVATE_KEY",
+        "SERVICE_ACCOUNT",
+        "SENTRY_AUTH_TOKEN",
+        "APPSFLYER_S2S",
+    )
+    for relative, expected in expected_profiles.items():
+        path = root / relative
+        if not path.is_file():
+            continue
+        try:
+            profile = json.loads(read_text(path))
+        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+            errors.append(f"client build profile is not valid JSON: {relative}: {error}")
+            continue
+        if profile != expected:
+            errors.append(f"client build profile has drifted: {relative}")
+        if isinstance(profile, dict):
+            for key in profile:
+                if isinstance(key, str) and any(
+                    marker in key.upper() for marker in forbidden_key_markers
+                ):
+                    errors.append(
+                        f"client build profile contains forbidden credential key: {relative}: {key}"
+                    )
+
+    lib_root = root / "lib"
+    if lib_root.is_dir():
+        owner = Path("lib/app/app_config.dart")
+        for path in lib_root.rglob("*.dart"):
+            relative = path.relative_to(root)
+            if relative == owner:
+                continue
+            source = strip_dart_comments_and_strings(read_text(path))
+            if re.search(r"\b(?:String|bool|int)\.fromEnvironment\s*\(", source):
+                errors.append(
+                    f"Dart build configuration must stay inside AppConfig: {relative}"
+                )
+
+    launch_path = root / ".vscode/launch.json"
+    if launch_path.is_file():
+        try:
+            launch = json.loads(read_text(launch_path))
+        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+            errors.append(f"IDE launch configuration is not valid JSON: {error}")
+        else:
+            configurations = (
+                launch.get("configurations") if isinstance(launch, dict) else None
+            )
+            loop_targets = (
+                [
+                    target
+                    for target in configurations
+                    if isinstance(target, dict) and target.get("name") == "Loop"
+                ]
+                if isinstance(configurations, list)
+                else []
+            )
+            expected_tool_args = ["--dart-define-from-file=config/debug.json"]
+            if (
+                len(loop_targets) != 1
+                or loop_targets[0].get("toolArgs") != expected_tool_args
+            ):
+                errors.append(
+                    "The IDE Loop target must inject only the reviewed Debug profile file"
+                )
+
+    for candidate in ("config/release.json", "config/team.local.json"):
+        result = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(root),
+                "check-ignore",
+                "--no-index",
+                "--quiet",
+                "--",
+                candidate,
+            ],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        if result.returncode != 0:
+            errors.append(f"local client build profile must be ignored: {candidate}")
+
+    errors.extend(check_behavior_test_evidence(root, BUILD_PROFILE_TEST_MARKERS))
+    return errors
+
+
+STREAM_TOKEN_CLIENT_TEST_MARKERS = {
+    Path("test/loop_stream_token_repository_test.dart"): (
+        "posts exact Chat and Video requests and returns only SDK token",
+        "rejects response drift before exposing a token",
+        "maps only strict sanitized backend errors",
+        "malformed HTTP errors cannot trigger credential recovery",
+        "status and public error code must match the exact contract",
+        "rejects invalid local inputs before dispatch",
+    ),
+    Path("test/loop_stream_token_session_test.dart"): (
+        "bootstraps first and passes a fresh bearer to the token route",
+        "one 401 refreshes Privy access token exactly once",
+        "a second 401 fails without requesting a third route token",
+        "one bootstrap_required reauthorizes the same identity and replays",
+        "401 and bootstrap recovery share bounded independent budgets",
+        "a repeated bootstrap_required invalidates and fails closed",
+        "wrong SDK user and 429 never enter a retry loop",
+    ),
+    Path("test/loop_bootstrap_providers_test.dart"): (
+        "Chat and Video share bootstrap identity and request separate SDK tokens",
+    ),
+}
+
+
+def check_stream_token_client_contract(root: Path) -> list[str]:
+    """Keep Stream credentials backend-owned, bounded, and non-persisting."""
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/integrations/backend/loop_stream_token.dart": (
+                "enum LoopStreamTokenProduct",
+                "abstract interface class LoopStreamTokenRepository",
+            ),
+            "lib/integrations/backend/loop_stream_token_repository.dart": (
+                "LoopStreamTokenProduct.chat => '/v1/chat/token'",
+                "LoopStreamTokenProduct.video => '/v1/video/token'",
+                "'authorization': 'Bearer $accessToken'",
+                "'api_key'",
+                "'expires_at'",
+                "'user'",
+                "_expectedApiKey",
+                "expectedStreamUserId",
+                "_hasNoStore",
+                "_parseErrorMetadata",
+                "_isStableErrorCodeForStatus",
+                "responseRequestIds.single != requestId",
+                "Duration(minutes: 65)",
+            ),
+            "lib/integrations/backend/loop_stream_token_session.dart": (
+                "var refreshedAuthentication = false",
+                "var repeatedBootstrap = false",
+                "failure.statusCode == 401",
+                "failure.code == 'bootstrap_required'",
+                "_bootstrapSession.invalidateAuthorization()",
+                "identity.streamUserId != expectedStreamUserId",
+            ),
+            "lib/integrations/backend/loop_stream_token_providers.dart": (
+                "ref.watch(loopBackendDioProvider)",
+                "config.streamApiKeyForCurrentBuild",
+                "loopStreamTokenSessionProvider",
+            ),
+            "lib/integrations/communication/stream_chat_providers.dart": (
+                "LoopStreamTokenProduct.chat",
+                "ref.watch(loopStreamTokenSessionProvider)",
+            ),
+            "lib/integrations/communication/stream_video_providers.dart": (
+                "LoopStreamTokenProduct.video",
+                "ref.watch(loopStreamTokenSessionProvider)",
+            ),
+            "docs/decisions/0045-connect-bounded-stream-user-token-loader.md": (
+                "## Status",
+                "## Context",
+                "## Decision",
+                "## Consequences",
+                "at most three token POSTs",
+                "Audio Room locator",
+            ),
+            "README.md": (
+                "POST /v1/chat/token",
+                "POST /v1/video/token",
+                "Token 不缓存、不落盘",
+            ),
+            "docs/product/implementation-constraints.md": (
+                "Chat/Video user-token loaders may call only",
+            ),
+            "docs/product-decisions.md": (
+                "one principal-bound, non-persisting loader",
+            ),
+        },
+    )
+
+    lib_root = root / "lib"
+    if lib_root.is_dir():
+        route_owner = Path(
+            "lib/integrations/backend/loop_stream_token_repository.dart"
+        )
+        for route in ("/v1/chat/token", "/v1/video/token"):
+            owners = []
+            for path in lib_root.rglob("*.dart"):
+                if route in read_text(path):
+                    owners.append(path.relative_to(root))
+            if owners and owners != [route_owner]:
+                errors.append(
+                    f"Stream token route must stay inside its strict backend repository: {route}: {owners}"
+                )
+
+        for path in lib_root.rglob("*.dart"):
+            source = read_text(path)
+            if "stream_token_contract_unavailable" in source:
+                errors.append(
+                    f"implemented Stream token contract regressed to unavailable: {path.relative_to(root)}"
+                )
+
+    for relative in (
+        Path("lib/integrations/backend/loop_stream_token_repository.dart"),
+        Path("lib/integrations/backend/loop_stream_token_session.dart"),
+    ):
+        path = root / relative
+        if not path.is_file():
+            continue
+        source = strip_dart_comments_and_strings(read_text(path))
+        for forbidden in (
+            "SharedPreferences",
+            "FlutterSecureStorage",
+            "Hive",
+            "base64Decode",
+            "print(",
+            "Log.",
+        ):
+            if forbidden in source:
+                errors.append(
+                    f"Stream tokens must not be persisted, decoded, or logged: {relative}: {forbidden}"
+                )
+
+    errors.extend(check_behavior_test_evidence(root, STREAM_TOKEN_CLIENT_TEST_MARKERS))
+    return errors
+
+
 NETWORK_DIO_POLICY_TEST_MARKERS = {
     Path("test/loop_dio_factory_test.dart"): (
         "common clients use bounded defaults without credential headers",
@@ -5865,7 +6229,7 @@ def check_reown_identity_contract(root: Path) -> list[str]:
             ("reownProjectId", "REOWN_PROJECT_ID"),
         ):
             match = re.search(
-                rf"\b{field}\s*:\s*String\.fromEnvironment\(\s*"
+                rf"\b{field}\s*:\s*(?:const\s+)?String\.fromEnvironment\(\s*"
                 rf"['\"]{define}['\"](?P<tail>[^)]*)\)",
                 config,
                 re.DOTALL,
@@ -6443,9 +6807,15 @@ def check_product_contract(root: Path) -> list[str]:
                 "Generate a new UUID call ID for every outgoing call.",
             ),
             "lib/app/app_config.dart": (
+                "const String.fromEnvironment('PRIVY_APP_CLIENT_ID')",
+                "const String.fromEnvironment('REOWN_PROJECT_ID')",
+                "const String.fromEnvironment('STREAM_API_KEY')",
+                "const String.fromEnvironment('LOOP_BACKEND_BASE_URL')",
+            ),
+            "config/debug.json": (
                 "cmt2t8k4n00780cjsxjqk0dkq",
-                "String.fromEnvironment('PRIVY_APP_CLIENT_ID')",
                 "qpwjdy8zjbdu",
+                "https://api-dev.quant-dinger.cc",
             ),
             "lib/integrations/communication/stream_video_sdk_session.dart": (
                 "muteAudioWhenInBackground: false",
@@ -8130,7 +8500,9 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_home_discovery_and_security_contract(root))
     errors.extend(check_security_capability_truth_contract(root))
     errors.extend(check_local_display_preferences_contract(root))
+    errors.extend(check_build_profile_configuration_contract(root))
     errors.extend(check_network_dio_policy_contract(root))
+    errors.extend(check_stream_token_client_contract(root))
     errors.extend(check_home_portfolio_truth_contract(root))
     errors.extend(check_spot_candle_contract(root))
     errors.extend(check_wallet_identity_readiness_contract(root))
@@ -8173,7 +8545,7 @@ def main() -> int:
     print(
         "Harness check passed: profile, six-destination contract, pins, "
         "Spot-only product, New Pairs exact-Preview truth, Chat snapshot, Preview request truth and exact conversation identity, Home portfolio truth, security capability truth, device-local display preferences, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
-        "providerless control boundaries, production Audio Room entry, Debug-only routine "
+        "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, records, and secret rules are consistent."
     )
     return 0

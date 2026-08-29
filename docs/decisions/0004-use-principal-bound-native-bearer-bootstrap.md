@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted on 2026-08-24.
+Accepted on 2026-08-24. The Stream-token-unavailable statements were
+superseded by decision 0045 on 2026-08-29; the bootstrap boundary remains
+active.
 
 ## Context
 

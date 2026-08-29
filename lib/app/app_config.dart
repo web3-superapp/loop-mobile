@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+enum LoopBuildMode { debug, release }
+
 /// Client-safe build-time configuration.
 ///
 /// Server secrets, Privy refresh tokens, Stream user tokens, Firebase service
@@ -14,22 +16,30 @@ class AppConfig {
     required this.streamApiKey,
     required this.backendBaseUrl,
     required this.firebaseConfigured,
+    this.buildMode = LoopBuildMode.debug,
+    this.declaredModeMatchesRuntime = true,
   });
 
-  factory AppConfig.fromEnvironment() {
-    return const AppConfig(
-      privyAppId: String.fromEnvironment(
-        'PRIVY_APP_ID',
-        defaultValue: 'cmt2t8k4n00780cjsxjqk0dkq',
-      ),
-      privyAppClientId: String.fromEnvironment('PRIVY_APP_CLIENT_ID'),
-      reownProjectId: String.fromEnvironment('REOWN_PROJECT_ID'),
-      streamApiKey: String.fromEnvironment(
-        'STREAM_API_KEY',
-        defaultValue: 'qpwjdy8zjbdu',
-      ),
-      backendBaseUrl: String.fromEnvironment('LOOP_BACKEND_BASE_URL'),
-      firebaseConfigured: bool.fromEnvironment('FIREBASE_CONFIGURED'),
+  factory AppConfig.fromEnvironment({
+    bool? releaseMode,
+    String? declaredBuildMode,
+  }) {
+    final expectedBuildMode = (releaseMode ?? kReleaseMode)
+        ? LoopBuildMode.release
+        : LoopBuildMode.debug;
+    final rawBuildMode =
+        declaredBuildMode ?? const String.fromEnvironment('LOOP_BUILD_MODE');
+    final configuredBuildMode = _parseBuildMode(rawBuildMode);
+
+    return AppConfig(
+      privyAppId: const String.fromEnvironment('PRIVY_APP_ID'),
+      privyAppClientId: const String.fromEnvironment('PRIVY_APP_CLIENT_ID'),
+      reownProjectId: const String.fromEnvironment('REOWN_PROJECT_ID'),
+      streamApiKey: const String.fromEnvironment('STREAM_API_KEY'),
+      backendBaseUrl: const String.fromEnvironment('LOOP_BACKEND_BASE_URL'),
+      firebaseConfigured: const bool.fromEnvironment('FIREBASE_CONFIGURED'),
+      buildMode: expectedBuildMode,
+      declaredModeMatchesRuntime: configuredBuildMode == expectedBuildMode,
     );
   }
 
@@ -39,6 +49,15 @@ class AppConfig {
   final String streamApiKey;
   final String backendBaseUrl;
   final bool firebaseConfigured;
+  final LoopBuildMode buildMode;
+
+  /// False when a Debug/Profile binary declares Release, a Release binary
+  /// declares Debug, or no configuration profile was supplied.
+  ///
+  /// Provider-backed capabilities use this as a global fail-closed gate. The
+  /// offline Preview composition overrides [AppConfig] explicitly and does not
+  /// depend on build-time values.
+  final bool declaredModeMatchesRuntime;
 
   static const String privyOAuthScheme = 'com.cywd.loop.privy';
   static const String reownWalletScheme = 'com.cywd.loop.wallet';
@@ -50,7 +69,8 @@ class AppConfig {
 
   bool get hasPrivyAppClientId => privyAppClientId.trim().isNotEmpty;
 
-  bool get canInitializePrivy => hasPrivyAppId && hasPrivyAppClientId;
+  bool get canInitializePrivy =>
+      declaredModeMatchesRuntime && hasPrivyAppId && hasPrivyAppClientId;
 
   bool get hasReownProjectId => reownProjectId.trim().isNotEmpty;
 
@@ -64,7 +84,27 @@ class AppConfig {
 
   bool get hasBackend => backendBaseUrl.trim().isNotEmpty;
 
-  bool get canConnectStream => hasStreamApiKey && hasBackend;
+  bool get canUseBackend => declaredModeMatchesRuntime && hasBackend;
+
+  String get backendBaseUrlForCurrentBuild =>
+      declaredModeMatchesRuntime ? backendBaseUrl.trim() : '';
+
+  String get streamApiKeyForCurrentBuild =>
+      declaredModeMatchesRuntime ? streamApiKey.trim() : '';
+
+  bool get canConnectStream =>
+      declaredModeMatchesRuntime && hasStreamApiKey && hasBackend;
+
+  bool get canInitializeFirebase =>
+      declaredModeMatchesRuntime && firebaseConfigured;
+
+  static LoopBuildMode? _parseBuildMode(String value) {
+    return switch (value.trim()) {
+      'debug' => LoopBuildMode.debug,
+      'release' => LoopBuildMode.release,
+      _ => null,
+    };
+  }
 }
 
 final appConfigProvider = Provider<AppConfig>((ref) {

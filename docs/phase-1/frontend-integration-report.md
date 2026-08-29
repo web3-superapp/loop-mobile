@@ -119,6 +119,10 @@ The native LOOP identity bootstrap slice was re-verified on 2026-08-24:
 
 These checks cover safe backend-origin parsing, an exact Bearer-only `POST /v1/bootstrap`, rejection of redirects, non-200 success codes and response drift, same-UUID LOOP/Stream identity derivation, no-store enforcement, sanitized errors, one HTTP 401 refresh attempt, timeout classification, single-flight authorization, verified-principal gating, synchronous local sign-out invalidation, stale SDK snapshot rejection, account-switch invalidation, and shared Chat/Video identity projection without a token shortcut. They use fake transports and identities. No deployed endpoint, TLS/device path, live Privy token verification, database identity stability, or live Stream connection was tested.
 
+That final “without a token shortcut” statement records the 2026-08-24
+checkpoint. Decision 0045 supersedes its token-unavailable state on
+2026-08-29; the historical command results remain unchanged.
+
 The foreground Audio Room app-side slice was re-verified on 2026-08-25:
 
 - `LOOP_FLUTTER_ROOT=/Users/mac/Documents/ChatGPT/LOOP/.tooling/flutter bin/dart format --output=none --set-exit-if-changed lib test`: passed; 104 files, 0 changed.
@@ -1074,3 +1078,37 @@ all 218 Dart files without changes, analysis reported no issues, and
 `git diff --check` was clean. This slice adds no route, provider call, backend
 call, persistence layer, Secure Storage, native build, simulator, interactive
 run, device validation, or package artifact.
+
+## Build-Profile Configuration and Stream Token Loading
+
+Decisions 0044 and 0045 centralize client-visible build configuration and
+replace the Chat/Video token placeholder with the implemented LOOP backend
+contracts. The toolbar `Loop` target now loads `config/debug.json` as one
+reviewable public configuration bundle. Release has only an empty ignored-file
+template, and a declared mode mismatch gates Privy, Reown, backend Dio, Stream,
+wallet adapter inputs, and future Firebase initialization. This does not alter
+the locked Development/Testnet product environment.
+
+The mobile backend layer now owns exact Chat and Video token requests through
+the existing authenticated Dio profile. It validates no-store, exact response
+shape, matching Stream API key and server-derived user ID, bounded printable
+token, and near-one-hour UTC expiry. Strict public error envelopes can spend at
+most one 401 refresh and one transparent bootstrap recovery across a maximum
+of three token requests. Tokens remain only in the official SDK loader and are
+never cached, persisted, decoded, or logged by LOOP.
+
+Focused Flutter behavior tests cover configuration/profile gates, both wire
+routes, success/error drift, recovery budgets, shared bootstrap, distinct
+Chat/Video products, and account rotation. Live Privy Bearer acceptance,
+Stream connect/refresh/reconnect, channels, two-device Chat, and Video remain
+provider/physical-device unverified. Audio Room remains unavailable because no
+production room locator was added.
+
+Repository-wide format checked all 235 Dart files without changes, analysis
+reported no issues, and the complete Flutter suite passed 683/683. Harness
+validation passed and its Python mutation suite passed 287/287. The single
+requested Android Debug checkpoint compiled successfully with
+`config/debug.json`; only the locked Gradle 8.14 / AGP 8.13.2 future-support
+warnings were emitted. No Release/iOS build, interactive run, simulator, or
+physical-device/provider validation was performed. `flutter clean` removed the
+generated APK and build metadata after the evidence was recorded.

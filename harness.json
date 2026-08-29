@@ -36,10 +36,11 @@
     ],
     "identity_boundary": [
       "Privy is the only identity source: Email OTP, Google OAuth, iOS-only Apple OAuth, and external-EVM SIWE login/link reuse one Privy owner",
-      "PRIVY_APP_CLIENT_ID and REOWN_PROJECT_ID are supplied only through --dart-define",
+      "Client-visible provider values are read only by AppConfig from a matching --dart-define-from-file Debug or Release profile",
+      "Build profile mismatch gates Privy, Reown, LOOP backend, Stream, wallet adapter inputs, and future Firebase without changing Development or Testnet policy",
       "Reown accepts only canonical eip155 accounts and personal_sign; AppKit auth, Email, Social, Embedded Wallet, SIWE, analytics, Link Mode, Solana, and transaction authority are disabled",
       "External EVM addresses are replaceable Privy sign-in credentials and never LOOP trading wallets or WalletSigningGateway inputs",
-      "Post-login LOOP bootstrap is principal-bound and non-blocking; provider and physical-device behavior remains unverified"
+      "Post-login LOOP bootstrap is principal-bound and non-blocking; Chat and Video token loads are non-persisting with one 401 and one bootstrap recovery budget; provider and physical-device behavior remains unverified"
     ],
     "package_managers": [
       "Flutter pub with repository pubspec.lock",

@@ -25,6 +25,10 @@ migrate_working_dir/
 *service-account*.json
 *service_account*.json
 
+# Local Release client configuration. Only the empty example is tracked.
+/config/release.json
+/config/*.local.json
+
 # Project-local SDK, compatibility artifacts, and GitNexus indexes.
 .tooling/
 .gitnexus/

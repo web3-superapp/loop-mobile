@@ -6,12 +6,16 @@ import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
+import 'package:loop_mobile/integrations/backend/loop_stream_token.dart';
+import 'package:loop_mobile/integrations/backend/loop_stream_token_providers.dart';
+import 'package:loop_mobile/integrations/backend/loop_stream_token_session.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_sdk_session.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 
 final streamChatSessionSourceProvider = Provider<StreamChatSessionSource>(
   (ref) => _LoopBackendStreamChatSessionSource(
     ref.watch(loopBootstrapSessionProvider),
+    ref.watch(loopStreamTokenSessionProvider),
   ),
 );
 
@@ -34,7 +38,7 @@ final streamChatPrincipalKeyProvider = Provider<String?>((ref) {
 /// explicit offline preview composition root).
 final streamChatSdkSessionProvider = Provider<StreamChatSdkSession?>((ref) {
   final apiKey = ref.watch(
-    appConfigProvider.select((config) => config.streamApiKey.trim()),
+    appConfigProvider.select((config) => config.streamApiKeyForCurrentBuild),
   );
   if (apiKey.isEmpty) return null;
   final principalKey = ref.watch(streamChatPrincipalKeyProvider);
@@ -76,9 +80,13 @@ Future<void> _disposeSessionSafely(StreamChatSdkSession session) async {
 
 final class _LoopBackendStreamChatSessionSource
     implements StreamChatSessionSource {
-  const _LoopBackendStreamChatSessionSource(this._bootstrapSession);
+  const _LoopBackendStreamChatSessionSource(
+    this._bootstrapSession,
+    this._tokenSession,
+  );
 
   final LoopBootstrapSession? _bootstrapSession;
+  final LoopStreamTokenSession? _tokenSession;
 
   @override
   Future<StreamChatIdentity?> loadIdentity() async {
@@ -94,11 +102,18 @@ final class _LoopBackendStreamChatSessionSource
 
   @override
   Future<String> loadToken(String userId) {
-    return Future<String>.error(
-      const LoopBackendFailure(
-        LoopBackendFailureKind.unavailable,
-        code: 'stream_token_contract_unavailable',
-      ),
+    final session = _tokenSession;
+    if (session == null) {
+      return Future<String>.error(
+        const LoopBackendFailure(
+          LoopBackendFailureKind.unavailable,
+          code: 'stream_token_configuration_unavailable',
+        ),
+      );
+    }
+    return session.loadToken(
+      product: LoopStreamTokenProduct.chat,
+      expectedStreamUserId: userId,
     );
   }
 }

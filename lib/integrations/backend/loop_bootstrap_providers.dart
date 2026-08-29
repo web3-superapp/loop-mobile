@@ -10,7 +10,7 @@ import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
 final loopBackendEndpointProvider = Provider<LoopBackendEndpoint?>((ref) {
   final rawValue = ref.watch(
-    appConfigProvider.select((config) => config.backendBaseUrl),
+    appConfigProvider.select((config) => config.backendBaseUrlForCurrentBuild),
   );
   return LoopBackendEndpoint.tryParse(rawValue);
 });

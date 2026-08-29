@@ -1,0 +1,9 @@
+{
+  "LOOP_BUILD_MODE": "release",
+  "PRIVY_APP_ID": "",
+  "PRIVY_APP_CLIENT_ID": "",
+  "REOWN_PROJECT_ID": "",
+  "STREAM_API_KEY": "",
+  "LOOP_BACKEND_BASE_URL": "",
+  "FIREBASE_CONFIGURED": "false"
+}

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import importlib.util
+import json
 import plistlib
 import tempfile
 import unittest
@@ -202,8 +203,8 @@ class HarnessTests(unittest.TestCase):
             path = root / "lib/app/app_config.dart"
             source = path.read_text(encoding="utf-8")
             source = source.replace(
-                "reownProjectId: String.fromEnvironment('REOWN_PROJECT_ID'),",
-                "reownProjectId: String.fromEnvironment(\n"
+                "reownProjectId: const String.fromEnvironment('REOWN_PROJECT_ID'),",
+                "reownProjectId: const String.fromEnvironment(\n"
                 "        'REOWN_PROJECT_ID',\n"
                 "        defaultValue: 'compiled-project-id',\n"
                 "      ),",
@@ -220,6 +221,157 @@ class HarnessTests(unittest.TestCase):
         self.assertTrue(
             any("GOOGLE_CLIENT_SECRET" in error for error in result),
             msg=f"expected client-secret guard: {result}",
+        )
+
+    def test_build_profile_backend_cannot_bypass_effective_value(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path(
+                "lib/integrations/backend/loop_bootstrap_providers.dart"
+            )
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "config.backendBaseUrlForCurrentBuild",
+                    "config.backendBaseUrl",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_build_profile_configuration_contract(
+                root
+            )
+
+        self.assertTrue(
+            any(
+                "loop_bootstrap_providers.dart is missing locked value"
+                in error
+                for error in result
+            ),
+            msg=f"expected effective backend profile guard: {result}",
+        )
+
+    def test_secondary_dart_environment_reader_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "lib/integrations/unsafe_config.dart"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "const unsafe = String.fromEnvironment('SECOND_CONFIG');\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_build_profile_configuration_contract(
+                root
+            )
+
+        self.assertTrue(
+            any(
+                "Dart build configuration must stay inside AppConfig" in error
+                for error in result
+            ),
+            msg=f"expected centralized environment-reader guard: {result}",
+        )
+
+    def test_client_profile_rejects_secret_shaped_keys(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "config/debug.json"
+            path.parent.mkdir(parents=True)
+            profile = json.loads(
+                (REPOSITORY_ROOT / "config/debug.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            profile["STREAM_API_SECRET"] = "must-not-ship"
+            path.write_text(json.dumps(profile), encoding="utf-8")
+
+            result = check_harness.check_build_profile_configuration_contract(
+                root
+            )
+
+        self.assertTrue(
+            any("forbidden credential key" in error for error in result),
+            msg=f"expected client-profile secret guard: {result}",
+        )
+
+    def test_loop_launch_target_rejects_additional_tool_arguments(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / ".vscode/launch.json"
+            path.parent.mkdir(parents=True)
+            launch = json.loads(
+                (REPOSITORY_ROOT / ".vscode/launch.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            loop_target = next(
+                target
+                for target in launch["configurations"]
+                if target["name"] == "Loop"
+            )
+            loop_target["toolArgs"].append(
+                "--dart-define=SENTRY_AUTH_TOKEN=must-not-ship"
+            )
+            path.write_text(json.dumps(launch), encoding="utf-8")
+
+            result = check_harness.check_build_profile_configuration_contract(
+                root
+            )
+
+        self.assertTrue(
+            any(
+                "inject only the reviewed Debug profile file" in error
+                for error in result
+            ),
+            msg=f"expected exact IDE tool-argument guard: {result}",
+        )
+
+    def test_stream_token_placeholder_cannot_return(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "lib/integrations/communication/stream_chat_providers.dart"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "const marker = 'stream_token_contract_unavailable';\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_stream_token_client_contract(root)
+
+        self.assertTrue(
+            any("regressed to unavailable" in error for error in result),
+            msg=f"expected Stream token placeholder guard: {result}",
+        )
+
+    def test_stream_token_bootstrap_budget_is_required(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path(
+                "lib/integrations/backend/loop_stream_token_session.dart"
+            )
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "var repeatedBootstrap = false",
+                    "var repeatedBootstrap = true",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_stream_token_client_contract(root)
+
+        self.assertTrue(
+            any(
+                "loop_stream_token_session.dart is missing locked value"
+                in error
+                for error in result
+            ),
+            msg=f"expected bounded bootstrap-recovery guard: {result}",
         )
 
     def test_reown_provider_auth_and_transaction_methods_cannot_be_enabled(

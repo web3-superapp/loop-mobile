@@ -88,6 +88,31 @@ The Harness preserves the migrated native compatibility failures and the later p
 
 Measure the Harness by zero repeated occurrences of the recorded native failures, zero committed privileged secrets, zero fake provider-connected states, exact lockfile/pin agreement, retention of all six primary destinations, consistent format/analyze/test evidence, and Android Debug compilation at requested feature checkpoints. The manual Release/iOS matrix and device validation count only when explicitly requested. Update this report when a rule prevents a regression or creates a false positive.
 
+## Build Profile and Stream Token Client Update
+
+Decisions 0044 and 0045 extend the existing harness without changing the
+dependency or native platform matrix. The Harness now requires one centralized
+Dart environment reader, a tracked public Debug profile, an empty Release
+example, an ignored local Release file, exact IDE injection, and effective
+provider getters that fail closed on profile mismatch. It also preserves the
+independent Development/Testnet product policy.
+
+The Stream guard requires the two fixed token routes to remain inside the
+backend repository, strict key/user/expiry/no-store parsing, one principal-
+bound non-persisting loader, independent one-use 401/bootstrap recovery
+budgets, and deterministic repository/session/provider tests. It rejects the
+old token-unavailable placeholder, feature-owned route literals, token
+persistence/logging, and any claim that a Video user token supplies an Audio
+Room locator.
+
+Provider and physical-device evidence remains deliberately outside the
+Harness. A passing local suite does not prove Privy Bearer acceptance, Stream
+connection, refresh, channels, two-device messages, calls, media, or rooms.
+At closure, Harness validation passed, all 287 Python mutation tests passed,
+all 683 Flutter tests passed, analysis was clean, and the profile-backed Android
+Debug build passed. The generated APK and build metadata were then cleaned;
+Release/iOS and device/provider validation were not run.
+
 ## Providerless Application-Logic Update
 
 On 2026-08-25, decision 0008 made the next frontend phase explicit: feature

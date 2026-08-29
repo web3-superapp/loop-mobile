@@ -18,14 +18,14 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - Wallet 其余纯前端控件已闭合：交易历史筛选只显示对应的演示行，Networks 的 testnet 开关只过滤明确标注的环境行，授权撤销保持禁用，Bridge 进度必须携带同一个强类型演示快照；裸深链不会编造路线或进度。所有这些状态仍不代表 provider 查询、钱包网络支持、签名、提交或成功
 - Hyperliquid Testnet 公共只读 Spot 行情：独立读取 `spotMetaAndAssetCtxs`，按稀疏 token index 和精确 coin 关联，金额与涨跌使用 Decimal，Market 展示最多 50 个有成交量的交易对并支持搜索、刷新、错误与空状态。每一行可按精确 `spotIndex` 打开实时只读详情，展示当前响应中的价格、24h 成交量、provider/token identity 和客户端 UTC 收取时间。详情页另以该已验收市场的 provider coin 读取真实 `candleSnapshot`，支持精确映射的 1H / 4H / 1D / 1W / 1M、最多最近 120 根、手动刷新以及加载/空/错误状态；还会按 1h / 4h / 1d / 7d / 30d 固定周期严格校验每根 `T-t`。C2 现可以同一个精确 `spotIndex` 打开 C3 全屏 K 线；C3 会再次从当前公共市场快照验收身份，因此无效或过期深链不会请求 K 线，也不再默认 ETH。OHLCV 保持 String + Decimal，末根未收盘时明确标记，不回退演示 K 线、假指标或其他币种。它们都只是公共发现数据，不是可执行报价；买卖、余额、订单、签名、转账与提现仍全部关闭。旧 Perp 代码仅保留为未挂载的历史实现，不再属于产品范围
 - Spot-only 产品边界已经在正式入口闭合：旧 `/perp*` 深链统一返回 Spot Market，正式 `main.dart` 不再装配 Perp 私有网关，目录中的 D1-D12 只作为不可点击的 `Out of scope` 历史记录。静态演示币种先进入实时 Spot 列表，只有当前 provider 快照已验收的市场才携带精确 `spotIndex` 打开详情；裸 `/market/token` 不再回退演示行情或 K 线
-- Stream Chat 官方 client、按用户持久化、token-provider 会话、频道列表与消息页已接入；后端身份/token 未就绪时不连接、不声称在线
+- Stream Chat 官方 client、按用户持久化、token-provider 会话、频道列表与消息页已接入；移动端现通过 LOOP backend 的 Chat/Video token 接口取得短期用户 Token，并严格核对 API Key、服务端派生 userId、UTC 过期时间与 `no-store`。缺少认证、bootstrap、配置或有效响应时不连接、不声称在线
 - Stream `token_card.v1` 只读消息卡已接入官方消息渲染链路：生产消息只接受严格的资产/链/合约/时间标识，不固化价格或风险事实；后端新鲜事实投影未接入前显示不可用，也不提供 Buy / Watch。旧版群聊、私聊、搜索与卡片 fixture 路由已限制为显式离线 Preview
 - Chat 的 E9 资产快照已收敛为明确标注 `演示数据` 的 Spot market Preview：不再展示 Position、LONG、Entry、收益、跟单或假保存；唯一可用动作只打开公共 Spot 行情列表，Watch 在真实持久化接入前保持禁用
 - Chat 的 Message Requests 已收敛为进程内 `开发预览` 状态：Accept 只从模拟 pending 列表移除且不创建 Stream 会话，Ignore 不通知对方，Report 不提交 moderation 举报；未知或重复处理的 ID 会失败，处理中的卡片禁止重复动作，Chat 首页数量随当前模拟 pending 列表变化
 - Chat 的 Preview 群资料页不再暴露空操作：通知选项只改变持续标注的进程内布局状态，关闭主选项会同步清理 mentions-only 示例；成员操作与退群在没有官方 Stream 写入能力时保持禁用，不再用空按钮或只关闭弹窗伪装成功
-- 原生 Privy Bearer `POST /v1/bootstrap` 客户端已接入；严格解析服务端 LOOP/Stream 身份、隔离账号切换并最多重试一次 401。每次新接受的完整 Privy 登录会在安全后端 Origin 已配置时非阻塞地预热一次 bootstrap；请求缺失或失败不会否定登录。未配置后端地址时零请求，Stream token 缺失时仍不连接
+- 原生 Privy Bearer `POST /v1/bootstrap`、`POST /v1/chat/token` 与 `POST /v1/video/token` 客户端已接入；严格解析服务端 LOOP/Stream 身份和短期 Token，隔离账号切换。单次 Stream Token 加载最多刷新一次 401、透明恢复一次 `bootstrap_required`，总计不超过三次 Token POST；其他失败不自动重试，Token 不缓存、不落盘。登录后的 bootstrap 预热仍是非阻塞的
 - Dio 构造已收敛到双信任边界：公开 Hyperliquid Testnet 只读请求与携带 Privy Bearer 的 LOOP backend 请求使用不同 profile；两者都限制精确 Origin、关闭重定向并保持无自动重试/无日志，公开客户端还会在发送前拒绝 Authorization，两种客户端都会拒绝 Cookie、Proxy-Authorization 与 `X-Api-Key`。仓库仍由各自窄 adapter 负责请求契约、错误映射、鉴权刷新与幂等语义
-- Audio Room 前端纵切已完成，并从正式 Chat 顶部提供唯一可见入口：入口只打开生产 Lobby，不发起 provider 操作，也不会回退演示房间。后端授权房间接缝、默认静音单飞加入、官方 `CallState` 状态/成员/能力/麦克风 UI、失败清理和账号/房间/client 轮换均已落地；真实 Video token 与房间 locator 缺失时保持不可加入
+- Audio Room 前端纵切已完成，并从正式 Chat 顶部提供唯一可见入口：入口只打开生产 Lobby，不发起 provider 操作，也不会回退演示房间。后端授权房间接缝、默认静音单飞加入、官方 `CallState` 状态/成员/能力/麦克风 UI、失败清理和账号/房间/client 轮换均已落地；Video 用户 Token 客户端已接通，但生产房间 locator 仍缺失，因此保持不可加入
 - Audio Room 首版只配置前台麦克风能力；任何退房或 App 退到后台都会立即发起原生音频暂停、终态关麦与 single-flight 退房，不让可能卡住的麦克风/原生命令延迟退房。大厅只在旧 `Call` 已从 Stream `activeCalls` 移除、在途麦克风命令已结束且命令后的第二次关麦已执行后开放。为避开 Stream Video 1.4.3 的迟到音轨重建缺陷，每个 `Call` 只允许一次 Speak 启动；Mute 后需离开并重进才能再次发言。失败可显式重试清理。会自动注册 Telecom/CallKit 的 Stream Push 插件不进入当前依赖图，Android 同时移除可选来电、后台通话、相机与推送项，iOS 不启用 Camera、PushKit、CallKit 或后台模式
 - 通知导航的 EventSource / Coordinator 纵切已接入根组合：生产 source 默认是无初始点击、无事件的 disabled 实现；协调器只从真实 LOOP session 与已验证 bootstrap identity 取得 Stream 身份。恢复期间最多暂存一个、默认 15 秒且硬上限一分钟的点击，账号切换、超时或授权失败即丢弃；通过完整重验后也只能落到官方 Chat CID、Audio Room 大厅或通知中心。生产通知页不展示伪实时卡片，演示卡仅在显式 `开发预览` 中可见
 - Home Global Search 已闭合 providerless 前端行为：只有显式 Preview 会显示并本地筛选一组有界的 `演示数据`，支持大小写/空白归一化、无结果与清空；群组和用户沿用精确注册的 Preview conversation ID，ETH 示例只进入公共 Spot 列表而不猜 `spotIndex`。正式会话在真实跨产品索引接入前显示不可用，不泄漏 Preview 结果
@@ -54,7 +54,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 
 应用逻辑继续通过页面状态、Riverpod controller 和窄业务 port 隔离 provider。`lib/features/` 不直接依赖 Dio 或保存 `/v1/` 路由；旧 Perp adapter 仅作为未挂载的实现历史保留，不再继续产品开发。尚未接入的 production port 仍使用 unavailable 实现，Fake 仅允许测试与显式 Preview 注入。
 
-Stream 生产路径必须先通过 BFF 获取或刷新短期用户 token，并由 session authorizer 建立 SDK 会话。每个 Privy principal 使用独立的 Stream client/persistence 实例，账号切换会废弃旧实例，避免不可取消的旧连接污染新账号。正式 Chat 页面直接使用 Stream 官方 controller/UI 作为消息、分页、已读、输入状态与离线历史的真相源；缺少授权时保持 fail-closed，也不会把本地 preview 伪装成在线能力。附件与语音录制会等平台权限和产品策略正式配置后再开放。
+Stream 生产路径通过 BFF 获取或刷新短期用户 token，并由 session authorizer 建立 SDK 会话。每个 Privy principal 使用独立的 Stream client/persistence 实例，账号切换会废弃旧实例，避免不可取消的旧连接污染新账号。正式 Chat 页面直接使用 Stream 官方 controller/UI 作为消息、分页、已读、输入状态与离线历史的真相源；缺少授权时保持 fail-closed，也不会把本地 preview 伪装成在线能力。附件与语音录制会等平台权限和产品策略正式配置后再开放。真实 Token 接受、连接、刷新、双设备消息和 Video 仍需要真机验证。
 
 当前产品决定以 [`docs/product-decisions.md`](docs/product-decisions.md) 为准。内部不可变 `user id` 是账户与社交关系的主身份，钱包地址只是可绑定、可替换的凭证。界面只陈述可验证的安全事实及来源时间，不使用 AI Guard 或风险分口径。
 
@@ -75,15 +75,15 @@ bin/flutter build apk --debug
 
 Release、iOS no-codesign、Web release、`bin/flutter run`、签名和真机验证都不是日常自动检查；只有明确提出时才运行。真机结果由产品方验证，未执行时始终记录为未验证。
 
-Privy Mobile App Client ID 和 Reown Project ID 没有 Dart 默认值，只通过 `--dart-define` 注入。它们是公开客户端标识，不是 Privy Secret、OAuth Client Secret 或钱包私钥：
+所有客户端公开值统一由 `AppConfig` 读取。Debug/Profile 只接受 `LOOP_BUILD_MODE=debug`，Release 只接受 `release`；缺失或错配会关闭 Privy、Reown、LOOP backend、Stream 和未来 Firebase 能力。IDE 的 `Loop` 配置会自动加载已审查的 Debug 文件：
 
 ```bash
-bin/flutter run \
-  --dart-define=PRIVY_APP_CLIENT_ID=client-完整值 \
-  --dart-define=REOWN_PROJECT_ID=32位十六进制项目ID
+bin/flutter run --dart-define-from-file=config/debug.json
 ```
 
-不要把 Privy Secret、Google/Apple OAuth Secret、Apple `.p8`、Stream Secret、Firebase service-account、APNs 私钥、钱包私钥或 Hyperliquid 私钥放进 Flutter 或 Git。
+Release 只提供空模板 `config/release.example.json`；填写后的本地 `config/release.json` 被 Git 忽略。Debug/Release 只是构建配置轴，不会打开 Production、Mainnet、提现、自动交易或 Spot 执行。未来 Sentry、AppsFlyer、Firebase 的客户端公开值也在对应 adapter 接入时进入同一配置入口。
+
+不要把 Privy Secret、Google/Apple OAuth Secret、Apple/APNs `.p8`、Stream Secret、Sentry Auth Token、AppsFlyer 服务端 Secret、Firebase service-account、钱包私钥或 Hyperliquid 私钥放进 Flutter、配置 JSON 或 Git。
 
 IDE 顶部 Run 可直接选择 `Loop`（正式入口）或 `Loop (Preview)`（前端体验入口），设备仍以 IDE 右下角当前选择为准，不固定 Pixel 7a。
 

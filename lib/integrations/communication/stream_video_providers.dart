@@ -6,11 +6,15 @@ import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
+import 'package:loop_mobile/integrations/backend/loop_stream_token.dart';
+import 'package:loop_mobile/integrations/backend/loop_stream_token_providers.dart';
+import 'package:loop_mobile/integrations/backend/loop_stream_token_session.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
 
 final streamVideoSessionSourceProvider = Provider<StreamVideoSessionSource>(
   (ref) => _LoopBackendStreamVideoSessionSource(
     ref.watch(loopBootstrapSessionProvider),
+    ref.watch(loopStreamTokenSessionProvider),
   ),
 );
 
@@ -36,7 +40,9 @@ final streamVideoPrincipalKeyProvider = Provider<String?>((ref) {
 final streamVideoSdkSessionProvider =
     Provider.autoDispose<StreamVideoSdkSession?>((ref) {
       final apiKey = ref.watch(
-        appConfigProvider.select((config) => config.streamApiKey.trim()),
+        appConfigProvider.select(
+          (config) => config.streamApiKeyForCurrentBuild,
+        ),
       );
       final principalKey = ref.watch(streamVideoPrincipalKeyProvider);
       if (apiKey.isEmpty || principalKey == null) return null;
@@ -76,9 +82,13 @@ Future<void> _disposeSessionSafely(StreamVideoSdkSession session) async {
 
 final class _LoopBackendStreamVideoSessionSource
     implements StreamVideoSessionSource {
-  const _LoopBackendStreamVideoSessionSource(this._bootstrapSession);
+  const _LoopBackendStreamVideoSessionSource(
+    this._bootstrapSession,
+    this._tokenSession,
+  );
 
   final LoopBootstrapSession? _bootstrapSession;
+  final LoopStreamTokenSession? _tokenSession;
 
   @override
   Future<StreamVideoIdentity?> loadIdentity() async {
@@ -94,11 +104,18 @@ final class _LoopBackendStreamVideoSessionSource
 
   @override
   Future<String> loadToken(String userId) {
-    return Future<String>.error(
-      const LoopBackendFailure(
-        LoopBackendFailureKind.unavailable,
-        code: 'stream_token_contract_unavailable',
-      ),
+    final session = _tokenSession;
+    if (session == null) {
+      return Future<String>.error(
+        const LoopBackendFailure(
+          LoopBackendFailureKind.unavailable,
+          code: 'stream_token_configuration_unavailable',
+        ),
+      );
+    }
+    return session.loadToken(
+      product: LoopStreamTokenProduct.video,
+      expectedStreamUserId: userId,
     );
   }
 }

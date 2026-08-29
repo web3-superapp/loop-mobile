@@ -33,9 +33,12 @@ the exact evidence is recorded below.
 
 ## Implemented boundary
 
-- `AppConfig` reads `PRIVY_APP_CLIENT_ID` and `REOWN_PROJECT_ID` only through
-  `--dart-define`; neither has a Dart default. Missing or malformed public
-  configuration fails closed without starting its provider flow.
+- `AppConfig` is now the only Dart environment reader. The IDE supplies the
+  tracked client-visible Development values through
+  `--dart-define-from-file=config/debug.json`; no provider identifier has a
+  Dart default. `LOOP_BUILD_MODE` must match Debug/Profile or Release, and a
+  missing/mismatched profile gates every provider-backed flow. Release remains
+  an empty local template and does not change Development/Testnet policy.
 - One cached `Privy.init` owner continues to provide session restoration,
   Email OTP, access-token access, embedded-wallet readiness, Google OAuth,
   iOS-only Apple OAuth, SIWE message generation, SIWE login, and SIWE link.

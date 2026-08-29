@@ -4,10 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
-import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
+import 'package:loop_mobile/integrations/backend/loop_stream_token.dart';
+import 'package:loop_mobile/integrations/backend/loop_stream_token_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
@@ -54,10 +55,11 @@ void main() {
   });
 
   test(
-    'Chat and Video share one trusted bootstrap identity but no token shortcut',
+    'Chat and Video share bootstrap identity and request separate SDK tokens',
     () async {
       final repository = _Repository(identity);
       final tokens = _RecordingTokens();
+      final streamTokens = _StreamTokenRepository();
       final container = ProviderContainer(
         overrides: [
           appConfigProvider.overrideWithValue(
@@ -66,6 +68,7 @@ void main() {
           loopSessionProvider.overrideWith(_AuthenticatedSession.new),
           loopBootstrapRepositoryProvider.overrideWithValue(repository),
           loopBackendAccessTokenSourceProvider.overrideWithValue(tokens),
+          loopStreamTokenRepositoryProvider.overrideWithValue(streamTokens),
         ],
       );
       addTearDown(container.dispose);
@@ -86,20 +89,50 @@ void main() {
       expect(videoIdentity?.userId, identity.streamUserId);
       expect(repository.calls, 1);
       expect(tokens.calls, 1);
-      await expectLater(
-        container
+      expect(
+        await container
             .read(streamChatSessionSourceProvider)
             .loadToken(identity.streamUserId),
-        throwsA(_unavailableTokenFailure()),
+        'chat-sdk-token',
       );
-      await expectLater(
-        container
+      expect(
+        await container
             .read(streamVideoSessionSourceProvider)
             .loadToken(identity.streamUserId),
-        throwsA(_unavailableTokenFailure()),
+        'video-sdk-token',
       );
+      expect(tokens.calls, 3);
+      expect(streamTokens.products, <LoopStreamTokenProduct>[
+        LoopStreamTokenProduct.chat,
+        LoopStreamTokenProduct.video,
+      ]);
     },
   );
+
+  test('a build-profile mismatch gates backend and Stream composition', () {
+    final tokens = _RecordingTokens();
+    final container = ProviderContainer(
+      overrides: [
+        appConfigProvider.overrideWithValue(
+          _config(
+            'https://api-dev.quant-dinger.cc',
+            declaredModeMatchesRuntime: false,
+          ),
+        ),
+        loopSessionProvider.overrideWith(_AuthenticatedSession.new),
+        loopBackendAccessTokenSourceProvider.overrideWithValue(tokens),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    expect(container.read(loopBackendEndpointProvider), isNull);
+    expect(container.read(loopBackendDioProvider), isNull);
+    expect(container.read(loopBootstrapSessionProvider), isNull);
+    expect(container.read(loopStreamTokenSessionProvider), isNull);
+    expect(container.read(streamChatSdkSessionProvider), isNull);
+    expect(container.read(streamVideoSdkSessionProvider), isNull);
+    expect(tokens.calls, 0);
+  });
 
   test('principal rotation invalidates the old in-flight bootstrap', () async {
     final gate = Completer<LoopBootstrapIdentity>();
@@ -143,14 +176,35 @@ void main() {
   });
 }
 
-AppConfig _config(String backendBaseUrl) {
+AppConfig _config(
+  String backendBaseUrl, {
+  bool declaredModeMatchesRuntime = true,
+}) {
   return AppConfig(
     privyAppId: 'privy-app',
     privyAppClientId: 'privy-client',
     streamApiKey: 'public-stream-key',
     backendBaseUrl: backendBaseUrl,
     firebaseConfigured: false,
+    declaredModeMatchesRuntime: declaredModeMatchesRuntime,
   );
+}
+
+final class _StreamTokenRepository implements LoopStreamTokenRepository {
+  final List<LoopStreamTokenProduct> products = <LoopStreamTokenProduct>[];
+
+  @override
+  Future<LoopStreamTokenCredential> issue({
+    required LoopStreamTokenProduct product,
+    required String expectedStreamUserId,
+    required String accessToken,
+  }) async {
+    products.add(product);
+    return LoopStreamTokenCredential(
+      token: '${product.wireName}-sdk-token',
+      expiresAt: DateTime.utc(2026, 8, 29, 13),
+    );
+  }
 }
 
 final class _RecordingTokens implements LoopBackendAccessTokenSource {
@@ -201,12 +255,4 @@ class _MutableSession extends LoopSessionController {
   );
 
   void replace(LoopSessionState next) => state = next;
-}
-
-TypeMatcher<LoopBackendFailure> _unavailableTokenFailure() {
-  return isA<LoopBackendFailure>().having(
-    (failure) => failure.kind,
-    'kind',
-    LoopBackendFailureKind.unavailable,
-  );
 }
