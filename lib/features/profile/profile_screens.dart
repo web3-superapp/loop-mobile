@@ -13,6 +13,9 @@ import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
+import 'package:loop_mobile/features/profile/social_privacy/social_privacy_controller.dart';
+import 'package:loop_mobile/features/profile/social_privacy/social_privacy_gateway.dart';
+import 'package:loop_mobile/features/profile/social_privacy/social_privacy_models.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
 @immutable
@@ -78,6 +81,7 @@ class ProfileSurfaceScreen extends StatelessWidget {
     'profile',
     'profile-edit',
     'privacy',
+    'social-privacy',
     'copytrade-perms',
     'security',
     'devices',
@@ -132,6 +136,7 @@ class ProfileSurfaceScreen extends StatelessWidget {
         onSignOut: onSignOut,
       ),
       'privacy' => const _PrivacyCenter(),
+      'social-privacy' => const _SocialPrivacyCenter(),
       'copytrade-perms' => const _CopyTradePermissions(),
       'security' => _SecurityCenter(
         capabilities: capabilities,
@@ -296,6 +301,13 @@ class _ProfileHome extends StatelessWidget {
               detail: 'Discoverability and copy visibility preferences',
               tone: LoopTone.conversation,
               onTap: () => onNavigate('privacy'),
+            ),
+            _SettingsTile(
+              icon: Icons.forum_outlined,
+              title: 'Social privacy',
+              detail: 'Friend requests, group invites, and direct messages',
+              tone: LoopTone.conversation,
+              onTap: () => onNavigate('social-privacy'),
             ),
             _SettingsTile(
               icon: Icons.content_copy_rounded,
@@ -1165,6 +1177,336 @@ String _privacyFailureMessage(PrivacyGatewayFailureKind? kind) =>
         'The Privacy operation failed. Provider details were not exposed.',
       null => 'The Privacy operation could not be completed.',
     };
+
+class _SocialPrivacyCenter extends ConsumerStatefulWidget {
+  const _SocialPrivacyCenter();
+
+  @override
+  ConsumerState<_SocialPrivacyCenter> createState() =>
+      _SocialPrivacyCenterState();
+}
+
+class _SocialPrivacyCenterState extends ConsumerState<_SocialPrivacyCenter> {
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(socialPrivacyControllerProvider);
+    if (state.phase == SocialPrivacyPhase.initial) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(ref.read(socialPrivacyControllerProvider.notifier).load());
+        }
+      });
+    }
+    final controller = ref.read(socialPrivacyControllerProvider.notifier);
+    final stackActions =
+        MediaQuery.sizeOf(context).width < 480 ||
+        MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    final discardButton = OutlinedButton(
+      key: const ValueKey<String>('social-privacy-discard'),
+      onPressed: state.isDirty && !state.isBusy && !state.requiresReload
+          ? controller.discard
+          : null,
+      child: Text(state.requiresReload ? 'Reload required' : 'Discard draft'),
+    );
+    final applyButton = FilledButton.icon(
+      key: const ValueKey<String>('social-privacy-apply'),
+      onPressed: state.canSave ? () => unawaited(controller.save()) : null,
+      icon: state.phase == SocialPrivacyPhase.saving
+          ? const SizedBox.square(
+              dimension: 17,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.task_alt_rounded),
+      label: Text(
+        state.phase == SocialPrivacyPhase.saving ? 'Applying…' : 'Apply draft',
+      ),
+    );
+    return LoopPage(
+      eyebrow: state.mode == SocialPrivacyMode.preview
+          ? '开发预览 · SOCIAL PRIVACY'
+          : 'SOCIAL PRIVACY',
+      title: 'Social privacy',
+      subtitle: 'Choose who may start new social interactions. Existing friendships and conversations are not removed by these preferences.',
+      padding: EdgeInsets.fromLTRB(20, 12, 20, stackActions ? 210 : 120),
+      bottom: state.resource == null
+          ? null
+          : LoopActionDock(
+              child: stackActions
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        discardButton,
+                        const SizedBox(height: 10),
+                        applyButton,
+                      ],
+                    )
+                  : Row(
+                      children: <Widget>[
+                        Expanded(child: discardButton),
+                        const SizedBox(width: 12),
+                        Expanded(child: applyButton),
+                      ],
+                    ),
+            ),
+      children: <Widget>[
+        _SocialPrivacyModeBanner(mode: state.mode),
+        const SizedBox(height: 16),
+        ..._socialPrivacyContent(state, controller),
+      ],
+    );
+  }
+
+  List<Widget> _socialPrivacyContent(
+    SocialPrivacyState state,
+    SocialPrivacyController controller,
+  ) {
+    if (state.resource == null) {
+      return switch (state.phase) {
+        SocialPrivacyPhase.initial ||
+        SocialPrivacyPhase.loading => const <Widget>[
+          LoopCard(
+            child: Row(
+              children: <Widget>[
+                SizedBox.square(
+                  dimension: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 14),
+                Expanded(child: Text('Loading Social Privacy preferences…')),
+              ],
+            ),
+          ),
+        ],
+        SocialPrivacyPhase.unavailable => const <Widget>[
+          LoopStateCard(
+            key: ValueKey<String>('social-privacy-unavailable'),
+            title: 'Social Privacy is not connected',
+            message: 'The app stays fail-closed. It does not display demo permissions or claim that requests, invites, or direct messages are allowed.',
+            icon: Icons.link_off_rounded,
+            tone: LoopTone.warning,
+          ),
+        ],
+        _ => <Widget>[
+          LoopStateCard(
+            key: const ValueKey<String>('social-privacy-load-failure'),
+            title: 'Social Privacy could not be loaded',
+            message: _socialPrivacyFailureMessage(state.failureKind),
+            icon: Icons.sync_problem_rounded,
+            tone: LoopTone.danger,
+            action: OutlinedButton.icon(
+              key: const ValueKey<String>('social-privacy-retry-load'),
+              onPressed: state.isBusy
+                  ? null
+                  : () => unawaited(controller.reload()),
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Retry'),
+            ),
+          ),
+        ],
+      };
+    }
+
+    final content = <Widget>[_SocialPrivacySummary(state: state)];
+    if (state.requiresReload) {
+      content.addAll(<Widget>[
+        const SizedBox(height: 14),
+        LoopStateCard(
+          key: const ValueKey<String>('social-privacy-conflict'),
+          title: state.phase == SocialPrivacyPhase.loading
+              ? 'Reloading the latest preferences…'
+              : 'Version conflict — nothing was overwritten',
+          message: 'These preferences changed elsewhere. Reload the latest server version before editing or applying another draft.',
+          icon: Icons.call_split_rounded,
+          tone: LoopTone.warning,
+          action: state.phase == SocialPrivacyPhase.loading
+              ? const CircularProgressIndicator(strokeWidth: 2)
+              : FilledButton.icon(
+                  key: const ValueKey<String>('social-privacy-conflict-reload'),
+                  onPressed: () => unawaited(controller.reload()),
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Reload latest'),
+                ),
+        ),
+      ]);
+    } else if (state.phase == SocialPrivacyPhase.failure ||
+        state.phase == SocialPrivacyPhase.unavailable) {
+      content.addAll(<Widget>[
+        const SizedBox(height: 14),
+        LoopStateCard(
+          key: const ValueKey<String>('social-privacy-save-failure'),
+          title: 'Preferences were not committed',
+          message: _socialPrivacyFailureMessage(state.failureKind),
+          icon: Icons.cloud_off_rounded,
+          tone: LoopTone.danger,
+          action: OutlinedButton.icon(
+            onPressed: state.canSave
+                ? () => unawaited(controller.save())
+                : null,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Retry apply'),
+          ),
+        ),
+      ]);
+    }
+
+    content.addAll(<Widget>[
+      const SizedBox(height: 24),
+      _SocialPrivacySwitch(
+        key: const ValueKey<String>('social-privacy-friend-requests'),
+        icon: Icons.person_add_alt_1_outlined,
+        title: 'Friend requests',
+        detail: 'Allow other LOOP profiles to send a new friend request.',
+        value: state.draft.friendRequests == FriendRequestsPreference.enabled,
+        onChanged: state.canEdit
+            ? (enabled) => controller.editFriendRequests(
+                enabled
+                    ? FriendRequestsPreference.enabled
+                    : FriendRequestsPreference.disabled,
+              )
+            : null,
+      ),
+      const SizedBox(height: 12),
+      _SocialPrivacySwitch(
+        key: const ValueKey<String>('social-privacy-group-invites'),
+        icon: Icons.group_add_outlined,
+        title: 'Group invitations',
+        detail: 'Allow accepted friends to include you in a new group.',
+        value: state.draft.groupInvites == GroupInvitesPreference.friends,
+        onChanged: state.canEdit
+            ? (enabled) => controller.editGroupInvites(
+                enabled
+                    ? GroupInvitesPreference.friends
+                    : GroupInvitesPreference.disabled,
+              )
+            : null,
+      ),
+      const SizedBox(height: 12),
+      _SocialPrivacySwitch(
+        key: const ValueKey<String>('social-privacy-direct-messages'),
+        icon: Icons.chat_bubble_outline_rounded,
+        title: 'Direct messages',
+        detail: 'Allow accepted friends to open a direct conversation.',
+        value: state.draft.directMessages == DirectMessagesPreference.friends,
+        onChanged: state.canEdit
+            ? (enabled) => controller.editDirectMessages(
+                enabled
+                    ? DirectMessagesPreference.friends
+                    : DirectMessagesPreference.disabled,
+              )
+            : null,
+      ),
+      const SizedBox(height: 18),
+      const _PrivacyFootnote(
+        text: 'Social Privacy controls future entry points only. Stream remains the source of truth for messages and channel membership.',
+      ),
+    ]);
+    return content;
+  }
+}
+
+class _SocialPrivacySwitch extends StatelessWidget {
+  const _SocialPrivacySwitch({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.detail,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String title;
+  final String detail;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopCard(
+      child: Material(
+        type: MaterialType.transparency,
+        child: SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          secondary: Icon(
+            icon,
+            color: value ? LoopColors.mint : LoopColors.vapor,
+          ),
+          title: Text(title),
+          subtitle: Text(detail),
+          value: value,
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+}
+
+class _SocialPrivacyModeBanner extends StatelessWidget {
+  const _SocialPrivacyModeBanner({required this.mode});
+
+  final SocialPrivacyMode mode;
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopStateCard(
+      title: switch (mode) {
+        SocialPrivacyMode.preview => '开发预览 · in-memory Social Privacy',
+        SocialPrivacyMode.production => 'Account Social Privacy preferences',
+        SocialPrivacyMode.unavailable => 'Production connection unavailable',
+      },
+      message: switch (mode) {
+        SocialPrivacyMode.preview => 'Changes last only for this Preview session and do not affect another account.',
+        SocialPrivacyMode.production => 'These preferences are synchronized through the authenticated LOOP backend boundary.',
+        SocialPrivacyMode.unavailable => 'New social actions stay unavailable until the authenticated adapter is connected.',
+      },
+      icon: mode == SocialPrivacyMode.preview
+          ? Icons.science_outlined
+          : Icons.forum_outlined,
+      tone: mode == SocialPrivacyMode.preview
+          ? LoopTone.warning
+          : LoopTone.neutral,
+    );
+  }
+}
+
+class _SocialPrivacySummary extends StatelessWidget {
+  const _SocialPrivacySummary({required this.state});
+
+  final SocialPrivacyState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: <Widget>[
+        LoopStatusPill(
+          label: 'VERSION ${state.resource!.version}',
+          tone: LoopTone.conversation,
+        ),
+        LoopStatusPill(
+          label: state.isDirty ? 'UNSAVED DRAFT' : 'NO LOCAL CHANGES',
+          tone: state.isDirty ? LoopTone.warning : LoopTone.positive,
+        ),
+        LoopStatusPill(
+          label: state.draft.friendRequests.wireValue.toUpperCase(),
+        ),
+      ],
+    );
+  }
+}
+
+String _socialPrivacyFailureMessage(
+  SocialPrivacyGatewayFailureKind? kind,
+) => switch (kind) {
+  SocialPrivacyGatewayFailureKind.unavailable => 'The Social Privacy service is unavailable. No preference was presented as committed.',
+  SocialPrivacyGatewayFailureKind.versionConflict => 'The Social Privacy resource changed elsewhere. Reload is required before another apply.',
+  SocialPrivacyGatewayFailureKind.invalidData => 'The service returned data outside the reviewed Social Privacy contract. Nothing was accepted.',
+  SocialPrivacyGatewayFailureKind.unexpected =>
+    'The Social Privacy operation failed. Provider details were not exposed.',
+  null => 'The Social Privacy operation could not be completed.',
+};
 
 class _CopyTradePermissions extends StatelessWidget {
   const _CopyTradePermissions();

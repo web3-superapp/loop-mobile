@@ -6,6 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/friends/chat_create_menu_button.dart';
+import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
+import 'package:loop_mobile/features/chat/group_alias/group_alias_screen.dart';
+import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
@@ -234,6 +237,134 @@ class StreamChatChannelRoutePage extends ConsumerWidget {
   }
 }
 
+/// Stream-owned gate for the public group-Alias channel route.
+///
+/// A deep link carries only an untrusted CID. The LOOP group resolver is not
+/// mounted until the current server-authorized Stream identity can query one
+/// exact existing channel membership. Account/session rotation rebuilds this
+/// gate with the new client and user ID, so an old proof cannot authorize a
+/// new principal.
+class StreamGroupAliasChannelRoutePage extends ConsumerWidget {
+  const StreamGroupAliasChannelRoutePage({required this.cid, super.key});
+
+  final String cid;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    try {
+      GroupAliasStreamChannelId.fromCid(cid);
+    } on InvalidGroupAliasContractException {
+      return const _StreamChannelUnavailablePage(
+        title: 'Invalid group link',
+        message: 'This link does not identify a supported LOOP group.',
+      );
+    }
+
+    return ref
+        .watch(streamChatAuthorizationProvider)
+        .when(
+          skipLoadingOnReload: false,
+          skipLoadingOnRefresh: false,
+          loading: () => const _StreamChannelUnavailablePage(
+            title: 'Restoring chat',
+            message: 'LOOP is restoring the server-authorized Stream session.',
+            loading: true,
+          ),
+          error: (error, stackTrace) => const _StreamChannelUnavailablePage(
+            title: 'Group identity unavailable',
+            message: 'Stream authorization could not be restored.',
+          ),
+          data: (authorization) {
+            final session = ref.watch(streamChatSdkSessionProvider);
+            final currentUser = session?.client.state.currentUser;
+            if (authorization != StreamSessionAuthorization.authorized ||
+                session == null ||
+                currentUser == null) {
+              return const _StreamChannelUnavailablePage(
+                title: 'Stream not connected',
+                message: 'Current Stream membership must be confirmed before resolving a LOOP group.',
+              );
+            }
+            return _ExistingMemberGroupAliasPage(
+              key: ValueKey<String>(
+                'stream-group-alias-member-route-$cid-${currentUser.id}',
+              ),
+              client: session.client,
+              cid: cid,
+              userId: currentUser.id,
+            );
+          },
+        );
+  }
+}
+
+class _ExistingMemberGroupAliasPage extends StatefulWidget {
+  const _ExistingMemberGroupAliasPage({
+    required this.client,
+    required this.cid,
+    required this.userId,
+    super.key,
+  });
+
+  final StreamChatClient client;
+  final String cid;
+  final String userId;
+
+  @override
+  State<_ExistingMemberGroupAliasPage> createState() =>
+      _ExistingMemberGroupAliasPageState();
+}
+
+class _ExistingMemberGroupAliasPageState
+    extends State<_ExistingMemberGroupAliasPage> {
+  late Future<Channel?> _channel;
+
+  @override
+  void initState() {
+    super.initState();
+    _channel = _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ExistingMemberGroupAliasPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.client, widget.client) ||
+        oldWidget.cid != widget.cid ||
+        oldWidget.userId != widget.userId) {
+      _channel = _load();
+    }
+  }
+
+  Future<Channel?> _load() => _loadExistingMemberChannel(
+    client: widget.client,
+    cid: widget.cid,
+    userId: widget.userId,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Channel?>(
+      future: _channel,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const _StreamChannelUnavailablePage(
+            title: 'Confirming group',
+            message: 'LOOP is confirming this exact Stream channel membership.',
+            loading: true,
+          );
+        }
+        if (snapshot.hasError || snapshot.data == null) {
+          return const _StreamChannelUnavailablePage(
+            title: 'Group unavailable',
+            message: 'No existing Stream group membership was confirmed. LOOP did not resolve a group.',
+          );
+        }
+        return GroupAliasChannelRoutePage(routeCid: widget.cid);
+      },
+    );
+  }
+}
+
 class _ExistingMemberStreamChannelPage extends StatefulWidget {
   const _ExistingMemberStreamChannelPage({
     required this.client,
@@ -295,10 +426,30 @@ class _ExistingMemberStreamChannelPageState
             message: 'No existing Stream channel membership was confirmed. LOOP did not create or open a channel.',
           );
         }
+        GroupAliasStreamChannelId? groupAliasChannelId;
+        try {
+          groupAliasChannelId = GroupAliasStreamChannelId.fromCid(widget.cid);
+        } on InvalidGroupAliasContractException {
+          // Known direct channels and invalid IDs intentionally have no group
+          // Alias action. Stream message UI remains available.
+        }
+        final usesGroupIdentity = loopStreamChannelUsesGroupMessageAlias(
+          widget.cid,
+        );
         return StreamChannel(
           key: ValueKey<String>(widget.cid),
           channel: snapshot.data!,
-          child: const StreamChannelPage(),
+          child: usesGroupIdentity
+              ? LoopStreamGroupChannelPage(
+                  onChannelAvatarPressed: groupAliasChannelId == null
+                      ? null
+                      : (context, channel) => unawaited(
+                          context.push<void>(
+                            '/chat/channel/${Uri.encodeComponent(widget.cid)}/alias',
+                          ),
+                        ),
+                )
+              : const StreamChannelPage(),
         );
       },
     );
@@ -342,6 +493,8 @@ class _StreamChannelListBodyState extends State<_StreamChannelListBody> {
         child: StreamChannelListView(
           controller: _controller,
           padding: const EdgeInsets.symmetric(vertical: 8),
+          itemBuilder: (context, channels, index, defaultItem) =>
+              loopStreamChannelListIdentityItem(defaultItem),
           emptyBuilder: (context) => const Center(
             child: Padding(
               padding: EdgeInsets.all(16),

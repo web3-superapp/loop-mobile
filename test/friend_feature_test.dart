@@ -22,53 +22,112 @@ const _requestId = '11111111-1111-4111-8111-111111111111';
 FriendProfileRef _profileRef(String value) => FriendProfileRef.fromWire(value);
 
 void main() {
-  test(
-    'friend inputs reject unsafe aliases, duplicate refs, and non-v4 IDs',
-    () {
-      expect(normalizeFriendAliasQuery('  NightOwl  '), 'NightOwl');
-      expect(
-        () => normalizeFriendAliasQuery('unsafe\u202Ealias'),
-        throwsA(isA<InvalidFriendContractException>()),
-      );
-      expect(
-        () => validateSelectedFriendRefs(<FriendProfileRef>[
-          _profileRef('only-one'),
-        ]),
-        throwsA(isA<InvalidFriendContractException>()),
-      );
-      expect(
-        () => validateSelectedFriendRefs(<FriendProfileRef>[
-          _profileRef('same'),
-          _profileRef('same'),
-        ]),
-        throwsA(isA<InvalidFriendContractException>()),
-      );
-      expect(validateFriendOperationId(_requestId), _requestId);
-      expect(
-        () => validateFriendOperationId('not-a-v4-id'),
-        throwsA(isA<InvalidFriendContractException>()),
-      );
-      expect(
-        () => validateFriendSearchResults(<FriendSearchResult>[
-          FriendSearchResult(
-            identity: FriendIdentity(
-              profileRef: _profileRef('search-result-one'),
-              alias: 'SameAlias',
-            ),
-            relationship: FriendRelationship.none,
+  test('friend inputs allow shared aliases but reject duplicate identities and non-v4 IDs', () {
+    expect(normalizeFriendAliasQuery('  NightOwl  '), 'NightOwl');
+    final foldedSpaceQuery = 'A${List<String>.filled(40, ' ').join()}B';
+    expect(normalizeFriendAliasQuery(foldedSpaceQuery), foldedSpaceQuery);
+    expect(
+      () => normalizeFriendAliasQuery('unsafe\u202Ealias'),
+      throwsA(isA<InvalidFriendContractException>()),
+    );
+    expect(
+      () => normalizeFriendAliasQuery('unsafe\u00ADalias'),
+      throwsA(isA<InvalidFriendContractException>()),
+    );
+    expect(
+      () => validateSelectedFriendRefs(<FriendProfileRef>[
+        _profileRef('only-one'),
+      ]),
+      throwsA(isA<InvalidFriendContractException>()),
+    );
+    expect(
+      () => validateSelectedFriendRefs(<FriendProfileRef>[
+        _profileRef('same'),
+        _profileRef('same'),
+      ]),
+      throwsA(isA<InvalidFriendContractException>()),
+    );
+    expect(validateFriendOperationId(_requestId), _requestId);
+    expect(
+      () => validateFriendOperationId('not-a-v4-id'),
+      throwsA(isA<InvalidFriendContractException>()),
+    );
+    final maximumCursor = List<String>.filled(1024, 'c').join();
+    expect(
+      FriendDirectoryPage(
+        items: const <FriendIdentity>[],
+        nextCursor: maximumCursor,
+      ).nextCursor,
+      maximumCursor,
+    );
+    expect(
+      () => FriendRequestPage(
+        items: const <FriendRequestRecord>[],
+        nextCursor: '${maximumCursor}c',
+      ),
+      throwsA(isA<InvalidFriendContractException>()),
+    );
+    expect(
+      FriendIdentity.fromBackend(
+        publicProfileId: FriendProfileRef.fromPublicProfileId(
+          'aaaaaaaa-1111-4111-8111-111111111111',
+        ),
+        profileCode: 'ABCDEFGHJK',
+        alias: 'Alias',
+        avatarRef: 'avatar:users/example.png',
+      ).avatarRef,
+      'avatar:users/example.png',
+    );
+    expect(
+      () => FriendIdentity.fromBackend(
+        publicProfileId: FriendProfileRef.fromPublicProfileId(
+          'aaaaaaaa-1111-4111-8111-111111111111',
+        ),
+        profileCode: 'ABCDEFGHJK',
+        alias: 'Alias',
+        avatarRef: 'https://example.invalid/avatar.png',
+      ),
+      throwsA(isA<InvalidFriendContractException>()),
+    );
+    final sharedAliasResults = validateFriendSearchResults(<FriendSearchResult>[
+      FriendSearchResult(
+        identity: FriendIdentity(
+          profileRef: _profileRef('search-result-one'),
+          alias: 'SameAlias',
+        ),
+        relationship: FriendRelationship.none,
+      ),
+      FriendSearchResult(
+        identity: FriendIdentity(
+          profileRef: _profileRef('search-result-two'),
+          alias: 'samealias',
+        ),
+        relationship: FriendRelationship.none,
+      ),
+    ]);
+    expect(sharedAliasResults, hasLength(2));
+    expect(
+      () => validateFriendSearchResults(<FriendSearchResult>[
+        FriendSearchResult(
+          identity: FriendIdentity(
+            profileRef: _profileRef('search-result-three'),
+            alias: 'First',
+            profileCode: '0123456789',
           ),
-          FriendSearchResult(
-            identity: FriendIdentity(
-              profileRef: _profileRef('search-result-two'),
-              alias: 'samealias',
-            ),
-            relationship: FriendRelationship.none,
+          relationship: FriendRelationship.none,
+        ),
+        FriendSearchResult(
+          identity: FriendIdentity(
+            profileRef: _profileRef('search-result-four'),
+            alias: 'Second',
+            profileCode: '0123456789',
           ),
-        ]),
-        throwsA(isA<InvalidFriendContractException>()),
-      );
-    },
-  );
+          relationship: FriendRelationship.none,
+        ),
+      ]),
+      throwsA(isA<InvalidFriendContractException>()),
+    );
+  });
 
   test(
     'Preview request becomes pending but never becomes an accepted friend',
@@ -647,7 +706,7 @@ void main() {
           ?.text,
       'mia',
     );
-    expect(find.text('结果待确认'), findsOneWidget);
+    expect(find.text('好友请求结果待确认'), findsOneWidget);
   });
 
   testWidgets('unknown group name restores after route disposal', (
@@ -886,7 +945,10 @@ void main() {
         find.byKey(const ValueKey<String>('friend-group-open-channel')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('opened-messaging:loop-created-1'), findsOneWidget);
+      expect(
+        find.text('opened-messaging:loop_group_created_1'),
+        findsOneWidget,
+      );
     },
   );
 
@@ -1218,7 +1280,7 @@ final class _OutcomeUnknownGroupGateway implements FriendGateway {
 }
 
 final class _ProductionGroupGateway implements FriendGateway {
-  _ProductionGroupGateway({this.streamCid = 'messaging:loop-created-1'});
+  _ProductionGroupGateway({this.streamCid = 'messaging:loop_group_created_1'});
 
   final MemoryFriendGateway _delegate = MemoryFriendGateway();
   final String? streamCid;
@@ -1233,6 +1295,7 @@ final class _ProductionGroupGateway implements FriendGateway {
     required List<FriendProfileRef> friendRefs,
   }) async => CreatedFriendGroup(
     requestId: requestId,
+    groupId: streamCid == null ? null : '22222222-2222-4222-8222-222222222222',
     name: normalizedName,
     friendRefs: friendRefs,
     streamCid: streamCid,

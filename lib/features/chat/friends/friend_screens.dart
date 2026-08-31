@@ -21,6 +21,17 @@ class _FriendListPageState extends ConsumerState<FriendListPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(friendDirectoryControllerProvider);
     final controller = ref.read(friendDirectoryControllerProvider.notifier);
+    final direct = ref.watch(friendDirectControllerProvider);
+    final directController = ref.read(friendDirectControllerProvider.notifier);
+    ref.listen<FriendDirectState>(friendDirectControllerProvider, (
+      previous,
+      next,
+    ) {
+      final receipt = next.receipt;
+      if (receipt == null || previous?.receipt == receipt) return;
+      directController.consumeReceipt();
+      context.push('/chat/channel/${Uri.encodeComponent(receipt.streamCid)}');
+    });
     if (state.phase == FriendDirectoryPhase.initial) {
       scheduleMicrotask(() {
         if (mounted) unawaited(controller.load());
@@ -31,8 +42,15 @@ class _FriendListPageState extends ConsumerState<FriendListPage> {
           ? '开发预览 · PEOPLE'
           : 'PEOPLE',
       title: '我的好友',
-      subtitle: '好友关系属于 LOOP 账号，与钱包地址和群内匿名昵称分离。',
+      subtitle: '好友关系属于 LOOP 账号，与钱包地址和每个群组内的独立化名分离。',
       actions: <Widget>[
+        if (state.mode == FriendGatewayMode.production)
+          IconButton(
+            key: const ValueKey<String>('friends-open-requests'),
+            tooltip: '好友申请',
+            onPressed: () => context.push('/chat/friends/requests'),
+            icon: const Icon(Icons.mark_email_unread_outlined),
+          ),
         if (state.mode != FriendGatewayMode.unavailable)
           IconButton(
             key: const ValueKey<String>('friends-refresh'),
@@ -54,7 +72,7 @@ class _FriendListPageState extends ConsumerState<FriendListPage> {
           const _FriendPreviewBanner(),
           const SizedBox(height: 14),
         ],
-        ..._directoryContent(state, controller),
+        ..._directoryContent(state, controller, direct, directController),
       ],
     );
   }
@@ -62,6 +80,8 @@ class _FriendListPageState extends ConsumerState<FriendListPage> {
   List<Widget> _directoryContent(
     FriendDirectoryState state,
     FriendDirectoryController controller,
+    FriendDirectState direct,
+    FriendDirectController directController,
   ) {
     if (state.phase == FriendDirectoryPhase.unavailable) {
       return const <Widget>[
@@ -79,6 +99,28 @@ class _FriendListPageState extends ConsumerState<FriendListPage> {
     }
 
     final content = <Widget>[];
+    if (direct.phase == FriendDirectPhase.failure) {
+      content.addAll(<Widget>[
+        LoopStateCard(
+          key: const ValueKey<String>('friend-direct-failure'),
+          title: direct.failureKind == FriendGatewayFailureKind.outcomeUnknown
+              ? '私聊频道结果待确认'
+              : '暂时无法打开私聊',
+          message: _friendFailureMessage(direct.failureKind),
+          icon: Icons.forum_outlined,
+          tone: LoopTone.danger,
+          action: direct.canReconcile
+              ? OutlinedButton.icon(
+                  key: const ValueKey<String>('friend-direct-reconcile'),
+                  onPressed: () => unawaited(directController.reconcile()),
+                  icon: const Icon(Icons.manage_search_rounded),
+                  label: const Text('查询结果'),
+                )
+              : null,
+        ),
+        const SizedBox(height: 14),
+      ]);
+    }
     if (state.phase == FriendDirectoryPhase.failure) {
       content.addAll(<Widget>[
         LoopStateCard(
@@ -133,13 +175,40 @@ class _FriendListPageState extends ConsumerState<FriendListPage> {
               index < state.friends.length;
               index++
             ) ...<Widget>[
-              _FriendIdentityRow(identity: state.friends[index]),
+              _FriendIdentityRow(
+                identity: state.friends[index],
+                chatEnabled: state.mode == FriendGatewayMode.production,
+                chatBusy:
+                    direct.isBusy &&
+                    direct.targetProfileRef == state.friends[index].profileRef,
+                onChat: () => unawaited(
+                  directController.open(state.friends[index].profileRef),
+                ),
+              ),
               if (index != state.friends.length - 1)
                 const Divider(height: 1, indent: 72),
             ],
           ],
         ),
       ),
+      if (state.nextCursor != null) ...<Widget>[
+        const SizedBox(height: 14),
+        Center(
+          child: OutlinedButton.icon(
+            key: const ValueKey<String>('friends-load-more'),
+            onPressed: state.isBusy
+                ? null
+                : () => unawaited(controller.loadMore()),
+            icon: state.isBusy
+                ? const SizedBox.square(
+                    dimension: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.expand_more_rounded),
+            label: const Text('加载更多'),
+          ),
+        ),
+      ],
     ]);
     return content;
   }
@@ -190,6 +259,17 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
           : 'DISCOVERY',
       title: '添加好友',
       subtitle: '仅搜索允许被发现的 LOOP 主昵称；群内昵称和钱包地址不会参与搜索。',
+      actions: <Widget>[
+        if (state.mode == FriendGatewayMode.production)
+          IconButton(
+            key: const ValueKey<String>('friend-search-open-requests'),
+            tooltip: '好友申请',
+            onPressed: state.isBusy
+                ? null
+                : () => context.push('/chat/friends/requests'),
+            icon: const Icon(Icons.mark_email_unread_outlined),
+          ),
+      ],
       children: <Widget>[
         if (state.mode == FriendGatewayMode.preview) ...<Widget>[
           const _FriendPreviewBanner(),
@@ -232,7 +312,8 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
             width: double.infinity,
             child: FilledButton.icon(
               key: const ValueKey<String>('friend-alias-search-submit'),
-              onPressed: state.isBusy || _queryController.text.trim().isEmpty
+              onPressed:
+                  state.isBusy || _queryController.text.trim().runes.length < 2
                   ? null
                   : () => _search(controller),
               icon: state.phase == FriendSearchPhase.searching
@@ -312,6 +393,19 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                   icon: const Icon(Icons.refresh_rounded),
                   label: const Text('重试搜索'),
                 )
+              : requestOutcomeUnknown
+              ? OutlinedButton.icon(
+                  key: const ValueKey<String>('friend-request-reconcile'),
+                  onPressed: state.isBusy
+                      ? null
+                      : () => unawaited(
+                          controller.reconcileRequest(
+                            state.requestingProfileRef!,
+                          ),
+                        ),
+                  icon: const Icon(Icons.manage_search_rounded),
+                  label: const Text('查询结果'),
+                )
               : null,
         ),
         if (state.results.isNotEmpty) ...<Widget>[
@@ -325,7 +419,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
         LoopStateCard(
           key: ValueKey<String>('friend-search-empty'),
           title: '没有找到可添加的用户',
-          message: '请检查昵称。不可发现、已屏蔽和不存在的账号不会在客户端被区分。',
+          message: '请检查昵称。不可发现和不存在的账号不会在客户端被区分。',
           icon: Icons.person_off_outlined,
         ),
       ];
@@ -338,6 +432,16 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
     FriendSearchController controller,
   ) {
     return <Widget>[
+      if (state.truncated) ...<Widget>[
+        const LoopStateCard(
+          key: ValueKey<String>('friend-search-truncated'),
+          title: '结果较多',
+          message: '当前只显示前 20 条结果，请输入更完整的昵称缩小范围。',
+          icon: Icons.filter_alt_outlined,
+          tone: LoopTone.warning,
+        ),
+        const SizedBox(height: 14),
+      ],
       LoopSectionLabel(
         'RESULTS',
         trailing: LoopStatusPill(
@@ -370,6 +474,12 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
                     state.results[index].identity.profileRef,
                   ),
                 ),
+                onReconcile: () => unawaited(
+                  controller.reconcileRequest(
+                    state.results[index].identity.profileRef,
+                  ),
+                ),
+                onReviewIncoming: () => context.push('/chat/friends/requests'),
               ),
               if (index != state.results.length - 1)
                 const Divider(height: 1, indent: 72),
@@ -467,6 +577,11 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
                 : () => context.push(
                     '/chat/channel/${Uri.encodeComponent(group.receipt!.streamCid!)}',
                   ),
+            onSetAlias: group.receipt!.groupId == null
+                ? null
+                : () => context.push(
+                    '/chat/groups/${group.receipt!.groupId}/alias',
+                  ),
             onReset: () {
               groupController.reset();
               _nameController.clear();
@@ -478,7 +593,7 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
             key: const ValueKey<String>('friend-group-name-input'),
             controller: _nameController,
             enabled: group.canEdit,
-            maxLength: 40,
+            maxLength: 60,
             textInputAction: TextInputAction.next,
             decoration: const InputDecoration(
               labelText: '群组名称',
@@ -605,18 +720,30 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
       ),
     ];
     if (group.phase == FriendGroupPhase.failure) {
-      final outcomeUnknown =
-          group.failureKind == FriendGatewayFailureKind.outcomeUnknown;
+      final unresolved =
+          group.failureKind == FriendGatewayFailureKind.outcomeUnknown ||
+          group.failureKind == FriendGatewayFailureKind.operatorRequired;
       content.insertAll(0, <Widget>[
         LoopStateCard(
           key: const ValueKey<String>('friend-group-create-failure'),
-          title: outcomeUnknown ? '群组创建结果待确认' : '群组未创建',
-          message: outcomeUnknown
+          title: group.failureKind == FriendGatewayFailureKind.operatorRequired
+              ? '群组创建需人工核对'
+              : group.failureKind == FriendGatewayFailureKind.outcomeUnknown
+              ? '群组创建结果待确认'
+              : '群组未创建',
+          message: unresolved
               ? '${_friendFailureMessage(group.failureKind)} 当前草稿已冻结，不会自动重复提交。'
               : _friendFailureMessage(group.failureKind),
           icon: Icons.sync_problem_rounded,
           tone: LoopTone.danger,
-          action: group.canResumeEditing
+          action: group.canReconcile
+              ? OutlinedButton.icon(
+                  key: const ValueKey<String>('friend-group-reconcile'),
+                  onPressed: () => unawaited(groupController.reconcile()),
+                  icon: const Icon(Icons.manage_search_rounded),
+                  label: const Text('查询结果'),
+                )
+              : group.canResumeEditing
               ? OutlinedButton.icon(
                   key: const ValueKey<String>('friend-group-resume-editing'),
                   onPressed: groupController.resumeEditing,
@@ -648,9 +775,17 @@ class _FriendPreviewBanner extends StatelessWidget {
 }
 
 class _FriendIdentityRow extends StatelessWidget {
-  const _FriendIdentityRow({required this.identity});
+  const _FriendIdentityRow({
+    required this.identity,
+    required this.chatEnabled,
+    required this.chatBusy,
+    required this.onChat,
+  });
 
   final FriendIdentity identity;
+  final bool chatEnabled;
+  final bool chatBusy;
+  final VoidCallback onChat;
 
   @override
   Widget build(BuildContext context) {
@@ -676,13 +811,27 @@ class _FriendIdentityRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    'LOOP 主昵称',
+                    identity.accountAlias == null
+                        ? '未设置主昵称 · ${identity.profileCode}'
+                        : 'LOOP #${identity.profileCode}',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
               ),
             ),
-            const LoopStatusPill(label: '好友', tone: LoopTone.conversation),
+            if (chatEnabled)
+              IconButton(
+                tooltip: '发起私聊',
+                onPressed: chatBusy ? null : onChat,
+                icon: chatBusy
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.forum_outlined),
+              )
+            else
+              const LoopStatusPill(label: '好友', tone: LoopTone.conversation),
           ],
         ),
       ),
@@ -698,6 +847,8 @@ class _FriendSearchResultRow extends StatelessWidget {
     required this.outcomeUnknown,
     required this.enabled,
     required this.onAdd,
+    required this.onReconcile,
+    required this.onReviewIncoming,
   });
 
   final String rowKey;
@@ -706,6 +857,8 @@ class _FriendSearchResultRow extends StatelessWidget {
   final bool outcomeUnknown;
   final bool enabled;
   final VoidCallback onAdd;
+  final VoidCallback onReconcile;
+  final VoidCallback onReviewIncoming;
 
   @override
   Widget build(BuildContext context) {
@@ -720,14 +873,28 @@ class _FriendSearchResultRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              result.identity.alias,
-              style: Theme.of(context).textTheme.titleMedium,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  result.identity.alias,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'LOOP #${result.identity.profileCode}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 8),
           if (outcomeUnknown)
-            const LoopStatusPill(label: '结果待确认', tone: LoopTone.warning)
+            OutlinedButton(
+              key: ValueKey<String>('$rowKey-reconcile'),
+              onPressed: enabled ? onReconcile : null,
+              child: const Text('查询结果'),
+            )
           else
             switch (result.relationship) {
               FriendRelationship.none => OutlinedButton(
@@ -743,6 +910,15 @@ class _FriendSearchResultRow extends StatelessWidget {
               FriendRelationship.requestPending => const LoopStatusPill(
                 label: '已发送',
                 tone: LoopTone.warning,
+              ),
+              FriendRelationship.outgoingPending => const LoopStatusPill(
+                label: '已发送',
+                tone: LoopTone.warning,
+              ),
+              FriendRelationship.incomingPending => OutlinedButton(
+                key: ValueKey<String>('$rowKey-review-incoming'),
+                onPressed: enabled ? onReviewIncoming : null,
+                child: const Text('处理申请'),
               ),
               FriendRelationship.friend => const LoopStatusPill(
                 label: '已是好友',
@@ -796,9 +972,19 @@ class _SelectableFriendRow extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  identity.alias,
-                  style: Theme.of(context).textTheme.titleMedium,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      identity.alias,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'LOOP #${identity.profileCode}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -815,12 +1001,14 @@ class _CreatedFriendGroupCard extends StatelessWidget {
     required this.receipt,
     required this.onReset,
     required this.onOpen,
+    required this.onSetAlias,
   });
 
   final FriendGatewayMode mode;
   final CreatedFriendGroup receipt;
   final VoidCallback onReset;
   final VoidCallback? onOpen;
+  final VoidCallback? onSetAlias;
 
   @override
   Widget build(BuildContext context) {
@@ -842,11 +1030,23 @@ class _CreatedFriendGroupCard extends StatelessWidget {
               icon: const Icon(Icons.add_rounded),
               label: const Text('再建一个'),
             )
-          : FilledButton.icon(
-              key: const ValueKey<String>('friend-group-open-channel'),
-              onPressed: onOpen,
-              icon: const Icon(Icons.forum_outlined),
-              label: const Text('进入群聊'),
+          : Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: <Widget>[
+                OutlinedButton.icon(
+                  key: const ValueKey<String>('friend-group-set-alias'),
+                  onPressed: onSetAlias,
+                  icon: const Icon(Icons.badge_outlined),
+                  label: const Text('设置群昵称'),
+                ),
+                FilledButton.icon(
+                  key: const ValueKey<String>('friend-group-open-channel'),
+                  onPressed: onOpen,
+                  icon: const Icon(Icons.forum_outlined),
+                  label: const Text('进入群聊'),
+                ),
+              ],
             ),
     );
   }
@@ -877,9 +1077,18 @@ class _FriendLoadingCard extends StatelessWidget {
 String _friendFailureMessage(FriendGatewayFailureKind? kind) => switch (kind) {
   FriendGatewayFailureKind.unavailable => '好友服务当前不可用，没有关系或群组被修改。',
   FriendGatewayFailureKind.invalidData => '输入或服务返回的数据不符合当前安全约束。',
-  FriendGatewayFailureKind.notFound => '目标当前不可用。不可发现、已屏蔽和不存在的账号不会被区分。',
+  FriendGatewayFailureKind.notFound => '目标当前不可用。不可发现和不存在的账号不会被区分。',
   FriendGatewayFailureKind.permissionDenied => '当前账号无权完成该操作，没有关系或群组被修改。',
   FriendGatewayFailureKind.conflict => '好友关系已经变化，请刷新后再试。',
+  FriendGatewayFailureKind.rateLimited => '操作过于频繁，请稍后再试。',
+  FriendGatewayFailureKind.profileRequired => '请先在 Profile 中设置 LOOP 主昵称。',
+  FriendGatewayFailureKind.incomingRequestPending => '对方已经向你发送申请，请在好友申请中处理。',
+  FriendGatewayFailureKind.outgoingRequestPending => '好友申请已经发送，正在等待对方处理。',
+  FriendGatewayFailureKind.alreadyFriends => '你们已经是好友。',
+  FriendGatewayFailureKind.cooldown => '该好友申请处于冷却期，请稍后再试。',
+  FriendGatewayFailureKind.alreadyDecided => '这条好友申请已经处理，请刷新列表。',
+  FriendGatewayFailureKind.cursorInvalid => '列表分页已过期，需要从第一页重新加载。',
+  FriendGatewayFailureKind.operatorRequired => '频道需要后台人工核对；不会自动创建第二个频道。',
   FriendGatewayFailureKind.outcomeUnknown => '请求可能已被接收，当前无法安全确认最终结果。',
   FriendGatewayFailureKind.unexpected => '服务暂时无法完成请求；没有好友关系或群组被修改。',
   null => '操作暂时无法完成。',

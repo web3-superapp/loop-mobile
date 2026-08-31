@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted on 2026-08-31.
+Superseded for production transport and wire identity by decision 0047 on
+2026-08-31. Its visibly labelled Development Preview and feature-owned port
+boundaries remain accepted.
 
 ## Context
 

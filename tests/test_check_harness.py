@@ -100,6 +100,7 @@ FRIEND_FRONTEND_FIXTURE_FILES = (
     "docs/harness/adoption-report.md",
     "docs/phase-1/frontend-integration-report.md",
     "docs/decisions/0046-model-friends-and-group-creation-before-transport.md",
+    "docs/decisions/0047-connect-backend-social-and-server-created-chat.md",
     "lib/app.dart",
     "lib/main.dart",
     "lib/main_preview.dart",
@@ -110,9 +111,47 @@ FRIEND_FRONTEND_FIXTURE_FILES = (
     "lib/features/chat/friends/friend_controllers.dart",
     "lib/features/chat/friends/friend_gateway.dart",
     "lib/features/chat/friends/friend_models.dart",
+    "lib/features/chat/friends/friend_request_controller.dart",
+    "lib/features/chat/friends/friend_request_screen.dart",
     "lib/features/chat/friends/friend_screens.dart",
+    "lib/features/chat/group_alias/group_alias_controller.dart",
+    "lib/features/chat/group_alias/group_alias_gateway.dart",
+    "lib/features/chat/group_alias/group_alias_models.dart",
+    "lib/features/chat/group_alias/group_alias_screen.dart",
+    "lib/features/chat/group_alias/group_alias_stream_message_identity.dart",
+    "lib/features/profile/social_privacy/social_privacy_controller.dart",
+    "lib/features/profile/social_privacy/social_privacy_gateway.dart",
+    "lib/features/profile/social_privacy/social_privacy_models.dart",
+    "lib/integrations/backend/loop_authenticated_providers.dart",
+    "lib/integrations/backend/loop_authenticated_session.dart",
+    "lib/integrations/personalization/dio_loop_personalization_gateways.dart",
+    "lib/integrations/personalization/loop_personalization_providers.dart",
+    "lib/integrations/personalization/memory_social_privacy_gateway.dart",
+    "lib/integrations/social/dio_loop_group_alias_gateway.dart",
+    "lib/integrations/social/dio_loop_social_friend_gateway.dart",
+    "lib/integrations/social/loop_group_alias_providers.dart",
+    "lib/integrations/social/loop_social_providers.dart",
+    "lib/integrations/social/loop_social_repository.dart",
+    "lib/integrations/social/loop_social_transport_models.dart",
     "lib/integrations/social/memory_friend_gateway.dart",
     "test/friend_feature_test.dart",
+    "test/friend_request_feature_test.dart",
+    "test/social_ui_safety_edges_test.dart",
+    "test/loop_social_authenticated_session_test.dart",
+    "test/loop_social_repository_test.dart",
+    "test/loop_social_friend_gateway_test.dart",
+    "test/social_privacy_models_test.dart",
+    "test/social_privacy_controller_test.dart",
+    "test/social_privacy_presentation_screen_test.dart",
+    "test/group_alias_models_test.dart",
+    "test/group_alias_controller_test.dart",
+    "test/group_alias_resolver_test.dart",
+    "test/group_alias_stream_message_identity_test.dart",
+    "test/dio_loop_group_alias_gateway_test.dart",
+    "test/dio_loop_group_alias_resolver_gateway_test.dart",
+    "test/loop_group_alias_providers_test.dart",
+    "test/dio_loop_personalization_gateways_test.dart",
+    "test/loop_personalization_providers_test.dart",
     "test/stream_chat_inbox_page_test.dart",
 )
 
@@ -137,7 +176,7 @@ class HarnessTests(unittest.TestCase):
     def test_current_repository_passes(self) -> None:
         self.assertEqual([], check_harness.validate(REPOSITORY_ROOT))
 
-    def test_friend_frontend_contract_accepts_reviewed_providerless_slice(
+    def test_friend_frontend_contract_accepts_reviewed_0047_slice(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -162,8 +201,31 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_friend_frontend_contract(root)
 
         self.assertTrue(
-            any("must never install MemoryFriendGateway" in error for error in result),
+            any(
+                "must never install social Preview memory gateways" in error
+                for error in result
+            ),
             msg=f"expected production Preview-composition guard: {result}",
+        )
+
+    def test_production_friend_override_cannot_be_removed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/main.dart"
+            source = path.read_text(encoding="utf-8")
+            override = """        friendGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopProductionFriendGatewayProvider),
+        ),
+"""
+            self.assertIn(override, source)
+            path.write_text(source.replace(override, ""), encoding="utf-8")
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("Production social override is required" in error for error in result),
+            msg=f"expected production Social composition guard: {result}",
         )
 
     def test_friend_feature_cannot_add_direct_backend_route(self) -> None:
@@ -182,6 +244,223 @@ class HarnessTests(unittest.TestCase):
         self.assertTrue(
             any("not a direct HTTP transport" in error for error in result),
             msg=f"expected feature transport guard: {result}",
+        )
+
+    def test_friend_feature_cannot_address_a_stream_channel_directly(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/features/chat/friends/friend_screens.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8")
+                + "\nfinal unsafeChannel = client.channel('messaging', id: 'unsafe');\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("must never create channels directly" in error for error in result),
+            msg=f"expected feature Stream-authority guard: {result}",
+        )
+
+    def test_group_alias_put_must_keep_alive_before_dispatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/features/chat/group_alias/group_alias_controller.dart"
+            source = path.read_text(encoding="utf-8")
+            start = source.find("Future<void> _startPut")
+            dispatch = source.find("_performPut(", start)
+            retain = source.rfind("_retainOutcomeUnknown();", start, dispatch)
+            self.assertGreaterEqual(retain, start)
+            path.write_text(
+                source[:retain] + "// removed keepAlive" + source[retain + len("_retainOutcomeUnknown();"):],
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("keepAlive before dispatching" in error for error in result),
+            msg=f"expected immutable Alias in-flight retention guard: {result}",
+        )
+
+    def test_reconciliation_query_requires_exact_not_found_code(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/integrations/social/dio_loop_social_friend_gateway.dart"
+            source = path.read_text(encoding="utf-8")
+            marker = "error.code == 'chat_operation_not_found'"
+            self.assertIn(marker, source)
+            path.write_text(
+                source.replace(marker, "error.code.isNotEmpty", 1),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("exact chat_operation_not_found" in error for error in result),
+            msg=f"expected exact operation-not-found replay guard: {result}",
+        )
+
+    def test_group_stream_identity_cannot_fallback_to_global_user_name(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/features/chat/group_alias/group_alias_stream_message_identity.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8")
+                + "\nString unsafeAliasFallback(User user) { return user.name; }\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("must never fall back to global identity" in error for error in result),
+            msg=f"expected group identity fallback guard: {result}",
+        )
+
+    def test_group_alias_projection_requires_exact_v1_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/features/chat/group_alias/group_alias_stream_message_identity.dart"
+            source = path.read_text(encoding="utf-8")
+            marker = (
+                "if (!setEquals(projectionFields, _aliasProjectionFields)) return null;"
+            )
+            self.assertIn(marker, source)
+            path.write_text(
+                source.replace(
+                    marker,
+                    "if (projectionFields.isEmpty) return null;",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("exact immutable v1 field set" in error for error in result),
+            msg=f"expected strict group Alias projection guard: {result}",
+        )
+
+    def test_group_channel_list_cannot_bypass_safe_identity_item(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/features/chat/stream_chat_inbox_page.dart"
+            source = path.read_text(encoding="utf-8")
+            marker = "loopStreamChannelListIdentityItem(defaultItem)"
+            self.assertIn(marker, source)
+            path.write_text(
+                source.replace(marker, "defaultItem", 1),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("channel list must route" in error for error in result),
+            msg=f"expected safe group channel-list item guard: {result}",
+        )
+
+    def test_group_channel_route_cannot_bypass_safe_page(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/features/chat/stream_chat_inbox_page.dart"
+            source = path.read_text(encoding="utf-8")
+            marker = "? LoopStreamGroupChannelPage("
+            self.assertIn(marker, source)
+            path.write_text(
+                source.replace(marker, "? StreamChannelPage(", 1),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("channel routes must select the safe page" in error for error in result),
+            msg=f"expected safe group channel-page routing guard: {result}",
+        )
+
+    def test_group_alias_deep_link_cannot_bypass_stream_membership(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/app.dart"
+            source = path.read_text(encoding="utf-8")
+            marker = "builder: (context, state) => StreamGroupAliasChannelRoutePage("
+            self.assertIn(marker, source)
+            path.write_text(
+                source.replace(
+                    marker,
+                    "builder: (context, state) => GroupAliasChannelRoutePage(",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any(
+                "Alias route must prove exact Stream membership" in error
+                for error in result
+            ),
+            msg=f"expected Alias deep-link membership guard: {result}",
+        )
+
+    def test_group_alias_resolver_cannot_send_the_full_cid(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/integrations/social/dio_loop_group_alias_gateway.dart"
+            source = path.read_text(encoding="utf-8")
+            self.assertIn("'stream_channel_id': channelId.wireValue", source)
+            path.write_text(
+                source.replace(
+                    "'stream_channel_id': channelId.wireValue",
+                    "'stream_channel_id': channelId.cid",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("validated channel ID, not the full CID" in error for error in result),
+            msg=f"expected resolver channel-ID guard: {result}",
+        )
+
+    def test_group_alias_resolver_cannot_gain_an_idempotency_key(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/integrations/social/dio_loop_group_alias_gateway.dart"
+            source = path.read_text(encoding="utf-8")
+            marker = "      'accept': Headers.jsonContentType,\n"
+            self.assertIn(marker, source)
+            path.write_text(
+                source.replace(
+                    marker,
+                    marker + "      'idempotency-key': 'unsafe',\n",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("must not send Idempotency-Key" in error for error in result),
+            msg=f"expected resolver idempotency guard: {result}",
         )
 
     def test_friend_unknown_writes_must_survive_route_disposal(self) -> None:

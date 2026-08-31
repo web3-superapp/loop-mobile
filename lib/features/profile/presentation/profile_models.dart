@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/core/text/loop_human_text.dart';
 
 const int profileMaximumVersion = 2147483647;
 
@@ -105,7 +106,7 @@ final class ProfileResource {
 
 String? _normalizeProfileAlias(String? value) {
   if (value == null) return null;
-  if (value.length > 256 || _containsForbiddenAliasCodePoint(value)) {
+  if (value.length > 256 || containsLoopForbiddenHumanTextCodePoint(value)) {
     throw const InvalidProfileContractException();
   }
 
@@ -115,34 +116,4 @@ String? _normalizeProfileAlias(String? value) {
     throw const InvalidProfileContractException();
   }
   return normalized;
-}
-
-bool _containsForbiddenAliasCodePoint(String value) {
-  final codeUnits = value.codeUnits;
-  for (var index = 0; index < codeUnits.length; index++) {
-    final unit = codeUnits[index];
-    int codePoint;
-    if (unit >= 0xD800 && unit <= 0xDBFF) {
-      if (index + 1 >= codeUnits.length) return true;
-      final low = codeUnits[index + 1];
-      if (low < 0xDC00 || low > 0xDFFF) return true;
-      codePoint = 0x10000 + ((unit - 0xD800) << 10) + (low - 0xDC00);
-      index += 1;
-    } else if (unit >= 0xDC00 && unit <= 0xDFFF) {
-      return true;
-    } else {
-      codePoint = unit;
-    }
-
-    if ((codePoint >= 0x0000 && codePoint <= 0x001F) ||
-        (codePoint >= 0x007F && codePoint <= 0x009F) ||
-        codePoint == 0x061C ||
-        codePoint == 0x200E ||
-        codePoint == 0x200F ||
-        (codePoint >= 0x202A && codePoint <= 0x202E) ||
-        (codePoint >= 0x2066 && codePoint <= 0x2069)) {
-      return true;
-    }
-  }
-  return false;
 }

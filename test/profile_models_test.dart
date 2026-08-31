@@ -60,9 +60,18 @@ void main() {
         '   ',
         'bad\nname',
         'bad\u0085name',
+        'safe\u00adevil',
+        'safe\u0600evil',
         'safe\u061cevil',
+        'safe\u06ddevil',
+        'safe\u070fevil',
+        'safe\u08e2evil',
+        'safe\u180eevil',
+        'safe\u200bevil',
         'safe\u200eevil',
         'safe\u200fevil',
+        'safe\u2028evil',
+        'safe\u2029evil',
         'safe\u202aevi',
         'safe\u202bevi',
         'safe\u202cevi',
@@ -72,6 +81,8 @@ void main() {
         'safe\u2067evi',
         'safe\u2068evi',
         'safe\u2069evi',
+        'safe\ufeffevil',
+        'safe\ufff9evil',
         String.fromCharCode(0xD800),
         String.fromCharCode(0xDC00),
       ]) {
@@ -89,11 +100,11 @@ void main() {
     test('keeps allowed Unicode without additional normalization', () {
       const decomposed = 'e\u0301';
       final value = ProfileValues(
-        alias: '  $decomposed 👩‍💻  ',
+        alias: '  $decomposed 👩💻  ',
         avatarRef: null,
       );
 
-      expect(value.alias, '$decomposed 👩‍💻');
+      expect(value.alias, '$decomposed 👩💻');
     });
 
     test('enforces opaque Avatar reference syntax and boundaries', () {

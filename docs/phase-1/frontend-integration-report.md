@@ -1146,3 +1146,61 @@ generated APK and build metadata after the evidence was recorded.
 - Pagination, incoming friend-request acceptance/rejection, exact query
   semantics, and timeout reconciliation remain pending backend-contract work;
   this slice does not hide them behind an invented adapter.
+
+## Backend Social, Server-Created Chat, and Group Alias Integration
+
+On 2026-08-31, decision 0047 superseded the preceding providerless production
+assumptions after the reviewed Development API and OpenAPI contract became
+available. Production now composes principal-bound authenticated adapters for
+Profile, public Privacy, Social Privacy, relationship-aware friend discovery,
+accepted-friend and pending-request pagination, request decisions,
+server-created group/direct channels, operation reconciliation, group
+resolution, and immutable group Alias reservation/search. Preview continues to
+use visibly labelled process-local memory adapters.
+
+Every social or Chat command owns one UUIDv4 as both `Idempotency-Key` and
+`operation_id`. Lost or malformed success responses retain the exact UUID/body
+and query the matching operation; only the exact route-specific operation-not-
+found code permits an identical replay. Authentication, rate-limit, transport,
+response-proof, parsing and polling failures cannot authorize a second write.
+Chat polling uses monotonic wall-clock and attempt bounds, while
+`operator_required` freezes the original intent for manual reconciliation.
+This retention is deliberately process-local; killed-process recovery remains
+unimplemented and is not represented as exactly-once evidence.
+
+The backend remains the only channel allocator. Flutter submits public profile
+UUIDs, validates the returned group/direct CID and result set, then queries
+Stream online by the exact CID plus current membership before mounting official
+channel UI. Direct group-Alias deep links use that same Stream-owned gate, so
+the LOOP resolver is not mounted before the current principal proves exact
+group membership. Stream continues to own messages, history, pagination, delivery,
+read state and realtime events. Group identity presentation accepts only the
+current member's exact immutable v1 Alias projection. Message senders, quotes,
+mentions, reactions, thread participants, channel previews, headers, avatars
+and typing surfaces fail closed to `群成员`/neutral group chrome rather than
+falling back to global Stream names, images, custom fields or visible IDs;
+known direct channels retain normal Stream identity behavior.
+
+OpenAPI alignment covers exact paths, methods, Bearer and JSON headers,
+idempotency headers, request/response shapes, success status codes, endpoint-
+specific public errors, canonical UUID/CID forms, the 1024-code-unit cursor
+limit, and complete Cc/Cf/Cs/Zl/Zp text rejection. Search preflight folds ASCII
+spaces for its local code-point check. NFKC validation remains authoritative to
+the backend instead of adding another client normalization dependency or
+rewriting a user's submitted display value.
+
+Repository-wide formatting checked 281 Dart files without changes, analysis
+reported no issues, and the complete Flutter suite passed 852/852 tests.
+Harness validation passed and all 304 Python mutation tests passed. The public
+Development `/health/ready` endpoint returned HTTP 200 with database `up`.
+One Android Debug build using `config/debug.json` compiled successfully; only
+the already-recorded locked Gradle 8.14 / AGP 8.13.2 future-support warnings
+and dependency deprecation notes were emitted. `flutter clean` then removed the
+APK and generated build metadata.
+
+No Release/iOS build, interactive run, simulator, physical-device flow, Privy
+test-account command, or live Stream conversation was exercised. Two-account
+request/accept/reject refresh, backend group/direct creation and convergence,
+Stream membership/permission behavior, group Alias projection and leave/rejoin
+restoration, and restart history remain explicitly unverified until performed
+against real Development provider accounts and devices.

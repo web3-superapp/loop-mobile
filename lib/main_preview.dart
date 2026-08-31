@@ -12,6 +12,8 @@ import 'package:loop_mobile/features/profile/notification_preferences/notificati
 import 'package:loop_mobile/features/profile/notification_preferences/notification_preferences_models.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
+import 'package:loop_mobile/features/profile/social_privacy/social_privacy_gateway.dart';
+import 'package:loop_mobile/features/profile/social_privacy/social_privacy_models.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_fixture_adapter.dart';
@@ -19,6 +21,7 @@ import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_trading_gateway
 import 'package:loop_mobile/integrations/personalization/memory_notification_preferences_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/memory_privacy_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/memory_profile_gateway.dart';
+import 'package:loop_mobile/integrations/personalization/memory_social_privacy_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_display_store.dart';
 import 'package:loop_mobile/integrations/privy/privy_fixture_adapter.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
@@ -73,6 +76,15 @@ Future<void> main() async {
               version: 1,
               values: const PrivacyValues.defaults(),
               updatedAt: DateTime.utc(2026, 8, 25),
+            ),
+          ),
+        ),
+        socialPrivacyGatewayProvider.overrideWithValue(
+          MemorySocialPrivacyGateway(
+            initialResource: SocialPrivacyResource(
+              version: 1,
+              values: const SocialPrivacyValues.defaults(),
+              updatedAt: DateTime.utc(2026, 8, 31),
             ),
           ),
         ),

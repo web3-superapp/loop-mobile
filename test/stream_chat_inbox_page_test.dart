@@ -9,6 +9,9 @@ import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
 import 'package:loop_mobile/features/chat/friends/friend_screens.dart';
+import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
+import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
+import 'package:loop_mobile/features/chat/group_alias/group_alias_screen.dart';
 import 'package:loop_mobile/features/chat/stream_chat_inbox_page.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
@@ -288,6 +291,37 @@ void main() {
     );
     expect(page.cid, 'messaging:loop-room-42');
   });
+
+  testWidgets(
+    'application Alias route requires current Stream membership before resolver',
+    (tester) async {
+      final resolver = _RecordingGroupAliasResolverGateway();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appConfigProvider.overrideWithValue(_config()),
+            privyAuthGatewayProvider.overrideWithValue(
+              const AuthenticatedTestPrivyGateway(),
+            ),
+            groupAliasResolverGatewayProvider.overrideWithValue(resolver),
+          ],
+          child: const LoopApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(NavigationBar));
+      GoRouter.of(context).go(
+        '/chat/channel/${Uri.encodeComponent('messaging:loop_group_12345678')}/alias',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(StreamGroupAliasChannelRoutePage), findsOneWidget);
+      expect(find.byType(GroupAliasChannelRoutePage), findsNothing);
+      expect(find.text('Stream not connected'), findsOneWidget);
+      expect(resolver.calls, isEmpty);
+    },
+  );
 }
 
 AppConfig _config() {
@@ -298,4 +332,20 @@ AppConfig _config() {
     backendBaseUrl: '',
     firebaseConfigured: false,
   );
+}
+
+final class _RecordingGroupAliasResolverGateway
+    implements GroupAliasResolverGateway {
+  final List<GroupAliasStreamChannelId> calls = <GroupAliasStreamChannelId>[];
+
+  @override
+  GroupAliasGatewayMode get mode => GroupAliasGatewayMode.production;
+
+  @override
+  Future<GroupId> resolveGroup(GroupAliasStreamChannelId channelId) {
+    calls.add(channelId);
+    return Future<GroupId>.error(
+      const GroupAliasGatewayException(GroupAliasGatewayFailureKind.unexpected),
+    );
+  }
 }

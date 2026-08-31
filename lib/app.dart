@@ -45,6 +45,8 @@ final _loopStreamComponentBuilders = StreamComponentBuilders(
         enableVoiceRecording: false,
       ),
     ),
+    messageItem: loopStreamGroupMessageItemBuilder,
+    mentionItem: loopStreamGroupMentionItemBuilder,
   ),
 );
 
@@ -270,8 +272,24 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
         builder: (context, state) => const AddFriendPage(),
       ),
       GoRoute(
+        path: '/chat/friends/requests',
+        builder: (context, state) => const FriendRequestsPage(),
+      ),
+      GoRoute(
         path: '/chat/groups/create',
         builder: (context, state) => const CreateFriendGroupPage(),
+      ),
+      GoRoute(
+        path: '/chat/groups/:groupId/alias',
+        builder: (context, state) => GroupAliasRoutePage(
+          routeGroupId: state.pathParameters['groupId'] ?? '',
+        ),
+      ),
+      GoRoute(
+        path: '/chat/channel/:cid/alias',
+        builder: (context, state) => StreamGroupAliasChannelRoutePage(
+          cid: state.pathParameters['cid'] ?? '',
+        ),
       ),
       GoRoute(
         path: '/chat/group',
@@ -517,6 +535,7 @@ final List<RouteBase> _profileRoutes =
     <(String, String)>[
           ('/profile/edit', 'profile-edit'),
           ('/profile/privacy', 'privacy'),
+          ('/profile/social-privacy', 'social-privacy'),
           ('/profile/copy', 'copytrade-perms'),
           ('/profile/security', 'security'),
           ('/profile/devices', 'devices'),
@@ -580,7 +599,7 @@ Widget _profileScreen(BuildContext context, WidgetRef ref, String id) {
         ? (session.isPreview ? 'Development preview' : 'Restricted session')
         : 'Privy session',
     address: account?.wallet?.address ?? 'No wallet connected',
-    bio: 'Provider-backed profile bootstrap is not connected.',
+    bio: 'Bio is not part of the reviewed Profile presentation contract.',
     connections: 0,
     groups: 0,
     watchlistItems: 0,
@@ -615,6 +634,7 @@ String _profilePath(String id) => switch (id) {
   'friends' => '/profile/friends',
   'profile-edit' => '/profile/edit',
   'privacy' => '/profile/privacy',
+  'social-privacy' => '/profile/social-privacy',
   'copytrade-perms' => '/profile/copy',
   'security' => '/profile/security',
   'devices' => '/profile/devices',
@@ -677,7 +697,10 @@ abstract final class LoopRouteRegistry {
     ...retainedPerpPaths,
     '/chat',
     '/chat/friends/add',
+    '/chat/friends/requests',
     '/chat/groups/create',
+    '/chat/groups/:groupId/alias',
+    '/chat/channel/:cid/alias',
     '/chat/group',
     '/chat/voice',
     '/chat/dm',
@@ -714,6 +737,7 @@ abstract final class LoopRouteRegistry {
     '/profile/friends',
     '/profile/edit',
     '/profile/privacy',
+    '/profile/social-privacy',
     '/profile/copy',
     '/profile/security',
     '/profile/devices',

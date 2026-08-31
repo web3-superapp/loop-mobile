@@ -15,6 +15,7 @@ final class FriendDirectoryState {
     required this.mode,
     required this.phase,
     Iterable<FriendIdentity> friends = const <FriendIdentity>[],
+    this.nextCursor,
     this.failureKind,
   }) : friends = validateFriendDirectory(friends);
 
@@ -32,9 +33,11 @@ final class FriendDirectoryState {
   final FriendGatewayMode mode;
   final FriendDirectoryPhase phase;
   final List<FriendIdentity> friends;
+  final String? nextCursor;
   final FriendGatewayFailureKind? failureKind;
 
   bool get isBusy => phase == FriendDirectoryPhase.loading;
+  bool get canLoadMore => !isBusy && nextCursor != null;
 }
 
 final class FriendDirectoryController extends Notifier<FriendDirectoryState> {
@@ -59,7 +62,9 @@ final class FriendDirectoryController extends Notifier<FriendDirectoryState> {
 
   Future<void> reload() => _startLoad();
 
-  Future<void> _startLoad() {
+  Future<void> loadMore() => _startLoad(append: true);
+
+  Future<void> _startLoad({bool append = false}) {
     final active = _operation;
     if (active != null) return active;
     final gateway = ref.read(friendGatewayProvider);
@@ -74,27 +79,59 @@ final class FriendDirectoryController extends Notifier<FriendDirectoryState> {
 
     final generation = ++_generation;
     late final Future<void> operation;
-    operation = _performLoad(gateway, generation).whenComplete(() {
-      if (identical(_operation, operation)) _operation = null;
-    });
+    operation = _performLoad(gateway, generation, append: append).whenComplete(
+      () {
+        if (identical(_operation, operation)) _operation = null;
+      },
+    );
     _operation = operation;
     return operation;
   }
 
-  Future<void> _performLoad(FriendGateway gateway, int generation) async {
+  Future<void> _performLoad(
+    FriendGateway gateway,
+    int generation, {
+    required bool append,
+  }) async {
     final previousFriends = state.friends;
+    final previousCursor = state.nextCursor;
+    if (append && previousCursor == null) return;
     state = FriendDirectoryState(
       mode: gateway.mode,
       phase: FriendDirectoryPhase.loading,
       friends: previousFriends,
+      nextCursor: previousCursor,
     );
     try {
-      final loaded = validateFriendDirectory(await gateway.loadFriends());
+      late final List<FriendIdentity> loaded;
+      String? nextCursor;
+      if (gateway is LoopSocialFriendGateway) {
+        FriendDirectoryPage page;
+        try {
+          page = await gateway.loadFriendPage(
+            cursor: append ? previousCursor : null,
+          );
+        } on FriendGatewayException catch (error) {
+          if (!append || error.kind != FriendGatewayFailureKind.cursorInvalid) {
+            rethrow;
+          }
+          page = await gateway.loadFriendPage();
+          append = false;
+        }
+        final merged = append
+            ? <FriendIdentity>[...previousFriends, ...page.items]
+            : page.items;
+        loaded = validateFriendDirectory(_deduplicateFriends(merged));
+        nextCursor = page.nextCursor;
+      } else {
+        loaded = validateFriendDirectory(await gateway.loadFriends());
+      }
       if (!_isCurrent(generation)) return;
       state = FriendDirectoryState(
         mode: gateway.mode,
         phase: FriendDirectoryPhase.ready,
         friends: loaded,
+        nextCursor: nextCursor,
       );
     } on FriendGatewayException catch (error) {
       if (!_isCurrent(generation)) return;
@@ -129,11 +166,24 @@ final class FriendDirectoryController extends Notifier<FriendDirectoryState> {
           ? FriendDirectoryPhase.unavailable
           : FriendDirectoryPhase.failure,
       friends: previousFriends,
+      nextCursor: state.nextCursor,
       failureKind: kind,
     );
   }
 
   bool _isCurrent(int generation) => ref.mounted && generation == _generation;
+
+  List<FriendIdentity> _deduplicateFriends(List<FriendIdentity> values) {
+    final byId = <FriendProfileRef, FriendIdentity>{};
+    for (final value in values) {
+      final previous = byId[value.profileRef];
+      if (previous != null && previous != value) {
+        throw const InvalidFriendContractException();
+      }
+      byId[value.profileRef] = value;
+    }
+    return byId.values.toList(growable: false);
+  }
 }
 
 final friendDirectoryControllerProvider =
@@ -161,6 +211,7 @@ final class FriendSearchState {
     this.requestingProfileRef,
     Iterable<FriendProfileRef> outcomeUnknownProfileRefs =
         const <FriendProfileRef>[],
+    this.truncated = false,
     this.failureKind,
   }) : results = validateFriendSearchResults(results),
        outcomeUnknownProfileRefs = Set<FriendProfileRef>.unmodifiable(
@@ -184,6 +235,7 @@ final class FriendSearchState {
   final List<FriendSearchResult> results;
   final FriendProfileRef? requestingProfileRef;
   final Set<FriendProfileRef> outcomeUnknownProfileRefs;
+  final bool truncated;
   final FriendGatewayFailureKind? failureKind;
 
   bool get isBusy =>
@@ -254,9 +306,17 @@ final class FriendSearchController extends Notifier<FriendSearchState> {
       query: query,
     );
     try {
-      final results = validateFriendSearchResults(
-        await gateway.searchByAlias(query),
-      );
+      late final List<FriendSearchResult> results;
+      var truncated = false;
+      if (gateway is LoopSocialFriendGateway) {
+        final page = await gateway.searchByAliasPage(query);
+        results = page.items;
+        truncated = page.truncated;
+      } else {
+        results = validateFriendSearchResults(
+          await gateway.searchByAlias(query),
+        );
+      }
       if (!_isCurrent(generation)) return;
       for (final result in results) {
         if (result.relationship != FriendRelationship.none) {
@@ -269,6 +329,7 @@ final class FriendSearchController extends Notifier<FriendSearchState> {
         phase: FriendSearchPhase.ready,
         query: query,
         results: results,
+        truncated: truncated,
         outcomeUnknownProfileRefs: _outcomeUnknownProfileRefs.where(
           (profileRef) =>
               results.any((result) => result.identity.profileRef == profileRef),
@@ -302,7 +363,16 @@ final class FriendSearchController extends Notifier<FriendSearchState> {
     }
   }
 
-  Future<void> sendRequest(FriendProfileRef profileRef) {
+  Future<void> sendRequest(FriendProfileRef profileRef) =>
+      _startRequest(profileRef, reconcileOnly: false);
+
+  Future<void> reconcileRequest(FriendProfileRef profileRef) =>
+      _startRequest(profileRef, reconcileOnly: true);
+
+  Future<void> _startRequest(
+    FriendProfileRef profileRef, {
+    required bool reconcileOnly,
+  }) {
     final active = _operation;
     if (active != null) return active;
     final index = state.results.indexWhere(
@@ -310,7 +380,8 @@ final class FriendSearchController extends Notifier<FriendSearchState> {
     );
     if (index < 0 ||
         state.results[index].relationship != FriendRelationship.none ||
-        _outcomeUnknownProfileRefs.contains(profileRef)) {
+        (_outcomeUnknownProfileRefs.contains(profileRef) && !reconcileOnly) ||
+        (!_outcomeUnknownProfileRefs.contains(profileRef) && reconcileOnly)) {
       return Future<void>.value();
     }
     final gateway = ref.read(friendGatewayProvider);
@@ -346,19 +417,36 @@ final class FriendSearchController extends Notifier<FriendSearchState> {
       phase: FriendSearchPhase.requesting,
       query: previous.query,
       results: previous.results,
+      truncated: previous.truncated,
       requestingProfileRef: profileRef,
       outcomeUnknownProfileRefs: previous.outcomeUnknownProfileRefs,
     );
     try {
-      final updated = FriendSearchResult.copyOf(
-        await gateway.sendFriendRequest(
-          requestId: requestId,
-          profileRef: profileRef,
-        ),
-      );
+      late final FriendSearchResult updated;
+      if (gateway is LoopSocialFriendGateway) {
+        final receipt = await gateway.sendFriendRequestCommand(
+          operationId: requestId,
+          targetProfileRef: profileRef,
+        );
+        final previousResult = previous.results.firstWhere(
+          (result) => result.identity.profileRef == profileRef,
+        );
+        updated = FriendSearchResult(
+          identity: previousResult.identity,
+          relationship: FriendRelationship.outgoingPending,
+          friendRequestId: receipt.friendRequestId,
+        );
+      } else {
+        updated = FriendSearchResult.copyOf(
+          await gateway.sendFriendRequest(
+            requestId: requestId,
+            profileRef: profileRef,
+          ),
+        );
+      }
       if (!_isCurrent(generation)) return;
       if (updated.identity.profileRef != profileRef ||
-          updated.relationship != FriendRelationship.requestPending) {
+          (!updated.isOutgoingPending)) {
         _outcomeUnknownProfileRefs.add(profileRef);
         _publishFailure(
           gateway.mode,
@@ -382,6 +470,7 @@ final class FriendSearchController extends Notifier<FriendSearchState> {
         phase: FriendSearchPhase.ready,
         query: previous.query,
         results: nextResults,
+        truncated: previous.truncated,
         outcomeUnknownProfileRefs: previous.outcomeUnknownProfileRefs.where(
           (candidate) => candidate != profileRef,
         ),
@@ -452,6 +541,7 @@ final class FriendSearchController extends Notifier<FriendSearchState> {
           : FriendSearchPhase.failure,
       query: query,
       results: results,
+      truncated: state.truncated,
       requestingProfileRef: requestingProfileRef,
       outcomeUnknownProfileRefs: _outcomeUnknownProfileRefs.where(
         (profileRef) =>
@@ -509,7 +599,13 @@ final class FriendGroupState {
 
   bool get canResumeEditing =>
       phase == FriendGroupPhase.failure &&
-      failureKind != FriendGatewayFailureKind.outcomeUnknown;
+      failureKind != FriendGatewayFailureKind.outcomeUnknown &&
+      failureKind != FriendGatewayFailureKind.operatorRequired;
+
+  bool get canReconcile =>
+      phase == FriendGroupPhase.failure &&
+      failureKind == FriendGatewayFailureKind.outcomeUnknown &&
+      requestId != null;
 
   bool get canCreate {
     if (mode == FriendGatewayMode.unavailable ||
@@ -517,7 +613,7 @@ final class FriendGroupState {
       return false;
     }
     try {
-      normalizeFriendDisplayName(name);
+      normalizeFriendGroupName(name);
       validateSelectedFriendRefs(selectedFriendRefs);
       return true;
     } on InvalidFriendContractException {
@@ -587,7 +683,7 @@ final class FriendGroupController extends Notifier<FriendGroupState> {
       return Future<void>.value();
     }
 
-    final normalizedName = normalizeFriendDisplayName(state.name);
+    final normalizedName = normalizeFriendGroupName(state.name);
     final friendRefs = validateSelectedFriendRefs(state.selectedFriendRefs);
     final requestId = state.requestId ?? const Uuid().v4();
     _unresolvedWriteKeepAlive ??= ref.keepAlive();
@@ -600,6 +696,27 @@ final class FriendGroupController extends Notifier<FriendGroupState> {
           requestId: requestId,
           normalizedName: normalizedName,
           friendRefs: friendRefs,
+        ).whenComplete(() {
+          if (identical(_operation, operation)) _operation = null;
+        });
+    _operation = operation;
+    return operation;
+  }
+
+  Future<void> reconcile() {
+    final active = _operation;
+    if (active != null) return active;
+    if (!state.canReconcile) return Future<void>.value();
+    final gateway = ref.read(friendGatewayProvider);
+    final generation = ++_generation;
+    late final Future<void> operation;
+    operation =
+        _performCreate(
+          gateway: gateway,
+          generation: generation,
+          requestId: state.requestId!,
+          normalizedName: normalizeFriendGroupName(state.name),
+          friendRefs: validateSelectedFriendRefs(state.selectedFriendRefs),
         ).whenComplete(() {
           if (identical(_operation, operation)) _operation = null;
         });
@@ -632,7 +749,7 @@ final class FriendGroupController extends Notifier<FriendGroupState> {
       if (!_isCurrent(generation)) return;
       if (receipt.requestId != requestId ||
           receipt.name != normalizedName ||
-          !listEquals(receipt.friendRefs, friendRefs) ||
+          !_sameFriendRefSet(receipt.friendRefs, friendRefs) ||
           (gateway.mode == FriendGatewayMode.preview &&
               receipt.streamCid != null) ||
           (gateway.mode == FriendGatewayMode.production &&
@@ -664,7 +781,8 @@ final class FriendGroupController extends Notifier<FriendGroupState> {
         friendRefs,
         error.kind,
       );
-      if (error.kind != FriendGatewayFailureKind.outcomeUnknown) {
+      if (error.kind != FriendGatewayFailureKind.outcomeUnknown &&
+          error.kind != FriendGatewayFailureKind.operatorRequired) {
         _releaseWriteRetention();
       }
     } on InvalidFriendContractException {
@@ -701,7 +819,8 @@ final class FriendGroupController extends Notifier<FriendGroupState> {
 
   void reset() {
     if (state.isBusy ||
-        state.failureKind == FriendGatewayFailureKind.outcomeUnknown) {
+        state.failureKind == FriendGatewayFailureKind.outcomeUnknown ||
+        state.failureKind == FriendGatewayFailureKind.operatorRequired) {
       return;
     }
     state = FriendGroupState.initial(ref.read(friendGatewayProvider).mode);
@@ -731,9 +850,228 @@ final class FriendGroupController extends Notifier<FriendGroupState> {
   }
 
   bool _isCurrent(int generation) => ref.mounted && generation == _generation;
+
+  bool _sameFriendRefSet(
+    List<FriendProfileRef> left,
+    List<FriendProfileRef> right,
+  ) => left.length == right.length && left.toSet().containsAll(right);
 }
 
 final friendGroupControllerProvider =
     NotifierProvider.autoDispose<FriendGroupController, FriendGroupState>(
       FriendGroupController.new,
+    );
+
+enum FriendDirectPhase { idle, opening, opened, unavailable, failure }
+
+@immutable
+final class FriendDirectState {
+  const FriendDirectState({
+    required this.mode,
+    required this.phase,
+    this.targetProfileRef,
+    this.operationId,
+    this.receipt,
+    this.failureKind,
+  });
+
+  factory FriendDirectState.initial(FriendGatewayMode mode) =>
+      FriendDirectState(
+        mode: mode,
+        phase: mode == FriendGatewayMode.production
+            ? FriendDirectPhase.idle
+            : FriendDirectPhase.unavailable,
+        failureKind: mode == FriendGatewayMode.production
+            ? null
+            : FriendGatewayFailureKind.unavailable,
+      );
+
+  final FriendGatewayMode mode;
+  final FriendDirectPhase phase;
+  final FriendProfileRef? targetProfileRef;
+  final String? operationId;
+  final CreatedDirectFriendChannel? receipt;
+  final FriendGatewayFailureKind? failureKind;
+
+  bool get isBusy => phase == FriendDirectPhase.opening;
+  bool get canReconcile =>
+      phase == FriendDirectPhase.failure &&
+      failureKind == FriendGatewayFailureKind.outcomeUnknown &&
+      targetProfileRef != null &&
+      operationId != null;
+}
+
+final class FriendDirectController extends Notifier<FriendDirectState> {
+  Future<void>? _operation;
+  KeepAliveLink? _unresolvedWriteKeepAlive;
+  final Map<FriendProfileRef, String> _operationIds =
+      <FriendProfileRef, String>{};
+  final Map<FriendProfileRef, FriendGatewayFailureKind> _unresolvedFailures =
+      <FriendProfileRef, FriendGatewayFailureKind>{};
+  var _generation = 0;
+
+  @override
+  FriendDirectState build() {
+    _unresolvedWriteKeepAlive?.close();
+    _unresolvedWriteKeepAlive = null;
+    _operationIds.clear();
+    _unresolvedFailures.clear();
+    _operation = null;
+    _generation += 1;
+    final mode = ref.watch(friendGatewayProvider).mode;
+    ref.onDispose(() => _generation += 1);
+    return FriendDirectState.initial(mode);
+  }
+
+  Future<void> open(FriendProfileRef targetProfileRef) =>
+      _start(targetProfileRef, reconcileOnly: false);
+
+  Future<void> reconcile() {
+    final target = state.targetProfileRef;
+    if (target == null || !state.canReconcile) return Future<void>.value();
+    return _start(target, reconcileOnly: true);
+  }
+
+  Future<void> _start(
+    FriendProfileRef targetProfileRef, {
+    required bool reconcileOnly,
+  }) {
+    final active = _operation;
+    if (active != null) return active;
+    final gateway = ref.read(friendGatewayProvider);
+    if (gateway is! LoopSocialFriendGateway ||
+        gateway.mode != FriendGatewayMode.production) {
+      state = FriendDirectState.initial(gateway.mode);
+      return Future<void>.value();
+    }
+    final existing = _operationIds[targetProfileRef];
+    final unresolvedKind = _unresolvedFailures[targetProfileRef];
+    if (existing != null && !reconcileOnly) {
+      _publishFailure(
+        gateway.mode,
+        existing,
+        targetProfileRef,
+        unresolvedKind ?? FriendGatewayFailureKind.outcomeUnknown,
+      );
+      return Future<void>.value();
+    }
+    if (reconcileOnly &&
+        (existing == null ||
+            unresolvedKind != FriendGatewayFailureKind.outcomeUnknown)) {
+      return Future<void>.value();
+    }
+    final operationId = existing ?? const Uuid().v4();
+    _operationIds[targetProfileRef] = operationId;
+    _unresolvedWriteKeepAlive ??= ref.keepAlive();
+    final generation = ++_generation;
+    late final Future<void> operation;
+    operation =
+        _perform(
+          gateway: gateway,
+          generation: generation,
+          operationId: operationId,
+          targetProfileRef: targetProfileRef,
+        ).whenComplete(() {
+          if (identical(_operation, operation)) _operation = null;
+        });
+    _operation = operation;
+    return operation;
+  }
+
+  Future<void> _perform({
+    required LoopSocialFriendGateway gateway,
+    required int generation,
+    required String operationId,
+    required FriendProfileRef targetProfileRef,
+  }) async {
+    state = FriendDirectState(
+      mode: gateway.mode,
+      phase: FriendDirectPhase.opening,
+      targetProfileRef: targetProfileRef,
+      operationId: operationId,
+    );
+    try {
+      final receipt = await gateway.createDirectChannel(
+        operationId: operationId,
+        targetProfileRef: targetProfileRef,
+      );
+      if (!_isCurrent(generation)) return;
+      if (receipt.operationId != operationId ||
+          receipt.targetProfileRef != targetProfileRef) {
+        _unresolvedFailures[targetProfileRef] =
+            FriendGatewayFailureKind.outcomeUnknown;
+        _publishFailure(
+          gateway.mode,
+          operationId,
+          targetProfileRef,
+          FriendGatewayFailureKind.outcomeUnknown,
+        );
+        return;
+      }
+      _operationIds.remove(targetProfileRef);
+      _unresolvedFailures.remove(targetProfileRef);
+      state = FriendDirectState(
+        mode: gateway.mode,
+        phase: FriendDirectPhase.opened,
+        targetProfileRef: targetProfileRef,
+        operationId: operationId,
+        receipt: receipt,
+      );
+      _releaseWriteRetentionIfResolved();
+    } on FriendGatewayException catch (error) {
+      if (!_isCurrent(generation)) return;
+      if (error.kind == FriendGatewayFailureKind.outcomeUnknown ||
+          error.kind == FriendGatewayFailureKind.operatorRequired) {
+        _unresolvedFailures[targetProfileRef] = error.kind;
+      } else {
+        _operationIds.remove(targetProfileRef);
+        _unresolvedFailures.remove(targetProfileRef);
+      }
+      _publishFailure(gateway.mode, operationId, targetProfileRef, error.kind);
+      _releaseWriteRetentionIfResolved();
+    } catch (_) {
+      if (!_isCurrent(generation)) return;
+      _unresolvedFailures[targetProfileRef] =
+          FriendGatewayFailureKind.outcomeUnknown;
+      _publishFailure(
+        gateway.mode,
+        operationId,
+        targetProfileRef,
+        FriendGatewayFailureKind.outcomeUnknown,
+      );
+    }
+  }
+
+  void consumeReceipt() {
+    if (state.phase != FriendDirectPhase.opened) return;
+    state = FriendDirectState.initial(state.mode);
+  }
+
+  void _publishFailure(
+    FriendGatewayMode mode,
+    String operationId,
+    FriendProfileRef targetProfileRef,
+    FriendGatewayFailureKind kind,
+  ) {
+    state = FriendDirectState(
+      mode: mode,
+      phase: FriendDirectPhase.failure,
+      targetProfileRef: targetProfileRef,
+      operationId: operationId,
+      failureKind: kind,
+    );
+  }
+
+  void _releaseWriteRetentionIfResolved() {
+    if (_operationIds.isNotEmpty) return;
+    _unresolvedWriteKeepAlive?.close();
+    _unresolvedWriteKeepAlive = null;
+  }
+
+  bool _isCurrent(int generation) => ref.mounted && generation == _generation;
+}
+
+final friendDirectControllerProvider =
+    NotifierProvider.autoDispose<FriendDirectController, FriendDirectState>(
+      FriendDirectController.new,
     );

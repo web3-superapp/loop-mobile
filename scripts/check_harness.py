@@ -86,6 +86,7 @@ REQUIRED_FILES = (
     "docs/decisions/0044-separate-build-profiles-from-product-environments.md",
     "docs/decisions/0045-connect-bounded-stream-user-token-loader.md",
     "docs/decisions/0046-model-friends-and-group-creation-before-transport.md",
+    "docs/decisions/0047-connect-backend-social-and-server-created-chat.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/gitnexus-generated-source-pollution.md",
     "docs/failures/providerless-notification-fixtures.md",
@@ -112,6 +113,9 @@ REQUIRED_FILES = (
     "config/release.example.json",
     "lib/core/navigation/stream_channel_route.dart",
     "lib/core/network/loop_dio_factory.dart",
+    "lib/app.dart",
+    "lib/main.dart",
+    "lib/main_preview.dart",
     "lib/app/app_config.dart",
     "lib/app/loop_display_preferences.dart",
     "lib/integrations/personalization/shared_preferences_display_store.dart",
@@ -138,7 +142,28 @@ REQUIRED_FILES = (
     "lib/features/chat/friends/friend_controllers.dart",
     "lib/features/chat/friends/friend_gateway.dart",
     "lib/features/chat/friends/friend_models.dart",
+    "lib/features/chat/friends/friend_request_controller.dart",
+    "lib/features/chat/friends/friend_request_screen.dart",
     "lib/features/chat/friends/friend_screens.dart",
+    "lib/features/chat/group_alias/group_alias_controller.dart",
+    "lib/features/chat/group_alias/group_alias_gateway.dart",
+    "lib/features/chat/group_alias/group_alias_models.dart",
+    "lib/features/chat/group_alias/group_alias_screen.dart",
+    "lib/features/chat/group_alias/group_alias_stream_message_identity.dart",
+    "lib/features/profile/social_privacy/social_privacy_controller.dart",
+    "lib/features/profile/social_privacy/social_privacy_gateway.dart",
+    "lib/features/profile/social_privacy/social_privacy_models.dart",
+    "lib/integrations/backend/loop_authenticated_providers.dart",
+    "lib/integrations/backend/loop_authenticated_session.dart",
+    "lib/integrations/personalization/dio_loop_personalization_gateways.dart",
+    "lib/integrations/personalization/loop_personalization_providers.dart",
+    "lib/integrations/personalization/memory_social_privacy_gateway.dart",
+    "lib/integrations/social/dio_loop_group_alias_gateway.dart",
+    "lib/integrations/social/dio_loop_social_friend_gateway.dart",
+    "lib/integrations/social/loop_group_alias_providers.dart",
+    "lib/integrations/social/loop_social_providers.dart",
+    "lib/integrations/social/loop_social_repository.dart",
+    "lib/integrations/social/loop_social_transport_models.dart",
     "lib/integrations/social/memory_friend_gateway.dart",
     "test/home_discovery_and_security_test.dart",
     "test/home_portfolio_truthfulness_test.dart",
@@ -198,6 +223,23 @@ REQUIRED_FILES = (
     "test/profile_models_test.dart",
     "test/profile_presentation_screen_test.dart",
     "test/friend_feature_test.dart",
+    "test/friend_request_feature_test.dart",
+    "test/social_ui_safety_edges_test.dart",
+    "test/loop_social_authenticated_session_test.dart",
+    "test/loop_social_repository_test.dart",
+    "test/loop_social_friend_gateway_test.dart",
+    "test/social_privacy_models_test.dart",
+    "test/social_privacy_controller_test.dart",
+    "test/social_privacy_presentation_screen_test.dart",
+    "test/group_alias_models_test.dart",
+    "test/group_alias_controller_test.dart",
+    "test/group_alias_resolver_test.dart",
+    "test/group_alias_stream_message_identity_test.dart",
+    "test/dio_loop_group_alias_gateway_test.dart",
+    "test/dio_loop_group_alias_resolver_gateway_test.dart",
+    "test/loop_group_alias_providers_test.dart",
+    "test/dio_loop_personalization_gateways_test.dart",
+    "test/loop_personalization_providers_test.dart",
     "test/privacy_controller_test.dart",
     "test/privacy_models_test.dart",
     "test/privacy_presentation_screen_test.dart",
@@ -8445,35 +8487,140 @@ def check_perp_positions_application_contract(root: Path) -> list[str]:
 
 FRIEND_FRONTEND_TEST_MARKERS = {
     Path("test/friend_feature_test.dart"): (
-        "friend inputs reject unsafe aliases, duplicate refs, and non-v4 IDs",
+        "friend inputs allow shared aliases but reject duplicate identities and non-v4 IDs",
         "Preview request becomes pending but never becomes an accepted friend",
         "search results retire after the page stops listening",
         "unknown friend request stays frozen after a search refresh",
         "unknown friend request survives route disposal in this session",
-        "friend request accepts only pending and treats friend as unknown",
-        "explicit unexpected friend rejection remains retryable",
         "Preview group creation is idempotent and never returns a Stream CID",
         "unknown group outcome freezes the draft and is never resubmitted",
         "unknown group draft survives route disposal in this session",
-        "definitive group rejection can be edited as a new intent",
-        "explicit unexpected group rejection remains editable",
         "production group receipt without a Chat CID stays unconfirmed",
         "production friend surfaces fail closed without controls",
         "gateway rotation clears visible friend and group text",
-        "unknown friend query restores after route disposal",
-        "unknown group name restores after route disposal",
-        "definitive friend rejection copy never claims unknown outcome",
         "Preview can search an alias and send a pending request",
         "Preview selects accepted friends and creates no Stream channel",
         "production group success requires a canonical CID and routes to guarded Chat",
         "Chat add menu exposes create-group and add-friend routes",
         "Profile exposes 我的好友 and application routes stay truthful",
     ),
+    Path("test/friend_request_feature_test.dart"): (
+        "loads incoming and outgoing first pages and paginates each list independently",
+        "accept and reject remove only the decided incoming request",
+        "unknown decision keeps one operation and permits reconciliation only",
+        "accept refreshes a mounted friend directory",
+        "Preview cannot opt into production friend-request behavior",
+    ),
+    Path("test/loop_social_authenticated_session_test.dart"): (
+        "refreshes one proven 401 exactly once",
+        "401 refresh and bootstrap recovery have independent one-use budgets",
+        "a second 401 fails without loading a third request token",
+        "a second bootstrap_required is not recovered again",
+        "dispose wins a race with an in-flight authenticated request",
+    ),
+    Path("test/loop_social_repository_test.dart"): (
+        "uses exact first/cursor queries and parses nullable aliases plus all relationships",
+        "sends exact idempotency headers and bodies for all commands",
+        "validates social operation id, kind, and terminal invariants",
+        "accepts 202 proof and uses the greater retry delay",
+        "accepts terminal group members as an unordered set payload",
+        "fails closed on malformed 200/202 operation envelopes",
+    ),
+    Path("test/loop_social_friend_gateway_test.dart"): (
+        "ambiguous friend command queries operation then replays exact UUID/body",
+        "a failed reconciliation query never replays the write",
+        "a rate-limited reconciliation keeps the original operation uncertain",
+        "ordinary read connection failure is never automatically replayed",
+        "group creation accepts backend member order as an unordered set",
+        "malformed committed POST payload reconciles before any replay",
+        "chat polling deadline includes request time, not only delays",
+        "operator_required is terminal and repeated intent never allocates another channel",
+        "direct_channel_unavailable is an operator hold and never starts a second allocation",
+    ),
+    Path("test/social_privacy_controller_test.dart"): (
+        "loads, edits the complete fixed set, and discards",
+        "version conflict freezes the draft until reload succeeds",
+        "gateway rotation retires old load and accepts only the new owner",
+        "gateway rotation retires an old save without clearing a new save",
+    ),
+    Path("test/social_privacy_presentation_screen_test.dart"): (
+        "default Social Privacy stays unavailable and fail-closed",
+        "CAS conflict preserves the unsaved draft and requires an explicit reload",
+        "social-privacy is a registered Profile surface",
+    ),
+    Path("test/group_alias_models_test.dart"): (
+        "rejects non-canonical IDs and every Stream/direct identifier",
+        "requires a 2-40 code-point search prefix and a 1-20 limit",
+        "rejects duplicate IDs, duplicate Aliases, and oversized pages",
+    ),
+    Path("test/group_alias_controller_test.dart"): (
+        "replays the exact committed Alias to confirm pending projection",
+        "retains unknown PUT and permits only exact-value convergence",
+        "reload cannot erase an unresolved exact PUT candidate",
+        "server immutable failure requires reload before another PUT",
+        "retains an in-flight PUT after its last listener is removed",
+    ),
+    Path("test/group_alias_stream_message_identity_test.dart"): (
+        "accepts only the canonical immutable v1 fields",
+        "rejects malformed, future, or ambiguous LOOP fields",
+        "display sanitizer closes every visible Stream user projection",
+        "official default message item shows the group Alias in channel and thread layouts",
+        "missing projection renders the neutral group-member label",
+        "current member projection updates the mounted default item",
+        "known direct channel keeps the official Stream sender name",
+        "group user mention candidates are hidden and cannot be selected",
+        "group conversation labels never fall back to member identity",
+        "group channel chrome hides stock typing and global identities",
+        "group list cell sanitizes preview and avatar while direct keeps default item",
+    ),
+    Path("test/group_alias_resolver_test.dart"): (
+        "keeps only the validated messaging channel ID",
+        "rejects direct, malformed, unsafe, and oversized CIDs with zero resolver calls",
+        "single-flights resolution and publishes a copied 200 group ID",
+        "an unavailable-mode gateway fails closed without a call",
+    ),
+    Path("test/dio_loop_group_alias_gateway_test.dart"): (
+        "sends the exact authenticated group-only requests",
+        "rejects account identity fields and strict response-proof drift",
+        "keeps an attempted PUT outcome unknown on transport, projection, or response-proof loss",
+        "uses the session one-401 refresh budget",
+        "uses the session one-bootstrap recovery budget",
+    ),
+    Path("test/dio_loop_group_alias_resolver_gateway_test.dart"): (
+        "sends the exact authenticated resolver request",
+        "requires an exact body and strict response proof",
+        "rejects a known direct CID locally without token or HTTP work",
+        "uses the session one-401 refresh budget",
+        "uses the session one-bootstrap recovery budget",
+    ),
+    Path("test/dio_loop_personalization_gateways_test.dart"): (
+        "send exact authenticated GET and full-CAS PUT requests",
+        "requires a strict no-store success envelope",
+        "maps exact CAS conflicts for all three resources",
+        "one strict 401 obtains a current token and then succeeds",
+        "one bootstrap_required response reauthorizes then succeeds",
+    ),
+    Path("test/loop_personalization_providers_test.dart"): (
+        "missing transport or authenticated owner stays unavailable",
+        "verified owner and backend produce lazy production gateways",
+        "principal and backend-provider rotation replace every gateway",
+    ),
+    Path("test/loop_group_alias_providers_test.dart"): (
+        "missing backend or verified owner stays fail closed",
+        "verified owner and backend produce one lazy production adapter",
+        "owner and backend rotation replace the production adapter",
+    ),
+    Path("test/social_ui_safety_edges_test.dart"): (
+        "group operator-required survives route disposal and blocks reset or a second UUID",
+        "direct operator-required is target-scoped and never allocates a second intent for that target",
+        "invalid route group ID fails closed with zero gateway calls",
+        "group Alias search renders only the Alias and no identity fields",
+    ),
 }
 
 
 def check_friend_frontend_contract(root: Path) -> list[str]:
-    """Keep friends providerless until the reviewed backend adapter exists."""
+    """Keep decision 0047's authenticated social boundary fail-closed."""
 
     errors = require_fragments(
         root,
@@ -8488,44 +8635,174 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "context.push('/chat/friends/add')",
             ),
             "lib/features/chat/friends/friend_models.dart": (
-                "enum FriendRelationship { none, requestPending, friend }",
-                "final class FriendProfileRef",
+                "factory FriendProfileRef.fromPublicProfileId(String value)",
+                "final String profileCode;",
+                "final String? accountAlias;",
+                "outgoingPending",
+                "incomingPending",
                 "groupMinimumSelectedFriends = 2",
                 "groupMaximumSelectedFriends = 29",
-                "final FriendProfileRef profileRef;",
                 "validateFriendOperationId",
-                "parseLoopStreamChannelCid(streamCid)",
+                "String get operationId => requestId;",
+                "address.id.startsWith('loop_group_')",
+                "address.id.startsWith('loop_direct_')",
+                "setEquals(other.friendRefs.toSet(), friendRefs.toSet())",
             ),
             "lib/features/chat/friends/friend_gateway.dart": (
                 "abstract interface class FriendGateway",
+                "abstract interface class LoopSocialFriendGateway",
                 "final class UnavailableFriendGateway",
                 "(ref) => const UnavailableFriendGateway()",
-                "required String requestId",
-                "required FriendProfileRef profileRef",
+                "sendFriendRequestCommand",
+                "loadFriendRequests",
+                "decideFriendRequest",
+                "createDirectChannel",
             ),
             "lib/features/chat/friends/friend_controllers.dart": (
-                "_requestIds.putIfAbsent",
                 "const Uuid().v4()",
-                "bool get canEdit =>",
-                "receipt.requestId != requestId",
-                "gateway.mode == FriendGatewayMode.preview",
                 "FriendGatewayFailureKind.outcomeUnknown",
                 "NotifierProvider.autoDispose",
-                "ref.keepAlive()",
-                "updated.relationship != FriendRelationship.requestPending",
+                "_unresolvedWriteKeepAlive ??= ref.keepAlive()",
+                "Future<void> reconcileRequest",
+                "Future<void> reconcile()",
+                "CreatedDirectFriendChannel",
+            ),
+            "lib/features/chat/friends/friend_request_controller.dart": (
+                "FriendRequestDirection.incoming",
+                "FriendRequestDirection.outgoing",
+                "const Uuid().v4()",
+                "_unresolvedWriteKeepAlive ??= ref.keepAlive()",
+                "reconcileDecision",
+            ),
+            "lib/features/chat/friends/friend_request_screen.dart": (
+                "ValueKey<String>('friend-requests-incoming-empty')",
+                "ValueKey<String>('friend-requests-outgoing-empty')",
+                "ValueKey<String>('friend-decision-reconcile')",
             ),
             "lib/features/chat/friends/friend_screens.dart": (
                 "ValueKey<String>('friends-service-unavailable')",
                 "ValueKey<String>('friend-search-unavailable')",
                 "ValueKey<String>('friend-group-unavailable')",
-                "title: '开发预览 · 仅本次运行'",
-                "未创建 Stream 频道",
-                "群内昵称和钱包地址不会参与搜索",
                 "ValueKey<String>('friend-group-open-channel')",
-                "当前草稿已冻结，不会自动重复提交",
+                "ValueKey<String>('friend-direct-reconcile')",
+                "ValueKey<String>('friend-request-reconcile')",
+                "ValueKey<String>('friend-group-reconcile')",
                 "ref.listenManual<FriendSearchState>",
                 "ref.listenManual<FriendGroupState>",
-                "服务暂时无法完成请求；没有好友关系或群组被修改。",
+            ),
+            "lib/features/chat/group_alias/group_alias_models.dart": (
+                "final class GroupId",
+                "final class GroupAliasStreamChannelId",
+                "factory GroupAliasStreamChannelId.fromCid(String cid)",
+                "address.id.startsWith('loop_direct_')",
+                "String get wireValue => _value;",
+                "final class GroupAliasId",
+            ),
+            "lib/features/chat/group_alias/group_alias_gateway.dart": (
+                "abstract interface class GroupAliasGateway",
+                "abstract interface class GroupAliasResolverGateway",
+                "Future<GroupId> resolveGroup(GroupAliasStreamChannelId channelId)",
+            ),
+            "lib/features/chat/group_alias/group_alias_controller.dart": (
+                "_outcomeUnknownKeepAlive ??= ref.keepAlive()",
+                "groupAliasResolverControllerProvider",
+                "groupAliasSearchControllerProvider",
+            ),
+            "lib/features/chat/group_alias/group_alias_screen.dart": (
+                "class GroupAliasChannelRoutePage",
+                "GroupAliasStreamChannelId.fromCid(routeCid)",
+                "class GroupAliasPage",
+            ),
+            "lib/features/chat/group_alias/group_alias_stream_message_identity.dart": (
+                "loopGroupMemberNeutralLabel = '群成员'",
+                "loopGroupConversationNeutralLabel = '群聊'",
+                "parseLoopGroupAliasMemberProjection",
+                "if (!setEquals(projectionFields, _aliasProjectionFields)) return null;",
+                "resolveLoopGroupMessageSenderLabel",
+                "resolveLoopGroupConversationLabel",
+                "sanitizeLoopGroupMessageForDisplay",
+                "loopStreamGroupMessageItemBuilder",
+                "loopStreamGroupMentionItemBuilder",
+                "loopStreamChannelListIdentityItem",
+                "class LoopStreamGroupChannelHeader",
+                "class LoopStreamGroupChannelPage",
+                "ValueKey<String>('loop-group-channel-neutral-avatar')",
+                "onUserAvatarTap: null",
+                "onMentionTap: null",
+            ),
+            "lib/features/profile/social_privacy/social_privacy_models.dart": (
+                "friendRequests = FriendRequestsPreference.disabled",
+                "groupInvites = GroupInvitesPreference.disabled",
+                "directMessages = DirectMessagesPreference.disabled",
+            ),
+            "lib/features/profile/social_privacy/social_privacy_gateway.dart": (
+                "abstract interface class SocialPrivacyGateway",
+                "final class UnavailableSocialPrivacyGateway",
+            ),
+            "lib/features/profile/social_privacy/social_privacy_controller.dart": (
+                "SocialPrivacyGatewayFailureKind.versionConflict",
+                "requiresReload: true",
+            ),
+            "lib/integrations/backend/loop_authenticated_session.dart": (
+                "final class LoopAuthenticatedSession",
+                "var refreshedAuthentication = false",
+                "var repeatedBootstrap = false",
+                "failure.statusCode == 401",
+                "failure.code == 'bootstrap_required'",
+            ),
+            "lib/integrations/backend/loop_authenticated_providers.dart": (
+                "final loopAuthenticatedSessionProvider",
+                "ref.onDispose(session.dispose)",
+            ),
+            "lib/integrations/social/loop_social_repository.dart": (
+                "final class DioLoopSocialRepository",
+                "'/v1/friends'",
+                "'/v1/friends/search'",
+                "'/v1/friend-requests'",
+                "'/v1/social/operations/$operationId'",
+                "'/v1/chat/operations/$operationId'",
+                "'/v1/chat/groups'",
+                "'/v1/chat/direct-channels'",
+                "'target_public_profile_id': targetProfileRef.wireValue",
+                "'friend_public_profile_ids': selected",
+                "'idempotency-key': operationId",
+                "_groupChannelIdPattern.hasMatch(address.id)",
+                "_directChannelIdPattern.hasMatch(address.id)",
+                "_decodePayload",
+                "_socialOperationErrorCodes",
+            ),
+            "lib/integrations/social/dio_loop_social_friend_gateway.dart": (
+                "final class DioLoopSocialFriendGateway",
+                "_querySocialOrNull",
+                "_queryChatOrNull",
+                "social_operation_not_found",
+                "chat_operation_not_found",
+                "_maximumChatPollingAttempts",
+                "_monotonicNow() - startedAt",
+                "FriendGatewayFailureKind.operatorRequired",
+            ),
+            "lib/integrations/social/loop_social_providers.dart": (
+                "final loopProductionFriendGatewayProvider",
+                "DioLoopSocialFriendGateway(session, repository)",
+                "ref.onDispose(gateway.dispose)",
+            ),
+            "lib/integrations/social/dio_loop_group_alias_gateway.dart": (
+                "implements GroupAliasGateway, GroupAliasResolverGateway",
+                "'/v1/chat/groups/resolve'",
+                "'stream_channel_id': channelId.wireValue",
+            ),
+            "lib/integrations/social/loop_group_alias_providers.dart": (
+                "final loopGroupAliasGatewayProvider",
+                "DioLoopGroupAliasGateway(dio: dio, session: session)",
+            ),
+            "lib/integrations/personalization/dio_loop_personalization_gateways.dart": (
+                "final class DioLoopSocialPrivacyGateway",
+                "static const _socialPrivacyPath = '/v1/profile/social-privacy'",
+                "expectedVersion: expectedVersion",
+            ),
+            "lib/integrations/personalization/loop_personalization_providers.dart": (
+                "final loopSocialPrivacyGatewayProvider",
+                "DioLoopSocialPrivacyGateway(dio: dio, session: session)",
             ),
             "lib/integrations/social/memory_friend_gateway.dart": (
                 "final class MemoryFriendGateway implements FriendGateway",
@@ -8534,13 +8811,26 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "streamCid: null",
                 "_groupReceipts[requestId]",
             ),
+            "lib/integrations/personalization/memory_social_privacy_gateway.dart": (
+                "final class MemorySocialPrivacyGateway implements SocialPrivacyGateway",
+                "SocialPrivacyMode get mode => SocialPrivacyMode.preview",
+            ),
             "lib/features/chat/stream_chat_inbox_page.dart": (
                 "const ChatCreateMenuButton()",
+                "class StreamGroupAliasChannelRoutePage extends ConsumerWidget",
+                "GroupAliasStreamChannelId.fromCid(cid)",
+                "class _ExistingMemberGroupAliasPage extends StatefulWidget",
+                "Future<Channel?> _load() => _loadExistingMemberChannel(",
+                "return GroupAliasChannelRoutePage(routeCid: widget.cid);",
                 "client.queryChannelsOnline(",
                 "Filter.equal('cid', cid)",
                 "Filter.in_('members', <Object>[userId])",
                 "channel.membership?.userId != userId",
                 "No existing Stream channel membership was confirmed",
+                "GroupAliasStreamChannelId.fromCid(widget.cid)",
+                "LoopStreamGroupChannelPage(",
+                "loopStreamChannelListIdentityItem(defaultItem)",
+                "'/chat/channel/${Uri.encodeComponent(widget.cid)}/alias'",
             ),
             "lib/features/chat/chat_inbox_page.dart": (
                 "const ChatCreateMenuButton()",
@@ -8548,82 +8838,141 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
             "lib/features/profile/profile_screens.dart": (
                 "title: '我的好友'",
                 "onTap: () => onNavigate('friends')",
+                "title: 'Social privacy'",
+                "onTap: () => onNavigate('social-privacy')",
             ),
             "lib/app.dart": (
+                "messageItem: loopStreamGroupMessageItemBuilder",
+                "mentionItem: loopStreamGroupMentionItemBuilder",
                 "path: '/chat/friends/add'",
+                "path: '/chat/friends/requests'",
                 "path: '/chat/groups/create'",
+                "path: '/chat/groups/:groupId/alias'",
+                "path: '/chat/channel/:cid/alias'",
+                "builder: (context, state) => StreamGroupAliasChannelRoutePage(",
                 "path: '/profile/friends'",
+                "('/profile/social-privacy', 'social-privacy')",
                 "'friends' => '/profile/friends'",
+                "'social-privacy' => '/profile/social-privacy'",
+            ),
+            "lib/main.dart": (
+                "friendGatewayProvider.overrideWith(",
+                "ref.watch(loopProductionFriendGatewayProvider)",
+                "groupAliasGatewayProvider.overrideWith(",
+                "ref.watch(loopGroupAliasGatewayProvider)",
+                "socialPrivacyGatewayProvider.overrideWith(",
+                "ref.watch(loopSocialPrivacyGatewayProvider)",
             ),
             "lib/main_preview.dart": (
                 "friendGatewayProvider.overrideWithValue(MemoryFriendGateway())",
+                "socialPrivacyGatewayProvider.overrideWithValue(",
+                "MemorySocialPrivacyGateway(",
             ),
             "docs/decisions/0046-model-friends-and-group-creation-before-transport.md": (
                 "## Status",
-                "## Context",
-                "## Decision",
-                "## Consequences",
-                "## Evidence",
-                "No backend path is invented",
+                "Superseded for production transport and wire identity by decision 0047",
+            ),
+            "docs/decisions/0047-connect-backend-social-and-server-created-chat.md": (
+                "Accepted on 2026-08-31",
+                "`public_profile_id` is the stable, opaque UUID",
+                "`profile_code` is the immutable, globally unique 10-character Crockford",
+                "matching social or Chat operation before any replay",
+                "`messaging:loop_group_*` CID; member IDs are an unordered set",
+                "canonical `messaging:loop_direct_*` CID",
+                "submit only its validated channel ID (not the full CID)",
+                "The resolver has no `Idempotency-Key`",
             ),
             "README.md": (
-                "Chat 顶部现提供固定的 `创建群组` / `添加好友` 菜单",
+                "正式入口现装配 principal-bound LOOP 社交适配器",
+                "`public_profile_id` 是唯一命令目标",
+                "先查询 operation",
             ),
             "docs/product/implementation-constraints.md": (
-                "Friend discovery uses only backend-authorized account-level LOOP Alias results",
+                "`public_profile_id` is the stable opaque UUID and only client-visible friend/group/direct command target",
+                "queries its owning operation first",
                 "exact online Stream channel-list result filtered by that CID and current membership",
             ),
             "docs/product-decisions.md": (
-                "Chat now exposes one fixed create menu and Profile exposes `我的好友`",
-            ),
-            "docs/harness/adoption-report.md": (
-                "## Friend Directory and Group-Creation Frontend Boundary",
-            ),
-            "docs/phase-1/frontend-integration-report.md": (
-                "## Friend Directory and Group-Creation Frontend Slice",
-            ),
-            "test/friend_feature_test.dart": tuple(
-                marker
-                for markers in FRIEND_FRONTEND_TEST_MARKERS.values()
-                for marker in markers
+                "production now uses the reviewed principal-bound LOOP social adapter",
+                "`public_profile_id` is the only command target",
+                "backend's fixed `messaging:loop_direct_*` CID",
             ),
             "test/stream_chat_inbox_page_test.dart": (
                 "channel route lookup requires an exact CID and current membership",
+                "application Alias route requires current Stream membership before resolver",
             ),
         },
     )
 
-    feature_root = root / "lib/features/chat/friends"
-    if feature_root.is_dir():
+    feature_roots = (
+        root / "lib/features/chat/friends",
+        root / "lib/features/chat/group_alias",
+        root / "lib/features/profile/social_privacy",
+    )
+    stream_presentation_path = Path(
+        "lib/features/chat/group_alias/group_alias_stream_message_identity.dart"
+    )
+    for feature_root in feature_roots:
+        if not feature_root.is_dir():
+            continue
         for path in feature_root.rglob("*.dart"):
             source = strip_dart_comments(read_text(path))
             if "package:dio/" in source or re.search(r"['\"]/v1/", source):
                 errors.append(
-                    "Friend feature code must stay behind its narrow port, not a direct HTTP transport: "
+                    "Social feature code must stay behind narrow ports, not a direct HTTP transport: "
+                    + str(path.relative_to(root))
+                )
+            relative = path.relative_to(root)
+            uses_stream_sdk = "package:stream_chat" in source
+            if (uses_stream_sdk and relative != stream_presentation_path) or re.search(
+                r"\bclient\s*\.\s*channel\s*\(", source
+            ):
+                errors.append(
+                    "Social feature code may use Stream types only in the reviewed group-Alias presentation adapter and must never create channels directly: "
                     + str(path.relative_to(root))
                 )
 
-    controllers_path = feature_root / "friend_controllers.dart"
+    friend_feature_root = root / "lib/features/chat/friends"
+    controllers_path = friend_feature_root / "friend_controllers.dart"
     if controllers_path.is_file():
         controllers = strip_dart_comments(read_text(controllers_path))
-        if controllers.count("ref.keepAlive()") < 2:
+        if controllers.count("ref.keepAlive()") < 3:
             errors.append(
-                "Friend request and group-create controllers must retain unresolved writes with ref.keepAlive()"
+                "Friend request, group-create, and direct-create controllers must retain unresolved writes with ref.keepAlive()"
             )
         if "error.kind == FriendGatewayFailureKind.unexpected" in controllers:
             errors.append(
                 "Typed unexpected write failures must remain definitive; only outcomeUnknown may freeze"
             )
 
-    models_path = feature_root / "friend_models.dart"
-    if models_path.is_file() and re.search(
-        r"\bgroupId\b", strip_dart_comments(read_text(models_path))
+    request_controller_path = friend_feature_root / "friend_request_controller.dart"
+    if request_controller_path.is_file() and "ref.keepAlive()" not in strip_dart_comments(
+        read_text(request_controller_path)
     ):
         errors.append(
-            "The provider-neutral friend group receipt must not guess an unreviewed groupId field"
+            "Friend-request decisions must retain unresolved writes with ref.keepAlive()"
         )
 
-    screens_path = feature_root / "friend_screens.dart"
+    alias_controller_path = (
+        root / "lib/features/chat/group_alias/group_alias_controller.dart"
+    )
+    if alias_controller_path.is_file():
+        alias_controller = strip_dart_comments(read_text(alias_controller_path))
+        put_start = alias_controller.find("Future<void> _startPut")
+        put_end = alias_controller.find("Future<void> _performPut", put_start + 1)
+        put_section = (
+            alias_controller[put_start:put_end]
+            if put_start >= 0 and put_end > put_start
+            else ""
+        )
+        retain_index = put_section.find("_retainOutcomeUnknown();")
+        dispatch_index = put_section.find("_performPut(")
+        if retain_index < 0 or dispatch_index <= retain_index:
+            errors.append(
+                "Group-Alias controller must keepAlive before dispatching an immutable PUT"
+            )
+
+    screens_path = friend_feature_root / "friend_screens.dart"
     if screens_path.is_file():
         screens = strip_dart_comments(read_text(screens_path))
         if screens.count("ref.listenManual<FriendGateway>") < 2:
@@ -8637,6 +8986,337 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
         if "client.channel(" in stream_route:
             errors.append(
                 "String-addressed Chat routes must not call client.channel before existing membership is queried"
+            )
+        group_gate_start = stream_route.find(
+            "class StreamGroupAliasChannelRoutePage"
+        )
+        group_gate_end = stream_route.find(
+            "class _ExistingMemberStreamChannelPage", group_gate_start + 1
+        )
+        group_gate = (
+            stream_route[group_gate_start:group_gate_end]
+            if group_gate_start >= 0 and group_gate_end > group_gate_start
+            else ""
+        )
+        group_query_index = group_gate.find("_loadExistingMemberChannel(")
+        group_proof_index = group_gate.find(
+            "if (snapshot.hasError || snapshot.data == null)",
+            group_query_index + 1,
+        )
+        group_resolver_index = group_gate.find(
+            "GroupAliasChannelRoutePage(routeCid: widget.cid)",
+            group_proof_index + 1,
+        )
+        if (
+            group_query_index < 0
+            or group_proof_index <= group_query_index
+            or group_resolver_index <= group_proof_index
+        ):
+            errors.append(
+                "Alias route must prove exact Stream membership before mounting the LOOP group resolver"
+            )
+
+        member_route_start = stream_route.find(
+            "class _ExistingMemberStreamChannelPage"
+        )
+        member_route = (
+            stream_route[member_route_start:]
+            if member_route_start >= 0
+            else ""
+        )
+        proof_index = member_route.find(
+            "if (snapshot.hasError || snapshot.data == null)"
+        )
+        alias_index = member_route.find(
+            "GroupAliasStreamChannelId.fromCid(widget.cid)", proof_index + 1
+        )
+        if proof_index < 0 or alias_index <= proof_index:
+            errors.append(
+                "Group-Alias navigation from a Stream channel must stay behind the exact membership result"
+            )
+
+        safe_page_assignment_match = re.search(
+            r"final\s+usesGroupIdentity\s*=\s*"
+            r"loopStreamChannelUsesGroupMessageAlias\s*\(\s*widget\.cid\s*,?\s*\)\s*;",
+            member_route[alias_index + 1 :],
+            re.DOTALL,
+        )
+        safe_page_assignment = (
+            alias_index + 1 + safe_page_assignment_match.start()
+            if safe_page_assignment_match is not None
+            else -1
+        )
+        safe_page_index = member_route.find(
+            "? LoopStreamGroupChannelPage(", safe_page_assignment + 1
+        )
+        direct_page_index = member_route.find(
+            ": const StreamChannelPage()", safe_page_index + 1
+        )
+        if (
+            safe_page_assignment < 0
+            or safe_page_index <= safe_page_assignment
+            or direct_page_index <= safe_page_index
+        ):
+            errors.append(
+                "Group Stream channel routes must select the safe page after membership proof while direct channels keep the official page"
+            )
+
+        if re.search(
+            r"itemBuilder\s*:\s*\([^)]*\bdefaultItem\b[^)]*\)\s*=>\s*"
+            r"loopStreamChannelListIdentityItem\s*\(\s*defaultItem\s*\)",
+            stream_route,
+            re.DOTALL,
+        ) is None:
+            errors.append(
+                "Group Stream channel list must route every official default item through the safe identity item"
+            )
+
+    app_path = root / "lib/app.dart"
+    if app_path.is_file():
+        app_source = strip_dart_comments(read_text(app_path))
+        alias_route_start = app_source.find("path: '/chat/channel/:cid/alias'")
+        alias_route_end = app_source.find("GoRoute(", alias_route_start + 1)
+        alias_route = (
+            app_source[alias_route_start:alias_route_end]
+            if alias_route_start >= 0 and alias_route_end > alias_route_start
+            else ""
+        )
+        if (
+            "StreamGroupAliasChannelRoutePage(" not in alias_route
+            or "=> GroupAliasChannelRoutePage(" in alias_route
+        ):
+            errors.append(
+                "Alias route must prove exact Stream membership before mounting the LOOP group resolver"
+            )
+
+    repository_path = root / "lib/integrations/social/loop_social_repository.dart"
+    if repository_path.is_file():
+        repository = strip_dart_comments(read_text(repository_path))
+
+        for marker in (
+            "_groupChannelIdPattern.hasMatch(address.id)",
+            "_directChannelIdPattern.hasMatch(address.id)",
+            "on InvalidFriendContractException",
+            "LoopBackendFailureKind.invalidPayload",
+            "_socialOperationErrorCodes.contains(errorCode)",
+        ):
+            if marker not in repository:
+                errors.append(
+                    "Social response parsing must fail closed on identity/CID/operation drift: "
+                    + marker
+                )
+
+        def command_section(start: str, end: str) -> str:
+            start_index = repository.find(start)
+            end_index = repository.find(end, start_index + 1)
+            if start_index < 0 or end_index < 0:
+                return ""
+            return repository[start_index:end_index]
+
+        command_sections = (
+            command_section("Future<LoopSocialOperation> sendFriendRequest", "Future<LoopSocialOperation> decideFriendRequest"),
+            command_section("Future<LoopSocialOperation> decideFriendRequest", "Future<LoopChatOperation> getChatOperation"),
+            command_section("Future<LoopChatOperation> createGroup", "Future<LoopChatOperation> createDirectChannel"),
+            command_section("Future<LoopChatOperation> createDirectChannel", "Future<Response<Object?>> _get"),
+        )
+        for section in command_sections:
+            if not section:
+                errors.append(
+                    "LOOP social command methods must remain structurally inspectable"
+                )
+                continue
+            if "profile_code" in section or "stream_user_id" in section:
+                errors.append(
+                    "Social commands must target public_profile_id only, never profile_code or Stream identity"
+                )
+
+    production_gateway_path = (
+        root / "lib/integrations/social/dio_loop_social_friend_gateway.dart"
+    )
+    if production_gateway_path.is_file():
+        production_gateway = strip_dart_comments(read_text(production_gateway_path))
+        reconciliation_sections = (
+            (
+                "Future<LoopSocialOperation> _runSocialCommand",
+                "final Set<String> _attemptedOperationIds",
+                "_querySocialOrNull(operationId, kind)",
+            ),
+            (
+                "Future<LoopChatOperation> _runChatCommand",
+                "Future<LoopChatOperation?> _queryChatOrNull",
+                "_queryChatOrNull(operationId, kind)",
+            ),
+        )
+        for start, end, query in reconciliation_sections:
+            start_index = production_gateway.find(start)
+            end_index = production_gateway.find(end, start_index + 1)
+            section = (
+                production_gateway[start_index:end_index]
+                if start_index >= 0 and end_index > start_index
+                else ""
+            )
+            catch_index = section.find("catch (error)")
+            query_index = section.find(query, catch_index + 1)
+            replay_index = section.find(
+                "await _session.execute(post)", query_index + len(query)
+            )
+            if catch_index < 0 or query_index < 0 or replay_index <= query_index:
+                errors.append(
+                    "Ambiguous social commands must query their operation before exact replay"
+                )
+
+        for query_name, not_found_code in (
+            ("_querySocialOrNull", "social_operation_not_found"),
+            ("_queryChatOrNull", "chat_operation_not_found"),
+        ):
+            start_index = production_gateway.find(
+                f"Future<Loop{'Social' if 'Social' in query_name else 'Chat'}Operation?> {query_name}"
+            )
+            end_index = production_gateway.find("\n  Future<", start_index + 1)
+            section = (
+                production_gateway[start_index:end_index]
+                if start_index >= 0 and end_index > start_index
+                else ""
+            )
+            if (
+                "error.statusCode == 404" not in section
+                or f"error.code == '{not_found_code}'" not in section
+                or "throw _outcomeUnknown(operationId);" not in section
+            ):
+                errors.append(
+                    f"{query_name} may authorize replay only for exact {not_found_code}"
+                )
+
+        poll_start = production_gateway.find("Future<LoopChatOperation> _pollChat")
+        poll_end = production_gateway.find(
+            "LoopChatOperationResult _requireSucceededChat", poll_start + 1
+        )
+        poll_section = (
+            production_gateway[poll_start:poll_end]
+            if poll_start >= 0 and poll_end > poll_start
+            else ""
+        )
+        if (
+            "_monotonicNow() - startedAt" not in poll_section
+            or "_maximumChatPollingAttempts" not in poll_section
+        ):
+            errors.append(
+                "Chat operation polling must be bounded by wall-clock time and attempts"
+            )
+
+    stream_identity_path = (
+        root
+        / "lib/features/chat/group_alias/group_alias_stream_message_identity.dart"
+    )
+    if stream_identity_path.is_file():
+        stream_identity = strip_dart_comments(read_text(stream_identity_path))
+        for forbidden in (
+            "return user.name",
+            "return user.id",
+            "onUserAvatarTap: props.onUserAvatarTap",
+            "onMentionTap: props.onMentionTap",
+        ):
+            if forbidden in stream_identity:
+                errors.append(
+                    "Group Stream identity presentation must never fall back to global identity: "
+                    + forbidden
+                )
+
+        projection_start = stream_identity.find(
+            "String? parseLoopGroupAliasMemberProjection"
+        )
+        projection_end = stream_identity.find(
+            "String resolveLoopGroupMessageSenderLabel", projection_start + 1
+        )
+        projection_section = (
+            stream_identity[projection_start:projection_end]
+            if projection_start >= 0 and projection_end > projection_start
+            else ""
+        )
+        if any(
+            marker not in projection_section
+            for marker in (
+                "key.startsWith('loop_group_alias')",
+                "setEquals(projectionFields, _aliasProjectionFields)",
+                "version is! int",
+                "version != 1",
+                "GroupAliasId.fromWire(rawId)",
+                "normalized != rawAlias",
+            )
+        ):
+            errors.append(
+                "Group Stream Alias projection must require the exact immutable v1 field set and canonical values"
+            )
+
+        list_item_start = stream_identity.find(
+            "Widget loopStreamChannelListIdentityItem"
+        )
+        list_item_end = stream_identity.find(
+            "class LoopStreamGroupChannelHeader", list_item_start + 1
+        )
+        list_item_section = (
+            stream_identity[list_item_start:list_item_end]
+            if list_item_start >= 0 and list_item_end > list_item_start
+            else ""
+        )
+        if any(
+            marker not in list_item_section
+            for marker in (
+                "return defaultItem;",
+                "_LoopStreamGroupChannelListItem(props: defaultItem.props)",
+                "sanitizeLoopGroupMessageForDisplay(",
+                "resolveLoopGroupConversationLabel(",
+                "avatar: const CircleAvatar(",
+                "ValueKey<String>('loop-group-channel-neutral-avatar')",
+                "StreamMessagePreviewText(",
+            )
+        ):
+            errors.append(
+                "Group Stream channel list item must sanitize its preview and use a neutral group identity"
+            )
+
+        safe_page_start = stream_identity.find("class LoopStreamGroupChannelPage")
+        safe_page_end = stream_identity.find(
+            "Message sanitizeLoopGroupMessageForDisplay", safe_page_start + 1
+        )
+        safe_page_section = (
+            stream_identity[safe_page_start:safe_page_end]
+            if safe_page_start >= 0 and safe_page_end > safe_page_start
+            else ""
+        )
+        if any(
+            marker not in safe_page_section
+            for marker in (
+                "LoopStreamGroupChannelHeader(",
+                "StreamMessageListView(",
+                "StreamMessageComposer(",
+                "threadBuilder:",
+                "enableVoiceRecording: false",
+            )
+        ):
+            errors.append(
+                "Group Stream channel page must preserve official messaging behavior behind safe group chrome"
+            )
+
+        for forbidden in ("StreamChannelAvatar(", "StreamTypingIndicator("):
+            if forbidden in list_item_section or forbidden in safe_page_section:
+                errors.append(
+                    "Group Stream list and channel chrome must not restore stock global identity projections: "
+                    + forbidden
+                )
+
+    alias_transport_path = (
+        root / "lib/integrations/social/dio_loop_group_alias_gateway.dart"
+    )
+    if alias_transport_path.is_file():
+        alias_transport = strip_dart_comments(read_text(alias_transport_path))
+        if "'stream_channel_id': channelId.cid" in alias_transport:
+            errors.append(
+                "Group-Alias resolver must send the validated channel ID, not the full CID"
+            )
+        if re.search(r"['\"]idempotency-key['\"]\s*:", alias_transport, re.IGNORECASE):
+            errors.append(
+                "Group-Alias resolver and immutable Alias endpoints must not send Idempotency-Key"
             )
 
     memory_path = root / "lib/integrations/social/memory_friend_gateway.dart"
@@ -8656,27 +9336,43 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 )
 
     production_root = root / "lib/main.dart"
-    if production_root.is_file() and "MemoryFriendGateway" in strip_dart_comments(
-        read_text(production_root)
-    ):
-        errors.append(
-            "The production composition root must never install MemoryFriendGateway"
-        )
+    if production_root.is_file():
+        production = strip_dart_comments(read_text(production_root))
+        if "MemoryFriendGateway" in production or "MemorySocialPrivacyGateway" in production:
+            errors.append(
+                "The production composition root must never install social Preview memory gateways"
+            )
+        for marker in (
+            "ref.watch(loopProductionFriendGatewayProvider)",
+            "ref.watch(loopGroupAliasGatewayProvider)",
+            "ref.watch(loopSocialPrivacyGatewayProvider)",
+        ):
+            if marker not in production:
+                errors.append(
+                    "Production social override is required through an integrations adapter: "
+                    + marker
+                )
 
     if (root / "lib").is_dir():
-        allowed_memory_consumers = {
-            Path("lib/main_preview.dart"),
-            Path("lib/integrations/social/memory_friend_gateway.dart"),
+        memory_implementations = {
+            "MemoryFriendGateway": Path(
+                "lib/integrations/social/memory_friend_gateway.dart"
+            ),
+            "MemorySocialPrivacyGateway": Path(
+                "lib/integrations/personalization/memory_social_privacy_gateway.dart"
+            ),
         }
         for path in (root / "lib").rglob("*.dart"):
             relative = path.relative_to(root)
-            if relative in allowed_memory_consumers:
-                continue
-            if "MemoryFriendGateway" in strip_dart_comments(read_text(path)):
-                errors.append(
-                    "MemoryFriendGateway may be composed only by the explicit Preview root: "
-                    + str(relative)
-                )
+            source = strip_dart_comments(read_text(path))
+            for marker, implementation in memory_implementations.items():
+                if relative in {Path("lib/main_preview.dart"), implementation}:
+                    continue
+                if marker in source:
+                    errors.append(
+                        f"{marker} may be composed only by the explicit Preview root: "
+                        + str(relative)
+                    )
 
     errors.extend(check_behavior_test_evidence(root, FRIEND_FRONTEND_TEST_MARKERS))
     return errors
@@ -8794,7 +9490,7 @@ def main() -> int:
         "Harness check passed: profile, six-destination contract, pins, "
         "Spot-only product, New Pairs exact-Preview truth, Chat snapshot, Preview request truth and exact conversation identity, Home portfolio truth, security capability truth, device-local display preferences, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
-        "verification, providerless friend/group boundaries, records, and secret rules are consistent."
+        "verification, authenticated social/friend/group boundaries, records, and secret rules are consistent."
     )
     return 0
 
