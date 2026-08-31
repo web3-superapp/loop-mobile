@@ -266,6 +266,14 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
       ),
       ..._retainedPerpRedirectRoutes,
       GoRoute(
+        path: '/chat/friends/add',
+        builder: (context, state) => const AddFriendPage(),
+      ),
+      GoRoute(
+        path: '/chat/groups/create',
+        builder: (context, state) => const CreateFriendGroupPage(),
+      ),
+      GoRoute(
         path: '/chat/group',
         builder: (context, state) => ChatPreviewRouteGuard(
           surfaceLabel: 'Group conversation',
@@ -464,6 +472,10 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
             SigningReviewPage(intent: state.extra! as SigningIntent),
       ),
       ..._profileRoutes,
+      GoRoute(
+        path: '/profile/friends',
+        builder: (context, state) => const FriendListPage(),
+      ),
       ..._systemRoutes,
       GoRoute(
         path: '/inventory',
@@ -600,6 +612,7 @@ String _accountPath(String id) => switch (id) {
 
 String _profilePath(String id) => switch (id) {
   'profile' => '/profile',
+  'friends' => '/profile/friends',
   'profile-edit' => '/profile/edit',
   'privacy' => '/profile/privacy',
   'copytrade-perms' => '/profile/copy',
@@ -663,6 +676,8 @@ abstract final class LoopRouteRegistry {
     '/market/smart-money',
     ...retainedPerpPaths,
     '/chat',
+    '/chat/friends/add',
+    '/chat/groups/create',
     '/chat/group',
     '/chat/voice',
     '/chat/dm',
@@ -696,6 +711,7 @@ abstract final class LoopRouteRegistry {
     '/wallet/protection',
     '/launchpad',
     '/profile',
+    '/profile/friends',
     '/profile/edit',
     '/profile/privacy',
     '/profile/copy',

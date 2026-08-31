@@ -317,6 +317,13 @@ class _ProfileHome extends StatelessWidget {
         _SettingsGroup(
           children: <Widget>[
             _SettingsTile(
+              icon: Icons.people_alt_outlined,
+              title: '我的好友',
+              detail: '查看已接受的 LOOP 好友',
+              tone: LoopTone.conversation,
+              onTap: () => onNavigate('friends'),
+            ),
+            _SettingsTile(
               icon: Icons.people_outline_rounded,
               title: 'Connections',
               detail: '${identity.connections} people in your network',

@@ -8,6 +8,7 @@ import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
+import 'package:loop_mobile/features/chat/friends/friend_screens.dart';
 import 'package:loop_mobile/features/chat/stream_chat_inbox_page.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
@@ -67,9 +68,27 @@ void main() {
     },
   );
 
+  test('channel route lookup requires an exact CID and current membership', () {
+    expect(
+      createLoopStreamChannelMembershipFilter(
+        cid: 'messaging:loop-room-42',
+        userId: 'loop-user-42',
+      ),
+      Filter.and(<Filter>[
+        Filter.equal('cid', 'messaging:loop-room-42'),
+        Filter.equal('type', 'messaging'),
+        Filter.in_('members', <Object>['loop-user-42']),
+      ]),
+    );
+  });
+
   testWidgets(
     'production inbox stays fail-closed until backend Stream identity exists',
     (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -97,6 +116,26 @@ void main() {
         find.byKey(const ValueKey<String>('stream-audio-room-entry')),
         findsOneWidget,
       );
+      expect(
+        find.byKey(const ValueKey<String>('chat-create-menu')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('chat-create-menu')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('chat-create-group-menu-item')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('chat-add-friend-menu-item')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('chat-add-friend-menu-item')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(AddFriendPage), findsOneWidget);
+      expect(tester.takeException(), isNull);
     },
   );
 
@@ -160,6 +199,10 @@ void main() {
       find.byKey(const ValueKey<String>('stream-audio-room-entry')),
       findsOneWidget,
     );
+    expect(
+      find.byKey(const ValueKey<String>('chat-create-menu')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('production Audio Room entry remains visible after Chat error', (
@@ -185,6 +228,10 @@ void main() {
     );
     expect(
       find.byKey(const ValueKey<String>('stream-audio-room-entry')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('chat-create-menu')),
       findsOneWidget,
     );
   });

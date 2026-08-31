@@ -5,6 +5,7 @@ import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
+import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/features/profile/notification_preferences/notification_preferences_gateway.dart';
@@ -22,6 +23,7 @@ import 'package:loop_mobile/integrations/personalization/shared_preferences_disp
 import 'package:loop_mobile/integrations/privy/privy_fixture_adapter.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/personalization/memory_watchlist_gateway.dart';
+import 'package:loop_mobile/integrations/social/memory_friend_gateway.dart';
 
 /// Explicit offline UI catalog entry point.
 ///
@@ -55,6 +57,7 @@ Future<void> main() async {
         communicationGatewayProvider.overrideWithValue(
           MemoryCommunicationGateway(),
         ),
+        friendGatewayProvider.overrideWithValue(MemoryFriendGateway()),
         notificationPreferencesGatewayProvider.overrideWithValue(
           MemoryNotificationPreferencesGateway(
             initialResource: NotificationPreferencesResource(

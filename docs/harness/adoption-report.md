@@ -875,3 +875,33 @@ reported no issues, and `git diff --check` was clean. No backend/provider
 request, database, Secure Storage dependency, native build, simulator,
 interactive run, physical-device validation, or package artifact is part of
 this slice.
+## Friend Directory and Group-Creation Frontend Boundary
+
+The Chat header now owns one fixed add menu for `创建群组` and `添加好友`, and
+Profile exposes `我的好友`. A feature-owned gateway and three controllers cover
+bounded Alias search, pending outgoing friend requests, accepted-friend loading,
+immutable group selection, single-flight work, route-lifetime disposal, and
+late-result isolation. An in-flight or ambiguous write alone retains its UUID
+and draft in memory for the current principal-bound gateway instance; account
+rotation rebuilds the controller and clears visible search/group text, while a
+new route restores text from retained unresolved state. Typed viewer-scoped references do not enter
+presentation keys. Duplicate Alias results fail closed; a friend-request write
+accepts only `requestPending`, ambiguous writes freeze without resubmission,
+definitive rejection releases an editable new intent, and production success
+requires one canonical Chat CID. The shared channel route uses an exact online
+CID + current-member list query before mounting official Stream channel UI, so a
+missing/drifted CID cannot fall through to `channel(...).watch()` creation.
+Production composes only the unavailable friend port, so this port issues no
+social backend request and no channel/member creation call. The shared official
+Chat route does make the described Stream read/watch query when navigated and
+retains the SDK's normal message/delivery behavior; it is not classified as a
+zero-Stream-request surface. The
+explicit Preview root injects the labelled process-local memory implementation;
+its group receipt contains no Stream CID.
+
+Harness source guards require the routes, production unavailable states,
+Preview-only composition, opaque profile references, pending relationship,
+idempotency/retention markers, exact existing-member channel lookup, and
+executable behavior tests. They also reject Dio or
+`/v1/` paths in the feature slice, Stream SDK ownership in the memory adapter,
+or `MemoryFriendGateway` composition from the production root.

@@ -5,6 +5,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/preview_conversation_identity.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
+import 'package:loop_mobile/features/chat/friends/chat_create_menu_button.dart';
 import 'package:loop_mobile/features/chat/stream_chat_inbox_page.dart';
 import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
@@ -71,6 +72,7 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
                 )
               : const Icon(Icons.person_add_alt_1_outlined),
         ),
+        const ChatCreateMenuButton(),
       ],
       bottom: const ChatMiniVoiceBar(),
       children: <Widget>[

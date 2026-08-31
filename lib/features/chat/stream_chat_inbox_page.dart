@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/friends/chat_create_menu_button.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
@@ -37,6 +38,44 @@ StreamChannelListController createLoopStreamChannelListController({
     messageLimit: 25,
     memberLimit: 30,
   );
+}
+
+/// Exact server-side lookup used before a string-addressed channel route mounts
+/// official Stream UI. Unlike `client.channel(...).watch()`, a channel-list
+/// query cannot create a missing channel.
+@visibleForTesting
+Filter createLoopStreamChannelMembershipFilter({
+  required String cid,
+  required String userId,
+}) => Filter.and(<Filter>[
+  Filter.equal('cid', cid),
+  Filter.equal('type', 'messaging'),
+  Filter.in_('members', <Object>[userId]),
+]);
+
+Future<Channel?> _loadExistingMemberChannel({
+  required StreamChatClient client,
+  required String cid,
+  required String userId,
+}) async {
+  final channels = await client.queryChannelsOnline(
+    filter: createLoopStreamChannelMembershipFilter(cid: cid, userId: userId),
+    state: true,
+    watch: true,
+    presence: true,
+    memberLimit: 30,
+    messageLimit: 25,
+    paginationParams: const PaginationParams(limit: 1),
+  );
+  if (channels.length != 1) return null;
+  final channel = channels.single;
+  final channelState = channel.state;
+  if (channel.cid != cid ||
+      channelState == null ||
+      channel.membership?.userId != userId) {
+    return null;
+  }
+  return channel;
 }
 
 /// Production Chat entry point backed directly by official Stream UI/state.
@@ -94,6 +133,7 @@ class StreamChatInboxPage extends ConsumerWidget {
               style: TextButton.styleFrom(foregroundColor: LoopColors.chat),
             ),
           ),
+          const ChatCreateMenuButton(),
         ],
       ),
       body: Stack(
@@ -183,17 +223,85 @@ class StreamChatChannelRoutePage extends ConsumerWidget {
                 message: 'A server-derived Stream identity and short-lived token are required before opening this conversation.',
               );
             }
-            final channel = session!.client.channel(
-              address.type,
-              id: address.id,
-            );
-            return StreamChannel(
-              key: ValueKey<String>(cid),
-              channel: channel,
-              child: const StreamChannelPage(),
+            return _ExistingMemberStreamChannelPage(
+              key: ValueKey<String>('stream-chat-member-route-$cid'),
+              client: session!.client,
+              cid: address.cid,
+              userId: session.client.state.currentUser!.id,
             );
           },
         );
+  }
+}
+
+class _ExistingMemberStreamChannelPage extends StatefulWidget {
+  const _ExistingMemberStreamChannelPage({
+    required this.client,
+    required this.cid,
+    required this.userId,
+    super.key,
+  });
+
+  final StreamChatClient client;
+  final String cid;
+  final String userId;
+
+  @override
+  State<_ExistingMemberStreamChannelPage> createState() =>
+      _ExistingMemberStreamChannelPageState();
+}
+
+class _ExistingMemberStreamChannelPageState
+    extends State<_ExistingMemberStreamChannelPage> {
+  late Future<Channel?> _channel;
+
+  @override
+  void initState() {
+    super.initState();
+    _channel = _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ExistingMemberStreamChannelPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.client, widget.client) ||
+        oldWidget.cid != widget.cid ||
+        oldWidget.userId != widget.userId) {
+      _channel = _load();
+    }
+  }
+
+  Future<Channel?> _load() => _loadExistingMemberChannel(
+    client: widget.client,
+    cid: widget.cid,
+    userId: widget.userId,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Channel?>(
+      future: _channel,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const _StreamChannelUnavailablePage(
+            title: 'Opening chat',
+            message: 'LOOP is confirming this channel and your membership.',
+            loading: true,
+          );
+        }
+        if (snapshot.hasError || snapshot.data == null) {
+          return const _StreamChannelUnavailablePage(
+            title: 'Conversation unavailable',
+            message: 'No existing Stream channel membership was confirmed. LOOP did not create or open a channel.',
+          );
+        }
+        return StreamChannel(
+          key: ValueKey<String>(widget.cid),
+          channel: snapshot.data!,
+          child: const StreamChannelPage(),
+        );
+      },
+    );
   }
 }
 

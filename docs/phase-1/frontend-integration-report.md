@@ -1112,3 +1112,37 @@ requested Android Debug checkpoint compiled successfully with
 warnings were emitted. No Release/iOS build, interactive run, simulator, or
 physical-device/provider validation was performed. `flutter clean` removed the
 generated APK and build metadata after the evidence was recorded.
+## Friend Directory and Group-Creation Frontend Slice
+
+- Added the Chat `+` menu with `创建群组` and `添加好友`, plus the Profile
+  `我的好友` entry and dedicated application routes.
+- Added a providerless friend-domain seam and deterministic, normally route-lifetime
+  controllers for Alias search, pending outgoing friend requests,
+  accepted-friend loading, group drafts, single-flight writes, late-result
+  isolation, typed viewer-scoped references, and UUID-v4 intent ownership.
+- In-flight or outcome-unknown writes retain only their UUID/draft in the
+  current principal-bound gateway session, so leaving and reopening a route
+  cannot submit a second logical intent. Definitive rejection and success
+  release that retention; account/gateway rotation rebuilds it and clears the
+  visible search/group text even when both accounts have the same mode. A newly
+  mounted route restores visible text from a retained unresolved state.
+- Duplicate Alias results fail closed until a public disambiguator exists.
+  A friend-request response is valid only as `requestPending`. Ambiguous writes
+  freeze without resubmission; definitive rejection can reopen the draft as a
+  new intent. Production group success requires a canonical Chat CID. The
+  official route then queries Stream online by exact CID and current membership
+  before mounting channel UI; it never calls `channel(...).watch()` on an
+  unverified string.
+- The production friend port stays unavailable with zero social backend
+  requests and no channel/member creation call. The shared official CID route
+  does make an exact Stream read/watch query when navigated and retains normal
+  SDK message/delivery behavior. The labelled Development Preview can exercise
+  the complete UI in memory, but a created Preview group has no Stream CID and
+  cannot claim provider membership.
+- Kept account Alias, future group-scoped Alias, wallet address, Privy/LOOP
+  identity, and Stream identity separate through opaque viewer-scoped profile
+  references. No social API route was invented while the backend contract is in
+  progress.
+- Pagination, incoming friend-request acceptance/rejection, exact query
+  semantics, and timeout reconciliation remain pending backend-contract work;
+  this slice does not hide them behind an invented adapter.

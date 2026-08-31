@@ -93,6 +93,29 @@ REOWN_IDENTITY_FIXTURE_FILES = (
     "test/privy_login_screen_test.dart",
 )
 
+FRIEND_FRONTEND_FIXTURE_FILES = (
+    "README.md",
+    "docs/product-decisions.md",
+    "docs/product/implementation-constraints.md",
+    "docs/harness/adoption-report.md",
+    "docs/phase-1/frontend-integration-report.md",
+    "docs/decisions/0046-model-friends-and-group-creation-before-transport.md",
+    "lib/app.dart",
+    "lib/main.dart",
+    "lib/main_preview.dart",
+    "lib/features/profile/profile_screens.dart",
+    "lib/features/chat/chat_inbox_page.dart",
+    "lib/features/chat/stream_chat_inbox_page.dart",
+    "lib/features/chat/friends/chat_create_menu_button.dart",
+    "lib/features/chat/friends/friend_controllers.dart",
+    "lib/features/chat/friends/friend_gateway.dart",
+    "lib/features/chat/friends/friend_models.dart",
+    "lib/features/chat/friends/friend_screens.dart",
+    "lib/integrations/social/memory_friend_gateway.dart",
+    "test/friend_feature_test.dart",
+    "test/stream_chat_inbox_page_test.dart",
+)
+
 
 def write_reown_identity_fixture(root: Path) -> None:
     for relative in REOWN_IDENTITY_FIXTURE_FILES:
@@ -102,9 +125,121 @@ def write_reown_identity_fixture(root: Path) -> None:
         target.write_bytes(source.read_bytes())
 
 
+def write_friend_frontend_fixture(root: Path) -> None:
+    for relative in FRIEND_FRONTEND_FIXTURE_FILES:
+        source = REPOSITORY_ROOT / relative
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(source.read_bytes())
+
+
 class HarnessTests(unittest.TestCase):
     def test_current_repository_passes(self) -> None:
         self.assertEqual([], check_harness.validate(REPOSITORY_ROOT))
+
+    def test_friend_frontend_contract_accepts_reviewed_providerless_slice(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertEqual([], result)
+
+    def test_friend_preview_gateway_cannot_enter_production_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/main.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8")
+                + "\n// executable mutation\nMemoryFriendGateway();\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("must never install MemoryFriendGateway" in error for error in result),
+            msg=f"expected production Preview-composition guard: {result}",
+        )
+
+    def test_friend_feature_cannot_add_direct_backend_route(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/features/chat/friends/friend_gateway.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8")
+                + "\nconst unsafeFriendPath = '/v1/friends';\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("not a direct HTTP transport" in error for error in result),
+            msg=f"expected feature transport guard: {result}",
+        )
+
+    def test_friend_unknown_writes_must_survive_route_disposal(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/features/chat/friends/friend_controllers.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace("ref.keepAlive()", "ref"),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("ref.keepAlive()" in error for error in result),
+            msg=f"expected unresolved-write retention guard: {result}",
+        )
+
+    def test_chat_cid_route_must_query_existing_membership(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/features/chat/stream_chat_inbox_page.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "client.queryChannelsOnline(",
+                    "client.queryChannels(",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("client.queryChannelsOnline(" in error for error in result),
+            msg=f"expected existing-member CID lookup guard: {result}",
+        )
+
+    def test_friend_visible_input_must_track_gateway_rotation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/features/chat/friends/friend_screens.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "ref.listenManual<FriendGateway>",
+                    "ref.listenManual<Object>",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("gateway rotation" in error for error in result),
+            msg=f"expected visible-input identity guard: {result}",
+        )
 
     def test_navigation_contract_requires_launch(self) -> None:
         profile, errors = check_harness.load_profile(REPOSITORY_ROOT)

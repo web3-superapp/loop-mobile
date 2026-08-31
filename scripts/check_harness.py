@@ -85,6 +85,7 @@ REQUIRED_FILES = (
     "docs/decisions/0043-use-reown-only-for-privy-external-evm-credentials.md",
     "docs/decisions/0044-separate-build-profiles-from-product-environments.md",
     "docs/decisions/0045-connect-bounded-stream-user-token-loader.md",
+    "docs/decisions/0046-model-friends-and-group-creation-before-transport.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/gitnexus-generated-source-pollution.md",
     "docs/failures/providerless-notification-fixtures.md",
@@ -133,6 +134,12 @@ REQUIRED_FILES = (
     "lib/features/market/spot_candle_chart.dart",
     "lib/features/market/spot_candle_section.dart",
     "lib/features/market/watchlist/watchlist_controller.dart",
+    "lib/features/chat/friends/chat_create_menu_button.dart",
+    "lib/features/chat/friends/friend_controllers.dart",
+    "lib/features/chat/friends/friend_gateway.dart",
+    "lib/features/chat/friends/friend_models.dart",
+    "lib/features/chat/friends/friend_screens.dart",
+    "lib/integrations/social/memory_friend_gateway.dart",
     "test/home_discovery_and_security_test.dart",
     "test/home_portfolio_truthfulness_test.dart",
     "test/new_pairs_truthfulness_test.dart",
@@ -190,6 +197,7 @@ REQUIRED_FILES = (
     "test/profile_controller_test.dart",
     "test/profile_models_test.dart",
     "test/profile_presentation_screen_test.dart",
+    "test/friend_feature_test.dart",
     "test/privacy_controller_test.dart",
     "test/privacy_models_test.dart",
     "test/privacy_presentation_screen_test.dart",
@@ -2891,7 +2899,7 @@ CHAT_PREVIEW_REQUEST_TEST_FINGERPRINT = (
 CHAT_PREVIEW_REQUEST_SOURCE_FINGERPRINTS = {
     "page": "7816c49c960272acff1caa32f824a6edd5b55ec22b982a41f739c143a421f7e8",
     "gateway": "a2ed73bcb1f80ac4110aa8f48fcb5f3c68d2d2270028dbf246e37af43df24701",
-    "inbox": "5fe03396b626edcd896068830d1aedee9c9af1ebe4208d64ae9202fff536b10a",
+    "inbox": "4b2ffcb9f2a69dbebde32b27aab185b8ab8136c37a23bb7cf176c22d4103a3e7",
 }
 
 
@@ -8435,6 +8443,245 @@ def check_perp_positions_application_contract(root: Path) -> list[str]:
     return errors
 
 
+FRIEND_FRONTEND_TEST_MARKERS = {
+    Path("test/friend_feature_test.dart"): (
+        "friend inputs reject unsafe aliases, duplicate refs, and non-v4 IDs",
+        "Preview request becomes pending but never becomes an accepted friend",
+        "search results retire after the page stops listening",
+        "unknown friend request stays frozen after a search refresh",
+        "unknown friend request survives route disposal in this session",
+        "friend request accepts only pending and treats friend as unknown",
+        "explicit unexpected friend rejection remains retryable",
+        "Preview group creation is idempotent and never returns a Stream CID",
+        "unknown group outcome freezes the draft and is never resubmitted",
+        "unknown group draft survives route disposal in this session",
+        "definitive group rejection can be edited as a new intent",
+        "explicit unexpected group rejection remains editable",
+        "production group receipt without a Chat CID stays unconfirmed",
+        "production friend surfaces fail closed without controls",
+        "gateway rotation clears visible friend and group text",
+        "unknown friend query restores after route disposal",
+        "unknown group name restores after route disposal",
+        "definitive friend rejection copy never claims unknown outcome",
+        "Preview can search an alias and send a pending request",
+        "Preview selects accepted friends and creates no Stream channel",
+        "production group success requires a canonical CID and routes to guarded Chat",
+        "Chat add menu exposes create-group and add-friend routes",
+        "Profile exposes 我的好友 and application routes stay truthful",
+    ),
+}
+
+
+def check_friend_frontend_contract(root: Path) -> list[str]:
+    """Keep friends providerless until the reviewed backend adapter exists."""
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/features/chat/friends/chat_create_menu_button.dart": (
+                "ValueKey<String>('chat-create-menu')",
+                "ValueKey<String>('chat-create-group-menu-item')",
+                "ValueKey<String>('chat-add-friend-menu-item')",
+                "label: '创建群组'",
+                "label: '添加好友'",
+                "context.push('/chat/groups/create')",
+                "context.push('/chat/friends/add')",
+            ),
+            "lib/features/chat/friends/friend_models.dart": (
+                "enum FriendRelationship { none, requestPending, friend }",
+                "final class FriendProfileRef",
+                "groupMinimumSelectedFriends = 2",
+                "groupMaximumSelectedFriends = 29",
+                "final FriendProfileRef profileRef;",
+                "validateFriendOperationId",
+                "parseLoopStreamChannelCid(streamCid)",
+            ),
+            "lib/features/chat/friends/friend_gateway.dart": (
+                "abstract interface class FriendGateway",
+                "final class UnavailableFriendGateway",
+                "(ref) => const UnavailableFriendGateway()",
+                "required String requestId",
+                "required FriendProfileRef profileRef",
+            ),
+            "lib/features/chat/friends/friend_controllers.dart": (
+                "_requestIds.putIfAbsent",
+                "const Uuid().v4()",
+                "bool get canEdit =>",
+                "receipt.requestId != requestId",
+                "gateway.mode == FriendGatewayMode.preview",
+                "FriendGatewayFailureKind.outcomeUnknown",
+                "NotifierProvider.autoDispose",
+                "ref.keepAlive()",
+                "updated.relationship != FriendRelationship.requestPending",
+            ),
+            "lib/features/chat/friends/friend_screens.dart": (
+                "ValueKey<String>('friends-service-unavailable')",
+                "ValueKey<String>('friend-search-unavailable')",
+                "ValueKey<String>('friend-group-unavailable')",
+                "title: '开发预览 · 仅本次运行'",
+                "未创建 Stream 频道",
+                "群内昵称和钱包地址不会参与搜索",
+                "ValueKey<String>('friend-group-open-channel')",
+                "当前草稿已冻结，不会自动重复提交",
+                "ref.listenManual<FriendSearchState>",
+                "ref.listenManual<FriendGroupState>",
+                "服务暂时无法完成请求；没有好友关系或群组被修改。",
+            ),
+            "lib/integrations/social/memory_friend_gateway.dart": (
+                "final class MemoryFriendGateway implements FriendGateway",
+                "FriendGatewayMode get mode => FriendGatewayMode.preview",
+                "relationship: FriendRelationship.requestPending",
+                "streamCid: null",
+                "_groupReceipts[requestId]",
+            ),
+            "lib/features/chat/stream_chat_inbox_page.dart": (
+                "const ChatCreateMenuButton()",
+                "client.queryChannelsOnline(",
+                "Filter.equal('cid', cid)",
+                "Filter.in_('members', <Object>[userId])",
+                "channel.membership?.userId != userId",
+                "No existing Stream channel membership was confirmed",
+            ),
+            "lib/features/chat/chat_inbox_page.dart": (
+                "const ChatCreateMenuButton()",
+            ),
+            "lib/features/profile/profile_screens.dart": (
+                "title: '我的好友'",
+                "onTap: () => onNavigate('friends')",
+            ),
+            "lib/app.dart": (
+                "path: '/chat/friends/add'",
+                "path: '/chat/groups/create'",
+                "path: '/profile/friends'",
+                "'friends' => '/profile/friends'",
+            ),
+            "lib/main_preview.dart": (
+                "friendGatewayProvider.overrideWithValue(MemoryFriendGateway())",
+            ),
+            "docs/decisions/0046-model-friends-and-group-creation-before-transport.md": (
+                "## Status",
+                "## Context",
+                "## Decision",
+                "## Consequences",
+                "## Evidence",
+                "No backend path is invented",
+            ),
+            "README.md": (
+                "Chat 顶部现提供固定的 `创建群组` / `添加好友` 菜单",
+            ),
+            "docs/product/implementation-constraints.md": (
+                "Friend discovery uses only backend-authorized account-level LOOP Alias results",
+                "exact online Stream channel-list result filtered by that CID and current membership",
+            ),
+            "docs/product-decisions.md": (
+                "Chat now exposes one fixed create menu and Profile exposes `我的好友`",
+            ),
+            "docs/harness/adoption-report.md": (
+                "## Friend Directory and Group-Creation Frontend Boundary",
+            ),
+            "docs/phase-1/frontend-integration-report.md": (
+                "## Friend Directory and Group-Creation Frontend Slice",
+            ),
+            "test/friend_feature_test.dart": tuple(
+                marker
+                for markers in FRIEND_FRONTEND_TEST_MARKERS.values()
+                for marker in markers
+            ),
+            "test/stream_chat_inbox_page_test.dart": (
+                "channel route lookup requires an exact CID and current membership",
+            ),
+        },
+    )
+
+    feature_root = root / "lib/features/chat/friends"
+    if feature_root.is_dir():
+        for path in feature_root.rglob("*.dart"):
+            source = strip_dart_comments(read_text(path))
+            if "package:dio/" in source or re.search(r"['\"]/v1/", source):
+                errors.append(
+                    "Friend feature code must stay behind its narrow port, not a direct HTTP transport: "
+                    + str(path.relative_to(root))
+                )
+
+    controllers_path = feature_root / "friend_controllers.dart"
+    if controllers_path.is_file():
+        controllers = strip_dart_comments(read_text(controllers_path))
+        if controllers.count("ref.keepAlive()") < 2:
+            errors.append(
+                "Friend request and group-create controllers must retain unresolved writes with ref.keepAlive()"
+            )
+        if "error.kind == FriendGatewayFailureKind.unexpected" in controllers:
+            errors.append(
+                "Typed unexpected write failures must remain definitive; only outcomeUnknown may freeze"
+            )
+
+    models_path = feature_root / "friend_models.dart"
+    if models_path.is_file() and re.search(
+        r"\bgroupId\b", strip_dart_comments(read_text(models_path))
+    ):
+        errors.append(
+            "The provider-neutral friend group receipt must not guess an unreviewed groupId field"
+        )
+
+    screens_path = feature_root / "friend_screens.dart"
+    if screens_path.is_file():
+        screens = strip_dart_comments(read_text(screens_path))
+        if screens.count("ref.listenManual<FriendGateway>") < 2:
+            errors.append(
+                "Friend search and group text must both clear on principal-bound gateway rotation"
+            )
+
+    stream_route_path = root / "lib/features/chat/stream_chat_inbox_page.dart"
+    if stream_route_path.is_file():
+        stream_route = strip_dart_comments(read_text(stream_route_path))
+        if "client.channel(" in stream_route:
+            errors.append(
+                "String-addressed Chat routes must not call client.channel before existing membership is queried"
+            )
+
+    memory_path = root / "lib/integrations/social/memory_friend_gateway.dart"
+    if memory_path.is_file():
+        memory = strip_dart_comments(read_text(memory_path))
+        for forbidden in (
+            "package:stream_chat",
+            "StreamChatClient",
+            "queryChannels(",
+            ".channel(",
+            "createChannel(",
+        ):
+            if forbidden in memory:
+                errors.append(
+                    "The Preview friend gateway must never own a Stream operation: "
+                    + forbidden
+                )
+
+    production_root = root / "lib/main.dart"
+    if production_root.is_file() and "MemoryFriendGateway" in strip_dart_comments(
+        read_text(production_root)
+    ):
+        errors.append(
+            "The production composition root must never install MemoryFriendGateway"
+        )
+
+    if (root / "lib").is_dir():
+        allowed_memory_consumers = {
+            Path("lib/main_preview.dart"),
+            Path("lib/integrations/social/memory_friend_gateway.dart"),
+        }
+        for path in (root / "lib").rglob("*.dart"):
+            relative = path.relative_to(root)
+            if relative in allowed_memory_consumers:
+                continue
+            if "MemoryFriendGateway" in strip_dart_comments(read_text(path)):
+                errors.append(
+                    "MemoryFriendGateway may be composed only by the explicit Preview root: "
+                    + str(relative)
+                )
+
+    errors.extend(check_behavior_test_evidence(root, FRIEND_FRONTEND_TEST_MARKERS))
+    return errors
+
+
 def check_secret_paths(paths: list[Path]) -> list[str]:
     errors: list[str] = []
     for path in paths:
@@ -8516,6 +8763,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_product_contract(root))
     errors.extend(check_chat_attachment_contract(root))
     errors.extend(check_production_chat_audio_room_entry(root))
+    errors.extend(check_friend_frontend_contract(root))
     errors.extend(check_notification_contract(root))
     errors.extend(check_providerless_application_contract(root))
     errors.extend(check_watchlist_application_contract(root))
@@ -8546,7 +8794,7 @@ def main() -> int:
         "Harness check passed: profile, six-destination contract, pins, "
         "Spot-only product, New Pairs exact-Preview truth, Chat snapshot, Preview request truth and exact conversation identity, Home portfolio truth, security capability truth, device-local display preferences, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
-        "verification, records, and secret rules are consistent."
+        "verification, providerless friend/group boundaries, records, and secret rules are consistent."
     )
     return 0
 
