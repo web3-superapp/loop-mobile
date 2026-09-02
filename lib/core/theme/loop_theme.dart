@@ -1,20 +1,40 @@
 import 'package:flutter/material.dart';
 
 abstract final class LoopColors {
-  static const Color abyss = Color(0xFF070A0F);
-  static const Color basalt = Color(0xFF111722);
-  static const Color elevated = Color(0xFF18202C);
-  static const Color chalk = Color(0xFFEDF3F6);
-  static const Color vapor = Color(0xFF93A1B3);
-  static const Color mint = Color(0xFF49E4A5);
+  // V2 Lime Ledger foundation. Keep the semantic aliases below while the
+  // existing surfaces migrate in bounded slices.
+  static const Color ink = Color(0xFF050604);
+  static const Color lime = Color(0xFFB8FF20);
+  static const Color chalk = Color(0xFFF3F5EF);
+  static const Color graphite = Color(0xFF171A16);
+  static const Color panel = Color(0xFF0E100D);
+  static const Color muted = Color(0xFF7F897B);
+  static const Color textSecondary = Color(0xADF3F5EF);
+  static const Color textTertiary = Color(0x94F3F5EF);
+  static const Color hairline = Color(0xFF242523);
+
+  static const Color abyss = ink;
+  static const Color basalt = graphite;
+  static const Color elevated = Color(0xFF1D1E1C);
+  static const Color vapor = muted;
+  static const Color mint = lime;
+  // Legacy categorical accents. New V2 surfaces use Lime, Chalk and Muted;
+  // existing feature slices migrate away from these aliases independently.
   static const Color market = Color(0xFF68B9FF);
   static const Color chat = Color(0xFFF2B562);
   static const Color danger = Color(0xFFFF6B82);
   static const Color warning = Color(0xFFFFC75F);
-  static const Color line = Color(0xFF263140);
+  static const Color line = hairline;
 }
 
 abstract final class LoopSpacing {
+  static const double compact = 8;
+  static const double regular = 14;
+  static const double page = 16;
+  static const double group = 22;
+  static const double section = 22;
+  static const double spacious = 30;
+
   static const double x1 = 4;
   static const double x2 = 8;
   static const double x3 = 12;
@@ -26,30 +46,27 @@ abstract final class LoopSpacing {
 }
 
 abstract final class LoopRadius {
-  static const BorderRadius small = BorderRadius.all(Radius.circular(10));
+  static const BorderRadius control = BorderRadius.all(Radius.circular(16));
+  static const BorderRadius card = BorderRadius.all(Radius.circular(20));
+  static const BorderRadius container = BorderRadius.all(Radius.circular(24));
+  static const BorderRadius small = BorderRadius.all(Radius.circular(12));
   static const BorderRadius medium = BorderRadius.all(Radius.circular(16));
-  static const BorderRadius large = BorderRadius.all(Radius.circular(22));
+  static const BorderRadius large = BorderRadius.all(Radius.circular(24));
   static const BorderRadius pill = BorderRadius.all(Radius.circular(999));
 }
 
 abstract final class LoopTheme {
   static ThemeData get dark {
-    final colorScheme =
-        ColorScheme.fromSeed(
-          seedColor: LoopColors.mint,
-          brightness: Brightness.dark,
-          surface: LoopColors.basalt,
-          error: LoopColors.danger,
-        ).copyWith(
-          primary: LoopColors.mint,
-          onPrimary: LoopColors.abyss,
-          secondary: LoopColors.market,
-          tertiary: LoopColors.chat,
-          surface: LoopColors.basalt,
-          onSurface: LoopColors.chalk,
-          outline: LoopColors.line,
-          error: LoopColors.danger,
-        );
+    final colorScheme = const ColorScheme.dark(
+      primary: LoopColors.lime,
+      onPrimary: LoopColors.ink,
+      secondary: LoopColors.chalk,
+      onSecondary: LoopColors.ink,
+      surface: LoopColors.graphite,
+      onSurface: LoopColors.chalk,
+      outline: LoopColors.line,
+      error: LoopColors.danger,
+    ).copyWith(tertiary: LoopColors.lime, onTertiary: LoopColors.ink);
 
     final base = ThemeData.dark(useMaterial3: true);
     final textTheme = base.textTheme.copyWith(
@@ -103,7 +120,7 @@ abstract final class LoopTheme {
         fontSize: 13,
         height: 1.46,
         fontWeight: FontWeight.w400,
-        color: LoopColors.vapor,
+        color: LoopColors.textSecondary,
       ),
       labelLarge: const TextStyle(
         fontSize: 13,
@@ -116,7 +133,7 @@ abstract final class LoopTheme {
         height: 1.2,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.35,
-        color: LoopColors.vapor,
+        color: LoopColors.textTertiary,
       ),
     );
 
@@ -143,22 +160,26 @@ abstract final class LoopTheme {
       navigationBarTheme: NavigationBarThemeData(
         height: 72,
         elevation: 0,
-        backgroundColor: LoopColors.basalt.withValues(alpha: 0.98),
-        indicatorColor: LoopColors.mint.withValues(alpha: 0.12),
+        backgroundColor: LoopColors.chalk,
+        indicatorColor: LoopColors.lime,
+        surfaceTintColor: Colors.transparent,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           return IconThemeData(
             size: 22,
             color: states.contains(WidgetState.selected)
-                ? LoopColors.mint
-                : LoopColors.vapor,
+                ? LoopColors.ink
+                : LoopColors.graphite.withValues(alpha: 0.64),
           );
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           return textTheme.labelMedium?.copyWith(
             color: states.contains(WidgetState.selected)
-                ? LoopColors.mint
-                : LoopColors.vapor,
+                ? LoopColors.ink
+                : LoopColors.graphite.withValues(alpha: 0.68),
             fontSize: 10,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w700
+                : FontWeight.w600,
           );
         }),
       ),

@@ -3,17 +3,16 @@
   "project": {
     "name": "Loop Mobile",
     "phase": "active",
-    "purpose": "Build Loop, a Flutter iOS/Android app with six primary destinations—Home, Market, Launch, Chat, Wallet, and Profile—using Privy identity/wallets, Reown only for external EVM credential proofs, Stream Chat/Video, public Hyperliquid Testnet spot discovery, and future backend-mediated spot execution.",
+    "purpose": "Build Loop, a Flutter iOS/Android app with five primary destinations—Community, Mining, Launch, Market, and Wallet—using Privy identity/wallets, Reown only for external EVM credential proofs, Stream Chat/Video inside Community, and reviewed backend-mediated V2 capabilities.",
     "primary_destinations": [
-      "Home",
-      "Market",
+      "Community",
+      "Mining",
       "Launch",
-      "Chat",
-      "Wallet",
-      "Profile"
+      "Market",
+      "Wallet"
     ],
     "ownership_boundaries": [
-      "lib/main.dart and lib/app.dart own composition, application bootstrap, routing, and the six-destination shell",
+      "lib/main.dart and lib/app.dart own composition, application bootstrap, routing, and the five-destination shell",
       "lib/core owns cross-cutting navigation, theme, signing intent, errors, logging, and security primitives",
       "lib/integrations owns narrow provider and backend adapters; Reown remains an ephemeral Privy external-EVM credential transport",
       "lib/features owns product-facing feature modules",

@@ -125,6 +125,18 @@ class StreamChatInboxPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        leading: IconButton(
+          key: const ValueKey<String>('stream-chat-back-to-community'),
+          tooltip: 'Back to Community',
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              context.pop();
+            } else {
+              context.go('/community');
+            }
+          },
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
         actions: <Widget>[
           Padding(
             padding: const EdgeInsets.only(right: 8),

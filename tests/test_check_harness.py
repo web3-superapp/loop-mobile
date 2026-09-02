@@ -19,6 +19,30 @@ check_harness = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(check_harness)
 
 
+V2_NAVIGATION_FIXTURE_FILES = (
+    "docs/decisions/0048-adopt-v2-five-destination-ui-foundation.md",
+    "docs/product-decisions.md",
+    "docs/product/implementation-constraints.md",
+    "lib/app.dart",
+    "lib/core/navigation/surface_catalog.dart",
+    "lib/features/chat/stream_chat_inbox_page.dart",
+    "lib/features/community/community_screen.dart",
+    "lib/features/mining/mining_screen.dart",
+    "lib/features/shell/loop_shell.dart",
+    "lib/features/wallet/wallet_overview_screens.dart",
+    "test/v2_primary_navigation_test.dart",
+    "test/v2_ui_foundation_test.dart",
+)
+
+
+def write_v2_navigation_fixture(root: Path) -> None:
+    for relative in V2_NAVIGATION_FIXTURE_FILES:
+        source = REPOSITORY_ROOT / relative
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+
+
 def write_audio_room_native_fixture(
     root: Path,
     *,
@@ -520,14 +544,218 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected visible-input identity guard: {result}",
         )
 
-    def test_navigation_contract_requires_launch(self) -> None:
+    def test_navigation_contract_requires_community(self) -> None:
         profile, errors = check_harness.load_profile(REPOSITORY_ROOT)
         self.assertEqual([], errors)
         assert profile is not None
         changed = copy.deepcopy(profile)
-        changed["project"]["primary_destinations"].remove("Launch")
+        changed["project"]["primary_destinations"].remove("Community")
         result = check_harness.check_profile(REPOSITORY_ROOT, changed)
-        self.assertTrue(any("preserve Home / Market / Launch" in error for error in result))
+        self.assertTrue(
+            any(
+                "preserve Community / Mining / Launch / Market / Wallet"
+                in error
+                for error in result
+            )
+        )
+
+    def test_v2_navigation_contract_rejects_a_restored_home_tab(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_navigation_fixture(root)
+            path = root / "lib/features/shell/loop_shell.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "'Community',\n      '/community'",
+                    "'Home',\n      '/home'",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_primary_navigation_contract(root)
+
+        self.assertTrue(
+            any("retired primary destination 'Home'" in error for error in result),
+            msg=f"expected retired-tab guard: {result}",
+        )
+
+    def test_v2_navigation_contract_rejects_legacy_redirect_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_navigation_fixture(root)
+            path = root / "lib/app.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "GoRoute(path: '/home', redirect: (context, state) => '/community')",
+                    "GoRoute(path: '/home', redirect: (context, state) => '/market')",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_primary_navigation_contract(root)
+
+        self.assertTrue(
+            any(
+                "V2 app routes must redirect `/home` to `/community`" in error
+                for error in result
+            ),
+            msg=f"expected compatibility-redirect guard: {result}",
+        )
+
+    def test_v2_navigation_contract_rejects_unknown_route_fallback_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_navigation_fixture(root)
+            path = root / "lib/app.dart"
+            source = path.read_text(encoding="utf-8")
+            mutated = source.replace(
+                "path: '/:unmatched(.*)',",
+                "path: '/not-a-catch-all',",
+                1,
+            )
+            self.assertNotEqual(source, mutated)
+            path.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_v2_primary_navigation_contract(root)
+
+        self.assertIn(
+            "V2 app routes must redirect `/:unmatched(.*)` to `/community`",
+            result,
+        )
+
+    def test_v2_navigation_contract_accepts_equivalent_format_and_test_names(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_navigation_fixture(root)
+            app_path = root / "lib/app.dart"
+            source = app_path.read_text(encoding="utf-8")
+            formatted = source.replace(
+                "GoRoute(path: '/home', redirect: (context, state) => '/community')",
+                "GoRoute(\n"
+                "        path: '/home',\n"
+                "        redirect: (context, state) {\n"
+                "          return '/community';\n"
+                "        },\n"
+                "      )",
+                1,
+            )
+            self.assertNotEqual(source, formatted)
+            app_path.write_text(formatted, encoding="utf-8")
+
+            test_path = root / "test/v2_primary_navigation_test.dart"
+            test_source = test_path.read_text(encoding="utf-8")
+            renamed = test_source.replace(
+                "unknown routes fall back directly to Community",
+                "unmatched locations use the reviewed V2 fallback",
+                1,
+            )
+            self.assertNotEqual(test_source, renamed)
+            test_path.write_text(renamed, encoding="utf-8")
+
+            result = check_harness.check_v2_primary_navigation_contract(root)
+
+        self.assertEqual([], result)
+
+    def test_v2_navigation_contract_ignores_redirects_inside_comments(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_navigation_fixture(root)
+            path = root / "lib/app.dart"
+            source = path.read_text(encoding="utf-8")
+            mutated = source.replace(
+                "GoRoute(path: '/home', redirect: (context, state) => '/community')",
+                "GoRoute(path: '/home', redirect: (context, state) => '/market')\n"
+                "      // GoRoute(path: '/home', redirect: (context, state) => '/community')",
+                1,
+            )
+            self.assertNotEqual(source, mutated)
+            path.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_v2_primary_navigation_contract(root)
+
+        self.assertIn(
+            "V2 app routes must redirect `/home` to `/community`",
+            result,
+        )
+
+    def test_v2_navigation_contract_ignores_auth_entry_inside_comments(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_navigation_fixture(root)
+            path = root / "lib/app.dart"
+            source = path.read_text(encoding="utf-8")
+            marker = "if (isAuthRoute) return '/community';"
+            mutated = source.replace(
+                marker,
+                "if (isAuthRoute) return '/market';\n"
+                f"      // {marker}",
+                1,
+            )
+            self.assertNotEqual(source, mutated)
+            path.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_v2_primary_navigation_contract(root)
+
+        self.assertIn(
+            "authenticated entry must return directly to Community",
+            result,
+        )
+
+    def test_v2_navigation_contract_rejects_profile_fallback_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_navigation_fixture(root)
+            path = root / "lib/app.dart"
+            source = path.read_text(encoding="utf-8")
+            profile_start = source.index("Widget _profileScreen(")
+            profile_end = source.index("String _accountPath(", profile_start)
+            profile_slice = source[profile_start:profile_end]
+            mutated_slice = profile_slice.replace(
+                "context.go('/community');",
+                "context.go('/wallet');",
+                1,
+            )
+            self.assertNotEqual(profile_slice, mutated_slice)
+            path.write_text(
+                source[:profile_start] + mutated_slice + source[profile_end:],
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_primary_navigation_contract(root)
+
+        self.assertIn(
+            "Profile root must expose a direct-link fallback that returns to Community",
+            result,
+        )
+
+    def test_v2_navigation_contract_rejects_chat_fallback_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_navigation_fixture(root)
+            path = root / "lib/features/chat/stream_chat_inbox_page.dart"
+            source = path.read_text(encoding="utf-8")
+            chat_start = source.index("class StreamChatInboxPage")
+            chat_end = source.index("class StreamChatChannelRoutePage", chat_start)
+            chat_slice = source[chat_start:chat_end]
+            mutated_slice = chat_slice.replace(
+                "context.go('/community');",
+                "context.go('/wallet');",
+                1,
+            )
+            self.assertNotEqual(chat_slice, mutated_slice)
+            path.write_text(
+                source[:chat_start] + mutated_slice + source[chat_end:],
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_primary_navigation_contract(root)
+
+        self.assertIn(
+            "Chat root must expose a direct-link fallback that returns to Community",
+            result,
+        )
 
     def test_routine_verification_is_android_debug_only(self) -> None:
         profile, errors = check_harness.load_profile(REPOSITORY_ROOT)
@@ -1564,7 +1792,7 @@ class HarnessTests(unittest.TestCase):
             route = source[route_start:route_end]
             without_route = source[:route_start] + source[route_end:]
             shell_end = without_route.index(
-                "        ],\n      ),\n      ..._accountRoutes,"
+                "      GoRoute(path: '/home', redirect:",
             )
             path.write_text(
                 without_route[:shell_end] + route + without_route[shell_end:],
@@ -1574,7 +1802,7 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_spot_candle_contract(root)
 
         self.assertIn(
-            "C3 must remain a root full-screen route outside the six-destination Shell",
+            "C3 must remain a root full-screen route outside the five-destination Shell",
             result,
         )
 

@@ -165,7 +165,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final router = GoRouter.of(tester.element(find.text('Home overview')));
+      final router = GoRouter.of(
+        tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+      );
       router.go('/home/security');
       await tester.pumpAndSettle();
 

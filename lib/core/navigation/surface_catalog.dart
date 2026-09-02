@@ -41,12 +41,11 @@ final class AppSurface {
 
 abstract final class SurfaceCatalog {
   static const List<String> primaryPaths = <String>[
-    '/home',
+    '/community',
+    '/mining',
+    '/launch',
     '/market',
-    '/launchpad',
-    '/chat',
     '/wallet',
-    '/profile',
   ];
 
   static const List<AppSurface> all = <AppSurface>[

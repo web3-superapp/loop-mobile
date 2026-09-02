@@ -8,7 +8,8 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 
 ## 当前已完成
 
-- 六个固定主入口：Home / Market / Launch / Chat / Wallet / Profile
+- 五个固定主入口：Community / Mining / Launch / Market / Wallet；登录后进入 Community，Chat 是 Community 子流程，Profile 从 Community 顶部进入
+- V2 UI Foundation 已开始迁移：Ink / Lime / Chalk / Graphite 视觉 token、五栏浮动导航、Community UI-first 入口和 Mining 真实不可用态。旧 `/home` 与 `/launchpad` 仅保留兼容重定向；原 103-surface 目录仍是迁移清单，不代表新版 93 route 已完成
 - 全量 103 个产品 surface 的路由目录；产品优先级独立采用 A / B / C（47 / 46 / 10），`deferred` 单独表达本期不交付
 - Privy 身份入口现支持 Email OTP、Google OAuth、iOS-only Apple OAuth，以及外部 EVM 钱包的 SIWE 登录/绑定。它们复用同一个 Privy 0.10.1 实例和单飞身份操作边界；缺少 Mobile App Client ID 时全部保持不可登录，缺少有效 Reown Project ID 时只关闭外部钱包入口。供应商 Dashboard、回跳、签名钱包与真机行为仍未验证
 - Reown AppKit 1.8.4 只负责连接 canonical `eip155` 账号并转发 Privy 生成消息的 `personal_sign`。AppKit 自带的认证、Email、Social、Embedded Wallet、SIWE、analytics、Link Mode 与 Solana 均未启用；会话完成后释放。外部地址只显示为 Privy 登录凭据，不进入 Embedded wallet、余额、签名或 LOOP 交易权限
@@ -39,7 +40,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - General Settings 的 Reduce motion 已使用设备本地非敏感偏好持久化，并在首个应用页面前恢复；构造、读取与写入均有一秒上限，快速连续切换和迟到写入保持顺序。读取失败后的重试会先重新读取，写入失败才重试当前明确选择；任何失败都只说明本次运行生效。它不绑定账号、不发送后端请求，也不会覆盖更严格的系统 Reduce Motion。Language、Display currency 与 Theme 在真实能力具备前继续禁用，Shared Preferences 不保存 Profile、Privacy、通知、钱包、token、PIN 或安全状态
 - Home 与 Net Worth 已关闭无来源的资产和活动结论：正式会话在 owner-scoped portfolio/activity 来源接入前只显示不可用与当前 Privy wallet identity 状态，不再展示静态总额、涨跌、图表、分配、未读数、提醒或授权记录。钱包身份不等于余额证据；原布局数据只保留在明确标注 `开发预览` / `演示数据` 的 Preview 中，本切片不新增接口、provider 请求或刷新动作
 - C10 New Pairs 已关闭正式会话中的演示事实泄漏：公开 Spot 快照不包含 listing time，客户端收取时间、首次本地观察、成交量与 canonical 标记也不能证明“新上线”。正式和缓存未验证会话仅显示数据源未连接且不发 Market/Candle 请求；BTC/ETH/SOL 与 fixture age 仅在精确 `开发预览` 会话中显示，并只能返回裸 `/market`
-- Launchpad 继续作为第 3 个一级入口保留，但当前只交付不可操作的 G1 占位：无项目来源时不声称项目正在进行、为空、已审核或满足资格，三个必要条件全部明确为未连接；G2–G4 继续 deferred，正式与 Preview 均不伪造项目、额度、申请、资金、签名或领取动作
+- Launch 继续作为第 3 个一级入口保留在 `/launch`，但当前只交付不可操作的占位：无项目来源时不声称项目正在进行、为空、已审核或满足资格；旧 `/launchpad` 只重定向到新入口，正式与 Preview 均不伪造项目、额度、申请、资金、签名或领取动作
 - I1 连通性页面已取消默认离线结论：裸 `/system/offline` 只显示状态来源未连接，不再把路由名当成设备断网或服务故障证据；只有组合根显式提供一个已观察的 scope 才能显示离线、公共行情故障或私有 LOOP 服务中断。全局横幅仍未挂载，也未新增连通性插件、健康轮询或自动重试
 - I2 服务错误页已取消默认失败与假追踪码：裸 `/system/error` 只显示错误上下文未连接，不再生成 `L-2048`，也不再把回首页伪装成重试或联系客服。只有精确请求返回错误或结果不可确认时，所属 feature 才能显式提供 presentation-safe observation；页面不会把超时说成确定失败。在后端 reference 的来源与精确语法完成审核前不显示任何 reference，Retry / Support 分别要求真实绑定的专用回调
 - I3 强更页已取消默认阻断与假更新动作：裸 `/system/update` 只显示版本策略未连接，可以返回 LOOP，不再声称当前版本不安全或不可跳过。只有未来 app-level 策略边界显式提供 verified requirement 才进入阻断态，`Update now` 还必须绑定独立的已审核商店动作；当前没有版本策略源、整数 build 比较、登录前根 gate 或真实 App Store / Play Store 目标
@@ -109,7 +110,7 @@ flutter build web --release
 
 ## 已锁定工程基线
 
-本仓库的目的为：Build Loop, a Flutter iOS/Android app with six primary destinations—Home, Market, Launch, Chat, Wallet, and Profile—using Privy identity/wallets, Reown only for external EVM credential proofs, Stream Chat/Video, public Hyperliquid Testnet spot discovery, and future backend-mediated spot execution.
+本仓库的目的为：Build Loop, a Flutter iOS/Android app with five primary destinations—Community, Mining, Launch, Market, and Wallet—using Privy identity/wallets, Reown only for external EVM credential proofs, Stream Chat/Video inside Community, and reviewed backend-mediated V2 capabilities.
 
 - Flutter 3.47.1 / Dart 3.13.1
 - Android API 28–36、AGP 8.13.2、Gradle 8.14、Kotlin 2.3.20、Java 17
@@ -147,12 +148,12 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 ## 不要重复建设
 
 - 不要继续扩展根目录的 HTML 原型；它只是历史交互与安全契约参考
-- 不要重新搭 Flutter 路由、主题、六 Tab 壳层、页面目录或通用状态组件
+- 不要绕开现有 Flutter 路由、主题、五 Tab 壳层或通用状态组件另建第二套导航和设计系统
 - 不要新建第二套交易确认弹层；所有资金意图统一进入 F11 `SigningReviewSurface`
 - 不要恢复 Perp 产品入口、合约分栏或永续交易文案；旧实现仅作为未挂载的回归历史保留
 - 不要自建钱包、撮合、桥、IM 或 RTC 基础设施；只实现已选供应商的薄适配与 LOOP 编排
 - 不要启用 Hyperliquid HIP-3、builder fee 或非 Core 市场
-- Pay 保留首页 `Coming soon` 入口以表达产品位置，但 A / B / C 优先级不等于交付期；B5-B8 当前全部 deferred，落地页不得出现扫码、相机、金额或支付动作
+- Pay 在 Wallet 保留明确不可用入口以表达新版产品位置，但 A / B / C 优先级不等于交付期；B5-B8 / D21 当前全部 deferred，落地页不得出现扫码、相机、金额或支付动作
 
 前端现已具备原生 LOOP identity bootstrap、Stream Chat 与前台 Audio Room 的主体轮换、后端 token/locator 边界、麦克风原生声明、通知意图契约和根协调器。根协调器的存在不代表通知已连接：正式入口仍使用 disabled EventSource，只有真实 session 与 bootstrap identity 同时成立时才可能处理一个有界点击。后端可并行实现 Stream Chat/Video 短期 token，以及“预创建房间 + 成员角色无 `create-call`”的 Audio Room locator 契约；双方就绪后再做真机双端联调。Firebase/Push 仍未初始化；还需要 Android/iOS Firebase 配置、精确 Stream provider name、真实 payload fixture、服务端事件 ID/过期/账号绑定契约，以及 iOS 普通推送与 VoIP 的单一路由策略。后台响铃、Camera、PushKit 与 CallKit 随后单独启用。
 

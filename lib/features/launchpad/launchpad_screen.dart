@@ -9,9 +9,9 @@ class LaunchpadScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final compactContextRail = MediaQuery.textScalerOf(context).scale(10) > 15;
     return LoopPage(
-      title: 'Launchpad',
-      eyebrow: 'Reserved destination',
-      subtitle: 'Launchpad remains a primary LOOP destination, while project discovery and participation stay outside this release.',
+      title: 'Launch',
+      eyebrow: 'UI foundation',
+      subtitle: 'Launch keeps its V2 product position while project discovery and participation wait for a reviewed source.',
       children: <Widget>[
         Align(
           alignment: Alignment.centerLeft,
@@ -73,7 +73,7 @@ class LaunchpadScreen extends StatelessWidget {
         const SizedBox(height: 18),
         const LoopStateCard(
           key: ValueKey<String>('launchpad-unavailable'),
-          title: 'Launchpad not connected',
+          title: 'Launch data not connected',
           message: 'Project lists, details, applications, allocations, funding, signing and claims are unavailable in this release. This page does not accept funds or submit any request.',
           icon: Icons.lock_clock_outlined,
           tone: LoopTone.warning,

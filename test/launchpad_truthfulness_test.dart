@@ -26,7 +26,7 @@ void main() {
   ) async {
     await _pumpLaunchpad(tester);
 
-    expect(find.text('Launchpad'), findsOneWidget);
+    expect(find.text('Launch'), findsOneWidget);
     expect(find.text('Coming later'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('launchpad-unavailable')),

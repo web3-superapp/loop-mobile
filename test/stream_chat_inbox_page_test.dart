@@ -105,7 +105,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(NavigationDestination, 'Chat'));
+      final router = GoRouter.of(
+        tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+      );
+      router.go('/chat');
       await tester.pumpAndSettle();
 
       expect(find.byType(StreamChatInboxPage), findsOneWidget);
@@ -158,7 +161,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(NavigationDestination, 'Chat'));
+      final router = GoRouter.of(
+        tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+      );
+      router.go('/chat');
       await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const ValueKey<String>('stream-audio-room-entry')),
@@ -280,7 +286,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final context = tester.element(find.byType(NavigationBar));
+    final context = tester.element(
+      find.byKey(const ValueKey<String>('community-screen')),
+    );
     GoRouter.of(context)
         .go('/chat/channel/${Uri.encodeComponent('messaging:loop-room-42')}');
     await tester.pumpAndSettle();
@@ -310,7 +318,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final context = tester.element(find.byType(NavigationBar));
+      final context = tester.element(
+        find.byKey(const ValueKey<String>('community-screen')),
+      );
       GoRouter.of(context).go(
         '/chat/channel/${Uri.encodeComponent('messaging:loop_group_12345678')}/alias',
       );

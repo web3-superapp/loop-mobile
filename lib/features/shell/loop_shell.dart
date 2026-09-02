@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
 
 class LoopShell extends StatelessWidget {
   const LoopShell({required this.child, required this.location, super.key});
@@ -10,7 +9,24 @@ class LoopShell extends StatelessWidget {
   final String location;
 
   static const _destinations = <_LoopDestination>[
-    _LoopDestination('Home', '/home', Icons.home_outlined, Icons.home_rounded),
+    _LoopDestination(
+      'Community',
+      '/community',
+      Icons.groups_outlined,
+      Icons.groups_rounded,
+    ),
+    _LoopDestination(
+      'Mining',
+      '/mining',
+      Icons.bolt_outlined,
+      Icons.bolt_rounded,
+    ),
+    _LoopDestination(
+      'Launch',
+      '/launch',
+      Icons.rocket_launch_outlined,
+      Icons.rocket_launch_rounded,
+    ),
     _LoopDestination(
       'Market',
       '/market',
@@ -18,28 +34,10 @@ class LoopShell extends StatelessWidget {
       Icons.query_stats_rounded,
     ),
     _LoopDestination(
-      'Launch',
-      '/launchpad',
-      Icons.rocket_launch_outlined,
-      Icons.rocket_launch_rounded,
-    ),
-    _LoopDestination(
-      'Chat',
-      '/chat',
-      Icons.forum_outlined,
-      Icons.forum_rounded,
-    ),
-    _LoopDestination(
       'Wallet',
       '/wallet',
       Icons.account_balance_wallet_outlined,
       Icons.account_balance_wallet_rounded,
-    ),
-    _LoopDestination(
-      'Profile',
-      '/profile',
-      Icons.person_outline_rounded,
-      Icons.person_rounded,
     ),
   ];
 
@@ -66,42 +64,38 @@ class LoopShell extends StatelessWidget {
                   thickness: 1,
                   color: LoopColors.line,
                 ),
-                Expanded(
-                  child: Column(
-                    children: <Widget>[
-                      Expanded(child: child),
-                      ChatMiniVoiceBar(
-                        onOpen: () => context.push('/chat/voice'),
-                      ),
-                    ],
-                  ),
-                ),
+                Expanded(child: child),
               ],
             ),
           );
         }
         return Scaffold(
-          body: Column(
-            children: <Widget>[
-              Expanded(child: child),
-              ChatMiniVoiceBar(onOpen: () => context.push('/chat/voice')),
-            ],
-          ),
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: _selectedIndex,
-            labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-            onDestinationSelected: (index) =>
-                context.go(_destinations[index].path),
-            destinations: _destinations
-                .map((item) {
-                  return NavigationDestination(
-                    icon: Icon(item.icon),
-                    selectedIcon: Icon(item.selectedIcon),
-                    label: item.label,
-                    tooltip: item.label,
-                  );
-                })
-                .toList(growable: false),
+          body: child,
+          bottomNavigationBar: ColoredBox(
+            color: LoopColors.ink,
+            child: SafeArea(
+              top: false,
+              minimum: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+              child: ClipRRect(
+                borderRadius: LoopRadius.large,
+                child: NavigationBar(
+                  selectedIndex: _selectedIndex,
+                  labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+                  onDestinationSelected: (index) =>
+                      context.go(_destinations[index].path),
+                  destinations: _destinations
+                      .map((item) {
+                        return NavigationDestination(
+                          icon: Icon(item.icon),
+                          selectedIcon: Icon(item.selectedIcon),
+                          label: item.label,
+                          tooltip: item.label,
+                        );
+                      })
+                      .toList(growable: false),
+                ),
+              ),
+            ),
           ),
         );
       },
@@ -134,12 +128,12 @@ class _DesktopRail extends StatelessWidget {
                 height: 32,
                 alignment: Alignment.center,
                 decoration: const BoxDecoration(
-                  color: LoopColors.mint,
+                  color: LoopColors.lime,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.all_inclusive_rounded,
-                  color: LoopColors.abyss,
+                  color: LoopColors.ink,
                   size: 20,
                 ),
               ),

@@ -42,7 +42,7 @@ Date: 2026-08-24
 ## Adopted surfaces
 
 - `AGENTS.md` is the repository-wide product, architecture, security, and workflow contract.
-- `harness.json` is the machine-readable active profile and preserves the six-destination navigation contract.
+- `harness.json` is the machine-readable active profile and preserves the five-destination V2 navigation contract.
 - `bin/flutter`, `bin/dart`, and `bin/loop-sdk` reject Flutter/Dart version drift.
 - `scripts/check_harness.py` and `tests/test_check_harness.py` validate exact pins, lockfiles, native identity/toolchain, records, provider shortcuts, centralized notification ingress, provider-neutral notification routing, secret paths, and Launchpad retention.
 - Numbered decisions, failure memory, product constraints, compatibility/integration reports, and the dependency/license register preserve rationale and evidence.
@@ -52,7 +52,7 @@ Date: 2026-08-24
 - Direct dependencies and both package-manager lockfiles must remain exact and committed.
 - Android remains API 28–36 with the Privy library compileSdk override; iOS remains 17.0 with project-local SwiftPM disabled and CocoaPods 1.16.2.
 - Android/iOS IDs remain `com.cywd.loop`; iOS tests use `com.cywd.loop.RunnerTests`.
-- Home / Market / Launch / Chat / Wallet / Profile remain primary destinations; the checker fails if Launch is removed from the profile.
+- Community / Mining / Launch / Market / Wallet remain primary destinations in order; the checker rejects retired Home, Chat, or Profile tabs while preserving their reviewed compatibility and child routes.
 - Harness source guards reject Privy debug/verbose logging, Stream dev tokens/guests, and premature Firebase initialization.
 - Notification guards reserve one future Firebase callback owner, reject competing Chat/Video handlers, and prevent the pure router from importing provider SDKs, logging payloads, accepting payload-selected routes, or carrying Audio Room locators.
 - The same guard requires the root application coordinator as the sole router/identity consumer, keeps its production EventSource disabled, binds authenticated context to the real session plus bootstrap Stream identity, and bounds restoration to one in-memory interaction.
@@ -86,7 +86,31 @@ The Harness preserves the migrated native compatibility failures and the later p
 
 ## Effectiveness
 
-Measure the Harness by zero repeated occurrences of the recorded native failures, zero committed privileged secrets, zero fake provider-connected states, exact lockfile/pin agreement, retention of all six primary destinations, consistent format/analyze/test evidence, and Android Debug compilation at requested feature checkpoints. The manual Release/iOS matrix and device validation count only when explicitly requested. Update this report when a rule prevents a regression or creates a false positive.
+Measure the Harness by zero repeated occurrences of the recorded native failures, zero committed privileged secrets, zero fake provider-connected states, exact lockfile/pin agreement, retention of all five V2 primary destinations, consistent format/analyze/test evidence, and Android Debug compilation at requested feature checkpoints. The manual Release/iOS matrix and device validation count only when explicitly requested. Update this report when a rule prevents a regression or creates a false positive.
+
+## V2 Five-Destination UI Foundation Update
+
+On 2026-09-02, decision 0048 replaced the former runtime navigation contract
+with Community / Mining / Launch / Market / Wallet. Community is the
+post-login home; Chat and Profile remain reachable child domains, while
+`/home` and `/launchpad` are compatibility redirects. The existing 103-surface
+catalog remains legacy migration inventory and does not claim completion of
+the replacement V2 93-route scope.
+
+The Harness now fixes the destination order, Shell ownership, redirects,
+Community child entries, Mining's source-unavailable behavior, and the absence
+of a global idle Audio Room bar. It also scopes the production Chat Audio Room
+guard to that action itself, so an unrelated conditional back-navigation
+button cannot create a false positive. D0/D1 `/v2` response shapes remain
+outside this UI-first slice until the backend publishes its reviewed OpenAPI,
+error matrix, deployment address, test data, and device checklist.
+
+Verification for this slice: Dart format checked 285 files with no changes,
+Flutter analysis reported no issues, all 862 Flutter tests passed, the Harness
+check passed, and all 312 Python mutation tests passed. Android Debug compiled
+successfully and the generated APK/build metadata were immediately removed
+with `bin/flutter clean`. Release, iOS, interactive run, provider behavior, and
+physical-device validation were not run.
 
 ## Build Profile and Stream Token Client Update
 

@@ -4,7 +4,11 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 
 ## Product shape and environments
 
-- Home, Market, Launch, Chat, Wallet, and Profile remain the six primary destinations. Launchpad is first-class. The product is spot-only; Perp is disabled and has no primary-feature entry.
+- Decision 0048 defines Community, Mining, Launch, Market and Wallet as the
+  five primary destinations. Community is the post-login home; Chat remains a
+  Community child flow and Profile remains a child domain outside the bottom
+  navigation. `/home` and `/launchpad` are compatibility redirects only. The
+  product is spot-only; Perp is disabled and has no primary-feature entry.
 - Development and Hyperliquid Testnet are the only enabled environments. Mainnet, real deposits/withdrawals, and automated trading remain feature-flagged off.
 - Debug/Profile versus Release is only a client build-profile axis and never changes that Development/Testnet policy. `LOOP_BUILD_MODE` must match the Flutter runtime mode; a missing or mismatched profile disables configured Privy, Reown, LOOP backend, Stream, wallet-adapter, and Firebase capabilities instead of reusing another profile's values. Public credential-free Hyperliquid Testnet reads remain the separately locked exception.
 - Prefer runnable vertical slices and the locked Privy, Reown, and Stream Flutter SDKs. Do not add a second identity, messaging, calling, state-management, routing, or HTTP stack. Reown is an external-wallet proof transport under Privy's identity boundary, not a second identity provider.
@@ -107,7 +111,7 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 - Public spot prices are discovery facts only. They are not executable quotes, proof of liquidity, proof of tradability, balances, or authorization. `BuildPolicy.spotExecutionEnabled` remains false, and no Buy, Sell, order, signing, transfer, or withdrawal action may be derived from this adapter.
 - A Spot candle request takes its exact provider coin only from a market accepted by `spotMetaAndAssetCtxs`; an invalid or absent route index causes zero candle requests. The only mounted display/wire mappings are `1H/1h`, `4H/4h`, `1D/1d`, `1W/1w`, and `1M/1M`, with monthly `1M` kept distinct from minute `1m`.
 - C2 and C3 carry Spot identity only as one canonical non-negative `spotIndex`. C3 rejects missing, repeated, extra, signed, padded, malformed, negative, and overflowing query input before reading a market. It must not recover identity from a symbol, navigation extra, Preview fixture, another Spot row, or Perp data, and an unadmitted index causes zero candle requests.
-- C3 is a root full-screen route outside the six-destination Shell. A pushed C3 closes back to its caller; a direct root deep link with no route history closes explicitly to `/market` rather than exposing an enabled no-op control.
+- C3 is a root full-screen route outside the five-destination Shell. A pushed C3 closes back to its caller; a direct root deep link with no route history closes explicitly to `/market` rather than exposing an enabled no-op control.
 - The five mounted candle intervals have fixed row durations of one hour, four hours, one day, seven days, and 30 days respectively. For every admitted row, `T - t` must equal that fixed duration minus one millisecond. Reject both shorter and longer rows for every interval, while still accepting an exact-duration first row that starts before the request boundary and overlaps it.
 - Each period requests approximately 120 candles and retains at most the latest 120 distinct rows. Do not poll, automatically retry, recursively backfill, or claim continuous history. Empty responses and gaps are valid; a first candle may open before the requested start when its close overlaps the window. Sort by open time and deduplicate by open time before retaining the latest rows.
 - Preserve candle OHLCV as exact wire String plus `Decimal`. Reject numeric JSON values and inconsistent identity, time, sign, or OHLC bounds. Floating-point conversion is allowed only for a normalized canvas projection and must never replace exact model facts or enter quote/trading calculations.
@@ -148,7 +152,11 @@ This file records non-negotiable product and engineering boundaries. Read it bef
 
 ## Experience and acceptance
 
-- Preserve the current 103-surface catalog, dark design direction, Dynamic Type, accessibility semantics, Reduce Motion, platform conventions, keyboard behavior, and smooth message scrolling.
+- Preserve the current 103-surface catalog as migration inventory until each
+  V2 module replaces it with reviewed routes; do not present it as completion
+  of the V2 93-route contract. Preserve the Lime Ledger dark direction,
+  Dynamic Type, accessibility semantics, Reduce Motion, platform conventions,
+  keyboard behavior, and smooth message scrolling.
 - Every flow accounts for loading, empty, error, offline, retry, disabled, and skeleton states as applicable.
 - Every stage reports completed functionality, changed files, commands, and actual results. Provider/device tests that were not run remain explicitly unverified.
 - The Reown dependency graph passed Android and iOS Debug and Release no-codesign compilation on 2026-08-29. Existing Phase 0 builds predate this graph and do not count; Email, Google, Apple, wallet-app return, SIWE, and real post-login bootstrap remain provider/physical-device gates even after compilation succeeds.

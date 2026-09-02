@@ -61,12 +61,11 @@ void main() {
       );
 
       expect(SurfaceCatalog.primaryPaths, <String>[
-        '/home',
+        '/community',
+        '/mining',
+        '/launch',
         '/market',
-        '/launchpad',
-        '/chat',
         '/wallet',
-        '/profile',
       ]);
       expect(SurfaceCatalog.primaryPaths, isNot(contains('/perp')));
       expect(SurfaceCatalog.byPath('/perp').module, SurfaceModule.perp);

@@ -40,7 +40,10 @@ void main() {
 
     expect(find.text('Welcome to LOOP'), findsOneWidget);
     expect(find.text('Login configuration incomplete'), findsOneWidget);
-    expect(find.text('Home overview'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('community-screen')),
+      findsNothing,
+    );
     expect(find.text('Enter development preview'), findsNothing);
   });
 
@@ -66,15 +69,23 @@ void main() {
     await tester.tap(previewButton);
     await tester.pumpAndSettle();
 
-    expect(find.text('Home overview'), findsOneWidget);
-    expect(find.text('开发预览'), findsWidgets);
+    expect(
+      find.byKey(const ValueKey<String>('community-screen')),
+      findsOneWidget,
+    );
+    expect(find.text('社区内容源待连接'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Profile'));
+    await tester.tap(
+      find.byKey(const ValueKey<String>('community-profile-action')),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Sign out of LOOP'));
     await tester.pumpAndSettle();
 
     expect(find.text('Welcome to LOOP'), findsOneWidget);
-    expect(find.text('Home overview'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('community-screen')),
+      findsNothing,
+    );
   });
 }

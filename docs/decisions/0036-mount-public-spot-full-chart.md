@@ -36,7 +36,7 @@ could not open C3.
 - The screen is scrollable in portrait and landscape. Drawing, calculated
   indicators, balance, Buy, Sell, order, signing, transfer, withdrawal, and
   execution controls remain absent.
-- C3 stays outside the six-destination Shell, so the chart does not render a
+- C3 stays outside the current primary Shell, so the chart does not render a
   bottom bar or misattribute a tab. Close pops back to C2 when C3 was pushed;
   a root deep link with no history returns explicitly to `/market`.
 - No backend route, SDK, dependency, polling, automatic retry, persistence,

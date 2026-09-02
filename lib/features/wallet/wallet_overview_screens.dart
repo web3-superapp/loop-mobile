@@ -68,6 +68,19 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         const SizedBox(height: 22),
         const _WalletBalanceCard(),
         const SizedBox(height: 16),
+        LoopStateCard(
+          key: const ValueKey<String>('wallet-pay-unavailable'),
+          title: 'Pay is not available yet',
+          message: 'Pay belongs to the Wallet domain in V2, but execution is deferred under D21. LOOP will not open a scanner, request camera access, collect payment details, or submit a transaction.',
+          icon: Icons.payments_outlined,
+          tone: LoopTone.warning,
+          action: OutlinedButton(
+            key: const ValueKey<String>('wallet-pay-availability-action'),
+            onPressed: () => context.push('/pay'),
+            child: const Text('View availability'),
+          ),
+        ),
+        const SizedBox(height: 16),
         Row(
           children: <Widget>[
             Expanded(

@@ -55,7 +55,10 @@ void main() {
 
         expect(repository.calls, 1);
         expect(tokens.calls, 1);
-        expect(find.text('Home overview'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey<String>('community-screen')),
+          findsOneWidget,
+        );
       },
     );
   }

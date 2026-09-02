@@ -125,9 +125,9 @@ class LoopBackdrop extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: <Color>[
-              LoopColors.market.withValues(alpha: 0.025),
-              LoopColors.abyss,
-              LoopColors.abyss,
+              LoopColors.lime.withValues(alpha: 0.028),
+              LoopColors.ink,
+              LoopColors.ink,
             ],
             stops: const <double>[0, 0.36, 1],
           ),

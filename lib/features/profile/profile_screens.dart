@@ -73,6 +73,7 @@ class ProfileSurfaceScreen extends StatelessWidget {
     this.capabilities = const PrivyProfileCapabilities.unavailable(),
     this.onNavigate,
     this.onSignOut,
+    this.leading,
     this.onAuthenticateSensitiveAction,
     this.recoveryWords,
   });
@@ -102,6 +103,7 @@ class ProfileSurfaceScreen extends StatelessWidget {
   final PrivyProfileCapabilities capabilities;
   final ProfileNavigation? onNavigate;
   final Future<void> Function()? onSignOut;
+  final Widget? leading;
   final SensitiveProfileAuthentication? onAuthenticateSensitiveAction;
 
   /// Injected only after a secure, freshly authorized recovery operation.
@@ -128,6 +130,7 @@ class ProfileSurfaceScreen extends StatelessWidget {
         identity: identity,
         onNavigate: navigate,
         onSignOut: onSignOut,
+        leading: leading,
       ),
       'profile-edit' => _ProfilePresentationSurface(
         editing: true,
@@ -189,12 +192,14 @@ class _ProfilePresentationSurface extends ConsumerStatefulWidget {
     required this.identity,
     required this.onNavigate,
     required this.onSignOut,
+    this.leading,
   });
 
   final bool editing;
   final ProfileIdentity identity;
   final ValueChanged<String> onNavigate;
   final Future<void> Function()? onSignOut;
+  final Widget? leading;
 
   @override
   ConsumerState<_ProfilePresentationSurface> createState() =>
@@ -230,6 +235,7 @@ class _ProfilePresentationSurfaceState
       controller: controller,
       onNavigate: widget.onNavigate,
       onSignOut: widget.onSignOut,
+      leading: widget.leading,
     );
   }
 
@@ -260,6 +266,7 @@ class _ProfileHome extends StatelessWidget {
     required this.controller,
     required this.onNavigate,
     required this.onSignOut,
+    this.leading,
   });
 
   final ProfileIdentity identity;
@@ -267,6 +274,7 @@ class _ProfileHome extends StatelessWidget {
   final ProfileController controller;
   final ValueChanged<String> onNavigate;
   final Future<void> Function()? onSignOut;
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
@@ -275,6 +283,7 @@ class _ProfileHome extends StatelessWidget {
           ? '开发预览 · YOUR IDENTITY'
           : 'YOUR IDENTITY',
       title: 'Profile',
+      leading: leading,
       actions: <Widget>[
         IconButton(
           tooltip: 'Edit profile',

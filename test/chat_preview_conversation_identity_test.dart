@@ -322,8 +322,11 @@ void main() {
   testWidgets('Inbox refuses an unregistered same-kind Preview conversation', (
     tester,
   ) async {
-    await _pumpPreviewApp(tester, gateway: _UnknownInboxGateway());
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Chat'));
+    final router = await _pumpPreviewApp(
+      tester,
+      gateway: _UnknownInboxGateway(),
+    );
+    router.go('/chat');
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.text('Decoy group'));

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -270,11 +271,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const ValueKey<String>('home-production-truth-boundary')),
-      findsOneWidget,
-    );
-    await tester.tap(find.byKey(const ValueKey<String>('home-open-net-worth')));
+    final community = find.byKey(const ValueKey<String>('community-screen'));
+    expect(community, findsOneWidget);
+    final router = GoRouter.of(tester.element(community));
+    router.go('/home/net-worth');
     await tester.pumpAndSettle();
 
     expect(

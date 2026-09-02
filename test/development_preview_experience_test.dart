@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
@@ -45,6 +46,9 @@ void main() {
 
       await tester.tap(find.text('Enter development preview'));
       await tester.pumpAndSettle();
+      final router = GoRouter.of(
+        tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+      );
 
       await tester.tap(find.widgetWithText(NavigationDestination, 'Market'));
       await tester.pumpAndSettle();
@@ -80,7 +84,7 @@ void main() {
       await tester.tap(find.byTooltip('Back'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(NavigationDestination, 'Chat'));
+      router.go('/chat');
       await tester.pumpAndSettle();
 
       expect(find.text('Offline preview · not connected'), findsWidgets);

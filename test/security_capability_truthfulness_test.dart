@@ -174,7 +174,9 @@ Future<GoRouter> _pumpAuthenticatedLoopApp(WidgetTester tester) async {
   );
   await tester.pumpAndSettle();
 
-  return GoRouter.of(tester.element(find.text('Home overview')));
+  return GoRouter.of(
+    tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+  );
 }
 
 Semantics _settingsSemantics(WidgetTester tester, String title) =>

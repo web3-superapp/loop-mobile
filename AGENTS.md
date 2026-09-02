@@ -2,15 +2,15 @@
 
 Repository phase: `active`.
 
-Build Loop, a Flutter iOS/Android app with six primary destinations—Home, Market, Launch, Chat, Wallet, and Profile—using Privy identity/wallets, Reown only for external EVM credential proofs, Stream Chat/Video, public Hyperliquid Testnet spot discovery, and future backend-mediated spot execution.
+Build Loop, a Flutter iOS/Android app with five primary destinations—Community, Mining, Launch, Market, and Wallet—using Privy identity/wallets, Reown only for external EVM credential proofs, Stream Chat/Video inside Community, and reviewed backend-mediated V2 capabilities.
 
-These instructions apply to the entire repository. Preserve the accepted UI catalog and six-destination shell while replacing preview-only provider seams through narrow, verified vertical slices. The current mounted market slice is public, Testnet, read-only Spot discovery; retained Perp routes and adapters are disabled implementation history and must not return to product navigation. Never imply that Privy, Stream, Firebase push, account Watchlist persistence, wallet signing, or private spot execution is connected when its required dashboard, backend, or device inputs are absent.
+These instructions apply to the entire repository. Preserve the approved five-destination V2 shell while migrating the legacy UI catalog through narrow, verified vertical slices. Community is the post-login home; Chat and Profile remain child domains outside bottom navigation. The current mounted market slice is public, Testnet, read-only Spot discovery and must not be relabelled as the future BSC Market; retained Perp routes and adapters are disabled implementation history and must not return to product navigation. Never imply that Privy, Stream, Firebase push, account Watchlist persistence, wallet signing, or private spot execution is connected when its required dashboard, backend, or device inputs are absent.
 
-Read `docs/product/implementation-constraints.md` and `docs/product-decisions.md` before planning or implementing product behavior. The former owns security and truth-source constraints; the latter owns the current 103-surface catalog, six primary destinations, and delivery decisions. Material below `reference/legacy-prototype/` is frozen history and must not override current Flutter product decisions.
+Read `docs/product/implementation-constraints.md` and `docs/product-decisions.md` before planning or implementing product behavior. The former owns security and truth-source constraints; the latter owns the five primary destinations, the legacy 103-surface migration inventory, and current delivery decisions. Material below `reference/legacy-prototype/` is frozen history and must not override current Flutter product decisions.
 
 ## Ownership boundaries
 
-- `lib/main.dart` and `lib/app.dart` own composition, application bootstrap, routing, and the six-destination shell
+- `lib/main.dart` and `lib/app.dart` own composition, application bootstrap, routing, and the five-destination shell
 - `lib/core/` owns cross-cutting navigation, theme, signing intent, errors, logging, and security primitives
 - `lib/integrations/` owns narrow Privy, Reown, Stream, Firebase, backend, and public Hyperliquid adapters
 - `lib/features/` owns product-facing feature modules; Stream types stay inside chat/calls
@@ -57,7 +57,7 @@ Never edit generated paths as application source. `.tooling` may hold an ignored
 ## Required workflow
 
 1. Read `README.md`, `harness.json`, relevant decisions, this file, `docs/product/implementation-constraints.md`, and every file being changed.
-2. Preserve Home / Market / Launch / Chat / Wallet / Profile as the six primary destinations. Market stays Spot-only and Launchpad remains a first-class destination; do not mount retained Perp history.
+2. Preserve Community / Mining / Launch / Market / Wallet as the five primary destinations in that order. Community is the post-login home; Chat and Profile stay reachable as child domains, `/home` and `/launchpad` remain compatibility redirects, Market stays Spot-only, and retained Perp history must not be mounted.
 3. Keep Development and Hyperliquid Testnet as the only enabled environments. Mainnet, withdrawals, and automated trading remain false until an explicit security decision changes them.
 4. Keep provider secrets, Stream server tokens, Firebase service-account credentials, APNs private keys, and Hyperliquid agent private keys out of Flutter, fixtures, logs, and Git.
 5. Use Privy as the only identity source. Email OTP, Google OAuth, iOS-only Apple OAuth, and external-EVM SIWE login/link reuse the same cached Privy owner. Reown is only an ephemeral EVM connection and `personal_sign` transport; AppKit auth, Email, Social, Embedded Wallet, SIWE, analytics, Link Mode, Solana, and transaction authority remain disabled. Read client-visible provider values only through `AppConfig` and the matching `--dart-define-from-file` build profile; neither is authority to embed a provider secret. Flutter may request a current Privy access token but never reads, stores, refreshes, or forwards a Privy refresh token.

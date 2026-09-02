@@ -1,13 +1,19 @@
 # LOOP current product decisions
 
-> Canonical current scope. Updated 2026-08-31.
+> Canonical current scope. Updated 2026-09-02.
 
 This document applies to the Flutter source at the repository root. Material under `reference/legacy-prototype/` is frozen history and does not override these decisions.
 
 ## Product shape
 
 - LOOP is a Flutter iOS and Android app. Web output is only a local UI-verification target.
-- The six primary destinations remain Home, Market, Launch, Chat, Wallet and Profile.
+- Decision 0048 adopts five primary destinations in this order: Community,
+  Mining, Launch, Market and Wallet. Community is the post-login home; Chat is
+  a Community child flow, while Profile is opened as a child surface rather
+  than a bottom-navigation destination.
+- `/home` and `/launchpad` are compatibility redirects to `/community` and
+  `/launch`. The existing 103-surface catalog remains migration inventory and
+  is not evidence that the replacement V2 93-route catalog is complete.
 - LOOP is spot-only. Perpetuals are disabled, have no primary-feature entry, and receive no further product work.
 - Privy is the selected login, wallet and final authorization boundary.
 - Reown AppKit 1.8.4 is accepted only as the connection and `personal_sign` transport for external EVM credentials under Privy. It is not a second identity system or a transaction wallet.
@@ -21,12 +27,13 @@ Product priority and current delivery are separate:
 - The catalog remains 47 A-priority, 46 B-priority and 10 C-priority surfaces.
 - B5 is A priority, B6 and B7 are B priority, and B8 is C priority.
 - B5 through B8 are all deferred from the current release.
-- Home keeps one Pay card labelled `Coming soon` so the planned product position remains visible.
+- Wallet keeps one Pay card labelled unavailable so the planned V2 product position remains visible after Home is retired.
 - Every Pay route is informational only. It must not open a scanner, request camera access, collect an amount or recipient, select a payment provider, or submit a transaction.
 
 ## Launchpad delivery
 
-- Launchpad remains the third first-class destination, but only G1 is in the current release as a non-actionable placeholder.
+- Launch remains the third first-class destination at `/launch`, but only the
+  existing non-actionable placeholder is in the current release.
 - G2 project discovery, G3 project details/participation and G4 project applications remain deferred. Production and Development Preview do not fabricate projects, eligibility, allocations or applications for them.
 - Without a reviewed launch source, G1 does not claim that launches are live, absent, approved, eligible or complete. Issuer facts, eligibility and participation prerequisites remain explicitly not connected.
 - G1 exposes no amount, allocation, funding, wallet, signing, claim or submission action. Any future participation requires its own backend/compliance contract and the shared canonical wallet review boundary.

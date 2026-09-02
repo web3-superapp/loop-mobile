@@ -1,5 +1,10 @@
 # Loop Mobile Frontend Foundation Integration Report
 
+> Historical Phase 1 evidence. Its six-destination navigation statements are
+> superseded in part by decision 0048; native, provider, security, and
+> truth-source evidence remains applicable unless a later decision says
+> otherwise.
+
 ## Device-Local Display Preferences
 
 Decision 0042 upgrades the only implemented H12 control, Reduce motion, from

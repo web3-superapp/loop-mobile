@@ -15,9 +15,11 @@ import 'package:loop_mobile/features/account/account_screens.dart';
 import 'package:loop_mobile/features/account/privy_login_screen.dart';
 import 'package:loop_mobile/features/catalog/catalog_surface_screen.dart';
 import 'package:loop_mobile/features/chat/chat.dart';
+import 'package:loop_mobile/features/community/community_screen.dart';
 import 'package:loop_mobile/features/home/home_screens.dart';
 import 'package:loop_mobile/features/launchpad/launchpad_screen.dart';
 import 'package:loop_mobile/features/market/market.dart';
+import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/review/signing_review_surface.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
@@ -154,11 +156,11 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
       if (!session.canEnterProduct) {
         return isAuthRoute ? null : '/auth';
       }
-      if (isAuthRoute) return '/home';
+      if (isAuthRoute) return '/community';
       return null;
     },
     routes: <RouteBase>[
-      GoRoute(path: '/', redirect: (context, state) => '/home'),
+      GoRoute(path: '/', redirect: (context, state) => '/community'),
       GoRoute(
         path: '/auth',
         builder: (context, state) => const PrivyLoginScreen(),
@@ -169,33 +171,39 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
             LoopShell(location: state.uri.path, child: child),
         routes: <RouteBase>[
           GoRoute(
-            path: '/home',
-            builder: (context, state) => const HomeScreen(),
+            path: '/community',
+            builder: (context, state) => const CommunityScreen(),
+          ),
+          GoRoute(
+            path: '/mining',
+            builder: (context, state) => const MiningScreen(),
+          ),
+          GoRoute(
+            path: '/launch',
+            builder: (context, state) => const LaunchpadScreen(),
           ),
           GoRoute(
             path: '/market',
             builder: (context, state) => const MarketScreen(),
           ),
           GoRoute(
-            path: '/launchpad',
-            builder: (context, state) => const LaunchpadScreen(),
-          ),
-          GoRoute(
-            path: '/chat',
-            builder: (context, state) => const ChatInboxPage(),
-          ),
-          GoRoute(
             path: '/wallet',
             builder: (context, state) => const WalletScreen(),
           ),
-          GoRoute(
-            path: '/profile',
-            builder: (context, state) => Consumer(
-              builder: (context, ref, child) =>
-                  _profileScreen(context, ref, 'profile'),
-            ),
-          ),
         ],
+      ),
+      GoRoute(path: '/home', redirect: (context, state) => '/community'),
+      GoRoute(path: '/launchpad', redirect: (context, state) => '/launch'),
+      GoRoute(
+        path: '/chat',
+        builder: (context, state) => const ChatInboxPage(),
+      ),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => Consumer(
+          builder: (context, ref, child) =>
+              _profileScreen(context, ref, 'profile'),
+        ),
       ),
       ..._accountRoutes,
       GoRoute(
@@ -500,6 +508,10 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
         builder: (context, state) => const UiInventoryScreen(),
       ),
       ..._catalogRoutes,
+      GoRoute(
+        path: '/:unmatched(.*)',
+        redirect: (context, state) => '/community',
+      ),
     ],
     errorBuilder: (context, state) =>
         UnknownRouteScreen(location: state.uri.toString()),
@@ -577,8 +589,8 @@ final List<RouteBase> _systemRoutes =
             path: item.$1,
             builder: (context, state) => SystemSurfaceScreen.fromId(
               item.$2,
-              onRetry: () => context.go('/home'),
-              onSecondaryAction: () => context.go('/home'),
+              onRetry: () => context.go('/community'),
+              onSecondaryAction: () => context.go('/community'),
               onPrimaryAction: () => ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text(
@@ -607,6 +619,20 @@ Widget _profileScreen(BuildContext context, WidgetRef ref, String id) {
   return ProfileSurfaceScreen.fromId(
     id,
     identity: identity,
+    leading: id == 'profile'
+        ? IconButton(
+            key: const ValueKey<String>('profile-back-to-community'),
+            tooltip: 'Back to Community',
+            onPressed: () {
+              if (Navigator.of(context).canPop()) {
+                context.pop();
+              } else {
+                context.go('/community');
+              }
+            },
+            icon: const Icon(Icons.arrow_back_rounded),
+          )
+        : null,
     onNavigate: (destination) => context.push(_profilePath(destination)),
     onSignOut: () => ref.read(loopSessionProvider.notifier).exit(),
   );
@@ -625,7 +651,7 @@ String _accountPath(String id) => switch (id) {
   'wallet-import' => '/auth/wallet/import',
   'security-setup' => '/auth/security',
   'profile-setup' => '/auth/profile',
-  'home' => '/home',
+  'home' => '/community',
   _ => '/auth',
 };
 
@@ -680,6 +706,9 @@ abstract final class LoopRouteRegistry {
     '/auth/wallet/import',
     '/auth/security',
     '/auth/profile',
+    '/community',
+    '/mining',
+    '/launch',
     '/home',
     '/home/net-worth',
     '/notifications',
@@ -793,15 +822,15 @@ class UnknownRouteScreen extends StatelessWidget {
       children: <Widget>[
         LoopStateCard(
           title: 'This surface is not in the product map',
-          message: 'Return home or inspect the full UI inventory.',
+          message: 'Return to Community or inspect the legacy UI inventory.',
           icon: Icons.route_outlined,
           tone: LoopTone.warning,
           action: Wrap(
             spacing: 10,
             children: <Widget>[
               FilledButton(
-                onPressed: () => context.go('/home'),
-                child: const Text('Go home'),
+                onPressed: () => context.go('/community'),
+                child: const Text('Go to Community'),
               ),
               OutlinedButton(
                 onPressed: () => context.go('/inventory'),

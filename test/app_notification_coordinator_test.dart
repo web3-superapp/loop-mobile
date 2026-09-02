@@ -54,7 +54,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Home overview'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('community-screen')),
+        findsOneWidget,
+      );
 
       final data = _systemNoticePayload();
       source.add(
@@ -70,7 +73,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Home overview'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('community-screen')),
+        findsOneWidget,
+      );
 
       source.add(
         LoopNotificationSourceEvent(

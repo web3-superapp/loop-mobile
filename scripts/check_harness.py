@@ -15,7 +15,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PRIMARY_DESTINATIONS = ["Home", "Market", "Launch", "Chat", "Wallet", "Profile"]
+PRIMARY_DESTINATIONS = ["Community", "Mining", "Launch", "Market", "Wallet"]
 PINNED_DEPENDENCIES = {
     "cupertino_icons": "1.0.8",
     "decimal": "3.2.6",
@@ -87,6 +87,7 @@ REQUIRED_FILES = (
     "docs/decisions/0045-connect-bounded-stream-user-token-loader.md",
     "docs/decisions/0046-model-friends-and-group-creation-before-transport.md",
     "docs/decisions/0047-connect-backend-social-and-server-created-chat.md",
+    "docs/decisions/0048-adopt-v2-five-destination-ui-foundation.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/gitnexus-generated-source-pollution.md",
     "docs/failures/providerless-notification-fixtures.md",
@@ -112,8 +113,12 @@ REQUIRED_FILES = (
     "config/debug.json",
     "config/release.example.json",
     "lib/core/navigation/stream_channel_route.dart",
+    "lib/core/navigation/surface_catalog.dart",
     "lib/core/network/loop_dio_factory.dart",
     "lib/app.dart",
+    "lib/features/shell/loop_shell.dart",
+    "lib/features/community/community_screen.dart",
+    "lib/features/mining/mining_screen.dart",
     "lib/main.dart",
     "lib/main_preview.dart",
     "lib/app/app_config.dart",
@@ -222,6 +227,8 @@ REQUIRED_FILES = (
     "test/profile_controller_test.dart",
     "test/profile_models_test.dart",
     "test/profile_presentation_screen_test.dart",
+    "test/v2_primary_navigation_test.dart",
+    "test/v2_ui_foundation_test.dart",
     "test/friend_feature_test.dart",
     "test/friend_request_feature_test.dart",
     "test/social_ui_safety_edges_test.dart",
@@ -1728,7 +1735,9 @@ def check_profile(root: Path, profile: dict[str, Any]) -> list[str]:
     if not isinstance(purpose, str) or not purpose.strip():
         errors.append("harness.json project purpose must be non-empty")
     if project.get("primary_destinations") != PRIMARY_DESTINATIONS:
-        errors.append("harness.json must preserve Home / Market / Launch / Chat / Wallet / Profile in order")
+        errors.append(
+            "harness.json must preserve Community / Mining / Launch / Market / Wallet in order"
+        )
 
     for field in ("ownership_boundaries",):
         value = project.get(field)
@@ -3117,7 +3126,7 @@ CHAT_PREVIEW_CONVERSATION_ID_TEST_MARKERS = {
     ),
 }
 CHAT_PREVIEW_CONVERSATION_ID_TEST_FINGERPRINT = (
-    "46011bed6be61b89d134fa4f58fc2bbe6fee0917b80f833fd33e7a60397e5ec1"
+    "6f3258b59a07c647b2dc603193c594ac18d886834bfc1971a8f0c386f3a53dc2"
 )
 CHAT_PREVIEW_CONVERSATION_ID_SOURCE_FINGERPRINTS = {
     "resolver": "f5bde23d09275447183ba03c3dab6a0d9d865d134bfd54710b6a9d704c0b8597",
@@ -4629,7 +4638,7 @@ HOME_DISCOVERY_SECURITY_TEST_MARKERS = {
     ),
 }
 HOME_DISCOVERY_SECURITY_TEST_FINGERPRINT = (
-    "ab4fa880f7391f5edb6733ef00049e4a71f2f793eea630f68bdb2959dc1f163d"
+    "6ac7f95f3edc6d57bf20cc6e2eaab8b91f1d9a0f34c23412041a5e9040957817"
 )
 HOME_DISCOVERY_SECURITY_SOURCE_FINGERPRINTS = {
     "entry": "421bd4be7cf8adeb87f4bac46f3af849d41c7685db318703b232811b844f7394",
@@ -4807,7 +4816,7 @@ HOME_PORTFOLIO_TEST_MARKERS = {
     ),
 }
 HOME_PORTFOLIO_TEST_FINGERPRINT = (
-    "90bec67494ae77690896be77d08b4b942fb9becfc2d49e2a2d7c7104683aa0b0"
+    "25cc38febfbcc5e0a504071b384f9326cf82ca59315b563e139dbda2c7a6631f"
 )
 HOME_PORTFOLIO_SOURCE_FINGERPRINTS = {
     "selector": "86dbf9882a3666b0856e00b3124d01d1c338f0288f279600727cf7f966b9827a",
@@ -5057,7 +5066,7 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                 "display symbols are not identity",
                 "Drawing, calculated",
                 "Pending chart work selects one I8",
-                "C3 stays outside the six-destination Shell",
+                "C3 stays outside the current primary Shell",
                 "a root deep link with no history returns explicitly to `/market`",
             ),
             "lib/core/navigation/spot_market_route.dart": (
@@ -5328,7 +5337,7 @@ def check_spot_candle_contract(root: Path) -> list[str]:
             shell_end = source.find("      ..._accountRoutes,", shell_start)
             if shell_start < route_start < shell_end:
                 errors.append(
-                    "C3 must remain a root full-screen route outside the six-destination Shell"
+                    "C3 must remain a root full-screen route outside the five-destination Shell"
                 )
 
     market_surface_path = root / "lib/features/market/market_screens.dart"
@@ -6839,14 +6848,14 @@ def check_product_contract(root: Path) -> list[str]:
         {
             "README.md": (
                 "Repository phase: `active`.",
-                "Home / Market / Launch / Chat / Wallet / Profile",
+                "Community / Mining / Launch / Market / Wallet",
                 "harness.json",
                 "python3 scripts/check_harness.py",
             ),
             "AGENTS.md": (
                 "Repository phase: `active`.",
-                "Home / Market / Launch / Chat / Wallet / Profile",
-                "Launchpad remains a first-class destination",
+                "Community / Mining / Launch / Market / Wallet",
+                "Community is the post-login home",
                 "python3 scripts/check_harness.py",
             ),
             "docs/product/implementation-constraints.md": (
@@ -6915,6 +6924,8 @@ def check_product_contract(root: Path) -> list[str]:
     if profile:
         purpose = profile.get("project", {}).get("purpose")
         if isinstance(purpose, str):
+            # Decision 0048 is the scoped navigation override. The canonical
+            # runtime purpose is mirrored in the user-facing repository README.
             for relative in ("README.md", "AGENTS.md"):
                 if purpose not in read_text(root / relative):
                     errors.append(f"{relative} must mirror the harness project purpose")
@@ -6928,6 +6939,221 @@ def check_product_contract(root: Path) -> list[str]:
             },
         )
     )
+    return errors
+
+
+def check_v2_primary_navigation_contract(root: Path) -> list[str]:
+    """Lock the runtime V2 shell without pretending the legacy catalog is migrated."""
+
+    errors: list[str] = []
+    normalized_contracts = {
+        "docs/decisions/0048-adopt-v2-five-destination-ui-foundation.md": (
+            "Community, Mining, Launch, Market and Wallet",
+            "`/home` and `/launchpad` only as",
+            "103-surface catalog as legacy migration inventory",
+            "reviewed backend V2 roadmap maps Pay to D21",
+            "Do not call, mock or pre-empt the backend D0/D1 `/v2` contract",
+        ),
+        "docs/product-decisions.md": (
+            "Community,\n  Mining, Launch, Market and Wallet",
+            "`/home` and `/launchpad` are compatibility redirects",
+        ),
+        "docs/product/implementation-constraints.md": (
+            "Community, Mining, Launch, Market and Wallet",
+            "`/home` and `/launchpad` are compatibility redirects only",
+        ),
+        "lib/features/community/community_screen.dart": (
+            "class CommunityScreen",
+            "'/chat'",
+            "'/profile'",
+        ),
+        "lib/features/mining/mining_screen.dart": (
+            "class MiningScreen",
+            "D19",
+        ),
+        "lib/features/wallet/wallet_overview_screens.dart": (
+            "ValueKey<String>('wallet-pay-unavailable')",
+            "ValueKey<String>('wallet-pay-availability-action')",
+            "context.push('/pay')",
+        ),
+    }
+    for relative, fragments in normalized_contracts.items():
+        path = root / relative
+        if not path.is_file():
+            errors.append(f"missing compatibility contract file: {relative}")
+            continue
+        contract_source = read_text(path)
+        if path.suffix == ".dart":
+            contract_source = strip_dart_comments(contract_source)
+        normalized = " ".join(contract_source.split())
+        for fragment in fragments:
+            if " ".join(fragment.split()) not in normalized:
+                errors.append(f"{relative} is missing locked V2 contract `{fragment}`")
+
+    shell_path = root / "lib/features/shell/loop_shell.dart"
+    if shell_path.is_file():
+        source = strip_dart_comments(read_text(shell_path))
+        start = source.find("static const _destinations")
+        end = source.find("  ];", start)
+        if start < 0 or end < 0:
+            errors.append("LoopShell must retain one inspectable destination list")
+        else:
+            block = source[start:end]
+            markers = (
+                ("'Community'", "'/community'"),
+                ("'Mining'", "'/mining'"),
+                ("'Launch'", "'/launch'"),
+                ("'Market'", "'/market'"),
+                ("'Wallet'", "'/wallet'"),
+            )
+            positions: list[int] = []
+            for label, path in markers:
+                label_at = block.find(label)
+                path_at = block.find(path, label_at)
+                if label_at < 0 or path_at < 0:
+                    errors.append(
+                        f"LoopShell must retain the V2 destination {label} at {path}"
+                    )
+                else:
+                    positions.append(label_at)
+            if len(positions) == len(markers) and positions != sorted(positions):
+                errors.append("LoopShell V2 destinations must retain their reviewed order")
+            for forbidden in ("'Home'", "'Chat'", "'Profile'", "'/launchpad'"):
+                if forbidden in block:
+                    errors.append(
+                        "LoopShell must not restore the retired primary destination "
+                        f"{forbidden}"
+                    )
+            if block.count("_LoopDestination(") != 5:
+                errors.append("LoopShell must expose exactly five primary destinations")
+        if "ChatMiniVoiceBar" in source:
+            errors.append(
+                "LoopShell must not present an idle Audio Room bar across every V2 tab"
+            )
+
+    app_path = root / "lib/app.dart"
+    if app_path.is_file():
+        source = strip_dart_comments(read_text(app_path))
+        compact_source = re.sub(r"\s+", " ", source).strip()
+        shell_start = compact_source.find("ShellRoute(")
+        first_root_after_shell = re.search(
+            r"GoRoute\s*\(\s*path\s*:\s*'/home'",
+            compact_source[shell_start + 1 :] if shell_start >= 0 else "",
+        )
+        shell_end = (
+            shell_start + 1 + first_root_after_shell.start()
+            if shell_start >= 0 and first_root_after_shell is not None
+            else -1
+        )
+        if shell_start < 0 or shell_end < 0:
+            errors.append("lib/app.dart must retain an inspectable V2 ShellRoute")
+        else:
+            shell = compact_source[shell_start:shell_end]
+            for path in ("/community", "/mining", "/launch", "/market", "/wallet"):
+                if re.search(rf"path\s*:\s*'{re.escape(path)}'", shell) is None:
+                    errors.append(f"V2 ShellRoute must own `{path}`")
+            for path in ("/home", "/launchpad", "/chat", "/profile"):
+                if re.search(rf"path\s*:\s*'{re.escape(path)}'", shell) is not None:
+                    errors.append(f"V2 ShellRoute must not own legacy child `{path}`")
+
+        def has_direct_redirect(path: str, destination: str) -> bool:
+            return (
+                re.search(
+                    rf"GoRoute\s*\(\s*path\s*:\s*'{re.escape(path)}'\s*,\s*"
+                    rf"redirect\s*:\s*\([^)]*\)\s*"
+                    rf"(?:=>\s*'{re.escape(destination)}'|"
+                    rf"\{{\s*return\s*'{re.escape(destination)}'\s*;\s*\}})"
+                    rf"\s*,?\s*\)",
+                    compact_source,
+                    flags=re.DOTALL,
+                )
+                is not None
+            )
+
+        if re.search(
+            r"if\s*\(\s*isAuthRoute\s*\)\s*return\s*'/community'\s*;",
+            compact_source,
+        ) is None:
+            errors.append("authenticated entry must return directly to Community")
+        for path, destination in (
+            ("/", "/community"),
+            ("/home", "/community"),
+            ("/launchpad", "/launch"),
+            ("/:unmatched(.*)", "/community"),
+        ):
+            if not has_direct_redirect(path, destination):
+                errors.append(
+                    f"V2 app routes must redirect `{path}` to `{destination}`"
+                )
+        for path in ("/chat", "/profile"):
+            if re.search(rf"path\s*:\s*'{re.escape(path)}'", compact_source) is None:
+                errors.append(f"V2 app routes must retain child route `{path}`")
+
+        profile_start = source.find("Widget _profileScreen(")
+        profile_end = source.find("String _accountPath(", profile_start)
+        profile_slice = source[
+            profile_start : profile_end if profile_end >= 0 else len(source)
+        ]
+        profile_fallback_fragments = (
+            "ValueKey<String>('profile-back-to-community')",
+            "Navigator.of(context).canPop()",
+            "context.pop();",
+            "context.go('/community');",
+        )
+        if profile_start < 0 or profile_end < 0 or any(
+            fragment not in profile_slice
+            for fragment in profile_fallback_fragments
+        ):
+            errors.append(
+                "Profile root must expose a direct-link fallback that returns to Community"
+            )
+
+    chat_path = root / "lib/features/chat/stream_chat_inbox_page.dart"
+    if chat_path.is_file():
+        source = strip_dart_comments(read_text(chat_path))
+        chat_start = source.find("class StreamChatInboxPage")
+        chat_end = source.find("class StreamChatChannelRoutePage", chat_start)
+        chat_slice = source[
+            chat_start : chat_end if chat_end >= 0 else len(source)
+        ]
+        chat_fallback_fragments = (
+            "ValueKey<String>('stream-chat-back-to-community')",
+            "Navigator.of(context).canPop()",
+            "context.pop();",
+            "context.go('/community');",
+        )
+        if chat_start < 0 or chat_end < 0 or any(
+            fragment not in chat_slice for fragment in chat_fallback_fragments
+        ):
+            errors.append(
+                "Chat root must expose a direct-link fallback that returns to Community"
+            )
+    else:
+        errors.append(
+            "missing compatibility contract file: lib/features/chat/stream_chat_inbox_page.dart"
+        )
+
+    catalog_path = root / "lib/core/navigation/surface_catalog.dart"
+    if catalog_path.is_file():
+        source = strip_dart_comments(read_text(catalog_path))
+        start = source.find("static const List<String> primaryPaths")
+        end = source.find("  ];", start)
+        if start < 0 or end < 0:
+            errors.append("SurfaceCatalog must expose runtime primaryPaths")
+        else:
+            block = source[start:end]
+            expected = ["/community", "/mining", "/launch", "/market", "/wallet"]
+            positions = [block.find(f"'{path}'") for path in expected]
+            if any(position < 0 for position in positions):
+                errors.append("SurfaceCatalog primaryPaths must contain all five V2 paths")
+            elif positions != sorted(positions):
+                errors.append("SurfaceCatalog primaryPaths must retain V2 order")
+            for retired in ("/home", "/launchpad", "/chat", "/profile"):
+                if f"'{retired}'" in block:
+                    errors.append(
+                        f"SurfaceCatalog primaryPaths must not retain `{retired}`"
+                    )
+
     return errors
 
 
@@ -7163,7 +7389,18 @@ def check_production_chat_audio_room_entry(root: Path) -> list[str]:
             errors.append(
                 "production StreamChatInboxPage Audio Room entry must open `/chat/voice` exactly once"
             )
-        if re.search(r"\bif\s*(?:\(|\b)", app_bar) or "onPressed: null" in app_bar:
+        room_entry_start = app_bar.find("actions: <Widget>[")
+        room_entry_end = app_bar.find("const ChatCreateMenuButton", room_entry_start)
+        room_entry = app_bar[
+            room_entry_start : room_entry_end
+            if room_entry_end >= 0
+            else len(app_bar)
+        ]
+        if (
+            room_entry_start < 0
+            or re.search(r"\bif\s*(?:\(|\b)", room_entry)
+            or "onPressed: null" in room_entry
+        ):
             errors.append(
                 "production StreamChatInboxPage Audio Room entry must not depend on inbox authorization state"
             )
@@ -9457,6 +9694,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_reown_identity_contract(root))
     errors.extend(check_audio_room_native_contract(root))
     errors.extend(check_product_contract(root))
+    errors.extend(check_v2_primary_navigation_contract(root))
     errors.extend(check_chat_attachment_contract(root))
     errors.extend(check_production_chat_audio_room_entry(root))
     errors.extend(check_friend_frontend_contract(root))
@@ -9487,7 +9725,7 @@ def main() -> int:
             print(f"- {error}")
         return 1
     print(
-        "Harness check passed: profile, six-destination contract, pins, "
+        "Harness check passed: profile, five-destination V2 contract, pins, "
         "Spot-only product, New Pairs exact-Preview truth, Chat snapshot, Preview request truth and exact conversation identity, Home portfolio truth, security capability truth, device-local display preferences, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, and secret rules are consistent."

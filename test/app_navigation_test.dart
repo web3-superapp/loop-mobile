@@ -28,7 +28,7 @@ import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'support/authenticated_test_privy_gateway.dart';
 
 void main() {
-  testWidgets('navigates the six primary destinations with one shell', (
+  testWidgets('navigates the five primary destinations with one shell', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -49,19 +49,24 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Home overview'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('community-screen')),
+      findsOneWidget,
+    );
     for (final destination in <String>[
-      'Market',
+      'Mining',
       'Launch',
-      'Chat',
+      'Market',
       'Wallet',
-      'Profile',
-      'Home',
+      'Community',
     ]) {
       await tester.tap(find.widgetWithText(NavigationDestination, destination));
       await tester.pumpAndSettle();
     }
-    expect(find.text('Home overview'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('community-screen')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('spot-only primary navigation exposes no Perp entry', (
@@ -96,12 +101,14 @@ void main() {
     expect(find.text('Trading account'), findsNothing);
     expect(find.textContaining('Hyperliquid margin'), findsNothing);
 
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Home'));
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Community'));
     await tester.pumpAndSettle();
     expect(find.textContaining('PERP EQUITY'), findsNothing);
     expect(find.textContaining('Spot to perp'), findsNothing);
 
-    await tester.tap(find.byTooltip('Search'));
+    await tester.tap(
+      find.byKey(const ValueKey<String>('community-search-action')),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Search not connected'), findsOneWidget);
     expect(find.text('ETH'), findsNothing);
@@ -168,12 +175,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final discover = find.byKey(
-      const ValueKey<String>('home-open-public-market'),
-    );
-    await tester.ensureVisible(discover);
-    await tester.pumpAndSettle();
-    await tester.tap(discover);
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Market'));
     await tester.pumpAndSettle();
 
     expect(find.text('Spot market'), findsOneWidget);
@@ -336,7 +338,7 @@ void main() {
     expect(find.text('Spot market'), findsOneWidget);
   });
 
-  testWidgets('home Pay card opens an informational Coming soon route', (
+  testWidgets('Wallet Pay card opens an informational unavailable route', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -356,15 +358,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.widgetWithText(NavigationDestination, 'Wallet'));
+    await tester.pumpAndSettle();
+
     final payNotice = find.byKey(
-      const ValueKey<String>('home-pay-coming-soon'),
+      const ValueKey<String>('wallet-pay-unavailable'),
     );
     expect(payNotice, findsOneWidget);
-    expect(find.text('Coming soon'), findsOneWidget);
-    expect(find.text('A priority · Delivery status: Deferred'), findsOneWidget);
+    expect(find.text('Pay is not available yet'), findsOneWidget);
     await tester.ensureVisible(payNotice);
     await tester.pumpAndSettle();
-    await tester.tap(payNotice);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('wallet-pay-availability-action')),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Coming soon'), findsOneWidget);
@@ -613,10 +619,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Offline preview · not connected'), findsOneWidget);
-    expect(find.text('Audio Room'), findsOneWidget);
-    expect(find.text('ETH Macro Room'), findsNothing);
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Chat'));
+    final router = GoRouter.of(
+      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+    );
+    router.go('/chat');
     await tester.pumpAndSettle();
 
     expect(find.text('Offline preview · not connected'), findsWidgets);
@@ -640,12 +646,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Stream not connected'), findsOneWidget);
-    expect(find.textContaining('Offline preview'), findsNothing);
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Chat'));
+    final router = GoRouter.of(
+      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+    );
+    router.go('/chat');
     await tester.pumpAndSettle();
 
     expect(find.text('Stream not connected'), findsOneWidget);
+    expect(find.textContaining('Offline preview'), findsNothing);
     expect(find.text('Glyph Hunters'), findsNothing);
   });
 
@@ -671,7 +679,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Chat'));
+    final router = GoRouter.of(
+      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+    );
+    router.go('/chat');
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('ETH Macro Room'));
     await tester.pumpAndSettle();
