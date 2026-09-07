@@ -24,6 +24,7 @@ PINNED_DEPENDENCIES = {
     "firebase_messaging": "16.5.0",
     "flutter_lints": "6.0.0",
     "flutter_riverpod": "3.4.2",
+    "flutter_secure_storage": "10.3.1",
     "go_router": "17.5.0",
     "privy_flutter": "0.10.1",
     "reown_appkit": "1.8.4",
@@ -88,6 +89,7 @@ REQUIRED_FILES = (
     "docs/decisions/0046-model-friends-and-group-creation-before-transport.md",
     "docs/decisions/0047-connect-backend-social-and-server-created-chat.md",
     "docs/decisions/0048-adopt-v2-five-destination-ui-foundation.md",
+    "docs/decisions/0049-connect-v2-account-device-session.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/gitnexus-generated-source-pollution.md",
     "docs/failures/providerless-notification-fixtures.md",
@@ -131,6 +133,17 @@ REQUIRED_FILES = (
     "lib/integrations/backend/loop_stream_token_providers.dart",
     "lib/integrations/backend/loop_stream_token_repository.dart",
     "lib/integrations/backend/loop_stream_token_session.dart",
+    "lib/integrations/backend/loop_backend_providers.dart",
+    "lib/integrations/backend/v2/loop_v2_contract.dart",
+    "lib/integrations/backend/v2/loop_v2_meta.dart",
+    "lib/integrations/backend/v2/loop_v2_meta_providers.dart",
+    "lib/integrations/backend/v2/loop_v2_meta_repository.dart",
+    "lib/integrations/backend/v2/loop_v2_session.dart",
+    "lib/integrations/backend/v2/loop_v2_session_api.dart",
+    "lib/integrations/backend/v2/loop_v2_session_coordinator.dart",
+    "lib/integrations/backend/v2/loop_v2_session_providers.dart",
+    "lib/integrations/backend/v2/loop_v2_session_store.dart",
+    "lib/app/session/loop_communication_retirement.dart",
     "lib/integrations/notifications/loop_notification_event_source.dart",
     "lib/integrations/notifications/loop_notification_router.dart",
     "lib/integrations/hyperliquid/hyperliquid_spot_market.dart",
@@ -203,6 +216,12 @@ REQUIRED_FILES = (
     "test/app_config_test.dart",
     "test/loop_stream_token_repository_test.dart",
     "test/loop_stream_token_session_test.dart",
+    "test/loop_v2_meta_providers_test.dart",
+    "test/loop_v2_meta_repository_test.dart",
+    "test/loop_v2_session_api_test.dart",
+    "test/loop_v2_session_coordinator_test.dart",
+    "test/loop_v2_session_store_test.dart",
+    "test/loop_session_controller_test.dart",
     "test/privy_provider_test.dart",
     "test/chat_spot_snapshot_test.dart",
     "test/chat_preview_message_requests_test.dart",
@@ -4056,7 +4075,7 @@ def check_build_profile_configuration_contract(root: Path) -> list[str]:
                 "/config/release.json",
                 "/config/*.local.json",
             ),
-            "lib/integrations/backend/loop_bootstrap_providers.dart": (
+            "lib/integrations/backend/loop_backend_providers.dart": (
                 "config.backendBaseUrlForCurrentBuild",
             ),
             "lib/integrations/communication/stream_chat_providers.dart": (
@@ -4113,6 +4132,7 @@ def check_build_profile_configuration_contract(root: Path) -> list[str]:
     expected_profiles = {
         Path("config/debug.json"): {
             "LOOP_BUILD_MODE": "debug",
+            "LOOP_CLIENT_VERSION": "0.1.0+1",
             "PRIVY_APP_ID": "cmt2t8k4n00780cjsxjqk0dkq",
             "PRIVY_APP_CLIENT_ID": "client-WY6ctzX8CSMMKhbvz8exuLovn1dTJyq8hReY1x63pBFfd",
             "REOWN_PROJECT_ID": "26a5cc1adad234fcdf7762b8d2a2b28d",
@@ -4122,6 +4142,7 @@ def check_build_profile_configuration_contract(root: Path) -> list[str]:
         },
         Path("config/release.example.json"): {
             "LOOP_BUILD_MODE": "release",
+            "LOOP_CLIENT_VERSION": "0.1.0+1",
             "PRIVY_APP_ID": "",
             "PRIVY_APP_CLIENT_ID": "",
             "REOWN_PROJECT_ID": "",
@@ -4360,6 +4381,596 @@ def check_stream_token_client_contract(root: Path) -> list[str]:
     return errors
 
 
+V2_SESSION_TEST_MARKERS = {
+    Path("test/app_config_test.dart"): (
+        "V2 client version is strict SemVer and build-profile scoped",
+    ),
+    Path("test/loop_v2_meta_repository_test.dart"): (
+        "client policy GET is credential-free and parses every gate",
+        "strict policy rejects drift, reordered tabs, and invalid proof",
+        "V2 metadata error requires exact code and request correlation",
+    ),
+    Path("test/loop_v2_meta_providers_test.dart"): (
+        "missing backend origin composes no public metadata client",
+        "snapshot starts policy and capabilities reads concurrently",
+        "snapshot does not automatically retry a failed metadata read",
+        "LoopApp starts D0 reads and a failure cannot block authenticated UI",
+        "unavailable and pending D0 observations cannot bypass authentication",
+    ),
+    Path("test/loop_v2_session_api_test.dart"): (
+        "account/me sends only its exact V2 business headers",
+        "bootstrap sends persisted metadata and parses opaque IDs",
+        "logout adds only the opaque session header",
+        "strict success rejects extra fields and missing response proof",
+        "V2 errors require the exact envelope and correlation proof",
+    ),
+    Path("test/loop_v2_session_coordinator_test.dart"): (
+        "restored account reuses only a matching active local session",
+        "account/me precedes a write-before-dispatch bootstrap",
+        "ambiguous bootstrap reuses its exact persisted command",
+        "a local/server identity mismatch fails closed without bootstrap",
+        "logout persists before dispatch and clears a terminal result",
+        "unknown logout retains and reuses the same command",
+        "SESSION_NOT_FOUND is non-enumerating and terminal",
+        "a later login reconciles an unconfirmed logout before new bootstrap",
+        "logout quiescence waits for a dispatched bootstrap before revocation",
+        "retirement cancels bootstrap before its write request is sent",
+        "ACCOUNT_BOOTSTRAP_REQUIRED replaces a stale local active session",
+        "ACCOUNT_BOOTSTRAP_REQUIRED discards stale active logout recovery",
+        "logout retires a pending bootstrap before revoking its recovered session",
+        "failed pending-bootstrap retirement is recovered before a fresh login",
+    ),
+    Path("test/loop_v2_session_store_test.dart"): (
+        "creates one canonical device ID and reuses it",
+        "round trips the exact owner journal without raw principal or tokens",
+        "write validates the complete journal before touching storage",
+        "journal state machine rejects overlapping bootstrap and logout",
+        "malformed critical state fails closed instead of rotating IDs",
+        "unknown journal fields and impossible logout state fail closed",
+    ),
+    Path("test/loop_session_controller_test.dart"): (
+        "ordered logout keeps the local barrier while backend and Stream retire",
+        "duplicate exit calls share one cleanup operation",
+    ),
+    Path("test/privy_login_screen_test.dart"): (
+        "signing out blocks every login entry until backend cleanup really ends",
+    ),
+}
+V2_SECURE_STORAGE_OWNER = Path(
+    "lib/integrations/backend/v2/loop_v2_session_store.dart"
+)
+V2_SECURE_JOURNAL_RUNTIME_USERS = frozenset(
+    {
+        V2_SECURE_STORAGE_OWNER,
+        Path("lib/integrations/backend/v2/loop_v2_session_providers.dart"),
+    }
+)
+V2_SERIALIZED_JOURNAL_KEYS = (
+    "deviceId",
+    "idempotencyKey",
+    "clientVersion",
+    "platform",
+    "contractVersion",
+    "accountId",
+    "sessionId",
+    "streamUserId",
+    "deviceId",
+    "schemaVersion",
+    "pendingBootstrap",
+    "activeSession",
+    "pendingLogout",
+    "bootstrapRetirementRequested",
+    "revocationUnconfirmed",
+)
+V2_PARSED_JOURNAL_KEYSETS = (
+    (
+        "schemaVersion",
+        "pendingBootstrap",
+        "activeSession",
+        "pendingLogout",
+        "bootstrapRetirementRequested",
+        "revocationUnconfirmed",
+    ),
+    (
+        "deviceId",
+        "idempotencyKey",
+        "clientVersion",
+        "platform",
+        "contractVersion",
+    ),
+    ("accountId", "sessionId", "streamUserId", "deviceId"),
+)
+V2_FORBIDDEN_PERSISTED_IDENTIFIERS = frozenset(
+    {
+        "accesstoken",
+        "authtoken",
+        "credential",
+        "email",
+        "mnemonic",
+        "password",
+        "phone",
+        "phonenumber",
+        "pin",
+        "principal",
+        "principalkey",
+        "privatekey",
+        "providerresponse",
+        "rawprincipal",
+        "refreshtoken",
+        "seedphrase",
+        "signature",
+        "streamtoken",
+        "wallet",
+        "walletaccount",
+        "walletaddress",
+    }
+)
+V2_CLIENT_SEMVER_PATTERN = re.compile(
+    r"^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\."
+    r"(?:0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|"
+    r"[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|"
+    r"[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?"
+    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
+)
+
+
+def check_v2_session_contract(root: Path) -> list[str]:
+    """Lock D0/D1 V2 composition and its narrow secure journal boundary."""
+
+    errors = require_fragments(
+        root,
+        {
+            "harness.json": (
+                "Flutter Secure Storage 10.3.1 / V2 device-session journal only",
+                "LOOP_CLIENT_VERSION comes only from the matching Debug or Release build profile",
+                "Secure storage is limited to the V2 device-session journal allowlist",
+            ),
+            "docs/decisions/0049-connect-v2-account-device-session.md": (
+                "## Status",
+                "## Context",
+                "## Decision",
+                "## Consequences",
+                "flutter_secure_storage` 10.3.1",
+                "Supply client version through the matching build profile",
+                "The raw principal is never written by LOOP",
+                "tokens and the implemented social routes remain frozen V1 consumers",
+            ),
+            "lib/app/app_config.dart": (
+                "const String.fromEnvironment('LOOP_CLIENT_VERSION')",
+                "hasValidLoopClientVersion",
+                "value.length >= 5",
+                "value.length <= 64",
+                "loopClientVersionForCurrentBuild",
+            ),
+            "lib/integrations/backend/v2/loop_v2_contract.dart": (
+                "abstract final class LoopV2Contract",
+                "static String validateSuccess(",
+                "static LoopBackendFailure mapDioFailure(",
+                "'correlationId'",
+            ),
+            "lib/integrations/backend/v2/loop_v2_meta_repository.dart": (
+                "LoopDioFactory.createCredentialFreePublic(origin: origin)",
+                "static const clientPolicyPath = '/v2/meta/client-policy'",
+                "static const capabilitiesPath = '/v2/meta/capabilities'",
+            ),
+            "lib/integrations/backend/v2/loop_v2_meta_providers.dart": (
+                "Future.wait<Object>(<Future<Object>>[",
+                "retry: (retryCount, error) => null",
+            ),
+            "lib/integrations/backend/v2/loop_v2_session_api.dart": (
+                "static const accountPath = '/v2/account/me'",
+                "static const bootstrapPath = '/v2/session/bootstrap'",
+                "static const logoutPath = '/v2/session/logout'",
+                "'x-loop-client-version'",
+                "'idempotency-key'",
+            ),
+            "lib/integrations/backend/v2/loop_v2_session_coordinator.dart": (
+                "final class LoopV2BootstrapRepository implements LoopBootstrapRepository",
+                "account = await _api.getAccount(",
+                "await _store.writeOwnerJournal(_ownerPartition, journal);",
+                "final result = await _api.bootstrap(",
+                "final class LoopV2LogoutCoordinator",
+                "Future<void> prepareForLogout()",
+                "_rejectUndispatchedRetiredOperation();",
+                "return _waitForInFlight();",
+                "if (accountBootstrapRequired && local != null)",
+                "if (journal?.bootstrapRetirementRequested == true)",
+                "journal!.copyWith(bootstrapRetirementRequested: true)",
+                "await _retirePendingBootstrap(",
+            ),
+            "lib/integrations/backend/v2/loop_v2_session_store.dart": (
+                "import 'package:flutter_secure_storage/flutter_secure_storage.dart';",
+                "abstract interface class LoopV2SecureKeyValueStore",
+                "resetOnError: false",
+                "storageNamespace: 'loop_backend_v2_session'",
+                "accountName: 'com.cywd.loop.backend.v2.session'",
+                "accessibility: KeychainAccessibility.unlocked_this_device",
+                "synchronizable: false",
+                "'https://quant-dinger.cc/loop/v2/privy-owner/$principal'",
+                "static const _deviceIdKey = 'loop.backend.v2.device_id';",
+                "static const _ownerKeyPrefix = 'loop.backend.v2.owner.';",
+                "await _storage.write(_deviceIdKey, generated);",
+                "final validated = _parseJournal(journal.toJson());",
+                "await _storage.write(key, jsonEncode(validated.toJson()));",
+                "(hasBootstrap && (hasActive || hasLogout || revocationUnconfirmed))",
+                "(bootstrapRetirementRequested && !hasBootstrap)",
+                "(revocationUnconfirmed && !hasLogout)",
+            ),
+            "lib/integrations/backend/v2/loop_v2_session_providers.dart": (
+                "config.loopClientVersionForCurrentBuild",
+                "return FlutterSecureLoopV2SessionJournalStore();",
+                "DioLoopV2SessionApi(dio)",
+            ),
+            "lib/integrations/backend/loop_bootstrap_providers.dart": (
+                "ref.watch(loopV2SessionApiProvider)",
+                "ref.watch(loopV2ClientMetadataProvider)",
+                "final repository = LoopV2BootstrapRepository(",
+                "ref.watch(loopV2SessionJournalStoreProvider)",
+                "ref.onDispose(repository.retire)",
+            ),
+            "lib/integrations/backend/loop_stream_token_repository.dart": (
+                "LoopStreamTokenProduct.chat => '/v1/chat/token'",
+                "LoopStreamTokenProduct.video => '/v1/video/token'",
+            ),
+            "lib/app.dart": (
+                "bootstrapRepository.prepareForLogout()",
+                "await bootstrapQuiescence;",
+                "ref.listenManual(",
+                "loopV2MetaSnapshotProvider,",
+                "fireImmediately: true,",
+            ),
+            "lib/app/session/loop_session_controller.dart": (
+                "LoopSessionMode.signingOut",
+                "Future<void>? _exitOperation;",
+                "if (_exitOperation != null || state.mode == LoopSessionMode.signingOut)",
+                "final gateway = ref.read(privyAuthGatewayProvider);",
+                "state = const LoopSessionState.signingOut();",
+                "backendResult = await revokeBackend(principalKey);",
+            ),
+            "lib/features/account/privy_login_screen.dart": (
+                "if (session.mode == LoopSessionMode.signingOut)",
+                "return const PrivySessionSignOutScreen();",
+                "key: const ValueKey<String>('privy-signing-out-screen')",
+            ),
+            "android/app/src/main/AndroidManifest.xml": (
+                'android:allowBackup="false"',
+            ),
+            "ios/Runner/Runner.entitlements": (
+                "<key>keychain-access-groups</key>",
+                "<array/>",
+            ),
+        },
+    )
+
+    profile_versions: dict[Path, str] = {}
+    for relative in (Path("config/debug.json"), Path("config/release.example.json")):
+        path = root / relative
+        if not path.is_file():
+            continue
+        try:
+            profile = json.loads(read_text(path))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            continue
+        version = profile.get("LOOP_CLIENT_VERSION") if isinstance(profile, dict) else None
+        if not isinstance(version, str) or V2_CLIENT_SEMVER_PATTERN.fullmatch(version) is None:
+            errors.append(
+                f"{relative} must provide a strict SemVer LOOP_CLIENT_VERSION"
+            )
+        else:
+            profile_versions[relative] = version
+
+    pubspec_path = root / "pubspec.yaml"
+    pubspec_version: str | None = None
+    if pubspec_path.is_file():
+        match = re.search(
+            r"^version:\s*([^\s#]+)\s*$",
+            read_text(pubspec_path),
+            re.MULTILINE,
+        )
+        if match is not None:
+            pubspec_version = match.group(1)
+    expected_profile_paths = {
+        Path("config/debug.json"),
+        Path("config/release.example.json"),
+    }
+    if (
+        pubspec_version is None
+        or set(profile_versions) != expected_profile_paths
+        or any(version != pubspec_version for version in profile_versions.values())
+    ):
+        errors.append(
+            "Debug and Release LOOP_CLIENT_VERSION values must match each "
+            "other and pubspec.yaml `version` exactly"
+        )
+
+    android_manifest_path = (
+        root / "android/app/src/main/AndroidManifest.xml"
+    )
+    if android_manifest_path.is_file():
+        try:
+            manifest = ElementTree.parse(android_manifest_path).getroot()
+        except ElementTree.ParseError as error:
+            errors.append(f"Android manifest is invalid XML: {error}")
+        else:
+            application = manifest.find("application")
+            allow_backup = (
+                application.get(
+                    "{http://schemas.android.com/apk/res/android}allowBackup"
+                )
+                if application is not None
+                else None
+            )
+            if allow_backup != "false":
+                errors.append(
+                    "Android backup must remain disabled for the V2 device journal"
+                )
+
+    entitlements_path = root / "ios/Runner/Runner.entitlements"
+    if entitlements_path.is_file():
+        try:
+            with entitlements_path.open("rb") as stream:
+                entitlements = plistlib.load(stream)
+        except (OSError, plistlib.InvalidFileException) as error:
+            errors.append(f"iOS entitlements are invalid: {error}")
+        else:
+            if entitlements.get("keychain-access-groups") != []:
+                errors.append(
+                    "V2 journal must not opt into a shared iOS keychain access group"
+                )
+
+    lib_root = root / "lib"
+    if lib_root.is_dir():
+        for path in lib_root.rglob("*.dart"):
+            relative = path.relative_to(root)
+            source = strip_dart_comments(read_text(path))
+            executable = strip_dart_comments_and_strings(source)
+            if "package:flutter_secure_storage/" in source and relative != V2_SECURE_STORAGE_OWNER:
+                errors.append(
+                    "flutter_secure_storage imports must stay inside the V2 "
+                    f"session store: {relative}"
+                )
+            if re.search(r"\bFlutterSecureStorage\b", executable) and relative != V2_SECURE_STORAGE_OWNER:
+                errors.append(
+                    "FlutterSecureStorage may be instantiated or typed only by "
+                    f"the V2 session store: {relative}"
+                )
+            if re.search(
+                r"\b(?:LoopV2SecureKeyValueStore|FlutterLoopV2SecureKeyValueStore)\b",
+                executable,
+            ) and relative != V2_SECURE_STORAGE_OWNER:
+                errors.append(
+                    "the raw V2 secure key-value facade must not escape its "
+                    f"session store: {relative}"
+                )
+            if (
+                re.search(r"\bFlutterSecureLoopV2SessionJournalStore\b", executable)
+                and relative not in V2_SECURE_JOURNAL_RUNTIME_USERS
+            ):
+                errors.append(
+                    "the concrete secure journal may only be composed by its "
+                    f"V2 provider: {relative}"
+                )
+
+    session_path = root / "lib/integrations/backend/v2/loop_v2_session.dart"
+    if session_path.is_file():
+        source = strip_dart_comments(read_text(session_path))
+        serialized_keys = tuple(
+            match.group(2)
+            for match in re.finditer(
+                r"(['\"])([A-Za-z][A-Za-z0-9_]*)\1\s*:", source
+            )
+        )
+        if serialized_keys != V2_SERIALIZED_JOURNAL_KEYS:
+            errors.append(
+                "V2 secure journal serialization must preserve its exact "
+                "device/command/opaque-session allowlist"
+            )
+        for key in serialized_keys:
+            normalized = re.sub(r"[^a-z0-9]", "", key.casefold())
+            if normalized in V2_FORBIDDEN_PERSISTED_IDENTIFIERS:
+                errors.append(
+                    f"V2 secure journal contains forbidden sensitive persisted field: {key}"
+                )
+        bodies = re.findall(
+            r"Map<String,\s*Object\?>\s+toJson\(\)\s*=>\s*"
+            r"<String,\s*Object\?>\{(.*?)\};",
+            source,
+            re.DOTALL,
+        )
+        if len(bodies) != 3:
+            errors.append("V2 secure journal must keep exactly three reviewed serializers")
+        for body in bodies:
+            executable = strip_dart_comments_and_strings(body)
+            identifiers = {
+                re.sub(r"[^a-z0-9]", "", value.casefold())
+                for value in re.findall(r"\b[A-Za-z][A-Za-z0-9_]*\b", executable)
+            }
+            forbidden = sorted(identifiers & V2_FORBIDDEN_PERSISTED_IDENTIFIERS)
+            if forbidden:
+                errors.append(
+                    "V2 secure journal serializer references forbidden sensitive "
+                    f"values: {', '.join(forbidden)}"
+                )
+
+    store_path = root / V2_SECURE_STORAGE_OWNER
+    if store_path.is_file():
+        source = strip_dart_comments(read_text(store_path))
+        imports = tuple(
+            re.findall(r"^import\s+['\"]([^'\"]+)['\"]\s*;", source, re.MULTILINE)
+        )
+        expected_imports = (
+            "dart:convert",
+            "package:flutter_secure_storage/flutter_secure_storage.dart",
+            "package:loop_mobile/integrations/backend/v2/loop_v2_session.dart",
+            "package:uuid/uuid.dart",
+        )
+        if imports != expected_imports:
+            errors.append(
+                "V2 session store imports must stay limited to conversion, "
+                "secure storage, its journal model, and UUID"
+            )
+        blocks = re.findall(
+            r"_strictMap\([^,]+,\s*const <String>\{(.*?)\}\s*\)",
+            source,
+            re.DOTALL,
+        )
+        parsed_keysets = tuple(
+            tuple(
+                re.findall(r"['\"]([A-Za-z][A-Za-z0-9_]*)['\"]", block)
+            )
+            for block in blocks
+        )
+        if parsed_keysets != V2_PARSED_JOURNAL_KEYSETS:
+            errors.append(
+                "V2 secure journal parsing must reject every field outside the "
+                "reviewed allowlist"
+            )
+        executable = strip_dart_comments_and_strings(source)
+        if len(re.findall(r"\bFlutterSecureStorage\s*\(", executable)) != 1:
+            errors.append(
+                "V2 session store must own exactly one raw secure-storage constructor"
+            )
+        platform_options = (
+            "resetOnError: false",
+            "storageNamespace: 'loop_backend_v2_session'",
+            "accountName: 'com.cywd.loop.backend.v2.session'",
+            "accessibility: KeychainAccessibility.unlocked_this_device",
+            "synchronizable: false",
+        )
+        if any(source.count(option) != 1 for option in platform_options):
+            errors.append(
+                "V2 secure storage platform isolation options have drifted"
+            )
+        storage_operations = set(
+            re.findall(r"\b_storage\.([A-Za-z][A-Za-z0-9_]*)\s*\(", executable)
+        )
+        if storage_operations != {"read", "write", "delete"}:
+            errors.append(
+                "V2 secure storage may use only read, write, and delete operations"
+            )
+        if len(re.findall(r"\b_storage\.write\s*\(", executable)) != 3:
+            errors.append(
+                "V2 secure storage must keep exactly the reviewed wrapper, "
+                "device-ID, and owner-journal write sites"
+            )
+
+    coordinator_path = (
+        root / "lib/integrations/backend/v2/loop_v2_session_coordinator.dart"
+    )
+    if coordinator_path.is_file():
+        source = strip_dart_comments(read_text(coordinator_path))
+        bootstrap_source, separator, logout_source = source.partition(
+            "final class LoopV2LogoutCoordinator"
+        )
+        account_call = bootstrap_source.find("account = await _api.getAccount(")
+        bootstrap_call = bootstrap_source.find("final result = await _api.bootstrap(")
+        bootstrap_write = bootstrap_source.find(
+            "await _store.writeOwnerJournal(_ownerPartition, journal);"
+        )
+        logout_write = logout_source.find(
+            "await _store.writeOwnerJournal(ownerPartition, journal);"
+        )
+        logout_call = logout_source.find("await _api.logout(")
+        if not (
+            separator
+            and
+            0 <= account_call < bootstrap_write < bootstrap_call
+            and 0 <= logout_write < logout_call
+        ):
+            errors.append(
+                "V2 session commands must remain account-first and "
+                "write-before-dispatch"
+            )
+        if source.count("final command = pending ?? _newCommand(deviceId);") != 2:
+            errors.append(
+                "V2 bootstrap and logout must each reuse an exact pending command"
+            )
+        if bootstrap_source.count("_rejectUndispatchedRetiredOperation();") != 4:
+            errors.append(
+                "V2 bootstrap retirement must guard logout reconciliation, "
+                "pending-bootstrap retirement, journal, and dispatch boundaries"
+            )
+        for identity_guard in (
+            "local.deviceId != deviceId",
+            "local.accountId != account.accountId",
+            "local.streamUserId != account.streamUserId",
+        ):
+            if source.count(identity_guard) != 1:
+                errors.append(
+                    "V2 active-session reuse must preserve device/account/Stream "
+                    f"identity matching: {identity_guard}"
+                )
+
+    meta_provider_path = (
+        root / "lib/integrations/backend/v2/loop_v2_meta_providers.dart"
+    )
+    meta_startup_path = root / "lib/app.dart"
+    if lib_root.is_dir():
+        for path in lib_root.rglob("*.dart"):
+            if path == meta_provider_path:
+                continue
+            executable = strip_dart_comments_and_strings(read_text(path))
+            references = executable.count("loopV2MetaSnapshotProvider")
+            if references == 0:
+                continue
+            if path != meta_startup_path:
+                errors.append(
+                    "D0 metadata may only have one inert production root observer; "
+                    "it must remain unused by "
+                    f"production feature gates: {path.relative_to(root)}"
+                )
+                continue
+            inert_startup_observer = re.search(
+                r"ref\.listenManual\s*\(\s*loopV2MetaSnapshotProvider\s*,"
+                r"\s*\([^)]*\)\s*\{\s*\}\s*,\s*fireImmediately\s*:\s*true\s*,?\s*\)",
+                executable,
+                re.DOTALL,
+            )
+            if references != 1 or inert_startup_observer is None:
+                errors.append(
+                    "D0 metadata startup must remain one non-authorizing, "
+                    "fire-immediate root observation"
+                )
+
+    provider_path = root / "lib/integrations/backend/loop_bootstrap_providers.dart"
+    if provider_path.is_file():
+        executable = strip_dart_comments_and_strings(read_text(provider_path))
+        if "DioLoopBootstrapRepository" in executable:
+            errors.append(
+                "production bootstrap provider must not fall back to the frozen V1 "
+                "DioLoopBootstrapRepository"
+            )
+        if len(re.findall(r"\bLoopV2BootstrapRepository\s*\(", executable)) != 1:
+            errors.append(
+                "production bootstrap provider must compose exactly one V2 repository"
+            )
+
+    session_controller_path = root / "lib/app/session/loop_session_controller.dart"
+    if session_controller_path.is_file():
+        executable = strip_dart_comments_and_strings(
+            read_text(session_controller_path)
+        )
+        if re.search(
+            r"revokeBackend\s*\(\s*principalKey\s*\)\s*\.timeout\s*\(",
+            executable,
+        ):
+            errors.append(
+                "V2 backend logout must not use a non-cancelling controller-level "
+                "timeout that can outlive the sign-out barrier"
+            )
+
+    stream_path = root / "lib/integrations/backend/loop_stream_token_repository.dart"
+    if stream_path.is_file():
+        source = strip_dart_comments(read_text(stream_path))
+        if "/v2/chat/token" in source or "/v2/video/token" in source:
+            errors.append(
+                "Stream Chat and Video token issuance must remain on the frozen V1 routes"
+            )
+
+    errors.extend(check_behavior_test_evidence(root, V2_SESSION_TEST_MARKERS))
+    return errors
+
+
 NETWORK_DIO_POLICY_TEST_MARKERS = {
     Path("test/loop_dio_factory_test.dart"): (
         "common clients use bounded defaults without credential headers",
@@ -4445,7 +5056,7 @@ def check_network_dio_policy_contract(root: Path) -> list[str]:
                 "'cookie'",
                 "'x-api-key'",
             ),
-            "lib/integrations/backend/loop_bootstrap_providers.dart": (
+            "lib/integrations/backend/loop_backend_providers.dart": (
                 "LoopDioFactory.createLoopBackend(origin: endpoint.uri)",
             ),
             "lib/integrations/hyperliquid/hyperliquid_http_providers.dart": (
@@ -4537,7 +5148,10 @@ def check_network_dio_policy_contract(root: Path) -> list[str]:
     if lib_root.is_dir():
         factory_consumers = {
             Path("lib/core/network/loop_dio_factory.dart"),
-            Path("lib/integrations/backend/loop_bootstrap_providers.dart"),
+            Path("lib/integrations/backend/loop_backend_providers.dart"),
+            Path(
+                "lib/integrations/backend/v2/loop_v2_meta_repository.dart"
+            ),
             Path(
                 "lib/integrations/hyperliquid/hyperliquid_http_providers.dart"
             ),
@@ -4583,10 +5197,13 @@ def check_network_dio_policy_contract(root: Path) -> list[str]:
                     )
 
         provider_profiles = {
-            Path("lib/integrations/backend/loop_bootstrap_providers.dart"): (
+            Path("lib/integrations/backend/loop_backend_providers.dart"): (
                 "createLoopBackend",
                 "createCredentialFreePublic",
             ),
+            Path(
+                "lib/integrations/backend/v2/loop_v2_meta_repository.dart"
+            ): ("createCredentialFreePublic", "createLoopBackend"),
             Path(
                 "lib/integrations/hyperliquid/hyperliquid_http_providers.dart"
             ): ("createCredentialFreePublic", "createLoopBackend"),
@@ -9683,6 +10300,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_build_profile_configuration_contract(root))
     errors.extend(check_network_dio_policy_contract(root))
     errors.extend(check_stream_token_client_contract(root))
+    errors.extend(check_v2_session_contract(root))
     errors.extend(check_home_portfolio_truth_contract(root))
     errors.extend(check_spot_candle_contract(root))
     errors.extend(check_wallet_identity_readiness_contract(root))

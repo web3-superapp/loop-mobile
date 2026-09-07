@@ -27,16 +27,18 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - Chat 顶部提供固定的 `创建群组` / `添加好友` 菜单，Profile 的 People & communication 提供 `我的好友`。正式入口现装配 principal-bound LOOP 社交适配器：支持关系感知的昵称前缀搜索、好友分页、收到/发出的待处理申请、接受/拒绝、从好友发起私聊，以及选择 2–29 位好友由后端创建群聊。`public_profile_id` 是唯一命令目标，`profile_code` 是不可变唯一的同名区分码，账户 Alias 可变、可为空且可重复；钱包地址、Privy/LOOP/Stream 身份和群 Alias 都不会变成公开搜索或客户端成员键。只有显式 Development Preview 注入进程内好友目录并持续标注 `开发预览`，预览建群仍不返回 Stream CID、不创建频道
 - 好友申请/决定、建群和私聊每个新意图都使用一个 UUIDv4 作为 `Idempotency-Key` 与 `operation_id`；丢响应或成功包解析失败时先查询 operation，只有精确的路由级 operation-not-found 才可复用完全相同的 UUID/Body 重放，查询鉴权、限流、网络、响应证明或解析失败都不会触发重复写入。Chat `202` 按服务端较大的等待值轮询，并同时受单调墙钟与次数上限约束；`operator_required` 会停止且不创建第二个频道。群聊成功还必须返回 `group_id`、无序匹配的好友集合与 canonical `messaging:loop_group_*` CID，私聊则收敛到 backend 固定的 `messaging:loop_direct_*` CID；随后仍用精确 CID + 当前成员条件向 Stream 查询已存在频道，未确认 membership 时不会挂载频道 UI。消息、历史、已读、输入状态、在线状态和实时成员仍以 Stream 官方 SDK 为真相源
 - 群内 Alias 以 backend `group_id` 隔离，首次保留后不可修改；相同 PUT 可恢复不明确响应，pending projection 不会标成确认。新建群直接使用回执中的 `group_id`；App 重启后，已通过精确 CID + 当前成员校验的 Stream 群可把严格校验后的 channel ID（不是完整 CID、没有 `Idempotency-Key`）交给 backend resolver 恢复 `group_id`，已知 direct ID 在本地直接拒绝。群内搜索只返回 `group_alias_id + alias`，不暴露公开 Profile、账户 Alias、钱包、LOOP 或 Stream 身份；群消息、引用、@提及、reaction、thread、输入状态、会话预览和头像也只允许使用当前 Member 的精确 v1 投影，缺失/异常时统一显示“群成员”，不回退账户级 Stream 名称或稳定 ID。它是群内展示化名而非强匿名保证。Social Privacy 与公开 Profile Privacy 分离，独立控制新的好友申请、好友拉群和好友私聊，版本 0 默认全部关闭。删除好友、拉黑/解除、二维码加好友、钱包地址搜索和群成员管理仍不在本阶段
-- 当前社交写入的 UUID/Body 保留仅覆盖当前 App 进程。被杀进程、清除数据、重装或换设备后，现有只能按 UUID 查询的后端契约不能让客户端发现丢失 UUID 的未决意图。这一点保持明确未验证，后续需要独立审核的加密、分账号 command journal，或后端 owner-scoped pending-intent discovery；本次不把 Reown 的传递 Secure Storage 当作 LOOP 存储
-- 上述正式社交路径依赖当前 Privy Bearer 与 LOOP bootstrap，Bearer 只附着单次请求；生产 Profile、公开 Privacy 与 Social Privacy 也已装配 authenticated CAS adapter。真实双账号好友闭环、group/direct 的 Stream provider 创建与并发收敛、群 Alias resolver/投影/离群恢复、客户端权限拒绝和 Flutter 重启历史发现尚未在物理设备与 Development Stream App 验证，不能据此声称已联调通过
-- 原生 Privy Bearer `POST /v1/bootstrap`、`POST /v1/chat/token` 与 `POST /v1/video/token` 客户端已接入；严格解析服务端 LOOP/Stream 身份和短期 Token，隔离账号切换。单次 Stream Token 加载最多刷新一次 401、透明恢复一次 `bootstrap_required`，总计不超过三次 Token POST；其他失败不自动重试，Token 不缓存、不落盘。登录后的 bootstrap 预热仍是非阻塞的
+- 当前社交写入的 UUID/Body 保留仅覆盖当前 App 进程。被杀进程、清除数据、重装或换设备后，现有只能按 UUID 查询的后端契约不能让客户端发现丢失 UUID 的未决意图。这一点保持明确未验证，后续仍需要独立审核的加密、分账号 social command journal，或后端 owner-scoped pending-intent discovery；D1 新增的 Secure Storage journal 只属于账户/设备会话与 bootstrap/logout 幂等命令，不能被社交写入复用
+- 上述正式社交路径依赖当前 Privy Bearer 与 V2 LOOP 账户会话，Bearer 只附着单次请求；生产 Profile、公开 Privacy 与 Social Privacy 也已装配 authenticated CAS adapter。真实双账号好友闭环、group/direct 的 Stream provider 创建与并发收敛、群 Alias resolver/投影/离群恢复、客户端权限拒绝和 Flutter 重启历史发现尚未在物理设备与 Development Stream App 验证，不能据此声称已联调通过
+- D0 公共 metadata 客户端已严格接入 `GET /v2/meta/client-policy` 与 `GET /v2/meta/capabilities`：`LoopApp` 根生命周期在有效 Development 配置下冷启动一次非阻塞并发观察，请求不携带 Bearer、body、query、`X-Loop-*` 或幂等头，响应必须满足 V2 七字段错误、`no-store` 与请求 ID 证明。错误只停留在 Riverpod observation，不阻断登录或路由；`unavailable`、`deferred` 和 `evidence.pending` 都不等于允许、已连接或已通过真机验收，也不会直接触发强更、地区或维护页面。D0 不提供 maintenance notice
+- D1 账户/设备会话客户端已接入 `GET /v2/account/me`、`POST /v2/session/bootstrap` 与 `POST /v2/session/logout`。恢复或登录先解析当前 Privy access token 对应的 opaque account，只有缺少可复用本机会话或后端要求 bootstrap 时才以预先持久化的同一 UUIDv4/metadata 发出命令；服务端明确要求 bootstrap 会废弃依赖旧账号的 active/logout 投影。成功后保存独立的 `accountId`、`sessionId` 与 `streamUserId`，不从 Privy、邮箱、Alias、钱包或其他 ID 推导。退出遇到响应不明的 bootstrap 时先持久化 retirement intent，以原 key 恢复其 session、用全新 logout key 撤销；若仍不明确则保留可恢复状态，下次同主体登录必须先撤销旧 session，再以新 bootstrap key 授权。退出是 single-flight，进入 `signingOut` 后立即撤销产品能力并关闭全部登录入口；后端 journal 操作真正终结后才退役 Chat/Video owner、调用捕获的 Privy gateway 并重新开放登录，避免不可取消的迟到 Future 注销新账号或删除新 journal。网络超时由有界 Dio 请求负责，不在 Controller 外层制造仍继续运行的超时 Future
+- 旧 `POST /v1/bootstrap` 已退出生产账户/会话组合；该组合为 Stream 仅保留 `POST /v1/chat/token` 与 `POST /v1/video/token`。两条 V1 token 路由继续使用冻结的 snake_case 契约，而 D0/D1 使用独立的 V2 camelCase/七字段错误契约。单次 Stream Token 加载最多刷新一次 401、透明恢复一次 V1 `bootstrap_required`，总计不超过三次 Token POST；其他失败不自动重试，Token 不缓存、不落盘
 - Dio 构造已收敛到双信任边界：公开 Hyperliquid Testnet 只读请求与携带 Privy Bearer 的 LOOP backend 请求使用不同 profile；两者都限制精确 Origin、关闭重定向并保持无自动重试/无日志，公开客户端还会在发送前拒绝 Authorization，两种客户端都会拒绝 Cookie、Proxy-Authorization 与 `X-Api-Key`。仓库仍由各自窄 adapter 负责请求契约、错误映射、鉴权刷新与幂等语义
 - Audio Room 前端纵切已完成，并从正式 Chat 顶部提供唯一可见入口：入口只打开生产 Lobby，不发起 provider 操作，也不会回退演示房间。后端授权房间接缝、默认静音单飞加入、官方 `CallState` 状态/成员/能力/麦克风 UI、失败清理和账号/房间/client 轮换均已落地；Video 用户 Token 客户端已接通，但生产房间 locator 仍缺失，因此保持不可加入
 - Audio Room 首版只配置前台麦克风能力；任何退房或 App 退到后台都会立即发起原生音频暂停、终态关麦与 single-flight 退房，不让可能卡住的麦克风/原生命令延迟退房。大厅只在旧 `Call` 已从 Stream `activeCalls` 移除、在途麦克风命令已结束且命令后的第二次关麦已执行后开放。为避开 Stream Video 1.4.3 的迟到音轨重建缺陷，每个 `Call` 只允许一次 Speak 启动；Mute 后需离开并重进才能再次发言。失败可显式重试清理。会自动注册 Telecom/CallKit 的 Stream Push 插件不进入当前依赖图，Android 同时移除可选来电、后台通话、相机与推送项，iOS 不启用 Camera、PushKit、CallKit 或后台模式
 - 通知导航的 EventSource / Coordinator 纵切已接入根组合：生产 source 默认是无初始点击、无事件的 disabled 实现；协调器只从真实 LOOP session 与已验证 bootstrap identity 取得 Stream 身份。恢复期间最多暂存一个、默认 15 秒且硬上限一分钟的点击，账号切换、超时或授权失败即丢弃；通过完整重验后也只能落到官方 Chat CID、Audio Room 大厅或通知中心。生产通知页不展示伪实时卡片，演示卡仅在显式 `开发预览` 中可见
 - Home Global Search 已闭合 providerless 前端行为：只有显式 Preview 会显示并本地筛选一组有界的 `演示数据`，支持大小写/空白归一化、无结果与清空；群组和用户沿用精确注册的 Preview conversation ID，ETH 示例只进入公共 Spot 列表而不猜 `spotIndex`。正式会话在真实跨产品索引接入前显示不可用，不泄漏 Preview 结果
 - Home Security Activity 已关闭无来源的安全结论：正式会话不再伪报 MFA、设备登录、审批次数或 `No urgent action`，没有已审核事件源时保持不可用。显式 Preview 只保留持续标注的布局示例，不计算风险分、不发请求，也不提供 Revoke/Block 等账户操作
-- Account/Profile 安全页已分离能力可用性与配置状态：A11 不再提供未接适配器的 Passkey、Biometrics、PIN 开关或伪保存，只能明确“不做修改”地继续；H5 不再用 capability 计算保护分数、ready/recovery 结论，Wallet MFA 与 App lock 在真实 setup adapter 接入前禁用。LOOP 未引入或使用应用自有 Secure Storage，Reown 的传递内部存储也不作为 LOOP store；当前没有存储或校验 app PIN
+- Account/Profile 安全页已分离能力可用性与配置状态：A11 不再提供未接适配器的 Passkey、Biometrics、PIN 开关或伪保存，只能明确“不做修改”地继续；H5 不再用 capability 计算保护分数、ready/recovery 结论，Wallet MFA 与 App lock 在真实 setup adapter 接入前禁用。LOOP 对 `flutter_secure_storage` 的直接使用只限 D1 设备/会话/幂等 journal；它不存 access/refresh/Stream token、raw Privy principal、钱包私钥、PIN 或保护状态，也不证明 App lock、Biometrics 或 PIN 已接入
 - General Settings 的 Reduce motion 已使用设备本地非敏感偏好持久化，并在首个应用页面前恢复；构造、读取与写入均有一秒上限，快速连续切换和迟到写入保持顺序。读取失败后的重试会先重新读取，写入失败才重试当前明确选择；任何失败都只说明本次运行生效。它不绑定账号、不发送后端请求，也不会覆盖更严格的系统 Reduce Motion。Language、Display currency 与 Theme 在真实能力具备前继续禁用，Shared Preferences 不保存 Profile、Privacy、通知、钱包、token、PIN 或安全状态
 - Home 与 Net Worth 已关闭无来源的资产和活动结论：正式会话在 owner-scoped portfolio/activity 来源接入前只显示不可用与当前 Privy wallet identity 状态，不再展示静态总额、涨跌、图表、分配、未读数、提醒或授权记录。钱包身份不等于余额证据；原布局数据只保留在明确标注 `开发预览` / `演示数据` 的 Preview 中，本切片不新增接口、provider 请求或刷新动作
 - C10 New Pairs 已关闭正式会话中的演示事实泄漏：公开 Spot 快照不包含 listing time，客户端收取时间、首次本地观察、成交量与 canonical 标记也不能证明“新上线”。正式和缓存未验证会话仅显示数据源未连接且不发 Market/Candle 请求；BTC/ETH/SOL 与 fixture age 仅在精确 `开发预览` 会话中显示，并只能返回裸 `/market`
@@ -61,7 +63,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 
 应用逻辑继续通过页面状态、Riverpod controller 和窄业务 port 隔离 provider。`lib/features/` 不直接依赖 Dio 或保存 `/v1/` 路由；旧 Perp adapter 仅作为未挂载的实现历史保留，不再继续产品开发。尚未接入的 production port 仍使用 unavailable 实现，Fake 仅允许测试与显式 Preview 注入。
 
-Stream 生产路径通过 BFF 获取或刷新短期用户 token，并由 session authorizer 建立 SDK 会话。每个 Privy principal 使用独立的 Stream client/persistence 实例，账号切换会废弃旧实例，避免不可取消的旧连接污染新账号。正式 Chat 页面直接使用 Stream 官方 controller/UI 作为消息、分页、已读、输入状态与离线历史的真相源；缺少授权时保持 fail-closed，也不会把本地 preview 伪装成在线能力。附件与语音录制会等平台权限和产品策略正式配置后再开放。真实 Token 接受、连接、刷新、双设备消息和 Video 仍需要真机验证。
+Stream 生产路径使用 V2 account/session 返回的 opaque `streamUserId`，再通过保留的 V1 Chat/Video token 路由获取或刷新短期用户 token，并由 session authorizer 建立 SDK 会话。每个 Privy principal 使用独立的 Stream client/persistence 实例，账号切换或退出会退役旧实例，避免不可取消的旧连接污染新账号。正式 Chat 页面直接使用 Stream 官方 controller/UI 作为消息、分页、已读、输入状态与离线历史的真相源；缺少授权时保持 fail-closed，也不会把本地 preview 伪装成在线能力。附件与语音录制会等平台权限和产品策略正式配置后再开放。真实 Token 接受、连接、刷新、双设备消息和 Video 仍需要真机验证。
 
 当前产品决定以 [`docs/product-decisions.md`](docs/product-decisions.md) 为准。内部不可变 `user id` 是账户与社交关系的主身份，钱包地址只是可绑定、可替换的凭证。界面只陈述可验证的安全事实及来源时间，不使用 AI Guard 或风险分口径。
 
@@ -82,7 +84,7 @@ bin/flutter build apk --debug
 
 Release、iOS no-codesign、Web release、`bin/flutter run`、签名和真机验证都不是日常自动检查；只有明确提出时才运行。真机结果由产品方验证，未执行时始终记录为未验证。
 
-所有客户端公开值统一由 `AppConfig` 读取。Debug/Profile 只接受 `LOOP_BUILD_MODE=debug`，Release 只接受 `release`；缺失或错配会关闭 Privy、Reown、LOOP backend、Stream 和未来 Firebase 能力。IDE 的 `Loop` 配置会自动加载已审查的 Debug 文件：
+所有客户端公开值统一由 `AppConfig` 读取。Debug/Profile 只接受 `LOOP_BUILD_MODE=debug`，Release 只接受 `release`；缺失或错配会关闭 Privy、Reown、LOOP backend、Stream 和未来 Firebase 能力。D1 还要求 `LOOP_CLIENT_VERSION` 是与当前构建匹配的严格 SemVer；空值、非法值或 build-profile 错配都会关闭 V2 account/session 组合。IDE 的 `Loop` 配置会自动加载已审查的 Debug 文件：
 
 ```bash
 bin/flutter run --dart-define-from-file=config/debug.json
@@ -118,11 +120,11 @@ flutter build web --release
 - Privy 0.10.1；Reown AppKit 1.8.4（lock 实际解析 Core 1.5.0 / Sign 1.4.0）；Stream Chat/Persistence 10.3.0；Stream Video 1.4.3（Push 1.4.3 已验证兼容但首版不链接）
 - Firebase Core 4.13.0 / Messaging 16.5.0
 - Riverpod 3.4.2 / go_router 17.5.0 / Dio 5.11.0
-- Decimal 3.2.6 / UUID 4.6.0
+- Decimal 3.2.6 / UUID 4.6.0 / flutter_secure_storage 10.3.1（仅 D1 journal）
 
 `harness.json` 是可机器校验的工程画像，`AGENTS.md` 是开发与安全边界。任何依赖、原生工具链、主导航或安全边界变更都要同步更新决策和验证报告。
 
-本次 Reown/身份切片改变了 Flutter 与原生依赖图。2026-08-29 已用当前锁定工具链通过 Android Debug/Release 和 iOS Debug/Release no-codesign 四项编译，详见 [`docs/phase-1/initialization-report.md`](docs/phase-1/initialization-report.md)。Email OTP、Google、Apple、钱包 App 回跳、SIWE 和真实 bootstrap 仍必须保持“供应商/物理设备未验证”，直到对应 Dashboard 与设备矩阵产生证据。
+Reown/身份切片在 2026-08-29 用当时锁定的依赖图通过 Android Debug/Release 和 iOS Debug/Release no-codesign 四项编译，详见 [`docs/phase-1/initialization-report.md`](docs/phase-1/initialization-report.md)。当前 D0+D1 切片又直接引入 `flutter_secure_storage` 10.3.1 并调整原生存储配置，旧编译结果不能替代本次检查；本次完整 Flutter 测试与 Android Debug 的确切结果留待主验证完成后补录。Email OTP、Google、Apple、外部钱包四入口、V2 首次/恢复/退出，以及真实 Stream Chat/Video 链路仍必须保持“供应商/物理设备未验证”，直到对应 Dashboard、测试账号与设备矩阵产生证据。
 
 Manual-only native release matrix（仅在明确要求时运行）：
 
@@ -155,7 +157,7 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 - 不要启用 Hyperliquid HIP-3、builder fee 或非 Core 市场
 - Pay 在 Wallet 保留明确不可用入口以表达新版产品位置，但 A / B / C 优先级不等于交付期；B5-B8 / D21 当前全部 deferred，落地页不得出现扫码、相机、金额或支付动作
 
-前端现已具备原生 LOOP identity bootstrap、Stream Chat 与前台 Audio Room 的主体轮换、后端 token/locator 边界、麦克风原生声明、通知意图契约和根协调器。根协调器的存在不代表通知已连接：正式入口仍使用 disabled EventSource，只有真实 session 与 bootstrap identity 同时成立时才可能处理一个有界点击。后端可并行实现 Stream Chat/Video 短期 token，以及“预创建房间 + 成员角色无 `create-call`”的 Audio Room locator 契约；双方就绪后再做真机双端联调。Firebase/Push 仍未初始化；还需要 Android/iOS Firebase 配置、精确 Stream provider name、真实 payload fixture、服务端事件 ID/过期/账号绑定契约，以及 iOS 普通推送与 VoIP 的单一路由策略。后台响铃、Camera、PushKit 与 CallKit 随后单独启用。
+前端现已具备 V2 LOOP account/device-session、D0 观察型 metadata、保留的 V1 Stream Chat/Video token client、Chat 与前台 Audio Room 的主体轮换、后端 locator 边界、麦克风原生声明、通知意图契约和根协调器。这些客户端边界不代表真实 Privy token 已被 Development 接受，也不代表 Stream 已连接：正式入口仍使用 disabled notification EventSource，只有真实 session 与 V2 bootstrap identity 同时成立时才可能处理一个有界点击。Audio Room 仍需要“预创建房间 + 成员角色无 `create-call`”的 locator 契约和双端真机证据。Firebase/Push 仍未初始化；还需要 Android/iOS Firebase 配置、精确 Stream provider name、真实 payload fixture、服务端事件 ID/过期/账号绑定契约，以及 iOS 普通推送与 VoIP 的单一路由策略。后台响铃、Camera、PushKit 与 CallKit 随后单独启用。
 
 ## 仓库结构
 

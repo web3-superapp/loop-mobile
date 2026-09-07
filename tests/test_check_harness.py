@@ -34,6 +34,39 @@ V2_NAVIGATION_FIXTURE_FILES = (
     "test/v2_ui_foundation_test.dart",
 )
 
+V2_SESSION_FIXTURE_FILES = (
+    "harness.json",
+    "android/app/src/main/AndroidManifest.xml",
+    "config/debug.json",
+    "config/release.example.json",
+    "docs/decisions/0049-connect-v2-account-device-session.md",
+    "ios/Runner/Runner.entitlements",
+    "lib/app.dart",
+    "lib/app/app_config.dart",
+    "lib/app/session/loop_session_controller.dart",
+    "lib/features/account/privy_login_screen.dart",
+    "lib/integrations/backend/loop_bootstrap_providers.dart",
+    "lib/integrations/backend/loop_stream_token_repository.dart",
+    "lib/integrations/backend/v2/loop_v2_contract.dart",
+    "lib/integrations/backend/v2/loop_v2_meta.dart",
+    "lib/integrations/backend/v2/loop_v2_meta_providers.dart",
+    "lib/integrations/backend/v2/loop_v2_meta_repository.dart",
+    "lib/integrations/backend/v2/loop_v2_session.dart",
+    "lib/integrations/backend/v2/loop_v2_session_api.dart",
+    "lib/integrations/backend/v2/loop_v2_session_coordinator.dart",
+    "lib/integrations/backend/v2/loop_v2_session_providers.dart",
+    "lib/integrations/backend/v2/loop_v2_session_store.dart",
+    "pubspec.yaml",
+    "test/app_config_test.dart",
+    "test/loop_session_controller_test.dart",
+    "test/privy_login_screen_test.dart",
+    "test/loop_v2_meta_providers_test.dart",
+    "test/loop_v2_meta_repository_test.dart",
+    "test/loop_v2_session_api_test.dart",
+    "test/loop_v2_session_coordinator_test.dart",
+    "test/loop_v2_session_store_test.dart",
+)
+
 
 def write_v2_navigation_fixture(root: Path) -> None:
     for relative in V2_NAVIGATION_FIXTURE_FILES:
@@ -41,6 +74,14 @@ def write_v2_navigation_fixture(root: Path) -> None:
         target = root / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+
+
+def write_v2_session_fixture(root: Path) -> None:
+    for relative in V2_SESSION_FIXTURE_FILES:
+        source = REPOSITORY_ROOT / relative
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(source.read_bytes())
 
 
 def write_audio_room_native_fixture(
@@ -199,6 +240,265 @@ def write_friend_frontend_fixture(root: Path) -> None:
 class HarnessTests(unittest.TestCase):
     def test_current_repository_passes(self) -> None:
         self.assertEqual([], check_harness.validate(REPOSITORY_ROOT))
+
+    def test_v2_session_contract_accepts_reviewed_d0_d1_slice(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_session_fixture(root)
+
+            result = check_harness.check_v2_session_contract(root)
+
+        self.assertEqual([], result)
+
+    def test_v2_secure_journal_cannot_persist_sensitive_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_session_fixture(root)
+            path = root / "lib/integrations/backend/v2/loop_v2_session.dart"
+            source = path.read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "'revocationUnconfirmed': revocationUnconfirmed,",
+                    "'revocationUnconfirmed': revocationUnconfirmed,\n"
+                    "    'accessToken': 'must-not-persist',",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_session_contract(root)
+
+        self.assertTrue(
+            any("forbidden sensitive persisted field" in error for error in result),
+            msg=f"expected secure-journal sensitive-field guard: {result}",
+        )
+
+    def test_production_bootstrap_cannot_fall_back_to_v1(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_session_fixture(root)
+            path = root / "lib/integrations/backend/loop_bootstrap_providers.dart"
+            source = path.read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "final repository = LoopV2BootstrapRepository(",
+                    "final repository = DioLoopBootstrapRepository(",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_session_contract(root)
+
+        self.assertTrue(
+            any("must not fall back" in error for error in result),
+            msg=f"expected production V1-bootstrap fallback guard: {result}",
+        )
+
+    def test_flutter_secure_storage_cannot_escape_v2_session_store(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_session_fixture(root)
+            path = root / "lib/features/profile/unsafe_secure_store.dart"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                "import 'package:flutter_secure_storage/flutter_secure_storage.dart';\n"
+                "final unsafeStore = FlutterSecureStorage();\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_session_contract(root)
+
+        self.assertTrue(
+            any("imports must stay inside" in error for error in result),
+            msg=f"expected secure-storage import boundary: {result}",
+        )
+        self.assertTrue(
+            any("instantiated or typed only" in error for error in result),
+            msg=f"expected secure-storage runtime boundary: {result}",
+        )
+
+    def test_v2_secure_storage_platform_isolation_cannot_relax(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_session_fixture(root)
+            path = root / "lib/integrations/backend/v2/loop_v2_session_store.dart"
+            source = path.read_text(encoding="utf-8")
+            path.write_text(
+                source.replace("resetOnError: false", "resetOnError: true"),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_session_contract(root)
+
+        self.assertTrue(
+            any("platform isolation options have drifted" in error for error in result),
+            msg=f"expected secure-storage platform-isolation guard: {result}",
+        )
+
+    def test_v2_bootstrap_retirement_must_guard_both_dispatch_edges(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_session_fixture(root)
+            path = (
+                root
+                / "lib/integrations/backend/v2/loop_v2_session_coordinator.dart"
+            )
+            source = path.read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "    _rejectUndispatchedRetiredOperation();\n",
+                    "",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_session_contract(root)
+
+        self.assertTrue(
+            any("must guard logout reconciliation" in error for error in result),
+            msg=f"expected late-bootstrap retirement guard: {result}",
+        )
+
+    def test_v2_pending_bootstrap_logout_retirement_cannot_be_removed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_session_fixture(root)
+            path = (
+                root
+                / "lib/integrations/backend/v2/loop_v2_session_coordinator.dart"
+            )
+            source = path.read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "journal!.copyWith(bootstrapRetirementRequested: true)",
+                    "journal!",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_session_contract(root)
+
+        self.assertTrue(
+            any("bootstrapRetirementRequested: true" in error for error in result),
+            msg=f"expected pending-bootstrap logout-retirement guard: {result}",
+        )
+
+    def test_v2_stale_account_projection_cannot_block_required_bootstrap(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_session_fixture(root)
+            path = (
+                root
+                / "lib/integrations/backend/v2/loop_v2_session_coordinator.dart"
+            )
+            source = path.read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "if (accountBootstrapRequired && local != null)",
+                    "if (false && local != null)",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_session_contract(root)
+
+        self.assertTrue(
+            any("accountBootstrapRequired" in error for error in result),
+            msg=f"expected required-bootstrap stale-journal guard: {result}",
+        )
+
+    def test_v2_meta_startup_observer_cannot_become_authorizing(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_session_fixture(root)
+            path = root / "lib/app.dart"
+            source = path.read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "(previous, next) {},",
+                    "(previous, next) { if (next.hasValue) {} },",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_session_contract(root)
+
+        self.assertTrue(
+            any("fire-immediate root observation" in error for error in result),
+            msg=f"expected non-authorizing D0 startup observer guard: {result}",
+        )
+
+    def test_v2_logout_cannot_release_barrier_with_a_late_backend_future(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_session_fixture(root)
+            path = root / "lib/app/session/loop_session_controller.dart"
+            source = path.read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "backendResult = await revokeBackend(principalKey);",
+                    "backendResult = await revokeBackend(principalKey).timeout(const Duration(seconds: 20));",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_session_contract(root)
+
+        self.assertTrue(
+            any("non-cancelling controller-level timeout" in error for error in result),
+            msg=f"expected late-backend logout guard: {result}",
+        )
+
+    def test_v1_stream_token_routes_cannot_move_to_v2(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_session_fixture(root)
+            path = root / "lib/integrations/backend/loop_stream_token_repository.dart"
+            source = path.read_text(encoding="utf-8")
+            path.write_text(
+                source.replace("'/v1/chat/token'", "'/v2/chat/token'"),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_session_contract(root)
+
+        self.assertTrue(
+            any("must remain on the frozen V1 routes" in error for error in result),
+            msg=f"expected frozen V1 Stream-token route guard: {result}",
+        )
+
+    def test_v2_client_version_must_be_strict_semver(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_session_fixture(root)
+            path = root / "config/debug.json"
+            profile = json.loads(path.read_text(encoding="utf-8"))
+            profile["LOOP_CLIENT_VERSION"] = "0.1"
+            path.write_text(json.dumps(profile), encoding="utf-8")
+
+            result = check_harness.check_v2_session_contract(root)
+
+        self.assertTrue(
+            any("strict SemVer LOOP_CLIENT_VERSION" in error for error in result),
+            msg=f"expected strict V2 client-version guard: {result}",
+        )
+
+    def test_v2_profile_versions_must_match_pubspec(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_session_fixture(root)
+            path = root / "config/release.example.json"
+            profile = json.loads(path.read_text(encoding="utf-8"))
+            profile["LOOP_CLIENT_VERSION"] = "0.1.1+1"
+            path.write_text(json.dumps(profile), encoding="utf-8")
+
+            result = check_harness.check_v2_session_contract(root)
+
+        self.assertTrue(
+            any("must match each other and pubspec.yaml" in error for error in result),
+            msg=f"expected V2 profile/pubspec version lock: {result}",
+        )
 
     def test_friend_frontend_contract_accepts_reviewed_0047_slice(
         self,
@@ -869,7 +1169,7 @@ class HarnessTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             relative = Path(
-                "lib/integrations/backend/loop_bootstrap_providers.dart"
+                "lib/integrations/backend/loop_backend_providers.dart"
             )
             path = root / relative
             path.parent.mkdir(parents=True)
@@ -888,7 +1188,7 @@ class HarnessTests(unittest.TestCase):
 
         self.assertTrue(
             any(
-                "loop_bootstrap_providers.dart is missing locked value"
+                "loop_backend_providers.dart is missing locked value"
                 in error
                 for error in result
             ),
@@ -7280,7 +7580,7 @@ class HarnessTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             relative = Path(
-                "lib/integrations/backend/loop_bootstrap_providers.dart"
+                "lib/integrations/backend/loop_backend_providers.dart"
             )
             path = root / relative
             path.parent.mkdir(parents=True)
@@ -7297,7 +7597,7 @@ class HarnessTests(unittest.TestCase):
 
         self.assertTrue(
             any(
-                "loop_bootstrap_providers.dart is missing locked value"
+                "loop_backend_providers.dart is missing locked value"
                 in error
                 for error in result
             ),

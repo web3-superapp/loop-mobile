@@ -19,6 +19,9 @@ void main() {
     expect(config.streamApiKey, isEmpty);
     expect(config.hasStreamApiKey, isFalse);
     expect(config.hasBackend, isFalse);
+    expect(config.loopClientVersion, isEmpty);
+    expect(config.hasValidLoopClientVersion, isFalse);
+    expect(config.loopClientVersionForCurrentBuild, isEmpty);
     expect(config.canConnectStream, isFalse);
     expect(config.firebaseConfigured, isFalse);
     expect(config.canInitializeFirebase, isFalse);
@@ -69,9 +72,49 @@ void main() {
     expect(config.canConnectExternalWallet, isFalse);
     expect(config.canUseBackend, isFalse);
     expect(config.backendBaseUrlForCurrentBuild, isEmpty);
+    expect(config.loopClientVersionForCurrentBuild, isEmpty);
     expect(config.streamApiKeyForCurrentBuild, isEmpty);
     expect(config.canConnectStream, isFalse);
     expect(config.canInitializeFirebase, isFalse);
+  });
+
+  test('V2 client version is strict SemVer and build-profile scoped', () {
+    const configured = AppConfig(
+      privyAppId: '',
+      privyAppClientId: '',
+      streamApiKey: '',
+      backendBaseUrl: 'https://api-dev.quant-dinger.cc',
+      firebaseConfigured: false,
+      loopClientVersion: '0.1.0+1',
+    );
+    const malformed = AppConfig(
+      privyAppId: '',
+      privyAppClientId: '',
+      streamApiKey: '',
+      backendBaseUrl: 'https://api-dev.quant-dinger.cc',
+      firebaseConfigured: false,
+      loopClientVersion: '0.1',
+    );
+
+    expect(configured.hasValidLoopClientVersion, isTrue);
+    expect(configured.loopClientVersionForCurrentBuild, '0.1.0+1');
+    expect(malformed.hasValidLoopClientVersion, isFalse);
+    expect(malformed.loopClientVersionForCurrentBuild, isEmpty);
+  });
+
+  test('V2 client version rejects values longer than the server limit', () {
+    final overlong = AppConfig(
+      privyAppId: '',
+      privyAppClientId: '',
+      streamApiKey: '',
+      backendBaseUrl: 'https://api-dev.quant-dinger.cc',
+      firebaseConfigured: false,
+      loopClientVersion: '1.0.0+${'a' * 59}',
+    );
+
+    expect(overlong.loopClientVersion.length, 65);
+    expect(overlong.hasValidLoopClientVersion, isFalse);
+    expect(overlong.loopClientVersionForCurrentBuild, isEmpty);
   });
 
   test('build profile never widens the locked product security policy', () {

@@ -25,6 +25,7 @@
     <permission android:name="${applicationId}.PERMISSION_CALL" tools:node="remove" />
 
     <application
+        android:allowBackup="false"
         android:label="Loop"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

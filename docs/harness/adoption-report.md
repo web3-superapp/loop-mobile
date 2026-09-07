@@ -929,3 +929,82 @@ idempotency/retention markers, exact existing-member channel lookup, and
 executable behavior tests. They also reject Dio or
 `/v1/` paths in the feature slice, Stream SDK ownership in the memory adapter,
 or `MemoryFriendGateway` composition from the production root.
+
+## V2 D0+D1 Account and Device Session Adoption
+
+Decision 0049 supersedes only decision 0048's temporary prohibition on D0/D1
+calls. The client now has strict V2 adapters for the two public D0 metadata
+resources and the three D1 account/session resources. D0 uses a separately
+owned credential-free Dio client, sends no Bearer, body, query, `X-Loop-*`, or
+idempotency header, and accepts only the exact five-tab policy and complete
+16-capability projection. The application root holds one fire-immediate,
+non-authorizing subscription so both public resources are actually observed;
+its error cannot block authentication or routing. Availability and
+provider/device evidence remain separate observations: `unavailable`,
+`deferred`, and `pending` never grant a feature or construct force-update,
+region, terms, or maintenance state. Maintenance is not part of D0.
+
+D1 resolves a verified Privy session through `GET /v2/account/me` before
+choosing whether `POST /v2/session/bootstrap` is needed. The command journal is
+written before dispatch, an uncertain retry keeps the same UUIDv4 and complete
+metadata, and success stores the independent opaque account, session, device,
+and Stream IDs. Production no longer calls `/v1/bootstrap`; the compatibility
+facade supplies the V2 `streamUserId` to the existing Stream loaders, for which
+only `POST /v1/chat/token` and `POST /v1/video/token` remain V1 in this
+identity/communication boundary. Their frozen V1 parser stays separate from
+the V2 camelCase success and uppercase seven-field error parser.
+
+`flutter_secure_storage` 10.3.1 is directly pinned for this one journal. Its
+allowlist is limited to the installation UUID, bootstrap/logout idempotency
+metadata, opaque `accountId`/`sessionId`/`streamUserId`, a pending-bootstrap
+retirement Boolean valid only beside its exact command, and an optional
+revocation-unconfirmed marker. A deterministic UUID partition isolates local
+owners without writing the raw Privy principal. Privy access/refresh tokens,
+Stream tokens, Provider payloads, email, wallet addresses or private keys,
+signing material, PINs, Profile/settings, and arbitrary feature data remain
+forbidden. Shared Preferences remains the independent one-Boolean display
+store; Reown storage remains provider-owned.
+
+Logout creates its own persisted command, attempts V2 revocation, retires the
+current Chat/Video SDK owners, and proceeds to Privy logout even when the
+backend result is unavailable. If only an ambiguous bootstrap command exists,
+logout first persists its retirement intent, resolves that exact key, then
+atomically records the recovered session plus a new logout command before
+revocation. A failed retirement remains durable and blocks reuse until a later
+login resolves and revokes the old session; only then may a fresh bootstrap key
+authorize. `ACCOUNT_BOOTSTRAP_REQUIRED` discards stale active/logout
+projections, while `SESSION_NOT_FOUND` is locally terminal. Ambiguous outcomes
+never become a false server-revoked claim. Android backup is disabled for this
+journal. iOS Keychain records may survive uninstall, so reinstall rotation is
+not accepted evidence.
+
+The root session controller makes logout single-flight and publishes a
+non-product `signingOut` state before any asynchronous cleanup. Login and
+Preview stay unavailable until the captured backend cleanup Future truly
+terminates, then the captured Stream owners and Privy gateway retire in order.
+The controller has no non-cancelling timeout around the journal-mutating
+Future; bounded Dio timeouts terminate network work without allowing a late
+old logout to overwrite or delete a newer same-principal journal.
+
+Harness acceptance for this slice requires exact V2 paths and per-route header
+sets, credential-free D0, strict no-store/request-correlation proof, V1/V2
+parser separation, the Secure Storage field/import allowlist, pre-dispatch
+journaling, same-command replay, opaque-ID non-derivation, bounded 401 recovery,
+logout cleanup, and continued absence of real-provider claims. The deterministic
+V2 repository, provider, storage, coordinator, and logout tests are repository
+evidence only. On 2026-09-07, the current tree passed format (301 files
+unchanged), analysis, all 908 Flutter tests, Harness source validation, all 325
+Harness mutation tests, and Android Debug compilation. The generated Debug APK
+was removed after verification.
+
+The Development D0 endpoints were also exercised directly on 2026-09-07:
+`GET /v2/meta/client-policy` and `GET /v2/meta/capabilities` both returned HTTP
+200 with `no-store` and request-correlation evidence. The latest
+`/health/ready` check returned HTTP 503 with database `down`, so authenticated
+D1 acceptance with a real Privy Bearer was not executable and is not claimed.
+
+Email OTP, Google OAuth, iOS Apple OAuth, external-wallet SIWE, real Privy token
+acceptance, first/returning-account behavior, provider linking, logout, and the
+Stream Chat/Video two-device path remain physical-device/provider unverified.
+No authenticated D1 backend acceptance, production readiness, or device
+sign-off is claimed by the client or Harness integration.

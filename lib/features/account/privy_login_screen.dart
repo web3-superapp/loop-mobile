@@ -35,6 +35,9 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
     if (session.mode == LoopSessionMode.restoring) {
       return const PrivySessionRestoreScreen();
     }
+    if (session.mode == LoopSessionMode.signingOut) {
+      return const PrivySessionSignOutScreen();
+    }
 
     final config = ref.watch(appConfigProvider);
     final previewEnabled = ref.watch(developmentPreviewEnabledProvider);
@@ -301,6 +304,43 @@ class PrivySessionRestoreScreen extends StatelessWidget {
                     ),
                     SizedBox(height: 24),
                     CircularProgressIndicator(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class PrivySessionSignOutScreen extends StatelessWidget {
+  const PrivySessionSignOutScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      key: const ValueKey<String>('privy-signing-out-screen'),
+      body: Stack(
+        children: <Widget>[
+          const Positioned.fill(child: LoopBackdrop()),
+          SafeArea(
+            child: Center(
+              child: Semantics(
+                label: 'LOOP is securely signing out',
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(
+                      Icons.logout_rounded,
+                      color: LoopColors.mint,
+                      size: 72,
+                    ),
+                    SizedBox(height: 24),
+                    CircularProgressIndicator(),
+                    SizedBox(height: 18),
+                    Text('Signing out securely'),
                   ],
                 ),
               ),

@@ -62,7 +62,7 @@ final class LoopBootstrapSession {
   ///
   /// Provider sessions call this after an authenticated backend route proves
   /// that its bootstrap mapping no longer exists. A later explicit operation
-  /// must then authorize through POST /v1/bootstrap again.
+  /// must then authorize through the current account/session resolver again.
   void invalidateAuthorization() {
     if (_disposed) return;
     _authorized = false;

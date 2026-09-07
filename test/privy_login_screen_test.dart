@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/features/account/email_auth_controller.dart';
 import 'package:loop_mobile/features/account/privy_login_screen.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
@@ -96,6 +97,68 @@ void main() {
     );
     await tester.pump();
   });
+
+  testWidgets(
+    'signing out blocks every login entry until backend cleanup really ends',
+    (tester) async {
+      final gateway = _SigningOutGateway();
+      final container = ProviderContainer(
+        overrides: [privyAuthGatewayProvider.overrideWithValue(gateway)],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: PrivyLoginScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.authenticated,
+      );
+
+      final backendGate = Completer<LoopBackendLogoutResult>();
+      final exit = container
+          .read(loopSessionProvider.notifier)
+          .exit(revokeBackend: (_) => backendGate.future);
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey<String>('privy-signing-out-screen')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('privy-email-field')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('privy-google-login-button')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('enter-development-preview-button')),
+        findsNothing,
+      );
+
+      // The removed controller-level timeout used to release this boundary
+      // after 20 seconds while the non-cancellable revoke Future kept running.
+      await tester.pump(const Duration(seconds: 21));
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.signingOut,
+      );
+      expect(gateway.logoutCalls, 0);
+
+      backendGate.complete(LoopBackendLogoutResult.confirmed);
+      await exit;
+      await tester.pump();
+
+      expect(gateway.logoutCalls, 1);
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.signedOut,
+      );
+    },
+  );
 }
 
 Future<void> _pump(
@@ -149,6 +212,43 @@ class _SessionGateway implements PrivyAuthGateway {
 
   @override
   Future<void> sendEmailCode(String email) async {}
+
+  @override
+  Future<PrivyAccountSummary> verifyEmailCode({
+    required String email,
+    required String code,
+  }) => throw UnimplementedError();
+
+  @override
+  Stream<PrivySessionSnapshot> watchSession() => const Stream.empty();
+}
+
+class _SigningOutGateway implements PrivyAuthGateway {
+  var logoutCalls = 0;
+
+  @override
+  Future<PrivyWalletCreationResult> createFirstEthereumWallet({
+    required String expectedPrivyUserId,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<String> getCurrentAccessToken() => throw UnimplementedError();
+
+  @override
+  Future<void> logout() async {
+    logoutCalls += 1;
+  }
+
+  @override
+  Future<PrivySessionSnapshot> restoreSession() async {
+    return const PrivySessionSnapshot(
+      PrivySessionKind.authenticated,
+      account: PrivyAccountSummary(privyUserId: 'did:privy:old'),
+    );
+  }
+
+  @override
+  Future<void> sendEmailCode(String email) => throw UnimplementedError();
 
   @override
   Future<PrivyAccountSummary> verifyEmailCode({

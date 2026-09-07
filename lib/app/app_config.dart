@@ -16,6 +16,7 @@ class AppConfig {
     required this.streamApiKey,
     required this.backendBaseUrl,
     required this.firebaseConfigured,
+    this.loopClientVersion = '0.1.0+1',
     this.buildMode = LoopBuildMode.debug,
     this.declaredModeMatchesRuntime = true,
   });
@@ -38,6 +39,7 @@ class AppConfig {
       streamApiKey: const String.fromEnvironment('STREAM_API_KEY'),
       backendBaseUrl: const String.fromEnvironment('LOOP_BACKEND_BASE_URL'),
       firebaseConfigured: const bool.fromEnvironment('FIREBASE_CONFIGURED'),
+      loopClientVersion: const String.fromEnvironment('LOOP_CLIENT_VERSION'),
       buildMode: expectedBuildMode,
       declaredModeMatchesRuntime: configuredBuildMode == expectedBuildMode,
     );
@@ -49,6 +51,7 @@ class AppConfig {
   final String streamApiKey;
   final String backendBaseUrl;
   final bool firebaseConfigured;
+  final String loopClientVersion;
   final LoopBuildMode buildMode;
 
   /// False when a Debug/Profile binary declares Release, a Release binary
@@ -85,6 +88,20 @@ class AppConfig {
   bool get hasBackend => backendBaseUrl.trim().isNotEmpty;
 
   bool get canUseBackend => declaredModeMatchesRuntime && hasBackend;
+
+  bool get hasValidLoopClientVersion {
+    final value = loopClientVersion.trim();
+    return value.length >= 5 &&
+        value.length <= 64 &&
+        RegExp(
+          r'^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$',
+        ).hasMatch(value);
+  }
+
+  String get loopClientVersionForCurrentBuild =>
+      declaredModeMatchesRuntime && hasValidLoopClientVersion
+      ? loopClientVersion.trim()
+      : '';
 
   String get backendBaseUrlForCurrentBuild =>
       declaredModeMatchesRuntime ? backendBaseUrl.trim() : '';

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
+import 'package:loop_mobile/app/session/loop_communication_retirement.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
@@ -48,7 +49,13 @@ final streamChatSdkSessionProvider = Provider<StreamChatSdkSession?>((ref) {
     source: ref.watch(streamChatSessionSourceProvider),
     principalKey: principalKey,
   );
-  ref.onDispose(() => unawaited(_disposeSessionSafely(session)));
+  final registration = ref
+      .watch(loopCommunicationRetirementRegistryProvider)
+      .register(session, session.dispose);
+  ref.onDispose(() {
+    registration.unregister();
+    unawaited(_disposeSessionSafely(session));
+  });
   return session;
 });
 

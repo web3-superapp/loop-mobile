@@ -1,5 +1,6 @@
 {
   "LOOP_BUILD_MODE": "release",
+  "LOOP_CLIENT_VERSION": "0.1.0+1",
   "PRIVY_APP_ID": "",
   "PRIVY_APP_CLIENT_ID": "",
   "REOWN_PROJECT_ID": "",

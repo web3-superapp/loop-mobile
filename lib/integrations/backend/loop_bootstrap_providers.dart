@@ -1,41 +1,29 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
-import 'package:loop_mobile/core/network/loop_dio_factory.dart';
+import 'package:loop_mobile/integrations/backend/loop_backend_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
-import 'package:loop_mobile/integrations/backend/loop_bootstrap_repository.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
-import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_coordinator.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.dart';
 
-final loopBackendEndpointProvider = Provider<LoopBackendEndpoint?>((ref) {
-  final rawValue = ref.watch(
-    appConfigProvider.select((config) => config.backendBaseUrlForCurrentBuild),
-  );
-  return LoopBackendEndpoint.tryParse(rawValue);
-});
-
-final loopBackendDioProvider = Provider<Dio?>((ref) {
-  final endpoint = ref.watch(loopBackendEndpointProvider);
-  if (endpoint == null) return null;
-  final dio = LoopDioFactory.createLoopBackend(origin: endpoint.uri);
-  ref.onDispose(() => dio.close(force: true));
-  return dio;
-});
+export 'package:loop_mobile/integrations/backend/loop_backend_providers.dart';
 
 final loopBootstrapRepositoryProvider = Provider<LoopBootstrapRepository?>((
   ref,
 ) {
-  final dio = ref.watch(loopBackendDioProvider);
-  return dio == null ? null : DioLoopBootstrapRepository(dio);
+  final principalKey = ref.watch(loopBootstrapPrincipalKeyProvider);
+  final api = ref.watch(loopV2SessionApiProvider);
+  final metadata = ref.watch(loopV2ClientMetadataProvider);
+  if (principalKey == null || api == null || metadata == null) return null;
+  final repository = LoopV2BootstrapRepository(
+    principalKey: principalKey,
+    clientMetadata: metadata,
+    api: api,
+    store: ref.watch(loopV2SessionJournalStoreProvider),
+  );
+  ref.onDispose(repository.retire);
+  return repository;
 });
-
-final loopBackendAccessTokenSourceProvider =
-    Provider<LoopBackendAccessTokenSource>((ref) {
-      return _PrivyLoopBackendAccessTokenSource(
-        ref.watch(privyAuthGatewayProvider),
-      );
-    });
 
 /// Opaque account-rotation key; never a LOOP or Stream user ID.
 final loopBootstrapPrincipalKeyProvider = Provider<String?>((ref) {
@@ -70,13 +58,3 @@ final loopBootstrapAuthorizationProvider =
       if (session == null) return LoopBootstrapAuthorization.unavailable;
       return session.authorize();
     }, retry: (retryCount, error) => null);
-
-final class _PrivyLoopBackendAccessTokenSource
-    implements LoopBackendAccessTokenSource {
-  const _PrivyLoopBackendAccessTokenSource(this._gateway);
-
-  final PrivyAuthGateway _gateway;
-
-  @override
-  Future<String> loadAccessToken() => _gateway.getCurrentAccessToken();
-}

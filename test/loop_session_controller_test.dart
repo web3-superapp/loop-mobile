@@ -41,7 +41,7 @@ void main() {
 
       expect(
         container.read(loopSessionProvider).mode,
-        LoopSessionMode.signedOut,
+        LoopSessionMode.signingOut,
       );
       expect(container.read(loopBootstrapPrincipalKeyProvider), isNull);
       expect(gateway.logoutCalls, 1);
@@ -50,7 +50,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(
         container.read(loopSessionProvider).mode,
-        LoopSessionMode.signedOut,
+        LoopSessionMode.signingOut,
       );
       expect(container.read(loopBootstrapPrincipalKeyProvider), isNull);
 
@@ -74,6 +74,133 @@ void main() {
     expect(session.mode, LoopSessionMode.signedOut);
     expect(session.errorMessage, '退出登录失败，请稍后重试。');
     expect(container.read(loopBootstrapPrincipalKeyProvider), isNull);
+  });
+
+  test(
+    'ordered logout keeps the local barrier while backend and Stream retire',
+    () async {
+      final backendGate = Completer<LoopBackendLogoutResult>();
+      final events = <String>[];
+
+      final exit = container
+          .read(loopSessionProvider.notifier)
+          .exit(
+            revokeBackend: (principalKey) {
+              expect(principalKey, 'did:privy:old');
+              events.add('backend');
+              return backendGate.future;
+            },
+            retireCommunications: () async {
+              events.add('stream');
+            },
+          );
+
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.signingOut,
+      );
+      expect(container.read(loopBootstrapPrincipalKeyProvider), isNull);
+      expect(events, <String>['backend']);
+      expect(gateway.logoutCalls, 0);
+
+      expect(
+        () => container
+            .read(loopSessionProvider.notifier)
+            .acceptAuthenticated(
+              const PrivyAccountSummary(privyUserId: 'did:privy:new'),
+            ),
+        throwsA(isA<PrivyGatewayException>()),
+      );
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.signingOut,
+      );
+
+      backendGate.complete(LoopBackendLogoutResult.confirmed);
+      await exit;
+
+      expect(events, <String>['backend', 'stream']);
+      expect(gateway.logoutCalls, 1);
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.signedOut,
+      );
+
+      container
+          .read(loopSessionProvider.notifier)
+          .acceptAuthenticated(
+            const PrivyAccountSummary(privyUserId: 'did:privy:new'),
+          );
+      expect(
+        container.read(loopSessionProvider).account?.privyUserId,
+        'did:privy:new',
+      );
+    },
+  );
+
+  test(
+    'unknown backend revocation never traps local or Privy logout',
+    () async {
+      await container
+          .read(loopSessionProvider.notifier)
+          .exit(
+            revokeBackend: (_) async => LoopBackendLogoutResult.unconfirmed,
+            retireCommunications: () async {},
+          );
+
+      expect(gateway.logoutCalls, 1);
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.signedOut,
+      );
+      expect(
+        container.read(loopSessionProvider).errorMessage,
+        '本地会话已退出，但 LOOP 后端会话撤销尚未确认。',
+      );
+    },
+  );
+
+  test('duplicate exit calls share one cleanup operation', () async {
+    final backendGate = Completer<LoopBackendLogoutResult>();
+    var backendCalls = 0;
+    var retirementCalls = 0;
+    final controller = container.read(loopSessionProvider.notifier);
+
+    final first = controller.exit(
+      revokeBackend: (_) {
+        backendCalls += 1;
+        return backendGate.future;
+      },
+      retireCommunications: () async {
+        retirementCalls += 1;
+      },
+    );
+    final second = controller.exit(
+      revokeBackend: (_) async {
+        backendCalls += 1;
+        return LoopBackendLogoutResult.confirmed;
+      },
+      retireCommunications: () async {
+        retirementCalls += 1;
+      },
+    );
+
+    expect(second, same(first));
+    expect(
+      container.read(loopSessionProvider).mode,
+      LoopSessionMode.signingOut,
+    );
+    expect(backendCalls, 1);
+    expect(retirementCalls, 0);
+    expect(gateway.logoutCalls, 0);
+
+    backendGate.complete(LoopBackendLogoutResult.confirmed);
+    await Future.wait<void>(<Future<void>>[first, second]);
+
+    expect(backendCalls, 1);
+    expect(retirementCalls, 1);
+    expect(gateway.logoutCalls, 1);
+    expect(container.read(loopSessionProvider).mode, LoopSessionMode.signedOut);
   });
 
   test('late wallet creation cannot attach to a rotated principal', () async {

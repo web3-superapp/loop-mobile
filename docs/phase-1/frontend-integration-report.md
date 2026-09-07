@@ -251,10 +251,12 @@ The deterministic behavior suite covers the exact four event wire values, unknow
 | --- | --- |
 | Privy App ID / API key | Client-safe identifier supplied |
 | Privy Mobile App Client ID | Client-safe Development identifier supplied and wired; build-time override remains available |
-| Privy Email OTP | Guarded implementation; provider/device verification pending |
+| Privy Email OTP / Google / iOS Apple / external-wallet SIWE | Guarded Privy entry implementations; real provider-account and physical-device verification pending for all four entrances |
+| LOOP D0 metadata | Strict credential-free V2 clients for client policy and all 16 capabilities; observational only, with no UI permission or provider-evidence claim |
+| LOOP D1 account/session | Strict account-first V2 bootstrap/logout client and persisted opaque device/session/idempotency journal; real Privy token and device flow pending |
 | Stream API key | Client-safe identifier supplied |
-| Stream Chat | Official client, persistence, lifecycle, controller and UI integrated; strict identifier-only `token_card.v1` receive rendering is wired, while the short-lived Chat token source and fresh token-facts projection are still required |
-| Stream Video | Delayed foreground SDK lifecycle and Audio Room lobby/join/official-state UI integrated; backend-derived identity bootstrap and native microphone declarations are wired, while initial/refresh Video tokens, an authorized pre-created room target, no-`create-call` role evidence, and device verification are still required |
+| Stream Chat | Official client, persistence, lifecycle, controller and UI plus the V1 short-lived Chat-token loader are integrated; V2 supplies the opaque Stream identity, while real connect/refresh, two-device messaging, and fresh token-facts projection remain unverified or unavailable |
+| Stream Video | Delayed foreground SDK lifecycle, V1 Video-token loader, Audio Room lobby/join/official-state UI, V2 identity and native microphone declarations are wired; an authorized pre-created room target, no-`create-call` role evidence, live media, and device verification are still required |
 | Firebase/push | Provider-neutral intent contract and fail-closed UI verified; no mobile configs, exact Stream push-provider names, or captured payload fixtures, so initialization/handlers/device registration remain disabled and the auto-registering Stream Video Push plugin is not linked |
 | Hyperliquid public markets | Direct Testnet Spot read-only snapshot and bounded candle adapters mounted; exact Decimal discovery/OHLCV facts only, never executable quotes |
 | Hyperliquid private reads | No private Spot read is connected. Retained Perp D8/D4 code is disabled, unmounted implementation history and no longer in product scope |
@@ -266,7 +268,7 @@ The deterministic behavior suite covers the exact four event wire values, unknow
 
 ## Follow-up inputs
 
-Privy Email OTP still requires dashboard confirmation and physical-device evidence before it is called connected. Provide future Firebase mobile configuration only through documented client inputs. Keep Privy/Stream secrets, Firebase service-account JSON, APNs `.p8`, and Hyperliquid agent keys in backend/provider secret managers. A deployed bootstrap endpoint, Stream Chat/Video token contracts, an attributable freshness-bounded Token Card facts projection, an Audio Room locator that returns a pre-created room with a mobile role lacking `create-call`, and a two-device test setup are required before claiming communication or trading connectivity.
+Privy Email OTP, Google, iOS Apple, and external-wallet SIWE still require real provider accounts, dashboard confirmation, and physical-device evidence before any entrance is called connected. Provide future Firebase mobile configuration only through documented client inputs. Keep Privy/Stream secrets, Firebase service-account JSON, APNs `.p8`, and Hyperliquid agent keys in backend/provider secret managers. The handed-off V2 account/session and retained V1 Chat/Video token contracts now have client adapters, but real Privy Bearer acceptance, first/returning-account/logout behavior, Stream connection/refresh, an attributable freshness-bounded Token Card facts projection, an Audio Room locator that returns a pre-created room with a mobile role lacking `create-call`, and a two-device test setup are still required before claiming communication or trading connectivity.
 
 ## Principal-bound Perp private reads merge
 
@@ -1209,3 +1211,90 @@ request/accept/reject refresh, backend group/direct creation and convergence,
 Stream membership/permission behavior, group Alias projection and leave/rejoin
 restoration, and restart history remain explicitly unverified until performed
 against real Development provider accounts and devices.
+
+## V2 D0+D1 Client Integration
+
+Decision 0049 replaces the former production V1 bootstrap owner with the
+handed-off D0+D1 V2 client contract while preserving unrelated historical V1
+feature contracts. The D0 repository owns a credential-free exact-origin Dio
+client and the application root concurrently observes
+`GET /v2/meta/client-policy` and `GET /v2/meta/capabilities` once per root
+lifecycle without blocking authentication or routing. It validates exact `Cache-Control: no-store`, one
+UUID `X-Request-ID`, the seven-field V2 error envelope, the fixed five-tab
+navigation baseline, all version/region/terms fields, and exactly 16 unique
+capability IDs. It exposes no `enabled` or `allowed` projection, performs no
+automatic retry, and is not wired to I3/I5 or another UI gate. In particular,
+`unavailable`, `deferred`, and evidence `pending` remain non-authorizing
+observations, and D0 supplies no maintenance notice.
+
+The D1 adapter implements `GET /v2/account/me`,
+`POST /v2/session/bootstrap`, and `POST /v2/session/logout` with only each
+route's allowed request-local Privy Bearer and V2 metadata headers. It strictly
+validates camelCase success bodies, endpoint-specific uppercase errors,
+no-store and request-correlation proof. Verified login/restoration checks the
+account projection first. A matching active journal can be reused; otherwise a
+bootstrap UUIDv4 and its complete device/platform/client/contract metadata are
+persisted before dispatch and reused unchanged after an uncertain result.
+Successful bootstrap replaces the journal with independent opaque
+`accountId`, `sessionId`, `streamUserId`, and device ID values; Flutter does not
+derive one identifier from another.
+
+The production `LoopBootstrapSession` compatibility facade now resolves
+through D1. `/v1/bootstrap` is no longer part of the production account/session
+flow. Within this migration, V1 remains only for `POST /v1/chat/token` and
+`POST /v1/video/token`; their frozen snake_case success/error parser and bounded
+`bootstrap_required` recovery remain separate from V2. Existing social V1
+resources retain their separately reviewed contracts and are not silently
+rewritten by D0/D1.
+
+The directly pinned `flutter_secure_storage` 10.3.1 adapter is deliberately not
+a token vault or general database. It stores only the installation UUID,
+bootstrap/logout idempotency metadata, opaque account/session/Stream IDs, a
+pending-bootstrap retirement Boolean valid only with its exact command, and an
+optional backend-revocation-unconfirmed marker. Owner separation uses a
+locally derived UUID partition; the raw Privy principal is never written.
+Privy access/refresh tokens, Stream tokens, Provider bodies, email, wallet
+addresses/private keys, signing material, PINs, Profile/settings, and arbitrary
+feature state are excluded. Shared Preferences remains limited to Reduce
+motion, Android application backup is disabled, and iOS uninstall rotation is
+not claimed because Keychain records may survive reinstall.
+
+Logout establishes the local sign-out barrier before asynchronous work,
+persists a distinct command, attempts D1 revocation, retires current Stream
+Chat/Video owners, and proceeds to Privy logout even when backend revocation is
+unconfirmed. A pending bootstrap is first marked for retirement and replayed
+with its original key; its recovered session and a new logout key are written
+atomically before revocation. If that remains ambiguous, the next login must
+finish old-session retirement before creating a fresh bootstrap key.
+`ACCOUNT_BOOTSTRAP_REQUIRED` discards stale active/logout projections;
+`SESSION_NOT_FOUND` closes the local journal. Other ambiguous results retain
+their exact recoverable state and never claim backend success.
+
+The application publishes a dedicated `signingOut` state and removes private
+capabilities plus every login/Preview entry before cleanup begins. Repeated
+exit requests share one operation. The backend cleanup Future is awaited to
+its real terminal state rather than wrapped in a non-cancelling Controller
+timeout, after which only the captured Stream owners and Privy gateway are
+retired. This prevents an old logout from consuming a newly logged-in
+principal token or deleting a newer same-principal journal.
+
+Deterministic tests were added for the D0 repository/provider and D1 contract,
+storage, account-first coordinator, same-command retry, owner rotation, logout,
+and response-proof boundaries. Final verification on 2026-09-07 passed format
+(301 files unchanged), analysis, all 908 Flutter tests, Harness source
+validation, all 325 Harness mutation tests, and Android Debug compilation. The
+generated Debug APK was removed after verification. No Release/iOS build,
+interactive run, simulator, or physical-device/provider test is claimed here.
+
+Direct Development checks on 2026-09-07 returned HTTP 200 with `no-store` and
+request-correlation evidence for both public D0 resources. The latest
+`/health/ready` request returned HTTP 503 with database `down`; consequently,
+authenticated D1 acceptance using a real Privy Bearer could not be executed and
+is not reported as passing.
+
+Email OTP, Google, iOS Apple, external-wallet SIWE, account linking, real V2
+first/returning-account and logout behavior, and Stream Chat/Video token
+acceptance, connection, refresh, messaging, or media remain explicitly
+unverified on real Development provider accounts and devices. The presence of
+client code and deterministic tests is not backend deployment acceptance or a
+provider/device sign-off.

@@ -21,12 +21,18 @@ final class LoopBackendFailure implements Exception {
     this.statusCode,
     this.code,
     this.requestId,
+    this.category,
+    this.retryable,
+    this.userMessageKey,
   });
 
   final LoopBackendFailureKind kind;
   final int? statusCode;
   final String? code;
   final String? requestId;
+  final String? category;
+  final bool? retryable;
+  final String? userMessageKey;
 
   @override
   String toString() {

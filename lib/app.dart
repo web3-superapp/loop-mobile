@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/app/notifications/loop_notification_coordinator.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
+import 'package:loop_mobile/app/session/loop_communication_retirement.dart';
 import 'package:loop_mobile/app/session/post_auth_bootstrap_coordinator.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/navigation/spot_market_route.dart';
@@ -26,6 +27,10 @@ import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/features/wallet/wallet_screens.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_coordinator.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/notifications/loop_notification_event_source.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
@@ -74,6 +79,14 @@ class _LoopAppState extends ConsumerState<LoopApp> {
   @override
   void initState() {
     super.initState();
+    // D0 metadata is a startup observation, not an authentication or feature
+    // gate. Keeping the subscription alive starts both public reads while an
+    // AsyncError remains isolated inside Riverpod and cannot block routing.
+    ref.listenManual(
+      loopV2MetaSnapshotProvider,
+      (previous, next) {},
+      fireImmediately: true,
+    );
     router = _buildRouter(() => ref.read(loopSessionProvider));
     notificationCoordinator = LoopNotificationCoordinator(
       source: ref.read(loopNotificationEventSourceProvider),
@@ -634,8 +647,38 @@ Widget _profileScreen(BuildContext context, WidgetRef ref, String id) {
           )
         : null,
     onNavigate: (destination) => context.push(_profilePath(destination)),
-    onSignOut: () => ref.read(loopSessionProvider.notifier).exit(),
+    onSignOut: () => _signOut(ref),
   );
+}
+
+Future<void> _signOut(WidgetRef ref) {
+  final retirement = ref
+      .read(loopCommunicationRetirementRegistryProvider)
+      .capture();
+  final bootstrapRepository = ref.read(loopBootstrapRepositoryProvider);
+  final bootstrapQuiescence = bootstrapRepository is LoopV2BootstrapRepository
+      ? bootstrapRepository.prepareForLogout()
+      : Future<void>.value();
+  final backend = ref.read(loopV2LogoutCoordinatorProvider);
+  return ref
+      .read(loopSessionProvider.notifier)
+      .exit(
+        revokeBackend: backend == null
+            ? null
+            : (principalKey) async {
+                await bootstrapQuiescence;
+                final result = await backend.logout(principalKey);
+                return switch (result) {
+                  LoopV2LogoutDisposition.notRequired =>
+                    LoopBackendLogoutResult.notRequired,
+                  LoopV2LogoutDisposition.confirmed =>
+                    LoopBackendLogoutResult.confirmed,
+                  LoopV2LogoutDisposition.unconfirmed =>
+                    LoopBackendLogoutResult.unconfirmed,
+                };
+              },
+        retireCommunications: retirement.retire,
+      );
 }
 
 String _accountPath(String id) => switch (id) {

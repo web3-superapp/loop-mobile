@@ -50,7 +50,11 @@ final class LoopBackendEndpoint {
   }
 }
 
-/// Strict client for the implemented `POST /v1/bootstrap` contract.
+/// Frozen strict client for the legacy `POST /v1/bootstrap` contract.
+///
+/// Production account/session composition uses V2. This adapter remains only
+/// as a compatibility artifact for byte-stability tests and deliberate V1
+/// consumers; Stream Chat/Video token issuance still has separate V1 routes.
 final class DioLoopBootstrapRepository implements LoopBootstrapRepository {
   DioLoopBootstrapRepository(this._dio);
 
