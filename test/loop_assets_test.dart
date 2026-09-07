@@ -1,6 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+
+import 'dart:typed_data';
+
+import 'package:flutter/services.dart' show CachingAssetBundle;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
@@ -158,6 +162,42 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets(
+    'identity avatar swaps the whole crop tree for a monogram on failure',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: LoopTheme.dark,
+          home: DefaultAssetBundle(
+            bundle: _ThrowingAssetBundle(),
+            child: const Center(
+              child: LoopIdentityAvatar(
+                atlas: LoopIdentityAtlas.people,
+                slot: 'whale',
+                size: 56,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      final monogram = find.byKey(
+        const ValueKey<String>('loop-asset-monogram'),
+      );
+      expect(monogram, findsOneWidget);
+      expect(find.text('WH'), findsOneWidget);
+      expect(find.byType(FittedBox), findsNothing);
+      final avatarRect = tester.getRect(find.byType(LoopIdentityAvatar));
+      expect(tester.getRect(monogram), avatarRect);
+      expect(avatarRect.size, const Size(56, 56));
+      expect(find.bySemanticsLabel('whale_0x9f 头像'), findsOneWidget);
+      semantics.dispose();
+    },
+  );
+
   testWidgets('identity avatar crops the atlas cell and labels the image', (
     tester,
   ) async {
@@ -203,4 +243,11 @@ void main() {
     expect(find.bySemanticsLabel('nobody 头像'), findsOneWidget);
     semantics.dispose();
   });
+}
+
+final class _ThrowingAssetBundle extends CachingAssetBundle {
+  @override
+  Future<ByteData> load(String key) async {
+    throw FlutterError('asset unavailable in test: $key');
+  }
 }

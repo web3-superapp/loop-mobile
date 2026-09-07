@@ -375,8 +375,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Coming soon'), findsOneWidget);
-    expect(find.textContaining('Pay is not available yet'), findsOneWidget);
+    expect(find.text('Pay 暂不可用'), findsOneWidget);
+    expect(find.textContaining('Pay 尚未开放'), findsOneWidget);
     expect(find.byType(FilledButton), findsNothing);
     expect(find.byType(OutlinedButton), findsNothing);
     expect(find.byType(TextField), findsNothing);

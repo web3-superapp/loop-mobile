@@ -92,9 +92,10 @@ abstract final class PreviewConversationIdentity {
   }) {
     final messageTarget = resolve(conversationId: conversationId, kind: kind);
     if (messageTarget != null) return messageTarget.location;
+    // Meetings have no product route in the 93-route manifest (decision
+    // 0050); the fixture stays listed but is not navigable.
     return switch ((conversationId, kind)) {
       (ChatContent.voiceRoomId, ConversationKind.voice) => '/chat/voice',
-      (meetingId, ConversationKind.meeting) => '/chat/meeting',
       _ => null,
     };
   }

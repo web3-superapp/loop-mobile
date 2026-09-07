@@ -745,18 +745,15 @@ class _WalletBackupScreen extends StatelessWidget {
               : _unavailable(context),
         ),
         const SizedBox(height: 10),
-        _RecoveryMethodTile(
+        // Recovery-phrase reveal and verification pages were retired with the
+        // 93-route manifest (decision 0050); the tile stays visible so the
+        // option is not silently missing, but it is not an entry point.
+        const _RecoveryMethodTile(
           icon: Icons.password_rounded,
           title: 'Recovery phrase',
           detail: 'Record recovery words offline',
-          available:
-              capabilities.canRevealRecoveryPhrase &&
-              capabilities.secureScreenProtectionActive,
-          onTap: () =>
-              capabilities.canRevealRecoveryPhrase &&
-                  capabilities.secureScreenProtectionActive
-              ? onNavigate('seed-show')
-              : _unavailable(context),
+          available: false,
+          onTap: null,
         ),
         const SizedBox(height: 10),
         _RecoveryMethodTile(
@@ -1794,7 +1791,7 @@ class _RecoveryMethodTile extends StatelessWidget {
   final String title;
   final String detail;
   final bool available;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

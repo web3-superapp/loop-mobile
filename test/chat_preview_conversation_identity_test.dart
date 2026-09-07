@@ -320,6 +320,24 @@ void main() {
     expect(find.byTooltip('Send message'), findsNothing);
   });
 
+  test('meeting fixtures stay listed but are not navigable', () {
+    // /chat/meeting was retired with the 93-route manifest (decision 0050).
+    expect(
+      PreviewConversationIdentity.locationForSummary(
+        conversationId: PreviewConversationIdentity.meetingId,
+        kind: ConversationKind.meeting,
+      ),
+      isNull,
+    );
+    expect(
+      PreviewConversationIdentity.locationForSummary(
+        conversationId: ChatContent.voiceRoomId,
+        kind: ConversationKind.voice,
+      ),
+      '/chat/voice',
+    );
+  });
+
   testWidgets('Inbox refuses an unregistered same-kind Preview conversation', (
     tester,
   ) async {

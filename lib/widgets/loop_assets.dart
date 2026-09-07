@@ -157,7 +157,7 @@ class LoopNetworkLogo extends StatelessWidget {
 /// `LoopIdentitySlots.communityAliases` table is consulted first). Unknown
 /// slots and load failures render the monogram. The image is never cut into
 /// loose files; the crop is computed at render time from the grid.
-class LoopIdentityAvatar extends StatelessWidget {
+class LoopIdentityAvatar extends StatefulWidget {
   const LoopIdentityAvatar({
     required this.atlas,
     required this.slot,
@@ -177,22 +177,87 @@ class LoopIdentityAvatar extends StatelessWidget {
   final String? semanticLabel;
   final String? fallbackMonogram;
 
+  @override
+  State<LoopIdentityAvatar> createState() => _LoopIdentityAvatarState();
+}
+
+class _LoopIdentityAvatarState extends State<LoopIdentityAvatar> {
+  ImageStream? _stream;
+  ImageStreamListener? _listener;
+  bool _failed = false;
+
   LoopIdentitySlot? get _resolvedSlot {
-    final key = atlas == LoopIdentityAtlas.communities
-        ? (LoopIdentitySlots.communityAliases[slot.toLowerCase()] ?? slot)
-        : slot;
-    return atlas.slot(key);
+    final key = widget.atlas == LoopIdentityAtlas.communities
+        ? (LoopIdentitySlots.communityAliases[widget.slot.toLowerCase()] ??
+              widget.slot)
+        : widget.slot;
+    return widget.atlas.slot(key);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _resolveImage();
+  }
+
+  @override
+  void didUpdateWidget(LoopIdentityAvatar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.atlas != widget.atlas) {
+      _failed = false;
+      _resolveImage();
+    }
+  }
+
+  /// Resolves the atlas through the ambient asset bundle so a decode or
+  /// bundle failure swaps the whole crop tree for the monogram. Inside the
+  /// crop tree an `errorBuilder` would be scaled and clipped with the cell.
+  void _resolveImage() {
+    _stopListening();
+    if (_resolvedSlot == null) return;
+    final provider = AssetImage(
+      widget.atlas.path,
+      bundle: DefaultAssetBundle.of(context),
+    );
+    final stream = provider.resolve(createLocalImageConfiguration(context));
+    final listener = ImageStreamListener(
+      (image, synchronousCall) {},
+      onError: (error, stackTrace) {
+        if (!mounted || _failed) return;
+        setState(() => _failed = true);
+      },
+    );
+    stream.addListener(listener);
+    _stream = stream;
+    _listener = listener;
+  }
+
+  void _stopListening() {
+    final stream = _stream;
+    final listener = _listener;
+    if (stream != null && listener != null) stream.removeListener(listener);
+    _stream = null;
+    _listener = null;
+  }
+
+  @override
+  void dispose() {
+    _stopListening();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final atlas = widget.atlas;
+    final size = widget.size;
     final cell = _resolvedSlot;
     final cornerRadius =
-        radius ??
+        widget.radius ??
         (atlas == LoopIdentityAtlas.people ? size / 2 : LoopRadius.innerValue);
-    final label = semanticLabel ?? cell?.label ?? '$slot 头像';
-    final monogram = fallbackMonogram ?? cell?.fallback ?? loopMonogram(slot);
-    if (cell == null) {
+    final label = widget.semanticLabel ?? cell?.label ?? '${widget.slot} 头像';
+    final monogram =
+        widget.fallbackMonogram ?? cell?.fallback ?? loopMonogram(widget.slot);
+    if (cell == null || _failed) {
       return _MonogramFallback(
         text: monogram,
         size: size,
@@ -223,14 +288,12 @@ class LoopIdentityAvatar extends StatelessWidget {
                 heightFactor: 1 / atlas.rows,
                 child: Image.asset(
                   atlas.path,
+                  bundle: DefaultAssetBundle.of(context),
                   excludeFromSemantics: true,
+                  // The stream listener above owns failure; this keeps the
+                  // framework from painting an error glyph in the meantime.
                   errorBuilder: (context, error, stackTrace) =>
-                      _MonogramFallback(
-                        text: monogram,
-                        size: size,
-                        shape: BoxShape.rectangle,
-                        radius: cornerRadius,
-                      ),
+                      const SizedBox.shrink(),
                 ),
               ),
             ),

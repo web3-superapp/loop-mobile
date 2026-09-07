@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -35,10 +37,47 @@ void main() {
     expect(LoopColors.limeSoft.withValues(alpha: 1), LoopColors.lime);
   });
 
-  test('no new blue accent is introduced beyond the legacy alias group', () {
-    // Only the pre-existing legacy alias may carry a blue hue.
-    const blue = LoopColors.market;
-    expect(blue, const Color(0xFF68B9FF));
+  test('legacy market/chat accents gain no new consumers in lib/', () {
+    // The blue/amber aliases are unmigrated history. This guard records the
+    // files that still use them; the list may only shrink. Remove the guard
+    // together with the aliases when the Market slice migrates.
+    const legacyAccentConsumers = <String>{
+      'lib/features/account/account_screens.dart',
+      'lib/features/chat/calls/stream_foreground_call_view.dart',
+      'lib/features/chat/calls/stream_voice_room_page.dart',
+      'lib/features/chat/chat_inbox_page.dart',
+      'lib/features/chat/chat_secondary_pages.dart',
+      'lib/features/chat/conversation_pages.dart',
+      'lib/features/chat/friends/chat_create_menu_button.dart',
+      'lib/features/chat/stream_chat_inbox_page.dart',
+      'lib/features/chat/voice_room_page.dart',
+      'lib/features/chat/widgets/chat_components.dart',
+      'lib/features/chat/widgets/token_card_view.dart',
+      'lib/features/home/home_screens.dart',
+      'lib/features/launchpad/launchpad_screen.dart',
+      'lib/features/market/market_models.dart',
+      'lib/features/market/market_screens.dart',
+      'lib/features/market/market_secondary_screens.dart',
+      'lib/features/market/spot_candle_chart.dart',
+      'lib/features/perp/perp_account_screens.dart',
+      'lib/features/perp/perp_models.dart',
+      'lib/features/profile/profile_screens.dart',
+      'lib/features/system/system_surfaces.dart',
+      'lib/widgets/loop_ui.dart',
+    };
+    final pattern = RegExp(r'LoopColors\.(?:market|chat)\b');
+    final consumers = Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'))
+        .where((file) => pattern.hasMatch(file.readAsStringSync()))
+        .map((file) => file.path)
+        .toSet();
+    expect(
+      consumers.difference(legacyAccentConsumers),
+      isEmpty,
+      reason: 'new code must not use the legacy blue/amber accents',
+    );
     final scheme = LoopTheme.dark.colorScheme;
     expect(scheme.primary, LoopColors.lime);
     expect(scheme.secondary, LoopColors.chalk);

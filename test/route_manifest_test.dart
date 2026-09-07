@@ -247,7 +247,7 @@ void main() {
 
       expect(router.routeInformationProvider.value.uri.path, '/pay');
       expect(find.text(LoopPendingSurface.unavailableHeadline), findsOneWidget);
-      expect(find.textContaining('Pay is not available yet'), findsOneWidget);
+      expect(find.textContaining('Pay 尚未开放'), findsOneWidget);
       expect(find.byType(FilledButton), findsNothing);
       expect(find.byType(OutlinedButton), findsNothing);
       expect(find.byType(TextField), findsNothing);

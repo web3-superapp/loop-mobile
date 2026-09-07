@@ -667,7 +667,15 @@ Widget _profileScreen(BuildContext context, WidgetRef ref, String id) {
             icon: const Icon(Icons.arrow_back_rounded),
           )
         : null,
-    onNavigate: (destination) => context.push(_profilePath(destination)),
+    onNavigate: (destination) {
+      final path = _profilePath(destination);
+      // Tab destinations replace the stack; only child pages push.
+      if (LoopRouteManifest.isTabPath(path)) {
+        context.go(path);
+      } else {
+        context.push(path);
+      }
+    },
     onSignOut: () => _signOut(ref),
   );
 }

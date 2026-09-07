@@ -24,13 +24,12 @@ class LoopPendingSurface extends StatelessWidget {
   final bool _unavailable;
 
   static const String pendingHeadline = '该页面尚未接入';
-  static const String unavailableHeadline = 'Coming soon';
+  static const String unavailableHeadline = 'Pay 暂不可用';
 
   /// Pay is the only fail-closed manifest page in this step; the wording is
   /// shared with the Wallet entry card so both tell the same truth.
   static const String unavailableMessage =
-      'Pay is not available yet. This route cannot scan a code, request camera '
-      'access, collect payment details or submit a transaction.';
+      'Pay 尚未开放。此页面不会扫码、不会请求相机权限、不会收集支付信息，也不会提交任何交易。';
 
   String get sourceLine => '来源：${entry.module.label} 第 ${entry.step} 步';
 
