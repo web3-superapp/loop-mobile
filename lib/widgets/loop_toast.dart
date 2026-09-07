@@ -157,33 +157,35 @@ class LoopToastView extends StatelessWidget {
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Container(width: 4, color: bar),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 14, 16, 14),
-                  child: Row(
-                    children: <Widget>[
-                      LoopIcon(icon, size: 15, color: LoopColors.ink),
-                      const SizedBox(width: 9),
-                      Expanded(
-                        child: Text(
-                          entry.message,
-                          style: LoopTypography.sora(
-                            size: 11,
-                            weight: FontWeight.w700,
-                            height: 1.4,
-                            color: LoopColors.ink,
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Container(width: 4, color: bar),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 14, 16, 14),
+                    child: Row(
+                      children: <Widget>[
+                        LoopIcon(icon, size: 15, color: LoopColors.ink),
+                        const SizedBox(width: 9),
+                        Expanded(
+                          child: Text(
+                            entry.message,
+                            style: LoopTypography.sora(
+                              size: 11,
+                              weight: FontWeight.w700,
+                              height: 1.4,
+                              color: LoopColors.ink,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

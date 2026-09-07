@@ -311,40 +311,46 @@ class _Head extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                state == LoopTokenCardState.loading
-                    ? '识别中'
-                    : model.price ?? '—',
-                style: LoopTypography.mono(
-                  size: 17,
-                  weight: FontWeight.w700,
-                  height: 1.05,
-                  letterSpacing: -0.68,
-                  color: muted ? secondary : foreground,
-                ),
-              ),
-              if (model.change != null || state == LoopTokenCardState.partial)
-                Padding(
-                  padding: const EdgeInsets.only(top: 5),
-                  child: Text(
-                    model.change ?? '无 24H 数据',
-                    style: LoopTypography.mono(
-                      size: 11,
-                      weight: FontWeight.w600,
-                      height: 1,
-                      color: switch (model.changeUp) {
-                        true => LoopColors.lime,
-                        false => LoopColors.chalk,
-                        null => secondary,
-                      },
-                    ),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  state == LoopTokenCardState.loading
+                      ? '识别中'
+                      : model.price ?? '—',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LoopTypography.mono(
+                    size: 17,
+                    weight: FontWeight.w700,
+                    height: 1.05,
+                    letterSpacing: -0.68,
+                    color: muted ? secondary : foreground,
                   ),
                 ),
-            ],
+                if (model.change != null || state == LoopTokenCardState.partial)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: Text(
+                      model.change ?? '无 24H 数据',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LoopTypography.mono(
+                        size: 11,
+                        weight: FontWeight.w600,
+                        height: 1,
+                        color: switch (model.changeUp) {
+                          true => LoopColors.lime,
+                          false => LoopColors.chalk,
+                          null => secondary,
+                        },
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),

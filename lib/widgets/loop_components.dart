@@ -368,7 +368,7 @@ class LoopFolioPrimary extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (trailing != null) trailing!,
+                      ?trailing,
                     ],
                   ),
                   if (caption != null) ...<Widget>[
@@ -629,6 +629,7 @@ class _Pressable extends StatelessWidget {
     return Semantics(
       button: true,
       label: semanticLabel,
+      excludeSemantics: semanticLabel != null,
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(onTap: onTap, borderRadius: borderRadius, child: box),
@@ -691,34 +692,9 @@ class LoopRecordRow extends StatelessWidget {
           ? const Radius.circular(LoopRadius.cardValue)
           : Radius.zero,
     );
-    final row = Container(
+    final content = Container(
       constraints: const BoxConstraints(minHeight: LoopTouch.minimum),
       padding: const EdgeInsets.fromLTRB(12, 13, 12, 13),
-      decoration: BoxDecoration(
-        color: LoopColors.chalk.withValues(alpha: 0.045),
-        borderRadius: radius,
-        border: bottomRadius
-            ? (topRadius
-                  ? const Border(top: BorderSide(color: LoopDepth.liftCardEdge))
-                  : null)
-            : Border(
-                top: topRadius
-                    ? const BorderSide(color: LoopDepth.liftCardEdge)
-                    : BorderSide.none,
-                bottom: BorderSide(
-                  color: LoopColors.chalk.withValues(alpha: 0.1),
-                ),
-              ),
-        boxShadow: bottomRadius
-            ? const <BoxShadow>[
-                BoxShadow(
-                  color: Color(0x66050604),
-                  offset: Offset(0, 8),
-                  blurRadius: 22,
-                ),
-              ]
-            : null,
-      ),
       child: Row(
         children: <Widget>[
           if (leading != null) ...<Widget>[leading!, const SizedBox(width: 12)],
@@ -777,6 +753,37 @@ class LoopRecordRow extends StatelessWidget {
             const SizedBox(width: 8),
             const LoopIcon('chevron', size: 15, color: LoopColors.text3),
           ],
+        ],
+      ),
+    );
+    // Light top edge (first) and separator (not last) are drawn as rows so
+    // the rounded decoration keeps a uniform border.
+    final row = Container(
+      decoration: BoxDecoration(
+        color: LoopColors.chalk.withValues(alpha: 0.045),
+        borderRadius: radius,
+        boxShadow: bottomRadius
+            ? const <BoxShadow>[
+                BoxShadow(
+                  color: Color(0x66050604),
+                  offset: Offset(0, 8),
+                  blurRadius: 22,
+                ),
+              ]
+            : null,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          if (topRadius) Container(height: 1, color: LoopDepth.liftCardEdge),
+          content,
+          if (!bottomRadius)
+            Container(
+              height: 1,
+              color: LoopColors.chalk.withValues(alpha: 0.1),
+            ),
         ],
       ),
     );
@@ -1236,11 +1243,11 @@ class LoopButton extends StatelessWidget {
         ],
       ),
     );
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      label: semanticLabel ?? label,
-      child: ExcludeSemantics(
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        enabled: enabled,
+        label: semanticLabel ?? label,
         child: Opacity(
           opacity: enabled ? 1 : 0.4,
           child: Material(
@@ -1251,7 +1258,7 @@ class LoopButton extends StatelessWidget {
               ),
               onTap: onPressed,
               borderRadius: BorderRadius.circular(14),
-              child: child,
+              child: ExcludeSemantics(child: child),
             ),
           ),
         ),
@@ -1348,7 +1355,7 @@ class LoopKeyValue extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 /// `.composer`: chat input pinned under the stream, never covered by the bar.
-class LoopComposer extends StatelessWidget {
+class LoopComposer extends StatefulWidget {
   const LoopComposer({
     super.key,
     this.controller,
@@ -1367,6 +1374,29 @@ class LoopComposer extends StatelessWidget {
   final Widget? leading;
 
   @override
+  State<LoopComposer> createState() => _LoopComposerState();
+}
+
+class _LoopComposerState extends State<LoopComposer> {
+  TextEditingController? _ownController;
+
+  TextEditingController get _controller =>
+      widget.controller ?? (_ownController ??= TextEditingController());
+
+  @override
+  void dispose() {
+    _ownController?.dispose();
+    super.dispose();
+  }
+
+  bool get _canSend => widget.enabled && widget.onSend != null;
+
+  void _send() {
+    if (!_canSend) return;
+    widget.onSend!(_controller.text);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final safeBottom = MediaQuery.paddingOf(context).bottom;
     return Container(
@@ -1377,21 +1407,24 @@ class LoopComposer extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          if (leading != null) ...<Widget>[leading!, const SizedBox(width: 9)],
+          if (widget.leading != null) ...<Widget>[
+            widget.leading!,
+            const SizedBox(width: 9),
+          ],
           Expanded(
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 43),
               child: TextField(
                 key: const ValueKey<String>('loop-composer-input'),
-                controller: controller,
-                enabled: enabled && onSend != null,
+                controller: _controller,
+                enabled: _canSend,
                 minLines: 1,
                 maxLines: 4,
                 textInputAction: TextInputAction.send,
-                onSubmitted: onSend,
+                onSubmitted: (_) => _send(),
                 style: LoopTypography.sora(size: 11, weight: FontWeight.w400),
                 decoration: InputDecoration(
-                  hintText: hintText,
+                  hintText: widget.hintText,
                   isDense: true,
                   filled: true,
                   fillColor: LoopColors.card,
@@ -1422,20 +1455,14 @@ class LoopComposer extends StatelessWidget {
           const SizedBox(width: 9),
           Semantics(
             button: true,
-            label: sendLabel,
-            enabled: enabled && onSend != null,
+            label: widget.sendLabel,
+            enabled: _canSend,
             child: Material(
-              color: enabled && onSend != null
-                  ? LoopColors.lime
-                  : LoopColors.card2,
+              color: _canSend ? LoopColors.lime : LoopColors.card2,
               borderRadius: BorderRadius.circular(14),
               child: InkWell(
                 key: const ValueKey<String>('loop-composer-send'),
-                onTap: enabled && onSend == null
-                    ? null
-                    : enabled
-                    ? () => onSend!(controller?.text ?? '')
-                    : null,
+                onTap: _canSend ? _send : null,
                 borderRadius: BorderRadius.circular(14),
                 child: SizedBox(
                   width: LoopTouch.minimum,
@@ -1444,9 +1471,7 @@ class LoopComposer extends StatelessWidget {
                     child: LoopIcon(
                       'arrow-up',
                       size: 17,
-                      color: enabled && onSend != null
-                          ? LoopColors.ink
-                          : LoopColors.text3,
+                      color: _canSend ? LoopColors.ink : LoopColors.text3,
                     ),
                   ),
                 ),

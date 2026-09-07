@@ -354,7 +354,7 @@ void main() {
             find.byKey(const ValueKey<String>('loop-button-secondary')).last,
           )
           .width,
-      390 - 32,
+      390,
     );
     expect(
       tester.getSemantics(find.bySemanticsLabel('取消')),
