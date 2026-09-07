@@ -51,7 +51,7 @@ void main() {
         tester.element(find.byKey(const ValueKey<String>('community-screen'))),
       );
 
-      await tester.tap(find.widgetWithText(LoopTabItem, 'Market'));
+      await tester.tap(find.widgetWithText(LoopTabItem, '行情'));
       await tester.pumpAndSettle();
 
       expect(spotRepository.fetchCount, 1);

@@ -18,11 +18,13 @@ class LoopShell extends StatelessWidget {
   final String location;
 
   static const _destinations = <_LoopDestination>[
-    _LoopDestination('Community', '/community', 'community'),
-    _LoopDestination('Mining', '/mining', 'mine-tab'),
+    // Labels are zh-CN per the 01 handover (社区/挖矿/Launch/行情/钱包);
+    // slugs stay the stable test and analytics identifiers.
+    _LoopDestination('社区', '/community', 'community'),
+    _LoopDestination('挖矿', '/mining', 'mine-tab'),
     _LoopDestination('Launch', '/launch', 'launch'),
-    _LoopDestination('Market', '/market', 'chart'),
-    _LoopDestination('Wallet', '/wallet', 'wallet'),
+    _LoopDestination('行情', '/market', 'chart'),
+    _LoopDestination('钱包', '/wallet', 'wallet'),
   ];
 
   /// Labels in shell order, for tests and the desktop rail.
@@ -129,6 +131,7 @@ class LoopTabBar extends StatelessWidget {
                     Expanded(
                       child: LoopTabItem(
                         label: LoopShell._destinations[index].label,
+                        slug: LoopShell._destinations[index].slug,
                         icon: LoopShell._destinations[index].icon,
                         selected: index == selectedIndex,
                         onTap: () => onSelect(index),
@@ -148,6 +151,7 @@ class LoopTabBar extends StatelessWidget {
 class LoopTabItem extends StatelessWidget {
   const LoopTabItem({
     required this.label,
+    required this.slug,
     required this.icon,
     required this.selected,
     required this.onTap,
@@ -155,6 +159,9 @@ class LoopTabItem extends StatelessWidget {
   });
 
   final String label;
+
+  /// Stable identifier (`community`, `mining`, ...) for keys and analytics.
+  final String slug;
   final String icon;
   final bool selected;
   final VoidCallback onTap;
@@ -170,7 +177,7 @@ class LoopTabItem extends StatelessWidget {
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
-          key: ValueKey<String>('loop-tab-${label.toLowerCase()}'),
+          key: ValueKey<String>('loop-tab-$slug'),
           onTap: onTap,
           borderRadius: LoopRadius.control,
           child: AnimatedContainer(
@@ -298,6 +305,8 @@ class _LoopDestination {
 
   final String label;
   final String path;
+
+  String get slug => path.substring(1);
 
   /// Sprite icon name.
   final String icon;

@@ -88,11 +88,18 @@ void main() {
 
     final items = tester.widgetList<LoopTabItem>(find.byType(LoopTabItem));
     expect(items.map((item) => item.label), <String>[
-      'Community',
-      'Mining',
+      '社区',
+      '挖矿',
       'Launch',
-      'Market',
-      'Wallet',
+      '行情',
+      '钱包',
+    ]);
+    expect(items.map((item) => item.slug), <String>[
+      'community',
+      'mining',
+      'launch',
+      'market',
+      'wallet',
     ]);
     expect(items.map((item) => item.selected), <bool>[
       false,
@@ -112,10 +119,10 @@ void main() {
       return container.decoration! as BoxDecoration;
     }
 
-    final market = decorationOf('Market');
+    final market = decorationOf('行情');
     expect(market.gradient, isA<LinearGradient>());
     expect((market.gradient! as LinearGradient).colors.last, LoopColors.lime);
-    expect(decorationOf('Wallet').gradient, isNull);
+    expect(decorationOf('钱包').gradient, isNull);
 
     Color labelColor(String label) => tester
         .widget<Text>(
@@ -126,17 +133,17 @@ void main() {
         )
         .style!
         .color!;
-    expect(labelColor('Market'), LoopColors.ink);
-    expect(labelColor('Wallet'), LoopColors.inkMuted);
+    expect(labelColor('行情'), LoopColors.ink);
+    expect(labelColor('钱包'), LoopColors.inkMuted);
 
     expect(
-      tester.getSize(find.widgetWithText(LoopTabItem, 'Wallet')).height,
+      tester.getSize(find.widgetWithText(LoopTabItem, '钱包')).height,
       greaterThanOrEqualTo(LoopTouch.tabCellMinHeight),
     );
     expect(
-      tester.getSemantics(find.widgetWithText(LoopTabItem, 'Market')),
+      tester.getSemantics(find.widgetWithText(LoopTabItem, '行情')),
       matchesSemantics(
-        label: 'Market',
+        label: '行情',
         isButton: true,
         isSelected: true,
         hasSelectedState: true,
@@ -146,10 +153,10 @@ void main() {
       ),
     );
 
-    await tester.tap(find.widgetWithText(LoopTabItem, 'Wallet'));
+    await tester.tap(find.widgetWithText(LoopTabItem, '钱包'));
     await tester.pumpAndSettle();
     expect(selected, 4);
-    expect(decorationOf('Wallet').gradient, isNotNull);
+    expect(decorationOf('钱包').gradient, isNotNull);
     semantics.dispose();
   });
 
@@ -260,11 +267,11 @@ void main() {
     expect(rail.backgroundColor, LoopColors.ink);
     expect(rail.indicatorColor, LoopColors.lime);
     expect(rail.destinations.map((d) => (d.label as Text).data), <String>[
-      'Community',
-      'Mining',
+      '社区',
+      '挖矿',
       'Launch',
-      'Market',
-      'Wallet',
+      '行情',
+      '钱包',
     ]);
   });
 }

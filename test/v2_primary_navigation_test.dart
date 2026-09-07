@@ -21,7 +21,7 @@ void main() {
       tester
           .widgetList<LoopTabItem>(find.byType(LoopTabItem))
           .map((destination) => destination.label),
-      <String>['Community', 'Mining', 'Launch', 'Market', 'Wallet'],
+      <String>['社区', '挖矿', 'Launch', '行情', '钱包'],
     );
     expect(find.text('Home'), findsNothing);
     expect(find.text('Chat'), findsNothing);
@@ -32,22 +32,18 @@ void main() {
     );
     final destinations = <(String, String, Finder)>[
       (
-        'Community',
+        '社区',
         '/community',
         find.byKey(const ValueKey<String>('community-screen')),
       ),
-      (
-        'Mining',
-        '/mining',
-        find.byKey(const ValueKey<String>('mining-screen')),
-      ),
+      ('挖矿', '/mining', find.byKey(const ValueKey<String>('mining-screen'))),
       (
         'Launch',
         '/launch',
         find.byKey(const ValueKey<String>('launchpad-unavailable')),
       ),
-      ('Market', '/market', find.text('Spot market')),
-      ('Wallet', '/wallet', find.text('Portfolio remains 开发预览')),
+      ('行情', '/market', find.text('Spot market')),
+      ('钱包', '/wallet', find.text('Portfolio remains 开发预览')),
     ];
 
     for (final (label, path, content) in destinations) {

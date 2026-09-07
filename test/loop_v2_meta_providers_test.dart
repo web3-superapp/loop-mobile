@@ -183,15 +183,11 @@ final class _FailingRepository implements LoopV2MetaRepository {
 LoopV2ClientPolicy _policy() {
   return LoopV2ClientPolicy(
     contractVersion: '2.0',
-    configVersion: DioLoopV2MetaRepository.productConfigVersion,
+    configVersion: 'productPolicyV2.2026-09-01',
     effectiveAt: DateTime.utc(2026, DateTime.september),
     defaultRoute: LoopV2PrimaryTab.community,
     navigation: LoopV2Navigation(primaryTabs: LoopV2PrimaryTab.values),
-    versionGate: const LoopV2VersionGate(
-      status: LoopV2VersionGateStatus.unavailable,
-      minimumSupportedVersions: LoopV2MinimumSupportedVersions(),
-      forceUpdate: null,
-      storeUrls: LoopV2StoreUrls(),
+    versionGate: const LoopV2VersionGate.unavailable(
       reasonCode: 'CLIENT_VERSION_POLICY_UNAVAILABLE',
     ),
     regionGate: const LoopV2RegionGate(
@@ -211,7 +207,7 @@ LoopV2ClientPolicy _policy() {
 LoopV2Capabilities _capabilities() {
   return LoopV2Capabilities(
     contractVersion: '2.0',
-    configVersion: DioLoopV2MetaRepository.productConfigVersion,
+    configVersion: 'productPolicyV2.2026-09-01',
     effectiveAt: DateTime.utc(2026, DateTime.september),
     capabilities: <LoopV2Capability>[
       for (final id in LoopV2CapabilityId.values)

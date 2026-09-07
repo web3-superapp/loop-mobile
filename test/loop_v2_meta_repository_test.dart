@@ -29,7 +29,7 @@ void main() {
       isNot(contains(startsWith('x-loop-'))),
     );
     expect(policy.contractVersion, '2.0');
-    expect(policy.configVersion, DioLoopV2MetaRepository.productConfigVersion);
+    expect(policy.configVersion, 'productPolicyV2.2026-09-01');
     expect(policy.effectiveAt, DateTime.utc(2026, DateTime.september));
     expect(policy.defaultRoute, LoopV2PrimaryTab.community);
     expect(policy.navigation.primaryTabs, <LoopV2PrimaryTab>[
@@ -40,9 +40,10 @@ void main() {
       LoopV2PrimaryTab.wallet,
     ]);
     expect(policy.versionGate.status, LoopV2VersionGateStatus.unavailable);
+    expect(policy.versionGate.isAvailable, isFalse);
     expect(policy.versionGate.minimumSupportedVersions.ios, isNull);
     expect(policy.versionGate.minimumSupportedVersions.android, isNull);
-    expect(policy.versionGate.forceUpdate, isNull);
+    expect(policy.versionGate.forceUpdateBelow, isNull);
     expect(policy.versionGate.storeUrls.ios, isNull);
     expect(policy.versionGate.storeUrls.android, isNull);
     expect(policy.versionGate.reasonCode, 'CLIENT_VERSION_POLICY_UNAVAILABLE');
@@ -109,23 +110,12 @@ void main() {
   );
 
   test(
-    'policy accepts future typed gate states without inferring them',
+    'policy parses the available version and terms variants exactly',
     () async {
       final value = _clientPolicy();
-      value['versionGate'] = <String, Object?>{
-        'status': 'active',
-        'minimumSupportedVersions': <String, Object?>{
-          'ios': '1.2.3',
-          'android': '1.2.4-beta.1+7',
-        },
-        'forceUpdate': false,
-        'storeUrls': <String, Object?>{
-          'ios': 'https://apps.apple.com/app/loop',
-          'android':
-              'https://play.google.com/store/apps/details?id=com.cywd.loop',
-        },
-        'reasonCode': null,
-      };
+      value['configVersion'] = 'productPolicyV2.2026-09-07_rc-2';
+      value['effectiveAt'] = '2026-09-07T10:30:00+08:00';
+      value['versionGate'] = _availableVersionGate();
       value['regionGate'] = <String, Object?>{
         'status': 'allowed',
         'reasonCode': null,
@@ -133,28 +123,35 @@ void main() {
         'readOnlyAssetAccess': true,
       };
       value['termsGate'] = <String, Object?>{
-        'status': 'required',
+        'status': 'available',
         'requiredVersion': 'terms-2026-09',
-        'reasonCode': 'TERMS_ACCEPTANCE_REQUIRED',
+        'reasonCode': null,
       };
       final repository = _resolvingRepository(value);
 
       final policy = await repository.getClientPolicy();
 
-      expect(policy.versionGate.status, LoopV2VersionGateStatus.active);
-      expect(policy.versionGate.forceUpdate, isFalse);
+      expect(policy.configVersion, 'productPolicyV2.2026-09-07_rc-2');
+      expect(policy.effectiveAt, DateTime.utc(2026, 9, 7, 2, 30));
+      expect(policy.versionGate.status, LoopV2VersionGateStatus.available);
+      expect(policy.versionGate.isAvailable, isTrue);
+      expect(policy.versionGate.reasonCode, isNull);
+      expect(policy.versionGate.minimumSupportedVersions.ios, '1.4.0');
       expect(
         policy.versionGate.minimumSupportedVersions.android,
         '1.2.4-beta.1+7',
       );
+      expect(policy.versionGate.forceUpdateBelow?.ios, '1.2.0');
+      expect(policy.versionGate.forceUpdateBelow?.android, '1.2.4-beta.1+7');
       expect(
         policy.versionGate.storeUrls.ios,
         Uri.parse('https://apps.apple.com/app/loop'),
       );
       expect(policy.regionGate.status, LoopV2RegionGateStatus.allowed);
       expect(policy.regionGate.readOnlyAssetAccess, isTrue);
-      expect(policy.termsGate.status, LoopV2TermsGateStatus.required);
+      expect(policy.termsGate.status, LoopV2TermsGateStatus.available);
       expect(policy.termsGate.requiredVersion, 'terms-2026-09');
+      expect(policy.termsGate.reasonCode, isNull);
     },
   );
 
@@ -166,14 +163,66 @@ void main() {
       (reorderedTabs['navigation']! as Map<String, Object?>)['primaryTabs'] =
           <String>['mining', 'community', 'launch', 'market', 'wallet'];
       final invalidSemver = _clientPolicy();
-      (invalidSemver['versionGate']!
-              as Map<String, Object?>)['minimumSupportedVersions'] =
-          <String, Object?>{'ios': '01.0.0', 'android': null};
+      invalidSemver['versionGate'] = _availableVersionGate()
+        ..['minimumSupportedVersions'] = <String, Object?>{
+          'ios': '01.0.0',
+          'android': '1.0.0',
+        };
+      final unavailableWithFloor = _clientPolicy();
+      (unavailableWithFloor['versionGate']!
+          as Map<String, Object?>)['forceUpdateBelow'] = <String, Object?>{
+        'ios': null,
+        'android': null,
+      };
+      final legacyForceUpdate = _clientPolicy();
+      (legacyForceUpdate['versionGate']!
+              as Map<String, Object?>)['forceUpdate'] =
+          null;
+      final availableMissingFloor = _clientPolicy();
+      availableMissingFloor['versionGate'] = _availableVersionGate()
+        ..remove('forceUpdateBelow');
+      final availableWithReason = _clientPolicy();
+      availableWithReason['versionGate'] = _availableVersionGate()
+        ..['reasonCode'] = 'CLIENT_VERSION_POLICY_UNAVAILABLE';
+      final availableHttpStore = _clientPolicy();
+      availableHttpStore['versionGate'] = _availableVersionGate()
+        ..['storeUrls'] = <String, Object?>{
+          'ios': 'http://apps.apple.com/app/loop',
+          'android': 'https://play.google.com/store/apps/details?id=x',
+        };
+      final legacyActiveStatus = _clientPolicy();
+      legacyActiveStatus['versionGate'] = _availableVersionGate()
+        ..['status'] = 'active';
+      final termsWithoutVersion = _clientPolicy();
+      termsWithoutVersion['termsGate'] = <String, Object?>{
+        'status': 'available',
+        'requiredVersion': null,
+        'reasonCode': null,
+      };
+      final legacyTermsRequired = _clientPolicy();
+      legacyTermsRequired['termsGate'] = <String, Object?>{
+        'status': 'required',
+        'requiredVersion': 'terms-2026-09',
+        'reasonCode': 'TERMS_ACCEPTANCE_REQUIRED',
+      };
+      final badConfigVersion = _clientPolicy()..['configVersion'] = '.v1';
+      final localEffectiveAt = _clientPolicy()
+        ..['effectiveAt'] = '2026-09-01T00:00:00';
 
       for (final repository in <DioLoopV2MetaRepository>[
         _resolvingRepository(extraField),
         _resolvingRepository(reorderedTabs),
         _resolvingRepository(invalidSemver),
+        _resolvingRepository(unavailableWithFloor),
+        _resolvingRepository(legacyForceUpdate),
+        _resolvingRepository(availableMissingFloor),
+        _resolvingRepository(availableWithReason),
+        _resolvingRepository(availableHttpStore),
+        _resolvingRepository(legacyActiveStatus),
+        _resolvingRepository(termsWithoutVersion),
+        _resolvingRepository(legacyTermsRequired),
+        _resolvingRepository(badConfigVersion),
+        _resolvingRepository(localEffectiveAt),
         _resolvingRepository(_clientPolicy(), includeRequestId: false),
         _resolvingRepository(
           _clientPolicy(),
@@ -334,8 +383,8 @@ Response<Object?> _response(
 Map<String, Object?> _clientPolicy() {
   return <String, Object?>{
     'contractVersion': '2.0',
-    'configVersion': DioLoopV2MetaRepository.productConfigVersion,
-    'effectiveAt': DioLoopV2MetaRepository.productEffectiveAt,
+    'configVersion': 'productPolicyV2.2026-09-01',
+    'effectiveAt': '2026-09-01T00:00:00.000Z',
     'defaultRoute': 'community',
     'navigation': <String, Object?>{
       'primaryTabs': <String>[
@@ -352,7 +401,6 @@ Map<String, Object?> _clientPolicy() {
         'ios': null,
         'android': null,
       },
-      'forceUpdate': null,
       'storeUrls': <String, Object?>{'ios': null, 'android': null},
       'reasonCode': 'CLIENT_VERSION_POLICY_UNAVAILABLE',
     },
@@ -370,11 +418,30 @@ Map<String, Object?> _clientPolicy() {
   };
 }
 
+Map<String, Object?> _availableVersionGate() {
+  return <String, Object?>{
+    'status': 'available',
+    'minimumSupportedVersions': <String, Object?>{
+      'ios': '1.4.0',
+      'android': '1.2.4-beta.1+7',
+    },
+    'forceUpdateBelow': <String, Object?>{
+      'ios': '1.2.0',
+      'android': '1.2.4-beta.1+7',
+    },
+    'storeUrls': <String, Object?>{
+      'ios': 'https://apps.apple.com/app/loop',
+      'android': 'https://play.google.com/store/apps/details?id=com.cywd.loop',
+    },
+    'reasonCode': null,
+  };
+}
+
 Map<String, Object?> _capabilities() {
   return <String, Object?>{
     'contractVersion': '2.0',
-    'configVersion': DioLoopV2MetaRepository.productConfigVersion,
-    'effectiveAt': DioLoopV2MetaRepository.productEffectiveAt,
+    'configVersion': 'productPolicyV2.2026-09-01',
+    'effectiveAt': '2026-09-01T00:00:00.000Z',
     'capabilities': <Object?>[
       for (var index = 0; index < LoopV2CapabilityId.values.length; index++)
         <String, Object?>{

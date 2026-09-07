@@ -910,10 +910,10 @@ class HarnessTests(unittest.TestCase):
             path = root / "lib/features/shell/loop_shell.dart"
             source = path.read_text(encoding="utf-8")
             mutated = source.replace(
-                "_LoopDestination('Mining', '/mining', 'mine-tab'),\n"
+                "_LoopDestination('挖矿', '/mining', 'mine-tab'),\n"
                 "    _LoopDestination('Launch', '/launch', 'launch'),",
                 "_LoopDestination('Launch', '/launch', 'launch'),\n"
-                "    _LoopDestination('Mining', '/mining', 'mine-tab'),",
+                "    _LoopDestination('挖矿', '/mining', 'mine-tab'),",
                 1,
             )
             self.assertNotEqual(source, mutated)
@@ -954,7 +954,7 @@ class HarnessTests(unittest.TestCase):
             path = root / "lib/features/shell/loop_shell.dart"
             path.write_text(
                 path.read_text(encoding="utf-8").replace(
-                    "'Community', '/community'",
+                    "'社区', '/community'",
                     "'Home', '/home'",
                     1,
                 ),

@@ -7729,11 +7729,11 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
         else:
             block = source[start:end]
             markers = (
-                ("'Community'", "'/community'"),
-                ("'Mining'", "'/mining'"),
+                ("'社区'", "'/community'"),
+                ("'挖矿'", "'/mining'"),
                 ("'Launch'", "'/launch'"),
-                ("'Market'", "'/market'"),
-                ("'Wallet'", "'/wallet'"),
+                ("'行情'", "'/market'"),
+                ("'钱包'", "'/wallet'"),
             )
             positions: list[int] = []
             for label, path in markers:
@@ -7747,7 +7747,14 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
                     positions.append(label_at)
             if len(positions) == len(markers) and positions != sorted(positions):
                 errors.append("LoopShell V2 destinations must retain their reviewed order")
-            for forbidden in ("'Home'", "'Chat'", "'Profile'", "'/launchpad'"):
+            for forbidden in (
+                "'Home'",
+                "'Chat'",
+                "'Profile'",
+                "'首页'",
+                "'聊天'",
+                "'/launchpad'",
+            ):
                 if forbidden in block:
                     errors.append(
                         "LoopShell must not restore the retired primary destination "

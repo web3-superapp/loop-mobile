@@ -53,13 +53,7 @@ void main() {
       find.byKey(const ValueKey<String>('community-screen')),
       findsOneWidget,
     );
-    for (final destination in <String>[
-      'Mining',
-      'Launch',
-      'Market',
-      'Wallet',
-      'Community',
-    ]) {
+    for (final destination in <String>['挖矿', 'Launch', '行情', '钱包', '社区']) {
       await tester.tap(find.widgetWithText(LoopTabItem, destination));
       await tester.pumpAndSettle();
     }
@@ -90,18 +84,18 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(LoopTabItem, 'Market'));
+    await tester.tap(find.widgetWithText(LoopTabItem, '行情'));
     await tester.pumpAndSettle();
     expect(find.text('Spot market'), findsOneWidget);
     expect(find.textContaining('Perp trading'), findsNothing);
     expect(find.textContaining('Live perpetual markets'), findsNothing);
 
-    await tester.tap(find.widgetWithText(LoopTabItem, 'Wallet'));
+    await tester.tap(find.widgetWithText(LoopTabItem, '钱包'));
     await tester.pumpAndSettle();
     expect(find.text('Trading account'), findsNothing);
     expect(find.textContaining('Hyperliquid margin'), findsNothing);
 
-    await tester.tap(find.widgetWithText(LoopTabItem, 'Community'));
+    await tester.tap(find.widgetWithText(LoopTabItem, '社区'));
     await tester.pumpAndSettle();
     expect(find.textContaining('PERP EQUITY'), findsNothing);
     expect(find.textContaining('Spot to perp'), findsNothing);
@@ -183,7 +177,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(LoopTabItem, 'Market'));
+    await tester.tap(find.widgetWithText(LoopTabItem, '行情'));
     await tester.pumpAndSettle();
 
     expect(find.text('Spot market'), findsOneWidget);
@@ -366,7 +360,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(LoopTabItem, 'Wallet'));
+    await tester.tap(find.widgetWithText(LoopTabItem, '钱包'));
     await tester.pumpAndSettle();
 
     final payNotice = find.byKey(

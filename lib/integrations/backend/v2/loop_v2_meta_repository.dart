@@ -29,8 +29,15 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
 
   static const clientPolicyPath = '/v2/meta/client-policy';
   static const capabilitiesPath = '/v2/meta/capabilities';
-  static const productConfigVersion = 'productPolicyV2.2026-09-01';
-  static const productEffectiveAt = '2026-09-01T00:00:00.000Z';
+
+  /// `configVersion` / `effectiveAt` identify the mutable policy snapshot and
+  /// are validated by shape only (decision 0029); they are never pinned.
+  static final RegExp configVersionPattern = RegExp(
+    r'^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$',
+  );
+  static const versionGateUnavailableReason =
+      'CLIENT_VERSION_POLICY_UNAVAILABLE';
+  static const termsGateUnavailableReason = 'TERMS_POLICY_UNAVAILABLE';
 
   static const _metaErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
@@ -129,7 +136,7 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
 
     return LoopV2ClientPolicy(
       contractVersion: LoopV2ClientMetadata.contractVersion,
-      configVersion: productConfigVersion,
+      configVersion: root['configVersion']! as String,
       effectiveAt: _utcDateTime(root['effectiveAt']),
       defaultRoute: defaultRoute,
       navigation: LoopV2Navigation(primaryTabs: primaryTabs),
@@ -169,40 +176,88 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
 
     return LoopV2Capabilities(
       contractVersion: LoopV2ClientMetadata.contractVersion,
-      configVersion: productConfigVersion,
+      configVersion: root['configVersion']! as String,
       effectiveAt: _utcDateTime(root['effectiveAt']),
       capabilities: capabilities,
     );
   }
 
   LoopV2VersionGate _parseVersionGate(Object? value) {
-    final gate = LoopV2Contract.strictMap(value, const <String>{
-      'status',
-      'minimumSupportedVersions',
-      'forceUpdate',
-      'storeUrls',
-      'reasonCode',
+    if (value is! Map) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+    }
+    final status = _enumValue(
+      value['status'],
+      LoopV2VersionGateStatus.tryParse,
+    );
+    switch (status) {
+      case LoopV2VersionGateStatus.unavailable:
+        final gate = LoopV2Contract.strictMap(value, const <String>{
+          'status',
+          'minimumSupportedVersions',
+          'storeUrls',
+          'reasonCode',
+        });
+        final minimums = LoopV2Contract.strictMap(
+          gate['minimumSupportedVersions'],
+          const <String>{'ios', 'android'},
+        );
+        final storeUrls = LoopV2Contract.strictMap(
+          gate['storeUrls'],
+          const <String>{'ios', 'android'},
+        );
+        if (minimums['ios'] != null ||
+            minimums['android'] != null ||
+            storeUrls['ios'] != null ||
+            storeUrls['android'] != null ||
+            gate['reasonCode'] != versionGateUnavailableReason) {
+          throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+        }
+        return const LoopV2VersionGate.unavailable(
+          reasonCode: versionGateUnavailableReason,
+        );
+      case LoopV2VersionGateStatus.available:
+        final gate = LoopV2Contract.strictMap(value, const <String>{
+          'status',
+          'minimumSupportedVersions',
+          'forceUpdateBelow',
+          'storeUrls',
+          'reasonCode',
+        });
+        if (gate['reasonCode'] != null) {
+          throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+        }
+        return LoopV2VersionGate(
+          status: status,
+          minimumSupportedVersions: _requiredVersions(
+            gate['minimumSupportedVersions'],
+          ),
+          forceUpdateBelow: _requiredVersions(gate['forceUpdateBelow']),
+          storeUrls: _requiredStoreUrls(gate['storeUrls']),
+          reasonCode: null,
+        );
+    }
+  }
+
+  LoopV2PlatformVersions _requiredVersions(Object? value) {
+    final versions = LoopV2Contract.strictMap(value, const <String>{
+      'ios',
+      'android',
     });
-    final minimums = LoopV2Contract.strictMap(
-      gate['minimumSupportedVersions'],
-      const <String>{'ios', 'android'},
+    return LoopV2PlatformVersions(
+      ios: _requiredSemver(versions['ios']),
+      android: _requiredSemver(versions['android']),
     );
-    final storeUrls = LoopV2Contract.strictMap(
-      gate['storeUrls'],
-      const <String>{'ios', 'android'},
-    );
-    return LoopV2VersionGate(
-      status: _enumValue(gate['status'], LoopV2VersionGateStatus.tryParse),
-      minimumSupportedVersions: LoopV2MinimumSupportedVersions(
-        ios: _nullableSemver(minimums['ios']),
-        android: _nullableSemver(minimums['android']),
-      ),
-      forceUpdate: _nullableBool(gate['forceUpdate']),
-      storeUrls: LoopV2StoreUrls(
-        ios: _nullableUri(storeUrls['ios']),
-        android: _nullableUri(storeUrls['android']),
-      ),
-      reasonCode: _nullableReasonCode(gate['reasonCode']),
+  }
+
+  LoopV2StoreUrls _requiredStoreUrls(Object? value) {
+    final urls = LoopV2Contract.strictMap(value, const <String>{
+      'ios',
+      'android',
+    });
+    return LoopV2StoreUrls(
+      ios: _requiredHttpsUri(urls['ios']),
+      android: _requiredHttpsUri(urls['android']),
     );
   }
 
@@ -227,18 +282,32 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
       'requiredVersion',
       'reasonCode',
     });
+    final status = _enumValue(gate['status'], LoopV2TermsGateStatus.tryParse);
     final requiredVersion = gate['requiredVersion'];
-    if (requiredVersion != null &&
-        (requiredVersion is! String ||
+    switch (status) {
+      case LoopV2TermsGateStatus.unavailable:
+        if (requiredVersion != null ||
+            gate['reasonCode'] != termsGateUnavailableReason) {
+          throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+        }
+        return const LoopV2TermsGate(
+          status: LoopV2TermsGateStatus.unavailable,
+          requiredVersion: null,
+          reasonCode: termsGateUnavailableReason,
+        );
+      case LoopV2TermsGateStatus.available:
+        if (requiredVersion is! String ||
             requiredVersion.isEmpty ||
-            requiredVersion.length > 128)) {
-      throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+            requiredVersion.length > 128 ||
+            gate['reasonCode'] != null) {
+          throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+        }
+        return LoopV2TermsGate(
+          status: status,
+          requiredVersion: requiredVersion,
+          reasonCode: null,
+        );
     }
-    return LoopV2TermsGate(
-      status: _enumValue(gate['status'], LoopV2TermsGateStatus.tryParse),
-      requiredVersion: requiredVersion as String?,
-      reasonCode: _nullableReasonCode(gate['reasonCode']),
-    );
   }
 
   LoopV2Capability _parseCapability(Object? value) {
@@ -270,11 +339,13 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
   }
 
   void _validateBaseline(Map<String, Object?> root) {
+    final configVersion = root['configVersion'];
     if (root['contractVersion'] != LoopV2ClientMetadata.contractVersion ||
-        root['configVersion'] != productConfigVersion ||
-        root['effectiveAt'] != productEffectiveAt) {
+        configVersion is! String ||
+        !configVersionPattern.hasMatch(configVersion)) {
       throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
     }
+    // effectiveAt is validated where it is parsed (_utcDateTime).
   }
 
   T _enumValue<T>(Object? value, T? Function(String) parser) {
@@ -299,8 +370,7 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
     return value;
   }
 
-  String? _nullableSemver(Object? value) {
-    if (value == null) return null;
+  String _requiredSemver(Object? value) {
     if (value is! String ||
         value.length < 5 ||
         value.length > 64 ||
@@ -308,6 +378,16 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
       throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
     }
     return value;
+  }
+
+  Uri _requiredHttpsUri(Object? value) {
+    final parsed = _nullableUri(value);
+    if (parsed == null ||
+        parsed.scheme != 'https' ||
+        parsed.userInfo.isNotEmpty) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+    }
+    return parsed;
   }
 
   Uri? _nullableUri(Object? value) {
@@ -329,14 +409,20 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
     return value as bool?;
   }
 
+  /// RFC 3339 date-time with an explicit timezone, normalised to UTC. The
+  /// backend emits UTC; an offset is accepted, a local (zone-less) value is not.
   DateTime _utcDateTime(Object? value) {
-    if (value is! String) {
+    if (value is! String || !_explicitZonePattern.hasMatch(value)) {
       throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
     }
     final parsed = DateTime.tryParse(value);
-    if (parsed == null || !parsed.isUtc || parsed.toIso8601String() != value) {
+    if (parsed == null || !parsed.isUtc) {
       throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
     }
     return parsed;
   }
+
+  static final RegExp _explicitZonePattern = RegExp(
+    r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$',
+  );
 }

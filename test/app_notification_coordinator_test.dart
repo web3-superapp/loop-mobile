@@ -106,6 +106,8 @@ void main() {
       expect(routingErrors.entries.map((error) => error.location), <String>[
         '/notifications',
       ]);
+      expect(routingErrors.last?.severity, LoopRoutingSeverity.info);
+      expect(routingErrors.errors, isEmpty);
     },
   );
 }

@@ -109,11 +109,11 @@ void main() {
       expect(LoopRouteManifest.defaultPath, '/community');
       expect(LoopShell.destinationPaths, LoopRouteManifest.tabPaths);
       expect(LoopShell.destinationLabels, <String>[
-        'Community',
-        'Mining',
+        '社区',
+        '挖矿',
         'Launch',
-        'Market',
-        'Wallet',
+        '行情',
+        '钱包',
       ]);
       for (final retired in <String>[
         '/home',

@@ -19,8 +19,10 @@ enum LoopV2PrimaryTab {
   }
 }
 
+/// `versionGate.status`. Decision 0029 removed the never-emitted `active`
+/// value; the gate is a `oneOf` on `available | unavailable`.
 enum LoopV2VersionGateStatus {
-  active('active'),
+  available('available'),
   unavailable('unavailable');
 
   const LoopV2VersionGateStatus(this.wireName);
@@ -52,9 +54,10 @@ enum LoopV2RegionGateStatus {
   }
 }
 
+/// `termsGate.status`. The former `accepted | required` values were never
+/// emitted; acceptance is account state owned by a later module.
 enum LoopV2TermsGateStatus {
-  accepted('accepted'),
-  required('required'),
+  available('available'),
   unavailable('unavailable');
 
   const LoopV2TermsGateStatus(this.wireName);
@@ -100,13 +103,18 @@ final class LoopV2Navigation {
   final List<LoopV2PrimaryTab> primaryTabs;
 }
 
+/// Per-platform SemVer strings. Both are non-null in the `available` variant
+/// and both null in the `unavailable` variant.
 @immutable
-final class LoopV2MinimumSupportedVersions {
-  const LoopV2MinimumSupportedVersions({this.ios, this.android});
+final class LoopV2PlatformVersions {
+  const LoopV2PlatformVersions({this.ios, this.android});
 
   final String? ios;
   final String? android;
 }
+
+/// Kept as an alias so existing call sites keep compiling.
+typedef LoopV2MinimumSupportedVersions = LoopV2PlatformVersions;
 
 @immutable
 final class LoopV2StoreUrls {
@@ -116,21 +124,38 @@ final class LoopV2StoreUrls {
   final Uri? android;
 }
 
+/// Discriminated version gate (decision 0029).
+///
+/// `available`: [minimumSupportedVersions], [forceUpdateBelow] and
+/// [storeUrls] are fully populated and [reasonCode] is null. A client below
+/// `forceUpdateBelow[platform]` must update; between the two floors it sees a
+/// dismissible prompt. `unavailable`: versions and store URLs are null,
+/// [forceUpdateBelow] is absent (null) and [reasonCode] names the cause.
 @immutable
 final class LoopV2VersionGate {
   const LoopV2VersionGate({
     required this.status,
     required this.minimumSupportedVersions,
-    required this.forceUpdate,
+    required this.forceUpdateBelow,
     required this.storeUrls,
     required this.reasonCode,
   });
 
+  const LoopV2VersionGate.unavailable({required this.reasonCode})
+    : status = LoopV2VersionGateStatus.unavailable,
+      minimumSupportedVersions = const LoopV2PlatformVersions(),
+      forceUpdateBelow = null,
+      storeUrls = const LoopV2StoreUrls();
+
   final LoopV2VersionGateStatus status;
-  final LoopV2MinimumSupportedVersions minimumSupportedVersions;
-  final bool? forceUpdate;
+  final LoopV2PlatformVersions minimumSupportedVersions;
+
+  /// Hard floor; only present in the `available` variant.
+  final LoopV2PlatformVersions? forceUpdateBelow;
   final LoopV2StoreUrls storeUrls;
   final String? reasonCode;
+
+  bool get isAvailable => status == LoopV2VersionGateStatus.available;
 }
 
 @immutable

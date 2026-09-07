@@ -119,6 +119,14 @@ abstract final class LoopRouteManifest {
     '/launchpad': '/launch',
   };
 
+  /// Retired locations the product still knowingly emits until their
+  /// replacement lands; the router records them as `info`, not `error`.
+  /// `/notifications`: the notification router's system-notice intent stays on
+  /// the legacy location until step 5 (D14) delivers the in-context notice.
+  static const List<String> informationalRetiredPaths = <String>[
+    '/notifications',
+  ];
+
   /// Retired locations that must never be mounted again. Each resolves to the
   /// unmatched handler, is recorded in [LoopRoutingErrorLog] and lands on
   /// [defaultPath].
