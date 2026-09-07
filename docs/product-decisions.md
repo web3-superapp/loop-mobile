@@ -12,8 +12,12 @@ This document applies to the Flutter source at the repository root. Material und
   a Community child flow, while Profile is opened as a child surface rather
   than a bottom-navigation destination.
 - `/home` and `/launchpad` are compatibility redirects to `/community` and
-  `/launch`. The existing 103-surface catalog remains migration inventory and
-  is not evidence that the replacement V2 93-route catalog is complete.
+  `/launch`. Decision 0050 makes `docs/product/routes-manifest.json` (93
+  routes, mirrored by `lib/core/navigation/route_manifest.dart`) the only
+  route inventory; every unimplemented slug mounts a truthful pending surface
+  and every retired location is logged and returned to Community. The former
+  103-surface catalog is read-only history, not a routing source or evidence
+  that the 93 pages are complete.
 - LOOP is spot-only. Perpetuals are disabled, have no primary-feature entry, and receive no further product work.
 - Privy is the selected login, wallet and final authorization boundary.
 - Reown AppKit 1.8.4 is accepted only as the connection and `personal_sign` transport for external EVM credentials under Privy. It is not a second identity system or a transaction wallet.
@@ -24,7 +28,7 @@ This document applies to the Flutter source at the repository root. Material und
 Product priority and current delivery are separate:
 
 - Product priority uses A, B and C. It is not a release phase or delivery promise.
-- The catalog remains 47 A-priority, 46 B-priority and 10 C-priority surfaces.
+- The retired catalog recorded 47 A-priority, 46 B-priority and 10 C-priority surfaces; the priorities below still describe Pay.
 - B5 is A priority, B6 and B7 are B priority, and B8 is C priority.
 - B5 through B8 are all deferred from the current release.
 - Wallet keeps one Pay card labelled unavailable so the planned V2 product position remains visible after Home is retired.

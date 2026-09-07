@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
@@ -26,7 +27,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
     router.go('/system/update');
     await tester.pumpAndSettle();
 
@@ -37,7 +38,7 @@ void main() {
 
     await tester.tap(find.text('Return to LOOP'));
     await tester.pumpAndSettle();
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(LoopTabBar), findsOneWidget);
   });
 
   testWidgets('naked I3 never infers or blocks for an update requirement', (

@@ -1,24 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:loop_mobile/core/navigation/surface_catalog.dart';
+import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/launchpad/launchpad_screen.dart';
 
 void main() {
-  test('Launchpad keeps only its first-class placeholder in this release', () {
-    final launchpad = SurfaceCatalog.all
-        .where((surface) => surface.module == SurfaceModule.launchpad)
-        .toList(growable: false);
+  test('Launch keeps only its tab page implemented in this release', () {
+    final launch = LoopRouteManifest.forModule(LoopRouteModule.launch);
 
-    expect(launchpad.map((surface) => surface.id), <String>[
-      'G1',
-      'G2',
-      'G3',
-      'G4',
-    ]);
-    expect(launchpad.first.path, '/launchpad');
-    expect(launchpad.first.deferred, isFalse);
-    expect(launchpad.skip(1).every((surface) => surface.deferred), isTrue);
+    expect(launch, hasLength(11));
+    expect(launch.first.slug, 'launch');
+    expect(launch.first.path, '/launch');
+    expect(launch.first.tab, isTrue);
+    expect(launch.first.status, LoopRouteStatus.implemented);
+    expect(
+      launch.skip(1).every((entry) => entry.status == LoopRouteStatus.pending),
+      isTrue,
+    );
+    expect(
+      launch.map((entry) => entry.path),
+      everyElement(startsWith('/launch')),
+    );
   });
 
   testWidgets('Launchpad is truthful and exposes no participation action', (

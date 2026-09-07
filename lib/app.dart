@@ -10,11 +10,11 @@ import 'package:loop_mobile/app/session/loop_communication_retirement.dart';
 import 'package:loop_mobile/app/session/post_auth_bootstrap_coordinator.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/navigation/spot_market_route.dart';
-import 'package:loop_mobile/core/navigation/surface_catalog.dart';
+import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
+import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
 import 'package:loop_mobile/features/account/privy_login_screen.dart';
-import 'package:loop_mobile/features/catalog/catalog_surface_screen.dart';
 import 'package:loop_mobile/features/chat/chat.dart';
 import 'package:loop_mobile/features/community/community_screen.dart';
 import 'package:loop_mobile/features/home/home_screens.dart';
@@ -23,6 +23,7 @@ import 'package:loop_mobile/features/market/market.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/review/signing_review_surface.dart';
+import 'package:loop_mobile/features/shell/loop_pending_surface.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/features/wallet/wallet_screens.dart';
@@ -87,7 +88,10 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       (previous, next) {},
       fireImmediately: true,
     );
-    router = _buildRouter(() => ref.read(loopSessionProvider));
+    router = _buildRouter(
+      () => ref.read(loopSessionProvider),
+      ref.read(loopRoutingErrorLogProvider),
+    );
     notificationCoordinator = LoopNotificationCoordinator(
       source: ref.read(loopNotificationEventSourceProvider),
       readSession: () => ref.read(loopSessionProvider),
@@ -160,7 +164,10 @@ class _LoopAppState extends ConsumerState<LoopApp> {
   }
 }
 
-GoRouter _buildRouter(LoopSessionState Function() readSession) {
+GoRouter _buildRouter(
+  LoopSessionState Function() readSession,
+  LoopRoutingErrorLog routingErrors,
+) {
   return GoRouter(
     initialLocation: '/auth',
     redirect: (context, state) {
@@ -182,26 +189,43 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
       ShellRoute(
         builder: (context, state, child) =>
             LoopShell(location: state.uri.path, child: child),
+        // Peer tabs fade; every other route pushes horizontally through the
+        // theme's LoopPushTransitionsBuilder.
         routes: <RouteBase>[
           GoRoute(
             path: '/community',
-            builder: (context, state) => const CommunityScreen(),
+            pageBuilder: (context, state) => LoopTabPage<void>(
+              key: state.pageKey,
+              child: const CommunityScreen(),
+            ),
           ),
           GoRoute(
             path: '/mining',
-            builder: (context, state) => const MiningScreen(),
+            pageBuilder: (context, state) => LoopTabPage<void>(
+              key: state.pageKey,
+              child: const MiningScreen(),
+            ),
           ),
           GoRoute(
             path: '/launch',
-            builder: (context, state) => const LaunchpadScreen(),
+            pageBuilder: (context, state) => LoopTabPage<void>(
+              key: state.pageKey,
+              child: const LaunchpadScreen(),
+            ),
           ),
           GoRoute(
             path: '/market',
-            builder: (context, state) => const MarketScreen(),
+            pageBuilder: (context, state) => LoopTabPage<void>(
+              key: state.pageKey,
+              child: const MarketScreen(),
+            ),
           ),
           GoRoute(
             path: '/wallet',
-            builder: (context, state) => const WalletScreen(),
+            pageBuilder: (context, state) => LoopTabPage<void>(
+              key: state.pageKey,
+              child: const WalletScreen(),
+            ),
           ),
         ],
       ),
@@ -220,20 +244,13 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
       ),
       ..._accountRoutes,
       GoRoute(
-        path: '/home/net-worth',
-        builder: (context, state) => const NetWorthScreen(),
-      ),
-      GoRoute(
-        path: '/notifications',
-        builder: (context, state) => const NotificationsScreen(),
-      ),
-      GoRoute(
         path: '/search',
         builder: (context, state) => const GlobalSearchScreen(),
       ),
+      // Manifest `networth` (legacy `/home/net-worth`, retired with Home).
       GoRoute(
-        path: '/home/security',
-        builder: (context, state) => const SecurityActivityScreen(),
+        path: '/wallet/networth',
+        builder: (context, state) => const NetWorthScreen(),
       ),
       GoRoute(
         path: SpotMarketRoute.path,
@@ -287,7 +304,6 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
         path: '/market/smart-money',
         builder: (context, state) => const SmartMoneyScreen(),
       ),
-      ..._retainedPerpRedirectRoutes,
       GoRoute(
         path: '/chat/friends/add',
         builder: (context, state) => const AddFriendPage(),
@@ -388,10 +404,6 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
             StreamChatChannelRoutePage(cid: state.pathParameters['cid'] ?? ''),
       ),
       GoRoute(
-        path: '/chat/meeting',
-        builder: (context, state) => const MeetingPlaceholderPage(),
-      ),
-      GoRoute(
         path: '/preview/token-card',
         builder: (context, state) => const ChatPreviewRouteGuard(
           surfaceLabel: 'Token card preview',
@@ -467,8 +479,9 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
         builder: (context, state) =>
             BridgeStatusScreen(snapshot: state.extra! as BridgePreviewSnapshot),
       ),
+      // Manifest `tx-result` (legacy `/wallet/transaction`).
       GoRoute(
-        path: '/wallet/transaction',
+        path: '/wallet/tx/result',
         builder: (context, state) => const TransactionResultScreen(),
       ),
       GoRoute(
@@ -492,16 +505,8 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
         builder: (context, state) => const ApprovalsScreen(),
       ),
       GoRoute(
-        path: '/wallet/dapps',
-        builder: (context, state) => const DappListScreen(),
-      ),
-      GoRoute(
         path: '/wallet/networks',
         builder: (context, state) => const NetworksScreen(),
-      ),
-      GoRoute(
-        path: '/wallet/protection',
-        builder: (context, state) => const ProtectionScreen(),
       ),
       GoRoute(
         path: '/preview/signing-review',
@@ -516,14 +521,21 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
         builder: (context, state) => const FriendListPage(),
       ),
       ..._systemRoutes,
+      // Manifest `pay`: informational unavailable surface (fail closed).
       GoRoute(
-        path: '/inventory',
-        builder: (context, state) => const UiInventoryScreen(),
+        path: '/pay',
+        builder: (context, state) => LoopPendingSurface.unavailable(
+          entry: LoopRouteManifest.bySlug('pay'),
+        ),
       ),
-      ..._catalogRoutes,
+      ..._pendingManifestRoutes,
+      // Illegal locations are recorded and land on Community.
       GoRoute(
         path: '/:unmatched(.*)',
-        redirect: (context, state) => '/community',
+        redirect: (context, state) {
+          routingErrors.record(state.uri.toString());
+          return '/community';
+        },
       ),
     ],
     errorBuilder: (context, state) =>
@@ -531,18 +543,27 @@ GoRouter _buildRouter(LoopSessionState Function() readSession) {
   );
 }
 
+/// Every manifest slug without a dedicated screen mounts the pending surface,
+/// so all 93 routes are reachable and none silently falls through.
+final List<RouteBase> _pendingManifestRoutes =
+    LoopRouteManifest.withStatus(LoopRouteStatus.pending)
+        .map((entry) {
+          return GoRoute(
+            path: entry.path,
+            builder: (context, state) => LoopPendingSurface(entry: entry),
+          );
+        })
+        .toList(growable: false);
+
+// Manifest 0-global-account pages with an existing screen. Onboarding, seed
+// reveal/verify, wallet import and the old profile setup are retired.
 final List<RouteBase> _accountRoutes =
     <(String, String)>[
           ('/splash', 'splash'),
-          ('/onboarding', 'onboarding'),
           ('/auth/wallet', 'auth-wallet'),
           ('/auth/wallet/create', 'wallet-create'),
           ('/auth/wallet/backup', 'wallet-backup'),
-          ('/auth/wallet/seed', 'seed-show'),
-          ('/auth/wallet/seed/verify', 'seed-verify'),
-          ('/auth/wallet/import', 'wallet-import'),
           ('/auth/security', 'security-setup'),
-          ('/auth/profile', 'profile-setup'),
         ]
         .map((item) {
           return GoRoute(
@@ -556,15 +577,16 @@ final List<RouteBase> _accountRoutes =
         })
         .toList(growable: false);
 
+// Manifest 7-profile pages with an existing screen. Copy permissions, seed
+// backup and profile rewards are retired; `/profile/social-privacy` stays as a
+// supplementary implementation route.
 final List<RouteBase> _profileRoutes =
     <(String, String)>[
           ('/profile/edit', 'profile-edit'),
           ('/profile/privacy', 'privacy'),
           ('/profile/social-privacy', 'social-privacy'),
-          ('/profile/copy', 'copytrade-perms'),
           ('/profile/security', 'security'),
           ('/profile/devices', 'devices'),
-          ('/profile/recovery', 'seed-backup'),
           ('/profile/social-recovery', 'social-recovery'),
           ('/profile/notifications', 'notif-settings'),
           ('/profile/connections', 'connections'),
@@ -572,7 +594,6 @@ final List<RouteBase> _profileRoutes =
           ('/profile/settings', 'settings'),
           ('/profile/about', 'about'),
           ('/profile/help', 'support'),
-          ('/profile/rewards', 'mining'),
           ('/profile/referral', 'referral'),
         ]
         .map((item) {
@@ -681,175 +702,49 @@ Future<void> _signOut(WidgetRef ref) {
       );
 }
 
+// Account screen destinations. Retired ids (onboarding, seed reveal/verify,
+// wallet import) resolve to the nearest manifest page instead of a dead route.
 String _accountPath(String id) => switch (id) {
-  'splash' => '/splash',
-  'onboarding' => '/onboarding',
-  'auth' => '/auth',
-  'auth-otp' => '/auth/otp',
-  'auth-wallet' => '/auth/wallet',
-  'wallet-create' => '/auth/wallet/create',
-  'wallet-backup' => '/auth/wallet/backup',
-  'seed-show' => '/auth/wallet/seed',
-  'seed-verify' => '/auth/wallet/seed/verify',
-  'wallet-import' => '/auth/wallet/import',
-  'security-setup' => '/auth/security',
-  'profile-setup' => '/auth/profile',
-  'home' => '/community',
-  _ => '/auth',
+  'splash' => LoopRouteManifest.pathFor('splash'),
+  'onboarding' => LoopRouteManifest.pathFor('auth'),
+  'auth' => LoopRouteManifest.pathFor('auth'),
+  'auth-otp' => LoopRouteManifest.pathFor('auth-otp'),
+  'auth-wallet' => LoopRouteManifest.pathFor('auth-wallet'),
+  'wallet-create' => LoopRouteManifest.pathFor('wallet-create'),
+  'wallet-backup' => LoopRouteManifest.pathFor('wallet-recovery'),
+  'seed-show' => LoopRouteManifest.pathFor('wallet-recovery'),
+  'seed-verify' => LoopRouteManifest.pathFor('wallet-recovery'),
+  'wallet-import' => LoopRouteManifest.pathFor('auth-wallet'),
+  'security-setup' => LoopRouteManifest.pathFor('security-setup'),
+  'profile-setup' => LoopRouteManifest.pathFor('loop-id-setup'),
+  'home' => LoopRouteManifest.defaultPath,
+  _ => LoopRouteManifest.pathFor('auth'),
 };
 
+// Profile screen destinations. Copy permissions live inside Privacy, seed
+// backup is replaced by the manifest `key-export` page and rewards by the
+// Mining tab; none of the retired ids reaches a dead route.
 String _profilePath(String id) => switch (id) {
-  'profile' => '/profile',
+  'profile' => LoopRouteManifest.pathFor('profile'),
   'friends' => '/profile/friends',
-  'profile-edit' => '/profile/edit',
-  'privacy' => '/profile/privacy',
+  'profile-edit' => LoopRouteManifest.pathFor('profile-edit'),
+  'privacy' => LoopRouteManifest.pathFor('privacy'),
   'social-privacy' => '/profile/social-privacy',
-  'copytrade-perms' => '/profile/copy',
-  'security' => '/profile/security',
-  'devices' => '/profile/devices',
-  'seed-backup' => '/profile/recovery',
-  'social-recovery' => '/profile/social-recovery',
-  'notif-settings' => '/profile/notifications',
-  'connections' => '/profile/connections',
-  'blocklist' => '/profile/blocked',
-  'settings' => '/profile/settings',
-  'about' => '/profile/about',
-  'support' => '/profile/help',
-  'mining' => '/profile/rewards',
-  'referral' => '/profile/referral',
-  _ => '/profile',
+  'copytrade-perms' => LoopRouteManifest.pathFor('privacy'),
+  'security' => LoopRouteManifest.pathFor('security'),
+  'devices' => LoopRouteManifest.pathFor('devices'),
+  'seed-backup' => LoopRouteManifest.pathFor('key-export'),
+  'social-recovery' => LoopRouteManifest.pathFor('social-recovery'),
+  'notif-settings' => LoopRouteManifest.pathFor('notif-settings'),
+  'connections' => LoopRouteManifest.pathFor('connections'),
+  'blocklist' => LoopRouteManifest.pathFor('blocklist'),
+  'settings' => LoopRouteManifest.pathFor('settings'),
+  'about' => LoopRouteManifest.pathFor('about'),
+  'support' => LoopRouteManifest.pathFor('support'),
+  'mining' => LoopRouteManifest.pathFor('mining'),
+  'referral' => LoopRouteManifest.pathFor('referral'),
+  _ => LoopRouteManifest.pathFor('profile'),
 };
-
-abstract final class LoopRouteRegistry {
-  static const Set<String> retainedPerpPaths = <String>{
-    '/perp',
-    '/perp/trade',
-    '/perp/confirm',
-    '/perp/positions',
-    '/perp/position',
-    '/perp/orders',
-    '/perp/history',
-    '/perp/account',
-    '/perp/transfer',
-    '/perp/deposit',
-    '/perp/funding',
-    '/perp/risk',
-  };
-
-  static const Set<String> customSurfacePaths = <String>{
-    '/splash',
-    '/onboarding',
-    '/auth',
-    '/auth/otp',
-    '/auth/wallet',
-    '/auth/wallet/create',
-    '/auth/wallet/backup',
-    '/auth/wallet/seed',
-    '/auth/wallet/seed/verify',
-    '/auth/wallet/import',
-    '/auth/security',
-    '/auth/profile',
-    '/community',
-    '/mining',
-    '/launch',
-    '/home',
-    '/home/net-worth',
-    '/notifications',
-    '/search',
-    '/home/security',
-    '/market',
-    SpotMarketRoute.path,
-    '/market/chart',
-    '/market/new',
-    '/market/holders',
-    '/market/trades',
-    '/market/watchlist',
-    '/market/alerts',
-    '/market/smart-money',
-    ...retainedPerpPaths,
-    '/chat',
-    '/chat/friends/add',
-    '/chat/friends/requests',
-    '/chat/groups/create',
-    '/chat/groups/:groupId/alias',
-    '/chat/channel/:cid/alias',
-    '/chat/group',
-    '/chat/voice',
-    '/chat/dm',
-    '/chat/group-info',
-    '/chat/voice/full',
-    '/chat/requests',
-    '/chat/search',
-    '/chat/meeting',
-    '/preview/token-card',
-    '/preview/contract-facts',
-    '/preview/asset-message',
-    '/wallet',
-    '/wallet/asset',
-    '/wallet/send',
-    '/wallet/send/to',
-    '/wallet/send/confirm',
-    '/wallet/receive',
-    '/wallet/swap',
-    '/wallet/swap/route',
-    '/wallet/bridge',
-    '/wallet/bridge/status',
-    '/preview/signing-review',
-    '/wallet/transaction',
-    '/wallet/history',
-    '/wallet/manage',
-    '/wallet/dapp',
-    '/preview/approval',
-    '/wallet/approvals',
-    '/wallet/dapps',
-    '/wallet/networks',
-    '/wallet/protection',
-    '/launchpad',
-    '/profile',
-    '/profile/friends',
-    '/profile/edit',
-    '/profile/privacy',
-    '/profile/social-privacy',
-    '/profile/copy',
-    '/profile/security',
-    '/profile/devices',
-    '/profile/recovery',
-    '/profile/social-recovery',
-    '/profile/notifications',
-    '/profile/connections',
-    '/profile/blocked',
-    '/profile/settings',
-    '/profile/about',
-    '/profile/help',
-    '/profile/rewards',
-    '/profile/referral',
-    '/system/offline',
-    '/system/error',
-    '/system/update',
-    '/system/maintenance',
-    '/system/region',
-    '/system/permission',
-    '/preview/toast',
-    '/preview/loading',
-  };
-}
-
-final List<RouteBase> _retainedPerpRedirectRoutes = LoopRouteRegistry
-    .retainedPerpPaths
-    .map((path) => GoRoute(path: path, redirect: (context, state) => '/market'))
-    .toList(growable: false);
-
-final List<RouteBase> _catalogRoutes = SurfaceCatalog.all
-    .where(
-      (surface) => !LoopRouteRegistry.customSurfacePaths.contains(surface.path),
-    )
-    .map(
-      (surface) => GoRoute(
-        path: surface.path,
-        builder: (context, state) => CatalogSurfaceScreen(surface: surface),
-      ),
-    )
-    .toList(growable: false);
 
 class UnknownRouteScreen extends StatelessWidget {
   const UnknownRouteScreen({required this.location, super.key});
@@ -864,22 +759,13 @@ class UnknownRouteScreen extends StatelessWidget {
       subtitle: location,
       children: <Widget>[
         LoopStateCard(
-          title: 'This surface is not in the product map',
-          message: 'Return to Community or inspect the legacy UI inventory.',
+          title: 'This location is not in the 93-route product map',
+          message: 'Return to Community. The request has been recorded.',
           icon: Icons.route_outlined,
           tone: LoopTone.warning,
-          action: Wrap(
-            spacing: 10,
-            children: <Widget>[
-              FilledButton(
-                onPressed: () => context.go('/community'),
-                child: const Text('Go to Community'),
-              ),
-              OutlinedButton(
-                onPressed: () => context.go('/inventory'),
-                child: const Text('UI inventory'),
-              ),
-            ],
+          action: FilledButton(
+            onPressed: () => context.go(LoopRouteManifest.defaultPath),
+            child: const Text('Go to Community'),
           ),
         ),
       ],

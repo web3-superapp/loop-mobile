@@ -9,8 +9,8 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 ## 当前已完成
 
 - 五个固定主入口：Community / Mining / Launch / Market / Wallet；登录后进入 Community，Chat 是 Community 子流程，Profile 从 Community 顶部进入
-- V2 UI Foundation 已开始迁移：Ink / Lime / Chalk / Graphite 视觉 token、五栏浮动导航、Community UI-first 入口和 Mining 真实不可用态。旧 `/home` 与 `/launchpad` 仅保留兼容重定向；原 103-surface 目录仍是迁移清单，不代表新版 93 route 已完成
-- 全量 103 个产品 surface 的路由目录；产品优先级独立采用 A / B / C（47 / 46 / 10），`deferred` 单独表达本期不交付
+- V2 UI Foundation 已开始迁移：Ink / Lime / Chalk / Graphite 视觉 token、五栏浮动导航、Community UI-first 入口和 Mining 真实不可用态。旧 `/home` 与 `/launchpad` 仅保留兼容重定向；路由表已改为只从 93 route manifest 生成（决策 0050/0051），未接入的页面挂真实的“尚未接入”占位，原 103-surface 目录仅作只读历史
+- 93 route manifest 驱动的路由表：Sora / IBM Plex Mono 字体、原型 SVG sprite 与素材、完整设计 Token、Chalk 浮动底栏、非法路由回 `community` 并记录 `LoopRoutingErrorLog`；原 103-surface 目录仅作只读历史（产品优先级 A / B / C 的旧说明不再是交付依据）
 - Privy 身份入口现支持 Email OTP、Google OAuth、iOS-only Apple OAuth，以及外部 EVM 钱包的 SIWE 登录/绑定。它们复用同一个 Privy 0.10.1 实例和单飞身份操作边界；缺少 Mobile App Client ID 时全部保持不可登录，缺少有效 Reown Project ID 时只关闭外部钱包入口。供应商 Dashboard、回跳、签名钱包与真机行为仍未验证
 - Reown AppKit 1.8.4 只负责连接 canonical `eip155` 账号并转发 Privy 生成消息的 `personal_sign`。AppKit 自带的认证、Email、Social、Embedded Wallet、SIWE、analytics、Link Mode 与 Solana 均未启用；会话完成后释放。外部地址只显示为 Privy 登录凭据，不进入 Embedded wallet、余额、签名或 LOOP 交易权限
 - Privy Embedded Ethereum wallet readiness 已挂到正式 Wallet：完整认证且无钱包时可走现有 principal-bound SDK 创建链路，已有钱包时只展示并复制当前会话的完整地址。Manage wallets 不再显示假钱包；Receive 不生成二维码或声称支持入金。余额、资产、Send、Swap、签名与交易结果仍明确为演示或不可用

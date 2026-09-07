@@ -274,7 +274,7 @@ void main() {
     final community = find.byKey(const ValueKey<String>('community-screen'));
     expect(community, findsOneWidget);
     final router = GoRouter.of(tester.element(community));
-    router.go('/home/net-worth');
+    router.go('/wallet/networth');
     await tester.pumpAndSettle();
 
     expect(

@@ -40,6 +40,25 @@ screens) is older history.
   token/network/brand assets are introduced in workspace step 1 from the
   prototype; until then the Material icon set remains a placeholder.
 
+## Consequences
+
+- `lib/core/navigation/route_manifest.dart` is the single Dart mirror of the
+  manifest; `lib/app.dart` mounts its 93 paths plus the two compatibility
+  redirects and an explicit, tested list of supplementary implementation
+  routes (Stream channel deep links, friend/group creation, local signing
+  review, guarded chat previews) that have no slug yet.
+- Retired locations (`/onboarding`, `/notifications`, `/onramp`, Pay
+  sub-routes, seed reveal/verify, wallet import, `/home/*`, `/perp/*`,
+  copy permissions, rewards, `/inventory`) resolve to the unmatched handler,
+  are recorded in `LoopRoutingErrorLog` and land on `/community`.
+- Unimplemented slugs mount `LoopPendingSurface` so every route is reachable
+  without fixtures; `surface_catalog.dart` and the catalog screens stop being
+  a routing source (the catalog file stays as read-only history for its
+  reviewed delivery-truth wording).
+- The notification router's legacy `/notifications` intent now lands on
+  Community with a logged routing error until an in-context notice target is
+  decided.
+
 ## Verification
 
 Baseline on 2026-09-07 with the pinned Flutter 3.47.1 in `.tooling/flutter`:

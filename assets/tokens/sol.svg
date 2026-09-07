@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">SOL token</title>
+  <rect x="3" y="3" width="58" height="58" rx="19" fill="#171a16" stroke="#7f897b" stroke-width="2"/>
+  <path d="M17 16h34l-7 8H10Z" fill="#f3f5ef"/>
+  <path d="M13 28h34l7 8H20Z" fill="#b8ff20"/>
+  <path d="M17 40h34l-7 8H10Z" fill="#f3f5ef"/>
+</svg>

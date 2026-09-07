@@ -6,6 +6,7 @@ import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_preview_route_guard.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
+import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
@@ -26,7 +27,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
     for (final route in <String>[
       '/chat/group',
       '/chat/group?conversationId=glyph-hunters',

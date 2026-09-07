@@ -7,6 +7,7 @@ import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
+import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle_providers.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_spot_candle_repository.dart';
@@ -50,7 +51,7 @@ void main() {
         tester.element(find.byKey(const ValueKey<String>('community-screen'))),
       );
 
-      await tester.tap(find.widgetWithText(NavigationDestination, 'Market'));
+      await tester.tap(find.widgetWithText(LoopTabItem, 'Market'));
       await tester.pumpAndSettle();
 
       expect(spotRepository.fetchCount, 1);

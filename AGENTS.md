@@ -6,7 +6,7 @@ Build Loop, a Flutter iOS/Android app with five primary destinations—Community
 
 These instructions apply to the entire repository. Preserve the approved five-destination V2 shell while migrating the legacy UI catalog through narrow, verified vertical slices. Community is the post-login home; Chat and Profile remain child domains outside bottom navigation. The current mounted market slice is public, Testnet, read-only Spot discovery and must not be relabelled as the future BSC Market; retained Perp routes and adapters are disabled implementation history and must not return to product navigation. Never imply that Privy, Stream, Firebase push, account Watchlist persistence, wallet signing, or private spot execution is connected when its required dashboard, backend, or device inputs are absent.
 
-Read `docs/product/implementation-constraints.md` and `docs/product-decisions.md` before planning or implementing product behavior. The former owns security and truth-source constraints; the latter owns the five primary destinations, the legacy 103-surface migration inventory, and current delivery decisions. Material below `reference/legacy-prototype/` is frozen history and must not override current Flutter product decisions.
+Read `docs/product/implementation-constraints.md` and `docs/product-decisions.md` before planning or implementing product behavior. The former owns security and truth-source constraints; the latter owns the five primary destinations, the 93-route manifest (`docs/product/routes-manifest.json`, mirrored by `lib/core/navigation/route_manifest.dart`), and current delivery decisions. `lib/core/navigation/surface_catalog.dart` is read-only history and is not a routing source. Material below `reference/legacy-prototype/` is frozen history and must not override current Flutter product decisions.
 
 ## Ownership boundaries
 
@@ -33,6 +33,7 @@ Stream SDK types may stay inside chat and calls to preserve official controllers
 - Firebase Core 4.13.0 / Messaging 16.5.0
 - Riverpod 3.4.2 / go_router 17.5.0 / Dio 5.11.0
 - Decimal 3.2.6 / UUID 4.6.0 / Shared Preferences 2.5.5
+- flutter_svg 2.3.0 (prototype SVG sprite, token/network/brand assets; decision 0051)
 
 Dependency managers are Flutter pub with repository `pubspec.lock`, Gradle Wrapper 8.14, and CocoaPods 1.16.2 with repository `ios/Podfile.lock`. Direct dependency constraints stay exact. Change a pin only with official-source research, both native builds, and a numbered decision/report update.
 

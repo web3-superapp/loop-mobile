@@ -12,6 +12,7 @@ Review date: 2026-09-03. Versions are locked by `pubspec.yaml` and `pubspec.lock
 | firebase_core | 4.13.0 | BSD-3-Clause-style Flutter license | Firebase bootstrap, gated until configs exist |
 | firebase_messaging | 16.5.0 | BSD-3-Clause-style Flutter license | Central push router, gated until configs exist |
 | flutter_secure_storage | 10.3.1 | BSD-3-Clause | Narrow device/session command journal; never stores provider tokens |
+| flutter_svg | 2.3.0 | MIT | Renders the prototype SVG sprite, token and network logos (decision 0051) |
 | flutter_lints | 6.0.0 | BSD-3-Clause-style Flutter license | Development lint rules |
 | flutter_riverpod | 3.4.2 | MIT | State management |
 | go_router | 17.5.0 | BSD-3-Clause-style Flutter license | Navigation |
@@ -32,6 +33,15 @@ The Reown graph is also source-available under vendor community terms rather tha
 Reown also resolves provider-internal storage and wallet-transport packages. LOOP's direct use of `flutter_secure_storage` is independently limited by decision 0049 to the V2 device/session command journal; it is not a provider-token, PIN, wallet, Profile, settings, or transaction store. LOOP uses a distinct Android storage namespace with destructive reset disabled and a non-synchronizing, this-device-only iOS Keychain service so the two owners cannot silently share storage policy.
 
 `stream_video_push_notification` 1.4.3 was compatibility-tested in Phase 0 but is intentionally absent from the current resolved application. Its native plugin auto-registers Telecom/CallKit behavior before LOOP has approved push, VoIP, or incoming-call capabilities. Reintroducing it requires a new native/provider decision and an updated attribution review.
+
+## Bundled fonts and prototype assets
+
+| Asset | License | Location |
+| --- | --- | --- |
+| Sora (variable) | SIL Open Font License 1.1 (`assets/fonts/OFL-Sora.txt`) | `assets/fonts/Sora-Variable.ttf` |
+| IBM Plex Mono Regular / Medium / SemiBold | SIL Open Font License 1.1 (`assets/fonts/OFL-IBMPlexMono.txt`) | `assets/fonts/IBMPlexMono-*.ttf` |
+| Noto Sans SC | SIL Open Font License 1.1 | Not bundled; platform CJK fallback (decision 0051) |
+| LOOP sprite, token, network, brand and identity atlas assets | LOOP product assets from the frozen cliview.org prototype (`LOOP/docs/prototype`) | `assets/icons`, `assets/tokens`, `assets/networks`, `assets/brand`, `assets/people`, `assets/communities` |
 
 ## Inspiration register
 

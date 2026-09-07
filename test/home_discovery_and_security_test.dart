@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/preview_conversation_identity.dart';
@@ -151,14 +152,16 @@ void main() {
   );
 
   testWidgets(
-    'production LoopApp security route mounts the unavailable surface',
+    'production LoopApp retires the Home security route to Community',
     (tester) async {
+      final routingErrors = LoopRoutingErrorLog();
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             privyAuthGatewayProvider.overrideWithValue(
               const AuthenticatedTestPrivyGateway(),
             ),
+            loopRoutingErrorLogProvider.overrideWithValue(routingErrors),
           ],
           child: const LoopApp(),
         ),
@@ -171,11 +174,13 @@ void main() {
       router.go('/home/security');
       await tester.pumpAndSettle();
 
+      expect(router.routeInformationProvider.value.uri.path, '/community');
+      expect(routingErrors.last?.location, '/home/security');
       expect(
         find.byKey(
           const ValueKey<String>('security-activity-provider-unavailable'),
         ),
-        findsOneWidget,
+        findsNothing,
       );
       expect(
         find.byKey(
@@ -183,6 +188,8 @@ void main() {
         ),
         findsNothing,
       );
+      expect(find.text('No urgent action'), findsNothing);
+      expect(find.textContaining('MFA is active'), findsNothing);
     },
   );
 

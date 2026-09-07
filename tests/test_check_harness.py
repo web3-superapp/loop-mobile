@@ -23,7 +23,9 @@ V2_NAVIGATION_FIXTURE_FILES = (
     "docs/decisions/0048-adopt-v2-five-destination-ui-foundation.md",
     "docs/product-decisions.md",
     "docs/product/implementation-constraints.md",
+    "docs/product/routes-manifest.json",
     "lib/app.dart",
+    "lib/core/navigation/route_manifest.dart",
     "lib/core/navigation/surface_catalog.dart",
     "lib/features/chat/stream_chat_inbox_page.dart",
     "lib/features/community/community_screen.dart",
@@ -859,6 +861,92 @@ class HarnessTests(unittest.TestCase):
             )
         )
 
+    def test_route_manifest_contract_accepts_repository(self) -> None:
+        self.assertEqual([], check_harness.check_route_manifest_contract(REPOSITORY_ROOT))
+
+    def test_route_manifest_contract_rejects_slug_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_navigation_fixture(root)
+            path = root / "lib/core/navigation/route_manifest.dart"
+            source = path.read_text(encoding="utf-8")
+            mutated = source.replace("slug: 'community-members',", "slug: 'members',", 1)
+            self.assertNotEqual(source, mutated)
+            path.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_route_manifest_contract(root)
+
+        self.assertTrue(
+            any("93 manifest slugs in manifest order" in error for error in result),
+            msg=f"expected manifest slug drift guard: {result}",
+        )
+
+    def test_route_manifest_contract_rejects_retired_route_in_app(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_navigation_fixture(root)
+            path = root / "lib/app.dart"
+            source = path.read_text(encoding="utf-8")
+            mutated = source.replace(
+                "GoRoute(path: '/home', redirect: (context, state) => '/community')",
+                "GoRoute(path: '/home', redirect: (context, state) => '/community'),\n"
+                "      GoRoute(path: '/onboarding', redirect: (context, state) => '/auth')",
+                1,
+            )
+            self.assertNotEqual(source, mutated)
+            path.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_route_manifest_contract(root)
+
+        self.assertIn(
+            "lib/app.dart must not mount or redirect retired route '/onboarding'",
+            result,
+        )
+
+    def test_route_manifest_contract_rejects_shell_tab_reorder(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_navigation_fixture(root)
+            path = root / "lib/features/shell/loop_shell.dart"
+            source = path.read_text(encoding="utf-8")
+            mutated = source.replace(
+                "_LoopDestination('Mining', '/mining', 'mine-tab'),\n"
+                "    _LoopDestination('Launch', '/launch', 'launch'),",
+                "_LoopDestination('Launch', '/launch', 'launch'),\n"
+                "    _LoopDestination('Mining', '/mining', 'mine-tab'),",
+                1,
+            )
+            self.assertNotEqual(source, mutated)
+            path.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_route_manifest_contract(root)
+
+        self.assertIn(
+            "LoopShell destinations must follow the manifest tab order",
+            result,
+        )
+
+    def test_v2_navigation_contract_requires_logged_unmatched_fallback(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_navigation_fixture(root)
+            path = root / "lib/app.dart"
+            source = path.read_text(encoding="utf-8")
+            mutated = source.replace(
+                "          routingErrors.record(state.uri.toString());\n",
+                "",
+                1,
+            )
+            self.assertNotEqual(source, mutated)
+            path.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_v2_primary_navigation_contract(root)
+
+        self.assertTrue(
+            any("recorded in LoopRoutingErrorLog" in error for error in result),
+            msg=f"expected logged unmatched fallback guard: {result}",
+        )
+
     def test_v2_navigation_contract_rejects_a_restored_home_tab(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -866,8 +954,8 @@ class HarnessTests(unittest.TestCase):
             path = root / "lib/features/shell/loop_shell.dart"
             path.write_text(
                 path.read_text(encoding="utf-8").replace(
-                    "'Community',\n      '/community'",
-                    "'Home',\n      '/home'",
+                    "'Community', '/community'",
+                    "'Home', '/home'",
                     1,
                 ),
                 encoding="utf-8",
@@ -3774,25 +3862,48 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected live bounded Home Security entry guard: {result}",
         )
 
-    def test_home_security_app_route_cannot_hide_builder_in_dead_evidence(self) -> None:
+    def test_home_security_route_cannot_be_remounted(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             relative = "lib/app.dart"
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            old = "builder: (context, state) => const SecurityActivityScreen(),"
+            old = "      GoRoute(\n        path: '/search',"
             new = (
-                "builder: (context, state) => const NetWorthScreen(),\n"
-                "        // Dead evidence: builder: (context, state) => const SecurityActivityScreen(),"
+                "      GoRoute(\n"
+                "        path: '/home/security',\n"
+                "        builder: (context, state) => const SecurityActivityScreen(),\n"
+                "      ),\n"
+                "      GoRoute(\n        path: '/search',"
             )
+            self.assertIn(old, source)
             path.write_text(source.replace(old, new, 1), encoding="utf-8")
 
             result = check_harness.check_home_discovery_and_security_contract(root)
 
         self.assertTrue(
-            any("Home Security route" in error and "fingerprint" in error for error in result),
-            msg=f"expected live Home Security app-route guard: {result}",
+            any("must not mount the retired Home security route" in error for error in result),
+            msg=f"expected retired Home Security route guard: {result}",
+        )
+
+    def test_home_security_route_comment_does_not_count_as_remount(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/app.dart"
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source + "\n// retired: GoRoute(path: '/home/security')\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_home_discovery_and_security_contract(root)
+
+        self.assertFalse(
+            any("retired Home security route" in error for error in result),
+            msg=f"comments must not trigger the remount guard: {result}",
         )
 
     def test_home_discovery_security_evidence_cannot_be_hollowed(self) -> None:

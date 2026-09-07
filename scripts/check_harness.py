@@ -25,6 +25,7 @@ PINNED_DEPENDENCIES = {
     "flutter_lints": "6.0.0",
     "flutter_riverpod": "3.4.2",
     "flutter_secure_storage": "10.3.1",
+    "flutter_svg": "2.3.0",
     "go_router": "17.5.0",
     "privy_flutter": "0.10.1",
     "reown_appkit": "1.8.4",
@@ -116,6 +117,13 @@ REQUIRED_FILES = (
     "config/release.example.json",
     "lib/core/navigation/stream_channel_route.dart",
     "lib/core/navigation/surface_catalog.dart",
+    "lib/core/navigation/route_manifest.dart",
+    "lib/core/navigation/loop_routing_error_log.dart",
+    "lib/features/shell/loop_pending_surface.dart",
+    "docs/product/routes-manifest.json",
+    "docs/decisions/0050-adopt-93-route-manifest.md",
+    "docs/decisions/0051-adopt-flutter-svg-and-prototype-assets.md",
+    "test/route_manifest_test.dart",
     "lib/core/network/loop_dio_factory.dart",
     "lib/app.dart",
     "lib/features/shell/loop_shell.dart",
@@ -1910,16 +1918,11 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
             "lib/app.dart": (
                 "SpotMarketRoute.indexParameter",
                 "spotIndex: int.tryParse(rawSpotIndex ?? '')",
-                "_retainedPerpRedirectRoutes",
-                "redirect: (context, state) => '/market'",
+                "_pendingManifestRoutes",
+                "routingErrors.record(state.uri.toString())",
             ),
             "lib/main.dart": (
                 "child: const LoopApp(),",
-            ),
-            "lib/features/catalog/catalog_surface_screen.dart": (
-                "surface.retainedHistory",
-                "Outside the current product",
-                "label: 'Out of scope'",
             ),
             "lib/integrations/hyperliquid/hyperliquid_spot_market_repository.dart": (
                 "api.hyperliquid-testnet.xyz",
@@ -1944,12 +1947,11 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
                 "spot detail supports a narrow screen at 200 percent text",
             ),
             "test/app_navigation_test.dart": (
-                "retained Perp deep links redirect to the Spot market",
+                "retained Perp paths are unmounted and fall back to Community with a logged error",
                 "providerless token links return to the live Spot ledger",
             ),
-            "test/surface_catalog_test.dart": (
-                "retainedPerpSurfaces.every((surface) => surface.retainedHistory)",
-                "inventory keeps retained Perp history out of scope",
+            "test/route_manifest_test.dart": (
+                "manifest keeps every retired Perp path unmounted",
             ),
             "test/spot_market_route_test.dart": (
                 "builds the canonical detail location",
@@ -2022,14 +2024,28 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
                     f"`{marker}`"
                 )
 
-    catalog_path = root / "lib/core/navigation/surface_catalog.dart"
-    if catalog_path.is_file():
-        retained_count = read_text(catalog_path).count("retainedHistory: true")
-        if retained_count != 12:
+    manifest_path = root / "lib/core/navigation/route_manifest.dart"
+    if manifest_path.is_file():
+        manifest_source = strip_dart_comments(read_text(manifest_path))
+        retired_start = manifest_source.find("static const List<String> retiredPaths")
+        retired_end = manifest_source.find("];", retired_start)
+        retired_block = manifest_source[retired_start:retired_end]
+        retired_perp = len(re.findall(r"'/perp(?:/[a-z-]+)?'", retired_block))
+        if retired_start < 0 or retired_perp != 12:
             errors.append(
-                "Surface catalog must mark exactly 12 retained Perp surfaces "
-                f"as history, found {retained_count}"
+                "Route manifest must list exactly 12 retired Perp paths as "
+                f"unmounted history, found {retired_perp}"
             )
+        mounted_block = manifest_source[:retired_start] + manifest_source[retired_end:]
+        if "'/perp" in mounted_block:
+            errors.append(
+                "Route manifest must not map any slug or supplementary route to a Perp path"
+            )
+    if app_path.is_file() and "'/perp" in strip_dart_comments(read_text(app_path)):
+        errors.append(
+            "lib/app.dart must redirect retained Perp routes through the unmatched "
+            "handler; no `/perp` path may be mounted or redirected"
+        )
 
     providerless_sources = (
         "lib/features/home/home_screens.dart",
@@ -3141,11 +3157,10 @@ CHAT_PREVIEW_CONVERSATION_ID_TEST_MARKERS = {
         "Unknown or kind-mismatched search results are not navigable",
         "Inbox refuses an unregistered same-kind Preview conversation",
         "Global Search names and opens the exact registered group",
-        "Preview notification opens the exact registered group",
     ),
 }
 CHAT_PREVIEW_CONVERSATION_ID_TEST_FINGERPRINT = (
-    "6f3258b59a07c647b2dc603193c594ac18d886834bfc1971a8f0c386f3a53dc2"
+    "8fab141f58026b3b57eb5250f6190e42975e4ce704e2ee32970dd134f955a46f"
 )
 CHAT_PREVIEW_CONVERSATION_ID_SOURCE_FINGERPRINTS = {
     "resolver": "f5bde23d09275447183ba03c3dab6a0d9d865d134bfd54710b6a9d704c0b8597",
@@ -3415,7 +3430,7 @@ def check_chat_preview_conversation_id_contract(root: Path) -> list[str]:
         (
             "lib/app.dart",
             "path: '/chat/channel/:cid'",
-            "path: '/chat/meeting'",
+            "path: '/preview/token-card'",
             "production_cid",
             "Production Stream CID route",
         ),
@@ -5249,19 +5264,18 @@ HOME_DISCOVERY_SECURITY_TEST_MARKERS = {
         "no-match never restores unrelated suggestions",
         "ETH opens bare Spot ledger and person opens exact Preview ID",
         "production Security is unavailable and contains no fixture facts or actions",
-        "production LoopApp security route mounts the unavailable surface",
+        "production LoopApp retires the Home security route to Community",
         "explicit Preview Security is visibly labelled and has no score or provider action",
         "Home security activity opens the bounded security surface",
     ),
 }
 HOME_DISCOVERY_SECURITY_TEST_FINGERPRINT = (
-    "6ac7f95f3edc6d57bf20cc6e2eaab8b91f1d9a0f34c23412041a5e9040957817"
+    "2f9284b8418e431c4118d5fe97b2d1de6376061f48ab52135a2897ce6c33e41b"
 )
 HOME_DISCOVERY_SECURITY_SOURCE_FINGERPRINTS = {
     "entry": "421bd4be7cf8adeb87f4bac46f3af849d41c7685db318703b232811b844f7394",
     "search": "0129124fee63ea30efdc2979ce131b43a23652fd018d41eb0eb8518915d90af8",
     "security": "4ead4f824e2cb3c2794442ec18490c587f05f8303da5d0cdbbfe212ad7b0685b",
-    "route": "517ab16d36ba9f128a00bb0ba14e88964cbe1798135426d4f541eadd1e1abab1",
 }
 
 
@@ -5287,8 +5301,8 @@ def check_home_discovery_and_security_contract(root: Path) -> list[str]:
                 "Example week · 演示数据",
             ),
             "lib/app.dart": (
-                "path: '/home/security'",
-                "builder: (context, state) => const SecurityActivityScreen()",
+                "path: '/search'",
+                "builder: (context, state) => const GlobalSearchScreen()",
             ),
             "test/home_discovery_and_security_test.dart": tuple(
                 marker
@@ -5390,19 +5404,15 @@ def check_home_discovery_and_security_contract(root: Path) -> list[str]:
 
     app_path = root / "lib/app.dart"
     if app_path.is_file():
-        app_source = read_text(app_path)
-        route_start = app_source.find("      GoRoute(\n        path: '/home/security',")
-        route_end = app_source.find(
-            "      GoRoute(\n        path: SpotMarketRoute.path,", route_start
-        )
-        if route_start < 0 or route_end < 0:
-            errors.append("Home Security route must retain one bounded reviewed slice")
-        elif normalized_dart_source_fingerprint(
-            app_source[route_start:route_end]
-        ) != HOME_DISCOVERY_SECURITY_SOURCE_FINGERPRINTS["route"]:
-            errors.append(
-                "Home Security route must match its reviewed unavailable-surface fingerprint"
-            )
+        app_source = strip_dart_comments(read_text(app_path))
+        # Home and its security activity route were retired with the 93-route
+        # manifest (decision 0050). The screen source stays unmounted history.
+        for forbidden in ("'/home/security'", "SecurityActivityScreen("):
+            if forbidden in app_source:
+                errors.append(
+                    "lib/app.dart must not mount the retired Home security route "
+                    f"`{forbidden}`"
+                )
 
     test_path = root / "test/home_discovery_and_security_test.dart"
     if test_path.is_file() and normalized_dart_source_fingerprint(
@@ -5433,7 +5443,7 @@ HOME_PORTFOLIO_TEST_MARKERS = {
     ),
 }
 HOME_PORTFOLIO_TEST_FINGERPRINT = (
-    "25cc38febfbcc5e0a504071b384f9326cf82ca59315b563e139dbda2c7a6631f"
+    "5fdd0114fcb979fae34505d254001601c7a951206e968529ac3d319df6160c7e"
 )
 HOME_PORTFOLIO_SOURCE_FINGERPRINTS = {
     "selector": "86dbf9882a3666b0856e00b3124d01d1c338f0288f279600727cf7f966b9827a",
@@ -5442,7 +5452,7 @@ HOME_PORTFOLIO_SOURCE_FINGERPRINTS = {
     "identity": "e93b2652095e01c3e339d39e0c05647825b4962277a808c2fb16107b1a8d7ab1",
     "communication": "377d8b039926c66a740bdaa212cb930b5a17e39433fda7c135e27ed716eb93f5",
     "net_worth": "da4c932af0f5dfc8a0df53e7034a1bde302f0db914ad2404d6dd8663d7110e82",
-    "route": "6f07003372e39ee7f478d59e5ac71a520392b2cab53645e9bef8975c7afbaef6",
+    "route": "c7110d32646f0193e09ca664f115c686589f4d61dfb93225cbf8105bd21a71c5",
 }
 
 
@@ -5466,7 +5476,7 @@ def check_home_portfolio_truth_contract(root: Path) -> list[str]:
                 "Allocation · 演示数据",
             ),
             "lib/app.dart": (
-                "path: '/home/net-worth'",
+                "path: '/wallet/networth'",
                 "builder: (context, state) => const NetWorthScreen()",
             ),
             "lib/core/navigation/surface_catalog.dart": (
@@ -5632,10 +5642,10 @@ def check_home_portfolio_truth_contract(root: Path) -> list[str]:
     if app_path.is_file():
         app_source = read_text(app_path)
         route_start = app_source.find(
-            "      GoRoute(\n        path: '/home/net-worth',"
+            "      GoRoute(\n        path: '/wallet/networth',"
         )
         route_end = app_source.find(
-            "      GoRoute(\n        path: '/notifications',", route_start + 1
+            "      GoRoute(\n        path: SpotMarketRoute.path,", route_start + 1
         )
         if route_start < 0 or route_end < 0:
             errors.append("B2 Net Worth route must retain one bounded reviewed slice")
@@ -5826,7 +5836,7 @@ def check_spot_candle_contract(root: Path) -> list[str]:
             "test/app_navigation_test.dart": (
                 "production C3 rejects legacy extras and malformed query before requests",
                 "production C3 is full-screen and closes a root link to Market",
-                "expect(find.byType(NavigationBar), findsNothing)",
+                "expect(find.byType(LoopTabBar), findsNothing)",
                 "find.byTooltip('关闭全屏 K 线')",
             ),
             "test/spot_candle_chart_test.dart": (
@@ -6188,8 +6198,8 @@ def check_wallet_preview_route_contract(root: Path) -> list[str]:
                 "DApp preview uses only the current wallet identity and typed domain",
                 "DApp preview never invents a wallet for a verified account",
             ),
-            "test/surface_catalog_test.dart": (
-                "Wallet catalog describes current delivery truth",
+            "test/route_manifest_test.dart": (
+                "Wallet manifest maps every slug to its mounted route",
             ),
         },
     )
@@ -7559,6 +7569,108 @@ def check_product_contract(root: Path) -> list[str]:
     return errors
 
 
+ROUTE_MANIFEST_JSON_PATH = Path("docs/product/routes-manifest.json")
+ROUTE_MANIFEST_DART_PATH = Path("lib/core/navigation/route_manifest.dart")
+ROUTE_MANIFEST_APP_PATH = Path("lib/app.dart")
+# Locations retired by decision 0050. None may be mounted, redirected or
+# pushed from the application router again.
+ROUTE_MANIFEST_RETIRED_LITERALS = (
+    "'/onboarding'",
+    "'/notifications'",
+    "'/onramp'",
+    "'/pay/receive'",
+    "'/pay/confirm'",
+    "'/auth/wallet/seed'",
+    "'/auth/wallet/seed/verify'",
+    "'/auth/wallet/import'",
+    "'/auth/profile'",
+    "'/profile/recovery'",
+    "'/profile/copy'",
+    "'/profile/rewards'",
+    "'/home/net-worth'",
+    "'/home/security'",
+    "'/chat/meeting'",
+    "'/wallet/transaction'",
+    "'/wallet/dapps'",
+    "'/wallet/protection'",
+    "'/inventory'",
+)
+
+
+def check_route_manifest_contract(root: Path) -> list[str]:
+    """Keep the Dart route table equal to the frozen 93-route manifest."""
+
+    errors: list[str] = []
+    json_path = root / ROUTE_MANIFEST_JSON_PATH
+    dart_path = root / ROUTE_MANIFEST_DART_PATH
+    if not json_path.is_file() or not dart_path.is_file():
+        return errors
+    try:
+        manifest = json.loads(read_text(json_path))
+    except json.JSONDecodeError as error:
+        return [f"{ROUTE_MANIFEST_JSON_PATH} is invalid JSON: {error}"]
+    expected_slugs = [
+        item["slug"]
+        for module in manifest.get("modules", {}).values()
+        for item in module
+    ]
+    if manifest.get("count") != 93 or len(expected_slugs) != 93:
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must describe exactly 93 routes")
+    if manifest.get("tabs") != ["community", "mining", "launch", "market", "wallet"]:
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must keep the five tabs in order")
+    if manifest.get("defaultRoute") != "community":
+        errors.append(f"{ROUTE_MANIFEST_JSON_PATH} must land on community")
+    if [name.title() for name in manifest.get("tabs", [])] != PRIMARY_DESTINATIONS:
+        errors.append("harness primary destinations must mirror the manifest tabs")
+
+    dart_source = strip_dart_comments(read_text(dart_path))
+    entries_start = dart_source.find("static const List<LoopRouteEntry> entries")
+    entries_end = dart_source.find("];", entries_start)
+    entries_block = dart_source[entries_start:entries_end]
+    dart_slugs = re.findall(r"slug:\s*'([a-z0-9-]+)'", entries_block)
+    if dart_slugs != expected_slugs:
+        errors.append(
+            "lib/core/navigation/route_manifest.dart entries must list the 93 manifest "
+            "slugs in manifest order"
+        )
+    dart_paths = re.findall(r"\bpath:\s*'([^']+)'", entries_block)
+    if len(set(dart_paths)) != len(dart_paths) or len(dart_paths) != len(dart_slugs):
+        errors.append("Route manifest must map every slug to exactly one unique path")
+    for literal in ROUTE_MANIFEST_RETIRED_LITERALS:
+        if literal in entries_block.replace("legacyPath: " + literal, ""):
+            errors.append(f"Route manifest must not map a slug to retired path {literal}")
+
+    app_path = root / ROUTE_MANIFEST_APP_PATH
+    if app_path.is_file():
+        app_source = strip_dart_comments(read_text(app_path))
+        for literal in ROUTE_MANIFEST_RETIRED_LITERALS:
+            if literal in app_source:
+                errors.append(
+                    f"lib/app.dart must not mount or redirect retired route {literal}"
+                )
+        for marker in (
+            "_pendingManifestRoutes",
+            "LoopRouteManifest.withStatus(",
+            "LoopPendingSurface(entry: entry)",
+            "LoopPendingSurface.unavailable(",
+        ):
+            if marker not in app_source:
+                errors.append(
+                    "lib/app.dart must mount every unimplemented manifest slug through "
+                    f"the pending surface; missing `{marker}`"
+                )
+
+    shell_path = root / "lib/features/shell/loop_shell.dart"
+    if shell_path.is_file():
+        shell_source = strip_dart_comments(read_text(shell_path))
+        start = shell_source.find("static const _destinations")
+        end = shell_source.find("  ];", start)
+        shell_paths = re.findall(r"'(/[a-z]+)'", shell_source[start:end])
+        if shell_paths != ["/" + slug for slug in manifest.get("tabs", [])]:
+            errors.append("LoopShell destinations must follow the manifest tab order")
+    return errors
+
+
 def check_v2_primary_navigation_contract(root: Path) -> list[str]:
     """Lock the runtime V2 shell without pretending the legacy catalog is migrated."""
 
@@ -7674,17 +7786,30 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
                     errors.append(f"V2 ShellRoute must not own legacy child `{path}`")
 
         def has_direct_redirect(path: str, destination: str) -> bool:
+            # A redirect body may record the routing error first, but it must
+            # end by returning exactly the reviewed destination.
             return (
                 re.search(
                     rf"GoRoute\s*\(\s*path\s*:\s*'{re.escape(path)}'\s*,\s*"
                     rf"redirect\s*:\s*\([^)]*\)\s*"
                     rf"(?:=>\s*'{re.escape(destination)}'|"
-                    rf"\{{\s*return\s*'{re.escape(destination)}'\s*;\s*\}})"
+                    rf"\{{\s*(?:routingErrors\.record\([^;]*\);\s*)?"
+                    rf"return\s*'{re.escape(destination)}'\s*;\s*\}})"
                     rf"\s*,?\s*\)",
                     compact_source,
                     flags=re.DOTALL,
                 )
                 is not None
+            )
+        unmatched = re.search(
+            r"GoRoute\s*\(\s*path\s*:\s*'/:unmatched\(\.\*\)'\s*,\s*redirect\s*:\s*"
+            r"\([^)]*\)\s*\{\s*routingErrors\.record\(state\.uri\.toString\(\)\);",
+            compact_source,
+        )
+        if unmatched is None:
+            errors.append(
+                "unmatched locations must be recorded in LoopRoutingErrorLog before "
+                "returning to Community"
             )
 
         if re.search(
@@ -7750,25 +7875,25 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             "missing compatibility contract file: lib/features/chat/stream_chat_inbox_page.dart"
         )
 
-    catalog_path = root / "lib/core/navigation/surface_catalog.dart"
-    if catalog_path.is_file():
-        source = strip_dart_comments(read_text(catalog_path))
-        start = source.find("static const List<String> primaryPaths")
-        end = source.find("  ];", start)
+    manifest_path = root / "lib/core/navigation/route_manifest.dart"
+    if manifest_path.is_file():
+        source = strip_dart_comments(read_text(manifest_path))
+        start = source.find("static const List<String> tabSlugs")
+        end = source.find("];", start)
         if start < 0 or end < 0:
-            errors.append("SurfaceCatalog must expose runtime primaryPaths")
+            errors.append("LoopRouteManifest must expose runtime tabSlugs")
         else:
             block = source[start:end]
-            expected = ["/community", "/mining", "/launch", "/market", "/wallet"]
-            positions = [block.find(f"'{path}'") for path in expected]
+            expected = ["community", "mining", "launch", "market", "wallet"]
+            positions = [block.find(f"'{slug}'") for slug in expected]
             if any(position < 0 for position in positions):
-                errors.append("SurfaceCatalog primaryPaths must contain all five V2 paths")
+                errors.append("LoopRouteManifest tabSlugs must contain all five V2 slugs")
             elif positions != sorted(positions):
-                errors.append("SurfaceCatalog primaryPaths must retain V2 order")
-            for retired in ("/home", "/launchpad", "/chat", "/profile"):
+                errors.append("LoopRouteManifest tabSlugs must retain V2 order")
+            for retired in ("home", "launchpad", "chat", "profile"):
                 if f"'{retired}'" in block:
                     errors.append(
-                        f"SurfaceCatalog primaryPaths must not retain `{retired}`"
+                        f"LoopRouteManifest tabSlugs must not retain `{retired}`"
                     )
 
     return errors
@@ -10313,6 +10438,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_audio_room_native_contract(root))
     errors.extend(check_product_contract(root))
     errors.extend(check_v2_primary_navigation_contract(root))
+    errors.extend(check_route_manifest_contract(root))
     errors.extend(check_chat_attachment_contract(root))
     errors.extend(check_production_chat_audio_room_entry(root))
     errors.extend(check_friend_frontend_contract(root))

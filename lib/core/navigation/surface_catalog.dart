@@ -1,3 +1,15 @@
+/// HISTORY ONLY — the retired 103-surface migration inventory.
+///
+/// Decision 0050 replaced this catalog with the 93-route manifest in
+/// `route_manifest.dart` (`docs/product/routes-manifest.json`). Nothing in
+/// `lib/app.dart`, the shell or any feature may read this file for routing,
+/// navigation or product scope; it is kept read-only because its per-surface
+/// delivery-truth descriptions are still referenced by the harness and by
+/// truthfulness tests as reviewed wording. Paths listed here that are not in
+/// the manifest (Home, onboarding, notifications, onramp, Pay sub-routes, seed
+/// backup, Perp, catalog placeholders) are retired and are not mounted.
+library;
+
 /// Product importance only. Delivery is tracked independently by [AppSurface.deferred].
 enum ProductPriority { a, b, c }
 

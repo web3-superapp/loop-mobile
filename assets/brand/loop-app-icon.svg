@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="loop-app-icon-title">
+  <title id="loop-app-icon-title">LOOP app icon</title>
+  <rect x="4" y="4" width="120" height="120" rx="32" fill="#050604" stroke="#171A16" stroke-width="4"/>
+  <path d="M64 64c-11-24-45-24-45 0s34 24 45 0c11-24 45-24 45 0s-34 24-45 0" fill="none" stroke="#171A16" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M64 64c-11-24-45-24-45 0s34 24 45 0c11-24 45-24 45 0s-34 24-45 0" fill="none" stroke="#F3F5EF" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M64 64c-11-24-45-24-45 0s34 24 45 0c11-24 45-24 45 0s-34 24-45 0" fill="none" stroke="#B8FF20" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="64" cy="64" r="4" fill="#B8FF20"/>
+</svg>

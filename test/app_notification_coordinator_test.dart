@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
@@ -26,6 +27,7 @@ void main() {
     'root coordinator ignores delivery and navigates a verified interaction',
     (tester) async {
       final source = _TestNotificationSource();
+      final routingErrors = LoopRoutingErrorLog();
       final bootstrap = LoopBootstrapSession(
         principalKey: 'did:privy:test-widget',
         accessTokens: const _AccessTokens(),
@@ -46,6 +48,7 @@ void main() {
             ),
             loopBootstrapSessionProvider.overrideWithValue(bootstrap),
             loopNotificationEventSourceProvider.overrideWithValue(source),
+            loopRoutingErrorLogProvider.overrideWithValue(routingErrors),
             hyperliquidMarketRepositoryProvider.overrideWithValue(
               const _EmptyMarketRepository(),
             ),
@@ -86,13 +89,23 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      // The frozen 93-route IA has no independent notification centre. The
+      // router still emits the legacy `/notifications` intent; the app
+      // records it as a routing error and stays on Community until the
+      // in-context notice target is decided.
+      expect(
+        find.byKey(const ValueKey<String>('community-screen')),
+        findsOneWidget,
+      );
       expect(
         find.byKey(
           const ValueKey<String>('notifications-provider-unavailable'),
         ),
-        findsOneWidget,
+        findsNothing,
       );
-      expect(find.text('Notifications not connected'), findsOneWidget);
+      expect(routingErrors.entries.map((error) => error.location), <String>[
+        '/notifications',
+      ]);
     },
   );
 }

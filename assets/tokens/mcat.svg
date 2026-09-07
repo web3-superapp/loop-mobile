@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">MOONCAT token</title>
+  <circle cx="32" cy="32" r="29" fill="#171a16" stroke="#7f897b" stroke-width="2"/>
+  <path d="M17 28 20 14l9 8h7l9-8 3 14v14c-4 6-9 9-16 9s-12-3-16-9Z" fill="#f3f5ef" stroke="#050604" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M24 33h4M36 33h4M28 42c3 2 5 2 8 0" fill="none" stroke="#050604" stroke-width="3" stroke-linecap="round"/>
+  <path d="M41 15a15 15 0 0 0 1 25 17 17 0 0 1-8-31 15 15 0 0 1 7 6Z" fill="#b8ff20"/>
+</svg>

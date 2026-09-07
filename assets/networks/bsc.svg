@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">BSC network</title>
+  <rect x="3" y="3" width="58" height="58" rx="19" fill="#171a16" stroke="#7f897b" stroke-width="2"/>
+  <path d="m32 9 10 10-6 6-4-4-4 4-6-6Zm-13 13 6 6-4 4 4 4-6 6L9 32Zm26 0 10 10-10 10-6-6 4-4-4-4ZM32 43l4-4 6 6-10 10-10-10 6-6Zm0-14 3 3-3 3-3-3Z" fill="#b8ff20" stroke="#050604" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="m32 23 9 9-9 9-9-9Z" fill="none" stroke="#f3f5ef" stroke-width="3"/>
+</svg>

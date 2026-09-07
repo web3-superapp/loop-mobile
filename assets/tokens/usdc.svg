@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">USDC token</title>
+  <circle cx="32" cy="32" r="29" fill="#f3f5ef" stroke="#7f897b" stroke-width="2"/>
+  <circle cx="32" cy="32" r="20" fill="none" stroke="#171a16" stroke-width="4"/>
+  <path d="M38 24c-2-2-4-3-7-3-4 0-7 2-7 5 0 8 16 2 16 10 0 4-3 7-8 7-4 0-7-1-9-4M32 17v30" fill="none" stroke="#050604" stroke-width="3" stroke-linecap="round"/>
+  <path d="M10 27v10M54 27v10" fill="none" stroke="#b8ff20" stroke-width="4" stroke-linecap="round"/>
+</svg>

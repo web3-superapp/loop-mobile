@@ -7,6 +7,7 @@ import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/preview_conversation_identity.dart';
+import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
@@ -363,29 +364,6 @@ void main() {
     );
     expect(find.byTooltip('Send message'), findsOneWidget);
   });
-
-  testWidgets('Preview notification opens the exact registered group', (
-    tester,
-  ) async {
-    final router = await _pumpPreviewApp(
-      tester,
-      gateway: MemoryCommunicationGateway(),
-    );
-    router.go('/notifications');
-    await tester.pumpAndSettle();
-
-    final mention = find.text('Mentioned in Glyph Hunters');
-    await tester.ensureVisible(mention);
-    await tester.pumpAndSettle();
-    await tester.tap(mention);
-    await tester.pumpAndSettle();
-
-    expect(
-      find.text('Offline preview · simulated conversation'),
-      findsOneWidget,
-    );
-    expect(find.byTooltip('Send message'), findsOneWidget);
-  });
 }
 
 Future<GoRouter> _pumpPreviewApp(
@@ -407,7 +385,7 @@ Future<GoRouter> _pumpPreviewApp(
   await tester.pumpAndSettle();
   await tester.tap(find.text('Enter development preview'));
   await tester.pumpAndSettle();
-  return GoRouter.of(tester.element(find.byType(NavigationBar)));
+  return GoRouter.of(tester.element(find.byType(LoopTabBar)));
 }
 
 final class _RecordingSearchGateway extends MemoryCommunicationGateway {

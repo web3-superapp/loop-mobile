@@ -24,6 +24,7 @@ dependencies:
   stream_chat_persistence: 10.3.0
   stream_video_flutter: 1.4.3
   uuid: 4.6.0
+  flutter_svg: 2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -42,3 +43,27 @@ flutter:
   config:
     enable-swift-package-manager: false
   uses-material-design: true
+  # Frozen prototype assets (docs/prototype, cliview.org loop-v2 build).
+  assets:
+    - assets/brand/
+    - assets/tokens/
+    - assets/networks/
+    - assets/people/
+    - assets/communities/
+    - assets/icons/
+  # Sora is a variable font; weights are selected through FontVariation
+  # (see LoopTypography). IBM Plex Mono ships the three static weights the
+  # prototype uses. Noto Sans SC is intentionally not bundled (17.7 MB); CJK
+  # text falls back to the platform font stack. See decision 0051.
+  fonts:
+    - family: Sora
+      fonts:
+        - asset: assets/fonts/Sora-Variable.ttf
+    - family: IBM Plex Mono
+      fonts:
+        - asset: assets/fonts/IBMPlexMono-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/IBMPlexMono-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/IBMPlexMono-SemiBold.ttf
+          weight: 600

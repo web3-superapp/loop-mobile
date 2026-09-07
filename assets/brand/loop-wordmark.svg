@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 140" role="img" aria-labelledby="loop-wordmark-title">
+  <title id="loop-wordmark-title">LOOP wordmark</title>
+  <path d="M22 17H56V88H116L96 121H22Z" fill="#F3F5EF" stroke="#171A16" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M28 112 49 92h45" fill="none" stroke="#B8FF20" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M230 70c-20-42-98-42-98 0s78 42 98 0c20-42 98-42 98 0s-78 42-98 0" fill="none" stroke="#171A16" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M230 70c-20-42-98-42-98 0s78 42 98 0c20-42 98-42 98 0s-78 42-98 0" fill="none" stroke="#F3F5EF" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M230 70c-20-42-98-42-98 0s78 42 98 0c20-42 98-42 98 0s-78 42-98 0" fill="none" stroke="#B8FF20" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M366 121V72c0-43 108-45 108-1 0 42-69 51-96 19" fill="none" stroke="#171A16" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M366 121V72c0-43 108-45 108-1 0 42-69 51-96 19" fill="none" stroke="#F3F5EF" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M379 71c16-23 63-23 80 0-14 20-55 25-80 9" fill="none" stroke="#B8FF20" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

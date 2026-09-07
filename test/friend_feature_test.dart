@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
 import 'package:loop_mobile/features/chat/friends/friend_screens.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
+import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/integrations/social/memory_friend_gateway.dart';
 
@@ -1046,7 +1047,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
 
     router.go('/profile/friends');
     await tester.pumpAndSettle();

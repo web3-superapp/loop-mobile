@@ -5,11 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/core/navigation/spot_market_route.dart';
-import 'package:loop_mobile/core/navigation/surface_catalog.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/catalog/catalog_surface_screen.dart';
+import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
+import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
+import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/features/wallet/bridge_preview_snapshot.dart';
 import 'package:loop_mobile/features/wallet/swap_preview_snapshot.dart';
@@ -60,7 +60,7 @@ void main() {
       'Wallet',
       'Community',
     ]) {
-      await tester.tap(find.widgetWithText(NavigationDestination, destination));
+      await tester.tap(find.widgetWithText(LoopTabItem, destination));
       await tester.pumpAndSettle();
     }
     expect(
@@ -90,18 +90,18 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Market'));
+    await tester.tap(find.widgetWithText(LoopTabItem, 'Market'));
     await tester.pumpAndSettle();
     expect(find.text('Spot market'), findsOneWidget);
     expect(find.textContaining('Perp trading'), findsNothing);
     expect(find.textContaining('Live perpetual markets'), findsNothing);
 
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Wallet'));
+    await tester.tap(find.widgetWithText(LoopTabItem, 'Wallet'));
     await tester.pumpAndSettle();
     expect(find.text('Trading account'), findsNothing);
     expect(find.textContaining('Hyperliquid margin'), findsNothing);
 
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Community'));
+    await tester.tap(find.widgetWithText(LoopTabItem, 'Community'));
     await tester.pumpAndSettle();
     expect(find.textContaining('PERP EQUITY'), findsNothing);
     expect(find.textContaining('Spot to perp'), findsNothing);
@@ -115,35 +115,43 @@ void main() {
     expect(find.text('ETH-PERP'), findsNothing);
   });
 
-  testWidgets('retained Perp deep links redirect to the Spot market', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          privyAuthGatewayProvider.overrideWithValue(
-            const AuthenticatedTestPrivyGateway(),
-          ),
-          hyperliquidSpotMarketRepositoryProvider.overrideWithValue(
-            const _EmptySpotMarketRepository(),
-          ),
-        ],
-        child: const LoopApp(),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
-    for (final path in LoopRouteRegistry.retainedPerpPaths) {
-      router.go(path);
+  testWidgets(
+    'retained Perp paths are unmounted and fall back to Community with a logged error',
+    (tester) async {
+      final routingErrors = LoopRoutingErrorLog();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            privyAuthGatewayProvider.overrideWithValue(
+              const AuthenticatedTestPrivyGateway(),
+            ),
+            hyperliquidSpotMarketRepositoryProvider.overrideWithValue(
+              const _EmptySpotMarketRepository(),
+            ),
+            loopRoutingErrorLogProvider.overrideWithValue(routingErrors),
+          ],
+          child: const LoopApp(),
+        ),
+      );
       await tester.pumpAndSettle();
 
-      expect(router.routeInformationProvider.value.uri.path, '/market');
-      expect(find.text('Spot market'), findsOneWidget, reason: path);
-      expect(find.text('Perpetuals'), findsNothing, reason: path);
-      expect(find.text('Positions'), findsNothing, reason: path);
-    }
-  });
+      final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
+      final perpPaths = LoopRouteManifest.retiredPaths
+          .where((path) => path.startsWith('/perp'))
+          .toList(growable: false);
+      expect(perpPaths, hasLength(12));
+      for (final path in perpPaths) {
+        router.go(path);
+        await tester.pumpAndSettle();
+
+        expect(router.routeInformationProvider.value.uri.path, '/community');
+        expect(routingErrors.last?.location, path, reason: path);
+        expect(find.text('Perpetuals'), findsNothing, reason: path);
+        expect(find.text('Positions'), findsNothing, reason: path);
+      }
+      expect(routingErrors.entries, hasLength(12));
+    },
+  );
 
   testWidgets('providerless token links return to the live Spot ledger', (
     tester,
@@ -175,13 +183,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Market'));
+    await tester.tap(find.widgetWithText(LoopTabItem, 'Market'));
     await tester.pumpAndSettle();
 
     expect(find.text('Spot market'), findsOneWidget);
     expect(find.textContaining('开发预览 K 线'), findsNothing);
 
-    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
     router.go('/search');
     await tester.pumpAndSettle();
     expect(find.text('Search not connected'), findsOneWidget);
@@ -269,7 +277,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+      final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
       final malformed = <(String, Object?)>[
         ('/market/chart', 'ETH'),
         ('/market/chart?spotIndex=1&spotIndex=2', null),
@@ -285,7 +293,7 @@ void main() {
           findsOneWidget,
           reason: location,
         );
-        expect(find.byType(NavigationBar), findsNothing, reason: location);
+        expect(find.byType(LoopTabBar), findsNothing, reason: location);
       }
 
       expect(marketRepository.fetchCount, 0);
@@ -316,13 +324,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
     router.go(SpotMarketRoute.chartLocation(7));
     await tester.pumpAndSettle();
 
     expect(router.routeInformationProvider.value.uri.path, '/market/chart');
     expect(find.text('SEVEN/USDC'), findsOneWidget);
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byType(LoopTabBar), findsNothing);
     expect(candleRepository.requests, <HyperliquidSpotCandleRequest>[
       const HyperliquidSpotCandleRequest(
         providerCoin: '@7',
@@ -334,7 +342,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(router.routeInformationProvider.value.uri.path, '/market');
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(LoopTabBar), findsOneWidget);
     expect(find.text('Spot market'), findsOneWidget);
   });
 
@@ -358,7 +366,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Wallet'));
+    await tester.tap(find.widgetWithText(LoopTabItem, 'Wallet'));
     await tester.pumpAndSettle();
 
     final payNotice = find.byKey(
@@ -396,7 +404,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
     router.go('/wallet/send/to');
     await tester.pumpAndSettle();
 
@@ -451,7 +459,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
     router.go('/wallet/asset');
     await tester.pumpAndSettle();
 
@@ -480,7 +488,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
     router.go('/wallet/asset', extra: WalletPreviewAsset.usdCoin);
     await tester.pumpAndSettle();
 
@@ -506,7 +514,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
     router.go('/wallet/swap/route');
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/wallet/swap');
@@ -540,7 +548,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final router = GoRouter.of(tester.element(find.byType(NavigationBar)));
+    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
     router.go('/wallet/bridge/status');
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/wallet/bridge');
@@ -559,46 +567,6 @@ void main() {
     expect(find.text(claimSnapshot.sourceConfirmationLabel), findsOneWidget);
     expect(find.text(claimSnapshot.destinationStepDetail), findsOneWidget);
     expect(find.text('Manual claim required'), findsOneWidget);
-  });
-
-  testWidgets('every Pay surface renders the same non-actionable placeholder', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    final payments = SurfaceCatalog.all.where(
-      (surface) => surface.path.startsWith('/pay') || surface.path == '/onramp',
-    );
-
-    for (final surface in payments) {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: LoopTheme.dark,
-          home: CatalogSurfaceScreen(surface: surface),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Coming soon'), findsOneWidget);
-      final priorityLabel = switch (surface.priority) {
-        ProductPriority.a => 'A PRIORITY',
-        ProductPriority.b => 'B PRIORITY',
-        ProductPriority.c => 'C PRIORITY',
-      };
-      expect(find.text('${surface.id} · $priorityLabel'), findsOneWidget);
-      expect(find.text('Product priority'), findsOneWidget);
-      expect(find.text('Delivery status'), findsOneWidget);
-      expect(find.text('Deferred'), findsOneWidget);
-      expect(find.textContaining('PHASE ONE'), findsNothing);
-      expect(find.textContaining('LATER'), findsNothing);
-      expect(find.byType(FilledButton), findsNothing);
-      expect(find.byType(OutlinedButton), findsNothing);
-      expect(find.byType(TextField), findsNothing);
-      expect(find.byIcon(Icons.qr_code_scanner_rounded), findsNothing);
-    }
   });
 
   testWidgets('communication preview is persistently identified as offline', (
