@@ -71,7 +71,8 @@ void main() {
     expect(button, findsOneWidget);
     // Pinned: visible without scrolling, with max(24, safe) below it.
     expect(844 - tester.getRect(button).bottom, 34);
-    expect(find.text('row 19'), findsNothing);
+    // Body rows scroll under the pinned action; the last row starts below it.
+    expect(tester.getRect(find.text('row 19')).top, greaterThan(844));
     semantics.dispose();
   });
 

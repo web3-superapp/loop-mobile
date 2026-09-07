@@ -24,6 +24,8 @@ import 'package:loop_mobile/integrations/personalization/memory_profile_gateway.
 import 'package:loop_mobile/integrations/personalization/memory_social_privacy_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_display_store.dart';
 import 'package:loop_mobile/integrations/privy/privy_fixture_adapter.dart';
+import 'package:loop_mobile/features/system/system_showcase_preview.dart';
+import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/personalization/memory_watchlist_gateway.dart';
 import 'package:loop_mobile/integrations/social/memory_friend_gateway.dart';
@@ -121,6 +123,11 @@ Future<void> main() async {
         ),
         walletSigningGatewayProvider.overrideWithValue(
           const PrivyFixtureAdapter(),
+        ),
+        // Component showcases (token-card-states / sign-sheet-states) carry
+        // fixture figures, so only this Preview root may supply them.
+        loopSystemShowcaseProvider.overrideWithValue(
+          buildLoopSystemShowcasePreview(),
         ),
       ],
       child: const LoopApp(),

@@ -1,199 +1,97 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
-import 'package:loop_mobile/app.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
-import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
-import 'support/authenticated_test_privy_gateway.dart';
+import 'support/system_surface_harness.dart';
 
 void main() {
-  testWidgets(
-    'production I2 route stays unknown without request-error evidence',
-    (tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            privyAuthGatewayProvider.overrideWithValue(
-              const AuthenticatedTestPrivyGateway(),
-            ),
-          ],
-          child: const LoopApp(),
-        ),
-      );
-      await tester.pumpAndSettle();
+  testWidgets('production server-error route stays unknown', (tester) async {
+    await expectProductionUnavailable(
+      tester,
+      location: '/system/error',
+      unavailableKey: 'service-error-source-unavailable',
+      absentClaims: <String>['服务暂时不可用', '追踪号', '联系客服'],
+    );
+  });
 
-      final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
-      router.go('/system/error');
-      await tester.pumpAndSettle();
-
-      expect(find.text('Service error status unavailable'), findsOneWidget);
-      expect(find.text('LOOP couldn’t confirm the result'), findsNothing);
-      expect(find.textContaining('L-2048'), findsNothing);
-      expect(find.text('Try again'), findsNothing);
-      expect(find.text('Contact support'), findsNothing);
-
-      await tester.tap(find.text('Return to LOOP'));
-      await tester.pumpAndSettle();
-      expect(find.byType(LoopTabBar), findsOneWidget);
-    },
-  );
-
-  testWidgets('naked I2 surface never infers a request error', (tester) async {
-    var continued = false;
-    await _pump(
+  testWidgets('naked server-error surface never infers a request error', (
+    tester,
+  ) async {
+    await pumpSystemSurface(
       tester,
       SystemSurfaceScreen.fromId(
         'server-error',
-        onRetry: () => fail('generic retry must not authorize I2'),
-        onSecondaryAction: () => continued = true,
-        onServiceRetry: () => fail('I2 retry requires an observation'),
-        onServiceSupport: () => fail('I2 support requires an observation'),
+        onServiceRetry: () {},
+        onServiceSupport: () {},
+        onSecondaryAction: () {},
       ),
     );
-
-    expect(find.text('Service error status unavailable'), findsOneWidget);
-    expect(find.text('LOOP couldn’t confirm the result'), findsNothing);
-    expect(find.textContaining('Support reference'), findsNothing);
-    expect(find.text('Try again'), findsNothing);
-    expect(find.text('Contact support'), findsNothing);
-
-    await tester.tap(find.text('Return to LOOP'));
-    expect(continued, isTrue);
+    expect(find.text('服务状态未接入'), findsOneWidget);
+    expect(find.text('服务暂时不可用'), findsNothing);
+    expect(find.text('重试'), findsNothing);
+    expect(find.text('联系客服'), findsNothing);
+    expect(find.textContaining('追踪号'), findsNothing);
+    expect(find.text('返回 LOOP'), findsOneWidget);
   });
 
-  testWidgets('explicit I2 evidence exposes only exact bound actions', (
+  testWidgets('explicit observation exposes only exact facts and actions', (
     tester,
   ) async {
     var retries = 0;
-    var supportOpens = 0;
-    await _pump(
+    var support = 0;
+    await pumpSystemSurface(
       tester,
       SystemSurfaceScreen.fromId(
         'server-error',
-        serviceErrorObservation: const LoopServiceErrorObservation(),
+        serviceErrorObservation: const LoopServiceErrorObservation(
+          traceId: '7f3a2c9e',
+          statusLabel: '502',
+        ),
         onServiceRetry: () => retries += 1,
-        onServiceSupport: () => supportOpens += 1,
+        onServiceSupport: () => support += 1,
+        onSecondaryAction: () {},
       ),
     );
-
-    expect(find.text('LOOP couldn’t confirm the result'), findsOneWidget);
+    expect(find.text('服务暂时不可用'), findsOneWidget);
+    expect(find.text('RETRY'), findsOneWidget);
     expect(
-      find.textContaining('Do not assume success or failure'),
+      find.bySemanticsLabel(RegExp('错误 502.*追踪号 7f3a2c9e')),
       findsOneWidget,
     );
-    expect(
-      find.text(
-        'Support references remain hidden until their exact source and format are reviewed.',
-      ),
-      findsOneWidget,
-    );
-    expect(find.text('Service error status unavailable'), findsNothing);
-
-    await tester.tap(find.text('Try again'));
-    await tester.tap(find.text('Contact support'));
+    expect(find.text('服务状态未接入'), findsNothing);
+    expect(find.text('返回 LOOP'), findsNothing);
+    await tester.tap(find.text('重试'));
+    await tester.tap(find.text('联系客服'));
     expect(retries, 1);
-    expect(supportOpens, 1);
-  });
+    expect(support, 1);
 
-  testWidgets('explicit I2 evidence never accepts generic system actions', (
-    tester,
-  ) async {
-    await _pump(
+    // Without a trace id the page says so instead of inventing one.
+    await pumpSystemSurface(
       tester,
-      SystemSurfaceScreen.fromId(
-        'server-error',
-        serviceErrorObservation: const LoopServiceErrorObservation(),
-        onRetry: () => fail('generic retry must stay isolated from I2'),
-        onPrimaryAction: () =>
-            fail('generic primary must stay isolated from I2'),
-        onSecondaryAction: () =>
-            fail('generic secondary must stay isolated from I2'),
-      ),
-    );
-
-    expect(find.text('Try again'), findsNothing);
-    expect(find.text('Contact support'), findsNothing);
-    expect(find.text('Return to LOOP'), findsNothing);
-  });
-
-  testWidgets('unknown I2 exposes a labelled return action to accessibility', (
-    tester,
-  ) async {
-    final semantics = tester.ensureSemantics();
-    try {
-      await _pump(
-        tester,
-        SystemSurfaceScreen.fromId('server-error', onSecondaryAction: () {}),
-      );
-
-      final title = tester.getSemantics(
-        find.text('Service error status unavailable'),
-      );
-      final returnButton = tester.getSemantics(
-        find.widgetWithText(TextButton, 'Return to LOOP'),
-      );
-      expect(title.flagsCollection.isHeader, isTrue);
-      expect(returnButton.label, 'Return to LOOP');
-      expect(returnButton.flagsCollection.isButton, isTrue);
-      expect(
-        returnButton.getSemanticsData().hasAction(SemanticsAction.tap),
-        isTrue,
-      );
-    } finally {
-      semantics.dispose();
-    }
-  });
-
-  for (final testCase in <({String name, Widget screen})>[
-    (name: 'unknown', screen: const SystemSurfaceScreen.fromId('server-error')),
-    (
-      name: 'observed',
-      screen: const SystemSurfaceScreen.fromId(
+      const SystemSurfaceScreen.fromId(
         'server-error',
         serviceErrorObservation: LoopServiceErrorObservation(),
       ),
-    ),
-  ]) {
-    testWidgets('${testCase.name} I2 remains usable at large text', (
+    );
+    expect(find.bySemanticsLabel(RegExp('结果未确认.*追踪号未提供')), findsOneWidget);
+    expect(find.text('重试'), findsNothing);
+    expect(find.text('联系客服'), findsNothing);
+  });
+
+  testWidgets('server-error states remain usable at 2x text', (tester) async {
+    await pumpSystemSurface(
       tester,
-    ) async {
-      await _pump(
-        tester,
-        testCase.screen,
-        size: const Size(390, 844),
-        textScaler: const TextScaler.linear(2),
-      );
-
-      expect(tester.takeException(), isNull);
-    });
-  }
-}
-
-Future<void> _pump(
-  WidgetTester tester,
-  Widget home, {
-  Size size = const Size(900, 1400),
-  TextScaler textScaler = TextScaler.noScaling,
-}) async {
-  tester.view.devicePixelRatio = 1;
-  tester.view.physicalSize = size;
-  addTearDown(tester.view.resetDevicePixelRatio);
-  addTearDown(tester.view.resetPhysicalSize);
-
-  await tester.pumpWidget(
-    MaterialApp(
-      theme: LoopTheme.dark,
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(textScaler: textScaler),
-        child: child!,
+      SystemSurfaceScreen.fromId(
+        'server-error',
+        serviceErrorObservation: const LoopServiceErrorObservation(
+          traceId: 'L-2048',
+        ),
+        onServiceRetry: () {},
+        onServiceSupport: () {},
       ),
-      home: home,
-    ),
-  );
-  await tester.pumpAndSettle();
+      textScale: 2,
+    );
+    expect(tester.takeException(), isNull);
+    await tester.ensureVisible(find.text('联系客服'));
+    await tester.tap(find.text('联系客服'));
+  });
 }

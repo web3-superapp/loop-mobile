@@ -4941,10 +4941,50 @@ def check_v2_session_contract(root: Path) -> list[str]:
                 executable,
                 re.DOTALL,
             )
-            if references != 1 or inert_startup_observer is None:
+            # S1 item 9: the two module-0 gate pages (force-update,
+            # region-blocked) may read the same snapshot, but only inside the
+            # bounded `_systemSurface` builder and only through the pure
+            # LoopClientPolicyProjection. Routing, auth and every other
+            # feature remain forbidden consumers.
+            system_start = executable.find("Widget _systemSurface(")
+            system_end = executable.find("\n}\n", system_start)
+            system_slice = (
+                executable[system_start:system_end]
+                if system_start >= 0 and system_end >= 0
+                else ""
+            )
+            page_reads = len(
+                re.findall(
+                    r"ref\.watch\(loopV2MetaSnapshotProvider\)\.value\?\.clientPolicy",
+                    system_slice,
+                )
+            )
+            outside_slice = (
+                executable[:system_start] + executable[system_end:]
+                if system_start >= 0 and system_end >= 0
+                else executable
+            )
+            if (
+                inert_startup_observer is None
+                or outside_slice.count("loopV2MetaSnapshotProvider") != 1
+                or system_slice.count("loopV2MetaSnapshotProvider") != page_reads
+                or page_reads > 1
+            ):
                 errors.append(
                     "D0 metadata startup must remain one non-authorizing, "
                     "fire-immediate root observation"
+                )
+            if page_reads == 1 and "LoopClientPolicyProjection" not in system_slice:
+                errors.append(
+                    "System pages may consume D0 client policy only through "
+                    "LoopClientPolicyProjection"
+                )
+            redirect_start = executable.find("redirect: (context, state) {")
+            if redirect_start >= 0 and "loopV2MetaSnapshotProvider" in executable[
+                redirect_start : executable.find("routes: <RouteBase>[", redirect_start)
+            ]:
+                errors.append(
+                    "D0 metadata must not gate the router redirect"
                 )
 
     provider_path = root / "lib/integrations/backend/loop_bootstrap_providers.dart"

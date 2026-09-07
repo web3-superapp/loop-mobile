@@ -409,6 +409,49 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected required-bootstrap stale-journal guard: {result}",
         )
 
+    def test_v2_meta_system_page_read_is_bounded_to_the_projection(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_session_fixture(root)
+            path = root / "lib/app.dart"
+            source = path.read_text(encoding="utf-8")
+            # A second page read outside the bounded builder is rejected.
+            mutated = source.replace(
+                "GoRoute(path: '/home', redirect: (context, state) => '/community')",
+                "GoRoute(path: '/home', redirect: (context, state) => "
+                "ref.watch(loopV2MetaSnapshotProvider).value == null ? '/auth' : '/community')",
+                1,
+            )
+            self.assertNotEqual(source, mutated)
+            path.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_v2_session_contract(root)
+
+        self.assertIn(
+            "D0 metadata startup must remain one non-authorizing, "
+            "fire-immediate root observation",
+            result,
+        )
+
+    def test_v2_meta_system_page_read_must_use_projection(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_session_fixture(root)
+            path = root / "lib/app.dart"
+            source = path.read_text(encoding="utf-8")
+            mutated = source.replace("LoopClientPolicyProjection.version(", "_localVersion(")
+            mutated = mutated.replace("LoopClientPolicyProjection.region(", "_localRegion(")
+            self.assertNotEqual(source, mutated)
+            path.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_v2_session_contract(root)
+
+        self.assertIn(
+            "System pages may consume D0 client policy only through "
+            "LoopClientPolicyProjection",
+            result,
+        )
+
     def test_v2_meta_startup_observer_cannot_become_authorizing(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

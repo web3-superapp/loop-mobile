@@ -1,178 +1,131 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
-import 'package:loop_mobile/app.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
-import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 
-import 'support/authenticated_test_privy_gateway.dart';
+import 'support/system_surface_harness.dart';
 
 void main() {
-  testWidgets('production I1 route stays unknown without a mounted source', (
+  testWidgets('production offline route stays unknown without a source', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          privyAuthGatewayProvider.overrideWithValue(
-            const AuthenticatedTestPrivyGateway(),
-          ),
-        ],
-        child: const LoopApp(),
-      ),
+    await expectProductionUnavailable(
+      tester,
+      location: '/system/offline',
+      unavailableKey: 'connectivity-source-unavailable',
+      absentClaims: <String>['当前设备离线', '完全离线', '重试'],
     );
-    await tester.pumpAndSettle();
-
-    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
-    router.go('/system/offline');
-    await tester.pumpAndSettle();
-
-    expect(find.text('Connectivity status unavailable'), findsOneWidget);
-    expect(find.text('You’re offline'), findsNothing);
-    expect(find.text('Try again'), findsNothing);
-    expect(find.byType(LoopConnectivityBanner), findsNothing);
   });
 
-  testWidgets('naked I1 surface does not infer an offline state', (
+  testWidgets('naked offline surface never infers an offline state', (
     tester,
   ) async {
-    var continued = false;
-    await _pump(
+    var generic = 0;
+    await pumpSystemSurface(
       tester,
       SystemSurfaceScreen.fromId(
         'offline',
-        onSecondaryAction: () => continued = true,
+        onRetry: () => generic += 1,
+        onSecondaryAction: () => generic += 1,
       ),
     );
-
-    expect(find.text('Connectivity status unavailable'), findsOneWidget);
+    expect(find.text('连接状态未接入'), findsOneWidget);
+    expect(find.text('UNKNOWN'), findsOneWidget);
+    expect(find.text('当前设备离线'), findsNothing);
+    expect(find.text('无法连接到服务器'), findsNothing);
+    expect(find.text('重试'), findsNothing);
+    expect(find.byType(LoopConnectivityBanner), findsNothing);
     expect(
-      find.byKey(const ValueKey<String>('connectivity-source-unavailable')),
+      find.byKey(const ValueKey<String>('system-state-dismissible')),
       findsOneWidget,
     );
-    expect(find.byIcon(Icons.help_outline_rounded), findsOneWidget);
-    expect(
-      find.byIcon(Icons.signal_wifi_statusbar_connected_no_internet_4_outlined),
-      findsNothing,
-    );
-    expect(find.text('You’re offline'), findsNothing);
-    expect(find.text('Market data is unavailable'), findsNothing);
-    expect(find.text('Trading is temporarily unavailable'), findsNothing);
-    expect(find.text('Try again'), findsNothing);
-
-    await tester.tap(find.text('Return to LOOP'));
-    expect(continued, isTrue);
+    await tester.tap(find.text('返回 LOOP'));
+    expect(generic, 1);
   });
 
-  for (final testCase in <({LoopConnectivityScope scope, String title})>[
-    (scope: LoopConnectivityScope.fullyOffline, title: 'You’re offline'),
-    (
-      scope: LoopConnectivityScope.marketDataUnavailable,
-      title: 'Market data is unavailable',
-    ),
-    (
-      scope: LoopConnectivityScope.tradingServiceUnavailable,
-      title: 'Trading is temporarily unavailable',
-    ),
-  ]) {
-    testWidgets('explicit ${testCase.scope.name} signal renders its I1 state', (
-      tester,
-    ) async {
-      var retried = false;
-      await _pump(
+  testWidgets('explicit scopes render their exact notice and actions', (
+    tester,
+  ) async {
+    final cases = <(LoopConnectivityScope, String, String)>[
+      (LoopConnectivityScope.fullyOffline, '当前设备离线', '完全离线'),
+      (LoopConnectivityScope.marketDataUnavailable, '行情来源暂时不可用', '行情来源暂时不可用'),
+      (
+        LoopConnectivityScope.tradingServiceUnavailable,
+        '交易服务暂时不可用',
+        '交易服务暂时不可用',
+      ),
+    ];
+    for (final (scope, heading, notice) in cases) {
+      var retries = 0;
+      var continues = 0;
+      await pumpSystemSurface(
         tester,
         SystemSurfaceScreen.fromId(
           'offline',
-          connectivityScope: testCase.scope,
-          onRetry: () => retried = true,
+          connectivityScope: scope,
+          onRetry: () => retries += 1,
+          onSecondaryAction: () => continues += 1,
         ),
       );
-
-      expect(find.text(testCase.title), findsOneWidget);
-      expect(find.text('Connectivity status unavailable'), findsNothing);
-      await tester.tap(find.text('Try again'));
-      expect(retried, isTrue);
-    });
-  }
-
-  testWidgets('explicit connectivity banner supports large text and retry', (
-    tester,
-  ) async {
-    var retried = false;
-    await _pump(
-      tester,
-      LoopConnectivityBanner(
-        scope: LoopConnectivityScope.marketDataUnavailable,
-        onRetry: () => retried = true,
-      ),
-      size: const Size(390, 844),
-      textScaler: const TextScaler.linear(2),
-    );
-
-    expect(
-      find.text('Market data unavailable · prices may be stale'),
-      findsOneWidget,
-    );
-    await tester.tap(find.text('Retry'));
-    expect(retried, isTrue);
-    expect(tester.takeException(), isNull);
+      expect(find.text(heading), findsWidgets, reason: scope.name);
+      expect(find.text(notice), findsWidgets, reason: scope.name);
+      expect(find.text('连接状态未接入'), findsNothing, reason: scope.name);
+      expect(find.text('返回 LOOP'), findsNothing, reason: scope.name);
+      if (scope == LoopConnectivityScope.fullyOffline) {
+        expect(find.byType(LoopEmpty), findsOneWidget);
+        expect(find.text('OFFLINE'), findsOneWidget);
+      }
+      await tester.ensureVisible(find.text('重试'));
+      await tester.tap(find.text('重试'));
+      expect(retries, 1, reason: scope.name);
+      await tester.tap(
+        find.text(
+          scope == LoopConnectivityScope.fullyOffline ? '查看缓存内容' : '继续使用可用功能',
+        ),
+      );
+      expect(continues, 1, reason: scope.name);
+    }
   });
 
-  testWidgets('unknown I1 source remains responsive at large text', (
-    tester,
-  ) async {
-    await _pump(
+  testWidgets('connectivity banner announces and retries', (tester) async {
+    final semantics = tester.ensureSemantics();
+    var retries = 0;
+    await pumpSystemSurface(
       tester,
-      const SystemSurfaceScreen.fromId('offline'),
-      size: const Size(390, 844),
-      textScaler: const TextScaler.linear(2),
+      Scaffold(
+        body: LoopConnectivityBanner(
+          scope: LoopConnectivityScope.marketDataUnavailable,
+          onRetry: () => retries += 1,
+        ),
+      ),
+      textScale: 2,
     );
-
-    expect(find.text('Connectivity status unavailable'), findsOneWidget);
-    expect(tester.takeException(), isNull);
+    expect(find.text('行情不可用 · 价格可能已过期'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('行情来源暂时不可用')), findsOneWidget);
+    await tester.tap(find.text('重试'));
+    expect(retries, 1);
+    semantics.dispose();
   });
 
-  testWidgets('explicit I1 outage remains responsive at large text', (
-    tester,
-  ) async {
-    await _pump(
-      tester,
-      const SystemSurfaceScreen.fromId(
-        'offline',
-        connectivityScope: LoopConnectivityScope.fullyOffline,
-      ),
-      size: const Size(390, 844),
-      textScaler: const TextScaler.linear(2),
-    );
-
-    expect(find.text('You’re offline'), findsOneWidget);
-    expect(tester.takeException(), isNull);
+  testWidgets('offline states remain usable at 2x text', (tester) async {
+    for (final scope in <LoopConnectivityScope?>[
+      null,
+      LoopConnectivityScope.fullyOffline,
+    ]) {
+      await pumpSystemSurface(
+        tester,
+        SystemSurfaceScreen.fromId(
+          'offline',
+          connectivityScope: scope,
+          onRetry: () {},
+          onSecondaryAction: () {},
+        ),
+        textScale: 2,
+      );
+      expect(tester.takeException(), isNull);
+      final action = find.text(scope == null ? '返回 LOOP' : '查看缓存内容');
+      await tester.ensureVisible(action);
+      await tester.tap(action);
+    }
   });
-}
-
-Future<void> _pump(
-  WidgetTester tester,
-  Widget home, {
-  Size size = const Size(900, 1400),
-  TextScaler textScaler = TextScaler.noScaling,
-}) async {
-  tester.view.devicePixelRatio = 1;
-  tester.view.physicalSize = size;
-  addTearDown(tester.view.resetDevicePixelRatio);
-  addTearDown(tester.view.resetPhysicalSize);
-
-  await tester.pumpWidget(
-    MaterialApp(
-      theme: LoopTheme.dark,
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(textScaler: textScaler),
-        child: child!,
-      ),
-      home: home,
-    ),
-  );
-  await tester.pumpAndSettle();
 }

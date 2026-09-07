@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/app/notifications/loop_notification_coordinator.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
@@ -12,6 +14,7 @@ import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/navigation/spot_market_route.dart';
 import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
+import 'package:loop_mobile/core/policy/loop_client_policy.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
 import 'package:loop_mobile/features/account/privy_login_screen.dart';
@@ -34,6 +37,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_coordinator.
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/notifications/loop_notification_event_source.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart'
     show
@@ -158,7 +162,8 @@ class _LoopAppState extends ConsumerState<LoopApp> {
             child: content,
           );
         }
-        return content;
+        // One toast host above the router: fixed above the tab bar, z 90.
+        return LoopToastHost(child: content);
       },
     );
   }
@@ -607,6 +612,9 @@ final List<RouteBase> _profileRoutes =
         })
         .toList(growable: false);
 
+// Manifest module 8 plus the two module-0 gates. `force-update` and
+// `region-blocked` read the D0 client-policy projection; the component-state
+// showcases read the preview-only showcase provider (null in production).
 final List<RouteBase> _systemRoutes =
     <(String, String)>[
           ('/system/offline', 'offline'),
@@ -617,25 +625,63 @@ final List<RouteBase> _systemRoutes =
           ('/system/permission', 'permission'),
           ('/preview/toast', 'toast'),
           ('/preview/loading', 'loading'),
+          ('/system/token-card', 'token-card-states'),
+          ('/system/sign-sheet', 'sign-sheet-states'),
         ]
         .map((item) {
           return GoRoute(
             path: item.$1,
-            builder: (context, state) => SystemSurfaceScreen.fromId(
-              item.$2,
-              onRetry: () => context.go('/community'),
-              onSecondaryAction: () => context.go('/community'),
-              onPrimaryAction: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'This action requires the production app host.',
-                  ),
-                ),
-              ),
+            builder: (context, state) => Consumer(
+              builder: (context, ref, child) =>
+                  _systemSurface(context, ref, item.$2),
             ),
           );
         })
         .toList(growable: false);
+
+Widget _systemSurface(BuildContext context, WidgetRef ref, String id) {
+  final policy = ref.watch(loopV2MetaSnapshotProvider).value?.clientPolicy;
+  final version = LoopClientPolicyProjection.version(
+    policy,
+    platform: defaultTargetPlatform,
+    clientVersion: ref.watch(appConfigProvider).loopClientVersion,
+  );
+  final region = LoopClientPolicyProjection.region(policy);
+  void returnToCommunity() => context.go(LoopRouteManifest.defaultPath);
+  void back() {
+    if (Navigator.of(context).canPop()) {
+      context.pop();
+    } else {
+      returnToCommunity();
+    }
+  }
+
+  return SystemSurfaceScreen.fromId(
+    id,
+    onBack: back,
+    onSecondaryAction: returnToCommunity,
+    forceUpdateRequirement:
+        version.decision == LoopVersionPolicyDecision.updateRequired
+        ? LoopForceUpdateRequirement(
+            minimumVersion: version.forceUpdateBelow,
+            configVersion: version.configVersion,
+            storeUrl: version.storeUrl,
+          )
+        : null,
+    featureAvailabilityRestriction:
+        region.decision == LoopRegionPolicyDecision.blocked
+        ? LoopFeatureAvailabilityRestriction(
+            reasonCode: region.reasonCode,
+            supportUrl: region.supportUrl,
+            readOnlyAssetAccess: region.readOnlyAssetAccess,
+          )
+        : null,
+    onRegionContinue: region.decision == LoopRegionPolicyDecision.blocked
+        ? returnToCommunity
+        : null,
+    showcase: ref.watch(loopSystemShowcaseProvider),
+  );
+}
 
 Widget _profileScreen(BuildContext context, WidgetRef ref, String id) {
   final session = ref.watch(loopSessionProvider);

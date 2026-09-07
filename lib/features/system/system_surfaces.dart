@@ -1,7 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_token_card.dart';
 
+/// System and component-state pages (manifest module 8 plus the two
+/// module-0 gates `force-update` / `region-blocked`).
+///
+/// Principle kept from the previous implementation: a page renders a real
+/// state only when its owner supplies a typed observation. Opening a route
+/// proves nothing. Without an observation the page shows the prototype
+/// layout with an explicit "来源未接入" notice and never a figure.
 enum LoopConnectivityScope {
   fullyOffline,
   marketDataUnavailable,
@@ -19,45 +32,56 @@ enum LoopSkeletonKind { list, detail, chart }
 typedef SystemAction = void Function();
 
 /// Presentation-safe evidence of an error or unconfirmed request outcome.
-///
-/// The owning feature keeps the raw exception, response, retry semantics, and
-/// every provider/support identifier. This marker intentionally carries none.
+/// [traceId] and [statusLabel] are display-ready strings chosen by the owner;
+/// raw exceptions, payloads and retry semantics stay with the owner.
 @immutable
 final class LoopServiceErrorObservation {
-  const LoopServiceErrorObservation();
+  const LoopServiceErrorObservation({this.traceId, this.statusLabel});
+
+  final String? traceId;
+  final String? statusLabel;
 }
 
 /// Evidence that an approved minimum-version policy blocks this build.
-///
-/// Version, platform, policy freshness, and store-destination facts remain at
-/// the future app-level policy boundary. This marker carries none of them.
 @immutable
 final class LoopForceUpdateRequirement {
-  const LoopForceUpdateRequirement();
+  const LoopForceUpdateRequirement({
+    this.minimumVersion,
+    this.configVersion,
+    this.storeUrl,
+  });
+
+  final String? minimumVersion;
+  final String? configVersion;
+  final Uri? storeUrl;
 }
 
 /// Evidence that an approved maintenance notice is currently active.
-///
-/// The future app-level source owns notice identity, freshness, timing, and
-/// affected services. This presentation marker intentionally carries none.
 @immutable
 final class LoopMaintenanceNotice {
-  const LoopMaintenanceNotice();
+  const LoopMaintenanceNotice({this.windowLabel, this.detail});
+
+  /// e.g. `03:00–05:00 UTC`; null when the source did not state a window.
+  final String? windowLabel;
+
+  /// Owner-supplied fact line (e.g. what stays read-only).
+  final String? detail;
 }
 
 /// Evidence that an approved current decision restricts feature availability.
-///
-/// The future app-level source owns decision identity, freshness, location,
-/// reason, and affected capabilities. This presentation marker carries none.
 @immutable
 final class LoopFeatureAvailabilityRestriction {
-  const LoopFeatureAvailabilityRestriction();
+  const LoopFeatureAvailabilityRestriction({
+    this.reasonCode,
+    this.supportUrl,
+    this.readOnlyAssetAccess,
+  });
+
+  final String? reasonCode;
+  final Uri? supportUrl;
+  final bool? readOnlyAssetAccess;
 }
 
-/// Presentation-safe permission context selected by the exact owning feature.
-///
-/// The future platform adapter owns OS status reads and native requests. This
-/// value carries only the reviewed permission kind and next presentation mode.
 @immutable
 final class LoopPermissionPrompt {
   const LoopPermissionPrompt({required this.kind, required this.mode});
@@ -67,10 +91,6 @@ final class LoopPermissionPrompt {
 }
 
 /// Presentation-safe feedback supplied by the exact feature that observed it.
-///
-/// The owning feature keeps raw exceptions, request identifiers, provider
-/// payloads, retry semantics, and any sensitive values. This projection carries
-/// only reviewed display copy and an optional exact action label.
 @immutable
 final class LoopGlobalFeedback {
   const LoopGlobalFeedback({
@@ -95,9 +115,6 @@ final class LoopGlobalFeedback {
 }
 
 /// A bounded skeleton selected by the exact feature that currently owns load.
-///
-/// List placeholder count controls visual density only. It never predicts a
-/// provider result count or proves that a request was sent.
 @immutable
 final class LoopLoadingPresentation {
   const LoopLoadingPresentation.list({this.placeholderCount = 4})
@@ -125,7 +142,57 @@ final class LoopLoadingPresentation {
   };
 }
 
-/// Single routing surface for global system UI I1-I8.
+/// One Token Card example for the `token-card-states` showcase.
+@immutable
+final class LoopTokenCardShowcaseItem {
+  const LoopTokenCardShowcaseItem({
+    required this.label,
+    required this.state,
+    required this.model,
+    this.actions = const <LoopTokenCardAction>[],
+  });
+
+  final String label;
+  final LoopTokenCardState state;
+  final LoopTokenCardModel model;
+  final List<LoopTokenCardAction> actions;
+}
+
+/// One sign-sheet example for the `sign-sheet-states` showcase.
+@immutable
+final class LoopSignSheetShowcaseItem {
+  const LoopSignSheetShowcaseItem({
+    required this.label,
+    required this.state,
+    required this.facts,
+    this.reason,
+  });
+
+  final String label;
+  final LoopSignSheetState state;
+  final List<LoopSignFact> facts;
+  final String? reason;
+}
+
+/// Component showcase fixtures. They carry figures, so only the explicit
+/// Development Preview root may supply them (labelled `演示数据`).
+/// Production keeps [loopSystemShowcaseProvider] at `null`.
+@immutable
+final class LoopSystemShowcase {
+  const LoopSystemShowcase({
+    required this.sourceLabel,
+    this.tokenCards = const <LoopTokenCardShowcaseItem>[],
+    this.signSheets = const <LoopSignSheetShowcaseItem>[],
+  });
+
+  final String sourceLabel;
+  final List<LoopTokenCardShowcaseItem> tokenCards;
+  final List<LoopSignSheetShowcaseItem> signSheets;
+}
+
+final loopSystemShowcaseProvider = Provider<LoopSystemShowcase?>((ref) => null);
+
+/// Single routing surface for the system and component-state pages.
 class SystemSurfaceScreen extends StatelessWidget {
   const SystemSurfaceScreen.fromId(
     this.surfaceId, {
@@ -145,6 +212,7 @@ class SystemSurfaceScreen extends StatelessWidget {
     this.onPermissionNotNow,
     this.onFeedbackAction,
     this.onFeedbackDismiss,
+    this.onBack,
     this.connectivityScope,
     this.serviceErrorObservation,
     this.forceUpdateRequirement,
@@ -153,6 +221,7 @@ class SystemSurfaceScreen extends StatelessWidget {
     this.permissionPrompt,
     this.globalFeedback,
     this.loadingPresentation,
+    this.showcase,
   });
 
   static const supportedIds = <String>{
@@ -164,11 +233,15 @@ class SystemSurfaceScreen extends StatelessWidget {
     'permission',
     'toast',
     'loading',
+    'token-card-states',
+    'sign-sheet-states',
   };
 
   final String surfaceId;
   final SystemAction? onRetry;
   final SystemAction? onPrimaryAction;
+
+  /// Generic "return to LOOP" used only by unavailable states.
   final SystemAction? onSecondaryAction;
   final SystemAction? onServiceRetry;
   final SystemAction? onServiceSupport;
@@ -182,6 +255,9 @@ class SystemSurfaceScreen extends StatelessWidget {
   final SystemAction? onPermissionNotNow;
   final SystemAction? onFeedbackAction;
   final SystemAction? onFeedbackDismiss;
+
+  /// Topbar back. Null hides the back button (blocking pages).
+  final SystemAction? onBack;
   final LoopConnectivityScope? connectivityScope;
   final LoopServiceErrorObservation? serviceErrorObservation;
   final LoopForceUpdateRequirement? forceUpdateRequirement;
@@ -190,74 +266,84 @@ class SystemSurfaceScreen extends StatelessWidget {
   final LoopPermissionPrompt? permissionPrompt;
   final LoopGlobalFeedback? globalFeedback;
   final LoopLoadingPresentation? loadingPresentation;
+  final LoopSystemShowcase? showcase;
 
   String get _id => surfaceId.replaceFirst('#', '').toLowerCase();
 
   @override
   Widget build(BuildContext context) {
     return switch (_id) {
-      'offline' =>
-        connectivityScope == null
-            ? _ConnectivityUnavailableScreen(onContinue: onSecondaryAction)
-            : _ConnectivityScreen(
-                scope: connectivityScope!,
-                onRetry: onRetry,
-                onContinue: onSecondaryAction,
-              ),
-      'server-error' =>
-        serviceErrorObservation == null
-            ? _ServiceErrorUnavailableScreen(onContinue: onSecondaryAction)
-            : _ServerErrorScreen(
-                onRetry: onServiceRetry,
-                onSupport: onServiceSupport,
-              ),
-      'force-update' =>
-        forceUpdateRequirement == null
-            ? _UpdateStatusUnavailableScreen(onContinue: onSecondaryAction)
-            : _ForceUpdateScreen(onUpdate: onForceUpdate),
-      'maintenance' =>
-        maintenanceNotice == null
-            ? _MaintenanceStatusUnavailableScreen(onContinue: onSecondaryAction)
-            : _MaintenanceScreen(
-                onRecheck: onMaintenanceRecheck,
-                onStatus: onMaintenanceStatus,
-              ),
-      'region-restricted' =>
-        featureAvailabilityRestriction == null
-            ? _FeatureAvailabilityStatusUnavailableScreen(
-                onContinue: onSecondaryAction,
-              )
-            : _FeatureAvailabilityRestrictedScreen(
-                onContinue: onRegionContinue,
-                onPolicy: onRegionPolicy,
-              ),
-      'permission' =>
-        permissionPrompt == null
-            ? _PermissionStatusUnavailableScreen(onContinue: onSecondaryAction)
-            : _PermissionScreen(
-                prompt: permissionPrompt!,
-                onRequest: onPermissionRequest,
-                onOpenSettings: onPermissionOpenSettings,
-                onNotNow: onPermissionNotNow,
-              ),
-      'toast' =>
-        globalFeedback?.presentationMessage == null
-            ? _FeedbackStatusUnavailableScreen(onContinue: onSecondaryAction)
-            : _GlobalFeedbackScreen(
-                feedback: globalFeedback!,
-                onAction: onFeedbackAction,
-                onDismiss: onFeedbackDismiss,
-              ),
-      'loading' =>
-        loadingPresentation == null || !loadingPresentation!.isPresentable
-            ? _LoadingContextUnavailableScreen(onContinue: onSecondaryAction)
-            : _LoadingScreen(presentation: loadingPresentation!),
-      _ => const _UnknownSystemScreen(),
+      'offline' => _OfflinePage(
+        scope: connectivityScope,
+        onRetry: onRetry,
+        onContinue: onSecondaryAction,
+        onBack: onBack,
+      ),
+      'server-error' => _ServerErrorPage(
+        observation: serviceErrorObservation,
+        onRetry: onServiceRetry,
+        onSupport: onServiceSupport,
+        onContinue: onSecondaryAction,
+        onBack: onBack,
+      ),
+      'force-update' => _ForceUpdatePage(
+        requirement: forceUpdateRequirement,
+        onUpdate: onForceUpdate,
+        onContinue: onSecondaryAction,
+        onBack: onBack,
+      ),
+      'maintenance' => _MaintenancePage(
+        notice: maintenanceNotice,
+        onRecheck: onMaintenanceRecheck,
+        onStatus: onMaintenanceStatus,
+        onContinue: onSecondaryAction,
+        onBack: onBack,
+      ),
+      'region-restricted' => _RegionPage(
+        restriction: featureAvailabilityRestriction,
+        onContinue: onRegionContinue,
+        onPolicy: onRegionPolicy,
+        onReturn: onSecondaryAction,
+        onBack: onBack,
+      ),
+      'permission' => _PermissionPage(
+        prompt: permissionPrompt,
+        onRequest: onPermissionRequest,
+        onOpenSettings: onPermissionOpenSettings,
+        onNotNow: onPermissionNotNow,
+        onContinue: onSecondaryAction,
+        onBack: onBack,
+      ),
+      'toast' => _ToastStatesPage(
+        feedback: globalFeedback,
+        onAction: onFeedbackAction,
+        onDismiss: onFeedbackDismiss,
+        onBack: onBack,
+      ),
+      'loading' => _SkeletonStatesPage(
+        presentation: loadingPresentation,
+        onBack: onBack,
+      ),
+      'token-card-states' => _TokenCardStatesPage(
+        showcase: showcase,
+        onBack: onBack,
+        onContinue: onSecondaryAction,
+      ),
+      'sign-sheet-states' => _SignSheetStatesPage(
+        showcase: showcase,
+        onBack: onBack,
+        onContinue: onSecondaryAction,
+      ),
+      _ => _UnknownSystemPage(onBack: onBack),
     };
   }
 }
 
-/// Compact app-wide connectivity banner for I1.
+// ---------------------------------------------------------------------------
+// Reusable pieces kept for feature slices (Market uses the skeleton view).
+// ---------------------------------------------------------------------------
+
+/// Compact app-wide connectivity banner.
 class LoopConnectivityBanner extends StatelessWidget {
   const LoopConnectivityBanner({required this.scope, super.key, this.onRetry});
 
@@ -266,71 +352,36 @@ class LoopConnectivityBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final content = _connectivityContent(scope);
-    final useStackedLayout = MediaQuery.textScalerOf(context).scale(10) > 15;
+    final content = _connectivityCopy(scope);
     return Material(
-      color: content.color.withValues(alpha: 0.12),
+      color: LoopColors.card2,
       child: SafeArea(
         bottom: false,
         child: Semantics(
           liveRegion: true,
-          label: '${content.title}. ${content.message}',
+          label: '${content.title}。${content.body}',
           child: Container(
             constraints: const BoxConstraints(minHeight: 48),
             padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: content.color.withValues(alpha: 0.32),
-                ),
-              ),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: LoopColors.line2)),
             ),
-            child: useStackedLayout
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Icon(content.icon, color: content.color, size: 19),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              content.banner,
-                              style: Theme.of(context).textTheme.labelLarge
-                                  ?.copyWith(color: content.color),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (onRetry != null)
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: onRetry,
-                            child: const Text('Retry'),
-                          ),
-                        ),
-                    ],
-                  )
-                : Row(
-                    children: <Widget>[
-                      Icon(content.icon, color: content.color, size: 19),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          content.banner,
-                          style: Theme.of(context).textTheme.labelLarge
-                              ?.copyWith(color: content.color),
-                        ),
-                      ),
-                      if (onRetry != null)
-                        TextButton(
-                          onPressed: onRetry,
-                          child: const Text('Retry'),
-                        ),
-                    ],
+            child: Row(
+              children: <Widget>[
+                LoopIcon(content.icon, size: 17),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ExcludeSemantics(
+                    child: Text(
+                      content.banner,
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
                   ),
+                ),
+                if (onRetry != null)
+                  TextButton(onPressed: onRetry, child: const Text('重试')),
+              ],
+            ),
           ),
         ),
       ),
@@ -338,7 +389,7 @@ class LoopConnectivityBanner extends StatelessWidget {
   }
 }
 
-/// I7 success/warning/error notice. Its host owns placement and lifetime.
+/// Success / warning / error notice. Its host owns placement and lifetime.
 class LoopGlobalNotice extends StatelessWidget {
   const LoopGlobalNotice({
     required this.feedback,
@@ -359,118 +410,45 @@ class LoopGlobalNotice extends StatelessWidget {
         key: ValueKey<String>('invalid-global-feedback'),
       );
     }
-    final (color, icon, label) = switch (feedback.kind) {
-      LoopNoticeKind.success => (
-        LoopColors.mint,
-        Icons.check_circle_outline_rounded,
-        'Success',
-      ),
-      LoopNoticeKind.warning => (
-        LoopColors.warning,
-        Icons.warning_amber_rounded,
-        'Warning',
-      ),
-      LoopNoticeKind.error => (
-        LoopColors.danger,
-        Icons.error_outline_rounded,
-        'Error',
-      ),
+    final kind = switch (feedback.kind) {
+      LoopNoticeKind.success => LoopToastKind.ok,
+      LoopNoticeKind.warning => LoopToastKind.warn,
+      LoopNoticeKind.error => LoopToastKind.err,
     };
-    final useStackedLayout = MediaQuery.textScalerOf(context).scale(10) > 15;
     final actionLabel = feedback.presentationActionLabel;
-    final actions = <Widget>[
-      if (actionLabel != null && onAction != null)
-        TextButton(onPressed: onAction, child: Text(actionLabel)),
-      if (onDismiss != null)
-        Semantics(
-          button: true,
-          label: 'Dismiss',
-          onTap: onDismiss,
-          child: ExcludeSemantics(
-            child: IconButton(
-              tooltip: 'Dismiss',
-              onPressed: onDismiss,
-              icon: const Icon(Icons.close_rounded, size: 19),
-            ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          LoopToastView(
+            entry: LoopToastEntry(message: message, kind: kind),
           ),
-        ),
-    ];
-    return Semantics(
-      container: true,
-      explicitChildNodes: true,
-      liveRegion: true,
-      label: '$label. $message',
-      child: Material(
-        color: LoopColors.basalt,
-        borderRadius: LoopRadius.medium,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 56),
-          padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
-          decoration: BoxDecoration(
-            borderRadius: LoopRadius.medium,
-            border: Border.all(color: color.withValues(alpha: 0.38)),
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: LoopColors.abyss.withValues(alpha: 0.38),
-                blurRadius: 22,
-                offset: const Offset(0, 8),
+          if ((actionLabel != null && onAction != null) || onDismiss != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: LoopButtonPair(
+                padded: false,
+                children: <Widget>[
+                  if (onDismiss != null)
+                    LoopButton(label: '关闭', onPressed: onDismiss),
+                  if (actionLabel != null && onAction != null)
+                    LoopButton(
+                      label: actionLabel,
+                      primary: true,
+                      onPressed: onAction,
+                    ),
+                ],
               ),
-            ],
-          ),
-          child: useStackedLayout
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        ExcludeSemantics(
-                          child: Icon(icon, color: color, size: 21),
-                        ),
-                        const SizedBox(width: 11),
-                        Expanded(
-                          child: ExcludeSemantics(
-                            child: Text(
-                              message,
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (actions.isNotEmpty)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: actions,
-                        ),
-                      ),
-                  ],
-                )
-              : Row(
-                  children: <Widget>[
-                    ExcludeSemantics(child: Icon(icon, color: color, size: 21)),
-                    const SizedBox(width: 11),
-                    Expanded(
-                      child: ExcludeSemantics(
-                        child: Text(
-                          message,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      ),
-                    ),
-                    ...actions,
-                  ],
-                ),
-        ),
+            ),
+        ],
       ),
     );
   }
 }
 
-/// I8 reusable skeleton. It intentionally does not shimmer, so reduced-motion
-/// users and ordinary users receive the same calm loading state.
+/// Reusable skeleton for feature slices; fails closed on invalid density.
 class LoopSkeletonView extends StatelessWidget {
   const LoopSkeletonView({required this.presentation, super.key});
 
@@ -483,25 +461,18 @@ class LoopSkeletonView extends StatelessWidget {
         key: ValueKey<String>('invalid-loading-presentation'),
       );
     }
-    final semanticLabel = switch (presentation.kind) {
-      LoopSkeletonKind.list => 'Loading list content',
-      LoopSkeletonKind.detail => 'Loading detail content',
-      LoopSkeletonKind.chart => 'Loading chart content',
-    };
-    return Semantics(
-      container: true,
-      liveRegion: true,
-      label: semanticLabel,
-      child: ExcludeSemantics(
-        child: switch (presentation.kind) {
-          LoopSkeletonKind.list => _ListSkeleton(
-            itemCount: presentation.placeholderCount,
-          ),
-          LoopSkeletonKind.detail => const _DetailSkeleton(),
-          LoopSkeletonKind.chart => const _ChartSkeleton(),
-        },
+    return switch (presentation.kind) {
+      LoopSkeletonKind.list => LoopSkeleton(
+        type: LoopSkeletonType.list,
+        rows: presentation.placeholderCount,
       ),
-    );
+      LoopSkeletonKind.detail => const LoopSkeleton(
+        type: LoopSkeletonType.detail,
+      ),
+      LoopSkeletonKind.chart => const LoopSkeleton(
+        type: LoopSkeletonType.chart,
+      ),
+    };
   }
 }
 
@@ -516,476 +487,38 @@ Future<void> showLoopForceUpdateDialog(
     builder: (context) => PopScope(
       canPop: false,
       child: AlertDialog(
-        icon: const Icon(
-          Icons.system_update_alt_rounded,
-          color: LoopColors.mint,
-          size: 34,
-        ),
-        title: const Text('Update LOOP to continue'),
-        content: const Text(
-          'An approved version policy requires a supported build before you can continue. Install a supported version before returning to LOOP.',
+        icon: const LoopIcon('upgrade', size: 34, color: LoopColors.lime),
+        title: const Text('请更新 LOOP 后继续'),
+        content: Text(
+          '已批准的版本策略要求受支持的版本${requirement.minimumVersion == null ? '' : '（最低 ${requirement.minimumVersion}）'}。安装受支持的版本后再回到 LOOP。',
         ),
         actions: <Widget>[
-          FilledButton(onPressed: onUpdate, child: const Text('Update now')),
+          LoopButton(label: '立即更新', primary: true, onPressed: onUpdate),
         ],
       ),
     ),
   );
 }
 
-class _ConnectivityUnavailableScreen extends StatelessWidget {
-  const _ConnectivityUnavailableScreen({required this.onContinue});
+// ---------------------------------------------------------------------------
+// Page scaffold shared by the state pages
+// ---------------------------------------------------------------------------
 
-  final VoidCallback? onContinue;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: 'CONNECTIVITY',
-      title: 'Connectivity status unavailable',
-      subtitle: 'LOOP did not receive a verified device or service connectivity signal for this page.',
-      bottom: onContinue == null
-          ? null
-          : LoopActionDock(
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: onContinue,
-                  child: const Text('Return to LOOP'),
-                ),
-              ),
-            ),
-      children: const <Widget>[
-        LoopStateCard(
-          key: ValueKey<String>('connectivity-source-unavailable'),
-          title: 'No connectivity source connected',
-          message: 'Opening this route does not mean the device is offline or that a LOOP service failed. Live status remains unknown until an approved source reports it.',
-          icon: Icons.help_outline_rounded,
-          tone: LoopTone.warning,
-        ),
-      ],
-    );
-  }
-}
-
-class _ConnectivityScreen extends StatelessWidget {
-  const _ConnectivityScreen({
-    required this.scope,
-    required this.onRetry,
-    required this.onContinue,
-  });
-
-  final LoopConnectivityScope scope;
-  final VoidCallback? onRetry;
-  final VoidCallback? onContinue;
-
-  @override
-  Widget build(BuildContext context) {
-    final content = _connectivityContent(scope);
-    final fullyOffline = scope == LoopConnectivityScope.fullyOffline;
-    return _SystemStateScaffold(
-      eyebrow: fullyOffline ? 'NO CONNECTION' : 'SERVICE INTERRUPTED',
-      title: content.title,
-      message: content.message,
-      icon: content.icon,
-      tone: content.color,
-      primaryLabel: 'Try again',
-      onPrimary: onRetry,
-      secondaryLabel: fullyOffline
-          ? 'Use downloaded content'
-          : 'Continue with available features',
-      onSecondary: onContinue,
-      detail: fullyOffline
-          ? 'Live prices, messages, balances, and orders may be out of date while you’re offline.'
-          : 'Other parts of LOOP remain available. Affected actions stay disabled until the service recovers.',
-    );
-  }
-}
-
-class _ServerErrorScreen extends StatelessWidget {
-  const _ServerErrorScreen({required this.onRetry, required this.onSupport});
-
-  final VoidCallback? onRetry;
-  final VoidCallback? onSupport;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SystemStateScaffold(
-      eyebrow: 'SERVICE ERROR',
-      title: 'LOOP couldn’t confirm the result',
-      message: 'The request did not return a confirmed outcome. Do not assume success or failure; check the latest state before trying again.',
-      icon: Icons.cloud_off_outlined,
-      tone: LoopColors.danger,
-      primaryLabel: onRetry == null ? null : 'Try again',
-      onPrimary: onRetry,
-      secondaryLabel: onSupport == null ? null : 'Contact support',
-      onSecondary: onSupport,
-      detail: 'Support references remain hidden until their exact source and format are reviewed.',
-    );
-  }
-}
-
-class _ServiceErrorUnavailableScreen extends StatelessWidget {
-  const _ServiceErrorUnavailableScreen({required this.onContinue});
-
-  final VoidCallback? onContinue;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SystemStateScaffold(
-      eyebrow: 'SERVICE STATUS',
-      title: 'Service error status unavailable',
-      message: 'Opening this route does not mean that a LOOP request or provider returned an error or an unconfirmed outcome. A feature must supply one exact observation before this page can report it.',
-      icon: Icons.help_outline_rounded,
-      tone: LoopColors.warning,
-      secondaryLabel: onContinue == null ? null : 'Return to LOOP',
-      onSecondary: onContinue,
-      detail: 'No request-error context is connected to this surface.',
-    );
-  }
-}
-
-class _ForceUpdateScreen extends StatelessWidget {
-  const _ForceUpdateScreen({required this.onUpdate});
-
-  final VoidCallback? onUpdate;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SystemStateScaffold(
-      eyebrow: 'UPDATE REQUIRED',
-      title: 'Update LOOP to continue',
-      message: 'An approved version policy requires a supported build before you can continue.',
-      icon: Icons.system_update_alt_rounded,
-      tone: LoopColors.mint,
-      primaryLabel: onUpdate == null ? null : 'Update now',
-      onPrimary: onUpdate,
-      detail: onUpdate == null
-          ? 'A verified update requirement is present, but no reviewed store action is connected.'
-          : 'Install a supported version before returning to LOOP. This requirement cannot be skipped.',
-      blocking: true,
-    );
-  }
-}
-
-class _UpdateStatusUnavailableScreen extends StatelessWidget {
-  const _UpdateStatusUnavailableScreen({required this.onContinue});
-
-  final VoidCallback? onContinue;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SystemStateScaffold(
-      eyebrow: 'VERSION STATUS',
-      title: 'Update status unavailable',
-      message: 'Opening this route does not mean that this build is unsupported or unsafe. An approved minimum-version policy must explicitly require an update before LOOP can block access.',
-      icon: Icons.help_outline_rounded,
-      tone: LoopColors.warning,
-      secondaryLabel: onContinue == null ? null : 'Return to LOOP',
-      onSecondary: onContinue,
-      detail: 'No minimum-version policy is connected to this surface.',
-    );
-  }
-}
-
-class _MaintenanceScreen extends StatelessWidget {
-  const _MaintenanceScreen({required this.onRecheck, required this.onStatus});
-
-  final VoidCallback? onRecheck;
-  final VoidCallback? onStatus;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SystemStateScaffold(
-      eyebrow: 'MAINTENANCE NOTICE',
-      title: 'Maintenance notice is active',
-      message: 'An approved maintenance notice is active. Feature availability still comes from each feature’s own current state.',
-      icon: Icons.construction_rounded,
-      tone: LoopColors.warning,
-      primaryLabel: onRecheck == null ? null : 'Check again',
-      onPrimary: onRecheck,
-      secondaryLabel: onStatus == null ? null : 'View service status',
-      onSecondary: onStatus,
-      detail: 'This notice does not include a maintenance window or affected services.',
-    );
-  }
-}
-
-class _MaintenanceStatusUnavailableScreen extends StatelessWidget {
-  const _MaintenanceStatusUnavailableScreen({required this.onContinue});
-
-  final VoidCallback? onContinue;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SystemStateScaffold(
-      eyebrow: 'MAINTENANCE STATUS',
-      title: 'Maintenance status unavailable',
-      message: 'Opening this route does not mean that maintenance is planned, active, or affecting a LOOP service. An approved current notice must be supplied before this page can report maintenance.',
-      icon: Icons.help_outline_rounded,
-      tone: LoopColors.warning,
-      secondaryLabel: onContinue == null ? null : 'Return to LOOP',
-      onSecondary: onContinue,
-      detail: 'No maintenance notice is connected to this surface.',
-    );
-  }
-}
-
-class _FeatureAvailabilityRestrictedScreen extends StatelessWidget {
-  const _FeatureAvailabilityRestrictedScreen({
-    required this.onContinue,
-    required this.onPolicy,
-  });
-
-  final VoidCallback? onContinue;
-  final VoidCallback? onPolicy;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SystemStateScaffold(
-      eyebrow: 'FEATURE AVAILABILITY',
-      title: 'Some features are unavailable',
-      message: 'Feature access is currently limited. Check each feature for its current availability.',
-      icon: Icons.public_off_outlined,
-      tone: LoopColors.warning,
-      primaryLabel: onContinue == null ? null : 'Continue to LOOP',
-      onPrimary: onContinue,
-      secondaryLabel: onPolicy == null ? null : 'View eligibility policy',
-      onSecondary: onPolicy,
-      detail: 'This page does not provide a location, reason, or affected features. It does not confirm that any other feature is available.',
-    );
-  }
-}
-
-class _FeatureAvailabilityStatusUnavailableScreen extends StatelessWidget {
-  const _FeatureAvailabilityStatusUnavailableScreen({required this.onContinue});
-
-  final VoidCallback? onContinue;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SystemStateScaffold(
-      eyebrow: 'FEATURE AVAILABILITY',
-      title: 'Availability status unavailable',
-      message: 'LOOP cannot confirm feature availability from this page. Opening it does not mean that this account or location is restricted.',
-      icon: Icons.help_outline_rounded,
-      tone: LoopColors.warning,
-      secondaryLabel: onContinue == null ? null : 'Return to LOOP',
-      onSecondary: onContinue,
-      detail: 'No current availability details are available here.',
-    );
-  }
-}
-
-class _PermissionScreen extends StatelessWidget {
-  const _PermissionScreen({
-    required this.prompt,
-    required this.onRequest,
-    required this.onOpenSettings,
-    required this.onNotNow,
-  });
-
-  final LoopPermissionPrompt prompt;
-  final VoidCallback? onRequest;
-  final VoidCallback? onOpenSettings;
-  final VoidCallback? onNotNow;
-
-  @override
-  Widget build(BuildContext context) {
-    final content = _permissionContent(prompt.kind);
-    final settings = prompt.mode == LoopPermissionPromptMode.settingsRecovery;
-    final primaryAction = settings ? onOpenSettings : onRequest;
-    return _SystemStateScaffold(
-      eyebrow: settings ? 'PERMISSION SETTINGS' : 'BEFORE YOU CONTINUE',
-      title: settings
-          ? 'Review ${content.shortName.toLowerCase()} access in settings'
-          : content.title,
-      message: settings
-          ? 'To change ${content.shortName.toLowerCase()} access, review LOOP in device settings.'
-          : content.message,
-      icon: content.icon,
-      tone: content.color,
-      primaryLabel: primaryAction == null
-          ? null
-          : settings
-          ? 'Open settings'
-          : 'Continue',
-      onPrimary: primaryAction,
-      secondaryLabel: onNotNow == null ? null : 'Not now',
-      onSecondary: onNotNow,
-      detail: settings
-          ? 'Returning to LOOP does not prove that this permission changed.'
-          : content.detail,
-    );
-  }
-}
-
-class _PermissionStatusUnavailableScreen extends StatelessWidget {
-  const _PermissionStatusUnavailableScreen({required this.onContinue});
-
-  final VoidCallback? onContinue;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SystemStateScaffold(
-      eyebrow: 'PERMISSION STATUS',
-      title: 'Permission status unavailable',
-      message: 'LOOP has not received a permission request or device status for this page. Opening it does not mean that a permission is needed or denied.',
-      icon: Icons.help_outline_rounded,
-      tone: LoopColors.warning,
-      secondaryLabel: onContinue == null ? null : 'Return to LOOP',
-      onSecondary: onContinue,
-      detail: 'Start from the feature you want to use so LOOP can explain the exact request.',
-    );
-  }
-}
-
-class _GlobalFeedbackScreen extends StatelessWidget {
-  const _GlobalFeedbackScreen({
-    required this.feedback,
-    required this.onAction,
-    required this.onDismiss,
-  });
-
-  final LoopGlobalFeedback feedback;
-  final VoidCallback? onAction;
-  final VoidCallback? onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SystemStateScaffold(
-      eyebrow: 'GLOBAL FEEDBACK',
-      title: 'Feature feedback',
-      message: 'This notice was supplied by the feature that observed the current outcome.',
-      icon: Icons.campaign_outlined,
-      tone: LoopColors.vapor,
-      content: LoopGlobalNotice(
-        feedback: feedback,
-        onAction: onAction,
-        onDismiss: onDismiss,
-      ),
-      detail: 'The owning feature keeps raw errors, identifiers, sensitive values, and retry semantics out of this feedback.',
-    );
-  }
-}
-
-class _FeedbackStatusUnavailableScreen extends StatelessWidget {
-  const _FeedbackStatusUnavailableScreen({required this.onContinue});
-
-  final VoidCallback? onContinue;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SystemStateScaffold(
-      eyebrow: 'GLOBAL FEEDBACK',
-      title: 'Feedback context unavailable',
-      message: 'No feature supplied a current success, warning, or error outcome for this page.',
-      icon: Icons.help_outline_rounded,
-      tone: LoopColors.warning,
-      secondaryLabel: onContinue == null ? null : 'Return to LOOP',
-      onSecondary: onContinue,
-      detail: 'Opening this route does not mean that an action succeeded, a warning was observed, or an error occurred.',
-    );
-  }
-}
-
-class _LoadingScreen extends StatelessWidget {
-  const _LoadingScreen({required this.presentation});
-
-  final LoopLoadingPresentation presentation;
-
-  @override
-  Widget build(BuildContext context) {
-    final (name, detail) = switch (presentation.kind) {
-      LoopSkeletonKind.list => (
-        'list',
-        'Placeholder rows set visual density only. They do not predict a result count, identity, freshness, or success.',
-      ),
-      LoopSkeletonKind.detail => (
-        'detail',
-        'This placeholder does not prove that an object exists, is accessible, or will load successfully.',
-      ),
-      LoopSkeletonKind.chart => (
-        'chart',
-        'This placeholder does not prove that prices, candles, provider history, freshness, continuity, or success exist.',
-      ),
-    };
-    return _SystemStateScaffold(
-      eyebrow: 'LOADING',
-      title: 'Loading in progress',
-      message:
-          'The owning feature selected a $name placeholder for its current pending state.',
-      icon: Icons.hourglass_top_rounded,
-      tone: LoopColors.vapor,
-      content: LoopSkeletonView(presentation: presentation),
-      detail: detail,
-    );
-  }
-}
-
-class _LoadingContextUnavailableScreen extends StatelessWidget {
-  const _LoadingContextUnavailableScreen({required this.onContinue});
-
-  final VoidCallback? onContinue;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SystemStateScaffold(
-      eyebrow: 'LOADING',
-      title: 'Loading context unavailable',
-      message: 'No feature supplied an active loading state for this page.',
-      icon: Icons.help_outline_rounded,
-      tone: LoopColors.warning,
-      secondaryLabel: onContinue == null ? null : 'Return to LOOP',
-      onSecondary: onContinue,
-      detail: 'Opening this route does not mean that content is being requested, exists, or will arrive.',
-    );
-  }
-}
-
-class _UnknownSystemScreen extends StatelessWidget {
-  const _UnknownSystemScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return const _SystemStateScaffold(
-      eyebrow: 'SYSTEM',
-      title: 'This page is unavailable',
-      message: 'LOOP could not identify the requested system page.',
-      icon: Icons.route_outlined,
-      tone: LoopColors.vapor,
-      detail: 'Return to the previous screen and try again.',
-    );
-  }
-}
-
-class _SystemStateScaffold extends StatelessWidget {
-  const _SystemStateScaffold({
-    required this.eyebrow,
+class _StatePage extends StatelessWidget {
+  const _StatePage({
     required this.title,
-    required this.message,
-    required this.icon,
-    required this.tone,
-    required this.detail,
-    this.primaryLabel,
-    this.onPrimary,
-    this.secondaryLabel,
-    this.onSecondary,
-    this.content,
+    required this.folio,
+    required this.body,
+    this.onBack,
+    this.primaryAction,
     this.blocking = false,
   });
 
-  final String eyebrow;
   final String title;
-  final String message;
-  final IconData icon;
-  final Color tone;
-  final String detail;
-  final String? primaryLabel;
-  final VoidCallback? onPrimary;
-  final String? secondaryLabel;
-  final VoidCallback? onSecondary;
-  final Widget? content;
+  final LoopFolioPrimary folio;
+  final List<Widget> body;
+  final VoidCallback? onBack;
+  final Widget? primaryAction;
   final bool blocking;
 
   @override
@@ -995,383 +528,935 @@ class _SystemStateScaffold extends StatelessWidget {
         blocking ? 'system-state-blocking' : 'system-state-dismissible',
       ),
       canPop: !blocking,
-      child: Scaffold(
-        body: Stack(
-          children: <Widget>[
-            const Positioned.fill(child: LoopBackdrop()),
-            SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  const verticalPadding = 46.0;
-                  final minContentHeight =
-                      constraints.maxHeight > verticalPadding
-                      ? constraints.maxHeight - verticalPadding
-                      : 0.0;
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 26, 24, 20),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(minHeight: minContentHeight),
-                      child: IntrinsicHeight(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text(
-                              eyebrow,
-                              style: Theme.of(context).textTheme.labelMedium
-                                  ?.copyWith(color: tone, letterSpacing: 1.4),
-                            ),
-                            const Spacer(),
-                            Center(
-                              child: _SystemGlyph(icon: icon, color: tone),
-                            ),
-                            const SizedBox(height: 38),
-                            Semantics(
-                              header: true,
-                              child: Text(
-                                title,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .displayMedium,
-                              ),
-                            ),
-                            const SizedBox(height: 13),
-                            Text(
-                              message,
-                              style: Theme.of(context).textTheme.bodyLarge
-                                  ?.copyWith(color: LoopColors.vapor),
-                            ),
-                            if (content != null) ...<Widget>[
-                              const SizedBox(height: 20),
-                              content!,
-                            ],
-                            const SizedBox(height: 20),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(14),
-                              decoration: const BoxDecoration(
-                                color: LoopColors.basalt,
-                                borderRadius: LoopRadius.medium,
-                                border: Border.fromBorderSide(
-                                  BorderSide(color: LoopColors.line),
-                                ),
-                              ),
-                              child: Text(
-                                detail,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ),
-                            const Spacer(),
-                            if (primaryLabel != null)
-                              SizedBox(
-                                width: double.infinity,
-                                child: FilledButton(
-                                  onPressed: onPrimary,
-                                  child: Text(primaryLabel!),
-                                ),
-                              ),
-                            if (secondaryLabel != null) ...<Widget>[
-                              const SizedBox(height: 10),
-                              SizedBox(
-                                width: double.infinity,
-                                child: TextButton(
-                                  onPressed: onSecondary,
-                                  child: Text(secondaryLabel!),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
+      child: LoopFocusPage(
+        archetype: LoopPageArchetype.state,
+        title: title,
+        onBack: blocking ? null : onBack,
+        folio: folio,
+        body: body,
+        primaryAction: primaryAction,
+      ),
+    );
+  }
+}
+
+/// The "来源未接入" notice every unobserved page shows in place of a state.
+class _SourceUnavailableNotice extends StatelessWidget {
+  const _SourceUnavailableNotice({
+    required this.keyName,
+    required this.title,
+    required this.body,
+  });
+
+  final String keyName;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopNotice(
+      key: ValueKey<String>(keyName),
+      icon: 'question',
+      tone: LoopNoticeTone.warn,
+      title: title,
+      body: body,
+    );
+  }
+}
+
+Widget? _returnAction(VoidCallback? onContinue) => onContinue == null
+    ? null
+    : LoopButton(
+        key: const ValueKey<String>('system-return'),
+        label: '返回 LOOP',
+        block: true,
+        onPressed: onContinue,
+      );
+
+// ---------------------------------------------------------------------------
+// offline
+// ---------------------------------------------------------------------------
+
+({String title, String body, String banner, String icon, LoopNoticeTone tone})
+_connectivityCopy(LoopConnectivityScope scope) => switch (scope) {
+  LoopConnectivityScope.fullyOffline => (
+    title: '完全离线',
+    body: '检查 Wi-Fi 或蜂窝数据。资产数据为最后一次同步的缓存，可能已过期。',
+    banner: '离线 · 实时信息已暂停',
+    icon: 'offline',
+    tone: LoopNoticeTone.danger,
+  ),
+  LoopConnectivityScope.marketDataUnavailable => (
+    title: '行情来源暂时不可用',
+    body: '其他功能正常。价格与图表可能不准，依赖当前价格的动作已暂停。',
+    banner: '行情不可用 · 价格可能已过期',
+    icon: 'warn',
+    tone: LoopNoticeTone.warn,
+  ),
+  LoopConnectivityScope.tradingServiceUnavailable => (
+    title: '交易服务暂时不可用',
+    body: '订单与账户变更无法提交；行情浏览与聊天仍可使用。',
+    banner: '交易服务中断 · 动作已暂停',
+    icon: 'warn',
+    tone: LoopNoticeTone.warn,
+  ),
+};
+
+class _OfflinePage extends StatelessWidget {
+  const _OfflinePage({
+    required this.scope,
+    required this.onRetry,
+    required this.onContinue,
+    required this.onBack,
+  });
+
+  final LoopConnectivityScope? scope;
+  final VoidCallback? onRetry;
+  final VoidCallback? onContinue;
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final scope = this.scope;
+    if (scope == null) {
+      return _StatePage(
+        title: '无网络',
+        onBack: onBack,
+        folio: const LoopFolioPrimary(
+          kicker: 'CONNECTIVITY',
+          heading: '连接状态未接入',
+          caption: '打开此页不代表设备离线或服务故障；实时状态要由已接入的来源报告。',
+          stamp: 'UNKNOWN',
+          archetype: LoopFolioArchetype.state,
         ),
-      ),
-    );
-  }
-}
-
-class _SystemGlyph extends StatelessWidget {
-  const _SystemGlyph({required this.icon, required this.color});
-
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      image: true,
-      child: SizedBox.square(
-        dimension: 168,
-        child: Stack(
-          alignment: Alignment.center,
-          children: <Widget>[
-            Container(
-              width: 168,
-              height: 168,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: color.withValues(alpha: 0.16)),
-              ),
-            ),
-            Container(
-              width: 116,
-              height: 116,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color.withValues(alpha: 0.08),
-                border: Border.all(color: color.withValues(alpha: 0.38)),
-              ),
-            ),
-            Icon(icon, size: 46, color: color),
-            Positioned(top: 9, child: _GlyphNode(color: color)),
-            Positioned(
-              left: 17,
-              bottom: 28,
-              child: _GlyphNode(color: color.withValues(alpha: 0.7)),
-            ),
-            Positioned(
-              right: 17,
-              bottom: 28,
-              child: _GlyphNode(color: color.withValues(alpha: 0.42)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GlyphNode extends StatelessWidget {
-  const _GlyphNode({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 13,
-      height: 13,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: LoopColors.abyss,
-        border: Border.all(color: color, width: 2),
-      ),
-    );
-  }
-}
-
-class _ListSkeleton extends StatelessWidget {
-  const _ListSkeleton({required this.itemCount});
-
-  final int itemCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: List<Widget>.generate(
-        itemCount,
-        (index) => Padding(
-          padding: EdgeInsets.only(bottom: index == itemCount - 1 ? 0 : 10),
-          child: const LoopCard(
-            child: Row(
-              children: <Widget>[
-                _SkeletonBlock(width: 42, height: 42, circular: true),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      _SkeletonBlock(width: 132, height: 12),
-                      SizedBox(height: 9),
-                      _SkeletonBlock(width: 204, height: 9),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+        body: const <Widget>[
+          _SourceUnavailableNotice(
+            keyName: 'connectivity-source-unavailable',
+            title: '没有已接入的连接状态来源',
+            body: '设备网络与 LOOP 服务的状态尚未由任何来源提供；此页不会推断离线。',
           ),
-        ),
+        ],
+        primaryAction: _returnAction(onContinue),
+      );
+    }
+    final copy = _connectivityCopy(scope);
+    final fullyOffline = scope == LoopConnectivityScope.fullyOffline;
+    return _StatePage(
+      title: '无网络',
+      onBack: onBack,
+      folio: LoopFolioPrimary(
+        kicker: fullyOffline ? 'DEVICE OFFLINE' : 'SERVICE INTERRUPTED',
+        heading: fullyOffline ? '当前设备离线' : copy.title,
+        caption: fullyOffline
+            ? '缓存仍可查看；发送、兑换与跨链已经暂停。'
+            : '其他部分仍可使用；受影响的动作在恢复前保持禁用。',
+        stamp: fullyOffline ? 'OFFLINE' : 'PARTIAL',
+        archetype: LoopFolioArchetype.state,
       ),
+      body: <Widget>[
+        LoopNotice(
+          icon: copy.icon,
+          tone: copy.tone,
+          title: copy.title,
+          body: copy.body,
+        ),
+        if (fullyOffline)
+          LoopEmpty(
+            icon: 'offline',
+            message: '无法连接到服务器',
+            action: onRetry == null
+                ? null
+                : LoopButton(label: '重试', onPressed: onRetry),
+          )
+        else if (onRetry != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            child: LoopButton(label: '重试', block: true, onPressed: onRetry),
+          ),
+        const LoopNotice(
+          title: '为什么区分这两种',
+          body: '完全断网时所有操作都要拦；单链或单一服务故障时其他功能应该照常可用 —— 一刀切会让用户以为整个 App 坏了。',
+        ),
+      ],
+      primaryAction: onContinue == null
+          ? null
+          : LoopButton(
+              label: fullyOffline ? '查看缓存内容' : '继续使用可用功能',
+              block: true,
+              onPressed: onContinue,
+            ),
     );
   }
 }
 
-class _DetailSkeleton extends StatelessWidget {
-  const _DetailSkeleton();
+// ---------------------------------------------------------------------------
+// server-error
+// ---------------------------------------------------------------------------
+
+class _ServerErrorPage extends StatelessWidget {
+  const _ServerErrorPage({
+    required this.observation,
+    required this.onRetry,
+    required this.onSupport,
+    required this.onContinue,
+    required this.onBack,
+  });
+
+  final LoopServiceErrorObservation? observation;
+  final VoidCallback? onRetry;
+  final VoidCallback? onSupport;
+  final VoidCallback? onContinue;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
-    return const LoopCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
+    final observation = this.observation;
+    if (observation == null) {
+      return _StatePage(
+        title: '服务状态',
+        onBack: onBack,
+        folio: const LoopFolioPrimary(
+          kicker: 'SERVICE STATUS',
+          heading: '服务状态未接入',
+          caption: '打开此页不代表某个请求返回了错误或未确认的结果。',
+          stamp: 'UNKNOWN',
+          archetype: LoopFolioArchetype.state,
+        ),
+        body: const <Widget>[
+          _SourceUnavailableNotice(
+            keyName: 'service-error-source-unavailable',
+            title: '没有请求错误上下文',
+            body: '必须由发生请求的功能提供一次确切的错误观测，此页才会报告服务不可用。',
+          ),
+        ],
+        primaryAction: _returnAction(onContinue),
+      );
+    }
+    final trace = observation.traceId;
+    return _StatePage(
+      title: '服务状态',
+      onBack: onBack,
+      folio: const LoopFolioPrimary(
+        kicker: 'SERVICE STATUS',
+        heading: '服务暂时不可用',
+        caption: '钱包仍在你的设备上；稍后重试或联系支持。',
+        stamp: 'RETRY',
+        archetype: LoopFolioArchetype.state,
+      ),
+      body: <Widget>[
+        LoopNotice(
+          icon: 'maintenance',
+          tone: LoopNoticeTone.danger,
+          title: observation.statusLabel == null
+              ? '结果未确认'
+              : '错误 ${observation.statusLabel}',
+          body:
+              '${trace == null ? '追踪号未提供' : '追踪号 $trace'} · 不要假定成功或失败；重试前先查看最新状态。Wallet 资产仍在链上，不受影响。',
+        ),
+        if (onRetry != null || onSupport != null)
+          LoopButtonPair(
             children: <Widget>[
-              _SkeletonBlock(width: 54, height: 54, circular: true),
-              SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    _SkeletonBlock(width: 146, height: 15),
-                    SizedBox(height: 10),
-                    _SkeletonBlock(width: 92, height: 10),
-                  ],
-                ),
+              if (onRetry != null)
+                LoopButton(label: '重试', primary: true, onPressed: onRetry),
+              if (onSupport != null)
+                LoopButton(label: '联系客服', onPressed: onSupport),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// force-update
+// ---------------------------------------------------------------------------
+
+class _ForceUpdatePage extends StatelessWidget {
+  const _ForceUpdatePage({
+    required this.requirement,
+    required this.onUpdate,
+    required this.onContinue,
+    required this.onBack,
+  });
+
+  final LoopForceUpdateRequirement? requirement;
+  final VoidCallback? onUpdate;
+  final VoidCallback? onContinue;
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final requirement = this.requirement;
+    if (requirement == null) {
+      return _StatePage(
+        title: '强制更新',
+        onBack: onBack,
+        folio: const LoopFolioPrimary(
+          kicker: 'VERSION POLICY',
+          heading: '版本策略未接入',
+          caption: '打开此页不代表当前版本不受支持或不安全。',
+          stamp: 'UNKNOWN',
+          archetype: LoopFolioArchetype.state,
+        ),
+        body: const <Widget>[
+          _SourceUnavailableNotice(
+            keyName: 'update-policy-unavailable',
+            title: '没有已批准的最低版本策略',
+            body: '只有当 client-policy 的 versionGate 为 available 且当前版本低于硬性下限时，LOOP 才会拦截。',
+          ),
+        ],
+        primaryAction: _returnAction(onContinue),
+      );
+    }
+    return _StatePage(
+      title: '强制更新',
+      blocking: true,
+      folio: const LoopFolioPrimary(
+        kicker: 'UPDATE REQUIRED',
+        heading: '请更新 LOOP 后继续',
+        caption: '已批准的版本策略要求受支持的版本，此要求不可跳过。',
+        stamp: 'REQUIRED',
+        archetype: LoopFolioArchetype.state,
+      ),
+      body: <Widget>[
+        LoopSurfaceCard(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: <Widget>[
+              LoopKeyValue(
+                label: '最低支持版本',
+                value: requirement.minimumVersion ?? '—',
+              ),
+              LoopKeyValue(
+                label: '策略版本',
+                value: requirement.configVersion ?? '—',
               ),
             ],
           ),
-          SizedBox(height: 24),
-          _SkeletonBlock(width: double.infinity, height: 12),
-          SizedBox(height: 10),
-          _SkeletonBlock(width: 244, height: 12),
-          SizedBox(height: 10),
-          _SkeletonBlock(width: 184, height: 12),
-        ],
-      ),
+        ),
+        if (onUpdate == null)
+          const LoopNotice(
+            key: ValueKey<String>('force-update-store-unavailable'),
+            icon: 'info',
+            title: '已确认需要更新',
+            body: '尚未接入经审核的应用商店跳转；请手动前往商店安装受支持的版本。',
+          ),
+      ],
+      primaryAction: onUpdate == null
+          ? null
+          : LoopButton(
+              label: '立即更新',
+              primary: true,
+              block: true,
+              onPressed: onUpdate,
+            ),
     );
   }
 }
 
-class _ChartSkeleton extends StatelessWidget {
-  const _ChartSkeleton();
+// ---------------------------------------------------------------------------
+// maintenance
+// ---------------------------------------------------------------------------
+
+class _MaintenancePage extends StatelessWidget {
+  const _MaintenancePage({
+    required this.notice,
+    required this.onRecheck,
+    required this.onStatus,
+    required this.onContinue,
+    required this.onBack,
+  });
+
+  final LoopMaintenanceNotice? notice;
+  final VoidCallback? onRecheck;
+  final VoidCallback? onStatus;
+  final VoidCallback? onContinue;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
-    return const LoopCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          _SkeletonBlock(width: 118, height: 12),
-          SizedBox(height: 12),
-          _SkeletonBlock(width: 176, height: 26),
-          SizedBox(height: 22),
-          SizedBox(
-            height: 112,
-            child: Stack(
-              children: <Widget>[
-                Positioned.fill(child: _SkeletonGrid()),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 20,
-                  child: _SkeletonBlock(width: double.infinity, height: 3),
+    final notice = this.notice;
+    if (notice == null) {
+      return _StatePage(
+        title: '计划维护',
+        onBack: onBack,
+        folio: const LoopFolioPrimary(
+          kicker: 'MAINTENANCE',
+          heading: '维护状态未接入',
+          caption: '打开此页不代表有计划中或进行中的维护。',
+          stamp: 'UNKNOWN',
+          archetype: LoopFolioArchetype.state,
+        ),
+        body: const <Widget>[
+          _SourceUnavailableNotice(
+            keyName: 'maintenance-source-unavailable',
+            title: '没有已批准的维护通知',
+            body: '必须提供一份当前生效的通知，此页才会报告维护窗口与受影响服务。',
+          ),
+        ],
+        primaryAction: _returnAction(onContinue),
+      );
+    }
+    return _StatePage(
+      title: '计划维护',
+      onBack: onBack,
+      folio: LoopFolioPrimary(
+        kicker: 'MAINTENANCE WINDOW',
+        heading: notice.windowLabel ?? '维护通知已生效',
+        caption: '期间暂停社区互动；钱包与 Mining 数据保持只读。',
+        stamp: notice.windowLabel == null ? 'ACTIVE' : 'WINDOW',
+        archetype: LoopFolioArchetype.state,
+      ),
+      body: <Widget>[
+        if (notice.detail != null)
+          LoopNotice(icon: 'mine', title: '维护说明', body: notice.detail!),
+        if (onRecheck != null || onStatus != null)
+          LoopButtonPair(
+            children: <Widget>[
+              if (onRecheck != null)
+                LoopButton(label: '再次检查', primary: true, onPressed: onRecheck),
+              if (onStatus != null)
+                LoopButton(label: '查看服务状态', onPressed: onStatus),
+            ],
+          ),
+      ],
+      primaryAction: onContinue == null
+          ? null
+          : LoopButton(label: '查看只读内容', block: true, onPressed: onContinue),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// region-blocked
+// ---------------------------------------------------------------------------
+
+class _RegionPage extends StatelessWidget {
+  const _RegionPage({
+    required this.restriction,
+    required this.onContinue,
+    required this.onPolicy,
+    required this.onReturn,
+    required this.onBack,
+  });
+
+  final LoopFeatureAvailabilityRestriction? restriction;
+  final VoidCallback? onContinue;
+  final VoidCallback? onPolicy;
+  final VoidCallback? onReturn;
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final restriction = this.restriction;
+    if (restriction == null) {
+      return _StatePage(
+        title: '地区限制',
+        onBack: onBack,
+        folio: const LoopFolioPrimary(
+          kicker: 'REGION POLICY',
+          heading: '地区策略未接入',
+          caption: '打开此页不代表你所在的地区或账号受限。',
+          stamp: 'UNKNOWN',
+          archetype: LoopFolioArchetype.state,
+        ),
+        body: const <Widget>[
+          _SourceUnavailableNotice(
+            keyName: 'region-policy-unavailable',
+            title: '没有已批准的地区判定',
+            body: 'LOOP 不会从设备语言、SIM 或 IP 推断地区；regionGate 为 unavailable 时视为“未知，未批准”。',
+          ),
+        ],
+        primaryAction: _returnAction(onReturn),
+      );
+    }
+    return _StatePage(
+      title: '地区限制',
+      onBack: onBack,
+      folio: LoopFolioPrimary(
+        kicker: 'REGION POLICY',
+        heading: '部分功能在当前地区不可用',
+        caption: restriction.readOnlyAssetAccess == true
+            ? '资产保持只读可见；受限功能按各自页面的当前状态显示。'
+            : '受限功能按各自页面的当前状态显示；此页不列出未确认的可用范围。',
+        stamp: restriction.reasonCode ?? 'RESTRICTED',
+        archetype: LoopFolioArchetype.state,
+      ),
+      body: <Widget>[
+        const LoopNotice(
+          icon: 'globe',
+          title: '这页不提供位置或原因细节',
+          body: '不推断你所在的位置，也不确认其他功能一定可用。',
+        ),
+        if (onContinue != null || onPolicy != null)
+          LoopButtonPair(
+            children: <Widget>[
+              if (onContinue != null)
+                LoopButton(
+                  label: '继续使用 LOOP',
+                  primary: true,
+                  onPressed: onContinue,
                 ),
-              ],
+              if (onPolicy != null)
+                LoopButton(label: '查看资格政策', onPressed: onPolicy),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// permission-notice
+// ---------------------------------------------------------------------------
+
+({String shortName, String icon, String purpose, String deniedBody})
+_permissionCopy(LoopPermissionKind kind) => switch (kind) {
+  LoopPermissionKind.notifications => (
+    shortName: '通知',
+    icon: 'bell',
+    purpose: '用来推送挖矿结算、Launch 开始、@我的消息与安全事件。不会推送营销内容。',
+    deniedBody: '你将收不到挖矿结算与 Launch 提醒。可在 系统设置 → LOOP → 通知 中重新开启。',
+  ),
+  LoopPermissionKind.camera => (
+    shortName: '相机',
+    icon: 'camera',
+    purpose: '只在扫二维码时使用 —— 扫收款地址、扫 WalletConnect。不会在后台访问。',
+    deniedBody: '扫码功能不可用；可在 系统设置 → LOOP → 相机 中重新开启。',
+  ),
+  LoopPermissionKind.microphone => (
+    shortName: '麦克风',
+    icon: 'mic',
+    purpose: '只在你于语音房点击「发言」后使用；进入语音房时麦克风默认关闭。',
+    deniedBody: '语音房只能收听；可在 系统设置 → LOOP → 麦克风 中重新开启。',
+  ),
+};
+
+class _PermissionPage extends StatelessWidget {
+  const _PermissionPage({
+    required this.prompt,
+    required this.onRequest,
+    required this.onOpenSettings,
+    required this.onNotNow,
+    required this.onContinue,
+    required this.onBack,
+  });
+
+  final LoopPermissionPrompt? prompt;
+  final VoidCallback? onRequest;
+  final VoidCallback? onOpenSettings;
+  final VoidCallback? onNotNow;
+  final VoidCallback? onContinue;
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final prompt = this.prompt;
+    final denied = prompt?.mode == LoopPermissionPromptMode.settingsRecovery;
+    final copy = prompt == null ? null : _permissionCopy(prompt.kind);
+    return _StatePage(
+      title: '权限说明',
+      onBack: onBack,
+      folio: const LoopFolioPrimary(
+        kicker: 'PERMISSION CONTROL',
+        heading: '使用前再申请',
+        caption: '相机、通知和生物识别只在对应动作发生时请求。',
+        stamp: 'JUST IN TIME',
+        archetype: LoopFolioArchetype.state,
+      ),
+      body: <Widget>[
+        const LoopLabel('申请前说明', tight: true),
+        const LoopNotice(
+          icon: 'bell',
+          title: '通知权限',
+          body: '用来推送挖矿结算、Launch 开始、@我的消息与安全事件。不会推送营销内容。',
+        ),
+        const LoopNotice(
+          icon: 'camera',
+          title: '相机权限',
+          body: '只在扫二维码时使用 —— 扫收款地址、扫 WalletConnect。不会在后台访问。',
+        ),
+        const LoopNotice(
+          icon: 'user',
+          title: '生物识别',
+          body: '用于应用锁与签名前验证。生物特征由系统保管，LOOP 拿不到。',
+        ),
+        if (copy == null) ...<Widget>[
+          const LoopLabel('当前申请', followsLabel: true),
+          const _SourceUnavailableNotice(
+            keyName: 'permission-prompt-unavailable',
+            title: '当前没有待处理的权限申请',
+            body: '从你要使用的功能进入，LOOP 才能说明本次具体申请的用途与范围；此页不会代为请求或推断系统状态。',
+          ),
+        ] else ...<Widget>[
+          LoopLabel(denied ? '被拒后的引导' : '本次申请', followsLabel: true),
+          LoopPermissionState(
+            key: ValueKey<String>(
+              'permission-prompt-${prompt!.kind.name}-${prompt.mode.name}',
+            ),
+            icon: copy.icon,
+            denied: denied,
+            title: denied ? '${copy.shortName}权限已被系统关闭' : '${copy.shortName}权限',
+            purpose: denied ? copy.deniedBody : copy.purpose,
+            onRequest: onRequest,
+            onOpenSettings: onOpenSettings,
+            requestLabel: '继续',
+            settingsLabel: '前往系统设置',
+          ),
+          if (onNotNow != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              child: LoopButton(label: '暂不', block: true, onPressed: onNotNow),
+            ),
+        ],
+      ],
+      primaryAction: copy == null ? _returnAction(onContinue) : null,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// toast-states
+// ---------------------------------------------------------------------------
+
+class _ToastStatesPage extends StatelessWidget {
+  const _ToastStatesPage({
+    required this.feedback,
+    required this.onAction,
+    required this.onDismiss,
+    required this.onBack,
+  });
+
+  final LoopGlobalFeedback? feedback;
+  final VoidCallback? onAction;
+  final VoidCallback? onDismiss;
+  final VoidCallback? onBack;
+
+  static const samples = <(String, LoopToastKind, String)>[
+    ('成功', LoopToastKind.ok, '示例 · 地址已复制'),
+    ('警告', LoopToastKind.warn, '示例 · 价格已变动，请刷新报价'),
+    ('错误', LoopToastKind.err, '示例 · 交易失败：gas 不足'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final feedback = this.feedback;
+    final hasFeedback = feedback?.presentationMessage != null;
+    final canToast = LoopToastHost.maybeOf(context) != null;
+    return _StatePage(
+      title: 'Toast 三态',
+      onBack: onBack,
+      folio: const LoopFolioPrimary(
+        kicker: 'FEEDBACK SURFACE',
+        heading: 'Toast 三态',
+        caption: '成功、警告与错误共用同一位置和清晰语义。',
+        stamp: '3 STATES',
+        archetype: LoopFolioArchetype.state,
+      ),
+      body: <Widget>[
+        if (hasFeedback) ...<Widget>[
+          const LoopLabel('当前反馈', tight: true),
+          LoopGlobalNotice(
+            feedback: feedback!,
+            onAction: onAction,
+            onDismiss: onDismiss,
+          ),
+        ] else
+          const LoopNotice(
+            key: ValueKey<String>('feedback-source-unavailable'),
+            icon: 'info',
+            body: '下面是组件示例。当前没有功能提供真实的成功、警告或错误结果；打开此页不代表任何动作发生过。',
+          ),
+        const LoopNotice(icon: 'info', body: '点按钮触发真实 Toast，2.6 秒后自动消失。'),
+        for (final (label, kind, message) in samples) ...<Widget>[
+          LoopLabel(label, followsLabel: true),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            child: LoopButton(
+              key: ValueKey<String>('toast-trigger-${kind.name}'),
+              label: '触发$label Toast',
+              block: true,
+              onPressed: canToast
+                  ? () => LoopToast.show(context, message: message, kind: kind)
+                  : null,
             ),
           ),
         ],
-      ),
+        const LoopLabel('静态样式对照', followsLabel: true),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: <Widget>[
+              for (final (_, kind, message) in samples)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: LoopToastView(
+                    entry: LoopToastEntry(message: message, kind: kind),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
     );
   }
 }
 
-class _SkeletonBlock extends StatelessWidget {
-  const _SkeletonBlock({
-    required this.width,
-    required this.height,
-    this.circular = false,
+// ---------------------------------------------------------------------------
+// skeleton-states
+// ---------------------------------------------------------------------------
+
+class _SkeletonStatesPage extends StatelessWidget {
+  const _SkeletonStatesPage({required this.presentation, required this.onBack});
+
+  final LoopLoadingPresentation? presentation;
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final presentation = this.presentation;
+    final valid = presentation != null && presentation.isPresentable;
+    return _StatePage(
+      title: '骨架屏三类',
+      onBack: onBack,
+      folio: const LoopFolioPrimary(
+        kicker: 'LOADING SYSTEM',
+        heading: '骨架屏三类',
+        caption: '列表、详情和图表分别保留稳定布局，避免内容跳动。',
+        stamp: '3 TYPES',
+        archetype: LoopFolioArchetype.state,
+      ),
+      body: <Widget>[
+        if (valid) ...<Widget>[
+          const LoopLabel('当前加载', tight: true),
+          LoopNotice(
+            key: const ValueKey<String>('loading-presentation-active'),
+            icon: 'clock',
+            body:
+                '拥有方选择了${switch (presentation.kind) {
+                  LoopSkeletonKind.list => '列表',
+                  LoopSkeletonKind.detail => '详情',
+                  LoopSkeletonKind.chart => '图表',
+                }}骨架；占位不代表结果数量、身份或成功。',
+          ),
+          LoopSkeletonView(presentation: presentation),
+        ] else
+          const LoopNotice(
+            key: ValueKey<String>('loading-source-unavailable'),
+            icon: 'info',
+            body: '下面是三类骨架的示例布局。当前没有功能处于加载中；打开此页不代表有请求在进行。',
+          ),
+        const LoopChalkCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              LoopSkeletonBlock(height: 13, widthFactor: 0.42),
+              SizedBox(height: 12),
+              LoopSkeletonBlock(height: 30, widthFactor: 0.68),
+              SizedBox(height: 9),
+              LoopSkeletonBlock(height: 11, widthFactor: 0.54),
+            ],
+          ),
+        ),
+        const LoopLabel('列表骨架', followsLabel: true),
+        const LoopSkeleton(type: LoopSkeletonType.list, rows: 3),
+        const LoopLabel('详情骨架'),
+        const LoopSkeleton(type: LoopSkeletonType.detail),
+        const LoopLabel('图表骨架'),
+        const LoopSkeleton(type: LoopSkeletonType.chart),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// token-card-states
+// ---------------------------------------------------------------------------
+
+class _TokenCardStatesPage extends StatelessWidget {
+  const _TokenCardStatesPage({
+    required this.showcase,
+    required this.onBack,
+    required this.onContinue,
   });
 
-  final double width;
-  final double height;
-  final bool circular;
+  final LoopSystemShowcase? showcase;
+  final VoidCallback? onBack;
+  final VoidCallback? onContinue;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: LoopColors.elevated,
-        borderRadius: circular ? LoopRadius.pill : LoopRadius.small,
+    final items = showcase?.tokenCards ?? const <LoopTokenCardShowcaseItem>[];
+    return _StatePage(
+      title: 'Token Card 五态',
+      onBack: onBack,
+      folio: const LoopFolioPrimary(
+        kicker: 'TOKEN CARD SYSTEM',
+        heading: '5 种卡片状态',
+        stamp: '5 STATES',
+        archetype: LoopFolioArchetype.state,
       ),
+      body: <Widget>[
+        if (items.isEmpty)
+          const _SourceUnavailableNotice(
+            keyName: 'token-card-showcase-unavailable',
+            title: '组件示例未接入',
+            body: '正式会话不注入演示资产；Token Card 出现在聊天流、社区主页、行情列表与搜索结果中，由各自的数据源驱动。',
+          )
+        else ...<Widget>[
+          LoopNotice(
+            key: const ValueKey<String>('token-card-showcase-label'),
+            icon: 'info',
+            tone: LoopNoticeTone.warn,
+            title: showcase!.sourceLabel,
+            body: '以下卡片的数值为固定演示，不来自任何 Provider。',
+          ),
+          for (final item in items) ...<Widget>[
+            LoopLabel(item.label, followsLabel: true),
+            LoopTokenCard(
+              state: item.state,
+              model: item.model,
+              actions: item.actions,
+            ),
+          ],
+          const LoopDisclosure(
+            summary: '查看组件出现位置',
+            child: LoopNotice(
+              margin: EdgeInsets.fromLTRB(16, 10, 16, 14),
+              body: '正常、识别中与 Launch 资产共享结构，不共享风险判断。此组件出现在聊天流、社区主页、行情列表、搜索结果四处，不占独立路由。',
+            ),
+          ),
+          const LoopNotice(
+            margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+            title: '风险态只列事实',
+            body: '每条带来源与观察时间，不给「危险」「不安全」这类结论 —— 判断权留给用户。',
+          ),
+        ],
+        const SizedBox(height: 20),
+      ],
+      primaryAction: items.isEmpty ? _returnAction(onContinue) : null,
     );
   }
 }
 
-class _SkeletonGrid extends StatelessWidget {
-  const _SkeletonGrid();
+// ---------------------------------------------------------------------------
+// sign-sheet-states
+// ---------------------------------------------------------------------------
+
+class _SignSheetStatesPage extends StatelessWidget {
+  const _SignSheetStatesPage({
+    required this.showcase,
+    required this.onBack,
+    required this.onContinue,
+  });
+
+  final LoopSystemShowcase? showcase;
+  final VoidCallback? onBack;
+  final VoidCallback? onContinue;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: List<Widget>.generate(
-        4,
-        (_) =>
-            Container(height: 1, color: LoopColors.line.withValues(alpha: 0.7)),
+    final items = showcase?.signSheets ?? const <LoopSignSheetShowcaseItem>[];
+    return _StatePage(
+      title: '签名弹层四态',
+      onBack: onBack,
+      folio: const LoopFolioPrimary(
+        kicker: 'ONE SIGNING EXIT',
+        heading: '4 种签名状态',
+        caption: '发送、兑换、DApp 与跨链统一进入同一签名出口。',
+        stamp: 'SECURE',
+        archetype: LoopFolioArchetype.state,
       ),
+      body: <Widget>[
+        const LoopNotice(
+          icon: 'lock',
+          title: '全产品唯一签名出口',
+          body: 'Send、Swap、Launch 买入、授权全部汇聚到这一个弹层；质押要等独立合约方案批准后才会加入。',
+        ),
+        if (items.isEmpty)
+          const _SourceUnavailableNotice(
+            keyName: 'sign-sheet-showcase-unavailable',
+            title: '组件示例未接入',
+            body: '正式会话不注入演示交易；真实签名由 Send / Swap / 授权流程携带同源 payload 进入此弹层。',
+          )
+        else ...<Widget>[
+          LoopNotice(
+            key: const ValueKey<String>('sign-sheet-showcase-label'),
+            icon: 'info',
+            tone: LoopNoticeTone.warn,
+            title: showcase!.sourceLabel,
+            body: '以下金额与策略均为固定演示，不会签名或广播。',
+          ),
+          for (final item in items) ...<Widget>[
+            LoopLabel(item.label, followsLabel: true),
+            if (item.state == LoopSignSheetState.pending)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                child: LoopButton(
+                  key: const ValueKey<String>('sign-sheet-trigger-pending'),
+                  label: '触发待确认弹层',
+                  block: true,
+                  onPressed: () => LoopSignSheet.show(
+                    context,
+                    sheet: LoopSignSheet(
+                      state: item.state,
+                      facts: item.facts,
+                      reason: item.reason,
+                      onConfirm: () => Navigator.of(context).pop(),
+                      onCancel: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: LoopSignSheet(
+                  state: item.state,
+                  facts: item.facts,
+                  reason: item.reason,
+                  onConfirm: () {},
+                  onCancel: () {},
+                  onAdjustPolicy:
+                      item.state == LoopSignSheetState.policyRejected
+                      ? () {}
+                      : null,
+                ),
+              ),
+          ],
+          const LoopNotice(
+            margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+            title: '策略拒绝不是错误',
+            body: '是钱包按你的规则挡住了 —— 所以文案要说清是哪条规则、怎么改，而不是只说「失败」。',
+          ),
+        ],
+        const SizedBox(height: 20),
+      ],
+      primaryAction: items.isEmpty ? _returnAction(onContinue) : null,
     );
   }
 }
 
-({String title, String message, String banner, IconData icon, Color color})
-_connectivityContent(LoopConnectivityScope scope) {
-  return switch (scope) {
-    LoopConnectivityScope.fullyOffline => (
-      title: 'You’re offline',
-      message:
-          'Reconnect to refresh account, market, chat, and wallet information.',
-      banner: 'Offline · live information is paused',
-      icon: Icons.wifi_off_rounded,
-      color: LoopColors.warning,
-    ),
-    LoopConnectivityScope.marketDataUnavailable => (
-      title: 'Market data is unavailable',
-      message: 'Live prices and charts cannot refresh. Trading actions that depend on current prices remain disabled.',
-      banner: 'Market data unavailable · prices may be stale',
-      icon: Icons.query_stats_rounded,
-      color: LoopColors.market,
-    ),
-    LoopConnectivityScope.tradingServiceUnavailable => (
-      title: 'Trading is temporarily unavailable',
-      message: 'Orders and account changes cannot be submitted. Market browsing and chat may still work.',
-      banner: 'Trading service interrupted · actions paused',
-      icon: Icons.sync_problem_rounded,
-      color: LoopColors.danger,
-    ),
-  };
-}
+class _UnknownSystemPage extends StatelessWidget {
+  const _UnknownSystemPage({required this.onBack});
 
-({
-  String shortName,
-  String title,
-  String message,
-  String detail,
-  IconData icon,
-  Color color,
-})
-_permissionContent(LoopPermissionKind kind) {
-  return switch (kind) {
-    LoopPermissionKind.camera => (
-      shortName: 'Camera',
-      title: 'Allow camera access to scan',
-      message: 'This permission request is for QR scanning.',
-      detail: 'The device controls the final permission choice. This page does not start a scanner.',
-      icon: Icons.qr_code_scanner_rounded,
-      color: LoopColors.market,
-    ),
-    LoopPermissionKind.notifications => (
-      shortName: 'Notification',
-      title: 'Choose whether LOOP can notify you',
-      message: 'This permission controls whether the operating system may show LOOP notifications.',
-      detail: 'Notification preferences and operating-system permission are separate. Allowing access does not enable a category or prove delivery.',
-      icon: Icons.notifications_active_outlined,
-      color: LoopColors.chat,
-    ),
-    LoopPermissionKind.microphone => (
-      shortName: 'Microphone',
-      title: 'Allow microphone access?',
-      message:
-          'LOOP uses the microphone only after you tap Speak in an audio room.',
-      detail: 'Joining an audio room starts with the microphone off. The device controls the final permission choice.',
-      icon: Icons.mic_none_rounded,
-      color: LoopColors.mint,
-    ),
-  };
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return _StatePage(
+      title: '系统',
+      onBack: onBack,
+      folio: const LoopFolioPrimary(
+        kicker: 'SYSTEM',
+        heading: '此页面不可用',
+        caption: 'LOOP 无法识别请求的系统页面。',
+        archetype: LoopFolioArchetype.state,
+      ),
+      body: const <Widget>[LoopNotice(body: '返回上一页后重试。')],
+    );
+  }
 }

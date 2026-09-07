@@ -279,26 +279,27 @@ class _Head extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Row(
+                // Wrap so a badge drops below the symbol at large text
+                // instead of overflowing the head row.
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: <Widget>[
-                    Flexible(
-                      child: Text(
-                        state == LoopTokenCardState.loading
-                            ? '识别中…'
-                            : model.symbol,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: LoopTypography.sora(
-                          size: 14,
-                          weight: FontWeight.w700,
-                          color: muted ? secondary : foreground,
-                        ),
+                    Text(
+                      state == LoopTokenCardState.loading
+                          ? '识别中…'
+                          : model.symbol,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LoopTypography.sora(
+                        size: 14,
+                        weight: FontWeight.w700,
+                        color: muted ? secondary : foreground,
                       ),
                     ),
-                    if (model.badge != null) ...<Widget>[
-                      const SizedBox(width: 6),
+                    if (model.badge != null)
                       LoopBadge(model.badge!, kind: LoopBadgeKind.launch),
-                    ],
                   ],
                 ),
                 Text(

@@ -88,12 +88,17 @@ class LoopFocusPage extends StatelessWidget {
                 minHeight: 72,
               ),
               ?folio,
+              // Focus bodies are short step pages: build them eagerly so
+              // every control exists for ensureVisible / assistive tech.
               Expanded(
-                child: ListView(
+                child: SingleChildScrollView(
                   padding: EdgeInsets.only(
                     bottom: primaryAction == null ? bottom : 12,
                   ),
-                  children: body,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: body,
+                  ),
                 ),
               ),
               ?disclosure,

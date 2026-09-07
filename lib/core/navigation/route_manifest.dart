@@ -1033,7 +1033,7 @@ abstract final class LoopRouteManifest {
       title: 'Token Card 五态',
       prototypeOrder: 88,
       step: 1,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'sign-sheet-states',
@@ -1042,7 +1042,7 @@ abstract final class LoopRouteManifest {
       title: '签名弹层四态',
       prototypeOrder: 89,
       step: 1,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
   ];
 

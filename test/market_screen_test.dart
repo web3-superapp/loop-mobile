@@ -459,14 +459,14 @@ void main() {
     expect(repository.fetchCount, 1);
     expect(candleRepository.requests, isEmpty);
     expect(find.byType(LoopSkeletonView), findsOneWidget);
-    expect(find.bySemanticsLabel('Loading chart content'), findsOneWidget);
+    expect(find.bySemanticsLabel('图表加载中'), findsOneWidget);
     expect(find.textContaining('精确 spotIndex'), findsOneWidget);
 
     repository.complete(_spotSnapshot);
     await tester.pumpAndSettle();
 
     expect(find.byType(LoopSkeletonView), findsNothing);
-    expect(find.bySemanticsLabel('Loading chart content'), findsNothing);
+    expect(find.bySemanticsLabel('图表加载中'), findsNothing);
     expect(candleRepository.requests, hasLength(1));
     semantics.dispose();
   });

@@ -202,14 +202,14 @@ void main() {
     ) async {
       final router = await _pumpApp(tester);
       final pending = LoopRouteManifest.withStatus(LoopRouteStatus.pending);
-      expect(pending, hasLength(26));
+      expect(pending, hasLength(24));
 
       for (final entry in <LoopRouteEntry>[
         LoopRouteManifest.bySlug('community-members'),
         LoopRouteManifest.bySlug('launch-trade'),
         LoopRouteManifest.bySlug('mining-rules'),
         LoopRouteManifest.bySlug('key-export'),
-        LoopRouteManifest.bySlug('sign-sheet-states'),
+        LoopRouteManifest.bySlug('chat-forward'),
       ]) {
         router.go(entry.path);
         await tester.pumpAndSettle();
