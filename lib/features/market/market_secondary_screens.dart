@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -629,9 +628,3 @@ class _SmartMoneyScreenState extends ConsumerState<SmartMoneyScreen> {
     );
   }
 }
-
-/// Kept so `token_screen.dart`'s formatter stays reachable from one place.
-String marketFormatDecimal(Decimal value) => tokenFormatDecimal(value);
-
-/// Text style anchor so the mono token stays imported here for figures.
-TextStyle get marketMonoValue => LoopMono.value;

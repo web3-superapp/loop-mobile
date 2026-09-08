@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -474,6 +473,3 @@ String _feedDetail(LoopNotificationEntry entry) {
     if (entry.priceAlertId != null) '提醒 ${entry.priceAlertId}',
   ].join(' · ');
 }
-
-/// Kept so a caller can build the alerts route without importing the model.
-String alertsRouteFor(String assetId) => MarketAssetRoute.alerts(assetId);

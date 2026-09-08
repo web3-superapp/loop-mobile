@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -734,6 +733,3 @@ String _notificationDetail(LoopNotificationEntry entry) {
     if (observedAt != null) '观察于 ${loopRelativeTime(observedAt)}',
   ].join(' · ');
 }
-
-/// Exposed so `chart-full` can reuse the same exact-value formatting.
-String tokenFormatDecimal(Decimal value) => loopFormatDecimal(value);
