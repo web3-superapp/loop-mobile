@@ -63,11 +63,11 @@ LoopSystemShowcase buildLoopSystemShowcasePreview() {
           badge: 'GRADUATED',
           metrics: <LoopTokenMetric>[
             LoopTokenMetric('市值', r'$2.4M'),
-            LoopTokenMetric('生态税', '1%', accent: true),
+            LoopTokenMetric('流动性', r'$412K', accent: true),
             LoopTokenMetric('持有人', '4,120'),
           ],
           communityIcon: 'graduate',
-          communityLine: '08-22 毕业 · 累计生态税 \$18,400 已回流 LOOP',
+          communityLine: '08-22 毕业 · 外盘流动性已建立',
         ),
         actions: <LoopTokenCardAction>[
           LoopTokenCardAction('买入', buy: true),
