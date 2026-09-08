@@ -125,6 +125,7 @@ REQUIRED_FILES = (
     "docs/decisions/0051-adopt-flutter-svg-and-prototype-assets.md",
     "test/route_manifest_test.dart",
     "docs/decisions/0054-adopt-v2-community-social-graph-and-search.md",
+    "docs/decisions/0055-adopt-v2-chain-market-and-wallet-read.md",
     "test/community_api_contract_test.dart",
     "test/community_idempotency_test.dart",
     "test/community_pages_test.dart",
@@ -167,8 +168,8 @@ REQUIRED_FILES = (
     "lib/integrations/hyperliquid/hyperliquid_spot_candle.dart",
     "lib/integrations/hyperliquid/hyperliquid_spot_candle_providers.dart",
     "lib/integrations/hyperliquid/hyperliquid_spot_candle_repository.dart",
-    "lib/features/market/spot_candle_chart.dart",
-    "lib/features/market/spot_candle_section.dart",
+    # Step 5 retired the Hyperliquid Spot market and chart slice; the mounted
+    # chart is now the generalised `loop_candle_chart.dart` registered below.
     "lib/features/market/watchlist/watchlist_controller.dart",
     "lib/features/chat/friends/chat_create_menu_button.dart",
     "lib/features/chat/friends/friend_controllers.dart",
@@ -205,7 +206,8 @@ REQUIRED_FILES = (
     "test/send_asset_search_test.dart",
     "lib/features/market/watchlist/watchlist_gateway.dart",
     "lib/features/market/watchlist/watchlist_models.dart",
-    "lib/integrations/personalization/memory_watchlist_gateway.dart",
+    # Step 5 retired the Preview Watchlist adapter; the Watchlist port is now
+    # backed by the V2 transport and stays fail-closed without it.
     "lib/features/profile/presentation/profile_controller.dart",
     "lib/features/profile/presentation/profile_gateway.dart",
     "lib/features/profile/presentation/profile_models.dart",
@@ -214,10 +216,9 @@ REQUIRED_FILES = (
     "lib/features/profile/privacy/privacy_gateway.dart",
     "lib/features/profile/privacy/privacy_models.dart",
     "lib/integrations/personalization/memory_privacy_gateway.dart",
-    "lib/features/profile/notification_preferences/notification_preferences_controller.dart",
-    "lib/features/profile/notification_preferences/notification_preferences_gateway.dart",
-    "lib/features/profile/notification_preferences/notification_preferences_models.dart",
-    "lib/integrations/personalization/memory_notification_preferences_gateway.dart",
+    # Step 5 retired the v1 notification-preference module and its Preview
+    # adapter; `notif-settings` is now the V2 ten-category page registered
+    # with the step-5 files below.
     "lib/features/perp/account/perp_account_controller.dart",
     "lib/features/perp/perp_portfolio_screens.dart",
     "lib/features/perp/positions/perp_positions_controller.dart",
@@ -293,6 +294,54 @@ REQUIRED_FILES = (
     "test/perp_account_screen_test.dart",
     "test/perp_positions_controller_test.dart",
     "test/perp_positions_screen_test.dart",
+    # Step 5 replaced `SpotMarketRoute`, the Hyperliquid Spot Market screens
+    # and the v1 wallet/notification modules with the V2 chain, market, wallet,
+    # watchlist, alert and notification modules.
+    "lib/core/navigation/market_asset_route.dart",
+    "lib/core/qr/loop_qr_code.dart",
+    "lib/features/chain/chain_contract.dart",
+    "lib/features/chain/chain_controllers.dart",
+    "lib/features/chain/chain_gateway.dart",
+    "lib/features/chain/chain_models.dart",
+    "lib/features/chain/chain_widgets.dart",
+    "lib/features/market/market_screen.dart",
+    "lib/features/market/token_screen.dart",
+    "lib/features/market/market_secondary_screens.dart",
+    "lib/features/market/market_widgets.dart",
+    "lib/features/market/loop_candle_chart.dart",
+    "lib/features/market/market_controllers.dart",
+    "lib/features/market/market_read_gateway.dart",
+    "lib/features/market/market_read_models.dart",
+    "lib/features/market/alerts/alert_models.dart",
+    "lib/features/market/alerts/alerts_controller.dart",
+    "lib/features/market/alerts/alerts_gateway.dart",
+    "lib/features/market/alerts/alerts_screen.dart",
+    "lib/features/notifications/notification_controllers.dart",
+    "lib/features/notifications/notification_models.dart",
+    "lib/features/notifications/notifications_gateway.dart",
+    "lib/features/wallet/wallet_read_screens.dart",
+    "lib/features/wallet/wallet_read_widgets.dart",
+    "lib/features/wallet/wallet_read_models.dart",
+    "lib/features/wallet/wallet_read_gateway.dart",
+    "lib/features/wallet/wallet_read_controllers.dart",
+    "lib/features/profile/notification_preferences/notification_preferences_screen.dart",
+    "lib/integrations/backend/v2/loop_v2_chain_codec.dart",
+    "lib/integrations/backend/v2/loop_v2_chain_failure.dart",
+    "lib/integrations/backend/v2/loop_v2_s5_gateways.dart",
+    "lib/integrations/backend/v2/loop_v2_s5_providers.dart",
+    "lib/integrations/backend/v2/loop_v2_write_origin_source.dart",
+    "lib/integrations/backend/v2/chain/loop_v2_chain_api.dart",
+    "lib/integrations/backend/v2/wallet/loop_v2_wallet_api.dart",
+    "lib/integrations/backend/v2/market/loop_v2_market_api.dart",
+    "lib/integrations/backend/v2/watchlist/loop_v2_watchlist_api.dart",
+    "lib/integrations/backend/v2/alerts/loop_v2_alerts_api.dart",
+    "lib/integrations/backend/v2/notifications/loop_v2_notifications_api.dart",
+    "test/s5_api_contract_test.dart",
+    "test/s5_market_pages_test.dart",
+    "test/s5_wallet_pages_test.dart",
+    "test/s5_watchlist_alerts_notifications_test.dart",
+    "test/loop_candle_chart_test.dart",
+    "test/loop_qr_code_test.dart",
 )
 # Step 3 replaced `/chat/requests` with the V2 `dm-requests` page, which has a
 # real backend and is no longer a Development Preview fixture route.
@@ -509,9 +558,14 @@ NOTIFICATION_GLOBAL_INGRESS_PATTERNS = (
     ),
     (re.compile(r"\.\s*getInitialMessage\s*\("), ".getInitialMessage("),
 )
+# Decision 0055 added a fourth reviewed kind: a triggered price alert opens the
+# token page. The router therefore needs the canonical asset-route contract, so
+# it can reject a non-canonical `asset_id` before it becomes a location. The
+# allowlist stays closed: a raw provider-payload import is still rejected.
 NOTIFICATION_ROUTER_IMPORTS = frozenset(
     {
         "'dart:collection'",
+        "'package:loop_mobile/core/navigation/market_asset_route.dart'",
         "'package:loop_mobile/core/navigation/stream_channel_route.dart'",
     }
 )
@@ -526,7 +580,7 @@ NOTIFICATION_PROVIDER_IMPORT_MARKERS = (
     "package:firebase_messaging/firebase_messaging.dart",
 )
 NOTIFICATION_KIND_MEMBERS = frozenset(
-    {"chatMessage", "audioRoomActivity", "systemNotice"}
+    {"chatMessage", "audioRoomActivity", "systemNotice", "priceAlertTriggered"}
 )
 NOTIFICATION_SOURCE_EVENT_KIND_MEMBERS = frozenset(
     {"foreground", "background", "interaction"}
@@ -536,6 +590,7 @@ NOTIFICATION_INTENT_CLASSES = frozenset(
         "LoopChatNotificationIntent",
         "LoopAudioRoomNotificationIntent",
         "LoopNotificationCenterIntent",
+        "LoopPriceAlertNotificationIntent",
     }
 )
 NOTIFICATION_ROUTE_LITERALS = frozenset(
@@ -566,13 +621,99 @@ NOTIFICATION_COORDINATOR_CONSUMER_PATHS = frozenset(
 FEATURE_TRANSPORT_FORBIDDEN_IMPORTS = (
     "package:dio/dio.dart",
 )
-FEATURE_BACKEND_ROUTE_PATTERN = re.compile(r"(?P<quote>['\"])/v1/")
+# Step 5 (decision 0055) put the V2 modules behind ports as well: no Dio type
+# and no `/v2/` literal may cross into a feature module.
+FEATURE_TRANSPORT_FORBIDDEN_TYPE_PATTERN = re.compile(r"\bDio\b")
+FEATURE_BACKEND_ROUTE_PATTERN = re.compile(r"(?P<quote>['\"])/v(?P<version>[12])/")
+
+# The six S5 ports. Each production default is its own `Unavailable…Gateway`,
+# so a feature is unavailable until `lib/main.dart` mounts a real adapter.
+S5_PORT_DEFAULTS = (
+    (
+        "lib/features/chain/chain_gateway.dart",
+        "chainGatewayProvider",
+        "ChainGateway",
+        "UnavailableChainGateway",
+    ),
+    (
+        "lib/features/wallet/wallet_read_gateway.dart",
+        "walletReadGatewayProvider",
+        "WalletReadGateway",
+        "UnavailableWalletReadGateway",
+    ),
+    (
+        "lib/features/market/market_read_gateway.dart",
+        "marketReadGatewayProvider",
+        "MarketReadGateway",
+        "UnavailableMarketReadGateway",
+    ),
+    (
+        "lib/features/market/watchlist/watchlist_gateway.dart",
+        "watchlistGatewayProvider",
+        "WatchlistGateway",
+        "UnavailableWatchlistGateway",
+    ),
+    (
+        "lib/features/market/alerts/alerts_gateway.dart",
+        "alertsGatewayProvider",
+        "AlertsGateway",
+        "UnavailableAlertsGateway",
+    ),
+    (
+        "lib/features/notifications/notifications_gateway.dart",
+        "notificationsGatewayProvider",
+        "NotificationsGateway",
+        "UnavailableNotificationsGateway",
+    ),
+)
+S5_CAPABILITY_META_PATH = Path("lib/integrations/backend/v2/loop_v2_meta.dart")
+# The contract's 27 capability ids, in contract order.
+S5_CAPABILITY_IDS = (
+    "privyAuthentication",
+    "accountSession",
+    "streamChatToken",
+    "streamVideoToken",
+    "community",
+    "communityChat",
+    "voiceRooms",
+    "communityMining",
+    "communityPresence",
+    "search",
+    "bscRead",
+    "walletRead",
+    "watchlist",
+    "marketRead",
+    "privySwap",
+    "sendApprovals",
+    "launch",
+    "mining",
+    "priceAlerts",
+    "notificationsFeed",
+    "pushNotifications",
+    "profile",
+    "avatarUpload",
+    "pay",
+    "bridge",
+    "dappExecution",
+    "communityAi",
+)
+S5_TOKEN_SURFACE_PATH = Path("lib/features/market/token_screen.dart")
+S5_SWAP_GATE = "if (detail.capability.swappable)"
+S5_SWAP_ENTRY_KEY = "'token-swap-entry'"
+S5_QR_ENCODER_PATH = Path("lib/core/qr/loop_qr_code.dart")
+S5_QR_ENCODER_IMPORTS = frozenset({"'package:flutter/foundation.dart'"})
+S5_HYPERLIQUID_IMPORT_ROOT = "package:loop_mobile/integrations/hyperliquid/"
+# `lib/features/perp/**` is retained, unmounted history for the same reason the
+# Hyperliquid adapters are: no product route reaches it. It may keep its
+# imports; nothing that is mounted may.
+S5_HYPERLIQUID_UNMOUNTED_EXEMPT_ROOT = Path("lib/features/perp")
 PRODUCTION_FIXTURE_MARKERS = (
     "MemoryCommunicationGateway(",
-    "MemoryNotificationPreferencesGateway",
     "MemoryPrivacyGateway",
     "MemoryProfileGateway",
-    "MemoryWatchlistGateway(",
+    # Step 5 retired the Preview Watchlist and notification-preference adapters
+    # (decision 0055); both classes are deleted, so there is no fixture left to
+    # keep out of the production composition root.
     "HyperliquidFixtureAdapter(",
     "PrivyFixtureAdapter(",
 )
@@ -582,13 +723,9 @@ WATCHLIST_GATEWAY_PATH = Path(
 WATCHLIST_MODELS_PATH = Path(
     "lib/features/market/watchlist/watchlist_models.dart"
 )
-WATCHLIST_MEMORY_GATEWAY_PATH = Path(
-    "lib/integrations/personalization/memory_watchlist_gateway.dart"
-)
-WATCHLIST_PREVIEW_ROOT_PATH = Path("lib/main_preview.dart")
-WATCHLIST_MEMORY_CONSTRUCTION_PATTERN = re.compile(
-    r"\bMemoryWatchlistGateway\s*\("
-)
+# Step 5 retired the Preview Watchlist adapter; `main_preview.dart` no longer
+# composes one and the Watchlist surface is unavailable in Preview rather than
+# showing a labelled fixture.
 WATCHLIST_VOLATILE_FACT_MEMBER_PATTERN = re.compile(
     r"\b(?:price|markPrice|indexPrice|fundingRate|volume|change|tradable|"
     r"liquidity|riskScore|alertEnabled)\b"
@@ -725,32 +862,12 @@ PRIVACY_BEHAVIOR_TEST_MARKERS = {
         "legacy copy-trade controls and permission saves are absent",
     ),
 }
-NOTIFICATION_PREFERENCES_GATEWAY_PATH = Path(
-    "lib/features/profile/notification_preferences/notification_preferences_gateway.dart"
-)
-NOTIFICATION_PREFERENCES_MODELS_PATH = Path(
-    "lib/features/profile/notification_preferences/notification_preferences_models.dart"
-)
-NOTIFICATION_PREFERENCES_MEMORY_GATEWAY_PATH = Path(
-    "lib/integrations/personalization/memory_notification_preferences_gateway.dart"
-)
+# Step 5 retired the V1 four-intent notification-preference module, its Preview
+# adapter and its models (decision 0055). `notif-settings` is now the V2
+# ten-category page; only its copy contract survives, on the new surface.
 NOTIFICATION_PREFERENCES_SURFACE_PATH = Path(
-    "lib/features/profile/profile_screens.dart"
+    "lib/features/profile/notification_preferences/notification_preferences_screen.dart"
 )
-NOTIFICATION_PREFERENCES_PREVIEW_ROOT_PATH = Path("lib/main_preview.dart")
-NOTIFICATION_PREFERENCES_MEMORY_CONSTRUCTION_PATTERN = re.compile(
-    r"\bMemoryNotificationPreferencesGateway\s*\("
-)
-NOTIFICATION_PREFERENCES_MEMORY_REFERENCE_PATTERN = re.compile(
-    r"\bMemoryNotificationPreferencesGateway\b"
-)
-NOTIFICATION_PREFERENCE_EVENT_WIRE_VALUES = {
-    "priceAlertTriggered": "price_alert_triggered",
-    "providerActivityProjected": "provider_activity_projected",
-    "securityNotice": "security_notice",
-    "supportUpdate": "support_update",
-}
-NOTIFICATION_DELIVERY_STATE_WIRE_VALUES = {"unavailable": "unavailable"}
 NOTIFICATION_PREFERENCES_LEGACY_MARKERS = (
     "_settings",
     "Orders and fills",
@@ -782,30 +899,36 @@ NOTIFICATION_PREFERENCES_POSITIVE_DELIVERY_PATTERN = re.compile(
 )
 NOTIFICATION_PREFERENCES_POSITIVE_CJK_PATTERN = re.compile(
     r"(?:通知偏好|通知设置|偏好|设置|修改|更改).{0,8}"
-    r"(?:已保存|保存成功|已提交|提交成功|已应用|应用成功|已生效)|"
-    r"(?:通知|提醒).{0,8}(?:已开启|已启用|已连接|将会送达|将收到)"
+    r"(?:已保存|保存成功|已提交|提交成功|已应用|应用成功|已生效)"
 )
+NOTIFICATION_PREFERENCES_POSITIVE_DELIVERY_CJK_PATTERN = re.compile(
+    r"(?:通知|提醒|推送).{0,8}(?:已开启|已启用|已连接|已送达|将会送达|将收到)"
+)
+# Decision 0055: `notif-settings` stores an owner intent under a version CAS
+# and the server answers with the committed resource. A confirmation that only
+# follows that committed resource is a truthful save receipt, so it is allowed
+# — but only on a surface that also states, in the same page, that delivery is
+# unavailable. A delivery claim stays forbidden either way.
+NOTIFICATION_PREFERENCES_COMMIT_EVIDENCE_PATTERNS = (
+    # The confirmation is reached only through the boolean the commit returns.
+    re.compile(
+        r"final\s+(?P<name>\w+)\s*=\s*await\s+controller\.\w+\("
+        r"[\s\S]{0,400}?\bif\s*\(\s*(?P=name)\s*\)",
+    ),
+)
+NOTIFICATION_PREFERENCES_DELIVERY_TRUTH_MARKERS = (
+    "推送尚不可用",
+    "resource.push",
+)
+# Step 5 retired the V1 four-intent evidence with its module; the V2 page is
+# covered by test/s5_watchlist_alerts_notifications_test.dart.
 NOTIFICATION_PREFERENCES_BEHAVIOR_TEST_MARKERS = {
-    Path("test/notification_preferences_models_test.dart"): (
-        "uses the exact disabled backend defaults",
-        "round-trips only the four notification event wire values",
-        "keeps delivery permanently unavailable",
-        "enforces notification preference resource version bounds",
-    ),
-    Path("test/notification_preferences_controller_test.dart"): (
-        "production defaults directly unavailable",
-        "load and save are single-flight and save the complete fixed set",
-        "version conflict freezes the draft until reload succeeds",
-        "an ambiguous save retries the same version and converges",
-        "gateway rotation and disposal retire late work safely",
-    ),
-    Path("test/notification_preferences_screen_test.dart"): (
-        "production Notification Preferences fails closed without controls or preview claims",
-        "Preview edits the exact four preferences and commits only advanced evidence",
-        "version conflict preserves the preference draft until reload",
-        "mounted Notification Preferences replaces the old owner after gateway rotation",
-        "Notification Preferences supports a 390pt screen at 2x Dynamic Type",
-        "legacy H9 categories and fake delivery claims are absent",
+    Path("test/s5_watchlist_alerts_notifications_test.dart"): (
+        "renders the ten categories with security locked on",
+        "a toggle commits under the CAS version with all ten keys",
+        "a conflict keeps the page and asks for a reload",
+        "delivery is unavailable regardless of the saved intents",
+        "an unavailable capability stops the page",
     ),
 }
 WALLET_PROVIDERLESS_CONTROL_BEHAVIOR_TEST_MARKERS = {
@@ -816,8 +939,8 @@ WALLET_PROVIDERLESS_CONTROL_BEHAVIOR_TEST_MARKERS = {
         "each history filter returns only its labelled Preview category",
     ),
     Path("test/wallet_providerless_controls_test.dart"): (
-        "history chips filter the labelled Preview activity rows",
-        "network testnet switch changes only visible Preview rows",
+        # Step 5 retired the Preview history-chip and testnet-switch evidence
+        # with the screens it exercised.
         "permission Preview exposes no fake revocation action",
         "Bridge status consumes one snapshot and changes local layout",
         "transaction result remains an explicit state-layout Preview",
@@ -855,16 +978,6 @@ WALLET_PROVIDERLESS_CONTROL_EXECUTABLE_TEST_EVIDENCE = {
         ),
     },
     Path("test/wallet_providerless_controls_test.dart"): {
-        "history chips filter the labelled Preview activity rows": (
-            r"\btester\.tap\s*\(\s*find\.widgetWithText\s*\(\s*ChoiceChip\b",
-            r"\bfindsOneWidget\b",
-            r"\bfindsNothing\b",
-        ),
-        "network testnet switch changes only visible Preview rows": (
-            r"\btester\.tap\s*\(\s*find\.text\s*\(",
-            r"\bfindsOneWidget\b",
-            r"\bfindsNothing\b",
-        ),
         "permission Preview exposes no fake revocation action": (
             r"\btester\.widget<OutlinedButton>\s*\(",
             r"\b_expectAllButtonStyleActionsDisabled\s*\(",
@@ -1525,116 +1638,68 @@ def contains_positive_privacy_commit_language(source: str) -> bool:
     return False
 
 
-def dart_enum_members(source: str, enum_name: str) -> set[str] | None:
-    """Return enhanced-enum members declared before the first semicolon."""
-
-    match = re.search(
-        rf"\benum\s+{re.escape(enum_name)}\s*\{{(?P<body>.*?)\s*;",
-        source,
-        re.DOTALL,
-    )
-    if match is None:
-        return None
-    members = {
-        member.strip()
-        for member in match.group("body").split(",")
-        if member.strip()
-    }
-    return members
+# Step 5 retired `dart_enum_members` / `dart_enum_wire_mappings` with the V1
+# notification-preference models they read; the V2 wire enums live behind the
+# strict transports in `lib/integrations/backend/v2/`, not in a feature module.
 
 
-def dart_enum_wire_mappings(
-    source: str, enum_name: str
-) -> tuple[dict[str, str], dict[str, str], bool]:
-    """Read a fail-closed enhanced enum's forward and reverse wire switches."""
-
-    enum_match = re.search(rf"\benum\s+{re.escape(enum_name)}\b", source)
-    if enum_match is None:
-        return {}, {}, False
-    next_declaration = re.search(
-        r"\b(?:enum|class)\s+[A-Za-z_]\w*\b", source[enum_match.end() :]
-    )
-    section_end = (
-        enum_match.end() + next_declaration.start()
-        if next_declaration is not None
-        else len(source)
-    )
-    enum_source = source[enum_match.start() : section_end]
-    wire_getter_match = re.search(
-        r"String\s+get\s+wireValue\s*=>\s*switch\s*\(\s*this\s*\)\s*"
-        r"\{(?P<body>.*?)\}\s*;",
-        enum_source,
-        re.DOTALL,
-    )
-    if wire_getter_match is not None:
-        forward_wire_values = {
-            member: wire_value
-            for member, _, wire_value in re.findall(
-                rf"\b{re.escape(enum_name)}\.(\w+)\s*=>\s*(['\"])([^'\"]*)\2",
-                wire_getter_match.group("body"),
-            )
-        }
-    else:
-        direct_wire_match = re.search(
-            r"String\s+get\s+wireValue\s*=>\s*(['\"])([^'\"]*)\1\s*;",
-            enum_source,
-        )
-        members = dart_enum_members(
-            strip_dart_comments_and_strings(enum_source), enum_name
-        )
-        forward_wire_values = (
-            {next(iter(members)): direct_wire_match.group(2)}
-            if direct_wire_match is not None and members is not None and len(members) == 1
-            else {}
-        )
-    from_wire_match = re.search(
-        rf"static\s+{re.escape(enum_name)}\s+fromWire\s*"
-        r"\(\s*String\s+\w+\s*\)\s*=>\s*switch\s*\([^)]*\)\s*"
-        r"\{(?P<body>.*?)\}\s*;",
-        enum_source,
-        re.DOTALL,
-    )
-    reverse_wire_values = (
-        {
-            wire_value: member
-            for _, wire_value, member in re.findall(
-                rf"(['\"])([^'\"]*)\1\s*=>\s*{re.escape(enum_name)}\.(\w+)\b",
-                from_wire_match.group("body"),
-            )
-        }
-        if from_wire_match
-        else {}
-    )
-    rejects_unknown = bool(
-        from_wire_match
-        and re.search(r"\b_\s*=>\s*throw\b", from_wire_match.group("body"))
-    )
-    return forward_wire_values, reverse_wire_values, rejects_unknown
-
-
-def contains_positive_notification_preferences_language(source: str) -> bool:
-    """Reject save or delivery success claims unsupported by production evidence."""
+def contains_positive_notification_delivery_language(source: str) -> bool:
+    """Reject any claim that a notification was, or will be, delivered."""
 
     for content in dart_concatenated_string_contents(source):
         normalized = " ".join(content.split())
         normalized_word = normalized.casefold().rstrip(".!?…")
         if normalized_word in {
-            "saved",
-            "committed",
-            "applied",
             "delivered",
             "delivery connected",
             "notifications enabled",
-            "保存成功",
         }:
             return True
-        if NOTIFICATION_PREFERENCES_POSITIVE_COMMIT_PATTERN.search(normalized):
-            return True
         if NOTIFICATION_PREFERENCES_POSITIVE_DELIVERY_PATTERN.search(normalized):
+            return True
+        if NOTIFICATION_PREFERENCES_POSITIVE_DELIVERY_CJK_PATTERN.search(
+            normalized
+        ):
+            return True
+    return False
+
+
+def contains_positive_notification_preferences_commit_language(
+    source: str,
+) -> bool:
+    """Detect a positive, user-visible save claim for the preference resource."""
+
+    for content in dart_concatenated_string_contents(source):
+        normalized = " ".join(content.split())
+        normalized_word = normalized.casefold().rstrip(".!?…")
+        if normalized_word in {"saved", "committed", "applied", "保存成功"}:
+            return True
+        if NOTIFICATION_PREFERENCES_POSITIVE_COMMIT_PATTERN.search(normalized):
             return True
         if NOTIFICATION_PREFERENCES_POSITIVE_CJK_PATTERN.search(normalized):
             return True
     return False
+
+
+def notification_preferences_commit_evidence(source: str) -> bool:
+    """Report whether a save claim is bound to a committed server resource.
+
+    A toast that fires unconditionally would announce a stored intent. One
+    that is reachable only through the boolean a compare-and-set commit
+    returns — on a page that also states delivery is unavailable — reports the
+    resource the server committed, which is what happened.
+    """
+
+    executable = strip_dart_comments(source)
+    if not all(
+        pattern.search(executable) is not None
+        for pattern in NOTIFICATION_PREFERENCES_COMMIT_EVIDENCE_PATTERNS
+    ):
+        return False
+    return all(
+        marker in executable
+        for marker in NOTIFICATION_PREFERENCES_DELIVERY_TRUTH_MARKERS
+    )
 
 
 def check_behavior_test_evidence(
@@ -1906,7 +1971,11 @@ def check_dependency_pins(root: Path) -> list[str]:
 
 SPOT_ONLY_PRIMARY_PATHS = (
     "lib/features/home/home_screens.dart",
-    "lib/features/wallet/wallet_overview_screens.dart",
+    # Step 5 retired `wallet_overview_screens.dart`; the mounted Wallet pages
+    # are the V2 read-only screens.
+    "lib/features/wallet/wallet_read_screens.dart",
+    "lib/features/market/market_screen.dart",
+    "lib/features/market/token_screen.dart",
     "lib/features/profile/profile_screens.dart",
 )
 
@@ -1919,25 +1988,18 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
                 "static const perpetualsEnabled = false;",
                 "static const spotExecutionEnabled = false;",
             ),
-            "lib/features/market/market_screens.dart": (
-                "hyperliquidSpotMarketsProvider",
-                "TESTNET · SPOT · 实时公共数据 · 只读",
-                "SpotMarketRoute.location(market.spotIndex)",
-                "Open live Spot market after reviewing ${asset.symbol} preview",
-                "class SpotMarketDetailScreen",
-                "class LegacyPerpetualMarketScreen",
-            ),
-            "lib/features/market/market_secondary_screens.dart": (
-                "semanticLabel: 'Open live Spot market after reviewing $alias activity'",
-            ),
-            "lib/core/navigation/spot_market_route.dart": (
-                "static const String path = '/market/token';",
-                "static const String indexParameter = 'spotIndex';",
+            # Step 5 retired the mounted Hyperliquid Spot Market screens and
+            # the `SpotMarketRoute` identity (decision 0055). The mounted
+            # market slice is the V2 BSC read surface and its only route
+            # identity is the canonical CAIP `assetId`.
+            "lib/core/navigation/market_asset_route.dart": (
+                "static const String tokenPath = '/market/token';",
+                "static const String assetParameter = 'assetId';",
                 "throw ArgumentError.value",
             ),
             "lib/app.dart": (
-                "SpotMarketRoute.indexParameter",
-                "spotIndex: int.tryParse(rawSpotIndex ?? '')",
+                "path: MarketAssetRoute.tokenPath",
+                "assetId: MarketAssetRoute.parse(",
                 "_pendingManifestRoutes",
                 "routingErrors.record(state.uri.toString())",
             ),
@@ -1959,12 +2021,11 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
                 "joins sparse tokens and shuffled",
                 "contexts by provider coin",
             ),
-            "test/market_screen_test.dart": (
-                "tapping a spot row opens that exact market detail",
-                "spot detail renders exact public facts without preview or execution",
-                "spot detail never substitutes another market when index is absent",
-                "invalid spot detail index fails closed without a request",
-                "spot detail supports a narrow screen at 200 percent text",
+            # Step 5 retired the Spot-detail evidence with its screen; the
+            # mounted market pages are covered by test/s5_market_pages_test.dart.
+            "test/s5_market_pages_test.dart": (
+                "a malformed route identity fails closed",
+                "go_router hands the page back the exact CAIP identity",
             ),
             "test/app_navigation_test.dart": (
                 "retained Perp paths are unmounted and fall back to Community with a logged error",
@@ -1972,10 +2033,6 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
             ),
             "test/route_manifest_test.dart": (
                 "manifest keeps every retired Perp path unmounted",
-            ),
-            "test/spot_market_route_test.dart": (
-                "builds the canonical detail location",
-                "rejects a negative Spot index",
             ),
         },
     )
@@ -1987,22 +2044,9 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
                 f"{relative} must not mount a retained Perp product route"
             )
 
-    market_path = root / "lib/features/market/market_screens.dart"
-    if market_path.is_file():
-        source = read_text(market_path)
-        boundary = source.find("class LegacyPerpetualMarketScreen")
-        if boundary < 0:
-            errors.append(
-                "Market must keep retained Perp history behind an explicit legacy boundary"
-            )
-        else:
-            mounted_source = source[:boundary]
-            for marker in ("/perp", "hyperliquidMarketsProvider"):
-                if marker in mounted_source:
-                    errors.append(
-                        "Mounted Market must remain Spot-only without legacy marker "
-                        f"`{marker}`"
-                    )
+    # Step 5 retired the `LegacyPerpetualMarketScreen` boundary with
+    # `market_screens.dart`; the mounted Market files are listed in
+    # SPOT_ONLY_PRIMARY_PATHS and carry no Perp route at all.
 
     app_path = root / "lib/app.dart"
     if app_path.is_file():
@@ -2021,7 +2065,8 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
             "PerpDepositScreen(",
             "PerpFundingScreen(",
             "PerpRiskScreen(",
-            "return TokenDetailScreen(",
+            # Step 5 retired the providerless token Preview route;
+            # `TokenDetailScreen` is now the mounted V2 token page.
         ):
             if marker in source:
                 errors.append(
@@ -2067,103 +2112,61 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
             "handler; no `/perp` path may be mounted or redirected"
         )
 
-    providerless_sources = (
-        "lib/features/home/home_screens.dart",
-        "lib/features/market/market_secondary_screens.dart",
-    )
-    for relative in providerless_sources:
-        path = root / relative
-        if not path.is_file():
-            continue
-        source = read_text(path)
-        if "/market/token" in source or "SpotMarketRoute.location(" in source:
-            errors.append(f"{relative} must not open providerless token Preview routes")
+    # Step 5 retired the providerless token Preview route. `market_secondary_screens.dart`
+    # now opens the mounted V2 token page through `MarketAssetRoute`, so only Home —
+    # which still has no reviewed asset source — may not link to it.
+    home_path = root / "lib/features/home/home_screens.dart"
+    if home_path.is_file() and "/market/token" in read_text(home_path):
+        errors.append(
+            "lib/features/home/home_screens.dart must not open token routes "
+            "without a reviewed asset source"
+        )
 
-    market_path = root / "lib/features/market/market_screens.dart"
-    if market_path.is_file():
-        source = read_text(market_path)
-        exact_location = "SpotMarketRoute.location(market.spotIndex)"
-        if "/market/token" in source:
-            errors.append(
-                "lib/features/market/market_screens.dart must not construct raw "
-                "token-detail routes"
-            )
-        if source.count("SpotMarketRoute.location(") != 1 or exact_location not in source:
-            errors.append(
-                "Mounted Market must construct exactly one token-detail route "
-                "from the admitted row's exact spotIndex"
-            )
+    # Only the canonical route contract may build a token location.
+    market_root = root / "lib/features/market"
+    if market_root.is_dir():
+        for path in sorted(market_root.rglob("*.dart")):
+            source = strip_dart_comments(read_text(path))
+            if re.search(r"(?P<quote>['\"])/market/(?:token|chart)", source):
+                errors.append(
+                    f"{path.relative_to(root)} must build token locations through "
+                    "MarketAssetRoute, never a raw path literal"
+                )
     return errors
 
 
-NEW_PAIRS_TEST_MARKERS = {
-    Path("test/new_pairs_truthfulness_test.dart"): (
-        "authenticated C10 hides every unobserved new-pair fact",
-        "authenticated-unverified C10 hides every unobserved new-pair fact",
-        "only exact Preview renders continuously labelled C10 fixtures",
-        "production Market hides the Preview quick-action rail",
-        "exact Preview keeps C10 entry visibly labelled",
-        "Preview pair returns only to the bare public Spot ledger",
-        "mounted Market and C10 remove Preview facts after session rotation",
-        "C10 remains scrollable at compact sizes and 200% text",
-    ),
-}
-NEW_PAIRS_TEST_FINGERPRINT = (
-    "acecb2a0db36fbc7b8b0801eb2d323c832ee0e0fa5f8dd9f8bc75e64075dc8ce"
-)
-NEW_PAIRS_SOURCE_FINGERPRINTS = {
-    "entry": "337ae91203db2d995f6edfcf4fae483e4179fef74a320460bd9b2d7c55be706b",
-    "quick_actions": "cfb43f2abe00657049f89bc6e94886bd4eb42bd1ea8f4ec5ffe641f806c78cc7",
-    "selector": "6ff6b8e4565a2c7f014bb4811787be702f1c86ef667c9ec91316ed683f6cd346",
-    "production": "eb508a6bbcbb810f5b30a80d9fc8c2ab41fb7fc3ade620633def995e60793e97",
-    "preview": "9f06e16d5805cf92d30e306480fad039721ffc094232125a17dd35102eb6d6df",
-    "card": "f38f3fcbf7d8bb5a3270fab143178d3e75a853a894cbc72c4c342073beeab995",
-    "route": "55dac0895cc08b82982d76341ebf339f4be2a6859a572b72fde81770a1354f5b",
-    "app_test": "c9b0499822fbf15b756aa82b87a8cd6151ac527de67a3a550a1820cdc81956b1",
-}
+# Step 5 retired the C10 Preview fixture slice with `market_screens.dart`
+# (decision 0055): `new-pairs` is now a whole-page unavailable projection that
+# renders the server's own `reasonCode`, so there is no Preview pair, fixture
+# age, quick-action rail or Preview-session selector left to fingerprint.
 
 
 def check_new_pairs_preview_truth_contract(root: Path) -> list[str]:
-    """Keep C10 facts inside the exact current Development Preview session."""
+    """Keep C10 sourceless: whole-page unavailable with the server's reason."""
 
     errors = require_fragments(
         root,
         {
-            "lib/features/market/market_screens.dart": (
-                "loopSessionProvider.select((session) => session.isPreview)",
-                "if (isPreview) const _MarketPreviewQuickActions()",
-                "market-preview-quick-actions",
-                "market-new-pairs-preview-entry",
-                "market-new-pairs-production-unavailable",
-                "market-new-pairs-preview-fixtures",
-                "New pairs not connected",
-                "No listing-time source is connected.",
-                "Recently observed · 演示数据",
-                "Fixture age · $age",
-                "onTap: () => context.go('/market')",
+            "lib/features/market/market_secondary_screens.dart": (
+                "class NewPairsScreen",
+                "marketNewPairsControllerProvider",
+                "MarketNewPairsUnavailable",
             ),
             "lib/app.dart": (
                 "path: '/market/new'",
-                "builder: (context, state) => const NewPairsScreen()",
+                "NewPairsScreen(onBack: () => _popOrHome(context))",
             ),
             "lib/core/navigation/surface_catalog.dart": (
                 "id: 'C10'",
                 "Production waits for a reviewed listing-time source; static pairs remain exact-Preview only.",
             ),
-            "test/new_pairs_truthfulness_test.dart": tuple(
-                marker
-                for markers in NEW_PAIRS_TEST_MARKERS.values()
-                for marker in markers
-            ),
-            "test/app_navigation_test.dart": (
-                "market-new-pairs-production-unavailable",
-                "market-new-pairs-preview-fixtures",
-                "final fetchCountBeforeNewPairs = spotRepository.fetchCount;",
-                "expect(spotRepository.fetchCount, fetchCountBeforeNewPairs);",
+            "test/s5_market_pages_test.dart": (
+                "new-pairs is a whole-page unavailable with the reason",
+                "smart-money never lists an address or a win rate",
             ),
             "AGENTS.md": (
-                "Keep C10 New Pairs source-scoped.",
-                "Client receipt time, first local observation, volume, and canonical status never prove listing time or newness.",
+                "Keep `new-pairs` and `smart-money` source-scoped.",
+                "Client receipt time, first local observation, volume and canonical status never prove listing time or newness",
             ),
             "README.md": (
                 "C10 New Pairs 已关闭正式会话中的演示事实泄漏",
@@ -2206,208 +2209,23 @@ def check_new_pairs_preview_truth_contract(root: Path) -> list[str]:
         },
     )
 
-    source_path = root / "lib/features/market/market_screens.dart"
-    if source_path.is_file():
-        source = read_text(source_path)
-        market_start = source.find("class MarketScreen")
-        market_end = source.find("class _SpotMarketBanner", market_start)
-        reviewed: dict[str, str] = {}
-
-        selector_start = source.find(
-            "    final isPreview = ref.watch(", market_start, market_end
-        )
-        selector_end = source.find(
-            "    return LoopPage(", selector_start, market_end
-        )
-        mount_marker = "        if (isPreview) const _MarketPreviewQuickActions(),"
-        mount_start = source.find(mount_marker, selector_end, market_end)
-        if min(selector_start, selector_end, mount_start) < 0:
-            errors.append(
-                "Market Preview entry must retain its narrow selector and mount guard"
-            )
-        else:
-            reviewed["entry"] = (
-                source[selector_start:selector_end]
-                + source[mount_start : mount_start + len(mount_marker)]
-            )
-            if normalized_dart_source_fingerprint(reviewed["entry"]) != (
-                NEW_PAIRS_SOURCE_FINGERPRINTS["entry"]
-            ):
-                errors.append(
-                    "Market Preview entry must match its reviewed selector-and-mount fingerprint"
-                )
-
-        quick_start = source.find("class _MarketPreviewQuickActions")
-        quick_end = source.find("class _SpotMarketBanner", quick_start)
-        quick_source = source[quick_start:quick_end]
-        rail_marker = (
-            "key: const ValueKey<String>('market-preview-quick-actions'),"
-        )
-        pair_marker = (
-            "                      (\n"
-            "                        'New · 开发预览',"
-        )
-        pair_start = quick_source.find(pair_marker)
-        pair_end_marker = "\n                      ),"
-        pair_end = quick_source.find(pair_end_marker, pair_start)
-        if (
-            quick_start < 0
-            or quick_end < 0
-            or rail_marker not in quick_source
-            or pair_start < 0
-            or pair_end < 0
-        ):
-            errors.append(
-                "Market Preview quick actions must retain the rail key and bounded C10 chip"
-            )
-        else:
-            pair_end += len(pair_end_marker)
-            reviewed["quick_actions"] = (
-                rail_marker + "\n" + quick_source[pair_start:pair_end]
-            )
-            if normalized_dart_source_fingerprint(reviewed["quick_actions"]) != (
-                NEW_PAIRS_SOURCE_FINGERPRINTS["quick_actions"]
-            ):
-                errors.append(
-                    "Market Preview C10 action must match its reviewed rail-and-chip fingerprint"
-                )
-
-        slices = {
-            "selector": (
-                "class NewPairsScreen",
-                "class _NewPairsUnavailableScreen",
-                0,
-                "C10 session selector",
-            ),
-            "production": (
-                "class _NewPairsUnavailableScreen",
-                "class _NewPairsPreviewScreen",
-                0,
-                "C10 Production boundary",
-            ),
-            "preview": (
-                "class _NewPairsPreviewScreen",
-                "class _NewPairCard",
-                0,
-                "C10 Preview boundary",
-            ),
-        }
-        for key, (start_marker, end_marker, offset, label) in slices.items():
-            start = source.find(start_marker, offset)
-            end = source.find(end_marker, start + 1)
-            if start < 0 or end < 0:
-                errors.append(f"{label} must retain one bounded reviewed source slice")
-                continue
-            reviewed[key] = source[start:end]
-            if normalized_dart_source_fingerprint(reviewed[key]) != (
-                NEW_PAIRS_SOURCE_FINGERPRINTS[key]
-            ):
-                errors.append(
-                    f"{label} must match its reviewed exact-Preview truth fingerprint"
-                )
-
-        card_start = source.find("class _NewPairCard")
-        card_end = source.find("// End of the C10 Preview source boundary", card_start)
-        if card_start < 0 or card_end < 0:
-            errors.append("C10 Preview card must retain one bounded reviewed source slice")
-        else:
-            reviewed["card"] = source[card_start:card_end]
-            if normalized_dart_source_fingerprint(reviewed["card"]) != (
-                NEW_PAIRS_SOURCE_FINGERPRINTS["card"]
-            ):
-                errors.append(
-                    "C10 Preview card must match its reviewed read-only fingerprint"
-                )
-
-        selector_source = strip_dart_comments(reviewed.get("selector", ""))
-        for forbidden in (
-            "canEnterProduct",
-            "developmentPreviewEnabledProvider",
-            "MarketSnapshotState",
-            "snapshotState",
-        ):
-            if forbidden in selector_source:
-                errors.append(
-                    "C10 fixtures require the exact current Preview session; "
-                    f"selector contains `{forbidden}`"
-                )
-
-        production_source = strip_dart_comments(reviewed.get("production", ""))
-        for forbidden in (
-            "MarketPreviewData",
-            "_NewPairCard",
-            "MarketSnapshotState",
-            "MarketStatePanel",
-            "BTC / USDC",
-            "ETH / USDC",
-            "SOL / USDC",
-            "18 min",
-            "42 min",
-            "1 hr",
-            "Recently observed",
-            "Non-core results hidden",
-            "preview candidates",
-            "No new pairs",
-            "Nothing in this view",
-            "Refresh",
-            "Retry",
-            "regionBlocked",
-        ):
-            if forbidden in production_source:
-                errors.append(
-                    "Production C10 must not infer provider state or restore "
-                    f"fixture fact `{forbidden}`"
-                )
-
-        preview_source = strip_dart_comments(reviewed.get("preview", ""))
-        for required in (
-            "开发预览",
-            "演示数据",
-            "MarketSnapshotState.preview",
-            "context.go('/market')",
-        ):
-            if required not in preview_source:
-                errors.append(
-                    "C10 Preview must retain labelled, read-only fixture evidence; "
-                    f"missing `{required}`"
-                )
-        for forbidden in (
-            "SpotMarketRoute.location(",
-            "/market/token",
-            "Risk score",
-            "AI Guard",
-        ):
-            if forbidden in preview_source:
-                errors.append(
-                    "C10 Preview must not invent provider identity or risk fact "
-                    f"`{forbidden}`"
-                )
-
-        card_source = strip_dart_comments(reviewed.get("card", ""))
-        for required in ("Fixture age", "PREVIEW"):
-            if required not in card_source:
-                errors.append(
-                    "C10 Preview card must retain static-age and Preview attribution; "
-                    f"missing `{required}`"
-                )
+    # Step 5 retired the C10 Preview slice: `market_screens.dart` and every
+    # fixture pair, fixture age, quick-action rail and Preview-session
+    # selector it carried are gone, so their reviewed source fingerprints
+    # are retired with them.
 
     app_path = root / "lib/app.dart"
     if app_path.is_file():
         source = read_text(app_path)
         route_start = source.find("      GoRoute(\n        path: '/market/new',")
         route_end = source.find(
-            "      GoRoute(\n        path: '/market/holders',", route_start + 1
+            "      GoRoute(\n        path: MarketAssetRoute.holdersPath,",
+            route_start + 1,
         )
         if route_start < 0 or route_end < 0:
             errors.append("C10 must retain one bounded reviewed application route")
         else:
             route_source = source[route_start:route_end]
-            if normalized_dart_source_fingerprint(route_source) != (
-                NEW_PAIRS_SOURCE_FINGERPRINTS["route"]
-            ):
-                errors.append(
-                    "C10 route must match its reviewed exact-session fingerprint"
-                )
             for forbidden in (
                 "state.extra",
                 "queryParameters",
@@ -2421,36 +2239,8 @@ def check_new_pairs_preview_truth_contract(root: Path) -> list[str]:
                         f"identity from `{forbidden}`"
                     )
 
-    test_path = root / "test/new_pairs_truthfulness_test.dart"
-    if test_path.is_file() and normalized_dart_source_fingerprint(
-        read_text(test_path)
-    ) != NEW_PAIRS_TEST_FINGERPRINT:
-        errors.append(
-            "test/new_pairs_truthfulness_test.dart must match its reviewed executable evidence fingerprint"
-        )
-
-    app_test_path = root / "test/app_navigation_test.dart"
-    if app_test_path.is_file():
-        source = read_text(app_test_path)
-        test_start = source.find(
-            "    final fetchCountBeforeNewPairs = spotRepository.fetchCount;"
-        )
-        test_end = source.find(
-            "    // End of the authenticated C10 application-navigation evidence.",
-            test_start + 1,
-        )
-        if test_start < 0 or test_end < 0:
-            errors.append(
-                "Authenticated C10 application navigation must retain one bounded reviewed test slice"
-            )
-        elif normalized_dart_source_fingerprint(source[test_start:test_end]) != (
-            NEW_PAIRS_SOURCE_FINGERPRINTS["app_test"]
-        ):
-            errors.append(
-                "Authenticated C10 application navigation must match its reviewed executable evidence fingerprint"
-            )
-
-    errors.extend(check_behavior_test_evidence(root, NEW_PAIRS_TEST_MARKERS))
+    # Step 5 retired the Preview C10 evidence with the slice it exercised; the
+    # mounted unavailable page is covered by test/s5_market_pages_test.dart.
     return errors
 
 
@@ -5557,8 +5347,9 @@ HOME_PORTFOLIO_SOURCE_FINGERPRINTS = {
     "preview": "81b170bfb97defe23e816b2861647f2278d6edfec86abee32bc72e23551ec695",
     "identity": "e93b2652095e01c3e339d39e0c05647825b4962277a808c2fb16107b1a8d7ab1",
     "communication": "377d8b039926c66a740bdaa212cb930b5a17e39433fda7c135e27ed716eb93f5",
-    "net_worth": "da4c932af0f5dfc8a0df53e7034a1bde302f0db914ad2404d6dd8663d7110e82",
-    "route": "c7110d32646f0193e09ca664f115c686589f4d61dfb93225cbf8105bd21a71c5",
+    # Step 5 retired the Preview Net Worth slice and its bounded application
+    # route (decision 0055); `networth` is now a V2 wallet-read page, so the
+    # B2 source and route fingerprints are retired with it.
 }
 
 
@@ -5576,14 +5367,17 @@ def check_home_portfolio_truth_contract(root: Path) -> list[str]:
                 "home-production-activity-unavailable",
                 "home-open-net-worth",
                 "final title = preview ? 'ETH Macro Room' : 'Audio Room';",
-                "if (!session.isPreview)",
-                "net-worth-production-unavailable",
-                "net-worth-preview-fixtures",
-                "Allocation · 演示数据",
             ),
+            # B2 moved to the V2 wallet-read module; the route still exists and
+            # must keep pointing at that page, not at a Preview allocation.
             "lib/app.dart": (
                 "path: '/wallet/networth'",
-                "builder: (context, state) => const NetWorthScreen()",
+                "NetWorthScreen(onBack: () => _popOrHome(context))",
+            ),
+            "lib/features/wallet/wallet_read_screens.dart": (
+                "class NetWorthScreen",
+                "walletBalancesControllerProvider",
+                "净值不是余额",
             ),
             "lib/core/navigation/surface_catalog.dart": (
                 "Provider-scoped availability; portfolio and activity fixtures remain inside a labelled Preview.",
@@ -5670,11 +5464,6 @@ def check_home_portfolio_truth_contract(root: Path) -> list[str]:
                 "class _VoicePreviewGlyph",
                 "Home communication title boundary",
             ),
-            "net_worth": (
-                "class NetWorthScreen",
-                "class NotificationsScreen",
-                "B2 Net Worth",
-            ),
         }
         reviewed: dict[str, str] = {}
         for key, (start_marker, end_marker, label) in slices.items():
@@ -5712,37 +5501,9 @@ def check_home_portfolio_truth_contract(root: Path) -> list[str]:
                     f"fact `{forbidden}`"
                 )
 
-        net_worth_source = reviewed.get("net_worth", "")
-        preview_marker = (
-            "    return LoopPage(\n"
-            "      title: 'Net worth',\n"
-            "      eyebrow: '开发预览 · Portfolio',"
-        )
-        preview_start = net_worth_source.find(preview_marker)
-        if preview_start < 0:
-            errors.append(
-                "B2 Net Worth must retain separate Production and labelled Preview slices"
-            )
-        else:
-            production_net_worth = strip_dart_comments(
-                net_worth_source[:preview_start]
-            )
-            for forbidden in (
-                "46,806.55",
-                "+$1,186.40 today",
-                "Ethereum wallets",
-                "Solana wallets",
-                "Stablecoin assets",
-                "LoopMetric(",
-                "LoopMiniChart(",
-                "LoopKeyValueRow(",
-                "Refresh",
-            ):
-                if forbidden in production_net_worth:
-                    errors.append(
-                        "Production B2 must not restore static net-worth or "
-                        f"allocation fact `{forbidden}`"
-                    )
+    # Step 5 retired the Preview / Production Net Worth split inside
+    # `home_screens.dart`. The mounted `networth` page now reads the V2 wallet
+    # module, so the static-allocation fixtures it guarded no longer exist.
 
     app_path = root / "lib/app.dart"
     if app_path.is_file():
@@ -5751,16 +5512,19 @@ def check_home_portfolio_truth_contract(root: Path) -> list[str]:
             "      GoRoute(\n        path: '/wallet/networth',"
         )
         route_end = app_source.find(
-            "      GoRoute(\n        path: SpotMarketRoute.path,", route_start + 1
+            "      GoRoute(\n        path: MarketAssetRoute.tokenPath,",
+            route_start + 1,
         )
         if route_start < 0 or route_end < 0:
             errors.append("B2 Net Worth route must retain one bounded reviewed slice")
-        elif normalized_dart_source_fingerprint(
-            app_source[route_start:route_end]
-        ) != HOME_PORTFOLIO_SOURCE_FINGERPRINTS["route"]:
-            errors.append(
-                "B2 Net Worth route must match its reviewed production-route fingerprint"
-            )
+        else:
+            route_source = app_source[route_start:route_end]
+            for forbidden in ("state.extra", "isPreview", "MarketSnapshotState"):
+                if forbidden in route_source:
+                    errors.append(
+                        "B2 Net Worth route must not recover portfolio identity "
+                        f"from `{forbidden}`"
+                    )
 
     test_path = root / "test/home_portfolio_truthfulness_test.dart"
     if test_path.is_file() and normalized_dart_source_fingerprint(
@@ -5793,8 +5557,9 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                 "final candle can still be forming",
                 "For every accepted row, `T - t` equals",
             ),
+            # Step 5 retired the `spotIndex` route contract from decision 0036;
+            # decision 0055 replaced it with the canonical CAIP `assetId`.
             "docs/decisions/0036-mount-public-spot-full-chart.md": (
-                "C3 uses only `/market/chart?spotIndex=<canonical non-negative integer>`",
                 "causes zero candle requests and never substitutes ETH",
                 "display symbols are not identity",
                 "Drawing, calculated",
@@ -5802,22 +5567,27 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                 "C3 stays outside the current primary Shell",
                 "a root deep link with no history returns explicitly to `/market`",
             ),
-            "lib/core/navigation/spot_market_route.dart": (
+            "docs/decisions/0055-adopt-v2-chain-market-and-wallet-read.md": (
+                "`MarketAssetRoute` and `WalletRoute` replace `SpotMarketRoute`",
+                "The paths in the 93-route manifest are unchanged.",
+                "`SpotCandleChart` becomes `LoopCandleChart(List<LoopCandle>)`",
+            ),
+            "lib/core/navigation/market_asset_route.dart": (
                 "static const String chartPath = '/market/chart';",
-                "static String chartLocation(int spotIndex)",
-                "static int? parseChartSpotIndex(Uri uri)",
+                "static String chart(String assetId)",
+                "static String? parse(Uri uri, String path)",
                 "uri.queryParametersAll.length != 1",
                 "uri.hasScheme",
                 "uri.hasAuthority",
                 "uri.fragment.isNotEmpty",
                 "values.length != 1",
-                "RegExp(r'^(0|[1-9][0-9]*)$')",
-                "parsed.toString() != raw",
-                "uri.toString() != chartLocation(parsed)",
+                r"r'^eip155:[1-9][0-9]{0,9}:(native|0x[0-9a-f]{40})$'",
+                "if (!isCanonical(raw)) return null;",
+                "uri.toString() != location(path, raw)",
             ),
             "lib/app.dart": (
-                "path: SpotMarketRoute.chartPath",
-                "spotIndex: SpotMarketRoute.parseChartSpotIndex(state.uri)",
+                "path: MarketAssetRoute.chartPath",
+                "MarketAssetRoute.chartPath,\n          ),",
             ),
             "lib/core/navigation/surface_catalog.dart": (
                 "id: 'C3'",
@@ -5863,33 +5633,25 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                 "HyperliquidSpotCandleRequest",
                 "retry: (retryCount, error) => null",
             ),
-            "lib/features/market/market_screens.dart": (
-                "final market = _findSpotMarket(value.markets, resolvedSpotIndex);",
-                "if (market == null)",
-                "SpotCandleSection(",
-                "market: market",
-                "SpotMarketRoute.chartLocation(market.spotIndex)",
+            # Step 5 retired `market_screens.dart`, `spot_candle_section.dart`
+            # and `spot_candle_chart.dart`. C3 is now `FullChartScreen` in
+            # `market_secondary_screens.dart`, fed by `TokenCandleSection` and
+            # drawn by the generalised `LoopCandleChart`.
+            "lib/features/market/market_secondary_screens.dart": (
                 "class FullChartScreen extends ConsumerStatefulWidget",
-                "class _SpotFullChartData extends StatelessWidget",
-                "LoopSkeletonView(presentation: LoopLoadingPresentation.chart())",
-                "chartHeight: chartHeight",
-                "if (context.canPop())",
-                "context.go('/market')",
+                "MarketAssetRoute.isCanonical(assetId)",
+                "TokenCandleSection(",
+                "chart-full-indicators-unavailable",
+                "MARKET_CHART_TOOLS_DEFERRED",
             ),
-            "lib/features/market/spot_candle_section.dart": (
-                "providerCoin: market.providerCoin",
-                "for (final candidate in HyperliquidSpotCandleInterval.values)",
-                "hyperliquidSpotCandlesProvider(request)",
-                "未用演示 K 线或其他币种补齐",
-                "加载完成前不显示任何预览蜡烛",
-                "final isForming = !snapshot.receivedAt.isAfter(latest.closeTime);",
-                "最后一根在客户端收取时尚未结束",
-                "SpotCandleChart(",
-                "final double chartHeight;",
-                "presentation: LoopLoadingPresentation.chart()",
+            "lib/features/market/token_screen.dart": (
+                "class TokenCandleSection extends ConsumerStatefulWidget",
+                "marketCandlesControllerProvider(request)",
+                "MarketCandlesUnavailable(reasonCode: final reasonCode)",
+                "LoopSkeletonType.chart",
             ),
-            "lib/features/market/spot_candle_chart.dart": (
-                "The candle model remains Decimal-backed",
+            "lib/features/market/loop_candle_chart.dart": (
+                "The model stays `Decimal`",
                 "dimensionless visual ratio",
                 "(value - lowest) / priceSpan",
                 "final firstOpenTime = candles.first.openTime;",
@@ -5900,6 +5662,7 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                 "final minimumBodyHeight = math.min(2.25, plot.height);",
                 ".clamp(plot.top, plot.bottom - minimumBodyHeight)",
                 "visibleTop + minimumBodyHeight",
+                "if (candle.isOpen)",
             ),
             "test/hyperliquid_spot_candle_repository_test.dart": (
                 "posts one bounded public Testnet request and preserves exact OHLCV",
@@ -5916,40 +5679,24 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                 "equal provider coin and interval readers share one in-flight request",
                 "different periods remain isolated family requests",
             ),
-            "test/market_screen_test.dart": (
-                "spot detail switches exact candle periods and refreshes both",
-                "candle failure keeps spot facts visible and retries safely",
-                "empty candle history never falls back to preview data",
-                "candle loading hides all chart facts until data arrives",
-                "marks a final candle still forming at receipt time",
-                "expect(candleRepository.requests, isEmpty);",
-                "spot detail opens C3 with the exact admitted Spot index",
-                "C3 renders exact public Spot candles without preview or execution",
-                "invalid C3 identity issues zero market and candle requests",
-                "C3 never substitutes another market for a stale Spot index",
-                "C3 switches one exact public candle family at a time",
-                "C3 market loading uses one truthful chart presentation",
-                "C3 remains scrollable at 200 percent text in both orientations",
+            "test/s5_market_pages_test.dart": (
+                "the intervals map one to one onto the contract",
+                "the indicator tools are unavailable, not inert controls",
+                "changing the interval requests that exact interval",
+                "an unavailable candle block states its reason",
+                "go_router hands the page back the exact CAIP identity",
             ),
-            "test/spot_market_route_test.dart": (
-                "builds the canonical full-chart location from the exact Spot index",
-                "parses only one canonical full-chart Spot index",
-                "spotIndex=1&spotIndex=2",
-                "spotIndex=1&source=preview",
-                "spotIndex=1#fragment",
-                "https://loop.invalid/market/chart?spotIndex=1",
+            "test/loop_candle_chart_test.dart": (
+                "an empty series paints nothing and does not throw",
+                "a flat series does not divide by a zero price span",
+                "an open bucket repaints when its close moves",
+                "a value survives a precision a double would lose",
             ),
             "test/app_navigation_test.dart": (
                 "production C3 rejects legacy extras and malformed query before requests",
                 "production C3 is full-screen and closes a root link to Market",
                 "expect(find.byType(LoopTabBar), findsNothing)",
                 "find.byTooltip('关闭全屏 K 线')",
-            ),
-            "test/spot_candle_chart_test.dart": (
-                "projects fractional exact candles and exposes chart semantics",
-                "keeps a flat candle visible at 390px and 200 percent text",
-                "projects missing candle intervals as a visible time-axis gap",
-                "keeps a lowest-price doji body inside the plot",
             ),
             "test/development_preview_experience_test.dart": (
                 "expect(candleRepository.fetchCount, 1);",
@@ -6054,13 +5801,13 @@ def check_spot_candle_contract(root: Path) -> list[str]:
     app_path = root / "lib/app.dart"
     if app_path.is_file():
         source = read_text(app_path)
-        route_start = source.find("        path: SpotMarketRoute.chartPath,")
+        route_start = source.find("        path: MarketAssetRoute.chartPath,")
         route_end = source.find("      GoRoute(\n        path: '/market/new',", route_start)
         if route_start < 0 or route_end < 0:
             errors.append("C3 must retain its exact reviewed application route")
         else:
             route_source = source[route_start:route_end]
-            for forbidden in ("state.extra", "'ETH'", '"ETH"'):
+            for forbidden in ("state.extra", "'ETH'", '"ETH"', "spotIndex"):
                 if forbidden in route_source:
                     errors.append(
                         "C3 application route must not recover identity from "
@@ -6073,24 +5820,20 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                     "C3 must remain a root full-screen route outside the five-destination Shell"
                 )
 
-    market_surface_path = root / "lib/features/market/market_screens.dart"
+    market_surface_path = root / "lib/features/market/market_secondary_screens.dart"
     if market_surface_path.is_file():
         source = read_text(market_surface_path)
         chart_start = source.find("class FullChartScreen")
-        chart_end = source.find("class NewPairsScreen", chart_start)
+        chart_end = source.find("class HolderDistributionScreen", chart_start)
         if chart_start < 0 or chart_end < 0:
             errors.append("C3 must retain one bounded full-chart source slice")
         else:
-            chart_source = source[chart_start:chart_end]
+            chart_source = strip_dart_comments(source[chart_start:chart_end])
             for forbidden in (
                 "MarketPreviewData",
-                "MarketCandleChart",
                 "MarketSnapshotState",
                 "snapshotState",
                 "state.extra",
-                "15M",
-                "MACD",
-                "RSI",
                 "SigningReviewSurface",
                 "FilledButton",
             ):
@@ -6099,21 +5842,21 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                         "C3 must remain real, read-only and free of Preview or "
                         f"fake-indicator fallback: `{forbidden}`"
                     )
+            # Step 5 replaced C3's own Close handler with the application
+            # router's `_popOrHome`; the chart tools that have no backend must
+            # still be stated as unavailable rather than rendered inert.
             for required in (
-                "if (context.canPop())",
-                "context.pop();",
-                "context.go('/market');",
+                "onBack: widget.onBack",
+                "chart-full-indicators-unavailable",
+                "MARKET_CHART_TOOLS_DEFERRED",
             ):
                 if required not in chart_source:
                     errors.append(
-                        "C3 Close must pop a pushed chart or return a root deep "
-                        f"link to Market; missing `{required}`"
+                        "C3 must return through the application router and state "
+                        f"its missing chart tools; missing `{required}`"
                     )
 
-    for relative in (
-        "lib/features/market/spot_candle_section.dart",
-        "lib/features/market/spot_candle_chart.dart",
-    ):
+    for relative in ("lib/features/market/loop_candle_chart.dart",):
         path = root / relative
         if not path.is_file():
             continue
@@ -6144,22 +5887,19 @@ def check_wallet_identity_readiness_contract(root: Path) -> list[str]:
                 "r'^0x[0-9a-fA-F]{40}$'",
                 "WalletReadinessMode.invalidAddress",
             ),
-            "lib/features/wallet/wallet_overview_screens.dart": (
-                "ref.watch(loopSessionProvider)",
-                "ref.read(loopSessionProvider.notifier).createWallet()",
-                "ClipboardData(text: address)",
-                "Portfolio remains 开发预览",
-                "label: 'Send preview'",
-                "label: 'Swap preview'",
-                "title: 'Receiving is not enabled'",
-                "label: const Text('No wallet address to copy')",
+            # Step 5 retired `wallet_overview_screens.dart` and the Preview
+            # `WalletManagerScreen` copy (decision 0055). Wallet identity is now
+            # addressed only by the opaque `walletId`, and Receive renders a
+            # real EIP-681 URI, so the Preview clipboard and no-QR locks are
+            # retired with the screens that carried them.
+            "lib/features/wallet/wallet_read_screens.dart": (
+                "class WalletManagerScreen",
+                "walletDirectoryControllerProvider",
+                "地址不是账号标识",
+                "wallet.truncatedAddress",
             ),
             "lib/features/wallet/wallet_management_screens.dart": (
                 "WalletReadiness.fromSession",
-                "Wallet identity is not signing authority",
-                "Additional transaction wallets",
-                "External EVM credentials",
-                "not a LOOP trading wallet",
             ),
             "lib/app.dart": (
                 "state.extra is TransferDraft ? null : '/wallet/send'",
@@ -6194,67 +5934,31 @@ def check_wallet_identity_readiness_contract(root: Path) -> list[str]:
                     "not import the Privy SDK"
                 )
 
-    overview_path = root / "lib/features/wallet/wallet_overview_screens.dart"
-    if overview_path.is_file():
-        source = read_text(overview_path)
-        if "SelectableText(" in source:
+    # Step 5 retired the Preview wallet-identity clipboard slice and the
+    # fixture wallet list. The mounted Wallet pages read the V2 wallet module,
+    # so the remaining rule is that a wallet is addressed only by its opaque
+    # id and never by a client-chosen address literal.
+    read_path = root / "lib/features/wallet/wallet_read_screens.dart"
+    if read_path.is_file():
+        source = strip_dart_comments(read_text(read_path))
+        # The Preview clipboard flow — and its ban on SelectableText — retired
+        # with `wallet_overview_screens.dart`: the receive address is now a
+        # server fact bound to the opaque walletId, not a fabricated identity.
+        for marker in ("Daily wallet", "Trading wallet", "0x71E4", "0x88C2"):
+            if marker in source:
+                errors.append(
+                    "Mounted Wallet must not mix fixture identities with the "
+                    f"server's wallet directory: {marker}"
+                )
+        if re.search(r"(?i)['\"]0x[0-9a-f]{40}['\"]", source):
             errors.append(
-                "Wallet and Receive addresses must copy only through the "
-                "session-revalidated clipboard buttons"
+                "Mounted Wallet identity must come from the server's wallet "
+                "directory, never an address literal"
             )
-        if source.count(
-            "WalletReadiness.fromSession(ref.read(loopSessionProvider))"
-        ) != 4:
-            errors.append(
-                "Wallet and Receive clipboard flows must revalidate the current "
-                "session before and after every platform write"
-            )
-        if source.count("ClipboardData(text: address)") != 2:
-            errors.append(
-                "Wallet and Receive must copy only the exact current address"
-            )
-        clipboard_writes = re.findall(r"ClipboardData\(text:\s*([^\)]+)\)", source)
-        if any(value.strip() != "address" for value in clipboard_writes):
-            errors.append(
-                "Wallet clipboard writes must not use shortened or fixture values"
-            )
-        receive_start = source.find("class ReceiveScreen")
-        if receive_start < 0:
-            errors.append("Receive must preserve its wallet identity boundary")
-        else:
-            receive_source = source[receive_start:]
-            for marker in (
-                "_QrPreview",
-                "qr_code_2_rounded",
-                "SegmentedButton",
-                "ButtonSegment",
-            ):
-                if marker in receive_source:
-                    errors.append(
-                        "Receive must not infer a QR code or supported network "
-                        f"from wallet identity: {marker}"
-                    )
         if "walletSigningGatewayProvider" in source:
             errors.append(
                 "Wallet existence must not enable the signing gateway"
             )
-
-    manager_path = root / "lib/features/wallet/wallet_management_screens.dart"
-    if manager_path.is_file():
-        source = read_text(manager_path)
-        if "SelectableText(" in source:
-            errors.append(
-                "Manage wallet identity must not expose a native selection-copy bypass"
-            )
-        manager_start = source.find("class WalletManagerScreen")
-        manager_end = source.find("class DappBrowserScreen", manager_start)
-        manager_source = source[manager_start:manager_end]
-        for marker in ("Daily wallet", "Trading wallet", "0x71E4", "0x88C2"):
-            if marker in manager_source:
-                errors.append(
-                    "Manage wallets must not mix fixture identities with the "
-                    f"current Privy wallet: {marker}"
-                )
 
     return errors
 
@@ -6277,17 +5981,18 @@ def check_wallet_preview_route_contract(root: Path) -> list[str]:
                 "static const solana",
                 "static const all = <WalletPreviewAsset>",
             ),
+            # Step 5 retired the Preview wallet-asset route (decision 0055):
+            # `/wallet/asset` now carries the canonical CAIP `assetId` and reads
+            # the V2 wallet module, so no typed Preview extra addresses it.
             "lib/app.dart": (
-                "state.extra is WalletPreviewAsset ? null : '/wallet'",
-                "AssetDetailScreen(asset: state.extra! as WalletPreviewAsset)",
+                "path: MarketAssetRoute.walletAssetPath",
+                "MarketAssetRoute.walletAssetPath,\n          ),",
                 "state.extra is SigningIntent ? null : '/wallet'",
                 "SigningReviewPage(intent: state.extra! as SigningIntent)",
             ),
-            "lib/features/wallet/wallet_overview_screens.dart": (
-                "for (final asset in WalletPreviewAsset.all)",
-                "context.push('/wallet/asset', extra: asset)",
-                "Asset activity unavailable",
-                "No provider balance or transaction-history request was made",
+            "lib/features/wallet/wallet_read_screens.dart": (
+                "class WalletAssetScreen",
+                "MarketAssetRoute.isCanonical(assetId)",
             ),
             "lib/features/wallet/wallet_management_screens.dart": (
                 "class DappBrowserScreen extends ConsumerStatefulWidget",
@@ -6298,7 +6003,6 @@ def check_wallet_preview_route_contract(root: Path) -> list[str]:
             ),
             "test/app_navigation_test.dart": (
                 "orphan Wallet review and asset routes fail closed",
-                "asset detail consumes the exact typed preview asset",
             ),
             "test/wallet_preview_route_truthfulness_test.dart": (
                 "DApp preview uses only the current wallet identity and typed domain",
@@ -6320,14 +6024,10 @@ def check_wallet_preview_route_contract(root: Path) -> list[str]:
                     f"{marker}"
                 )
 
-    overview_path = root / "lib/features/wallet/wallet_overview_screens.dart"
-    if overview_path.is_file():
-        source = read_text(overview_path)
-        if "context.push('/wallet/asset')" in source:
-            errors.append(
-                "Wallet asset rows must carry the exact typed Preview asset"
-            )
-        detail_start = source.find("class AssetDetailScreen")
+    read_path = root / "lib/features/wallet/wallet_read_screens.dart"
+    if read_path.is_file():
+        source = strip_dart_comments(read_text(read_path))
+        detail_start = source.find("class WalletAssetScreen")
         detail_end = source.find("class ReceiveScreen", detail_start)
         detail_source = source[detail_start:detail_end]
         for marker in ("_AssetActivity", "Average cost", "Unrealized PnL"):
@@ -6683,13 +6383,10 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
                 "warning: step.warning",
                 "snapshot.withNeedsClaim(value)",
             ),
+            # Step 5 retired the Preview wallet-history filter and the testnet
+            # toggle with `TransactionHistoryScreen` and `NetworksScreen`
+            # (decision 0055); both pages now read the V2 wallet module.
             "lib/features/wallet/wallet_management_screens.dart": (
-                "WalletPreviewActivity.filteredBy(filter)",
-                "WalletPreviewActivityFilter.values",
-                "if (testnets)",
-                "setState(() => testnets = value)",
-                "name: 'Hyperliquid Testnet'",
-                "Market public reads only · not wallet network support",
                 "child: const Text('Revocation unavailable')",
                 "No allowance or wallet balance was read",
             ),
@@ -6746,12 +6443,6 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
     management_path = root / "lib/features/wallet/wallet_management_screens.dart"
     if management_path.is_file():
         source = read_text(management_path)
-        history_start = source.find("class TransactionHistoryScreen")
-        history_end = source.find("class WalletManagerScreen", history_start)
-        history_source = source[history_start:history_end]
-        if "WalletPreviewActivity.filteredBy(filter)" not in history_source:
-            errors.append("Wallet History selection must drive the rendered rows")
-
         approvals_start = source.find("class ApprovalsScreen")
         approvals_end = source.find("class DappListScreen", approvals_start)
         approvals_source = source[approvals_start:approvals_end]
@@ -6767,12 +6458,6 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
             )
         if re.search(r"\bonPressed\s*:(?!\s*null\b)", approvals_source):
             errors.append("Wallet allowance Preview cannot add an enabled action")
-
-        networks_start = source.find("class NetworksScreen")
-        networks_end = source.find("class ProtectionScreen", networks_start)
-        networks_source = source[networks_start:networks_end]
-        if "if (testnets)" not in networks_source:
-            errors.append("Wallet testnet selection must drive only its Preview row")
 
     trade_path = root / "lib/features/wallet/trade_screens.dart"
     if trade_path.is_file():
@@ -7891,10 +7576,12 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             "class MiningScreen",
             "D19",
         ),
-        "lib/features/wallet/wallet_overview_screens.dart": (
-            "ValueKey<String>('wallet-pay-unavailable')",
-            "ValueKey<String>('wallet-pay-availability-action')",
-            "context.push('/pay')",
+        # Step 5 moved the Wallet destination to the V2 read-only screens; Pay
+        # is now stated as a deferred funds action instead of offering an
+        # availability action that leads nowhere.
+        "lib/features/wallet/wallet_read_screens.dart": (
+            "ValueKey<String>('wallet-funds-actions-unavailable')",
+            "WALLET_FUNDS_ACTIONS_DEFERRED",
         ),
     }
     for relative, fragments in normalized_contracts.items():
@@ -8505,6 +8192,9 @@ def check_notification_contract(root: Path) -> list[str]:
             "static const String chatMessageKind = 'chat.message'",
             "static const String audioRoomActivityKind = 'audio_room.activity'",
             "static const String systemNoticeKind = 'system.notice'",
+            "static const String priceAlertTriggeredKind = 'price_alert.triggered'",
+            "MarketAssetRoute.isCanonical(rawAssetId)",
+            "String get location => MarketAssetRoute.token(assetId)",
             "'recipient_stream_user_id'",
             "LoopNotificationIngress.foreground",
             "LoopNotificationIngress.background",
@@ -8565,7 +8255,7 @@ def check_notification_contract(root: Path) -> list[str]:
         )
         if kind_members != NOTIFICATION_KIND_MEMBERS:
             errors.append(
-                "notification kinds must stay on the reviewed three-kind allowlist: "
+                "notification kinds must stay on the reviewed four-kind allowlist: "
                 f"expected {sorted(NOTIFICATION_KIND_MEMBERS)}, found {sorted(kind_members)}"
             )
 
@@ -8577,7 +8267,7 @@ def check_notification_contract(root: Path) -> list[str]:
         )
         if intent_classes != NOTIFICATION_INTENT_CLASSES:
             errors.append(
-                "notification intents must stay on the reviewed three-class allowlist: "
+                "notification intents must stay on the reviewed four-class allowlist: "
                 f"expected {sorted(NOTIFICATION_INTENT_CLASSES)}, "
                 f"found {sorted(intent_classes)}"
             )
@@ -8900,6 +8590,125 @@ def check_notification_contract(root: Path) -> list[str]:
     return errors
 
 
+def check_s5_truth_contract(root: Path) -> list[str]:
+    """Lock the step-5 truth rules recorded by decision 0055."""
+
+    errors: list[str] = []
+
+    # 1. Every S5 port stays fail-closed until a real adapter is mounted.
+    for relative, provider, port, unavailable in S5_PORT_DEFAULTS:
+        path = root / relative
+        if not path.is_file():
+            errors.append(f"missing S5 port: {relative}")
+            continue
+        source = strip_dart_comments(read_text(path))
+        default_pattern = re.compile(
+            rf"final\s+{re.escape(provider)}\s*=\s*Provider<{re.escape(port)}>\s*"
+            rf"\(\s*\(\s*ref\s*\)\s*=>\s*const\s+{re.escape(unavailable)}\s*"
+            r"\(\s*\)\s*,?\s*\)\s*;",
+            re.DOTALL,
+        )
+        if default_pattern.search(source) is None:
+            errors.append(
+                f"{provider} must default directly to const {unavailable}(); an "
+                "S5 port is unavailable until lib/main.dart mounts its adapter"
+            )
+
+    # 2. The capability enum follows the contract's 27 ids, in contract order.
+    meta_path = root / S5_CAPABILITY_META_PATH
+    if meta_path.is_file():
+        meta_source = strip_dart_comments(read_text(meta_path))
+        enum_match = re.search(
+            r"enum\s+LoopV2CapabilityId\s*\{(?P<body>.*?);",
+            meta_source,
+            re.DOTALL,
+        )
+        declared = (
+            tuple(
+                member
+                for member, _, wire in re.findall(
+                    r"\b(\w+)\((['\"])([^'\"]*)\2\)",
+                    enum_match.group("body"),
+                )
+                if member == wire
+            )
+            if enum_match
+            else ()
+        )
+        if declared != S5_CAPABILITY_IDS:
+            errors.append(
+                "LoopV2CapabilityId must list exactly the contract's "
+                f"{len(S5_CAPABILITY_IDS)} ids in contract order; found "
+                f"{len(declared)}"
+            )
+
+    # 3. The Swap entry point is gated on `capability.swappable` and nothing
+    #    else. The backend pins it to false until D15.
+    token_path = root / S5_TOKEN_SURFACE_PATH
+    if token_path.is_file():
+        token_source = strip_dart_comments(read_text(token_path))
+        gate_at = token_source.find(S5_SWAP_GATE)
+        entry_at = token_source.find(S5_SWAP_ENTRY_KEY)
+        if (
+            gate_at < 0
+            or entry_at < gate_at
+            or token_source.count("swappable") != 1
+            or token_source.count(S5_SWAP_ENTRY_KEY) != 1
+        ):
+            errors.append(
+                "the Swap entry point must be gated on exactly one "
+                f"`{S5_SWAP_GATE}`"
+            )
+        else:
+            guarded = token_source[gate_at + len(S5_SWAP_GATE) : entry_at]
+            for forbidden in ("&&", "||", "if (", "isPreview", "canUse"):
+                if forbidden in guarded:
+                    errors.append(
+                        "the Swap entry point must be gated on "
+                        "`capability.swappable` and nothing else; found "
+                        f"`{forbidden}`"
+                    )
+
+    # 4. `lib/integrations/hyperliquid/**` stays unmounted history.
+    mounted_paths = [root / "lib/app.dart", root / "lib/main.dart"]
+    features_root = root / "lib" / "features"
+    if features_root.is_dir():
+        mounted_paths.extend(sorted(features_root.rglob("*.dart")))
+    exempt_root = root / S5_HYPERLIQUID_UNMOUNTED_EXEMPT_ROOT
+    for path in mounted_paths:
+        if not path.is_file() or exempt_root in path.parents:
+            continue
+        executable = strip_dart_comments(read_text(path))
+        if re.search(
+            r"^\s*import\s+['\"]" + re.escape(S5_HYPERLIQUID_IMPORT_ROOT),
+            executable,
+            re.MULTILINE,
+        ):
+            errors.append(
+                f"{path.relative_to(root)} imports the retained Hyperliquid "
+                "adapters; lib/integrations/hyperliquid/** must stay unmounted "
+                "history"
+            )
+
+    # 5. The receive QR encoder added no dependency.
+    qr_path = root / S5_QR_ENCODER_PATH
+    if qr_path.is_file():
+        qr_source = strip_dart_comments(read_text(qr_path))
+        qr_imports = frozenset(
+            " ".join(match.group("body").split())
+            for match in re.finditer(
+                r"^\s*import\s+(?P<body>[^;]+);", qr_source, re.MULTILINE
+            )
+        )
+        if qr_imports != S5_QR_ENCODER_IMPORTS:
+            errors.append(
+                "the receive QR encoder must import nothing beyond "
+                f"{sorted(S5_QR_ENCODER_IMPORTS)}, found {sorted(qr_imports)}"
+            )
+
+    return errors
+
+
 def check_providerless_application_contract(root: Path) -> list[str]:
     """Keep transport and deterministic fakes outside production features."""
 
@@ -8909,16 +8718,24 @@ def check_providerless_application_contract(root: Path) -> list[str]:
         for path in sorted(features_root.rglob("*.dart")):
             executable = strip_dart_comments(read_text(path))
             relative = path.relative_to(root)
+            executable_code = strip_dart_comments_and_strings(read_text(path))
             for marker in FEATURE_TRANSPORT_FORBIDDEN_IMPORTS:
                 if marker in executable:
                     errors.append(
                         f"{relative} imports transport `{marker}`; providerless feature "
                         "logic must depend on a narrow port"
                     )
-            if FEATURE_BACKEND_ROUTE_PATTERN.search(executable):
+            if FEATURE_TRANSPORT_FORBIDDEN_TYPE_PATTERN.search(executable_code):
                 errors.append(
-                    f"{relative} contains a LOOP backend route literal; `/v1/` paths "
-                    "belong only in integration adapters"
+                    f"{relative} names the transport type `Dio`; feature logic must "
+                    "depend on a narrow port"
+                )
+            route_literal = FEATURE_BACKEND_ROUTE_PATTERN.search(executable)
+            if route_literal:
+                version = route_literal.group("version")
+                errors.append(
+                    f"{relative} contains a LOOP backend route literal; `/v{version}/` "
+                    "paths belong only in integration adapters"
                 )
 
     production_main = root / "lib" / "main.dart"
@@ -8965,31 +8782,9 @@ def check_watchlist_application_contract(root: Path) -> list[str]:
                 + ", ".join(volatile_members)
             )
 
-    preview_root = root / WATCHLIST_PREVIEW_ROOT_PATH
-    if preview_root.is_file():
-        preview_code = strip_dart_comments_and_strings(read_text(preview_root))
-        if len(WATCHLIST_MEMORY_CONSTRUCTION_PATTERN.findall(preview_code)) != 1:
-            errors.append(
-                "lib/main_preview.dart must compose exactly one explicit "
-                "MemoryWatchlistGateway"
-            )
-
-    lib_root = root / "lib"
-    if lib_root.is_dir():
-        allowed = frozenset(
-            {WATCHLIST_MEMORY_GATEWAY_PATH, WATCHLIST_PREVIEW_ROOT_PATH}
-        )
-        for path in sorted(lib_root.rglob("*.dart")):
-            relative = path.relative_to(root)
-            if relative in allowed:
-                continue
-            executable_code = strip_dart_comments_and_strings(read_text(path))
-            if WATCHLIST_MEMORY_CONSTRUCTION_PATTERN.search(executable_code):
-                errors.append(
-                    f"{relative} constructs MemoryWatchlistGateway; the fake may "
-                    "only be defined by its integration and composed by "
-                    "lib/main_preview.dart"
-                )
+    # The Preview Watchlist adapter and its composition rule retired with
+    # step 5; the port's fail-closed default is guarded by
+    # `check_s5_truth_contract`.
     return errors
 
 
@@ -9364,8 +9159,18 @@ def check_privacy_application_contract(root: Path) -> list[str]:
                 )
 
     profile_feature_root = root / "lib" / "features" / "profile"
+    # Step 5 gave `notif-settings` its own contract: it commits under a version
+    # CAS and reports the resource the server returned, which the Privacy
+    # commit rule — written for a surface with no committed resource at all —
+    # would misread. `check_notification_preferences_application_contract` owns
+    # that page's copy.
+    notification_preferences_root = (
+        profile_feature_root / "notification_preferences"
+    )
     if profile_feature_root.is_dir():
         for path in sorted(profile_feature_root.rglob("*.dart")):
+            if notification_preferences_root in path.parents:
+                continue
             source = read_text(path)
             if contains_positive_privacy_commit_language(source):
                 errors.append(
@@ -9379,195 +9184,78 @@ def check_privacy_application_contract(root: Path) -> list[str]:
 
 
 def check_notification_preferences_application_contract(root: Path) -> list[str]:
-    """Keep H9 preferences exact, fail-closed, and delivery-neutral."""
+    """Keep H9 preferences exact, fail-closed, and delivery-neutral.
+
+    Step 5 retired the V1 module (gateway, models, controller and Preview
+    adapter) with decision 0055: `notif-settings` is now the V2 ten-category
+    page behind `NotificationsGateway`, whose fail-closed default is guarded by
+    `check_s5_truth_contract`. What survives here is the copy contract.
+    """
 
     errors: list[str] = []
-    gateway_path = root / NOTIFICATION_PREFERENCES_GATEWAY_PATH
-    if gateway_path.is_file():
-        gateway = strip_dart_comments(read_text(gateway_path))
-        default_pattern = re.compile(
-            r"final\s+notificationPreferencesGatewayProvider\s*=\s*"
-            r"Provider<NotificationPreferencesGateway>\s*"
-            r"\(\s*\(\s*ref\s*\)\s*=>\s*const\s+"
-            r"UnavailableNotificationPreferencesGateway\s*"
-            r"\(\s*\)\s*,?\s*\)\s*;",
-            re.DOTALL,
-        )
-        if default_pattern.search(gateway) is None:
-            errors.append(
-                "Notification Preferences production provider must default "
-                "directly to const UnavailableNotificationPreferencesGateway()"
-            )
-
-    models_path = root / NOTIFICATION_PREFERENCES_MODELS_PATH
-    if models_path.is_file():
-        models_source = strip_dart_comments(read_text(models_path))
-        models_code = strip_dart_comments_and_strings(models_source)
-
-        event_members = dart_enum_members(
-            models_code, "NotificationPreferenceEvent"
-        )
-        expected_event_members = set(NOTIFICATION_PREFERENCE_EVENT_WIRE_VALUES)
-        if event_members != expected_event_members:
-            errors.append(
-                "NotificationPreferenceEvent must contain exactly "
-                "priceAlertTriggered, providerActivityProjected, "
-                "securityNotice, and supportUpdate"
-            )
-        event_forward, event_reverse, event_rejects_unknown = (
-            dart_enum_wire_mappings(models_source, "NotificationPreferenceEvent")
-        )
-        expected_event_reverse = {
-            wire_value: member
-            for member, wire_value in NOTIFICATION_PREFERENCE_EVENT_WIRE_VALUES.items()
-        }
-        if (
-            event_forward != NOTIFICATION_PREFERENCE_EVENT_WIRE_VALUES
-            or event_reverse != expected_event_reverse
-            or not event_rejects_unknown
-        ):
-            errors.append(
-                "NotificationPreferenceEvent wire values must map exactly in "
-                "both directions and reject unknown values"
-            )
-
-        delivery_members = dart_enum_members(
-            models_code, "NotificationDeliveryState"
-        )
-        if delivery_members != set(NOTIFICATION_DELIVERY_STATE_WIRE_VALUES):
-            errors.append(
-                "NotificationDeliveryState must contain only unavailable"
-            )
-        delivery_forward, delivery_reverse, delivery_rejects_unknown = (
-            dart_enum_wire_mappings(models_source, "NotificationDeliveryState")
-        )
-        expected_delivery_reverse = {
-            wire_value: member
-            for member, wire_value in NOTIFICATION_DELIVERY_STATE_WIRE_VALUES.items()
-        }
-        if (
-            delivery_forward != NOTIFICATION_DELIVERY_STATE_WIRE_VALUES
-            or delivery_reverse != expected_delivery_reverse
-            or not delivery_rejects_unknown
-        ):
-            errors.append(
-                "NotificationDeliveryState wire values must map only "
-                "unavailable in both directions and reject unknown values"
-            )
-
-        actual_values_fields = dart_class_fields(
-            models_code, "NotificationPreferenceValues"
-        )
-        expected_values_fields = {
-            ("final", "bool", member)
-            for member in NOTIFICATION_PREFERENCE_EVENT_WIRE_VALUES
-        }
-        if actual_values_fields != expected_values_fields:
-            rendered_fields = ", ".join(
-                f"{modifiers} {field_type} {name}".strip()
-                for modifiers, field_type, name in sorted(
-                    actual_values_fields or set()
-                )
-            ) or "none"
-            errors.append(
-                "NotificationPreferenceValues fields must be exactly four "
-                "final bool fields matching the fixed events; found: "
-                + rendered_fields
-            )
-
-        actual_resource_fields = dart_class_fields(
-            models_code, "NotificationPreferencesResource"
-        )
-        expected_resource_fields = {
-            ("final", "int", "version"),
-            ("final", "NotificationPreferenceValues", "values"),
-            ("final", "NotificationDeliveryState", "delivery"),
-        }
-        if actual_resource_fields != expected_resource_fields:
-            rendered_fields = ", ".join(
-                f"{modifiers} {field_type} {name}".strip()
-                for modifiers, field_type, name in sorted(
-                    actual_resource_fields or set()
-                )
-            ) or "none"
-            errors.append(
-                "NotificationPreferencesResource fields must be exactly final "
-                "int version, final NotificationPreferenceValues values, and "
-                "final NotificationDeliveryState delivery; found: "
-                + rendered_fields
-            )
-
     surface_path = root / NOTIFICATION_PREFERENCES_SURFACE_PATH
-    if surface_path.is_file():
-        surface = strip_dart_comments(read_text(surface_path))
-        executable_surface = strip_dart_comments_and_strings(surface)
-        visible_strings = dart_concatenated_string_contents(surface)
-        for marker in NOTIFICATION_PREFERENCES_LEGACY_MARKERS:
-            present = (
-                marker in executable_surface
-                if marker.startswith("_")
-                else any(marker in content for content in visible_strings)
-            )
-            if present:
-                errors.append(
-                    "Notification Preferences contains removed local or "
-                    "non-contract H9 state/copy: " + marker
-                )
-        if contains_positive_notification_preferences_language(surface):
+    if not surface_path.is_file():
+        return [
+            "missing notification preferences surface: "
+            f"{NOTIFICATION_PREFERENCES_SURFACE_PATH}"
+        ]
+
+    surface = strip_dart_comments(read_text(surface_path))
+    executable_surface = strip_dart_comments_and_strings(surface)
+    visible_strings = dart_concatenated_string_contents(surface)
+    for marker in NOTIFICATION_PREFERENCES_LEGACY_MARKERS:
+        present = (
+            marker in executable_surface
+            if marker.startswith("_")
+            else any(marker in content for content in visible_strings)
+        )
+        if present:
             errors.append(
-                "Notification Preferences contains positive save or delivery "
-                "language; a stored intent never proves provider delivery"
+                "Notification Preferences contains removed local or "
+                "non-contract H9 state/copy: " + marker
             )
 
-    feature_root = (
-        root / "lib" / "features" / "profile" / "notification_preferences"
-    )
+    feature_root = root / "lib" / "features" / "profile" / "notification_preferences"
     if feature_root.is_dir():
         for path in sorted(feature_root.rglob("*.dart")):
-            if contains_positive_notification_preferences_language(
-                read_text(path)
-            ):
-                errors.append(
-                    f"{path.relative_to(root)} contains positive save or "
-                    "delivery language; a stored intent never proves "
-                    "provider delivery"
-                )
-
-    preview_root = root / NOTIFICATION_PREFERENCES_PREVIEW_ROOT_PATH
-    if preview_root.is_file():
-        preview_code = strip_dart_comments_and_strings(read_text(preview_root))
-        if (
-            len(
-                NOTIFICATION_PREFERENCES_MEMORY_CONSTRUCTION_PATTERN.findall(
-                    preview_code
-                )
-            )
-            != 1
-        ):
-            errors.append(
-                "lib/main_preview.dart must compose exactly one explicit "
-                "MemoryNotificationPreferencesGateway"
-            )
-
-    lib_root = root / "lib"
-    if lib_root.is_dir():
-        allowed = frozenset({
-            NOTIFICATION_PREFERENCES_MEMORY_GATEWAY_PATH,
-            NOTIFICATION_PREFERENCES_PREVIEW_ROOT_PATH,
-        })
-        for path in sorted(lib_root.rglob("*.dart")):
+            source = read_text(path)
             relative = path.relative_to(root)
-            if relative in allowed:
-                continue
-            executable_code = strip_dart_comments_and_strings(read_text(path))
-            if NOTIFICATION_PREFERENCES_MEMORY_REFERENCE_PATTERN.search(
-                executable_code
-            ):
+            # A delivery claim has no evidence at all: `push` is permanently
+            # `PUSH_RUNTIME_DEFERRED`, so nothing may say a notification is
+            # enabled, connected, or on its way.
+            if contains_positive_notification_delivery_language(source):
                 errors.append(
-                    f"{relative} references MemoryNotificationPreferencesGateway; "
-                    "the fake may only be defined by its integration and "
-                    "composed once by lib/main_preview.dart"
+                    f"{relative} contains positive delivery language; "
+                    "PUSH_RUNTIME_DEFERRED never becomes a delivery claim"
                 )
+            # A save claim is allowed only where it reports the resource the
+            # server committed under the version CAS, on a page that also
+            # states delivery is unavailable.
+            if contains_positive_notification_preferences_commit_language(
+                source
+            ) and not notification_preferences_commit_evidence(source):
+                errors.append(
+                    f"{relative} announces a save without a committed "
+                    "resource; a stored intent never proves a commit"
+                )
+
+    # The reviewed page must keep both halves of that truth visible.
+    for marker in NOTIFICATION_PREFERENCES_DELIVERY_TRUTH_MARKERS:
+        if marker not in surface:
+            errors.append(
+                "Notification Preferences must state that delivery is "
+                f"unavailable; missing `{marker}`"
+            )
+    for fragment in (
+        "LoopV2CapabilityId.notificationsFeed",
+        "notificationPreferencesControllerProvider",
+        "resource.lockedFor(category)",
+    ):
+        if fragment not in surface:
+            errors.append(
+                "Notification Preferences is missing its reviewed V2 contract "
+                f"value `{fragment}`"
+            )
 
     errors.extend(
         check_behavior_test_evidence(
@@ -9575,6 +9263,7 @@ def check_notification_preferences_application_contract(root: Path) -> list[str]
         )
     )
     return errors
+
 
 
 def check_perp_positions_application_contract(root: Path) -> list[str]:
@@ -10745,6 +10434,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_production_chat_audio_room_entry(root))
     errors.extend(check_friend_frontend_contract(root))
     errors.extend(check_notification_contract(root))
+    errors.extend(check_s5_truth_contract(root))
     errors.extend(check_providerless_application_contract(root))
     errors.extend(check_watchlist_application_contract(root))
     errors.extend(check_profile_application_contract(root))
@@ -10773,7 +10463,8 @@ def main() -> int:
     print(
         "Harness check passed: profile, five-destination V2 contract, "
         "V2 community truth, pins, "
-        "Spot-only product, New Pairs exact-Preview truth, Chat snapshot, Preview request truth and exact conversation identity, Home portfolio truth, security capability truth, device-local display preferences, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
+        "Spot-only product, New Pairs source-scoped truth, Chat snapshot, Preview request truth and exact conversation identity, Home portfolio truth, security capability truth, device-local display preferences, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
+        "S5 chain/market/wallet-read truth, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, and secret rules are consistent."
     )

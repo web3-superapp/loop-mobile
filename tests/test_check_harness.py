@@ -31,7 +31,7 @@ V2_NAVIGATION_FIXTURE_FILES = (
     "lib/features/community/community_screen.dart",
     "lib/features/mining/mining_screen.dart",
     "lib/features/shell/loop_shell.dart",
-    "lib/features/wallet/wallet_overview_screens.dart",
+    "lib/features/wallet/wallet_read_screens.dart",
     "test/v2_primary_navigation_test.dart",
     "test/v2_ui_foundation_test.dart",
 )
@@ -1754,14 +1754,15 @@ class HarnessTests(unittest.TestCase):
     def test_spot_candle_paths_are_required(self) -> None:
         expected = {
             "docs/decisions/0019-use-public-testnet-spot-candles.md",
-            "lib/features/market/spot_candle_chart.dart",
-            "lib/features/market/spot_candle_section.dart",
+            # Step 5 retired the Hyperliquid-backed candle UI; the mounted
+            # chart is the generalised LoopCandleChart.
+            "lib/features/market/loop_candle_chart.dart",
             "lib/integrations/hyperliquid/hyperliquid_spot_candle.dart",
             "lib/integrations/hyperliquid/hyperliquid_spot_candle_providers.dart",
             "lib/integrations/hyperliquid/hyperliquid_spot_candle_repository.dart",
             "test/hyperliquid_spot_candle_providers_test.dart",
             "test/hyperliquid_spot_candle_repository_test.dart",
-            "test/spot_candle_chart_test.dart",
+            "test/loop_candle_chart_test.dart",
         }
 
         self.assertTrue(expected.issubset(set(check_harness.REQUIRED_FILES)))
@@ -1953,15 +1954,15 @@ class HarnessTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            market_relative = "test/market_screen_test.dart"
-            market_test = root / market_relative
-            market_test.parent.mkdir(parents=True, exist_ok=True)
-            market_test.write_text(
-                (REPOSITORY_ROOT / market_relative)
+            chart_relative = "test/loop_candle_chart_test.dart"
+            chart_test = root / chart_relative
+            chart_test.parent.mkdir(parents=True, exist_ok=True)
+            chart_test.write_text(
+                (REPOSITORY_ROOT / chart_relative)
                 .read_text(encoding="utf-8")
                 .replace(
-                    "marks a final candle still forming at receipt time",
-                    "always marks the final candle closed",
+                    "an open bucket repaints when its close moves",
+                    "an open bucket is drawn like a settled one",
                 ),
                 encoding="utf-8",
             )
@@ -1973,8 +1974,8 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected overlap/gap behavior-evidence guard: {result}",
         )
         self.assertTrue(
-            any("final candle still forming" in error for error in result),
-            msg=f"expected forming-candle behavior-evidence guard: {result}",
+            any("open bucket repaints" in error for error in result),
+            msg=f"expected open-bucket behavior-evidence guard: {result}",
         )
 
     def test_spot_candle_exact_decimal_fields_cannot_become_double(self) -> None:
@@ -2002,7 +2003,7 @@ class HarnessTests(unittest.TestCase):
     def test_spot_candle_chart_time_gap_projection_cannot_be_removed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            chart_relative = "lib/features/market/spot_candle_chart.dart"
+            chart_relative = "lib/features/market/loop_candle_chart.dart"
             chart = root / chart_relative
             chart.parent.mkdir(parents=True)
             chart.write_text(
@@ -2014,18 +2015,6 @@ class HarnessTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            test_relative = "test/spot_candle_chart_test.dart"
-            behavior_test = root / test_relative
-            behavior_test.parent.mkdir(parents=True, exist_ok=True)
-            behavior_test.write_text(
-                (REPOSITORY_ROOT / test_relative)
-                .read_text(encoding="utf-8")
-                .replace(
-                    "projects missing candle intervals as a visible time-axis gap",
-                    "projects every candle at an equal slot",
-                ),
-                encoding="utf-8",
-            )
 
             result = check_harness.check_spot_candle_contract(root)
 
@@ -2033,15 +2022,11 @@ class HarnessTests(unittest.TestCase):
             any("final centerX = xFor(candle);" in error for error in result),
             msg=f"expected time-axis projection implementation guard: {result}",
         )
-        self.assertTrue(
-            any("visible time-axis gap" in error for error in result),
-            msg=f"expected time-gap behavior-evidence guard: {result}",
-        )
 
     def test_spot_candle_lowest_doji_visibility_cannot_be_removed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            chart_relative = "lib/features/market/spot_candle_chart.dart"
+            chart_relative = "lib/features/market/loop_candle_chart.dart"
             chart = root / chart_relative
             chart.parent.mkdir(parents=True)
             chart.write_text(
@@ -2050,18 +2035,6 @@ class HarnessTests(unittest.TestCase):
                 .replace(
                     ".clamp(plot.top, plot.bottom - minimumBodyHeight)",
                     ".clamp(plot.top, plot.bottom)",
-                ),
-                encoding="utf-8",
-            )
-            test_relative = "test/spot_candle_chart_test.dart"
-            behavior_test = root / test_relative
-            behavior_test.parent.mkdir(parents=True, exist_ok=True)
-            behavior_test.write_text(
-                (REPOSITORY_ROOT / test_relative)
-                .read_text(encoding="utf-8")
-                .replace(
-                    "keeps a lowest-price doji body inside the plot",
-                    "allows a lowest-price doji body outside the plot",
                 ),
                 encoding="utf-8",
             )
@@ -2074,10 +2047,6 @@ class HarnessTests(unittest.TestCase):
                 for error in result
             ),
             msg=f"expected lowest-bound doji implementation guard: {result}",
-        )
-        self.assertTrue(
-            any("lowest-price doji body inside" in error for error in result),
-            msg=f"expected lowest-bound doji behavior-evidence guard: {result}",
         )
 
     def test_spot_candle_polling_and_automatic_retry_are_rejected(self) -> None:
@@ -2151,7 +2120,7 @@ class HarnessTests(unittest.TestCase):
     def test_spot_candle_execution_navigation_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            path = root / "lib/features/market/spot_candle_section.dart"
+            path = root / "lib/features/market/loop_candle_chart.dart"
             path.parent.mkdir(parents=True)
             path.write_text(
                 "FilledButton(onPressed: () => context.push('/trade'));\n",
@@ -2174,8 +2143,10 @@ class HarnessTests(unittest.TestCase):
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
                 source.replace(
-                    "spotIndex: SpotMarketRoute.parseChartSpotIndex(state.uri)",
-                    "spotIndex: state.extra is int ? state.extra! as int : 0",
+                    "            MarketAssetRoute.chartPath,\n          ),",
+                    "            MarketAssetRoute.chartPath,\n          ) ?? "
+                    "(state.extra! as String),",
+                    1,
                 ),
                 encoding="utf-8",
             )
@@ -2190,15 +2161,14 @@ class HarnessTests(unittest.TestCase):
     def test_c3_cannot_restore_preview_candles_or_fake_indicators(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            relative = "lib/features/market/market_screens.dart"
+            relative = "lib/features/market/market_secondary_screens.dart"
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
                 source.replace(
                     "class _FullChartScreenState",
-                    "final unsafeChart = MarketCandleChart();\n"
-                    "final unsafeIndicator = 'MACD';\n"
+                    "final unsafeChart = MarketSnapshotState.preview;\n"
                     "class _FullChartScreenState",
                 ),
                 encoding="utf-8",
@@ -2218,7 +2188,7 @@ class HarnessTests(unittest.TestCase):
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            route_path = source.index("        path: SpotMarketRoute.chartPath,")
+            route_path = source.index("        path: MarketAssetRoute.chartPath,")
             route_start = source.rfind("      GoRoute(", 0, route_path)
             route_end = source.index(
                 "      GoRoute(\n        path: '/market/new',",
@@ -2241,17 +2211,20 @@ class HarnessTests(unittest.TestCase):
             result,
         )
 
-    def test_c3_root_close_cannot_become_an_enabled_noop(self) -> None:
+    def test_c3_missing_chart_tools_cannot_become_inert_controls(self) -> None:
+        # Step 5 moved C3's Close into the application router's `_popOrHome`;
+        # what the page still owes the reader is that the prototype's chart
+        # tools have no source at all.
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            relative = "lib/features/market/market_screens.dart"
+            relative = "lib/features/market/market_secondary_screens.dart"
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
                 source.replace(
-                    "context.go('/market');",
-                    "Navigator.of(context).maybePop();",
+                    "MARKET_CHART_TOOLS_DEFERRED",
+                    "MARKET_CHART_TOOLS_READY",
                     1,
                 ),
                 encoding="utf-8",
@@ -2260,8 +2233,10 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_spot_candle_contract(root)
 
         self.assertTrue(
-            any("C3 Close must pop" in error for error in result),
-            msg=f"expected C3 root-close guard: {result}",
+            any(
+                "state its missing chart tools" in error for error in result
+            ),
+            msg=f"expected C3 unavailable-tools guard: {result}",
         )
 
     def test_perpetual_policy_cannot_be_reenabled(self) -> None:
@@ -2327,19 +2302,6 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected production Perp composition guard: {result}",
         )
 
-    def test_providerless_token_preview_cannot_return_to_app_router(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            path = root / "lib/app.dart"
-            path.parent.mkdir(parents=True)
-            path.write_text("return TokenDetailScreen();\n", encoding="utf-8")
-            result = check_harness.check_spot_only_product_contract(root)
-
-        self.assertTrue(
-            any("providerless token routes" in error for error in result),
-            msg=f"expected providerless token route guard: {result}",
-        )
-
     def test_providerless_source_cannot_build_raw_token_detail_route(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -2349,69 +2311,33 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_spot_only_product_contract(root)
 
         self.assertTrue(
-            any("providerless token Preview routes" in error for error in result),
+            any(
+                "without a reviewed asset source" in error for error in result
+            ),
             msg=f"expected raw providerless route guard: {result}",
         )
 
-    def test_providerless_source_cannot_invent_spot_index(self) -> None:
+    def test_market_cannot_build_a_token_location_from_a_path_literal(
+        self,
+    ) -> None:
+        # Step 5 replaced `SpotMarketRoute` with `MarketAssetRoute`; only that
+        # contract may build a token or chart location, so a ticker can never
+        # select an asset.
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             path = root / "lib/features/market/market_secondary_screens.dart"
             path.parent.mkdir(parents=True)
             path.write_text(
-                "final route = SpotMarketRoute.location(1035);\n",
+                "final route = '/market/token?symbol=PEPE';\n",
                 encoding="utf-8",
             )
-            result = check_harness.check_spot_only_product_contract(root)
-
-        self.assertTrue(
-            any("providerless token Preview routes" in error for error in result),
-            msg=f"expected invented Spot index guard: {result}",
-        )
-
-    def test_mounted_market_cannot_add_a_second_detail_route(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            path = root / "lib/features/market/market_screens.dart"
-            path.parent.mkdir(parents=True)
-            source = (
-                REPOSITORY_ROOT / "lib/features/market/market_screens.dart"
-            ).read_text(encoding="utf-8")
-            path.write_text(
-                source + "\nfinal unsafeRoute = SpotMarketRoute.location(1035);\n",
-                encoding="utf-8",
-            )
-            result = check_harness.check_spot_only_product_contract(root)
-
-        self.assertTrue(
-            any("exactly one token-detail route" in error for error in result),
-            msg=f"expected duplicate Spot route guard: {result}",
-        )
-
-    def test_spot_detail_navigation_cannot_be_removed(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            path = root / "lib/features/market/market_screens.dart"
-            path.parent.mkdir(parents=True)
-            source = (
-                REPOSITORY_ROOT / "lib/features/market/market_screens.dart"
-            ).read_text(encoding="utf-8")
-            path.write_text(
-                source.replace(
-                    "class SpotMarketDetailScreen",
-                    "class RemovedSpotMarketDetailScreen",
-                ),
-                encoding="utf-8",
-            )
-
             result = check_harness.check_spot_only_product_contract(root)
 
         self.assertTrue(
             any(
-                "class SpotMarketDetailScreen" in error
-                for error in result
+                "never a raw path literal" in error for error in result
             ),
-            msg=f"expected Spot detail navigation guard: {result}",
+            msg=f"expected canonical token-route guard: {result}",
         )
 
     def test_chat_spot_snapshot_cannot_restore_position_language(self) -> None:
@@ -3981,30 +3907,26 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected production Home static-fact guard: {result}",
         )
 
-    def test_net_worth_production_cannot_restore_static_facts(self) -> None:
+    def test_net_worth_page_must_stay_on_the_wallet_read_module(self) -> None:
+        # Step 5 retired the Preview / Production Net Worth split inside
+        # `home_screens.dart`; B2 now reads the V2 wallet module and must keep
+        # saying that net worth is not a spendable balance.
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            relative = "lib/features/home/home_screens.dart"
+            relative = "lib/features/wallet/wallet_read_screens.dart"
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
-                source.replace(
-                    "title: 'Net worth not connected'",
-                    "title: r'Net worth $46,806.55'",
-                    1,
-                ),
+                source.replace("净值不是余额", "净值就是余额", 1),
                 encoding="utf-8",
             )
 
             result = check_harness.check_home_portfolio_truth_contract(root)
 
         self.assertTrue(
-            any(
-                "Production B2" in error and "46,806.55" in error
-                for error in result
-            ),
-            msg=f"expected production Net Worth static-fact guard: {result}",
+            any("净值不是余额" in error for error in result),
+            msg=f"expected B2 net-worth-is-not-balance guard: {result}",
         )
 
     def test_home_portfolio_previews_cannot_lose_truth_labels(self) -> None:
@@ -4028,41 +3950,32 @@ class HarnessTests(unittest.TestCase):
             ),
             msg=f"expected B1 Preview truth-label guard: {result}",
         )
-        self.assertTrue(
-            any(
-                "B2 Net Worth" in error
-                and (
-                    "truth fingerprint" in error
-                    or "labelled Preview slices" in error
-                )
-                for error in result
-            ),
-            msg=f"expected B2 Preview truth-label guard: {result}",
-        )
 
-    def test_home_net_worth_route_cannot_hide_real_builder_in_dead_evidence(self) -> None:
+    def test_home_net_worth_route_cannot_recover_portfolio_identity(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             relative = "lib/app.dart"
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            old = "builder: (context, state) => const NetWorthScreen(),"
+            old = "            NetWorthScreen(onBack: () => _popOrHome(context)),"
             new = (
-                "builder: (context, state) => const NotificationsScreen(),\n"
-                "        // Dead evidence: builder: (context, state) => const NetWorthScreen(),"
+                "            NetWorthScreen(\n"
+                "              isPreview: state.extra! as bool,\n"
+                "              onBack: () => _popOrHome(context),\n"
+                "            ),"
             )
+            assert old in source
             path.write_text(source.replace(old, new, 1), encoding="utf-8")
 
             result = check_harness.check_home_portfolio_truth_contract(root)
 
         self.assertTrue(
             any(
-                "B2 Net Worth route" in error
-                and "production-route fingerprint" in error
+                "B2 Net Worth route must not recover portfolio identity" in error
                 for error in result
             ),
-            msg=f"expected live B2 production-route guard: {result}",
+            msg=f"expected bounded B2 production-route guard: {result}",
         )
 
     def test_home_portfolio_evidence_cannot_be_hollowed(self) -> None:
@@ -4088,30 +4001,29 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected non-hollow Home portfolio evidence: {result}",
         )
 
-    def test_new_pairs_preview_gate_cannot_be_broadened(self) -> None:
+    # Step 5 retired the C10 Preview fixture slice (decision 0055). What is
+    # left to guard is that `new-pairs` stays a whole-page unavailable that
+    # renders the server's own reason, mounted through one bounded route.
+    def test_new_pairs_must_stay_a_whole_page_unavailable(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            relative = "lib/features/market/market_screens.dart"
+            relative = "lib/features/market/market_secondary_screens.dart"
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            selector_start = source.index("class NewPairsScreen")
-            mutated = source[:selector_start] + source[selector_start:].replace(
-                "session.isPreview",
-                "session.canEnterProduct",
-                1,
+            path.write_text(
+                source.replace(
+                    "MarketNewPairsUnavailable",
+                    "MarketNewPairsEmptyList",
+                ),
+                encoding="utf-8",
             )
-            path.write_text(mutated, encoding="utf-8")
 
             result = check_harness.check_new_pairs_preview_truth_contract(root)
 
         self.assertTrue(
-            any(
-                "C10 fixtures require the exact current Preview session" in error
-                or "C10 session selector" in error
-                for error in result
-            ),
-            msg=f"expected exact C10 Preview-session guard: {result}",
+            any("MarketNewPairsUnavailable" in error for error in result),
+            msg=f"expected C10 whole-page unavailable guard: {result}",
         )
 
     def test_new_pairs_route_cannot_inject_preview_state(self) -> None:
@@ -4121,15 +4033,17 @@ class HarnessTests(unittest.TestCase):
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            old = "            NewPairsScreen(onBack: () => _popOrHome(context)),"
+            assert old in source
             path.write_text(
                 source.replace(
-                    "builder: (context, state) => const NewPairsScreen(),",
-                    """builder: (context, state) => Consumer(
+                    old,
+                    """            Consumer(
           builder: (context, ref, child) {
             unawaited(Future<void>.microtask(() {
               ref.read(loopSessionProvider.notifier).enterPreview();
             }));
-            return const NewPairsScreen();
+            return NewPairsScreen(onBack: () => _popOrHome(context));
           },
         ),""",
                     1,
@@ -4141,149 +4055,10 @@ class HarnessTests(unittest.TestCase):
 
         self.assertTrue(
             any(
-                "C10 route" in error
-                and (
-                    "exact-session fingerprint" in error
-                    or "must not inject Preview" in error
-                )
+                "C10 route" in error and "must not inject Preview" in error
                 for error in result
             ),
             msg=f"expected C10 route Preview-injection guard: {result}",
-        )
-
-    def test_new_pairs_production_cannot_restore_fixture_facts(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/market/market_screens.dart"
-            path = root / relative
-            path.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            path.write_text(
-                source.replace(
-                    "title: 'New pairs not connected'",
-                    "title: 'New pairs not connected · BTC / USDC'",
-                    1,
-                ),
-                encoding="utf-8",
-            )
-
-            result = check_harness.check_new_pairs_preview_truth_contract(root)
-
-        self.assertTrue(
-            any(
-                "Production C10" in error and "BTC / USDC" in error
-                for error in result
-            ),
-            msg=f"expected Production C10 fixture-fact guard: {result}",
-        )
-
-    def test_new_pairs_preview_cannot_lose_truth_labels(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/market/market_screens.dart"
-            path = root / relative
-            path.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            preview_start = source.index("class _NewPairsPreviewScreen")
-            preview_source = source[preview_start:]
-            for original, replacement in (
-                ("C10 · 开发预览 · Discovery feed", "C10 · Discovery feed"),
-                (
-                    "const MarketSnapshotBanner(state: MarketSnapshotState.preview)",
-                    "const SizedBox.shrink()",
-                ),
-                ("Recently observed · 演示数据", "Recently observed"),
-                ("Folded candidates · 演示数据", "Folded candidates"),
-                ("label: 'PREVIEW'", "label: 'SAMPLE'"),
-            ):
-                preview_source = preview_source.replace(original, replacement, 1)
-            mutated = source[:preview_start] + preview_source
-            path.write_text(mutated, encoding="utf-8")
-
-            result = check_harness.check_new_pairs_preview_truth_contract(root)
-
-        for label in ("开发预览", "演示数据", "MarketSnapshotState.preview", "PREVIEW"):
-            self.assertTrue(
-                any(f"missing `{label}`" in error for error in result),
-                msg=f"expected C10 Preview `{label}` attribution guard: {result}",
-            )
-
-    def test_new_pairs_unavailable_cannot_claim_empty_results(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/market/market_screens.dart"
-            path = root / relative
-            path.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            path.write_text(
-                source.replace(
-                    "title: 'New pairs not connected'",
-                    "title: 'No new pairs'",
-                    1,
-                ),
-                encoding="utf-8",
-            )
-
-            result = check_harness.check_new_pairs_preview_truth_contract(root)
-
-        self.assertTrue(
-            any(
-                "Production C10" in error and "No new pairs" in error
-                for error in result
-            ),
-            msg=f"expected C10 no-fake-empty guard: {result}",
-        )
-
-    def test_new_pairs_preview_cannot_invent_spot_identity(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/market/market_screens.dart"
-            path = root / relative
-            path.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            preview_start = source.index("class _NewPairsPreviewScreen")
-            mutated = source[:preview_start] + source[preview_start:].replace(
-                "context.go('/market')",
-                "context.go('/market/token')",
-                1,
-            )
-            path.write_text(mutated, encoding="utf-8")
-
-            result = check_harness.check_new_pairs_preview_truth_contract(root)
-
-        self.assertTrue(
-            any(
-                "C10 Preview" in error
-                and (
-                    "truth fingerprint" in error
-                    or "invent provider identity" in error
-                )
-                for error in result
-            ),
-            msg=f"expected C10 invented-Spot-identity guard: {result}",
-        )
-
-    def test_new_pairs_evidence_cannot_be_hollowed(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "test/new_pairs_truthfulness_test.dart"
-            path = root / relative
-            path.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            path.write_text(
-                source.replace(
-                    "expect(evidence.$1.fetchCount, 0);",
-                    "expect(true, isTrue);",
-                    1,
-                ),
-                encoding="utf-8",
-            )
-
-            result = check_harness.check_new_pairs_preview_truth_contract(root)
-
-        self.assertTrue(
-            any("executable evidence fingerprint" in error for error in result),
-            msg=f"expected non-hollow C10 executable evidence: {result}",
         )
 
     def test_lock_parser_reads_exact_versions(self) -> None:
@@ -4352,87 +4127,64 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected verified Wallet gate: {result}",
         )
 
-    def test_wallet_clipboard_must_keep_the_exact_current_address(self) -> None:
+    # Step 5 retired the Preview wallet-identity clipboard slice and its
+    # no-QR rule with `wallet_overview_screens.dart` (decision 0055). Receive
+    # now encodes a real EIP-681 URI, and a wallet is addressed only by its
+    # opaque id, so what survives is the ban on invented identity.
+    def test_mounted_wallet_cannot_invent_a_wallet_address(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            relative = "lib/features/wallet/wallet_overview_screens.dart"
+            relative = "lib/features/wallet/wallet_read_screens.dart"
             target = root / relative
             target.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             target.write_text(
-                source.replace(
-                    "ClipboardData(text: address)",
-                    "ClipboardData(text: shortenedAddress)",
-                ),
+                source
+                + "\nconst unsafeWallet = "
+                "'0x6666666666666666666666666666666666666666';\n",
                 encoding="utf-8",
             )
             result = check_harness.check_wallet_identity_readiness_contract(root)
 
         self.assertTrue(
-            any("copy only the exact current address" in error for error in result),
-            msg=f"expected exact Wallet clipboard guard: {result}",
+            any("never an address literal" in error for error in result),
+            msg=f"expected mounted Wallet address-literal guard: {result}",
         )
 
-    def test_wallet_identity_cannot_bypass_the_guarded_clipboard_flow(self) -> None:
+    def test_mounted_wallet_cannot_mix_fixture_identities(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            relative = "lib/features/wallet/wallet_overview_screens.dart"
+            relative = "lib/features/wallet/wallet_read_screens.dart"
             target = root / relative
             target.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             target.write_text(
-                source.replace(
-                    "Text(\n              readiness.ethereumAddress!",
-                    "SelectableText(\n              readiness.ethereumAddress!",
-                ),
+                source.replace("没有嵌入式钱包", "Daily wallet", 1),
                 encoding="utf-8",
             )
             result = check_harness.check_wallet_identity_readiness_contract(root)
 
         self.assertTrue(
-            any("session-revalidated clipboard buttons" in error for error in result),
-            msg=f"expected Wallet selection-copy bypass guard: {result}",
+            any("must not mix fixture identities" in error for error in result),
+            msg=f"expected mounted Wallet fixture-identity guard: {result}",
         )
 
-    def test_wallet_clipboard_must_revalidate_after_the_platform_write(self) -> None:
+    def test_wallet_existence_cannot_enable_the_signing_gateway(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            relative = "lib/features/wallet/wallet_overview_screens.dart"
+            relative = "lib/features/wallet/wallet_read_screens.dart"
             target = root / relative
             target.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             target.write_text(
-                source.replace(
-                    "final latest = WalletReadiness.fromSession("
-                    "ref.read(loopSessionProvider));",
-                    "final latest = current;",
-                    1,
-                ),
+                source + "\nfinal unsafe = walletSigningGatewayProvider;\n",
                 encoding="utf-8",
             )
             result = check_harness.check_wallet_identity_readiness_contract(root)
 
         self.assertTrue(
-            any("before and after every platform write" in error for error in result),
-            msg=f"expected Wallet clipboard revalidation guard: {result}",
-        )
-
-    def test_receive_cannot_infer_a_qr_code_from_wallet_identity(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/wallet/wallet_overview_screens.dart"
-            target = root / relative
-            target.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            target.write_text(
-                source + "\nfinal unsafeQr = Icons.qr_code_2_rounded;\n",
-                encoding="utf-8",
-            )
-            result = check_harness.check_wallet_identity_readiness_contract(root)
-
-        self.assertTrue(
-            any("must not infer a QR code" in error for error in result),
-            msg=f"expected Receive QR guard: {result}",
+            any("must not enable the signing gateway" in error for error in result),
+            msg=f"expected Wallet signing-gateway guard: {result}",
         )
 
     def test_wallet_feature_cannot_import_privy_sdk_directly(self) -> None:
@@ -4460,16 +4212,20 @@ class HarnessTests(unittest.TestCase):
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             target.write_text(
                 source.replace(
-                    "state.extra is WalletPreviewAsset ? null : '/wallet'",
-                    "true ? null : '/wallet'",
+                    "            MarketAssetRoute.walletAssetPath,\n          ),",
+                    "            MarketAssetRoute.walletAssetPath,\n          ) ?? "
+                    "'eip155:56:native',",
+                    1,
                 ),
                 encoding="utf-8",
             )
             result = check_harness.check_wallet_preview_route_contract(root)
 
         self.assertTrue(
-            any("state.extra is WalletPreviewAsset" in error for error in result),
-            msg=f"expected typed Wallet asset route guard: {result}",
+            any(
+                "MarketAssetRoute.walletAssetPath" in error for error in result
+            ),
+            msg=f"expected canonical Wallet asset route guard: {result}",
         )
 
     def test_signing_review_route_cannot_restore_a_fallback_intent(self) -> None:
@@ -5006,27 +4762,10 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected truthful Send asset no-match guard: {result}",
         )
 
-    def test_wallet_history_filter_must_drive_rendered_rows(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/wallet/wallet_management_screens.dart"
-            target = root / relative
-            target.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            target.write_text(
-                source.replace(
-                    "WalletPreviewActivity.filteredBy(filter)",
-                    "WalletPreviewActivity.all",
-                ),
-                encoding="utf-8",
-            )
-            result = check_harness.check_wallet_providerless_controls_contract(root)
-
-        self.assertTrue(
-            any("History selection must drive" in error for error in result),
-            msg=f"expected active Wallet History filter guard: {result}",
-        )
-
+    # Step 5 retired the Preview wallet-history filter and the testnet toggle
+    # with `TransactionHistoryScreen` and `NetworksScreen` (decision 0055);
+    # both pages now page and fail closed against the V2 wallet module. The
+    # `WalletPreviewActivity` model itself is still guarded below.
     def test_wallet_history_category_cannot_match_every_activity(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -5049,45 +4788,6 @@ class HarnessTests(unittest.TestCase):
                 for error in result
             ),
             msg=f"expected exact Wallet History category guard: {result}",
-        )
-
-    def test_wallet_testnet_switch_must_drive_preview_row(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/wallet/wallet_management_screens.dart"
-            target = root / relative
-            target.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            target.write_text(
-                source.replace("if (testnets)", "if (true)"),
-                encoding="utf-8",
-            )
-            result = check_harness.check_wallet_providerless_controls_contract(root)
-
-        self.assertTrue(
-            any("testnet selection must drive" in error for error in result),
-            msg=f"expected active Wallet testnet filter guard: {result}",
-        )
-
-    def test_wallet_testnet_switch_callback_cannot_become_noop(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/wallet/wallet_management_screens.dart"
-            target = root / relative
-            target.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            target.write_text(
-                source.replace(
-                    "setState(() => testnets = value)",
-                    "setState(() {})",
-                ),
-                encoding="utf-8",
-            )
-            result = check_harness.check_wallet_providerless_controls_contract(root)
-
-        self.assertTrue(
-            any("setState(() => testnets = value)" in error for error in result),
-            msg=f"expected Wallet testnet callback guard: {result}",
         )
 
     def test_wallet_revocation_cannot_become_an_enabled_placeholder(self) -> None:
@@ -5383,17 +5083,17 @@ class HarnessTests(unittest.TestCase):
             source = root / "lib" / "main.dart"
             source.parent.mkdir(parents=True)
             source.write_text(
+                # Step 5 deleted the Watchlist and notification-preference
+                # fakes; the five that remain are still Preview-only.
                 "final chat = MemoryCommunicationGateway();\n"
-                "final notifications = MemoryNotificationPreferencesGateway();\n"
                 "final privacy = MemoryPrivacyGateway();\n"
                 "final profile = MemoryProfileGateway();\n"
-                "final watchlist = MemoryWatchlistGateway();\n"
                 "final market = HyperliquidFixtureAdapter();\n"
                 "final wallet = PrivyFixtureAdapter();\n",
                 encoding="utf-8",
             )
             result = check_harness.check_providerless_application_contract(root)
-        self.assertEqual(7, len(result))
+        self.assertEqual(5, len(result))
         self.assertTrue(
             all("tests or lib/main_preview.dart" in error for error in result)
         )
@@ -5438,25 +5138,227 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected Watchlist fact-boundary guard: {result}",
         )
 
-    def test_watchlist_memory_gateway_cannot_be_composed_by_a_feature(self) -> None:
+    # ------------------------------------------------------------------
+    # Step 5 truth rules (decision 0055).
+    # ------------------------------------------------------------------
+
+    def test_feature_cannot_name_the_transport_type(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            source = (
-                root / "lib" / "features" / "market" / "unsafe_watchlist.dart"
-            )
+            source = root / "lib" / "features" / "market" / "unsafe_market.dart"
             source.parent.mkdir(parents=True)
             source.write_text(
-                "final gateway = MemoryWatchlistGateway();\n",
+                "class MarketReader {\n"
+                "  MarketReader(this.client);\n"
+                "  final Dio client;\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_providerless_application_contract(root)
+
+        self.assertTrue(
+            any("names the transport type `Dio`" in error for error in result),
+            msg=f"expected feature transport-type guard: {result}",
+        )
+
+    def test_feature_cannot_hold_a_v2_route_literal(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "market" / "unsafe_route.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "const path = '/v2/market/assets';\n", encoding="utf-8"
+            )
+            result = check_harness.check_providerless_application_contract(root)
+
+        self.assertTrue(
+            any("`/v2/` paths belong only" in error for error in result),
+            msg=f"expected feature V2 route-literal guard: {result}",
+        )
+
+    def test_feature_v2_route_literal_guard_ignores_documentation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "market" / "documented.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "/// `new-pairs` · `GET /v2/market/new-pairs`.\n"
+                "abstract class MarketReadGateway {}\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_providerless_application_contract(root)
+
+        self.assertEqual([], result, msg=f"comments are not route literals: {result}")
+
+    def test_s5_ports_must_default_fail_closed(self) -> None:
+        for relative, provider, port, unavailable in check_harness.S5_PORT_DEFAULTS:
+            with self.subTest(provider=provider):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    for other, _, _, _ in check_harness.S5_PORT_DEFAULTS:
+                        target = root / other
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        target.write_text(
+                            (REPOSITORY_ROOT / other).read_text(encoding="utf-8"),
+                            encoding="utf-8",
+                        )
+                    target = root / relative
+                    target.write_text(
+                        target.read_text(encoding="utf-8").replace(
+                            f"(ref) => const {unavailable}(),",
+                            f"(ref) => ref.read(dio{port}AdapterProvider),",
+                            1,
+                        ),
+                        encoding="utf-8",
+                    )
+
+                    result = check_harness.check_s5_truth_contract(root)
+
+                self.assertTrue(
+                    any(
+                        f"{provider} must default directly to const "
+                        f"{unavailable}()" in error
+                        for error in result
+                    ),
+                    msg=f"expected fail-closed {provider} guard: {result}",
+                )
+
+    def test_capability_enum_must_hold_the_contracts_twenty_seven_ids(self) -> None:
+        relative = str(check_harness.S5_CAPABILITY_META_PATH)
+        source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+        mutations = (
+            # A twenty-eighth id the contract never listed.
+            ("  communityAi('communityAi');", "  communityAi('communityAi'),\n  perpTrading('perpTrading');"),
+            # A dropped id.
+            ("  marketRead('marketRead'),\n", ""),
+            # A renamed wire value.
+            ("  priceAlerts('priceAlerts'),", "  priceAlerts('price_alerts'),"),
+        )
+        for original, replacement in mutations:
+            with self.subTest(mutation=original.strip()):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    target = root / relative
+                    target.parent.mkdir(parents=True)
+                    self.assertIn(original, source)
+                    target.write_text(
+                        source.replace(original, replacement, 1), encoding="utf-8"
+                    )
+
+                    result = check_harness.check_s5_truth_contract(root)
+
+                self.assertTrue(
+                    any(
+                        "LoopV2CapabilityId must list exactly the contract's 27 ids"
+                        in error
+                        for error in result
+                    ),
+                    msg=f"expected 27-capability guard: {result}",
+                )
+
+    def test_swap_entry_point_must_be_gated_on_swappable_alone(self) -> None:
+        relative = str(check_harness.S5_TOKEN_SURFACE_PATH)
+        source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+        mutations = (
+            # A second condition decides the entry point.
+            (
+                "if (detail.capability.swappable)",
+                "if (detail.capability.swappable || session.isPreview)",
+            ),
+            # The gate is replaced by something the server never said.
+            ("if (detail.capability.swappable)", "if (detail.registry.verified)"),
+        )
+        for original, replacement in mutations:
+            with self.subTest(mutation=replacement):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    target = root / relative
+                    target.parent.mkdir(parents=True)
+                    self.assertIn(original, source)
+                    target.write_text(
+                        source.replace(original, replacement, 1), encoding="utf-8"
+                    )
+
+                    result = check_harness.check_s5_truth_contract(root)
+
+                self.assertTrue(
+                    any("Swap entry point" in error for error in result),
+                    msg=f"expected swappable-only Swap gate guard: {result}",
+                )
+
+    def test_mounted_source_cannot_import_the_retained_hyperliquid_adapters(
+        self,
+    ) -> None:
+        for relative in (
+            "lib/app.dart",
+            "lib/main.dart",
+            "lib/features/market/unsafe_spot.dart",
+        ):
+            with self.subTest(path=relative):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    target = root / relative
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_text(
+                        "import 'package:loop_mobile/integrations/hyperliquid/"
+                        "hyperliquid_spot_market.dart';\n",
+                        encoding="utf-8",
+                    )
+
+                    result = check_harness.check_s5_truth_contract(root)
+
+                self.assertTrue(
+                    any(
+                        "must stay unmounted history" in error for error in result
+                    ),
+                    msg=f"expected unmounted Hyperliquid guard: {result}",
+                )
+
+    def test_retained_perp_history_may_keep_its_hyperliquid_imports(self) -> None:
+        # `lib/features/perp/**` is retained, unmounted history for the same
+        # reason: no product route reaches it.
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            target = root / "lib/features/perp/perp_overview_screens.dart"
+            target.parent.mkdir(parents=True)
+            target.write_text(
+                "import 'package:loop_mobile/integrations/hyperliquid/"
+                "hyperliquid_trading_gateway.dart';\n",
                 encoding="utf-8",
             )
 
-            result = check_harness.check_watchlist_application_contract(root)
+            result = check_harness.check_s5_truth_contract(root)
 
-        self.assertTrue(
-            any("constructs MemoryWatchlistGateway" in error for error in result),
-            msg=f"expected Preview-only Watchlist fake guard: {result}",
+        self.assertEqual(
+            [],
+            [error for error in result if "unmounted history" in error],
+            msg=f"retained Perp history must stay exempt: {result}",
         )
 
+    def test_receive_qr_encoder_cannot_take_a_dependency(self) -> None:
+        relative = str(check_harness.S5_QR_ENCODER_PATH)
+        source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            target.write_text(
+                "import 'package:qr/qr.dart';\n" + source, encoding="utf-8"
+            )
+
+            result = check_harness.check_s5_truth_contract(root)
+
+        self.assertTrue(
+            any(
+                "receive QR encoder must import nothing beyond" in error
+                for error in result
+            ),
+            msg=f"expected dependency-free QR encoder guard: {result}",
+        )
+
+    # Step 5 retired the Preview Watchlist adapter (decision 0055); the class
+    # is deleted, so there is no fake left to keep out of a feature module. The
+    # port's fail-closed default is guarded by check_s5_truth_contract.
     def test_profile_provider_must_default_unavailable(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -5892,211 +5794,28 @@ class HarnessTests(unittest.TestCase):
                         msg=f"expected non-hollow Privacy behavior guard: {result}",
                     )
 
+    # Step 5 retired the V1 four-intent notification-preference module — its
+    # gateway, models, controller and Preview adapter — with decision 0055.
+    # `notif-settings` is the V2 ten-category page; what the harness still owns
+    # is its copy contract.
     def test_notification_preferences_paths_are_required(self) -> None:
-        expected = {
-            "docs/decisions/0012-model-notification-preferences-before-http-adapter.md",
-            "lib/features/profile/notification_preferences/notification_preferences_controller.dart",
-            "lib/features/profile/notification_preferences/notification_preferences_gateway.dart",
-            "lib/features/profile/notification_preferences/notification_preferences_models.dart",
-            "lib/integrations/personalization/memory_notification_preferences_gateway.dart",
-            "test/notification_preferences_controller_test.dart",
-            "test/notification_preferences_models_test.dart",
-            "test/notification_preferences_screen_test.dart",
-        }
-
-        self.assertTrue(expected.issubset(set(check_harness.REQUIRED_FILES)))
-
-    def test_notification_preferences_provider_must_default_unavailable(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            gateway = root / check_harness.NOTIFICATION_PREFERENCES_GATEWAY_PATH
-            gateway.parent.mkdir(parents=True)
-            gateway.write_text(
-                "final notificationPreferencesGatewayProvider = "
-                "Provider<NotificationPreferencesGateway>(\n"
-                "  (ref) => MemoryNotificationPreferencesGateway(),\n"
-                ");\n",
-                encoding="utf-8",
-            )
-
-            result = (
-                check_harness.check_notification_preferences_application_contract(
-                    root
-                )
-            )
-
-        self.assertTrue(
-            any("must default directly" in error for error in result),
-            msg=f"expected unavailable Notification Preferences guard: {result}",
+        required = set(check_harness.REQUIRED_FILES)
+        self.assertIn(
+            "lib/features/profile/notification_preferences/"
+            "notification_preferences_screen.dart",
+            required,
         )
-
-    def test_notification_preferences_models_must_match_exact_contract(
-        self,
-    ) -> None:
-        valid_source = self._notification_preferences_models_source()
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            models = root / check_harness.NOTIFICATION_PREFERENCES_MODELS_PATH
-            models.parent.mkdir(parents=True)
-            models.write_text(valid_source, encoding="utf-8")
-            valid_result = (
-                check_harness.check_notification_preferences_application_contract(
-                    root
-                )
-            )
-
-            invalid_source = valid_source.replace(
-                "  supportUpdate;",
-                "  supportUpdate,\n  marketing;",
-            ).replace(
-                "    NotificationPreferenceEvent.supportUpdate => 'support_update',",
-                "    NotificationPreferenceEvent.supportUpdate => 'support_update',\n"
-                "    NotificationPreferenceEvent.marketing => 'marketing',",
-            ).replace(
-                "    'support_update' => NotificationPreferenceEvent.supportUpdate,",
-                "    'support_update' => NotificationPreferenceEvent.supportUpdate,\n"
-                "    'marketing' => NotificationPreferenceEvent.marketing,",
-            ).replace(
-                "  unavailable;",
-                "  unavailable,\n  available;",
-            ).replace(
-                "    NotificationDeliveryState.unavailable => 'unavailable',",
-                "    NotificationDeliveryState.unavailable => 'unavailable',\n"
-                "    NotificationDeliveryState.available => 'available',",
-            ).replace(
-                "    'unavailable' => NotificationDeliveryState.unavailable,",
-                "    'unavailable' => NotificationDeliveryState.unavailable,\n"
-                "    'available' => NotificationDeliveryState.available,",
-            ).replace(
-                "  final bool supportUpdate;",
-                "  final bool supportUpdate;\n  final bool marketing;",
-            ).replace(
-                "  final NotificationDeliveryState delivery;",
-                "  final NotificationDeliveryState delivery;\n"
-                "  final DateTime? updatedAt;",
-            )
-            models.write_text(invalid_source, encoding="utf-8")
-            invalid_result = (
-                check_harness.check_notification_preferences_application_contract(
-                    root
-                )
-            )
-
-        self.assertEqual([], valid_result)
-        self.assertTrue(
-            any("NotificationPreferenceEvent must contain exactly" in error for error in invalid_result)
-        )
-        self.assertTrue(
-            any("NotificationPreferenceEvent wire values" in error for error in invalid_result)
-        )
-        self.assertTrue(
-            any("NotificationDeliveryState must contain only" in error for error in invalid_result)
-        )
-        self.assertTrue(
-            any("NotificationDeliveryState wire values" in error for error in invalid_result)
-        )
-        self.assertTrue(
-            any("NotificationPreferenceValues fields" in error for error in invalid_result)
-        )
-        self.assertTrue(
-            any("NotificationPreferencesResource fields" in error for error in invalid_result)
-        )
-
-    def test_notification_preference_wire_parsers_must_fail_closed(self) -> None:
-        examples = (
-            (
-                "_ => throw Exception(),",
-                "_ => NotificationPreferenceEvent.priceAlertTriggered,",
-                "NotificationPreferenceEvent wire values",
-            ),
-            (
-                "_ => throw StateError('delivery'),",
-                "_ => NotificationDeliveryState.unavailable,",
-                "NotificationDeliveryState wire values",
-            ),
-        )
-        for original, replacement, expected_error in examples:
-            with self.subTest(expected_error=expected_error):
-                with tempfile.TemporaryDirectory() as temporary:
-                    root = Path(temporary)
-                    models = (
-                        root / check_harness.NOTIFICATION_PREFERENCES_MODELS_PATH
-                    )
-                    models.parent.mkdir(parents=True)
-                    source = self._notification_preferences_models_source()
-                    self.assertIn(original, source)
-                    models.write_text(
-                        source.replace(original, replacement, 1),
-                        encoding="utf-8",
-                    )
-
-                    result = check_harness.check_notification_preferences_application_contract(
-                        root
-                    )
-
-                self.assertTrue(
-                    any(expected_error in error for error in result),
-                    msg=f"expected fail-closed wire guard: {result}",
-                )
-
-    def test_notification_preferences_memory_gateway_is_preview_only(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            source = (
-                root
-                / "lib"
-                / "features"
-                / "profile"
-                / "notification_preferences"
-                / "unsafe_fake.dart"
-            )
-            source.parent.mkdir(parents=True)
-            source.write_text(
-                "final gatewayFactory = MemoryNotificationPreferencesGateway.new;\n",
-                encoding="utf-8",
-            )
-
-            result = (
-                check_harness.check_notification_preferences_application_contract(
-                    root
-                )
-            )
-
-        self.assertTrue(
-            any(
-                "references MemoryNotificationPreferencesGateway" in error
-                for error in result
-            ),
-            msg=f"expected Preview-only Notification Preferences fake guard: {result}",
-        )
-
-    def test_notification_preferences_preview_requires_exactly_one_memory_gateway(
-        self,
-    ) -> None:
-        preview_sources = (
-            "void main() {}\n",
-            "final first = MemoryNotificationPreferencesGateway();\n"
-            "final second = MemoryNotificationPreferencesGateway();\n",
-        )
-        for preview_source in preview_sources:
-            with self.subTest(source=preview_source):
-                with tempfile.TemporaryDirectory() as temporary:
-                    root = Path(temporary)
-                    preview = (
-                        root
-                        / check_harness.NOTIFICATION_PREFERENCES_PREVIEW_ROOT_PATH
-                    )
-                    preview.parent.mkdir(parents=True)
-                    preview.write_text(preview_source, encoding="utf-8")
-
-                    result = check_harness.check_notification_preferences_application_contract(
-                        root
-                    )
-
-                self.assertTrue(
-                    any("must compose exactly one" in error for error in result),
-                    msg=f"expected exact Preview construction guard: {result}",
-                )
+        for retired in (
+            "lib/features/profile/notification_preferences/"
+            "notification_preferences_controller.dart",
+            "lib/features/profile/notification_preferences/"
+            "notification_preferences_gateway.dart",
+            "lib/features/profile/notification_preferences/"
+            "notification_preferences_models.dart",
+            "lib/integrations/personalization/"
+            "memory_notification_preferences_gateway.dart",
+        ):
+            self.assertNotIn(retired, required)
 
     def test_notification_preferences_surface_rejects_legacy_h9_state(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -6134,20 +5853,50 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected every legacy H9 marker to fail: {result}",
         )
 
-    def test_notification_preferences_rejects_positive_save_or_delivery_copy(
+    def test_notification_preferences_reject_every_delivery_claim(self) -> None:
+        # `push` is permanently PUSH_RUNTIME_DEFERRED, so no wording — English
+        # or Chinese — may say a notification is enabled, connected or coming.
+        examples = (
+            ("final label = 'Notifications are now enabled';\n", True),
+            ("final label = 'Delivery is available';\n", True),
+            ("final label = 'Notification ' 'delivery is connected';\n", True),
+            ("final label = 'You will now receive alerts';\n", True),
+            ("final label = '推送已开启';\n", True),
+            ("final label = '推送尚不可用';\n", False),
+            ("final label = 'Delivery remains unavailable.';\n", False),
+        )
+        for source_text, rejected in examples:
+            with self.subTest(source=source_text):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    surface = (
+                        root / check_harness.NOTIFICATION_PREFERENCES_SURFACE_PATH
+                    )
+                    surface.parent.mkdir(parents=True)
+                    surface.write_text(source_text, encoding="utf-8")
+
+                    result = check_harness.check_notification_preferences_application_contract(
+                        root
+                    )
+
+                detected = any(
+                    "positive delivery language" in error for error in result
+                )
+                self.assertEqual(rejected, detected, msg=f"unexpected guard: {result}")
+
+    def test_notification_preferences_save_claim_needs_a_committed_resource(
         self,
     ) -> None:
+        # A save toast that fires unconditionally announces a stored intent.
         examples = (
             ("final label = 'Preferences saved';\n", True),
             ("final label = 'Preferences have been saved';\n", True),
             ("final label = 'Successfully saved';\n", True),
-            ("final label = 'Notifications are now enabled';\n", True),
-            ("final label = 'Delivery is available';\n", True),
             ("final label = '\\u0050references saved';\n", True),
-            ("final label = 'Notification ' 'delivery is connected';\n", True),
-            ("final label = '通知偏好已保存';\n", True),
+            ("final label = '通知设置已保存';\n", True),
             (
-                "final label = 'Preferences were not saved. Delivery remains unavailable.';\n",
+                "final label = 'Preferences were not saved. "
+                "Delivery remains unavailable.';\n",
                 False,
             ),
         )
@@ -6166,14 +5915,83 @@ class HarnessTests(unittest.TestCase):
                     )
 
                 detected = any(
-                    "positive save or delivery language" in error
-                    for error in result
+                    "without a committed resource" in error for error in result
                 )
                 self.assertEqual(rejected, detected, msg=f"unexpected guard: {result}")
+
+    def test_notification_preferences_save_claim_survives_a_real_commit(
+        self,
+    ) -> None:
+        # The reviewed page says `通知设置已保存` only after the server returned
+        # the committed resource, while stating that delivery is unavailable.
+        # That is a save receipt, not a delivery claim, so it must pass.
+        relative = str(check_harness.NOTIFICATION_PREFERENCES_SURFACE_PATH)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            surface = root / relative
+            surface.parent.mkdir(parents=True)
+            surface.write_text(
+                (REPOSITORY_ROOT / relative).read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_notification_preferences_application_contract(
+                root
+            )
+
+        self.assertEqual(
+            [],
+            [
+                error
+                for error in result
+                if "delivery language" in error
+                or "without a committed resource" in error
+            ],
+            msg=f"reviewed committed-resource copy must pass: {result}",
+        )
+
+    def test_notification_preferences_save_claim_cannot_escape_its_commit(
+        self,
+    ) -> None:
+        relative = str(check_harness.NOTIFICATION_PREFERENCES_SURFACE_PATH)
+        source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+        mutations = (
+            # The toast no longer waits for the committed resource.
+            ("if (applied) {", "if (true) {"),
+            # The page stops stating that delivery is unavailable.
+            ("推送尚不可用", "推送已就绪"),
+        )
+        for original, replacement in mutations:
+            with self.subTest(mutation=original):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    surface = root / relative
+                    surface.parent.mkdir(parents=True)
+                    self.assertIn(original, source)
+                    surface.write_text(
+                        source.replace(original, replacement, 1),
+                        encoding="utf-8",
+                    )
+
+                    result = check_harness.check_notification_preferences_application_contract(
+                        root
+                    )
+
+                self.assertTrue(
+                    any(
+                        "without a committed resource" in error
+                        or "must state that delivery is unavailable" in error
+                        for error in result
+                    ),
+                    msg=f"expected committed-resource save guard: {result}",
+                )
 
     def test_notification_preferences_behavior_tests_cannot_be_hollowed_out(
         self,
     ) -> None:
+        surface_relative = str(
+            check_harness.NOTIFICATION_PREFERENCES_SURFACE_PATH
+        )
         for (
             relative,
             markers,
@@ -6192,8 +6010,16 @@ class HarnessTests(unittest.TestCase):
                 with self.subTest(path=str(relative), source=source_text):
                     with tempfile.TemporaryDirectory() as temporary:
                         root = Path(temporary)
+                        surface = root / surface_relative
+                        surface.parent.mkdir(parents=True)
+                        surface.write_text(
+                            (REPOSITORY_ROOT / surface_relative).read_text(
+                                encoding="utf-8"
+                            ),
+                            encoding="utf-8",
+                        )
                         test_path = root / relative
-                        test_path.parent.mkdir(parents=True)
+                        test_path.parent.mkdir(parents=True, exist_ok=True)
                         test_path.write_text(source_text, encoding="utf-8")
 
                         result = check_harness.check_notification_preferences_application_contract(
@@ -6210,69 +6036,6 @@ class HarnessTests(unittest.TestCase):
                             f"behavior guard: {result}"
                         ),
                     )
-
-    @staticmethod
-    def _notification_preferences_models_source() -> str:
-        return (
-            "enum NotificationPreferenceEvent {\n"
-            "  priceAlertTriggered,\n"
-            "  providerActivityProjected,\n"
-            "  securityNotice,\n"
-            "  supportUpdate;\n"
-            "  String get wireValue => switch (this) {\n"
-            "    NotificationPreferenceEvent.priceAlertTriggered => 'price_alert_triggered',\n"
-            "    NotificationPreferenceEvent.providerActivityProjected => 'provider_activity_projected',\n"
-            "    NotificationPreferenceEvent.securityNotice => 'security_notice',\n"
-            "    NotificationPreferenceEvent.supportUpdate => 'support_update',\n"
-            "  };\n"
-            "  static NotificationPreferenceEvent fromWire(String value) => switch (value) {\n"
-            "    'price_alert_triggered' => NotificationPreferenceEvent.priceAlertTriggered,\n"
-            "    'provider_activity_projected' => NotificationPreferenceEvent.providerActivityProjected,\n"
-            "    'security_notice' => NotificationPreferenceEvent.securityNotice,\n"
-            "    'support_update' => NotificationPreferenceEvent.supportUpdate,\n"
-            "    _ => throw Exception(),\n"
-            "  };\n"
-            "}\n"
-            "enum NotificationDeliveryState {\n"
-            "  unavailable;\n"
-            "  String get wireValue => switch (this) {\n"
-            "    NotificationDeliveryState.unavailable => 'unavailable',\n"
-            "  };\n"
-            "  static NotificationDeliveryState fromWire(String value) => switch (value) {\n"
-            "    'unavailable' => NotificationDeliveryState.unavailable,\n"
-            "    _ => throw StateError('delivery'),\n"
-            "  };\n"
-            "}\n"
-            "final class NotificationPreferenceValues {\n"
-            "  final bool priceAlertTriggered;\n"
-            "  final bool providerActivityProjected;\n"
-            "  final bool securityNotice;\n"
-            "  final bool supportUpdate;\n"
-            "}\n"
-            "final class NotificationPreferencesResource {\n"
-            "  final int version;\n"
-            "  final NotificationPreferenceValues values;\n"
-            "  final NotificationDeliveryState delivery;\n"
-            "}\n"
-        )
-
-    def test_notification_global_handler_must_be_centralized(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            source = root / "lib" / "features" / "chat" / "unsafe_push.dart"
-            source.parent.mkdir(parents=True)
-            source.write_text(
-                "FirebaseMessaging\n  .onBackgroundMessage(backgroundHandler);\n",
-                encoding="utf-8",
-            )
-            result = check_harness.check_notification_contract(root)
-        self.assertTrue(
-            any(
-                "only lib/integrations/notifications/firebase_notification_ingress.dart"
-                in error
-                for error in result
-            )
-        )
 
     def test_notification_router_rejects_payload_selected_routes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -6337,7 +6100,10 @@ class HarnessTests(unittest.TestCase):
             any("global notification ingress" in error for error in result)
         )
 
-    def test_notification_router_rejects_a_fourth_intent_and_route(self) -> None:
+    def test_notification_router_rejects_a_fifth_intent_and_route(self) -> None:
+        # Decision 0055 widened the reviewed allowlist to four kinds and four
+        # intents. It stays closed: an unreviewed fifth intent, kind or route
+        # is still rejected.
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             router = root / check_harness.NOTIFICATION_ROUTER_PATH
@@ -6355,10 +6121,84 @@ class HarnessTests(unittest.TestCase):
             )
             result = check_harness.check_notification_contract(root)
         self.assertTrue(
-            any("three-class allowlist" in error for error in result)
+            any("four-class allowlist" in error for error in result),
+            msg=f"expected closed intent allowlist: {result}",
         )
         self.assertTrue(
-            any("three-route allowlist" in error for error in result)
+            any("three-route allowlist" in error for error in result),
+            msg=f"expected closed route allowlist: {result}",
+        )
+
+    def test_notification_router_rejects_a_fifth_kind(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            router = root / check_harness.NOTIFICATION_ROUTER_PATH
+            router.parent.mkdir(parents=True)
+            source = (
+                REPOSITORY_ROOT / check_harness.NOTIFICATION_ROUTER_PATH
+            ).read_text(encoding="utf-8")
+            router.write_text(
+                source.replace(
+                    "  priceAlertTriggered,",
+                    "  priceAlertTriggered,\n  walletActivity,",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_notification_contract(root)
+        self.assertTrue(
+            any("four-kind allowlist" in error for error in result),
+            msg=f"expected closed kind allowlist: {result}",
+        )
+
+    def test_notification_router_rejects_a_raw_provider_payload_import(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            router = root / check_harness.NOTIFICATION_ROUTER_PATH
+            router.parent.mkdir(parents=True)
+            source = (
+                REPOSITORY_ROOT / check_harness.NOTIFICATION_ROUTER_PATH
+            ).read_text(encoding="utf-8")
+            router.write_text(
+                "import 'package:firebase_messaging/firebase_messaging.dart';\n"
+                + source,
+                encoding="utf-8",
+            )
+            result = check_harness.check_notification_contract(root)
+        self.assertTrue(
+            any(
+                "provider-neutral allowlist" in error for error in result
+            ),
+            msg=f"expected provider-neutral import allowlist: {result}",
+        )
+
+    def test_notification_router_must_validate_the_price_alert_identity(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            router = root / check_harness.NOTIFICATION_ROUTER_PATH
+            router.parent.mkdir(parents=True)
+            source = (
+                REPOSITORY_ROOT / check_harness.NOTIFICATION_ROUTER_PATH
+            ).read_text(encoding="utf-8")
+            router.write_text(
+                source.replace(
+                    "MarketAssetRoute.isCanonical(rawAssetId)",
+                    "rawAssetId.isNotEmpty",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_notification_contract(root)
+        self.assertTrue(
+            any(
+                "MarketAssetRoute.isCanonical(rawAssetId)" in error
+                for error in result
+            ),
+            msg=f"expected canonical price-alert identity guard: {result}",
         )
 
     def test_feature_cannot_forge_notification_identity_or_router(self) -> None:

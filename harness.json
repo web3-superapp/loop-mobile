@@ -15,7 +15,8 @@
       "lib/main.dart and lib/app.dart own composition, application bootstrap, routing, and the five-destination shell",
       "lib/core owns cross-cutting navigation, theme, signing intent, errors, logging, and security primitives",
       "lib/integrations owns narrow provider and backend adapters; Reown remains an ephemeral Privy external-EVM credential transport",
-      "lib/features owns product-facing feature modules",
+      "lib/integrations/hyperliquid and lib/features/perp are retained unmounted history; no file under lib/features, lib/app.dart or lib/main.dart may import or route to them",
+      "lib/features owns product-facing feature modules and depends only on narrow ports; no Dio type and no /v1/ or /v2/ route literal crosses into a feature module",
       "reference/legacy-prototype is frozen history",
       "The backend owns provider secrets, token minting, private trading, signing, risk, idempotency, and reconciliation"
     ]
