@@ -652,9 +652,29 @@ S5_PORT_DEFAULTS = (
         "NotificationsGateway",
         "UnavailableNotificationsGateway",
     ),
+    # Step 6 money actions. A write port that is not mounted must fail closed
+    # exactly like a read port: no prepare, no report, no execute.
+    (
+        "lib/features/wallet/money_actions_gateway.dart",
+        "walletIntentsGatewayProvider",
+        "WalletIntentsGateway",
+        "UnavailableWalletIntentsGateway",
+    ),
+    (
+        "lib/features/wallet/money_actions_gateway.dart",
+        "swapQuoteGatewayProvider",
+        "SwapQuoteGateway",
+        "UnavailableSwapQuoteGateway",
+    ),
+    (
+        "lib/features/wallet/money_actions_gateway.dart",
+        "approvalsGatewayProvider",
+        "ApprovalsGateway",
+        "UnavailableApprovalsGateway",
+    ),
 )
 S5_CAPABILITY_META_PATH = Path("lib/integrations/backend/v2/loop_v2_meta.dart")
-# The contract's 28 capability ids, in contract order.
+# The contract's 31 capability ids, in contract order.
 S5_CAPABILITY_IDS = (
     "privyAuthentication",
     "accountSession",
@@ -680,6 +700,9 @@ S5_CAPABILITY_IDS = (
     "pushNotifications",
     "profile",
     "avatarUpload",
+    "security",
+    "settings",
+    "support",
     "pay",
     "bridge",
     "dappExecution",
@@ -928,22 +951,12 @@ WALLET_PROVIDERLESS_CONTROL_BEHAVIOR_TEST_MARKERS = {
     ),
     Path("test/wallet_providerless_controls_test.dart"): (
         # Step 5 retired the Preview history-chip and testnet-switch evidence
-        # with the screens it exercised.
-        "permission Preview exposes no fake revocation action",
+        # with the screens it exercised; step 6 retired the Preview approvals
+        # and transaction-result layouts with the real money-action pages.
         "Bridge status consumes one snapshot and changes local layout",
-        "transaction result remains an explicit state-layout Preview",
     ),
     Path("test/app_navigation_test.dart"): (
         "Bridge status route requires the exact typed snapshot",
-    ),
-    Path("test/send_flow_truthfulness_test.dart"): (
-        "transaction result catalog never claims a transfer occurred",
-    ),
-    Path("test/send_asset_search_test.dart"): (
-        "Send asset search filters labelled Preview assets and restores canonical order",
-        "filtered Send asset selection carries the exact asset and network",
-        "Send asset no-match remains local Preview evidence",
-        "Send asset Preview supports 390pt at 2x Dynamic Type",
     ),
 }
 WALLET_PROVIDERLESS_CONTROL_EXECUTABLE_TEST_EVIDENCE = {
@@ -966,25 +979,12 @@ WALLET_PROVIDERLESS_CONTROL_EXECUTABLE_TEST_EVIDENCE = {
         ),
     },
     Path("test/wallet_providerless_controls_test.dart"): {
-        "permission Preview exposes no fake revocation action": (
-            r"\btester\.widget<OutlinedButton>\s*\(",
-            r"\b_expectAllButtonStyleActionsDisabled\s*\(",
-            r"\bbutton\.onPressed\b",
-            r"\bisNull\b",
-            r"\bfindsNothing\b",
-        ),
         "Bridge status consumes one snapshot and changes local layout": (
             r"\bBridgeStatusScreen\s*\(\s*snapshot\s*:\s*BridgePreviewSnapshot\.demo",
             r"\btester\.tap\s*\(\s*find\.byType\s*\(\s*Switch\b",
             r"\b_expectAllButtonStyleActionsDisabled\s*\(",
             r"\bclaim\.onPressed\b",
             r"\bisNull\b",
-        ),
-        "transaction result remains an explicit state-layout Preview": (
-            r"\bTransactionResultScreen\s*\(",
-            r"(?:\btester\.tap\s*\([\s\S]*?){3}",
-            r"\bexplorer\.onPressed\b",
-            r"\bfindsNothing\b",
         ),
     },
     Path("test/app_navigation_test.dart"): {
@@ -993,42 +993,6 @@ WALLET_PROVIDERLESS_CONTROL_EXECUTABLE_TEST_EVIDENCE = {
             r"\bBridgePreviewSnapshot\.demo\.withNeedsClaim\s*\(",
             r"\bextra\s*:\s*claimSnapshot\b",
             r"\bfindsOneWidget\b",
-        ),
-    },
-    Path("test/send_flow_truthfulness_test.dart"): {
-        "transaction result catalog never claims a transfer occurred": (
-            r"\bTransactionResultScreen\s*\(",
-            r"\bfindsOneWidget\b",
-            r"\bfindsNothing\b",
-        ),
-    },
-    Path("test/send_asset_search_test.dart"): {
-        "Send asset search filters labelled Preview assets and restores canonical order": (
-            r"\btester\.enterText\s*\(",
-            r"\btester\.getTopLeft\s*\(",
-            r"\bfind\.byTooltip\s*\(",
-            r"\bfindsNothing\b",
-        ),
-        "filtered Send asset selection carries the exact asset and network": (
-            r"\btester\.enterText\s*\(",
-            r"\btester\.tap\s*\(",
-            r"\btester\.pumpAndSettle\s*\(",
-            r"\bfindsOneWidget\b",
-            r"\bfindsNothing\b",
-        ),
-        "Send asset no-match remains local Preview evidence": (
-            r"(?:\btester\.enterText\s*\([\s\S]*?){2}",
-            r"\bfind\.textContaining\s*\(",
-            r"\bfindsOneWidget\b",
-            r"\bfindsNothing\b",
-        ),
-        "Send asset Preview supports 390pt at 2x Dynamic Type": (
-            r"\bTextScaler\.linear\s*\(\s*2\s*\)",
-            r"\btester\.widget<TextField>\s*\(",
-            r"\btester\.widget<Semantics>\s*\(",
-            r"\bassetSemantics\.properties\.onTap\b",
-            r"\btester\.ensureVisible\s*\(",
-            r"\btester\.takeException\s*\(",
         ),
     },
 }
@@ -5516,9 +5480,12 @@ def check_wallet_identity_readiness_contract(root: Path) -> list[str]:
             "lib/features/wallet/wallet_management_screens.dart": (
                 "WalletReadiness.fromSession",
             ),
+            # Step 6 replaced the Preview transfer draft with the typed
+            # `SendDraft`, whose route guard is locked by the money-action
+            # contract below (decision 0058).
             "lib/app.dart": (
-                "state.extra is TransferDraft ? null : '/wallet/send'",
-                "draft.recipient.trim().isNotEmpty",
+                "state.extra is SendDraft ? null : '/wallet/send'",
+                "draft is SendDraft && draft.isComplete",
             ),
             # Step 5 replaced the Privy-readiness Wallet, Receive and Manage
             # screens with the V2 wallet-read pages, so their widget evidence
@@ -5588,21 +5555,15 @@ def check_wallet_preview_route_contract(root: Path) -> list[str]:
                 "A naked or restored route returns to Wallet",
                 "Remove the DApp fixture wallet",
             ),
-            "lib/features/wallet/wallet_preview_asset.dart": (
-                "final class WalletPreviewAsset",
-                "static const ethereum",
-                "static const usdCoin",
-                "static const solana",
-                "static const all = <WalletPreviewAsset>",
-            ),
             # Step 5 retired the Preview wallet-asset route (decision 0057):
             # `/wallet/asset` now carries the canonical CAIP `assetId` and reads
             # the V2 wallet module, so no typed Preview extra addresses it.
+            # Step 6 retired `/preview/signing-review` and the Preview asset
+            # collection with it: the signing exit now accepts only a
+            # backend-canonical intent.
             "lib/app.dart": (
                 "path: MarketAssetRoute.walletAssetPath",
                 "MarketAssetRoute.walletAssetPath,\n          ),",
-                "state.extra is SigningIntent ? null : '/wallet'",
-                "SigningReviewPage(intent: state.extra! as SigningIntent)",
             ),
             "lib/features/wallet/wallet_read_screens.dart": (
                 "class WalletAssetScreen",
@@ -5614,11 +5575,6 @@ def check_wallet_preview_route_contract(root: Path) -> list[str]:
                 "Current wallet identity",
                 "Wallet injection",
                 "typed domain is not trusted",
-            ),
-            "test/app_navigation_test.dart": (
-                # The `/wallet/asset` half of this test was retired with the
-                # typed Preview extra; the signing-review half survives.
-                "an orphan signing review returns to Wallet",
             ),
             "test/wallet_preview_route_truthfulness_test.dart": (
                 "DApp preview uses only the current wallet identity and typed domain",
@@ -5659,7 +5615,7 @@ def check_wallet_preview_route_contract(root: Path) -> list[str]:
     if management_path.is_file():
         source = read_text(management_path)
         dapp_start = source.find("class DappBrowserScreen")
-        dapp_end = source.find("class ApprovalInterceptScreen", dapp_start)
+        dapp_end = source.find("class DappListScreen", dapp_start)
         dapp_source = source[dapp_start:dapp_end]
         for marker in ("0x71E4", "Selected wallet"):
             if marker in dapp_source:
@@ -5699,14 +5655,19 @@ def check_wallet_preview_route_contract(root: Path) -> list[str]:
 
 
 def check_wallet_local_draft_contract(root: Path) -> list[str]:
-    """Keep local transfer syntax and Swap projections exact and unsignable."""
+    """Keep the exact amount lexicon, and keep local drafts out of a wallet.
+
+    Step 6 replaced the Preview transfer and Swap drafts with server-prepared
+    intents (decision 0058). What survives from decision 0022 is the part that
+    still governs a real money action: the amount is exact text, never a
+    `double`, and only a backend-canonical intent may reach the signing exit.
+    """
 
     errors = require_fragments(
         root,
         {
             "docs/decisions/0022-bind-wallet-local-drafts-to-exact-snapshots.md": (
                 "exact positive decimal String",
-                "closed-set immutable `SwapPreviewSnapshot.demo`",
                 "synchronous single-flight gate",
                 "`IntentOrigin.backendCanonical`",
             ),
@@ -5719,75 +5680,13 @@ def check_wallet_local_draft_contract(root: Path) -> list[str]:
             ),
             "lib/features/wallet/transfer_amount.dart": (
                 "final class TransferAmount",
-                "maxWireLength = 128",
-                r"r'^(?:[1-9][0-9]*(?:\.[0-9]+)?|0\.[0-9]*[1-9][0-9]*)$'",
-                "final match = _wirePattern.firstMatch(source)",
-                "match.start != 0 || match.end != source.length",
-                "Decimal.tryParse(source)",
-                "TransferAmount._(wire: source)",
-                "String displayWithAsset(String asset)",
-            ),
-            "lib/features/wallet/send_screens.dart": (
-                "TransferAmount.tryParse(controller.text)",
-                "maxLength: TransferAmount.maxWireLength",
-                "maxLengthEnforcement: MaxLengthEnforcement.none",
-                "if (reviewOpening) return;",
-                "setState(() => reviewOpening = true);",
-                "amount.displayWithAsset(widget.draft.asset)",
-                "Complete recipient address",
-            ),
-            "lib/features/wallet/swap_preview_snapshot.dart": (
-                "final class SwapPreviewSnapshot",
-                "const SwapPreviewSnapshot._",
-                "static const demo = SwapPreviewSnapshot._",
-                "SigningIntent toLocalSigningIntent",
-                "pay: payLabel",
-                "receive: receiveLabel",
-                "rate: rate",
-                "fee: providerFee",
-            ),
-            "lib/features/wallet/trade_screens.dart": (
-                "SwapPreviewSnapshot? snapshot = SwapPreviewSnapshot.demo",
-                "setState(() => snapshot = null);",
-                "payController.value = TextEditingValue",
-                "snapshot = restored;",
-                "extra: currentSnapshot",
-                "no quote will be requested",
-                "if (reviewOpening || !identical(snapshot, currentSnapshot)) return;",
-                "currentSnapshot.toLocalSigningIntent",
-                "SwapRouteScreen({required this.snapshot",
-            ),
-            "lib/app.dart": (
-                "state.extra is SwapPreviewSnapshot ? null : '/wallet/swap'",
-                "snapshot: state.extra! as SwapPreviewSnapshot",
+                "static const int maxWireLength = 128",
+                "TransferAmount? tryParse(String source)",
             ),
             "test/transfer_amount_test.dart": (
                 "accepts the exact maximum length and rejects longer values",
                 "preserves trailing zeros in the display and future wire value",
                 "rejects noncanonical, zero, signed, exponent, and spaced input",
-            ),
-            "test/send_flow_truthfulness_test.dart": (
-                "opens one local review per tap burst",
-                "preserves and rejects an overlong pasted amount",
-                "'1.2500 ETH'",
-            ),
-            "test/swap_preview_snapshot_test.dart": (
-                "one immutable demo snapshot derives every local review fact",
-            ),
-            "test/swap_preview_flow_test.dart": (
-                "editing invalidates every derived Swap fact until atomic restore",
-                "rapid review taps derive one intent from the current snapshot",
-                "quote details consume only the typed snapshot",
-            ),
-            "test/app_navigation_test.dart": (
-                "Swap quote route requires the exact typed snapshot",
-                "wrong snapshot type",
-                "wrong draft type",
-                "recipient: '   '",
-            ),
-            "test/signing_review_boundary_test.dart": (
-                "local Swap snapshot cannot invoke even an available wallet gateway",
-                "expect(gateway.handoffCalls, 0);",
             ),
         },
     )
@@ -5820,126 +5719,21 @@ def check_wallet_local_draft_contract(root: Path) -> list[str]:
                     f"representation: {marker}"
                 )
 
-    send_path = root / "lib/features/wallet/send_screens.dart"
-    if send_path.is_file():
-        source = read_text(send_path)
-        confirm_start = source.find("class SendConfirmScreen")
-        confirm_end = source.find("enum TransactionPreviewState", confirm_start)
-        confirm_source = source[confirm_start:confirm_end]
-        if "if (reviewOpening) return;" not in confirm_source:
-            errors.append("Transfer review navigation must remain single-flight")
-        if (
-            "maxLength: TransferAmount.maxWireLength" not in confirm_source
-            or "maxLengthEnforcement: MaxLengthEnforcement.none"
-            not in confirm_source
-        ):
-            errors.append(
-                "Transfer input must preserve overlong source text for explicit rejection"
-            )
-        for marker in (
-            "TransferAmount.tryParse(controller.text.trim())",
-            "amount: '${controller.text",
-            "IntentOrigin.backendCanonical",
-            "walletSigningGatewayProvider",
-            ".handoff(",
-        ):
-            if marker in confirm_source:
-                errors.append(
-                    "Local transfer review must preserve exact unsignable draft state: "
-                    f"{marker}"
-                )
-
-    snapshot_path = root / "lib/features/wallet/swap_preview_snapshot.dart"
-    if snapshot_path.is_file():
-        source = strip_dart_comments(read_text(snapshot_path))
-        for fragment in (
-            "pay: payLabel",
-            "receive: receiveLabel",
-            "rate: rate",
-            "fee: providerFee",
-        ):
-            if fragment not in source:
-                errors.append(
-                    "Swap local review must derive every field from one snapshot: "
-                    f"{fragment}"
-                )
-        for marker in (
-            "IntentOrigin.backendCanonical",
-            "walletSigningGatewayProvider",
-            "package:dio/",
-            "'/v1/",
-        ):
-            if marker in source:
-                errors.append(
-                    "Swap preview snapshots must remain providerless and unsignable: "
-                    f"{marker}"
-                )
-
-    trade_path = root / "lib/features/wallet/trade_screens.dart"
-    if trade_path.is_file():
-        source = read_text(trade_path)
-        swap_start = source.find("class SwapScreen")
-        swap_end = source.find("class BridgeScreen", swap_start)
-        swap_source = source[swap_start:swap_end]
-        for marker in (
-            "bool quoteCurrent",
-            "SigningIntent.swap(",
-            "context.push('/wallet/swap/route')",
-            "IntentOrigin.backendCanonical",
-            "walletSigningGatewayProvider",
-        ):
-            if marker in swap_source:
-                errors.append(
-                    "Swap UI must consume one typed local snapshot without a second "
-                    f"truth source: {marker}"
-                )
-        for marker in (
-            "'0.50'",
-            "'2,302.18'",
-            "'2302.18'",
-            "'1 ETH = 4,604.36 USDC'",
-            "'1 ETH = 4604.36 USDC'",
-            "'2.30 USDC'",
-            "'0.00031 ETH'",
-            "'0.08%'",
-            "'3.73 USDC'",
-            "'2,290.66 USDC'",
-            "'2290.66 USDC'",
-        ):
-            if marker in swap_source:
-                errors.append(
-                    "Swap quote literals belong only to SwapPreviewSnapshot: "
-                    f"{marker}"
-                )
-        for fragment, message in (
-            (
-                "setState(() => snapshot = null);",
-                "Swap edits must invalidate the complete snapshot",
-            ),
-            (
-                "payController.value = TextEditingValue",
-                "Swap restore must restore its input controller atomically",
-            ),
-            (
-                "snapshot = restored;",
-                "Swap restore must restore the same immutable snapshot atomically",
-            ),
-            (
-                "if (reviewOpening || !identical(snapshot, currentSnapshot)) return;",
-                "Swap review navigation must remain snapshot-bound and single-flight",
-            ),
-        ):
-            if fragment not in swap_source:
-                errors.append(message)
-
     intent_path = root / "lib/core/intent/signing_intent.dart"
     if intent_path.is_file():
         source = read_text(intent_path)
-        swap_start = source.find("factory SigningIntent.swap")
-        swap_end = source.find("factory SigningIntent.approval", swap_start)
-        swap_source = source[swap_start:swap_end]
-        if "origin: IntentOrigin.localPreview" not in swap_source:
-            errors.append("SigningIntent.swap must remain a local Preview intent")
+        for factory, following in (
+            ("factory SigningIntent.swap", "factory SigningIntent.approval"),
+            ("factory SigningIntent.transfer", "factory SigningIntent.swap"),
+            ("factory SigningIntent.approval", "final String revision;"),
+            ("factory SigningIntent.perpOrder", "factory SigningIntent.transfer"),
+        ):
+            start = source.find(factory)
+            if start < 0:
+                continue
+            body = source[start : source.find(following, start)]
+            if "origin: IntentOrigin.localPreview" not in body:
+                errors.append(f"{factory} must remain a local Preview intent")
 
     return errors
 
@@ -6001,33 +5795,9 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
             ),
             # Step 5 retired the Preview wallet-history filter and the testnet
             # toggle with `TransactionHistoryScreen` and `NetworksScreen`
-            # (decision 0057); both pages now read the V2 wallet module.
-            "lib/features/wallet/wallet_management_screens.dart": (
-                "child: const Text('Revocation unavailable')",
-                "No allowance or wallet balance was read",
-            ),
-            "lib/features/wallet/send_screens.dart": (
-                "WalletPreviewAsset.all",
-                "_SendPreviewAsset.available(asset)",
-                "const _SendPreviewAsset.unavailable(",
-                "asset.matchesEvery(queryTokens)",
-                "queryTokens.every(searchText.contains)",
-                "matchingAssets.any((asset) => !asset.selectable)",
-                "asset: asset.symbol",
-                "network: asset.networkLabel",
-                "'No local preview assets match'",
-                "'Try ETH, USDC, SOL or ARB. No wallet provider search was performed.'",
-                "'Pending state example'",
-                "'Success state example'",
-                "'Failure state example'",
-                "'Unknown state example'",
-                "'No request was sent or submitted. No pending receipt exists.'",
-                "'No transfer occurred or was submitted. No success receipt exists.'",
-                "'No request was sent or submitted. No verified failure receipt exists.'",
-                "'No request was sent or submitted. No reconciliation is running.'",
-                "value: 'Not submitted'",
-                "label: const Text('No transaction to inspect')",
-            ),
+            # (decision 0057); step 6 retired the Preview approvals screen, the
+            # Preview send-asset search and the Preview transaction-result
+            # layout with the real money-action pages (decision 0058).
             "lib/app.dart": (
                 "state.extra is BridgePreviewSnapshot ? null : '/wallet/bridge'",
                 "snapshot: state.extra! as BridgePreviewSnapshot",
@@ -6040,14 +5810,9 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
             ),
             "test/wallet_providerless_controls_test.dart": (
                 # Step 5 replaced the Preview history and network screens with
-                # the V2 `tx-history` and `networks` pages.
-                "permission Preview exposes no fake revocation action",
+                # the V2 `tx-history` and `networks` pages; step 6 replaced the
+                # Preview approvals and result layouts with real pages.
                 "Bridge status consumes one snapshot and changes local layout",
-                "transaction result remains an explicit state-layout Preview",
-            ),
-            "test/send_flow_truthfulness_test.dart": (
-                "transaction result catalog never claims a transfer occurred",
-                "No request was sent or submitted. No pending receipt exists.",
             ),
             "test/app_navigation_test.dart": (
                 "Bridge status route requires the exact typed snapshot",
@@ -6055,25 +5820,6 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
             ),
         },
     )
-
-    management_path = root / "lib/features/wallet/wallet_management_screens.dart"
-    if management_path.is_file():
-        source = read_text(management_path)
-        approvals_start = source.find("class ApprovalsScreen")
-        approvals_end = source.find("class DappListScreen", approvals_start)
-        approvals_source = source[approvals_start:approvals_end]
-        if not re.search(
-            r"onPressed:\s*null,\s*child:\s*const Text\('Revocation unavailable'\)",
-            approvals_source,
-            re.DOTALL,
-        ):
-            errors.append("Wallet allowance revocation must remain visibly disabled")
-        if "ScaffoldMessenger" in approvals_source:
-            errors.append(
-                "Wallet allowance revocation cannot use an enabled snackbar placeholder"
-            )
-        if re.search(r"\bonPressed\s*:(?!\s*null\b)", approvals_source):
-            errors.append("Wallet allowance Preview cannot add an enabled action")
 
     trade_path = root / "lib/features/wallet/trade_screens.dart"
     if trade_path.is_file():
@@ -6103,72 +5849,6 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
         status_source = bridge_source[status_start:status_end]
         if re.search(r"\bonPressed\s*:(?!\s*null\b)", status_source):
             errors.append("Bridge progress Preview cannot add an enabled action")
-
-    send_path = root / "lib/features/wallet/send_screens.dart"
-    if send_path.is_file():
-        source = read_text(send_path)
-        send_start = source.find("class SendAssetScreen")
-        send_end = source.find("class SendRecipientScreen", send_start)
-        send_source = source[send_start:send_end]
-        for fragment, message in (
-            (
-                "WalletPreviewAsset.all",
-                "Send asset search must derive from the canonical Preview assets",
-            ),
-            (
-                "const _SendPreviewAsset.unavailable(",
-                "Unavailable Send asset must remain in the typed Preview collection",
-            ),
-            (
-                "asset.matchesEvery(queryTokens)",
-                "Send asset search must filter every typed Preview asset",
-            ),
-            (
-                "queryTokens.every(searchText.contains)",
-                "Send asset query tokens must drive the rendered Preview rows",
-            ),
-            (
-                "onChanged: (_) => setState(() {}),",
-                "Send asset search input must update visible local results",
-            ),
-            (
-                "matchingAssets.any((asset) => !asset.selectable)",
-                "Unavailable Send Preview must follow the local search query",
-            ),
-            (
-                "asset: asset.symbol",
-                "Send asset navigation must carry the selected Preview asset",
-            ),
-            (
-                "network: asset.networkLabel",
-                "Send asset navigation must carry the selected Preview network",
-            ),
-            (
-                "No local preview assets match",
-                "Send asset no-match must remain local Preview evidence",
-            ),
-            (
-                "No wallet provider search was performed.",
-                "Send asset no-match must not claim a provider result",
-            ),
-        ):
-            if fragment not in send_source:
-                errors.append(message)
-
-        result_start = source.find("class TransactionResultScreen")
-        result_source = source[result_start:]
-        for marker in (
-            "Transfer completed",
-            "Transaction confirmed",
-            "submitted successfully",
-            "Transaction hash",
-            "Retry transaction",
-        ):
-            if marker in result_source:
-                errors.append(
-                    "Transaction Result Preview must not claim provider activity: "
-                    f"{marker}"
-                )
 
     errors.extend(
         check_behavior_test_evidence(
@@ -8265,6 +7945,154 @@ def check_s5_truth_contract(root: Path) -> list[str]:
     return errors
 
 
+
+S6_MONEY_ACTION_PATHS = (
+    Path("lib/features/wallet/money_actions_models.dart"),
+    Path("lib/features/wallet/money_actions_gateway.dart"),
+    Path("lib/features/wallet/money_actions_controllers.dart"),
+    Path("lib/features/wallet/money_actions_signing.dart"),
+    Path("lib/features/wallet/money_actions_widgets.dart"),
+    Path("lib/features/wallet/send_screens.dart"),
+    Path("lib/features/wallet/swap_screens.dart"),
+    Path("lib/features/wallet/approval_screens.dart"),
+    Path("lib/features/wallet/tx_result_screen.dart"),
+)
+# The exact `eth_sendTransaction` parameter keys, in contract order. The client
+# rebuilds the object verbatim and may not add, drop or rename a field.
+S6_UNSIGNED_TRANSACTION_KEYS = (
+    "chainId",
+    "from",
+    "to",
+    "data",
+    "value",
+    "gas",
+    "nonce",
+    "type",
+    "maxFeePerGas",
+    "maxPriorityFeePerGas",
+    "gasPrice",
+)
+
+
+def check_s6_money_action_contract(root: Path) -> list[str]:
+    """Lock the step-6 money-action truth rules (decision 0058)."""
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/core/intent/signing_intent.dart": (
+                "factory SigningIntent.backendCanonical",
+                "required String payloadDigest",
+                "sealed class SigningPayload",
+                "final class DeviceTransactionPayload extends SigningPayload",
+                "final class AuthorizationSignaturePayload extends SigningPayload",
+            ),
+            "lib/integrations/privy/wallet_signing_gateway.dart": (
+                "String? walletHandoffRefusal(",
+                "if (intent.isLocalPreview) return 'canonical_intent_required';",
+            ),
+            "lib/integrations/privy/privy_device_signer.dart": (
+                "eth_sendTransaction",
+                "generateAuthorizationSignature",
+                "privy_wallet_mismatch",
+            ),
+            "lib/features/wallet/money_actions_signing.dart": (
+                "if (!intent.canSignAt(now))",
+                "if (!intent.payloadMatchesReview)",
+                "SigningIntent.backendCanonical(",
+            ),
+            "lib/features/wallet/tx_result_screen.dart": (
+                "intent.state == LoopIntentState.confirmed",
+            ),
+        },
+    )
+
+    # 1. `backendCanonical` is the only origin a wallet may ever receive, and
+    #    only one factory may produce it.
+    intent_path = root / "lib/core/intent/signing_intent.dart"
+    if intent_path.is_file():
+        source = strip_dart_comments(read_text(intent_path))
+        if source.count("origin: IntentOrigin.backendCanonical") != 1:
+            errors.append(
+                "exactly one SigningIntent factory may set "
+                "IntentOrigin.backendCanonical"
+            )
+        for marker in (
+            "payload != null",
+            "payloadDigest != null",
+        ):
+            if marker not in source:
+                errors.append(
+                    "allowsWalletHandoff must require a canonical payload and "
+                    f"its digest: {marker}"
+                )
+
+    # 2. The signed transaction is rebuilt with the contract's exact keys.
+    models_path = root / "lib/features/wallet/money_actions_models.dart"
+    if models_path.is_file():
+        source = strip_dart_comments(read_text(models_path))
+        start = source.find("Map<String, Object?> toWire()")
+        wire = source[start : source.find("}", start)] if start >= 0 else ""
+        declared = tuple(re.findall(r"'([A-Za-z]+)':", wire))
+        if declared != S6_UNSIGNED_TRANSACTION_KEYS:
+            errors.append(
+                "LoopUnsignedTransaction.toWire must emit exactly the "
+                f"contract's {len(S6_UNSIGNED_TRANSACTION_KEYS)} keys in order; "
+                f"found {list(declared)}"
+            )
+
+    # 3. The money-action feature files stay port-only: no transport, no route
+    #    literal, no fixture.
+    for relative in S6_MONEY_ACTION_PATHS:
+        path = root / relative
+        if not path.is_file():
+            errors.append(f"missing S6 money-action file: {relative}")
+            continue
+        source = strip_dart_comments(read_text(path))
+        for marker in ("package:dio/", "'/v2/", '"/v2/', "演示数据"):
+            if marker in source:
+                errors.append(
+                    f"{relative} must stay a port consumer without transport "
+                    f"or fixture detail: {marker}"
+                )
+
+    # 4. Unlimited approval travels only with its acknowledgement.
+    api_path = root / (
+        "lib/integrations/backend/v2/wallet_intents/"
+        "loop_v2_wallet_intents_api.dart"
+    )
+    if api_path.is_file():
+        source = strip_dart_comments(read_text(api_path))
+        if (
+            "if (allowance is LoopUnlimitedAllowanceRequest)\n"
+            "        'acknowledgeUnlimited': true," not in source
+            and "'acknowledgeUnlimited': true" not in source
+        ):
+            errors.append(
+                "an unlimited allowance must carry acknowledgeUnlimited: true"
+            )
+        if "'acknowledgeUnlimited': false" in source:
+            errors.append(
+                "acknowledgeUnlimited is a confirmation, never a default false"
+            )
+
+    # 5. The Swap confirmation waits on the capability *and* its evidence.
+    swap_path = root / "lib/features/wallet/swap_screens.dart"
+    if swap_path.is_file():
+        source = strip_dart_comments(read_text(swap_path))
+        if "capability.isUsable" not in source:
+            errors.append(
+                "the Swap confirmation must be gated on capability.isUsable, "
+                "which folds in the pending device evidence"
+            )
+        if "真机证据未取得" not in source:
+            errors.append(
+                "the Swap confirmation must name the pending device evidence"
+            )
+
+    return errors
+
+
 def check_providerless_application_contract(root: Path) -> list[str]:
     """Keep transport and deterministic fakes outside production features."""
 
@@ -9985,6 +9813,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_friend_frontend_contract(root))
     errors.extend(check_notification_contract(root))
     errors.extend(check_s5_truth_contract(root))
+    errors.extend(check_s6_money_action_contract(root))
     errors.extend(check_providerless_application_contract(root))
     errors.extend(check_watchlist_application_contract(root))
     errors.extend(check_profile_application_contract(root))
@@ -10014,7 +9843,7 @@ def main() -> int:
         "Harness check passed: profile, five-destination V2 contract, "
         "V2 community truth, pins, "
         "Spot-only product, New Pairs source-scoped truth, Chat snapshot, Preview request truth and exact conversation identity, security capability truth, device-local display preferences, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
-        "S5 chain/market/wallet-read truth, "
+        "S5 chain/market/wallet-read truth, S6 money-action truth, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, and secret rules are consistent."
     )

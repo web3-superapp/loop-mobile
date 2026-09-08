@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 
@@ -244,6 +246,77 @@ class _MoneySignSheetState extends State<MoneySignSheet> {
       onConfirm: _confirm,
       onCancel: () => Navigator.of(context).pop(_outcome),
       onAdjustPolicy: widget.onAdjustPolicy,
+    );
+  }
+}
+
+/// The review block every confirmation page renders.
+///
+/// Its lines come from [moneyActionFields] — the same builder the signing exit
+/// uses — so the page and the sheet can never show different facts.
+class MoneyIntentReviewCard extends StatelessWidget {
+  const MoneyIntentReviewCard({required this.intent, super.key, this.clock});
+
+  final LoopWalletIntent intent;
+  final DateTime Function()? clock;
+
+  @override
+  Widget build(BuildContext context) {
+    final fields = moneyActionFields(intent);
+    final review = intent.review;
+    return Column(
+      key: const ValueKey<String>('money-intent-review'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopRecordCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Text(
+                '${moneyActionTitle(intent.kind).replaceFirst('确认', '')} · '
+                'FINAL REVIEW',
+                style: LoopMono.label,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                review.amount.isUnlimited
+                    ? '无限 ${review.asset.symbol}'
+                    : '${review.amount.display} ${review.asset.symbol}',
+                style: LoopMono.display,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                intent.policy.valueUsd == null
+                    ? '本次没有可用的新鲜行情，因此不展示估值。'
+                    : '预估价值 ${loopFormatUsd(intent.policy.valueUsd!)} · '
+                          '来源 ${intent.policy.priceSource ?? '未标注'}',
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          child: LoopSurfaceCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                for (final field in fields.skip(1))
+                  LoopKeyValue(
+                    key: ValueKey<String>('money-review-\${field.label}'),
+                    label: field.label,
+                    value: field.value,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    valueUp: field.label == '模拟结果'
+                        ? intent.simulation.passed
+                        : null,
+                  ),
+              ],
+            ),
+          ),
+        ),
+        MoneyFactsFooter(intent: intent, now: clock?.call()),
+      ],
     );
   }
 }

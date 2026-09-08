@@ -208,7 +208,6 @@ abstract final class LoopRouteManifest {
     '/chat/channel/:cid',
     '/chat/groups/create',
     '/chat/groups/:groupId/alias',
-    '/preview/signing-review',
     '/preview/contract-facts',
     '/preview/asset-message',
     '/preview/token-card',
@@ -844,12 +843,13 @@ abstract final class LoopRouteManifest {
     ),
     LoopRouteEntry(
       slug: 'approval-guard',
-      path: '/preview/approval',
+      path: '/wallet/approval-guard',
       module: LoopRouteModule.wallet,
       title: '授权拦截',
       prototypeOrder: 66,
       step: 6,
       status: LoopRouteStatus.implemented,
+      legacyPath: '/preview/approval',
     ),
     LoopRouteEntry(
       slug: 'approvals',
