@@ -4825,11 +4825,140 @@ class HarnessTests(unittest.TestCase):
                     msg=f"expected fail-closed {provider} guard: {result}",
                 )
 
-    def test_capability_enum_must_hold_the_contracts_twenty_eight_ids(self) -> None:
+    def _s7_root(self, temporary: str) -> Path:
+        """Copies every file `check_s7_truth_contract` inspects."""
+
+        root = Path(temporary)
+        relatives = [relative for relative, _, _, _ in check_harness.S7_PORT_DEFAULTS]
+        relatives.append(str(check_harness.S7_CONTRACT_PATH))
+        relatives.append(str(check_harness.S7_NON_EXECUTABLE_PATH))
+        relatives.extend(str(path) for path in check_harness.S7_TOKEN_CARD_PATHS)
+        for surface_root in check_harness.S7_SURFACE_ROOTS:
+            for path in sorted((REPOSITORY_ROOT / surface_root).rglob("*.dart")):
+                relatives.append(str(path.relative_to(REPOSITORY_ROOT)))
+        for relative in dict.fromkeys(relatives):
+            target = root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(
+                (REPOSITORY_ROOT / relative).read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+        return root
+
+    def test_s7_ports_must_default_fail_closed(self) -> None:
+        for relative, provider, port, unavailable in check_harness.S7_PORT_DEFAULTS:
+            with self.subTest(provider=provider):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = self._s7_root(temporary)
+                    target = root / relative
+                    target.write_text(
+                        target.read_text(encoding="utf-8").replace(
+                            f"(ref) => const {unavailable}(),",
+                            f"(ref) => ref.read(dio{port}AdapterProvider),",
+                            1,
+                        ),
+                        encoding="utf-8",
+                    )
+
+                    result = check_harness.check_s7_truth_contract(root)
+
+                self.assertTrue(
+                    any(
+                        f"{provider} must default directly to const "
+                        f"{unavailable}()" in error
+                        for error in result
+                    ),
+                    msg=f"expected fail-closed {provider} guard: {result}",
+                )
+
+    def test_s7_missing_figure_marker_must_stay_the_em_dash(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._s7_root(temporary)
+            target = root / check_harness.S7_CONTRACT_PATH
+            target.write_text(
+                target.read_text(encoding="utf-8").replace(
+                    check_harness.S7_MISSING_FIGURE_MARKER,
+                    "const String launchMissingFigure = '0';",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_s7_truth_contract(root)
+
+        self.assertTrue(
+            any("must declare" in error and "em dash" in error for error in result),
+            msg=f"expected em-dash placeholder guard: {result}",
+        )
+
+    def test_s7_surfaces_must_not_restate_the_retired_prototype_copy(self) -> None:
+        for retired in check_harness.S7_RETIRED_PROTOTYPE_COPY:
+            with self.subTest(retired=retired):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = self._s7_root(temporary)
+                    target = root / "lib/features/launch/launch_screen.dart"
+                    target.write_text(
+                        target.read_text(encoding="utf-8").replace(
+                            "kicker: 'LAUNCH DESK',",
+                            f"kicker: '{retired}',",
+                            1,
+                        ),
+                        encoding="utf-8",
+                    )
+
+                    result = check_harness.check_s7_truth_contract(root)
+
+                self.assertTrue(
+                    any(f"states `{retired}`" in error for error in result),
+                    msg=f"expected retired-copy guard for {retired}: {result}",
+                )
+
+    def test_graduated_token_card_must_not_label_an_ecosystem_tax(self) -> None:
+        for relative in check_harness.S7_TOKEN_CARD_PATHS:
+            with self.subTest(path=str(relative)):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = self._s7_root(temporary)
+                    target = root / relative
+                    target.write_text(
+                        target.read_text(encoding="utf-8")
+                        + "\nconst String _tax = '生态税';\n",
+                        encoding="utf-8",
+                    )
+
+                    result = check_harness.check_s7_truth_contract(root)
+
+                self.assertTrue(
+                    any("labels a 生态税 metric" in error for error in result),
+                    msg=f"expected ecosystem-tax guard for {relative}: {result}",
+                )
+
+    def test_s7_action_surface_must_not_open_the_signing_sheet(self) -> None:
+        for marker in check_harness.S7_SIGNING_MARKERS:
+            with self.subTest(marker=marker):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = self._s7_root(temporary)
+                    target = root / check_harness.S7_NON_EXECUTABLE_PATH
+                    target.write_text(
+                        target.read_text(encoding="utf-8")
+                        + f"\nvoid _open() => {marker}();\n",
+                        encoding="utf-8",
+                    )
+
+                    result = check_harness.check_s7_truth_contract(root)
+
+                self.assertTrue(
+                    any(f"references `{marker}`" in error for error in result),
+                    msg=f"expected signing guard for {marker}: {result}",
+                )
+
+    def test_current_s7_surfaces_pass_their_guard(self) -> None:
+        self.assertEqual(check_harness.check_s7_truth_contract(REPOSITORY_ROOT), [])
+
+    def test_capability_enum_must_hold_the_contracts_thirty_one_ids(self) -> None:
         relative = str(check_harness.S5_CAPABILITY_META_PATH)
         source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
         mutations = (
-            # A twenty-eighth id the contract never listed.
+            # A thirty-second id the contract never listed.
             ("  communityAi('communityAi');", "  communityAi('communityAi'),\n  perpTrading('perpTrading');"),
             # A dropped id.
             ("  marketRead('marketRead'),\n", ""),
@@ -4851,11 +4980,11 @@ class HarnessTests(unittest.TestCase):
 
                 self.assertTrue(
                     any(
-                        "LoopV2CapabilityId must list exactly the contract's 28 ids"
+                        "LoopV2CapabilityId must list exactly the contract's 31 ids"
                         in error
                         for error in result
                     ),
-                    msg=f"expected 27-capability guard: {result}",
+                    msg=f"expected 31-capability guard: {result}",
                 )
 
     def test_swap_entry_point_must_be_gated_on_swappable_alone(self) -> None:

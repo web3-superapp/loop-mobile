@@ -127,6 +127,7 @@ REQUIRED_FILES = (
     "test/route_manifest_test.dart",
     "docs/decisions/0054-adopt-v2-community-social-graph-and-search.md",
     "docs/decisions/0057-adopt-v2-chain-market-and-wallet-read.md",
+    "docs/decisions/0058-adopt-v2-launch-catalog-and-mining-skeleton.md",
     "test/community_api_contract_test.dart",
     "test/community_idempotency_test.dart",
     "test/community_pages_test.dart",
@@ -331,6 +332,34 @@ REQUIRED_FILES = (
     "test/s5_watchlist_alerts_notifications_test.dart",
     "test/loop_candle_chart_test.dart",
     "test/loop_qr_code_test.dart",
+    # Step 7 (decision 0058): the launch catalogue, the mining skeleton and the
+    # referral graph, each behind a fail-closed port.
+    "lib/core/navigation/launch_route.dart",
+    "lib/features/launch/launch_contract.dart",
+    "lib/features/launch/launch_models.dart",
+    "lib/features/launch/launch_gateway.dart",
+    "lib/features/launch/launch_controllers.dart",
+    "lib/features/launch/launch_widgets.dart",
+    "lib/features/launch/launch_screen.dart",
+    "lib/features/launch/launch_detail_screens.dart",
+    "lib/features/launch/launch_action_screens.dart",
+    "lib/features/mining/mining_models.dart",
+    "lib/features/mining/mining_gateway.dart",
+    "lib/features/mining/mining_controllers.dart",
+    "lib/features/mining/mining_secondary_screens.dart",
+    "lib/features/mining/referral_models.dart",
+    "lib/features/mining/referral_gateway.dart",
+    "lib/features/mining/referral_screen.dart",
+    "lib/integrations/backend/v2/loop_v2_s7_codec.dart",
+    "lib/integrations/backend/v2/loop_v2_s7_gateways.dart",
+    "lib/integrations/backend/v2/loop_v2_s7_providers.dart",
+    "lib/integrations/backend/v2/launch/loop_v2_launch_api.dart",
+    "lib/integrations/backend/v2/mining/loop_v2_mining_api.dart",
+    "lib/integrations/backend/v2/referral/loop_v2_referral_api.dart",
+    "test/s7_api_contract_test.dart",
+    "test/s7_launch_pages_test.dart",
+    "test/s7_mining_pages_test.dart",
+    "test/s7_referral_test.dart",
 )
 # Step 3 replaced `/chat/requests` with the V2 `dm-requests` page, which has a
 # real backend and is no longer a Development Preview fixture route.
@@ -654,7 +683,9 @@ S5_PORT_DEFAULTS = (
     ),
 )
 S5_CAPABILITY_META_PATH = Path("lib/integrations/backend/v2/loop_v2_meta.dart")
-# The contract's 28 capability ids, in contract order.
+# The contract's 31 capability ids, in contract order. Step 7 (decision 0058)
+# read the frozen `integration/v2` contract, which carries `security`,
+# `settings` and `support` alongside the three S7 ids.
 S5_CAPABILITY_IDS = (
     "privyAuthentication",
     "accountSession",
@@ -680,11 +711,68 @@ S5_CAPABILITY_IDS = (
     "pushNotifications",
     "profile",
     "avatarUpload",
+    "security",
+    "settings",
+    "support",
     "pay",
     "bridge",
     "dappExecution",
     "communityAi",
 )
+# The three S7 ports (decision 0058). Each production default is its own
+# `Unavailable…Gateway`, so Launch, Mining and Referral are unavailable until
+# `lib/main.dart` mounts a real adapter. There is no Preview mode for step 7:
+# no Launch or Mining fixture can be labelled truthfully.
+S7_PORT_DEFAULTS = (
+    (
+        "lib/features/launch/launch_gateway.dart",
+        "launchGatewayProvider",
+        "LaunchGateway",
+        "UnavailableLaunchGateway",
+    ),
+    (
+        "lib/features/mining/mining_gateway.dart",
+        "miningGatewayProvider",
+        "MiningGateway",
+        "UnavailableMiningGateway",
+    ),
+    (
+        "lib/features/mining/referral_gateway.dart",
+        "referralGatewayProvider",
+        "ReferralGateway",
+        "UnavailableReferralGateway",
+    ),
+)
+S7_CONTRACT_PATH = Path("lib/features/launch/launch_contract.dart")
+# The em dash is the only placeholder an S7 metric may render. `0` next to a
+# missing contract fact would be indistinguishable from a proven zero.
+S7_MISSING_FIGURE_MARKER = "const String launchMissingFigure = '—';"
+# The prototype口径 that the missing 02 contract document retires. None of them
+# may appear in a mounted Launch, Mining or Referral surface. Naming the
+# server's own `ecosystemTax` field while rendering it unavailable is not a
+# claim, so the bare word is not forbidden — only the asserted rate is.
+S7_RETIRED_PROTOTYPE_COPY = (
+    "永久 1%",
+    "1% 生态税",
+    "0.5% 单地址",
+    "统一 10 亿",
+    "尾号统一",
+    "10 亿总量",
+)
+# The graduated Token Card lost its ecosystem-tax metric with decision 0058:
+# there is no proven rate to label.
+S7_TOKEN_CARD_PATHS = (
+    Path("lib/widgets/loop_token_card.dart"),
+    Path("lib/features/system/system_showcase_preview.dart"),
+)
+S7_SURFACE_ROOTS = (
+    Path("lib/features/launch"),
+    Path("lib/features/mining"),
+)
+# `loop-stake` is non-executable as a whole page, so it owns no amount field
+# and no signing entry; `launch-trade` keeps its form but never opens one.
+S7_NON_EXECUTABLE_PATH = Path("lib/features/launch/launch_action_screens.dart")
+S7_SIGNING_MARKERS = ("showLoopSignSheet", "LoopSignSheet", "SigningIntent")
 S5_TOKEN_SURFACE_PATH = Path("lib/features/market/token_screen.dart")
 S5_SWAP_GATE = "if (detail.capability.swappable)"
 S5_SWAP_ENTRY_KEY = "'token-swap-entry'"
@@ -8265,6 +8353,90 @@ def check_s5_truth_contract(root: Path) -> list[str]:
     return errors
 
 
+def check_s7_truth_contract(root: Path) -> list[str]:
+    """Lock the step-7 truth rules recorded by decision 0058."""
+
+    errors: list[str] = []
+
+    # 1. Every S7 port stays fail-closed until a real adapter is mounted.
+    for relative, provider, port, unavailable in S7_PORT_DEFAULTS:
+        path = root / relative
+        if not path.is_file():
+            errors.append(f"missing S7 port: {relative}")
+            continue
+        source = strip_dart_comments(read_text(path))
+        default_pattern = re.compile(
+            rf"final\s+{re.escape(provider)}\s*=\s*Provider<{re.escape(port)}>\s*"
+            rf"\(\s*\(\s*ref\s*\)\s*=>\s*const\s+{re.escape(unavailable)}\s*"
+            r"\(\s*\)\s*,?\s*\)\s*;",
+            re.DOTALL,
+        )
+        if default_pattern.search(source) is None:
+            errors.append(
+                f"{provider} must default directly to const {unavailable}(); an "
+                "S7 port is unavailable until lib/main.dart mounts its adapter"
+            )
+
+    # 2. The em dash is the only S7 placeholder, and it is declared once.
+    contract_path = root / S7_CONTRACT_PATH
+    if not contract_path.is_file():
+        errors.append(f"missing S7 contract: {S7_CONTRACT_PATH}")
+    elif S7_MISSING_FIGURE_MARKER not in read_text(contract_path):
+        errors.append(
+            "lib/features/launch/launch_contract.dart must declare "
+            f"`{S7_MISSING_FIGURE_MARKER}`; an S7 metric with no source renders "
+            "the em dash and the server's reasonCode, never 0"
+        )
+
+    # 3. The prototype口径 the missing 02 document retires never reaches a
+    #    mounted Launch, Mining or Referral surface.
+    for relative_root in S7_SURFACE_ROOTS:
+        surface_root = root / relative_root
+        if not surface_root.is_dir():
+            errors.append(f"missing S7 surface root: {relative_root}")
+            continue
+        for path in sorted(surface_root.rglob("*.dart")):
+            source = strip_dart_comments(read_text(path))
+            for retired in S7_RETIRED_PROTOTYPE_COPY:
+                if retired in source:
+                    errors.append(
+                        f"{path.relative_to(root)} states `{retired}`; the "
+                        "Launch contract baseline is undelivered, so no supply, "
+                        "tax, cap or address口径 may be rendered"
+                    )
+
+    # 4. The graduated Token Card carries no ecosystem-tax label.
+    for relative in S7_TOKEN_CARD_PATHS:
+        path = root / relative
+        if not path.is_file():
+            errors.append(f"missing Token Card source: {relative}")
+            continue
+        if "生态税" in strip_dart_comments(read_text(path)):
+            errors.append(
+                f"{relative} labels a 生态税 metric; LoopTokenCard.graduated "
+                "carries no ecosystem tax while the Launch contract baseline "
+                "is undelivered"
+            )
+
+    # 5. No Launch surface constructs a transaction or opens the signing sheet.
+    #    `loop-stake` is non-executable as a whole page and `launch-trade`
+    #    disables its main action on the server's own refusal.
+    action_path = root / S7_NON_EXECUTABLE_PATH
+    if not action_path.is_file():
+        errors.append(f"missing S7 action surface: {S7_NON_EXECUTABLE_PATH}")
+    else:
+        action_source = strip_dart_comments(read_text(action_path))
+        for marker in S7_SIGNING_MARKERS:
+            if marker in action_source:
+                errors.append(
+                    f"{S7_NON_EXECUTABLE_PATH} references `{marker}`; no Launch "
+                    "surface may open a signing sheet while the contract "
+                    "baseline is undelivered"
+                )
+
+    return errors
+
+
 def check_providerless_application_contract(root: Path) -> list[str]:
     """Keep transport and deterministic fakes outside production features."""
 
@@ -9985,6 +10157,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_friend_frontend_contract(root))
     errors.extend(check_notification_contract(root))
     errors.extend(check_s5_truth_contract(root))
+    errors.extend(check_s7_truth_contract(root))
     errors.extend(check_providerless_application_contract(root))
     errors.extend(check_watchlist_application_contract(root))
     errors.extend(check_profile_application_contract(root))
@@ -10015,6 +10188,7 @@ def main() -> int:
         "V2 community truth, pins, "
         "Spot-only product, New Pairs source-scoped truth, Chat snapshot, Preview request truth and exact conversation identity, security capability truth, device-local display preferences, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
         "S5 chain/market/wallet-read truth, "
+        "S7 launch/mining/referral truth, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, and secret rules are consistent."
     )
