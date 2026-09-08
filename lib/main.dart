@@ -11,7 +11,11 @@ import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_catalog.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
+import 'package:loop_mobile/features/profile/about/about_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
+import 'package:loop_mobile/features/profile/security/security_gateway.dart';
+import 'package:loop_mobile/features/profile/settings/settings_gateway.dart';
+import 'package:loop_mobile/features/profile/support/support_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_display_store.dart';
 import 'package:loop_mobile/integrations/personalization/loop_personalization_providers.dart';
 import 'package:loop_mobile/integrations/social/loop_social_providers.dart';
@@ -20,6 +24,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_communication_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s5_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_s8_providers.dart';
 import 'package:loop_mobile/integrations/sharing/system_chat_merge_export_sink.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
@@ -96,6 +101,20 @@ Future<void> main() async {
         ),
         notificationsGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2NotificationsGatewayProvider),
+        ),
+        // S8 security / settings / support. `about` is public and needs only a
+        // backend origin; the other three also need an authenticated session.
+        securityGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2SecurityGatewayProvider),
+        ),
+        accountSettingsGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2AccountSettingsGatewayProvider),
+        ),
+        supportGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2SupportGatewayProvider),
+        ),
+        aboutGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2AboutGatewayProvider),
         ),
       ],
       child: const LoopApp(),

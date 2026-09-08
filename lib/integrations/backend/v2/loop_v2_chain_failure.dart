@@ -10,7 +10,10 @@ LoopChainFailureKind loopChainFailureKindForV2(LoopBackendFailure failure) {
   return switch (failure.code) {
     'PERMISSION_DENIED' ||
     'POLICY_BLOCKED' => LoopChainFailureKind.permissionDenied,
-    'NOT_FOUND' => LoopChainFailureKind.notFound,
+    // The command needs a second factor the product has not delivered; it is
+    // a permanent refusal, never a retryable failure.
+    'AUTH_STEP_UP_REQUIRED' => LoopChainFailureKind.stepUpRequired,
+    'NOT_FOUND' || 'SESSION_NOT_FOUND' => LoopChainFailureKind.notFound,
     'VERSION_CONFLICT' || 'DATA_STALE' => LoopChainFailureKind.versionConflict,
     'ACCOUNT_BOOTSTRAP_REQUIRED' => LoopChainFailureKind.bootstrapRequired,
     'IDEMPOTENCY_CONFLICT' => LoopChainFailureKind.idempotencyConflict,

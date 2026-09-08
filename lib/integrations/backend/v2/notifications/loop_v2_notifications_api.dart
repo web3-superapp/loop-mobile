@@ -47,12 +47,6 @@ final class DioLoopV2NotificationsApi implements LoopV2NotificationsApi {
   static const preferencesPath = '/v2/notification-preferences';
   static const maximumVersion = 2147483647;
 
-  static final RegExp _entityRefPattern = RegExp(
-    r'^[a-z][A-Za-z0-9]{0,31}:[A-Za-z0-9._:-]{1,160}$',
-  );
-  static final RegExp _contextRoutePattern = RegExp(r'^[a-z][a-z0-9-]{0,63}$');
-  static final RegExp _sourcePattern = RegExp(r'^[a-z][a-z0-9_]{0,63}$');
-
   final Dio _dio;
 
   @override
@@ -90,7 +84,7 @@ final class DioLoopV2NotificationsApi implements LoopV2NotificationsApi {
         root['items'],
         maximum: 50,
       )) {
-        final entry = _entry(raw);
+        final entry = loopV2NotificationEntryFromMap(raw);
         if (!seen.add(entry.notificationId)) LoopV2ChainCodec.invalid();
         items.add(entry);
       }
@@ -135,7 +129,7 @@ final class DioLoopV2NotificationsApi implements LoopV2NotificationsApi {
         'contractVersion',
       });
       LoopV2ChainCodec.requireContractVersion(root);
-      final entry = _entry(root['notification']);
+      final entry = loopV2NotificationEntryFromMap(root['notification']);
       if (entry.notificationId != notificationId) LoopV2ChainCodec.invalid();
       // A read receipt must actually carry a read time.
       if (entry.readAt == null) LoopV2ChainCodec.invalid();
@@ -250,90 +244,105 @@ final class DioLoopV2NotificationsApi implements LoopV2NotificationsApi {
       push: LoopV2ChainCodec.unavailable(root['push']),
     );
   }
+}
 
-  static LoopNotificationEntry _entry(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, const <String>{
+final RegExp _entityRefPattern = RegExp(
+  r'^[a-z][A-Za-z0-9]{0,31}:[A-Za-z0-9._:-]{1,160}$',
+);
+final RegExp _contextRoutePattern = RegExp(r'^[a-z][a-z0-9-]{0,63}$');
+final RegExp _sourcePattern = RegExp(r'^[a-z][a-z0-9_]{0,63}$');
+
+/// Decodes one `notification.v1` projection row.
+///
+/// Shared by `GET /v2/notifications/feed`, the read command and the step-8
+/// security summary, so the three surfaces can never drift apart. [idPattern]
+/// exists because the security summary publishes the generic opaque UUID
+/// shape while the feed publishes the v4 shape.
+LoopNotificationEntry loopV2NotificationEntryFromMap(
+  Object? raw, {
+  RegExp? idPattern,
+}) {
+  final map = LoopV2Contract.strictMap(raw, const <String>{
+    'notificationId',
+    'type',
+    'entityRef',
+    'contextRoute',
+    'contextParams',
+    'payload',
+    'source',
+    'observedAt',
+    'readAt',
+    'createdAt',
+  });
+  final rawType = map['type'];
+  if (rawType is! String) LoopV2ChainCodec.invalid();
+  final type = LoopNotificationCategory.tryParse(rawType);
+  if (type == null) LoopV2ChainCodec.invalid();
+  return LoopNotificationEntry(
+    notificationId: LoopV2ChainCodec.requireString(
+      map,
       'notificationId',
-      'type',
+      pattern: idPattern ?? LoopV2Contract.uuidV4Pattern,
+      maxLength: 36,
+    ),
+    type: type,
+    entityRef: LoopV2ChainCodec.requireString(
+      map,
       'entityRef',
+      pattern: _entityRefPattern,
+      maxLength: 200,
+    ),
+    contextRoute: LoopV2ChainCodec.requireString(
+      map,
       'contextRoute',
-      'contextParams',
-      'payload',
+      pattern: _contextRoutePattern,
+      maxLength: 64,
+    ),
+    contextParams: _stringMap(map['contextParams'], maximum: 8),
+    payload: _payloadMap(map['payload']),
+    source: LoopV2ChainCodec.optionalString(
+      map,
       'source',
-      'observedAt',
-      'readAt',
-      'createdAt',
-    });
-    final rawType = map['type'];
-    if (rawType is! String) LoopV2ChainCodec.invalid();
-    final type = LoopNotificationCategory.tryParse(rawType);
-    if (type == null) LoopV2ChainCodec.invalid();
-    return LoopNotificationEntry(
-      notificationId: LoopV2ChainCodec.requireString(
-        map,
-        'notificationId',
-        pattern: LoopV2Contract.uuidV4Pattern,
-        maxLength: 36,
-      ),
-      type: type,
-      entityRef: LoopV2ChainCodec.requireString(
-        map,
-        'entityRef',
-        pattern: _entityRefPattern,
-        maxLength: 200,
-      ),
-      contextRoute: LoopV2ChainCodec.requireString(
-        map,
-        'contextRoute',
-        pattern: _contextRoutePattern,
-        maxLength: 64,
-      ),
-      contextParams: _stringMap(map['contextParams'], maximum: 8),
-      payload: _payloadMap(map['payload']),
-      source: LoopV2ChainCodec.optionalString(
-        map,
-        'source',
-        pattern: _sourcePattern,
-        maxLength: 64,
-      ),
-      observedAt: LoopV2ChainCodec.optionalTimestamp(map, 'observedAt'),
-      readAt: LoopV2ChainCodec.optionalTimestamp(map, 'readAt'),
-      createdAt: LoopV2ChainCodec.requireTimestamp(map, 'createdAt'),
-    );
-  }
+      pattern: _sourcePattern,
+      maxLength: 64,
+    ),
+    observedAt: LoopV2ChainCodec.optionalTimestamp(map, 'observedAt'),
+    readAt: LoopV2ChainCodec.optionalTimestamp(map, 'readAt'),
+    createdAt: LoopV2ChainCodec.requireTimestamp(map, 'createdAt'),
+  );
+}
 
-  static Map<String, String> _stringMap(Object? raw, {required int maximum}) {
-    if (raw is! Map || raw.length > maximum) LoopV2ChainCodec.invalid();
-    final result = <String, String>{};
-    for (final entry in raw.entries) {
-      final key = entry.key;
-      final value = entry.value;
-      if (key is! String ||
-          key.isEmpty ||
-          key.length > 64 ||
-          value is! String ||
-          value.length > 256) {
-        LoopV2ChainCodec.invalid();
-      }
-      result[key] = value;
+Map<String, String> _stringMap(Object? raw, {required int maximum}) {
+  if (raw is! Map || raw.length > maximum) LoopV2ChainCodec.invalid();
+  final result = <String, String>{};
+  for (final entry in raw.entries) {
+    final key = entry.key;
+    final value = entry.value;
+    if (key is! String ||
+        key.isEmpty ||
+        key.length > 64 ||
+        value is! String ||
+        value.length > 256) {
+      LoopV2ChainCodec.invalid();
     }
-    return result;
+    result[key] = value;
   }
+  return result;
+}
 
-  static Map<String, String?> _payloadMap(Object? raw) {
-    if (raw is! Map || raw.length > 16) LoopV2ChainCodec.invalid();
-    final result = <String, String?>{};
-    for (final entry in raw.entries) {
-      final key = entry.key;
-      final value = entry.value;
-      if (key is! String ||
-          key.isEmpty ||
-          key.length > 64 ||
-          (value != null && (value is! String || value.length > 256))) {
-        LoopV2ChainCodec.invalid();
-      }
-      result[key] = value;
+Map<String, String?> _payloadMap(Object? raw) {
+  if (raw is! Map || raw.length > 16) LoopV2ChainCodec.invalid();
+  final result = <String, String?>{};
+  for (final entry in raw.entries) {
+    final key = entry.key;
+    final value = entry.value;
+    if (key is! String ||
+        key.isEmpty ||
+        key.length > 64 ||
+        (value != null && (value is! String || value.length > 256))) {
+      LoopV2ChainCodec.invalid();
     }
-    return result;
+    result[key] = value;
   }
+  return result;
 }

@@ -26,6 +26,10 @@ enum LoopChainFailureKind {
   permissionDenied,
   notFound,
 
+  /// The server requires a second verification factor for this command. Step
+  /// up is not delivered, so the command can never succeed in this build.
+  stepUpRequired,
+
   /// Optimistic-concurrency rejection: reload and merge before retrying.
   versionConflict,
   bootstrapRequired,
@@ -199,6 +203,7 @@ String loopChainFailureReason(LoopChainFailureKind? kind) => switch (kind) {
   LoopChainFailureKind.indexingDelayed =>
     '链上索引尚未运行或未追上最新区块，这里不是"没有记录"，而是暂时读不到。',
   LoopChainFailureKind.permissionDenied => '当前账号无权执行此操作，服务端已拒绝。',
+  LoopChainFailureKind.stepUpRequired => '这一步需要二次验证。二次验证尚未开放，服务端已拒绝，没有发生任何变化。',
   LoopChainFailureKind.notFound => '目标不存在、未登记，或对当前账号不可见。',
   LoopChainFailureKind.versionConflict => '数据已被其他设备修改。请重新加载后再提交，本次没有覆盖任何内容。',
   LoopChainFailureKind.bootstrapRequired => '账号尚未完成初始化，请稍后重试。',
@@ -286,7 +291,8 @@ LoopChainViewPhase loopChainPhaseForFailure(LoopChainFailureKind? kind) =>
       LoopChainFailureKind.offline => LoopChainViewPhase.offline,
       LoopChainFailureKind.unavailable ||
       LoopChainFailureKind.indexingDelayed => LoopChainViewPhase.unavailable,
-      LoopChainFailureKind.permissionDenied => LoopChainViewPhase.permission,
+      LoopChainFailureKind.permissionDenied ||
+      LoopChainFailureKind.stepUpRequired => LoopChainViewPhase.permission,
       null => LoopChainViewPhase.empty,
       _ => LoopChainViewPhase.error,
     };

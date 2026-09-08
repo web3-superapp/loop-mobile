@@ -211,6 +211,7 @@ abstract final class LoopV2Contract {
       'REQUEST_TIMEOUT' => LoopBackendFailureKind.timeout,
       'RATE_LIMITED' ||
       'NOT_FOUND' ||
+      'AUTH_STEP_UP_REQUIRED' ||
       'PERMISSION_DENIED' ||
       'POLICY_BLOCKED' ||
       'CAPABILITY_UNAVAILABLE' ||
