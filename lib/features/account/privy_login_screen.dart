@@ -1,18 +1,27 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/email_auth_controller.dart';
-import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
 
-/// Production authentication surface backed by Privy credentials.
+/// `auth`: the identity entry point backed by Privy credentials.
 ///
-/// Development preview is an explicit offline/read-only mode. Entering it does
-/// not create a wallet, connect Stream, bootstrap a backend session, or trade.
+/// The second email step lives on its own manifest route (`/auth/otp`); this
+/// page only sends the code. Development preview is an explicit offline,
+/// read-only mode: entering it creates no wallet, connects no provider and
+/// bootstraps no backend session.
 class PrivyLoginScreen extends ConsumerStatefulWidget {
-  const PrivyLoginScreen({super.key});
+  const PrivyLoginScreen({super.key, this.onCodeSent});
+
+  /// Called after a code was accepted for delivery, so the shell can push the
+  /// `auth-otp` page.
+  final VoidCallback? onCodeSent;
 
   @override
   ConsumerState<PrivyLoginScreen> createState() => _PrivyLoginScreenState();
@@ -20,12 +29,10 @@ class PrivyLoginScreen extends ConsumerStatefulWidget {
 
 class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
   final _emailController = TextEditingController();
-  final _codeController = TextEditingController();
 
   @override
   void dispose() {
     _emailController.dispose();
-    _codeController.dispose();
     super.dispose();
   }
 
@@ -42,241 +49,242 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
     final config = ref.watch(appConfigProvider);
     final previewEnabled = ref.watch(developmentPreviewEnabledProvider);
     final authState = ref.watch(emailAuthProvider);
-    final authController = ref.read(emailAuthProvider.notifier);
+    final controller = ref.read(emailAuthProvider.notifier);
     final showApple = ref.watch(isIosIdentityPlatformProvider);
 
-    return LoopPage(
-      eyebrow: 'PRIVY IDENTITY',
-      title: authState.step == EmailAuthStep.enterEmail
-          ? 'Welcome to LOOP'
-          : 'Check your email',
-      subtitle: authState.step == EmailAuthStep.enterEmail
-          ? 'Use a one-time email code to enter. Wallet creation remains a separate, explicit action.'
-          : 'A 6-digit code was sent to ${authState.submittedEmail}. This address stays fixed until you choose to change it.',
-      children: <Widget>[
-        if (!config.canInitializePrivy && !previewEnabled) ...<Widget>[
-          const LoopStateCard(
-            title: 'Login configuration incomplete',
-            message: 'The Privy App ID is present, but the Mobile App Client ID is missing. Real OTP calls remain disabled.',
-            icon: Icons.key_off_outlined,
-            tone: LoopTone.warning,
+    return LoopFocusPage(
+      archetype: LoopPageArchetype.intro,
+      title: '欢迎来到 LOOP',
+      primaryAction: LoopButton(
+        key: const ValueKey<String>('privy-auth-primary-button'),
+        label: authState.isBusy ? '发送中…' : '发送验证码',
+        primary: true,
+        block: true,
+        onPressed: authState.isBusy
+            ? null
+            : () => unawaited(_sendCode(controller)),
+      ),
+      body: <Widget>[
+        const Padding(
+          padding: EdgeInsets.only(bottom: 14),
+          child: Center(
+            child: LoopBrandMark(
+              key: ValueKey<String>('privy-auth-mark'),
+              kind: LoopBrandMarkKind.appIcon,
+              height: 84,
+              semanticLabel: 'LOOP',
+            ),
           ),
-          const SizedBox(height: 16),
-        ],
-        LoopCard(
-          accent: true,
-          tone: LoopTone.positive,
-          child: AutofillGroup(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Text(
-                  authState.step == EmailAuthStep.enterEmail
-                      ? 'Continue with email'
-                      : authState.submittedEmail ?? 'Email verification',
-                  style: Theme.of(context).textTheme.titleLarge,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            0,
+            LoopSpacing.page,
+            LoopSpacing.group,
+          ),
+          child: Text(
+            '登录后自动创建钱包，持仓即产生算力。',
+            textAlign: TextAlign.center,
+            style: LoopTypography.sora(
+              size: 14,
+              weight: FontWeight.w500,
+              height: 1.5,
+              color: LoopColors.text2,
+            ),
+          ),
+        ),
+        if (!config.canInitializePrivy && !previewEnabled)
+          const LoopNotice(
+            key: ValueKey<String>('privy-auth-configuration-incomplete'),
+            icon: 'warn',
+            tone: LoopNoticeTone.warn,
+            title: '登录配置不完整',
+            body: '缺少 Privy Mobile App Client ID，真实的验证码请求保持关闭。',
+          ),
+        const LoopLabel('用邮箱登录'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+          child: LoopSurfaceCard(
+            child: AutofillGroup(
+              child: TextField(
+                key: const ValueKey<String>('privy-email-field'),
+                controller: _emailController,
+                enabled: !authState.isBusy,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.done,
+                autofillHints: const <String>[AutofillHints.email],
+                autocorrect: false,
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  hintText: 'name@example.com',
                 ),
-                const SizedBox(height: 14),
-                if (authState.step == EmailAuthStep.enterEmail)
-                  TextField(
-                    key: const ValueKey('privy-email-field'),
-                    controller: _emailController,
-                    enabled: !authState.isBusy,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.done,
-                    autofillHints: const <String>[AutofillHints.email],
-                    autocorrect: false,
-                    decoration: const InputDecoration(
-                      labelText: 'Email address',
-                      hintText: 'name@example.com',
-                      prefixIcon: Icon(Icons.alternate_email_rounded),
-                    ),
-                    onSubmitted: authState.isBusy
-                        ? null
-                        : authController.sendCode,
-                  )
-                else
-                  TextField(
-                    key: const ValueKey('privy-otp-field'),
-                    controller: _codeController,
-                    enabled: !authState.isBusy,
-                    keyboardType: TextInputType.number,
-                    textInputAction: TextInputAction.done,
-                    autofillHints: const <String>[AutofillHints.oneTimeCode],
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(6),
-                    ],
-                    decoration: const InputDecoration(
-                      labelText: 'Verification code',
-                      hintText: '000000',
-                      prefixIcon: Icon(Icons.password_rounded),
-                    ),
-                    onSubmitted: authState.isBusy
-                        ? null
-                        : authController.verifyCode,
-                  ),
-                if (authState.errorMessage != null) ...<Widget>[
-                  const SizedBox(height: 12),
-                  Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      authState.errorMessage!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: LoopColors.danger,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 16),
-                FilledButton(
-                  key: const ValueKey('privy-auth-primary-button'),
-                  onPressed: authState.isBusy
-                      ? null
-                      : () {
-                          if (authState.step == EmailAuthStep.enterEmail) {
-                            authController.sendCode(_emailController.text);
-                          } else {
-                            authController.verifyCode(_codeController.text);
-                          }
-                        },
-                  child: authState.isBusy
-                      ? const SizedBox.square(
-                          dimension: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(
-                          authState.step == EmailAuthStep.enterEmail
-                              ? 'Send one-time code'
-                              : 'Verify and continue',
-                        ),
-                ),
-                if (authState.step == EmailAuthStep.enterCode) ...<Widget>[
-                  const SizedBox(height: 6),
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: TextButton(
-                          onPressed: authState.isBusy
-                              ? null
-                              : authController.changeEmail,
-                          child: const Text('Change email'),
-                        ),
-                      ),
-                      Expanded(
-                        child: TextButton(
-                          onPressed: authState.isBusy
-                              ? null
-                              : authController.resendCode,
-                          child: const Text('Resend code'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
+                onSubmitted: authState.isBusy
+                    ? null
+                    : (_) => unawaited(_sendCode(controller)),
+              ),
+            ),
+          ),
+        ),
+        if (authState.errorMessage != null)
+          LoopNotice(
+            key: const ValueKey<String>('privy-auth-error'),
+            icon: 'close',
+            tone: LoopNoticeTone.danger,
+            title: '无法继续',
+            body: authState.errorMessage!,
+            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+          ),
+        const LoopLabel('或'),
+        _AuthMethod(
+          identifier: 'privy-google-login-button',
+          label: '使用 Google 继续',
+          busy: authState.activeOperation == IdentityAuthOperation.google,
+          available: config.canInitializePrivy,
+          unavailableReason: '缺少 Privy Mobile App Client ID',
+          onPressed: authState.isBusy ? null : controller.loginWithGoogle,
+        ),
+        if (showApple)
+          _AuthMethod(
+            identifier: 'privy-apple-login-button',
+            label: '使用 Apple 继续',
+            busy: authState.activeOperation == IdentityAuthOperation.apple,
+            available: config.canInitializePrivy,
+            unavailableReason: '缺少 Privy Mobile App Client ID',
+            onPressed: authState.isBusy ? null : controller.loginWithApple,
+          ),
+        _AuthMethod(
+          identifier: 'privy-wallet-login-button',
+          label: '连接已有钱包',
+          busy:
+              authState.activeOperation ==
+              IdentityAuthOperation.externalWalletLogin,
+          available: config.canConnectExternalWallet,
+          unavailableReason: config.hasValidReownProjectId
+              ? '缺少 Privy Mobile App Client ID'
+              : '缺少有效的 Reown Project ID',
+          onPressed: authState.isBusy
+              ? null
+              : () => unawaited(controller.connectExternalWallet(context)),
+        ),
+        const LoopNotice(
+          icon: 'info',
+          title: '外部钱包只是登录凭证',
+          body: '它不是 LOOP 交易钱包，也不能授权任何交易。',
+          margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            14,
+            LoopSpacing.page,
+            0,
+          ),
+          child: Text(
+            '继续即表示同意用户协议与隐私政策',
+            textAlign: TextAlign.center,
+            style: LoopTypography.sora(
+              size: 11,
+              weight: FontWeight.w400,
+              color: LoopColors.text3,
             ),
           ),
         ),
         if (previewEnabled) ...<Widget>[
-          const SizedBox(height: 16),
-          OutlinedButton.icon(
-            key: const ValueKey('enter-development-preview-button'),
-            onPressed: () =>
-                ref.read(loopSessionProvider.notifier).enterPreview(),
-            icon: const Icon(Icons.visibility_outlined),
-            label: const Text('Enter development preview'),
+          const LoopLabel('开发预览'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+            child: LoopButton(
+              key: const ValueKey<String>('enter-development-preview-button'),
+              label: '进入开发预览',
+              block: true,
+              onPressed: () =>
+                  ref.read(loopSessionProvider.notifier).enterPreview(),
+            ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            '开发预览 · 不会创建钱包、连接 Stream、提交交易或伪造 Provider 状态。',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: LoopColors.vapor),
-          ),
-        ],
-        if (authState.step == EmailAuthStep.enterEmail) ...<Widget>[
-          const SizedBox(height: 16),
-          LoopCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Text(
-                  'Other sign-in methods',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 14),
-                OutlinedButton.icon(
-                  key: const ValueKey('privy-google-login-button'),
-                  onPressed: authState.isBusy
-                      ? null
-                      : authController.loginWithGoogle,
-                  icon:
-                      authState.activeOperation == IdentityAuthOperation.google
-                      ? const _IdentityButtonProgress()
-                      : const Icon(Icons.g_mobiledata_rounded),
-                  label: const Text('Continue with Google'),
-                ),
-                if (showApple) ...<Widget>[
-                  const SizedBox(height: 10),
-                  OutlinedButton.icon(
-                    key: const ValueKey('privy-apple-login-button'),
-                    onPressed: authState.isBusy
-                        ? null
-                        : authController.loginWithApple,
-                    icon:
-                        authState.activeOperation == IdentityAuthOperation.apple
-                        ? const _IdentityButtonProgress()
-                        : const Icon(Icons.apple_rounded),
-                    label: const Text('Continue with Apple'),
-                  ),
-                ],
-                const SizedBox(height: 10),
-                OutlinedButton.icon(
-                  key: const ValueKey('privy-wallet-login-button'),
-                  onPressed:
-                      authState.isBusy || !config.canConnectExternalWallet
-                      ? null
-                      : () => authController.connectExternalWallet(context),
-                  icon:
-                      authState.activeOperation ==
-                          IdentityAuthOperation.externalWalletLogin
-                      ? const _IdentityButtonProgress()
-                      : const Icon(Icons.account_balance_wallet_outlined),
-                  label: const Text('Connect wallet'),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'External EVM wallets are Privy sign-in credentials only. They are not LOOP trading wallets and cannot authorize trades.',
-                  style: Theme.of(context).textTheme.bodyMedium
-                      ?.copyWith(color: LoopColors.vapor),
-                ),
-                if (!config.hasValidReownProjectId) ...<Widget>[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Reown Project ID is missing or invalid; wallet connection remains unavailable.',
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(color: LoopColors.warning),
-                  ),
-                ],
-              ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              10,
+              LoopSpacing.page,
+              0,
+            ),
+            child: Text(
+              '开发预览 · 不会创建钱包、连接 Stream、提交交易或伪造 Provider 状态。',
+              textAlign: TextAlign.center,
+              style: LoopTypography.sora(
+                size: 11,
+                weight: FontWeight.w400,
+                color: LoopColors.text3,
+              ),
             ),
           ),
         ],
+        const SizedBox(height: 18),
       ],
     );
   }
+
+  Future<void> _sendCode(EmailAuthController controller) async {
+    await controller.sendCode(_emailController.text);
+    if (!mounted) return;
+    if (ref.read(emailAuthProvider).step == EmailAuthStep.enterCode) {
+      widget.onCodeSent?.call();
+    }
+  }
 }
 
-class _IdentityButtonProgress extends StatelessWidget {
-  const _IdentityButtonProgress();
+/// One sign-in method row. An unavailable method states its reason instead of
+/// silently disabling itself.
+class _AuthMethod extends StatelessWidget {
+  const _AuthMethod({
+    required this.identifier,
+    required this.label,
+    required this.busy,
+    required this.available,
+    required this.unavailableReason,
+    required this.onPressed,
+  });
+
+  final String identifier;
+  final String label;
+  final bool busy;
+  final bool available;
+  final String unavailableReason;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox.square(
-      dimension: 18,
-      child: CircularProgressIndicator(strokeWidth: 2),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        10,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          LoopButton(
+            key: ValueKey<String>(identifier),
+            label: busy ? '$label…' : label,
+            block: true,
+            onPressed: available ? onPressed : null,
+          ),
+          if (!available)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                '暂不可用 · $unavailableReason',
+                style: LoopTypography.sora(
+                  size: 11,
+                  weight: FontWeight.w400,
+                  color: LoopColors.text3,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -287,29 +295,33 @@ class PrivySessionRestoreScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: <Widget>[
-          const Positioned.fill(child: LoopBackdrop()),
-          SafeArea(
-            child: Center(
-              child: Semantics(
-                label: 'LOOP is restoring your Privy session',
-                child: const Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Icon(
-                      Icons.all_inclusive_rounded,
-                      color: LoopColors.mint,
-                      size: 72,
-                    ),
-                    SizedBox(height: 24),
-                    CircularProgressIndicator(),
-                  ],
+      key: const ValueKey<String>('privy-restoring-screen'),
+      body: SafeArea(
+        child: Center(
+          child: Semantics(
+            label: 'LOOP 正在恢复登录状态',
+            liveRegion: true,
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                LoopBrandMark(
+                  kind: LoopBrandMarkKind.appIcon,
+                  height: 72,
+                  semanticLabel: 'LOOP',
                 ),
-              ),
+                SizedBox(height: 24),
+                SizedBox(
+                  width: 160,
+                  child: LinearProgressIndicator(
+                    minHeight: 3,
+                    backgroundColor: LoopColors.line2,
+                    valueColor: AlwaysStoppedAnimation<Color>(LoopColors.lime),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -322,31 +334,35 @@ class PrivySessionSignOutScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       key: const ValueKey<String>('privy-signing-out-screen'),
-      body: Stack(
-        children: <Widget>[
-          const Positioned.fill(child: LoopBackdrop()),
-          SafeArea(
-            child: Center(
-              child: Semantics(
-                label: 'LOOP is securely signing out',
-                child: const Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Icon(
-                      Icons.logout_rounded,
-                      color: LoopColors.mint,
-                      size: 72,
-                    ),
-                    SizedBox(height: 24),
-                    CircularProgressIndicator(),
-                    SizedBox(height: 18),
-                    Text('Signing out securely'),
-                  ],
+      body: SafeArea(
+        child: Center(
+          child: Semantics(
+            label: 'LOOP 正在安全退出',
+            liveRegion: true,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const SizedBox(
+                  width: 160,
+                  child: LinearProgressIndicator(
+                    minHeight: 3,
+                    backgroundColor: LoopColors.line2,
+                    valueColor: AlwaysStoppedAnimation<Color>(LoopColors.lime),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 18),
+                Text(
+                  '正在安全退出',
+                  style: LoopTypography.sora(
+                    size: 13,
+                    weight: FontWeight.w500,
+                    color: LoopColors.text2,
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

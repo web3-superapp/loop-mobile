@@ -229,11 +229,25 @@ GoRouter _buildRouter(
       GoRoute(path: '/', redirect: (context, state) => '/community'),
       GoRoute(
         path: '/auth',
-        builder: (context, state) => const PrivyLoginScreen(),
+        builder: (context, state) => PrivyLoginScreen(
+          onCodeSent: () => context.push(LoopRouteManifest.pathFor('auth-otp')),
+        ),
       ),
       GoRoute(
         path: '/auth/otp',
-        builder: (context, state) => const PrivyOtpScreen(),
+        builder: (context, state) => Consumer(
+          builder: (context, ref, child) => PrivyOtpScreen(
+            onBack: () {
+              // Leaving the step abandons the pending code on purpose.
+              ref.read(emailAuthProvider.notifier).changeEmail();
+              if (Navigator.of(context).canPop()) {
+                context.pop();
+              } else {
+                context.go(LoopRouteManifest.pathFor('auth'));
+              }
+            },
+          ),
+        ),
       ),
       GoRoute(
         path: '/auth/loop-id',
