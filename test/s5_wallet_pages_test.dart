@@ -127,6 +127,11 @@ void main() {
 
       await scrollToS5Section(
         tester,
+        find.byKey(const ValueKey<String>('wallet-funds-actions-unavailable')),
+      );
+      expect(find.textContaining('需要统一签名出口'), findsOneWidget);
+      await scrollToS5Section(
+        tester,
         find.byKey(const ValueKey<String>('wallet-security-unavailable')),
       );
       expect(find.textContaining('安全中心 / 授权盘点 / DApp'), findsOneWidget);

@@ -197,6 +197,15 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 '手续费保留 ${loopFormatDecimal(balances.gasReservePolicy.nativeReserve)} BNB'
                 ' · 由服务端配置 ${balances.gasReservePolicy.configVersion} 下发',
           ),
+          const LoopLabel('资金动作'),
+          // The prototype's Pay / 兑换 / 发送 / 跨链 row belongs to D15 and D16.
+          // Rendering the controls now would promise a path that cannot be
+          // signed, so the entry states what is missing instead.
+          const LoopUnavailableCard(
+            key: ValueKey<String>('wallet-funds-actions-unavailable'),
+            label: 'Pay / 兑换 / 发送 / 跨链 未开放',
+            reasonCode: 'WALLET_FUNDS_ACTIONS_DEFERRED',
+          ),
           const LoopLabel('安全与连接'),
           const LoopUnavailableCard(
             key: ValueKey<String>('wallet-security-unavailable'),
