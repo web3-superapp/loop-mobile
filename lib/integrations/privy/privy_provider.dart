@@ -1,12 +1,29 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
+import 'package:loop_mobile/integrations/privy/privy_device_signer.dart';
 import 'package:loop_mobile/integrations/privy/privy_production_adapter.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 
+/// The current device signer of the live Privy session, or the fail-closed
+/// default when Privy is not configured or the session has no embedded wallet.
+final privyDeviceSignerProvider = Provider<PrivyDeviceSigner>((ref) {
+  final host = ref.watch(privyDeviceSigningHostProvider);
+  return host?.deviceSigner ?? const UnavailablePrivyDeviceSigner();
+});
+
+final privyDeviceSigningHostProvider = Provider<PrivyDeviceSigningHost?>((ref) {
+  final gateway = ref.watch(privyAuthGatewayProvider);
+  return gateway is PrivyDeviceSigningHost
+      ? gateway as PrivyDeviceSigningHost
+      : null;
+});
+
+/// The single signing exit. Every money action goes through this provider.
 final walletSigningGatewayProvider = Provider<WalletSigningGateway>((ref) {
   final config = ref.watch(appConfigProvider);
-  return PrivyProductionAdapter(
-    appId: config.canInitializePrivy ? config.privyAppId : '',
-    appClientId: config.canInitializePrivy ? config.privyAppClientId : '',
+  return PrivyWalletSigningGateway(
+    host: ref.watch(privyDeviceSigningHostProvider),
+    credentialsConfigured: config.canInitializePrivy,
   );
 });

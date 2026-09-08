@@ -22,6 +22,12 @@ LoopChainFailureKind loopChainFailureKindForV2(LoopBackendFailure failure) {
     'CAPABILITY_UNAVAILABLE' ||
     'PROVIDER_DISCONNECTED' => LoopChainFailureKind.unavailable,
     'INVALID_REQUEST' => LoopChainFailureKind.invalidData,
+    'INSUFFICIENT_BALANCE' => LoopChainFailureKind.insufficientBalance,
+    'SIMULATION_FAILED' => LoopChainFailureKind.simulationFailed,
+    'QUOTE_EXPIRED' => LoopChainFailureKind.quoteExpired,
+    // The server already accepted one submission whose outcome is unresolved.
+    // The client must poll it; a second attempt is forbidden.
+    'SUBMISSION_UNKNOWN' => LoopChainFailureKind.submissionUnknown,
     _ => switch (failure.kind) {
       LoopBackendFailureKind.connection ||
       LoopBackendFailureKind.timeout => LoopChainFailureKind.offline,
