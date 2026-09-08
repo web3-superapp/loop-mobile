@@ -12,7 +12,7 @@ import 'package:loop_mobile/app/session/loop_communication_retirement.dart';
 import 'package:loop_mobile/app/session/post_auth_bootstrap_coordinator.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
-import 'package:loop_mobile/core/navigation/spot_market_route.dart';
+import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/policy/loop_client_policy.dart';
@@ -29,7 +29,6 @@ import 'package:loop_mobile/features/community/community_profile_screen.dart';
 import 'package:loop_mobile/features/community/community_screen.dart';
 import 'package:loop_mobile/features/community/referral_screen.dart';
 import 'package:loop_mobile/features/community/search_screen.dart';
-import 'package:loop_mobile/features/home/home_screens.dart';
 import 'package:loop_mobile/features/launchpad/launchpad_screen.dart';
 import 'package:loop_mobile/features/market/market.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
@@ -367,59 +366,73 @@ GoRouter _buildRouter(
       // Manifest `networth` (legacy `/home/net-worth`, retired with Home).
       GoRoute(
         path: '/wallet/networth',
-        builder: (context, state) => const NetWorthScreen(),
+        builder: (context, state) =>
+            NetWorthScreen(onBack: () => _popOrHome(context)),
       ),
       GoRoute(
-        path: SpotMarketRoute.path,
-        redirect: (context, state) =>
-            state.uri.queryParameters.containsKey(
-              SpotMarketRoute.indexParameter,
-            )
-            ? null
-            : '/market',
-        builder: (context, state) {
-          final rawSpotIndex =
-              state.uri.queryParameters[SpotMarketRoute.indexParameter];
-          return SpotMarketDetailScreen(
-            spotIndex: int.tryParse(rawSpotIndex ?? ''),
-          );
-        },
+        path: MarketAssetRoute.tokenPath,
+        builder: (context, state) => TokenDetailScreen(
+          assetId: MarketAssetRoute.parse(
+            state.uri,
+            MarketAssetRoute.tokenPath,
+          ),
+          onBack: () => _popOrHome(context),
+        ),
       ),
       GoRoute(
-        path: SpotMarketRoute.chartPath,
+        path: MarketAssetRoute.chartPath,
         builder: (context, state) => FullChartScreen(
-          spotIndex: SpotMarketRoute.parseChartSpotIndex(state.uri),
+          assetId: MarketAssetRoute.parse(
+            state.uri,
+            MarketAssetRoute.chartPath,
+          ),
+          onBack: () => _popOrHome(context),
         ),
       ),
       GoRoute(
         path: '/market/new',
-        builder: (context, state) => const NewPairsScreen(),
+        builder: (context, state) =>
+            NewPairsScreen(onBack: () => _popOrHome(context)),
       ),
       GoRoute(
-        path: '/market/holders',
+        path: MarketAssetRoute.holdersPath,
         builder: (context, state) => HolderDistributionScreen(
-          symbol: state.extra is String ? state.extra! as String : 'ETH',
+          assetId: MarketAssetRoute.parse(
+            state.uri,
+            MarketAssetRoute.holdersPath,
+          ),
+          onBack: () => _popOrHome(context),
         ),
       ),
       GoRoute(
-        path: '/market/trades',
+        path: MarketAssetRoute.tradesPath,
         builder: (context, state) => TradingActivityScreen(
-          symbol: state.extra is String ? state.extra! as String : 'ETH',
+          assetId: MarketAssetRoute.parse(
+            state.uri,
+            MarketAssetRoute.tradesPath,
+          ),
+          onBack: () => _popOrHome(context),
         ),
       ),
       GoRoute(
         path: '/market/watchlist',
-        builder: (context, state) => const WatchlistEditorScreen(),
+        builder: (context, state) =>
+            WatchlistEditorScreen(onBack: () => _popOrHome(context)),
       ),
       GoRoute(
-        path: '/market/alerts',
+        path: MarketAssetRoute.alertsPath,
         builder: (context, state) => PriceAlertsScreen(
-          symbol: state.extra is String ? state.extra! as String : 'ETH',
+          assetId: MarketAssetRoute.parse(
+            state.uri,
+            MarketAssetRoute.alertsPath,
+          ),
+          onBack: () => _popOrHome(context),
         ),
       ),
       GoRoute(
         path: '/market/smart-money',
-        builder: (context, state) => const SmartMoneyScreen(),
+        builder: (context, state) =>
+            SmartMoneyScreen(onBack: () => _popOrHome(context)),
       ),
       GoRoute(
         path: '/chat/friends/requests',
@@ -536,11 +549,14 @@ GoRouter _buildRouter(
         ),
       ),
       GoRoute(
-        path: '/wallet/asset',
-        redirect: (context, state) =>
-            state.extra is WalletPreviewAsset ? null : '/wallet',
-        builder: (context, state) =>
-            AssetDetailScreen(asset: state.extra! as WalletPreviewAsset),
+        path: MarketAssetRoute.walletAssetPath,
+        builder: (context, state) => WalletAssetScreen(
+          assetId: MarketAssetRoute.parse(
+            state.uri,
+            MarketAssetRoute.walletAssetPath,
+          ),
+          onBack: () => _popOrHome(context),
+        ),
       ),
       GoRoute(
         path: '/wallet/send',
@@ -565,8 +581,11 @@ GoRouter _buildRouter(
             SendConfirmScreen(draft: state.extra! as TransferDraft),
       ),
       GoRoute(
-        path: '/wallet/receive',
-        builder: (context, state) => const ReceiveScreen(),
+        path: WalletRoute.receivePath,
+        builder: (context, state) => ReceiveScreen(
+          walletId: WalletRoute.parse(state.uri, WalletRoute.receivePath),
+          onBack: () => _popOrHome(context),
+        ),
       ),
       GoRoute(
         path: '/wallet/swap',
@@ -596,12 +615,16 @@ GoRouter _buildRouter(
         builder: (context, state) => const TransactionResultScreen(),
       ),
       GoRoute(
-        path: '/wallet/history',
-        builder: (context, state) => const TransactionHistoryScreen(),
+        path: WalletRoute.historyPath,
+        builder: (context, state) => TransactionHistoryScreen(
+          walletId: WalletRoute.parse(state.uri, WalletRoute.historyPath),
+          onBack: () => _popOrHome(context),
+        ),
       ),
       GoRoute(
         path: '/wallet/manage',
-        builder: (context, state) => const WalletManagerScreen(),
+        builder: (context, state) =>
+            WalletManagerScreen(onBack: () => _popOrHome(context)),
       ),
       GoRoute(
         path: '/wallet/dapp',
@@ -617,7 +640,8 @@ GoRouter _buildRouter(
       ),
       GoRoute(
         path: '/wallet/networks',
-        builder: (context, state) => const NetworksScreen(),
+        builder: (context, state) =>
+            NetworksScreen(onBack: () => _popOrHome(context)),
       ),
       GoRoute(
         path: '/preview/signing-review',

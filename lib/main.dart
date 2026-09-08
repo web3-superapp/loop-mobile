@@ -2,8 +2,13 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
+import 'package:loop_mobile/features/chain/chain_gateway.dart';
 import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
+import 'package:loop_mobile/features/market/alerts/alerts_gateway.dart';
+import 'package:loop_mobile/features/market/market_read_gateway.dart';
+import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
+import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_catalog.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
@@ -11,7 +16,9 @@ import 'package:loop_mobile/integrations/personalization/shared_preferences_disp
 import 'package:loop_mobile/integrations/personalization/loop_personalization_providers.dart';
 import 'package:loop_mobile/integrations/social/loop_social_providers.dart';
 import 'package:loop_mobile/integrations/social/loop_group_alias_providers.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_s5_providers.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
@@ -54,6 +61,26 @@ Future<void> main() async {
         ),
         searchGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2SearchGatewayProvider),
+        ),
+        // S5 read modules. Each stays fail-closed until its Dio client,
+        // client metadata and authenticated session all exist.
+        chainGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2ChainGatewayProvider),
+        ),
+        walletReadGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2WalletReadGatewayProvider),
+        ),
+        marketReadGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2MarketReadGatewayProvider),
+        ),
+        watchlistGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2WatchlistGatewayProvider),
+        ),
+        alertsGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2AlertsGatewayProvider),
+        ),
+        notificationsGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2NotificationsGatewayProvider),
         ),
       ],
       child: const LoopApp(),

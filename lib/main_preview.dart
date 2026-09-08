@@ -6,10 +6,6 @@ import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
-import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
-import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
-import 'package:loop_mobile/features/profile/notification_preferences/notification_preferences_gateway.dart';
-import 'package:loop_mobile/features/profile/notification_preferences/notification_preferences_models.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
 import 'package:loop_mobile/features/profile/social_privacy/social_privacy_gateway.dart';
@@ -18,7 +14,6 @@ import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_fixture_adapter.dart';
 import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_trading_gateway.dart';
-import 'package:loop_mobile/integrations/personalization/memory_notification_preferences_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/memory_privacy_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/memory_profile_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/memory_social_privacy_gateway.dart';
@@ -27,7 +22,6 @@ import 'package:loop_mobile/integrations/privy/privy_fixture_adapter.dart';
 import 'package:loop_mobile/features/system/system_showcase_preview.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
-import 'package:loop_mobile/integrations/personalization/memory_watchlist_gateway.dart';
 import 'package:loop_mobile/integrations/social/memory_friend_gateway.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
@@ -72,15 +66,6 @@ Future<void> main() async {
         communityGatewayProvider.overrideWithValue(MemoryCommunityGateway()),
         socialGatewayProvider.overrideWithValue(MemorySocialGateway()),
         searchGatewayProvider.overrideWithValue(const MemorySearchGateway()),
-        notificationPreferencesGatewayProvider.overrideWithValue(
-          MemoryNotificationPreferencesGateway(
-            initialResource: NotificationPreferencesResource(
-              version: 1,
-              values: const NotificationPreferenceValues.disabled(),
-              delivery: NotificationDeliveryState.unavailable,
-            ),
-          ),
-        ),
         privacyGatewayProvider.overrideWithValue(
           MemoryPrivacyGateway(
             initialResource: PrivacyResource(
@@ -104,25 +89,6 @@ Future<void> main() async {
             initialResource: ProfileResource(
               version: 1,
               values: ProfileValues(alias: 'QuietComet', avatarRef: null),
-              updatedAt: DateTime.utc(2026, 8, 25),
-            ),
-          ),
-        ),
-        watchlistGatewayProvider.overrideWithValue(
-          MemoryWatchlistGateway(
-            initialSnapshot: WatchlistSnapshot(
-              version: 1,
-              groups: <WatchlistGroup>[
-                WatchlistGroup(
-                  key: 'core',
-                  name: 'Core',
-                  items: <WatchlistItem>[
-                    WatchlistItem(assetKey: 'BTC'),
-                    WatchlistItem(assetKey: 'ETH'),
-                    WatchlistItem(assetKey: 'SOL'),
-                  ],
-                ),
-              ],
               updatedAt: DateTime.utc(2026, 8, 25),
             ),
           ),
