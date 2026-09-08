@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/core/policy/loop_client_policy.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 
@@ -52,3 +54,18 @@ final loopCapabilityProvider =
       final snapshot = ref.watch(loopV2MetaSnapshotProvider).value;
       return LoopCapabilityProjector.of(snapshot?.capabilities, id);
     });
+
+/// Pure projection of the D0 version gate for the dismissible soft prompt.
+///
+/// `updateRequired` keeps its own dedicated system page; this provider only
+/// carries the recommendation. An unavailable or not-yet-effective gate, an
+/// unknown platform, or an unparsable client version all project as `unknown`
+/// and show nothing.
+final loopVersionPolicyProvider = Provider<LoopVersionPolicyProjection>((ref) {
+  final snapshot = ref.watch(loopV2MetaSnapshotProvider).value;
+  return LoopClientPolicyProjection.version(
+    snapshot?.clientPolicy,
+    platform: defaultTargetPlatform,
+    clientVersion: ref.watch(appConfigProvider).loopClientVersion,
+  );
+});

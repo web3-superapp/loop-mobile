@@ -4986,13 +4986,16 @@ def check_v2_session_contract(root: Path) -> list[str]:
             if references == 0:
                 continue
             if path == capability_projection_path:
-                if references != 1 or not re.search(
-                    r"ref\.watch\(loopV2MetaSnapshotProvider\)\.value",
-                    executable,
-                ):
+                observed = len(
+                    re.findall(
+                        r"ref\.watch\(loopV2MetaSnapshotProvider\)\.value",
+                        executable,
+                    )
+                )
+                if references != observed or observed == 0:
                     errors.append(
-                        "the capability projection must read the D0 snapshot "
-                        "exactly once and only as an observed value"
+                        "the D0 projection may read the snapshot only as an "
+                        "observed value"
                     )
                 for forbidden in ("GoRouter", "context.go", "context.push",
                                   "Dio", "authorize("):

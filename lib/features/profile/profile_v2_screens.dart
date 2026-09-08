@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/policy/loop_client_policy.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_catalog.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
@@ -1111,6 +1112,54 @@ class ProfileAvailabilityBanner extends ConsumerWidget {
       title: '资料状态暂不可读',
       body: '${profileFailureReason(landing.failureKind)} 你可以继续浏览；下次启动会重新检查。',
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Soft update prompt (S1 batch B ruling, delivered in step 2)
+// ---------------------------------------------------------------------------
+
+/// Dismissible prompt for `updateRecommended`.
+///
+/// `updateRequired` is not shown here: it keeps its own blocking system page.
+/// An unavailable, not-yet-effective or unparsable version gate shows nothing,
+/// because "unknown" is never "out of date".
+class LoopSoftUpdatePrompt extends ConsumerStatefulWidget {
+  const LoopSoftUpdatePrompt({super.key});
+
+  @override
+  ConsumerState<LoopSoftUpdatePrompt> createState() =>
+      _LoopSoftUpdatePromptState();
+}
+
+class _LoopSoftUpdatePromptState extends ConsumerState<LoopSoftUpdatePrompt> {
+  /// Run-local only. Dismissing is a convenience, never a stored decision.
+  String? _dismissedConfigVersion;
+
+  @override
+  Widget build(BuildContext context) {
+    final version = ref.watch(loopVersionPolicyProvider);
+    if (version.decision != LoopVersionPolicyDecision.updateRecommended ||
+        _dismissedConfigVersion == version.configVersion) {
+      return const SizedBox.shrink();
+    }
+    final minimum = version.minimumVersion;
+    return LoopNotice(
+      key: const ValueKey<String>('loop-soft-update-prompt'),
+      icon: 'info',
+      title: '有新版本可用',
+      body: minimum == null
+          ? '建议更新到最新版本；当前版本仍然可以继续使用。'
+          : '建议更新到 $minimum 或更高版本；当前版本仍然可以继续使用。',
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      trailing: LoopIconButton(
+        key: const ValueKey<String>('loop-soft-update-dismiss'),
+        icon: 'close',
+        label: '忽略更新提示',
+        onPressed: () =>
+            setState(() => _dismissedConfigVersion = version.configVersion),
+      ),
     );
   }
 }

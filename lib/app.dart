@@ -260,6 +260,7 @@ GoRouter _buildRouter(
           location: state.uri.path,
           child: Column(
             children: <Widget>[
+              const LoopSoftUpdatePrompt(),
               const ProfileAvailabilityBanner(),
               Expanded(child: child),
             ],
