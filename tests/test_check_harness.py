@@ -1747,7 +1747,7 @@ class HarnessTests(unittest.TestCase):
             "test/hyperliquid_spot_market_repository_test.dart",
             "test/local_settings_and_help_test.dart",
             # Step 5 retired `test/market_screen_test.dart` with the mounted
-            # Hyperliquid Spot screens it drove (decision 0055).
+            # Hyperliquid Spot screens it drove (decision 0057).
         }
 
         self.assertTrue(expected.issubset(set(check_harness.REQUIRED_FILES)))
@@ -3984,7 +3984,7 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected non-hollow Home portfolio evidence: {result}",
         )
 
-    # Step 5 retired the C10 Preview fixture slice (decision 0055). What is
+    # Step 5 retired the C10 Preview fixture slice (decision 0057). What is
     # left to guard is that `new-pairs` stays a whole-page unavailable that
     # renders the server's own reason, mounted through one bounded route.
     def test_new_pairs_must_stay_a_whole_page_unavailable(self) -> None:
@@ -4111,7 +4111,7 @@ class HarnessTests(unittest.TestCase):
         )
 
     # Step 5 retired the Preview wallet-identity clipboard slice and its
-    # no-QR rule with `wallet_overview_screens.dart` (decision 0055). Receive
+    # no-QR rule with `wallet_overview_screens.dart` (decision 0057). Receive
     # now encodes a real EIP-681 URI, and a wallet is addressed only by its
     # opaque id, so what survives is the ban on invented identity.
     def test_mounted_wallet_cannot_invent_a_wallet_address(self) -> None:
@@ -4746,7 +4746,7 @@ class HarnessTests(unittest.TestCase):
         )
 
     # Step 5 retired the Preview wallet-history filter and the testnet toggle
-    # with `TransactionHistoryScreen` and `NetworksScreen` (decision 0055);
+    # with `TransactionHistoryScreen` and `NetworksScreen` (decision 0057);
     # both pages now page and fail closed against the V2 wallet module. The
     # `WalletPreviewActivity` model itself is still guarded below.
     def test_wallet_history_category_cannot_match_every_activity(self) -> None:
@@ -5122,7 +5122,7 @@ class HarnessTests(unittest.TestCase):
         )
 
     # ------------------------------------------------------------------
-    # Step 5 truth rules (decision 0055).
+    # Step 5 truth rules (decision 0057).
     # ------------------------------------------------------------------
 
     def test_feature_cannot_name_the_transport_type(self) -> None:
@@ -5339,7 +5339,7 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected dependency-free QR encoder guard: {result}",
         )
 
-    # Step 5 retired the Preview Watchlist adapter (decision 0055); the class
+    # Step 5 retired the Preview Watchlist adapter (decision 0057); the class
     # is deleted, so there is no fake left to keep out of a feature module. The
     # port's fail-closed default is guarded by check_s5_truth_contract.
     def test_profile_provider_must_default_unavailable(self) -> None:
@@ -5778,7 +5778,7 @@ class HarnessTests(unittest.TestCase):
                     )
 
     # Step 5 retired the V1 four-intent notification-preference module — its
-    # gateway, models, controller and Preview adapter — with decision 0055.
+    # gateway, models, controller and Preview adapter — with decision 0057.
     # `notif-settings` is the V2 ten-category page; what the harness still owns
     # is its copy contract.
     def test_notification_preferences_paths_are_required(self) -> None:
@@ -6084,7 +6084,7 @@ class HarnessTests(unittest.TestCase):
         )
 
     def test_notification_router_rejects_a_fifth_intent_and_route(self) -> None:
-        # Decision 0055 widened the reviewed allowlist to four kinds and four
+        # Decision 0057 widened the reviewed allowlist to four kinds and four
         # intents. It stays closed: an unreviewed fifth intent, kind or route
         # is still rejected.
         with tempfile.TemporaryDirectory() as temporary:

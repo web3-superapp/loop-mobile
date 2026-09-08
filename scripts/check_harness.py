@@ -125,7 +125,7 @@ REQUIRED_FILES = (
     "docs/decisions/0051-adopt-flutter-svg-and-prototype-assets.md",
     "test/route_manifest_test.dart",
     "docs/decisions/0054-adopt-v2-community-social-graph-and-search.md",
-    "docs/decisions/0055-adopt-v2-chain-market-and-wallet-read.md",
+    "docs/decisions/0057-adopt-v2-chain-market-and-wallet-read.md",
     "test/community_api_contract_test.dart",
     "test/community_idempotency_test.dart",
     "test/community_pages_test.dart",
@@ -549,7 +549,7 @@ NOTIFICATION_GLOBAL_INGRESS_PATTERNS = (
     ),
     (re.compile(r"\.\s*getInitialMessage\s*\("), ".getInitialMessage("),
 )
-# Decision 0055 added a fourth reviewed kind: a triggered price alert opens the
+# Decision 0057 added a fourth reviewed kind: a triggered price alert opens the
 # token page. The router therefore needs the canonical asset-route contract, so
 # it can reject a non-canonical `asset_id` before it becomes a location. The
 # allowlist stays closed: a raw provider-payload import is still rejected.
@@ -612,7 +612,7 @@ NOTIFICATION_COORDINATOR_CONSUMER_PATHS = frozenset(
 FEATURE_TRANSPORT_FORBIDDEN_IMPORTS = (
     "package:dio/dio.dart",
 )
-# Step 5 (decision 0055) put the V2 modules behind ports as well: no Dio type
+# Step 5 (decision 0057) put the V2 modules behind ports as well: no Dio type
 # and no `/v2/` literal may cross into a feature module.
 FEATURE_TRANSPORT_FORBIDDEN_TYPE_PATTERN = re.compile(r"\bDio\b")
 FEATURE_BACKEND_ROUTE_PATTERN = re.compile(r"(?P<quote>['\"])/v(?P<version>[12])/")
@@ -703,7 +703,7 @@ PRODUCTION_FIXTURE_MARKERS = (
     "MemoryPrivacyGateway",
     "MemoryProfileGateway",
     # Step 5 retired the Preview Watchlist and notification-preference adapters
-    # (decision 0055); both classes are deleted, so there is no fixture left to
+    # (decision 0057); both classes are deleted, so there is no fixture left to
     # keep out of the production composition root.
     "HyperliquidFixtureAdapter(",
     "PrivyFixtureAdapter(",
@@ -854,7 +854,7 @@ PRIVACY_BEHAVIOR_TEST_MARKERS = {
     ),
 }
 # Step 5 retired the V1 four-intent notification-preference module, its Preview
-# adapter and its models (decision 0055). `notif-settings` is now the V2
+# adapter and its models (decision 0057). `notif-settings` is now the V2
 # ten-category page; only its copy contract survives, on the new surface.
 NOTIFICATION_PREFERENCES_SURFACE_PATH = Path(
     "lib/features/profile/notification_preferences/notification_preferences_screen.dart"
@@ -895,7 +895,7 @@ NOTIFICATION_PREFERENCES_POSITIVE_CJK_PATTERN = re.compile(
 NOTIFICATION_PREFERENCES_POSITIVE_DELIVERY_CJK_PATTERN = re.compile(
     r"(?:通知|提醒|推送).{0,8}(?:已开启|已启用|已连接|已送达|将会送达|将收到)"
 )
-# Decision 0055: `notif-settings` stores an owner intent under a version CAS
+# Decision 0057: `notif-settings` stores an owner intent under a version CAS
 # and the server answers with the committed resource. A confirmation that only
 # follows that committed resource is a truthful save receipt, so it is allowed
 # — but only on a surface that also states, in the same page, that delivery is
@@ -1980,7 +1980,7 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
                 "static const spotExecutionEnabled = false;",
             ),
             # Step 5 retired the mounted Hyperliquid Spot Market screens and
-            # the `SpotMarketRoute` identity (decision 0055). The mounted
+            # the `SpotMarketRoute` identity (decision 0057). The mounted
             # market slice is the V2 BSC read surface and its only route
             # identity is the canonical CAIP `assetId`.
             "lib/core/navigation/market_asset_route.dart": (
@@ -2130,7 +2130,7 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
 
 
 # Step 5 retired the C10 Preview fixture slice with `market_screens.dart`
-# (decision 0055): `new-pairs` is now a whole-page unavailable projection that
+# (decision 0057): `new-pairs` is now a whole-page unavailable projection that
 # renders the server's own `reasonCode`, so there is no Preview pair, fixture
 # age, quick-action rail or Preview-session selector left to fingerprint.
 
@@ -5325,13 +5325,13 @@ HOME_PORTFOLIO_TEST_MARKERS = {
         "verified B1 without a wallet stays unavailable",
         "invalid B1 wallet identity never implies portfolio facts",
         "explicit Preview B1 keeps every fixture visibly labelled",
-        # Step 5 retired the Preview Net Worth slice (decision 0055), so the
+        # Step 5 retired the Preview Net Worth slice (decision 0057), so the
         # four B2 tests went with it and the scroll test is B1-only.
         "B1 remains scrollable at 200 percent text",
     ),
 }
 # Re-baselined by step 5: the four B2 tests were retired with the Preview Net
-# Worth slice (decision 0055) and the scroll test is now B1-only.
+# Worth slice (decision 0057) and the scroll test is now B1-only.
 HOME_PORTFOLIO_TEST_FINGERPRINT = (
     "aa76e508a69fd199e75807fe2d52cc9c0d1f283de0c9fff80c52a11e5f43d0b2"
 )
@@ -5342,7 +5342,7 @@ HOME_PORTFOLIO_SOURCE_FINGERPRINTS = {
     "identity": "e93b2652095e01c3e339d39e0c05647825b4962277a808c2fb16107b1a8d7ab1",
     "communication": "377d8b039926c66a740bdaa212cb930b5a17e39433fda7c135e27ed716eb93f5",
     # Step 5 retired the Preview Net Worth slice and its bounded application
-    # route (decision 0055); `networth` is now a V2 wallet-read page, so the
+    # route (decision 0057); `networth` is now a V2 wallet-read page, so the
     # B2 source and route fingerprints are retired with it.
 }
 
@@ -5552,7 +5552,7 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                 "For every accepted row, `T - t` equals",
             ),
             # Step 5 retired the `spotIndex` route contract from decision 0036;
-            # decision 0055 replaced it with the canonical CAIP `assetId`.
+            # decision 0057 replaced it with the canonical CAIP `assetId`.
             "docs/decisions/0036-mount-public-spot-full-chart.md": (
                 "causes zero candle requests and never substitutes ETH",
                 "display symbols are not identity",
@@ -5561,7 +5561,7 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                 "C3 stays outside the current primary Shell",
                 "a root deep link with no history returns explicitly to `/market`",
             ),
-            "docs/decisions/0055-adopt-v2-chain-market-and-wallet-read.md": (
+            "docs/decisions/0057-adopt-v2-chain-market-and-wallet-read.md": (
                 "`MarketAssetRoute` and `WalletRoute` replace `SpotMarketRoute`",
                 "The paths in the 93-route manifest are unchanged.",
                 "`SpotCandleChart` becomes `LoopCandleChart(List<LoopCandle>)`",
@@ -5688,7 +5688,7 @@ def check_spot_candle_contract(root: Path) -> list[str]:
             ),
             # Step 5 retired the two `SpotMarketRoute` C3 navigation tests and
             # the live-Spot half of the Preview experience test with the
-            # screens they drove (decision 0055). `chart-full` evidence now
+            # screens they drove (decision 0057). `chart-full` evidence now
             # lives in the two S5 files above.
         },
     )
@@ -5871,7 +5871,7 @@ def check_wallet_identity_readiness_contract(root: Path) -> list[str]:
                 "WalletReadinessMode.invalidAddress",
             ),
             # Step 5 retired `wallet_overview_screens.dart` and the Preview
-            # `WalletManagerScreen` copy (decision 0055). Wallet identity is now
+            # `WalletManagerScreen` copy (decision 0057). Wallet identity is now
             # addressed only by the opaque `walletId`, and Receive renders a
             # real EIP-681 URI, so the Preview clipboard and no-QR locks are
             # retired with the screens that carried them.
@@ -5963,7 +5963,7 @@ def check_wallet_preview_route_contract(root: Path) -> list[str]:
                 "static const solana",
                 "static const all = <WalletPreviewAsset>",
             ),
-            # Step 5 retired the Preview wallet-asset route (decision 0055):
+            # Step 5 retired the Preview wallet-asset route (decision 0057):
             # `/wallet/asset` now carries the canonical CAIP `assetId` and reads
             # the V2 wallet module, so no typed Preview extra addresses it.
             "lib/app.dart": (
@@ -6369,7 +6369,7 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
             ),
             # Step 5 retired the Preview wallet-history filter and the testnet
             # toggle with `TransactionHistoryScreen` and `NetworksScreen`
-            # (decision 0055); both pages now read the V2 wallet module.
+            # (decision 0057); both pages now read the V2 wallet module.
             "lib/features/wallet/wallet_management_screens.dart": (
                 "child: const Text('Revocation unavailable')",
                 "No allowance or wallet balance was read",
@@ -8578,7 +8578,7 @@ def check_notification_contract(root: Path) -> list[str]:
 
 
 def check_s5_truth_contract(root: Path) -> list[str]:
-    """Lock the step-5 truth rules recorded by decision 0055."""
+    """Lock the step-5 truth rules recorded by decision 0057."""
 
     errors: list[str] = []
 
@@ -9174,7 +9174,7 @@ def check_notification_preferences_application_contract(root: Path) -> list[str]
     """Keep H9 preferences exact, fail-closed, and delivery-neutral.
 
     Step 5 retired the V1 module (gateway, models, controller and Preview
-    adapter) with decision 0055: `notif-settings` is now the V2 ten-category
+    adapter) with decision 0057: `notif-settings` is now the V2 ten-category
     page behind `NotificationsGateway`, whose fail-closed default is guarded by
     `check_s5_truth_contract`. What survives here is the copy contract.
     """

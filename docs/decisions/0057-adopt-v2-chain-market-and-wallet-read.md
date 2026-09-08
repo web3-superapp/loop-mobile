@@ -1,4 +1,4 @@
-# 0055 · Adopt the V2 chain, market and wallet-read modules
+# 0057 · Adopt the V2 chain, market and wallet-read modules
 
 ## Status
 
