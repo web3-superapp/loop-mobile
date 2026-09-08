@@ -123,6 +123,24 @@ String communityFailureReason(CommunityFailureKind? kind) => switch (kind) {
   null => '操作没有完成。',
 };
 
+/// zh-CN copy for a refused community application.
+///
+/// The five codes the create endpoint can answer with are mapped one by one:
+/// a reserved or blocked name, a taken slug, a length rejection and a missing
+/// LOOP ID activation each need a different next step from the applicant.
+String communityApplyFailureReason(CommunityFailureKind? kind) =>
+    switch (kind) {
+      CommunityFailureKind.aliasReserved =>
+        '社区名称撞上了 LOOP 保留词（如官方、支持、管理），请换一个名称再提交。',
+      CommunityFailureKind.aliasBlocked => '社区名称在当前的运营屏蔽名单内，请换一个名称再提交。',
+      CommunityFailureKind.resourceConflict => '这个短链接已经被另一个社区占用，请换一个再提交。',
+      CommunityFailureKind.validationFailed =>
+        '名称或简介归一化后超出长度限制（名称 1–40，简介 ≤280），请修改后再提交。',
+      CommunityFailureKind.activationRequired =>
+        '需要先完成 LOOP ID 激活才能申请社区。激活后可以重新提交这份申请。',
+      _ => communityFailureReason(kind),
+    };
+
 /// zh-CN explanation for one server `reasonCode`. An unknown code keeps a
 /// neutral sentence rather than inventing a cause.
 String communityUnavailableReason(String reasonCode) => switch (reasonCode) {

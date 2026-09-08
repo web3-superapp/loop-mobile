@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
@@ -11,6 +12,7 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// The four prototype segments. Only the two backed by
 /// `GET /v2/communities?sort=` can be selected; the other two are disabled
@@ -58,6 +60,36 @@ class CommunityDiscoverScreen extends ConsumerStatefulWidget {
 class _CommunityDiscoverScreenState
     extends ConsumerState<CommunityDiscoverScreen> {
   CommunityDiscoverSegment _segment = CommunityDiscoverSegment.members;
+
+  /// Collects the application, confirms it, then submits it exactly once.
+  /// The five refusal codes each get their own copy; only a 201 navigates.
+  Future<void> _apply() async {
+    final application = await showCommunityApplySheet(context);
+    if (application == null || !mounted) return;
+    final confirmed = await confirmCommunityAction(
+      context,
+      title: '提交社区申请？',
+      body: '提交后社区状态为「审核中」，你是所有者。短链接一旦被接受就不能再改。',
+      confirmLabel: '提交',
+      sheetKey: 'community-apply-confirm-sheet',
+    );
+    if (!confirmed || !mounted) return;
+    final outcome = await ref
+        .read(communityApplicationControllerProvider.notifier)
+        .submit(application);
+    if (!mounted) return;
+    final detail = outcome.detail;
+    if (detail != null) {
+      LoopToast.show(context, message: '社区申请已提交，状态为审核中');
+      widget.onOpenCommunity?.call(detail.community.communityId);
+      return;
+    }
+    LoopToast.show(
+      context,
+      message: communityApplyFailureReason(outcome.failureKind),
+      kind: LoopToastKind.err,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -185,6 +217,19 @@ class _CommunityDiscoverScreenState
                 '任何社区都可以提交申请。申请后状态为"审核中"，只有运维核验通过才会显示验证标记；'
                 '本页不代表任何 Mining 权重结论。',
             margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
+          ),
+          // No application route exists in the frozen manifest, so the form
+          // opens as a sheet from this block.
+          LoopButtonPair(
+            children: <Widget>[
+              LoopButton(
+                key: const ValueKey<String>('community-apply-action'),
+                label: '申请入驻',
+                onPressed: communityCapabilityBlocks(mode, capability)
+                    ? null
+                    : () => unawaited(_apply()),
+              ),
+            ],
           ),
         ],
       ),

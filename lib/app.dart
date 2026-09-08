@@ -333,12 +333,10 @@ GoRouter _buildRouter(
         builder: (context, state) => GlobalSearchScreen(
           initialQuery: state.uri.queryParameters['q'],
           onBack: () => _popOrHome(context),
+          // A `publicProfile` result opens the shared public-profile sheet
+          // inside the page; LOOP has no route for another account.
           onOpenCommunity: (communityId) =>
               context.push('/community/profile?id=$communityId'),
-          // `publicProfile` has no dedicated page before D7; the stranger
-          // request and connection surfaces stay the only people entries.
-          onOpenProfile: (publicProfileId) =>
-              context.push('/profile/connections'),
         ),
       ),
       GoRoute(

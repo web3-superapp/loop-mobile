@@ -380,3 +380,166 @@ Future<CommunityProfileEdit?> showCommunityProfileEditSheet(
     descriptionController.dispose();
   });
 }
+
+/// The community application form.
+///
+/// It has no route of its own: the frozen 93-page manifest has no application
+/// page, so `community-discover` opens this sheet instead of inventing one.
+/// Shape is checked locally so an obviously invalid application never leaves
+/// the device; acceptance stays the server's decision.
+Future<CommunityApplication?> showCommunityApplySheet(BuildContext context) {
+  return showLoopSheet<CommunityApplication>(
+    context,
+    barrierLabel: '关闭社区申请',
+    builder: (sheetContext) => const _CommunityApplyForm(),
+  );
+}
+
+class _CommunityApplyForm extends StatefulWidget {
+  const _CommunityApplyForm();
+
+  @override
+  State<_CommunityApplyForm> createState() => _CommunityApplyFormState();
+}
+
+class _CommunityApplyFormState extends State<_CommunityApplyForm> {
+  final TextEditingController _name = TextEditingController();
+  final TextEditingController _slug = TextEditingController();
+  final TextEditingController _description = TextEditingController();
+  final TextEditingController _assetKey = TextEditingController();
+  CommunityApplicationField? _invalidField;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _slug.dispose();
+    _description.dispose();
+    _assetKey.dispose();
+    super.dispose();
+  }
+
+  String? _optional(TextEditingController controller) {
+    final value = controller.text.trim();
+    return value.isEmpty ? null : value;
+  }
+
+  void _submit() {
+    final application = CommunityApplication(
+      name: _name.text.trim(),
+      slug: _slug.text.trim(),
+      description: _optional(_description),
+      boundAssetKey: _optional(_assetKey)?.toLowerCase(),
+    );
+    final invalid = application.invalidField;
+    if (invalid != null) {
+      setState(() => _invalidField = invalid);
+      return;
+    }
+    Navigator.of(context).pop(application);
+  }
+
+  String? _errorFor(CommunityApplicationField field) =>
+      _invalidField == field ? communityApplicationFieldReason(field) : null;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      key: const ValueKey<String>('community-apply-sheet'),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            '申请入驻',
+            style: LoopTypography.sora(size: 18, weight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '提交后社区状态为「审核中」，你是所有者。验证标记只能由运维核验后设置，'
+            '本表单不会带来任何 Mining 权重结论。',
+            style: LoopTypography.sora(
+              size: 12,
+              weight: FontWeight.w500,
+              color: LoopColors.muted,
+              height: 1.55,
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            key: const ValueKey<String>('community-apply-name'),
+            controller: _name,
+            decoration: InputDecoration(
+              labelText: '社区名称（1–40）',
+              errorText: _errorFor(CommunityApplicationField.name),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            key: const ValueKey<String>('community-apply-slug'),
+            controller: _slug,
+            decoration: InputDecoration(
+              labelText: '短链接（3–32，小写字母、数字与连字符）',
+              errorText: _errorFor(CommunityApplicationField.slug),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            key: const ValueKey<String>('community-apply-description'),
+            controller: _description,
+            maxLines: 2,
+            decoration: InputDecoration(
+              labelText: '简介（可留空，≤280）',
+              errorText: _errorFor(CommunityApplicationField.description),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            key: const ValueKey<String>('community-apply-asset-key'),
+            controller: _assetKey,
+            decoration: InputDecoration(
+              labelText: '绑定资产（可留空，eip155:<链>:0x…）',
+              errorText: _errorFor(CommunityApplicationField.boundAssetKey),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '绑定地址只被登记，D10 之前服务端不解析它，因此不会显示价格、市值或持有人。',
+            style: LoopTypography.sora(
+              size: 11.5,
+              weight: FontWeight.w500,
+              color: LoopColors.muted,
+            ),
+          ),
+          const SizedBox(height: 16),
+          LoopButtonPair(
+            padded: false,
+            children: <Widget>[
+              LoopButton(
+                key: const ValueKey<String>('community-apply-submit'),
+                label: '提交申请',
+                primary: true,
+                onPressed: _submit,
+              ),
+              LoopButton(
+                key: const ValueKey<String>('community-apply-cancel'),
+                label: '取消',
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Inline copy for the field the local shape check rejected.
+String communityApplicationFieldReason(CommunityApplicationField field) =>
+    switch (field) {
+      CommunityApplicationField.name => '名称需要 1–40 个字符，且不能包含控制字符。',
+      CommunityApplicationField.slug => '短链接只能是 3–32 位小写字母、数字或连字符。',
+      CommunityApplicationField.description => '简介最多 280 个字符，且不能包含控制字符。',
+      CommunityApplicationField.boundAssetKey =>
+        '绑定资产需要形如 eip155:56:0x… 的 40 位十六进制地址。',
+    };

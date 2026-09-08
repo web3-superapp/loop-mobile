@@ -623,8 +623,14 @@ void main() {
 
       await tester.tap(find.text('frog_member'));
       await tester.pumpAndSettle();
+      // The row still opens the shared public-profile sheet, but it carries
+      // no governance command for this viewer.
       expect(
-        find.byKey(const ValueKey<String>('member-actions-sheet')),
+        find.byKey(const ValueKey<String>('public-profile-sheet')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-action-mute')),
         findsNothing,
       );
     });
@@ -642,12 +648,12 @@ void main() {
         await tester.tap(find.text('frog_member'));
         await tester.pumpAndSettle();
         expect(
-          find.byKey(const ValueKey<String>('member-actions-sheet')),
+          find.byKey(const ValueKey<String>('public-profile-sheet')),
           findsOneWidget,
         );
 
         await tester.tap(
-          find.byKey(const ValueKey<String>('member-action-mute')),
+          find.byKey(const ValueKey<String>('public-profile-action-mute')),
         );
         await tester.pumpAndSettle();
         expect(
@@ -681,7 +687,9 @@ void main() {
 
       await tester.tap(find.text('frog_member'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey<String>('member-action-ban')));
+      await tester.tap(
+        find.byKey(const ValueKey<String>('public-profile-action-ban')),
+      );
       await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const ValueKey<String>('community-confirm-accept')),

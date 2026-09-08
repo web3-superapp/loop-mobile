@@ -28,6 +28,13 @@ abstract interface class LoopV2CommunityApi {
     String? cursor,
   });
 
+  Future<CommunityDetail> createCommunity({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required CommunityApplication application,
+  });
+
   Future<CommunityDetail> getCommunity({
     required String accessToken,
     required String clientVersion,
@@ -287,6 +294,39 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(error, allowedCodes: allowedCodes);
     }
+  }
+
+  @override
+  Future<CommunityDetail> createCommunity({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required CommunityApplication application,
+  }) {
+    if (application.invalidField != null) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+    }
+    return _detailRequest(
+      () => _dio.post<Object?>(
+        communitiesPath,
+        // All five fields are always submitted; three of them may be null.
+        data: <String, Object?>{
+          'name': application.name,
+          'slug': application.slug,
+          'description': application.description,
+          'logoRef': application.logoRef,
+          'boundAssetKey': application.boundAssetKey,
+        },
+        options: LoopV2ModuleRequest.writeOptions(
+          accessToken,
+          clientVersion,
+          idempotencyKey,
+          hasBody: true,
+        ),
+      ),
+      allowedCodes: LoopV2ModuleRequest.writeErrors,
+      statusCode: 201,
+    );
   }
 
   @override

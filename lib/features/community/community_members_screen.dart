@@ -9,10 +9,10 @@ import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
-import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// One governance command offered on a member row.
@@ -71,12 +71,10 @@ class CommunityMembersScreen extends ConsumerStatefulWidget {
     required this.communityId,
     super.key,
     this.onBack,
-    this.onOpenProfile,
   });
 
   final String? communityId;
   final VoidCallback? onBack;
-  final ValueChanged<String>? onOpenProfile;
 
   @override
   ConsumerState<CommunityMembersScreen> createState() =>
@@ -295,54 +293,32 @@ class _CommunityMembersScreenState
       position: position,
       // The viewer's own row is never navigable, and a member without a
       // profile row can never be a command target.
+      // The viewer's own row is never navigable. Every other row opens the
+      // shared public-profile sheet, which carries the governance commands
+      // the server has allowed for this viewer.
       onTap: entry.isSelf || state.busy
           ? null
-          : (actions.isEmpty
-                ? (entry.profile.isCommandTarget
-                      ? () => widget.onOpenProfile?.call(
-                          entry.profile.publicProfileId!,
-                        )
-                      : null)
-                : () => unawaited(_openActions(entry, actions, controller))),
+          : () => unawaited(_openMemberSheet(entry, actions, controller)),
       semanticLabel: '${entry.profile.displayName}，$status',
     );
   }
 
-  Future<void> _openActions(
+  Future<void> _openMemberSheet(
     CommunityMemberEntry entry,
     List<CommunityGovernanceAction> actions,
     CommunityMembersController controller,
   ) async {
-    final chosen = await showLoopSheet<CommunityGovernanceAction>(
+    final chosen = await showPublicProfileSheet<CommunityGovernanceAction>(
       context,
-      barrierLabel: '关闭成员操作',
-      builder: (sheetContext) => Padding(
-        key: const ValueKey<String>('member-actions-sheet'),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            LoopLabel(entry.profile.displayName),
-            for (final action in actions)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: LoopButton(
-                  key: ValueKey<String>('member-action-${action.name}'),
-                  label: action.label,
-                  block: true,
-                  onPressed: () => Navigator.of(sheetContext).pop(action),
-                ),
-              ),
-            LoopButton(
-              key: const ValueKey<String>('member-action-cancel'),
-              label: '取消',
-              block: true,
-              onPressed: () => Navigator.of(sheetContext).pop(),
-            ),
-          ],
-        ),
-      ),
+      profile: entry.profile,
+      actions: <PublicProfileSheetAction<CommunityGovernanceAction>>[
+        for (final action in actions)
+          PublicProfileSheetAction<CommunityGovernanceAction>(
+            id: action.name,
+            label: action.label,
+            value: action,
+          ),
+      ],
     );
     if (chosen == null || !mounted) return;
     final confirmed = await confirmCommunityAction(

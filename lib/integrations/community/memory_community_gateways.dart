@@ -181,6 +181,34 @@ final class MemoryCommunityGateway implements CommunityGateway {
   }
 
   @override
+  Future<CommunityDetail> createCommunity(
+    CommunityApplication application,
+  ) async {
+    if (application.invalidField != null) {
+      throw const CommunityGatewayException(
+        CommunityFailureKind.validationFailed,
+      );
+    }
+    if (_previewCommunities.any((item) => item.slug == application.slug)) {
+      throw const CommunityGatewayException(
+        CommunityFailureKind.resourceConflict,
+      );
+    }
+    final created = _community(
+      id: '6dd85f64-5717-4562-b3fc-2c963f66afd9',
+      name: application.name,
+      slug: application.slug,
+      memberCount: 1,
+      verification: CommunityVerification.pending,
+      description: application.description,
+      boundAssetKey: application.boundAssetKey,
+    );
+    _previewCommunities.add(created);
+    _joined.add(created.communityId);
+    return _detail(created);
+  }
+
+  @override
   Future<CommunityDetail> loadCommunity(String communityId) async =>
       _detail(_byId(communityId));
 

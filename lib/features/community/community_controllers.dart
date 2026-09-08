@@ -260,6 +260,75 @@ final communityDiscoverControllerProvider =
     >(CommunityDiscoverController.new);
 
 // ---------------------------------------------------------------------------
+// community application (no dedicated route; opened as a sheet)
+// ---------------------------------------------------------------------------
+
+@immutable
+final class CommunityApplicationOutcome {
+  const CommunityApplicationOutcome({this.detail, this.failureKind});
+
+  /// The created community. Non-null only after a 201.
+  final CommunityDetail? detail;
+  final CommunityFailureKind? failureKind;
+
+  bool get isAccepted => detail != null;
+}
+
+/// Submits one community application. It owns no list state: the caller
+/// navigates to the created community on success and shows the mapped copy on
+/// a refusal.
+final class CommunityApplicationController
+    extends Notifier<CommunityResourceState<CommunityDetail>>
+    with CommunitySingleFlight {
+  @override
+  CommunityResourceState<CommunityDetail> build() {
+    nextGeneration();
+    final mode = ref.watch(communityGatewayProvider).mode;
+    ref.onDispose(nextGeneration);
+    return CommunityResourceState<CommunityDetail>(
+      mode: mode,
+      phase: CommunityViewPhase.empty,
+    );
+  }
+
+  Future<CommunityApplicationOutcome> submit(
+    CommunityApplication application,
+  ) async {
+    if (state.busy) {
+      return const CommunityApplicationOutcome(
+        failureKind: CommunityFailureKind.stale,
+      );
+    }
+    final gateway = ref.read(communityGatewayProvider);
+    final generation = nextGeneration();
+    state = state.working(true);
+    try {
+      final detail = await gateway.createCommunity(application);
+      if (isCurrent(generation)) state = state.ready(detail);
+      return CommunityApplicationOutcome(detail: detail);
+    } on CommunityGatewayException catch (error) {
+      if (isCurrent(generation)) {
+        state = state.working(false).failed(error.kind);
+      }
+      return CommunityApplicationOutcome(failureKind: error.kind);
+    } catch (_) {
+      if (isCurrent(generation)) {
+        state = state.working(false).failed(CommunityFailureKind.unexpected);
+      }
+      return const CommunityApplicationOutcome(
+        failureKind: CommunityFailureKind.unexpected,
+      );
+    }
+  }
+}
+
+final communityApplicationControllerProvider =
+    NotifierProvider.autoDispose<
+      CommunityApplicationController,
+      CommunityResourceState<CommunityDetail>
+    >(CommunityApplicationController.new);
+
+// ---------------------------------------------------------------------------
 // community-profile · one community record
 // ---------------------------------------------------------------------------
 

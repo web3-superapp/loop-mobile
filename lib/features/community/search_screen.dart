@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/community/search_controller.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
+import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -23,13 +24,11 @@ class GlobalSearchScreen extends ConsumerStatefulWidget {
     this.initialQuery,
     this.onBack,
     this.onOpenCommunity,
-    this.onOpenProfile,
   });
 
   final String? initialQuery;
   final VoidCallback? onBack;
   final ValueChanged<String>? onOpenCommunity;
-  final ValueChanged<String>? onOpenProfile;
 
   @override
   ConsumerState<GlobalSearchScreen> createState() => _GlobalSearchScreenState();
@@ -47,12 +46,27 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     super.dispose();
   }
 
+  /// Navigation is decided by `destination.kind` alone. LOOP has no page for
+  /// another account, so a `publicProfile` result opens the shared sheet
+  /// instead of routing somewhere that would have to be invented.
   void _openResult(SearchResult result) {
     switch (result.destination) {
       case SearchDestinationKind.communityProfile:
         widget.onOpenCommunity?.call(result.stableId);
       case SearchDestinationKind.publicProfile:
-        widget.onOpenProfile?.call(result.stableId);
+        unawaited(
+          showPublicProfileSheet<Object>(
+            context,
+            profile: LoopPublicProfile(
+              publicProfileId: result.stableId,
+              // `users` results carry the alias as the title and the LOOP ID
+              // as the subtitle; nothing else about the account is known here.
+              loopId: result.subtitle ?? result.title,
+              alias: result.subtitle == null ? null : result.title,
+              avatarRef: result.avatarRef,
+            ),
+          ),
+        );
     }
   }
 

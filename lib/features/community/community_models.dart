@@ -363,3 +363,65 @@ final class ReferralRules {
   final LoopUnavailableFact edges;
   final LoopUnavailableFact inviteCode;
 }
+
+/// The field a [CommunityApplication] would be rejected on.
+enum CommunityApplicationField { name, slug, description, boundAssetKey }
+
+/// The exact `POST /v2/communities` body.
+///
+/// The five fields are all submitted; the last three may be null. The shape is
+/// checked here so an obviously invalid application never leaves the device,
+/// but acceptance stays the server's decision.
+@immutable
+final class CommunityApplication {
+  const CommunityApplication({
+    required this.name,
+    required this.slug,
+    this.description,
+    this.logoRef,
+    this.boundAssetKey,
+  });
+
+  static final RegExp slugPattern = RegExp(r'^[a-z0-9-]{3,32}$');
+  static final RegExp boundAssetKeyPattern = RegExp(
+    r'^eip155:[1-9][0-9]{0,9}:0x[0-9a-fA-F]{40}$',
+  );
+  static final RegExp _forbiddenText = RegExp(
+    r'[\p{Cc}\p{Cf}\p{Cs}\p{Zl}\p{Zp}]',
+    unicode: true,
+  );
+
+  static const nameMaximumRunes = 40;
+  static const descriptionMaximumRunes = 280;
+
+  final String name;
+  final String slug;
+  final String? description;
+  final String? logoRef;
+  final String? boundAssetKey;
+
+  /// The first field the server would reject, or null when the shape is
+  /// acceptable.
+  CommunityApplicationField? get invalidField {
+    final nameRunes = name.runes.length;
+    if (nameRunes < 1 ||
+        nameRunes > nameMaximumRunes ||
+        name.trim().isEmpty ||
+        _forbiddenText.hasMatch(name)) {
+      return CommunityApplicationField.name;
+    }
+    if (!slugPattern.hasMatch(slug)) return CommunityApplicationField.slug;
+    final text = description;
+    if (text != null &&
+        (text.isEmpty ||
+            text.runes.length > descriptionMaximumRunes ||
+            _forbiddenText.hasMatch(text))) {
+      return CommunityApplicationField.description;
+    }
+    final assetKey = boundAssetKey;
+    if (assetKey != null && !boundAssetKeyPattern.hasMatch(assetKey)) {
+      return CommunityApplicationField.boundAssetKey;
+    }
+    return null;
+  }
+}

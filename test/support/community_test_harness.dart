@@ -169,6 +169,7 @@ final class FakeCommunityGateway implements CommunityGateway {
     this.directoryPage,
     this.detail,
     this.members,
+    this.createdDetail,
   });
 
   @override
@@ -182,6 +183,10 @@ final class FakeCommunityGateway implements CommunityGateway {
   CommunityDirectoryPage? directoryPage;
   CommunityDetail? detail;
   CommunityMemberDirectory? members;
+
+  /// Set when the application must be accepted; otherwise `writeFailure`
+  /// (or `failure`) decides the refusal.
+  CommunityDetail? createdDetail;
 
   final List<String> commands = <String>[];
 
@@ -227,6 +232,10 @@ final class FakeCommunityGateway implements CommunityGateway {
     commands.add('list:${sort.wireName}:${membership.wireName}:$cursor');
     return _read(directoryPage);
   }
+
+  @override
+  Future<CommunityDetail> createCommunity(CommunityApplication application) =>
+      _write('create:${application.slug}', createdDetail);
 
   @override
   Future<CommunityDetail> loadCommunity(String communityId) => _read(detail);

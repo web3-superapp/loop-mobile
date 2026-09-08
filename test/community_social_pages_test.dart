@@ -576,7 +576,7 @@ void main() {
 
     testWidgets('a result opens through its destination kind', (tester) async {
       final communities = <String>[];
-      final profiles = <String>[];
+      final social = FakeSocialGateway();
       final gateway = FakeSearchGateway(
         pages: <SearchDomain, SearchPage>{
           SearchDomain.communities: _searchPage(SearchDomain.communities),
@@ -588,20 +588,31 @@ void main() {
         GlobalSearchScreen(
           initialQuery: 'frog',
           onOpenCommunity: communities.add,
-          onOpenProfile: profiles.add,
         ),
         search: gateway,
+        social: social,
       );
 
       await tester.tap(find.text('Frog Holders'));
       await tester.pumpAndSettle();
       expect(communities, <String>[testCommunityId]);
 
+      // A `publicProfile` result opens the shared sheet: LOOP has no route
+      // for another account before D7, and none is invented.
       await tester.tap(find.byKey(const ValueKey<String>('search-seg-users')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('frog_maxi'));
       await tester.pumpAndSettle();
-      expect(profiles, <String>[testMemberId]);
+
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-sheet')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-loop-id')),
+        findsOneWidget,
+      );
+      expect(communities, <String>[testCommunityId]);
     });
 
     testWidgets('a short prefix spends no quota', (tester) async {

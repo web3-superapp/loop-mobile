@@ -82,6 +82,25 @@ final class DioLoopV2CommunityGateway implements CommunityGateway {
   );
 
   @override
+  Future<CommunityDetail> createCommunity(CommunityApplication application) {
+    if (application.invalidField != null) {
+      return Future<CommunityDetail>.error(
+        const CommunityGatewayException(CommunityFailureKind.validationFailed),
+      );
+    }
+    // A changed application is a new logical operation and gets a fresh key.
+    return _write(
+      'create:${application.slug}:${application.name}',
+      (accessToken, key) => _api.createCommunity(
+        accessToken: accessToken,
+        clientVersion: _clientVersion,
+        idempotencyKey: key,
+        application: application,
+      ),
+    );
+  }
+
+  @override
   Future<CommunityDetail> loadCommunity(String communityId) => _read(
     (accessToken) => _api.getCommunity(
       accessToken: accessToken,

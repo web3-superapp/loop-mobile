@@ -200,6 +200,14 @@ final class _RecordingCommunityApi implements LoopV2CommunityApi {
   );
 
   @override
+  Future<CommunityDetail> createCommunity({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required CommunityApplication application,
+  }) => _write(idempotencyKey, detail);
+
+  @override
   Future<CommunityDetail> getCommunity({
     required String accessToken,
     required String clientVersion,

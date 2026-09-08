@@ -16,6 +16,10 @@ abstract interface class CommunityGateway {
     String? cursor,
   });
 
+  /// Applies for a new community. The applicant becomes its owner and the
+  /// result is always `pending`: there is no self-service verification.
+  Future<CommunityDetail> createCommunity(CommunityApplication application);
+
   Future<CommunityDetail> loadCommunity(String communityId);
 
   Future<CommunityDetail> join(String communityId);
@@ -77,6 +81,10 @@ final class UnavailableCommunityGateway implements CommunityGateway {
     CommunityMembershipFilter membership = CommunityMembershipFilter.all,
     String? cursor,
   }) => _unavailable();
+
+  @override
+  Future<CommunityDetail> createCommunity(CommunityApplication application) =>
+      _unavailable();
 
   @override
   Future<CommunityDetail> loadCommunity(String communityId) => _unavailable();
