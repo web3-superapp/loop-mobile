@@ -197,6 +197,8 @@ enum LoopV2CapabilityId {
   streamChatToken('streamChatToken'),
   streamVideoToken('streamVideoToken'),
   community('community'),
+  communityChat('communityChat'),
+  voiceRooms('voiceRooms'),
   communityMining('communityMining'),
   communityPresence('communityPresence'),
   search('search'),

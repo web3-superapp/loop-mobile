@@ -3396,29 +3396,6 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected exact Preview Inbox navigation guard: {result}",
         )
 
-    def test_home_global_search_cannot_restore_mismatched_group(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/home/home_screens.dart"
-            path = root / relative
-            path.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            path.write_text(
-                source.replace(
-                    "location: PreviewConversationIdentity.group.location,",
-                    "location: '/chat/group',",
-                    1,
-                ),
-                encoding="utf-8",
-            )
-
-            result = check_harness.check_home_discovery_and_security_contract(root)
-
-        self.assertTrue(
-            any("Global Search" in error and "truth fingerprint" in error for error in result),
-            msg=f"expected truthful Home Preview search guard: {result}",
-        )
-
     def test_chat_preview_notification_cannot_drop_exact_group_id(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -3665,27 +3642,6 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected non-hollow exact-ID evidence: {result}",
         )
 
-    def test_home_global_search_cannot_leak_preview_into_production(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/home/home_screens.dart"
-            path = root / relative
-            path.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            start = source.index("class GlobalSearchScreen")
-            end = source.index("class SecurityActivityScreen", start)
-            changed = source[start:end].replace(
-                "if (!isPreview) {", "if (false && !isPreview) {", 1
-            )
-            path.write_text(source[:start] + changed + source[end:], encoding="utf-8")
-
-            result = check_harness.check_home_discovery_and_security_contract(root)
-
-        self.assertTrue(
-            any("Global Search" in error and "truth fingerprint" in error for error in result),
-            msg=f"expected production Search Preview-leak guard: {result}",
-        )
-
     def test_home_preview_session_mode_cannot_be_broadened(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -3693,26 +3649,25 @@ class HarnessTests(unittest.TestCase):
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            start = source.index("class GlobalSearchScreen")
+            start = source.index("class SecurityActivityScreen")
             changed = source[start:].replace(
                 "session.mode == LoopSessionMode.preview",
                 "session.mode != LoopSessionMode.signedOut",
-                2,
+                1,
             )
             path.write_text(source[:start] + changed, encoding="utf-8")
 
             result = check_harness.check_home_discovery_and_security_contract(root)
 
         self.assertTrue(
-            any("Global Search" in error and "truth fingerprint" in error for error in result),
-            msg=f"expected exact Preview Search session guard: {result}",
-        )
-        self.assertTrue(
-            any("Security Activity" in error and "truth fingerprint" in error for error in result),
+            any(
+                "Security Activity" in error and "truth fingerprint" in error
+                for error in result
+            ),
             msg=f"expected exact Preview Security session guard: {result}",
         )
 
-    def test_home_global_search_query_cannot_be_ignored(self) -> None:
+    def test_retired_home_global_search_cannot_return(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             relative = "lib/features/home/home_screens.dart"
@@ -3720,107 +3675,15 @@ class HarnessTests(unittest.TestCase):
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
-                source.replace(
-                    ".where((target) => target.matchesEvery(queryTokens))",
-                    ".where((target) => true)",
-                    1,
-                ),
+                source + "\n\nclass GlobalSearchScreen extends StatelessWidget {}\n",
                 encoding="utf-8",
             )
 
             result = check_harness.check_home_discovery_and_security_contract(root)
 
         self.assertTrue(
-            any("Global Search" in error and "truth fingerprint" in error for error in result),
-            msg=f"expected executable local-filter guard: {result}",
-        )
-
-    def test_home_global_search_no_match_cannot_disappear(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/home/home_screens.dart"
-            path = root / relative
-            path.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            path.write_text(
-                source.replace("if (matches.isEmpty)", "if (false)", 1),
-                encoding="utf-8",
-            )
-
-            result = check_harness.check_home_discovery_and_security_contract(root)
-
-        self.assertTrue(
-            any("Global Search" in error and "truth fingerprint" in error for error in result),
-            msg=f"expected truthful no-match guard: {result}",
-        )
-
-    def test_home_global_search_clear_cannot_become_no_op(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/home/home_screens.dart"
-            path = root / relative
-            path.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            path.write_text(
-                source.replace(
-                    "onPressed: () => setState(controller.clear)",
-                    "onPressed: () => setState(() {})",
-                    1,
-                ),
-                encoding="utf-8",
-            )
-
-            result = check_harness.check_home_discovery_and_security_contract(root)
-
-        self.assertTrue(
-            any("Global Search" in error and "truth fingerprint" in error for error in result),
-            msg=f"expected Search Clear behavior guard: {result}",
-        )
-
-    def test_home_global_search_cannot_invent_spot_identity(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/home/home_screens.dart"
-            path = root / relative
-            path.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            path.write_text(
-                source.replace(
-                    "location: '/market',",
-                    "location: '/market/token?spotIndex=0',",
-                    1,
-                ),
-                encoding="utf-8",
-            )
-
-            result = check_harness.check_home_discovery_and_security_contract(root)
-
-        self.assertTrue(
-            any("Global Search" in error and "truth fingerprint" in error for error in result),
-            msg=f"expected no-invented-Spot-identity guard: {result}",
-        )
-
-    def test_home_global_search_cannot_restore_static_price(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/home/home_screens.dart"
-            path = root / relative
-            path.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            path.write_text(
-                source.replace(
-                    "Spot asset example · opens public Testnet markets",
-                    r"Token · $4,630.50",
-                    1,
-                ),
-                encoding="utf-8",
-            )
-
-            result = check_harness.check_home_discovery_and_security_contract(root)
-
-        self.assertTrue(
-            any("static asset price" in error for error in result),
-            msg=f"expected source-less Search price guard: {result}",
+            any("retired Home Global Search slice" in error for error in result),
+            msg=f"expected retired Home Search guard: {result}",
         )
 
     def test_home_security_cannot_leak_fixtures_into_production(self) -> None:
@@ -3962,7 +3825,8 @@ class HarnessTests(unittest.TestCase):
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
                 source.replace(
-                    "expect(find.text('Search not connected'), findsOneWidget);",
+                    "expect(find.text('Security activity not connected'), "
+                    "findsOneWidget);",
                     "expect(true, isTrue);",
                     1,
                 ),

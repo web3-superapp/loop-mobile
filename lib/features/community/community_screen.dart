@@ -83,7 +83,8 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
     );
     final mode = ref.watch(communityGatewayProvider).mode;
     final state = ref.watch(communityHomeControllerProvider);
-    if (capability.isAvailable && state.phase == CommunityViewPhase.loading) {
+    if (!communityCapabilityBlocks(mode, capability) &&
+        state.phase == CommunityViewPhase.loading) {
       scheduleMicrotask(() {
         if (mounted) {
           unawaited(ref.read(communityHomeControllerProvider.notifier).load());
@@ -160,13 +161,17 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
               _CommunityMessagePanel(
                 home: home,
                 onClose: _closePanel,
+                onOpenChat: () {
+                  _closePanel();
+                  _open('/chat');
+                },
                 onOpenRequests: () {
                   _closePanel();
                   _open('/chat/requests');
                 },
               ),
             CommunityPreviewNotice(mode: mode, resource: '社区聚合'),
-            if (!capability.isAvailable)
+            if (communityCapabilityBlocks(mode, capability))
               _CommunityCapabilityBlock(
                 reasonCode: capability.reasonCode,
                 decision: capability.decision,
@@ -418,11 +423,13 @@ class _CommunityMessagePanel extends StatelessWidget {
   const _CommunityMessagePanel({
     required this.home,
     required this.onClose,
+    required this.onOpenChat,
     required this.onOpenRequests,
   });
 
   final CommunityHome? home;
   final VoidCallback onClose;
+  final VoidCallback onOpenChat;
   final VoidCallback onOpenRequests;
 
   @override
@@ -465,9 +472,17 @@ class _CommunityMessagePanel extends StatelessWidget {
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               LoopRecordRow(
+                key: const ValueKey<String>('community-open-chat'),
+                title: '聊天',
+                subtitle: '打开会话收件箱',
+                position: LoopRowPosition.first,
+                onTap: onOpenChat,
+              ),
+              LoopRecordRow(
                 key: const ValueKey<String>('community-open-requests'),
                 title: '陌生人请求',
                 subtitle: '接受、忽略或举报',
+                position: LoopRowPosition.last,
                 onTap: onOpenRequests,
               ),
             ],

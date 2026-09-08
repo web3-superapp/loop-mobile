@@ -47,7 +47,8 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
     final mode = ref.watch(communityGatewayProvider).mode;
     final state = ref.watch(referralRulesControllerProvider);
     final controller = ref.read(referralRulesControllerProvider.notifier);
-    if (capability.isAvailable && state.phase == CommunityViewPhase.loading) {
+    if (!communityCapabilityBlocks(mode, capability) &&
+        state.phase == CommunityViewPhase.loading) {
       scheduleMicrotask(() {
         if (mounted) unawaited(controller.load());
       });
@@ -74,7 +75,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
       ),
       sections: <Widget>[
         CommunityPreviewNotice(mode: mode, resource: '邀请规则'),
-        if (!capability.isAvailable)
+        if (communityCapabilityBlocks(mode, capability))
           LoopEmpty(
             key: const ValueKey<String>('referral-capability-unavailable'),
             icon: 'warn',

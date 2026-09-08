@@ -58,9 +58,7 @@ void main() {
       // No capability document has been observed, so the page issues no
       // request and states that instead of showing a figure.
       expect(
-        find.byKey(
-          const ValueKey<String>('community-capability-unavailable'),
-        ),
+        find.byKey(const ValueKey<String>('community-capability-unavailable')),
         findsOne,
       );
       expect(find.text('社区模块当前不可用'), findsOne);

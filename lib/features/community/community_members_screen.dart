@@ -29,6 +29,38 @@ enum CommunityGovernanceAction {
   final String label;
 }
 
+/// The commands the server has told this viewer it may run against this row.
+///
+/// This is visibility only: the permission matrix itself lives on the server
+/// and decides the outcome. The client adds no rule of its own beyond the
+/// facts the response already states.
+List<CommunityGovernanceAction> communityGovernanceActions(
+  CommunityViewer? viewer,
+  CommunityMemberEntry entry,
+) {
+  if (viewer == null || !entry.isActionable) {
+    return const <CommunityGovernanceAction>[];
+  }
+  // The owner can never be the target of a governance action.
+  if (entry.role == CommunityRole.owner) {
+    return const <CommunityGovernanceAction>[];
+  }
+  return <CommunityGovernanceAction>[
+    if (viewer.canInviteAdmin && entry.role == CommunityRole.member)
+      CommunityGovernanceAction.promote,
+    if (viewer.canInviteAdmin && entry.role == CommunityRole.admin)
+      CommunityGovernanceAction.demote,
+    if (viewer.canMute && entry.status != CommunityMemberStatus.muted)
+      CommunityGovernanceAction.mute,
+    if (viewer.canMute && entry.status == CommunityMemberStatus.muted)
+      CommunityGovernanceAction.unmute,
+    if (viewer.canBan && entry.status != CommunityMemberStatus.banned)
+      CommunityGovernanceAction.ban,
+    if (viewer.canBan && entry.status == CommunityMemberStatus.banned)
+      CommunityGovernanceAction.unban,
+  ];
+}
+
 /// `community-members` · grouped directory and governance.
 ///
 /// Action visibility comes only from the server's `viewer` flags plus the
@@ -62,7 +94,7 @@ class _CommunityMembersScreenState
     final state = ref.watch(communityMembersControllerProvider);
     final controller = ref.read(communityMembersControllerProvider.notifier);
     final id = widget.communityId;
-    if (capability.isAvailable &&
+    if (!communityCapabilityBlocks(mode, capability) &&
         id != null &&
         state.phase == CommunityViewPhase.loading) {
       scheduleMicrotask(() {
@@ -87,38 +119,41 @@ class _CommunityMembersScreenState
       ),
       filters: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: <Widget>[
-            _filterSeg(
-              controller,
-              state,
-              CommunityMemberFilter.all,
-              counts == null ? '全部' : '全部 ${counts.all}',
-            ),
-            _filterSeg(
-              controller,
-              state,
-              CommunityMemberFilter.owner,
-              counts == null ? 'Owner' : 'Owner ${counts.owner}',
-            ),
-            _filterSeg(
-              controller,
-              state,
-              CommunityMemberFilter.admin,
-              counts == null ? 'Admin' : 'Admin ${counts.admin}',
-            ),
-            // Presence has no source; the segment stays disabled with its
-            // server reason rather than showing a fabricated online count.
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: LoopSeg(
-                key: const ValueKey<String>('members-seg-online'),
-                label: '在线',
-                selected: false,
-                onSelected: null,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: <Widget>[
+              _filterSeg(
+                controller,
+                state,
+                CommunityMemberFilter.all,
+                counts == null ? '全部' : '全部 ${counts.all}',
               ),
-            ),
-          ],
+              _filterSeg(
+                controller,
+                state,
+                CommunityMemberFilter.owner,
+                counts == null ? 'Owner' : 'Owner ${counts.owner}',
+              ),
+              _filterSeg(
+                controller,
+                state,
+                CommunityMemberFilter.admin,
+                counts == null ? 'Admin' : 'Admin ${counts.admin}',
+              ),
+              // Presence has no source; the segment stays disabled with its
+              // server reason rather than showing a fabricated online count.
+              const Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: LoopSeg(
+                  key: ValueKey<String>('members-seg-online'),
+                  label: '在线',
+                  selected: false,
+                  onSelected: null,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       collection: ListView(
@@ -135,7 +170,7 @@ class _CommunityMembersScreenState
               message: '缺少社区标识',
               reason: '请从社区档案进入，本页不会猜测要打开哪个社区。',
             )
-          else if (!capability.isAvailable)
+          else if (communityCapabilityBlocks(mode, capability))
             LoopEmpty(
               key: const ValueKey<String>(
                 'community-members-capability-unavailable',
@@ -237,41 +272,13 @@ class _CommunityMembersScreenState
     return groups;
   }
 
-  /// The commands the server has told this viewer it may run against this row.
-  static List<CommunityGovernanceAction> availableActions(
-    CommunityViewer? viewer,
-    CommunityMemberEntry entry,
-  ) {
-    if (viewer == null || !entry.isActionable) {
-      return const <CommunityGovernanceAction>[];
-    }
-    // The owner can never be the target of a governance action.
-    if (entry.role == CommunityRole.owner) {
-      return const <CommunityGovernanceAction>[];
-    }
-    return <CommunityGovernanceAction>[
-      if (viewer.canInviteAdmin && entry.role == CommunityRole.member)
-        CommunityGovernanceAction.promote,
-      if (viewer.canInviteAdmin && entry.role == CommunityRole.admin)
-        CommunityGovernanceAction.demote,
-      if (viewer.canMute && entry.status != CommunityMemberStatus.muted)
-        CommunityGovernanceAction.mute,
-      if (viewer.canMute && entry.status == CommunityMemberStatus.muted)
-        CommunityGovernanceAction.unmute,
-      if (viewer.canBan && entry.status != CommunityMemberStatus.banned)
-        CommunityGovernanceAction.ban,
-      if (viewer.canBan && entry.status == CommunityMemberStatus.banned)
-        CommunityGovernanceAction.unban,
-    ];
-  }
-
   LoopRecordRow _memberRow({
     required CommunityMemberEntry entry,
     required LoopRowPosition position,
     required CommunityMembersState state,
     required CommunityMembersController controller,
   }) {
-    final actions = availableActions(state.viewer, entry);
+    final actions = communityGovernanceActions(state.viewer, entry);
     final status = switch (entry.status) {
       CommunityMemberStatus.active => entry.role.label,
       CommunityMemberStatus.muted => '${entry.role.label} · 已禁言',

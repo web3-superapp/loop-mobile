@@ -65,7 +65,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
     final state = ref.watch(searchControllerProvider);
     final controller = ref.read(searchControllerProvider.notifier);
     final initial = widget.initialQuery;
-    if (capability.isAvailable &&
+    if (!communityCapabilityBlocks(mode, capability) &&
         !_submittedInitialQuery &&
         initial != null &&
         searchQueryIsSubmittable(initial)) {
@@ -132,7 +132,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '搜索结果'),
-          if (!capability.isAvailable)
+          if (communityCapabilityBlocks(mode, capability))
             LoopEmpty(
               key: const ValueKey<String>('search-capability-unavailable'),
               icon: 'warn',

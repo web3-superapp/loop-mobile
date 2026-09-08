@@ -41,7 +41,8 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
     final mode = ref.watch(socialGatewayProvider).mode;
     final state = ref.watch(connectionsControllerProvider);
     final controller = ref.read(connectionsControllerProvider.notifier);
-    if (capability.isAvailable && state.phase == CommunityViewPhase.loading) {
+    if (!communityCapabilityBlocks(mode, capability) &&
+        state.phase == CommunityViewPhase.loading) {
       scheduleMicrotask(() {
         if (mounted) unawaited(controller.load());
       });
@@ -66,28 +67,31 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
       ),
       filters: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: LoopSeg(
-                key: const ValueKey<String>('connections-seg-following'),
-                label: counts == null ? '关注' : '关注 ${counts.following}',
-                selected: state.direction == ConnectionDirection.following,
-                onSelected: () => unawaited(
-                  controller.selectDirection(ConnectionDirection.following),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: LoopSeg(
+                  key: const ValueKey<String>('connections-seg-following'),
+                  label: counts == null ? '关注' : '关注 ${counts.following}',
+                  selected: state.direction == ConnectionDirection.following,
+                  onSelected: () => unawaited(
+                    controller.selectDirection(ConnectionDirection.following),
+                  ),
                 ),
               ),
-            ),
-            LoopSeg(
-              key: const ValueKey<String>('connections-seg-followers'),
-              label: counts == null ? '粉丝' : '粉丝 ${counts.followers}',
-              selected: state.direction == ConnectionDirection.followers,
-              onSelected: () => unawaited(
-                controller.selectDirection(ConnectionDirection.followers),
+              LoopSeg(
+                key: const ValueKey<String>('connections-seg-followers'),
+                label: counts == null ? '粉丝' : '粉丝 ${counts.followers}',
+                selected: state.direction == ConnectionDirection.followers,
+                onSelected: () => unawaited(
+                  controller.selectDirection(ConnectionDirection.followers),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       collection: ListView(
@@ -95,7 +99,7 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '关注关系'),
-          if (!capability.isAvailable)
+          if (communityCapabilityBlocks(mode, capability))
             LoopEmpty(
               key: const ValueKey<String>('connections-capability-unavailable'),
               icon: 'warn',

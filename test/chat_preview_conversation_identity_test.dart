@@ -360,7 +360,6 @@ void main() {
     expect(find.text('NightOwl'), findsNothing);
     expect(find.byTooltip('Send message'), findsNothing);
   });
-
 }
 
 Future<GoRouter> _pumpPreviewApp(

@@ -38,7 +38,8 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
     final mode = ref.watch(socialGatewayProvider).mode;
     final state = ref.watch(messageRequestsControllerProvider);
     final controller = ref.read(messageRequestsControllerProvider.notifier);
-    if (capability.isAvailable && state.phase == CommunityViewPhase.loading) {
+    if (!communityCapabilityBlocks(mode, capability) &&
+        state.phase == CommunityViewPhase.loading) {
       scheduleMicrotask(() {
         if (mounted) unawaited(controller.load());
       });
@@ -67,7 +68,7 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '陌生人请求'),
-          if (!capability.isAvailable)
+          if (communityCapabilityBlocks(mode, capability))
             LoopEmpty(
               key: const ValueKey<String>('dm-requests-capability-unavailable'),
               icon: 'warn',

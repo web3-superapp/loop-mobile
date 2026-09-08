@@ -1010,64 +1010,67 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Profile exposes 好友请求 and the retired friend routes fail closed', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    String? destination;
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: LoopTheme.dark,
-        home: ProviderScope(
-          child: ProfileSurfaceScreen.fromId(
-            'profile',
-            onNavigate: (value) => destination = value,
+  testWidgets(
+    'Profile exposes 好友请求 and the retired friend routes fail closed',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      String? destination;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: LoopTheme.dark,
+          home: ProviderScope(
+            child: ProfileSurfaceScreen.fromId(
+              'profile',
+              onNavigate: (value) => destination = value,
+            ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, -700));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('好友请求'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('好友请求'));
-    expect(destination, 'friend-requests');
-    expect(tester.takeException(), isNull);
+      );
+      await tester.pumpAndSettle();
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -700));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('好友请求'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('好友请求'));
+      expect(destination, 'friend-requests');
+      expect(tester.takeException(), isNull);
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          privyAuthGatewayProvider.overrideWithValue(
-            const AuthenticatedTestPrivyGateway(),
-          ),
-        ],
-        child: const LoopApp(),
-      ),
-    );
-    await tester.pumpAndSettle();
-    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            privyAuthGatewayProvider.overrideWithValue(
+              const AuthenticatedTestPrivyGateway(),
+            ),
+          ],
+          child: const LoopApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
 
-    // Both locations were folded into `search` + `connections`: they are no
-    // longer mounted and land back on Community as informational retirements.
-    router.go('/profile/friends');
-    await tester.pumpAndSettle();
-    expect(find.byType(FriendListPage), findsNothing);
-    expect(router.routeInformationProvider.value.uri.path, '/community');
+      // Both locations were folded into `search` + `connections`: they are no
+      // longer mounted and land back on Community as informational retirements.
+      router.go('/profile/friends');
+      await tester.pumpAndSettle();
+      expect(find.byType(FriendListPage), findsNothing);
+      expect(router.routeInformationProvider.value.uri.path, '/community');
 
-    router.go('/chat/friends/add');
-    await tester.pumpAndSettle();
-    expect(find.byType(AddFriendPage), findsNothing);
-    expect(router.routeInformationProvider.value.uri.path, '/community');
+      router.go('/chat/friends/add');
+      await tester.pumpAndSettle();
+      expect(find.byType(AddFriendPage), findsNothing);
+      expect(router.routeInformationProvider.value.uri.path, '/community');
 
-    router.go('/chat/friends/requests');
-    await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path,
-        '/chat/friends/requests');
-  });
+      router.go('/chat/friends/requests');
+      await tester.pumpAndSettle();
+      expect(
+        router.routeInformationProvider.value.uri.path,
+        '/chat/friends/requests',
+      );
+    },
+  );
 }
 
 Future<void> _pumpPage(

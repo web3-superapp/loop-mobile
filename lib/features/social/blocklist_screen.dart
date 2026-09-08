@@ -42,7 +42,7 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
     final mode = ref.watch(socialGatewayProvider).mode;
     final state = ref.watch(blocklistControllerProvider);
     final controller = ref.read(blocklistControllerProvider.notifier);
-    if (capability.isAvailable &&
+    if (!communityCapabilityBlocks(mode, capability) &&
         state.kind.isSupported &&
         state.phase == CommunityViewPhase.loading) {
       scheduleMicrotask(() {
@@ -68,21 +68,24 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
       ),
       filters: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: <Widget>[
-            for (final kind in BlockKind.values)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: LoopSeg(
-                  key: ValueKey<String>('blocklist-seg-${kind.wireName}'),
-                  label: kind == BlockKind.user && state.userCount != null
-                      ? '用户 ${state.userCount}'
-                      : _segmentLabels[kind]!,
-                  selected: state.kind == kind,
-                  onSelected: () => controller.selectKind(kind),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: <Widget>[
+              for (final kind in BlockKind.values)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: LoopSeg(
+                    key: ValueKey<String>('blocklist-seg-${kind.wireName}'),
+                    label: kind == BlockKind.user && state.userCount != null
+                        ? '用户 ${state.userCount}'
+                        : _segmentLabels[kind]!,
+                    selected: state.kind == kind,
+                    onSelected: () => controller.selectKind(kind),
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
       collection: ListView(
@@ -90,7 +93,7 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '屏蔽名单'),
-          if (!capability.isAvailable)
+          if (communityCapabilityBlocks(mode, capability))
             LoopEmpty(
               key: const ValueKey<String>('blocklist-capability-unavailable'),
               icon: 'warn',

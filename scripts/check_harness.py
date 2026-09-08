@@ -288,11 +288,12 @@ REQUIRED_FILES = (
     "test/perp_positions_controller_test.dart",
     "test/perp_positions_screen_test.dart",
 )
+# Step 3 replaced `/chat/requests` with the V2 `dm-requests` page, which has a
+# real backend and is no longer a Development Preview fixture route.
 CHAT_PREVIEW_ONLY_ROUTES = (
     "/chat/group",
     "/chat/dm",
     "/chat/group-info",
-    "/chat/requests",
     "/chat/search",
     "/preview/token-card",
     "/preview/contract-facts",
@@ -3054,7 +3055,6 @@ def check_chat_preview_message_request_contract(root: Path) -> list[str]:
             ),
             "test/chat_preview_route_guard_test.dart": (
                 "production legacy Chat routes never mount preview fixtures",
-                "'/chat/requests'",
                 "find.byKey(const ValueKey<String>('chat-preview-route-blocked'))",
             ),
             "docs/product/implementation-constraints.md": (
@@ -3169,16 +3169,15 @@ CHAT_PREVIEW_CONVERSATION_ID_TEST_MARKERS = {
         "Group information disables unsupported member and leave actions",
         "Unknown or kind-mismatched search results are not navigable",
         "Inbox refuses an unregistered same-kind Preview conversation",
-        "Global Search names and opens the exact registered group",
     ),
 }
 CHAT_PREVIEW_CONVERSATION_ID_TEST_FINGERPRINT = (
-    "2f25fa3842d9d0a340fd215b29312bcf25a3e01a214334a47b4458847fcb8c4a"
+    "6299c676adb255b595b6f4211daf8d6e89836218cdec9c4650409c274e1ace26"
 )
 CHAT_PREVIEW_CONVERSATION_ID_SOURCE_FINGERPRINTS = {
     "resolver": "9b441d2d8c58355db0d3bc47100f6d85534a4f4569a646126496a62b68520547",
     "primary_routes": "2cfd47ba25ac99a4435fd913b50d56decae3bc5d235549f240d11ef27a0c4ec9",
-    "secondary_routes": "8b6fd9d4bce7e380e4fcf0bf3d5e54691b1e9cbaf9618784ddc7a8354b45023c",
+    "secondary_routes": "0104d26ed539453a6bdd66d5f5f05526c331ed05b230bf017096ee69337a1229",
     "conversation_pages": "4d71552865ef9c3f872da63d4cdcb9299468e3f07e0bafdf40f7e72f97f51a11",
     "group_info": "d967998206d33611981bbd5107e9b51975cbfbf2c69a121800b0584731a0b54c",
     "member_list": "9e34dccc196b4237baba7ea8a6b1ece71c297d010b1a5a8c7cd264d9419350bd",
@@ -3263,10 +3262,10 @@ def check_chat_preview_conversation_id_contract(root: Path) -> list[str]:
                 "path: '/chat/channel/:cid'",
                 "StreamChatChannelRoutePage(cid: state.pathParameters['cid'] ?? '')",
             ),
+            # Step 3 retired the Home Global Search slice; the Preview
+            # notification target keeps the exact registered group location.
             "lib/features/home/home_screens.dart": (
-                "title: PreviewConversationIdentity.group.title",
                 "PreviewConversationIdentity.group.location",
-                "Group · offline conversation preview",
             ),
             "test/chat_preview_conversation_identity_test.dart": (
                 "CommunicationFailure.conversationNotFound.code",
@@ -5374,12 +5373,10 @@ def check_network_dio_policy_contract(root: Path) -> list[str]:
     return errors
 
 
+# Step 3 retired the Home-era Global Search slice: `/search` is now the V2
+# five-domain search page, covered by test/community_social_pages_test.dart.
 HOME_DISCOVERY_SECURITY_TEST_MARKERS = {
     Path("test/home_discovery_and_security_test.dart"): (
-        "production Search is unavailable and contains no Preview facts",
-        "query filters local suggestions and Clear restores them",
-        "no-match never restores unrelated suggestions",
-        "ETH opens bare Spot ledger and person opens exact Preview ID",
         "production Security is unavailable and contains no fixture facts or actions",
         "production LoopApp retires the Home security route to Community",
         "explicit Preview Security is visibly labelled and has no score or provider action",
@@ -5387,11 +5384,10 @@ HOME_DISCOVERY_SECURITY_TEST_MARKERS = {
     ),
 }
 HOME_DISCOVERY_SECURITY_TEST_FINGERPRINT = (
-    "2f9284b8418e431c4118d5fe97b2d1de6376061f48ab52135a2897ce6c33e41b"
+    "6a1d98752061c94e9466a017a2c612f88041dd0581821ae2c458feeeed0cab80"
 )
 HOME_DISCOVERY_SECURITY_SOURCE_FINGERPRINTS = {
     "entry": "421bd4be7cf8adeb87f4bac46f3af849d41c7685db318703b232811b844f7394",
-    "search": "0129124fee63ea30efdc2979ce131b43a23652fd018d41eb0eb8518915d90af8",
     "security": "4ead4f824e2cb3c2794442ec18490c587f05f8303da5d0cdbbfe212ad7b0685b",
 }
 
@@ -5405,21 +5401,15 @@ def check_home_discovery_and_security_contract(root: Path) -> list[str]:
             "lib/features/home/home_screens.dart": (
                 "onTap: () => context.push('/home/security')",
                 "session.mode == LoopSessionMode.preview",
-                "global-search-provider-unavailable",
-                "global-search-preview-fixtures",
-                "global-search-preview-empty",
-                "target.matchesEvery(queryTokens)",
-                "controller.clear",
-                "PreviewConversationIdentity.group.location",
-                "PreviewConversationIdentity.direct.location",
-                "location: '/market'",
                 "security-activity-provider-unavailable",
                 "security-activity-preview-fixtures",
                 "Example week · 演示数据",
             ),
             "lib/app.dart": (
                 "path: '/search'",
-                "builder: (context, state) => const GlobalSearchScreen()",
+                # Step 3: `/search` mounts the V2 five-domain search page.
+                "GlobalSearchScreen(",
+                "initialQuery: state.uri.queryParameters['q']",
             ),
             "test/home_discovery_and_security_test.dart": tuple(
                 marker
@@ -5484,30 +5474,23 @@ def check_home_discovery_and_security_contract(root: Path) -> list[str]:
             errors.append(
                 "Home Security entry must match its reviewed bounded-route fingerprint"
             )
-        search_start = source.find("class GlobalSearchScreen")
-        security_start = source.find("class SecurityActivityScreen", search_start + 1)
-        if search_start < 0 or security_start < 0:
+        if "class GlobalSearchScreen" in source:
             errors.append(
-                "Home Search and Security must retain two bounded reviewed source slices"
+                "lib/features/home/home_screens.dart must not restore the retired "
+                "Home Global Search slice; `/search` is the V2 search page"
+            )
+        security_start = source.find("class SecurityActivityScreen")
+        if security_start < 0:
+            errors.append(
+                "Home Security must retain one bounded reviewed source slice"
             )
         else:
-            search_source = source[search_start:security_start]
             security_source = source[security_start:]
-            if normalized_dart_source_fingerprint(search_source) != (
-                HOME_DISCOVERY_SECURITY_SOURCE_FINGERPRINTS["search"]
-            ):
-                errors.append(
-                    "Home Global Search must match its reviewed providerless truth fingerprint"
-                )
             if normalized_dart_source_fingerprint(security_source) != (
                 HOME_DISCOVERY_SECURITY_SOURCE_FINGERPRINTS["security"]
             ):
                 errors.append(
                     "Home Security Activity must match its reviewed production-truth fingerprint"
-                )
-            if r"$4,630.50" in search_source:
-                errors.append(
-                    "Home Global Search must not restore a source-less static asset price"
                 )
             for forbidden in ("No urgent action", "MFA is active"):
                 if forbidden in security_source:
@@ -9695,7 +9678,7 @@ FRIEND_FRONTEND_TEST_MARKERS = {
         "Preview selects accepted friends and creates no Stream channel",
         "production group success requires a canonical CID and routes to guarded Chat",
         "Chat add menu exposes create-group and add-friend routes",
-        "Profile exposes 我的好友 and application routes stay truthful",
+        "Profile exposes 好友请求 and the retired friend routes fail closed",
     ),
     Path("test/friend_request_feature_test.dart"): (
         "loads incoming and outgoing first pages and paginates each list independently",
@@ -9829,7 +9812,8 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "label: '创建群组'",
                 "label: '添加好友'",
                 "context.push('/chat/groups/create')",
-                "context.push('/chat/friends/add')",
+                # Step 3 folded the V1 alias search into the V2 global search.
+                "context.push('/search')",
             ),
             "lib/features/chat/friends/friend_models.dart": (
                 "factory FriendProfileRef.fromPublicProfileId(String value)",
@@ -10035,21 +10019,23 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
             # Decision 0053: the Profile root moved to profile_v2_screens; the
             # Social privacy entry retired with the V2 privacy resource.
             "lib/features/profile/profile_v2_screens.dart": (
-                "title: '我的好友'",
-                "onTap: () => widget.onNavigate('friends')",
+                # Step 3: the friend list retired; only the request inbox stays.
+                "title: '好友请求'",
+                "onTap: () => widget.onNavigate('friend-requests')",
+                "onTap: () => widget.onNavigate('connections')",
                 "onTap: () => widget.onNavigate('privacy')",
             ),
             "lib/app.dart": (
                 "messageItem: loopStreamGroupMessageItemBuilder",
                 "mentionItem: loopStreamGroupMentionItemBuilder",
-                "path: '/chat/friends/add'",
                 "path: '/chat/friends/requests'",
                 "path: '/chat/groups/create'",
                 "path: '/chat/groups/:groupId/alias'",
                 "path: '/chat/channel/:cid/alias'",
                 "builder: (context, state) => StreamGroupAliasChannelRoutePage(",
-                "path: '/profile/friends'",
-                "'friends' => '/profile/friends'",
+                # Step 3: `/profile/friends` and `/chat/friends/add` are retired
+                # informational locations; the request inbox keeps its route.
+                "'friend-requests' => '/chat/friends/requests'",
                 # Decision 0053: the retired V1 social-privacy destination
                 # resolves to the V2 Privacy centre instead of a dead route.
                 "'social-privacy' => LoopRouteManifest.pathFor('privacy')",

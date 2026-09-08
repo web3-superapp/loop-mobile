@@ -67,7 +67,8 @@ class _CommunityDiscoverScreenState
     final mode = ref.watch(communityGatewayProvider).mode;
     final state = ref.watch(communityDiscoverControllerProvider);
     final controller = ref.read(communityDiscoverControllerProvider.notifier);
-    if (capability.isAvailable && state.phase == CommunityViewPhase.loading) {
+    if (!communityCapabilityBlocks(mode, capability) &&
+        state.phase == CommunityViewPhase.loading) {
       scheduleMicrotask(() {
         if (!mounted) return;
         unawaited(
@@ -95,24 +96,27 @@ class _CommunityDiscoverScreenState
       ),
       filters: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: <Widget>[
-            for (final segment in CommunityDiscoverSegment.values)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: LoopSeg(
-                  key: ValueKey<String>('discover-seg-${segment.name}'),
-                  label: segment.label,
-                  selected: segment == selectedSegment,
-                  onSelected: segment.isAvailable
-                      ? () {
-                          setState(() => _segment = segment);
-                          unawaited(controller.selectSort(segment.sort!));
-                        }
-                      : null,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: <Widget>[
+              for (final segment in CommunityDiscoverSegment.values)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: LoopSeg(
+                    key: ValueKey<String>('discover-seg-${segment.name}'),
+                    label: segment.label,
+                    selected: segment == selectedSegment,
+                    onSelected: segment.isAvailable
+                        ? () {
+                            setState(() => _segment = segment);
+                            unawaited(controller.selectSort(segment.sort!));
+                          }
+                        : null,
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
       collection: ListView(
@@ -128,7 +132,7 @@ class _CommunityDiscoverScreenState
                 message: '"${segment.label}" 暂不可用',
                 reason: segment.deferredReason,
               ),
-          if (!capability.isAvailable)
+          if (communityCapabilityBlocks(mode, capability))
             LoopEmpty(
               key: const ValueKey<String>(
                 'community-discover-capability-unavailable',

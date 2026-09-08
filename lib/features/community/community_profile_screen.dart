@@ -48,7 +48,7 @@ class _CommunityProfileScreenState
     final state = ref.watch(communityProfileControllerProvider);
     final controller = ref.read(communityProfileControllerProvider.notifier);
     final id = widget.communityId;
-    if (capability.isAvailable &&
+    if (!communityCapabilityBlocks(mode, capability) &&
         id != null &&
         state.phase == CommunityViewPhase.loading) {
       scheduleMicrotask(() {
@@ -99,7 +99,7 @@ class _CommunityProfileScreenState
             message: '缺少社区标识',
             reason: '请从社区列表或搜索结果进入，本页不会猜测要打开哪个社区。',
           )
-        else if (!capability.isAvailable)
+        else if (communityCapabilityBlocks(mode, capability))
           LoopEmpty(
             key: const ValueKey<String>(
               'community-profile-capability-unavailable',

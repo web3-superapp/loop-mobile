@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
@@ -10,6 +11,16 @@ import 'package:loop_mobile/widgets/loop_sheet.dart';
 /// modes carry no kicker, so the label can never appear outside Preview.
 String? communityPreviewKicker(CommunityGatewayMode mode) =>
     mode == CommunityGatewayMode.preview ? '开发预览' : null;
+
+/// Whether the page must stop at the capability gate instead of reading.
+///
+/// The explicit Development Preview adapter makes no server claim and is
+/// visibly labelled `演示数据`, so it is not gated by the public capability
+/// document — which a Preview session never observes.
+bool communityCapabilityBlocks(
+  CommunityGatewayMode mode,
+  LoopCapabilityProjection capability,
+) => mode != CommunityGatewayMode.preview && !capability.isAvailable;
 
 /// Visible Preview truth label. Reads and writes made here stay in the
 /// running Preview and never reach an account or a provider.

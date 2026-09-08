@@ -829,6 +829,15 @@ Widget _systemSurface(BuildContext context, WidgetRef ref, String id) {
   );
 }
 
+/// Pops when the page was pushed, otherwise lands on the manifest default.
+void _popOrHome(BuildContext context) {
+  if (Navigator.of(context).canPop()) {
+    context.pop();
+  } else {
+    context.go(LoopRouteManifest.defaultPath);
+  }
+}
+
 Widget _profileScreen(BuildContext context, WidgetRef ref, String id) {
   final session = ref.watch(loopSessionProvider);
   final account = session.account;
@@ -865,15 +874,6 @@ Widget _profileScreen(BuildContext context, WidgetRef ref, String id) {
     },
     onSignOut: () => _signOut(ref),
   );
-}
-
-/// Pops when the page was pushed, otherwise lands on the manifest default.
-void _popOrHome(BuildContext context) {
-  if (Navigator.of(context).canPop()) {
-    context.pop();
-  } else {
-    context.go(LoopRouteManifest.defaultPath);
-  }
 }
 
 Future<void> _signOut(WidgetRef ref) {
