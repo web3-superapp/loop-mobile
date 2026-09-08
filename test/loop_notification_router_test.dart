@@ -32,6 +32,44 @@ void main() {
     );
   });
 
+  test('a chat notification lands on the surface its channel prefix names', () {
+    const hex = '0123456789abcdef0123456789abcdef';
+    final instance = router();
+    var eventCounter = 0;
+    String? locationFor(String cid) {
+      eventCounter += 1;
+      return instance
+          .route(
+            data: _payload(
+              kind: LoopNotificationRouter.chatMessageKind,
+              cid: cid,
+              eventId:
+                  '123e4567-e89b-42d3-a456-4266141740'
+                  '${eventCounter.toString().padLeft(2, '0')}',
+            ),
+            ingress: LoopNotificationIngress.interaction,
+            session: authenticated,
+          )
+          .intent
+          ?.location;
+    }
+
+    expect(
+      locationFor('messaging:loop_direct_$hex'),
+      '/chat/dm?cid=${Uri.encodeComponent('messaging:loop_direct_$hex')}',
+    );
+    expect(
+      locationFor('messaging:loop_group_$hex'),
+      '/chat/group?cid=${Uri.encodeComponent('messaging:loop_group_$hex')}',
+    );
+    // A community channel carries its community, because the community record
+    // is the gate for its official channel.
+    expect(
+      locationFor('messaging:loop_community_$hex'),
+      '/community/chat?id=01234567-89ab-cdef-0123-456789abcdef',
+    );
+  });
+
   test('Audio Room and system events resolve only fixed safe destinations', () {
     final instance = router();
     final audio = instance.route(

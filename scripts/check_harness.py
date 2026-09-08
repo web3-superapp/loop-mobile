@@ -3182,8 +3182,8 @@ CHAT_PREVIEW_CONVERSATION_ID_TEST_FINGERPRINT = (
 )
 CHAT_PREVIEW_CONVERSATION_ID_SOURCE_FINGERPRINTS = {
     "resolver": "9b441d2d8c58355db0d3bc47100f6d85534a4f4569a646126496a62b68520547",
-    "primary_routes": "2cfd47ba25ac99a4435fd913b50d56decae3bc5d235549f240d11ef27a0c4ec9",
-    "secondary_routes": "0104d26ed539453a6bdd66d5f5f05526c331ed05b230bf017096ee69337a1229",
+    "primary_routes": "9a082ef53214555407dcb2e685b96c4ad889290d962bddc9f0adb4b6fa15ae6f",
+    "secondary_routes": "cb31c8b5beb308a8a629bac006ab92372383c436482518da19ae7a2bbba22252",
     "conversation_pages": "4d71552865ef9c3f872da63d4cdcb9299468e3f07e0bafdf40f7e72f97f51a11",
     "group_info": "d967998206d33611981bbd5107e9b51975cbfbf2c69a121800b0584731a0b54c",
     "member_list": "9e34dccc196b4237baba7ea8a6b1ece71c297d010b1a5a8c7cd264d9419350bd",
@@ -3191,7 +3191,7 @@ CHAT_PREVIEW_CONVERSATION_ID_SOURCE_FINGERPRINTS = {
     "inbox_navigation": "e854a63e6871f7c56b14a0671617413c3191670b656ccef4fa13fe8b0abe72fe",
     "gateway": "a2ed73bcb1f80ac4110aa8f48fcb5f3c68d2d2270028dbf246e37af43df24701",
     "home_notification": "7dacb554dd1ad92063d87548c5f0a34069b5643bf69dc2de83c7da820658ed85",
-    "production_cid": "4348e875f73b80a338085fa567f1500e99cd26754bee9d7320a6f3da30258ae5",
+    "production_cid": "b8767b4ff571bf2822440a5f9bff2df95ab907ab646376a12a891c2bc3de84a4",
     "unavailable_page": "3476f8d0a2ad8d4e0e2922a926fc2177bfcfa88fceca55dbb39189c8ed3351ff",
 }
 
@@ -3266,7 +3266,9 @@ def check_chat_preview_conversation_id_contract(root: Path) -> list[str]:
                 "PreviewConversationIdentity.readSingleConversationId(",
                 "PreviewConversationIdentity.hasConversationIdQuery(state.uri)",
                 "path: '/chat/channel/:cid'",
-                "StreamChatChannelRoutePage(cid: state.pathParameters['cid'] ?? '')",
+                # Step 4 turned the CID deep link into a redirect onto the
+                # surface its LOOP-assigned prefix names.
+                "loopChatLocationForCid(state.pathParameters['cid'] ?? '')",
             ),
             # Step 3 retired the Home Global Search slice; the Preview
             # notification target keeps the exact registered group location.
@@ -8207,11 +8209,20 @@ def check_chat_attachment_contract(root: Path) -> list[str]:
             next_route = app_text.find("GoRoute(", start + len(route_marker))
             route_block = app_text[start : next_route if next_route >= 0 else len(app_text)]
             first_builder = re.search(r"\bbuilder\s*:", route_block)
+            tail = route_block[first_builder.start() :] if first_builder else ""
+            # Step 4 gave each of these slugs a V2 production surface. The
+            # Preview branch of `_chatSurface` still owns the fixture page and
+            # must stay behind the guard; `/chat/voice` has no fixture guard
+            # because its Preview page is itself the labelled lobby.
             guarded_builder = re.match(
-                r"builder\s*:\s*\([^)]*\)\s*=>\s*(?:const\s+)?ChatPreviewRouteGuard\s*\(",
-                route_block[first_builder.start() :] if first_builder else "",
+                r"builder\s*:\s*\([^)]*\)\s*=>\s*(?:const\s+)?"
+                r"(?:ChatPreviewRouteGuard|_chatSurface)\s*\(",
+                tail,
             )
-            if guarded_builder is None:
+            if guarded_builder is None or (
+                "_chatSurface(" in tail
+                and "ChatPreviewRouteGuard(" not in tail
+            ):
                 errors.append(
                     f"lib/app.dart preview-only route `{route}` must be wrapped by ChatPreviewRouteGuard"
                 )
@@ -8302,28 +8313,41 @@ def check_chat_attachment_contract(root: Path) -> list[str]:
 
 
 def check_production_chat_audio_room_entry(root: Path) -> list[str]:
-    """Keep the production Audio Room reachable without inventing room state."""
+    """Keep every Audio Room a community resource with a server-owned locator.
+
+    Step 4 replaced decision 0024's generic inbox entry: a room now belongs to
+    one community, so the lobby is reached from a community record and the
+    inbox must not offer a locator it does not have. Decision 0005's provider
+    evidence still closes the whole page while it is pending.
+    """
 
     errors = require_fragments(
         root,
         {
             "lib/features/chat/stream_chat_inbox_page.dart": (
                 "class StreamChatInboxPage extends ConsumerWidget",
-                "ValueKey<String>('stream-audio-room-entry')",
-                "context.push<void>('/chat/voice')",
-                "label: const Text('Audio Room')",
+                "const ChatCreateMenuButton()",
             ),
             "lib/features/chat/voice_room_page.dart": (
                 "gateway.mode == CommunicationMode.production",
                 "return const StreamVoiceRoomPage();",
             ),
+            "lib/features/chat/v2/voice_room_screens.dart": (
+                "capability.evidencePending",
+                "voiceroom-evidence-pending",
+                "AUDIO_ROOM_USER_ROLE_EVIDENCE_PENDING",
+                "audioRoomTargetSourceProvider.overrideWithValue(",
+            ),
             "test/stream_chat_inbox_page_test.dart": (
-                "production Chat opens the truthful Audio Room lobby without preview fallback",
-                "production Audio Room entry remains visible while Chat loads",
-                "production Audio Room entry remains visible after Chat error",
-                "find.byType(StreamVoiceRoomPage), findsOneWidget",
+                "the generic Chat inbox no longer offers an Audio Room without a community",
                 "find.text('ETH Macro Room'), findsNothing",
                 "find.text('Connected'), findsNothing",
+            ),
+            "test/communication_pages_test.dart": (
+                "a pending role evidence closes the whole page",
+                "a listener sees no host control",
+                "a host sees the host controls and the queue",
+                "an unobserved participant count renders the em dash",
             ),
             "docs/decisions/0024-expose-production-audio-room-from-chat.md": (
                 "The entry performs no provider operation",
@@ -8335,45 +8359,9 @@ def check_production_chat_audio_room_entry(root: Path) -> list[str]:
     inbox_path = root / "lib/features/chat/stream_chat_inbox_page.dart"
     if inbox_path.is_file():
         inbox = strip_dart_comments(read_text(inbox_path))
-        class_start = inbox.find("class StreamChatInboxPage")
-        class_end = inbox.find("class StreamChatChannelRoutePage", class_start + 1)
-        class_body = inbox[
-            class_start : class_end if class_end >= 0 else len(inbox)
-        ]
-        scaffold_start = class_body.find("return Scaffold(")
-        app_bar_start = class_body.find("appBar: AppBar(", scaffold_start)
-        body_start = class_body.find("body: Stack(", app_bar_start)
-        app_bar = class_body[
-            app_bar_start : body_start if body_start >= 0 else len(class_body)
-        ]
-        if (
-            class_start < 0
-            or scaffold_start < 0
-            or app_bar_start < 0
-            or body_start < 0
-            or app_bar.count("'stream-audio-room-entry'") != 1
-        ):
+        if "'stream-audio-room-entry'" in inbox:
             errors.append(
-                "production StreamChatInboxPage app bar must own exactly one Audio Room entry"
-            )
-        if app_bar.count("context.push<void>('/chat/voice')") != 1:
-            errors.append(
-                "production StreamChatInboxPage Audio Room entry must open `/chat/voice` exactly once"
-            )
-        room_entry_start = app_bar.find("actions: <Widget>[")
-        room_entry_end = app_bar.find("const ChatCreateMenuButton", room_entry_start)
-        room_entry = app_bar[
-            room_entry_start : room_entry_end
-            if room_entry_end >= 0
-            else len(app_bar)
-        ]
-        if (
-            room_entry_start < 0
-            or re.search(r"\bif\s*(?:\(|\b)", room_entry)
-            or "onPressed: null" in room_entry
-        ):
-            errors.append(
-                "production StreamChatInboxPage Audio Room entry must not depend on inbox authorization state"
+                "the generic Chat inbox must not offer an Audio Room entry without a community"
             )
 
     errors.extend(
@@ -8381,70 +8369,17 @@ def check_production_chat_audio_room_entry(root: Path) -> list[str]:
             root,
             {
                 Path("test/stream_chat_inbox_page_test.dart"): (
-                    "production Chat opens the truthful Audio Room lobby without preview fallback",
-                    "production Audio Room entry remains visible while Chat loads",
-                    "production Audio Room entry remains visible after Chat error",
+                    "the generic Chat inbox no longer offers an Audio Room without a community",
+                ),
+                Path("test/communication_pages_test.dart"): (
+                    "a pending role evidence closes the whole page",
+                    "a listener sees no host control",
+                    "a host sees the host controls and the queue",
                 ),
             },
         )
     )
-
-    test_path = root / "test/stream_chat_inbox_page_test.dart"
-    if test_path.is_file():
-        test_source = strip_dart_comments(read_text(test_path))
-        test_starts = [
-            match.start()
-            for match in re.finditer(r"\btest(?:Widgets)?\s*\(", test_source)
-        ]
-
-        def named_test_body(marker: str) -> str | None:
-            declaration = re.search(
-                r"\btest(?:Widgets)?\s*\(\s*(['\"])"
-                + re.escape(marker)
-                + r"\1\s*,",
-                test_source,
-                re.DOTALL,
-            )
-            if declaration is None:
-                return None
-            next_test = next(
-                (start for start in test_starts if start > declaration.start()),
-                len(test_source),
-            )
-            return test_source[declaration.end() : next_test]
-
-        exact_assertions = {
-            "production Chat opens the truthful Audio Room lobby without preview fallback": (
-                r"expect\s*\(\s*find\.byType\s*\(\s*StreamVoiceRoomPage\s*\)\s*,\s*findsOneWidget\s*\)",
-                r"expect\s*\(\s*find\.text\s*\(\s*'ETH Macro Room'\s*\)\s*,\s*findsNothing\s*\)",
-                r"expect\s*\(\s*find\.textContaining\s*\(\s*'preview participant'\s*\)\s*,\s*findsNothing\s*\)",
-                r"expect\s*\(\s*find\.text\s*\(\s*'Connected'\s*\)\s*,\s*findsNothing\s*\)",
-            ),
-            "production Audio Room entry remains visible while Chat loads": (
-                r"expect\s*\(\s*find\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(\s*'stream-chat-connecting'\s*\)\s*\)\s*,\s*findsOneWidget\s*,?\s*\)",
-                r"expect\s*\(\s*find\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(\s*'stream-audio-room-entry'\s*\)\s*\)\s*,\s*findsOneWidget\s*,?\s*\)",
-            ),
-            "production Audio Room entry remains visible after Chat error": (
-                r"expect\s*\(\s*find\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(\s*'stream-chat-unavailable'\s*\)\s*\)\s*,\s*findsOneWidget\s*,?\s*\)",
-                r"expect\s*\(\s*find\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(\s*'stream-audio-room-entry'\s*\)\s*\)\s*,\s*findsOneWidget\s*,?\s*\)",
-            ),
-        }
-        for marker, patterns in exact_assertions.items():
-            body = named_test_body(marker)
-            if body is None:
-                continue
-            missing = [
-                pattern
-                for pattern in patterns
-                if re.search(pattern, body, re.DOTALL) is None
-            ]
-            if missing:
-                errors.append(
-                    "test/stream_chat_inbox_page_test.dart test "
-                    f"`{marker}` lacks exact Audio Room assertions"
-                )
     return errors
-
 
 def check_source_guards(root: Path) -> list[str]:
     forbidden = {
@@ -10119,14 +10054,13 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
             "lib/app.dart": (
                 "messageItem: loopStreamGroupMessageItemBuilder",
                 "mentionItem: loopStreamGroupMentionItemBuilder",
-                "path: '/chat/friends/requests'",
                 "path: '/chat/groups/create'",
                 "path: '/chat/groups/:groupId/alias'",
-                "path: '/chat/channel/:cid/alias'",
-                "builder: (context, state) => StreamGroupAliasChannelRoutePage(",
-                # Step 3: `/profile/friends` and `/chat/friends/add` are retired
-                # informational locations; the request inbox keeps its route.
-                "'friend-requests' => '/chat/friends/requests'",
+                # Step 4: `/chat/friends/requests` was folded into the
+                # `dm-requests` page and `/chat/channel/:cid/alias` into
+                # `group-info`, which resolves the LOOP group itself. Both are
+                # informational retirements now, so neither may be mounted.
+                "'friend-requests' => LoopRouteManifest.pathFor('dm-requests')",
                 # Decision 0053: the retired V1 social-privacy destination
                 # resolves to the V2 Privacy centre instead of a dead route.
                 "'social-privacy' => LoopRouteManifest.pathFor('privacy')",
@@ -10173,7 +10107,7 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
             ),
             "test/stream_chat_inbox_page_test.dart": (
                 "channel route lookup requires an exact CID and current membership",
-                "application Alias route requires current Stream membership before resolver",
+                "the retired CID-addressed Alias route never reaches a resolver",
             ),
         },
     )
@@ -10348,19 +10282,16 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
     app_path = root / "lib/app.dart"
     if app_path.is_file():
         app_source = strip_dart_comments(read_text(app_path))
-        alias_route_start = app_source.find("path: '/chat/channel/:cid/alias'")
-        alias_route_end = app_source.find("GoRoute(", alias_route_start + 1)
-        alias_route = (
-            app_source[alias_route_start:alias_route_end]
-            if alias_route_start >= 0 and alias_route_end > alias_route_start
-            else ""
-        )
+        # Step 4 retired the CID-addressed Alias entry: `group-info` resolves
+        # the LOOP group itself, so no route may hand an untrusted CID to the
+        # resolver.
         if (
-            "StreamGroupAliasChannelRoutePage(" not in alias_route
-            or "=> GroupAliasChannelRoutePage(" in alias_route
+            "path: '/chat/channel/:cid/alias'" in app_source
+            or "StreamGroupAliasChannelRoutePage(" in app_source
+            or "=> GroupAliasChannelRoutePage(" in app_source
         ):
             errors.append(
-                "Alias route must prove exact Stream membership before mounting the LOOP group resolver"
+                "the retired CID-addressed Alias route must not be mounted again"
             )
 
     repository_path = root / "lib/integrations/social/loop_social_repository.dart"

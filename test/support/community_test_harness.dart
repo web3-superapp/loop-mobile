@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
@@ -614,6 +615,7 @@ Future<void> pumpCommunityPage(
   SearchGateway? search,
   ChatV2Gateway? chat,
   VoiceRoomGateway? voiceRoom,
+  GroupAliasResolverGateway? groupAliasResolver,
   LoopV2MetaSnapshot? meta,
   Size size = const Size(390, 1400),
   bool settle = true,
@@ -633,6 +635,10 @@ Future<void> pumpCommunityPage(
         if (chat != null) chatV2GatewayProvider.overrideWithValue(chat),
         if (voiceRoom != null)
           voiceRoomGatewayProvider.overrideWithValue(voiceRoom),
+        if (groupAliasResolver != null)
+          groupAliasResolverGatewayProvider.overrideWithValue(
+            groupAliasResolver,
+          ),
         loopV2MetaSnapshotProvider.overrideWith(
           (ref) async => meta ?? testMetaSnapshot(),
         ),
