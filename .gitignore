@@ -30,7 +30,7 @@ migrate_working_dir/
 /config/*.local.json
 
 # Project-local SDK, compatibility artifacts, and GitNexus indexes.
-.tooling/
+.tooling
 .gitnexus/
 
 # Python is used only for the repository harness.
