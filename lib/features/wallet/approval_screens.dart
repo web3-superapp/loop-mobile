@@ -255,7 +255,9 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
               onPressed: _busy ? null : () => setState(() => _intent = null),
             ),
           ],
-          if (_failure != null)
+          if (_failure == LoopChainFailureKind.permissionDenied)
+            const MoneyPolicyNotice(policy: null)
+          else if (_failure != null)
             LoopErrorState(
               key: const ValueKey<String>('approval-guard-error'),
               title: '授权没有准备成功',

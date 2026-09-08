@@ -595,9 +595,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.byKey(const ValueKey<String>('approval-guard-error')),
+        find.byKey(const ValueKey<String>('money-policy-blocked')),
         findsOneWidget,
       );
+      // A blocked action names the rule and says the limit is not adjustable
+      // yet; it never offers a setting that does not exist.
+      expect(find.textContaining('本步暂不可调'), findsOneWidget);
     });
 
     testWidgets('a closed write switch stops the guard', (tester) async {

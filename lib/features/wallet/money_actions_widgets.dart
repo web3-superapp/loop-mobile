@@ -185,9 +185,11 @@ class _MoneySignSheetState extends State<MoneySignSheet> {
       _reason = loopReasonCodeText(reason);
       // A canary ceiling refusal is a policy decision, not a failure, and gets
       // its own state so the copy can say which rule stopped it.
-      return reason == 'POLICY_BLOCKED'
-          ? LoopSignSheetState.policyRejected
-          : LoopSignSheetState.simulationFailed;
+      if (reason == 'POLICY_BLOCKED') {
+        _reason = moneyPolicyBlockedText(widget.intent.policy);
+        return LoopSignSheetState.policyRejected;
+      }
+      return LoopSignSheetState.simulationFailed;
     }
     return LoopSignSheetState.pending;
   }
@@ -317,6 +319,41 @@ class MoneyIntentReviewCard extends StatelessWidget {
         ),
         MoneyFactsFooter(intent: intent, now: clock?.call()),
       ],
+    );
+  }
+}
+
+/// zh-CN copy for a policy refusal.
+///
+/// A blocked action is not an error: it names the rule that stopped it. The
+/// only rule that can fire today is the server's canary ceiling, and there is
+/// no user-owned limit to adjust until the security centre ships — so the copy
+/// says that rather than offering a setting that does not exist.
+String moneyPolicyBlockedText(LoopIntentPolicy policy) =>
+    '这笔操作超过了服务端的单笔上限 '
+    '${loopFormatUsd(policy.canaryMaxUsd)}（策略 ${policy.configVersion}）。'
+    '这是 LOOP 服务端配置的灰度上限，不是你的钱包策略：'
+    '安全中心的自定义上限尚未交付，本步暂不可调。请降低本次金额。';
+
+/// The block a money-action page renders when the server refused on policy.
+class MoneyPolicyNotice extends StatelessWidget {
+  const MoneyPolicyNotice({required this.policy, super.key});
+
+  /// `null` when the refusal happened before an intent existed.
+  final LoopIntentPolicy? policy;
+
+  @override
+  Widget build(BuildContext context) {
+    final value = policy;
+    return LoopNotice(
+      key: const ValueKey<String>('money-policy-blocked'),
+      icon: 'shield',
+      tone: LoopNoticeTone.danger,
+      title: '被策略拒绝，没有提交任何交易',
+      body: value == null
+          ? '服务端按当前的灰度上限拒绝了这笔操作。安全中心的自定义上限尚未交付，'
+                '本步暂不可调，请降低本次金额。'
+          : moneyPolicyBlockedText(value),
     );
   }
 }

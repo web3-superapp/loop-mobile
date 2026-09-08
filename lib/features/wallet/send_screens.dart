@@ -654,6 +654,8 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
                 _open('/wallet/tx/result?intentId=${other.intentId}'),
             onCancel: () => unawaited(_cancelOther(other)),
           )
+        else if (_failure == LoopChainFailureKind.permissionDenied)
+          const MoneyPolicyNotice(policy: null)
         else if (intent == null)
           LoopChainStateBlock(
             keyPrefix: 'send-confirm',

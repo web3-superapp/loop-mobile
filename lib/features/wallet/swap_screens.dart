@@ -215,7 +215,9 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
               ],
             ),
           ),
-          if (_failure != null)
+          if (_failure == LoopChainFailureKind.permissionDenied)
+            const MoneyPolicyNotice(policy: null)
+          else if (_failure != null)
             LoopErrorState(
               key: const ValueKey<String>('swap-quote-error'),
               title: '没有取到报价',
