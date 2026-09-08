@@ -34,11 +34,18 @@ class GroupChatScreen extends ConsumerWidget {
     super.key,
     this.onBack,
     this.onOpenInfo,
+    this.onOpenSearch,
+    this.onOpenForward,
   });
 
   final String? channelCid;
   final VoidCallback? onBack;
   final ValueChanged<String>? onOpenInfo;
+
+  /// Both take the channel CID, so search and forwarding start from the exact
+  /// conversation the user is reading.
+  final ValueChanged<String>? onOpenSearch;
+  final ValueChanged<String>? onOpenForward;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -61,13 +68,26 @@ class GroupChatScreen extends ConsumerWidget {
               onBack: onBack,
               minHeight: 72,
               actions: <Widget>[
-                if (cid != null)
+                if (cid != null) ...<Widget>[
+                  LoopIconButton(
+                    key: const ValueKey<String>('group-open-search'),
+                    icon: 'search',
+                    label: '搜索这个会话',
+                    onPressed: () => onOpenSearch?.call(cid),
+                  ),
+                  LoopIconButton(
+                    key: const ValueKey<String>('group-open-forward'),
+                    icon: 'shuffle',
+                    label: '转发消息',
+                    onPressed: () => onOpenForward?.call(cid),
+                  ),
                   LoopIconButton(
                     key: const ValueKey<String>('group-open-info'),
                     icon: 'info',
                     label: '群信息',
                     onPressed: () => onOpenInfo?.call(cid),
                   ),
+                ],
               ],
             ),
             Expanded(

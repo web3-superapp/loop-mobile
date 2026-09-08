@@ -402,6 +402,10 @@ GoRouter _buildRouter(
               context.push('/community/profile?id=$communityId'),
           onOpenVoiceRoom: (communityId) =>
               context.push('/chat/voice?id=$communityId'),
+          onOpenSearch: (cid) =>
+              context.push('/chat/search?cid=${Uri.encodeComponent(cid)}'),
+          onOpenForward: (cid) =>
+              context.push('/chat/forward?cid=${Uri.encodeComponent(cid)}'),
         ),
       ),
       GoRoute(
@@ -497,6 +501,10 @@ GoRouter _buildRouter(
             onOpenInfo: (cid) => context.push(
               '/chat/group-info?cid=${Uri.encodeComponent(cid)}',
             ),
+            onOpenSearch: (cid) =>
+                context.push('/chat/search?cid=${Uri.encodeComponent(cid)}'),
+            onOpenForward: (cid) =>
+                context.push('/chat/forward?cid=${Uri.encodeComponent(cid)}'),
           ),
         ),
       ),

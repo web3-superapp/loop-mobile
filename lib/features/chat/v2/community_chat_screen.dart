@@ -26,12 +26,19 @@ class CommunityChatScreen extends ConsumerStatefulWidget {
     this.onBack,
     this.onOpenProfile,
     this.onOpenVoiceRoom,
+    this.onOpenSearch,
+    this.onOpenForward,
   });
 
   final String? communityId;
   final VoidCallback? onBack;
   final ValueChanged<String>? onOpenProfile;
   final ValueChanged<String>? onOpenVoiceRoom;
+
+  /// Both take the channel CID, so search and forwarding start from the exact
+  /// conversation the user is reading.
+  final ValueChanged<String>? onOpenSearch;
+  final ValueChanged<String>? onOpenForward;
 
   @override
   ConsumerState<CommunityChatScreen> createState() =>
@@ -69,6 +76,20 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
               onBack: widget.onBack,
               minHeight: 72,
               actions: <Widget>[
+                if (detail?.chat.channelCid case final String cid) ...<Widget>[
+                  LoopIconButton(
+                    key: const ValueKey<String>('community-chat-open-search'),
+                    icon: 'search',
+                    label: '搜索这个会话',
+                    onPressed: () => widget.onOpenSearch?.call(cid),
+                  ),
+                  LoopIconButton(
+                    key: const ValueKey<String>('community-chat-open-forward'),
+                    icon: 'shuffle',
+                    label: '转发消息',
+                    onPressed: () => widget.onOpenForward?.call(cid),
+                  ),
+                ],
                 if (detail != null) ...<Widget>[
                   LoopIconButton(
                     key: const ValueKey<String>('community-chat-open-voice'),
