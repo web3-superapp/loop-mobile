@@ -56,8 +56,12 @@ final class LoopChatNotificationIntent
 
   final LoopStreamChannelAddress channel;
 
+  /// The LOOP-assigned channel prefix decides the surface: a community
+  /// channel opens `community-chat`, a direct channel opens `dm`, a group
+  /// channel opens `group`. The parser already rejected every other shape, so
+  /// no intent can exist without a mapped location.
   @override
-  String get location => '/chat/channel/${Uri.encodeComponent(channel.cid)}';
+  String get location => loopChatLocationForCid(channel.cid)!;
 }
 
 /// Audio notifications can only open the foreground lobby. A notification can
@@ -349,7 +353,10 @@ final class LoopNotificationRouter {
         );
       }
       channel = parseLoopStreamChannelCid(cid);
-      if (channel == null) {
+      // A channel whose LOOP-assigned prefix names no surface cannot produce a
+      // navigation intent: there is nothing to open, and a generic channel
+      // page would be a broader destination than the payload authorises.
+      if (channel == null || loopChatLocationForCid(cid) == null) {
         return const _LoopNotificationParseResult.failure(
           _LoopNotificationParseFailure.malformed,
         );

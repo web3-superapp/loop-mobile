@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
-import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_screen.dart';
@@ -119,7 +118,7 @@ void main() {
       expect(find.byType(StreamChannelListView), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('stream-audio-room-entry')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(
         find.byKey(const ValueKey<String>('chat-create-menu')),
@@ -149,7 +148,7 @@ void main() {
   );
 
   testWidgets(
-    'production Chat opens the truthful Audio Room lobby without preview fallback',
+    'the generic Chat inbox no longer offers an Audio Room without a community',
     (tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -169,20 +168,29 @@ void main() {
       );
       router.go('/chat');
       await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const ValueKey<String>('stream-audio-room-entry')),
-      );
-      await tester.pumpAndSettle();
 
-      expect(find.byType(StreamVoiceRoomPage), findsOneWidget);
-      expect(find.text('Stream session unavailable'), findsOneWidget);
+      // Step 4 made every room a community resource, so the inbox has no
+      // locator of its own and must not offer one.
+      expect(
+        find.byKey(const ValueKey<String>('stream-audio-room-entry')),
+        findsNothing,
+      );
+
+      // Reached without a capability document the lobby stays closed and
+      // requests nothing; no fixture room is ever substituted.
+      router.go('/chat/voice');
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-capability-unavailable')),
+        findsOneWidget,
+      );
       expect(find.text('ETH Macro Room'), findsNothing);
       expect(find.textContaining('preview participant'), findsNothing);
       expect(find.text('Connected'), findsNothing);
     },
   );
 
-  testWidgets('production Audio Room entry remains visible while Chat loads', (
+  testWidgets('the create menu remains visible while Chat loads', (
     tester,
   ) async {
     final authorization = Completer<StreamSessionAuthorization>();
@@ -209,7 +217,7 @@ void main() {
     );
     expect(
       find.byKey(const ValueKey<String>('stream-audio-room-entry')),
-      findsOneWidget,
+      findsNothing,
     );
     expect(
       find.byKey(const ValueKey<String>('chat-create-menu')),
@@ -217,7 +225,7 @@ void main() {
     );
   });
 
-  testWidgets('production Audio Room entry remains visible after Chat error', (
+  testWidgets('the create menu remains visible after a Chat error', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -240,7 +248,7 @@ void main() {
     );
     expect(
       find.byKey(const ValueKey<String>('stream-audio-room-entry')),
-      findsOneWidget,
+      findsNothing,
     );
     expect(
       find.byKey(const ValueKey<String>('chat-create-menu')),
@@ -273,7 +281,7 @@ void main() {
     expect(find.byType(StreamChannel), findsNothing);
   });
 
-  testWidgets('encoded CID is decoded by the application route', (
+  testWidgets('a channel deep link redirects to the surface its prefix names', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -289,22 +297,29 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final context = tester.element(
-      find.byKey(const ValueKey<String>('community-screen')),
+    final router = GoRouter.of(
+      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
     );
-    GoRouter.of(context)
-        .go('/chat/channel/${Uri.encodeComponent('messaging:loop-room-42')}');
-    await tester.pumpAndSettle();
+    const hex = '0123456789abcdef0123456789abcdef';
+    for (final (cid, path) in <(String, String)>[
+      ('messaging:loop_direct_$hex', '/chat/dm'),
+      ('messaging:loop_group_$hex', '/chat/group'),
+      ('messaging:loop_community_$hex', '/community/chat'),
+    ]) {
+      router.go('/chat/channel/${Uri.encodeComponent(cid)}');
+      await tester.pumpAndSettle();
+      expect(router.routeInformationProvider.value.uri.path, path, reason: cid);
+    }
 
-    expect(find.byType(StreamChatChannelRoutePage), findsOneWidget);
-    final page = tester.widget<StreamChatChannelRoutePage>(
-      find.byType(StreamChatChannelRoutePage),
-    );
-    expect(page.cid, 'messaging:loop-room-42');
+    // An unknown channel shape fails closed rather than opening a generic
+    // channel page.
+    router.go('/chat/channel/${Uri.encodeComponent('messaging:loop-room-42')}');
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/community');
   });
 
   testWidgets(
-    'application Alias route requires current Stream membership before resolver',
+    'the retired CID-addressed Alias route never reaches a resolver',
     (tester) async {
       final resolver = _RecordingGroupAliasResolverGateway();
       await tester.pumpWidget(
@@ -321,17 +336,20 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final context = tester.element(
-        find.byKey(const ValueKey<String>('community-screen')),
+      final router = GoRouter.of(
+        tester.element(find.byKey(const ValueKey<String>('community-screen'))),
       );
-      GoRouter.of(context).go(
-        '/chat/channel/${Uri.encodeComponent('messaging:loop_group_12345678')}/alias',
+      router.go(
+        '/chat/channel/${Uri.encodeComponent('messaging:loop_group_12345678')}'
+        '/alias',
       );
       await tester.pumpAndSettle();
 
-      expect(find.byType(StreamGroupAliasChannelRoutePage), findsOneWidget);
+      // Step 4 folded the CID-addressed entry into `group-info`, which resolves
+      // the LOOP group itself.
+      expect(find.byType(StreamGroupAliasChannelRoutePage), findsNothing);
       expect(find.byType(GroupAliasChannelRoutePage), findsNothing);
-      expect(find.text('Stream not connected'), findsOneWidget);
+      expect(router.routeInformationProvider.value.uri.path, '/community');
       expect(resolver.calls, isEmpty);
     },
   );

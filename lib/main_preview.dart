@@ -23,10 +23,14 @@ import 'package:loop_mobile/features/system/system_showcase_preview.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/social/memory_friend_gateway.dart';
+import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
+import 'package:loop_mobile/integrations/communication/memory_chat_v2_gateways.dart';
 import 'package:loop_mobile/integrations/community/memory_community_gateways.dart';
+import 'package:loop_mobile/integrations/sharing/system_chat_merge_export_sink.dart';
 
 /// Explicit offline UI catalog entry point.
 ///
@@ -66,6 +70,17 @@ Future<void> main() async {
         communityGatewayProvider.overrideWithValue(MemoryCommunityGateway()),
         socialGatewayProvider.overrideWithValue(MemorySocialGateway()),
         searchGatewayProvider.overrideWithValue(const MemorySearchGateway()),
+        chatV2GatewayProvider.overrideWithValue(MemoryChatV2Gateway()),
+        voiceRoomGatewayProvider.overrideWithValue(MemoryVoiceRoomGateway()),
+        // The merged image is encoded on device and handed to the operating
+        // system; it never reaches a LOOP service, in either composition.
+        chatMergeExportSinkProvider.overrideWithValue(
+          const SystemChatMergeExportSink(),
+        ),
+        // Step 5 retired the Preview Watchlist and notification-preference
+        // adapters with the V1 modules they implemented (decision 0057). Both
+        // surfaces are unavailable in Preview rather than showing a fixture
+        // written against a contract that no longer exists.
         privacyGatewayProvider.overrideWithValue(
           MemoryPrivacyGateway(
             initialResource: PrivacyResource(

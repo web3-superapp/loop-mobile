@@ -27,6 +27,11 @@ abstract interface class SocialGateway {
 
   Future<MessageRequestPage> listMessageRequests({String? cursor});
 
+  /// Sends a stranger message request. Reachability is not enumerable: every
+  /// unreachable target answers the same not-found kind, so the caller must
+  /// not infer whether the account exists.
+  Future<MessageRequestEntry> sendMessageRequest(String publicProfileId);
+
   Future<MessageRequestOutcome> decideMessageRequest({
     required String messageRequestId,
     required MessageRequestDecision decision,
@@ -70,6 +75,10 @@ final class UnavailableSocialGateway implements SocialGateway {
 
   @override
   Future<MessageRequestPage> listMessageRequests({String? cursor}) =>
+      _unavailable();
+
+  @override
+  Future<MessageRequestEntry> sendMessageRequest(String publicProfileId) =>
       _unavailable();
 
   @override

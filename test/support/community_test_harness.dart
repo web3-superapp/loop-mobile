@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
+import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
+import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
@@ -14,6 +18,8 @@ import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+
+import 'communication_test_harness.dart';
 
 const testCommunityId = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
 const testOwnerId = '9c1f0f2e-5a7b-4c3d-8e9f-0a1b2c3d4e5f';
@@ -73,9 +79,38 @@ CommunityViewer testViewer({
   canBan: canBan,
 );
 
+const testChatUnavailable = CommunityChatSection(
+  status: CommunityChatStatus.unavailable,
+  channelCid: null,
+  memberState: null,
+  reasonCode: 'COMMUNITY_CHANNEL_NOT_PROVISIONED',
+);
+
+const testChatAvailable = CommunityChatSection(
+  status: CommunityChatStatus.available,
+  channelCid: 'messaging:loop_community_0123456789abcdef0123456789abcdef',
+  memberState: CommunityChatMemberState.synced,
+  reasonCode: null,
+);
+
+const testChatSyncing = CommunityChatSection(
+  status: CommunityChatStatus.syncing,
+  channelCid: null,
+  memberState: CommunityChatMemberState.pending,
+  reasonCode: 'COMMUNITY_CHANNEL_MEMBER_SYNCING',
+);
+
+const testVoiceUnavailable = CommunityVoiceSection(
+  status: CommunityVoiceStatus.unavailable,
+  currentRoomId: null,
+  reasonCode: 'COMMUNITY_VOICE_ROOM_NOT_LIVE',
+);
+
 CommunityDetail testDetail({
   CommunitySummary? community,
   CommunityViewer? viewer,
+  CommunityChatSection chat = testChatUnavailable,
+  CommunityVoiceSection voice = testVoiceUnavailable,
 }) => CommunityDetail(
   community: community ?? testCommunity(),
   viewer: viewer ?? testViewer(),
@@ -83,6 +118,8 @@ CommunityDetail testDetail({
   onlineCount: testPresence,
   announcements: const LoopUnavailableFact('COMMUNITY_ANNOUNCEMENTS_DEFERRED'),
   officialLinks: const LoopUnavailableFact('COMMUNITY_LINKS_DEFERRED'),
+  chat: chat,
+  voice: voice,
 );
 
 CommunityMemberEntry testMember({
@@ -315,6 +352,7 @@ final class FakeSocialGateway implements SocialGateway {
   ConnectionPage? connections;
   BlockPage? blocks;
   MessageRequestPage? requests;
+  MessageRequestEntry? sentRequest;
   MessageRequestOutcome? outcome;
 
   final List<String> commands = <String>[];
@@ -399,6 +437,26 @@ final class FakeSocialGateway implements SocialGateway {
       _read(requests);
 
   @override
+  Future<MessageRequestEntry> sendMessageRequest(String publicProfileId) {
+    commands.add('message-request:$publicProfileId');
+    final kind = writeFailure;
+    if (kind != null) {
+      return Future<MessageRequestEntry>.error(CommunityGatewayException(kind));
+    }
+    return Future<MessageRequestEntry>.value(
+      sentRequest ??
+          MessageRequestEntry(
+            messageRequestId: '1d2c3b4a-5e6f-4a7b-8c9d-0e1f2a3b4c5d',
+            profile: testProfile(publicProfileId: publicProfileId),
+            createdAt: DateTime.utc(2026, 9, 8),
+            expiresAt: DateTime.utc(2026, 9, 15),
+            preview: const LoopUnavailableFact('MESSAGE_PREVIEW_DEFERRED'),
+            aiModeration: const LoopUnavailableFact('AI_MODERATION_DEFERRED'),
+          ),
+    );
+  }
+
+  @override
   Future<MessageRequestOutcome> decideMessageRequest({
     required String messageRequestId,
     required MessageRequestDecision decision,
@@ -465,6 +523,13 @@ LoopV2MetaSnapshot testMetaSnapshot({
   LoopV2CapabilityAvailability community =
       LoopV2CapabilityAvailability.available,
   LoopV2CapabilityAvailability search = LoopV2CapabilityAvailability.available,
+  LoopV2CapabilityAvailability communityChat =
+      LoopV2CapabilityAvailability.available,
+  LoopV2CapabilityAvailability voiceRooms =
+      LoopV2CapabilityAvailability.available,
+  LoopV2CapabilityAvailability communityAi =
+      LoopV2CapabilityAvailability.deferred,
+  bool voiceRoomEvidencePending = false,
 }) {
   return LoopV2MetaSnapshot(
     clientPolicy: LoopV2ClientPolicy(
@@ -499,6 +564,9 @@ LoopV2MetaSnapshot testMetaSnapshot({
             availability: switch (id) {
               LoopV2CapabilityId.community => community,
               LoopV2CapabilityId.search => search,
+              LoopV2CapabilityId.communityChat => communityChat,
+              LoopV2CapabilityId.voiceRooms => voiceRooms,
+              LoopV2CapabilityId.communityAi => communityAi,
               _ => LoopV2CapabilityAvailability.unavailable,
             },
             reasonCode: switch (id) {
@@ -510,12 +578,32 @@ LoopV2MetaSnapshot testMetaSnapshot({
                 search == LoopV2CapabilityAvailability.available
                     ? null
                     : 'SEARCH_RUNTIME_UNAVAILABLE',
+              LoopV2CapabilityId.communityChat =>
+                communityChat == LoopV2CapabilityAvailability.available
+                    ? null
+                    : 'COMMUNICATION_RUNTIME_UNAVAILABLE',
+              LoopV2CapabilityId.voiceRooms =>
+                voiceRooms == LoopV2CapabilityAvailability.available
+                    ? null
+                    : 'COMMUNICATION_RUNTIME_UNAVAILABLE',
+              LoopV2CapabilityId.communityAi =>
+                communityAi == LoopV2CapabilityAvailability.available
+                    ? null
+                    : 'COMMUNITY_AI_RUNTIME_DEFERRED',
               _ => 'NOT_CONNECTED',
             },
-            evidence: const LoopV2CapabilityEvidence(
-              status: LoopV2CapabilityEvidenceStatus.notApplicable,
-              reasonCode: null,
-            ),
+            // Decision 0005 keeps a provider-evidence flag on `voiceRooms`
+            // only; every other capability carries `notApplicable`.
+            evidence:
+                id == LoopV2CapabilityId.voiceRooms && voiceRoomEvidencePending
+                ? const LoopV2CapabilityEvidence(
+                    status: LoopV2CapabilityEvidenceStatus.pending,
+                    reasonCode: 'AUDIO_ROOM_USER_ROLE_EVIDENCE_PENDING',
+                  )
+                : const LoopV2CapabilityEvidence(
+                    status: LoopV2CapabilityEvidenceStatus.notApplicable,
+                    reasonCode: null,
+                  ),
           ),
       ],
     ),
@@ -529,6 +617,11 @@ Future<void> pumpCommunityPage(
   CommunityGateway? community,
   SocialGateway? social,
   SearchGateway? search,
+  ChatV2Gateway? chat,
+  VoiceRoomGateway? voiceRoom,
+  GroupAliasResolverGateway? groupAliasResolver,
+  ChatMergeExportSink? mergeExportSink,
+  List<ChatForwardMessage>? selectedForward,
   LoopV2MetaSnapshot? meta,
   Size size = const Size(390, 1400),
   bool settle = true,
@@ -545,6 +638,19 @@ Future<void> pumpCommunityPage(
           communityGatewayProvider.overrideWithValue(community),
         if (social != null) socialGatewayProvider.overrideWithValue(social),
         if (search != null) searchGatewayProvider.overrideWithValue(search),
+        if (chat != null) chatV2GatewayProvider.overrideWithValue(chat),
+        if (voiceRoom != null)
+          voiceRoomGatewayProvider.overrideWithValue(voiceRoom),
+        if (groupAliasResolver != null)
+          groupAliasResolverGatewayProvider.overrideWithValue(
+            groupAliasResolver,
+          ),
+        if (mergeExportSink != null)
+          chatMergeExportSinkProvider.overrideWithValue(mergeExportSink),
+        if (selectedForward != null)
+          chatForwardControllerProvider.overrideWith(
+            () => SeededChatForwardController(selectedForward),
+          ),
         loopV2MetaSnapshotProvider.overrideWith(
           (ref) async => meta ?? testMetaSnapshot(),
         ),

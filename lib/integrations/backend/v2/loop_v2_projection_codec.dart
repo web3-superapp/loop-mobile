@@ -244,6 +244,86 @@ abstract final class LoopV2ProjectionCodec {
     return raw;
   }
 
+  static final RegExp communityChannelCidPattern = RegExp(
+    r'^messaging:loop_community_[0-9a-f]{32}$',
+  );
+
+  /// The `chat` section of a community record.
+  ///
+  /// Only `available` may carry a channel CID, and it must carry one. Any other
+  /// pairing is a contract break rather than a partially trusted projection.
+  static CommunityChatSection chatSection(Object? raw) {
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'channelCid',
+      'memberState',
+      'reasonCode',
+    });
+    final rawStatus = map['status'];
+    if (rawStatus is! String) invalid();
+    final status = CommunityChatStatus.tryParse(rawStatus);
+    if (status == null) invalid();
+    final channelCid = optionalPattern(
+      map,
+      'channelCid',
+      communityChannelCidPattern,
+    );
+    if ((status == CommunityChatStatus.available) != (channelCid != null)) {
+      invalid();
+    }
+    final rawMemberState = map['memberState'];
+    CommunityChatMemberState? memberState;
+    if (rawMemberState != null) {
+      if (rawMemberState is! String) invalid();
+      memberState = CommunityChatMemberState.tryParse(rawMemberState);
+      if (memberState == null) invalid();
+    }
+    return CommunityChatSection(
+      status: status,
+      channelCid: channelCid,
+      memberState: memberState,
+      reasonCode: reasonCode(map, 'reasonCode'),
+    );
+  }
+
+  static CommunityVoiceSection voiceSection(Object? raw) {
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'currentRoomId',
+      'reasonCode',
+    });
+    final rawStatus = map['status'];
+    if (rawStatus is! String) invalid();
+    final status = CommunityVoiceStatus.tryParse(rawStatus);
+    if (status == null) invalid();
+    final currentRoomId = optionalPattern(
+      map,
+      'currentRoomId',
+      LoopV2Contract.uuidPattern,
+    );
+    if ((status == CommunityVoiceStatus.available) != (currentRoomId != null)) {
+      invalid();
+    }
+    return CommunityVoiceSection(
+      status: status,
+      currentRoomId: currentRoomId,
+      reasonCode: reasonCode(map, 'reasonCode'),
+    );
+  }
+
+  /// A nullable server `reasonCode`. It is shape-checked and then rendered
+  /// verbatim; the client never invents one of its own.
+  static String? reasonCode(Map<String, Object?> source, String key) {
+    final value = source[key];
+    if (value == null) return null;
+    if (value is! String ||
+        value.length > 64 ||
+        !LoopV2Contract.reasonCodePattern.hasMatch(value)) {
+      invalid();
+    }
+    return value;
+  }
+
   static CommunityDetail detail(Map<String, Object?> root) {
     return CommunityDetail(
       community: community(root['community']),
@@ -252,6 +332,8 @@ abstract final class LoopV2ProjectionCodec {
       onlineCount: unavailable(root['onlineCount']),
       announcements: unavailable(root['announcements']),
       officialLinks: unavailable(root['officialLinks']),
+      chat: chatSection(root['chat']),
+      voice: voiceSection(root['voice']),
     );
   }
 
@@ -262,6 +344,8 @@ abstract final class LoopV2ProjectionCodec {
     'onlineCount',
     'announcements',
     'officialLinks',
+    'chat',
+    'voice',
     'contractVersion',
   };
 

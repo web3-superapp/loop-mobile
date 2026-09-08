@@ -767,12 +767,19 @@ class HarnessTests(unittest.TestCase):
             write_friend_frontend_fixture(root)
             path = root / "lib/app.dart"
             source = path.read_text(encoding="utf-8")
-            marker = "builder: (context, state) => StreamGroupAliasChannelRoutePage("
+            # Step 4 retired the CID-addressed Alias entry; remounting it in
+            # any form must fail closed.
+            marker = "      GoRoute(\n        path: '/chat/groups/create',"
             self.assertIn(marker, source)
             path.write_text(
                 source.replace(
                     marker,
-                    "builder: (context, state) => GroupAliasChannelRoutePage(",
+                    "      GoRoute(\n"
+                    "        path: '/chat/channel/:cid/alias',\n"
+                    "        builder: (context, state) => GroupAliasChannelRoutePage(\n"
+                    "          routeCid: state.pathParameters['cid'] ?? '',\n"
+                    "        ),\n"
+                    "      ),\n" + marker,
                     1,
                 ),
                 encoding="utf-8",
@@ -782,10 +789,10 @@ class HarnessTests(unittest.TestCase):
 
         self.assertTrue(
             any(
-                "Alias route must prove exact Stream membership" in error
+                "retired CID-addressed Alias route must not be mounted" in error
                 for error in result
             ),
-            msg=f"expected Alias deep-link membership guard: {result}",
+            msg=f"expected retired Alias route guard: {result}",
         )
 
     def test_group_alias_resolver_cannot_send_the_full_cid(self) -> None:
@@ -3176,8 +3183,8 @@ class HarnessTests(unittest.TestCase):
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
                 source.replace(
-                    ") ??\n                '',",
-                    ") ??\n                'glyph-hunters',",
+                    ") ??\n                  '',",
+                    ") ??\n                  'glyph-hunters',",
                     1,
                 ),
                 encoding="utf-8",
@@ -3510,15 +3517,19 @@ class HarnessTests(unittest.TestCase):
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            # Step 4 turned the CID deep link into a redirect; a dead branch
+            # that keeps the correct mapping unreachable must still be caught.
             old = (
-                "builder: (context, state) =>\n"
-                "            StreamChatChannelRoutePage(cid: state.pathParameters['cid'] ?? ''),"
+                "        redirect: (context, state) =>\n"
+                "            loopChatLocationForCid(state.pathParameters['cid'] ?? '') ??\n"
+                "            routingErrors.record(state.uri.toString()),"
             )
             new = (
-                "builder: (context, state) => false\n"
-                "            ? StreamChatChannelRoutePage(cid: state.pathParameters['cid'] ?? '')\n"
-                "            : const StreamChatChannelRoutePage(cid: ''),"
+                "        redirect: (context, state) => false\n"
+                "            ? loopChatLocationForCid(state.pathParameters['cid'] ?? '')\n"
+                "            : routingErrors.record(state.uri.toString()),"
             )
+            self.assertIn(old, source)
             path.write_text(source.replace(old, new, 1), encoding="utf-8")
 
             result = check_harness.check_chat_preview_conversation_id_contract(root)
@@ -6020,6 +6031,26 @@ class HarnessTests(unittest.TestCase):
                         ),
                     )
 
+    def test_notification_global_handler_must_be_centralized(self) -> None:
+        # Nothing in step 5 touched this rule: only one file may ever own a
+        # Firebase global callback, and it does not exist yet.
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "chat" / "unsafe_push.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "FirebaseMessaging\n  .onBackgroundMessage(backgroundHandler);\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_notification_contract(root)
+        self.assertTrue(
+            any(
+                "only lib/integrations/notifications/firebase_notification_ingress.dart"
+                in error
+                for error in result
+            )
+        )
+
     def test_notification_router_rejects_payload_selected_routes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -6385,14 +6416,23 @@ class HarnessTests(unittest.TestCase):
             )
         )
 
-    def test_production_chat_audio_room_entry_cannot_point_elsewhere(self) -> None:
+    def test_generic_chat_inbox_cannot_reintroduce_an_audio_room_entry(self) -> None:
+        """Step 4 made every room a community resource with a server locator."""
+
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             relative = Path("lib/features/chat/stream_chat_inbox_page.dart")
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             mutated = source.replace(
-                "context.push<void>('/chat/voice')",
-                "context.push<void>('/chat/meeting')",
+                "actions: <Widget>[const ChatCreateMenuButton()],",
+                "actions: <Widget>[\n"
+                "          TextButton(\n"
+                "            key: const ValueKey<String>('stream-audio-room-entry'),\n"
+                "            onPressed: () => unawaited(context.push<void>('/chat/voice')),\n"
+                "            child: const Text('Audio Room'),\n"
+                "          ),\n"
+                "          const ChatCreateMenuButton(),\n"
+                "        ],",
             )
             self.assertNotEqual(source, mutated)
             destination = root / relative
@@ -6403,22 +6443,38 @@ class HarnessTests(unittest.TestCase):
 
         self.assertTrue(
             any(
-                "Audio Room entry must open `/chat/voice` exactly once" in error
+                "must not offer an Audio Room entry without a community" in error
                 for error in result
             ),
-            msg=f"expected production Audio Room route guard: {result}",
+            msg=f"expected retired generic Audio Room entry guard: {result}",
+        )
+
+    def test_voice_room_evidence_gate_cannot_be_removed(self) -> None:
+        """Decision 0005 keeps the page closed while the role evidence is pending."""
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/features/chat/v2/voice_room_screens.dart")
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            mutated = source.replace("capability.evidencePending", "false")
+            self.assertNotEqual(source, mutated)
+            destination = root / relative
+            destination.parent.mkdir(parents=True)
+            destination.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_production_chat_audio_room_entry(root)
+
+        self.assertTrue(
+            any("capability.evidencePending" in error for error in result),
+            msg=f"expected Audio Room evidence-gate guard: {result}",
         )
 
     def test_production_chat_audio_room_behavior_evidence_cannot_be_hollow(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            relative = Path("test/stream_chat_inbox_page_test.dart")
+            relative = Path("test/communication_pages_test.dart")
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            mutated = source.replace(
-                "expect(find.byType(StreamVoiceRoomPage), findsOneWidget);",
-                "find.byType(StreamVoiceRoomPage);\n"
-                "      expect(true, isTrue);",
-            )
+            mutated = source.replace("expect(", "identity(")
             self.assertNotEqual(source, mutated)
             destination = root / relative
             destination.parent.mkdir(parents=True)
@@ -6427,31 +6483,12 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_production_chat_audio_room_entry(root)
 
         self.assertTrue(
-            any("lacks exact Audio Room assertions" in error for error in result),
+            any(
+                "is missing required behavior evidence" in error
+                and "a pending role evidence closes the whole page" in error
+                for error in result
+            ),
             msg=f"expected production Audio Room behavior guard: {result}",
-        )
-
-    def test_production_chat_audio_room_entry_cannot_be_authorization_gated(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = Path("lib/features/chat/stream_chat_inbox_page.dart")
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            mutated = source.replace(
-                "        actions: <Widget>[\n          Padding(",
-                "        actions: <Widget>[\n"
-                "          if (!authorization.isLoading)\n"
-                "            Padding(",
-            )
-            self.assertNotEqual(source, mutated)
-            destination = root / relative
-            destination.parent.mkdir(parents=True)
-            destination.write_text(mutated, encoding="utf-8")
-
-            result = check_harness.check_production_chat_audio_room_entry(root)
-
-        self.assertTrue(
-            any("must not depend on inbox authorization state" in error for error in result),
-            msg=f"expected production Audio Room state-independence guard: {result}",
         )
 
     def test_duplicate_preview_chat_route_is_rejected(self) -> None:

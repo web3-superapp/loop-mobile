@@ -137,8 +137,6 @@ void main() {
       expect(LoopRouteManifest.supplementaryPaths, <String>[
         '/chat',
         '/chat/channel/:cid',
-        '/chat/channel/:cid/alias',
-        '/chat/friends/requests',
         '/chat/groups/create',
         '/chat/groups/:groupId/alias',
         '/preview/signing-review',
@@ -159,7 +157,14 @@ void main() {
       );
       // Step 3 folded the V1 friend list and alias search into `search` +
       // `connections`: neither is mounted, and both stay informational.
-      for (final retired in <String>['/profile/friends', '/chat/friends/add']) {
+      // Step 4 folded the V1 friend-request page into `dm-requests` and the
+      // CID-addressed alias entry into `group-info`.
+      for (final retired in <String>[
+        '/profile/friends',
+        '/chat/friends/add',
+        '/chat/friends/requests',
+        '/chat/channel/:cid/alias',
+      ]) {
         expect(
           LoopRouteManifest.informationalRetiredPaths,
           contains(retired),
@@ -256,9 +261,10 @@ void main() {
       final router = await _pumpApp(tester);
       final pending = LoopRouteManifest.withStatus(LoopRouteStatus.pending);
       // S2 connected `/auth/otp` and `/auth/loop-id`; S3 connected
-      // `community-discover`, `community-profile` and `community-members`,
-      // so the manifest carries three fewer pending pages.
-      expect(pending, hasLength(20));
+      // `community-discover`, `community-profile` and `community-members`;
+      // S4 connected `community-chat`, `community-ai`, `chat-forward` and
+      // `chat-merge-preview`.
+      expect(pending, hasLength(16));
       expect(
         LoopRouteManifest.bySlug('auth-otp').status,
         LoopRouteStatus.implemented,
@@ -270,12 +276,25 @@ void main() {
       expect(LoopRouteManifest.withStatus(LoopRouteStatus.redirect), isEmpty);
       expect(pending.map((entry) => entry.slug), isNot(contains('auth-otp')));
 
+      for (final slug in <String>[
+        'community-chat',
+        'community-ai',
+        'chat-forward',
+        'chat-merge-preview',
+      ]) {
+        expect(
+          LoopRouteManifest.bySlug(slug).status,
+          LoopRouteStatus.implemented,
+          reason: slug,
+        );
+        expect(pending.map((entry) => entry.slug), isNot(contains(slug)));
+      }
+
       for (final entry in <LoopRouteEntry>[
-        LoopRouteManifest.bySlug('community-chat'),
         LoopRouteManifest.bySlug('launch-trade'),
         LoopRouteManifest.bySlug('mining-rules'),
         LoopRouteManifest.bySlug('key-export'),
-        LoopRouteManifest.bySlug('chat-forward'),
+        LoopRouteManifest.bySlug('launch-apply'),
       ]) {
         router.go(entry.path);
         await tester.pumpAndSettle();

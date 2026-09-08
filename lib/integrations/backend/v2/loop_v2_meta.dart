@@ -190,8 +190,10 @@ final class LoopV2TermsGate {
 /// `loop-api/openapi/loop-api.v2.json`. `profile` and `avatarUpload` were
 /// added by loop-api decision 0030; `communityMining`, `communityPresence` and
 /// `search` by decision 0031; `marketRead`, `priceAlerts` and
-/// `notificationsFeed` by decision 0034 (27 ids). The parser requires the exact set, so this list
-/// must track the frozen contract even for modules this step does not consume.
+/// `notificationsFeed` by loop-api decision 0034 and the step-5 market and
+/// alerts modules, for 27 ids in the exact order of `openapi/loop-api.v2.json`.
+/// The parser requires the exact set, so this list must track the frozen
+/// contract even for modules a given step does not consume.
 enum LoopV2CapabilityId {
   privyAuthentication('privyAuthentication'),
   accountSession('accountSession'),

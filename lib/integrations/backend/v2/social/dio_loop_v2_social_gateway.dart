@@ -139,6 +139,18 @@ final class DioLoopV2SocialGateway implements SocialGateway {
       );
 
   @override
+  Future<MessageRequestEntry> sendMessageRequest(String publicProfileId) =>
+      _write(
+        'message-request:$publicProfileId',
+        (accessToken, key) => _api.sendMessageRequest(
+          accessToken: accessToken,
+          clientVersion: _clientVersion,
+          idempotencyKey: key,
+          publicProfileId: publicProfileId,
+        ),
+      );
+
+  @override
   Future<MessageRequestOutcome> decideMessageRequest({
     required String messageRequestId,
     required MessageRequestDecision decision,

@@ -15,7 +15,15 @@ import 'package:loop_mobile/widgets/loop_ui.dart';
 /// mounted foreground view reads connection, participants, capabilities and
 /// microphone state directly from Stream's official CallState.
 class StreamVoiceRoomPage extends ConsumerWidget {
-  const StreamVoiceRoomPage({super.key});
+  const StreamVoiceRoomPage({super.key, this.target});
+
+  /// A locator the caller already holds.
+  ///
+  /// The community voice pages resolve their room through the LOOP backend and
+  /// hand the authorized room straight in, so the lobby never has to read a
+  /// scoped provider. When it is null the page falls back to
+  /// [audioRoomTargetProvider], whose production default performs no request.
+  final AudioRoomTarget? target;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,7 +33,12 @@ class StreamVoiceRoomPage extends ConsumerWidget {
         : ref.watch(streamVideoAuthorizationProvider);
     final authorized =
         authorization?.value == StreamVideoSessionAuthorization.authorized;
-    final target = authorized ? ref.watch(audioRoomTargetProvider) : null;
+    final suppliedTarget = target;
+    final resolvedTarget = !authorized
+        ? null
+        : suppliedTarget != null
+        ? AsyncValue<AudioRoomTarget?>.data(suppliedTarget)
+        : ref.watch(audioRoomTargetProvider);
     final callFactory = authorized
         ? ref.watch(audioRoomCallFactoryProvider)
         : null;
@@ -34,11 +47,13 @@ class StreamVoiceRoomPage extends ConsumerWidget {
       key: ValueKey<String?>(principalKey),
       principalKey: principalKey,
       authorization: authorization,
-      target: target,
+      target: resolvedTarget,
       callFactory: callFactory,
       onRetryAuthorization: () =>
           ref.invalidate(streamVideoAuthorizationProvider),
-      onRetryTarget: () => ref.invalidate(audioRoomTargetProvider),
+      onRetryTarget: suppliedTarget != null
+          ? null
+          : () => ref.invalidate(audioRoomTargetProvider),
     );
   }
 }
@@ -59,7 +74,10 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
   final AsyncValue<AudioRoomTarget?>? target;
   final AudioRoomCallFactory? callFactory;
   final VoidCallback onRetryAuthorization;
-  final VoidCallback onRetryTarget;
+
+  /// Null when the caller supplied the target: there is no provider to
+  /// invalidate, so no retry is offered.
+  final VoidCallback? onRetryTarget;
 
   @override
   State<_StreamVoiceRoomSurface> createState() =>
@@ -272,7 +290,8 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
                                 icon: const Icon(Icons.refresh_rounded),
                                 label: const Text('Retry session'),
                               )
-                            : content.retryTarget
+                            : content.retryTarget &&
+                                  widget.onRetryTarget != null
                             ? OutlinedButton.icon(
                                 onPressed: widget.onRetryTarget,
                                 icon: const Icon(Icons.refresh_rounded),

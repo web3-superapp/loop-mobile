@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
@@ -26,11 +27,15 @@ class CommunityProfileScreen extends ConsumerStatefulWidget {
     super.key,
     this.onBack,
     this.onOpenMembers,
+    this.onOpenChat,
+    this.onOpenVoiceRoom,
   });
 
   final String? communityId;
   final VoidCallback? onBack;
   final ValueChanged<String>? onOpenMembers;
+  final ValueChanged<String>? onOpenChat;
+  final ValueChanged<String>? onOpenVoiceRoom;
 
   @override
   ConsumerState<CommunityProfileScreen> createState() =>
@@ -150,6 +155,14 @@ class _CommunityProfileScreenState
               body: communityFailureReason(state.failureKind),
               margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
             ),
+          const LoopLabel('聊天与语音'),
+          _ChannelActions(
+            detail: detail,
+            onOpenChat: () =>
+                widget.onOpenChat?.call(detail.community.communityId),
+            onOpenVoiceRoom: () =>
+                widget.onOpenVoiceRoom?.call(detail.community.communityId),
+          ),
           const LoopLabel('在线'),
           CommunityUnavailableCard(label: '在线人数', fact: detail.onlineCount),
           const LoopLabel('社区币'),
@@ -419,6 +432,60 @@ class _BoundAssetCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The two conversation entries a community record offers.
+///
+/// The official channel opens only when the server reports it as available;
+/// `syncing` still opens the page, which then explains the wait. The voice
+/// entry appears only for a room the server reports as live.
+class _ChannelActions extends StatelessWidget {
+  const _ChannelActions({
+    required this.detail,
+    required this.onOpenChat,
+    required this.onOpenVoiceRoom,
+  });
+
+  final CommunityDetail detail;
+  final VoidCallback onOpenChat;
+  final VoidCallback onOpenVoiceRoom;
+
+  @override
+  Widget build(BuildContext context) {
+    final chat = detail.chat;
+    final voice = detail.voice;
+    final chatOpenable = chat.isAvailable || chat.isSyncing;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('community-profile-open-chat'),
+              title: '社区官方群',
+              subtitle: switch (chat.status) {
+                CommunityChatStatus.available => '进入官方群',
+                CommunityChatStatus.syncing => '聊天权限同步中',
+                CommunityChatStatus.unavailable =>
+                  communicationUnavailableReason(chat.reasonCode),
+              },
+              position: LoopRowPosition.first,
+              onTap: chatOpenable ? onOpenChat : null,
+            ),
+            LoopRecordRow(
+              key: const ValueKey<String>('community-profile-open-voice'),
+              title: '语音房',
+              subtitle: voice.isLive
+                  ? '当前有进行中的语音房'
+                  : communicationUnavailableReason(voice.reasonCode),
+              position: LoopRowPosition.last,
+              onTap: voice.isLive ? onOpenVoiceRoom : null,
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

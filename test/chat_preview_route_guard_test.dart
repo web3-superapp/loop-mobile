@@ -28,15 +28,8 @@ void main() {
     await tester.pumpAndSettle();
 
     final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
+    // The guarded component previews stay blocked outside Preview mode.
     for (final route in <String>[
-      '/chat/group',
-      '/chat/group?conversationId=glyph-hunters',
-      '/chat/dm',
-      '/chat/dm?conversationId=sable-direct',
-      '/chat/group-info',
-      '/chat/group-info?conversationId=glyph-hunters',
-      '/chat/search',
-      '/chat/search?conversationId=glyph-hunters',
       '/preview/token-card',
       '/preview/contract-facts',
       '/preview/asset-message',
@@ -53,6 +46,37 @@ void main() {
       expect(
         find.byKey(const ValueKey<String>('chat-preview-open-chats')),
         findsOneWidget,
+        reason: route,
+      );
+      expect(find.text('Glyph Hunters'), findsNothing, reason: route);
+      expect(find.text('0xSable'), findsNothing, reason: route);
+      expect(find.text('GLYPH / USDC'), findsNothing, reason: route);
+    }
+
+    // Step 4 gave the four conversation slugs their V2 surfaces. Outside
+    // Preview mode the fixture pages are not built at all, so no fixture name
+    // can appear on any of them.
+    for (final (route, pageKey) in <(String, String)>[
+      ('/chat/group', 'group-screen'),
+      ('/chat/group?conversationId=glyph-hunters', 'group-screen'),
+      ('/chat/dm', 'dm-screen'),
+      ('/chat/dm?conversationId=sable-direct', 'dm-screen'),
+      ('/chat/group-info', 'group-info-screen'),
+      ('/chat/group-info?conversationId=glyph-hunters', 'group-info-screen'),
+      ('/chat/search', 'chat-search-screen'),
+      ('/chat/search?conversationId=glyph-hunters', 'chat-search-screen'),
+    ]) {
+      router.go(route);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(ValueKey<String>(pageKey)),
+        findsOneWidget,
+        reason: route,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('chat-preview-route-label')),
+        findsNothing,
         reason: route,
       );
       expect(find.text('Glyph Hunters'), findsNothing, reason: route);

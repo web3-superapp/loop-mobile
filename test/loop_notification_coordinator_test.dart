@@ -12,53 +12,47 @@ import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 void main() {
   final now = DateTime.utc(2026, 8, 25, 12);
 
-  test(
-    'authorized initial interaction navigates to its fixed route once',
-    () async {
-      final source = _TestEventSource(
-        initialInteraction: _event(
-          LoopNotificationSourceEventKind.interaction,
-          kind: LoopNotificationRouter.chatMessageKind,
-        ),
-      );
-      final tokens = _TokenSource();
-      final repository = _Repository((_) async => _identityA);
-      final bootstrap = _bootstrap(
-        principalKey: _principalA,
-        tokens: tokens,
-        repository: repository,
-      );
-      expect(
-        await bootstrap.authorize(),
-        LoopBootstrapAuthorization.authorized,
-      );
-      final session = _authenticated(_principalA);
-      final navigations = <String>[];
-      final coordinator = LoopNotificationCoordinator(
-        source: source,
-        readSession: () => session,
-        readBootstrapSession: () => bootstrap,
-        navigate: (intent) => navigations.add(intent.location),
-        clock: () => now,
-      );
-      addTearDown(() async {
-        await coordinator.dispose();
-        bootstrap.dispose();
-        await source.close();
-      });
+  test('authorized initial interaction navigates to its fixed route once', () async {
+    final source = _TestEventSource(
+      initialInteraction: _event(
+        LoopNotificationSourceEventKind.interaction,
+        kind: LoopNotificationRouter.chatMessageKind,
+      ),
+    );
+    final tokens = _TokenSource();
+    final repository = _Repository((_) async => _identityA);
+    final bootstrap = _bootstrap(
+      principalKey: _principalA,
+      tokens: tokens,
+      repository: repository,
+    );
+    expect(await bootstrap.authorize(), LoopBootstrapAuthorization.authorized);
+    final session = _authenticated(_principalA);
+    final navigations = <String>[];
+    final coordinator = LoopNotificationCoordinator(
+      source: source,
+      readSession: () => session,
+      readBootstrapSession: () => bootstrap,
+      navigate: (intent) => navigations.add(intent.location),
+      clock: () => now,
+    );
+    addTearDown(() async {
+      await coordinator.dispose();
+      bootstrap.dispose();
+      await source.close();
+    });
 
-      coordinator.start();
-      coordinator.start();
-      await _flushAsyncWork();
+    coordinator.start();
+    coordinator.start();
+    await _flushAsyncWork();
 
-      expect(source.initialInteractionCalls, 1);
-      expect(tokens.calls, 1);
-      expect(repository.calls, 1);
-      expect(navigations, <String>[
-        '/chat/channel/${Uri.encodeComponent('messaging:loop-room-42')}',
-      ]);
-    },
-  );
+    expect(source.initialInteractionCalls, 1);
+    expect(tokens.calls, 1);
+    expect(repository.calls, 1);
+    expect(navigations, <String>[
+      '/chat/dm?cid=${Uri.encodeComponent('messaging:loop_direct_0123456789abcdef0123456789abcdef')}',
+    ]);
+  });
 
   test(
     'foreground and background delivery never navigate or consume the tap',
@@ -535,7 +529,9 @@ LoopNotificationSourceEvent _event(
       'occurred_at': '2026-08-25T11:59:00.000Z',
       'expires_at': '2026-08-25T12:10:00.000Z',
       if (kind == LoopNotificationRouter.chatMessageKind)
-        'cid': 'messaging:loop-room-42',
+        // Step 4: only a channel whose LOOP-assigned prefix names a surface
+        // can produce a navigation intent.
+        'cid': 'messaging:loop_direct_0123456789abcdef0123456789abcdef',
     },
   );
 }

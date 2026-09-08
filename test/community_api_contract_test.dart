@@ -61,13 +61,41 @@ Map<String, Object?> viewer({
   'canBan': canBan,
 };
 
-Map<String, Object?> detailBody() => <String, Object?>{
+Map<String, Object?> chatSection({
+  String status = 'available',
+  Object? channelCid =
+      'messaging:loop_community_0123456789abcdef0123456789abcdef',
+  Object? memberState = 'synced',
+  Object? reasonCode,
+}) => <String, Object?>{
+  'status': status,
+  'channelCid': channelCid,
+  'memberState': memberState,
+  'reasonCode': reasonCode,
+};
+
+Map<String, Object?> voiceSection({
+  String status = 'unavailable',
+  Object? currentRoomId,
+  Object? reasonCode = 'COMMUNITY_VOICE_ROOM_NOT_LIVE',
+}) => <String, Object?>{
+  'status': status,
+  'currentRoomId': currentRoomId,
+  'reasonCode': reasonCode,
+};
+
+Map<String, Object?> detailBody({
+  Map<String, Object?>? chat,
+  Map<String, Object?>? voice,
+}) => <String, Object?>{
   'community': community(),
   'viewer': viewer(),
   'miningPower': unavailable('MINING_FORMULA_BASELINE_PENDING'),
   'onlineCount': unavailable('STREAM_PRESENCE_NOT_CONNECTED'),
   'announcements': unavailable('COMMUNITY_ANNOUNCEMENTS_DEFERRED'),
   'officialLinks': unavailable('COMMUNITY_LINKS_DEFERRED'),
+  'chat': chat ?? chatSection(),
+  'voice': voice ?? voiceSection(),
   'contractVersion': '2.0',
 };
 
