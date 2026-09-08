@@ -53,10 +53,12 @@ void main() {
         expect(find.text(fact.value), findsOneWidget);
       }
       expect(find.text('待确认'), findsOneWidget);
+      // Prototype `#sign-title` / `#sign-confirm` defaults.
+      expect(find.text('确认交易'), findsOneWidget);
       expect(
-        _button(tester, '确认'),
+        _button(tester, '确认签名'),
         matchesSemantics(
-          label: '确认',
+          label: '确认签名',
           isButton: true,
           hasEnabledState: true,
           isEnabled: true,
@@ -65,7 +67,7 @@ void main() {
           isFocusable: true,
         ),
       );
-      await tester.tap(find.text('确认'));
+      await tester.tap(find.text('确认签名'));
       await tester.tap(find.text('取消'));
       expect(confirmed, 1);
       expect(cancelled, 1);
@@ -95,15 +97,15 @@ void main() {
     expect(find.text('模拟失败'), findsOneWidget);
     expect(find.text('失败 · 无法预演'), findsOneWidget);
     expect(
-      _button(tester, '确认'),
+      _button(tester, '确认签名'),
       matchesSemantics(
-        label: '确认',
+        label: '确认签名',
         isButton: true,
         hasEnabledState: true,
         isEnabled: false,
       ),
     );
-    await tester.tap(find.text('确认'), warnIfMissed: false);
+    await tester.tap(find.text('确认签名'), warnIfMissed: false);
     expect(confirmed, 0);
 
     await _pump(
@@ -123,9 +125,9 @@ void main() {
     expect(find.text('被策略拒绝'), findsOneWidget);
     expect(find.text('关闭'), findsOneWidget);
     expect(
-      _button(tester, '确认'),
+      _button(tester, '确认签名'),
       matchesSemantics(
-        label: '确认',
+        label: '确认签名',
         isButton: true,
         hasEnabledState: true,
         isEnabled: false,
@@ -182,7 +184,7 @@ void main() {
       ),
     );
     expect(find.text('已完成'), findsOneWidget);
-    expect(find.bySemanticsLabel('确认'), findsNothing);
+    expect(find.bySemanticsLabel('确认签名'), findsNothing);
     await tester.tap(find.text('关闭'));
     expect(closed, 1);
     semantics.dispose();

@@ -57,7 +57,9 @@ void main() {
         onPermissionRequest: () => requests += 1,
         onPermissionOpenSettings: () => settings += 1,
         onPermissionNotNow: () => notNow += 1,
-        onSecondaryAction: () {},
+        onRetry: () => fail('generic retry must stay isolated from I6'),
+        onPrimaryAction: () => fail('generic primary must stay isolated'),
+        onSecondaryAction: () => fail('generic secondary must stay isolated'),
       ),
     );
     expect(
@@ -93,6 +95,30 @@ void main() {
     await tester.ensureVisible(find.text('前往系统设置'));
     await tester.tap(find.text('前往系统设置'));
     expect((requests, settings), (1, 1));
+  });
+
+  testWidgets('an explicit prompt never accepts generic system actions', (
+    tester,
+  ) async {
+    await pumpSystemSurface(
+      tester,
+      SystemSurfaceScreen.fromId(
+        'permission',
+        permissionPrompt: const LoopPermissionPrompt(
+          kind: LoopPermissionKind.notifications,
+          mode: LoopPermissionPromptMode.education,
+        ),
+        onRetry: () => fail('generic retry must stay isolated from I6'),
+        onPrimaryAction: () => fail('generic primary must stay isolated'),
+        onSecondaryAction: () => fail('generic secondary must stay isolated'),
+      ),
+    );
+
+    expect(find.text('本次申请'), findsOneWidget);
+    expect(find.text('继续'), findsNothing);
+    expect(find.text('前往系统设置'), findsNothing);
+    expect(find.text('暂不'), findsNothing);
+    expect(find.text('返回 LOOP'), findsNothing);
   });
 
   testWidgets('permission states remain usable at 2x text', (tester) async {

@@ -21,6 +21,48 @@ enum LoopConnectivityScope {
   tradingServiceUnavailable,
 }
 
+/// Explicit connectivity evidence supplied by the owner of the request that
+/// failed. The page never derives any of it from opening the route.
+@immutable
+final class LoopConnectivityObservation {
+  const LoopConnectivityObservation({
+    required this.scope,
+    this.lastSyncAt,
+    this.partialOutage,
+  });
+
+  final LoopConnectivityScope scope;
+
+  /// When the cached data on the other pages was last synced. Null means the
+  /// owner did not record one, and the kicker then states the device state.
+  final DateTime? lastSyncAt;
+
+  /// One named chain or service that is down while the rest of LOOP works
+  /// (prototype `offline.html` 部分故障 block). Null keeps that block
+  /// unavailable: per-chain availability has no connected source yet.
+  final LoopPartialOutage? partialOutage;
+
+  /// `LAST SYNC · HH:mm` in the device's own zone, or null.
+  String? get lastSyncKicker {
+    final value = lastSyncAt;
+    if (value == null) return null;
+    final local = value.toLocal();
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    return 'LAST SYNC · $hour:$minute';
+  }
+}
+
+/// A single chain or service outage reported by an approved source.
+@immutable
+final class LoopPartialOutage {
+  const LoopPartialOutage({required this.networkLabel, this.detail});
+
+  /// e.g. `BSC`; a display label chosen by the owner, never inferred.
+  final String networkLabel;
+  final String? detail;
+}
+
 enum LoopPermissionKind { camera, notifications, microphone }
 
 enum LoopPermissionPromptMode { education, settingsRecovery }
@@ -42,16 +84,23 @@ final class LoopServiceErrorObservation {
   final String? statusLabel;
 }
 
-/// Evidence that an approved minimum-version policy blocks this build.
+/// Evidence that an approved version policy blocks this build.
+///
+/// Decision 0029 has two floors. [forceUpdateBelow] is the hard floor that
+/// produced this block; [minimumSupportedVersion] is the softer
+/// `minimumSupportedVersions[platform]` value and is shown only when the
+/// policy stated one. They are never merged into a single "minimum".
 @immutable
 final class LoopForceUpdateRequirement {
   const LoopForceUpdateRequirement({
-    this.minimumVersion,
+    this.forceUpdateBelow,
+    this.minimumSupportedVersion,
     this.configVersion,
     this.storeUrl,
   });
 
-  final String? minimumVersion;
+  final String? forceUpdateBelow;
+  final String? minimumSupportedVersion;
   final String? configVersion;
   final Uri? storeUrl;
 }
@@ -205,6 +254,7 @@ class SystemSurfaceScreen extends StatelessWidget {
     this.onForceUpdate,
     this.onMaintenanceRecheck,
     this.onMaintenanceStatus,
+    this.onMaintenanceReadOnly,
     this.onRegionContinue,
     this.onRegionPolicy,
     this.onPermissionRequest,
@@ -213,7 +263,7 @@ class SystemSurfaceScreen extends StatelessWidget {
     this.onFeedbackAction,
     this.onFeedbackDismiss,
     this.onBack,
-    this.connectivityScope,
+    this.connectivityObservation,
     this.serviceErrorObservation,
     this.forceUpdateRequirement,
     this.maintenanceNotice,
@@ -248,6 +298,10 @@ class SystemSurfaceScreen extends StatelessWidget {
   final SystemAction? onForceUpdate;
   final SystemAction? onMaintenanceRecheck;
   final SystemAction? onMaintenanceStatus;
+
+  /// Dedicated "view read-only content" action for an active maintenance
+  /// notice. The generic secondary action stays out of every explicit state.
+  final SystemAction? onMaintenanceReadOnly;
   final SystemAction? onRegionContinue;
   final SystemAction? onRegionPolicy;
   final SystemAction? onPermissionRequest;
@@ -258,7 +312,7 @@ class SystemSurfaceScreen extends StatelessWidget {
 
   /// Topbar back. Null hides the back button (blocking pages).
   final SystemAction? onBack;
-  final LoopConnectivityScope? connectivityScope;
+  final LoopConnectivityObservation? connectivityObservation;
   final LoopServiceErrorObservation? serviceErrorObservation;
   final LoopForceUpdateRequirement? forceUpdateRequirement;
   final LoopMaintenanceNotice? maintenanceNotice;
@@ -274,7 +328,7 @@ class SystemSurfaceScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (_id) {
       'offline' => _OfflinePage(
-        scope: connectivityScope,
+        observation: connectivityObservation,
         onRetry: onRetry,
         onContinue: onSecondaryAction,
         onBack: onBack,
@@ -296,6 +350,7 @@ class SystemSurfaceScreen extends StatelessWidget {
         notice: maintenanceNotice,
         onRecheck: onMaintenanceRecheck,
         onStatus: onMaintenanceStatus,
+        onReadOnly: onMaintenanceReadOnly,
         onContinue: onSecondaryAction,
         onBack: onBack,
       ),
@@ -490,7 +545,7 @@ Future<void> showLoopForceUpdateDialog(
         icon: const LoopIcon('upgrade', size: 34, color: LoopColors.lime),
         title: const Text('请更新 LOOP 后继续'),
         content: Text(
-          '已批准的版本策略要求受支持的版本${requirement.minimumVersion == null ? '' : '（最低 ${requirement.minimumVersion}）'}。安装受支持的版本后再回到 LOOP。',
+          '已批准的版本策略要求受支持的版本${requirement.forceUpdateBelow == null ? '' : '（强制更新下限 ${requirement.forceUpdateBelow}）'}。安装受支持的版本后再回到 LOOP。',
         ),
         actions: <Widget>[
           LoopButton(label: '立即更新', primary: true, onPressed: onUpdate),
@@ -604,21 +659,21 @@ _connectivityCopy(LoopConnectivityScope scope) => switch (scope) {
 
 class _OfflinePage extends StatelessWidget {
   const _OfflinePage({
-    required this.scope,
+    required this.observation,
     required this.onRetry,
     required this.onContinue,
     required this.onBack,
   });
 
-  final LoopConnectivityScope? scope;
+  final LoopConnectivityObservation? observation;
   final VoidCallback? onRetry;
   final VoidCallback? onContinue;
   final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
-    final scope = this.scope;
-    if (scope == null) {
+    final observation = this.observation;
+    if (observation == null) {
       return _StatePage(
         title: '无网络',
         onBack: onBack,
@@ -639,13 +694,17 @@ class _OfflinePage extends StatelessWidget {
         primaryAction: _returnAction(onContinue),
       );
     }
+    final scope = observation.scope;
     final copy = _connectivityCopy(scope);
     final fullyOffline = scope == LoopConnectivityScope.fullyOffline;
+    final outage = observation.partialOutage;
     return _StatePage(
       title: '无网络',
       onBack: onBack,
       folio: LoopFolioPrimary(
-        kicker: fullyOffline ? 'DEVICE OFFLINE' : 'SERVICE INTERRUPTED',
+        kicker:
+            observation.lastSyncKicker ??
+            (fullyOffline ? 'DEVICE OFFLINE' : 'SERVICE INTERRUPTED'),
         heading: fullyOffline ? '当前设备离线' : copy.title,
         caption: fullyOffline
             ? '缓存仍可查看；发送、兑换与跨链已经暂停。'
@@ -673,9 +732,24 @@ class _OfflinePage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
             child: LoopButton(label: '重试', block: true, onPressed: onRetry),
           ),
+        const LoopLabel('部分故障（另一种态）', followsLabel: true),
+        if (outage == null)
+          const _SourceUnavailableNotice(
+            keyName: 'partial-outage-source-unavailable',
+            title: '没有按链拆分的故障来源',
+            body: '单条链或单一服务是否可用，必须由已接入的来源逐条报告；此页不会推断某条链不可用。',
+          )
+        else
+          LoopNotice(
+            key: const ValueKey<String>('partial-outage-notice'),
+            icon: 'warn',
+            tone: LoopNoticeTone.warn,
+            title: '${outage.networkLabel} 网络暂时不可用',
+            body: outage.detail ?? '其他链正常。该链上的资产余额可能不准，该链的交易已暂停。',
+          ),
         const LoopNotice(
           title: '为什么区分这两种',
-          body: '完全断网时所有操作都要拦；单链或单一服务故障时其他功能应该照常可用 —— 一刀切会让用户以为整个 App 坏了。',
+          body: '完全断网时所有操作都要拦；单链故障时其他链应该照常可用 —— 一刀切会让用户以为整个 App 坏了。',
         ),
       ],
       primaryAction: onContinue == null
@@ -825,9 +899,14 @@ class _ForceUpdatePage extends StatelessWidget {
           child: Column(
             children: <Widget>[
               LoopKeyValue(
-                label: '最低支持版本',
-                value: requirement.minimumVersion ?? '—',
+                label: '强制更新下限',
+                value: requirement.forceUpdateBelow ?? '—',
               ),
+              if (requirement.minimumSupportedVersion != null)
+                LoopKeyValue(
+                  label: '最低支持版本',
+                  value: requirement.minimumSupportedVersion!,
+                ),
               LoopKeyValue(
                 label: '策略版本',
                 value: requirement.configVersion ?? '—',
@@ -864,6 +943,7 @@ class _MaintenancePage extends StatelessWidget {
     required this.notice,
     required this.onRecheck,
     required this.onStatus,
+    required this.onReadOnly,
     required this.onContinue,
     required this.onBack,
   });
@@ -871,6 +951,10 @@ class _MaintenancePage extends StatelessWidget {
   final LoopMaintenanceNotice? notice;
   final VoidCallback? onRecheck;
   final VoidCallback? onStatus;
+
+  /// Only the explicit-notice state exposes this; it is never the generic
+  /// "return to LOOP" action of the source-unavailable state.
+  final VoidCallback? onReadOnly;
   final VoidCallback? onContinue;
   final VoidCallback? onBack;
 
@@ -921,9 +1005,9 @@ class _MaintenancePage extends StatelessWidget {
             ],
           ),
       ],
-      primaryAction: onContinue == null
+      primaryAction: onReadOnly == null
           ? null
-          : LoopButton(label: '查看只读内容', block: true, onPressed: onContinue),
+          : LoopButton(label: '查看只读内容', block: true, onPressed: onReadOnly),
     );
   }
 }
@@ -1405,6 +1489,7 @@ class _SignSheetStatesPage extends StatelessWidget {
                       state: item.state,
                       facts: item.facts,
                       reason: item.reason,
+                      confirmLabel: '确认',
                       onConfirm: () => Navigator.of(context).pop(),
                       onCancel: () => Navigator.of(context).pop(),
                     ),
@@ -1418,6 +1503,7 @@ class _SignSheetStatesPage extends StatelessWidget {
                   state: item.state,
                   facts: item.facts,
                   reason: item.reason,
+                  confirmLabel: '确认',
                   onConfirm: () {},
                   onCancel: () {},
                   onAdjustPolicy:

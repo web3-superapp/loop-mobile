@@ -37,12 +37,12 @@ class LoopSignSheet extends StatelessWidget {
     required this.state,
     required this.facts,
     super.key,
-    this.title = '确认签名',
+    this.title = '确认交易',
     this.reason,
     this.onConfirm,
     this.onCancel,
     this.onAdjustPolicy,
-    this.confirmLabel = '确认',
+    this.confirmLabel = '确认签名',
     this.cancelLabel = '取消',
   });
 
@@ -50,6 +50,9 @@ class LoopSignSheet extends StatelessWidget {
 
   /// 操作 / 资产 / 网络 / 费用 / 模拟结果 …
   final List<LoopSignFact> facts;
+
+  /// Prototype `#sign-title`. The showcase cards override the confirm label
+  /// with the compact 「确认」 used by the inline examples.
   final String title;
 
   /// Human explanation for failed / rejected / complete states.

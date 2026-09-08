@@ -105,7 +105,9 @@ void main() {
           ),
           onFeedbackAction: () => actions += 1,
           onFeedbackDismiss: () => dismissed += 1,
-          onSecondaryAction: () {},
+          onRetry: () => fail('generic retry must stay isolated from I7'),
+          onPrimaryAction: () => fail('generic primary must stay isolated'),
+          onSecondaryAction: () => fail('generic secondary must stay isolated'),
         ),
       );
       expect(find.text('当前反馈'), findsOneWidget);
@@ -127,6 +129,100 @@ void main() {
     }
     expect((actions, dismissed), (3, 3));
     semantics.dispose();
+  });
+
+  testWidgets('the action requires both an exact label and its callback', (
+    tester,
+  ) async {
+    const feedback = LoopGlobalFeedback(
+      kind: LoopNoticeKind.warning,
+      message: '确切的警告观测。',
+      actionLabel: '查看',
+    );
+
+    // Label without callback.
+    await pumpSystemSurface(
+      tester,
+      const SystemSurfaceScreen.fromId('toast', globalFeedback: feedback),
+    );
+    expect(find.text('查看'), findsNothing);
+
+    // Callback without label.
+    var actions = 0;
+    await pumpSystemSurface(
+      tester,
+      SystemSurfaceScreen.fromId(
+        'toast',
+        globalFeedback: const LoopGlobalFeedback(
+          kind: LoopNoticeKind.warning,
+          message: '确切的警告观测。',
+        ),
+        onFeedbackAction: () => actions += 1,
+      ),
+    );
+    expect(find.text('查看'), findsNothing);
+
+    await pumpSystemSurface(
+      tester,
+      SystemSurfaceScreen.fromId(
+        'toast',
+        globalFeedback: feedback,
+        onFeedbackAction: () => actions += 1,
+      ),
+    );
+    await tester.tap(find.text('查看'));
+    expect(actions, 1);
+  });
+
+  testWidgets('dismiss is independent and uses its dedicated callback', (
+    tester,
+  ) async {
+    const feedback = LoopGlobalFeedback(
+      kind: LoopNoticeKind.success,
+      message: '确切的成功观测。',
+    );
+    await pumpSystemSurface(
+      tester,
+      const SystemSurfaceScreen.fromId('toast', globalFeedback: feedback),
+    );
+    expect(find.text('关闭'), findsNothing);
+
+    var dismissals = 0;
+    await pumpSystemSurface(
+      tester,
+      SystemSurfaceScreen.fromId(
+        'toast',
+        globalFeedback: feedback,
+        onFeedbackDismiss: () => dismissals += 1,
+      ),
+    );
+    expect(find.text('查看'), findsNothing);
+    await tester.tap(find.text('关闭'));
+    expect(dismissals, 1);
+  });
+
+  testWidgets('explicit feedback never accepts generic system actions', (
+    tester,
+  ) async {
+    await pumpSystemSurface(
+      tester,
+      SystemSurfaceScreen.fromId(
+        'toast',
+        globalFeedback: const LoopGlobalFeedback(
+          kind: LoopNoticeKind.error,
+          message: '确切的错误观测。',
+          actionLabel: '查看',
+        ),
+        onRetry: () => fail('generic retry must stay isolated from I7'),
+        onPrimaryAction: () => fail('generic primary must stay isolated'),
+        onSecondaryAction: () => fail('generic secondary must stay isolated'),
+      ),
+    );
+
+    expect(find.text('确切的错误观测。'), findsOneWidget);
+    expect(find.text('查看'), findsNothing);
+    expect(find.text('关闭'), findsNothing);
+    expect(find.text('返回 LOOP'), findsNothing);
   });
 
   testWidgets('toast page remains usable at 2x text', (tester) async {

@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
@@ -79,7 +82,10 @@ void main() {
         captured!.headers.keys.map((key) => key.toLowerCase()),
         isNot(contains(startsWith('x-loop-'))),
       );
-      expect(projection.capabilities, hasLength(16));
+      expect(
+        projection.capabilities,
+        hasLength(LoopV2CapabilityId.values.length),
+      );
       expect(
         projection.capabilities.map((item) => item.id).toSet(),
         LoopV2CapabilityId.values.toSet(),
@@ -154,6 +160,137 @@ void main() {
       expect(policy.termsGate.reasonCode, isNull);
     },
   );
+
+  test(
+    'unavailable gates accept both frozen reason codes and pass them through',
+    () async {
+      for (final reason in <String>[
+        'CLIENT_VERSION_POLICY_UNAVAILABLE',
+        'POLICY_NOT_YET_EFFECTIVE',
+      ]) {
+        final value = _clientPolicy();
+        (value['versionGate']! as Map<String, Object?>)['reasonCode'] = reason;
+        final policy = await _resolvingRepository(value).getClientPolicy();
+        expect(policy.versionGate.status, LoopV2VersionGateStatus.unavailable);
+        expect(policy.versionGate.reasonCode, reason);
+        expect(policy.versionGate.forceUpdateBelow, isNull);
+      }
+      for (final reason in <String>[
+        'TERMS_POLICY_UNAVAILABLE',
+        'POLICY_NOT_YET_EFFECTIVE',
+      ]) {
+        final value = _clientPolicy();
+        (value['termsGate']! as Map<String, Object?>)['reasonCode'] = reason;
+        final policy = await _resolvingRepository(value).getClientPolicy();
+        expect(policy.termsGate.status, LoopV2TermsGateStatus.unavailable);
+        expect(policy.termsGate.reasonCode, reason);
+        expect(policy.termsGate.requiredVersion, isNull);
+      }
+
+      // Any other reason code stays a contract violation.
+      final foreignVersionReason = _clientPolicy();
+      (foreignVersionReason['versionGate']!
+              as Map<String, Object?>)['reasonCode'] =
+          'TERMS_POLICY_UNAVAILABLE';
+      final foreignTermsReason = _clientPolicy();
+      (foreignTermsReason['termsGate']! as Map<String, Object?>)['reasonCode'] =
+          'CLIENT_VERSION_POLICY_UNAVAILABLE';
+      final nullVersionReason = _clientPolicy();
+      (nullVersionReason['versionGate']!
+              as Map<String, Object?>)['reasonCode'] =
+          null;
+      for (final value in <Map<String, Object?>>[
+        foreignVersionReason,
+        foreignTermsReason,
+        nullVersionReason,
+      ]) {
+        await expectLater(
+          _resolvingRepository(value).getClientPolicy(),
+          throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+        );
+      }
+    },
+  );
+
+  test('effectiveAt accepts the lowercase RFC 3339 spellings', () async {
+    for (final effectiveAt in <String>[
+      '2026-09-01T00:00:00.000Z',
+      '2026-09-01t00:00:00.000z',
+      '2026-09-01t00:00:00Z',
+      '2026-09-01T08:00:00+08:00',
+      '2026-09-01t08:00:00+08:00',
+    ]) {
+      final value = _clientPolicy()..['effectiveAt'] = effectiveAt;
+      final policy = await _resolvingRepository(value).getClientPolicy();
+      expect(
+        policy.effectiveAt,
+        DateTime.utc(2026, DateTime.september),
+        reason: effectiveAt,
+      );
+      expect(policy.effectiveAt.isUtc, isTrue, reason: effectiveAt);
+    }
+    for (final effectiveAt in <String>[
+      '2026-09-01 00:00:00Z',
+      '2026-09-01T00:00:00',
+      '2026-09-01',
+    ]) {
+      await expectLater(
+        _resolvingRepository(_clientPolicy()..['effectiveAt'] = effectiveAt)
+            .getClientPolicy(),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+        reason: effectiveAt,
+      );
+    }
+  });
+
+  test('client capability enum equals the frozen contract enum', () {
+    const relativePaths = <String>[
+      '../loop-api/openapi/loop-api.v2.json',
+      '../../loop-api/openapi/loop-api.v2.json',
+    ];
+    File? contract;
+    for (final path in relativePaths) {
+      final candidate = File(path);
+      if (candidate.existsSync()) {
+        contract = candidate;
+        break;
+      }
+    }
+    if (contract == null) {
+      // ignore: avoid_print
+      print(
+        'skip: loop-api contract not found next to this checkout '
+        '(looked in $relativePaths). Run this test from a workspace that '
+        'contains both repositories.',
+      );
+      return;
+    }
+    final document =
+        jsonDecode(contract.readAsStringSync()) as Map<String, Object?>;
+    final paths = document['paths']! as Map<String, Object?>;
+    final capabilities =
+        paths['/v2/meta/capabilities']! as Map<String, Object?>;
+    final get = capabilities['get']! as Map<String, Object?>;
+    final responses = get['responses']! as Map<String, Object?>;
+    final ok = responses['200']! as Map<String, Object?>;
+    final content = ok['content']! as Map<String, Object?>;
+    final json = content['application/json']! as Map<String, Object?>;
+    final schema = json['schema']! as Map<String, Object?>;
+    final properties = schema['properties']! as Map<String, Object?>;
+    final list = properties['capabilities']! as Map<String, Object?>;
+    final items = list['items']! as Map<String, Object?>;
+    final itemProperties = items['properties']! as Map<String, Object?>;
+    final capabilityId =
+        itemProperties['capabilityId']! as Map<String, Object?>;
+    final contractIds = (capabilityId['enum']! as List<Object?>)
+        .cast<String>()
+        .toList(growable: false);
+
+    expect(
+      LoopV2CapabilityId.values.map((id) => id.wireName).toList(),
+      contractIds,
+    );
+  });
 
   test(
     'strict policy rejects drift, reordered tabs, and invalid proof',
@@ -245,7 +382,7 @@ void main() {
 
       final duplicate = _capabilities();
       final duplicateItems = duplicate['capabilities']! as List<Object?>;
-      duplicateItems[15] = Map<String, Object?>.from(
+      duplicateItems[duplicateItems.length - 1] = Map<String, Object?>.from(
         duplicateItems.first! as Map<String, Object?>,
       );
 

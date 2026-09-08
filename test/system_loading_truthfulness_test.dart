@@ -100,8 +100,9 @@ void main() {
         SystemSurfaceScreen.fromId(
           'loading',
           loadingPresentation: presentation,
-          onRetry: () {},
-          onSecondaryAction: () {},
+          onRetry: () => fail('generic retry must stay isolated from I8'),
+          onPrimaryAction: () => fail('generic primary must stay isolated'),
+          onSecondaryAction: () => fail('generic secondary must stay isolated'),
         ),
       );
       expect(find.text('当前加载'), findsOneWidget, reason: key);
@@ -123,6 +124,46 @@ void main() {
       );
     }
     semantics.dispose();
+  });
+
+  testWidgets('skeleton semantics expose no result facts or actions', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await pumpSystemSurface(
+        tester,
+        SystemSurfaceScreen.fromId(
+          'loading',
+          loadingPresentation: const LoopLoadingPresentation.list(
+            placeholderCount: 8,
+          ),
+          onRetry: () => fail('generic retry must stay isolated from I8'),
+          onPrimaryAction: () => fail('generic primary must stay isolated'),
+          onSecondaryAction: () => fail('generic secondary must stay isolated'),
+        ),
+      );
+
+      final skeleton = tester.getSemantics(find.byType(LoopSkeletonView));
+      expect(skeleton.label, '列表加载中');
+      expect(skeleton.flagsCollection.isLiveRegion, isTrue);
+      // A placeholder count is layout, never a result count or identity.
+      expect(find.textContaining('8'), findsNothing);
+      for (final claim in <String>['ETH', '价格', 'Provider', '条结果']) {
+        expect(find.textContaining(claim), findsNothing, reason: claim);
+      }
+      expect(
+        find.descendant(
+          of: find.byType(LoopSkeletonView),
+          matching: find.byType(Text),
+        ),
+        findsNothing,
+      );
+      expect(find.text('重试'), findsNothing);
+      expect(find.text('返回 LOOP'), findsNothing);
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('skeleton page remains usable at 2x text', (tester) async {

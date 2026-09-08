@@ -48,7 +48,7 @@ void main() {
         ),
         onMaintenanceRecheck: () => rechecks += 1,
         onMaintenanceStatus: () => status += 1,
-        onSecondaryAction: () => readOnly += 1,
+        onMaintenanceReadOnly: () => readOnly += 1,
       ),
     );
     expect(find.text('03:00–05:00 UTC'), findsOneWidget);
@@ -71,6 +71,73 @@ void main() {
     expect(find.text('ACTIVE'), findsOneWidget);
     expect(find.textContaining('UTC'), findsNothing);
     expect(find.text('再次检查'), findsNothing);
+  });
+
+  testWidgets('explicit notice never accepts generic system actions', (
+    tester,
+  ) async {
+    await pumpSystemSurface(
+      tester,
+      SystemSurfaceScreen.fromId(
+        'maintenance',
+        maintenanceNotice: const LoopMaintenanceNotice(
+          windowLabel: '03:00–05:00 UTC',
+        ),
+        onRetry: () =>
+            fail('generic retry must stay isolated from maintenance'),
+        onPrimaryAction: () => fail('generic primary must stay isolated'),
+        onSecondaryAction: () => fail('generic secondary must stay isolated'),
+      ),
+    );
+
+    expect(find.text('03:00–05:00 UTC'), findsOneWidget);
+    expect(find.text('再次检查'), findsNothing);
+    expect(find.text('查看服务状态'), findsNothing);
+    expect(find.text('查看只读内容'), findsNothing);
+    expect(find.text('返回 LOOP'), findsNothing);
+  });
+
+  testWidgets('read-only action requires its dedicated callback', (
+    tester,
+  ) async {
+    // The unknown state's generic return action never leaks into the
+    // explicit state, and the explicit action never appears without its own
+    // callback.
+    await pumpSystemSurface(
+      tester,
+      SystemSurfaceScreen.fromId(
+        'maintenance',
+        maintenanceNotice: const LoopMaintenanceNotice(),
+        onSecondaryAction: () => fail('generic secondary must stay isolated'),
+      ),
+    );
+    expect(find.text('查看只读内容'), findsNothing);
+
+    var readOnly = 0;
+    await pumpSystemSurface(
+      tester,
+      SystemSurfaceScreen.fromId(
+        'maintenance',
+        maintenanceNotice: const LoopMaintenanceNotice(),
+        onMaintenanceReadOnly: () => readOnly += 1,
+      ),
+    );
+    await tester.tap(find.text('查看只读内容'));
+    expect(readOnly, 1);
+
+    // The source-unavailable state keeps the generic return action.
+    var returns = 0;
+    await pumpSystemSurface(
+      tester,
+      SystemSurfaceScreen.fromId(
+        'maintenance',
+        onMaintenanceReadOnly: () => fail('read-only requires a notice'),
+        onSecondaryAction: () => returns += 1,
+      ),
+    );
+    expect(find.text('查看只读内容'), findsNothing);
+    await tester.tap(find.text('返回 LOOP'));
+    expect(returns, 1);
   });
 
   testWidgets('maintenance states remain usable at 2x text', (tester) async {

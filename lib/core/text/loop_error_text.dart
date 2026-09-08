@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-/// zh-CN copy for the frozen V2 error catalog (loop-api decision 0029).
+/// zh-CN copy for the frozen V2 error catalog (loop-api decision 0029,
+/// extended to 28 codes by decision 0030's two alias codes).
 ///
 /// The wire contract is `code` first; `userMessageKey` is the backend's
 /// localisation key (`errors.<family>.<name>`, `errors.internal` keeps its
@@ -39,6 +40,20 @@ abstract final class LoopErrorText {
       userMessageKey: 'errors.account.bootstrapRequired',
       title: '账号尚未初始化',
       message: '需要先完成 LOOP 账号引导才能继续。',
+      retryable: false,
+    ),
+    LoopErrorCopy(
+      code: 'ALIAS_BLOCKED',
+      userMessageKey: 'errors.alias.blocked',
+      title: '这个名称不可用',
+      message: '该名称在当前的运营名单内，请换一个再试。',
+      retryable: false,
+    ),
+    LoopErrorCopy(
+      code: 'ALIAS_RESERVED',
+      userMessageKey: 'errors.alias.reserved',
+      title: '这个名称已被保留',
+      message: '该名称属于 LOOP 保留词（如官方、支持、管理），请换一个再试。',
       retryable: false,
     ),
     LoopErrorCopy(
@@ -143,7 +158,7 @@ abstract final class LoopErrorText {
       code: 'POLICY_BLOCKED',
       userMessageKey: 'errors.policy.blocked',
       title: '被策略拦截',
-      message: '此操作被你或平台设置的策略拦截，可在安全中心查看规则。',
+      message: '此操作被当前生效的策略拦截。具体规则由发起该操作的功能说明。',
       retryable: false,
     ),
     LoopErrorCopy(

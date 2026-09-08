@@ -4,15 +4,17 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 
 void main() {
   test(
-    'catalog covers the 26 frozen V2 codes with errors.<family>.<name> keys',
+    'catalog covers the 28 frozen V2 codes with errors.<family>.<name> keys',
     () {
-      expect(LoopErrorText.catalog, hasLength(26));
+      expect(LoopErrorText.catalog, hasLength(28));
       expect(
         LoopErrorText.catalog.map((copy) => copy.code).toSet(),
-        hasLength(26),
+        hasLength(28),
       );
       expect(LoopErrorText.catalog.map((copy) => copy.code), <String>[
         'ACCOUNT_BOOTSTRAP_REQUIRED',
+        'ALIAS_BLOCKED',
+        'ALIAS_RESERVED',
         'AUTH_INVALID',
         'AUTH_REQUIRED',
         'AUTH_STEP_UP_REQUIRED',
@@ -100,5 +102,22 @@ void main() {
     expect(LoopErrorText.isKnownCode('INTERNAL_ERROR'), isTrue);
     expect(LoopErrorText.isKnownCode('INTERNAL'), isFalse);
     expect(LoopErrorText.unknown.message, isNot(contains('成功')));
+  });
+
+  test('alias and policy copy stay neutral and route-free', () {
+    expect(LoopErrorText.forCode('ALIAS_RESERVED').title, '这个名称已被保留');
+    expect(LoopErrorText.forCode('ALIAS_BLOCKED').title, '这个名称不可用');
+    for (final code in <String>['ALIAS_RESERVED', 'ALIAS_BLOCKED']) {
+      final copy = LoopErrorText.forCode(code);
+      expect(copy.retryable, isFalse, reason: code);
+      expect(
+        copy.userMessageKey,
+        'errors.alias.${code == 'ALIAS_RESERVED' ? 'reserved' : 'blocked'}',
+      );
+    }
+    // POLICY_BLOCKED must not send the user to a surface LOOP does not have.
+    final policy = LoopErrorText.forCode('POLICY_BLOCKED');
+    expect(policy.message, isNot(contains('安全中心')));
+    expect(policy.message, isNot(contains('设置')));
   });
 }

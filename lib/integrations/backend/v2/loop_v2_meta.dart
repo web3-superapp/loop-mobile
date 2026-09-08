@@ -186,6 +186,9 @@ final class LoopV2TermsGate {
   final String? reasonCode;
 }
 
+/// Capability IDs in the exact contract order of
+/// `loop-api/openapi/loop-api.v2.json`. `profile` and `avatarUpload` were
+/// added by loop-api decision 0030.
 enum LoopV2CapabilityId {
   privyAuthentication('privyAuthentication'),
   accountSession('accountSession'),
@@ -199,6 +202,8 @@ enum LoopV2CapabilityId {
   launch('launch'),
   mining('mining'),
   pushNotifications('pushNotifications'),
+  profile('profile'),
+  avatarUpload('avatarUpload'),
   pay('pay'),
   bridge('bridge'),
   dappExecution('dappExecution'),

@@ -85,15 +85,23 @@ void main() {
       SystemSurfaceScreen.fromId(
         'force-update',
         forceUpdateRequirement: const LoopForceUpdateRequirement(
-          minimumVersion: '1.2.0',
+          forceUpdateBelow: '1.2.0',
+          minimumSupportedVersion: '1.4.0',
         ),
         onForceUpdate: () => updates += 1,
-        onSecondaryAction: () {},
+        onRetry: () =>
+            fail('generic retry must stay isolated from force-update'),
+        onPrimaryAction: () => fail('generic primary must stay isolated'),
+        onSecondaryAction: () => fail('generic secondary must stay isolated'),
       ),
     );
     expect(find.text('请更新 LOOP 后继续'), findsOneWidget);
     expect(find.text('REQUIRED'), findsOneWidget);
+    // The two floors are labelled separately and never merged.
+    expect(find.text('强制更新下限'), findsOneWidget);
     expect(find.text('1.2.0'), findsOneWidget);
+    expect(find.text('最低支持版本'), findsOneWidget);
+    expect(find.text('1.4.0'), findsOneWidget);
     expect(find.text('返回 LOOP'), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('system-state-blocking')),
@@ -101,6 +109,28 @@ void main() {
     );
     await tester.tap(find.text('立即更新'));
     expect(updates, 1);
+  });
+
+  testWidgets('a policy without a soft floor shows only the hard floor', (
+    tester,
+  ) async {
+    await pumpSystemSurface(
+      tester,
+      const SystemSurfaceScreen.fromId(
+        'force-update',
+        forceUpdateRequirement: LoopForceUpdateRequirement(
+          forceUpdateBelow: '1.2.0',
+        ),
+      ),
+    );
+    expect(find.text('强制更新下限'), findsOneWidget);
+    expect(find.text('最低支持版本'), findsNothing);
+    // No reviewed store action: the update button must not appear.
+    expect(find.text('立即更新'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('force-update-store-unavailable')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('force-update dialog requires the same explicit evidence', (
@@ -115,7 +145,7 @@ void main() {
             onPressed: () => showLoopForceUpdateDialog(
               context,
               requirement: const LoopForceUpdateRequirement(
-                minimumVersion: '2.0.0',
+                forceUpdateBelow: '2.0.0',
               ),
               onUpdate: () => updates += 1,
             ),
@@ -127,7 +157,7 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     expect(find.text('请更新 LOOP 后继续'), findsOneWidget);
-    expect(find.textContaining('最低 2.0.0'), findsOneWidget);
+    expect(find.textContaining('强制更新下限 2.0.0'), findsOneWidget);
     await tester.tap(find.text('立即更新'));
     expect(updates, 1);
   });

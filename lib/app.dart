@@ -663,7 +663,8 @@ Widget _systemSurface(BuildContext context, WidgetRef ref, String id) {
     forceUpdateRequirement:
         version.decision == LoopVersionPolicyDecision.updateRequired
         ? LoopForceUpdateRequirement(
-            minimumVersion: version.forceUpdateBelow,
+            forceUpdateBelow: version.forceUpdateBelow,
+            minimumSupportedVersion: version.minimumVersion,
             configVersion: version.configVersion,
             storeUrl: version.storeUrl,
           )

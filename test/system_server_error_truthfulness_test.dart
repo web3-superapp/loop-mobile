@@ -48,7 +48,9 @@ void main() {
         ),
         onServiceRetry: () => retries += 1,
         onServiceSupport: () => support += 1,
-        onSecondaryAction: () {},
+        onRetry: () => fail('generic retry must stay isolated from I2'),
+        onPrimaryAction: () => fail('generic primary must stay isolated'),
+        onSecondaryAction: () => fail('generic secondary must stay isolated'),
       ),
     );
     expect(find.text('服务暂时不可用'), findsOneWidget);
@@ -75,6 +77,28 @@ void main() {
     expect(find.bySemanticsLabel(RegExp('结果未确认.*追踪号未提供')), findsOneWidget);
     expect(find.text('重试'), findsNothing);
     expect(find.text('联系客服'), findsNothing);
+  });
+
+  testWidgets('explicit observation never accepts generic system actions', (
+    tester,
+  ) async {
+    await pumpSystemSurface(
+      tester,
+      SystemSurfaceScreen.fromId(
+        'server-error',
+        serviceErrorObservation: const LoopServiceErrorObservation(
+          statusLabel: '502',
+        ),
+        onRetry: () => fail('generic retry must stay isolated from I2'),
+        onPrimaryAction: () => fail('generic primary must stay isolated'),
+        onSecondaryAction: () => fail('generic secondary must stay isolated'),
+      ),
+    );
+
+    expect(find.text('服务暂时不可用'), findsOneWidget);
+    expect(find.text('重试'), findsNothing);
+    expect(find.text('联系客服'), findsNothing);
+    expect(find.text('返回 LOOP'), findsNothing);
   });
 
   testWidgets('server-error states remain usable at 2x text', (tester) async {

@@ -51,7 +51,9 @@ void main() {
             ),
         onRegionContinue: () => continues += 1,
         onRegionPolicy: () => policy += 1,
-        onSecondaryAction: () {},
+        onRetry: () => fail('generic retry must stay isolated from region'),
+        onPrimaryAction: () => fail('generic primary must stay isolated'),
+        onSecondaryAction: () => fail('generic secondary must stay isolated'),
       ),
     );
     expect(find.text('部分功能在当前地区不可用'), findsOneWidget);
@@ -74,6 +76,53 @@ void main() {
     expect(find.text('RESTRICTED'), findsOneWidget);
     expect(find.textContaining('不列出未确认的可用范围'), findsOneWidget);
     expect(find.text('继续使用 LOOP'), findsNothing);
+  });
+
+  testWidgets('region actions appear independently and never generically', (
+    tester,
+  ) async {
+    var continues = 0;
+    var policyOpens = 0;
+    await pumpSystemSurface(
+      tester,
+      SystemSurfaceScreen.fromId(
+        'region-restricted',
+        featureAvailabilityRestriction:
+            const LoopFeatureAvailabilityRestriction(),
+        onRegionContinue: () => continues += 1,
+      ),
+    );
+    expect(find.text('查看资格政策'), findsNothing);
+    await tester.tap(find.text('继续使用 LOOP'));
+    expect(continues, 1);
+
+    await pumpSystemSurface(
+      tester,
+      SystemSurfaceScreen.fromId(
+        'region-restricted',
+        featureAvailabilityRestriction:
+            const LoopFeatureAvailabilityRestriction(),
+        onRegionPolicy: () => policyOpens += 1,
+      ),
+    );
+    expect(find.text('继续使用 LOOP'), findsNothing);
+    await tester.tap(find.text('查看资格政策'));
+    expect(policyOpens, 1);
+
+    await pumpSystemSurface(
+      tester,
+      SystemSurfaceScreen.fromId(
+        'region-restricted',
+        featureAvailabilityRestriction:
+            const LoopFeatureAvailabilityRestriction(),
+        onRetry: () => fail('generic retry must stay isolated from region'),
+        onPrimaryAction: () => fail('generic primary must stay isolated'),
+        onSecondaryAction: () => fail('generic secondary must stay isolated'),
+      ),
+    );
+    expect(find.text('继续使用 LOOP'), findsNothing);
+    expect(find.text('查看资格政策'), findsNothing);
+    expect(find.text('返回 LOOP'), findsNothing);
   });
 
   testWidgets('region states remain usable at 2x text', (tester) async {

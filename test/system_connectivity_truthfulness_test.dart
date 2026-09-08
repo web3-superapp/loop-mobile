@@ -26,6 +26,7 @@ void main() {
       SystemSurfaceScreen.fromId(
         'offline',
         onRetry: () => generic += 1,
+        onPrimaryAction: () => fail('generic primary must stay isolated'),
         onSecondaryAction: () => generic += 1,
       ),
     );
@@ -34,6 +35,9 @@ void main() {
     expect(find.text('当前设备离线'), findsNothing);
     expect(find.text('无法连接到服务器'), findsNothing);
     expect(find.text('重试'), findsNothing);
+    expect(find.text('LAST SYNC · 09:38'), findsNothing);
+    expect(find.text('部分故障（另一种态）'), findsNothing);
+    expect(find.textContaining('网络暂时不可用'), findsNothing);
     expect(find.byType(LoopConnectivityBanner), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('system-state-dismissible')),
@@ -62,8 +66,9 @@ void main() {
         tester,
         SystemSurfaceScreen.fromId(
           'offline',
-          connectivityScope: scope,
+          connectivityObservation: LoopConnectivityObservation(scope: scope),
           onRetry: () => retries += 1,
+          onPrimaryAction: () => fail('generic primary must stay isolated'),
           onSecondaryAction: () => continues += 1,
         ),
       );
@@ -71,6 +76,21 @@ void main() {
       expect(find.text(notice), findsWidgets, reason: scope.name);
       expect(find.text('连接状态未接入'), findsNothing, reason: scope.name);
       expect(find.text('返回 LOOP'), findsNothing, reason: scope.name);
+      // No lastSyncAt and no per-chain source: neither may be invented.
+      expect(
+        find.textContaining('LAST SYNC'),
+        findsNothing,
+        reason: scope.name,
+      );
+      await scrollPageTo(
+        tester,
+        find.byKey(const ValueKey<String>('partial-outage-source-unavailable')),
+      );
+      expect(
+        find.byKey(const ValueKey<String>('partial-outage-notice')),
+        findsNothing,
+        reason: scope.name,
+      );
       if (scope == LoopConnectivityScope.fullyOffline) {
         expect(find.byType(LoopEmpty), findsOneWidget);
         expect(find.text('OFFLINE'), findsOneWidget);
@@ -85,6 +105,52 @@ void main() {
       );
       expect(continues, 1, reason: scope.name);
     }
+  });
+
+  testWidgets('lastSyncAt and a named outage are shown only when supplied', (
+    tester,
+  ) async {
+    await pumpSystemSurface(
+      tester,
+      SystemSurfaceScreen.fromId(
+        'offline',
+        connectivityObservation: LoopConnectivityObservation(
+          scope: LoopConnectivityScope.fullyOffline,
+          lastSyncAt: DateTime(2026, 9, 7, 9, 38),
+          partialOutage: const LoopPartialOutage(networkLabel: 'BSC'),
+        ),
+      ),
+    );
+
+    expect(find.text('LAST SYNC · 09:38'), findsOneWidget);
+    expect(find.text('DEVICE OFFLINE'), findsNothing);
+    await scrollPageTo(
+      tester,
+      find.byKey(const ValueKey<String>('partial-outage-notice')),
+    );
+    expect(find.text('部分故障（另一种态）'), findsOneWidget);
+    expect(find.text('BSC 网络暂时不可用'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('partial-outage-source-unavailable')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('offline without lastSyncAt states the device state only', (
+    tester,
+  ) async {
+    await pumpSystemSurface(
+      tester,
+      SystemSurfaceScreen.fromId(
+        'offline',
+        connectivityObservation: const LoopConnectivityObservation(
+          scope: LoopConnectivityScope.fullyOffline,
+        ),
+      ),
+    );
+
+    expect(find.text('DEVICE OFFLINE'), findsOneWidget);
+    expect(find.textContaining('LAST SYNC'), findsNothing);
   });
 
   testWidgets('connectivity banner announces and retries', (tester) async {
@@ -108,22 +174,24 @@ void main() {
   });
 
   testWidgets('offline states remain usable at 2x text', (tester) async {
-    for (final scope in <LoopConnectivityScope?>[
+    for (final observation in <LoopConnectivityObservation?>[
       null,
-      LoopConnectivityScope.fullyOffline,
+      const LoopConnectivityObservation(
+        scope: LoopConnectivityScope.fullyOffline,
+      ),
     ]) {
       await pumpSystemSurface(
         tester,
         SystemSurfaceScreen.fromId(
           'offline',
-          connectivityScope: scope,
+          connectivityObservation: observation,
           onRetry: () {},
           onSecondaryAction: () {},
         ),
         textScale: 2,
       );
       expect(tester.takeException(), isNull);
-      final action = find.text(scope == null ? '返回 LOOP' : '查看缓存内容');
+      final action = find.text(observation == null ? '返回 LOOP' : '查看缓存内容');
       await tester.ensureVisible(action);
       await tester.tap(action);
     }

@@ -35,9 +35,22 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
   static final RegExp configVersionPattern = RegExp(
     r'^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$',
   );
+
+  /// `POLICY_NOT_YET_EFFECTIVE` means a complete policy exists but its
+  /// `effectiveAt` is still in the future (loop-api decision 0029). Both
+  /// values are accepted and the observed one is passed through unchanged.
+  static const policyNotYetEffectiveReason = 'POLICY_NOT_YET_EFFECTIVE';
   static const versionGateUnavailableReason =
       'CLIENT_VERSION_POLICY_UNAVAILABLE';
   static const termsGateUnavailableReason = 'TERMS_POLICY_UNAVAILABLE';
+  static const versionGateUnavailableReasons = <String>{
+    versionGateUnavailableReason,
+    policyNotYetEffectiveReason,
+  };
+  static const termsGateUnavailableReasons = <String>{
+    termsGateUnavailableReason,
+    policyNotYetEffectiveReason,
+  };
 
   static const _metaErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
@@ -206,16 +219,16 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
           gate['storeUrls'],
           const <String>{'ios', 'android'},
         );
+        final reasonCode = gate['reasonCode'];
         if (minimums['ios'] != null ||
             minimums['android'] != null ||
             storeUrls['ios'] != null ||
             storeUrls['android'] != null ||
-            gate['reasonCode'] != versionGateUnavailableReason) {
+            reasonCode is! String ||
+            !versionGateUnavailableReasons.contains(reasonCode)) {
           throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
         }
-        return const LoopV2VersionGate.unavailable(
-          reasonCode: versionGateUnavailableReason,
-        );
+        return LoopV2VersionGate.unavailable(reasonCode: reasonCode);
       case LoopV2VersionGateStatus.available:
         final gate = LoopV2Contract.strictMap(value, const <String>{
           'status',
@@ -286,14 +299,16 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
     final requiredVersion = gate['requiredVersion'];
     switch (status) {
       case LoopV2TermsGateStatus.unavailable:
+        final reasonCode = gate['reasonCode'];
         if (requiredVersion != null ||
-            gate['reasonCode'] != termsGateUnavailableReason) {
+            reasonCode is! String ||
+            !termsGateUnavailableReasons.contains(reasonCode)) {
           throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
         }
-        return const LoopV2TermsGate(
+        return LoopV2TermsGate(
           status: LoopV2TermsGateStatus.unavailable,
           requiredVersion: null,
-          reasonCode: termsGateUnavailableReason,
+          reasonCode: reasonCode,
         );
       case LoopV2TermsGateStatus.available:
         if (requiredVersion is! String ||
@@ -410,12 +425,14 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
   }
 
   /// RFC 3339 date-time with an explicit timezone, normalised to UTC. The
-  /// backend emits UTC; an offset is accepted, a local (zone-less) value is not.
+  /// backend emits UTC; an offset is accepted, a local (zone-less) value is
+  /// not. RFC 3339 allows the lowercase `t` / `z` spellings, so the value is
+  /// upper-cased before parsing (`DateTime.parse` only accepts `T`).
   DateTime _utcDateTime(Object? value) {
     if (value is! String || !_explicitZonePattern.hasMatch(value)) {
       throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
     }
-    final parsed = DateTime.tryParse(value);
+    final parsed = DateTime.tryParse(value.toUpperCase());
     if (parsed == null || !parsed.isUtc) {
       throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
     }
@@ -423,6 +440,6 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
   }
 
   static final RegExp _explicitZonePattern = RegExp(
-    r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$',
+    r'^\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[Zz]|[+-]\d{2}:\d{2})$',
   );
 }
