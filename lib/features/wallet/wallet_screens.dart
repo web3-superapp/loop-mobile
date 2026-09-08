@@ -1,4 +1,4 @@
-export 'bridge_preview_snapshot.dart';
+export 'deferred_screens.dart';
 export 'send_screens.dart';
 export 'swap_preview_snapshot.dart';
 export 'trade_screens.dart';

@@ -711,16 +711,22 @@ GoRouter _buildRouter(
         builder: (context, state) =>
             SwapRouteScreen(snapshot: state.extra! as SwapPreviewSnapshot),
       ),
+      // D21: `bridge` and `bridge-status` are entry points only. The status
+      // page is reachable on its own because there is nothing to carry into
+      // it: all three steps are pending and none of them has a source.
       GoRoute(
         path: '/wallet/bridge',
-        builder: (context, state) => const BridgeScreen(),
+        builder: (context, state) => BridgeScreen(
+          onBack: () => _popOrHome(context),
+          onOpenStatus: () => context.push('/wallet/bridge/status'),
+        ),
       ),
       GoRoute(
         path: '/wallet/bridge/status',
-        redirect: (context, state) =>
-            state.extra is BridgePreviewSnapshot ? null : '/wallet/bridge',
-        builder: (context, state) =>
-            BridgeStatusScreen(snapshot: state.extra! as BridgePreviewSnapshot),
+        builder: (context, state) => BridgeStatusScreen(
+          onBack: () => _popOrHome(context),
+          onOpenWallet: () => context.go(LoopRouteManifest.pathFor('wallet')),
+        ),
       ),
       // Manifest `tx-result` (legacy `/wallet/transaction`).
       GoRoute(
@@ -741,7 +747,8 @@ GoRouter _buildRouter(
       ),
       GoRoute(
         path: '/wallet/dapp',
-        builder: (context, state) => const DappBrowserScreen(),
+        builder: (context, state) =>
+            DappReviewScreen(onBack: () => _popOrHome(context)),
       ),
       GoRoute(
         path: '/preview/approval',
@@ -790,12 +797,12 @@ GoRouter _buildRouter(
         ),
       ),
       ..._systemRoutes,
-      // Manifest `pay`: informational unavailable surface (fail closed).
+      // Manifest `pay`: reached from Wallet, unavailable with the server's own
+      // `PAY_RUNTIME_DEFERRED` (fail closed).
       GoRoute(
         path: '/pay',
-        builder: (context, state) => LoopPendingSurface.unavailable(
-          entry: LoopRouteManifest.bySlug('pay'),
-        ),
+        builder: (context, state) =>
+            PayScreen(onBack: () => _popOrHome(context)),
       ),
       ..._pendingManifestRoutes,
       // Illegal locations are recorded and land on Community.
@@ -883,6 +890,7 @@ final List<RouteBase> _profileRoutes =
           ('/profile/privacy', 'privacy'),
           ('/profile/security', 'security'),
           ('/profile/devices', 'devices'),
+          ('/profile/key-export', 'key-export'),
           ('/profile/social-recovery', 'social-recovery'),
           ('/profile/notifications', 'notif-settings'),
           ('/profile/settings', 'settings'),
@@ -1086,7 +1094,9 @@ String _profilePath(String id) => switch (id) {
   'copytrade-perms' => LoopRouteManifest.pathFor('privacy'),
   'security' => LoopRouteManifest.pathFor('security'),
   'devices' => LoopRouteManifest.pathFor('devices'),
+  'key-export' => LoopRouteManifest.pathFor('key-export'),
   'social-recovery' => LoopRouteManifest.pathFor('social-recovery'),
+  'networks' => LoopRouteManifest.pathFor('networks'),
   'notif-settings' => LoopRouteManifest.pathFor('notif-settings'),
   'connections' => LoopRouteManifest.pathFor('connections'),
   'blocklist' => LoopRouteManifest.pathFor('blocklist'),

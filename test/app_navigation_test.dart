@@ -9,7 +9,6 @@ import 'package:loop_mobile/features/chat/chat_content.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
-import 'package:loop_mobile/features/wallet/bridge_preview_snapshot.dart';
 import 'package:loop_mobile/features/wallet/swap_preview_snapshot.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
@@ -231,7 +230,7 @@ void main() {
     expect(find.text(SwapPreviewSnapshot.demo.receiveLabel), findsOneWidget);
   });
 
-  testWidgets('Bridge status route requires the exact typed snapshot', (
+  testWidgets('Bridge status is reachable on its own and stays pending', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -247,24 +246,21 @@ void main() {
     await tester.pumpAndSettle();
 
     final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
+    // D21: there is no bridge intent to carry into the status page, so the
+    // route no longer demands one; all three steps are pending with no source.
     router.go('/wallet/bridge/status');
-    await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path, '/wallet/bridge');
-
-    router.go('/wallet/bridge/status', extra: 'wrong Bridge snapshot type');
-    await tester.pumpAndSettle();
-    expect(router.routeInformationProvider.value.uri.path, '/wallet/bridge');
-
-    final claimSnapshot = BridgePreviewSnapshot.demo.withNeedsClaim(true);
-    router.go('/wallet/bridge/status', extra: claimSnapshot);
     await tester.pumpAndSettle();
     expect(
       router.routeInformationProvider.value.uri.path,
       '/wallet/bridge/status',
     );
-    expect(find.text(claimSnapshot.sourceConfirmationLabel), findsOneWidget);
-    expect(find.text(claimSnapshot.destinationStepDetail), findsOneWidget);
-    expect(find.text('Manual claim required'), findsOneWidget);
+    expect(find.text('没有可跟踪的跨链'), findsOneWidget);
+    for (final step in <String>['源链确认', '中继处理', '目标链到账']) {
+      expect(find.text(step), findsOneWidget, reason: step);
+    }
+    expect(find.text('等待'), findsNWidgets(3));
+    expect(find.text('进行中'), findsNothing);
+    expect(find.text('完成'), findsNothing);
   });
 
   testWidgets('communication preview is persistently identified as offline', (

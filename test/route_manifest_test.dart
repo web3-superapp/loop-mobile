@@ -263,8 +263,8 @@ void main() {
       // S2 connected `/auth/otp` and `/auth/loop-id`; S3 connected
       // `community-discover`, `community-profile` and `community-members`;
       // S4 connected `community-chat`, `community-ai`, `chat-forward` and
-      // `chat-merge-preview`.
-      expect(pending, hasLength(16));
+      // `chat-merge-preview`; S8 connected `key-export`.
+      expect(pending, hasLength(15));
       expect(
         LoopRouteManifest.bySlug('auth-otp').status,
         LoopRouteStatus.implemented,
@@ -281,6 +281,7 @@ void main() {
         'community-ai',
         'chat-forward',
         'chat-merge-preview',
+        'key-export',
       ]) {
         expect(
           LoopRouteManifest.bySlug(slug).status,
@@ -293,7 +294,6 @@ void main() {
       for (final entry in <LoopRouteEntry>[
         LoopRouteManifest.bySlug('launch-trade'),
         LoopRouteManifest.bySlug('mining-rules'),
-        LoopRouteManifest.bySlug('key-export'),
         LoopRouteManifest.bySlug('launch-apply'),
       ]) {
         router.go(entry.path);
@@ -331,8 +331,15 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(router.routeInformationProvider.value.uri.path, '/pay');
-      expect(find.text(LoopPendingSurface.unavailableHeadline), findsOneWidget);
-      expect(find.textContaining('Pay 尚未开放'), findsOneWidget);
+      expect(
+        LoopRouteManifest.bySlug('pay').status,
+        LoopRouteStatus.unavailable,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('pay-unavailable')),
+        findsOneWidget,
+      );
+      expect(find.text('Pay 尚未开放'), findsOneWidget);
       expect(find.byType(FilledButton), findsNothing);
       expect(find.byType(OutlinedButton), findsNothing);
       expect(find.byType(TextField), findsNothing);

@@ -922,7 +922,7 @@ abstract final class LoopRouteManifest {
       title: '私钥导出',
       prototypeOrder: 74,
       step: 8,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'social-recovery',

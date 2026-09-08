@@ -1,85 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
-import 'package:loop_mobile/features/wallet/wallet_readiness.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:uuid/uuid.dart';
-
-class DappBrowserScreen extends ConsumerStatefulWidget {
-  const DappBrowserScreen({super.key});
-
-  @override
-  ConsumerState<DappBrowserScreen> createState() => _DappBrowserScreenState();
-}
-
-class _DappBrowserScreenState extends ConsumerState<DappBrowserScreen> {
-  final controller = TextEditingController(text: 'app.uniswap.org');
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final readiness = WalletReadiness.fromSession(
-      ref.watch(loopSessionProvider),
-    );
-    final typedDomain = controller.text.trim();
-    return LoopPage(
-      title: 'DApp browser',
-      eyebrow: '开发预览',
-      subtitle: 'Local domain layout only. Embedded browsing and wallet injection remain disabled.',
-      children: <Widget>[
-        TextField(
-          controller: controller,
-          onChanged: (_) => setState(() {}),
-          keyboardType: TextInputType.url,
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.lock_outline_rounded),
-            suffixIcon: Icon(Icons.refresh_rounded),
-          ),
-        ),
-        const SizedBox(height: 14),
-        const LoopStateCard(
-          title: 'Browser and injection unavailable',
-          message: 'The typed domain is not trusted, opened, resolved, or connected to a wallet.',
-          icon: Icons.language_rounded,
-          tone: LoopTone.warning,
-        ),
-        const LoopSectionLabel('Before connecting'),
-        LoopCard(
-          child: Column(
-            children: <Widget>[
-              LoopKeyValueRow(
-                label: 'Typed preview domain',
-                value: typedDomain.isEmpty ? 'Unavailable' : typedDomain,
-              ),
-              LoopKeyValueRow(
-                label: 'Current wallet identity',
-                value: readiness.canCopy
-                    ? readiness.ethereumAddress!
-                    : 'Unavailable',
-              ),
-              const LoopKeyValueRow(
-                label: 'Wallet injection',
-                value: 'Unavailable',
-              ),
-              const LoopKeyValueRow(
-                label: 'Granted permissions',
-                value: 'None',
-                last: true,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class ApprovalInterceptScreen extends StatefulWidget {
   const ApprovalInterceptScreen({super.key});

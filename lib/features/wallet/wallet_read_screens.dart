@@ -239,6 +239,18 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               LoopRecordRow(
+                key: const ValueKey<String>('wallet-security-entry'),
+                title: '安全中心',
+                subtitle: '设备、会话与账户保护',
+                onTap: () => _open('/profile/security'),
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('wallet-dapp-entry'),
+                title: 'DApp 核对',
+                subtitle: '本地核对网址；连接与签名尚未开放',
+                onTap: () => _open('/wallet/dapp'),
+              ),
+              LoopRecordRow(
                 key: const ValueKey<String>('wallet-networks-entry'),
                 title: '网络与 RPC',
                 subtitle: '只有 BNB Smart Chain 一条网络',

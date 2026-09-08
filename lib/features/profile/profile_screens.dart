@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/profile/about/about_screen.dart';
 import 'package:loop_mobile/features/profile/notification_preferences/notification_preferences_screen.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
+import 'package:loop_mobile/features/profile/security/security_screens.dart';
+import 'package:loop_mobile/features/profile/settings/settings_screen.dart';
+import 'package:loop_mobile/features/profile/support/support_screen.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 
 @immutable
@@ -75,6 +77,7 @@ class ProfileSurfaceScreen extends StatelessWidget {
     'copytrade-perms',
     'security',
     'devices',
+    'key-export',
     'social-recovery',
     'notif-settings',
     'connections',
@@ -120,22 +123,20 @@ class ProfileSurfaceScreen extends StatelessWidget {
       'profile-edit' => ProfileEditScreen(onNavigate: navigate, onBack: onBack),
       'privacy' => PrivacyCenterScreen(onNavigate: navigate, onBack: onBack),
       'copytrade-perms' => const _CopyTradePermissions(),
-      'security' => _SecurityCenter(
-        capabilities: capabilities,
-        onNavigate: navigate,
-      ),
-      'devices' => _DeviceManagement(
-        capabilityAvailable: capabilities.deviceManagementAvailable,
-      ),
-      'social-recovery' => _SocialRecovery(
-        capabilityAvailable: capabilities.socialRecoveryAvailable,
-      ),
+      'security' => SecurityCenterScreen(onNavigate: navigate, onBack: onBack),
+      'devices' => DeviceManagementScreen(onBack: onBack),
+      'key-export' => KeyExportScreen(onBack: onBack),
+      'social-recovery' => SocialRecoveryScreen(onBack: onBack),
       'notif-settings' => NotificationPreferencesScreen(onBack: onBack),
       'connections' => const _ConnectionsScreen(),
       'blocklist' => const _BlocklistScreen(),
-      'settings' => const _GeneralSettings(),
-      'about' => const _AboutAndLegal(),
-      'support' => const _SupportScreen(),
+      'settings' => GeneralSettingsScreen(
+        onNavigate: navigate,
+        onBack: onBack,
+        onSignOut: onSignOut,
+      ),
+      'about' => AboutScreen(onBack: onBack),
+      'support' => SupportScreen(onNavigate: navigate, onBack: onBack),
       'mining' => const _ComingLaterScreen(
         eyebrow: 'MINING & REWARDS',
         title: 'Rewards are coming later',
@@ -182,160 +183,6 @@ class _CopyTradePermissions extends StatelessWidget {
   }
 }
 
-class _SecurityCenter extends StatelessWidget {
-  const _SecurityCenter({required this.capabilities, required this.onNavigate});
-
-  final PrivyProfileCapabilities capabilities;
-  final ValueChanged<String> onNavigate;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: 'SECURITY',
-      title: 'Protect the account',
-      subtitle: 'Capability availability is shown separately from enrollment and account status.',
-      children: <Widget>[
-        const LoopStateCard(
-          key: ValueKey<String>('protection-status-unavailable'),
-          title: 'Protection status is not connected',
-          message: 'No provider-backed enrollment state was loaded. This page does not claim that MFA, app lock, or a recovery method is configured.',
-          icon: Icons.policy_outlined,
-          tone: LoopTone.warning,
-        ),
-        const LoopSectionLabel('Account protection'),
-        _SettingsGroup(
-          children: <Widget>[
-            _SettingsTile(
-              icon: Icons.verified_user_outlined,
-              title: 'Wallet multi-factor authentication',
-              detail: capabilities.mfaAvailable
-                  ? 'Wallet capability is available; enrollment status is unknown.'
-                  : 'Wallet capability is not available in this build.',
-              trailing: _CapabilityPill(available: capabilities.mfaAvailable),
-              onTap: null,
-            ),
-            _SettingsTile(
-              icon: Icons.lock_outline_rounded,
-              title: 'App lock',
-              detail: capabilities.appLockAvailable
-                  ? 'Capability is available; enrollment status is unknown.'
-                  : 'Capability is not available on this device.',
-              trailing: _CapabilityPill(
-                available: capabilities.appLockAvailable,
-              ),
-              onTap: null,
-            ),
-            _SettingsTile(
-              icon: Icons.devices_other_outlined,
-              title: 'Devices & sessions',
-              detail: capabilities.deviceManagementAvailable
-                  ? 'Capability is available; session data is not connected.'
-                  : 'Session management is unavailable.',
-              trailing: _CapabilityPill(
-                available: capabilities.deviceManagementAvailable,
-              ),
-              onTap: () => onNavigate('devices'),
-              last: true,
-            ),
-          ],
-        ),
-        const LoopSectionLabel('Recovery'),
-        _SettingsGroup(
-          children: <Widget>[
-            _SettingsTile(
-              icon: Icons.vpn_key_outlined,
-              title: '导出私钥',
-              detail: capabilities.privateKeyExportAvailable
-                  ? '能力可用；导出流程仍需要一次显式授权。'
-                  : '当前构建没有可用的私钥导出通道。LOOP 不使用助记词。',
-              trailing: _CapabilityPill(
-                available: capabilities.privateKeyExportAvailable,
-              ),
-              onTap: null,
-            ),
-            _SettingsTile(
-              icon: Icons.group_outlined,
-              title: 'Social recovery',
-              detail: capabilities.socialRecoveryAvailable
-                  ? 'Capability is available; enrollment status is unknown.'
-                  : 'Capability is not available for this wallet.',
-              trailing: _CapabilityPill(
-                available: capabilities.socialRecoveryAvailable,
-              ),
-              onTap: () => onNavigate('social-recovery'),
-              last: true,
-            ),
-          ],
-        ),
-        const LoopSectionLabel('Recent sign-ins'),
-        const LoopStateCard(
-          key: ValueKey<String>('recent-sign-ins-unavailable'),
-          title: 'Recent sign-ins are not connected',
-          message: 'No device or location history was loaded, so this screen does not show sample sessions as account activity.',
-          icon: Icons.devices_other_outlined,
-          tone: LoopTone.warning,
-        ),
-      ],
-    );
-  }
-}
-
-class _DeviceManagement extends StatelessWidget {
-  const _DeviceManagement({required this.capabilityAvailable});
-
-  final bool capabilityAvailable;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: 'SESSIONS',
-      title: 'Devices with access',
-      subtitle: 'Session history and revocation require provider-backed account data.',
-      children: <Widget>[
-        LoopStateCard(
-          key: const ValueKey<String>('device-management-unavailable'),
-          title: capabilityAvailable
-              ? 'Session data is not connected'
-              : 'Session controls unavailable',
-          message: capabilityAvailable
-              ? 'The account may support session management, but no reviewed device list or revocation adapter is available in this build.'
-              : 'Device access cannot be read or changed right now. Your current session is unchanged.',
-          icon: Icons.phonelink_erase_outlined,
-          tone: LoopTone.warning,
-        ),
-      ],
-    );
-  }
-}
-
-class _SocialRecovery extends StatelessWidget {
-  const _SocialRecovery({required this.capabilityAvailable});
-
-  final bool capabilityAvailable;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: 'SOCIAL RECOVERY',
-      title: 'Two of three guardians',
-      subtitle: 'Guardian configuration requires provider-backed wallet recovery data.',
-      children: <Widget>[
-        LoopStateCard(
-          key: const ValueKey<String>('social-recovery-unavailable'),
-          title: capabilityAvailable
-              ? 'Guardian data is not connected'
-              : 'Social recovery unavailable',
-          message: capabilityAvailable
-              ? 'The wallet may support social recovery, but no reviewed guardian list or invitation adapter is available in this build.'
-              : 'This wallet has not confirmed guardian-based recovery. No invitations can be sent.',
-          icon: Icons.group_off_outlined,
-          tone: LoopTone.warning,
-        ),
-      ],
-    );
-  }
-}
-
 class _ConnectionsScreen extends StatelessWidget {
   const _ConnectionsScreen();
 
@@ -375,270 +222,6 @@ class _BlocklistScreen extends StatelessWidget {
           message: 'No block records were loaded and this build will not pretend a local removal changed an account-level rule.',
           icon: Icons.block_outlined,
           tone: LoopTone.warning,
-        ),
-      ],
-    );
-  }
-}
-
-class _GeneralSettings extends ConsumerWidget {
-  const _GeneralSettings();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final preferences = ref.watch(loopDisplayPreferencesProvider);
-    final persistenceDetail = switch (preferences.persistence) {
-      LoopDisplayPreferencesPersistence.available =>
-        'Stored locally when changed; no account or backend is used',
-      LoopDisplayPreferencesPersistence.saving =>
-        'Applied now and saving locally on this device',
-      LoopDisplayPreferencesPersistence.unavailable =>
-        'Applied for this app run; local saving is unavailable',
-    };
-    return LoopPage(
-      eyebrow: 'GENERAL',
-      title: 'Settings',
-      subtitle: 'Local display controls that work without an account service.',
-      children: <Widget>[
-        _SwitchSetting(
-          key: const ValueKey<String>('reduce-motion-setting'),
-          icon: Icons.motion_photos_off_outlined,
-          title: 'Reduce motion',
-          detail: persistenceDetail,
-          value: preferences.reduceMotion,
-          onChanged: ref
-              .read(loopDisplayPreferencesProvider.notifier)
-              .setReduceMotion,
-        ),
-        if (preferences.persistence ==
-            LoopDisplayPreferencesPersistence.unavailable)
-          LoopStateCard(
-            key: const ValueKey<String>('display-preferences-unavailable'),
-            title: 'Local storage unavailable',
-            message: 'Reduce motion still applies for this app run. Retry checks local storage again without using an account or backend.',
-            icon: Icons.save_outlined,
-            tone: LoopTone.warning,
-            action: OutlinedButton(
-              key: const ValueKey<String>('retry-display-preferences'),
-              onPressed: ref
-                  .read(loopDisplayPreferencesProvider.notifier)
-                  .retryPersistence,
-              child: const Text('Retry local storage'),
-            ),
-          ),
-        const LoopSectionLabel('Current build'),
-        const _SettingsGroup(
-          children: <Widget>[
-            _SettingsTile(
-              icon: Icons.language_rounded,
-              title: 'Language',
-              detail: 'Build-defined copy; localization is not connected',
-              onTap: null,
-            ),
-            _SettingsTile(
-              icon: Icons.attach_money_rounded,
-              title: 'Display currency',
-              detail: 'No conversion; markets show their actual quote asset',
-              onTap: null,
-            ),
-            _SettingsTile(
-              icon: Icons.dark_mode_outlined,
-              title: 'Theme',
-              detail: 'Dark design system only in this build',
-              onTap: null,
-              last: true,
-            ),
-          ],
-        ),
-        const SizedBox(height: 18),
-        const _PrivacyFootnote(
-          text: 'Reduce motion is a non-sensitive device preference and always respects a stricter system accessibility setting. It is not tied to an account, and no backend request is made.',
-        ),
-      ],
-    );
-  }
-}
-
-class _AboutAndLegal extends StatelessWidget {
-  const _AboutAndLegal();
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: 'ABOUT LOOP',
-      title: 'Clear terms, one place',
-      subtitle: 'Review the rules and risks that apply before using wallet or trading features.',
-      children: <Widget>[
-        LoopCard(
-          accent: true,
-          tone: LoopTone.positive,
-          child: Row(
-            children: <Widget>[
-              const _LoopMark(),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'LOOP mobile',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Version 0.1.0 (1)',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-              const LoopStatusPill(label: 'Current', tone: LoopTone.positive),
-            ],
-          ),
-        ),
-        const LoopSectionLabel('Legal'),
-        _SettingsGroup(
-          children: <Widget>[
-            const _DocumentTile(
-              title: 'Terms of use',
-              detail: 'Document not included in this build',
-            ),
-            const _DocumentTile(
-              title: 'Privacy policy',
-              detail: 'Document not included in this build',
-            ),
-            const _DocumentTile(
-              title: 'Trading risk disclosure',
-              detail: 'Document not included; Spot execution is disabled',
-            ),
-            _DocumentTile(
-              title: 'Open-source licenses',
-              detail: 'Licenses registered by the running Flutter build',
-              onTap: () => showLicensePage(
-                context: context,
-                applicationName: 'LOOP',
-                applicationVersion: '0.1.0 (1)',
-              ),
-              last: true,
-            ),
-          ],
-        ),
-        const SizedBox(height: 18),
-        const _PrivacyFootnote(
-          text: 'Availability of wallet and trading features may vary by account, product, and region.',
-        ),
-      ],
-    );
-  }
-}
-
-class _SupportScreen extends StatefulWidget {
-  const _SupportScreen();
-
-  @override
-  State<_SupportScreen> createState() => _SupportScreenState();
-}
-
-class _SupportScreenState extends State<_SupportScreen> {
-  static const _articles = <({String title, String answer, String keywords})>[
-    (
-      title: 'Why does Chat say Stream not connected?',
-      answer: 'A Stream API key is public configuration, not user authorization. Production Chat needs the LOOP backend to validate Privy and issue a server-derived Stream user ID plus short-lived user token. Use Loop (Preview) to inspect labelled offline cells and rooms.',
-      keywords: 'chat stream token preview user id 聊天 未连接',
-    ),
-    (
-      title: 'What does the Spot market show?',
-      answer: 'It shows public, read-only Hyperliquid Testnet spot marks and 24-hour volume. These discovery facts are not executable quotes and the app cannot place an order from this feed.',
-      keywords: 'spot market hyperliquid testnet price volume 现货 行情',
-    ),
-    (
-      title: 'Why can’t I access a wallet action?',
-      answer: 'Wallet creation and signing require an authenticated Privy capability for the current account and device. Preview never creates a real wallet or signs an action.',
-      keywords: 'wallet privy sign preview 钱包 签名',
-    ),
-    (
-      title: 'How do I recover my account?',
-      answer: 'Open Security center to see only the recovery capabilities confirmed for the current wallet. LOOP does not invent a recovery phrase or guardian state.',
-      keywords: 'security recover account phrase guardian 安全 恢复',
-    ),
-    (
-      title: 'How do I report a suspicious message?',
-      answer: 'Production reporting is unavailable until server-authorized Stream moderation is connected. Do not share a recovery phrase, private key, or one-time code with anyone claiming to be support.',
-      keywords: 'report suspicious message scam moderation 举报 可疑 消息',
-    ),
-  ];
-
-  String _query = '';
-
-  @override
-  Widget build(BuildContext context) {
-    final normalized = _query.trim().toLowerCase();
-    final articles = _articles
-        .where((article) {
-          if (normalized.isEmpty) return true;
-          return '${article.title} ${article.answer} ${article.keywords}'
-              .toLowerCase()
-              .contains(normalized);
-        })
-        .toList(growable: false);
-    return LoopPage(
-      eyebrow: 'HELP · BUNDLED LOCALLY',
-      title: 'Find an answer first',
-      subtitle: 'LOOP support will never ask for a recovery phrase, private key, or one-time code.',
-      children: <Widget>[
-        TextField(
-          key: const ValueKey<String>('local-help-search'),
-          onChanged: (value) => setState(() => _query = value),
-          decoration: const InputDecoration(
-            hintText: 'Search local help',
-            prefixIcon: Icon(Icons.search_rounded),
-          ),
-        ),
-        LoopSectionLabel('Local answers · ${articles.length}'),
-        if (articles.isEmpty)
-          const LoopStateCard(
-            key: ValueKey<String>('local-help-empty'),
-            title: 'No local answer found',
-            message: 'Try Stream, Spot, wallet, recovery, or report. Online support is not connected.',
-            icon: Icons.search_off_rounded,
-          )
-        else
-          LoopCard(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Column(
-              children: <Widget>[
-                for (final article in articles)
-                  Material(
-                    type: MaterialType.transparency,
-                    child: ExpansionTile(
-                      key: ValueKey<String>('help-${article.title}'),
-                      title: Text(article.title),
-                      children: <Widget>[
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                          child: Text(article.answer),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        const LoopSectionLabel('Contact'),
-        const LoopStateCard(
-          title: 'Online support is not connected',
-          message: 'No request will be submitted from this build. Never put secret wallet information into an unverified support channel.',
-          icon: Icons.support_agent_rounded,
-          tone: LoopTone.warning,
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: null,
-            icon: const Icon(Icons.support_agent_rounded),
-            label: const Text('Contact unavailable'),
-          ),
         ),
       ],
     );
@@ -735,126 +318,6 @@ class _UnknownProfileScreen extends StatelessWidget {
   }
 }
 
-class _SettingsGroup extends StatelessWidget {
-  const _SettingsGroup({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      child: Column(children: children),
-    );
-  }
-}
-
-class _SettingsTile extends StatelessWidget {
-  const _SettingsTile({
-    required this.icon,
-    required this.title,
-    required this.detail,
-    required this.onTap,
-    this.trailing,
-    this.last = false,
-  });
-
-  final IconData icon;
-  final String title;
-  final String detail;
-  final VoidCallback? onTap;
-  final Widget? trailing;
-  final bool last;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: onTap != null,
-      enabled: onTap != null,
-      label: '$title. $detail',
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 68),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            border: last
-                ? null
-                : const Border(bottom: BorderSide(color: LoopColors.line)),
-          ),
-          child: Row(
-            children: <Widget>[
-              Icon(icon, size: 21, color: LoopColors.vapor),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(title, style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 3),
-                    Text(detail, style: Theme.of(context).textTheme.bodyMedium),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              trailing ??
-                  (onTap == null
-                      ? const LoopStatusPill(
-                          label: 'Unavailable',
-                          tone: LoopTone.neutral,
-                        )
-                      : const Icon(
-                          Icons.chevron_right_rounded,
-                          color: LoopColors.vapor,
-                        )),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SwitchSetting extends StatelessWidget {
-  const _SwitchSetting({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.detail,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final IconData icon;
-  final String title;
-  final String detail;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopCard(
-      child: Row(
-        children: <Widget>[
-          Icon(icon, color: value ? LoopColors.mint : LoopColors.vapor),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text(detail, style: Theme.of(context).textTheme.bodyMedium),
-              ],
-            ),
-          ),
-          Switch(value: value, onChanged: onChanged),
-        ],
-      ),
-    );
-  }
-}
-
 class _PrivacyFootnote extends StatelessWidget {
   const _PrivacyFootnote({
     this.text = 'Changing visibility affects future views. Content already shared in a conversation may remain visible to its participants.',
@@ -877,67 +340,6 @@ class _PrivacyFootnote extends StatelessWidget {
           child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
         ),
       ],
-    );
-  }
-}
-
-class _CapabilityPill extends StatelessWidget {
-  const _CapabilityPill({required this.available});
-
-  final bool available;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopStatusPill(
-      label: available ? 'Available' : 'Unavailable',
-      tone: LoopTone.neutral,
-    );
-  }
-}
-
-class _DocumentTile extends StatelessWidget {
-  const _DocumentTile({
-    required this.title,
-    required this.detail,
-    this.onTap,
-    this.last = false,
-  });
-
-  final String title;
-  final String detail;
-  final VoidCallback? onTap;
-  final bool last;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SettingsTile(
-      icon: Icons.description_outlined,
-      title: title,
-      detail: detail,
-      onTap: onTap,
-      last: last,
-    );
-  }
-}
-
-class _LoopMark extends StatelessWidget {
-  const _LoopMark();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 54,
-      height: 54,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: LoopColors.mint, width: 2),
-      ),
-      child: Text(
-        'L',
-        style: Theme.of(context).textTheme.headlineMedium
-            ?.copyWith(color: LoopColors.mint),
-      ),
     );
   }
 }

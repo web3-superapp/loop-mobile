@@ -7,9 +7,12 @@ import 'package:loop_mobile/core/navigation/surface_catalog.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
+import 'package:loop_mobile/features/profile/security/security_models.dart';
+import 'package:loop_mobile/features/profile/security/security_screens.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
+import 'support/s8_harness.dart';
 
 void main() {
   testWidgets(
@@ -52,68 +55,44 @@ void main() {
     },
   );
 
-  testWidgets(
-    'H5 keeps capability availability separate from configured protection',
-    (tester) async {
-      final destinations = <String>[];
-      await _pumpPhone(
-        tester,
-        ProfileSurfaceScreen.fromId(
-          'security',
-          capabilities: const PrivyProfileCapabilities(
-            mfaAvailable: true,
-            appLockAvailable: true,
-            deviceManagementAvailable: true,
-            privateKeyExportAvailable: true,
-            socialRecoveryAvailable: true,
-          ),
-          onNavigate: destinations.add,
-        ),
+  testWidgets('H5 states each protection method is off, with its reason', (
+    tester,
+  ) async {
+    final destinations = <String>[];
+    await pumpS8Page(
+      tester,
+      SecurityCenterScreen(onNavigate: destinations.add),
+      security: FakeSecurityGateway(),
+    );
+
+    // No score, no badge, no "protections ready" claim.
+    expect(find.text('GOOD'), findsNothing);
+    expect(find.textContaining('项保护已开启'), findsNothing);
+    expect(find.text('2 台设备 · 2 个会话'), findsOneWidget);
+
+    for (final id in LoopSecurityCapabilityId.values) {
+      final row = find.byKey(
+        ValueKey<String>('security-method-${id.wireName}'),
       );
+      await scrollToS8Section(tester, row);
+      expect(row, findsOneWidget, reason: id.wireName);
+    }
+    expect(find.text('未开启'), findsNWidgets(6));
+    expect(find.text('已开启'), findsOneWidget); // security.event only
 
-      expect(
-        find.byKey(const ValueKey<String>('protection-status-unavailable')),
-        findsOneWidget,
-      );
-      expect(find.text('Protection status is not connected'), findsOneWidget);
-      expect(find.text('Core protections ready'), findsNothing);
-      expect(find.text('Add another protection'), findsNothing);
-      expect(find.text('3/3'), findsNothing);
-      expect(find.text('Recovery is not set'), findsNothing);
-      expect(find.textContaining('enrollment status is unknown'), findsWidgets);
-
-      final walletMfa = find.text('Wallet multi-factor authentication');
-      final appLock = find.text('App lock');
-      final walletMfaSemantics = _settingsSemantics(
-        tester,
-        'Wallet multi-factor authentication',
-      );
-      final appLockSemantics = _settingsSemantics(tester, 'App lock');
-      expect(walletMfaSemantics.properties.enabled, isFalse);
-      expect(appLockSemantics.properties.enabled, isFalse);
-
-      await _tap(tester, walletMfa);
-      await _tap(tester, appLock);
-      expect(destinations, isEmpty);
-
-      // LOOP has no seed phrase: the recovery-phrase surface was removed and
-      // its id is no longer routable from Profile.
-      expect(find.text('Recovery phrase'), findsNothing);
-      expect(ProfileSurfaceScreen.supportedIds, isNot(contains('seed-backup')));
-
-      // The key-export tile reports capability only; it opens nothing and
-      // reveals no key material here.
-      final keyExport = find.text('导出私钥');
-      expect(keyExport, findsOneWidget);
-      expect(_settingsSemantics(tester, '导出私钥').properties.enabled, isFalse);
-
-      await _tap(tester, find.text('Devices & sessions'));
-      await _tap(tester, keyExport);
-      await _tap(tester, find.text('Social recovery'));
-
-      expect(destinations, <String>['devices', 'social-recovery']);
-    },
-  );
+    // The two rows that lead somewhere lead to their own explanation page.
+    await tester.tap(
+      find.byKey(const ValueKey<String>('security-method-socialRecovery')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('security-method-keyExport')),
+    );
+    await tester.pumpAndSettle();
+    expect(destinations, <String>['social-recovery', 'key-export']);
+    expect(find.text('Recovery phrase'), findsNothing);
+    expect(ProfileSurfaceScreen.supportedIds, isNot(contains('seed-backup')));
+  });
 
   testWidgets('no recovery-phrase or seed surface is reachable from Profile', (
     tester,
@@ -151,7 +130,7 @@ void main() {
     expect(find.byType(Switch), findsNothing);
   });
 
-  testWidgets('production LoopApp H5 keeps protection status unavailable', (
+  testWidgets('production LoopApp H5 fails closed with no adapter', (
     tester,
   ) async {
     final router = await _pumpAuthenticatedLoopApp(tester);
@@ -159,17 +138,16 @@ void main() {
     router.go('/profile/security');
     await tester.pumpAndSettle();
 
+    // Production has no assembled security adapter, so the whole page is
+    // unavailable with a reason instead of claiming anything about the
+    // account's protection.
     expect(
-      find.byKey(const ValueKey<String>('protection-status-unavailable')),
+      find.byKey(const ValueKey<String>('security-capability-block')),
       findsOneWidget,
     );
-    expect(find.text('Available'), findsNothing);
-    expect(find.text('Unavailable'), findsNWidgets(5));
-    expect(find.text('Core protections ready'), findsNothing);
-    // The key-export tile stays unavailable and no seed surface is offered.
-    expect(find.text('导出私钥'), findsOneWidget);
-    expect(_settingsSemantics(tester, '导出私钥').properties.enabled, isFalse);
-    expect(find.textContaining('LOOP 不使用助记词'), findsOneWidget);
+    expect(find.text('安全中心当前不可用'), findsOneWidget);
+    expect(find.textContaining('项保护已开启'), findsNothing);
+    expect(find.text('已开启'), findsNothing);
     expect(find.text('Recovery phrase'), findsNothing);
   });
 
@@ -216,15 +194,6 @@ Future<GoRouter> _pumpAuthenticatedLoopApp(WidgetTester tester) async {
     tester.element(find.byKey(const ValueKey<String>('community-screen'))),
   );
 }
-
-Semantics _settingsSemantics(WidgetTester tester, String title) =>
-    tester.widget<Semantics>(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is Semantics &&
-            (widget.properties.label ?? '').startsWith('$title.'),
-      ),
-    );
 
 Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.ensureVisible(finder);
