@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 
 /// The only delivery contexts a future centralized provider adapter may pass
@@ -77,6 +78,21 @@ final class LoopNotificationCenterIntent
   String get location => '/notifications';
 }
 
+/// A triggered price alert opens the token page for the asset it watches.
+///
+/// The destination is decided by the server's `contextRoute` + `contextParams`
+/// and is validated here against the canonical CAIP identity: a malformed or
+/// non-canonical `assetId` fails closed rather than opening another asset.
+final class LoopPriceAlertNotificationIntent
+    extends LoopNotificationNavigationIntent {
+  const LoopPriceAlertNotificationIntent._(this.assetId);
+
+  final String assetId;
+
+  @override
+  String get location => MarketAssetRoute.token(assetId);
+}
+
 /// A provider-neutral result that never retains the untrusted input map.
 final class LoopNotificationDecision {
   const LoopNotificationDecision._(this.disposition, this.intent);
@@ -93,7 +109,12 @@ final class LoopNotificationDecision {
   final LoopNotificationNavigationIntent? intent;
 }
 
-enum _LoopNotificationKind { chatMessage, audioRoomActivity, systemNotice }
+enum _LoopNotificationKind {
+  chatMessage,
+  audioRoomActivity,
+  systemNotice,
+  priceAlertTriggered,
+}
 
 final class _LoopNotificationEvent {
   const _LoopNotificationEvent({
@@ -101,12 +122,14 @@ final class _LoopNotificationEvent {
     required this.recipientStreamUserId,
     required this.kind,
     this.channel,
+    this.assetId,
   });
 
   final String eventId;
   final String recipientStreamUserId;
   final _LoopNotificationKind kind;
   final LoopStreamChannelAddress? channel;
+  final String? assetId;
 }
 
 enum _LoopNotificationParseFailure { malformed, invalidTime, expired }
@@ -146,6 +169,7 @@ final class LoopNotificationRouter {
   static const String chatMessageKind = 'chat.message';
   static const String audioRoomActivityKind = 'audio_room.activity';
   static const String systemNoticeKind = 'system.notice';
+  static const String priceAlertTriggeredKind = 'price_alert.triggered';
 
   static const Set<String> _commonKeys = <String>{
     'loop_schema',
@@ -156,6 +180,10 @@ final class LoopNotificationRouter {
     'expires_at',
   };
   static const Set<String> _chatKeys = <String>{..._commonKeys, 'cid'};
+  static const Set<String> _priceAlertKeys = <String>{
+    ..._commonKeys,
+    'asset_id',
+  };
   static final RegExp _eventIdPattern = RegExp(
     r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
   );
@@ -240,6 +268,8 @@ final class LoopNotificationRouter {
         const LoopAudioRoomNotificationIntent._(),
       _LoopNotificationKind.systemNotice =>
         const LoopNotificationCenterIntent._(),
+      _LoopNotificationKind.priceAlertTriggered =>
+        LoopPriceAlertNotificationIntent._(event.assetId!),
     });
   }
 
@@ -258,6 +288,7 @@ final class LoopNotificationRouter {
       chatMessageKind => _LoopNotificationKind.chatMessage,
       audioRoomActivityKind => _LoopNotificationKind.audioRoomActivity,
       systemNoticeKind => _LoopNotificationKind.systemNotice,
+      priceAlertTriggeredKind => _LoopNotificationKind.priceAlertTriggered,
       _ => null,
     };
     if (kind == null) {
@@ -266,9 +297,11 @@ final class LoopNotificationRouter {
       );
     }
 
-    final allowedKeys = kind == _LoopNotificationKind.chatMessage
-        ? _chatKeys
-        : _commonKeys;
+    final allowedKeys = switch (kind) {
+      _LoopNotificationKind.chatMessage => _chatKeys,
+      _LoopNotificationKind.priceAlertTriggered => _priceAlertKeys,
+      _ => _commonKeys,
+    };
     if (data.length != allowedKeys.length ||
         !data.keys.every(allowedKeys.contains) ||
         !data.values.every((value) => value is String)) {
@@ -323,12 +356,25 @@ final class LoopNotificationRouter {
       }
     }
 
+    String? assetId;
+    if (kind == _LoopNotificationKind.priceAlertTriggered) {
+      final rawAssetId = data['asset_id']! as String;
+      // Only the canonical CAIP identity may address a token page.
+      if (!MarketAssetRoute.isCanonical(rawAssetId)) {
+        return const _LoopNotificationParseResult.failure(
+          _LoopNotificationParseFailure.malformed,
+        );
+      }
+      assetId = rawAssetId;
+    }
+
     return _LoopNotificationParseResult.event(
       _LoopNotificationEvent(
         eventId: eventId,
         recipientStreamUserId: recipientStreamUserId,
         kind: kind,
         channel: channel,
+        assetId: assetId,
       ),
     );
   }

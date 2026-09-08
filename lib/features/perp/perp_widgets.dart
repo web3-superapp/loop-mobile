@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -379,4 +381,167 @@ class PerpReadOnlyNotice extends StatelessWidget {
       tone: LoopTone.warning,
     );
   }
+}
+
+/// Retained Perp history: the fixed preview candlestick sketch that used to
+/// live in the Market slice. It carries no provider data and is not mounted in
+/// product navigation.
+class MarketCandleChart extends StatelessWidget {
+  const MarketCandleChart({
+    super.key,
+    this.height = 220,
+    this.showAxis = true,
+    this.semanticLabel = 'Simulated candlestick chart, read-only preview',
+  });
+
+  final double height;
+  final bool showAxis;
+  final String semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      image: true,
+      label: semanticLabel,
+      child: SizedBox(
+        width: double.infinity,
+        height: height,
+        child: CustomPaint(
+          painter: _CandlePainter(
+            candles: CandlePreviewData.candles,
+            showAxis: showAxis,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CandlePainter extends CustomPainter {
+  const _CandlePainter({required this.candles, required this.showAxis});
+
+  final List<CandlePreview> candles;
+  final bool showAxis;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (candles.isEmpty) return;
+    final plotRight = showAxis ? size.width - 45 : size.width;
+    final gridPaint = Paint()
+      ..color = LoopColors.line.withValues(alpha: 0.7)
+      ..strokeWidth = 1;
+    for (var index = 0; index <= 4; index++) {
+      final y = size.height * index / 4;
+      canvas.drawLine(
+        Offset.zero.translate(0, y),
+        Offset(plotRight, y),
+        gridPaint,
+      );
+    }
+    for (var index = 0; index <= 5; index++) {
+      final x = plotRight * index / 5;
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
+    }
+
+    final low = candles.map((candle) => candle.low).reduce(math.min);
+    final high = candles.map((candle) => candle.high).reduce(math.max);
+    final span = math.max(high - low, 1);
+    double yFor(double value) =>
+        size.height - ((value - low) / span * (size.height - 16)) - 8;
+
+    final slot = plotRight / candles.length;
+    final bodyWidth = math.max(3.0, slot * 0.48);
+    for (var index = 0; index < candles.length; index++) {
+      final candle = candles[index];
+      final color = candle.isUp ? LoopColors.mint : LoopColors.danger;
+      final x = slot * index + slot / 2;
+      canvas.drawLine(
+        Offset(x, yFor(candle.high)),
+        Offset(x, yFor(candle.low)),
+        Paint()
+          ..color = color
+          ..strokeWidth = 1.25,
+      );
+      final top = math.min(yFor(candle.open), yFor(candle.close));
+      final bottom = math.max(yFor(candle.open), yFor(candle.close));
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTRB(
+            x - bodyWidth / 2,
+            top,
+            x + bodyWidth / 2,
+            math.max(bottom, top + 2),
+          ),
+          const Radius.circular(1.5),
+        ),
+        Paint()..color = color,
+      );
+    }
+
+    if (showAxis) {
+      final painter = TextPainter(textDirection: TextDirection.ltr);
+      for (var index = 0; index <= 4; index++) {
+        final value = high - ((high - low) * index / 4);
+        painter.text = TextSpan(
+          text: value.toStringAsFixed(0),
+          style: const TextStyle(
+            color: LoopColors.vapor,
+            fontSize: 9,
+            fontFamily: 'monospace',
+          ),
+        );
+        painter.layout();
+        painter.paint(
+          canvas,
+          Offset(plotRight + 7, size.height * index / 4 - 5),
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _CandlePainter oldDelegate) {
+    return oldDelegate.candles != candles || oldDelegate.showAxis != showAxis;
+  }
+}
+
+/// Retained Perp history: the fixed candle sketch the preview chart draws.
+/// It is not market data and never reaches a product surface.
+final class CandlePreview {
+  const CandlePreview({
+    required this.open,
+    required this.high,
+    required this.low,
+    required this.close,
+  });
+
+  final double open;
+  final double high;
+  final double low;
+  final double close;
+
+  bool get isUp => close >= open;
+}
+
+abstract final class CandlePreviewData {
+  static const List<CandlePreview> candles = <CandlePreview>[
+    CandlePreview(open: 42, high: 51, low: 39, close: 48),
+    CandlePreview(open: 48, high: 54, low: 44, close: 46),
+    CandlePreview(open: 46, high: 58, low: 45, close: 56),
+    CandlePreview(open: 56, high: 61, low: 51, close: 53),
+    CandlePreview(open: 53, high: 65, low: 52, close: 62),
+    CandlePreview(open: 62, high: 68, low: 57, close: 59),
+    CandlePreview(open: 59, high: 73, low: 58, close: 70),
+    CandlePreview(open: 70, high: 76, low: 64, close: 67),
+    CandlePreview(open: 67, high: 80, low: 66, close: 77),
+    CandlePreview(open: 77, high: 82, low: 69, close: 72),
+    CandlePreview(open: 72, high: 86, low: 71, close: 83),
+    CandlePreview(open: 83, high: 89, low: 77, close: 80),
+    CandlePreview(open: 80, high: 93, low: 78, close: 90),
+    CandlePreview(open: 90, high: 96, low: 84, close: 87),
+    CandlePreview(open: 87, high: 99, low: 86, close: 96),
+    CandlePreview(open: 96, high: 101, low: 89, close: 92),
+    CandlePreview(open: 92, high: 105, low: 91, close: 102),
+    CandlePreview(open: 102, high: 108, low: 96, close: 104),
+  ];
 }

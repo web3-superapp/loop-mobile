@@ -1,33 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 
-enum WatchlistMode { unavailable, preview, production }
-
-enum WatchlistGatewayFailureKind {
-  unavailable,
-  versionConflict,
-  invalidData,
-  unexpected,
-}
-
-final class WatchlistGatewayException implements Exception {
-  const WatchlistGatewayException(this.kind);
-
-  final WatchlistGatewayFailureKind kind;
-
-  String get code => switch (kind) {
-    WatchlistGatewayFailureKind.unavailable => 'watchlist_unavailable',
-    WatchlistGatewayFailureKind.versionConflict => 'version_conflict',
-    WatchlistGatewayFailureKind.invalidData => 'invalid_watchlist_data',
-    WatchlistGatewayFailureKind.unexpected => 'watchlist_request_failed',
-  };
-
-  @override
-  String toString() => code;
-}
-
+/// Feature-facing port for the `watchlist` module.
+///
+/// The whole resource is replaced under a version CAS; there is no per-item
+/// mutation and no `Idempotency-Key` (the server rejects one).
 abstract interface class WatchlistGateway {
-  WatchlistMode get mode;
+  LoopChainGatewayMode get mode;
 
   Future<WatchlistSnapshot> load();
 
@@ -37,16 +17,16 @@ abstract interface class WatchlistGateway {
   });
 }
 
-/// Production-safe default while the authenticated mobile transport is absent.
+/// Production-safe default while the authenticated transport is absent.
 final class UnavailableWatchlistGateway implements WatchlistGateway {
   const UnavailableWatchlistGateway();
 
   @override
-  WatchlistMode get mode => WatchlistMode.unavailable;
+  LoopChainGatewayMode get mode => LoopChainGatewayMode.unavailable;
 
   @override
   Future<WatchlistSnapshot> load() => Future<WatchlistSnapshot>.error(
-    const WatchlistGatewayException(WatchlistGatewayFailureKind.unavailable),
+    const LoopChainException(LoopChainFailureKind.unavailable),
   );
 
   @override
@@ -54,7 +34,7 @@ final class UnavailableWatchlistGateway implements WatchlistGateway {
     required int expectedVersion,
     required List<WatchlistGroup> groups,
   }) => Future<WatchlistSnapshot>.error(
-    const WatchlistGatewayException(WatchlistGatewayFailureKind.unavailable),
+    const LoopChainException(LoopChainFailureKind.unavailable),
   );
 }
 

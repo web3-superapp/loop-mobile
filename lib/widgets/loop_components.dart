@@ -837,6 +837,7 @@ class LoopRecordGroup extends StatelessWidget {
             trailing: rows[index].trailing,
             trailingCaption: rows[index].trailingCaption,
             trailingCaptionUp: rows[index].trailingCaptionUp,
+            trailingBadge: rows[index].trailingBadge,
             onTap: rows[index].onTap,
             semanticLabel: rows[index].semanticLabel,
             position: rows.length == 1

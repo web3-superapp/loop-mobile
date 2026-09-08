@@ -1,14 +1,21 @@
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/chain/chain_models.dart';
 
+/// Server-enforced Watchlist limits (`docs/frontend-v2-wallet-api.md` §9).
 const int watchlistMaxGroups = 20;
 const int watchlistMaxItems = 100;
+const int watchlistMaxNameCodePoints = 40;
 const int watchlistMaximumVersion = 2147483647;
 
 final RegExp _watchlistGroupKeyPattern = RegExp(r'^[a-z0-9][a-z0-9_-]{0,31}$');
-final RegExp _watchlistAssetKeyPattern = RegExp(r'^[A-Z0-9][A-Z0-9:_-]{0,63}$');
+final RegExp _forbiddenDisplayCodePoint = RegExp(
+  r'[\p{Cc}\p{Cf}\p{Cs}\p{Zl}\p{Zp}]',
+  unicode: true,
+);
 
-/// Sanitized validation failure for a value outside the backend Watchlist
-/// contract. The rejected value is deliberately never included in the error.
+/// Sanitized validation failure for a value outside the Watchlist contract.
+/// The rejected value is deliberately never included in the error.
 final class InvalidWatchlistContractException implements Exception {
   const InvalidWatchlistContractException();
 
@@ -18,26 +25,47 @@ final class InvalidWatchlistContractException implements Exception {
   String toString() => 'The Watchlist contract value is invalid';
 }
 
+/// One watched asset.
+///
+/// The identity is the canonical CAIP `assetId` — never a ticker, never an
+/// address on its own. [asset] is `null` with a `reasonCode` when the registry
+/// can no longer read it; the row is still listed so the owner can remove it.
 @immutable
 final class WatchlistItem {
-  factory WatchlistItem({required String assetKey}) {
-    if (!_watchlistAssetKeyPattern.hasMatch(assetKey)) {
+  factory WatchlistItem({
+    required String assetId,
+    LoopAssetSummary? asset,
+    String? reasonCode,
+  }) {
+    if (!loopAssetIdPattern.hasMatch(assetId)) {
       throw const InvalidWatchlistContractException();
     }
-    return WatchlistItem._(assetKey);
+    return WatchlistItem._(assetId, asset, reasonCode);
   }
 
-  const WatchlistItem._(this.assetKey);
+  const WatchlistItem._(this.assetId, this.asset, this.reasonCode);
 
-  final String assetKey;
+  final String assetId;
+  final LoopAssetSummary? asset;
+  final String? reasonCode;
+
+  bool get isReadable => asset != null;
+
+  String get displayName => asset?.symbol ?? loopTruncatedAssetId(assetId);
+
+  String get displayDetail =>
+      asset?.name ?? loopReasonCodeText(reasonCode ?? 'ASSET_NOT_READABLE');
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is WatchlistItem && other.assetKey == assetKey;
+      other is WatchlistItem &&
+          other.assetId == assetId &&
+          other.asset == asset &&
+          other.reasonCode == reasonCode;
 
   @override
-  int get hashCode => assetKey.hashCode;
+  int get hashCode => Object.hash(assetId, asset, reasonCode);
 }
 
 @immutable
@@ -49,25 +77,19 @@ final class WatchlistGroup {
   }) {
     if (!_watchlistGroupKeyPattern.hasMatch(key) ||
         name.length > 256 ||
-        _containsForbiddenDisplayCodePoint(name)) {
+        _forbiddenDisplayCodePoint.hasMatch(name)) {
       throw const InvalidWatchlistContractException();
     }
-
     final normalizedName = name.trim();
-    if (!_isValidNormalizedDisplayName(normalizedName)) {
+    if (normalizedName.isEmpty) {
       throw const InvalidWatchlistContractException();
     }
-
-    final copiedItems = List<WatchlistItem>.unmodifiable(
-      items.map((item) => WatchlistItem(assetKey: item.assetKey)),
-    );
-    if (copiedItems.length > watchlistMaxItems ||
-        copiedItems.map((item) => item.assetKey).toSet().length !=
-            copiedItems.length) {
+    final copied = List<WatchlistItem>.unmodifiable(items);
+    if (copied.length > watchlistMaxItems ||
+        copied.map((item) => item.assetId).toSet().length != copied.length) {
       throw const InvalidWatchlistContractException();
     }
-
-    return WatchlistGroup._(key, normalizedName, copiedItems);
+    return WatchlistGroup._(key, normalizedName, copied);
   }
 
   const WatchlistGroup._(this.key, this.name, this.items);
@@ -76,13 +98,17 @@ final class WatchlistGroup {
   final String name;
   final List<WatchlistItem> items;
 
-  WatchlistGroup copyWith({String? name, Iterable<WatchlistItem>? items}) {
-    return WatchlistGroup(
-      key: key,
-      name: name ?? this.name,
-      items: items ?? this.items,
-    );
-  }
+  /// Whether this group's name is short enough for a write. Reads accept the
+  /// wider schema bound; only the editor enforces the documented 1–40.
+  bool get nameFitsWriteContract =>
+      name.runes.isNotEmpty && name.runes.length <= watchlistMaxNameCodePoints;
+
+  WatchlistGroup copyWith({String? name, Iterable<WatchlistItem>? items}) =>
+      WatchlistGroup(
+        key: key,
+        name: name ?? this.name,
+        items: items ?? this.items,
+      );
 
   @override
   bool operator ==(Object other) =>
@@ -96,118 +122,67 @@ final class WatchlistGroup {
   int get hashCode => Object.hash(key, name, Object.hashAll(items));
 }
 
+/// The whole owner-scoped Watchlist resource with its CAS version.
 @immutable
 final class WatchlistSnapshot {
   factory WatchlistSnapshot({
     required int version,
-    required Iterable<WatchlistGroup> groups,
     required DateTime? updatedAt,
+    required Iterable<WatchlistGroup> groups,
   }) {
     if (version < 0 || version > watchlistMaximumVersion) {
       throw const InvalidWatchlistContractException();
     }
-    final copiedGroups = validateWatchlistGroups(groups);
-    if (version == 0) {
-      if (copiedGroups.isNotEmpty || updatedAt != null) {
-        throw const InvalidWatchlistContractException();
-      }
-    } else if (updatedAt == null) {
+    final copied = List<WatchlistGroup>.unmodifiable(groups);
+    if (copied.length > watchlistMaxGroups ||
+        copied.map((group) => group.key).toSet().length != copied.length) {
       throw const InvalidWatchlistContractException();
     }
-    return WatchlistSnapshot._(version, copiedGroups, updatedAt?.toUtc());
+    var total = 0;
+    for (final group in copied) {
+      total += group.items.length;
+    }
+    if (total > watchlistMaxItems) {
+      throw const InvalidWatchlistContractException();
+    }
+    return WatchlistSnapshot._(version, updatedAt, copied, total);
   }
 
-  const WatchlistSnapshot._(this.version, this.groups, this.updatedAt);
-
-  factory WatchlistSnapshot.empty() => WatchlistSnapshot(
-    version: 0,
-    groups: const <WatchlistGroup>[],
-    updatedAt: null,
+  const WatchlistSnapshot._(
+    this.version,
+    this.updatedAt,
+    this.groups,
+    this.itemCount,
   );
 
-  factory WatchlistSnapshot.copyOf(WatchlistSnapshot source) =>
-      WatchlistSnapshot(
-        version: source.version,
-        groups: source.groups,
-        updatedAt: source.updatedAt,
-      );
-
   final int version;
-  final List<WatchlistGroup> groups;
   final DateTime? updatedAt;
+  final List<WatchlistGroup> groups;
+  final int itemCount;
+
+  bool get isEmpty => itemCount == 0;
+
+  /// Assets in Watchlist order, de-duplicated across groups — the same order
+  /// `GET /v2/market/overview` returns them in.
+  List<String> get orderedAssetIds {
+    final seen = <String>{};
+    final ordered = <String>[];
+    for (final group in groups) {
+      for (final item in group.items) {
+        if (seen.add(item.assetId)) ordered.add(item.assetId);
+      }
+    }
+    return List<String>.unmodifiable(ordered);
+  }
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is WatchlistSnapshot &&
           other.version == version &&
-          listEquals(other.groups, groups) &&
-          other.updatedAt == updatedAt;
+          other.updatedAt == updatedAt &&
+          listEquals(other.groups, groups);
 
   @override
-  int get hashCode => Object.hash(version, Object.hashAll(groups), updatedAt);
-}
-
-/// Returns a defensive, validated copy while preserving group and item order.
-List<WatchlistGroup> validateWatchlistGroups(Iterable<WatchlistGroup> groups) {
-  final copiedGroups = List<WatchlistGroup>.unmodifiable(
-    groups.map(
-      (group) =>
-          WatchlistGroup(key: group.key, name: group.name, items: group.items),
-    ),
-  );
-  if (copiedGroups.length > watchlistMaxGroups ||
-      copiedGroups.map((group) => group.key).toSet().length !=
-          copiedGroups.length ||
-      copiedGroups.fold<int>(0, (total, group) => total + group.items.length) >
-          watchlistMaxItems) {
-    throw const InvalidWatchlistContractException();
-  }
-  return copiedGroups;
-}
-
-bool watchlistGroupsEqual(
-  Iterable<WatchlistGroup> left,
-  Iterable<WatchlistGroup> right,
-) {
-  return listEquals(
-    left.toList(growable: false),
-    right.toList(growable: false),
-  );
-}
-
-bool _isValidNormalizedDisplayName(String value) {
-  if (value.isEmpty || _containsForbiddenDisplayCodePoint(value)) return false;
-  final codePointLength = value.runes.length;
-  return codePointLength >= 1 && codePointLength <= 40;
-}
-
-bool _containsForbiddenDisplayCodePoint(String value) {
-  final codeUnits = value.codeUnits;
-  for (var index = 0; index < codeUnits.length; index++) {
-    final unit = codeUnits[index];
-    int codePoint;
-    if (unit >= 0xD800 && unit <= 0xDBFF) {
-      if (index + 1 >= codeUnits.length) return true;
-      final low = codeUnits[index + 1];
-      if (low < 0xDC00 || low > 0xDFFF) return true;
-      codePoint = 0x10000 + ((unit - 0xD800) << 10) + (low - 0xDC00);
-      index += 1;
-    } else if (unit >= 0xDC00 && unit <= 0xDFFF) {
-      return true;
-    } else {
-      codePoint = unit;
-    }
-
-    if ((codePoint >= 0x0000 && codePoint <= 0x001F) ||
-        (codePoint >= 0x007F && codePoint <= 0x009F) ||
-        codePoint == 0x061C ||
-        codePoint == 0x200E ||
-        codePoint == 0x200F ||
-        (codePoint >= 0x202A && codePoint <= 0x202E) ||
-        (codePoint >= 0x2066 && codePoint <= 0x2069)) {
-      return true;
-    }
-  }
-  return false;
+  int get hashCode => Object.hash(version, updatedAt, Object.hashAll(groups));
 }

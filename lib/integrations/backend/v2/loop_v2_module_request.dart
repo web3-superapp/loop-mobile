@@ -61,6 +61,59 @@ abstract final class LoopV2ModuleRequest {
     },
   };
 
+  /// S5 reads add the two codes only the chain and market routes can answer
+  /// with: a non-BSC `assetId` and an indexer that has never run.
+  static const chainReadErrors = <int, Set<String>>{
+    400: <String>{'INVALID_REQUEST'},
+    401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
+    404: <String>{'NOT_FOUND'},
+    409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED', 'VERSION_CONFLICT'},
+    422: <String>{'CHAIN_MISMATCH', 'VALIDATION_FAILED'},
+    500: <String>{'INTERNAL_ERROR'},
+    503: <String>{
+      'CAPABILITY_UNAVAILABLE',
+      'INDEXING_DELAYED',
+      'PROVIDER_DISCONNECTED',
+      'REQUEST_TIMEOUT',
+    },
+  };
+
+  /// A compare-and-set write: no `Idempotency-Key`, `expectedVersion` instead.
+  static const casWriteErrors = <int, Set<String>>{
+    400: <String>{'INVALID_REQUEST'},
+    401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
+    403: <String>{'PERMISSION_DENIED', 'POLICY_BLOCKED'},
+    404: <String>{'NOT_FOUND'},
+    409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED', 'VERSION_CONFLICT'},
+    422: <String>{'CHAIN_MISMATCH', 'VALIDATION_FAILED'},
+    500: <String>{'INTERNAL_ERROR'},
+    503: <String>{
+      'CAPABILITY_UNAVAILABLE',
+      'PROVIDER_DISCONNECTED',
+      'REQUEST_TIMEOUT',
+    },
+  };
+
+  /// An idempotent create: one canonical UUIDv4 per logical operation.
+  static const chainIdempotentWriteErrors = <int, Set<String>>{
+    400: <String>{'INVALID_REQUEST'},
+    401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
+    403: <String>{'PERMISSION_DENIED', 'POLICY_BLOCKED'},
+    404: <String>{'NOT_FOUND'},
+    409: <String>{
+      'ACCOUNT_BOOTSTRAP_REQUIRED',
+      'IDEMPOTENCY_CONFLICT',
+      'VERSION_CONFLICT',
+    },
+    422: <String>{'CHAIN_MISMATCH', 'VALIDATION_FAILED'},
+    500: <String>{'INTERNAL_ERROR'},
+    503: <String>{
+      'CAPABILITY_UNAVAILABLE',
+      'PROVIDER_DISCONNECTED',
+      'REQUEST_TIMEOUT',
+    },
+  };
+
   static void validateToken(String accessToken) {
     if (accessToken.isEmpty ||
         accessToken.length > 4096 ||
@@ -119,10 +172,63 @@ abstract final class LoopV2ModuleRequest {
     String clientVersion,
     String idempotencyKey, {
     bool hasBody = false,
+    LoopV2WriteOrigin? origin,
   }) => Options(
-    headers: writeHeaders(accessToken, clientVersion, idempotencyKey),
+    headers: <String, String>{
+      ...writeHeaders(accessToken, clientVersion, idempotencyKey),
+      ...?origin?.headers,
+    },
     contentType: hasBody ? Headers.jsonContentType : null,
     followRedirects: false,
     responseType: ResponseType.json,
   );
+
+  /// A compare-and-set write. It deliberately carries no `Idempotency-Key`:
+  /// the server answers `400 INVALID_REQUEST` when one is present, because the
+  /// version, not a key, is what makes the write safe to retry.
+  static Options casOptions(
+    String accessToken,
+    String clientVersion, {
+    bool hasBody = false,
+    LoopV2WriteOrigin? origin,
+  }) => Options(
+    headers: <String, String>{
+      ...readHeaders(accessToken, clientVersion),
+      ...?origin?.headers,
+    },
+    contentType: hasBody ? Headers.jsonContentType : null,
+    followRedirects: false,
+    responseType: ResponseType.json,
+  );
+}
+
+/// The optional platform and device annotation a write may carry.
+///
+/// Both headers are validated by the server when present, so a malformed value
+/// is rejected here rather than sent. They are never added to a read.
+final class LoopV2WriteOrigin {
+  const LoopV2WriteOrigin({required this.platform, required this.deviceId});
+
+  static const iosPlatform = 'ios';
+  static const androidPlatform = 'android';
+
+  final String platform;
+  final String deviceId;
+
+  /// `null` when either value would break the contract; the write then goes
+  /// out without the optional annotation instead of failing.
+  static LoopV2WriteOrigin? tryCreate({
+    required String? platform,
+    required String? deviceId,
+  }) {
+    if (platform == null || deviceId == null) return null;
+    if (platform != iosPlatform && platform != androidPlatform) return null;
+    if (!LoopV2Contract.uuidV4Pattern.hasMatch(deviceId)) return null;
+    return LoopV2WriteOrigin(platform: platform, deviceId: deviceId);
+  }
+
+  Map<String, String> get headers => <String, String>{
+    'x-loop-platform': platform,
+    'x-loop-device-id': deviceId,
+  };
 }

@@ -1,490 +1,228 @@
-import 'dart:math' as math;
+import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/navigation/market_asset_route.dart';
+import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/features/market/market_models.dart';
-import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/chain/chain_models.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/market/market_controllers.dart';
+import 'package:loop_mobile/features/market/market_read_gateway.dart';
+import 'package:loop_mobile/features/market/market_read_models.dart';
+import 'package:loop_mobile/features/market/market_widgets.dart';
+import 'package:loop_mobile/features/market/token_screen.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
 
-/// C5 — Holder concentration and labelled wallet groups.
-class HolderDistributionScreen extends StatelessWidget {
+/// Shared capability gate for the four secondary market pages.
+bool _marketBlocked(WidgetRef ref) {
+  final capability = ref.watch(
+    loopCapabilityProvider(LoopV2CapabilityId.marketRead),
+  );
+  final mode = ref.watch(marketReadGatewayProvider).mode;
+  return loopChainCapabilityBlocks(mode, capability);
+}
+
+String _marketBlockReason(WidgetRef ref) =>
+    ref
+        .watch(loopCapabilityProvider(LoopV2CapabilityId.marketRead))
+        .reasonCode ??
+    'MARKET_RUNTIME_UNAVAILABLE';
+
+Widget _invalidAssetPage(String title, VoidCallback? onBack) => LoopFocusPage(
+  key: ValueKey<String>('invalid-asset-$title'),
+  archetype: LoopPageArchetype.record,
+  title: title,
+  onBack: onBack,
+  body: const <Widget>[
+    LoopEmpty(
+      key: ValueKey<String>('invalid-asset-identity'),
+      icon: 'warn',
+      message: '路由中没有可用的资产标识',
+      reason: '本页只接受规范的 CAIP assetId。未请求任何行情，也没有回退到其他资产。',
+    ),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// chart-full
+// ---------------------------------------------------------------------------
+
+/// `chart-full` · the full-screen chart for one asset.
+///
+/// The interval segments map one-to-one onto the contract's `interval` values.
+/// The prototype's `1m` segment and its MA / EMA / MACD / RSI / drawing tools
+/// have no backend, so they are rendered as unavailable rather than as
+/// controls that would silently do nothing.
+class FullChartScreen extends ConsumerStatefulWidget {
+  const FullChartScreen({required this.assetId, super.key, this.onBack});
+
+  final String? assetId;
+  final VoidCallback? onBack;
+
+  @override
+  ConsumerState<FullChartScreen> createState() => _FullChartScreenState();
+}
+
+class _FullChartScreenState extends ConsumerState<FullChartScreen> {
+  LoopCandleInterval _interval = LoopCandleInterval.oneHour;
+
+  @override
+  Widget build(BuildContext context) {
+    final assetId = widget.assetId;
+    if (assetId == null || !MarketAssetRoute.isCanonical(assetId)) {
+      return _invalidAssetPage('无法打开这张 K 线', widget.onBack);
+    }
+    if (_marketBlocked(ref)) {
+      return LoopFocusPage(
+        key: const ValueKey<String>('chart-full-blocked'),
+        archetype: LoopPageArchetype.record,
+        title: '全屏 K 线',
+        onBack: widget.onBack,
+        body: <Widget>[
+          LoopUnavailableCard(
+            key: const ValueKey<String>('chart-full-capability-block'),
+            label: '行情模块当前不可用',
+            reasonCode: _marketBlockReason(ref),
+          ),
+        ],
+      );
+    }
+    return LoopFocusPage(
+      key: ValueKey<String>('chart-full-$assetId'),
+      archetype: LoopPageArchetype.record,
+      title: '全屏 K 线',
+      kicker: loopTruncatedAssetId(assetId),
+      onBack: widget.onBack,
+      body: <Widget>[
+        TokenCandleSection(
+          key: const ValueKey<String>('chart-full-candles'),
+          assetId: assetId,
+          interval: _interval,
+          height: 320,
+          onIntervalChanged: (value) => setState(() => _interval = value),
+        ),
+        const LoopLabel('指标与画线'),
+        const LoopUnavailableCard(
+          key: ValueKey<String>('chart-full-indicators-unavailable'),
+          label: 'MA / EMA / MACD / RSI 与画线工具不可用',
+          reasonCode: 'MARKET_CHART_TOOLS_DEFERRED',
+        ),
+        const LoopNotice(
+          key: ValueKey<String>('chart-full-interval-notice'),
+          title: '周期与契约一一对应',
+          body: '可选周期为 15m / 1H / 4H / 1D / 1W。原型里的 1m 没有后端来源，因此没有出现在这里。',
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// token-holders
+// ---------------------------------------------------------------------------
+
+/// `token-holders` · only the holder count has a source in this step.
+class HolderDistributionScreen extends ConsumerStatefulWidget {
   const HolderDistributionScreen({
+    required this.assetId,
     super.key,
-    this.symbol = 'ETH',
-    this.snapshotState = MarketSnapshotState.preview,
+    this.onBack,
   });
 
-  final String symbol;
-  final MarketSnapshotState snapshotState;
+  final String? assetId;
+  final VoidCallback? onBack;
 
   @override
-  Widget build(BuildContext context) {
-    final asset = MarketPreviewData.asset(symbol);
-    final canShowData = snapshotState == MarketSnapshotState.preview;
-    return LoopPage(
-      eyebrow: 'C5 · ${asset.symbol} ownership',
-      title: 'Holder distribution',
-      subtitle: 'See concentration and known wallet groups without turning incomplete labels into conclusions.',
-      actions: <Widget>[
-        IconButton(
-          onPressed: () => context.push('/market/trades', extra: asset.symbol),
-          tooltip: 'Open trading activity',
-          icon: const Icon(Icons.swap_vert_rounded),
-        ),
-      ],
-      children: <Widget>[
-        _MarketPreviewBanner(state: snapshotState),
-        if (!canShowData) ...<Widget>[
-          const SizedBox(height: 18),
-          _MarketSecondaryState(state: snapshotState, subject: 'holder data'),
-        ] else ...<Widget>[
-          const SizedBox(height: 20),
-          LoopCard(
-            accent: true,
-            tone: LoopTone.market,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final compact = constraints.maxWidth < 330;
-                final chart = const _DistributionRing();
-                final summary = Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'Top 100 overview',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 13),
-                    const _DistributionLegend(
-                      color: LoopColors.market,
-                      label: 'Top 10 wallets',
-                      value: '37.4%',
-                    ),
-                    const SizedBox(height: 9),
-                    const _DistributionLegend(
-                      color: LoopColors.mint,
-                      label: 'Wallets 11–100',
-                      value: '28.1%',
-                    ),
-                    const SizedBox(height: 9),
-                    const _DistributionLegend(
-                      color: LoopColors.vapor,
-                      label: 'Other holders',
-                      value: '34.5%',
-                    ),
-                  ],
-                );
-                if (compact) {
-                  return Column(
-                    children: <Widget>[
-                      chart,
-                      const SizedBox(height: 18),
-                      summary,
-                    ],
-                  );
-                }
-                return Row(
-                  children: <Widget>[
-                    chart,
-                    const SizedBox(width: 22),
-                    Expanded(child: summary),
-                  ],
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Sample data · labels may be incomplete · updated 08:42 UTC',
-            style: Theme.of(context).textTheme.labelMedium,
-          ),
-          const LoopSectionLabel('Known wallet groups'),
-          const _HolderGroupCard(
-            icon: Icons.account_balance_outlined,
-            title: 'Exchange-labelled wallets',
-            detail: '6 wallets · 18.2% of sampled supply',
-            color: LoopColors.market,
-          ),
-          const SizedBox(height: 10),
-          const _HolderGroupCard(
-            icon: Icons.groups_2_outlined,
-            title: 'Related wallet cluster',
-            detail: '12 wallets · 7.8% · relationship not verified',
-            color: LoopColors.warning,
-          ),
-          const SizedBox(height: 10),
-          const _HolderGroupCard(
-            icon: Icons.help_outline_rounded,
-            title: 'Unlabelled large wallets',
-            detail: '9 wallets · 11.4% · owner unknown',
-            color: LoopColors.vapor,
-          ),
-          const LoopSectionLabel('Largest sampled wallets'),
-          const LoopCard(
-            child: Column(
-              children: <Widget>[
-                _HolderRow(
-                  rank: '01',
-                  address: '0x71…E20A',
-                  share: '8.42%',
-                  label: 'Exchange',
-                ),
-                _HolderRow(
-                  rank: '02',
-                  address: '0xA8…19F2',
-                  share: '6.18%',
-                  label: 'Unlabelled',
-                ),
-                _HolderRow(
-                  rank: '03',
-                  address: '0x34…C810',
-                  share: '4.77%',
-                  label: 'Treasury',
-                ),
-                _HolderRow(
-                  rank: '04',
-                  address: '0xF2…08B1',
-                  share: '3.26%',
-                  label: 'Unlabelled',
-                  last: true,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          const LoopStateCard(
-            title: 'Concentration is a fact, not a verdict',
-            message: 'Wallet labels can be missing or wrong. Review transfers and ownership controls before acting.',
-            icon: Icons.info_outline_rounded,
-            tone: LoopTone.warning,
-          ),
-        ],
-      ],
-    );
-  }
+  ConsumerState<HolderDistributionScreen> createState() =>
+      _HolderDistributionScreenState();
 }
 
-class _DistributionRing extends StatelessWidget {
-  const _DistributionRing();
-
+class _HolderDistributionScreenState
+    extends ConsumerState<HolderDistributionScreen> {
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      image: true,
-      label: 'Sample holder distribution. Top ten wallets hold 37.4 percent.',
-      child: SizedBox.square(
-        dimension: 142,
-        child: Stack(
-          alignment: Alignment.center,
-          children: <Widget>[
-            const Positioned.fill(
-              child: CustomPaint(painter: _DistributionPainter()),
-            ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text('37.4%', style: context.dataStyle.copyWith(fontSize: 20)),
-                Text('TOP 10', style: Theme.of(context).textTheme.labelMedium),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DistributionPainter extends CustomPainter {
-  const _DistributionPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 15
-      ..strokeCap = StrokeCap.butt;
-    const gap = 0.035;
-    var start = -math.pi / 2;
-    for (final segment in const <(double, Color)>[
-      (0.374, LoopColors.market),
-      (0.281, LoopColors.mint),
-      (0.345, LoopColors.vapor),
-    ]) {
-      final sweep = math.pi * 2 * segment.$1;
-      paint.color = segment.$2;
-      canvas.drawArc(
-        rect.deflate(12),
-        start + gap,
-        sweep - gap * 2,
-        false,
-        paint,
-      );
-      start += sweep;
+    final assetId = widget.assetId;
+    if (assetId == null || !MarketAssetRoute.isCanonical(assetId)) {
+      return _invalidAssetPage('无法打开持有人分布', widget.onBack);
     }
-  }
+    final blocked = _marketBlocked(ref);
+    final state = ref.watch(marketHoldersControllerProvider(assetId));
+    if (!blocked && state.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref.read(marketHoldersControllerProvider(assetId).notifier).load(),
+          );
+        }
+      });
+    }
+    final holders = state.value;
+    final count = holders?.holderCount;
 
-  @override
-  bool shouldRepaint(covariant _DistributionPainter oldDelegate) => false;
-}
-
-class _DistributionLegend extends StatelessWidget {
-  const _DistributionLegend({
-    required this.color,
-    required this.label,
-    required this.value,
-  });
-
-  final Color color;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
-        ),
-        Text(value, style: context.dataStyle.copyWith(fontSize: 12)),
-      ],
-    );
-  }
-}
-
-class _HolderGroupCard extends StatelessWidget {
-  const _HolderGroupCard({
-    required this.icon,
-    required this.title,
-    required this.detail,
-    required this.color,
-  });
-
-  final IconData icon;
-  final String title;
-  final String detail;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopCard(
-      child: Row(
-        children: <Widget>[
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: LoopRadius.small,
-            ),
-            child: Icon(icon, color: color, size: 21),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text(detail, style: Theme.of(context).textTheme.bodyMedium),
-              ],
-            ),
-          ),
-        ],
+    return LoopDashboardPage(
+      key: ValueKey<String>('token-holders-$assetId'),
+      archetype: LoopPageArchetype.listing,
+      title: '持有人分布',
+      onBack: widget.onBack,
+      primary: LoopFolioPrimary(
+        key: const ValueKey<String>('token-holders-folio'),
+        archetype: LoopFolioArchetype.listing,
+        kicker: 'HOLDER LEDGER',
+        heading: count == null || count.value == null
+            ? '持有人总数不可用'
+            : '${loopFormatDecimal(count.value!, maxFractionDigits: 0)} 持有人',
+        caption: count == null
+            ? '持有人事实尚未读取成功。'
+            : count.isAvailable
+            ? loopFactProvenance(count)
+            : loopReasonCodeText(count.reasonCode),
       ),
-    );
-  }
-}
-
-class _HolderRow extends StatelessWidget {
-  const _HolderRow({
-    required this.rank,
-    required this.address,
-    required this.share,
-    required this.label,
-    this.last = false,
-  });
-
-  final String rank;
-  final String address;
-  final String share;
-  final String label;
-  final bool last;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 13),
-      decoration: BoxDecoration(
-        border: last
-            ? null
-            : const Border(bottom: BorderSide(color: LoopColors.line)),
-      ),
-      child: Row(
-        children: <Widget>[
-          SizedBox(
-            width: 30,
-            child: Text(
-              rank,
-              style: Theme.of(context).textTheme.labelMedium
-                  ?.copyWith(fontFamily: 'monospace'),
+      sections: <Widget>[
+        if (blocked)
+          LoopUnavailableCard(
+            key: const ValueKey<String>('token-holders-capability-block'),
+            label: '行情模块当前不可用',
+            reasonCode: _marketBlockReason(ref),
+          )
+        else if (!state.isReady || holders == null)
+          LoopChainStateBlock(
+            keyPrefix: 'token-holders',
+            phase: state.phase,
+            failureKind: state.failureKind,
+            onRetry: () => unawaited(
+              ref
+                  .read(marketHoldersControllerProvider(assetId).notifier)
+                  .reload(),
+            ),
+          )
+        else ...<Widget>[
+          const LoopLabel('持有人总数'),
+          LoopSurfaceCard(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            child: LoopFactLine(
+              label: '持有人总数',
+              fact: holders.holderCount,
+              emphasize: true,
+              formatter: (value) =>
+                  loopFormatDecimal(value, maxFractionDigits: 0),
             ),
           ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(address, style: context.dataStyle.copyWith(fontSize: 12)),
-                const SizedBox(height: 3),
-                Text(label, style: Theme.of(context).textTheme.labelMedium),
-              ],
-            ),
+          const LoopLabel('分布'),
+          LoopUnavailableCard.fact(
+            key: const ValueKey<String>('token-holders-distribution'),
+            label: 'Top 持有人、集中度与聚类标注不可用',
+            fact: holders.distribution,
           ),
-          Text(share, style: context.dataStyle),
-        ],
-      ),
-    );
-  }
-}
-
-/// C6 — Read-only recent trading activity.
-class TradingActivityScreen extends StatefulWidget {
-  const TradingActivityScreen({
-    super.key,
-    this.symbol = 'ETH',
-    this.snapshotState = MarketSnapshotState.preview,
-  });
-
-  final String symbol;
-  final MarketSnapshotState snapshotState;
-
-  @override
-  State<TradingActivityScreen> createState() => _TradingActivityScreenState();
-}
-
-class _TradingActivityScreenState extends State<TradingActivityScreen> {
-  String _filter = 'All';
-
-  @override
-  Widget build(BuildContext context) {
-    final asset = MarketPreviewData.asset(widget.symbol);
-    final canShowData = widget.snapshotState == MarketSnapshotState.preview;
-    return LoopPage(
-      eyebrow: 'C6 · ${asset.symbol} activity',
-      title: 'Trading activity',
-      subtitle: 'A sample stream of recent buys and sells, with larger trades called out plainly.',
-      actions: <Widget>[
-        IconButton(
-          onPressed: () => context.push('/market/holders', extra: asset.symbol),
-          tooltip: 'Open holder distribution',
-          icon: const Icon(Icons.donut_large_rounded),
-        ),
-      ],
-      children: <Widget>[
-        _MarketPreviewBanner(state: widget.snapshotState),
-        if (!canShowData) ...<Widget>[
-          const SizedBox(height: 18),
-          _MarketSecondaryState(
-            state: widget.snapshotState,
-            subject: 'trading activity',
-          ),
-        ] else ...<Widget>[
-          const SizedBox(height: 18),
-          LoopCard(
-            accent: true,
-            tone: LoopTone.market,
-            child: const Row(
-              children: <Widget>[
-                Expanded(
-                  child: LoopMetric(label: 'Sample volume', value: '\$4.82M'),
-                ),
-                Expanded(
-                  child: LoopMetric(
-                    label: 'Buy share',
-                    value: '54.8%',
-                    tone: LoopTone.positive,
-                  ),
-                ),
-                Expanded(
-                  child: LoopMetric(label: 'Large trades', value: '7'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children:
-                  <String>['All', 'Buys', 'Sells', 'Large', 'Tracked wallets']
-                      .map(
-                        (filter) => Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(filter),
-                            selected: _filter == filter,
-                            onSelected: (_) => setState(() => _filter = filter),
-                          ),
-                        ),
-                      )
-                      .toList(growable: false),
-            ),
-          ),
-          LoopSectionLabel(
-            'Recent sample',
-            trailing: Text(
-              _filter,
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
-          ),
-          const LoopCard(
-            child: Column(
-              children: <Widget>[
-                _TradeRow(
-                  time: '08:42:12',
-                  side: 'BUY',
-                  price: '4,638.20',
-                  size: '42.8 ETH',
-                  value: '\$198.5K',
-                  note: 'Large trade',
-                ),
-                _TradeRow(
-                  time: '08:41:58',
-                  side: 'SELL',
-                  price: '4,637.80',
-                  size: '3.12 ETH',
-                  value: '\$14.4K',
-                ),
-                _TradeRow(
-                  time: '08:41:34',
-                  side: 'BUY',
-                  price: '4,636.90',
-                  size: '18.4 ETH',
-                  value: '\$85.3K',
-                  note: 'Tracked wallet',
-                ),
-                _TradeRow(
-                  time: '08:40:51',
-                  side: 'SELL',
-                  price: '4,635.10',
-                  size: '7.06 ETH',
-                  value: '\$32.7K',
-                  last: true,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          const LoopStateCard(
-            title: 'Recent activity is not direction',
-            message: 'A labelled wallet or large trade can buy, sell, hedge, or transfer for many reasons.',
-            icon: Icons.info_outline_rounded,
-            tone: LoopTone.warning,
+          const LoopNotice(
+            key: ValueKey<String>('token-holders-notice'),
+            title: '没有分布就不画分布',
+            body: '前十 / 前百集中度需要全量历史，本步没有来源。这里不展示任何推测比例或示例地址。',
           ),
         ],
       ],
@@ -492,656 +230,408 @@ class _TradingActivityScreenState extends State<TradingActivityScreen> {
   }
 }
 
-class _TradeRow extends StatelessWidget {
-  const _TradeRow({
-    required this.time,
-    required this.side,
-    required this.price,
-    required this.size,
-    required this.value,
-    this.note,
-    this.last = false,
-  });
+// ---------------------------------------------------------------------------
+// token-trades
+// ---------------------------------------------------------------------------
 
-  final String time;
-  final String side;
-  final String price;
-  final String size;
-  final String value;
-  final String? note;
-  final bool last;
+/// `token-trades` · the indexed pool swap tape.
+///
+/// The backend sends no counterparty address: `isOwn` is the only identity
+/// fact. The prototype's 大单 segment is a local threshold filter on
+/// `amountQuote`; its 聪明钱 segment has no backend and stays disabled.
+class TradingActivityScreen extends ConsumerStatefulWidget {
+  const TradingActivityScreen({required this.assetId, super.key, this.onBack});
+
+  final String? assetId;
+  final VoidCallback? onBack;
+
+  /// The local threshold that marks a trade as 大单. It is a client-side view
+  /// filter, never a server fact.
+  static final Decimal largeTradeQuoteThreshold = Decimal.fromInt(10000);
 
   @override
-  Widget build(BuildContext context) {
-    final isBuy = side == 'BUY';
-    final color = isBuy ? LoopColors.mint : LoopColors.danger;
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 13),
-      decoration: BoxDecoration(
-        border: last
-            ? null
-            : const Border(bottom: BorderSide(color: LoopColors.line)),
-      ),
-      child: Row(
-        children: <Widget>[
-          SizedBox(
-            width: 58,
-            child: Text(
-              time,
-              style: Theme.of(context).textTheme.labelMedium
-                  ?.copyWith(fontFamily: 'monospace'),
-            ),
-          ),
-          Container(
-            width: 4,
-            height: 34,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: LoopRadius.pill,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    Text(
-                      side,
-                      style: Theme.of(context).textTheme.labelMedium
-                          ?.copyWith(color: color),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      price,
-                      style: context.dataStyle.copyWith(fontSize: 12),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$size · $value',
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
-              ],
-            ),
-          ),
-          if (note != null)
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 92),
-              child: Text(
-                note!,
-                textAlign: TextAlign.right,
-                style: Theme.of(context).textTheme.labelMedium
-                    ?.copyWith(color: LoopColors.chat),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+  ConsumerState<TradingActivityScreen> createState() =>
+      _TradingActivityScreenState();
 }
 
-/// C9 — Read-only alert list and notification state.
-class PriceAlertsScreen extends StatelessWidget {
-  const PriceAlertsScreen({
-    super.key,
-    this.symbol = 'ETH',
-    this.snapshotState = MarketSnapshotState.preview,
-  });
-
-  final String symbol;
-  final MarketSnapshotState snapshotState;
+class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
+  int _segment = 0;
 
   @override
   Widget build(BuildContext context) {
-    final asset = MarketPreviewData.asset(symbol);
-    final canShowData = snapshotState == MarketSnapshotState.preview;
-    return LoopPage(
-      eyebrow: 'C9 · Notifications',
-      title: 'Price alerts',
-      subtitle: 'Review how thresholds and trigger history will read. Alert changes remain off.',
-      actions: <Widget>[
-        IconButton(
-          onPressed: null,
-          tooltip: 'Creating alerts is unavailable in preview',
-          icon: const Icon(Icons.add_alert_outlined),
-        ),
-      ],
-      children: <Widget>[
-        _MarketPreviewBanner(state: snapshotState),
-        if (!canShowData) ...<Widget>[
-          const SizedBox(height: 18),
-          _MarketSecondaryState(state: snapshotState, subject: 'price alerts'),
-        ] else ...<Widget>[
-          const SizedBox(height: 18),
-          const LoopStateCard(
-            title: 'Notifications are off',
-            message: 'Allow notifications in system settings before expecting price or provider-activity reminders.',
-            icon: Icons.notifications_off_outlined,
-            tone: LoopTone.warning,
-          ),
-          const LoopSectionLabel(
-            'Alert examples',
-            trailing: LoopStatusPill(
-              label: '2 READ-ONLY',
-              tone: LoopTone.market,
+    final assetId = widget.assetId;
+    if (assetId == null || !MarketAssetRoute.isCanonical(assetId)) {
+      return _invalidAssetPage('无法打开交易活动', widget.onBack);
+    }
+    final blocked = _marketBlocked(ref);
+    final state = ref.watch(marketTradesControllerProvider(assetId));
+    if (!blocked && state.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref.read(marketTradesControllerProvider(assetId).notifier).load(),
+          );
+        }
+      });
+    }
+    final page = state.value;
+    final block = page?.trades;
+
+    return LoopDashboardPage(
+      key: ValueKey<String>('token-trades-$assetId'),
+      archetype: LoopPageArchetype.listing,
+      title: '交易活动',
+      onBack: widget.onBack,
+      primary: LoopFolioPrimary(
+        key: const ValueKey<String>('token-trades-folio'),
+        archetype: LoopFolioArchetype.listing,
+        kicker: 'ACTIVITY TAPE',
+        heading: block is MarketTradesAvailable
+            ? '${block.items.length} 笔链上成交'
+            : '链上成交',
+        caption: '来自已登记 PancakeSwap V3 池的 Swap 事件，每条带交易哈希、区块与确认状态。',
+      ),
+      sections: <Widget>[
+        if (blocked)
+          LoopUnavailableCard(
+            key: const ValueKey<String>('token-trades-capability-block'),
+            label: '行情模块当前不可用',
+            reasonCode: _marketBlockReason(ref),
+          )
+        else if (!state.isReady || block == null)
+          LoopChainStateBlock(
+            keyPrefix: 'token-trades',
+            phase: state.phase,
+            failureKind: state.failureKind,
+            onRetry: () => unawaited(
+              ref
+                  .read(marketTradesControllerProvider(assetId).notifier)
+                  .reload(),
             ),
-          ),
-          _AlertCard(
-            symbol: asset.symbol,
-            condition: 'Price rises above',
-            target: asset.symbol == 'ETH' ? '\$4,800.00' : asset.price,
-            repeat: 'Once',
-          ),
-          const SizedBox(height: 10),
-          _AlertCard(
-            symbol: 'BTC',
-            condition: '24h move exceeds',
-            target: '±5.00%',
-            repeat: 'Every 24 hours',
-          ),
-          const LoopSectionLabel('Trigger history'),
-          const LoopCard(
-            child: Column(
-              children: <Widget>[
-                _AlertHistoryRow(
-                  symbol: 'SOL',
-                  detail: 'Crossed \$220.00',
-                  time: '23 Aug · 18:20',
-                ),
-                _AlertHistoryRow(
-                  symbol: 'ETH',
-                  detail: 'Moved +4.0% in 24h',
-                  time: '21 Aug · 09:11',
-                  last: true,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: null,
-            icon: const Icon(Icons.lock_outline_rounded),
-            label: const Text('Create alert unavailable'),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _AlertCard extends StatelessWidget {
-  const _AlertCard({
-    required this.symbol,
-    required this.condition,
-    required this.target,
-    required this.repeat,
-  });
-
-  final String symbol;
-  final String condition;
-  final String target;
-  final String repeat;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopCard(
-      child: Column(
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              LoopAssetMark(symbol: symbol, size: 38),
-              const SizedBox(width: 11),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      symbol,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      condition,
-                      style: Theme.of(context).textTheme.labelMedium,
-                    ),
-                  ],
-                ),
-              ),
-              Text(target, style: context.dataStyle),
-            ],
-          ),
-          const SizedBox(height: 13),
-          const Divider(),
-          const SizedBox(height: 10),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  repeat,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-              Switch(value: false, onChanged: null),
-              IconButton(
-                onPressed: null,
-                tooltip: 'Alert editing is unavailable in preview',
-                icon: const Icon(Icons.more_horiz_rounded),
+          )
+        else
+          ...switch (block) {
+            MarketTradesUnavailable(reasonCode: final reasonCode) => <Widget>[
+              LoopUnavailableCard(
+                key: const ValueKey<String>('token-trades-unavailable'),
+                label: '成交记录不可用',
+                reasonCode: reasonCode,
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AlertHistoryRow extends StatelessWidget {
-  const _AlertHistoryRow({
-    required this.symbol,
-    required this.detail,
-    required this.time,
-    this.last = false,
-  });
-
-  final String symbol;
-  final String detail;
-  final String time;
-  final bool last;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 13),
-      decoration: BoxDecoration(
-        border: last
-            ? null
-            : const Border(bottom: BorderSide(color: LoopColors.line)),
-      ),
-      child: Row(
-        children: <Widget>[
-          LoopAssetMark(symbol: symbol, size: 34),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(detail, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text(time, style: Theme.of(context).textTheme.labelMedium),
-              ],
-            ),
-          ),
-          const LoopStatusPill(label: 'SAMPLE', tone: LoopTone.neutral),
-        ],
-      ),
-    );
-  }
-}
-
-/// C11 — Followed-wallet activity without investment recommendations.
-class SmartMoneyScreen extends StatefulWidget {
-  const SmartMoneyScreen({
-    super.key,
-    this.snapshotState = MarketSnapshotState.preview,
-  });
-
-  final MarketSnapshotState snapshotState;
-
-  @override
-  State<SmartMoneyScreen> createState() => _SmartMoneyScreenState();
-}
-
-class _SmartMoneyScreenState extends State<SmartMoneyScreen> {
-  String _filter = 'All activity';
-
-  @override
-  Widget build(BuildContext context) {
-    final canShowData = widget.snapshotState == MarketSnapshotState.preview;
-    return LoopPage(
-      eyebrow: 'C11 · Followed wallets',
-      title: 'Wallet activity',
-      subtitle: 'Track public wallet movements as facts. A profitable history does not make the next move reliable.',
-      actions: <Widget>[
-        IconButton(
-          onPressed: null,
-          tooltip: 'Following wallets is unavailable in preview',
-          icon: const Icon(Icons.person_add_alt_1_outlined),
-        ),
+            MarketTradesAvailable() => _tradeSections(block),
+          },
       ],
-      children: <Widget>[
-        _MarketPreviewBanner(state: widget.snapshotState),
-        if (!canShowData) ...<Widget>[
-          const SizedBox(height: 18),
-          _MarketSecondaryState(
-            state: widget.snapshotState,
-            subject: 'wallet activity',
-          ),
-        ] else ...<Widget>[
-          const SizedBox(height: 18),
-          const LoopStateCard(
-            title: 'Public activity, incomplete context',
-            message: 'Wallet transfers can be hedges, custody moves, or internal routing. Nothing here is a recommendation.',
-            icon: Icons.visibility_outlined,
-            tone: LoopTone.warning,
-          ),
-          const SizedBox(height: 16),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: <String>['All activity', 'Buys', 'Sells', 'Transfers']
-                  .map(
-                    (filter) => Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(filter),
-                        selected: _filter == filter,
-                        onSelected: (_) => setState(() => _filter = filter),
+    );
+  }
+
+  List<Widget> _tradeSections(MarketTradesAvailable block) {
+    final visible = _segment == 1
+        ? block.items
+              .where(
+                (trade) =>
+                    trade.amountQuote >=
+                    TradingActivityScreen.largeTradeQuoteThreshold,
+              )
+              .toList(growable: false)
+        : block.items;
+    return <Widget>[
+      MarketSegmentBar(
+        labels: const <String>['全部', '大单', '聪明钱'],
+        selectedIndex: _segment,
+        enabled: const <bool>[true, true, false],
+        onSelected: (index) => setState(() => _segment = index),
+      ),
+      if (_segment == 2)
+        const LoopUnavailableCard(
+          key: ValueKey<String>('token-trades-smart-money'),
+          label: '聪明钱筛选不可用',
+          reasonCode: 'SMART_MONEY_RUNTIME_DEFERRED',
+        )
+      else if (visible.isEmpty)
+        LoopEmpty(
+          key: const ValueKey<String>('token-trades-empty'),
+          message: _segment == 1 ? '这一页没有大单' : '这一页没有成交',
+          reason: _segment == 1
+              ? '大单是本地按报价金额筛选的视图，不是服务端事实。'
+              : '索引器已经读到这个区间，但其中没有成交。',
+        )
+      else
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[for (final trade in visible) _tradeRow(trade)],
+        ),
+      _FreshnessFooter(freshness: block.freshness),
+      const LoopNotice(
+        key: ValueKey<String>('token-trades-notice'),
+        title: '不下发对手方地址',
+        body: '服务端只告诉你哪一笔是你自己的钱包发起的。"大单"是本地按金额筛选的视图，"聪明钱"没有来源。',
+      ),
+    ];
+  }
+
+  LoopRecordRow _tradeRow(MarketTrade trade) {
+    final isBuy = trade.direction == MarketTradeDirection.buy;
+    final isLarge =
+        trade.amountQuote >= TradingActivityScreen.largeTradeQuoteThreshold;
+    return LoopRecordRow(
+      key: ValueKey<String>('trade-${trade.tradeId}'),
+      title:
+          '${isBuy ? '买入' : '卖出'} '
+          '${loopFormatDecimal(trade.amountQuote, maxFractionDigits: 2)} '
+          '${trade.quoteSymbol}',
+      subtitle: <String>[
+        if (trade.isOwn) '我',
+        loopConfirmationLabel(trade.status),
+        if (trade.confirmations != null) '${trade.confirmations} 确认',
+        '区块 ${trade.blockNumber}',
+        loopRelativeTime(trade.blockTimestamp),
+      ].join(' · '),
+      trailing: loopFormatDecimal(trade.amountAsset),
+      trailingCaptionUp: isBuy,
+      trailingCaption: isBuy ? '流出池' : '流入池',
+      trailingBadge: trade.status == LoopConfirmationStatus.reorged
+          ? const LoopBadge('已回滚', kind: LoopBadgeKind.down)
+          : isLarge
+          ? const LoopBadge('大单')
+          : null,
+    );
+  }
+}
+
+class _FreshnessFooter extends StatelessWidget {
+  const _FreshnessFooter({required this.freshness});
+
+  final LoopIndexerFreshness freshness;
+
+  @override
+  Widget build(BuildContext context) {
+    final lag = freshness.lagBlocks;
+    return LoopProvenanceFooter(
+      key: const ValueKey<String>('indexer-freshness'),
+      text: <String>[
+        '索引高度 ${freshness.indexerBlockNumber}',
+        if (lag != null) '数据落后 $lag 块',
+        '观察于 ${loopRelativeTime(freshness.observedAt)}',
+      ].join(' · '),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// new-pairs
+// ---------------------------------------------------------------------------
+
+/// `new-pairs` · GeckoTerminal is disabled by default, so the whole page is
+/// unavailable and states the server's `reasonCode`.
+class NewPairsScreen extends ConsumerStatefulWidget {
+  const NewPairsScreen({super.key, this.onBack, this.onNavigate});
+
+  final VoidCallback? onBack;
+  final void Function(String location)? onNavigate;
+
+  @override
+  ConsumerState<NewPairsScreen> createState() => _NewPairsScreenState();
+}
+
+class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
+  void _open(String location) {
+    final navigate = widget.onNavigate;
+    if (navigate != null) {
+      navigate(location);
+      return;
+    }
+    context.push(location);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final blocked = _marketBlocked(ref);
+    final state = ref.watch(marketNewPairsControllerProvider);
+    if (!blocked && state.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(ref.read(marketNewPairsControllerProvider.notifier).load());
+        }
+      });
+    }
+    final page = state.value;
+    final block = page?.newPairs;
+
+    return LoopDashboardPage(
+      key: const ValueKey<String>('new-pairs-screen'),
+      archetype: LoopPageArchetype.listing,
+      title: '新币发现',
+      onBack: widget.onBack,
+      primary: LoopFolioPrimary(
+        key: const ValueKey<String>('new-pairs-folio'),
+        archetype: LoopFolioArchetype.listing,
+        kicker: 'NEW PAIRS',
+        heading: block is MarketNewPairsAvailable
+            ? '${block.items.length} 个新对'
+            : '新币发现',
+        caption: '流动性、合约状态与来源标注优先于短时价格表现。',
+      ),
+      sections: <Widget>[
+        if (blocked)
+          LoopUnavailableCard(
+            key: const ValueKey<String>('new-pairs-capability-block'),
+            label: '行情模块当前不可用',
+            reasonCode: _marketBlockReason(ref),
+          )
+        else if (!state.isReady || page == null || block == null)
+          LoopChainStateBlock(
+            keyPrefix: 'new-pairs',
+            phase: state.phase,
+            failureKind: state.failureKind,
+            onRetry: () => unawaited(
+              ref.read(marketNewPairsControllerProvider.notifier).reload(),
+            ),
+          )
+        else
+          ...switch (block) {
+            // No provider means the whole page is unavailable, with the
+            // server's reason — never an empty list.
+            MarketNewPairsUnavailable(reasonCode: final reasonCode) => <Widget>[
+              LoopUnavailableCard(
+                key: const ValueKey<String>('new-pairs-unavailable'),
+                label: '新币发现不可用',
+                reasonCode: reasonCode,
+              ),
+            ],
+            MarketNewPairsAvailable() => <Widget>[
+              if (block.items.isEmpty)
+                const LoopEmpty(
+                  key: ValueKey<String>('new-pairs-empty'),
+                  message: '来源当前没有报告新的池',
+                  reason: '这是来源的结果，不是筛选后的结论。',
+                )
+              else
+                LoopRecordGroup(
+                  rows: <LoopRecordRow>[
+                    for (final pair in block.items)
+                      LoopRecordRow(
+                        key: ValueKey<String>('new-pair-${pair.poolAddress}'),
+                        title: pair.name,
+                        subtitle: <String>[
+                          pair.dexId,
+                          if (pair.createdAt != null)
+                            '创建于 ${loopRelativeTime(pair.createdAt!)}',
+                          if (pair.reserveUsd != null)
+                            '储备 ${loopFormatUsd(pair.reserveUsd!)}',
+                        ].join(' · '),
+                        trailing: pair.volumeH24Usd == null
+                            ? null
+                            : loopFormatUsd(pair.volumeH24Usd!),
+                        onTap: pair.registryAssetId == null
+                            ? null
+                            : () => _open(
+                                MarketAssetRoute.token(pair.registryAssetId!),
+                              ),
                       ),
-                    ),
-                  )
-                  .toList(growable: false),
-            ),
-          ),
-          LoopSectionLabel(
-            'Recent sample',
-            trailing: Text(
-              _filter,
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
-          ),
-          _WalletActivityCard(
-            alias: 'Atlas 07',
-            address: '0x71…E20A',
-            action: 'Bought 18.4 ETH',
-            detail: '\$85.3K · average \$4,636.90',
-            time: '2 min ago',
-            symbol: 'ETH',
-            tone: LoopTone.positive,
-            onOpen: () => context.go('/market'),
-          ),
-          const SizedBox(height: 10),
-          _WalletActivityCard(
-            alias: 'Northstar',
-            address: '0xA8…19F2',
-            action: 'Sent 42.0 BTC',
-            detail: 'Destination label unavailable',
-            time: '18 min ago',
-            symbol: 'BTC',
-            tone: LoopTone.warning,
-            onOpen: () => context.go('/market'),
-          ),
-          const SizedBox(height: 10),
-          _WalletActivityCard(
-            alias: 'Cedar 12',
-            address: '0x34…C810',
-            action: 'Sold 820 SOL',
-            detail: '\$179.2K · average \$218.54',
-            time: '41 min ago',
-            symbol: 'SOL',
-            tone: LoopTone.danger,
-            onOpen: () => context.go('/market'),
-          ),
-          const LoopSectionLabel('Following'),
-          const LoopCard(
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: LoopMetric(label: 'Wallets', value: '3 sample'),
+                  ],
                 ),
-                Expanded(
-                  child: LoopMetric(label: 'Alerts', value: 'Off'),
-                ),
-                Expanded(
-                  child: LoopMetric(
-                    label: 'Labels checked',
-                    value: '08:42 UTC',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: null,
-            icon: const Icon(Icons.lock_outline_rounded),
-            label: const Text('Follow wallet unavailable'),
+              LoopProvenanceFooter(
+                text:
+                    '来源 ${loopFactSourceLabel(block.source)} · '
+                    '观察于 ${loopRelativeTime(block.fetchedAt)}',
+              ),
+            ],
+          },
+        if (page != null) ...<Widget>[
+          const LoopLabel('风险预筛'),
+          LoopUnavailableCard.fact(
+            key: const ValueKey<String>('new-pairs-risk-screening'),
+            label: '风险预筛不可用',
+            fact: page.riskScreening,
           ),
         ],
+        const LoopNotice(
+          key: ValueKey<String>('new-pairs-notice'),
+          title: '预筛不等于结论',
+          body: '没有风险预筛来源时，这里不会按其它字段自行判定风险。新池流动性薄，价格易被操纵。',
+          tone: LoopNoticeTone.warn,
+        ),
       ],
     );
   }
 }
 
-class _WalletActivityCard extends StatelessWidget {
-  const _WalletActivityCard({
-    required this.alias,
-    required this.address,
-    required this.action,
-    required this.detail,
-    required this.time,
-    required this.symbol,
-    required this.tone,
-    required this.onOpen,
-  });
+// ---------------------------------------------------------------------------
+// smart-money
+// ---------------------------------------------------------------------------
 
-  final String alias;
-  final String address;
-  final String action;
-  final String detail;
-  final String time;
-  final String symbol;
-  final LoopTone tone;
-  final VoidCallback onOpen;
+/// `smart-money` · always unavailable in this step (D21).
+class SmartMoneyScreen extends ConsumerStatefulWidget {
+  const SmartMoneyScreen({super.key, this.onBack});
+
+  final VoidCallback? onBack;
 
   @override
-  Widget build(BuildContext context) {
-    return LoopCard(
-      accent: true,
-      tone: tone,
-      onTap: onOpen,
-      semanticLabel: 'Open live Spot market after reviewing $alias activity',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Container(
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: loopToneColor(tone).withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  alias.characters.first,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-              const SizedBox(width: 11),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(alias, style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 3),
-                    Text(
-                      address,
-                      style: Theme.of(context).textTheme.labelMedium
-                          ?.copyWith(fontFamily: 'monospace'),
-                    ),
-                  ],
-                ),
-              ),
-              Text(time, style: Theme.of(context).textTheme.labelMedium),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: <Widget>[
-              LoopAssetMark(symbol: symbol, size: 36),
-              const SizedBox(width: 11),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      action,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(detail, style: Theme.of(context).textTheme.bodyMedium),
-                  ],
-                ),
-              ),
-              const Icon(Icons.arrow_forward_rounded, size: 19),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  ConsumerState<SmartMoneyScreen> createState() => _SmartMoneyScreenState();
 }
 
-class _MarketPreviewBanner extends StatelessWidget {
-  const _MarketPreviewBanner({required this.state});
-
-  final MarketSnapshotState state;
-
+class _SmartMoneyScreenState extends ConsumerState<SmartMoneyScreen> {
   @override
   Widget build(BuildContext context) {
-    final descriptor = switch (state) {
-      MarketSnapshotState.preview => (
-        'SAMPLE DATA · READ-ONLY',
-        'Updated 08:42 UTC · actions are off',
-        LoopTone.market,
-        Icons.visibility_outlined,
-      ),
-      MarketSnapshotState.loading => (
-        'LOADING',
-        'Waiting for current market information',
-        LoopTone.neutral,
-        Icons.sync_rounded,
-      ),
-      MarketSnapshotState.offline => (
-        'OFFLINE',
-        'Values stay hidden while there is no connection',
-        LoopTone.warning,
-        Icons.cloud_off_outlined,
-      ),
-      MarketSnapshotState.stale => (
-        'UPDATE NEEDED',
-        'Old values were cleared',
-        LoopTone.warning,
-        Icons.history_toggle_off_rounded,
-      ),
-      MarketSnapshotState.empty => (
-        'NOTHING HERE YET',
-        'No matching information is available',
-        LoopTone.neutral,
-        Icons.inbox_outlined,
-      ),
-      MarketSnapshotState.regionBlocked => (
-        'UNAVAILABLE IN THIS REGION',
-        'Market information and actions are off',
-        LoopTone.danger,
-        Icons.public_off_outlined,
-      ),
-    };
-    final color = loopToneColor(descriptor.$3);
-    return Semantics(
-      liveRegion: state != MarketSnapshotState.preview,
-      label: '${descriptor.$1}. ${descriptor.$2}',
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.075),
-          borderRadius: LoopRadius.small,
-          border: Border.all(color: color.withValues(alpha: 0.25)),
-        ),
-        child: Row(
-          children: <Widget>[
-            Icon(descriptor.$4, size: 17, color: color),
-            const SizedBox(width: 9),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    descriptor.$1,
-                    style: Theme.of(context).textTheme.labelMedium
-                        ?.copyWith(color: color, letterSpacing: 0.75),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    descriptor.$2,
-                    style: Theme.of(context).textTheme.labelMedium,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MarketSecondaryState extends StatelessWidget {
-  const _MarketSecondaryState({required this.state, required this.subject});
-
-  final MarketSnapshotState state;
-  final String subject;
-
-  @override
-  Widget build(BuildContext context) {
-    if (state == MarketSnapshotState.loading) {
-      return LoopStateCard(
-        title: 'Loading $subject',
-        message: 'Current information will appear here when it is ready.',
-        icon: Icons.sync_rounded,
-      );
+    final blocked = _marketBlocked(ref);
+    final state = ref.watch(marketSmartMoneyControllerProvider);
+    if (!blocked && state.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref.read(marketSmartMoneyControllerProvider.notifier).load(),
+          );
+        }
+      });
     }
-    final descriptor = switch (state) {
-      MarketSnapshotState.offline => (
-        'No connection',
-        'Reconnect to view current $subject. Old values are not shown.',
-        Icons.cloud_off_outlined,
-        LoopTone.warning,
+    final fact = state.value;
+
+    return LoopFocusPage(
+      key: const ValueKey<String>('smart-money-screen'),
+      archetype: LoopPageArchetype.listing,
+      title: '聪明钱追踪',
+      onBack: widget.onBack,
+      folio: const LoopFolioPrimary(
+        key: ValueKey<String>('smart-money-folio'),
+        archetype: LoopFolioArchetype.listing,
+        kicker: 'PUBLIC WALLET WATCH',
+        heading: '聪明钱追踪未交付',
+        caption: '这里不会展示任何地址、胜率或跟随建议。',
       ),
-      MarketSnapshotState.stale => (
-        'Information needs an update',
-        'The previous $subject is too old to display. Refresh before relying on it.',
-        Icons.history_toggle_off_rounded,
-        LoopTone.warning,
-      ),
-      MarketSnapshotState.empty => (
-        'Nothing here yet',
-        'There is no $subject for this view. Try another asset or return later.',
-        Icons.inbox_outlined,
-        LoopTone.neutral,
-      ),
-      MarketSnapshotState.regionBlocked => (
-        'Unavailable in this region',
-        '$subject and related actions are not available from your location.',
-        Icons.public_off_outlined,
-        LoopTone.danger,
-      ),
-      _ => (
-        'Read-only sample',
-        'No account changes can be made here.',
-        Icons.visibility_outlined,
-        LoopTone.market,
-      ),
-    };
-    return LoopStateCard(
-      title: descriptor.$1,
-      message: descriptor.$2,
-      icon: descriptor.$3,
-      tone: descriptor.$4,
+      body: <Widget>[
+        if (blocked)
+          LoopUnavailableCard(
+            key: const ValueKey<String>('smart-money-capability-block'),
+            label: '行情模块当前不可用',
+            reasonCode: _marketBlockReason(ref),
+          )
+        else if (!state.isReady || fact == null)
+          LoopChainStateBlock(
+            keyPrefix: 'smart-money',
+            phase: state.phase,
+            failureKind: state.failureKind,
+            rows: 1,
+            onRetry: () => unawaited(
+              ref.read(marketSmartMoneyControllerProvider.notifier).reload(),
+            ),
+          )
+        else
+          LoopUnavailableCard.fact(
+            key: const ValueKey<String>('smart-money-unavailable'),
+            label: '聪明钱追踪不可用',
+            fact: fact,
+          ),
+        const LoopNotice(
+          key: ValueKey<String>('smart-money-notice'),
+          title: '胜率不是预测',
+          body: '即使这项交付，地址标签与胜率也只是公开链上数据的历史统计，不构成跟随建议。',
+        ),
+      ],
     );
   }
 }
+
+/// Kept so `token_screen.dart`'s formatter stays reachable from one place.
+String marketFormatDecimal(Decimal value) => tokenFormatDecimal(value);
+
+/// Text style anchor so the mono token stays imported here for figures.
+TextStyle get marketMonoValue => LoopMono.value;
