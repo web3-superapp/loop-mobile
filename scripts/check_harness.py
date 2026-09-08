@@ -7560,12 +7560,15 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             "class MiningScreen",
             "D19",
         ),
-        # Step 5 moved the Wallet destination to the V2 read-only screens; Pay
-        # is now stated as a deferred funds action instead of offering an
-        # availability action that leads nowhere.
+        # Step 5 moved the Wallet destination to the V2 read-only screens. The
+        # prototype's four funds-action entries stay in place and each opens
+        # its own manifest slug; every destination owns its unavailable state
+        # (ruling of 2026-09-08), so this page never speaks for four others.
         "lib/features/wallet/wallet_read_screens.dart": (
-            "ValueKey<String>('wallet-funds-actions-unavailable')",
-            "WALLET_FUNDS_ACTIONS_DEFERRED",
+            "ValueKey<String>('wallet-pay-entry')",
+            "ValueKey<String>('wallet-swap-entry')",
+            "ValueKey<String>('wallet-send-entry')",
+            "ValueKey<String>('wallet-bridge-entry')",
         ),
     }
     for relative, fragments in normalized_contracts.items():

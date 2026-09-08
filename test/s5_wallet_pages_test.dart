@@ -127,16 +127,42 @@ void main() {
 
       await scrollToS5Section(
         tester,
-        find.byKey(const ValueKey<String>('wallet-funds-actions-unavailable')),
-      );
-      expect(find.textContaining('需要统一签名出口'), findsOneWidget);
-      await scrollToS5Section(
-        tester,
         find.byKey(const ValueKey<String>('wallet-security-unavailable')),
       );
       expect(find.textContaining('安全中心 / 授权盘点 / DApp'), findsOneWidget);
       expect(find.textContaining('8 个有效授权'), findsNothing);
       expect(find.textContaining('4 条链已启用'), findsNothing);
+    });
+
+    testWidgets('the funds actions open their own manifest slugs', (
+      tester,
+    ) async {
+      final opened = <String>[];
+      await pumpS5Page(
+        tester,
+        WalletScreen(onNavigate: opened.add),
+        wallet: FakeWalletReadGateway(),
+      );
+
+      for (final entry in const <(String, String)>[
+        ('wallet-pay-entry', '/pay'),
+        ('wallet-swap-entry', '/wallet/swap'),
+        ('wallet-send-entry', '/wallet/send'),
+        ('wallet-bridge-entry', '/wallet/bridge'),
+      ]) {
+        await scrollToS5Section(tester, find.byKey(ValueKey<String>(entry.$1)));
+        await tester.tap(find.byKey(ValueKey<String>(entry.$1)));
+        await tester.pumpAndSettle();
+      }
+
+      // Each entry opens its own page, which owns its unavailable state; this
+      // page never speaks for the four destinations.
+      expect(opened, <String>[
+        '/pay',
+        '/wallet/swap',
+        '/wallet/send',
+        '/wallet/bridge',
+      ]);
     });
 
     testWidgets('an unavailable chain capability stops the page', (

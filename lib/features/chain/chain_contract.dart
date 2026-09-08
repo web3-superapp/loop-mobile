@@ -268,7 +268,6 @@ String loopReasonCodeText(String? reasonCode) => switch (reasonCode) {
   'MARKET_CHART_TOOLS_DEFERRED' => '指标与画线工具没有服务端来源，本步不提供。',
   'WALLET_NETWORTH_TREND_DEFERRED' => '净值走势与 24h 涨跌没有后端来源，本步不展示。',
   'WALLET_CUSTOM_RPC_DEFERRED' => '自定义 RPC 与测试网本步不开放。',
-  'WALLET_FUNDS_ACTIONS_DEFERRED' => '发送、兑换、跨链与 Pay 需要统一签名出口，尚未交付。',
   'WALLET_SECURITY_FACTS_DEFERRED' => '安全中心、授权盘点与 DApp 状态尚未接入，不展示任何数量。',
   null => '该字段当前没有可信来源。',
   _ => '该字段当前没有可信来源。',

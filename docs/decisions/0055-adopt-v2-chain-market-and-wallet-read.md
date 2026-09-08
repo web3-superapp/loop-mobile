@@ -116,6 +116,9 @@ Six constraints shaped the result:
     nothing beyond `package:flutter/foundation.dart`.
 13. **The capability enum follows the contract's 27 ids** with `marketRead`,
     `priceAlerts` and `notificationsFeed`.
+14. **The receive QR is not verified on a device.** The encoder is covered by
+    known-answer tests against reference symbols, but no physical scan has
+    been performed; it stays on the external Go/No-Go list.
 
 ## Consequences
 
@@ -149,10 +152,16 @@ Six constraints shaped the result:
   cross-chain segments render the server's reason. An indexer that never ran is
   `INDEXING_DELAYED`, never an empty list.
 - The Preview Watchlist and notification-preference adapters are gone.
-  `main_preview.dart` no longer composes them, so those two surfaces are
-  unavailable in Preview rather than showing a labelled fixture. Restoring
-  them would mean rewriting both memory adapters against the V2 contracts,
-  which the step did not need.
+  `main_preview.dart` no longer composes them, so `watchlist-edit` and
+  `notif-settings` are unavailable in Preview rather than showing a labelled
+  fixture. Rewriting both memory adapters against the V2 contracts is
+  deliberately deferred (ruling of 2026-09-08): Preview is UI evidence, and an
+  unavailable Preview surface is truthful, where a fixture written against the
+  old shape would not be.
+- The wallet page keeps the prototype's Pay / 兑换 / 发送 / 跨链 entries and
+  opens each one's own manifest slug (ruling of 2026-09-08). Every destination
+  owns its unavailable state, so the entry point stays honest without this page
+  speaking for four others.
 - The V1 four-intent notification-preference module and its screen are
   deleted. The V1 resource stays frozen server-side; the client only speaks V2.
 

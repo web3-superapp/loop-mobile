@@ -198,13 +198,37 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 ' · 由服务端配置 ${balances.gasReservePolicy.configVersion} 下发',
           ),
           const LoopLabel('资金动作'),
-          // The prototype's Pay / 兑换 / 发送 / 跨链 row belongs to D15 and D16.
-          // Rendering the controls now would promise a path that cannot be
-          // signed, so the entry states what is missing instead.
-          const LoopUnavailableCard(
-            key: ValueKey<String>('wallet-funds-actions-unavailable'),
-            label: 'Pay / 兑换 / 发送 / 跨链 未开放',
-            reasonCode: 'WALLET_FUNDS_ACTIONS_DEFERRED',
+          // The prototype's Pay / 兑换 / 发送 / 跨链 entries stay in place and
+          // each opens its own manifest slug. None of them can sign yet: every
+          // destination owns its unavailable state, so the entry point is
+          // honest without this page having to speak for four other pages.
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('wallet-pay-entry'),
+                title: 'Pay',
+                subtitle: '扫码支付尚未开放',
+                onTap: () => _open('/pay'),
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('wallet-swap-entry'),
+                title: '兑换',
+                subtitle: 'Swap 需要统一签名出口，尚未交付',
+                onTap: () => _open('/wallet/swap'),
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('wallet-send-entry'),
+                title: '发送',
+                subtitle: '发送需要统一签名出口，尚未交付',
+                onTap: () => _open('/wallet/send'),
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('wallet-bridge-entry'),
+                title: '跨链',
+                subtitle: '跨链尚未开放',
+                onTap: () => _open('/wallet/bridge'),
+              ),
+            ],
           ),
           const LoopLabel('安全与连接'),
           const LoopUnavailableCard(
