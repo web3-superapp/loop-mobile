@@ -637,13 +637,19 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
     try {
       final directory = await command(id);
       if (!isCurrent(generation)) return null;
-      // Every governance response is the members list first page.
-      state = _apply(
-        previous,
-        directory,
-        append: false,
-        filter: previous.filter,
-      );
+      if (previous.filter == CommunityMemberFilter.all) {
+        // The governance response is the default directory's first page.
+        state = _apply(
+          previous,
+          directory,
+          append: false,
+          filter: previous.filter,
+        );
+      } else {
+        // A filtered view (owner, admin, banned) is not what the command
+        // answered with, so it is read again instead of being mislabelled.
+        await _fetch(filter: previous.filter, append: false);
+      }
       return null;
     } on CommunityGatewayException catch (error) {
       if (isCurrent(generation)) {

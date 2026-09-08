@@ -26,6 +26,59 @@ final class PublicProfileSheetAction<T> {
   final T value;
 }
 
+/// The identity the sheet renders.
+///
+/// It is built either from the fixed four-field projection or from a search
+/// result's `displaySnapshot`. The snapshot path never infers a LOOP ID or an
+/// alias from the title and subtitle: a subtitle that is not a LOOP ID leaves
+/// [loopId] null and the mono row is simply not drawn.
+@immutable
+final class PublicProfileIdentity {
+  const PublicProfileIdentity({
+    required this.publicProfileId,
+    required this.displayName,
+    this.loopId,
+    this.avatarRef,
+  });
+
+  factory PublicProfileIdentity.fromProfile(LoopPublicProfile profile) =>
+      PublicProfileIdentity(
+        publicProfileId: profile.publicProfileId,
+        displayName: profile.displayName,
+        loopId: profile.loopId,
+        avatarRef: profile.avatarRef,
+      );
+
+  /// A `users` search result: `stableId` is the command target and the
+  /// snapshot is display copy. Only a subtitle that is a canonical LOOP ID is
+  /// accepted as one.
+  factory PublicProfileIdentity.fromSearchSnapshot({
+    required String stableId,
+    required String title,
+    String? subtitle,
+    String? avatarRef,
+  }) {
+    final canonicalLoopId =
+        subtitle != null && _loopIdPattern.hasMatch(subtitle) ? subtitle : null;
+    return PublicProfileIdentity(
+      publicProfileId: stableId,
+      displayName: title,
+      loopId: canonicalLoopId,
+      avatarRef: avatarRef,
+    );
+  }
+
+  static final RegExp _loopIdPattern = RegExp(r'^LOOP-[0-9A-HJKMNP-TV-Z]{8}$');
+
+  /// The only accepted command target; null for a row without a profile.
+  final String? publicProfileId;
+  final String displayName;
+  final String? loopId;
+  final String? avatarRef;
+
+  bool get isCommandTarget => publicProfileId != null;
+}
+
 /// The shared "public profile" panel.
 ///
 /// LOOP has no dedicated page for another account before D7, so a user search
@@ -38,7 +91,7 @@ final class PublicProfileSheetAction<T> {
 /// sheet was dismissed or only the follow control was used.
 Future<T?> showPublicProfileSheet<T extends Object>(
   BuildContext context, {
-  required LoopPublicProfile profile,
+  required PublicProfileIdentity identity,
   bool? viewerFollows,
   List<PublicProfileSheetAction<T>> actions =
       const <PublicProfileSheetAction<Never>>[],
@@ -47,7 +100,7 @@ Future<T?> showPublicProfileSheet<T extends Object>(
     context,
     barrierLabel: '关闭公开资料',
     builder: (sheetContext) => _PublicProfileSheet<T>(
-      profile: profile,
+      identity: identity,
       viewerFollows: viewerFollows,
       actions: actions,
     ),
@@ -56,12 +109,12 @@ Future<T?> showPublicProfileSheet<T extends Object>(
 
 class _PublicProfileSheet<T extends Object> extends ConsumerStatefulWidget {
   const _PublicProfileSheet({
-    required this.profile,
+    required this.identity,
     required this.viewerFollows,
     required this.actions,
   });
 
-  final LoopPublicProfile profile;
+  final PublicProfileIdentity identity;
   final bool? viewerFollows;
   final List<PublicProfileSheetAction<T>> actions;
 
@@ -77,7 +130,7 @@ class _PublicProfileSheetState<T extends Object>
   CommunityFailureKind? _failureKind;
 
   Future<void> _toggleFollow() async {
-    final target = widget.profile.publicProfileId;
+    final target = widget.identity.publicProfileId;
     if (target == null || _busy) return;
     final next = !(_following ?? false);
     setState(() {
@@ -111,9 +164,10 @@ class _PublicProfileSheetState<T extends Object>
 
   @override
   Widget build(BuildContext context) {
-    final profile = widget.profile;
+    final identity = widget.identity;
+    final loopId = identity.loopId;
     final following = _following;
-    final canFollow = profile.isCommandTarget;
+    final canFollow = identity.isCommandTarget;
     return Padding(
       key: const ValueKey<String>('public-profile-sheet'),
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
@@ -124,8 +178,8 @@ class _PublicProfileSheetState<T extends Object>
           Row(
             children: <Widget>[
               LoopProfileAvatar(
-                avatarRef: profile.avatarRef,
-                alias: profile.alias,
+                avatarRef: identity.avatarRef,
+                alias: identity.displayName,
                 size: 56,
               ),
               const SizedBox(width: 14),
@@ -134,22 +188,26 @@ class _PublicProfileSheetState<T extends Object>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      profile.displayName,
+                      identity.displayName,
                       key: const ValueKey<String>('public-profile-name'),
                       style: LoopTypography.sora(
                         size: 17,
                         weight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      profile.loopId,
-                      key: const ValueKey<String>('public-profile-loop-id'),
-                      style: LoopTypography.mono(
-                        size: 12,
-                        color: LoopColors.muted,
+                    // The LOOP ID row is drawn only when the caller actually
+                    // has one; it is never derived from display copy.
+                    if (loopId != null) ...<Widget>[
+                      const SizedBox(height: 4),
+                      Text(
+                        loopId,
+                        key: const ValueKey<String>('public-profile-loop-id'),
+                        style: LoopTypography.mono(
+                          size: 12,
+                          color: LoopColors.muted,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),

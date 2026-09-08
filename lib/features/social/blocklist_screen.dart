@@ -75,13 +75,17 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
               for (final kind in BlockKind.values)
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
+                  // The two deferred kinds have no backend at all, so their
+                  // segments are disabled rather than selectable-and-empty.
                   child: LoopSeg(
                     key: ValueKey<String>('blocklist-seg-${kind.wireName}'),
                     label: kind == BlockKind.user && state.userCount != null
                         ? '用户 ${state.userCount}'
                         : _segmentLabels[kind]!,
                     selected: state.kind == kind,
-                    onSelected: () => controller.selectKind(kind),
+                    onSelected: kind.isSupported
+                        ? () => controller.selectKind(kind)
+                        : null,
                   ),
                 ),
             ],
@@ -152,6 +156,15 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
                 ),
               ),
           ],
+          // The two deferred kinds are disabled segments, so their reason is
+          // stated here instead of only after a selection that cannot happen.
+          const LoopEmpty(
+            key: ValueKey<String>('blocklist-deferred-kinds'),
+            icon: 'warn',
+            message: '合约与域名屏蔽暂不可用',
+            reason: '这两类屏蔽还没有服务端来源，分段保持禁用，本页不列出任何条目，也不发起请求。',
+            margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
+          ),
           const LoopNotice(
             key: ValueKey<String>('blocklist-precedence-notice'),
             icon: 'shield',

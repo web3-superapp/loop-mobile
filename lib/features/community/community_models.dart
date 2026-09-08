@@ -88,14 +88,23 @@ enum CommunityMembershipFilter {
 }
 
 /// Members directory `role` filter.
+///
+/// `all`, `owner` and `admin` list active and muted memberships only. `banned`
+/// is the governance view of the banned rows: it is the single way to reach an
+/// unban, it is open to an owner or an admin only, and the segment counts stay
+/// the counts of the non-banned directory, so it carries no count badge.
 enum CommunityMemberFilter {
   all('all'),
   owner('owner'),
-  admin('admin');
+  admin('admin'),
+  banned('banned');
 
   const CommunityMemberFilter(this.wireName);
 
   final String wireName;
+
+  /// True for the governance view the server opens to `canBan` viewers only.
+  bool get isGovernanceView => this == CommunityMemberFilter.banned;
 }
 
 @immutable

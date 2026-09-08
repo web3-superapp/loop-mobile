@@ -656,6 +656,7 @@ class LoopRecordRow extends StatelessWidget {
     this.trailing,
     this.trailingCaption,
     this.trailingCaptionUp,
+    this.trailingBadge,
     this.onTap,
     this.position = LoopRowPosition.single,
     this.semanticLabel,
@@ -673,6 +674,11 @@ class LoopRecordRow extends StatelessWidget {
 
   /// null: neutral (text3); true: `.up` Lime; false: `.down` Chalk.
   final bool? trailingCaptionUp;
+
+  /// `.row .badge`: a status pill instead of a mono figure. A row that carries
+  /// a state rather than a number uses this so the value column is never read
+  /// as data.
+  final Widget? trailingBadge;
   final VoidCallback? onTap;
   final LoopRowPosition position;
   final String? semanticLabel;
@@ -719,6 +725,10 @@ class LoopRecordRow extends StatelessWidget {
               ],
             ),
           ),
+          if (trailingBadge != null) ...<Widget>[
+            const SizedBox(width: 10),
+            trailingBadge!,
+          ],
           if (trailing != null || trailingCaption != null) ...<Widget>[
             const SizedBox(width: 12),
             Column(

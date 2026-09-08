@@ -57,12 +57,13 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         unawaited(
           showPublicProfileSheet<Object>(
             context,
-            profile: LoopPublicProfile(
-              publicProfileId: result.stableId,
-              // `users` results carry the alias as the title and the LOOP ID
-              // as the subtitle; nothing else about the account is known here.
-              loopId: result.subtitle ?? result.title,
-              alias: result.subtitle == null ? null : result.title,
+            // The snapshot is display copy: only `stableId` is a command
+            // target, and a subtitle is accepted as a LOOP ID only when it
+            // actually is one.
+            identity: PublicProfileIdentity.fromSearchSnapshot(
+              stableId: result.stableId,
+              title: result.title,
+              subtitle: result.subtitle,
               avatarRef: result.avatarRef,
             ),
           ),

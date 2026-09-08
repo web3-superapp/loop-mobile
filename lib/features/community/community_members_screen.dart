@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/social/public_profile_sheet.dart';
+import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -19,6 +20,7 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 enum CommunityGovernanceAction {
   promote('任命为 Admin'),
   demote('撤销 Admin'),
+  transfer('转让所有者'),
   mute('禁言'),
   unmute('解除禁言'),
   ban('封禁'),
@@ -27,6 +29,17 @@ enum CommunityGovernanceAction {
   const CommunityGovernanceAction(this.label);
 
   final String label;
+
+  /// Extra copy the second confirmation shows before the command runs.
+  String get confirmationDetail => switch (this) {
+    CommunityGovernanceAction.transfer =>
+      '转让后你会变成普通成员，不能再编辑资料或执行治理动作。这一步不可撤销，只有新的所有者能把权限交还给你。',
+    CommunityGovernanceAction.ban =>
+      '被封禁的成员会离开官方频道，并从默认成员目录中移除；你之后可以在「已封禁」分段里解除封禁。封禁不改动个人关注关系。',
+    CommunityGovernanceAction.unban =>
+      '解除封禁会把该成员恢复为活跃成员，加入时间不变，并重新加回官方频道。对方不需要重新申请加入。',
+    _ => '结果由服务端判定，本次操作会写入社区审计。',
+  };
 }
 
 /// The commands the server has told this viewer it may run against this row.
@@ -45,19 +58,25 @@ List<CommunityGovernanceAction> communityGovernanceActions(
   if (entry.role == CommunityRole.owner) {
     return const <CommunityGovernanceAction>[];
   }
+  // A banned row has exactly one meaningful command: restore it.
+  if (entry.status == CommunityMemberStatus.banned) {
+    return <CommunityGovernanceAction>[
+      if (viewer.canBan) CommunityGovernanceAction.unban,
+    ];
+  }
   return <CommunityGovernanceAction>[
     if (viewer.canInviteAdmin && entry.role == CommunityRole.member)
       CommunityGovernanceAction.promote,
     if (viewer.canInviteAdmin && entry.role == CommunityRole.admin)
       CommunityGovernanceAction.demote,
+    // Only an owner is told it may appoint an admin, so only an owner is
+    // offered the transfer.
+    if (viewer.canInviteAdmin) CommunityGovernanceAction.transfer,
     if (viewer.canMute && entry.status != CommunityMemberStatus.muted)
       CommunityGovernanceAction.mute,
     if (viewer.canMute && entry.status == CommunityMemberStatus.muted)
       CommunityGovernanceAction.unmute,
-    if (viewer.canBan && entry.status != CommunityMemberStatus.banned)
-      CommunityGovernanceAction.ban,
-    if (viewer.canBan && entry.status == CommunityMemberStatus.banned)
-      CommunityGovernanceAction.unban,
+    if (viewer.canBan) CommunityGovernanceAction.ban,
   ];
 }
 
@@ -104,9 +123,17 @@ class _CommunityMembersScreenState
     return LoopStreamPage(
       key: const ValueKey<String>('community-members-screen'),
       archetype: LoopPageArchetype.listing,
-      title: '成员与权限',
+      title: '成员',
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
+      actions: <Widget>[
+        LoopIconButton(
+          key: const ValueKey<String>('community-members-search'),
+          icon: 'search',
+          label: '搜索成员',
+          onPressed: () => unawaited(_explainMemberSearch()),
+        ),
+      ],
       folio: LoopFolioPrimary(
         variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.listing,
@@ -139,6 +166,16 @@ class _CommunityMembersScreenState
                 CommunityMemberFilter.admin,
                 counts == null ? 'Admin' : 'Admin ${counts.admin}',
               ),
+              // The governance view is only opened to a viewer the server
+              // told may ban, and it carries no count: `counts` stays the
+              // non-banned directory's.
+              if (state.viewer?.canBan ?? false)
+                _filterSeg(
+                  controller,
+                  state,
+                  CommunityMemberFilter.banned,
+                  '已封禁',
+                ),
               // Presence has no source; the segment stays disabled with its
               // server reason rather than showing a fabricated online count.
               const Padding(
@@ -161,6 +198,13 @@ class _CommunityMembersScreenState
           CommunityPreviewNotice(mode: mode, resource: '成员目录'),
           if (counts != null)
             CommunityUnavailableCard(label: '在线人数', fact: counts.online),
+          if (state.items.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 10),
+            CommunityUnavailableCard(
+              label: '成员算力',
+              fact: state.items.first.miningPower,
+            ),
+          ],
           if (id == null)
             const LoopEmpty(
               key: ValueKey<String>('community-members-missing-id'),
@@ -279,8 +323,8 @@ class _CommunityMembersScreenState
     final actions = communityGovernanceActions(state.viewer, entry);
     final status = switch (entry.status) {
       CommunityMemberStatus.active => entry.role.label,
-      CommunityMemberStatus.muted => '${entry.role.label} · 已禁言',
-      CommunityMemberStatus.banned => '${entry.role.label} · 已封禁',
+      CommunityMemberStatus.muted => '已禁言',
+      CommunityMemberStatus.banned => '已封禁',
     };
     final identity = entry.profile.publicProfileId ?? entry.profile.loopId;
     return LoopRecordRow(
@@ -288,20 +332,62 @@ class _CommunityMembersScreenState
       title: entry.isSelf
           ? '我 · ${entry.profile.displayName}'
           : entry.profile.displayName,
-      subtitle: '${entry.profile.loopId} · $status',
-      trailing: entry.role.label,
+      // The role and the status are a state, not a figure, so they ride in the
+      // badge and the subtitle keeps only the identity.
+      subtitle: entry.profile.loopId,
+      trailingBadge: LoopBadge(
+        status,
+        key: ValueKey<String>('member-badge-$identity'),
+        kind: switch (entry.status) {
+          CommunityMemberStatus.active =>
+            entry.role == CommunityRole.member
+                ? LoopBadgeKind.mute
+                : LoopBadgeKind.mining,
+          CommunityMemberStatus.muted => LoopBadgeKind.mute,
+          CommunityMemberStatus.banned => LoopBadgeKind.down,
+        },
+      ),
       position: position,
-      // The viewer's own row is never navigable, and a member without a
-      // profile row can never be a command target.
       // The viewer's own row is never navigable. Every other row opens the
       // shared public-profile sheet, which carries the governance commands
       // the server has allowed for this viewer.
       onTap: entry.isSelf || state.busy
           ? null
           : () => unawaited(_openMemberSheet(entry, actions, controller)),
-      semanticLabel: '${entry.profile.displayName}，$status',
+      semanticLabel: '${entry.profile.displayName}，${entry.role.label}，$status',
     );
   }
+
+  /// Member search has no backend in this step; the control explains that
+  /// rather than filtering the loaded page and calling it a search.
+  Future<void> _explainMemberSearch() => showLoopSheet<void>(
+    context,
+    barrierLabel: '关闭成员搜索说明',
+    builder: (sheetContext) => Padding(
+      key: const ValueKey<String>('member-search-unavailable-sheet'),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const LoopEmpty(
+            message: '成员搜索暂不可用',
+            reason:
+                '成员目录没有搜索接口，本页只能按角色分段翻页。'
+                '要按别名找人，请使用全局搜索的「用户」域。',
+            margin: EdgeInsets.zero,
+          ),
+          const SizedBox(height: 14),
+          LoopButton(
+            key: const ValueKey<String>('member-search-close'),
+            label: '知道了',
+            block: true,
+            onPressed: () => Navigator.of(sheetContext).pop(),
+          ),
+        ],
+      ),
+    ),
+  );
 
   Future<void> _openMemberSheet(
     CommunityMemberEntry entry,
@@ -310,7 +396,7 @@ class _CommunityMembersScreenState
   ) async {
     final chosen = await showPublicProfileSheet<CommunityGovernanceAction>(
       context,
-      profile: entry.profile,
+      identity: PublicProfileIdentity.fromProfile(entry.profile),
       actions: <PublicProfileSheetAction<CommunityGovernanceAction>>[
         for (final action in actions)
           PublicProfileSheetAction<CommunityGovernanceAction>(
@@ -326,7 +412,7 @@ class _CommunityMembersScreenState
       title: '${chosen.label}？',
       body:
           '目标：${entry.profile.displayName}（${entry.profile.loopId}）。'
-          '结果由服务端判定，本次操作会写入社区审计。',
+          '${chosen.confirmationDetail}',
       confirmLabel: chosen.label,
       sheetKey: 'member-confirm-sheet',
     );
@@ -341,6 +427,10 @@ class _CommunityMembersScreenState
       CommunityGovernanceAction.demote => await controller.changeRole(
         publicProfileId: target,
         role: CommunityRole.member,
+      ),
+      CommunityGovernanceAction.transfer => await controller.changeRole(
+        publicProfileId: target,
+        role: CommunityRole.owner,
       ),
       CommunityGovernanceAction.mute => await controller.setMuted(
         publicProfileId: target,

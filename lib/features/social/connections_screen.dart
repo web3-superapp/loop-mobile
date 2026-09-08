@@ -150,19 +150,22 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
                   onPressed: () => unawaited(controller.loadMore()),
                 ),
               ),
+            if (state.items.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 14),
+              // The reason comes from the server's own per-row projection.
+              CommunityUnavailableCard(
+                label: '行内算力',
+                fact: state.items.first.miningPower,
+              ),
+            ],
+            const LoopNotice(
+              key: ValueKey<String>('connections-discoverable-notice'),
+              icon: 'info',
+              title: '想被别人找到？',
+              body: '默认不可被发现。需要在"隐私中心 · 可被发现"里打开后，别人才能搜索到你并关注你。',
+              margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
+            ),
           ],
-          const LoopNotice(
-            key: ValueKey<String>('connections-discoverable-notice'),
-            icon: 'info',
-            title: '想被别人找到？',
-            body: '默认不可被发现。需要在"隐私中心 · 可被发现"里打开后，别人才能搜索到你并关注你。',
-            margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
-          ),
-          const LoopEmpty(
-            key: ValueKey<String>('connections-mining-power-unavailable'),
-            message: '行内算力',
-            reason: '算力口径尚未确定，列表不展示任何算力数字。',
-          ),
         ],
       ),
     );
@@ -180,7 +183,11 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
       key: ValueKey<String>('connection-row-${target ?? entry.profile.loopId}'),
       title: entry.profile.displayName,
       subtitle: entry.profile.loopId,
-      trailing: entry.viewerFollows ? '已关注' : '未关注',
+      // The relationship is a state, not a figure.
+      trailingBadge: LoopBadge(
+        entry.viewerFollows ? '已关注' : '未关注',
+        kind: entry.viewerFollows ? LoopBadgeKind.up : LoopBadgeKind.mute,
+      ),
       position: communityRowPosition(index, length),
       onTap: state.busy || target == null
           ? null

@@ -47,7 +47,7 @@ final class DioLoopV2CommunityGateway implements CommunityGateway {
       return result;
     } on CommunityGatewayException catch (failure) {
       // Only an unresolved outcome keeps the key for an identical retry.
-      if (failure.kind != CommunityFailureKind.offline) {
+      if (!communityOutcomeIsUnresolved(failure.kind)) {
         _keyring.release(signature);
       }
       rethrow;

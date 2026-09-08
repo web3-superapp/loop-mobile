@@ -641,8 +641,10 @@ GoRouter _buildRouter(
       ),
       GoRoute(
         path: '/profile/referral',
-        builder: (context, state) =>
-            ReferralScreen(onBack: () => _popOrHome(context)),
+        builder: (context, state) => ReferralScreen(
+          onBack: () => _popOrHome(context),
+          onOpenMining: () => context.go(LoopRouteManifest.pathFor('mining')),
+        ),
       ),
       ..._systemRoutes,
       // Manifest `pay`: informational unavailable surface (fail closed).

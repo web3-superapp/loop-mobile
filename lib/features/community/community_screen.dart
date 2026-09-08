@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -100,151 +101,175 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
       },
       child: Focus(
         autofocus: false,
-        child: LoopDashboardPage(
-          key: const ValueKey<String>('community-screen'),
-          archetype: LoopPageArchetype.listing,
-          title: '社区',
-          kicker: communityPreviewKicker(mode),
-          tabPage: true,
-          actions: <Widget>[
-            // The toggle keeps its own focus node so Escape can hand focus
-            // back to the control that opened the panel.
-            Focus(
-              focusNode: _searchToggleFocus,
-              child: LoopIconButton(
-                key: const ValueKey<String>('community-search-toggle'),
-                icon: 'search',
-                label: _panel == CommunityPanel.search ? '关闭搜索' : '打开全局搜索',
-                onPressed: () => _toggle(CommunityPanel.search),
-              ),
-            ),
-            Focus(
-              focusNode: _messageToggleFocus,
-              child: LoopIconButton(
-                key: const ValueKey<String>('community-message-toggle'),
-                icon: 'bell',
-                label: _panel == CommunityPanel.messages ? '关闭消息面板' : '打开消息面板',
-                onPressed: () => _toggle(CommunityPanel.messages),
-              ),
-            ),
-            LoopIconButton(
-              key: const ValueKey<String>('community-profile-action'),
-              icon: 'user',
-              label: '查看个人中心',
-              onPressed: () => _open('/profile'),
-            ),
-          ],
-          primary: LoopFolioPrimary(
-            key: const ValueKey<String>('community-folio'),
-            variant: LoopFolioVariant.lime,
-            archetype: LoopFolioArchetype.listing,
-            kicker: 'COMMUNITY INDEX',
-            heading: joinedCount == null
-                ? communityMissingFigure
-                : '$joinedCount 个已加入的社区',
-            caption: home == null
-                ? '社区聚合尚未读取成功，本页不展示任何推测数字。'
-                : '发现 ${home.discover.length} 个已验证社区 · '
-                      '数据观察于 ${communityObservedAtLabel(home.observedAt)}',
-            stamp: home == null ? null : 'DATABASE',
-          ),
-          sections: <Widget>[
-            if (_panel == CommunityPanel.search)
-              _CommunitySearchPanel(
-                onSubmit: (query) {
-                  _closePanel();
-                  _open('/search?q=${Uri.encodeQueryComponent(query)}');
-                },
-                onClose: _closePanel,
-              ),
-            if (_panel == CommunityPanel.messages)
-              _CommunityMessagePanel(
-                home: home,
-                onClose: _closePanel,
-                onOpenChat: () {
-                  _closePanel();
-                  _open('/chat');
-                },
-                onOpenRequests: () {
-                  _closePanel();
-                  _open('/chat/requests');
-                },
-              ),
-            CommunityPreviewNotice(mode: mode, resource: '社区聚合'),
-            if (communityCapabilityBlocks(mode, capability))
-              _CommunityCapabilityBlock(
-                reasonCode: capability.reasonCode,
-                decision: capability.decision,
-              )
-            else if (state.phase != CommunityViewPhase.ready || home == null)
-              CommunityStateBlock(
-                phase: state.phase,
-                failureKind: state.failureKind,
-                emptyMessage: '还没有加入任何社区',
-                emptyReason: '加入社区后，这里会列出服务端确认的成员关系。',
-                onRetry: () => unawaited(
-                  ref.read(communityHomeControllerProvider.notifier).reload(),
-                ),
-              )
-            else ...<Widget>[
-              _DiscoverHero(
-                discoverCount: home.discover.length,
-                onTap: () => _open('/community/discover'),
-              ),
-              const LoopLabel('已加入的社区'),
-              if (home.joined.isEmpty)
-                const LoopEmpty(
-                  key: ValueKey<String>('community-joined-empty'),
-                  message: '还没有加入任何社区',
-                  reason: '从"发现社区"开始，加入后这里会显示服务端确认的成员关系。',
-                )
-              else
-                LoopRecordGroup(
-                  rows: <LoopRecordRow>[
-                    for (var index = 0; index < home.joined.length; index += 1)
-                      _joinedRow(home.joined, index),
-                  ],
-                ),
-              if (home.joinedTruncated)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: LoopButton(
-                    key: const ValueKey<String>('community-view-all-joined'),
-                    label: '查看全部已加入的社区',
-                    block: true,
-                    onPressed: () =>
-                        _open('/community/discover?membership=joined'),
+        // The two panels float over the page at `LoopZ.communityPanel`; they
+        // never enter the scroll stream, so opening one does not reflow the
+        // index below it.
+        child: Stack(
+          children: <Widget>[
+            LoopDashboardPage(
+              key: const ValueKey<String>('community-screen'),
+              archetype: LoopPageArchetype.listing,
+              title: '社区',
+              kicker: communityPreviewKicker(mode),
+              tabPage: true,
+              actions: <Widget>[
+                // The toggle keeps its own focus node so Escape can hand focus
+                // back to the control that opened the panel.
+                Focus(
+                  focusNode: _searchToggleFocus,
+                  child: LoopIconButton(
+                    key: const ValueKey<String>('community-search-toggle'),
+                    icon: 'search',
+                    label: _panel == CommunityPanel.search ? '关闭搜索' : '打开全局搜索',
+                    onPressed: () => _toggle(CommunityPanel.search),
                   ),
                 ),
-              const LoopLabel('发现'),
-              if (home.discover.isEmpty)
-                const LoopEmpty(
-                  key: ValueKey<String>('community-discover-empty'),
-                  message: '暂时没有可推荐的已验证社区',
-                  reason: '推荐只包含已验证且尚未加入的社区。',
-                )
-              else
-                LoopRecordGroup(
-                  rows: <LoopRecordRow>[
-                    for (
-                      var index = 0;
-                      index < home.discover.length;
-                      index += 1
-                    )
-                      _discoverRow(home.discover, index),
-                  ],
+                Focus(
+                  focusNode: _messageToggleFocus,
+                  child: LoopIconButton(
+                    key: const ValueKey<String>('community-message-toggle'),
+                    icon: 'bell',
+                    label: _panel == CommunityPanel.messages
+                        ? '关闭消息面板'
+                        : '打开消息面板',
+                    onPressed: () => _toggle(CommunityPanel.messages),
+                  ),
                 ),
-              LoopNotice(
-                key: const ValueKey<String>('community-recommendation-rule'),
-                icon: 'info',
-                title: '推荐依据',
-                body:
-                    '推荐列表由版本化规则 ${home.recommendation.ruleVersion} 生成，'
-                    '只使用成员数与创建时间等可核查事实，不是个性化算法推荐。',
-                margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                LoopIconButton(
+                  key: const ValueKey<String>('community-profile-action'),
+                  icon: 'user',
+                  label: '查看个人中心',
+                  onPressed: () => _open('/profile'),
+                ),
+              ],
+              primary: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  // The discover hero sits above the index card, as in the frozen
+                  // prototype, and only ever states a server-counted figure.
+                  if (home != null)
+                    _DiscoverHero(
+                      discoverCount: home.discover.length,
+                      onTap: () => _open('/community/discover'),
+                    ),
+                  LoopFolioPrimary(
+                    key: const ValueKey<String>('community-folio'),
+                    variant: LoopFolioVariant.lime,
+                    archetype: LoopFolioArchetype.listing,
+                    kicker: 'COMMUNITY INDEX',
+                    heading: joinedCount == null
+                        ? communityMissingFigure
+                        : '$joinedCount 个已加入的社区',
+                    caption: home == null
+                        ? '社区聚合尚未读取成功，本页不展示任何推测数字。'
+                        : '发现 ${home.discover.length} 个已验证社区 · '
+                              '数据观察于 ${communityObservedAtLabel(home.observedAt)}',
+                    stamp: home == null ? null : 'DATABASE',
+                  ),
+                ],
               ),
-            ],
-            const SizedBox(height: 20),
+              sections: <Widget>[
+                CommunityPreviewNotice(mode: mode, resource: '社区聚合'),
+                if (communityCapabilityBlocks(mode, capability))
+                  _CommunityCapabilityBlock(
+                    reasonCode: capability.reasonCode,
+                    decision: capability.decision,
+                  )
+                else if (state.phase != CommunityViewPhase.ready ||
+                    home == null)
+                  CommunityStateBlock(
+                    phase: state.phase,
+                    failureKind: state.failureKind,
+                    emptyMessage: '还没有加入任何社区',
+                    emptyReason: '加入社区后，这里会列出服务端确认的成员关系。',
+                    onRetry: () => unawaited(
+                      ref
+                          .read(communityHomeControllerProvider.notifier)
+                          .reload(),
+                    ),
+                  )
+                else ...<Widget>[
+                  const LoopLabel('已加入的社区'),
+                  if (home.joined.isEmpty)
+                    const LoopEmpty(
+                      key: ValueKey<String>('community-joined-empty'),
+                      message: '还没有加入任何社区',
+                      reason: '从"发现社区"开始，加入后这里会显示服务端确认的成员关系。',
+                    )
+                  else
+                    LoopRecordGroup(
+                      rows: <LoopRecordRow>[
+                        for (
+                          var index = 0;
+                          index < home.joined.length;
+                          index += 1
+                        )
+                          _joinedRow(home.joined, index),
+                      ],
+                    ),
+                  if (home.joinedTruncated)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                      child: LoopButton(
+                        key: const ValueKey<String>(
+                          'community-view-all-joined',
+                        ),
+                        label: '查看全部已加入的社区',
+                        block: true,
+                        onPressed: () =>
+                            _open('/community/discover?membership=joined'),
+                      ),
+                    ),
+                  LoopNotice(
+                    key: const ValueKey<String>(
+                      'community-recommendation-rule',
+                    ),
+                    icon: 'info',
+                    title: '推荐依据',
+                    body:
+                        '推荐列表由版本化规则 ${home.recommendation.ruleVersion} 生成，'
+                        '只使用成员数与创建时间等可核查事实，不是个性化算法推荐。',
+                    margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                  ),
+                ],
+                const SizedBox(height: 20),
+              ],
+            ),
+            if (_panel != CommunityPanel.none)
+              Positioned(
+                left: 0,
+                right: 0,
+                top: MediaQuery.paddingOf(context).top + 72,
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: _panel == CommunityPanel.search
+                      ? _CommunitySearchPanel(
+                          onSubmit: (query) {
+                            _closePanel();
+                            _open(
+                              '/search?q=${Uri.encodeQueryComponent(query)}',
+                            );
+                          },
+                          onClose: _closePanel,
+                        )
+                      : _CommunityMessagePanel(
+                          home: home,
+                          onClose: _closePanel,
+                          onOpenChat: () {
+                            _closePanel();
+                            _open('/chat');
+                          },
+                          onOpenRequests: () {
+                            _closePanel();
+                            _open('/chat/requests');
+                          },
+                          onOpenMessageSearch: () {
+                            _closePanel();
+                            _open('/chat/search');
+                          },
+                        ),
+                ),
+              ),
           ],
         ),
       ),
@@ -267,20 +292,6 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
       onTap: () => _open('/community/profile?id=${community.communityId}'),
       position: communityRowPosition(index, items.length),
       semanticLabel: '${community.name}，$status，${community.memberCount} 名成员',
-    );
-  }
-
-  LoopRecordRow _discoverRow(List<CommunitySummary> items, int index) {
-    final community = items[index];
-    return LoopRecordRow(
-      key: ValueKey<String>('community-discover-${community.communityId}'),
-      leading: CommunityLogoTile(name: community.name),
-      title: community.name,
-      subtitle: '${community.slug} · 已验证',
-      trailing: '${community.memberCount}',
-      trailingCaption: '成员',
-      onTap: () => _open('/community/profile?id=${community.communityId}'),
-      position: communityRowPosition(index, items.length),
     );
   }
 }
@@ -317,41 +328,51 @@ class _DiscoverHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LoopChalkCard(
+    return LoopSurfaceCard(
       key: const ValueKey<String>('community-discover-hero'),
       margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      background: LoopColors.lime,
+      borderColor: LoopColors.lime,
       onTap: onTap,
       semanticLabel: '发现新社区，当前有 $discoverCount 个推荐',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: <Widget>[
-          Text(
-            'DISCOVER',
-            style: LoopTypography.mono(
-              size: 9.5,
-              weight: FontWeight.w600,
-              color: LoopColors.ink.withValues(alpha: 0.6),
-              letterSpacing: 1.2,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  'DISCOVER',
+                  style: LoopTypography.mono(
+                    size: 9.5,
+                    weight: FontWeight.w600,
+                    color: LoopColors.ink.withValues(alpha: 0.6),
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '发现新社区',
+                  style: LoopTypography.sora(
+                    size: 19,
+                    weight: FontWeight.w800,
+                    color: LoopColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '按成员数或创建时间浏览已验证社区。$discoverCount 个推荐来自本次聚合。',
+                  style: LoopTypography.sora(
+                    size: 12,
+                    weight: FontWeight.w500,
+                    color: LoopColors.ink.withValues(alpha: 0.72),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            '发现新社区',
-            style: LoopTypography.sora(
-              size: 19,
-              weight: FontWeight.w800,
-              color: LoopColors.ink,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '按成员数或创建时间浏览已验证社区。$discoverCount 个推荐来自本次聚合。',
-            style: LoopTypography.sora(
-              size: 12,
-              weight: FontWeight.w500,
-              color: LoopColors.ink.withValues(alpha: 0.72),
-            ),
-          ),
+          const SizedBox(width: 10),
+          const LoopIcon('chevron', size: 18, color: LoopColors.ink),
         ],
       ),
     );
@@ -425,12 +446,14 @@ class _CommunityMessagePanel extends StatelessWidget {
     required this.onClose,
     required this.onOpenChat,
     required this.onOpenRequests,
+    required this.onOpenMessageSearch,
   });
 
   final CommunityHome? home;
   final VoidCallback onClose;
   final VoidCallback onOpenChat;
   final VoidCallback onOpenRequests;
+  final VoidCallback onOpenMessageSearch;
 
   @override
   Widget build(BuildContext context) {
@@ -482,8 +505,15 @@ class _CommunityMessagePanel extends StatelessWidget {
                 key: const ValueKey<String>('community-open-requests'),
                 title: '陌生人请求',
                 subtitle: '接受、忽略或举报',
-                position: LoopRowPosition.last,
+                position: LoopRowPosition.middle,
                 onTap: onOpenRequests,
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('community-open-message-search'),
+                title: '搜索消息',
+                subtitle: '在已接通的会话里检索',
+                position: LoopRowPosition.last,
+                onTap: onOpenMessageSearch,
               ),
             ],
           ),

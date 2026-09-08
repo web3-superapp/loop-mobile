@@ -43,7 +43,7 @@ final class DioLoopV2SocialGateway implements SocialGateway {
       _keyring.release(signature);
       return result;
     } on CommunityGatewayException catch (failure) {
-      if (failure.kind != CommunityFailureKind.offline) {
+      if (!communityOutcomeIsUnresolved(failure.kind)) {
         _keyring.release(signature);
       }
       rethrow;

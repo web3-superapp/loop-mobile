@@ -8,6 +8,14 @@ import 'package:flutter/foundation.dart';
 /// `/v2/` literal.
 enum CommunityFailureKind {
   offline,
+
+  /// The request was cancelled in flight. A write may or may not have been
+  /// applied, so its idempotency key must survive for an identical retry.
+  cancelled,
+
+  /// A 2xx (or an error envelope) the client could not parse. The server may
+  /// already have applied the write, so this is an unresolved outcome too.
+  outcomeUnknown,
   unavailable,
   permissionDenied,
   notFound,
@@ -106,6 +114,8 @@ final class LoopPublicProfile {
 /// did not happen; it never claims a result the server did not confirm.
 String communityFailureReason(CommunityFailureKind? kind) => switch (kind) {
   CommunityFailureKind.offline => '设备当前离线，本页没有读到任何服务端数据，也没有提交任何操作。',
+  CommunityFailureKind.cancelled => '请求已被取消，结果未知。请查看最新状态后再决定是否重试。',
+  CommunityFailureKind.outcomeUnknown => '服务返回的数据不符合约定，结果未确认。请刷新查看最新状态，不要重复提交。',
   CommunityFailureKind.unavailable => '社区服务当前不可用，没有执行任何操作。',
   CommunityFailureKind.permissionDenied => '当前账号无权执行此操作，服务端已拒绝。',
   CommunityFailureKind.notFound => '目标不存在、已被移除，或对当前账号不可见。',
@@ -122,6 +132,15 @@ String communityFailureReason(CommunityFailureKind? kind) => switch (kind) {
   CommunityFailureKind.unexpected => '操作没有完成，未暴露供应商细节。',
   null => '操作没有完成。',
 };
+
+/// Whether the write's outcome is unknown, so its idempotency key must be
+/// replayed rather than replaced. A timeout, a lost connection, a cancelled
+/// request and an unparsable response all leave the server free to have
+/// applied the command already.
+bool communityOutcomeIsUnresolved(CommunityFailureKind kind) =>
+    kind == CommunityFailureKind.offline ||
+    kind == CommunityFailureKind.cancelled ||
+    kind == CommunityFailureKind.outcomeUnknown;
 
 /// zh-CN copy for a refused community application.
 ///

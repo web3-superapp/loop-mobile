@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_sheet.dart';
 
 /// zh-CN copy for one versioned referral level description key.
 String referralLevelDescription(String descriptionKey) =>
@@ -30,9 +31,13 @@ String referralLevelDescription(String descriptionKey) =>
 /// counts and the invite code have no source and stay unavailable, so the
 /// share action is disabled rather than promising a relationship.
 class ReferralScreen extends ConsumerStatefulWidget {
-  const ReferralScreen({super.key, this.onBack});
+  const ReferralScreen({super.key, this.onBack, this.onOpenMining});
 
   final VoidCallback? onBack;
+
+  /// The prototype's "back to mining" control. Referral is a Mining Power
+  /// rule page, so it offers a way back to the Mining tab.
+  final VoidCallback? onOpenMining;
 
   @override
   ConsumerState<ReferralScreen> createState() => _ReferralScreenState();
@@ -59,8 +64,20 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
       key: const ValueKey<String>('referral-screen'),
       archetype: LoopPageArchetype.record,
       title: 'Referral Boost',
-      kicker: communityPreviewKicker(mode) ?? 'MINING POWER',
+      // The Preview label is added to the page's own eyebrow, never instead
+      // of it: both facts stay visible.
+      kicker: communityPreviewKicker(mode) == null
+          ? 'MINING POWER · SERVER VERIFIED'
+          : 'MINING POWER · ${communityPreviewKicker(mode)}',
       onBack: widget.onBack,
+      actions: <Widget>[
+        LoopIconButton(
+          key: const ValueKey<String>('referral-explain-action'),
+          icon: 'info',
+          label: 'Referral 说明',
+          onPressed: () => unawaited(_explain()),
+        ),
+      ],
       primary: LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
@@ -108,6 +125,11 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
           LoopButtonPair(
             children: <Widget>[
               LoopButton(
+                key: const ValueKey<String>('referral-back-to-mining'),
+                label: '返回挖矿',
+                onPressed: widget.onOpenMining,
+              ),
+              LoopButton(
                 key: const ValueKey<String>('referral-invite-action'),
                 label: '邀请好友',
                 // Disabled: there is no invite code to share.
@@ -131,6 +153,46 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
       ],
     );
   }
+
+  /// The prototype's topbar info control. It restates the rule's scope; it
+  /// never adds a figure the server did not send.
+  Future<void> _explain() => showLoopSheet<void>(
+    context,
+    barrierLabel: '关闭 Referral 说明',
+    builder: (sheetContext) => Padding(
+      key: const ValueKey<String>('referral-explain-sheet'),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            'Referral 说明',
+            style: LoopTypography.sora(size: 18, weight: FontWeight.w700),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '五级比例来自服务端的版本化配置，不随账号变化。加成只计入 Mining Power，'
+            '不是收入、佣金或返佣。各级关系人数与邀请码还没有服务端来源，'
+            '因此本页不显示任何人数，「邀请好友」也保持禁用。',
+            style: LoopTypography.sora(
+              size: 13,
+              weight: FontWeight.w500,
+              color: LoopColors.muted,
+              height: 1.6,
+            ),
+          ),
+          const SizedBox(height: 16),
+          LoopButton(
+            key: const ValueKey<String>('referral-explain-close'),
+            label: '知道了',
+            block: true,
+            onPressed: () => Navigator.of(sheetContext).pop(),
+          ),
+        ],
+      ),
+    ),
+  );
 
   LoopRecordRow _levelRow(ReferralLevel level, int index, int length) {
     return LoopRecordRow(

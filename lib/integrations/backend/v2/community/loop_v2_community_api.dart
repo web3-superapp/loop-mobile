@@ -611,7 +611,11 @@ CommunityFailureKind communityFailureKindForV2(LoopBackendFailure failure) {
     _ => switch (failure.kind) {
       LoopBackendFailureKind.connection ||
       LoopBackendFailureKind.timeout => CommunityFailureKind.offline,
-      LoopBackendFailureKind.invalidPayload => CommunityFailureKind.invalidData,
+      LoopBackendFailureKind.cancelled => CommunityFailureKind.cancelled,
+      // A payload the client could not parse leaves a write unresolved: the
+      // server may already have applied it.
+      LoopBackendFailureKind.invalidPayload =>
+        CommunityFailureKind.outcomeUnknown,
       LoopBackendFailureKind.unavailable ||
       LoopBackendFailureKind.authentication ||
       LoopBackendFailureKind.invalidConfiguration =>

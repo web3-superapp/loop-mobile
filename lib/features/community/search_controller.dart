@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -8,6 +10,12 @@ import 'package:loop_mobile/features/community/search_models.dart';
 
 /// The five domain segments in prototype order. `assets`, `launch` and
 /// `dapps` are selectable but carry the server's unavailable reason.
+/// The three domains that have no backend in this step.
+bool searchDomainIsDeferred(SearchDomain domain) =>
+    domain == SearchDomain.assets ||
+    domain == SearchDomain.launch ||
+    domain == SearchDomain.dapps;
+
 const List<SearchDomain> searchDomainOrder = <SearchDomain>[
   SearchDomain.assets,
   SearchDomain.communities,
@@ -20,6 +28,13 @@ const List<SearchDomain> searchDomainOrder = <SearchDomain>[
 /// public search quota is never spent on a request that would be rejected.
 const int searchMinimumRunes = 2;
 const int searchMaximumRunes = 40;
+
+/// The term used to probe a domain that has no backend.
+///
+/// `q` is required by the contract, and the three deferred domains answer
+/// `{status: unavailable, reasonCode}` for any term without spending the
+/// public search quota, so the reason can be read without a user query.
+const String searchUnavailableProbeQuery = 'loop';
 
 bool searchQueryIsSubmittable(String query) {
   final runes = query.trim().runes.length;
@@ -82,21 +97,73 @@ final class SearchController extends Notifier<SearchState>
 
   void selectDomain(SearchDomain domain) {
     if (domain == state.domain) return;
+    final closed = state.mode == CommunityGatewayMode.unavailable;
     state = SearchState(
       mode: state.mode,
-      phase: state.mode == CommunityGatewayMode.unavailable
-          ? CommunityViewPhase.unavailable
-          : CommunityViewPhase.empty,
+      phase: closed ? CommunityViewPhase.unavailable : CommunityViewPhase.empty,
       domain: domain,
       query: state.query,
-      failureKind: state.mode == CommunityGatewayMode.unavailable
-          ? CommunityFailureKind.unavailable
-          : null,
+      failureKind: closed ? CommunityFailureKind.unavailable : null,
     );
+    if (closed) return;
     if (searchQueryIsSubmittable(state.query)) {
-      submit(state.query);
+      unawaited(submit(state.query));
+      return;
+    }
+    // A domain with no backend is probed once so the page can show the
+    // server's own reason instead of a client-side guess.
+    if (searchDomainIsDeferred(domain)) {
+      state = SearchState(
+        mode: state.mode,
+        phase: CommunityViewPhase.loading,
+        domain: domain,
+        query: state.query,
+      );
+      unawaited(_probe());
     }
   }
+
+  /// Reads the server's `reasonCode` for a domain that has no results to give.
+  Future<void> _probe() => single(() async {
+    final gateway = ref.read(searchGatewayProvider);
+    final previous = state;
+    final generation = nextGeneration();
+    try {
+      final page = await gateway.search(
+        domain: previous.domain,
+        query: searchUnavailableProbeQuery,
+      );
+      if (!isCurrent(generation)) return;
+      state = SearchState(
+        mode: previous.mode,
+        // A probe never presents results, only the reason.
+        phase: page.available
+            ? CommunityViewPhase.empty
+            : CommunityViewPhase.unavailable,
+        domain: page.domain,
+        query: previous.query,
+        reasonCode: page.reasonCode,
+      );
+    } on CommunityGatewayException catch (error) {
+      if (!isCurrent(generation)) return;
+      state = SearchState(
+        mode: previous.mode,
+        phase: communityPhaseForFailure(error.kind),
+        domain: previous.domain,
+        query: previous.query,
+        failureKind: error.kind,
+      );
+    } catch (_) {
+      if (!isCurrent(generation)) return;
+      state = SearchState(
+        mode: previous.mode,
+        phase: CommunityViewPhase.error,
+        domain: previous.domain,
+        query: previous.query,
+        failureKind: CommunityFailureKind.unexpected,
+      );
+    }
+  });
 
   Future<void> submit(String query) {
     final trimmed = query.trim();

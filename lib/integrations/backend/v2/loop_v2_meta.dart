@@ -204,6 +204,7 @@ enum LoopV2CapabilityId {
   search('search'),
   bscRead('bscRead'),
   walletRead('walletRead'),
+  watchlist('watchlist'),
   privySwap('privySwap'),
   sendApprovals('sendApprovals'),
   launch('launch'),

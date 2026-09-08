@@ -317,6 +317,19 @@ class _MembershipActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final membership = detail.viewer.membership;
+    if (membership?.status == CommunityMemberStatus.banned) {
+      // A banned membership row stays readable, but nothing on it can act.
+      return const LoopNotice(
+        key: ValueKey<String>('community-membership-banned'),
+        icon: 'shield',
+        tone: LoopNoticeTone.danger,
+        title: '你已被该社区封禁',
+        body:
+            '社区聊天与治理动作对你不可用，你也不在默认成员目录里。'
+            '只有社区的所有者或管理员可以解除封禁；解除后你会恢复为活跃成员，无需重新加入。',
+        margin: EdgeInsets.fromLTRB(16, 0, 16, 14),
+      );
+    }
     if (membership == null) {
       return LoopButtonPair(
         children: <Widget>[
@@ -359,7 +372,9 @@ class _MembershipActions extends StatelessWidget {
             key: ValueKey<String>('community-owner-cannot-leave'),
             icon: 'info',
             title: '所有者不能直接退出',
-            body: '需要先把所有权转让给另一名成员，服务端才会接受退出请求。',
+            body:
+                '先在「成员」页对某位成员执行「转让所有者」，你会变成普通成员，'
+                '之后才能退出。服务端在转让前会拒绝所有者的退出请求。',
             margin: EdgeInsets.fromLTRB(16, 0, 16, 14),
           ),
       ],

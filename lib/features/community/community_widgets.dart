@@ -409,6 +409,16 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
   final TextEditingController _assetKey = TextEditingController();
   CommunityApplicationField? _invalidField;
 
+  /// The closed set the server accepts, plus "no logo".
+  static const List<String?> _logoRefs = <String?>[
+    null,
+    'avatar:preset/community-01',
+    'avatar:preset/community-02',
+    'avatar:preset/community-03',
+    'avatar:preset/community-04',
+  ];
+  String? _logoRef;
+
   @override
   void dispose() {
     _name.dispose();
@@ -428,6 +438,7 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
       name: _name.text.trim(),
       slug: _slug.text.trim(),
       description: _optional(_description),
+      logoRef: _logoRef,
       boundAssetKey: _optional(_assetKey)?.toLowerCase(),
     );
     final invalid = application.invalidField;
@@ -491,6 +502,29 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
             decoration: InputDecoration(
               labelText: '简介（可留空，≤280）',
               errorText: _errorFor(CommunityApplicationField.description),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const LoopLabel('社区标识（可留空）'),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: <Widget>[
+                for (final reference in _logoRefs)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: LoopSeg(
+                      key: ValueKey<String>(
+                        'community-apply-logo-${reference ?? 'none'}',
+                      ),
+                      label: reference == null
+                          ? '不设置'
+                          : reference.split('-').last,
+                      selected: _logoRef == reference,
+                      onSelected: () => setState(() => _logoRef = reference),
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: 12),

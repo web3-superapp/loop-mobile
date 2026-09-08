@@ -120,23 +120,36 @@ final class ConnectionsController extends Notifier<ConnectionsState>
       );
     } on CommunityGatewayException catch (error) {
       if (!isCurrent(generation)) return;
-      state = ConnectionsState(
-        mode: previous.mode,
-        phase: communityPhaseForFailure(error.kind),
-        direction: direction,
-        counts: previous.counts,
-        failureKind: error.kind,
-      );
+      state = _failed(previous, direction, append, error.kind);
     } catch (_) {
       if (!isCurrent(generation)) return;
-      state = ConnectionsState(
-        mode: previous.mode,
-        phase: CommunityViewPhase.error,
-        direction: direction,
-        failureKind: CommunityFailureKind.unexpected,
+      state = _failed(
+        previous,
+        direction,
+        append,
+        CommunityFailureKind.unexpected,
       );
     }
   });
+
+  /// A failed page keeps what was already loaded: only a first page that has
+  /// nothing to show falls back to a whole-page state.
+  static ConnectionsState _failed(
+    ConnectionsState previous,
+    ConnectionDirection direction,
+    bool append,
+    CommunityFailureKind kind,
+  ) => ConnectionsState(
+    mode: previous.mode,
+    phase: append && previous.items.isNotEmpty
+        ? CommunityViewPhase.ready
+        : communityPhaseForFailure(kind),
+    direction: direction,
+    items: append ? previous.items : const <ConnectionEntry>[],
+    counts: previous.counts,
+    nextCursor: append ? previous.nextCursor : null,
+    failureKind: kind,
+  );
 
   /// Returns null when the server confirmed the change. The row's badge only
   /// ever repeats the server's `viewerFollows`.
@@ -340,23 +353,35 @@ final class BlocklistController extends Notifier<BlocklistState>
           );
         } on CommunityGatewayException catch (error) {
           if (!isCurrent(generation)) return;
-          state = BlocklistState(
-            mode: previous.mode,
-            phase: communityPhaseForFailure(error.kind),
-            kind: kind,
-            userCount: previous.userCount,
-            failureKind: error.kind,
-          );
+          state = _failed(previous, kind, append, error.kind);
         } catch (_) {
           if (!isCurrent(generation)) return;
-          state = BlocklistState(
-            mode: previous.mode,
-            phase: CommunityViewPhase.error,
-            kind: kind,
-            failureKind: CommunityFailureKind.unexpected,
+          state = _failed(
+            previous,
+            kind,
+            append,
+            CommunityFailureKind.unexpected,
           );
         }
       });
+
+  /// A failed page keeps what was already loaded.
+  static BlocklistState _failed(
+    BlocklistState previous,
+    BlockKind kind,
+    bool append,
+    CommunityFailureKind failureKind,
+  ) => BlocklistState(
+    mode: previous.mode,
+    phase: append && previous.items.isNotEmpty
+        ? CommunityViewPhase.ready
+        : communityPhaseForFailure(failureKind),
+    kind: kind,
+    items: append ? previous.items : const <BlockEntry>[],
+    userCount: previous.userCount,
+    nextCursor: append ? previous.nextCursor : null,
+    failureKind: failureKind,
+  );
 
   /// Lifting a block never restores a follow edge; the copy says so and the
   /// list is reloaded from the server rather than patched locally.
@@ -509,20 +534,27 @@ final class MessageRequestsController extends Notifier<MessageRequestsState>
       );
     } on CommunityGatewayException catch (error) {
       if (!isCurrent(generation)) return;
-      state = MessageRequestsState(
-        mode: previous.mode,
-        phase: communityPhaseForFailure(error.kind),
-        failureKind: error.kind,
-      );
+      state = _failed(previous, append, error.kind);
     } catch (_) {
       if (!isCurrent(generation)) return;
-      state = MessageRequestsState(
-        mode: previous.mode,
-        phase: CommunityViewPhase.error,
-        failureKind: CommunityFailureKind.unexpected,
-      );
+      state = _failed(previous, append, CommunityFailureKind.unexpected);
     }
   });
+
+  /// A failed page keeps what was already loaded.
+  static MessageRequestsState _failed(
+    MessageRequestsState previous,
+    bool append,
+    CommunityFailureKind kind,
+  ) => MessageRequestsState(
+    mode: previous.mode,
+    phase: append && previous.items.isNotEmpty
+        ? CommunityViewPhase.ready
+        : communityPhaseForFailure(kind),
+    items: append ? previous.items : const <MessageRequestEntry>[],
+    nextCursor: append ? previous.nextCursor : null,
+    failureKind: kind,
+  );
 
   /// Returns the server outcome, or null when the decision was refused. Only a
   /// non-null outcome may raise a success Toast, and `blocked` in the copy
