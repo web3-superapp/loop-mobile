@@ -2,9 +2,10 @@
 
 ## Status
 
-Accepted 2026-09-08. Extends decisions 0002, 0005, 0006 and 0054. Retires the
-generic Audio Room entry of decision 0024, the V1 friend-request route and the
-CID-addressed group-Alias route.
+Accepted 2026-09-08. Extends decisions 0002, 0005, 0006, 0045 and 0054;
+completed by decision 0056 for the merged-image export. Retires the generic
+Audio Room entry of decision 0024, the V1 friend-request route, the
+CID-addressed group-Alias route and the V1 Stream token paths.
 
 ## Context
 
@@ -67,25 +68,31 @@ Five constraints shaped the result:
    explanation and issues no request. The official `CallState` surface is
    mounted only after the LOOP join grant exists, inside a nested
    `ProviderScope` that supplies exactly one authorized room ID.
-7. **Host controls come only from `viewer`.** Invite, remove, mute-all and end
+7. **A hand raise is never a speaker.** The room resource carries no speaker
+   directory — only the viewer's own role and two aggregate counts — so the
+   removal action renders unavailable rather than taking its target from the
+   hand-raise queue.
+8. **Host controls come only from `viewer`.** Invite, remove, mute-all and end
    render when the server says the viewer is host and grants the flag. The
    participant figure is the server's `participants.observed` with its
    `observedAt`; an unobserved count renders `—`, never `0`. The LOOP
    speaker/listener counts are labelled as role intent, not presence.
-8. **Forwarding caps at 20 and merging at 50.** A deleted or empty message is
+9. **Forwarding caps at 20 and merging at 50.** A deleted or empty message is
    skipped and counted, never silently dropped; a target must be a channel the
    account already belongs to. The merged transcript is anonymous by
    construction — `匿名成员`, the timestamp and the text — so no alias, LOOP ID,
-   Stream user ID or address can be exported. Export itself is unavailable:
-   there is no reviewed system-share adapter.
-9. **`community-ai` restores the layout and closes every functional area** with
+   Stream user ID or address can be exported. Decision 0056 completes the
+   export: the anonymous card is captured with `RepaintBoundary.toImage`,
+   encoded to PNG with `dart:ui` and handed to the system share sheet through
+   `share_plus`. Nothing is uploaded and nothing is kept.
+10. **`community-ai` restores the layout and closes every functional area** with
    the server's `COMMUNITY_AI_RUNTIME_DEFERRED`. The prototype's sample answer,
    knowledge-base figure, daily digest count and suggested prompts have no
    source and are not reproduced.
-10. **Preview and production never share a widget.** `_chatSurface` picks the
+11. **Preview and production never share a widget.** `_chatSurface` picks the
     labelled fixture page in Preview mode and the V2 page otherwise, so
     decision 0025 stays intact while production carries no fixture.
-11. **Three retirements.** `/chat/friends/requests` folds into `dm-requests`,
+12. **Three retirements.** `/chat/friends/requests` folds into `dm-requests`,
     `/chat/channel/:cid/alias` folds into `group-info` (which resolves the LOOP
     group itself), and `/chat/channel/:cid` becomes a redirect. All three are
     recorded as informational retirements.
@@ -95,9 +102,10 @@ Five constraints shaped the result:
 - `group-info` shows member management, the group profile and the notification
   preferences as unavailable: none has a reviewed source in this step. The
   group-Alias editor stays reachable at its supplementary route.
-- `chat-merge-preview` renders the full anonymous transcript but cannot produce
-  a file: `share_plus` and an image encoder are not in the locked stack, so the
-  export action states that plainly instead of failing at the last step.
+- `chat-merge-preview` renders the full anonymous transcript and exports it
+  through the operating system's share sheet (decision 0056). The bytes are a
+  pixel copy of the card the viewer can see, so the anonymisation is structural
+  rather than a filter applied at export time.
 - `dm` opens only after a friendship exists. Without one it offers exactly one
   next step — `POST /v2/message-requests` — and says that an unreachable target
   answers the same way as a non-existent one, so nothing about the other
@@ -105,9 +113,14 @@ Five constraints shaped the result:
 - `voiceroom` and `voiceroom-full` are closed in every environment until the
   Stream Dashboard export proves the `audio_room` `user` role cannot create a
   call. The whole client path exists and is tested behind that gate.
-- The Stream user token loader still uses the frozen `/v1/chat/token` and
-  `/v1/video/token`, which resolve to the same account. Migrating it to the V2
-  endpoints changes the request headers and is a separate decision.
+- The Stream user token loader now uses `POST /v2/chat/token` and
+  `POST /v2/video/token`. They are writes: each attempt carries the contract
+  headers and its own canonical UUIDv4 `Idempotency-Key`, and errors arrive in
+  the seven-field envelope. Decision 0045's recovery budget is unchanged — one
+  401 refresh and one bootstrap recovery — and the session now recognises both
+  the V1 `bootstrap_required` and the V2 `ACCOUNT_BOOTSTRAP_REQUIRED` code for
+  the same condition. `DioLoopStreamTokenRepository` stays in the repository as
+  frozen V1 history and is no longer mounted.
 
 ## Evidence
 

@@ -3,6 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
+import 'package:loop_mobile/integrations/backend/loop_stream_token.dart';
+import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_stream_token_repository.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_communication_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_projection_codec.dart';
 
@@ -453,6 +456,199 @@ void main() {
         throwsA(isA<LoopBackendFailure>()),
       );
     });
+  });
+
+  group('V2 Stream token loader', () {
+    const streamUserId = 'loop_7a7448be64e24f9fa9f1891f1beec7fd';
+    const apiKey = 'public-stream-api-key';
+
+    Map<String, Object?> tokenBody({
+      String userId = streamUserId,
+      String key = apiKey,
+      String expiresAt = '2026-09-08T02:00:00.000Z',
+    }) => <String, Object?>{
+      'apiKey': key,
+      'token': 'a' * 64,
+      'expiresAt': expiresAt,
+      'user': <String, Object?>{'id': userId},
+      'contractVersion': '2.0',
+    };
+
+    DioLoopV2StreamTokenRepository repository(
+      List<RequestOptions> captured, {
+      Object? body,
+    }) => DioLoopV2StreamTokenRepository(
+      _dio((options, handler) {
+        captured.add(options);
+        handler.resolve(_response(options, body ?? tokenBody()));
+      }),
+      expectedApiKey: apiKey,
+      clientVersion: _clientVersion,
+      now: () => DateTime.utc(2026, 9, 8, 1),
+    );
+
+    test(
+      'chat and video tokens post to the V2 paths with the write headers',
+      () async {
+        final captured = <RequestOptions>[];
+        final api = repository(captured);
+
+        for (final product in LoopStreamTokenProduct.values) {
+          await api.issue(
+            product: product,
+            expectedStreamUserId: streamUserId,
+            accessToken: _token,
+          );
+        }
+
+        expect(captured.map((request) => request.uri.path), <String>[
+          '/v2/chat/token',
+          '/v2/video/token',
+        ]);
+        for (final request in captured) {
+          expect(request.method, 'POST');
+          expect(request.headers['x-loop-contract-version'], '2.0');
+          expect(request.headers['x-loop-client-version'], _clientVersion);
+          expect(
+            LoopV2Contract.uuidV4Pattern.hasMatch(
+              request.headers['idempotency-key']! as String,
+            ),
+            isTrue,
+          );
+          // The identity is never client-selected: no body, no query.
+          expect(request.data, isNull);
+          expect(request.queryParameters, isEmpty);
+        }
+        // Every attempt is its own logical operation.
+        expect(
+          captured.first.headers['idempotency-key'],
+          isNot(captured.last.headers['idempotency-key']),
+        );
+      },
+    );
+
+    test('a token for another Stream identity is an invalid payload', () async {
+      final api = repository(
+        <RequestOptions>[],
+        body: tokenBody(userId: 'loop_0000000000000000000000000000ffff'),
+      );
+
+      await expectLater(
+        api.issue(
+          product: LoopStreamTokenProduct.chat,
+          expectedStreamUserId: streamUserId,
+          accessToken: _token,
+        ),
+        throwsA(
+          isA<LoopBackendFailure>().having(
+            (failure) => failure.kind,
+            'kind',
+            LoopBackendFailureKind.invalidPayload,
+          ),
+        ),
+      );
+    });
+
+    test('a token for another public API key is an invalid payload', () async {
+      final api = repository(
+        <RequestOptions>[],
+        body: tokenBody(key: 'another-public-key'),
+      );
+
+      await expectLater(
+        api.issue(
+          product: LoopStreamTokenProduct.chat,
+          expectedStreamUserId: streamUserId,
+          accessToken: _token,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a lifetime beyond the contract hour is an invalid payload', () async {
+      final api = repository(
+        <RequestOptions>[],
+        body: tokenBody(expiresAt: '2026-09-09T01:00:00.000Z'),
+      );
+
+      await expectLater(
+        api.issue(
+          product: LoopStreamTokenProduct.chat,
+          expectedStreamUserId: streamUserId,
+          accessToken: _token,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test(
+      'the seven-field envelope keeps the 401 and bootstrap policy',
+      () async {
+        for (final (status, code, kind)
+            in <(int, String, LoopBackendFailureKind)>[
+              (401, 'AUTH_INVALID', LoopBackendFailureKind.authentication),
+              (
+                409,
+                'ACCOUNT_BOOTSTRAP_REQUIRED',
+                LoopBackendFailureKind.invalidRequest,
+              ),
+              (429, 'RATE_LIMITED', LoopBackendFailureKind.unavailable),
+            ]) {
+          final api = DioLoopV2StreamTokenRepository(
+            _dio((options, handler) {
+              handler.reject(
+                DioException(
+                  requestOptions: options,
+                  type: DioExceptionType.badResponse,
+                  response: Response<Object?>(
+                    requestOptions: options,
+                    statusCode: status,
+                    data: <String, Object?>{
+                      'code': code,
+                      'category': status == 401
+                          ? 'authentication'
+                          : status == 409
+                          ? 'conflict'
+                          : 'rateLimit',
+                      'retryable': status != 401,
+                      'userMessageKey': 'errors.streamToken',
+                      'correlationId': _requestId,
+                      'detailsSafe': null,
+                      'providerReferenceSafe': null,
+                    },
+                    headers: Headers.fromMap(<String, List<String>>{
+                      'cache-control': <String>['no-store'],
+                      'x-request-id': const <String>[_requestId],
+                      if (status == 401)
+                        'www-authenticate': const <String>[
+                          'Bearer realm="loop-api"',
+                        ],
+                    }),
+                  ),
+                ),
+              );
+            }),
+            expectedApiKey: apiKey,
+            clientVersion: _clientVersion,
+          );
+
+          await expectLater(
+            api.issue(
+              product: LoopStreamTokenProduct.chat,
+              expectedStreamUserId: streamUserId,
+              accessToken: _token,
+            ),
+            throwsA(
+              isA<LoopBackendFailure>()
+                  .having((failure) => failure.kind, 'kind', kind)
+                  .having((failure) => failure.statusCode, 'statusCode', status)
+                  .having((failure) => failure.code, 'code', code),
+            ),
+            reason: code,
+          );
+        }
+      },
+    );
   });
 
   group('community chat and voice sections', () {

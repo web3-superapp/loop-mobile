@@ -15,10 +15,11 @@ void main() {
   }
 
   test('interaction resolves only the strict Chat CID route', () {
+    const hex = '0123456789abcdef0123456789abcdef';
     final decision = router().route(
       data: _payload(
         kind: LoopNotificationRouter.chatMessageKind,
-        cid: 'messaging:loop-room-42',
+        cid: 'messaging:loop_direct_$hex',
       ),
       ingress: LoopNotificationIngress.interaction,
       session: authenticated,
@@ -28,8 +29,32 @@ void main() {
     expect(decision.intent, isA<LoopChatNotificationIntent>());
     expect(
       decision.intent?.location,
-      '/chat/channel/${Uri.encodeComponent('messaging:loop-room-42')}',
+      '/chat/dm?cid=${Uri.encodeComponent('messaging:loop_direct_$hex')}',
     );
+  });
+
+  test('a channel with no LOOP prefix produces no navigation intent', () {
+    // A payload LOOP cannot map has nothing to open: it must not fall back to
+    // a generic channel page, which would be a broader destination than the
+    // notification authorised.
+    for (final cid in <String>[
+      'messaging:loop-room-42',
+      'messaging:loop_direct_short',
+      'messaging:some_other_channel',
+    ]) {
+      final decision = router().route(
+        data: _payload(kind: LoopNotificationRouter.chatMessageKind, cid: cid),
+        ingress: LoopNotificationIngress.interaction,
+        session: authenticated,
+      );
+
+      expect(
+        decision.disposition,
+        LoopNotificationDisposition.malformed,
+        reason: cid,
+      );
+      expect(decision.intent, isNull, reason: cid);
+    }
   });
 
   test('a chat notification lands on the surface its channel prefix names', () {
@@ -333,7 +358,9 @@ void main() {
 Map<String, Object?> _payload({
   required String kind,
   String eventId = '123e4567-e89b-42d3-a456-426614174000',
-  String cid = 'messaging:loop-room-42',
+  // Step 4: only a channel whose LOOP-assigned prefix names a surface can
+  // produce a navigation intent, so the default payload carries one.
+  String cid = 'messaging:loop_direct_0123456789abcdef0123456789abcdef',
 }) {
   return <String, Object?>{
     'loop_schema': LoopNotificationRouter.schema,

@@ -1,5 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
+import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
+import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -248,4 +252,39 @@ final class FakeGroupAliasResolverGateway implements GroupAliasResolverGateway {
     calls.add(channelId);
     return Future<GroupId>.value(GroupId.fromWire(groupId));
   }
+}
+
+/// Records every merged image the page would have shared, without touching a
+/// platform channel.
+final class RecordingChatMergeExportSink implements ChatMergeExportSink {
+  RecordingChatMergeExportSink({this.outcome = ChatMergeExportOutcome.shared});
+
+  ChatMergeExportOutcome outcome;
+  final List<Uint8List> shared = <Uint8List>[];
+  final List<String> fileNames = <String>[];
+
+  @override
+  Future<ChatMergeExportOutcome> shareImage({
+    required Uint8List pngBytes,
+    required String fileName,
+  }) async {
+    shared.add(pngBytes);
+    fileNames.add(fileName);
+    return outcome;
+  }
+}
+
+/// Seeds `chat-forward` / `chat-merge-preview` with an exact selection, so a
+/// page test never has to drive a Stream query to reach the merged card.
+final class SeededChatForwardController extends ChatForwardController {
+  SeededChatForwardController(this._messages);
+
+  final List<ChatForwardMessage> _messages;
+
+  @override
+  ChatForwardState build() => ChatForwardState(
+    sourceCid: testGroupCid,
+    messages: List<ChatForwardMessage>.unmodifiable(_messages),
+    selected: <String>{for (final message in _messages) message.messageId},
+  );
 }

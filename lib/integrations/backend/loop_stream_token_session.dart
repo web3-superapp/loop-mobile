@@ -9,8 +9,9 @@ import 'package:loop_mobile/integrations/backend/loop_stream_token.dart';
 ///
 /// Tokens are returned directly to the official SDK loader and are never
 /// cached or persisted by LOOP. One 401 may refresh the current Privy access
-/// token. One `bootstrap_required` response may re-establish the same
-/// server-derived identity before retrying.
+/// token. One bootstrap-required response may re-establish the same
+/// server-derived identity before retrying; the V1 code (`bootstrap_required`)
+/// and the V2 code (`ACCOUNT_BOOTSTRAP_REQUIRED`) name the same condition.
 final class LoopStreamTokenSession {
   factory LoopStreamTokenSession({
     required String principalKey,
@@ -68,7 +69,9 @@ final class LoopStreamTokenSession {
         }
 
         final requiresBootstrap =
-            failure.statusCode == 409 && failure.code == 'bootstrap_required';
+            failure.statusCode == 409 &&
+            (failure.code == 'bootstrap_required' ||
+                failure.code == 'ACCOUNT_BOOTSTRAP_REQUIRED');
         if (!requiresBootstrap) rethrow;
         _bootstrapSession.invalidateAuthorization();
         if (repeatedBootstrap) rethrow;

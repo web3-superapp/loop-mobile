@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
+import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
+import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
@@ -16,6 +18,8 @@ import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+
+import 'communication_test_harness.dart';
 
 const testCommunityId = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
 const testOwnerId = '9c1f0f2e-5a7b-4c3d-8e9f-0a1b2c3d4e5f';
@@ -616,6 +620,8 @@ Future<void> pumpCommunityPage(
   ChatV2Gateway? chat,
   VoiceRoomGateway? voiceRoom,
   GroupAliasResolverGateway? groupAliasResolver,
+  ChatMergeExportSink? mergeExportSink,
+  List<ChatForwardMessage>? selectedForward,
   LoopV2MetaSnapshot? meta,
   Size size = const Size(390, 1400),
   bool settle = true,
@@ -638,6 +644,12 @@ Future<void> pumpCommunityPage(
         if (groupAliasResolver != null)
           groupAliasResolverGatewayProvider.overrideWithValue(
             groupAliasResolver,
+          ),
+        if (mergeExportSink != null)
+          chatMergeExportSinkProvider.overrideWithValue(mergeExportSink),
+        if (selectedForward != null)
+          chatForwardControllerProvider.overrideWith(
+            () => SeededChatForwardController(selectedForward),
           ),
         loopV2MetaSnapshotProvider.overrideWith(
           (ref) async => meta ?? testMetaSnapshot(),

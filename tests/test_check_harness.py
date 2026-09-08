@@ -3613,12 +3613,12 @@ class HarnessTests(unittest.TestCase):
             old = (
                 "        redirect: (context, state) =>\n"
                 "            loopChatLocationForCid(state.pathParameters['cid'] ?? '') ??\n"
-                "            LoopRouteManifest.defaultPath,"
+                "            routingErrors.record(state.uri.toString()),"
             )
             new = (
                 "        redirect: (context, state) => false\n"
                 "            ? loopChatLocationForCid(state.pathParameters['cid'] ?? '')\n"
-                "            : LoopRouteManifest.defaultPath,"
+                "            : routingErrors.record(state.uri.toString()),"
             )
             self.assertIn(old, source)
             path.write_text(source.replace(old, new, 1), encoding="utf-8")

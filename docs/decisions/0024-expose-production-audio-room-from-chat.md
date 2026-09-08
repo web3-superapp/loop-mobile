@@ -2,6 +2,15 @@
 
 ## Status
 
+> **Superseded in part by decision 0055 (2026-09-08).** Step 4 made every
+> Audio Room a community resource with a server-owned locator, so the clause
+> requiring one always-visible Audio Room entry in the generic Chat inbox no
+> longer applies: an inbox has no community and therefore no room to open. The
+> lobby is now reached from a community record, and decision 0005's provider
+> evidence closes the page entirely while it is pending. Everything else in
+> this decision — that the entry performs no provider operation, never selects
+> or fabricates a room, and never renders preview room state — still holds.
+
 Accepted on 2026-08-26.
 
 ## Context

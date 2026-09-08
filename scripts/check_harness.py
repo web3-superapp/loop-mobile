@@ -29,6 +29,7 @@ PINNED_DEPENDENCIES = {
     "go_router": "17.5.0",
     "privy_flutter": "0.10.1",
     "reown_appkit": "1.8.4",
+    "share_plus": "12.0.2",
     "shared_preferences": "2.5.5",
     "stream_chat_flutter": "10.3.0",
     "stream_chat_persistence": "10.3.0",
@@ -538,13 +539,11 @@ NOTIFICATION_INTENT_CLASSES = frozenset(
         "LoopNotificationCenterIntent",
     }
 )
-NOTIFICATION_ROUTE_LITERALS = frozenset(
-    {
-        "/chat/channel/${Uri.encodeComponent(channel.cid)}",
-        "/chat/voice",
-        "/notifications",
-    }
-)
+# Step 4: the chat intent no longer holds a route literal at all. It resolves
+# through `loopChatLocationForCid`, the one mapper shared with chat search and
+# the compatibility deep link, and the parser rejects every channel that mapper
+# cannot name.
+NOTIFICATION_ROUTE_LITERALS = frozenset({"/chat/voice", "/notifications"})
 NOTIFICATION_ROUTER_CONSUMER_PATHS = frozenset(
     {NOTIFICATION_ROUTER_PATH, NOTIFICATION_COORDINATOR_PATH}
 )
@@ -3191,7 +3190,7 @@ CHAT_PREVIEW_CONVERSATION_ID_SOURCE_FINGERPRINTS = {
     "inbox_navigation": "e854a63e6871f7c56b14a0671617413c3191670b656ccef4fa13fe8b0abe72fe",
     "gateway": "a2ed73bcb1f80ac4110aa8f48fcb5f3c68d2d2270028dbf246e37af43df24701",
     "home_notification": "7dacb554dd1ad92063d87548c5f0a34069b5643bf69dc2de83c7da820658ed85",
-    "production_cid": "b8767b4ff571bf2822440a5f9bff2df95ab907ab646376a12a891c2bc3de84a4",
+    "production_cid": "cd1ec47454a1c55cb2225b7e119b5f5f36ff61dbf6e1434edcaa26705b89f98a",
     "unavailable_page": "3476f8d0a2ad8d4e0e2922a926fc2177bfcfa88fceca55dbb39189c8ed3351ff",
 }
 
@@ -8336,7 +8335,10 @@ def check_production_chat_audio_room_entry(root: Path) -> list[str]:
                 "capability.evidencePending",
                 "voiceroom-evidence-pending",
                 "AUDIO_ROOM_USER_ROLE_EVIDENCE_PENDING",
-                "audioRoomTargetSourceProvider.overrideWithValue(",
+                # The authorized room is handed straight to the reviewed lobby,
+                # so no scoped provider can resolve to the fail-closed default.
+                "StreamVoiceRoomPage(target: target)",
+                "voiceroom-remove-speaker-unavailable",
             ),
             "test/stream_chat_inbox_page_test.dart": (
                 "the generic Chat inbox no longer offers an Audio Room without a community",
@@ -8446,7 +8448,8 @@ def check_notification_contract(root: Path) -> list[str]:
             "LoopNotificationIngress.interaction",
             "LoopNotificationSessionMode.authenticated",
             "LoopNotificationDisposition.duplicateInteraction",
-            "Uri.encodeComponent(channel.cid)",
+            "loopChatLocationForCid(channel.cid)!",
+            "loopChatLocationForCid(cid) == null",
             "String get location => '/chat/voice'",
             "String get location => '/notifications'",
         )

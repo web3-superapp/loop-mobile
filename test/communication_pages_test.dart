@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
+import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
+import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
+import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/features/chat/v2/chat_search_screen.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/community_chat_screen.dart';
@@ -253,6 +256,18 @@ void main() {
         find.byKey(const ValueKey<String>('dm-operator-required')),
         findsOneWidget,
       );
+      expect(
+        find.byKey(const ValueKey<String>('dm-operator-required-notice')),
+        findsOneWidget,
+      );
+      // A terminal unresolved outcome offers no retry: reopening would start a
+      // second logical operation under a new key.
+      expect(
+        find.byKey(const ValueKey<String>('community-state-error')),
+        findsNothing,
+      );
+      expect(find.text('重试'), findsNothing);
+      expect(find.text('再试一次'), findsNothing);
     });
   });
 
@@ -365,6 +380,20 @@ void main() {
         expect(find.text(label), findsOneWidget, reason: label);
       }
     });
+
+    test('a group or community hit carries the neutral member label', () {
+      // Stream's account-level `user.name` is never the sender of a group or
+      // community result; the group message list uses the same neutral label.
+      expect(
+        chatSearchSenderLabel(LoopChatSurface.group),
+        loopGroupMemberNeutralLabel,
+      );
+      expect(
+        chatSearchSenderLabel(LoopChatSurface.communityChat),
+        loopGroupMemberNeutralLabel,
+      );
+      expect(chatSearchSenderLabel(LoopChatSurface.direct), '私聊');
+    });
   });
 
   group('chat-forward', () {
@@ -461,6 +490,76 @@ void main() {
 
     test('the anonymous label is the only author a merged row can carry', () {
       expect(chatMergeAnonymousLabel, '匿名成员');
+    });
+
+    testWidgets('the export encodes the anonymous card and shares it once', (
+      tester,
+    ) async {
+      final sink = RecordingChatMergeExportSink();
+      await pumpCommunityPage(
+        tester,
+        const ChatMergePreviewScreen(),
+        mergeExportSink: sink,
+        selectedForward: <ChatForwardMessage>[
+          ChatForwardMessage(
+            messageId: 'a',
+            text: '社区金库仓位已完成服务端复核。',
+            createdAt: DateTime.utc(2026, 9, 8, 9, 34),
+            forwardable: true,
+          ),
+        ],
+      );
+
+      // Only the anonymous label is rendered, so only it can be captured.
+      expect(find.text('匿名成员 · 2026-09-08 09:34 UTC'), findsOneWidget);
+      expect(find.textContaining('LOOP-'), findsNothing);
+      expect(find.textContaining('0x'), findsNothing);
+
+      final export = find.byKey(const ValueKey<String>('chat-merge-export'));
+      await scrollToCommunitySection(tester, export);
+      // `toImage` awaits real engine work, so the capture runs outside the
+      // fake async zone.
+      await tester.runAsync(() async {
+        await tester.tap(export);
+        await tester.pump();
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      });
+      await tester.pumpAndSettle();
+
+      expect(sink.shared, hasLength(1));
+      expect(sink.fileNames, <String>['loop-merge-preview.png']);
+      // A real PNG signature proves the bytes were encoded on device.
+      expect(sink.shared.single.take(4), <int>[0x89, 0x50, 0x4e, 0x47]);
+    });
+
+    testWidgets('an unavailable share adapter encodes and shares nothing', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const ChatMergePreviewScreen(),
+        selectedForward: <ChatForwardMessage>[
+          ChatForwardMessage(
+            messageId: 'a',
+            text: 'kept',
+            createdAt: DateTime.utc(2026, 9, 8, 9),
+            forwardable: true,
+          ),
+        ],
+      );
+
+      final export = find.byKey(const ValueKey<String>('chat-merge-export'));
+      await scrollToCommunitySection(tester, export);
+      // `toImage` awaits real engine work, so the capture runs outside the
+      // fake async zone.
+      await tester.runAsync(() async {
+        await tester.tap(export);
+        await tester.pump();
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      });
+      await tester.pumpAndSettle();
+
+      expect(find.text('本次运行没有装配系统分享，长图未生成'), findsOneWidget);
     });
   });
 
@@ -586,6 +685,51 @@ void main() {
       expect(row, findsOneWidget);
       expect(find.text('—'), findsWidgets);
       expect(find.text('0'), findsNothing);
+    });
+
+    testWidgets('a joined room hands the exact room to the reviewed lobby', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: FakeVoiceRoomGateway(
+          snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.speaker),
+        ),
+      );
+
+      final media = find.byKey(const ValueKey<String>('voiceroom-media'));
+      await scrollToCommunitySection(tester, media);
+      expect(media, findsOneWidget);
+      // The lobby receives the authorized room as a constructor argument, so
+      // no scoped provider can resolve it to the fail-closed default.
+      final lobby = tester.widget<StreamVoiceRoomPage>(
+        find.byType(StreamVoiceRoomPage),
+      );
+      expect(lobby.target, isNotNull);
+      expect(lobby.target!.roomId, 'loop_voice_$testChannelHex');
+    });
+
+    testWidgets('a host is offered no speaker to remove', (tester) async {
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
+        voiceRoom: FakeVoiceRoomGateway(
+          snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
+          handRaises: <VoiceRoomHandRaiseEntry>[testHandRaiseEntry()],
+        ),
+      );
+
+      final unavailable = find.byKey(
+        const ValueKey<String>('voiceroom-remove-speaker-unavailable'),
+      );
+      await scrollToCommunitySection(tester, unavailable);
+      expect(unavailable, findsOneWidget);
+      // A hand raise is a request to speak, never a speaker.
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-remove-speaker')),
+        findsNothing,
+      );
     });
 
     testWidgets('raising a hand goes through the LOOP command port', (
