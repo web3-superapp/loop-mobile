@@ -1,6 +1,8 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/market/loop_candle_chart.dart';
@@ -522,6 +524,39 @@ void main() {
       expect(find.textContaining('聪明钱追踪尚未交付'), findsOneWidget);
       expect(find.textContaining('胜率'), findsWidgets);
       expect(find.textContaining('0x'), findsNothing);
+    });
+  });
+
+  group('asset route round trip', () {
+    testWidgets('go_router hands the page back the exact CAIP identity', (
+      tester,
+    ) async {
+      // The canonical location percent-encodes the CAIP colons. If go_router
+      // normalised them differently the page would fail closed on its own
+      // link, so the round trip is guarded rather than assumed.
+      String? parsed;
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: <RouteBase>[
+          GoRoute(path: '/', builder: (context, state) => const SizedBox()),
+          GoRoute(
+            path: MarketAssetRoute.tokenPath,
+            builder: (context, state) {
+              parsed = MarketAssetRoute.parse(
+                state.uri,
+                MarketAssetRoute.tokenPath,
+              );
+              return const SizedBox();
+            },
+          ),
+        ],
+      );
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+
+      router.go(MarketAssetRoute.token(s5WbnbAssetId));
+      await tester.pumpAndSettle();
+
+      expect(parsed, s5WbnbAssetId);
     });
   });
 }
