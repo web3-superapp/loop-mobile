@@ -59,6 +59,7 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
       archetype: LoopPageArchetype.intro,
       title: '创建 LOOP ID',
       onBack: widget.onBack,
+      primaryActionBeforeDisclosure: true,
       primaryAction: LoopButton(
         key: const ValueKey<String>('loop-id-submit'),
         label: switch (state.phase) {
@@ -142,6 +143,15 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
             tone: LoopNoticeTone.warn,
             title: 'LOOP ID 激活暂不可用',
             body: profileFailureReason(state.failureKind),
+          )
+        else if (state.resource == null && state.failureKind == null)
+          // Nothing has been read yet and nothing failed: an initial state is
+          // not an error.
+          LoopEmpty(
+            key: const ValueKey<String>('loop-id-empty'),
+            message: '还没有读取到你的 LOOP ID',
+            reason: '账号资料尚未载入。',
+            action: LoopButton(label: '载入', onPressed: controller.reload),
           )
         else if (state.resource == null)
           LoopErrorState(

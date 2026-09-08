@@ -50,6 +50,7 @@ class LoopFocusPage extends StatelessWidget {
     this.folio,
     this.primaryAction,
     this.disclosure,
+    this.primaryActionBeforeDisclosure = true,
   });
 
   final LoopPageArchetype archetype;
@@ -63,6 +64,11 @@ class LoopFocusPage extends StatelessWidget {
   /// Pinned under the body (`.btn-pair` / `.btn-block`).
   final Widget? primaryAction;
   final LoopDisclosure? disclosure;
+
+  /// Prototype order: the primary action sits above the disclosure so it stays
+  /// reachable on the first screen. Set false only when the disclosure is the
+  /// page's own risk copy and must be read before acting.
+  final bool primaryActionBeforeDisclosure;
 
   static const LoopLayoutMode layoutMode = LoopLayoutMode.focus;
 
@@ -101,16 +107,23 @@ class LoopFocusPage extends StatelessWidget {
                   ),
                 ),
               ),
-              ?disclosure,
+              if (!primaryActionBeforeDisclosure) ?disclosure,
               if (primaryAction != null)
                 Padding(
                   padding: EdgeInsets.fromLTRB(
                     LoopSpacing.page,
                     LoopSpacing.tight,
                     LoopSpacing.page,
-                    bottom,
+                    primaryActionBeforeDisclosure && disclosure != null
+                        ? LoopSpacing.tight
+                        : bottom,
                   ),
                   child: primaryAction,
+                ),
+              if (primaryActionBeforeDisclosure && disclosure != null)
+                Padding(
+                  padding: EdgeInsets.only(bottom: bottom),
+                  child: disclosure,
                 ),
             ],
           ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -116,6 +118,107 @@ void main() {
     expect(find.text('还可尝试 3 次'), findsOneWidget);
   });
 
+  testWidgets('six labelled cells mirror the one real field', (tester) async {
+    final container = await _pump(tester, _Gateway());
+    await _sendCode(tester, container);
+
+    for (var index = 1; index <= 6; index += 1) {
+      expect(
+        find.byKey(ValueKey<String>('privy-otp-cell-$index')),
+        findsOneWidget,
+      );
+    }
+    // Exactly one field owns the value.
+    expect(find.byType(TextField), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('privy-otp-field')),
+      '8420',
+    );
+    await tester.pumpAndSettle();
+
+    final semantics = tester.getSemantics(
+      find.byKey(const ValueKey<String>('privy-otp-cell-1')),
+    );
+    expect(semantics.label, '验证码第 1 位');
+    expect(semantics.value, '8');
+    expect(
+      tester
+          .getSemantics(find.byKey(const ValueKey<String>('privy-otp-cell-5')))
+          .value,
+      '未填写',
+    );
+    // A letter never reaches the controller.
+    await tester.enterText(
+      find.byKey(const ValueKey('privy-otp-field')),
+      '84a20x',
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .getSemantics(find.byKey(const ValueKey<String>('privy-otp-cell-3')))
+          .value,
+      '2',
+    );
+  });
+
+  testWidgets('an in-flight verification shows the loading state', (
+    tester,
+  ) async {
+    final gateway = _Gateway(holdVerify: true);
+    final container = await _pump(tester, gateway);
+    await _sendCode(tester, container);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('privy-otp-field')),
+      '842000',
+    );
+    await tester.tap(find.byKey(const ValueKey('privy-auth-primary-button')));
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey<String>('privy-otp-verifying')),
+      findsOneWidget,
+    );
+    gateway.releaseVerify();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('an unconfirmed delivery is shown as offline, not a bad code', (
+    tester,
+  ) async {
+    final gateway = _Gateway(sendFailure: '验证码发送失败，请稍后重试。');
+    final container = await _pump(tester, gateway);
+    await container
+        .read(emailAuthProvider.notifier)
+        .sendCode('owner@example.com');
+    await tester.pumpAndSettle();
+
+    // The send failed, so the step never advanced and nothing claims a code
+    // was delivered.
+    expect(container.read(emailAuthProvider).deliveryUnconfirmed, isTrue);
+    expect(container.read(emailAuthProvider).failedAttempts, 0);
+  });
+
+  testWidgets('a failed resend shows the offline block on the step', (
+    tester,
+  ) async {
+    final gateway = _Gateway();
+    final container = await _pump(tester, gateway);
+    await _sendCode(tester, container);
+
+    gateway.sendFailure = '验证码发送失败，请稍后重试。';
+    _now = _base.add(emailAuthResendCooldown);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.byKey(const ValueKey<String>('privy-otp-resend')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('privy-otp-offline')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('leaving the step abandons the pending code', (tester) async {
     var backs = 0;
     final container = await _pump(tester, _Gateway(), onBack: () => backs += 1);
@@ -179,11 +282,18 @@ Future<ProviderContainer> _pump(
 }
 
 class _Gateway implements PrivyAuthGateway {
-  _Gateway({this.verifyFailure});
+  _Gateway({this.verifyFailure, this.sendFailure, this.holdVerify = false});
 
   final String? verifyFailure;
+  String? sendFailure;
+  final bool holdVerify;
+  final Completer<void> _verifyGate = Completer<void>();
   var sendCalls = 0;
   var verifyCalls = 0;
+
+  void releaseVerify() {
+    if (!_verifyGate.isCompleted) _verifyGate.complete();
+  }
 
   @override
   Future<PrivyWalletCreationResult> createFirstEthereumWallet({
@@ -203,6 +313,8 @@ class _Gateway implements PrivyAuthGateway {
   @override
   Future<void> sendEmailCode(String email) async {
     sendCalls += 1;
+    final failure = sendFailure;
+    if (failure != null) throw PrivyGatewayException(failure);
   }
 
   @override
@@ -211,6 +323,7 @@ class _Gateway implements PrivyAuthGateway {
     required String code,
   }) async {
     verifyCalls += 1;
+    if (holdVerify) await _verifyGate.future;
     final failure = verifyFailure;
     if (failure != null) throw PrivyGatewayException(failure);
     return const PrivyAccountSummary(privyUserId: 'did:privy:owner');

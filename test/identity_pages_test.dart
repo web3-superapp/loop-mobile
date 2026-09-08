@@ -133,8 +133,10 @@ void main() {
         find.byKey(const ValueKey<String>('wallet-recovery-unavailable')),
         findsOneWidget,
       );
-      expect(find.text('不可用'), findsNWidgets(5));
+      // The three selectable methods; the two disclosure rows stay collapsed.
+      expect(find.text('不可用'), findsNWidgets(3));
       expect(find.text('可用'), findsNothing);
+      expect(find.text('已选'), findsNothing);
       // Confirm cannot pretend a recovery method was chosen.
       expect(_enabled(tester, 'wallet-recovery-confirm'), isFalse);
       // Skipping stays possible and honest about the consequence.
@@ -154,7 +156,7 @@ void main() {
       expect(find.textContaining('导入'), findsNothing);
     });
 
-    testWidgets('enables confirm once one method is really available', (
+    testWidgets('confirm needs an available method to be chosen first', (
       tester,
     ) async {
       final destinations = <String>[];
@@ -168,11 +170,56 @@ void main() {
       );
 
       expect(find.text('可用'), findsOneWidget);
+      // Availability alone is not a choice.
+      expect(_enabled(tester, 'wallet-recovery-confirm'), isFalse);
+
+      // An unavailable row cannot be selected.
+      await tester.tap(find.byKey(const ValueKey<String>('recovery-cloud')));
+      await tester.pump();
+      expect(_enabled(tester, 'wallet-recovery-confirm'), isFalse);
+
+      await tester.tap(find.byKey(const ValueKey<String>('recovery-passkey')));
+      await tester.pump();
+      expect(find.text('已选'), findsOneWidget);
+      expect(_enabled(tester, 'wallet-recovery-confirm'), isTrue);
+
       await tester.tap(
         find.byKey(const ValueKey<String>('wallet-recovery-confirm')),
       );
       await tester.pump();
       expect(destinations, <String>['security-setup']);
+    });
+
+    testWidgets('a loading or failed capability read blocks every option', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const WalletRecoveryScreen(
+          capabilities: PrivyWalletCapabilities(canUsePasskey: true),
+          onContinue: _noop,
+          loading: true,
+        ),
+      );
+      expect(
+        find.byKey(const ValueKey<String>('wallet-recovery-loading')),
+        findsOneWidget,
+      );
+      expect(find.text('可用'), findsNothing);
+
+      await _pump(
+        tester,
+        const WalletRecoveryScreen(
+          capabilities: PrivyWalletCapabilities(canUsePasskey: true),
+          onContinue: _noop,
+          failureReason: '能力清单暂时读不到。',
+        ),
+      );
+      expect(
+        find.byKey(const ValueKey<String>('wallet-recovery-error')),
+        findsOneWidget,
+      );
+      expect(_enabled(tester, 'wallet-recovery-confirm'), isFalse);
     });
   });
 
@@ -258,6 +305,8 @@ Future<void> _pump(WidgetTester tester, Widget child) async {
   await tester.pumpWidget(MaterialApp(theme: LoopTheme.dark, home: child));
   await tester.pump();
 }
+
+void _noop() {}
 
 bool _enabled(WidgetTester tester, String key) {
   final button = tester.widget<LoopButton>(find.byKey(ValueKey<String>(key)));

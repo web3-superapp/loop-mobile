@@ -69,11 +69,47 @@ void main() {
     expect(LoopFocusPage.layoutMode, LoopLayoutMode.focus);
     final button = find.byKey(const ValueKey<String>('loop-button-primary'));
     expect(button, findsOneWidget);
-    // Pinned: visible without scrolling, with max(24, safe) below it.
-    expect(844 - tester.getRect(button).bottom, 34);
+    final summary = find.text('更多说明');
+    // Prototype order: the primary action is reachable on the first screen and
+    // sits above the disclosure, which keeps max(24, safe) below it.
+    expect(
+      tester.getRect(button).bottom,
+      lessThan(tester.getRect(summary).top),
+    );
+    // Both stay on the first screen, above the max(24, safe) bottom inset.
+    expect(tester.getRect(button).bottom, lessThan(844 - 34));
+    expect(tester.getRect(summary).bottom, lessThan(844 - 34));
     // Body rows scroll under the pinned action; the last row starts below it.
     expect(tester.getRect(find.text('row 19')).top, greaterThan(844));
     semantics.dispose();
+  });
+
+  testWidgets('focus page can put a risk disclosure before the action', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      LoopFocusPage(
+        archetype: LoopPageArchetype.action,
+        title: '恢复方式',
+        primaryActionBeforeDisclosure: false,
+        body: const <Widget>[Text('body')],
+        primaryAction: LoopButton(
+          label: '继续',
+          primary: true,
+          block: true,
+          onPressed: () {},
+        ),
+        disclosure: const LoopDisclosure(summary: '跳过风险', child: Text('说明')),
+      ),
+      padding: const EdgeInsets.only(bottom: 34),
+    );
+
+    final button = find.byKey(const ValueKey<String>('loop-button-primary'));
+    expect(
+      tester.getRect(find.text('跳过风险')).bottom,
+      lessThan(tester.getRect(button).top),
+    );
   });
 
   testWidgets(

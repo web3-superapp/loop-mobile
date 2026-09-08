@@ -9,6 +9,18 @@ import 'package:loop_mobile/integrations/reown/reown_external_wallet_connector.d
 
 enum EmailAuthStep { enterEmail, enterCode }
 
+/// What the last failure was about.
+///
+/// The Privy gateway returns one sanitized message and no transport
+/// classification, so this records which command failed, never why.
+enum EmailAuthFailureKind {
+  /// A verification attempt was rejected.
+  rejected,
+
+  /// A send or resend did not complete. Whether a code went out is unknown.
+  deliveryUnconfirmed,
+}
+
 /// Client-owned resend cooldown. It is a local rate limit on this device only
 /// and never claims a provider-side quota.
 const Duration emailAuthResendCooldown = Duration(seconds: 48);
@@ -49,6 +61,7 @@ class EmailAuthState {
     this.successMessage,
     this.resendAvailableAt,
     this.failedAttempts = 0,
+    this.failureKind,
   });
 
   final EmailAuthStep step;
@@ -64,9 +77,16 @@ class EmailAuthState {
   /// Rejected verification attempts for the current code on this device.
   final int failedAttempts;
 
+  final EmailAuthFailureKind? failureKind;
+
   bool get isBusy => activeOperation != null;
 
   bool get attemptsExhausted => failedAttempts >= emailAuthMaximumAttempts;
+
+  /// True when a send or resend did not confirm delivery. It never claims the
+  /// code was wrong, and never claims it was delivered either.
+  bool get deliveryUnconfirmed =>
+      failureKind == EmailAuthFailureKind.deliveryUnconfirmed;
 
   int get remainingAttempts => (emailAuthMaximumAttempts - failedAttempts)
       .clamp(0, emailAuthMaximumAttempts);
@@ -123,6 +143,7 @@ class EmailAuthController extends Notifier<EmailAuthState> {
       state = EmailAuthState(
         submittedEmail: email,
         errorMessage: error.userMessage,
+        failureKind: EmailAuthFailureKind.deliveryUnconfirmed,
       );
     }
   }
@@ -179,6 +200,7 @@ class EmailAuthController extends Notifier<EmailAuthState> {
         submittedEmail: email,
         resendAvailableAt: resendAvailableAt,
         failedAttempts: attempts,
+        failureKind: EmailAuthFailureKind.rejected,
         errorMessage: exhausted
             ? '${error.userMessage} 尝试次数已用完，请重新发送验证码。'
             : '${error.userMessage} 还可尝试 ${emailAuthMaximumAttempts - attempts} 次。',
@@ -213,6 +235,7 @@ class EmailAuthController extends Notifier<EmailAuthState> {
         submittedEmail: email,
         resendAvailableAt: state.resendAvailableAt,
         failedAttempts: state.failedAttempts,
+        failureKind: EmailAuthFailureKind.deliveryUnconfirmed,
         errorMessage: error.userMessage,
       );
     }

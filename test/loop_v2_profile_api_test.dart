@@ -499,31 +499,7 @@ void main() {
     final api = DioLoopV2ProfileApi(
       _dio((options, handler) {
         captured = options;
-        handler.resolve(
-          _response(options, <String, Object?>{
-            'avatars': <Object?>[
-              <String, Object?>{
-                'avatarRef': 'avatar:preset/people-01',
-                'atlas': 'people',
-                'slot': 1,
-                'label': 'People 01',
-              },
-              <String, Object?>{
-                'avatarRef': 'avatar:preset/people-05',
-                'atlas': 'people',
-                'slot': 5,
-                'label': 'People 05',
-              },
-              <String, Object?>{
-                'avatarRef': 'avatar:preset/monogram',
-                'atlas': 'monogram',
-                'slot': null,
-                'label': 'Monogram',
-              },
-            ],
-            'contractVersion': '2.0',
-          }),
-        );
+        handler.resolve(_response(options, _avatarCatalog()));
       }),
     );
 
@@ -531,37 +507,56 @@ void main() {
 
     expect(_header(captured!, 'authorization'), isNull);
     expect(_loopHeaders(captured!), isEmpty);
-    expect(avatars.length, 3);
+    // The catalog is the closed submittable set: 12 slots plus the monogram.
+    expect(avatars.length, 13);
     // Row-major: slot 5 is row 2, column 1.
-    expect(avatars[1].row, 2);
-    expect(avatars[1].column, 1);
+    expect(avatars[4].row, 2);
+    expect(avatars[4].column, 1);
     expect(avatars.last.isMonogram, isTrue);
     expect(avatars.last.slot, isNull);
   });
 
   test('a duplicated avatarRef is an invalid catalog', () async {
+    final body = _avatarCatalog();
+    (body['avatars']! as List<Object?>)[1] = <String, Object?>{
+      'avatarRef': 'avatar:preset/people-01',
+      'atlas': 'people',
+      'slot': 2,
+      'label': 'People 01 again',
+    };
     final api = DioLoopV2ProfileApi(
-      _dio((options, handler) {
-        handler.resolve(
-          _response(options, <String, Object?>{
-            'avatars': <Object?>[
-              <String, Object?>{
-                'avatarRef': 'avatar:preset/people-01',
-                'atlas': 'people',
-                'slot': 1,
-                'label': 'People 01',
-              },
-              <String, Object?>{
-                'avatarRef': 'avatar:preset/people-01',
-                'atlas': 'people',
-                'slot': 2,
-                'label': 'People 01 again',
-              },
-            ],
-            'contractVersion': '2.0',
-          }),
-        );
-      }),
+      _dio((options, handler) => handler.resolve(_response(options, body))),
+    );
+
+    await expectLater(
+      api.getAvatars(),
+      throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+    );
+  });
+
+  test('a short catalog is rejected', () async {
+    final body = _avatarCatalog();
+    (body['avatars']! as List<Object?>).removeLast();
+    final api = DioLoopV2ProfileApi(
+      _dio((options, handler) => handler.resolve(_response(options, body))),
+    );
+
+    await expectLater(
+      api.getAvatars(),
+      throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+    );
+  });
+
+  test('a non-preset catalog reference is rejected', () async {
+    final body = _avatarCatalog();
+    (body['avatars']! as List<Object?>)[0] = <String, Object?>{
+      'avatarRef': 'avatar:legacy/upload-9f2c',
+      'atlas': 'people',
+      'slot': 1,
+      'label': 'Legacy',
+    };
+    final api = DioLoopV2ProfileApi(
+      _dio((options, handler) => handler.resolve(_response(options, body))),
     );
 
     await expectLater(
@@ -606,6 +601,25 @@ void main() {
     expect(requested, isFalse);
   });
 }
+
+Map<String, Object?> _avatarCatalog() => <String, Object?>{
+  'avatars': <Object?>[
+    for (var slot = 1; slot <= 12; slot += 1)
+      <String, Object?>{
+        'avatarRef': 'avatar:preset/people-${slot.toString().padLeft(2, '0')}',
+        'atlas': 'people',
+        'slot': slot,
+        'label': 'People ${slot.toString().padLeft(2, '0')}',
+      },
+    <String, Object?>{
+      'avatarRef': 'avatar:preset/monogram',
+      'atlas': 'monogram',
+      'slot': null,
+      'label': 'Monogram',
+    },
+  ],
+  'contractVersion': '2.0',
+};
 
 Dio _dio(void Function(RequestOptions, RequestInterceptorHandler) onRequest) {
   return Dio(BaseOptions(baseUrl: 'https://api-dev.quant-dinger.cc/'))

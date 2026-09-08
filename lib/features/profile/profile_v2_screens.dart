@@ -310,9 +310,50 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
           message: 'LOOP 余额、质押与算力暂不可读',
           reason: '资产与挖矿数据源尚未接入，这里不展示任何推测数字。',
         ),
+        const LoopLabel('我的社区'),
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-communities'),
+              title: '我的社区',
+              // Membership has no source yet, so the row states that instead
+              // of showing a count.
+              subtitle: '社区成员关系尚未接入',
+              trailing: '未接入',
+              onTap: () => widget.onNavigate('community-discover'),
+            ),
+          ],
+        ),
+        const LoopLabel('Launch'),
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-launch-history'),
+              title: '参与记录',
+              subtitle: 'Launch 参与数据尚未接入',
+              trailing: '未接入',
+              position: LoopRowPosition.first,
+              onTap: () => widget.onNavigate('launch-history'),
+            ),
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-launch-tier'),
+              title: '我的资格',
+              subtitle: '质押与 Tier 数据尚未接入',
+              trailing: '未接入',
+              position: LoopRowPosition.last,
+              onTap: () => widget.onNavigate('launch-tier'),
+            ),
+          ],
+        ),
         const LoopLabel('账户'),
         LoopRecordGroup(
           rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-wallets'),
+              title: '我的钱包',
+              subtitle: '绑定的钱包与地址',
+              onTap: () => widget.onNavigate('wallets'),
+            ),
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-privacy'),
               title: '隐私中心',
@@ -407,11 +448,40 @@ class _ProfileIdentityCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 12),
-          LoopSeg(
-            key: const ValueKey<String>('profile-open-edit'),
+          // `.chalk-card .seg`: Ink ground with Chalk text, not the Lime fill.
+          Semantics(
+            button: true,
             label: '编辑资料',
-            selected: true,
-            onSelected: onEdit,
+            child: Material(
+              color: LoopColors.ink,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: const BorderSide(color: LoopColors.ink),
+              ),
+              child: InkWell(
+                key: const ValueKey<String>('profile-open-edit'),
+                onTap: onEdit,
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  constraints: const BoxConstraints(
+                    minWidth: LoopTouch.minimum,
+                    minHeight: LoopTouch.minimum,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 15),
+                  alignment: Alignment.center,
+                  child: ExcludeSemantics(
+                    child: Text(
+                      '编辑资料',
+                      style: LoopTypography.sora(
+                        size: 11,
+                        weight: FontWeight.w700,
+                        color: LoopColors.chalk,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),

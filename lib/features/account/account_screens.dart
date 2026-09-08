@@ -505,57 +505,119 @@ class WalletCreateScreen extends StatelessWidget {
 // wallet-recovery · intro / focus
 // ---------------------------------------------------------------------------
 
-class WalletRecoveryScreen extends StatelessWidget {
+/// One selectable recovery method. Selecting it records a local intent only;
+/// nothing is enrolled, stored or proven until the capability exists.
+enum WalletRecoveryMethod {
+  passkey('Passkey（推荐）', '用设备生物识别，跟随系统钥匙串同步', 'key'),
+  password('恢复密码', '自己设一个密码，忘了就找不回', 'lock'),
+  cloud('自动恢复', '凭登录方式恢复，最省事但依赖供应商', 'cloud');
+
+  const WalletRecoveryMethod(this.title, this.detail, this.icon);
+
+  final String title;
+  final String detail;
+  final String icon;
+}
+
+class WalletRecoveryScreen extends StatefulWidget {
   const WalletRecoveryScreen({
     required this.capabilities,
     required this.onContinue,
     super.key,
     this.onBack,
+    this.loading = false,
+    this.failureReason,
+    this.onRetry,
   });
 
   final PrivyWalletCapabilities capabilities;
   final VoidCallback onContinue;
   final VoidCallback? onBack;
 
-  bool get _anyAvailable =>
-      capabilities.canUsePasskey ||
-      capabilities.canUseRecoveryPassword ||
-      capabilities.canUseCloudRecovery;
+  /// The capability document has not been observed yet.
+  final bool loading;
+
+  /// The capability document could not be read. Options stay unavailable.
+  final String? failureReason;
+  final VoidCallback? onRetry;
+
+  @override
+  State<WalletRecoveryScreen> createState() => _WalletRecoveryScreenState();
+}
+
+class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
+  WalletRecoveryMethod? _chosen;
+
+  bool _available(WalletRecoveryMethod method) => switch (method) {
+    WalletRecoveryMethod.passkey => widget.capabilities.canUsePasskey,
+    WalletRecoveryMethod.password => widget.capabilities.canUseRecoveryPassword,
+    WalletRecoveryMethod.cloud => widget.capabilities.canUseCloudRecovery,
+  };
+
+  String _reason(WalletRecoveryMethod method) => switch (method) {
+    WalletRecoveryMethod.passkey => '设备或 Privy 尚未确认 Passkey 能力',
+    WalletRecoveryMethod.password => '恢复密码通道尚未接入',
+    WalletRecoveryMethod.cloud => '供应商恢复通道尚未接入',
+  };
+
+  bool get _anyAvailable => WalletRecoveryMethod.values.any(_available);
 
   @override
   Widget build(BuildContext context) {
+    final blocked = widget.loading || widget.failureReason != null;
     return LoopFocusPage(
       archetype: LoopPageArchetype.intro,
       title: '恢复方式',
-      onBack: onBack,
+      onBack: widget.onBack,
+      // The skip risk lives in the disclosure, so the primary pair stays
+      // reachable on the first screen.
       primaryAction: LoopButtonPair(
         children: <Widget>[
-          LoopButton(
-            key: const ValueKey<String>('wallet-recovery-later'),
-            label: '稍后设置',
-            onPressed: onContinue,
-          ),
           LoopButton(
             key: const ValueKey<String>('wallet-recovery-confirm'),
             label: '确认',
             primary: true,
-            onPressed: _anyAvailable ? onContinue : null,
+            onPressed: _chosen != null && !blocked ? widget.onContinue : null,
+          ),
+          LoopButton(
+            key: const ValueKey<String>('wallet-recovery-later'),
+            label: '稍后设置',
+            onPressed: widget.onContinue,
           ),
         ],
       ),
-      disclosure: const LoopDisclosure(
+      disclosure: LoopDisclosure(
         summary: '其他恢复方式与跳过风险',
         child: Padding(
-          padding: EdgeInsets.fromLTRB(14, 0, 14, 14),
+          padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              LoopNotice(
+              const LoopLabel('另外', tight: true),
+              LoopRecordGroup(
+                rows: <LoopRecordRow>[
+                  _capabilityRow(
+                    title: '社交恢复 2-of-3',
+                    detail: '指定 3 个守护人，2 个同意即可恢复',
+                    available: widget.capabilities.canUseSocialRecovery,
+                    reason: '守护人机制尚未接入',
+                    position: LoopRowPosition.first,
+                  ),
+                  _capabilityRow(
+                    title: '导出私钥',
+                    detail: '随时可导出，这是你的逃生舱',
+                    available: widget.capabilities.canExportPrivateKey,
+                    reason: '私钥导出通道尚未接入',
+                    position: LoopRowPosition.last,
+                  ),
+                ],
+              ),
+              const LoopNotice(
                 icon: 'warn',
                 tone: LoopNoticeTone.danger,
                 title: '跳过的后果',
                 body: '换设备或清除数据后可能永久失去资产访问权。恢复方式可用后请尽快设置。',
-                margin: EdgeInsets.zero,
+                margin: EdgeInsets.only(top: 12),
               ),
             ],
           ),
@@ -570,64 +632,76 @@ class WalletRecoveryScreen extends StatelessWidget {
           title: '这一步决定你换手机后能不能拿回资产',
           body: 'LOOP 没有助记词兜底，恢复方式是唯一的路。',
         ),
-        if (!_anyAvailable)
-          const LoopNotice(
-            key: ValueKey<String>('wallet-recovery-unavailable'),
-            icon: 'warn',
-            tone: LoopNoticeTone.warn,
-            title: '暂时没有可用的恢复方式',
-            body: 'Privy 尚未确认任何恢复能力。下面的选项都不能在本地模拟或预先勾选。',
+        if (widget.loading)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: LoopSkeleton(
+              key: ValueKey<String>('wallet-recovery-loading'),
+              type: LoopSkeletonType.list,
+              rows: 3,
+            ),
+          )
+        else if (widget.failureReason != null)
+          LoopErrorState(
+            key: const ValueKey<String>('wallet-recovery-error'),
+            reason: widget.failureReason!,
+            source: '能力清单',
+            onRetry: widget.onRetry,
+          )
+        else ...<Widget>[
+          if (!_anyAvailable)
+            const LoopNotice(
+              key: ValueKey<String>('wallet-recovery-unavailable'),
+              icon: 'warn',
+              tone: LoopNoticeTone.warn,
+              title: '暂时没有可用的恢复方式',
+              body: 'Privy 尚未确认任何恢复能力。下面的选项都不能在本地模拟或预先勾选。',
+            ),
+          const LoopLabel('选择方式'),
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              for (final method in WalletRecoveryMethod.values)
+                _methodRow(method),
+            ],
           ),
-        const LoopLabel('选择方式'),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            _choice(
-              title: 'Passkey（推荐）',
-              detail: '用设备生物识别，跟随系统钥匙串同步',
-              available: capabilities.canUsePasskey,
-              reason: '设备或 Privy 尚未确认 Passkey 能力',
-              position: LoopRowPosition.first,
-            ),
-            _choice(
-              title: '恢复密码',
-              detail: '自己设一个密码，忘了就找不回',
-              available: capabilities.canUseRecoveryPassword,
-              reason: '恢复密码通道尚未接入',
-              position: LoopRowPosition.middle,
-            ),
-            _choice(
-              title: '自动恢复',
-              detail: '凭登录方式恢复，最省事但依赖供应商',
-              available: capabilities.canUseCloudRecovery,
-              reason: '供应商恢复通道尚未接入',
-              position: LoopRowPosition.last,
-            ),
-          ],
-        ),
-        const LoopLabel('另外'),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            _choice(
-              title: '社交恢复 2-of-3',
-              detail: '指定 3 个守护人，2 个同意即可恢复',
-              available: capabilities.canUseSocialRecovery,
-              reason: '守护人机制尚未接入',
-              position: LoopRowPosition.first,
-            ),
-            _choice(
-              title: '导出私钥',
-              detail: '随时可导出，这是你的逃生舱',
-              available: capabilities.canExportPrivateKey,
-              reason: '私钥导出通道尚未接入',
-              position: LoopRowPosition.last,
-            ),
-          ],
-        ),
+        ],
       ],
     );
   }
 
-  LoopRecordRow _choice({
+  LoopRecordRow _methodRow(WalletRecoveryMethod method) {
+    final available = _available(method);
+    final chosen = _chosen == method;
+    final index = WalletRecoveryMethod.values.indexOf(method);
+    return LoopRecordRow(
+      key: ValueKey<String>('recovery-${method.name}'),
+      leading: LoopIcon(
+        method.icon,
+        size: 19,
+        color: available ? LoopColors.lime : LoopColors.text3,
+      ),
+      title: method.title,
+      subtitle: available
+          ? method.detail
+          : '${method.detail} · ${_reason(method)}',
+      trailing: chosen
+          ? '已选'
+          : available
+          ? '可用'
+          : '不可用',
+      onTap: available ? () => setState(() => _chosen = method) : null,
+      position: index == 0
+          ? LoopRowPosition.first
+          : index == WalletRecoveryMethod.values.length - 1
+          ? LoopRowPosition.last
+          : LoopRowPosition.middle,
+      semanticLabel: available
+          ? '${method.title}，${chosen ? '已选' : '可选'}'
+          : '${method.title}，不可用：${_reason(method)}',
+    );
+  }
+
+  LoopRecordRow _capabilityRow({
     required String title,
     required String detail,
     required bool available,

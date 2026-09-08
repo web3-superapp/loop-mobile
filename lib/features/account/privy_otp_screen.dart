@@ -25,6 +25,7 @@ class PrivyOtpScreen extends ConsumerStatefulWidget {
 
 class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
   final _codeController = TextEditingController();
+  final _codeFocusNode = FocusNode();
   Timer? _ticker;
 
   @override
@@ -41,6 +42,7 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
   @override
   void dispose() {
     _ticker?.cancel();
+    _codeFocusNode.dispose();
     _codeController.dispose();
     super.dispose();
   }
@@ -107,37 +109,34 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
             reason: '返回登录页重新输入邮箱后再来这一步。',
           )
         else ...<Widget>[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-            child: LoopSurfaceCard(
-              child: TextField(
-                key: const ValueKey<String>('privy-otp-field'),
-                controller: _codeController,
-                enabled: !authState.isBusy && !authState.attemptsExhausted,
-                keyboardType: TextInputType.number,
-                textInputAction: TextInputAction.done,
-                autofillHints: const <String>[AutofillHints.oneTimeCode],
-                inputFormatters: <TextInputFormatter>[
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(6),
-                ],
-                style: LoopTypography.mono(
-                  size: 22,
-                  weight: FontWeight.w600,
-                  letterSpacing: 8,
-                  color: LoopColors.chalk,
-                ),
-                textAlign: TextAlign.center,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  hintText: '000000',
-                ),
-                onSubmitted: authState.isBusy || authState.attemptsExhausted
-                    ? null
-                    : controller.verifyCode,
+          _OtpGrid(
+            controller: _codeController,
+            focusNode: _codeFocusNode,
+            enabled: !authState.isBusy && !authState.attemptsExhausted,
+            onChanged: (_) => setState(() {}),
+            onSubmitted: authState.isBusy || authState.attemptsExhausted
+                ? null
+                : controller.verifyCode,
+          ),
+          if (authState.activeOperation ==
+              IdentityAuthOperation.verifyEmailCode)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 14, 16, 0),
+              child: LoopSkeleton(
+                key: ValueKey<String>('privy-otp-verifying'),
+                type: LoopSkeletonType.list,
+                rows: 1,
               ),
             ),
-          ),
+          if (authState.deliveryUnconfirmed)
+            LoopOfflineState(
+              key: const ValueKey<String>('privy-otp-offline'),
+              pausedActions: const <String>['重新发送验证码'],
+              onRetry: canResend
+                  ? () => unawaited(controller.resendCode())
+                  : null,
+              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(
               LoopSpacing.page,
@@ -217,6 +216,103 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// `.otp-grid`: six visible cells over one real field.
+///
+/// The cells are presentation only. A single hidden [TextField] keeps the
+/// exact controller contract, the one-time-code autofill hint and the digit
+/// formatters, so nothing here can accept a value the controller would not.
+class _OtpGrid extends StatelessWidget {
+  const _OtpGrid({
+    required this.controller,
+    required this.focusNode,
+    required this.enabled,
+    required this.onChanged,
+    required this.onSubmitted,
+  });
+
+  static const length = 6;
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final bool enabled;
+  final ValueChanged<String> onChanged;
+  final ValueChanged<String>? onSubmitted;
+
+  @override
+  Widget build(BuildContext context) {
+    final digits = controller.text;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+      child: Stack(
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              for (var index = 0; index < length; index++) ...<Widget>[
+                if (index > 0) const SizedBox(width: 8),
+                Expanded(
+                  child: Semantics(
+                    label: '验证码第 ${index + 1} 位',
+                    value: index < digits.length ? digits[index] : '未填写',
+                    readOnly: true,
+                    child: Container(
+                      key: ValueKey<String>('privy-otp-cell-${index + 1}'),
+                      height: LoopTouch.minimum,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: LoopColors.card,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: index == digits.length && enabled
+                              ? LoopColors.lime
+                              : LoopColors.line,
+                        ),
+                      ),
+                      child: ExcludeSemantics(
+                        child: Text(
+                          index < digits.length ? digits[index] : '',
+                          style: LoopTypography.mono(
+                            size: 20,
+                            weight: FontWeight.w600,
+                            color: LoopColors.chalk,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          // The one real field: transparent, full-bleed, and the only place
+          // that owns the value.
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0,
+              child: TextField(
+                key: const ValueKey<String>('privy-otp-field'),
+                controller: controller,
+                focusNode: focusNode,
+                enabled: enabled,
+                showCursor: false,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                autofillHints: const <String>[AutofillHints.oneTimeCode],
+                inputFormatters: <TextInputFormatter>[
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(length),
+                ],
+                decoration: const InputDecoration(border: InputBorder.none),
+                onChanged: onChanged,
+                onSubmitted: onSubmitted,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -131,6 +131,9 @@ final class DioLoopV2ProfileApi implements LoopV2ProfileApi {
   static final RegExp _avatarRefPattern = RegExp(
     r'^avatar:[A-Za-z0-9][A-Za-z0-9._/-]{0,126}$',
   );
+  // The catalog is the closed set of submittable references: 12 people slots
+  // plus the client-rendered monogram.
+  static const _avatarCatalogLength = 13;
   static final RegExp _atlasPattern = RegExp(r'^[a-z][a-z0-9-]{0,31}$');
   static final RegExp _labelPattern = RegExp(
     r'^[^\p{Cc}\p{Cf}]{1,64}$',
@@ -219,7 +222,7 @@ final class DioLoopV2ProfileApi implements LoopV2ProfileApi {
       });
       _requireContractVersion(root);
       final rawAvatars = root['avatars'];
-      if (rawAvatars is! List || rawAvatars.isEmpty || rawAvatars.length > 64) {
+      if (rawAvatars is! List || rawAvatars.length != _avatarCatalogLength) {
         throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
       }
       final seen = <String>{};
@@ -236,6 +239,9 @@ final class DioLoopV2ProfileApi implements LoopV2ProfileApi {
           'avatarRef',
           pattern: _avatarRefPattern,
         );
+        if (!profilePresetAvatarReferencePattern.hasMatch(avatarRef)) {
+          throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+        }
         final atlas = LoopV2Contract.requiredString(
           item,
           'atlas',
@@ -248,7 +254,7 @@ final class DioLoopV2ProfileApi implements LoopV2ProfileApi {
         );
         final slot = item['slot'];
         if (!seen.add(avatarRef) ||
-            (slot != null && (slot is! int || slot < 1 || slot > 64))) {
+            (slot != null && (slot is! int || slot < 1 || slot > 12))) {
           throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
         }
         avatars.add(

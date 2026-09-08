@@ -71,6 +71,16 @@ void main() {
     expect(_pressed(tester, 'loop-id-submit'), isNull);
   });
 
+  testWidgets('an unread profile is empty, not an error', (tester) async {
+    // Nothing failed yet: the initial state must not claim a failure.
+    final gateway = _ProfileGateway(loadDelay: const Duration(seconds: 1));
+    await _pump(tester, profile: gateway, settle: false);
+
+    expect(find.byKey(const ValueKey<String>('loop-id-error')), findsNothing);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('a failed read offers retry instead of a fabricated ID', (
     tester,
   ) async {
@@ -88,6 +98,28 @@ void main() {
     await tester.tap(find.text('重试'));
     await tester.pumpAndSettle();
     expect(find.text(loopId), findsOneWidget);
+  });
+
+  testWidgets('a non-preset V1 avatar is never seeded into the body', (
+    tester,
+  ) async {
+    final activation = _ActivationGateway(activated('Voyager_7'));
+    await _pump(
+      tester,
+      profile: _ProfileGateway(avatarRef: 'avatar:legacy/upload-9f2c'),
+      activation: activation,
+    );
+
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('loop-id-alias-field')),
+      'Voyager_7',
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey<String>('loop-id-submit')));
+    await tester.pumpAndSettle();
+
+    expect(activation.calls, 1);
+    expect(activation.avatarRef, isNull);
   });
 
   testWidgets('the empty avatar catalog keeps the picker unavailable', (
@@ -282,10 +314,11 @@ Future<ProviderContainer> _pump(
 }
 
 final class _ProfileGateway implements ProfileGateway {
-  _ProfileGateway({this.failure, this.loadDelay});
+  _ProfileGateway({this.failure, this.loadDelay, this.avatarRef});
 
   ProfileGatewayException? failure;
   final Duration? loadDelay;
+  final String? avatarRef;
 
   @override
   ProfileMode get mode => ProfileMode.production;
@@ -298,7 +331,7 @@ final class _ProfileGateway implements ProfileGateway {
     if (error != null) throw error;
     return ProfileResource(
       version: 0,
-      values: ProfileValues(alias: null, avatarRef: null),
+      values: ProfileValues(alias: null, avatarRef: avatarRef),
       updatedAt: null,
       loopId: 'LOOP-7HJKMNPQ',
     );
@@ -318,6 +351,7 @@ final class _ActivationGateway implements ProfileActivationGateway {
   final ProfileGatewayException? failure;
   var calls = 0;
   String? alias;
+  String? avatarRef;
   List<ProfileInterest> interests = const <ProfileInterest>[];
 
   @override
@@ -331,6 +365,7 @@ final class _ActivationGateway implements ProfileActivationGateway {
   }) async {
     calls += 1;
     this.alias = alias;
+    this.avatarRef = avatarRef;
     this.interests = interests;
     final error = failure;
     if (error != null) throw error;

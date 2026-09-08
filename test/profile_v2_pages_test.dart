@@ -114,6 +114,32 @@ void main() {
       expect(find.byKey(const ValueKey<String>('profile-empty')), findsNothing);
     });
 
+    testWidgets('the account entries reach their manifest slugs', (
+      tester,
+    ) async {
+      final destinations = <String>[];
+      await _pump(
+        tester,
+        'profile',
+        gateway: _Gateway(resource: active()),
+        onNavigate: destinations.add,
+      );
+
+      for (final entry in <(String, String)>[
+        ('profile-open-communities', 'community-discover'),
+        ('profile-open-launch-history', 'launch-history'),
+        ('profile-open-launch-tier', 'launch-tier'),
+        ('profile-open-wallets', 'wallets'),
+      ]) {
+        await _scrollTo(tester, entry.$1);
+        await tester.tap(find.byKey(ValueKey<String>(entry.$1)));
+        await tester.pumpAndSettle();
+        expect(destinations.last, entry.$2);
+      }
+      // Unconnected sources say so instead of showing a count.
+      expect(find.text('未接入'), findsNWidgets(3));
+    });
+
     testWidgets('the primary action opens the edit page', (tester) async {
       final destinations = <String>[];
       await _pump(
@@ -135,6 +161,8 @@ void main() {
 
       expect(find.textContaining('跟单'), findsNothing);
       expect(find.textContaining('社交隐私'), findsNothing);
+      expect(find.textContaining('持仓广播'), findsNothing);
+      await _scrollTo(tester, 'profile-open-privacy');
       expect(
         find.byKey(const ValueKey<String>('profile-open-privacy')),
         findsOneWidget,
@@ -378,6 +406,15 @@ void main() {
       expect(_pressed(tester, 'profile-edit-save'), isNull);
     });
   });
+}
+
+Future<void> _scrollTo(WidgetTester tester, String key) async {
+  await tester.scrollUntilVisible(
+    find.byKey(ValueKey<String>(key)),
+    240,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.pumpAndSettle();
 }
 
 VoidCallback? _pressed(WidgetTester tester, String key) {
