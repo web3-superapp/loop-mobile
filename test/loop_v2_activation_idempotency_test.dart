@@ -219,6 +219,77 @@ void main() {
     },
   );
 
+  test(
+    'an idempotency conflict resets the key instead of replaying it',
+    () async {
+      final api = _RecordingApi(<Object>[
+        const LoopBackendFailure(
+          LoopBackendFailureKind.invalidRequest,
+          statusCode: 409,
+          code: 'IDEMPOTENCY_CONFLICT',
+        ),
+        activated(),
+      ]);
+      final store = _MemoryActivationStore(deviceId);
+      final gateway = DioLoopV2ProfileActivationGateway(
+        principalKey: principal,
+        api: api,
+        clientMetadata: clientMetadata,
+        store: store,
+        session: _session(),
+      );
+
+      await expectLater(
+        gateway.activate(
+          alias: 'Alice',
+          avatarRef: null,
+          interests: const <ProfileInterest>[],
+        ),
+        throwsA(
+          isA<ProfileGatewayException>().having(
+            (error) => error.kind,
+            'kind',
+            ProfileGatewayFailureKind.idempotencyConflict,
+          ),
+        ),
+      );
+      // The recorded key is already bound to different bytes on the server, so
+      // replaying it could only conflict again.
+      expect(store.record, isNull);
+
+      await gateway.activate(
+        alias: 'Alice',
+        avatarRef: null,
+        interests: const <ProfileInterest>[],
+      );
+      expect(
+        api.commands[0].idempotencyKey,
+        isNot(api.commands[1].idempotencyKey),
+      );
+    },
+  );
+
+  test('a non-preset avatar reference is never submitted', () async {
+    final api = _RecordingApi(<Object>[activated()]);
+    final store = _MemoryActivationStore(deviceId);
+    final gateway = DioLoopV2ProfileActivationGateway(
+      principalKey: principal,
+      api: api,
+      clientMetadata: clientMetadata,
+      store: store,
+      session: _session(),
+    );
+
+    await gateway.activate(
+      alias: 'Alice',
+      // A value a V1 row could hold. It is readable, never submittable.
+      avatarRef: 'avatar:legacy/upload-9f2c',
+      interests: const <ProfileInterest>[],
+    );
+
+    expect(api.requests.single.avatarRef, isNull);
+  });
+
   test('an alias outside the contract never reaches the transport', () async {
     final api = _RecordingApi(<Object>[activated()]);
     final store = _MemoryActivationStore(deviceId);

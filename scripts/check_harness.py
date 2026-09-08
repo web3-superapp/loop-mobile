@@ -8995,6 +8995,43 @@ def check_profile_application_contract(root: Path) -> list[str]:
     surface_path = root / PROFILE_V2_SURFACE_PATH
     if surface_path.is_file():
         surface = strip_dart_comments(read_text(surface_path))
+        # Constraint 10: a Preview session must say so on every V2 page that
+        # reads an owner resource, and the label must be derived from the
+        # gateway mode so it can never appear in production.
+        if "String? loopPreviewKicker(bool isPreview)" not in surface:
+            errors.append(
+                "the V2 Profile pages must derive the Preview label from a "
+                "single mode projection"
+            )
+        # The build lives in the State class, so the slice starts there.
+        for page, mode in (
+            ("class _ProfileHomeScreenState", "ProfileMode.preview"),
+            ("class _ProfileEditScreenState", "ProfileMode.preview"),
+            ("class _PrivacyCenterScreenState", "PrivacyMode.preview"),
+        ):
+            page_start = surface.find(page)
+            page_end = surface.find("\nclass ", page_start + 1)
+            page_slice = (
+                surface[page_start : page_end if page_end > 0 else len(surface)]
+                if page_start >= 0
+                else ""
+            )
+            if (
+                f"state.mode == {mode}" not in page_slice
+                or "loopPreviewKicker(" not in page_slice
+                or "LoopPreviewModeNotice(" not in page_slice
+            ):
+                errors.append(
+                    f"{page[7:]} must label a Preview session with both the "
+                    "kicker and the visible notice"
+                )
+        if re.search(r"['\"]开发预览['\"]", surface) and (
+            "isPreview ? '开发预览' : null" not in surface
+        ):
+            errors.append(
+                "the Preview label must never be written outside the mode "
+                "projection"
+            )
         edit_start = surface.find("class ProfileEditScreen")
         privacy_start = surface.find("class PrivacyCenterScreen", edit_start)
         edit_surface = (
@@ -9699,10 +9736,11 @@ FRIEND_FRONTEND_TEST_MARKERS = {
         "gateway rotation retires old load and accepts only the new owner",
         "gateway rotation retires an old save without clearing a new save",
     ),
+    # Decision 0053: the surface retired; the evidence is now its retirement.
     Path("test/social_privacy_presentation_screen_test.dart"): (
-        "default Social Privacy stays unavailable and fail-closed",
-        "CAS conflict preserves the unsaved draft and requires an explicit reload",
-        "social-privacy is a registered Profile surface",
+        "social-privacy is no longer a Profile surface",
+        "the retired location is recorded as information, not a route",
+        "production composition no longer mounts the V1 gateway",
     ),
     Path("test/group_alias_models_test.dart"): (
         "rejects non-canonical IDs and every Stream/direct identifier",
@@ -10021,8 +10059,6 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "ref.watch(loopProductionFriendGatewayProvider)",
                 "groupAliasGatewayProvider.overrideWith(",
                 "ref.watch(loopGroupAliasGatewayProvider)",
-                "socialPrivacyGatewayProvider.overrideWith(",
-                "ref.watch(loopSocialPrivacyGatewayProvider)",
             ),
             "lib/main_preview.dart": (
                 "friendGatewayProvider.overrideWithValue(MemoryFriendGateway())",
@@ -10503,10 +10539,16 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
             errors.append(
                 "The production composition root must never install social Preview memory gateways"
             )
+        # Decision 0053 retired V1 Social Privacy: the production root must
+        # leave the port at its fail-closed default instead of mounting it.
+        if "socialPrivacyGatewayProvider" in production:
+            errors.append(
+                "the retired V1 Social Privacy port must not be mounted in "
+                "the production composition root"
+            )
         for marker in (
             "ref.watch(loopProductionFriendGatewayProvider)",
             "ref.watch(loopGroupAliasGatewayProvider)",
-            "ref.watch(loopSocialPrivacyGatewayProvider)",
         ):
             if marker not in production:
                 errors.append(

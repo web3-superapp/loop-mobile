@@ -154,7 +154,8 @@ final class DioLoopV2ProfileActivationGateway
       }
       request = LoopV2ActivationRequest(
         alias: normalizedAlias,
-        avatarRef: values.avatarRef,
+        // A V1 row's non-preset reference is readable but not submittable.
+        avatarRef: profileSubmittableAvatarRef(values.avatarRef),
         interests: values.interests,
       );
     } on InvalidProfileContractException {
@@ -346,10 +347,16 @@ Future<ProfileResource> executeProfileRequest(
   }
 }
 
+/// A rejection the recorded command can never recover from.
+///
+/// `IDEMPOTENCY_CONFLICT` is terminal for the recorded key: the backend has
+/// already bound it to different bytes, so replaying it can only conflict
+/// again. Clearing the record lets the next attempt generate a fresh key.
 bool _isTerminalRejection(ProfileGatewayFailureKind kind) =>
     kind == ProfileGatewayFailureKind.validationFailed ||
     kind == ProfileGatewayFailureKind.aliasReserved ||
     kind == ProfileGatewayFailureKind.aliasBlocked ||
+    kind == ProfileGatewayFailureKind.idempotencyConflict ||
     kind == ProfileGatewayFailureKind.invalidData;
 
 ProfileGatewayFailureKind profileFailureKindForV2(LoopBackendFailure failure) {

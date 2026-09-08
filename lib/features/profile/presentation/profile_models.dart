@@ -16,6 +16,23 @@ final RegExp _profileAvatarReferencePattern = RegExp(
 /// Server-generated, immutable, non-enumerable public identifier.
 final RegExp profileLoopIdPattern = RegExp(r'^LOOP-[0-9A-HJKMNP-TV-Z]{8}$');
 
+/// The only avatar references a V2 write accepts.
+final RegExp profilePresetAvatarReferencePattern = RegExp(
+  r'^avatar:preset/(?:people-(?:0[1-9]|1[0-2])|monogram)$',
+);
+
+/// True for a reference the V2 write contract accepts.
+bool isProfilePresetAvatarRef(String? value) =>
+    value != null && profilePresetAvatarReferencePattern.hasMatch(value);
+
+/// Converges a stored avatar reference onto a submittable value.
+///
+/// A V1 row may hold a non-preset reference. It stays readable — the UI falls
+/// back to the monogram — but it must never be resubmitted, so seeding a draft
+/// or an activation state drops it to null instead of echoing it back.
+String? profileSubmittableAvatarRef(String? value) =>
+    isProfilePresetAvatarRef(value) ? value : null;
+
 /// Sanitized validation failure for data outside the backend Profile contract.
 ///
 /// Rejected user input is deliberately never included in this exception.

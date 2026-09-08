@@ -31,6 +31,14 @@ final isIosIdentityPlatformProvider = Provider<bool>((ref) {
   return !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 });
 
+/// The device clock used by the local resend cooldown.
+///
+/// It is a provider rather than a mutable field so a test can substitute an
+/// instant without giving production code a writable clock.
+final loopDeviceClockProvider = Provider<DateTime Function()>(
+  (ref) => DateTime.now,
+);
+
 @immutable
 class EmailAuthState {
   const EmailAuthState({
@@ -79,8 +87,7 @@ class EmailAuthState {
 }
 
 class EmailAuthController extends Notifier<EmailAuthState> {
-  /// Injectable only in tests; production uses the real device clock.
-  DateTime Function() clock = DateTime.now;
+  DateTime _now() => ref.read(loopDeviceClockProvider)();
 
   @override
   EmailAuthState build() => const EmailAuthState();
@@ -110,7 +117,7 @@ class EmailAuthController extends Notifier<EmailAuthState> {
       state = EmailAuthState(
         step: EmailAuthStep.enterCode,
         submittedEmail: email,
-        resendAvailableAt: clock().add(emailAuthResendCooldown),
+        resendAvailableAt: _now().add(emailAuthResendCooldown),
       );
     } on PrivyGatewayException catch (error) {
       state = EmailAuthState(
@@ -182,7 +189,7 @@ class EmailAuthController extends Notifier<EmailAuthState> {
   Future<void> resendCode() async {
     final email = state.submittedEmail;
     if (email == null || state.isBusy) return;
-    final now = clock();
+    final now = _now();
     if (state.resendCooldownSeconds(now) > 0) return;
     state = EmailAuthState(
       step: EmailAuthStep.enterCode,
@@ -198,7 +205,7 @@ class EmailAuthController extends Notifier<EmailAuthState> {
       state = EmailAuthState(
         step: EmailAuthStep.enterCode,
         submittedEmail: email,
-        resendAvailableAt: clock().add(emailAuthResendCooldown),
+        resendAvailableAt: _now().add(emailAuthResendCooldown),
       );
     } on PrivyGatewayException catch (error) {
       state = EmailAuthState(

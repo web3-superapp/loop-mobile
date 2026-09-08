@@ -100,6 +100,38 @@ class LoopProfileAvatar extends StatelessWidget {
   }
 }
 
+/// `开发预览` eyebrow for a Preview-backed page. Production and unavailable
+/// modes carry no kicker, so the label can never appear outside Preview.
+String? loopPreviewKicker(bool isPreview) => isPreview ? '开发预览' : null;
+
+/// Visible Preview truth label (constraint 10). Edits made here persist only
+/// for the running Preview and never reach an account or a provider.
+class LoopPreviewModeNotice extends StatelessWidget {
+  const LoopPreviewModeNotice({
+    required this.isPreview,
+    required this.resource,
+    super.key,
+  });
+
+  final bool isPreview;
+
+  /// The resource name shown in the copy, e.g. `资料` or `隐私设置`.
+  final String resource;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isPreview) return const SizedBox.shrink();
+    return LoopNotice(
+      key: const ValueKey<String>('loop-preview-mode-notice'),
+      icon: 'info',
+      tone: LoopNoticeTone.warn,
+      title: '开发预览',
+      body: '$resource只保存在本次运行的内存里，不会写入账号，也不会调用任何 Provider。',
+      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+    );
+  }
+}
+
 /// The five reviewed states for a Profile-backed page.
 enum LoopResourcePhase { loading, empty, error, offline, unavailable, ready }
 
@@ -139,7 +171,7 @@ String profileFailureReason(ProfileGatewayFailureKind? kind) => switch (kind) {
   ProfileGatewayFailureKind.unavailable => '资料服务当前不可用，没有任何修改被保存。',
   ProfileGatewayFailureKind.offline => '设备当前离线，资料未能读取，也没有提交任何修改。',
   ProfileGatewayFailureKind.versionConflict => '资料在别处已被修改。请重新载入后再保存。',
-  ProfileGatewayFailureKind.idempotencyConflict => '这次激活的请求内容发生了变化。请重新提交。',
+  ProfileGatewayFailureKind.idempotencyConflict => '提交冲突，已重置，请再试一次。',
   ProfileGatewayFailureKind.bootstrapRequired => '账号尚未完成初始化，请稍后重试。',
   ProfileGatewayFailureKind.validationFailed => '别名或简介超出长度限制，请修改后重试。',
   ProfileGatewayFailureKind.aliasReserved => '该名称属于 LOOP 保留词，请换一个再试。',
@@ -235,10 +267,12 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
     final resource = state.resource;
     final alias = resource?.values.alias;
     final phase = profileResourcePhase(state);
+    final isPreview = state.mode == ProfileMode.preview;
 
     return LoopDashboardPage(
       archetype: LoopPageArchetype.record,
       title: '我的',
+      kicker: loopPreviewKicker(isPreview),
       onBack: widget.onBack,
       actions: <Widget>[
         LoopIconButton(
@@ -257,6 +291,7 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
         stamp: 'PUBLIC',
       ),
       sections: <Widget>[
+        LoopPreviewModeNotice(isPreview: isPreview, resource: '资料'),
         if (phase != LoopResourcePhase.ready)
           _ProfileStateBlock(
             phase: phase,
@@ -422,11 +457,16 @@ class _ProfileStateBlock extends StatelessWidget {
         message: '还没有可展示的资料',
         reason: '账号资料尚未读取。',
       ),
-      LoopResourcePhase.error || LoopResourcePhase.ready => LoopErrorState(
+      LoopResourcePhase.error => LoopErrorState(
         key: const ValueKey<String>('profile-error'),
         reason: profileFailureReason(state.failureKind),
         source: '资料服务',
         onRetry: onRetry,
+      ),
+      // The owner renders the resource itself; a ready state must never reach
+      // a state block.
+      LoopResourcePhase.ready => throw StateError(
+        'a ready Profile must not render a state block',
       ),
     };
   }
@@ -472,6 +512,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     }
     final controller = ref.read(profileControllerProvider.notifier);
     _syncEditors(state);
+    _convergeAvatarRef(controller, state);
     final phase = profileResourcePhase(state);
     final avatarUpload = ref.watch(
       loopCapabilityProvider(LoopV2CapabilityId.avatarUpload),
@@ -480,6 +521,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     return LoopFocusPage(
       archetype: LoopPageArchetype.action,
       title: '编辑资料',
+      kicker: loopPreviewKicker(state.mode == ProfileMode.preview),
       onBack: widget.onBack,
       folio: LoopFolioPrimary(
         variant: LoopFolioVariant.chalk,
@@ -500,6 +542,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             : null,
       ),
       body: <Widget>[
+        LoopPreviewModeNotice(
+          isPreview: state.mode == ProfileMode.preview,
+          resource: '资料',
+        ),
         if (phase != LoopResourcePhase.ready)
           _ProfileStateBlock(
             phase: phase,
@@ -625,6 +671,22 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         ],
       ],
     );
+  }
+
+  /// A V1 row may hold a non-preset avatar reference. It renders as the
+  /// monogram, but the draft drops it so a save can never resubmit it.
+  void _convergeAvatarRef(ProfileController controller, ProfileState state) {
+    if (!state.canEdit || state.draft.avatarRef == null) return;
+    if (isProfilePresetAvatarRef(state.draft.avatarRef)) return;
+    scheduleMicrotask(() {
+      if (!mounted) return;
+      final current = ref.read(profileControllerProvider);
+      if (!current.canEdit ||
+          isProfilePresetAvatarRef(current.draft.avatarRef)) {
+        return;
+      }
+      ref.read(profileControllerProvider.notifier).editAvatarRef(null);
+    });
   }
 
   void _syncEditors(ProfileState state) {
@@ -912,6 +974,7 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
     return LoopFocusPage(
       archetype: LoopPageArchetype.action,
       title: '隐私中心',
+      kicker: loopPreviewKicker(state.mode == PrivacyMode.preview),
       onBack: widget.onBack,
       folio: LoopFolioPrimary(
         variant: LoopFolioVariant.chalk,
@@ -932,6 +995,10 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
             : null,
       ),
       body: <Widget>[
+        LoopPreviewModeNotice(
+          isPreview: state.mode == PrivacyMode.preview,
+          resource: '隐私设置',
+        ),
         if (phase != LoopResourcePhase.ready)
           _PrivacyStateBlock(
             phase: phase,
@@ -1079,11 +1146,14 @@ class _PrivacyStateBlock extends StatelessWidget {
         message: '还没有可展示的隐私设置',
         reason: '隐私偏好尚未读取。',
       ),
-      LoopResourcePhase.error || LoopResourcePhase.ready => LoopErrorState(
+      LoopResourcePhase.error => LoopErrorState(
         key: const ValueKey<String>('privacy-error'),
         reason: privacyFailureReason(state.failureKind),
         source: '隐私服务',
         onRetry: onRetry,
+      ),
+      LoopResourcePhase.ready => throw StateError(
+        'a ready Privacy resource must not render a state block',
       ),
     };
   }

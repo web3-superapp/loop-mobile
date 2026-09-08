@@ -10,8 +10,11 @@ import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 void main() {
   late _FakePrivyGateway gateway;
   late ProviderContainer container;
+  // One injected instant per test; advanced explicitly to cross the cooldown.
+  var now = DateTime.utc(2026, 9, 8, 10);
 
   setUp(() {
+    now = DateTime.utc(2026, 9, 8, 10);
     gateway = _FakePrivyGateway();
     container = ProviderContainer(
       overrides: [
@@ -26,6 +29,7 @@ void main() {
         ),
         developmentPreviewEnabledProvider.overrideWithValue(true),
         privyAuthGatewayProvider.overrideWithValue(gateway),
+        loopDeviceClockProvider.overrideWithValue(() => now),
       ],
     );
     addTearDown(container.dispose);
@@ -33,8 +37,6 @@ void main() {
 
   test('freezes normalized email between send, resend, and verify', () async {
     final controller = container.read(emailAuthProvider.notifier);
-    var now = DateTime.utc(2026, 9, 8, 10);
-    controller.clock = () => now;
 
     await controller.sendCode('  person@example.com  ');
     expect(gateway.sentEmails, <String>['person@example.com']);
@@ -89,8 +91,6 @@ void main() {
 
   test('counts local verification attempts and a resend clears them', () async {
     final controller = container.read(emailAuthProvider.notifier);
-    var now = DateTime.utc(2026, 9, 8, 10);
-    controller.clock = () => now;
     gateway.verifyFailure = const PrivyGatewayException('验证码不正确。');
 
     await controller.sendCode('person@example.com');

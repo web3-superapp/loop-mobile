@@ -10,6 +10,12 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 /// export and embedded-wallet creation must never become available because a
 /// screen was merely routed to. LOOP has no recovery phrase at all: seed
 /// reveal, verify and import were removed with the mnemonic pages.
+///
+/// These stay local constants rather than a `loopCapabilityProvider` read
+/// because the frozen V2 contract has no capability ID for passkey, recovery
+/// password, cloud or social recovery, application PIN, transaction MFA or
+/// private-key export. When the contract adds them, replace each field with
+/// the matching projection instead of widening this struct.
 @immutable
 class PrivyWalletCapabilities {
   const PrivyWalletCapabilities({

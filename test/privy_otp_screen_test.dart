@@ -8,7 +8,13 @@ import 'package:loop_mobile/features/account/privy_otp_screen.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
+// One injected instant, advanced explicitly to cross the resend cooldown.
+final _base = DateTime.utc(2026, 9, 7, 1);
+DateTime _now = _base;
+
 void main() {
+  setUp(() => _now = _base);
+
   testWidgets('shows the empty step when no code was requested', (
     tester,
   ) async {
@@ -99,8 +105,7 @@ void main() {
     expect(container.read(emailAuthProvider).failedAttempts, 1);
 
     // Move the injected clock past the cooldown instead of waiting.
-    container.read(emailAuthProvider.notifier).clock = () =>
-        DateTime.utc(2026, 9, 7, 1).add(emailAuthResendCooldown);
+    _now = _base.add(emailAuthResendCooldown);
     await tester.pump(const Duration(seconds: 1));
 
     await tester.tap(find.byKey(const ValueKey<String>('privy-otp-resend')));
@@ -132,9 +137,9 @@ VoidCallback? _pressed(WidgetTester tester, String key) {
 }
 
 Future<void> _sendCode(WidgetTester tester, ProviderContainer container) async {
-  final controller = container.read(emailAuthProvider.notifier)
-    ..clock = () => DateTime.utc(2026, 9, 7, 1);
-  await controller.sendCode('owner@example.com');
+  await container
+      .read(emailAuthProvider.notifier)
+      .sendCode('owner@example.com');
   await tester.pumpAndSettle();
 }
 
@@ -156,6 +161,7 @@ Future<ProviderContainer> _pump(
         ),
       ),
       privyAuthGatewayProvider.overrideWithValue(gateway),
+      loopDeviceClockProvider.overrideWithValue(() => _now),
     ],
   );
   addTearDown(container.dispose);

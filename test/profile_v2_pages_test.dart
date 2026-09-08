@@ -5,6 +5,8 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_catalog.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
+import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
+import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -140,6 +142,37 @@ void main() {
     });
   });
 
+  group('preview truth', () {
+    for (final surfaceId in <String>['profile', 'profile-edit', 'privacy']) {
+      testWidgets('$surfaceId labels a Preview session', (tester) async {
+        await _pump(
+          tester,
+          surfaceId,
+          gateway: _Gateway(resource: active(), mode: ProfileMode.preview),
+          privacyMode: PrivacyMode.preview,
+        );
+
+        expect(
+          find.byKey(const ValueKey<String>('loop-preview-mode-notice')),
+          findsOneWidget,
+        );
+        expect(find.text('开发预览'), findsWidgets);
+      });
+
+      testWidgets('$surfaceId carries no Preview label in production', (
+        tester,
+      ) async {
+        await _pump(tester, surfaceId, gateway: _Gateway(resource: active()));
+
+        expect(
+          find.byKey(const ValueKey<String>('loop-preview-mode-notice')),
+          findsNothing,
+        );
+        expect(find.text('开发预览'), findsNothing);
+      });
+    }
+  });
+
   group('profile-edit', () {
     testWidgets('ready edits the alias, bio and tracks against one draft', (
       tester,
@@ -259,6 +292,35 @@ void main() {
       expect(_pressed(tester, 'profile-edit-save'), isNull);
     });
 
+    testWidgets('a non-preset V1 avatar is dropped from the draft', (
+      tester,
+    ) async {
+      final gateway = _Gateway(
+        resource: ProfileResource(
+          version: 1,
+          values: ProfileValues(
+            alias: 'Voyager_7',
+            // Only a V1 write could have produced this.
+            avatarRef: 'avatar:legacy/upload-9f2c',
+          ),
+          updatedAt: DateTime.utc(2026, 9, 7, 1),
+          loopId: loopId,
+          profileStatus: ProfileStatus.active,
+          activatedAt: DateTime.utc(2026, 9, 7, 1),
+        ),
+      );
+      await _pump(tester, 'profile-edit', gateway: gateway);
+
+      // It renders as the monogram, and saving cannot resubmit it.
+      expect(
+        find.byKey(const ValueKey<String>('loop-profile-avatar-monogram')),
+        findsWidgets,
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('profile-edit-save')));
+      await tester.pumpAndSettle();
+      expect(gateway.savedValues?.avatarRef, isNull);
+    });
+
     testWidgets('avatar upload is never offered as available', (tester) async {
       await _pump(
         tester,
@@ -328,6 +390,7 @@ Future<void> _pump(
   required _Gateway gateway,
   _AvatarCatalog? avatars,
   ValueChanged<String>? onNavigate,
+  PrivacyMode privacyMode = PrivacyMode.production,
   bool settle = true,
 }) async {
   tester.view.physicalSize = const Size(1170, 2532);
@@ -337,6 +400,7 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         profileGatewayProvider.overrideWithValue(gateway),
+        privacyGatewayProvider.overrideWithValue(_Privacy(privacyMode)),
         avatarCatalogGatewayProvider.overrideWithValue(
           avatars ?? _AvatarCatalog(),
         ),
@@ -359,8 +423,38 @@ Future<void> _pump(
   }
 }
 
+final class _Privacy implements PrivacyGateway {
+  _Privacy(this.mode);
+
+  @override
+  final PrivacyMode mode;
+
+  @override
+  Future<PrivacyResource> load() async => PrivacyResource(
+    version: 1,
+    values: const PrivacyValues(discoverable: true, anonymousMode: true),
+    updatedAt: DateTime.utc(2026, 9, 7, 1),
+  );
+
+  @override
+  Future<PrivacyResource> replace({
+    required int expectedVersion,
+    required PrivacyValues values,
+  }) async => PrivacyResource(
+    version: expectedVersion + 1,
+    values: values,
+    updatedAt: DateTime.utc(2026, 9, 7, 2),
+  );
+}
+
 final class _Gateway implements ProfileGateway {
-  _Gateway({this.resource, this.failure, this.saveFailure, this.loadDelay});
+  _Gateway({
+    this.resource,
+    this.failure,
+    this.saveFailure,
+    this.loadDelay,
+    this.mode = ProfileMode.production,
+  });
 
   ProfileResource? resource;
   ProfileGatewayException? failure;
@@ -371,7 +465,7 @@ final class _Gateway implements ProfileGateway {
   int? savedExpectedVersion;
 
   @override
-  ProfileMode get mode => ProfileMode.production;
+  final ProfileMode mode;
 
   @override
   Future<ProfileResource> load() async {

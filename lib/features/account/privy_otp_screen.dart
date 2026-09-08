@@ -50,7 +50,7 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
     final authState = ref.watch(emailAuthProvider);
     final controller = ref.read(emailAuthProvider.notifier);
     final destination = authState.submittedEmail;
-    final now = controller.clock();
+    final now = ref.watch(loopDeviceClockProvider)();
     final cooldown = authState.resendCooldownSeconds(now);
     final canResend = authState.canResend(now);
 

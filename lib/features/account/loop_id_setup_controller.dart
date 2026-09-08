@@ -166,7 +166,11 @@ final class LoopIdSetupController extends Notifier<LoopIdSetupState> {
             : LoopIdSetupPhase.ready,
         resource: loaded,
         alias: loaded.values.alias ?? state.alias,
-        avatarRef: loaded.values.avatarRef ?? state.avatarRef,
+        // A V1 row may hold a non-preset reference. It is never seeded into
+        // the activation body, so the monogram is used instead.
+        avatarRef:
+            profileSubmittableAvatarRef(loaded.values.avatarRef) ??
+            state.avatarRef,
         interests: loaded.values.interests.isEmpty
             ? state.interests
             : loaded.values.interests,
@@ -194,8 +198,9 @@ final class LoopIdSetupController extends Notifier<LoopIdSetupState> {
   }
 
   void editAvatarRef(String? avatarRef) {
+    final submittable = profileSubmittableAvatarRef(avatarRef);
     state = state.copyWith(
-      avatarRef: avatarRef,
+      avatarRef: submittable,
       clearAvatarRef: avatarRef == null,
       clearFailure: true,
       phase: state.phase == LoopIdSetupPhase.failure
