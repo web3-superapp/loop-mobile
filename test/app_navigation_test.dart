@@ -10,7 +10,6 @@ import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/features/wallet/bridge_preview_snapshot.dart';
-import 'package:loop_mobile/features/wallet/swap_preview_snapshot.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
@@ -141,7 +140,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(router.routeInformationProvider.value.uri.path, '/wallet/send');
-    expect(find.text('Choose asset'), findsOneWidget);
 
     router.go('/wallet/send/to', extra: 'wrong draft type');
     await tester.pumpAndSettle();
@@ -155,49 +153,34 @@ void main() {
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/wallet/send');
 
+    // A draft without a checked recipient and an amount is incomplete: the
+    // confirmation page must never prepare an intent from it.
     router.go(
       '/wallet/send/confirm',
-      extra: const TransferDraft(asset: 'ETH', network: 'Ethereum'),
+      extra: const SendDraft(
+        walletId: 'd64786bb-408d-415d-8a69-6277d56c921b',
+        assetId: 'eip155:56:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
+        symbol: 'WBNB',
+      ),
     );
     await tester.pumpAndSettle();
 
     expect(router.routeInformationProvider.value.uri.path, '/wallet/send');
-    expect(find.text('Choose asset'), findsOneWidget);
 
     router.go(
       '/wallet/send/confirm',
-      extra: const TransferDraft(
-        asset: 'ETH',
-        network: 'Ethereum',
-        recipient: '   ',
+      extra: const SendDraft(
+        walletId: 'd64786bb-408d-415d-8a69-6277d56c921b',
+        assetId: 'eip155:56:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
+        symbol: 'WBNB',
+        recipientAddress: '0x000000000000000000000000000000000000dEaD',
       ),
     );
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/wallet/send');
   });
 
-  testWidgets('an orphan signing review returns to Wallet', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          privyAuthGatewayProvider.overrideWithValue(
-            const AuthenticatedTestPrivyGateway(),
-          ),
-        ],
-        child: const LoopApp(),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
-    router.go('/preview/signing-review');
-    await tester.pumpAndSettle();
-
-    expect(router.routeInformationProvider.value.uri.path, '/wallet');
-    expect(find.text('Transaction intent review'), findsNothing);
-  });
-
-  testWidgets('Swap quote route requires the exact typed snapshot', (
+  testWidgets('the Swap quote detail requires the exact typed quote', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -217,18 +200,31 @@ void main() {
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/wallet/swap');
 
-    router.go('/wallet/swap/route', extra: 'wrong snapshot type');
+    // The detail page renders one server quote object and nothing else, so a
+    // wrong extra returns to Swap instead of rendering a shaped placeholder.
+    router.go('/wallet/swap/route', extra: 'wrong quote type');
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/wallet/swap');
+  });
 
-    router.go('/wallet/swap/route', extra: SwapPreviewSnapshot.demo);
-    await tester.pumpAndSettle();
-    expect(
-      router.routeInformationProvider.value.uri.path,
-      '/wallet/swap/route',
+  testWidgets('the approval guard requires a typed request', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
+        ],
+        child: const LoopApp(),
+      ),
     );
-    expect(find.text(SwapPreviewSnapshot.demo.payLabel), findsOneWidget);
-    expect(find.text(SwapPreviewSnapshot.demo.receiveLabel), findsOneWidget);
+    await tester.pumpAndSettle();
+
+    final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
+    router.go('/wallet/approval-guard');
+    await tester.pumpAndSettle();
+
+    expect(router.routeInformationProvider.value.uri.path, '/wallet/approvals');
   });
 
   testWidgets('Bridge status route requires the exact typed snapshot', (

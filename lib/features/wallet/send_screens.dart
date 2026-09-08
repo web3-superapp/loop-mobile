@@ -343,6 +343,20 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
     final balancesState = ref.watch(
       walletBalancesControllerProvider(widget.draft.walletId),
     );
+    if (!blocked && balancesState.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref
+                .read(
+                  walletBalancesControllerProvider(widget.draft.walletId)
+                      .notifier,
+                )
+                .load(),
+          );
+        }
+      });
+    }
     final row = balancesState.value?.rowFor(widget.draft.assetId);
     final spendable = row?.balance is LoopBalanceAvailable
         ? (row!.balance as LoopBalanceAvailable).spendableBalance

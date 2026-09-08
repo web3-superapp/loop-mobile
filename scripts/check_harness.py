@@ -201,7 +201,6 @@ REQUIRED_FILES = (
     "lib/integrations/social/memory_friend_gateway.dart",
     "test/security_capability_truthfulness_test.dart",
     "test/loop_dio_factory_test.dart",
-    "test/send_asset_search_test.dart",
     "lib/features/market/watchlist/watchlist_gateway.dart",
     "lib/features/market/watchlist/watchlist_models.dart",
     # Step 5 retired the Preview Watchlist adapter; the Watchlist port is now
@@ -3839,7 +3838,7 @@ BUILD_PROFILE_TEST_MARKERS = {
         "a build-profile mismatch gates backend and Stream composition",
     ),
     Path("test/privy_provider_test.dart"): (
-        "wallet signing adapter reads the centralized matching AppConfig",
+        "the signing exit reads the centralized matching AppConfig",
         "a build-profile mismatch strips Privy provider inputs",
     ),
 }
@@ -5482,7 +5481,7 @@ def check_wallet_identity_readiness_contract(root: Path) -> list[str]:
             ),
             # Step 6 replaced the Preview transfer draft with the typed
             # `SendDraft`, whose route guard is locked by the money-action
-            # contract below (decision 0058).
+            # contract below (decision 0059).
             "lib/app.dart": (
                 "state.extra is SendDraft ? null : '/wallet/send'",
                 "draft is SendDraft && draft.isComplete",
@@ -5497,8 +5496,12 @@ def check_wallet_identity_readiness_contract(root: Path) -> list[str]:
                 "renders the QR, the address and the EIP-681 uri",
                 "an archived wallet cannot be activated",
             ),
-            "test/signing_review_boundary_test.dart": (
-                "local transfer draft cannot invoke even an available wallet gateway",
+            # Step 6 replaced the local-draft boundary test with the real
+            # signing exit: a preview intent is now refused by the wallet
+            # gateway itself (decision 0059).
+            "test/privy_adapter_test.dart": (
+                "a locally built preview intent can never reach a wallet",
+                "expect(signer.sendCalls, 0);",
             ),
             "test/app_navigation_test.dart": (
                 "incomplete Send deep links return to asset selection",
@@ -5658,7 +5661,7 @@ def check_wallet_local_draft_contract(root: Path) -> list[str]:
     """Keep the exact amount lexicon, and keep local drafts out of a wallet.
 
     Step 6 replaced the Preview transfer and Swap drafts with server-prepared
-    intents (decision 0058). What survives from decision 0022 is the part that
+    intents (decision 0059). What survives from decision 0022 is the part that
     still governs a real money action: the amount is exact text, never a
     `double`, and only a backend-canonical intent may reach the signing exit.
     """
@@ -5797,7 +5800,7 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
             # toggle with `TransactionHistoryScreen` and `NetworksScreen`
             # (decision 0057); step 6 retired the Preview approvals screen, the
             # Preview send-asset search and the Preview transaction-result
-            # layout with the real money-action pages (decision 0058).
+            # layout with the real money-action pages (decision 0059).
             "lib/app.dart": (
                 "state.extra is BridgePreviewSnapshot ? null : '/wallet/bridge'",
                 "snapshot: state.extra! as BridgePreviewSnapshot",
@@ -7975,7 +7978,7 @@ S6_UNSIGNED_TRANSACTION_KEYS = (
 
 
 def check_s6_money_action_contract(root: Path) -> list[str]:
-    """Lock the step-6 money-action truth rules (decision 0058)."""
+    """Lock the step-6 money-action truth rules (decision 0059)."""
 
     errors = require_fragments(
         root,

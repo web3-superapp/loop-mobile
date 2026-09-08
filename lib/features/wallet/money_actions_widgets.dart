@@ -303,7 +303,7 @@ class MoneyIntentReviewCard extends StatelessWidget {
               children: <Widget>[
                 for (final field in fields.skip(1))
                   LoopKeyValue(
-                    key: ValueKey<String>('money-review-\${field.label}'),
+                    key: ValueKey<String>('money-review-${field.label}'),
                     label: field.label,
                     value: field.value,
                     padding: const EdgeInsets.symmetric(vertical: 8),

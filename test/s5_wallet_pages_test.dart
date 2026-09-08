@@ -130,7 +130,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('wallet-security-unavailable')),
       );
-      expect(find.textContaining('安全中心 / 授权盘点 / DApp'), findsOneWidget);
+      expect(find.textContaining('安全中心 / DApp'), findsOneWidget);
       expect(find.textContaining('8 个有效授权'), findsNothing);
       expect(find.textContaining('4 条链已启用'), findsNothing);
     });

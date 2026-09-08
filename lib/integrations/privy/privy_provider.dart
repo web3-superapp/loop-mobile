@@ -13,6 +13,9 @@ final privyDeviceSignerProvider = Provider<PrivyDeviceSigner>((ref) {
 });
 
 final privyDeviceSigningHostProvider = Provider<PrivyDeviceSigningHost?>((ref) {
+  // Without both Privy credentials there is no SDK to construct: asking the
+  // auth gateway for one would throw rather than fail closed.
+  if (!ref.watch(appConfigProvider).canInitializePrivy) return null;
   final gateway = ref.watch(privyAuthGatewayProvider);
   return gateway is PrivyDeviceSigningHost
       ? gateway as PrivyDeviceSigningHost
