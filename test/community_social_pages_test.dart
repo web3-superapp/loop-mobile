@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/referral_screen.dart';
+import 'package:loop_mobile/features/community/search_controller.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/features/community/search_screen.dart';
 import 'package:loop_mobile/features/social/blocklist_screen.dart';
@@ -164,6 +165,42 @@ void main() {
       );
     });
 
+    testWidgets('a failed next page keeps the rows already loaded', (
+      tester,
+    ) async {
+      final gateway = FakeSocialGateway(
+        connections: ConnectionPage(
+          direction: ConnectionDirection.following,
+          items: _connections().items,
+          counts: const ConnectionCounts(following: 24, followers: 108),
+          nextCursor: 'AbC-1_2.dEf-3_4',
+        ),
+      );
+      await pumpCommunityPage(
+        tester,
+        const ConnectionsScreen(),
+        social: gateway,
+      );
+      expect(find.text('frog_member'), findsOneWidget);
+
+      gateway.failure = CommunityFailureKind.offline;
+      await tester.tap(
+        find.byKey(const ValueKey<String>('connections-load-more')),
+      );
+      await tester.pumpAndSettle();
+
+      // The first page survives: only the appended page failed.
+      expect(find.text('frog_member'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('community-state-offline')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('connections-action-failure')),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('a deferred community capability issues no request', (
       tester,
     ) async {
@@ -257,25 +294,21 @@ void main() {
       await pumpCommunityPage(tester, const BlocklistScreen(), social: gateway);
 
       expect(find.text('用户 1'), findsOneWidget);
-      await tester.tap(
-        find.byKey(const ValueKey<String>('blocklist-seg-contract')),
-      );
-      await tester.pumpAndSettle();
-
+      // The two deferred kinds are disabled segments with their reason stated
+      // on the page: they cannot be selected and issue no request.
+      for (final kind in <String>['contract', 'domain']) {
+        expect(
+          tester
+              .widget<LoopSeg>(
+                find.byKey(ValueKey<String>('blocklist-seg-$kind')),
+              )
+              .onSelected,
+          isNull,
+          reason: kind,
+        );
+      }
       expect(
-        find.byKey(
-          const ValueKey<String>('blocklist-kind-unavailable-contract'),
-        ),
-        findsOneWidget,
-      );
-      expect(gateway.commands, <String>['blocks:user']);
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('blocklist-seg-domain')),
-      );
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey<String>('blocklist-kind-unavailable-domain')),
+        find.byKey(const ValueKey<String>('blocklist-deferred-kinds')),
         findsOneWidget,
       );
       expect(gateway.commands, <String>['blocks:user']);
@@ -572,6 +605,38 @@ void main() {
         );
         expect(find.text('Frog Holders'), findsNothing);
       }
+    });
+
+    testWidgets('a deferred domain is probed once for its reason', (
+      tester,
+    ) async {
+      final gateway = FakeSearchGateway(
+        pages: <SearchDomain, SearchPage>{
+          SearchDomain.launch: _searchPage(
+            SearchDomain.launch,
+            available: false,
+            reasonCode: 'LAUNCH_MODULE_DEFERRED',
+            results: 0,
+          ),
+        },
+      );
+      await pumpCommunityPage(
+        tester,
+        const GlobalSearchScreen(),
+        search: gateway,
+      );
+
+      // No query has been typed, yet the reason is read from the server
+      // rather than guessed: the three deferred domains cost no quota.
+      await tester.tap(find.byKey(const ValueKey<String>('search-seg-launch')));
+      await tester.pumpAndSettle();
+
+      expect(gateway.queries, <String>['launch:$searchUnavailableProbeQuery']);
+      expect(
+        find.byKey(const ValueKey<String>('search-domain-unavailable-launch')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Launch 检索源尚未接入'), findsOneWidget);
     });
 
     testWidgets('a result opens through its destination kind', (tester) async {

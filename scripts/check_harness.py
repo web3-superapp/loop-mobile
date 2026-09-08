@@ -124,6 +124,12 @@ REQUIRED_FILES = (
     "docs/decisions/0050-adopt-93-route-manifest.md",
     "docs/decisions/0051-adopt-flutter-svg-and-prototype-assets.md",
     "test/route_manifest_test.dart",
+    "docs/decisions/0054-adopt-v2-community-social-graph-and-search.md",
+    "test/community_api_contract_test.dart",
+    "test/community_idempotency_test.dart",
+    "test/community_pages_test.dart",
+    "test/community_social_pages_test.dart",
+    "test/community_public_profile_and_apply_test.dart",
     "lib/core/network/loop_dio_factory.dart",
     "lib/app.dart",
     "lib/features/shell/loop_shell.dart",
@@ -7771,6 +7777,91 @@ def check_route_manifest_contract(root: Path) -> list[str]:
     return errors
 
 
+S3_COMMUNITY_TEST_MARKERS = {
+    Path("test/community_social_pages_test.dart"): (
+        "a result opens through its destination kind",
+        "the three deferred domains show their server reason",
+    ),
+    Path("test/community_pages_test.dart"): (
+        "the viewer flags alone decide which commands a row offers",
+        "a member with no viewer permission has no row action",
+    ),
+}
+
+
+def check_v2_community_truth_contract(root: Path) -> list[str]:
+    """Keep S3 navigation and governance visibility server-decided."""
+
+    errors = require_fragments(
+        root,
+        {
+            # `search` may only navigate by the server's destination kind: a
+            # route assembled from display copy would be an invented fact.
+            "lib/features/community/search_screen.dart": (
+                "switch (result.destination)",
+                "SearchDestinationKind.communityProfile",
+                "SearchDestinationKind.publicProfile",
+                "PublicProfileIdentity.fromSearchSnapshot(",
+            ),
+            # Governance visibility reads the server's viewer flags only; the
+            # permission matrix itself is never re-implemented on the client.
+            "lib/features/community/community_members_screen.dart": (
+                "communityGovernanceActions(state.viewer, entry)",
+                "showPublicProfileSheet<CommunityGovernanceAction>(",
+                "confirmCommunityAction(",
+            ),
+            "lib/features/community/community_widgets.dart": (
+                "Future<bool> confirmCommunityAction(",
+            ),
+        },
+    )
+
+    members = root / "lib/features/community/community_members_screen.dart"
+    if members.is_file():
+        source = strip_dart_comments(read_text(members))
+        start = source.find("List<CommunityGovernanceAction> communityGovernanceActions")
+        end = source.find("\n}", start)
+        if start < 0 or end < 0:
+            errors.append(
+                "community-members must retain one inspectable action-visibility "
+                "function"
+            )
+        else:
+            block = source[start:end]
+            for required in (
+                "viewer.canInviteAdmin",
+                "viewer.canMute",
+                "viewer.canBan",
+                "entry.isActionable",
+                "CommunityRole.owner",
+            ):
+                if required not in block:
+                    errors.append(
+                        "community-members action visibility must read "
+                        f"`{required}` from the server projection"
+                    )
+            # A client-side role table would be a second source of truth.
+            for forbidden in ("isSelf ==", "role ==  ", "PERMISSION"):
+                if forbidden in block:
+                    errors.append(
+                        "community-members must not re-implement the permission "
+                        f"matrix; found `{forbidden}`"
+                    )
+
+    search = root / "lib/features/community/search_screen.dart"
+    if search.is_file():
+        source = strip_dart_comments(read_text(search))
+        for forbidden in ("result.title ==", "'/community/profile?id='", "Uri.parse("):
+            if forbidden in source:
+                errors.append(
+                    "search must navigate only by `destination.kind`; found "
+                    f"`{forbidden}`"
+                )
+
+    errors.extend(check_behavior_test_evidence(root, S3_COMMUNITY_TEST_MARKERS))
+    return errors
+
+
 def check_v2_primary_navigation_contract(root: Path) -> list[str]:
     """Lock the runtime V2 shell without pretending the legacy catalog is migrated."""
 
@@ -10648,6 +10739,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_audio_room_native_contract(root))
     errors.extend(check_product_contract(root))
     errors.extend(check_v2_primary_navigation_contract(root))
+    errors.extend(check_v2_community_truth_contract(root))
     errors.extend(check_route_manifest_contract(root))
     errors.extend(check_chat_attachment_contract(root))
     errors.extend(check_production_chat_audio_room_entry(root))
@@ -10679,7 +10771,8 @@ def main() -> int:
             print(f"- {error}")
         return 1
     print(
-        "Harness check passed: profile, five-destination V2 contract, pins, "
+        "Harness check passed: profile, five-destination V2 contract, "
+        "V2 community truth, pins, "
         "Spot-only product, New Pairs exact-Preview truth, Chat snapshot, Preview request truth and exact conversation identity, Home portfolio truth, security capability truth, device-local display preferences, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, and secret rules are consistent."

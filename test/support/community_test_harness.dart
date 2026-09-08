@@ -170,6 +170,8 @@ final class FakeCommunityGateway implements CommunityGateway {
     this.detail,
     this.members,
     this.createdDetail,
+    this.membersByFilter =
+        const <CommunityMemberFilter, CommunityMemberDirectory>{},
   });
 
   @override
@@ -183,6 +185,10 @@ final class FakeCommunityGateway implements CommunityGateway {
   CommunityDirectoryPage? directoryPage;
   CommunityDetail? detail;
   CommunityMemberDirectory? members;
+
+  /// Per-filter directories. A missing entry falls back to [members], so an
+  /// existing test keeps its single-view behaviour.
+  Map<CommunityMemberFilter, CommunityMemberDirectory> membersByFilter;
 
   /// Set when the application must be accepted; otherwise `writeFailure`
   /// (or `failure`) decides the refusal.
@@ -261,7 +267,7 @@ final class FakeCommunityGateway implements CommunityGateway {
     String? cursor,
   }) {
     commands.add('members:${role.wireName}:$cursor');
-    return _read(members);
+    return _read(membersByFilter[role] ?? members);
   }
 
   @override

@@ -157,6 +157,25 @@ void main() {
         LoopRouteManifest.informationalRetiredPaths,
         contains('/profile/social-privacy'),
       );
+      // Step 3 folded the V1 friend list and alias search into `search` +
+      // `connections`: neither is mounted, and both stay informational.
+      for (final retired in <String>['/profile/friends', '/chat/friends/add']) {
+        expect(
+          LoopRouteManifest.informationalRetiredPaths,
+          contains(retired),
+          reason: retired,
+        );
+        expect(
+          LoopRouteManifest.supplementaryPaths,
+          isNot(contains(retired)),
+          reason: retired,
+        );
+        expect(
+          LoopRouteManifest.retiredPaths,
+          isNot(contains(retired)),
+          reason: retired,
+        );
+      }
       final manifestPaths = LoopRouteManifest.entries
           .map((entry) => entry.path)
           .toSet();

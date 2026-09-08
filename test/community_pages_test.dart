@@ -75,7 +75,12 @@ void main() {
       expect(find.text('2 个已加入的社区'), findsOneWidget);
       expect(find.textContaining('发现 3 个已验证社区'), findsOneWidget);
       expect(find.text('Joined 0'), findsOneWidget);
-      expect(find.text('Discover 0'), findsOneWidget);
+      // The discover list moved to its own page; the hero states the count.
+      expect(find.text('Discover 0'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('community-discover-hero')),
+        findsOneWidget,
+      );
       // The rule version is cited; the page never calls it a recommendation.
       expect(find.textContaining('rule:verified-members-v1'), findsOneWidget);
     });
@@ -91,10 +96,6 @@ void main() {
       expect(find.text('0 个已加入的社区'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('community-joined-empty')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('community-discover-empty')),
         findsOneWidget,
       );
     });
@@ -509,6 +510,42 @@ void main() {
       );
     });
 
+    testWidgets('a banned viewer is told, and cannot leave or act', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityProfileScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          detail: testDetail(
+            viewer: testViewer(
+              role: CommunityRole.member,
+              status: CommunityMemberStatus.banned,
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('community-membership-banned')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('无需重新加入'), findsOneWidget);
+      // Nothing on a banned membership can act.
+      expect(
+        find.byKey(const ValueKey<String>('community-leave-action')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('community-join-action')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('community-edit-profile-action')),
+        findsNothing,
+      );
+    });
+
     testWidgets('a missing community id issues no request', (tester) async {
       final gateway = FakeCommunityGateway(detail: testDetail());
       await pumpCommunityPage(
@@ -581,8 +618,29 @@ void main() {
       ).map((action) => action.name).toList(growable: false);
 
       final ownerViewer = testViewer();
-      expect(actions(ownerViewer, member), <String>['promote', 'mute', 'ban']);
-      expect(actions(ownerViewer, admin), <String>['demote', 'mute', 'ban']);
+      expect(actions(ownerViewer, member), <String>[
+        'promote',
+        'transfer',
+        'mute',
+        'ban',
+      ]);
+      expect(actions(ownerViewer, admin), <String>[
+        'demote',
+        'transfer',
+        'mute',
+        'ban',
+      ]);
+      // A banned row offers exactly one command: restore it.
+      expect(
+        actions(
+          ownerViewer,
+          testMember(
+            role: CommunityRole.member,
+            status: CommunityMemberStatus.banned,
+          ),
+        ),
+        <String>['unban'],
+      );
       // The owner is never a target, and neither is the viewer's own row.
       expect(actions(ownerViewer, owner), isEmpty);
       expect(actions(ownerViewer, self), isEmpty);
@@ -698,6 +756,143 @@ void main() {
 
       expect(find.text('封禁已生效'), findsNothing);
       expect(find.textContaining('状态已经改变'), findsWidgets);
+    });
+
+    testWidgets('the banned view is reachable and unban restores the member', (
+      tester,
+    ) async {
+      final active = testDirectory(
+        items: <CommunityMemberEntry>[
+          testMember(role: CommunityRole.member, alias: 'frog_member'),
+        ],
+      );
+      final banned = testDirectory(
+        items: <CommunityMemberEntry>[
+          testMember(
+            role: CommunityRole.member,
+            alias: 'frog_member',
+            status: CommunityMemberStatus.banned,
+          ),
+        ],
+      );
+      final gateway = FakeCommunityGateway(
+        members: active,
+        membersByFilter: <CommunityMemberFilter, CommunityMemberDirectory>{
+          CommunityMemberFilter.all: active,
+          CommunityMemberFilter.banned: banned,
+        },
+      );
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: gateway,
+        social: FakeSocialGateway(),
+        // Five segments do not fit a 390pt row; the width keeps them all
+        // hit-testable without scrolling the filter strip first.
+        size: const Size(900, 1400),
+      );
+
+      // The governance segment carries no count: `counts` stays the
+      // non-banned directory's.
+      final seg = find.byKey(const ValueKey<String>('members-seg-banned'));
+      expect(seg, findsOneWidget);
+      expect(tester.widget<LoopSeg>(seg).label, '已封禁');
+
+      await tester.tap(seg);
+      await tester.pumpAndSettle();
+      expect(gateway.commands, contains('members:banned:null'));
+      expect(find.text('已封禁'), findsWidgets);
+
+      // A banned row offers only the restore, and the second confirmation
+      // still stands in front of it.
+      await tester.tap(find.text('frog_member'));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-action-unban')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-action-ban')),
+        findsNothing,
+      );
+
+      gateway.membersByFilter =
+          <CommunityMemberFilter, CommunityMemberDirectory>{
+            CommunityMemberFilter.all: active,
+            CommunityMemberFilter.banned: testDirectory(
+              items: const <CommunityMemberEntry>[],
+            ),
+          };
+      await tester.tap(
+        find.byKey(const ValueKey<String>('public-profile-action-unban')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('恢复为活跃成员'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-confirm-accept')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(gateway.commands, contains('ban:$testMemberId:false'));
+      // A filtered view is read again rather than mislabelled with the
+      // default directory the command answered with.
+      expect(
+        gateway.commands.where((c) => c == 'members:banned:null'),
+        hasLength(2),
+      );
+      expect(find.text('解除封禁已生效'), findsOneWidget);
+    });
+
+    testWidgets('a transfer is offered to the owner and states its finality', (
+      tester,
+    ) async {
+      final gateway = FakeCommunityGateway(members: testDirectory());
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: gateway,
+        social: FakeSocialGateway(),
+      );
+
+      await tester.tap(find.text('frog_member'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('public-profile-action-transfer')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('这一步不可撤销'), findsOneWidget);
+      expect(gateway.commands.where((c) => c.startsWith('role:')), isEmpty);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-confirm-accept')),
+      );
+      await tester.pumpAndSettle();
+      expect(gateway.commands, contains('role:$testMemberId:owner'));
+    });
+
+    testWidgets('a member viewer is not offered the banned view', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          members: testDirectory(
+            viewer: testViewer(
+              role: CommunityRole.member,
+              canInviteAdmin: false,
+              canMute: false,
+              canBan: false,
+            ),
+          ),
+        ),
+        social: FakeSocialGateway(),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('members-seg-banned')),
+        findsNothing,
+      );
     });
 
     testWidgets('a refused directory renders the permission state', (

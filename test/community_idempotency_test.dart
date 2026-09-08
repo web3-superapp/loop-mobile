@@ -80,6 +80,34 @@ void main() {
     },
   );
 
+  test('a cancelled or unparsable write keeps its key', () async {
+    for (final unresolved in <LoopBackendFailure>[
+      LoopBackendFailure(LoopBackendFailureKind.cancelled),
+      LoopBackendFailure(LoopBackendFailureKind.invalidPayload),
+    ]) {
+      final api = _RecordingCommunityApi()..failure = unresolved;
+      final keyring = LoopV2CommandKeyring();
+      final gateway = DioLoopV2CommunityGateway(
+        api: api,
+        clientMetadata: _metadata,
+        session: _immediateSession(),
+        keyring: keyring,
+      );
+
+      await expectLater(
+        gateway.join(testCommunityId),
+        throwsA(isA<CommunityGatewayException>()),
+      );
+      // The server may already have applied the command, so the retry must
+      // replay the recorded key rather than start a new operation.
+      expect(
+        keyring.peek('join:$testCommunityId'),
+        api.keys.single,
+        reason: '${unresolved.kind}',
+      );
+    }
+  });
+
   test('a successful write releases its key', () async {
     final api = _RecordingCommunityApi()..detail = testDetail();
     final keyring = LoopV2CommandKeyring();

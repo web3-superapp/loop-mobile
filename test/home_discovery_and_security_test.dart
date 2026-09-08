@@ -13,8 +13,9 @@ import 'support/authenticated_test_privy_gateway.dart';
 
 void main() {
   // The former Home-era `GlobalSearchScreen` (Preview fixture suggestions)
-  // was retired in step 3: `/search` is now the V2 five-domain search, covered
-  // by `test/community_search_screen_test.dart`.
+  // was retired in step 3: `/search` is now the V2 five-domain search page,
+  // covered by the `search` group in `test/community_social_pages_test.dart`
+  // and by `test/community_public_profile_and_apply_test.dart`.
   testWidgets(
     'production Security is unavailable and contains no fixture facts or actions',
     (tester) async {

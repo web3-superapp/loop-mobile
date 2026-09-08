@@ -3667,6 +3667,67 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected exact Preview Security session guard: {result}",
         )
 
+    def test_search_cannot_navigate_without_destination_kind(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for relative in (
+                "lib/features/community/search_screen.dart",
+                "lib/features/community/community_members_screen.dart",
+                "lib/features/community/community_widgets.dart",
+            ):
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(
+                    (REPOSITORY_ROOT / relative).read_text(encoding="utf-8"),
+                    encoding="utf-8",
+                )
+            path = root / "lib/features/community/search_screen.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "switch (result.destination)",
+                    "switch (result.resultType)",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_community_truth_contract(root)
+
+        self.assertTrue(
+            any("destination" in error for error in result),
+            msg=f"expected destination-kind navigation guard: {result}",
+        )
+
+    def test_member_action_visibility_cannot_leave_the_viewer(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for relative in (
+                "lib/features/community/search_screen.dart",
+                "lib/features/community/community_members_screen.dart",
+                "lib/features/community/community_widgets.dart",
+            ):
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(
+                    (REPOSITORY_ROOT / relative).read_text(encoding="utf-8"),
+                    encoding="utf-8",
+                )
+            path = root / "lib/features/community/community_members_screen.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "viewer.canBan",
+                    "true",
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_community_truth_contract(root)
+
+        self.assertTrue(
+            any("viewer.canBan" in error for error in result),
+            msg=f"expected server-decided action visibility guard: {result}",
+        )
+
     def test_retired_home_global_search_cannot_return(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

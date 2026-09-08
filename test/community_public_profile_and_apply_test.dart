@@ -75,7 +75,8 @@ void main() {
       expect(find.text('LOOP-3HJKMNPQ'), findsWidgets);
       // No wallet address, profile code or invented figure is on the panel.
       expect(find.textContaining('0x'), findsNothing);
-      expect(find.textContaining('算力'), findsNothing);
+      // No figure of any kind rides on the panel itself.
+      expect(find.textContaining('2,840'), findsNothing);
     });
 
     testWidgets('the dm control is disabled with its reason', (tester) async {
