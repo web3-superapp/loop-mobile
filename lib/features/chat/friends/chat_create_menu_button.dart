@@ -25,7 +25,7 @@ class ChatCreateMenuButton extends StatelessWidget {
           case _ChatCreateAction.createGroup:
             context.push('/chat/groups/create');
           case _ChatCreateAction.addFriend:
-            context.push('/chat/friends/add');
+            context.push('/search');
         }
       },
       itemBuilder: (context) => const <PopupMenuEntry<_ChatCreateAction>>[

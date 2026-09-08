@@ -63,7 +63,7 @@ class _FriendListPageState extends ConsumerState<FriendListPage> {
         IconButton(
           key: const ValueKey<String>('friends-open-add'),
           tooltip: '添加好友',
-          onPressed: () => context.push('/chat/friends/add'),
+          onPressed: () => context.push('/search'),
           icon: const Icon(Icons.person_add_alt_1_outlined),
         ),
       ],
@@ -149,7 +149,7 @@ class _FriendListPageState extends ConsumerState<FriendListPage> {
           message: '通过 LOOP 主昵称找到对方并发送好友请求。对方接受后才会出现在这里。',
           icon: Icons.person_search_outlined,
           action: FilledButton.icon(
-            onPressed: () => context.push('/chat/friends/add'),
+            onPressed: () => context.push('/search'),
             icon: const Icon(Icons.person_add_alt_1_outlined),
             label: const Text('添加好友'),
           ),
@@ -683,7 +683,7 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
           message: '好友请求被对方接受后，才能邀请对方创建群组。',
           icon: Icons.group_off_outlined,
           action: OutlinedButton.icon(
-            onPressed: () => context.push('/chat/friends/add'),
+            onPressed: () => context.push('/search'),
             icon: const Icon(Icons.person_add_alt_1_outlined),
             label: const Text('添加好友'),
           ),

@@ -204,10 +204,15 @@ abstract final class LoopV2Contract {
       'SESSION_NOT_FOUND' ||
       'VALIDATION_FAILED' ||
       'ALIAS_RESERVED' ||
-      'ALIAS_BLOCKED' => LoopBackendFailureKind.invalidRequest,
+      'ALIAS_BLOCKED' ||
+      'DATA_STALE' ||
+      'RESOURCE_CONFLICT' ||
+      'PROFILE_ACTIVATION_REQUIRED' => LoopBackendFailureKind.invalidRequest,
       'REQUEST_TIMEOUT' => LoopBackendFailureKind.timeout,
       'RATE_LIMITED' ||
       'NOT_FOUND' ||
+      'PERMISSION_DENIED' ||
+      'POLICY_BLOCKED' ||
       'CAPABILITY_UNAVAILABLE' ||
       'PROVIDER_DISCONNECTED' ||
       'INTERNAL_ERROR' => LoopBackendFailureKind.unavailable,

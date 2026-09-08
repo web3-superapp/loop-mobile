@@ -361,27 +361,6 @@ void main() {
     expect(find.byTooltip('Send message'), findsNothing);
   });
 
-  testWidgets('Global Search names and opens the exact registered group', (
-    tester,
-  ) async {
-    final router = await _pumpPreviewApp(
-      tester,
-      gateway: MemoryCommunicationGateway(),
-    );
-    router.go('/search');
-    await tester.pumpAndSettle();
-
-    expect(find.text(PreviewConversationIdentity.group.title), findsOneWidget);
-    expect(find.text('ETH Holders Lounge'), findsNothing);
-    await tester.tap(find.text(PreviewConversationIdentity.group.title));
-    await tester.pumpAndSettle();
-
-    expect(
-      find.text('Offline preview · simulated conversation'),
-      findsOneWidget,
-    );
-    expect(find.byTooltip('Send message'), findsOneWidget);
-  });
 }
 
 Future<GoRouter> _pumpPreviewApp(

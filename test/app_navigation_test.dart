@@ -101,10 +101,13 @@ void main() {
     expect(find.textContaining('Spot to perp'), findsNothing);
 
     await tester.tap(
-      find.byKey(const ValueKey<String>('community-search-action')),
+      find.byKey(const ValueKey<String>('community-search-toggle')),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Search not connected'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('community-search-panel')),
+      findsOneWidget,
+    );
     expect(find.text('ETH'), findsNothing);
     expect(find.text('ETH-PERP'), findsNothing);
   });
@@ -186,7 +189,12 @@ void main() {
     final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
     router.go('/search');
     await tester.pumpAndSettle();
-    expect(find.text('Search not connected'), findsOneWidget);
+    // The V2 search page issues no request while the capability document has
+    // not been observed, and never falls back to Preview assets.
+    expect(
+      find.byKey(const ValueKey<String>('search-capability-unavailable')),
+      findsOneWidget,
+    );
     expect(find.text('ETH'), findsNothing);
 
     router.go('/market/token');

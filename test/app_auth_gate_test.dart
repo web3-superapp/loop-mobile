@@ -143,7 +143,10 @@ void main() {
       find.byKey(const ValueKey<String>('community-screen')),
       findsOneWidget,
     );
-    expect(find.text('社区内容源待连接'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('community-capability-unavailable')),
+      findsOneWidget,
+    );
 
     await tester.tap(
       find.byKey(const ValueKey<String>('community-profile-action')),

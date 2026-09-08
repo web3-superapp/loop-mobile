@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_screen.dart';
@@ -48,23 +49,23 @@ void main() {
   });
 
   group('Community UI foundation', () {
-    testWidgets('stays truthful while D3 content is unavailable', (
+    testWidgets('stays truthful while the community capability is unknown', (
       tester,
     ) async {
       await _pumpCommunity(tester);
 
       expect(find.byKey(const ValueKey<String>('community-screen')), findsOne);
+      // No capability document has been observed, so the page issues no
+      // request and states that instead of showing a figure.
       expect(
-        find.byKey(const ValueKey<String>('community-home-unavailable')),
+        find.byKey(
+          const ValueKey<String>('community-capability-unavailable'),
+        ),
         findsOne,
       );
-      expect(
-        find.byKey(const ValueKey<String>('community-index-unavailable')),
-        findsOne,
-      );
-      expect(find.text('社区内容源待连接'), findsOne);
-      expect(find.textContaining('将在后端 D3 提供真实来源'), findsOne);
-      expect(find.textContaining('当前不展示社区数量'), findsOne);
+      expect(find.text('社区模块当前不可用'), findsOne);
+      expect(find.textContaining('尚未读取到能力清单'), findsOne);
+      expect(find.text('—'), findsWidgets);
 
       for (final inventedFact in <String>[
         '38 VERIFIED',
@@ -75,6 +76,7 @@ void main() {
         'BONK Community',
         'MOONCAT',
         '3 条未读',
+        '演示数据',
       ]) {
         expect(
           find.textContaining(inventedFact),
@@ -84,45 +86,58 @@ void main() {
       }
     });
 
-    testWidgets(
-      'Community exposes implemented child flows without fixture facts',
-      (tester) async {
-        final destinations = <String>[];
-        await _pumpCommunity(tester, onNavigate: destinations.add);
+    testWidgets('search and message panels are mutually exclusive', (
+      tester,
+    ) async {
+      await _pumpCommunity(tester);
 
-        await tester.tap(
-          find.byKey(const ValueKey<String>('community-search-action')),
-        );
-        await tester.tap(
-          find.byKey(const ValueKey<String>('community-chat-action')),
-        );
-        await tester.tap(
-          find.byKey(const ValueKey<String>('community-profile-action')),
-        );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-search-toggle')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('community-search-panel')),
+        findsOne,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('community-message-panel')),
+        findsNothing,
+      );
 
-        for (final (key, destination) in <(String, String)>[
-          ('community-open-chat', '/chat'),
-          ('community-open-friends', '/profile/friends'),
-          ('community-add-friend', '/chat/friends/add'),
-          ('community-create-group', '/chat/groups/create'),
-        ]) {
-          final finder = find.byKey(ValueKey<String>(key));
-          await tester.ensureVisible(finder);
-          await tester.tap(finder);
-          expect(destinations.last, destination);
-        }
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-message-toggle')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('community-search-panel')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('community-message-panel')),
+        findsOne,
+      );
 
-        expect(destinations, <String>[
-          '/search',
-          '/chat',
-          '/profile',
-          '/chat',
-          '/profile/friends',
-          '/chat/friends/add',
-          '/chat/groups/create',
-        ]);
-      },
-    );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-message-close')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('community-message-panel')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('the profile action reaches the profile domain', (
+      tester,
+    ) async {
+      final destinations = <String>[];
+      await _pumpCommunity(tester, onNavigate: destinations.add);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-profile-action')),
+      );
+      expect(destinations, <String>['/profile']);
+    });
 
     testWidgets('remains usable at phone width and 2x text scale', (
       tester,
@@ -133,7 +148,7 @@ void main() {
         textScaler: const TextScaler.linear(2),
       );
 
-      final notice = find.textContaining('本页没有请求或生成社区事实');
+      final notice = find.textContaining('尚未读取到能力清单');
       await tester.scrollUntilVisible(notice, 240);
       expect(notice, findsOne);
       expect(tester.takeException(), isNull);
@@ -238,7 +253,7 @@ Future<void> _pumpCommunity(
         data: MediaQuery.of(context).copyWith(textScaler: textScaler),
         child: child!,
       ),
-      home: CommunityScreen(onNavigate: onNavigate),
+      home: ProviderScope(child: CommunityScreen(onNavigate: onNavigate)),
     ),
   );
   await tester.pumpAndSettle();

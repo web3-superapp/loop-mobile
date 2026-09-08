@@ -367,10 +367,10 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
               onTap: () => widget.onNavigate('security'),
             ),
             LoopRecordRow(
-              key: const ValueKey<String>('profile-open-friends'),
-              title: '我的好友',
-              subtitle: '好友与请求',
-              onTap: () => widget.onNavigate('friends'),
+              key: const ValueKey<String>('profile-open-friend-requests'),
+              title: '好友请求',
+              subtitle: '收到的好友申请（好友列表已折叠进搜索与关注）',
+              onTap: () => widget.onNavigate('friend-requests'),
             ),
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-connections'),

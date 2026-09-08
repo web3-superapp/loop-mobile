@@ -967,9 +967,11 @@ void main() {
           path: '/chat/groups/create',
           builder: (context, state) => const Text('group-route'),
         ),
+        // `/chat/friends/add` was retired in step 3; the add-friend menu
+        // item now opens the V2 global search.
         GoRoute(
-          path: '/chat/friends/add',
-          builder: (context, state) => const Text('friend-route'),
+          path: '/search',
+          builder: (context, state) => const Text('search-route'),
         ),
       ],
     );
@@ -1004,11 +1006,11 @@ void main() {
       find.byKey(const ValueKey<String>('chat-add-friend-menu-item')),
     );
     await tester.pumpAndSettle();
-    expect(find.text('friend-route'), findsOneWidget);
+    expect(find.text('search-route'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Profile exposes 我的好友 and application routes stay truthful', (
+  testWidgets('Profile exposes 好友请求 and the retired friend routes fail closed', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -1030,10 +1032,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -700));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('我的好友'));
+    await tester.ensureVisible(find.text('好友请求'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('我的好友'));
-    expect(destination, 'friends');
+    await tester.tap(find.text('好友请求'));
+    expect(destination, 'friend-requests');
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(
@@ -1049,21 +1051,22 @@ void main() {
     await tester.pumpAndSettle();
     final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
 
+    // Both locations were folded into `search` + `connections`: they are no
+    // longer mounted and land back on Community as informational retirements.
     router.go('/profile/friends');
     await tester.pumpAndSettle();
-    expect(find.byType(FriendListPage), findsOneWidget);
-    expect(
-      find.byKey(const ValueKey<String>('friends-service-unavailable')),
-      findsOneWidget,
-    );
+    expect(find.byType(FriendListPage), findsNothing);
+    expect(router.routeInformationProvider.value.uri.path, '/community');
 
     router.go('/chat/friends/add');
     await tester.pumpAndSettle();
-    expect(find.byType(AddFriendPage), findsOneWidget);
-    expect(
-      find.byKey(const ValueKey<String>('friend-search-unavailable')),
-      findsOneWidget,
-    );
+    expect(find.byType(AddFriendPage), findsNothing);
+    expect(router.routeInformationProvider.value.uri.path, '/community');
+
+    router.go('/chat/friends/requests');
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path,
+        '/chat/friends/requests');
   });
 }
 

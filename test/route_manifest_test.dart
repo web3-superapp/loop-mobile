@@ -138,11 +138,9 @@ void main() {
         '/chat',
         '/chat/channel/:cid',
         '/chat/channel/:cid/alias',
-        '/chat/friends/add',
         '/chat/friends/requests',
         '/chat/groups/create',
         '/chat/groups/:groupId/alias',
-        '/profile/friends',
         '/preview/signing-review',
         '/preview/contract-facts',
         '/preview/asset-message',
@@ -238,10 +236,10 @@ void main() {
     ) async {
       final router = await _pumpApp(tester);
       final pending = LoopRouteManifest.withStatus(LoopRouteStatus.pending);
-      // S2 connected `/auth/otp` (PrivyOtpScreen) and `/auth/loop-id`
-      // (LoopIdSetupScreen), so the manifest carries one fewer pending page
-      // and no redirect placeholder at all.
-      expect(pending, hasLength(23));
+      // S2 connected `/auth/otp` and `/auth/loop-id`; S3 connected
+      // `community-discover`, `community-profile` and `community-members`,
+      // so the manifest carries three fewer pending pages.
+      expect(pending, hasLength(20));
       expect(
         LoopRouteManifest.bySlug('auth-otp').status,
         LoopRouteStatus.implemented,
@@ -254,7 +252,7 @@ void main() {
       expect(pending.map((entry) => entry.slug), isNot(contains('auth-otp')));
 
       for (final entry in <LoopRouteEntry>[
-        LoopRouteManifest.bySlug('community-members'),
+        LoopRouteManifest.bySlug('community-chat'),
         LoopRouteManifest.bySlug('launch-trade'),
         LoopRouteManifest.bySlug('mining-rules'),
         LoopRouteManifest.bySlug('key-export'),

@@ -1,0 +1,189 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/features/community/community_controllers.dart';
+import 'package:loop_mobile/features/community/community_gateway.dart';
+import 'package:loop_mobile/features/community/community_models.dart';
+import 'package:loop_mobile/features/community/community_state.dart';
+import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
+
+/// The four prototype segments. Only the two backed by
+/// `GET /v2/communities?sort=` can be selected; the other two are disabled
+/// with the reason, because "算力最高" and "讨论最多" have no source yet.
+enum CommunityDiscoverSegment {
+  members('成员最多', CommunityDirectorySort.members),
+  power('算力最高', null),
+  discussion('讨论最多', null),
+  newest('新社区', CommunityDirectorySort.newest);
+
+  const CommunityDiscoverSegment(this.label, this.sort);
+
+  final String label;
+  final CommunityDirectorySort? sort;
+
+  bool get isAvailable => sort != null;
+
+  /// The step that will give the segment a source.
+  String get deferredReason => switch (this) {
+    CommunityDiscoverSegment.power => '社区算力排序需要挖矿口径（D19）确定后才有来源。',
+    CommunityDiscoverSegment.discussion => '讨论量排序需要 Stream 接通（D7）后才有来源。',
+    _ => '',
+  };
+}
+
+class CommunityDiscoverScreen extends ConsumerStatefulWidget {
+  const CommunityDiscoverScreen({
+    super.key,
+    this.onBack,
+    this.onOpenCommunity,
+    this.joinedOnly = false,
+  });
+
+  final VoidCallback? onBack;
+  final ValueChanged<String>? onOpenCommunity;
+
+  /// Entered from the home aggregate's "view all joined" action.
+  final bool joinedOnly;
+
+  @override
+  ConsumerState<CommunityDiscoverScreen> createState() =>
+      _CommunityDiscoverScreenState();
+}
+
+class _CommunityDiscoverScreenState
+    extends ConsumerState<CommunityDiscoverScreen> {
+  CommunityDiscoverSegment _segment = CommunityDiscoverSegment.members;
+
+  @override
+  Widget build(BuildContext context) {
+    final capability = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.community),
+    );
+    final mode = ref.watch(communityGatewayProvider).mode;
+    final state = ref.watch(communityDiscoverControllerProvider);
+    final controller = ref.read(communityDiscoverControllerProvider.notifier);
+    if (capability.isAvailable && state.phase == CommunityViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (!mounted) return;
+        unawaited(
+          widget.joinedOnly ? controller.openJoined() : controller.load(),
+        );
+      });
+    }
+
+    final selectedSegment = _segment;
+    return LoopStreamPage(
+      key: const ValueKey<String>('community-discover-screen'),
+      archetype: LoopPageArchetype.listing,
+      title: widget.joinedOnly ? '已加入的社区' : '发现社区',
+      kicker: communityPreviewKicker(mode),
+      onBack: widget.onBack,
+      folio: LoopFolioPrimary(
+        variant: LoopFolioVariant.chalk,
+        archetype: LoopFolioArchetype.listing,
+        kicker: 'DISCOVERY DESK',
+        heading: state.phase == CommunityViewPhase.ready
+            ? '${state.items.length} 个社区'
+            : communityMissingFigure,
+        caption: '排序只使用可核查事实：服务端维护的成员数与创建时间。热门不等于推荐。',
+        stamp: state.recommendation == null ? null : 'RULE',
+      ),
+      filters: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: <Widget>[
+            for (final segment in CommunityDiscoverSegment.values)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: LoopSeg(
+                  key: ValueKey<String>('discover-seg-${segment.name}'),
+                  label: segment.label,
+                  selected: segment == selectedSegment,
+                  onSelected: segment.isAvailable
+                      ? () {
+                          setState(() => _segment = segment);
+                          unawaited(controller.selectSort(segment.sort!));
+                        }
+                      : null,
+                ),
+              ),
+          ],
+        ),
+      ),
+      collection: ListView(
+        key: const ValueKey<String>('community-discover-list'),
+        padding: const EdgeInsets.only(bottom: 24),
+        children: <Widget>[
+          CommunityPreviewNotice(mode: mode, resource: '社区目录'),
+          for (final segment in CommunityDiscoverSegment.values)
+            if (!segment.isAvailable)
+              LoopEmpty(
+                key: ValueKey<String>('discover-seg-${segment.name}-reason'),
+                icon: 'warn',
+                message: '"${segment.label}" 暂不可用',
+                reason: segment.deferredReason,
+              ),
+          if (!capability.isAvailable)
+            LoopEmpty(
+              key: const ValueKey<String>(
+                'community-discover-capability-unavailable',
+              ),
+              icon: 'warn',
+              message: '社区模块当前不可用',
+              reason: capability.reasonCode == null
+                  ? '尚未读取到能力清单，本页不请求社区目录。'
+                  : '服务端原因：${capability.reasonCode}。',
+            )
+          else if (state.phase != CommunityViewPhase.ready)
+            CommunityStateBlock(
+              phase: state.phase,
+              failureKind: state.failureKind,
+              emptyMessage: '没有符合条件的社区',
+              emptyReason: '该排序下服务端没有返回任何社区。',
+              onRetry: () => unawaited(controller.reload()),
+            )
+          else ...<Widget>[
+            LoopRecordGroup(
+              rows: <LoopRecordRow>[
+                for (var index = 0; index < state.items.length; index += 1)
+                  communityDirectoryRow(
+                    community: state.items[index],
+                    position: communityRowPosition(index, state.items.length),
+                    onTap: () => widget.onOpenCommunity?.call(
+                      state.items[index].communityId,
+                    ),
+                  ),
+              ],
+            ),
+            if (state.nextCursor != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: LoopButton(
+                  key: const ValueKey<String>('community-discover-load-more'),
+                  label: state.loadingMore ? '正在载入…' : '载入更多',
+                  block: true,
+                  onPressed: state.loadingMore
+                      ? null
+                      : () => unawaited(controller.loadMore()),
+                ),
+              ),
+          ],
+          const LoopNotice(
+            key: ValueKey<String>('community-discover-apply-notice'),
+            icon: 'community',
+            title: '社区怎么入驻',
+            body:
+                '任何社区都可以提交申请。申请后状态为"审核中"，只有运维核验通过才会显示验证标记；'
+                '本页不代表任何 Mining 权重结论。',
+            margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
+          ),
+        ],
+      ),
+    );
+  }
+}

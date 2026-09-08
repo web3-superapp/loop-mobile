@@ -35,7 +35,6 @@ void main() {
       '/chat/dm?conversationId=sable-direct',
       '/chat/group-info',
       '/chat/group-info?conversationId=glyph-hunters',
-      '/chat/requests',
       '/chat/search',
       '/chat/search?conversationId=glyph-hunters',
       '/preview/token-card',

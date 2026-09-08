@@ -4,12 +4,12 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 
 void main() {
   test(
-    'catalog covers the 28 frozen V2 codes with errors.<family>.<name> keys',
+    'catalog covers the 30 frozen V2 codes with errors.<family>.<name> keys',
     () {
-      expect(LoopErrorText.catalog, hasLength(28));
+      expect(LoopErrorText.catalog, hasLength(30));
       expect(
         LoopErrorText.catalog.map((copy) => copy.code).toSet(),
-        hasLength(28),
+        hasLength(30),
       );
       expect(LoopErrorText.catalog.map((copy) => copy.code), <String>[
         'ACCOUNT_BOOTSTRAP_REQUIRED',
@@ -30,11 +30,13 @@ void main() {
         'NOT_FOUND',
         'PERMISSION_DENIED',
         'POLICY_BLOCKED',
+        'PROFILE_ACTIVATION_REQUIRED',
         'PROVIDER_DISCONNECTED',
         'QUOTE_EXPIRED',
         'RATE_LIMITED',
         'REGION_BLOCKED',
         'REQUEST_TIMEOUT',
+        'RESOURCE_CONFLICT',
         'SESSION_NOT_FOUND',
         'SIMULATION_FAILED',
         'SUBMISSION_UNKNOWN',

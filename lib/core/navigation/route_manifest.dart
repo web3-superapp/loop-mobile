@@ -126,9 +126,15 @@ abstract final class LoopRouteManifest {
   /// `/profile/social-privacy`: the V1 social-privacy resource was retired by
   /// the V2 privacy resource (step 2); the location stays recorded as info
   /// until the remaining chat surfaces stop linking to it.
+  /// `/profile/friends` and `/chat/friends/add`: the V1 friend list and the
+  /// alias search were folded into `search` + `connections` in step 3; the
+  /// two locations stay recorded as info while installed clients may still
+  /// emit them.
   static const List<String> informationalRetiredPaths = <String>[
     '/notifications',
     '/profile/social-privacy',
+    '/profile/friends',
+    '/chat/friends/add',
   ];
 
   /// Retired locations that must never be mounted again. Each resolves to the
@@ -181,11 +187,9 @@ abstract final class LoopRouteManifest {
     '/chat',
     '/chat/channel/:cid',
     '/chat/channel/:cid/alias',
-    '/chat/friends/add',
     '/chat/friends/requests',
     '/chat/groups/create',
     '/chat/groups/:groupId/alias',
-    '/profile/friends',
     '/preview/signing-review',
     '/preview/contract-facts',
     '/preview/asset-message',
@@ -312,7 +316,7 @@ abstract final class LoopRouteManifest {
       title: '发现社区',
       prototypeOrder: 14,
       step: 3,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'community-profile',
@@ -321,7 +325,7 @@ abstract final class LoopRouteManifest {
       title: '社区主页',
       prototypeOrder: 15,
       step: 3,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'community-chat',
@@ -348,7 +352,7 @@ abstract final class LoopRouteManifest {
       title: '成员与权限',
       prototypeOrder: 18,
       step: 3,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'voiceroom',

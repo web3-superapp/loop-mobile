@@ -23,7 +23,12 @@ import 'package:loop_mobile/features/account/loop_id_setup_screen.dart';
 import 'package:loop_mobile/features/account/privy_login_screen.dart';
 import 'package:loop_mobile/features/account/privy_otp_screen.dart';
 import 'package:loop_mobile/features/chat/chat.dart';
+import 'package:loop_mobile/features/community/community_discover_screen.dart';
+import 'package:loop_mobile/features/community/community_members_screen.dart';
+import 'package:loop_mobile/features/community/community_profile_screen.dart';
 import 'package:loop_mobile/features/community/community_screen.dart';
+import 'package:loop_mobile/features/community/referral_screen.dart';
+import 'package:loop_mobile/features/community/search_screen.dart';
 import 'package:loop_mobile/features/home/home_screens.dart';
 import 'package:loop_mobile/features/launchpad/launchpad_screen.dart';
 import 'package:loop_mobile/features/market/market.dart';
@@ -32,6 +37,9 @@ import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/review/signing_review_surface.dart';
+import 'package:loop_mobile/features/social/blocklist_screen.dart';
+import 'package:loop_mobile/features/social/connections_screen.dart';
+import 'package:loop_mobile/features/social/dm_requests_screen.dart';
 import 'package:loop_mobile/features/shell/loop_pending_surface.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
@@ -322,7 +330,41 @@ GoRouter _buildRouter(
       ..._accountRoutes,
       GoRoute(
         path: '/search',
-        builder: (context, state) => const GlobalSearchScreen(),
+        builder: (context, state) => GlobalSearchScreen(
+          initialQuery: state.uri.queryParameters['q'],
+          onBack: () => _popOrHome(context),
+          onOpenCommunity: (communityId) =>
+              context.push('/community/profile?id=$communityId'),
+          // `publicProfile` has no dedicated page before D7; the stranger
+          // request and connection surfaces stay the only people entries.
+          onOpenProfile: (publicProfileId) =>
+              context.push('/profile/connections'),
+        ),
+      ),
+      GoRoute(
+        path: '/community/discover',
+        builder: (context, state) => CommunityDiscoverScreen(
+          joinedOnly: state.uri.queryParameters['membership'] == 'joined',
+          onBack: () => _popOrHome(context),
+          onOpenCommunity: (communityId) =>
+              context.push('/community/profile?id=$communityId'),
+        ),
+      ),
+      GoRoute(
+        path: '/community/profile',
+        builder: (context, state) => CommunityProfileScreen(
+          communityId: state.uri.queryParameters['id'],
+          onBack: () => _popOrHome(context),
+          onOpenMembers: (communityId) =>
+              context.push('/community/members?id=$communityId'),
+        ),
+      ),
+      GoRoute(
+        path: '/community/members',
+        builder: (context, state) => CommunityMembersScreen(
+          communityId: state.uri.queryParameters['id'],
+          onBack: () => _popOrHome(context),
+        ),
       ),
       // Manifest `networth` (legacy `/home/net-worth`, retired with Home).
       GoRoute(
@@ -380,10 +422,6 @@ GoRouter _buildRouter(
       GoRoute(
         path: '/market/smart-money',
         builder: (context, state) => const SmartMoneyScreen(),
-      ),
-      GoRoute(
-        path: '/chat/friends/add',
-        builder: (context, state) => const AddFriendPage(),
       ),
       GoRoute(
         path: '/chat/friends/requests',
@@ -454,10 +492,8 @@ GoRouter _buildRouter(
       ),
       GoRoute(
         path: '/chat/requests',
-        builder: (context, state) => const ChatPreviewRouteGuard(
-          surfaceLabel: 'Message requests',
-          child: MessageRequestsPage(),
-        ),
+        builder: (context, state) =>
+            MessageRequestsScreen(onBack: () => _popOrHome(context)),
       ),
       GoRoute(
         path: '/chat/search',
@@ -594,8 +630,21 @@ GoRouter _buildRouter(
       ),
       ..._profileRoutes,
       GoRoute(
-        path: '/profile/friends',
-        builder: (context, state) => const FriendListPage(),
+        path: '/profile/connections',
+        builder: (context, state) => ConnectionsScreen(
+          onBack: () => _popOrHome(context),
+          onOpenConversation: (publicProfileId) => context.push('/chat/dm'),
+        ),
+      ),
+      GoRoute(
+        path: '/profile/blocked',
+        builder: (context, state) =>
+            BlocklistScreen(onBack: () => _popOrHome(context)),
+      ),
+      GoRoute(
+        path: '/profile/referral',
+        builder: (context, state) =>
+            ReferralScreen(onBack: () => _popOrHome(context)),
       ),
       ..._systemRoutes,
       // Manifest `pay`: informational unavailable surface (fail closed).
@@ -693,12 +742,9 @@ final List<RouteBase> _profileRoutes =
           ('/profile/devices', 'devices'),
           ('/profile/social-recovery', 'social-recovery'),
           ('/profile/notifications', 'notif-settings'),
-          ('/profile/connections', 'connections'),
-          ('/profile/blocked', 'blocklist'),
           ('/profile/settings', 'settings'),
           ('/profile/about', 'about'),
           ('/profile/help', 'support'),
-          ('/profile/referral', 'referral'),
         ]
         .map((item) {
           return GoRoute(
@@ -821,6 +867,15 @@ Widget _profileScreen(BuildContext context, WidgetRef ref, String id) {
   );
 }
 
+/// Pops when the page was pushed, otherwise lands on the manifest default.
+void _popOrHome(BuildContext context) {
+  if (Navigator.of(context).canPop()) {
+    context.pop();
+  } else {
+    context.go(LoopRouteManifest.defaultPath);
+  }
+}
+
 Future<void> _signOut(WidgetRef ref) {
   final retirement = ref
       .read(loopCommunicationRetirementRegistryProvider)
@@ -874,7 +929,9 @@ String _accountPath(String id) => switch (id) {
 // Mining tab; none of the retired ids reaches a dead route.
 String _profilePath(String id) => switch (id) {
   'profile' => LoopRouteManifest.pathFor('profile'),
-  'friends' => '/profile/friends',
+  // `/profile/friends` and `/chat/friends/add` were folded into `search`
+  // and `connections`; only the request inbox is retained until D7.
+  'friend-requests' => '/chat/friends/requests',
   'wallets' => LoopRouteManifest.pathFor('wallets'),
   'community-discover' => LoopRouteManifest.pathFor('community-discover'),
   'launch-history' => LoopRouteManifest.pathFor('launch-history'),

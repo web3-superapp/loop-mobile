@@ -140,7 +140,11 @@ void main() {
         find.byKey(const ValueKey<String>('chat-add-friend-menu-item')),
       );
       await tester.pumpAndSettle();
-      expect(find.byType(AddFriendPage), findsOneWidget);
+      // The V1 alias search was folded into the V2 global search in step 3.
+      expect(
+        find.byKey(const ValueKey<String>('global-search-screen')),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     },
   );

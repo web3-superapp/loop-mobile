@@ -1,21 +1,57 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/community/community_controllers.dart';
+import 'package:loop_mobile/features/community/community_gateway.dart';
+import 'package:loop_mobile/features/community/community_models.dart';
+import 'package:loop_mobile/features/community/community_state.dart';
+import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
 
 typedef CommunityNavigation = void Function(String location);
 
-/// UI-first Community home for the v2 product shape.
+/// Which of the two mutually exclusive topbar panels is open.
+enum CommunityPanel { none, search, messages }
+
+/// `community` · the post-login home aggregate.
 ///
-/// The screen intentionally owns no provider, controller, or request. Existing
-/// social and Stream destinations remain responsible for proving their own
-/// current availability after navigation.
-class CommunityScreen extends StatelessWidget {
+/// Every figure on this page comes from `GET /v2/community/home`. Unread
+/// counts, live voice and stranger requests have no source before D7, so the
+/// message panel states that instead of showing a badge.
+class CommunityScreen extends ConsumerStatefulWidget {
   const CommunityScreen({super.key, this.onNavigate});
 
   final CommunityNavigation? onNavigate;
 
-  void _open(BuildContext context, String location) {
-    final navigate = onNavigate;
+  @override
+  ConsumerState<CommunityScreen> createState() => _CommunityScreenState();
+}
+
+class _CommunityScreenState extends ConsumerState<CommunityScreen> {
+  final FocusNode _searchToggleFocus = FocusNode(
+    debugLabel: 'community-search',
+  );
+  final FocusNode _messageToggleFocus = FocusNode(
+    debugLabel: 'community-messages',
+  );
+  CommunityPanel _panel = CommunityPanel.none;
+
+  @override
+  void dispose() {
+    _searchToggleFocus.dispose();
+    _messageToggleFocus.dispose();
+    super.dispose();
+  }
+
+  void _open(String location) {
+    final navigate = widget.onNavigate;
     if (navigate != null) {
       navigate(location);
       return;
@@ -23,516 +59,427 @@ class CommunityScreen extends StatelessWidget {
     context.push(location);
   }
 
+  /// The two panels are mutually exclusive: opening one always closes the
+  /// other, and Escape closes the open panel and returns focus to its toggle.
+  void _toggle(CommunityPanel panel) {
+    setState(() {
+      _panel = _panel == panel ? CommunityPanel.none : panel;
+    });
+  }
+
+  void _closePanel() {
+    if (_panel == CommunityPanel.none) return;
+    final restore = _panel == CommunityPanel.search
+        ? _searchToggleFocus
+        : _messageToggleFocus;
+    setState(() => _panel = CommunityPanel.none);
+    restore.requestFocus();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: const ValueKey<String>('community-screen'),
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const _LoopWordmark(),
-        actions: <Widget>[
-          IconButton(
-            key: const ValueKey<String>('community-search-action'),
-            onPressed: () => _open(context, '/search'),
-            tooltip: '搜索（数据源待接入）',
-            icon: const Icon(Icons.search_rounded),
-          ),
-          IconButton(
-            key: const ValueKey<String>('community-chat-action'),
-            onPressed: () => _open(context, '/chat'),
-            tooltip: '聊天',
-            icon: const Icon(Icons.chat_bubble_outline_rounded),
-          ),
-          IconButton(
-            key: const ValueKey<String>('community-profile-action'),
-            onPressed: () => _open(context, '/profile'),
-            tooltip: '个人资料',
-            icon: const Icon(Icons.person_outline_rounded),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: Stack(
-        children: <Widget>[
-          const Positioned.fill(child: _LedgerBackdrop()),
-          SafeArea(
-            top: false,
-            bottom: false,
-            child: CustomScrollView(
-              key: const ValueKey<String>('community-scroll'),
-              slivers: <Widget>[
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
-                  sliver: SliverList.list(
-                    children: <Widget>[
-                      Text(
-                        'COMMUNITY / V2',
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              color: LoopColors.lime,
-                              letterSpacing: 1.7,
-                            ),
-                      ),
-                      const SizedBox(height: 10),
-                      Semantics(
-                        header: true,
-                        child: Text(
-                          '社区',
-                          style: Theme.of(context).textTheme.displayMedium
-                              ?.copyWith(fontWeight: FontWeight.w800),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '社区将成为登录后的默认首页。现阶段先提供已实现的聊天与社交入口，社区数据仍保持明确不可用。',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 22),
-                      const _CommunitySourceCard(),
-                      const SizedBox(height: 28),
-                      const _SectionHeading(
-                        index: '01',
-                        title: '沟通与关系',
-                        caption: '入口已就绪，服务状态由目标页面独立校验',
-                      ),
-                      const SizedBox(height: 12),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final tileWidth = (constraints.maxWidth - 12) / 2;
-                          return Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            children: <Widget>[
-                              _CommunityRouteTile(
-                                key: const ValueKey<String>(
-                                  'community-open-chat',
-                                ),
-                                width: tileWidth,
-                                icon: Icons.forum_outlined,
-                                title: '聊天',
-                                detail: '打开 Stream 会话入口',
-                                onTap: () => _open(context, '/chat'),
-                              ),
-                              _CommunityRouteTile(
-                                key: const ValueKey<String>(
-                                  'community-open-friends',
-                                ),
-                                width: tileWidth,
-                                icon: Icons.people_outline_rounded,
-                                title: '我的好友',
-                                detail: '查看服务端确认的好友关系',
-                                onTap: () => _open(context, '/profile/friends'),
-                              ),
-                              _CommunityRouteTile(
-                                key: const ValueKey<String>(
-                                  'community-add-friend',
-                                ),
-                                width: tileWidth,
-                                icon: Icons.person_add_alt_1_outlined,
-                                title: '添加好友',
-                                detail: '按昵称搜索并发送申请',
-                                onTap: () =>
-                                    _open(context, '/chat/friends/add'),
-                              ),
-                              _CommunityRouteTile(
-                                key: const ValueKey<String>(
-                                  'community-create-group',
-                                ),
-                                width: tileWidth,
-                                icon: Icons.group_add_outlined,
-                                title: '创建群组',
-                                detail: '从已确认好友中选择成员',
-                                onTap: () =>
-                                    _open(context, '/chat/groups/create'),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 28),
-                      const _SectionHeading(
-                        index: '02',
-                        title: '社区内容',
-                        caption: '后端 D3–D5 分阶段交付',
-                      ),
-                      const SizedBox(height: 12),
-                      const _UnavailableCommunityIndex(),
-                      const SizedBox(height: 16),
-                      const _TruthNotice(),
-                    ],
-                  ),
-                ),
-              ],
+    final capability = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.community),
+    );
+    final mode = ref.watch(communityGatewayProvider).mode;
+    final state = ref.watch(communityHomeControllerProvider);
+    if (capability.isAvailable && state.phase == CommunityViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(ref.read(communityHomeControllerProvider.notifier).load());
+        }
+      });
+    }
+
+    final home = state.value;
+    final joinedCount = home?.joined.length;
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.escape): _closePanel,
+      },
+      child: Focus(
+        autofocus: false,
+        child: LoopDashboardPage(
+          key: const ValueKey<String>('community-screen'),
+          archetype: LoopPageArchetype.listing,
+          title: '社区',
+          kicker: communityPreviewKicker(mode),
+          tabPage: true,
+          actions: <Widget>[
+            // The toggle keeps its own focus node so Escape can hand focus
+            // back to the control that opened the panel.
+            Focus(
+              focusNode: _searchToggleFocus,
+              child: LoopIconButton(
+                key: const ValueKey<String>('community-search-toggle'),
+                icon: 'search',
+                label: _panel == CommunityPanel.search ? '关闭搜索' : '打开全局搜索',
+                onPressed: () => _toggle(CommunityPanel.search),
+              ),
             ),
+            Focus(
+              focusNode: _messageToggleFocus,
+              child: LoopIconButton(
+                key: const ValueKey<String>('community-message-toggle'),
+                icon: 'bell',
+                label: _panel == CommunityPanel.messages ? '关闭消息面板' : '打开消息面板',
+                onPressed: () => _toggle(CommunityPanel.messages),
+              ),
+            ),
+            LoopIconButton(
+              key: const ValueKey<String>('community-profile-action'),
+              icon: 'user',
+              label: '查看个人中心',
+              onPressed: () => _open('/profile'),
+            ),
+          ],
+          primary: LoopFolioPrimary(
+            key: const ValueKey<String>('community-folio'),
+            variant: LoopFolioVariant.lime,
+            archetype: LoopFolioArchetype.listing,
+            kicker: 'COMMUNITY INDEX',
+            heading: joinedCount == null
+                ? communityMissingFigure
+                : '$joinedCount 个已加入的社区',
+            caption: home == null
+                ? '社区聚合尚未读取成功，本页不展示任何推测数字。'
+                : '发现 ${home.discover.length} 个已验证社区 · '
+                      '数据观察于 ${communityObservedAtLabel(home.observedAt)}',
+            stamp: home == null ? null : 'DATABASE',
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LoopWordmark extends StatelessWidget {
-  const _LoopWordmark();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            color: LoopColors.lime,
-            shape: BoxShape.circle,
-          ),
-          child: SizedBox.square(dimension: 9),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          'LOOP',
-          style: Theme.of(context).textTheme.labelLarge
-              ?.copyWith(color: LoopColors.chalk, letterSpacing: 1.1),
-        ),
-      ],
-    );
-  }
-}
-
-class _LedgerBackdrop extends StatelessWidget {
-  const _LedgerBackdrop();
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: LoopColors.ink,
-      child: CustomPaint(painter: _LedgerGridPainter()),
-    );
-  }
-}
-
-class _LedgerGridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = LoopColors.chalk.withValues(alpha: 0.025)
-      ..strokeWidth = 1;
-    const gap = 18.0;
-    for (double y = 0; y < size.height; y += gap) {
-      canvas.drawLine(
-        Offset.zero.translate(0, y),
-        Offset(size.width, y),
-        paint,
-      );
-    }
-    for (double x = 0; x < size.width; x += gap) {
-      canvas.drawLine(
-        Offset.zero.translate(x, 0),
-        Offset(x, size.height),
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _LedgerGridPainter oldDelegate) => false;
-}
-
-class _CommunitySourceCard extends StatelessWidget {
-  const _CommunitySourceCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      container: true,
-      label: '社区首页数据源未连接',
-      child: DecoratedBox(
-        key: const ValueKey<String>('community-home-unavailable'),
-        decoration: const BoxDecoration(
-          color: LoopColors.lime,
-          borderRadius: BorderRadius.all(Radius.circular(28)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Wrap(
-                spacing: 10,
-                runSpacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: <Widget>[
-                  Text(
-                    'COMMUNITY INDEX',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: LoopColors.ink.withValues(alpha: 0.68),
-                      letterSpacing: 1.5,
-                    ),
+          sections: <Widget>[
+            if (_panel == CommunityPanel.search)
+              _CommunitySearchPanel(
+                onSubmit: (query) {
+                  _closePanel();
+                  _open('/search?q=${Uri.encodeQueryComponent(query)}');
+                },
+                onClose: _closePanel,
+              ),
+            if (_panel == CommunityPanel.messages)
+              _CommunityMessagePanel(
+                home: home,
+                onClose: _closePanel,
+                onOpenRequests: () {
+                  _closePanel();
+                  _open('/chat/requests');
+                },
+              ),
+            CommunityPreviewNotice(mode: mode, resource: '社区聚合'),
+            if (!capability.isAvailable)
+              _CommunityCapabilityBlock(
+                reasonCode: capability.reasonCode,
+                decision: capability.decision,
+              )
+            else if (state.phase != CommunityViewPhase.ready || home == null)
+              CommunityStateBlock(
+                phase: state.phase,
+                failureKind: state.failureKind,
+                emptyMessage: '还没有加入任何社区',
+                emptyReason: '加入社区后，这里会列出服务端确认的成员关系。',
+                onRetry: () => unawaited(
+                  ref.read(communityHomeControllerProvider.notifier).reload(),
+                ),
+              )
+            else ...<Widget>[
+              _DiscoverHero(
+                discoverCount: home.discover.length,
+                onTap: () => _open('/community/discover'),
+              ),
+              const LoopLabel('已加入的社区'),
+              if (home.joined.isEmpty)
+                const LoopEmpty(
+                  key: ValueKey<String>('community-joined-empty'),
+                  message: '还没有加入任何社区',
+                  reason: '从"发现社区"开始，加入后这里会显示服务端确认的成员关系。',
+                )
+              else
+                LoopRecordGroup(
+                  rows: <LoopRecordRow>[
+                    for (var index = 0; index < home.joined.length; index += 1)
+                      _joinedRow(home.joined, index),
+                  ],
+                ),
+              if (home.joinedTruncated)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: LoopButton(
+                    key: const ValueKey<String>('community-view-all-joined'),
+                    label: '查看全部已加入的社区',
+                    block: true,
+                    onPressed: () =>
+                        _open('/community/discover?membership=joined'),
                   ),
-                  const _InkPill(label: 'D3 · NOT CONNECTED'),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Text(
-                '社区内容源待连接',
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  color: LoopColors.ink,
-                  fontWeight: FontWeight.w900,
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                '已加入、推荐和最近访问的社区，将在后端 D3 提供真实来源、能力状态与新鲜度后显示。',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: LoopColors.ink.withValues(alpha: 0.78),
-                  fontWeight: FontWeight.w600,
+              const LoopLabel('发现'),
+              if (home.discover.isEmpty)
+                const LoopEmpty(
+                  key: ValueKey<String>('community-discover-empty'),
+                  message: '暂时没有可推荐的已验证社区',
+                  reason: '推荐只包含已验证且尚未加入的社区。',
+                )
+              else
+                LoopRecordGroup(
+                  rows: <LoopRecordRow>[
+                    for (
+                      var index = 0;
+                      index < home.discover.length;
+                      index += 1
+                    )
+                      _discoverRow(home.discover, index),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 20),
-              const Divider(color: Color(0x33050604)),
-              const SizedBox(height: 14),
-              Text(
-                '当前不展示社区数量、在线人数、未读数或推荐结果。',
-                style: Theme.of(context).textTheme.labelLarge
-                    ?.copyWith(color: LoopColors.ink),
+              LoopNotice(
+                key: const ValueKey<String>('community-recommendation-rule'),
+                icon: 'info',
+                title: '推荐依据',
+                body:
+                    '推荐列表由版本化规则 ${home.recommendation.ruleVersion} 生成，'
+                    '只使用成员数与创建时间等可核查事实，不是个性化算法推荐。',
+                margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
               ),
             ],
-          ),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );
   }
+
+  LoopRecordRow _joinedRow(List<JoinedCommunity> items, int index) {
+    final entry = items[index];
+    final community = entry.community;
+    final status = switch (entry.membership.status) {
+      CommunityMemberStatus.active => entry.membership.role.label,
+      CommunityMemberStatus.muted => '已禁言',
+      CommunityMemberStatus.banned => '已封禁',
+    };
+    return LoopRecordRow(
+      key: ValueKey<String>('community-joined-${community.communityId}'),
+      leading: CommunityLogoTile(name: community.name),
+      title: community.name,
+      subtitle: '${community.memberCount} 名成员 · $status',
+      onTap: () => _open('/community/profile?id=${community.communityId}'),
+      position: communityRowPosition(index, items.length),
+      semanticLabel: '${community.name}，$status，${community.memberCount} 名成员',
+    );
+  }
+
+  LoopRecordRow _discoverRow(List<CommunitySummary> items, int index) {
+    final community = items[index];
+    return LoopRecordRow(
+      key: ValueKey<String>('community-discover-${community.communityId}'),
+      leading: CommunityLogoTile(name: community.name),
+      title: community.name,
+      subtitle: '${community.slug} · 已验证',
+      trailing: '${community.memberCount}',
+      trailingCaption: '成员',
+      onTap: () => _open('/community/profile?id=${community.communityId}'),
+      position: communityRowPosition(index, items.length),
+    );
+  }
 }
 
-class _InkPill extends StatelessWidget {
-  const _InkPill({required this.label});
+class _CommunityCapabilityBlock extends StatelessWidget {
+  const _CommunityCapabilityBlock({
+    required this.reasonCode,
+    required this.decision,
+  });
 
-  final String label;
+  final String? reasonCode;
+  final LoopCapabilityDecision decision;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: LoopColors.ink,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: LoopColors.lime,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.8,
-          ),
-        ),
-      ),
+    return LoopEmpty(
+      key: const ValueKey<String>('community-capability-unavailable'),
+      icon: 'warn',
+      message: '社区模块当前不可用',
+      reason: switch (decision) {
+        LoopCapabilityDecision.unknown => '尚未读取到能力清单，本页不请求社区数据，也不展示任何数字。',
+        LoopCapabilityDecision.deferred => '服务端尚未启用 community 模块。',
+        _ => reasonCode == null ? '服务端已声明该模块当前不可用。' : '服务端原因：$reasonCode。',
+      },
     );
   }
 }
 
-class _SectionHeading extends StatelessWidget {
-  const _SectionHeading({
-    required this.index,
-    required this.title,
-    required this.caption,
-  });
+class _DiscoverHero extends StatelessWidget {
+  const _DiscoverHero({required this.discoverCount, required this.onTap});
 
-  final String index;
-  final String title;
-  final String caption;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(
-          index,
-          style: Theme.of(context).textTheme.labelMedium
-              ?.copyWith(color: LoopColors.lime, letterSpacing: 1.1),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(title, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 3),
-              Text(caption, style: Theme.of(context).textTheme.bodyMedium),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CommunityRouteTile extends StatelessWidget {
-  const _CommunityRouteTile({
-    required this.width,
-    required this.icon,
-    required this.title,
-    required this.detail,
-    required this.onTap,
-    super.key,
-  });
-
-  final double width;
-  final IconData icon;
-  final String title;
-  final String detail;
+  final int discoverCount;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      child: Semantics(
-        button: true,
-        label: '$title，$detail',
-        child: Material(
-          color: LoopColors.graphite,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(color: LoopColors.chalk.withValues(alpha: 0.12)),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 132),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Icon(icon, color: LoopColors.lime, size: 25),
-                    const SizedBox(height: 18),
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: LoopColors.chalk,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      detail,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: LoopColors.chalk.withValues(alpha: 0.56),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+    return LoopChalkCard(
+      key: const ValueKey<String>('community-discover-hero'),
+      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      onTap: onTap,
+      semanticLabel: '发现新社区，当前有 $discoverCount 个推荐',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            'DISCOVER',
+            style: LoopTypography.mono(
+              size: 9.5,
+              weight: FontWeight.w600,
+              color: LoopColors.ink.withValues(alpha: 0.6),
+              letterSpacing: 1.2,
             ),
           ),
-        ),
+          const SizedBox(height: 8),
+          Text(
+            '发现新社区',
+            style: LoopTypography.sora(
+              size: 19,
+              weight: FontWeight.w800,
+              color: LoopColors.ink,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '按成员数或创建时间浏览已验证社区。$discoverCount 个推荐来自本次聚合。',
+            style: LoopTypography.sora(
+              size: 12,
+              weight: FontWeight.w500,
+              color: LoopColors.ink.withValues(alpha: 0.72),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _UnavailableCommunityIndex extends StatelessWidget {
-  const _UnavailableCommunityIndex();
+class _CommunitySearchPanel extends StatefulWidget {
+  const _CommunitySearchPanel({required this.onSubmit, required this.onClose});
+
+  final ValueChanged<String> onSubmit;
+  final VoidCallback onClose;
 
   @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      key: const ValueKey<String>('community-index-unavailable'),
-      decoration: BoxDecoration(
-        color: LoopColors.graphite.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: LoopColors.chalk.withValues(alpha: 0.12)),
-      ),
-      child: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 18, vertical: 4),
-        child: Column(
-          children: <Widget>[
-            _UnavailableRow(label: '已加入的社区', dependency: 'D3'),
-            _UnavailableRow(label: '推荐与社区发现', dependency: 'D3–D4'),
-            _UnavailableRow(
-              label: '社区成员与治理',
-              dependency: 'D5',
-              showDivider: false,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  State<_CommunitySearchPanel> createState() => _CommunitySearchPanelState();
 }
 
-class _UnavailableRow extends StatelessWidget {
-  const _UnavailableRow({
-    required this.label,
-    required this.dependency,
-    this.showDivider = true,
-  });
+class _CommunitySearchPanelState extends State<_CommunitySearchPanel> {
+  final TextEditingController _controller = TextEditingController();
 
-  final String label;
-  final String dependency;
-  final bool showDivider;
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Row(
+    return LoopSurfaceCard(
+      key: const ValueKey<String>('community-search-panel'),
+      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          TextField(
+            key: const ValueKey<String>('community-search-field'),
+            controller: _controller,
+            autofocus: true,
+            textInputAction: TextInputAction.search,
+            onSubmitted: widget.onSubmit,
+            decoration: const InputDecoration(
+              labelText: '搜索社区或用户',
+              hintText: '输入至少 2 个字符',
+            ),
+          ),
+          const SizedBox(height: 12),
+          LoopButtonPair(
+            padded: false,
             children: <Widget>[
-              Expanded(
-                child: Text(
-                  label,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+              LoopButton(
+                key: const ValueKey<String>('community-search-submit'),
+                label: '搜索',
+                primary: true,
+                onPressed: () => widget.onSubmit(_controller.text),
               ),
-              const SizedBox(width: 12),
-              Text(
-                '$dependency · 待接入',
-                textAlign: TextAlign.end,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: LoopColors.lime,
-                  fontWeight: FontWeight.w700,
-                ),
+              LoopButton(
+                key: const ValueKey<String>('community-search-close'),
+                label: '关闭',
+                onPressed: widget.onClose,
               ),
             ],
           ),
-        ),
-        if (showDivider)
-          Divider(color: LoopColors.chalk.withValues(alpha: 0.1), height: 1),
-      ],
+        ],
+      ),
     );
   }
 }
 
-class _TruthNotice extends StatelessWidget {
-  const _TruthNotice();
+class _CommunityMessagePanel extends StatelessWidget {
+  const _CommunityMessagePanel({
+    required this.home,
+    required this.onClose,
+    required this.onOpenRequests,
+  });
+
+  final CommunityHome? home;
+  final VoidCallback onClose;
+  final VoidCallback onOpenRequests;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: LoopColors.lime.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: LoopColors.lime.withValues(alpha: 0.28)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            const Icon(Icons.verified_user_outlined, color: LoopColors.lime),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                '本页没有请求或生成社区事实。点击沟通入口后，目标页面会按当前账号重新校验 LOOP backend 与 Stream 状态。',
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: LoopColors.chalk.withValues(alpha: 0.72)),
-              ),
+    final unread = home?.unread;
+    final liveVoice = home?.liveVoice;
+    return LoopSurfaceCard(
+      key: const ValueKey<String>('community-message-panel'),
+      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            'MESSAGE CENTER',
+            style: LoopTypography.mono(
+              size: 9.5,
+              weight: FontWeight.w600,
+              color: LoopColors.muted,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 10),
+          if (unread != null)
+            CommunityUnavailableCard(
+              key: const ValueKey<String>('community-unread-unavailable'),
+              label: '未读消息',
+              fact: unread,
+              margin: EdgeInsets.zero,
+            ),
+          if (liveVoice != null) ...<Widget>[
+            const SizedBox(height: 10),
+            CommunityUnavailableCard(
+              key: const ValueKey<String>('community-live-voice-unavailable'),
+              label: '语音房',
+              fact: liveVoice,
+              margin: EdgeInsets.zero,
             ),
           ],
-        ),
+          const SizedBox(height: 12),
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('community-open-requests'),
+                title: '陌生人请求',
+                subtitle: '接受、忽略或举报',
+                onTap: onOpenRequests,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          LoopButton(
+            key: const ValueKey<String>('community-message-close'),
+            label: '关闭消息面板',
+            block: true,
+            onPressed: onClose,
+          ),
+        ],
       ),
     );
   }

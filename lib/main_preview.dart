@@ -29,6 +29,10 @@ import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/personalization/memory_watchlist_gateway.dart';
 import 'package:loop_mobile/integrations/social/memory_friend_gateway.dart';
+import 'package:loop_mobile/features/community/community_gateway.dart';
+import 'package:loop_mobile/features/community/search_gateway.dart';
+import 'package:loop_mobile/features/social/social_gateway.dart';
+import 'package:loop_mobile/integrations/community/memory_community_gateways.dart';
 
 /// Explicit offline UI catalog entry point.
 ///
@@ -63,6 +67,11 @@ Future<void> main() async {
           MemoryCommunicationGateway(),
         ),
         friendGatewayProvider.overrideWithValue(MemoryFriendGateway()),
+        // Labelled memory-only S3 adapters. Every surface backed by one of
+        // these renders the visible 演示数据 notice.
+        communityGatewayProvider.overrideWithValue(MemoryCommunityGateway()),
+        socialGatewayProvider.overrideWithValue(MemorySocialGateway()),
+        searchGatewayProvider.overrideWithValue(const MemorySearchGateway()),
         notificationPreferencesGatewayProvider.overrideWithValue(
           MemoryNotificationPreferencesGateway(
             initialResource: NotificationPreferencesResource(

@@ -11,6 +11,10 @@ import 'package:loop_mobile/integrations/personalization/shared_preferences_disp
 import 'package:loop_mobile/integrations/personalization/loop_personalization_providers.dart';
 import 'package:loop_mobile/integrations/social/loop_social_providers.dart';
 import 'package:loop_mobile/integrations/social/loop_group_alias_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_providers.dart';
+import 'package:loop_mobile/features/social/social_gateway.dart';
+import 'package:loop_mobile/features/community/search_gateway.dart';
+import 'package:loop_mobile/features/community/community_gateway.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +45,15 @@ Future<void> main() async {
         ),
         privacyGatewayProvider.overrideWith(
           (ref) => ref.watch(loopPrivacyGatewayProvider),
+        ),
+        communityGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2CommunityGatewayProvider),
+        ),
+        socialGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2SocialGatewayProvider),
+        ),
+        searchGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2SearchGatewayProvider),
         ),
       ],
       child: const LoopApp(),
