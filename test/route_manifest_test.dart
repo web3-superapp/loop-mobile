@@ -263,8 +263,10 @@ void main() {
       // S2 connected `/auth/otp` and `/auth/loop-id`; S3 connected
       // `community-discover`, `community-profile` and `community-members`;
       // S4 connected `community-chat`, `community-ai`, `chat-forward` and
-      // `chat-merge-preview`.
-      expect(pending, hasLength(16));
+      // `chat-merge-preview`; S7 connected the ten remaining Launch pages and
+      // the five remaining Mining pages. Only `key-export` is still pending.
+      expect(pending, hasLength(1));
+      expect(pending.single.slug, 'key-export');
       expect(
         LoopRouteManifest.bySlug('auth-otp').status,
         LoopRouteStatus.implemented,
@@ -290,11 +292,23 @@ void main() {
         expect(pending.map((entry) => entry.slug), isNot(contains(slug)));
       }
 
+      for (final slug in <String>[
+        'launch-trade',
+        'mining-rules',
+        'launch-apply',
+        'loop-stake',
+        'mining-rank',
+      ]) {
+        expect(
+          LoopRouteManifest.bySlug(slug).status,
+          LoopRouteStatus.implemented,
+          reason: slug,
+        );
+        expect(pending.map((entry) => entry.slug), isNot(contains(slug)));
+      }
+
       for (final entry in <LoopRouteEntry>[
-        LoopRouteManifest.bySlug('launch-trade'),
-        LoopRouteManifest.bySlug('mining-rules'),
         LoopRouteManifest.bySlug('key-export'),
-        LoopRouteManifest.bySlug('launch-apply'),
       ]) {
         router.go(entry.path);
         await tester.pumpAndSettle();
