@@ -241,6 +241,19 @@ class _TokenHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resolved = detail;
+    // A blocked asset shows no fact at all, not even in the hero.
+    if (resolved != null && resolved.capability.blocksEntirePage) {
+      return LoopFolioPrimary(
+        key: const ValueKey<String>('token-folio-blocked'),
+        variant: LoopFolioVariant.lime,
+        archetype: LoopFolioArchetype.record,
+        kicker: 'TOKEN FACTS',
+        heading: resolved.asset.symbol,
+        caption: loopReasonCodeText(
+          resolved.capability.reasonCode ?? 'ASSET_BLOCKED',
+        ),
+      );
+    }
     if (resolved == null) {
       return LoopFolioPrimary(
         key: const ValueKey<String>('token-folio-pending'),

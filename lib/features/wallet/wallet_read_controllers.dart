@@ -107,10 +107,16 @@ final class WalletActivityController
           .read(walletReadGatewayProvider)
           .loadActivity(walletId, cursor: cursor);
       if (!isCurrent(generation)) return;
+      // One indexed log is unique by transaction hash plus log index, so a
+      // row that was already shown is never appended twice.
+      final seen = current.items.map((entry) => entry.entryId).toSet();
       state = state.ready(
         LoopWalletActivityPage(
           walletId: current.walletId,
-          items: <LoopWalletActivityEntry>[...current.items, ...next.items],
+          items: <LoopWalletActivityEntry>[
+            ...current.items,
+            ...next.items.where((entry) => seen.add(entry.entryId)),
+          ],
           nextCursor: next.nextCursor,
           freshness: next.freshness,
           nativeTransfers: next.nativeTransfers,

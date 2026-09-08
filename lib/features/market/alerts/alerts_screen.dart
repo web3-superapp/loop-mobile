@@ -80,7 +80,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       actions: <Widget>[
         LoopIconButton(
           key: const ValueKey<String>('alerts-create-action'),
-          icon: 'plus',
+          icon: 'bell',
           label: '新建价格提醒',
           onPressed: blocked || state.busy
               ? null
