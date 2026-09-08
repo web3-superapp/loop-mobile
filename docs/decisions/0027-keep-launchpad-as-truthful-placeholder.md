@@ -2,7 +2,13 @@
 
 ## Status
 
-Accepted on 2026-08-28.
+Accepted on 2026-08-28. **Superseded by decision 0058 on 2026-09-09**: step 7
+connected the V2 launch catalogue and application flow, so the placeholder this
+decision preserved (`lib/features/launchpad/launchpad_screen.dart`) is deleted.
+Its underlying rule survives unchanged — the Launch destination still claims no
+issuer, eligibility, allocation or participation fact it cannot prove — but it
+is now enforced by a real `unavailable` projection from the server rather than
+by a static page.
 
 ## Context
 
