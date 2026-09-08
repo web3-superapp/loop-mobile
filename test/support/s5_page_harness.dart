@@ -91,6 +91,7 @@ final class FakeWalletReadGateway implements WalletReadGateway {
   final S5Answer<LoopWalletReceive> receive;
   final LoopChainFailureKind? switchFailure;
 
+  int directoryReads = 0;
   final List<String> switched = <String>[];
   final List<String?> expectedActive = <String?>[];
   final List<String?> activityCursors = <String?>[];
@@ -99,7 +100,10 @@ final class FakeWalletReadGateway implements WalletReadGateway {
   final LoopChainGatewayMode mode;
 
   @override
-  Future<LoopWalletDirectory> loadWallets() => directory.resolve();
+  Future<LoopWalletDirectory> loadWallets() {
+    directoryReads += 1;
+    return directory.resolve();
+  }
 
   @override
   Future<LoopWalletDirectory> setActiveWallet({

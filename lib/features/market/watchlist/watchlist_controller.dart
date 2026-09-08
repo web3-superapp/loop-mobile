@@ -73,6 +73,58 @@ final class WatchlistEditorState {
 
   bool get canSave => isDirty && !busy && !requiresReload;
 
+  /// A one-line description of what this draft changes, per group.
+  ///
+  /// It compares the draft against the version the page was rendered from, so
+  /// after a conflict the user can see what a reload would discard before
+  /// choosing to discard it.
+  List<String> get draftChanges {
+    final committed = snapshot?.groups;
+    final current = draft;
+    if (committed == null || current == null) return const <String>[];
+    final changes = <String>[];
+    final committedByKey = <String, WatchlistGroup>{
+      for (final group in committed) group.key: group,
+    };
+    for (final group in current) {
+      final before = committedByKey.remove(group.key);
+      if (before == null) {
+        changes.add('新增分组 ${group.name}');
+        continue;
+      }
+      final beforeIds = before.items
+          .map((item) => item.assetId)
+          .toList(growable: false);
+      final afterIds = group.items
+          .map((item) => item.assetId)
+          .toList(growable: false);
+      if (listEquals(beforeIds, afterIds)) continue;
+      final removed = beforeIds.where((id) => !afterIds.contains(id)).length;
+      final added = afterIds.where((id) => !beforeIds.contains(id)).length;
+      final reordered = removed == 0 && added == 0;
+      changes.add(
+        '${group.name}：'
+        '${reordered ? '重新排序' : <String>[if (added > 0) '新增 $added 项', if (removed > 0) '移除 $removed 项'].join('，')}',
+      );
+    }
+    for (final group in committedByKey.values) {
+      changes.add('移除分组 ${group.name}');
+    }
+    return List<String>.unmodifiable(changes);
+  }
+
+  /// The draft as plain text, so it can survive a reload on the clipboard.
+  String get draftAsText {
+    final buffer = StringBuffer('LOOP 自选草稿（基于版本 ${snapshot?.version ?? 0}）');
+    for (final group in groups) {
+      buffer.write('\n${group.name} [${group.key}]');
+      for (final item in group.items) {
+        buffer.write('\n  ${item.assetId}');
+      }
+    }
+    return buffer.toString();
+  }
+
   WatchlistEditorState copyWith({
     LoopChainViewPhase? phase,
     WatchlistSnapshot? snapshot,

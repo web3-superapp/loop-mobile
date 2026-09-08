@@ -70,6 +70,10 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     }
     final controller = ref.read(alertsControllerProvider.notifier);
     final armed = state.page?.armed ?? const <LoopPriceAlert>[];
+    // `entityRef` is `priceAlert:<alertId>`, so a feed entry points at exactly
+    // one row. Highlighting is driven by that reference, never by matching a
+    // symbol or a threshold the two objects happen to share.
+    final triggered = _triggeredAlertIds(ref);
 
     return LoopDashboardPage(
       key: const ValueKey<String>('alerts-screen'),
@@ -133,7 +137,12 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
           else
             LoopRecordGroup(
               rows: <LoopRecordRow>[
-                for (final alert in state.items) _alertRow(alert, controller),
+                for (final alert in state.items)
+                  _alertRow(
+                    alert,
+                    controller,
+                    highlighted: triggered.contains(alert.alertId),
+                  ),
               ],
             ),
           const LoopLabel('触发历史'),
@@ -159,13 +168,29 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     );
   }
 
-  LoopRecordRow _alertRow(LoopPriceAlert alert, AlertsController controller) {
+  /// The alert ids the feed says have fired, taken from each entry's
+  /// `entityRef`. An entry with no parsable reference contributes nothing.
+  Set<String> _triggeredAlertIds(WidgetRef ref) {
+    final feed = ref.watch(notificationFeedControllerProvider).value;
+    if (feed == null) return const <String>{};
+    return <String>{for (final entry in feed.priceAlerts) ?entry.priceAlertId};
+  }
+
+  LoopRecordRow _alertRow(
+    LoopPriceAlert alert,
+    AlertsController controller, {
+    bool highlighted = false,
+  }) {
     final currentPrice = _currentPriceFor(alert.assetId);
     final distance = alert.distancePercent(currentPrice);
     return LoopRecordRow(
+      // The key stays the alert's identity. A key that changed with the feed
+      // would remount the row on every refresh; the highlight is carried by
+      // the badge and the subtitle instead.
       key: ValueKey<String>('alert-${alert.alertId}'),
       title: alert.headline,
       subtitle: <String>[
+        if (highlighted) '通知已记录这次触发',
         alert.state.label,
         if (distance != null) '距目标 ${loopFormatPercent(distance)}',
         if (alert.lastEvaluatedAt == null)
@@ -174,7 +199,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
           '评估于 ${loopRelativeTime(alert.lastEvaluatedAt!)}',
       ].join(' · '),
       trailingBadge: LoopBadge(
-        alert.state.label,
+        highlighted ? '本次触发' : alert.state.label,
         kind: switch (alert.state) {
           LoopAlertState.active => LoopBadgeKind.up,
           LoopAlertState.triggered => LoopBadgeKind.mining,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/market/alerts/alert_models.dart';
@@ -140,6 +141,99 @@ void main() {
       // The local draft survives the conflict.
       expect(find.text('2 个自选资产'), findsOneWidget);
       expect(find.text('自选已保存'), findsNothing);
+    });
+
+    testWidgets('a conflict names what a reload would discard', (tester) async {
+      final watchlist = FakeWatchlistGateway(
+        replaceFailure: LoopChainFailureKind.versionConflict,
+      );
+      await pumpS5Page(
+        tester,
+        const WatchlistEditorScreen(),
+        watchlist: watchlist,
+      );
+
+      await tester.tap(
+        find.byKey(ValueKey<String>('watchlist-remove-$s5UsdtAssetId')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('watchlist-remove-confirm')),
+      );
+      await tester.pumpAndSettle();
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('watchlist-save')),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('watchlist-save')));
+      await tester.pumpAndSettle();
+
+      // A reload is destructive, so it is offered only beside a list of
+      // exactly what it discards.
+      expect(
+        find.byKey(const ValueKey<String>('watchlist-conflict-diff')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Mining：移除 1 项'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('watchlist-conflict-reload')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the draft can be copied before a reload discards it', (
+      tester,
+    ) async {
+      final writes = <MethodCall>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') writes.add(call);
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+
+      await pumpS5Page(
+        tester,
+        const WatchlistEditorScreen(),
+        watchlist: FakeWatchlistGateway(
+          replaceFailure: LoopChainFailureKind.versionConflict,
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(ValueKey<String>('watchlist-remove-$s5UsdtAssetId')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('watchlist-remove-confirm')),
+      );
+      await tester.pumpAndSettle();
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('watchlist-save')),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('watchlist-save')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('watchlist-conflict-copy-draft')),
+      );
+      await tester.pumpAndSettle();
+
+      final copied =
+          (writes.single.arguments as Map<Object?, Object?>)['text']! as String;
+      expect(copied, contains(s5WbnbAssetId));
+      expect(copied, contains(s5NativeAssetId));
+      // The removed row is not in the copy: the draft is what would be lost.
+      expect(copied, isNot(contains(s5UsdtAssetId)));
+      expect(find.text('草稿已复制'), findsOneWidget);
     });
 
     testWidgets('an unavailable capability stops the editor', (tester) async {
@@ -352,6 +446,84 @@ void main() {
       await tester.pumpAndSettle();
       expect(notifications.read, <String>[s5NotificationId]);
       expect(find.text('未读'), findsNothing);
+    });
+
+    testWidgets('a feed entry highlights exactly the alert it references', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const PriceAlertsScreen(),
+        alerts: FakeAlertsGateway(
+          page: S5Answer<LoopAlertPage>(
+            value: LoopAlertPage(
+              items: <LoopPriceAlert>[
+                s5Alert(),
+                LoopPriceAlert(
+                  alertId: s5OtherWalletId,
+                  assetId: s5UsdtAssetId,
+                  asset: s5Summary(symbol: 'USDT'),
+                  condition: LoopAlertCondition.below,
+                  threshold: s5Decimal('1'),
+                  thresholdText: '1',
+                  expiresAt: null,
+                  state: LoopAlertState.active,
+                  triggeredAt: null,
+                  lastEvaluatedAt: DateTime.utc(2026, 9, 8, 7),
+                  delivery: const LoopUnavailable('PUSH_RUNTIME_DEFERRED'),
+                  version: 1,
+                  createdAt: DateTime.utc(2026, 9, 8),
+                  updatedAt: DateTime.utc(2026, 9, 8),
+                ),
+              ],
+              nextCursor: null,
+            ),
+          ),
+        ),
+        notifications: FakeNotificationsGateway(),
+      );
+
+      // The feed's `entityRef` is `priceAlert:<alertId>`, so exactly the row it
+      // names is highlighted; the other alert is untouched even though both
+      // are active.
+      expect(
+        find.descendant(
+          of: find.byKey(ValueKey<String>('alert-$s5AlertId')),
+          matching: find.text('本次触发'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(ValueKey<String>('alert-$s5OtherWalletId')),
+          matching: find.text('本次触发'),
+        ),
+        findsNothing,
+      );
+      expect(find.textContaining('通知已记录这次触发'), findsOneWidget);
+    });
+
+    testWidgets('no feed entry means no alert row is highlighted', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const PriceAlertsScreen(),
+        alerts: FakeAlertsGateway(),
+        notifications: FakeNotificationsGateway(
+          feed: S5Answer<LoopNotificationFeed>(
+            value: LoopNotificationFeed(
+              items: const <LoopNotificationEntry>[],
+              nextCursor: null,
+              unreadCount: 0,
+              push: const LoopUnavailable('PUSH_RUNTIME_DEFERRED'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byKey(ValueKey<String>('alert-$s5AlertId')), findsOneWidget);
+      expect(find.text('本次触发'), findsNothing);
     });
 
     testWidgets('push is stated as unavailable, never as pending permission', (

@@ -189,10 +189,6 @@ String? loopFactQualityMarker(LoopFactQuality quality) => switch (quality) {
   LoopFactQuality.unavailable => null,
 };
 
-/// The em dash used only where a figure is structurally absent. A missing
-/// *source* is never an em dash: it is an unavailable explanation.
-const String loopMissingFigure = '—';
-
 /// zh-CN copy for a failed S5 operation. It states what did not happen; it
 /// never claims a result the server did not confirm.
 String loopChainFailureReason(LoopChainFailureKind? kind) => switch (kind) {
@@ -239,6 +235,7 @@ String loopReasonCodeText(String? reasonCode) => switch (reasonCode) {
   'CROSS_CHAIN_ACTIVITY_NOT_SUPPORTED' => '跨链与挖矿领取记录本步没有来源。',
   'PRIVY_ASSET_MAPPING_UNAVAILABLE' => '该资产无法与 Privy 的口径对齐，交叉核对不可用。',
   'PRIVY_WALLET_ID_UNAVAILABLE' => '外部钱包没有 Privy 钱包 ID，交叉核对不可用。',
+  'PRIVY_BALANCE_CROSS_CHECK_FAILED' => '与 Privy 的余额交叉核对失败，链上读数不受影响。',
   // asset capability
   'SWAP_MODULE_NOT_DELIVERED' => 'Swap 尚未交付，本页不渲染任何买卖入口。',
   'ASSET_NOT_READABLE' => '该资产已不可读，只保留这一行以便你把它移除。',

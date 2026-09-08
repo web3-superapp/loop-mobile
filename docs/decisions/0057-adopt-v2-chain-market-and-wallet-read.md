@@ -98,9 +98,11 @@ Six constraints shaped the result:
    else.** The backend pins it to `false` until D15, so `token` renders the
    server's `SWAP_MODULE_NOT_DELIVERED` explanation instead of a buy or sell
    control.
-9. **The Hyperliquid Spot slice is unmounted.** `lib/integrations/hyperliquid/`
-   is retained as history — its repositories and their tests still run — but no
-   product route, screen or composition root references it. The preview candle
+9. **The Hyperliquid slice is unmounted.** `lib/integrations/hyperliquid/` is
+   retained as history — its repositories and their tests still run — but no
+   product route, screen, composition root or Preview root references it. Both
+   `main.dart` and `main_preview.dart` are free of it, so the harness can
+   assert that no mounted source imports the package at all. The preview candle
    sketch it fed moves into the retained Perp slice.
 10. **`notif-settings` moves to the ten V2 categories.** `security.event` is
     locked on: the switch is not interactive and every write submits `true`,
@@ -114,8 +116,11 @@ Six constraints shaped the result:
     is a dependency-free byte-mode QR encoder, so the EIP-681 URI becomes a
     scannable symbol without adding a package to the locked stack. It imports
     nothing beyond `package:flutter/foundation.dart`.
-13. **The capability enum follows the contract's 27 ids** with `marketRead`,
-    `priceAlerts` and `notificationsFeed`.
+13. **The capability enum follows the frozen contract exactly**, whatever the
+    step consumes. Step 5 added `marketRead`, `priceAlerts` and
+    `notificationsFeed`; `referral` was adopted from the step-7 contract while
+    this branch was open. The parser requires the exact set, so a contract the
+    client does not track would be rejected wholesale.
 14. **The receive QR is not verified on a device.** The encoder is covered by
     known-answer tests against reference symbols, but no physical scan has
     been performed; it stays on the external Go/No-Go list.

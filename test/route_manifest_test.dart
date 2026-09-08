@@ -407,6 +407,28 @@ void main() {
       }
     });
   });
+
+  group('retired Home surfaces', () {
+    test('the Home slice source is gone, not merely unmounted', () {
+      // Step 5 deleted `lib/features/home/home_screens.dart` (decision 0057).
+      // Its three screens — Home, the standalone notification centre and the
+      // Home security activity page — are product red lines, so the evidence
+      // that they stay retired is that the source no longer exists at all.
+      expect(File('lib/features/home/home_screens.dart').existsSync(), isFalse);
+      expect(Directory('lib/features/home').existsSync(), isFalse);
+    });
+
+    test('their three locations stay retired and unmounted', () {
+      for (final retired in <String>[
+        '/home/net-worth',
+        '/home/security',
+        '/notifications',
+      ]) {
+        expect(LoopRouteManifest.retiredPaths, contains(retired));
+        expect(LoopRouteManifest.byPath(retired), isNull);
+      }
+    });
+  });
 }
 
 Iterable<String> _flatten(List<RouteBase> routes) sync* {

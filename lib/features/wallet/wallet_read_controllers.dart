@@ -18,8 +18,13 @@ final class WalletDirectoryController
       ref.read(walletReadGatewayProvider).loadWallets();
 
   /// Switches the active wallet under a compare-and-set on the currently
-  /// rendered active id. A concurrent switch fails with `versionConflict`, and
-  /// the page reloads before offering the action again.
+  /// rendered active id.
+  ///
+  /// A concurrent switch fails with `versionConflict`. The directory is then
+  /// re-read before the action is offered again, because the id this page was
+  /// rendered from is provably no longer the server's. The controller stays
+  /// busy across both the write and that reload, so no row can be tapped while
+  /// the page is showing an id the server has already replaced.
   Future<bool> setActive(String walletId) async {
     final current = state.value;
     if (current == null || state.busy) return false;
@@ -35,10 +40,32 @@ final class WalletDirectoryController
       return true;
     } on LoopChainException catch (error) {
       state = state.working(false).failed(error.kind);
+      if (error.kind == LoopChainFailureKind.versionConflict) {
+        await _reloadAfterConflict();
+      }
       return false;
     } catch (_) {
       state = state.working(false).failed(LoopChainFailureKind.unexpected);
       return false;
+    }
+  }
+
+  /// Re-reads the directory while keeping the conflict visible.
+  ///
+  /// The failure kind survives the reload so the page can still say the switch
+  /// did not happen; only the stale id is replaced.
+  Future<void> _reloadAfterConflict() async {
+    final conflict = state.failureKind;
+    state = state.working(true);
+    try {
+      final directory = await ref.read(walletReadGatewayProvider).loadWallets();
+      state = state
+          .ready(directory)
+          .failed(conflict ?? LoopChainFailureKind.versionConflict);
+    } on LoopChainException catch (error) {
+      state = state.working(false).failed(error.kind);
+    } catch (_) {
+      state = state.working(false).failed(LoopChainFailureKind.unexpected);
     }
   }
 }

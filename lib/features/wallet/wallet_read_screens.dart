@@ -734,7 +734,9 @@ class _CrossCheckCard extends StatelessWidget {
       return LoopUnavailableCard(
         key: const ValueKey<String>('wallet-asset-crosscheck-unavailable'),
         label: '与 Privy 的交叉核对不可用',
-        reasonCode: crossCheck.reasonCode ?? 'PRIVY_ASSET_MAPPING_UNAVAILABLE',
+        // The server may state no reason. Substituting one here would invent a
+        // cause it never reported, so the card falls back to a neutral line.
+        reasonCode: crossCheck.reasonCode,
       );
     }
     return LoopNotice(
@@ -947,7 +949,7 @@ class _ReceiveQrCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // The EIP-681 string is encoded on the device; the backend never sends an
-    // image, and no dependency was added for it (decision 0055).
+    // image, and no dependency was added for it (decision 0057).
     final code = LoopQrCode.encode(network.uri);
     return LoopChalkCard(
       key: const ValueKey<String>('receive-card'),

@@ -166,13 +166,16 @@ class LoopUnavailableCard extends StatelessWidget {
        );
 
   final String label;
-  final String reasonCode;
+
+  /// `null` when the server stated no reason. The card then renders the
+  /// neutral sentence rather than inventing a code the server never sent.
+  final String? reasonCode;
   final EdgeInsets margin;
 
   @override
   Widget build(BuildContext context) {
     return LoopEmpty(
-      key: ValueKey<String>('unavailable-$reasonCode'),
+      key: ValueKey<String>('unavailable-${reasonCode ?? 'unstated'}'),
       icon: 'warn',
       message: label,
       reason: loopReasonCodeText(reasonCode),

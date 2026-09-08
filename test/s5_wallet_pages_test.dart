@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
@@ -393,6 +394,54 @@ void main() {
       expect(find.text('Ethereum'), findsNothing);
       expect(find.text('Solana'), findsNothing);
       expect(find.text('Base'), findsNothing);
+    });
+
+    testWidgets('copying puts the full address on the clipboard', (
+      tester,
+    ) async {
+      final writes = <MethodCall>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') writes.add(call);
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+
+      await pumpS5Page(
+        tester,
+        const ReceiveScreen(walletId: s5WalletId),
+        wallet: FakeWalletReadGateway(),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('receive-copy-address')),
+      );
+      await tester.pumpAndSettle();
+
+      // The clipboard carries the exact full address, never the truncated
+      // display form the wallet list uses.
+      expect(writes, hasLength(1));
+      expect(
+        (writes.single.arguments as Map<Object?, Object?>)['text'],
+        s5Address,
+      );
+      expect(find.text('地址已复制'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey<String>('receive-copy-uri')));
+      await tester.pumpAndSettle();
+
+      expect(
+        (writes.last.arguments as Map<Object?, Object?>)['text'],
+        'ethereum:$s5Address@56',
+      );
+      expect(find.text('付款链接已复制'), findsOneWidget);
     });
 
     testWidgets('an unavailable receive read states its reason', (

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
@@ -102,20 +103,22 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          if (state.requiresReload)
+          if (state.requiresReload) ...<Widget>[
             LoopNotice(
               key: const ValueKey<String>('watchlist-conflict'),
               tone: LoopNoticeTone.warn,
               icon: 'warn',
               title: '版本冲突 —— 没有覆盖任何内容',
-              body: '自选已在其他设备上改动。请重新加载后再编辑；重新加载会丢弃当前草稿。',
-              trailing: LoopButton(
-                key: const ValueKey<String>('watchlist-conflict-reload'),
-                label: '重新加载',
-                onPressed: () => unawaited(controller.reload()),
-              ),
-            )
-          else if (state.failureKind != null)
+              body: '自选已在其他设备上改动。重新加载会丢弃下面这些改动，先复制草稿再决定。',
+            ),
+            // A reload is destructive, so it is offered only next to a list of
+            // exactly what it would discard and a way to keep that list.
+            _ConflictDiff(
+              changes: state.draftChanges,
+              onCopyDraft: () => unawaited(_copyDraft(state.draftAsText)),
+              onReload: () => unawaited(controller.reload()),
+            ),
+          ] else if (state.failureKind != null)
             LoopErrorState(
               key: const ValueKey<String>('watchlist-save-error'),
               title: '自选没有保存',
@@ -200,6 +203,12 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
         ],
       ],
     );
+  }
+
+  Future<void> _copyDraft(String draft) async {
+    await Clipboard.setData(ClipboardData(text: draft));
+    if (!mounted) return;
+    LoopToast.show(context, message: '草稿已复制', kind: LoopToastKind.ok);
   }
 
   Future<void> _save(WatchlistEditorController controller) async {
@@ -329,6 +338,66 @@ class _ReorderableWatchlist extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Names every change a reload would discard, and offers to keep them.
+class _ConflictDiff extends StatelessWidget {
+  const _ConflictDiff({
+    required this.changes,
+    required this.onCopyDraft,
+    required this.onReload,
+  });
+
+  final List<String> changes;
+  final VoidCallback onCopyDraft;
+  final VoidCallback onReload;
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopSurfaceCard(
+      key: const ValueKey<String>('watchlist-conflict-diff'),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text('重新加载会丢弃', style: LoopMono.label),
+          const SizedBox(height: 6),
+          if (changes.isEmpty)
+            Text(
+              '这份草稿与已提交的版本没有差异。',
+              key: const ValueKey<String>('watchlist-conflict-no-diff'),
+              style: Theme.of(context).textTheme.bodyMedium,
+            )
+          else
+            for (final change in changes)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Text(
+                  '· $change',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+          const SizedBox(height: 12),
+          LoopButtonPair(
+            padded: false,
+            children: <Widget>[
+              LoopButton(
+                key: const ValueKey<String>('watchlist-conflict-copy-draft'),
+                label: '复制当前草稿',
+                onPressed: onCopyDraft,
+              ),
+              LoopButton(
+                key: const ValueKey<String>('watchlist-conflict-reload'),
+                label: '重新加载',
+                primary: true,
+                onPressed: onReload,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

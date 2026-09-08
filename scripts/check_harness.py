@@ -199,8 +199,6 @@ REQUIRED_FILES = (
     "lib/integrations/social/loop_social_repository.dart",
     "lib/integrations/social/loop_social_transport_models.dart",
     "lib/integrations/social/memory_friend_gateway.dart",
-    "test/home_discovery_and_security_test.dart",
-    "test/home_portfolio_truthfulness_test.dart",
     "test/security_capability_truthfulness_test.dart",
     "test/loop_dio_factory_test.dart",
     "test/send_asset_search_test.dart",
@@ -248,7 +246,6 @@ REQUIRED_FILES = (
     "test/hyperliquid_spot_market_repository_test.dart",
     "test/local_settings_and_help_test.dart",
     "test/loop_display_preferences_test.dart",
-    "test/notifications_screen_test.dart",
     "test/external_wallet_credential_gateway_test.dart",
     "test/identity_auth_controller_test.dart",
     "test/post_auth_bootstrap_coordinator_test.dart",
@@ -657,7 +654,7 @@ S5_PORT_DEFAULTS = (
     ),
 )
 S5_CAPABILITY_META_PATH = Path("lib/integrations/backend/v2/loop_v2_meta.dart")
-# The contract's 27 capability ids, in contract order.
+# The contract's 28 capability ids, in contract order.
 S5_CAPABILITY_IDS = (
     "privyAuthentication",
     "accountSession",
@@ -677,6 +674,7 @@ S5_CAPABILITY_IDS = (
     "sendApprovals",
     "launch",
     "mining",
+    "referral",
     "priceAlerts",
     "notificationsFeed",
     "pushNotifications",
@@ -1960,7 +1958,7 @@ def check_dependency_pins(root: Path) -> list[str]:
 
 
 SPOT_ONLY_PRIMARY_PATHS = (
-    "lib/features/home/home_screens.dart",
+    # Step 5 deleted the Home slice outright (decision 0057).
     # Step 5 retired `wallet_overview_screens.dart`; the mounted Wallet pages
     # are the V2 read-only screens.
     "lib/features/wallet/wallet_read_screens.dart",
@@ -2105,14 +2103,14 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
             "handler; no `/perp` path may be mounted or redirected"
         )
 
-    # Step 5 retired the providerless token Preview route. `market_secondary_screens.dart`
-    # now opens the mounted V2 token page through `MarketAssetRoute`, so only Home —
-    # which still has no reviewed asset source — may not link to it.
-    home_path = root / "lib/features/home/home_screens.dart"
-    if home_path.is_file() and "/market/token" in read_text(home_path):
+    # Step 5 deleted the Home slice, so the rule that it may not link to a
+    # token route has no subject left. The file must not come back: Home, a
+    # standalone notification centre and the Home security page are product
+    # red lines, and their three locations stay in `retiredPaths`.
+    if (root / "lib/features/home/home_screens.dart").is_file():
         errors.append(
-            "lib/features/home/home_screens.dart must not open token routes "
-            "without a reviewed asset source"
+            "lib/features/home/home_screens.dart is retired (decision 0057) and "
+            "must not be restored"
         )
 
     # Only the canonical route contract may build a token location.
@@ -3053,11 +3051,8 @@ def check_chat_preview_conversation_id_contract(root: Path) -> list[str]:
                 # surface its LOOP-assigned prefix names.
                 "loopChatLocationForCid(state.pathParameters['cid'] ?? '')",
             ),
-            # Step 3 retired the Home Global Search slice; the Preview
-            # notification target keeps the exact registered group location.
-            "lib/features/home/home_screens.dart": (
-                "PreviewConversationIdentity.group.location",
-            ),
+            # Step 5 deleted the Home slice, so the Preview notification
+            # target it carried is retired with it (decision 0057).
             "test/chat_preview_conversation_identity_test.dart": (
                 "CommunicationFailure.conversationNotFound.code",
                 "another-group",
@@ -3223,13 +3218,7 @@ def check_chat_preview_conversation_id_contract(root: Path) -> list[str]:
             "gateway",
             "Preview memory gateway",
         ),
-        (
-            "lib/features/home/home_screens.dart",
-            "class NotificationsScreen",
-            "class _NotificationCard",
-            "home_notification",
-            "Home Preview notification target",
-        ),
+        # Step 5 deleted the Home slice and its Preview notification target.
         (
             "lib/app.dart",
             "path: '/chat/channel/:cid'",
@@ -5164,373 +5153,15 @@ def check_network_dio_policy_contract(root: Path) -> list[str]:
     return errors
 
 
-# Step 3 retired the Home-era Global Search slice: `/search` is now the V2
-# five-domain search page, covered by test/community_social_pages_test.dart.
-HOME_DISCOVERY_SECURITY_TEST_MARKERS = {
-    Path("test/home_discovery_and_security_test.dart"): (
-        "production Security is unavailable and contains no fixture facts or actions",
-        "production LoopApp retires the Home security route to Community",
-        "explicit Preview Security is visibly labelled and has no score or provider action",
-        "Home security activity opens the bounded security surface",
-    ),
-}
-HOME_DISCOVERY_SECURITY_TEST_FINGERPRINT = (
-    "6a1d98752061c94e9466a017a2c612f88041dd0581821ae2c458feeeed0cab80"
-)
-HOME_DISCOVERY_SECURITY_SOURCE_FINGERPRINTS = {
-    "entry": "421bd4be7cf8adeb87f4bac46f3af849d41c7685db318703b232811b844f7394",
-    "security": "4ead4f824e2cb3c2794442ec18490c587f05f8303da5d0cdbbfe212ad7b0685b",
-}
-
-
-def check_home_discovery_and_security_contract(root: Path) -> list[str]:
-    """Keep local Home discovery interactive and production security truthful."""
-
-    errors = require_fragments(
-        root,
-        {
-            "lib/features/home/home_screens.dart": (
-                "onTap: () => context.push('/home/security')",
-                "session.mode == LoopSessionMode.preview",
-                "security-activity-provider-unavailable",
-                "security-activity-preview-fixtures",
-                "Example week · 演示数据",
-            ),
-            "lib/app.dart": (
-                "path: '/search'",
-                # Step 3: `/search` mounts the V2 five-domain search page.
-                "GlobalSearchScreen(",
-                "initialQuery: state.uri.queryParameters['q']",
-            ),
-            "test/home_discovery_and_security_test.dart": tuple(
-                marker
-                for markers in HOME_DISCOVERY_SECURITY_TEST_MARKERS.values()
-                for marker in markers
-            ),
-            "lib/core/navigation/surface_catalog.dart": (
-                "Labelled local Preview filtering; production cross-product search remains unavailable.",
-                "Production remains unavailable until verified wallet and account event sources exist.",
-            ),
-            "AGENTS.md": (
-                "Keep Home Search and Security Activity source-scoped.",
-                "production Security must not infer all-clear, MFA, device, approval, severity, count, or risk facts",
-            ),
-            "README.md": (
-                "Home Global Search 已闭合 providerless 前端行为",
-                "Home Security Activity 已关闭无来源的安全结论",
-            ),
-            "docs/product/implementation-constraints.md": (
-                "Home Global Search may filter only its bounded, process-local examples in explicit Preview mode.",
-                "Security Activity is unknown when its wallet and account event sources are absent.",
-            ),
-            "docs/product-decisions.md": (
-                "Home Global Search has one bounded providerless Preview projection",
-                "Home Security Activity has no approved production event source or schema.",
-            ),
-            "docs/decisions/0026-bound-home-discovery-and-security-facts.md": (
-                "## Status",
-                "## Context",
-                "## Decision",
-                "## Consequences",
-                "## Evidence",
-            ),
-            "docs/failures/providerless-security-activity-facts.md": (
-                "## Summary",
-                "## Root Cause",
-                "## Detection",
-                "## Prevention",
-                "## Evidence",
-            ),
-            "docs/harness/adoption-report.md": (
-                "## Home Discovery and Security Truth Boundary",
-            ),
-            "docs/phase-1/frontend-integration-report.md": (
-                "## Home Discovery and Security Truth Boundary",
-            ),
-        },
-    )
-
-    source_path = root / "lib/features/home/home_screens.dart"
-    if source_path.is_file():
-        source = read_text(source_path)
-        entry_start = source.find(
-            "        _ActivityRow(\n          icon: Icons.shield_outlined,"
-        )
-        entry_end = source.find("      ],\n    );\n  }\n}", entry_start)
-        if entry_start < 0 or entry_end < 0:
-            errors.append("Home Security entry must retain one bounded reviewed slice")
-        elif normalized_dart_source_fingerprint(source[entry_start:entry_end]) != (
-            HOME_DISCOVERY_SECURITY_SOURCE_FINGERPRINTS["entry"]
-        ):
-            errors.append(
-                "Home Security entry must match its reviewed bounded-route fingerprint"
-            )
-        if "class GlobalSearchScreen" in source:
-            errors.append(
-                "lib/features/home/home_screens.dart must not restore the retired "
-                "Home Global Search slice; `/search` is the V2 search page"
-            )
-        security_start = source.find("class SecurityActivityScreen")
-        if security_start < 0:
-            errors.append(
-                "Home Security must retain one bounded reviewed source slice"
-            )
-        else:
-            security_source = source[security_start:]
-            if normalized_dart_source_fingerprint(security_source) != (
-                HOME_DISCOVERY_SECURITY_SOURCE_FINGERPRINTS["security"]
-            ):
-                errors.append(
-                    "Home Security Activity must match its reviewed production-truth fingerprint"
-                )
-            for forbidden in ("No urgent action", "MFA is active"):
-                if forbidden in security_source:
-                    errors.append(
-                        "Home Security Activity must not restore providerless positive security facts"
-                    )
-            if "onPressed:" in security_source:
-                errors.append(
-                    "Home Security Activity must not expose a providerless account action"
-                )
-
-    app_path = root / "lib/app.dart"
-    if app_path.is_file():
-        app_source = strip_dart_comments(read_text(app_path))
-        # Home and its security activity route were retired with the 93-route
-        # manifest (decision 0050). The screen source stays unmounted history.
-        for forbidden in ("'/home/security'", "SecurityActivityScreen("):
-            if forbidden in app_source:
-                errors.append(
-                    "lib/app.dart must not mount the retired Home security route "
-                    f"`{forbidden}`"
-                )
-
-    test_path = root / "test/home_discovery_and_security_test.dart"
-    if test_path.is_file() and normalized_dart_source_fingerprint(
-        read_text(test_path)
-    ) != HOME_DISCOVERY_SECURITY_TEST_FINGERPRINT:
-        errors.append(
-            "test/home_discovery_and_security_test.dart must match its reviewed executable evidence fingerprint"
-        )
-
-    errors.extend(
-        check_behavior_test_evidence(root, HOME_DISCOVERY_SECURITY_TEST_MARKERS)
-    )
-    return errors
-
-
-HOME_PORTFOLIO_TEST_MARKERS = {
-    Path("test/home_portfolio_truthfulness_test.dart"): (
-        "production B1 contains no portfolio or activity fixtures",
-        "restricted B1 never upgrades cached identity into wallet facts",
-        "verified B1 without a wallet stays unavailable",
-        "invalid B1 wallet identity never implies portfolio facts",
-        "explicit Preview B1 keeps every fixture visibly labelled",
-        # Step 5 retired the Preview Net Worth slice (decision 0057), so the
-        # four B2 tests went with it and the scroll test is B1-only.
-        "B1 remains scrollable at 200 percent text",
-    ),
-}
-# Re-baselined by step 5: the four B2 tests were retired with the Preview Net
-# Worth slice (decision 0057) and the scroll test is now B1-only.
-HOME_PORTFOLIO_TEST_FINGERPRINT = (
-    "aa76e508a69fd199e75807fe2d52cc9c0d1f283de0c9fff80c52a11e5f43d0b2"
-)
-HOME_PORTFOLIO_SOURCE_FINGERPRINTS = {
-    "selector": "86dbf9882a3666b0856e00b3124d01d1c338f0288f279600727cf7f966b9827a",
-    "production": "a9a0597d545713f7d417ae01d1fb086315f58523f07e748b802e7ecca5cd80ba",
-    "preview": "81b170bfb97defe23e816b2861647f2278d6edfec86abee32bc72e23551ec695",
-    "identity": "e93b2652095e01c3e339d39e0c05647825b4962277a808c2fb16107b1a8d7ab1",
-    "communication": "377d8b039926c66a740bdaa212cb930b5a17e39433fda7c135e27ed716eb93f5",
-    # Step 5 retired the Preview Net Worth slice and its bounded application
-    # route (decision 0057); `networth` is now a V2 wallet-read page, so the
-    # B2 source and route fingerprints are retired with it.
-}
-
-
-def check_home_portfolio_truth_contract(root: Path) -> list[str]:
-    """Keep B1/B2 portfolio fixtures inside exact Development Preview."""
-
-    errors = require_fragments(
-        root,
-        {
-            "lib/features/home/home_screens.dart": (
-                "final isSessionPreview = session.isPreview;",
-                "WalletReadiness.fromSession(session)",
-                "home-production-truth-boundary",
-                "home-preview-fixtures",
-                "home-production-activity-unavailable",
-                "home-open-net-worth",
-                "final title = preview ? 'ETH Macro Room' : 'Audio Room';",
-            ),
-            # B2 moved to the V2 wallet-read module; the route still exists and
-            # must keep pointing at that page, not at a Preview allocation.
-            "lib/app.dart": (
-                "path: '/wallet/networth'",
-                "NetWorthScreen(onBack: () => _popOrHome(context))",
-            ),
-            "lib/features/wallet/wallet_read_screens.dart": (
-                "class NetWorthScreen",
-                "walletBalancesControllerProvider",
-                "净值不是余额",
-            ),
-            "lib/core/navigation/surface_catalog.dart": (
-                "Provider-scoped availability; portfolio and activity fixtures remain inside a labelled Preview.",
-                "Production portfolio facts are unavailable; static allocation remains inside a labelled Preview.",
-            ),
-            "test/home_portfolio_truthfulness_test.dart": tuple(
-                marker
-                for markers in HOME_PORTFOLIO_TEST_MARKERS.values()
-                for marker in markers
-            ),
-            "AGENTS.md": (
-                "Keep Home Portfolio and Net Worth source-scoped.",
-                "A verified Privy wallet proves current-session wallet identity only, never balance or net worth.",
-            ),
-            "README.md": (
-                "Home 与 Net Worth 已关闭无来源的资产和活动结论",
-                "钱包身份不等于余额证据",
-            ),
-            "docs/product/implementation-constraints.md": (
-                "Home Portfolio, Net Worth, allocation, and cross-product activity are unknown",
-                "wallet identity is not balance evidence",
-                "No refresh, retry, loading, empty, or error behavior exists without an actual request owner.",
-            ),
-            "docs/product-decisions.md": (
-                "Home Portfolio and Net Worth have no approved production balance, allocation, or cross-product activity source.",
-                "wallet identity is not balance evidence",
-            ),
-            "docs/decisions/0037-bound-home-portfolio-and-net-worth-facts.md": (
-                "# 0037 Bound Home Portfolio and Net Worth Facts",
-                "## Status",
-                "## Context",
-                "## Decision",
-                "## Consequences",
-                "## Evidence",
-                "Wallet identity is not balance evidence.",
-                "No portfolio, balance, allocation, or cross-product activity request is",
-                "added. This slice adds no gateway, backend route, SDK, dependency, refresh,",
-            ),
-            "docs/failures/providerless-home-portfolio-facts.md": (
-                "# Providerless Home Portfolio Facts",
-                "## Summary",
-                "## Root Cause",
-                "## Detection",
-                "## Prevention",
-                "## Evidence",
-                "Production B1 and B2 render unavailable states",
-                "No refresh, retry, loading, empty, or failure state is inferred",
-            ),
-            "docs/harness/adoption-report.md": (
-                "## Home Portfolio and Net Worth Truth Boundary",
-            ),
-            "docs/phase-1/frontend-integration-report.md": (
-                "## Home Portfolio and Net Worth Truth Boundary",
-            ),
-        },
-    )
-
-    source_path = root / "lib/features/home/home_screens.dart"
-    if source_path.is_file():
-        source = read_text(source_path)
-        slices = {
-            "selector": (
-                "class HomeScreen",
-                "class _HomeProductionContent",
-                "Home session selector",
-            ),
-            "production": (
-                "class _HomeProductionContent",
-                "class _HomePreviewContent",
-                "Production B1",
-            ),
-            "preview": (
-                "class _HomePreviewContent",
-                "class _PortfolioUnavailableHero",
-                "Preview B1",
-            ),
-            "identity": (
-                "class _PortfolioUnavailableHero",
-                "class _PayComingSoonCard",
-                "Home wallet-identity projection",
-            ),
-            "communication": (
-                "class _CommunicationStatusCard",
-                "class _VoicePreviewGlyph",
-                "Home communication title boundary",
-            ),
-        }
-        reviewed: dict[str, str] = {}
-        for key, (start_marker, end_marker, label) in slices.items():
-            start = source.find(start_marker)
-            end = source.find(end_marker, start + 1)
-            if start < 0 or end < 0:
-                errors.append(f"{label} must retain one bounded reviewed source slice")
-                continue
-            reviewed[key] = source[start:end]
-            if normalized_dart_source_fingerprint(reviewed[key]) != (
-                HOME_PORTFOLIO_SOURCE_FINGERPRINTS[key]
-            ):
-                errors.append(
-                    f"{label} must match its reviewed Home portfolio truth fingerprint"
-                )
-
-        production_source = strip_dart_comments(reviewed.get("production", ""))
-        for forbidden in (
-            "46,806.55",
-            "+2.6% today",
-            "3 watchlist moves",
-            "18 unread",
-            "Wallet ready",
-            "Glyph Hunters",
-            "ETH Macro Room",
-            "ETH moved above your alert",
-            "One approval can spend your USDC",
-            "_PortfolioHero(",
-            "_ActivityRow(",
-            "LoopMiniChart(",
-        ):
-            if forbidden in production_source:
-                errors.append(
-                    "Production B1 must not restore static portfolio or activity "
-                    f"fact `{forbidden}`"
-                )
-
-    # Step 5 retired the Preview / Production Net Worth split inside
-    # `home_screens.dart`. The mounted `networth` page now reads the V2 wallet
-    # module, so the static-allocation fixtures it guarded no longer exist.
-
-    app_path = root / "lib/app.dart"
-    if app_path.is_file():
-        app_source = read_text(app_path)
-        route_start = app_source.find(
-            "      GoRoute(\n        path: '/wallet/networth',"
-        )
-        route_end = app_source.find(
-            "      GoRoute(\n        path: MarketAssetRoute.tokenPath,",
-            route_start + 1,
-        )
-        if route_start < 0 or route_end < 0:
-            errors.append("B2 Net Worth route must retain one bounded reviewed slice")
-        else:
-            route_source = app_source[route_start:route_end]
-            for forbidden in ("state.extra", "isPreview", "MarketSnapshotState"):
-                if forbidden in route_source:
-                    errors.append(
-                        "B2 Net Worth route must not recover portfolio identity "
-                        f"from `{forbidden}`"
-                    )
-
-    test_path = root / "test/home_portfolio_truthfulness_test.dart"
-    if test_path.is_file() and normalized_dart_source_fingerprint(
-        read_text(test_path)
-    ) != HOME_PORTFOLIO_TEST_FINGERPRINT:
-        errors.append(
-            "test/home_portfolio_truthfulness_test.dart must match its reviewed executable evidence fingerprint"
-        )
-
-    errors.extend(check_behavior_test_evidence(root, HOME_PORTFOLIO_TEST_MARKERS))
-    return errors
+# Step 5 deleted `lib/features/home/home_screens.dart` (decision 0057) with the
+# three screens it carried: Home, the standalone notification centre and the
+# Home security activity page. All three are product red lines, so the two
+# guards that used to police their copy — Home discovery/security and the B1/B2
+# portfolio truth — are retired with their subject. What replaces them is
+# stronger: `check_spot_only_product_contract` fails if the file returns at all,
+# and `test/route_manifest_test.dart` proves the source is gone and that
+# `/home/net-worth`, `/home/security` and `/notifications` stay in
+# `retiredPaths`.
 
 
 def check_spot_candle_contract(root: Path) -> list[str]:
@@ -8539,7 +8170,7 @@ def check_s5_truth_contract(root: Path) -> list[str]:
                 "S5 port is unavailable until lib/main.dart mounts its adapter"
             )
 
-    # 2. The capability enum follows the contract's 27 ids, in contract order.
+    # 2. The capability enum follows the contract's 28 ids, in contract order.
     meta_path = root / S5_CAPABILITY_META_PATH
     if meta_path.is_file():
         meta_source = strip_dart_comments(read_text(meta_path))
@@ -10330,14 +9961,12 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_chat_spot_snapshot_contract(root))
     errors.extend(check_chat_preview_message_request_contract(root))
     errors.extend(check_chat_preview_conversation_id_contract(root))
-    errors.extend(check_home_discovery_and_security_contract(root))
     errors.extend(check_security_capability_truth_contract(root))
     errors.extend(check_local_display_preferences_contract(root))
     errors.extend(check_build_profile_configuration_contract(root))
     errors.extend(check_network_dio_policy_contract(root))
     errors.extend(check_stream_token_client_contract(root))
     errors.extend(check_v2_session_contract(root))
-    errors.extend(check_home_portfolio_truth_contract(root))
     errors.extend(check_spot_candle_contract(root))
     errors.extend(check_wallet_identity_readiness_contract(root))
     errors.extend(check_wallet_preview_route_contract(root))
@@ -10384,7 +10013,7 @@ def main() -> int:
     print(
         "Harness check passed: profile, five-destination V2 contract, "
         "V2 community truth, pins, "
-        "Spot-only product, New Pairs source-scoped truth, Chat snapshot, Preview request truth and exact conversation identity, Home portfolio truth, security capability truth, device-local display preferences, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
+        "Spot-only product, New Pairs source-scoped truth, Chat snapshot, Preview request truth and exact conversation identity, security capability truth, device-local display preferences, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
         "S5 chain/market/wallet-read truth, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, and secret rules are consistent."

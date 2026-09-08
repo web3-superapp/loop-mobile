@@ -485,6 +485,14 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
     if (activeWalletId != null && !seen.contains(activeWalletId)) {
       LoopV2ChainCodec.invalid();
     }
+    // Exactly the named row may claim to be active. Two sources of truth for
+    // "which wallet am I using" is one too many, so a directory that disagrees
+    // with itself is an invalid payload rather than a resolved guess.
+    for (final wallet in wallets) {
+      if (wallet.isActive != (wallet.walletId == activeWalletId)) {
+        LoopV2ChainCodec.invalid();
+      }
+    }
     return LoopWalletDirectory(
       wallets: wallets,
       activeWalletId: activeWalletId,

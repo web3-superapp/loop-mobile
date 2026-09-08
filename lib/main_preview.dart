@@ -12,8 +12,6 @@ import 'package:loop_mobile/features/profile/social_privacy/social_privacy_gatew
 import 'package:loop_mobile/features/profile/social_privacy/social_privacy_models.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
-import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_fixture_adapter.dart';
-import 'package:loop_mobile/integrations/hyperliquid/hyperliquid_trading_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/memory_privacy_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/memory_profile_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/memory_social_privacy_gateway.dart';
@@ -107,9 +105,6 @@ Future<void> main() async {
               updatedAt: DateTime.utc(2026, 8, 25),
             ),
           ),
-        ),
-        hyperliquidTradingGatewayProvider.overrideWithValue(
-          const HyperliquidFixtureAdapter(),
         ),
         walletSigningGatewayProvider.overrideWithValue(
           const PrivyFixtureAdapter(),
