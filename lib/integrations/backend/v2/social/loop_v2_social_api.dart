@@ -45,6 +45,13 @@ abstract interface class LoopV2SocialApi {
     String? cursor,
   });
 
+  Future<MessageRequestEntry> sendMessageRequest({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required String publicProfileId,
+  });
+
   Future<MessageRequestOutcome> decideMessageRequest({
     required String accessToken,
     required String clientVersion,
@@ -353,34 +360,9 @@ final class DioLoopV2SocialApi implements LoopV2SocialApi {
         root['items'],
         maximum: 50,
       )) {
-        final item = LoopV2Contract.strictMap(raw, const <String>{
-          'messageRequestId',
-          'profile',
-          'createdAt',
-          'expiresAt',
-          'preview',
-          'aiModeration',
-        });
         items.add(
-          MessageRequestEntry(
-            messageRequestId: LoopV2Contract.requiredString(
-              item,
-              'messageRequestId',
-              pattern: LoopV2Contract.uuidPattern,
-            ),
-            profile: LoopV2ProjectionCodec.profile(item['profile']),
-            createdAt: LoopV2ProjectionCodec.requireTimestamp(
-              item,
-              'createdAt',
-            ),
-            expiresAt: LoopV2ProjectionCodec.requireTimestamp(
-              item,
-              'expiresAt',
-            ),
-            preview: LoopV2ProjectionCodec.unavailable(item['preview']),
-            aiModeration: LoopV2ProjectionCodec.unavailable(
-              item['aiModeration'],
-            ),
+          _messageRequestEntry(
+            LoopV2Contract.strictMap(raw, _messageRequestEntryKeys),
           ),
         );
       }
@@ -392,6 +374,70 @@ final class DioLoopV2SocialApi implements LoopV2SocialApi {
       throw LoopV2Contract.mapDioFailure(
         error,
         allowedCodes: LoopV2ModuleRequest.readErrors,
+      );
+    }
+  }
+
+  static const _messageRequestEntryKeys = <String>{
+    'messageRequestId',
+    'profile',
+    'createdAt',
+    'expiresAt',
+    'preview',
+    'aiModeration',
+  };
+
+  static MessageRequestEntry _messageRequestEntry(Map<String, Object?> item) {
+    return MessageRequestEntry(
+      messageRequestId: LoopV2Contract.requiredString(
+        item,
+        'messageRequestId',
+        pattern: LoopV2Contract.uuidPattern,
+      ),
+      profile: LoopV2ProjectionCodec.profile(item['profile']),
+      createdAt: LoopV2ProjectionCodec.requireTimestamp(item, 'createdAt'),
+      expiresAt: LoopV2ProjectionCodec.requireTimestamp(item, 'expiresAt'),
+      preview: LoopV2ProjectionCodec.unavailable(item['preview']),
+      aiModeration: LoopV2ProjectionCodec.unavailable(item['aiModeration']),
+    );
+  }
+
+  @override
+  Future<MessageRequestEntry> sendMessageRequest({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required String publicProfileId,
+  }) async {
+    final target = _requireId(publicProfileId);
+    try {
+      final response = await _dio.post<Object?>(
+        messageRequestsPath,
+        data: <String, Object?>{'targetPublicProfileId': target},
+        options: LoopV2ModuleRequest.writeOptions(
+          accessToken,
+          clientVersion,
+          idempotencyKey,
+          hasBody: true,
+        ),
+      );
+      LoopV2Contract.validateSuccess(response, statusCode: 200);
+      final root = LoopV2Contract.strictMap(response.data, <String>{
+        ..._messageRequestEntryKeys,
+        'contractVersion',
+      });
+      LoopV2ProjectionCodec.requireContractVersion(root);
+      final entry = _messageRequestEntry(root);
+      // The response carries the recipient's identity; a different target
+      // would mean the request did not go where the user aimed it.
+      if (entry.profile.publicProfileId != target) {
+        LoopV2ProjectionCodec.invalid();
+      }
+      return entry;
+    } on DioException catch (error) {
+      throw LoopV2Contract.mapDioFailure(
+        error,
+        allowedCodes: LoopV2ModuleRequest.writeErrors,
       );
     }
   }

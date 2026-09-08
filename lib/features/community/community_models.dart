@@ -176,6 +176,106 @@ final class CommunityViewer {
   bool get canGovern => canInviteAdmin || canMute || canBan;
 }
 
+/// Whether the official community channel can be opened right now.
+///
+/// `syncing` is deliberately not `unavailable`: LOOP has recorded the
+/// membership intent and the provider has not caught up yet, so the page says
+/// so instead of claiming the feature is off.
+enum CommunityChatStatus {
+  available('available'),
+  syncing('syncing'),
+  unavailable('unavailable');
+
+  const CommunityChatStatus(this.wireName);
+
+  final String wireName;
+
+  static CommunityChatStatus? tryParse(String value) {
+    for (final item in values) {
+      if (item.wireName == value) return item;
+    }
+    return null;
+  }
+}
+
+/// The channel-member projection. It distinguishes copy only; it never proves
+/// a Stream fact.
+enum CommunityChatMemberState {
+  synced('synced'),
+  pending('pending'),
+  removed('removed'),
+  capacityPending('capacityPending');
+
+  const CommunityChatMemberState(this.wireName);
+
+  final String wireName;
+
+  static CommunityChatMemberState? tryParse(String value) {
+    for (final item in values) {
+      if (item.wireName == value) return item;
+    }
+    return null;
+  }
+}
+
+/// The `chat` section of a community record.
+///
+/// Only [CommunityChatStatus.available] ever carries a [channelCid]; every
+/// other state carries the server's own `reasonCode` and no channel.
+@immutable
+final class CommunityChatSection {
+  const CommunityChatSection({
+    required this.status,
+    required this.channelCid,
+    required this.memberState,
+    required this.reasonCode,
+  });
+
+  final CommunityChatStatus status;
+  final String? channelCid;
+  final CommunityChatMemberState? memberState;
+  final String? reasonCode;
+
+  bool get isAvailable =>
+      status == CommunityChatStatus.available && channelCid != null;
+
+  bool get isSyncing => status == CommunityChatStatus.syncing;
+}
+
+enum CommunityVoiceStatus {
+  available('available'),
+  unavailable('unavailable');
+
+  const CommunityVoiceStatus(this.wireName);
+
+  final String wireName;
+
+  static CommunityVoiceStatus? tryParse(String value) {
+    for (final item in values) {
+      if (item.wireName == value) return item;
+    }
+    return null;
+  }
+}
+
+/// The `voice` section of a community record. It only says whether a live room
+/// exists; joining is still a separate server decision.
+@immutable
+final class CommunityVoiceSection {
+  const CommunityVoiceSection({
+    required this.status,
+    required this.currentRoomId,
+    required this.reasonCode,
+  });
+
+  final CommunityVoiceStatus status;
+  final String? currentRoomId;
+  final String? reasonCode;
+
+  bool get isLive =>
+      status == CommunityVoiceStatus.available && currentRoomId != null;
+}
+
 @immutable
 final class CommunityDetail {
   const CommunityDetail({
@@ -185,6 +285,8 @@ final class CommunityDetail {
     required this.onlineCount,
     required this.announcements,
     required this.officialLinks,
+    required this.chat,
+    required this.voice,
   });
 
   final CommunitySummary community;
@@ -193,6 +295,8 @@ final class CommunityDetail {
   final LoopUnavailableFact onlineCount;
   final LoopUnavailableFact announcements;
   final LoopUnavailableFact officialLinks;
+  final CommunityChatSection chat;
+  final CommunityVoiceSection voice;
 }
 
 @immutable

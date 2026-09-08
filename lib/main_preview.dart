@@ -29,9 +29,11 @@ import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/personalization/memory_watchlist_gateway.dart';
 import 'package:loop_mobile/integrations/social/memory_friend_gateway.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
+import 'package:loop_mobile/integrations/communication/memory_chat_v2_gateways.dart';
 import 'package:loop_mobile/integrations/community/memory_community_gateways.dart';
 
 /// Explicit offline UI catalog entry point.
@@ -72,6 +74,8 @@ Future<void> main() async {
         communityGatewayProvider.overrideWithValue(MemoryCommunityGateway()),
         socialGatewayProvider.overrideWithValue(MemorySocialGateway()),
         searchGatewayProvider.overrideWithValue(const MemorySearchGateway()),
+        chatV2GatewayProvider.overrideWithValue(MemoryChatV2Gateway()),
+        voiceRoomGatewayProvider.overrideWithValue(MemoryVoiceRoomGateway()),
         notificationPreferencesGatewayProvider.overrideWithValue(
           MemoryNotificationPreferencesGateway(
             initialResource: NotificationPreferencesResource(

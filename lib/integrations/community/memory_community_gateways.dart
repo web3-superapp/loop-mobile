@@ -116,6 +116,26 @@ final class MemoryCommunityGateway implements CommunityGateway {
         'COMMUNITY_ANNOUNCEMENTS_DEFERRED',
       ),
       officialLinks: const LoopUnavailableFact('COMMUNITY_LINKS_DEFERRED'),
+      // The Preview owns no Stream channel, so it never reports `available`
+      // and never invents a channel CID.
+      chat: joined
+          ? const CommunityChatSection(
+              status: CommunityChatStatus.syncing,
+              channelCid: null,
+              memberState: CommunityChatMemberState.pending,
+              reasonCode: 'COMMUNITY_CHANNEL_MEMBER_SYNCING',
+            )
+          : const CommunityChatSection(
+              status: CommunityChatStatus.unavailable,
+              channelCid: null,
+              memberState: null,
+              reasonCode: 'COMMUNITY_MEMBERSHIP_REQUIRED',
+            ),
+      voice: const CommunityVoiceSection(
+        status: CommunityVoiceStatus.unavailable,
+        currentRoomId: null,
+        reasonCode: 'COMMUNITY_VOICE_ROOM_NOT_LIVE',
+      ),
     );
   }
 
@@ -466,6 +486,22 @@ final class MemorySocialGateway implements SocialGateway {
         items: List<MessageRequestEntry>.unmodifiable(_requests),
         nextCursor: null,
       );
+
+  @override
+  Future<MessageRequestEntry> sendMessageRequest(String publicProfileId) async {
+    final entry = MessageRequestEntry(
+      messageRequestId: '2e3d4c5b-6a7b-4c8d-9e0f-1a2b3c4d5e6f',
+      profile: _previewProfiles.firstWhere(
+        (item) => item.publicProfileId == publicProfileId,
+        orElse: () => _previewProfiles.first,
+      ),
+      createdAt: DateTime.utc(2026, 9, 8),
+      expiresAt: DateTime.utc(2026, 9, 15),
+      preview: const LoopUnavailableFact('MESSAGE_PREVIEW_DEFERRED'),
+      aiModeration: const LoopUnavailableFact('AI_MODERATION_DEFERRED'),
+    );
+    return entry;
+  }
 
   @override
   Future<MessageRequestOutcome> decideMessageRequest({

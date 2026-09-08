@@ -73,9 +73,38 @@ CommunityViewer testViewer({
   canBan: canBan,
 );
 
+const testChatUnavailable = CommunityChatSection(
+  status: CommunityChatStatus.unavailable,
+  channelCid: null,
+  memberState: null,
+  reasonCode: 'COMMUNITY_CHANNEL_NOT_PROVISIONED',
+);
+
+const testChatAvailable = CommunityChatSection(
+  status: CommunityChatStatus.available,
+  channelCid: 'messaging:loop_community_0123456789abcdef0123456789abcdef',
+  memberState: CommunityChatMemberState.synced,
+  reasonCode: null,
+);
+
+const testChatSyncing = CommunityChatSection(
+  status: CommunityChatStatus.syncing,
+  channelCid: null,
+  memberState: CommunityChatMemberState.pending,
+  reasonCode: 'COMMUNITY_CHANNEL_MEMBER_SYNCING',
+);
+
+const testVoiceUnavailable = CommunityVoiceSection(
+  status: CommunityVoiceStatus.unavailable,
+  currentRoomId: null,
+  reasonCode: 'COMMUNITY_VOICE_ROOM_NOT_LIVE',
+);
+
 CommunityDetail testDetail({
   CommunitySummary? community,
   CommunityViewer? viewer,
+  CommunityChatSection chat = testChatUnavailable,
+  CommunityVoiceSection voice = testVoiceUnavailable,
 }) => CommunityDetail(
   community: community ?? testCommunity(),
   viewer: viewer ?? testViewer(),
@@ -83,6 +112,8 @@ CommunityDetail testDetail({
   onlineCount: testPresence,
   announcements: const LoopUnavailableFact('COMMUNITY_ANNOUNCEMENTS_DEFERRED'),
   officialLinks: const LoopUnavailableFact('COMMUNITY_LINKS_DEFERRED'),
+  chat: chat,
+  voice: voice,
 );
 
 CommunityMemberEntry testMember({
@@ -315,6 +346,7 @@ final class FakeSocialGateway implements SocialGateway {
   ConnectionPage? connections;
   BlockPage? blocks;
   MessageRequestPage? requests;
+  MessageRequestEntry? sentRequest;
   MessageRequestOutcome? outcome;
 
   final List<String> commands = <String>[];
@@ -397,6 +429,26 @@ final class FakeSocialGateway implements SocialGateway {
   @override
   Future<MessageRequestPage> listMessageRequests({String? cursor}) =>
       _read(requests);
+
+  @override
+  Future<MessageRequestEntry> sendMessageRequest(String publicProfileId) {
+    commands.add('message-request:$publicProfileId');
+    final kind = writeFailure;
+    if (kind != null) {
+      return Future<MessageRequestEntry>.error(CommunityGatewayException(kind));
+    }
+    return Future<MessageRequestEntry>.value(
+      sentRequest ??
+          MessageRequestEntry(
+            messageRequestId: '1d2c3b4a-5e6f-4a7b-8c9d-0e1f2a3b4c5d',
+            profile: testProfile(publicProfileId: publicProfileId),
+            createdAt: DateTime.utc(2026, 9, 8),
+            expiresAt: DateTime.utc(2026, 9, 15),
+            preview: const LoopUnavailableFact('MESSAGE_PREVIEW_DEFERRED'),
+            aiModeration: const LoopUnavailableFact('AI_MODERATION_DEFERRED'),
+          ),
+    );
+  }
 
   @override
   Future<MessageRequestOutcome> decideMessageRequest({

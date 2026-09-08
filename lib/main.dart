@@ -11,9 +11,11 @@ import 'package:loop_mobile/integrations/personalization/shared_preferences_disp
 import 'package:loop_mobile/integrations/personalization/loop_personalization_providers.dart';
 import 'package:loop_mobile/integrations/social/loop_social_providers.dart';
 import 'package:loop_mobile/integrations/social/loop_group_alias_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_communication_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_providers.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 
 Future<void> main() async {
@@ -54,6 +56,12 @@ Future<void> main() async {
         ),
         searchGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2SearchGatewayProvider),
+        ),
+        chatV2GatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2ChatGatewayProvider),
+        ),
+        voiceRoomGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2VoiceRoomGatewayProvider),
         ),
       ],
       child: const LoopApp(),
