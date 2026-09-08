@@ -528,10 +528,8 @@ Future<void> pumpS5Page(
     ProviderScope(
       overrides: [
         if (chain != null) chainGatewayProvider.overrideWithValue(chain),
-        if (wallet != null)
-          walletReadGatewayProvider.overrideWithValue(wallet),
-        if (market != null)
-          marketReadGatewayProvider.overrideWithValue(market),
+        if (wallet != null) walletReadGatewayProvider.overrideWithValue(wallet),
+        if (market != null) marketReadGatewayProvider.overrideWithValue(market),
         if (watchlist != null)
           watchlistGatewayProvider.overrideWithValue(watchlist),
         if (alerts != null) alertsGatewayProvider.overrideWithValue(alerts),

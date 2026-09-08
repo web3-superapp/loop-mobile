@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
-import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/home/home_screens.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
-
-import 'support/authenticated_test_privy_gateway.dart';
 
 const _verifiedWalletSession = LoopSessionState(
   mode: LoopSessionMode.authenticated,
@@ -137,217 +133,53 @@ void main() {
     );
   });
 
-  testWidgets(
-    'production B2 exposes availability without invented allocation',
-    (tester) async {
-      await _pumpSurface(
-        tester,
-        const NetWorthScreen(),
-        session: _verifiedWalletSession,
-      );
-
-      expect(
-        find.byKey(const ValueKey<String>('net-worth-production-unavailable')),
-        findsOneWidget,
-      );
-      expect(find.text('Net worth not connected'), findsOneWidget);
-      expect(
-        find.textContaining('verified Privy wallet identity'),
-        findsOneWidget,
-      );
-      for (final fixture in <String>[
-        r'$46,806.55',
-        r'+$1,186.40 today',
-        'Ethereum wallets',
-        'Solana wallets',
-        'Stablecoin assets',
-        'Development preview only',
-        'Allocation',
-      ]) {
-        expect(find.textContaining(fixture), findsNothing, reason: fixture);
-      }
-    },
-  );
-
-  testWidgets('production B2 fails closed for every non-ready identity', (
-    tester,
-  ) async {
-    const cases = <(LoopSessionState, String)>[
-      (
-        LoopSessionState(
-          mode: LoopSessionMode.authenticatedUnverified,
-          account: PrivyAccountSummary(
-            privyUserId: 'did:privy:cached-wallet',
-            wallet: PrivyWalletSummary(
-              address: '0x1111111111111111111111111111111111111111',
-            ),
-          ),
-        ),
-        'cached session is restricted',
-      ),
-      (
-        LoopSessionState(
-          mode: LoopSessionMode.authenticated,
-          account: PrivyAccountSummary(privyUserId: 'did:privy:no-wallet'),
-        ),
-        'no embedded wallet identity',
-      ),
-      (
-        LoopSessionState(
-          mode: LoopSessionMode.authenticated,
-          account: PrivyAccountSummary(
-            privyUserId: 'did:privy:invalid-wallet',
-            wallet: PrivyWalletSummary(address: '0x1234'),
-          ),
-        ),
-        'incomplete or invalid',
-      ),
-    ];
-
-    for (final (session, expectedMessage) in cases) {
-      await _pumpSurface(tester, const NetWorthScreen(), session: session);
-
-      expect(
-        find.byKey(const ValueKey<String>('net-worth-production-unavailable')),
-        findsOneWidget,
-      );
-      expect(find.textContaining(expectedMessage), findsOneWidget);
-      for (final fixture in <String>[
-        r'$46,806.55',
-        '开发预览',
-        '演示数据',
-        'Allocation',
-      ]) {
-        expect(find.textContaining(fixture), findsNothing, reason: fixture);
-      }
-    }
-  });
-
-  testWidgets('explicit Preview B2 labels its static portfolio before values', (
-    tester,
-  ) async {
-    await _pumpSurface(
-      tester,
-      const NetWorthScreen(),
-      session: const LoopSessionState.preview(),
-    );
-
-    expect(
-      find.byKey(const ValueKey<String>('net-worth-preview-fixtures')),
-      findsOneWidget,
-    );
-    expect(find.textContaining('开发预览'), findsWidgets);
-    expect(find.textContaining('演示数据'), findsWidgets);
-    expect(find.text(r'$46,806.55'), findsOneWidget);
-    expect(find.text('ALLOCATION · 演示数据'), findsOneWidget);
-    expect(
-      tester
-          .getTopLeft(
-            find.byKey(const ValueKey<String>('net-worth-preview-fixtures')),
-          )
-          .dy,
-      lessThan(tester.getTopLeft(find.text(r'$46,806.55')).dy),
-    );
-    expect(
-      find.byKey(const ValueKey<String>('net-worth-production-unavailable')),
-      findsNothing,
-    );
-  });
-
-  testWidgets('real LoopApp carries the production boundary from B1 to B2', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          privyAuthGatewayProvider.overrideWithValue(
-            const AuthenticatedTestPrivyGateway(
-              walletAddress: '0x1111111111111111111111111111111111111111',
-            ),
-          ),
-        ],
-        child: const LoopApp(),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    final community = find.byKey(const ValueKey<String>('community-screen'));
-    expect(community, findsOneWidget);
-    final router = GoRouter.of(tester.element(community));
-    router.go('/wallet/networth');
-    await tester.pumpAndSettle();
-
-    expect(
-      find.byKey(const ValueKey<String>('net-worth-production-unavailable')),
-      findsOneWidget,
-    );
-    expect(find.text(r'$46,806.55'), findsNothing);
-  });
-
-  testWidgets('B1 and B2 remain scrollable at 200 percent text', (
-    tester,
-  ) async {
+  testWidgets('B1 remains scrollable at 200 percent text', (tester) async {
     for (final session in <LoopSessionState>[
       _verifiedWalletSession,
       const LoopSessionState.preview(),
     ]) {
       for (final size in <Size>[const Size(390, 844), const Size(844, 390)]) {
-        for (final surface in <Widget>[
+        await _pumpSurface(
+          tester,
           const HomeScreen(),
-          const NetWorthScreen(),
-        ]) {
-          await _pumpSurface(
-            tester,
-            surface,
-            session: session,
-            size: size,
-            textScaler: const TextScaler.linear(2),
-          );
-          if (surface is HomeScreen && session.isPreview) {
-            expect(find.text('DISCOVER'), findsOneWidget);
-            expect(find.text('DISCUSS'), findsOneWidget);
-            expect(find.text('EXECUTE'), findsOneWidget);
-          }
-
-          final contentEnd = switch ((surface, session.isPreview)) {
-            (HomeScreen(), false) => find.byKey(
-              const ValueKey<String>('home-production-activity-unavailable'),
-            ),
-            (HomeScreen(), true) => find.text(
-              'One approval can spend your USDC',
-            ),
-            (NetWorthScreen(), false) => find.byKey(
-              const ValueKey<String>('net-worth-production-content-end'),
-            ),
-            (NetWorthScreen(), true) => find.byKey(
-              const ValueKey<String>('net-worth-preview-content-end'),
-            ),
-            _ => throw StateError('Unexpected Home truth surface'),
-          };
-          final verticalScrollable = find
-              .byWidgetPredicate(
-                (widget) =>
-                    widget is Scrollable &&
-                    (widget.axisDirection == AxisDirection.down ||
-                        widget.axisDirection == AxisDirection.up),
-              )
-              .first;
-          await tester.scrollUntilVisible(
-            contentEnd,
-            500,
-            scrollable: verticalScrollable,
-          );
-          await tester.pumpAndSettle();
-          expect(contentEnd, findsOneWidget);
-
-          final exception = tester.takeException();
-          final diagnostics = exception is FlutterError
-              ? exception.diagnostics
-                    .map((node) => node.toStringDeep())
-                    .join('\n')
-              : '$exception';
-          expect(exception, isNull, reason: '$surface · $size\n$diagnostics');
+          session: session,
+          size: size,
+          textScaler: const TextScaler.linear(2),
+        );
+        if (session.isPreview) {
+          expect(find.text('DISCOVER'), findsOneWidget);
+          expect(find.text('DISCUSS'), findsOneWidget);
+          expect(find.text('EXECUTE'), findsOneWidget);
         }
+
+        final contentEnd = session.isPreview
+            ? find.text('One approval can spend your USDC')
+            : find.byKey(
+                const ValueKey<String>('home-production-activity-unavailable'),
+              );
+        final verticalScrollable = find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is Scrollable &&
+                  (widget.axisDirection == AxisDirection.down ||
+                      widget.axisDirection == AxisDirection.up),
+            )
+            .first;
+        await tester.scrollUntilVisible(
+          contentEnd,
+          500,
+          scrollable: verticalScrollable,
+        );
+        await tester.pumpAndSettle();
+        expect(contentEnd, findsOneWidget);
+
+        final exception = tester.takeException();
+        final diagnostics = exception is FlutterError
+            ? exception.diagnostics
+                  .map((node) => node.toStringDeep())
+                  .join('\n')
+            : '$exception';
+        expect(exception, isNull, reason: 'B1 · $size\n$diagnostics');
       }
     }
   });

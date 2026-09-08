@@ -110,11 +110,12 @@ class _LoopCandlePainter extends CustomPainter {
     }
 
     for (final candle in candles) {
+      // Lime is the only accent: an unchanged bucket is neutral, not blue.
       final color = candle.isUp
           ? LoopColors.mint
           : candle.isDown
           ? LoopColors.danger
-          : LoopColors.market;
+          : LoopColors.vapor;
       final centerX = xFor(candle);
       final wickPaint = Paint()
         ..color = color

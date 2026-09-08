@@ -42,8 +42,8 @@ void main() {
         '/launch',
         find.byKey(const ValueKey<String>('launchpad-unavailable')),
       ),
-      ('行情', '/market', find.text('Spot market')),
-      ('钱包', '/wallet', find.text('Portfolio remains 开发预览')),
+      ('行情', '/market', find.byKey(const ValueKey<String>('market-screen'))),
+      ('钱包', '/wallet', find.byKey(const ValueKey<String>('wallet-screen'))),
     ];
 
     for (final (label, path, content) in destinations) {

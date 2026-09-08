@@ -7,61 +7,6 @@ import 'package:loop_mobile/features/wallet/trade_screens.dart';
 import 'package:loop_mobile/features/wallet/wallet_management_screens.dart';
 
 void main() {
-  testWidgets('history chips filter the labelled Preview activity rows', (
-    tester,
-  ) async {
-    await _pump(tester, const TransactionHistoryScreen());
-
-    expect(find.text('Received USDC'), findsOneWidget);
-    expect(find.text('Swapped ETH to USDC'), findsOneWidget);
-    expect(find.text('Sent ETH'), findsOneWidget);
-
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Sent'));
-    await tester.pump();
-
-    expect(find.text('Sent ETH'), findsOneWidget);
-    expect(find.text('Received USDC'), findsNothing);
-    expect(find.text('Swapped ETH to USDC'), findsNothing);
-    expect(find.text('TODAY'), findsNothing);
-    expect(find.text('AUGUST 21'), findsOneWidget);
-
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Swaps'));
-    await tester.pump();
-
-    expect(find.text('Swapped ETH to USDC'), findsOneWidget);
-    expect(find.text('Sent ETH'), findsNothing);
-    expect(find.text('AUGUST 21'), findsNothing);
-    expect(find.text('TODAY'), findsOneWidget);
-
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Received'));
-    await tester.pump();
-
-    expect(find.text('Received USDC'), findsOneWidget);
-    expect(find.text('Swapped ETH to USDC'), findsNothing);
-    expect(find.text('Sent ETH'), findsNothing);
-  });
-
-  testWidgets('network testnet switch changes only visible Preview rows', (
-    tester,
-  ) async {
-    await _pump(tester, const NetworksScreen());
-
-    expect(find.text('Hyperliquid Testnet'), findsNothing);
-    await tester.tap(find.text('Show testnets'));
-    await tester.pump();
-
-    expect(find.text('Hyperliquid Testnet'), findsOneWidget);
-    expect(
-      find.text('Market public reads only · not wallet network support'),
-      findsOneWidget,
-    );
-    expect(find.text('Ethereum'), findsOneWidget);
-
-    await tester.tap(find.text('Show testnets'));
-    await tester.pump();
-    expect(find.text('Hyperliquid Testnet'), findsNothing);
-  });
-
   testWidgets('permission Preview exposes no fake revocation action', (
     tester,
   ) async {

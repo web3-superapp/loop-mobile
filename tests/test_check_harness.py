@@ -1746,7 +1746,8 @@ class HarnessTests(unittest.TestCase):
             "test/development_preview_experience_test.dart",
             "test/hyperliquid_spot_market_repository_test.dart",
             "test/local_settings_and_help_test.dart",
-            "test/market_screen_test.dart",
+            # Step 5 retired `test/market_screen_test.dart` with the mounted
+            # Hyperliquid Spot screens it drove (decision 0055).
         }
 
         self.assertTrue(expected.issubset(set(check_harness.REQUIRED_FILES)))
@@ -2095,27 +2096,9 @@ class HarnessTests(unittest.TestCase):
             result,
         )
 
-    def test_invalid_and_absent_spot_indices_keep_zero_candle_requests(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "test/market_screen_test.dart"
-            path = root / relative
-            path.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            path.write_text(
-                source.replace(
-                    "expect(candleRepository.requests, isEmpty);",
-                    "expect(candleRepository.requests, isNotEmpty);",
-                ),
-                encoding="utf-8",
-            )
-
-            result = check_harness.check_spot_candle_contract(root)
-
-        self.assertTrue(
-            any("zero candle requests" in error for error in result),
-            msg=f"expected invalid/absent-index request guard: {result}",
-        )
+    # Step 5 retired `test/market_screen_test.dart` together with the Spot
+    # detail screen; `test/s5_market_pages_test.dart` now proves that a
+    # malformed asset identity issues no candle request.
 
     def test_spot_candle_execution_navigation_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

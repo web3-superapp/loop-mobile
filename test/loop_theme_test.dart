@@ -42,7 +42,6 @@ void main() {
     // files that still use them; the list may only shrink. Remove the guard
     // together with the aliases when the Market slice migrates.
     const legacyAccentConsumers = <String>{
-      'lib/features/account/account_screens.dart',
       'lib/features/chat/calls/stream_foreground_call_view.dart',
       'lib/features/chat/calls/stream_voice_room_page.dart',
       'lib/features/chat/chat_inbox_page.dart',
@@ -55,14 +54,9 @@ void main() {
       'lib/features/chat/widgets/token_card_view.dart',
       'lib/features/home/home_screens.dart',
       'lib/features/launchpad/launchpad_screen.dart',
-      'lib/features/market/market_models.dart',
-      'lib/features/market/market_screens.dart',
-      'lib/features/market/market_secondary_screens.dart',
-      'lib/features/market/spot_candle_chart.dart',
       'lib/features/perp/perp_account_screens.dart',
       'lib/features/perp/perp_models.dart',
       'lib/features/profile/profile_screens.dart',
-      'lib/features/system/system_surfaces.dart',
       'lib/widgets/loop_ui.dart',
     };
     final pattern = RegExp(r'LoopColors\.(?:market|chat)\b');

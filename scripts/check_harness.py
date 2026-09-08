@@ -200,7 +200,6 @@ REQUIRED_FILES = (
     "lib/integrations/social/memory_friend_gateway.dart",
     "test/home_discovery_and_security_test.dart",
     "test/home_portfolio_truthfulness_test.dart",
-    "test/new_pairs_truthfulness_test.dart",
     "test/security_capability_truthfulness_test.dart",
     "test/loop_dio_factory_test.dart",
     "test/send_asset_search_test.dart",
@@ -248,16 +247,11 @@ REQUIRED_FILES = (
     "test/hyperliquid_spot_market_repository_test.dart",
     "test/local_settings_and_help_test.dart",
     "test/loop_display_preferences_test.dart",
-    "test/market_screen_test.dart",
-    "test/spot_candle_chart_test.dart",
     "test/notifications_screen_test.dart",
     "test/external_wallet_credential_gateway_test.dart",
     "test/identity_auth_controller_test.dart",
     "test/post_auth_bootstrap_coordinator_test.dart",
     "test/privy_login_screen_test.dart",
-    "test/watchlist_controller_test.dart",
-    "test/watchlist_editor_screen_test.dart",
-    "test/watchlist_models_test.dart",
     "test/profile_controller_test.dart",
     "test/profile_models_test.dart",
     "test/profile_presentation_screen_test.dart",
@@ -284,9 +278,6 @@ REQUIRED_FILES = (
     "test/privacy_controller_test.dart",
     "test/privacy_models_test.dart",
     "test/privacy_presentation_screen_test.dart",
-    "test/notification_preferences_controller_test.dart",
-    "test/notification_preferences_models_test.dart",
-    "test/notification_preferences_screen_test.dart",
     "test/loop_perp_providers_test.dart",
     "test/loop_perp_repository_test.dart",
     "test/loop_perp_session_test.dart",
@@ -2015,7 +2006,10 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
                 "MemoryCommunicationGateway()",
             ),
             "test/development_preview_experience_test.dart": (
-                "explicit Preview shows live public Spot and an interactive offline Chat",
+                # Step 5 dropped the live-Spot half of this test with the
+                # mounted Hyperliquid market slice; the offline Chat half is
+                # the surviving Preview evidence.
+                "explicit Preview opens an interactive offline Chat",
             ),
             "test/hyperliquid_spot_market_repository_test.dart": (
                 "joins sparse tokens and shuffled",
@@ -2028,8 +2022,8 @@ def check_spot_only_product_contract(root: Path) -> list[str]:
                 "go_router hands the page back the exact CAIP identity",
             ),
             "test/app_navigation_test.dart": (
+                # Step 5 retired the Spot-ledger walk with the screens it drove.
                 "retained Perp paths are unmounted and fall back to Community with a logged error",
-                "providerless token links return to the live Spot ledger",
             ),
             "test/route_manifest_test.dart": (
                 "manifest keeps every retired Perp path unmounted",
@@ -5331,15 +5325,15 @@ HOME_PORTFOLIO_TEST_MARKERS = {
         "verified B1 without a wallet stays unavailable",
         "invalid B1 wallet identity never implies portfolio facts",
         "explicit Preview B1 keeps every fixture visibly labelled",
-        "production B2 exposes availability without invented allocation",
-        "production B2 fails closed for every non-ready identity",
-        "explicit Preview B2 labels its static portfolio before values",
-        "real LoopApp carries the production boundary from B1 to B2",
-        "B1 and B2 remain scrollable at 200 percent text",
+        # Step 5 retired the Preview Net Worth slice (decision 0055), so the
+        # four B2 tests went with it and the scroll test is B1-only.
+        "B1 remains scrollable at 200 percent text",
     ),
 }
+# Re-baselined by step 5: the four B2 tests were retired with the Preview Net
+# Worth slice (decision 0055) and the scroll test is now B1-only.
 HOME_PORTFOLIO_TEST_FINGERPRINT = (
-    "5fdd0114fcb979fae34505d254001601c7a951206e968529ac3d319df6160c7e"
+    "aa76e508a69fd199e75807fe2d52cc9c0d1f283de0c9fff80c52a11e5f43d0b2"
 )
 HOME_PORTFOLIO_SOURCE_FINGERPRINTS = {
     "selector": "86dbf9882a3666b0856e00b3124d01d1c338f0288f279600727cf7f966b9827a",
@@ -5692,17 +5686,10 @@ def check_spot_candle_contract(root: Path) -> list[str]:
                 "an open bucket repaints when its close moves",
                 "a value survives a precision a double would lose",
             ),
-            "test/app_navigation_test.dart": (
-                "production C3 rejects legacy extras and malformed query before requests",
-                "production C3 is full-screen and closes a root link to Market",
-                "expect(find.byType(LoopTabBar), findsNothing)",
-                "find.byTooltip('关闭全屏 K 线')",
-            ),
-            "test/development_preview_experience_test.dart": (
-                "expect(candleRepository.fetchCount, 1);",
-                "expect(find.textContaining('Buy'), findsNothing);",
-                "expect(find.textContaining('Sell'), findsNothing);",
-            ),
+            # Step 5 retired the two `SpotMarketRoute` C3 navigation tests and
+            # the live-Spot half of the Preview experience test with the
+            # screens they drove (decision 0055). `chart-full` evidence now
+            # lives in the two S5 files above.
         },
     )
 
@@ -5790,13 +5777,9 @@ def check_spot_candle_contract(root: Path) -> list[str]:
             "lib/main_preview.dart must not replace public Spot candles with a Preview repository"
         )
 
-    market_test_path = root / "test/market_screen_test.dart"
-    if market_test_path.is_file() and read_text(market_test_path).count(
-        "expect(candleRepository.requests, isEmpty);"
-    ) < 2:
-        errors.append(
-            "Spot detail tests must prove zero candle requests for both absent and invalid indices"
-        )
+    # Step 5 retired `test/market_screen_test.dart` with the Hyperliquid Spot
+    # detail screen it drove. `test/s5_market_pages_test.dart` now proves that
+    # a malformed asset identity issues no candle request.
 
     app_path = root / "lib/app.dart"
     if app_path.is_file():
@@ -5905,16 +5888,15 @@ def check_wallet_identity_readiness_contract(root: Path) -> list[str]:
                 "state.extra is TransferDraft ? null : '/wallet/send'",
                 "draft.recipient.trim().isNotEmpty",
             ),
-            "test/wallet_readiness_screen_test.dart": (
-                "authenticated Wallet creates one embedded Ethereum wallet and publishes the exact address",
-                "existing wallet never exposes a create action",
-                "restricted Wallet never invokes wallet creation",
-                "wallet creation failure stays retryable and never fabricates an address",
-                "Receive copies the exact current Privy address",
-                "Receive disables copy when no current address exists",
-                "Receive clipboard failure never claims success",
-                "Receive warns when the account changes during a clipboard write",
-                "Manage wallets shows only the current provider wallet",
+            # Step 5 replaced the Privy-readiness Wallet, Receive and Manage
+            # screens with the V2 wallet-read pages, so their widget evidence
+            # moved to test/s5_wallet_pages_test.dart; only the
+            # `WalletReadiness` model group survives in the old file.
+            "test/s5_wallet_pages_test.dart": (
+                "addresses are truncated and grouped by kind",
+                "switching confirms first and sends the expected active id",
+                "renders the QR, the address and the EIP-681 uri",
+                "an archived wallet cannot be activated",
             ),
             "test/signing_review_boundary_test.dart": (
                 "local transfer draft cannot invoke even an available wallet gateway",
@@ -6002,7 +5984,9 @@ def check_wallet_preview_route_contract(root: Path) -> list[str]:
                 "typed domain is not trusted",
             ),
             "test/app_navigation_test.dart": (
-                "orphan Wallet review and asset routes fail closed",
+                # The `/wallet/asset` half of this test was retired with the
+                # typed Preview extra; the signing-review half survives.
+                "an orphan signing review returns to Wallet",
             ),
             "test/wallet_preview_route_truthfulness_test.dart": (
                 "DApp preview uses only the current wallet identity and typed domain",
@@ -6423,8 +6407,8 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
                 "each history filter returns only its labelled Preview category",
             ),
             "test/wallet_providerless_controls_test.dart": (
-                "history chips filter the labelled Preview activity rows",
-                "network testnet switch changes only visible Preview rows",
+                # Step 5 replaced the Preview history and network screens with
+                # the V2 `tx-history` and `networks` pages.
                 "permission Preview exposes no fake revocation action",
                 "Bridge status consumes one snapshot and changes local layout",
                 "transaction result remains an explicit state-layout Preview",
