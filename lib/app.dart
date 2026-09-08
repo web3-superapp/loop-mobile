@@ -12,6 +12,7 @@ import 'package:loop_mobile/app/session/loop_communication_retirement.dart';
 import 'package:loop_mobile/app/session/post_auth_bootstrap_coordinator.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
+import 'package:loop_mobile/core/navigation/launch_route.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
@@ -35,11 +36,14 @@ import 'package:loop_mobile/features/community/community_discover_screen.dart';
 import 'package:loop_mobile/features/community/community_members_screen.dart';
 import 'package:loop_mobile/features/community/community_profile_screen.dart';
 import 'package:loop_mobile/features/community/community_screen.dart';
-import 'package:loop_mobile/features/community/referral_screen.dart';
 import 'package:loop_mobile/features/community/search_screen.dart';
-import 'package:loop_mobile/features/launchpad/launchpad_screen.dart';
+import 'package:loop_mobile/features/launch/launch_action_screens.dart';
+import 'package:loop_mobile/features/launch/launch_detail_screens.dart';
+import 'package:loop_mobile/features/launch/launch_screen.dart';
 import 'package:loop_mobile/features/market/market.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
+import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
+import 'package:loop_mobile/features/mining/referral_screen.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
@@ -312,14 +316,36 @@ GoRouter _buildRouter(
             path: '/mining',
             pageBuilder: (context, state) => LoopTabPage<void>(
               key: state.pageKey,
-              child: const MiningScreen(),
+              child: MiningScreen(
+                onOpenAssets: () =>
+                    context.push(LoopRouteManifest.pathFor('mining-assets')),
+                onOpenRewards: () =>
+                    context.push(LoopRouteManifest.pathFor('mining-rewards')),
+                onOpenRank: () =>
+                    context.push(LoopRouteManifest.pathFor('mining-rank')),
+                onOpenRules: () =>
+                    context.push(LoopRouteManifest.pathFor('mining-rules')),
+                onOpenReferral: () =>
+                    context.push(LoopRouteManifest.pathFor('referral')),
+              ),
             ),
           ),
           GoRoute(
             path: '/launch',
             pageBuilder: (context, state) => LoopTabPage<void>(
               key: state.pageKey,
-              child: const LaunchpadScreen(),
+              child: LaunchScreen(
+                onOpenLaunch: (launchId) =>
+                    context.push(LaunchRoute.detail(launchId)),
+                onOpenStake: () =>
+                    context.push(LoopRouteManifest.pathFor('loop-stake')),
+                onOpenRules: () =>
+                    context.push(LoopRouteManifest.pathFor('launch-rounds')),
+                onOpenEconomy: () =>
+                    context.push(LoopRouteManifest.pathFor('loop-economy')),
+                onOpenApply: () =>
+                    context.push(LoopRouteManifest.pathFor('launch-apply')),
+              ),
             ),
           ),
           GoRoute(
@@ -797,6 +823,8 @@ GoRouter _buildRouter(
           entry: LoopRouteManifest.bySlug('pay'),
         ),
       ),
+      ..._launchRoutes,
+      ..._miningRoutes,
       ..._pendingManifestRoutes,
       // Illegal locations are recorded and land on Community.
       GoRoute(
@@ -811,6 +839,135 @@ GoRouter _buildRouter(
         UnknownRouteScreen(location: state.uri.toString()),
   );
 }
+
+/// The eleven Launch pages. Each record page carries its subject as the exact
+/// `launchId` query parameter produced by [LaunchRoute]; a missing or
+/// malformed value fails closed into the page's unavailable state rather than
+/// substituting another project.
+final List<RouteBase> _launchRoutes = <RouteBase>[
+  GoRoute(
+    path: LaunchRoute.detailPath,
+    builder: (context, state) => LaunchDetailScreen(
+      launchId: LaunchRoute.parse(state.uri, LaunchRoute.detailPath),
+      onBack: () => _popOrHome(context),
+      onOpenTier: () => _pushLaunchChild(context, state, LaunchRoute.tierPath),
+      onOpenRounds: () =>
+          _pushLaunchChild(context, state, LaunchRoute.roundsPath),
+      onOpenTrade: () =>
+          _pushLaunchChild(context, state, LaunchRoute.tradePath),
+      onOpenHolders: () =>
+          _pushLaunchChild(context, state, LaunchRoute.holdersPath),
+      onOpenGraduation: () =>
+          _pushLaunchChild(context, state, LaunchRoute.graduationPath),
+      onOpenHistory: () =>
+          _pushLaunchChild(context, state, LaunchRoute.historyPath),
+    ),
+  ),
+  GoRoute(
+    path: LaunchRoute.tierPath,
+    builder: (context, state) => LaunchTierScreen(
+      launchId: LaunchRoute.parse(state.uri, LaunchRoute.tierPath),
+      onBack: () => _popOrHome(context),
+      onOpenStake: () => context.push(LoopRouteManifest.pathFor('loop-stake')),
+    ),
+  ),
+  GoRoute(
+    path: LaunchRoute.tradePath,
+    builder: (context, state) => LaunchTradeScreen(
+      launchId: LaunchRoute.parse(state.uri, LaunchRoute.tradePath),
+      onBack: () => _popOrHome(context),
+      onOpenHolders: () =>
+          _pushLaunchChild(context, state, LaunchRoute.holdersPath),
+    ),
+  ),
+  GoRoute(
+    path: LaunchRoute.holdersPath,
+    builder: (context, state) => LaunchHoldersScreen(
+      launchId: LaunchRoute.parse(state.uri, LaunchRoute.holdersPath),
+      onBack: () => _popOrHome(context),
+    ),
+  ),
+  GoRoute(
+    path: LaunchRoute.graduationPath,
+    builder: (context, state) => LaunchGraduationScreen(
+      launchId: LaunchRoute.parse(state.uri, LaunchRoute.graduationPath),
+      onBack: () => _popOrHome(context),
+    ),
+  ),
+  GoRoute(
+    path: LaunchRoute.historyPath,
+    builder: (context, state) => LaunchHistoryScreen(
+      launchId: LaunchRoute.parse(state.uri, LaunchRoute.historyPath),
+      onBack: () => _popOrHome(context),
+    ),
+  ),
+  GoRoute(
+    path: LaunchRoute.roundsPath,
+    builder: (context, state) => LaunchRoundsScreen(
+      launchId: LaunchRoute.parse(state.uri, LaunchRoute.roundsPath),
+      onBack: () => _popOrHome(context),
+    ),
+  ),
+  GoRoute(
+    path: '/launch/loop-stake',
+    builder: (context, state) =>
+        LoopStakeScreen(onBack: () => _popOrHome(context)),
+  ),
+  GoRoute(
+    path: '/launch/loop-economy',
+    builder: (context, state) =>
+        LoopEconomyScreen(onBack: () => _popOrHome(context)),
+  ),
+  GoRoute(
+    path: '/launch/apply',
+    builder: (context, state) =>
+        LaunchApplyScreen(onBack: () => _popOrHome(context)),
+  ),
+];
+
+/// Carries the current page's launch identity to a sibling record page. When
+/// the current location has no canonical identity the sibling is opened
+/// without one and renders its own unavailable state.
+void _pushLaunchChild(BuildContext context, GoRouterState state, String path) {
+  final launchId = LaunchRoute.parse(state.uri, state.uri.path);
+  context.push(launchId == null ? path : LaunchRoute.location(path, launchId));
+}
+
+/// The five Mining child pages.
+final List<RouteBase> _miningRoutes = <RouteBase>[
+  GoRoute(
+    path: '/mining/assets',
+    builder: (context, state) => MiningAssetsScreen(
+      onBack: () => _popOrHome(context),
+      onOpenRules: () =>
+          context.push(LoopRouteManifest.pathFor('mining-rules')),
+    ),
+  ),
+  GoRoute(
+    path: '/mining/rewards',
+    builder: (context, state) =>
+        MiningRewardsScreen(onBack: () => _popOrHome(context)),
+  ),
+  GoRoute(
+    path: '/mining/rank',
+    builder: (context, state) =>
+        MiningRankScreen(onBack: () => _popOrHome(context)),
+  ),
+  GoRoute(
+    path: MiningRoute.communityPath,
+    builder: (context, state) => MiningCommunityScreen(
+      communityId: MiningRoute.parse(state.uri, MiningRoute.communityPath),
+      onBack: () => _popOrHome(context),
+    ),
+  ),
+  GoRoute(
+    path: '/mining/rules',
+    builder: (context, state) => MiningRulesScreen(
+      onBack: () => _popOrHome(context),
+      onOpenReferral: () => context.push(LoopRouteManifest.pathFor('referral')),
+    ),
+  ),
+];
 
 /// Every manifest slug without a dedicated screen mounts the pending surface,
 /// so all 93 routes are reachable and none silently falls through.
