@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -14,6 +18,10 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 /// The forward and merge caps fixed by the step-4 ruling.
 const int chatForwardSelectionLimit = 20;
 const int chatMergeSelectionLimit = 50;
+
+/// How many recent conversations the destination list offers. It is one page,
+/// not the account's complete channel set, and the page says so.
+const int chatForwardTargetPageSize = 30;
 
 /// The anonymous author label used by every merged row.
 const String chatMergeAnonymousLabel = '匿名成员';
@@ -127,7 +135,9 @@ final class ChatForwardOutcome {
 ///
 /// Stream types stay inside this feature: the controller projects messages and
 /// channels into the two DTOs above before any page sees them.
-final class ChatForwardController extends Notifier<ChatForwardState> {
+/// Not `final`: a test seeds an exact selection by overriding [build], which
+/// is how the merged card is reached without driving a Stream query.
+base class ChatForwardController extends Notifier<ChatForwardState> {
   @override
   ChatForwardState build() => const ChatForwardState();
 
@@ -141,46 +151,66 @@ final class ChatForwardController extends Notifier<ChatForwardState> {
     }
     state = ChatForwardState(sourceCid: sourceCid, loading: true);
     try {
-      final channels = await session.client.queryChannelsOnline(
-        filter: Filter.in_('members', <Object>[userId]),
+      // The source conversation is queried on its own, by exact CID and
+      // current membership, so the message list can never come from whichever
+      // page of the inbox happened to contain it.
+      final sourceChannels = await session.client.queryChannelsOnline(
+        filter: Filter.and(<Filter>[
+          Filter.equal('cid', sourceCid),
+          Filter.in_('members', <Object>[userId]),
+        ]),
         state: true,
         messageLimit: chatMergeSelectionLimit,
-        paginationParams: const PaginationParams(limit: 30),
+        paginationParams: const PaginationParams(limit: 1),
+      );
+      final messages = <ChatForwardMessage>[];
+      if (sourceChannels.length == 1 &&
+          sourceChannels.single.cid == sourceCid &&
+          sourceChannels.single.membership?.userId == userId) {
+        for (final message
+            in sourceChannels.single.state?.messages ?? const <Message>[]) {
+          messages.add(
+            ChatForwardMessage(
+              messageId: message.id,
+              text: message.text ?? '',
+              createdAt: message.createdAt,
+              forwardable:
+                  !message.isDeleted && (message.text ?? '').trim().isNotEmpty,
+            ),
+          );
+        }
+      }
+
+      // The destination list is one bounded page of the account's most
+      // recently updated conversations; the page says so rather than implying
+      // it is the complete set.
+      final destinations = await session.client.queryChannelsOnline(
+        filter: Filter.in_('members', <Object>[userId]),
+        sort: const <SortOption<ChannelState>>[
+          SortOption<ChannelState>.desc(ChannelSortKey.lastUpdated),
+        ],
+        paginationParams: const PaginationParams(
+          limit: chatForwardTargetPageSize,
+        ),
       );
       final targets = <ChatForwardTarget>[];
-      final messages = <ChatForwardMessage>[];
-      for (final channel in channels) {
+      for (final channel in destinations) {
         final cid = channel.cid;
-        if (cid == null) continue;
+        if (cid == null || cid == sourceCid) continue;
         final surface = loopChatSurfaceForCid(cid);
         if (surface == null) continue;
         // A destination must be a channel the account already belongs to.
         if (channel.membership?.userId != userId) continue;
-        if (cid != sourceCid) {
-          targets.add(
-            ChatForwardTarget(
-              cid: cid,
-              label: switch (surface) {
-                LoopChatSurface.communityChat => '社区官方群',
-                LoopChatSurface.group => '群聊',
-                LoopChatSurface.direct => '私聊',
-              },
-            ),
-          );
-        } else {
-          for (final message in channel.state?.messages ?? const <Message>[]) {
-            messages.add(
-              ChatForwardMessage(
-                messageId: message.id,
-                text: message.text ?? '',
-                createdAt: message.createdAt,
-                forwardable:
-                    !message.isDeleted &&
-                    (message.text ?? '').trim().isNotEmpty,
-              ),
-            );
-          }
-        }
+        targets.add(
+          ChatForwardTarget(
+            cid: cid,
+            label: switch (surface) {
+              LoopChatSurface.communityChat => '社区官方群',
+              LoopChatSurface.group => '群聊',
+              LoopChatSurface.direct => '私聊',
+            },
+          ),
+        );
       }
       state = ChatForwardState(
         sourceCid: sourceCid,
@@ -346,6 +376,15 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
               ],
             ),
           const LoopLabel('发送到'),
+          const LoopNotice(
+            key: ValueKey<String>('chat-forward-target-scope'),
+            icon: 'info',
+            title: '只列出最近的会话',
+            body:
+                '这里显示你最近更新的 $chatForwardTargetPageSize 个已加入会话，'
+                '不是全部会话。找不到目标时请先在会话列表里打开它。',
+            margin: EdgeInsets.fromLTRB(16, 4, 16, 0),
+          ),
           if (state.targets.isEmpty)
             const LoopEmpty(
               key: ValueKey<String>('chat-forward-no-targets'),
@@ -465,21 +504,33 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
 ///
 /// Anonymous is the only mode: every row shows `匿名成员`, the timestamp and
 /// the text. No alias, LOOP ID, Stream user ID or wallet address is rendered,
-/// so none can be exported either.
-class ChatMergePreviewScreen extends ConsumerWidget {
+/// so none can be exported either — the exported PNG is a pixel copy of the
+/// card the viewer can see, encoded on device and handed straight to the
+/// system share sheet.
+class ChatMergePreviewScreen extends ConsumerStatefulWidget {
   const ChatMergePreviewScreen({super.key, this.onBack});
 
   final VoidCallback? onBack;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ChatMergePreviewScreen> createState() =>
+      _ChatMergePreviewScreenState();
+}
+
+class _ChatMergePreviewScreenState
+    extends ConsumerState<ChatMergePreviewScreen> {
+  final GlobalKey _cardKey = GlobalKey(debugLabel: 'chat-merge-card-boundary');
+  bool _exporting = false;
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(chatForwardControllerProvider);
     final rows = state.mergeRows;
     return LoopDashboardPage(
       key: const ValueKey<String>('chat-merge-preview-screen'),
       archetype: LoopPageArchetype.state,
       title: '合并长图预览',
-      onBack: onBack,
+      onBack: widget.onBack,
       primary: LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.state,
@@ -507,42 +558,47 @@ class ChatMergePreviewScreen extends ConsumerWidget {
               body: '一次最多合并 $chatMergeSelectionLimit 条，多出的部分不会出现在预览里。',
               margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             ),
-          LoopChalkCard(
-            key: const ValueKey<String>('chat-merge-card'),
-            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                for (final row in rows)
-                  Padding(
-                    key: ValueKey<String>('chat-merge-row-${row.messageId}'),
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          '$chatMergeAnonymousLabel · '
-                          '${communityObservedAtLabel(row.createdAt)}',
-                          style: LoopTypography.mono(
-                            size: 9.5,
-                            weight: FontWeight.w600,
-                            color: LoopColors.inkText3,
+          // The exported image is captured from exactly this subtree, so the
+          // anonymous rendering above is the only thing that can be encoded.
+          RepaintBoundary(
+            key: _cardKey,
+            child: LoopChalkCard(
+              key: const ValueKey<String>('chat-merge-card'),
+              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  for (final row in rows)
+                    Padding(
+                      key: ValueKey<String>('chat-merge-row-${row.messageId}'),
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            '$chatMergeAnonymousLabel · '
+                            '${communityObservedAtLabel(row.createdAt)}',
+                            style: LoopTypography.mono(
+                              size: 9.5,
+                              weight: FontWeight.w600,
+                              color: LoopColors.inkText3,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          row.text,
-                          style: LoopTypography.sora(
-                            size: 11,
-                            weight: FontWeight.w400,
-                            height: 1.55,
-                            color: LoopColors.ink,
+                          const SizedBox(height: 5),
+                          Text(
+                            row.text,
+                            style: LoopTypography.sora(
+                              size: 11,
+                              weight: FontWeight.w400,
+                              height: 1.55,
+                              color: LoopColors.ink,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
           const LoopNotice(
@@ -552,15 +608,64 @@ class ChatMergePreviewScreen extends ConsumerWidget {
             body: '钱包地址、昵称与内部 ID 永远不会进入合并长图，合并结果也不会上传到 LOOP 服务端。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
-          const LoopEmpty(
-            key: ValueKey<String>('chat-merge-export-unavailable'),
-            icon: 'warn',
-            message: '生成长图当前不可用',
-            reason: '导出与系统分享还没有经过评审的实现，本页只做本机预览，不会生成或上传任何文件。',
+          LoopButtonPair(
+            children: <Widget>[
+              LoopButton(
+                key: const ValueKey<String>('chat-merge-back'),
+                label: '返回聊天',
+                onPressed: widget.onBack,
+              ),
+              LoopButton(
+                key: const ValueKey<String>('chat-merge-export'),
+                label: '生成长图',
+                primary: true,
+                onPressed: _exporting ? null : () => unawaited(_export()),
+              ),
+            ],
           ),
           const SizedBox(height: 20),
         ],
       ],
     );
+  }
+
+  /// Captures the anonymous card, encodes it as PNG on device and hands the
+  /// bytes to the system share sheet. Nothing is uploaded and nothing is kept.
+  Future<void> _export() async {
+    setState(() => _exporting = true);
+    final sink = ref.read(chatMergeExportSinkProvider);
+    ChatMergeExportOutcome outcome;
+    try {
+      final boundary =
+          _cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final bytes = boundary == null ? null : await _encode(boundary);
+      outcome = bytes == null
+          ? ChatMergeExportOutcome.failed
+          : await sink.shareImage(
+              pngBytes: bytes,
+              fileName: 'loop-merge-preview.png',
+            );
+    } catch (_) {
+      outcome = ChatMergeExportOutcome.failed;
+    }
+    if (!mounted) return;
+    setState(() => _exporting = false);
+    LoopToast.show(
+      context,
+      message: chatMergeExportMessage(outcome),
+      kind: outcome == ChatMergeExportOutcome.shared
+          ? LoopToastKind.ok
+          : LoopToastKind.warn,
+    );
+  }
+
+  static Future<Uint8List?> _encode(RenderRepaintBoundary boundary) async {
+    final image = await boundary.toImage(pixelRatio: 3);
+    try {
+      final data = await image.toByteData(format: ui.ImageByteFormat.png);
+      return data?.buffer.asUint8List();
+    } finally {
+      image.dispose();
+    }
   }
 }

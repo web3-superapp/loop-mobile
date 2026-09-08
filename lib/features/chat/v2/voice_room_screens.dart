@@ -150,8 +150,6 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
               onEnd: () => _run(controller.endRoom, '房间已结束'),
               onInvite: (profileId) =>
                   _run(() => controller.inviteSpeaker(profileId), '已邀请发言'),
-              onRemove: (profileId) =>
-                  _run(() => controller.removeSpeaker(profileId), '已移出发言'),
             ),
           ],
           _ViewerActions(
@@ -280,7 +278,13 @@ class _MediaSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final id = roomId;
-    if (id == null) {
+    final target = id == null
+        ? null
+        : AudioRoomTarget.tryParse(
+            callType: AudioRoomTarget.callType,
+            roomId: id,
+          );
+    if (target == null) {
       return const LoopEmpty(
         key: ValueKey<String>('voiceroom-media-unavailable'),
         icon: 'warn',
@@ -288,32 +292,15 @@ class _MediaSection extends StatelessWidget {
         reason: '服务端返回的通话地址不符合约定，本页没有发起任何连接。',
       );
     }
+    // The authorized room is handed straight to the reviewed lobby: no scoped
+    // provider is involved, so the locator can never resolve to the
+    // fail-closed production default by accident.
     return SizedBox(
       key: const ValueKey<String>('voiceroom-media'),
       height: 420,
-      child: ProviderScope(
-        overrides: [
-          audioRoomTargetSourceProvider.overrideWithValue(
-            _JoinedAudioRoomTargetSource(id),
-          ),
-        ],
-        child: const StreamVoiceRoomPage(),
-      ),
+      child: StreamVoiceRoomPage(target: target),
     );
   }
-}
-
-/// Hands the reviewed lobby exactly one authorized room ID.
-final class _JoinedAudioRoomTargetSource implements AudioRoomTargetSource {
-  const _JoinedAudioRoomTargetSource(this._roomId);
-
-  final String _roomId;
-
-  @override
-  Future<AudioRoomTarget?> loadTarget() async => AudioRoomTarget.tryParse(
-    callType: AudioRoomTarget.callType,
-    roomId: _roomId,
-  );
 }
 
 class _HandRaiseQueue extends StatelessWidget {
@@ -363,14 +350,12 @@ class _HostControls extends StatelessWidget {
     required this.onMuteAll,
     required this.onEnd,
     required this.onInvite,
-    required this.onRemove,
   });
 
   final VoiceRoomPageState state;
   final Future<void> Function() onMuteAll;
   final Future<void> Function() onEnd;
   final Future<void> Function(String publicProfileId) onInvite;
-  final Future<void> Function(String publicProfileId) onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -385,7 +370,13 @@ class _HostControls extends StatelessWidget {
       key: const ValueKey<String>('voiceroom-host-controls'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        if (pending.isNotEmpty)
+        if (snapshot.viewer.canInviteSpeakers && pending.isEmpty)
+          const LoopEmpty(
+            key: ValueKey<String>('voiceroom-invite-empty'),
+            message: '没有待邀请的举手',
+            reason: '有人举手后，这里会按服务端分配的顺序号列出。',
+          )
+        else if (pending.isNotEmpty)
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               for (var index = 0; index < pending.length; index += 1)
@@ -409,11 +400,18 @@ class _HostControls extends StatelessWidget {
                 ),
             ],
           ),
-        if (snapshot.viewer.canInviteSpeakers && pending.isEmpty)
+        // The room resource carries no speaker directory: it returns only the
+        // viewer's own role and two aggregate counts. A hand raise is a
+        // *request* to speak, never proof that the account is speaking, so it
+        // must not become the target of a removal.
+        if (snapshot.viewer.canInviteSpeakers)
           const LoopEmpty(
-            key: ValueKey<String>('voiceroom-invite-empty'),
-            message: '没有待邀请的举手',
-            reason: '有人举手后，这里会按服务端分配的顺序号列出。',
+            key: ValueKey<String>('voiceroom-remove-speaker-unavailable'),
+            icon: 'warn',
+            message: '移出发言当前不可用',
+            reason:
+                '服务端的房间资源没有下发发言人名单，因此这里没有可选的移出目标。'
+                '举手队列只是发言申请，不能当作发言人使用。',
           ),
         LoopButtonPair(
           children: <Widget>[
@@ -433,20 +431,6 @@ class _HostControls extends StatelessWidget {
               ),
           ],
         ),
-        if (snapshot.viewer.canInviteSpeakers && pending.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-            child: LoopButton(
-              key: const ValueKey<String>('voiceroom-remove-speaker'),
-              label: '移出第一位发言人',
-              block: true,
-              onPressed: busy
-                  ? null
-                  : () => unawaited(
-                      onRemove(pending.first.profile.publicProfileId!),
-                    ),
-            ),
-          ),
       ],
     );
   }

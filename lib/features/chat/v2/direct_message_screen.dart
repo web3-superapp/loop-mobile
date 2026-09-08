@@ -131,29 +131,45 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
           onSend: _sendMessageRequest,
         );
       }
+      // `operatorRequired` is a terminal *unresolved* outcome: the server
+      // accepted the command and a human has to finish it. Offering a retry
+      // would start a second logical operation under a new key, so this state
+      // gets its own explanation with no retry at all.
+      if (state.block == DirectChannelBlock.operatorRequired) {
+        return const SingleChildScrollView(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              LoopEmpty(
+                key: ValueKey<String>('dm-operator-required'),
+                icon: 'clock',
+                message: '需要人工处理',
+                reason:
+                    '服务端已经受理这次请求，但需要人工介入才能完成。'
+                    '这里不提供重试：重新提交会开出第二个操作。请联系支持后再回到这个会话。',
+              ),
+              LoopNotice(
+                key: ValueKey<String>('dm-operator-required-notice'),
+                icon: 'info',
+                tone: LoopNoticeTone.warn,
+                title: '不要重复提交',
+                body: '这次请求已经记录在服务端，重复发起不会加快处理，反而会产生一条新的待处理操作。',
+                margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+              ),
+            ],
+          ),
+        );
+      }
       return SingleChildScrollView(
         padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            CommunityStateBlock(
-              phase: state.phase,
-              failureKind: state.failureKind,
-              skeleton: LoopSkeletonType.list,
-              emptyMessage: '还没有打开这个私聊',
-              emptyReason: '服务端还没有返回可用的会话地址。',
-              onRetry: () => unawaited(controller.resolve()),
-            ),
-            if (state.block == DirectChannelBlock.operatorRequired)
-              LoopNotice(
-                key: const ValueKey<String>('dm-operator-required'),
-                icon: 'warn',
-                tone: LoopNoticeTone.warn,
-                title: '需要人工处理',
-                body: '服务端已经受理这次请求，但需要人工介入才能完成。请不要重复提交，联系支持后再试。',
-                margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-              ),
-          ],
+        child: CommunityStateBlock(
+          phase: state.phase,
+          failureKind: state.failureKind,
+          skeleton: LoopSkeletonType.list,
+          emptyMessage: '还没有打开这个私聊',
+          emptyReason: '服务端还没有返回可用的会话地址。',
+          onRetry: () => unawaited(controller.resolve()),
         ),
       );
     }

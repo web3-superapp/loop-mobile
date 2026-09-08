@@ -625,7 +625,7 @@ GoRouter _buildRouter(
         path: '/chat/channel/:cid',
         redirect: (context, state) =>
             loopChatLocationForCid(state.pathParameters['cid'] ?? '') ??
-            LoopRouteManifest.defaultPath,
+            routingErrors.record(state.uri.toString()),
       ),
       GoRoute(
         path: '/preview/token-card',

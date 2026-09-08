@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
@@ -26,6 +27,18 @@ enum ChatSearchScope {
 
   final String label;
 }
+
+/// The sender label one result may carry.
+///
+/// `message.user.name` is an account-level Stream value, so a group or
+/// community hit uses the same neutral label the group message list does. A
+/// direct hit carries the conversation it opens, which is the identity the
+/// page already owns.
+String chatSearchSenderLabel(LoopChatSurface surface) => switch (surface) {
+  LoopChatSurface.communityChat ||
+  LoopChatSurface.group => loopGroupMemberNeutralLabel,
+  LoopChatSurface.direct => '私聊',
+};
 
 /// One decoded search hit. Stream types stop at this boundary.
 @immutable
@@ -181,9 +194,11 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
     return ChatSearchHit(
       messageId: message.id,
       cid: cid,
-      // Stream's own user name is display data from the provider; LOOP never
-      // treats it as an identity.
-      senderLabel: message.user?.name ?? '群成员',
+      // `message.user.name` is an account-level Stream value. A community or
+      // group hit therefore carries the neutral member label, exactly as the
+      // group message list does; a direct hit carries the conversation's own
+      // identity, which is the page the result opens.
+      senderLabel: chatSearchSenderLabel(surface),
       channelLabel: switch (surface) {
         LoopChatSurface.communityChat => '社区官方群',
         LoopChatSurface.group => '群聊',
@@ -319,7 +334,9 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
         final hit = hits[index];
         return LoopRecordRow(
           key: ValueKey<String>('chat-search-hit-${hit.messageId}'),
-          title: '${hit.senderLabel} · ${hit.channelLabel}',
+          title: hit.senderLabel == hit.channelLabel
+              ? hit.channelLabel
+              : '${hit.senderLabel} · ${hit.channelLabel}',
           subtitle: hit.text,
           trailingCaption: communityObservedAtLabel(hit.createdAt),
           position: index == 0
