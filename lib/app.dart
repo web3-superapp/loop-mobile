@@ -10,6 +10,7 @@ import 'package:loop_mobile/app/notifications/loop_notification_coordinator.dart
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/app/session/loop_communication_retirement.dart';
 import 'package:loop_mobile/app/session/post_auth_bootstrap_coordinator.dart';
+import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/navigation/spot_market_route.dart';
 import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
@@ -17,14 +18,19 @@ import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/policy/loop_client_policy.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
+import 'package:loop_mobile/features/account/email_auth_controller.dart';
+import 'package:loop_mobile/features/account/loop_id_setup_screen.dart';
 import 'package:loop_mobile/features/account/privy_login_screen.dart';
+import 'package:loop_mobile/features/account/privy_otp_screen.dart';
 import 'package:loop_mobile/features/chat/chat.dart';
 import 'package:loop_mobile/features/community/community_screen.dart';
 import 'package:loop_mobile/features/home/home_screens.dart';
 import 'package:loop_mobile/features/launchpad/launchpad_screen.dart';
 import 'package:loop_mobile/features/market/market.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
+import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
+import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/review/signing_review_surface.dart';
 import 'package:loop_mobile/features/shell/loop_pending_surface.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
@@ -80,6 +86,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
   late final GoRouter router;
   late final LoopNotificationCoordinator notificationCoordinator;
   late final PostAuthBootstrapCoordinator postAuthBootstrapCoordinator;
+  late final PostAuthProfileRedirectCoordinator postAuthProfileCoordinator;
 
   @override
   void initState() {
@@ -110,10 +117,35 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       if (!mounted) return;
       await ref.read(loopBootstrapSessionProvider)?.authorize();
     });
+    postAuthProfileCoordinator = PostAuthProfileRedirectCoordinator(
+      readProfile: () async {
+        // Riverpod rotates principal-scoped gateways after publishing the
+        // session; yield once so this read cannot use a retired owner.
+        await Future<void>.delayed(Duration.zero);
+        return ref.read(profileGatewayProvider).load();
+      },
+      publish: (landing, kind) {
+        if (!mounted) return;
+        ref
+            .read(loopProfileLandingProvider.notifier)
+            .publish(landing, kind: kind);
+      },
+      navigate: (landing) {
+        if (!mounted || landing != LoopProfileLanding.loopIdSetup) return;
+        // Only lift an owner out of the credential or landing pages. A deep
+        // link the owner opened deliberately is never interrupted.
+        const liftable = <String>{'/auth', '/auth/otp', '/community'};
+        final location = router.state.matchedLocation;
+        if (liftable.contains(location)) {
+          router.go(LoopRouteManifest.pathFor('loop-id-setup'));
+        }
+      },
+    );
     ref.listenManual<LoopSessionState>(loopSessionProvider, (previous, next) {
       if (previous?.mode != next.mode) router.refresh();
       notificationCoordinator.onIdentityMayHaveChanged();
       postAuthBootstrapCoordinator.onSessionChanged(previous, next);
+      postAuthProfileCoordinator.onSessionChanged(previous, next);
     });
     ref.listenManual(loopBootstrapSessionProvider, (previous, next) {
       if (!identical(previous, next)) {
@@ -177,11 +209,20 @@ GoRouter _buildRouter(
     initialLocation: '/auth',
     redirect: (context, state) {
       final session = readSession();
-      final isAuthRoute = state.matchedLocation == '/auth';
+      final location = state.matchedLocation;
+      // Credential pages reachable before a verified session. Everything else
+      // stays behind the gate.
+      const signedOutRoutes = <String>{
+        '/auth',
+        '/auth/otp',
+        '/auth/wallet',
+        '/splash',
+      };
+      const credentialRoutes = <String>{'/auth', '/auth/otp'};
       if (!session.canEnterProduct) {
-        return isAuthRoute ? null : '/auth';
+        return signedOutRoutes.contains(location) ? null : '/auth';
       }
-      if (isAuthRoute) return '/community';
+      if (credentialRoutes.contains(location)) return '/community';
       return null;
     },
     routes: <RouteBase>[
@@ -190,10 +231,26 @@ GoRouter _buildRouter(
         path: '/auth',
         builder: (context, state) => const PrivyLoginScreen(),
       ),
-      GoRoute(path: '/auth/otp', redirect: (context, state) => '/auth'),
+      GoRoute(
+        path: '/auth/otp',
+        builder: (context, state) => const PrivyOtpScreen(),
+      ),
+      GoRoute(
+        path: '/auth/loop-id',
+        builder: (context, state) => LoopIdSetupScreen(
+          onActivated: () => context.go(LoopRouteManifest.defaultPath),
+        ),
+      ),
       ShellRoute(
-        builder: (context, state, child) =>
-            LoopShell(location: state.uri.path, child: child),
+        builder: (context, state, child) => LoopShell(
+          location: state.uri.path,
+          child: Column(
+            children: <Widget>[
+              const ProfileAvailabilityBanner(),
+              Expanded(child: child),
+            ],
+          ),
+        ),
         // Peer tabs fade; every other route pushes horizontally through the
         // theme's LoopPushTransitionsBuilder.
         routes: <RouteBase>[
@@ -567,29 +624,56 @@ final List<RouteBase> _accountRoutes =
           ('/splash', 'splash'),
           ('/auth/wallet', 'auth-wallet'),
           ('/auth/wallet/create', 'wallet-create'),
-          ('/auth/wallet/backup', 'wallet-backup'),
+          ('/auth/wallet/backup', 'wallet-recovery'),
           ('/auth/security', 'security-setup'),
         ]
         .map((item) {
           return GoRoute(
             path: item.$1,
-            builder: (context, state) => AccountSurfaceScreen.fromId(
-              item.$2,
-              onNavigate: (destination) =>
-                  context.go(_accountPath(destination)),
+            builder: (context, state) => Consumer(
+              builder: (context, ref, child) =>
+                  _accountScreen(context, ref, item.$2),
             ),
           );
         })
         .toList(growable: false);
 
+/// Account step pages. Every capability stays fail-closed: this composition
+/// never asserts a wallet, recovery or protection capability it has not been
+/// told about by the integration layer.
+Widget _accountScreen(BuildContext context, WidgetRef ref, String id) {
+  final config = ref.watch(appConfigProvider);
+  void back() {
+    if (Navigator.of(context).canPop()) {
+      context.pop();
+    } else {
+      context.go(LoopRouteManifest.pathFor('auth'));
+    }
+  }
+
+  return AccountSurfaceScreen.fromId(
+    id,
+    versionLabel: 'Version ${config.loopClientVersionForCurrentBuild}',
+    capabilities: PrivyWalletCapabilities(
+      canConnectExternalWallet: config.canConnectExternalWallet,
+    ),
+    onBack: back,
+    onPrimaryAction: id == 'auth-wallet' && config.canConnectExternalWallet
+        ? () => unawaited(
+            ref.read(emailAuthProvider.notifier).connectExternalWallet(context),
+          )
+        : null,
+    onNavigate: (destination) => context.go(_accountPath(destination)),
+  );
+}
+
 // Manifest 7-profile pages with an existing screen. Copy permissions, seed
-// backup and profile rewards are retired; `/profile/social-privacy` stays as a
-// supplementary implementation route.
+// backup and profile rewards are retired; `/profile/social-privacy` retired
+// with V2 privacy (step 2).
 final List<RouteBase> _profileRoutes =
     <(String, String)>[
           ('/profile/edit', 'profile-edit'),
           ('/profile/privacy', 'privacy'),
-          ('/profile/social-privacy', 'social-privacy'),
           ('/profile/security', 'security'),
           ('/profile/devices', 'devices'),
           ('/profile/social-recovery', 'social-recovery'),
@@ -697,23 +781,18 @@ Widget _profileScreen(BuildContext context, WidgetRef ref, String id) {
     groups: 0,
     watchlistItems: 0,
   );
+  void back() {
+    if (Navigator.of(context).canPop()) {
+      context.pop();
+    } else {
+      context.go(LoopRouteManifest.defaultPath);
+    }
+  }
+
   return ProfileSurfaceScreen.fromId(
     id,
     identity: identity,
-    leading: id == 'profile'
-        ? IconButton(
-            key: const ValueKey<String>('profile-back-to-community'),
-            tooltip: 'Back to Community',
-            onPressed: () {
-              if (Navigator.of(context).canPop()) {
-                context.pop();
-              } else {
-                context.go('/community');
-              }
-            },
-            icon: const Icon(Icons.arrow_back_rounded),
-          )
-        : null,
+    onBack: back,
     onNavigate: (destination) {
       final path = _profilePath(destination);
       // Tab destinations replace the stack; only child pages push.
@@ -766,12 +845,11 @@ String _accountPath(String id) => switch (id) {
   'auth-otp' => LoopRouteManifest.pathFor('auth-otp'),
   'auth-wallet' => LoopRouteManifest.pathFor('auth-wallet'),
   'wallet-create' => LoopRouteManifest.pathFor('wallet-create'),
-  'wallet-backup' => LoopRouteManifest.pathFor('wallet-recovery'),
-  'seed-show' => LoopRouteManifest.pathFor('wallet-recovery'),
-  'seed-verify' => LoopRouteManifest.pathFor('wallet-recovery'),
-  'wallet-import' => LoopRouteManifest.pathFor('auth-wallet'),
+  'wallet-recovery' => LoopRouteManifest.pathFor('wallet-recovery'),
   'security-setup' => LoopRouteManifest.pathFor('security-setup'),
+  'loop-id-setup' => LoopRouteManifest.pathFor('loop-id-setup'),
   'profile-setup' => LoopRouteManifest.pathFor('loop-id-setup'),
+  'community' => LoopRouteManifest.defaultPath,
   'home' => LoopRouteManifest.defaultPath,
   _ => LoopRouteManifest.pathFor('auth'),
 };
@@ -784,11 +862,10 @@ String _profilePath(String id) => switch (id) {
   'friends' => '/profile/friends',
   'profile-edit' => LoopRouteManifest.pathFor('profile-edit'),
   'privacy' => LoopRouteManifest.pathFor('privacy'),
-  'social-privacy' => '/profile/social-privacy',
+  'social-privacy' => LoopRouteManifest.pathFor('privacy'),
   'copytrade-perms' => LoopRouteManifest.pathFor('privacy'),
   'security' => LoopRouteManifest.pathFor('security'),
   'devices' => LoopRouteManifest.pathFor('devices'),
-  'seed-backup' => LoopRouteManifest.pathFor('key-export'),
   'social-recovery' => LoopRouteManifest.pathFor('social-recovery'),
   'notif-settings' => LoopRouteManifest.pathFor('notif-settings'),
   'connections' => LoopRouteManifest.pathFor('connections'),

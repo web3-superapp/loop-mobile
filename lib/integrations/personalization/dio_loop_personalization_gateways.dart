@@ -1,13 +1,17 @@
 import 'package:dio/dio.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
-import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
-import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
 import 'package:loop_mobile/features/profile/social_privacy/social_privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/social_privacy/social_privacy_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_session.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 
+/// Frozen V1 personalization adapters.
+///
+/// V1 Privacy was retired by the V2 privacy resource (decision 0053): its
+/// `copy_trade_visibility` field has no V2 counterpart and copytrade must not
+/// return, so no honest mapping onto the current model exists.
+///
 /// Authenticated production adapter for the owner-scoped Profile resource.
 ///
 /// The access token is supplied by [LoopAuthenticatedSession] for exactly one
@@ -67,59 +71,6 @@ final class DioLoopProfileGateway implements ProfileGateway {
       );
     } catch (_) {
       throw const ProfileGatewayException(ProfileGatewayFailureKind.unexpected);
-    }
-  }
-}
-
-/// Authenticated production adapter for owner-only Privacy preferences.
-final class DioLoopPrivacyGateway implements PrivacyGateway {
-  DioLoopPrivacyGateway({required Dio dio, required this._session})
-    : _transport = _DioLoopPersonalizationTransport(dio);
-
-  final _DioLoopPersonalizationTransport _transport;
-  final LoopAuthenticatedSession _session;
-
-  @override
-  PrivacyMode get mode => PrivacyMode.production;
-
-  @override
-  Future<PrivacyResource> load() => _execute(
-    (accessToken) => _transport.loadPrivacy(accessToken: accessToken),
-  );
-
-  @override
-  Future<PrivacyResource> replace({
-    required int expectedVersion,
-    required PrivacyValues values,
-  }) {
-    if (expectedVersion < 0 || expectedVersion > privacyMaximumVersion) {
-      return Future<PrivacyResource>.error(
-        const PrivacyGatewayException(PrivacyGatewayFailureKind.invalidData),
-      );
-    }
-    final candidate = PrivacyValues.copyOf(values);
-    return _execute(
-      (accessToken) => _transport.replacePrivacy(
-        accessToken: accessToken,
-        expectedVersion: expectedVersion,
-        values: candidate,
-      ),
-    );
-  }
-
-  Future<PrivacyResource> _execute(
-    Future<PrivacyResource> Function(String accessToken) request,
-  ) async {
-    try {
-      return await _session.execute(request);
-    } on LoopBackendFailure catch (failure) {
-      throw PrivacyGatewayException(_privacyFailureKind(failure));
-    } on InvalidPrivacyContractException {
-      throw const PrivacyGatewayException(
-        PrivacyGatewayFailureKind.invalidData,
-      );
-    } catch (_) {
-      throw const PrivacyGatewayException(PrivacyGatewayFailureKind.unexpected);
     }
   }
 }
@@ -185,7 +136,6 @@ final class _DioLoopPersonalizationTransport {
   const _DioLoopPersonalizationTransport(this._dio);
 
   static const _profilePath = '/v1/profile';
-  static const _privacyPath = '/v1/profile/privacy';
   static const _socialPrivacyPath = '/v1/profile/social-privacy';
 
   static final RegExp _requestIdPattern = RegExp(
@@ -249,35 +199,6 @@ final class _DioLoopPersonalizationTransport {
       },
     );
     return _parseSuccess(response, _parseProfileResource);
-  }
-
-  Future<PrivacyResource> loadPrivacy({required String accessToken}) async {
-    final response = await _get(
-      _privacyPath,
-      accessToken: accessToken,
-      resource: _PersonalizationResource.privacy,
-    );
-    return _parseSuccess(response, _parsePrivacyResource);
-  }
-
-  Future<PrivacyResource> replacePrivacy({
-    required String accessToken,
-    required int expectedVersion,
-    required PrivacyValues values,
-  }) async {
-    final response = await _put(
-      _privacyPath,
-      accessToken: accessToken,
-      resource: _PersonalizationResource.privacy,
-      data: <String, Object?>{
-        'expected_version': expectedVersion,
-        'privacy': <String, Object?>{
-          'discoverable': values.discoverable,
-          'copy_trade_visibility': values.copyTradeVisibility.wireValue,
-        },
-      },
-    );
-    return _parseSuccess(response, _parsePrivacyResource);
   }
 
   Future<SocialPrivacyResource> loadSocialPrivacy({
@@ -393,31 +314,6 @@ final class _DioLoopPersonalizationTransport {
     return ProfileResource(
       version: _version(root['version']),
       values: values,
-      updatedAt: _nullableTimestamp(root['updated_at']),
-    );
-  }
-
-  PrivacyResource _parsePrivacyResource(Object? payload) {
-    final root = _strictMap(payload, const <String>{
-      'version',
-      'privacy',
-      'updated_at',
-    });
-    final rawValues = _strictMap(root['privacy'], const <String>{
-      'discoverable',
-      'copy_trade_visibility',
-    });
-    final discoverable = rawValues['discoverable'];
-    final visibility = rawValues['copy_trade_visibility'];
-    if (discoverable is! bool || visibility is! String) {
-      return _invalidPayload();
-    }
-    return PrivacyResource(
-      version: _version(root['version']),
-      values: PrivacyValues(
-        discoverable: discoverable,
-        copyTradeVisibility: CopyTradeVisibility.fromWire(visibility),
-      ),
       updatedAt: _nullableTimestamp(root['updated_at']),
     );
   }
@@ -655,7 +551,7 @@ final class _DioLoopPersonalizationTransport {
       throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
 }
 
-enum _PersonalizationResource { profile, privacy, socialPrivacy }
+enum _PersonalizationResource { profile, socialPrivacy }
 
 final class _PersonalizationErrorMetadata {
   const _PersonalizationErrorMetadata({
@@ -680,21 +576,6 @@ ProfileGatewayFailureKind _profileFailureKind(LoopBackendFailure failure) {
     return ProfileGatewayFailureKind.unavailable;
   }
   return ProfileGatewayFailureKind.unexpected;
-}
-
-PrivacyGatewayFailureKind _privacyFailureKind(LoopBackendFailure failure) {
-  if (failure.statusCode == 409 && failure.code == 'version_conflict') {
-    return PrivacyGatewayFailureKind.versionConflict;
-  }
-  if (failure.kind == LoopBackendFailureKind.invalidPayload ||
-      (failure.kind == LoopBackendFailureKind.invalidRequest &&
-          failure.code == 'invalid_request')) {
-    return PrivacyGatewayFailureKind.invalidData;
-  }
-  if (_isUnavailableFailure(failure)) {
-    return PrivacyGatewayFailureKind.unavailable;
-  }
-  return PrivacyGatewayFailureKind.unexpected;
 }
 
 SocialPrivacyGatewayFailureKind _socialPrivacyFailureKind(

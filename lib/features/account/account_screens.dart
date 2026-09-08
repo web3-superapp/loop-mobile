@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
-import 'package:loop_mobile/widgets/loop_ui.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// Capabilities confirmed by the Privy integration at runtime.
 ///
-/// The default is deliberately fail-closed. Recovery words, private-key import,
-/// and embedded-wallet creation must never become available because a screen was
-/// merely routed to.
+/// The default is deliberately fail-closed. Recovery methods, MFA, private-key
+/// export and embedded-wallet creation must never become available because a
+/// screen was merely routed to. LOOP has no recovery phrase at all: seed
+/// reveal, verify and import were removed with the mnemonic pages.
 @immutable
 class PrivyWalletCapabilities {
   const PrivyWalletCapabilities({
@@ -14,13 +17,12 @@ class PrivyWalletCapabilities {
     this.canConnectExternalWallet = false,
     this.canUsePasskey = false,
     this.canUseBiometrics = false,
+    this.canUseRecoveryPassword = false,
     this.canUseCloudRecovery = false,
     this.canUseSocialRecovery = false,
-    this.canRevealRecoveryPhrase = false,
-    this.canVerifyRecoveryPhrase = false,
-    this.canImportRecoveryPhrase = false,
-    this.canImportPrivateKey = false,
-    this.canImportWatchOnly = true,
+    this.canExportPrivateKey = false,
+    this.canUseApplicationPin = false,
+    this.canUseTransactionMfa = false,
     this.secureScreenProtectionActive = false,
   });
 
@@ -30,142 +32,247 @@ class PrivyWalletCapabilities {
   final bool canConnectExternalWallet;
   final bool canUsePasskey;
   final bool canUseBiometrics;
+  final bool canUseRecoveryPassword;
   final bool canUseCloudRecovery;
   final bool canUseSocialRecovery;
-  final bool canRevealRecoveryPhrase;
-  final bool canVerifyRecoveryPhrase;
-  final bool canImportRecoveryPhrase;
-  final bool canImportPrivateKey;
-  final bool canImportWatchOnly;
+  final bool canExportPrivateKey;
+  final bool canUseApplicationPin;
+  final bool canUseTransactionMfa;
   final bool secureScreenProtectionActive;
 }
 
 typedef AccountNavigation = void Function(String destination);
 
-/// Single routing surface for the complete A1-A12 account journey.
+/// Routing surface for the account pages that are not a Privy credential flow.
+///
+/// `auth` and `auth-otp` live in `privy_login_screen.dart` / `privy_otp_screen
+/// .dart`; `loop-id-setup` lives in `loop_id_setup_screen.dart`.
 class AccountSurfaceScreen extends StatelessWidget {
   const AccountSurfaceScreen.fromId(
     this.surfaceId, {
     super.key,
     this.capabilities = const PrivyWalletCapabilities.unavailable(),
     this.onNavigate,
+    this.onBack,
     this.onPrimaryAction,
     this.versionLabel = 'Version 0.1.0',
-    this.maskedDestination = 'm•••@example.com',
-    this.recoveryWords,
   });
 
   static const supportedIds = <String>{
     'splash',
-    'onboarding',
-    'auth',
-    'auth-otp',
     'auth-wallet',
     'wallet-create',
-    'wallet-backup',
-    'seed-show',
-    'seed-verify',
-    'wallet-import',
+    'wallet-recovery',
     'security-setup',
-    'profile-setup',
   };
 
   final String surfaceId;
   final PrivyWalletCapabilities capabilities;
   final AccountNavigation? onNavigate;
+  final VoidCallback? onBack;
   final VoidCallback? onPrimaryAction;
   final String versionLabel;
-  final String maskedDestination;
-
-  /// Supplied only after the secure wallet boundary authorizes a reveal.
-  /// No recovery material is bundled in this UI layer.
-  final List<String>? recoveryWords;
 
   String get _id => surfaceId.replaceFirst('#', '').toLowerCase();
 
   void _navigate(BuildContext context, String destination) {
-    if (onNavigate != null) {
-      onNavigate!(destination);
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Continue to ${_friendlyDestination(destination)}'),
-      ),
-    );
+    onNavigate?.call(destination);
   }
-
-  static String _friendlyDestination(String value) => switch (value) {
-    'auth' => 'sign in',
-    'auth-otp' => 'verification',
-    'auth-wallet' => 'wallet connection',
-    'wallet-create' => 'wallet setup',
-    'wallet-backup' => 'recovery setup',
-    'seed-show' => 'recovery phrase',
-    'seed-verify' => 'phrase check',
-    'security-setup' => 'security setup',
-    'profile-setup' => 'profile setup',
-    'home' => 'home',
-    _ => 'the next step',
-  };
 
   @override
   Widget build(BuildContext context) {
     return switch (_id) {
-      'splash' => _SplashScreen(
+      'splash' => SplashScreen(
         versionLabel: versionLabel,
-        onContinue: () => _navigate(context, 'onboarding'),
+        onContinue: () => _navigate(context, 'auth'),
       ),
-      'onboarding' => _OnboardingScreen(
-        onComplete: () => _navigate(context, 'auth'),
-      ),
-      'auth' => _AuthScreen(
-        capabilities: capabilities,
-        onNavigate: (destination) => _navigate(context, destination),
-      ),
-      'auth-otp' => _OtpScreen(destination: maskedDestination),
-      'auth-wallet' => _ExternalWalletScreen(
+      'auth-wallet' => ExternalWalletScreen(
         capabilityAvailable: capabilities.canConnectExternalWallet,
-        onConnected:
-            onPrimaryAction ?? () => _navigate(context, 'profile-setup'),
+        onBack: onBack,
+        onConnect: onPrimaryAction,
       ),
-      'wallet-create' => _WalletCreateScreen(
+      'wallet-create' => WalletCreateScreen(
         capabilityAvailable: capabilities.canCreateEmbeddedWallet,
-        onCreated: onPrimaryAction ?? () => _navigate(context, 'wallet-backup'),
+        onBack: onBack,
+        onContinue: () => _navigate(context, 'wallet-recovery'),
       ),
-      'wallet-backup' => _WalletBackupScreen(
+      'wallet-recovery' => WalletRecoveryScreen(
         capabilities: capabilities,
-        onNavigate: (destination) => _navigate(context, destination),
+        onBack: onBack,
+        onContinue: () => _navigate(context, 'security-setup'),
       ),
-      'seed-show' => _SeedShowScreen(
+      'security-setup' => SecuritySetupScreen(
         capabilities: capabilities,
-        recoveryWords: recoveryWords,
-        onContinue: () => _navigate(context, 'seed-verify'),
+        onBack: onBack,
+        onContinue: () => _navigate(context, 'loop-id-setup'),
       ),
-      'seed-verify' => _SeedVerifyScreen(
-        capabilityAvailable: capabilities.canVerifyRecoveryPhrase,
-        onVerified:
-            onPrimaryAction ?? () => _navigate(context, 'security-setup'),
-      ),
-      'wallet-import' => _WalletImportScreen(
-        capabilities: capabilities,
-        onImported:
-            onPrimaryAction ?? () => _navigate(context, 'security-setup'),
-      ),
-      'security-setup' => _SecuritySetupScreen(
-        capabilities: capabilities,
-        onContinue: () => _navigate(context, 'profile-setup'),
-      ),
-      'profile-setup' => _ProfileSetupScreen(
-        onComplete: onPrimaryAction ?? () => _navigate(context, 'home'),
-      ),
-      _ => const _UnknownAccountScreen(),
+      _ => const UnknownAccountScreen(),
     };
   }
 }
 
-class _SplashScreen extends StatelessWidget {
-  const _SplashScreen({required this.versionLabel, required this.onContinue});
+/// `.identity-progress`: step counter, label and a filled track.
+class IdentityProgress extends StatelessWidget {
+  const IdentityProgress({
+    required this.step,
+    required this.total,
+    required this.label,
+    super.key,
+  });
+
+  final int step;
+  final int total;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final fraction = (step / total).clamp(0.0, 1.0);
+    return Semantics(
+      container: true,
+      label: '流程第 $step 步，共 $total 步：$label',
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          2,
+          LoopSpacing.page,
+          14,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            ExcludeSemantics(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  RichText(
+                    text: TextSpan(
+                      children: <InlineSpan>[
+                        TextSpan(
+                          text: step.toString().padLeft(2, '0'),
+                          style: LoopTypography.mono(
+                            size: 12,
+                            weight: FontWeight.w600,
+                            color: LoopColors.lime,
+                          ),
+                        ),
+                        TextSpan(
+                          text: ' / ${total.toString().padLeft(2, '0')}',
+                          style: LoopTypography.mono(
+                            size: 12,
+                            weight: FontWeight.w500,
+                            color: LoopColors.text3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    label,
+                    style: LoopTypography.mono(
+                      size: 11,
+                      weight: FontWeight.w500,
+                      color: LoopColors.text2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                key: const ValueKey<String>('identity-progress-track'),
+                value: fraction,
+                minHeight: 4,
+                backgroundColor: LoopColors.line2,
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  LoopColors.lime,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// `.identity-step-copy`: one line of primary narrative for a step page.
+class IdentityStepCopy extends StatelessWidget {
+  const IdentityStepCopy(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        0,
+        LoopSpacing.page,
+        LoopSpacing.group,
+      ),
+      child: Semantics(
+        container: true,
+        child: Text(
+          key: const ValueKey<String>('identity-step-copy'),
+          text,
+          textAlign: TextAlign.center,
+          style: LoopTypography.sora(
+            size: 14,
+            weight: FontWeight.w500,
+            height: 1.5,
+            color: LoopColors.text2,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One recovery / security option whose availability comes from a capability.
+/// It is never a switch: nothing here can enrol, configure or store anything.
+class CapabilityChoiceRow extends StatelessWidget {
+  const CapabilityChoiceRow({
+    required this.title,
+    required this.detail,
+    required this.available,
+    required this.unavailableReason,
+    super.key,
+    this.position = LoopRowPosition.single,
+  });
+
+  final String title;
+  final String detail;
+  final bool available;
+  final String unavailableReason;
+  final LoopRowPosition position;
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopRecordRow(
+      key: ValueKey<String>('capability-$title'),
+      title: title,
+      subtitle: available ? detail : '$detail · $unavailableReason',
+      trailing: available ? '可用' : '不可用',
+      position: position,
+      semanticLabel: available
+          ? '$title，能力可用，但尚未启用'
+          : '$title，不可用：$unavailableReason',
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// splash · intro / focus
+// ---------------------------------------------------------------------------
+
+class SplashScreen extends StatelessWidget {
+  const SplashScreen({
+    required this.versionLabel,
+    required this.onContinue,
+    super.key,
+  });
 
   final String versionLabel;
   final VoidCallback onContinue;
@@ -173,1796 +280,485 @@ class _SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: <Widget>[
-          const Positioned.fill(child: LoopBackdrop()),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  const _LoopWordmark(),
-                  const Spacer(),
-                  const Center(child: _IdentityOrbit(size: 184)),
-                  const SizedBox(height: 40),
-                  Text(
-                    'Your onchain life,\nheld in one loop.',
-                    style: Theme.of(context).textTheme.displayMedium,
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'Checking your session and account protection before you continue.',
-                    style: Theme.of(context).textTheme.bodyLarge
-                        ?.copyWith(color: LoopColors.vapor),
-                  ),
-                  const SizedBox(height: 24),
-                  Semantics(
-                    liveRegion: true,
-                    label: 'Checking account status',
-                    child: Row(
-                      children: <Widget>[
-                        const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Checking account status…',
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: onContinue,
-                          child: const Text('Continue'),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    versionLabel,
-                    style: Theme.of(context).textTheme.labelMedium,
-                  ),
-                ],
+      key: const ValueKey<String>('loop-splash-screen'),
+      body: SafeArea(
+        child: Column(
+          children: <Widget>[
+            const Spacer(),
+            const LoopBrandMark(
+              key: ValueKey<String>('loop-splash-wordmark'),
+              kind: LoopBrandMarkKind.wordmark,
+              height: 64,
+              semanticLabel: 'LOOP',
+            ),
+            const SizedBox(height: 28),
+            const SizedBox(
+              width: 200,
+              child: LinearProgressIndicator(
+                key: ValueKey<String>('loop-splash-loader'),
+                minHeight: 3,
+                backgroundColor: LoopColors.line2,
+                valueColor: AlwaysStoppedAnimation<Color>(LoopColors.lime),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _OnboardingScreen extends StatefulWidget {
-  const _OnboardingScreen({required this.onComplete});
-
-  final VoidCallback onComplete;
-
-  @override
-  State<_OnboardingScreen> createState() => _OnboardingScreenState();
-}
-
-class _OnboardingScreenState extends State<_OnboardingScreen> {
-  final PageController _controller = PageController();
-  int _page = 0;
-
-  static const _stories =
-      <
-        ({
-          String eyebrow,
-          String title,
-          String body,
-          IconData icon,
-          Color color,
-        })
-      >[
-        (
-          eyebrow: 'DISCOVER',
-          title: 'Read the market\nwithout losing context.',
-          body: 'Move from a market signal to the conversation around it, with the asset still in view.',
-          icon: Icons.radar_rounded,
-          color: LoopColors.market,
-        ),
-        (
-          eyebrow: 'DISCUSS',
-          title: 'Talk as an identity,\nnot an address.',
-          body: 'Use a rotating alias, choose what others can see, and keep wallet details private by default.',
-          icon: Icons.forum_outlined,
-          color: LoopColors.chat,
-        ),
-        (
-          eyebrow: 'EXECUTE',
-          title: 'Review the facts.\nThen make the move.',
-          body: 'Every sensitive action returns to a clear review step before your wallet signs.',
-          icon: Icons.bolt_rounded,
-          color: LoopColors.mint,
-        ),
-      ];
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _next() {
-    if (_page == _stories.length - 1) {
-      widget.onComplete();
-      return;
-    }
-    final reduceMotion = MediaQuery.disableAnimationsOf(context);
-    _controller.animateToPage(
-      _page + 1,
-      duration: reduceMotion
-          ? Duration.zero
-          : const Duration(milliseconds: 320),
-      curve: Curves.easeOutCubic,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: <Widget>[
-          const Positioned.fill(child: LoopBackdrop()),
-          SafeArea(
-            child: Column(
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 12, 0),
-                  child: Row(
-                    children: <Widget>[
-                      const _LoopWordmark(),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: widget.onComplete,
-                        child: const Text('Skip'),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: PageView.builder(
-                    controller: _controller,
-                    itemCount: _stories.length,
-                    onPageChanged: (page) => setState(() => _page = page),
-                    itemBuilder: (context, index) {
-                      final story = _stories[index];
-                      return Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 30, 20, 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            _OnboardingArtifact(
-                              index: index,
-                              icon: story.icon,
-                              color: story.color,
-                            ),
-                            const Spacer(),
-                            Text(
-                              story.eyebrow,
-                              style: Theme.of(context).textTheme.labelMedium
-                                  ?.copyWith(
-                                    color: story.color,
-                                    letterSpacing: 1.5,
-                                  ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              story.title,
-                              style: Theme.of(context).textTheme.displayMedium,
-                            ),
-                            const SizedBox(height: 14),
-                            Text(
-                              story.body,
-                              style: Theme.of(context).textTheme.bodyLarge
-                                  ?.copyWith(color: LoopColors.vapor),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-                  child: Column(
-                    children: <Widget>[
-                      Row(
-                        children: List<Widget>.generate(
-                          _stories.length,
-                          (index) => Expanded(
-                            child: AnimatedContainer(
-                              duration: MediaQuery.disableAnimationsOf(context)
-                                  ? Duration.zero
-                                  : const Duration(milliseconds: 180),
-                              height: 3,
-                              margin: EdgeInsets.only(
-                                right: index == _stories.length - 1 ? 0 : 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: index <= _page
-                                    ? _stories[_page].color
-                                    : LoopColors.line,
-                                borderRadius: LoopRadius.pill,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: _next,
-                          child: Text(
-                            _page == _stories.length - 1
-                                ? 'Set up LOOP'
-                                : 'Continue',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AuthScreen extends StatelessWidget {
-  const _AuthScreen({required this.capabilities, required this.onNavigate});
-
-  final PrivyWalletCapabilities capabilities;
-  final ValueChanged<String> onNavigate;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: '开发预览 · AUTH CATALOG',
-      title: 'Authentication layouts',
-      subtitle: 'The live /auth route uses Privy Email OTP. These additional methods are non-actionable product previews.',
-      children: <Widget>[
-        _AccountMethodTile(
-          icon: Icons.alternate_email_rounded,
-          title: 'Continue with email',
-          detail: 'Open the real Privy Email OTP route',
-          tone: LoopTone.positive,
-          onTap: () => onNavigate('auth'),
-        ),
-        const SizedBox(height: 10),
-        _AccountMethodTile(
-          icon: Icons.apple_rounded,
-          title: 'Continue with Apple',
-          detail: 'Not enabled in this phase',
-          enabled: false,
-          onTap: () => onNavigate('wallet-create'),
-        ),
-        const SizedBox(height: 10),
-        _AccountMethodTile(
-          icon: Icons.g_mobiledata_rounded,
-          title: 'Continue with Google',
-          detail: 'Not enabled in this phase',
-          enabled: false,
-          onTap: () => onNavigate('wallet-create'),
-        ),
-        const SizedBox(height: 10),
-        _AccountMethodTile(
-          icon: Icons.key_rounded,
-          title: 'Use a passkey',
-          detail: capabilities.canUsePasskey
-              ? 'Confirm with this device'
-              : 'Not available on this device',
-          enabled: capabilities.canUsePasskey,
-          onTap: () => onNavigate('wallet-create'),
-        ),
-        const LoopSectionLabel('Already have a wallet?'),
-        _AccountMethodTile(
-          icon: Icons.account_balance_wallet_outlined,
-          title: 'Connect an external wallet',
-          detail: capabilities.canConnectExternalWallet
-              ? 'Use an installed wallet or WalletConnect'
-              : 'Wallet connection is unavailable right now',
-          tone: LoopTone.market,
-          enabled: capabilities.canConnectExternalWallet,
-          onTap: () => onNavigate('auth-wallet'),
-        ),
-        const SizedBox(height: 10),
-        _AccountMethodTile(
-          icon: Icons.download_rounded,
-          title: 'Import or watch a wallet',
-          detail: 'Available methods depend on your account',
-          onTap: () => onNavigate('wallet-import'),
-        ),
-        const SizedBox(height: 18),
-        const _PlainDisclosure(
-          icon: Icons.lock_outline_rounded,
-          text: 'LOOP never asks for recovery words during sign-in. Sensitive wallet actions require a separate confirmation.',
-        ),
-      ],
-    );
-  }
-}
-
-class _OtpScreen extends StatelessWidget {
-  const _OtpScreen({required this.destination});
-
-  final String destination;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: '开发预览 · LEGACY OTP CATALOG',
-      title: 'OTP layout retired',
-      subtitle:
-          '$destination is sample text only. No code was sent and no local code can authenticate a user.',
-      children: <Widget>[
-        const LoopStateCard(
-          title: 'Use the production authentication route',
-          message: 'Privy sends and verifies Email OTP through /auth. This catalog surface has no inputs, resend timer or success navigation.',
-          icon: Icons.key_off_outlined,
-          tone: LoopTone.warning,
-        ),
-      ],
-    );
-  }
-}
-
-class _ExternalWalletScreen extends StatefulWidget {
-  const _ExternalWalletScreen({
-    required this.capabilityAvailable,
-    required this.onConnected,
-  });
-
-  final bool capabilityAvailable;
-  final VoidCallback onConnected;
-
-  @override
-  State<_ExternalWalletScreen> createState() => _ExternalWalletScreenState();
-}
-
-class _ExternalWalletScreenState extends State<_ExternalWalletScreen> {
-  String _selected = 'Browser wallet';
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: 'EXTERNAL WALLET',
-      title: 'Connect a wallet',
-      subtitle:
-          'Choose an installed wallet, or scan the code from another device.',
-      bottom: widget.capabilityAvailable
-          ? LoopActionDock(
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: widget.onConnected,
-                  child: Text('Connect $_selected'),
-                ),
-              ),
-            )
-          : null,
-      children: <Widget>[
-        if (!widget.capabilityAvailable) ...<Widget>[
-          const LoopStateCard(
-            title: 'Wallet connection is unavailable',
-            message: 'Continue with email, Apple, or Google and try connecting a wallet later.',
-            icon: Icons.link_off_rounded,
-            tone: LoopTone.warning,
-          ),
-          const SizedBox(height: 18),
-        ],
-        AbsorbPointer(
-          absorbing: !widget.capabilityAvailable,
-          child: Opacity(
-            opacity: widget.capabilityAvailable ? 1 : 0.5,
-            child: Column(
-              children: <Widget>[
-                for (final wallet in const <(String, String, IconData)>[
-                  (
-                    'Browser wallet',
-                    'Continue in an installed wallet',
-                    Icons.language_rounded,
-                  ),
-                  (
-                    'Mobile wallet',
-                    'Open a supported app on this phone',
-                    Icons.phone_iphone_rounded,
-                  ),
-                ]) ...<Widget>[
-                  _ChoiceTile(
-                    title: wallet.$1,
-                    detail: wallet.$2,
-                    icon: wallet.$3,
-                    selected: _selected == wallet.$1,
-                    onTap: () => setState(() => _selected = wallet.$1),
-                  ),
-                  const SizedBox(height: 10),
-                ],
-                const LoopSectionLabel('Connect from another device'),
-                LoopCard(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: <Widget>[
-                      Container(
-                        width: 104,
-                        height: 104,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: LoopColors.chalk,
-                          borderRadius: LoopRadius.small,
-                        ),
-                        child: const Icon(
-                          Icons.qr_code_2_rounded,
-                          color: LoopColors.abyss,
-                          size: 84,
-                        ),
-                      ),
-                      const SizedBox(width: 18),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text(
-                              'Scan to connect',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            const SizedBox(height: 7),
-                            Text(
-                              'Open WalletConnect in your wallet app and scan this code.',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 18),
-        const _PlainDisclosure(
-          icon: Icons.draw_outlined,
-          text: 'Your wallet will ask you to sign a sign-in message. This does not move funds or approve token access.',
-        ),
-      ],
-    );
-  }
-}
-
-class _WalletCreateScreen extends StatelessWidget {
-  const _WalletCreateScreen({
-    required this.capabilityAvailable,
-    required this.onCreated,
-  });
-
-  final bool capabilityAvailable;
-  final VoidCallback onCreated;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: 'EMBEDDED WALLET',
-      title: 'Set up your wallet',
-      subtitle: 'Your account can hold an embedded wallet when this capability is available for your configuration.',
-      bottom: capabilityAvailable
-          ? LoopActionDock(
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: onCreated,
-                  child: const Text('Create wallet securely'),
-                ),
-              ),
-            )
-          : null,
-      children: <Widget>[
-        const Center(child: _IdentityOrbit(size: 156)),
-        const SizedBox(height: 28),
-        if (capabilityAvailable)
-          const LoopStateCard(
-            title: 'Ready to create',
-            message: 'Wallet creation happens inside the secured wallet service. LOOP does not receive raw key material.',
-            icon: Icons.verified_user_outlined,
-            tone: LoopTone.positive,
-          )
-        else
-          const LoopStateCard(
-            title: 'Embedded wallet unavailable',
-            message: 'No wallet will be created. Connect an external wallet or return to sign-in options.',
-            icon: Icons.lock_clock_outlined,
-            tone: LoopTone.warning,
-          ),
-        const LoopSectionLabel('What happens next'),
-        const LoopCard(
-          child: Column(
-            children: <Widget>[
-              _StepRow(
-                number: '1',
-                title: 'Create',
-                detail:
-                    'The wallet service prepares an address for this account.',
-              ),
-              _StepRow(
-                number: '2',
-                title: 'Protect',
-                detail: 'You choose an available recovery method.',
-              ),
-              _StepRow(
-                number: '3',
-                title: 'Review',
-                detail: 'Sensitive actions require an explicit confirmation.',
-                last: true,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _WalletBackupScreen extends StatelessWidget {
-  const _WalletBackupScreen({
-    required this.capabilities,
-    required this.onNavigate,
-  });
-
-  final PrivyWalletCapabilities capabilities;
-  final ValueChanged<String> onNavigate;
-
-  void _unavailable(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('This recovery method is not available for this wallet.'),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: 'RECOVERY',
-      title: 'Choose how to recover',
-      subtitle: 'Available methods are confirmed for this wallet at the moment you choose them.',
-      children: <Widget>[
-        _RecoveryMethodTile(
-          icon: Icons.cloud_outlined,
-          title: 'Cloud recovery',
-          detail: 'Restore after signing in to your protected account',
-          available: capabilities.canUseCloudRecovery,
-          onTap: () => capabilities.canUseCloudRecovery
-              ? onNavigate('security-setup')
-              : _unavailable(context),
-        ),
-        const SizedBox(height: 10),
-        // Recovery-phrase reveal and verification pages were retired with the
-        // 93-route manifest (decision 0050); the tile stays visible so the
-        // option is not silently missing, but it is not an entry point.
-        const _RecoveryMethodTile(
-          icon: Icons.password_rounded,
-          title: 'Recovery phrase',
-          detail: 'Record recovery words offline',
-          available: false,
-          onTap: null,
-        ),
-        const SizedBox(height: 10),
-        _RecoveryMethodTile(
-          icon: Icons.group_outlined,
-          title: 'Social recovery',
-          detail: 'Require two of three trusted guardians',
-          available: capabilities.canUseSocialRecovery,
-          onTap: () => capabilities.canUseSocialRecovery
-              ? onNavigate('social-recovery')
-              : _unavailable(context),
-        ),
-        const SizedBox(height: 22),
-        LoopStateCard(
-          title: 'Skipping recovery can lock you out',
-          message: 'If you lose access before setting a recovery method, assets may be permanently unreachable.',
-          icon: Icons.warning_amber_rounded,
-          tone: LoopTone.danger,
-          action: OutlinedButton(
-            onPressed: () => _showSkipWarning(context),
-            child: const Text('Decide later'),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _showSkipWarning(BuildContext context) async {
-    final leave = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Continue without recovery?'),
-        content: const Text(
-          'You may permanently lose access to wallet assets if you lose this account or device before adding recovery.',
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Go back'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: LoopColors.danger),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Accept risk and continue'),
-          ),
-        ],
-      ),
-    );
-    if (leave ?? false) onNavigate('security-setup');
-  }
-}
-
-class _SeedShowScreen extends StatefulWidget {
-  const _SeedShowScreen({
-    required this.capabilities,
-    required this.recoveryWords,
-    required this.onContinue,
-  });
-
-  final PrivyWalletCapabilities capabilities;
-  final List<String>? recoveryWords;
-  final VoidCallback onContinue;
-
-  @override
-  State<_SeedShowScreen> createState() => _SeedShowScreenState();
-}
-
-class _SeedShowScreenState extends State<_SeedShowScreen>
-    with WidgetsBindingObserver {
-  bool _riskAccepted = false;
-  bool _revealed = false;
-  bool _recorded = false;
-
-  bool get _authorized =>
-      widget.capabilities.canRevealRecoveryPhrase &&
-      widget.capabilities.secureScreenProtectionActive &&
-      widget.recoveryWords != null &&
-      widget.recoveryWords!.isNotEmpty;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed && _revealed && mounted) {
-      setState(() {
-        _revealed = false;
-        _recorded = false;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: 'RECOVERY PHRASE',
-      title: 'Record it offline',
-      subtitle: 'Anyone with these words can control the wallet. Never share them with support or paste them into a website.',
-      bottom: _authorized && _revealed
-          ? LoopActionDock(
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _recorded ? widget.onContinue : null,
-                  child: const Text('Verify my backup'),
-                ),
-              ),
-            )
-          : null,
-      children: <Widget>[
-        const LoopStateCard(
-          title: 'Private screen',
-          message: 'Move away from cameras and people. The phrase hides when LOOP leaves the foreground.',
-          icon: Icons.visibility_off_outlined,
-          tone: LoopTone.danger,
-        ),
-        const SizedBox(height: 16),
-        if (!_authorized)
-          LoopStateCard(
-            title: 'Recovery phrase unavailable',
-            message: widget.capabilities.secureScreenProtectionActive
-                ? 'This wallet has not authorized recovery-word access. Nothing is shown or generated on this screen.'
-                : 'Screen-capture protection could not be confirmed, so recovery words stay hidden.',
-            icon: Icons.lock_outline_rounded,
-            tone: LoopTone.warning,
-          )
-        else ...<Widget>[
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            value: _riskAccepted,
-            onChanged: (value) => setState(() {
-              _riskAccepted = value ?? false;
-              if (!_riskAccepted) _revealed = false;
-            }),
-            controlAffinity: ListTileControlAffinity.leading,
-            title: const Text(
-              'I understand that anyone with these words can control this wallet.',
-            ),
-          ),
-          const SizedBox(height: 6),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _riskAccepted
-                  ? () => setState(() => _revealed = !_revealed)
-                  : null,
-              icon: Icon(
-                _revealed
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined,
-              ),
-              label: Text(
-                _revealed ? 'Hide recovery words' : 'Reveal recovery words',
+            const Spacer(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+              child: LoopButton(
+                key: const ValueKey<String>('loop-splash-enter'),
+                label: '进入 LOOP',
+                primary: true,
+                block: true,
+                onPressed: onContinue,
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          AnimatedCrossFade(
-            duration: MediaQuery.disableAnimationsOf(context)
-                ? Duration.zero
-                : const Duration(milliseconds: 180),
-            crossFadeState: _revealed
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            firstChild: _HiddenSeedPanel(
-              wordCount: widget.recoveryWords!.length,
-            ),
-            secondChild: _SeedWordGrid(words: widget.recoveryWords!),
-          ),
-          if (_revealed) ...<Widget>[
-            const SizedBox(height: 12),
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              value: _recorded,
-              onChanged: (value) => setState(() => _recorded = value ?? false),
-              controlAffinity: ListTileControlAffinity.leading,
-              title: const Text(
-                'I recorded every word in order and stored it offline.',
-              ),
-            ),
-          ],
-        ],
-      ],
-    );
-  }
-}
-
-class _SeedVerifyScreen extends StatefulWidget {
-  const _SeedVerifyScreen({
-    required this.capabilityAvailable,
-    required this.onVerified,
-  });
-
-  final bool capabilityAvailable;
-  final VoidCallback onVerified;
-
-  @override
-  State<_SeedVerifyScreen> createState() => _SeedVerifyScreenState();
-}
-
-class _SeedVerifyScreenState extends State<_SeedVerifyScreen> {
-  final _controllers = List<TextEditingController>.generate(
-    3,
-    (_) => TextEditingController(),
-  );
-
-  bool get _complete =>
-      _controllers.every((controller) => controller.text.trim().isNotEmpty);
-
-  @override
-  void dispose() {
-    for (final controller in _controllers) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: 'FINAL CHECK',
-      title: 'Verify your backup',
-      subtitle: 'Enter the requested words exactly as you recorded them. LOOP will not reveal or suggest the answer.',
-      bottom: widget.capabilityAvailable
-          ? LoopActionDock(
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _complete ? widget.onVerified : null,
-                  child: const Text('Verify recovery phrase'),
-                ),
-              ),
-            )
-          : null,
-      children: <Widget>[
-        if (!widget.capabilityAvailable)
-          const LoopStateCard(
-            title: 'Verification unavailable',
-            message: 'This wallet has not authorized recovery-phrase verification. Your setup remains incomplete.',
-            icon: Icons.lock_outline_rounded,
-            tone: LoopTone.warning,
-          )
-        else
-          for (final item in const <(int, String)>[
-            (3, 'First check'),
-            (7, 'Second check'),
-            (11, 'Final check'),
-          ]) ...<Widget>[
+            const SizedBox(height: 14),
             Text(
-              'Word ${item.$1}',
-              style: Theme.of(context).textTheme.labelLarge,
+              versionLabel,
+              style: LoopTypography.mono(
+                size: 10,
+                weight: FontWeight.w500,
+                color: LoopColors.text3,
+              ),
             ),
-            const SizedBox(height: 7),
-            TextField(
-              controller: _controllers[const [3, 7, 11].indexOf(item.$1)],
-              autocorrect: false,
-              enableSuggestions: false,
-              textCapitalization: TextCapitalization.none,
-              keyboardType: TextInputType.visiblePassword,
-              decoration: InputDecoration(hintText: item.$2),
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
           ],
-        const _PlainDisclosure(
-          icon: Icons.no_accounts_outlined,
-          text: 'Support will never ask for your full recovery phrase or private key.',
         ),
-      ],
+      ),
     );
   }
 }
 
-enum _ImportMode { phrase, privateKey, watchOnly }
+// ---------------------------------------------------------------------------
+// auth-wallet · intro / focus
+// ---------------------------------------------------------------------------
 
-class _WalletImportScreen extends StatefulWidget {
-  const _WalletImportScreen({
-    required this.capabilities,
-    required this.onImported,
+class ExternalWalletScreen extends StatelessWidget {
+  const ExternalWalletScreen({
+    required this.capabilityAvailable,
+    super.key,
+    this.onBack,
+    this.onConnect,
   });
 
-  final PrivyWalletCapabilities capabilities;
-  final VoidCallback onImported;
-
-  @override
-  State<_WalletImportScreen> createState() => _WalletImportScreenState();
-}
-
-class _WalletImportScreenState extends State<_WalletImportScreen> {
-  _ImportMode _mode = _ImportMode.watchOnly;
-  final TextEditingController _value = TextEditingController();
-
-  bool get _available => switch (_mode) {
-    _ImportMode.phrase => widget.capabilities.canImportRecoveryPhrase,
-    _ImportMode.privateKey => widget.capabilities.canImportPrivateKey,
-    _ImportMode.watchOnly => widget.capabilities.canImportWatchOnly,
-  };
-
-  String get _label => switch (_mode) {
-    _ImportMode.phrase => 'Recovery phrase',
-    _ImportMode.privateKey => 'Private key',
-    _ImportMode.watchOnly => 'Public wallet address',
-  };
-
-  String get _hint => switch (_mode) {
-    _ImportMode.phrase => 'Enter words in their original order',
-    _ImportMode.privateKey => 'Enter your private key',
-    _ImportMode.watchOnly => '0x…',
-  };
-
-  @override
-  void dispose() {
-    _value.dispose();
-    super.dispose();
-  }
+  final bool capabilityAvailable;
+  final VoidCallback? onBack;
+  final VoidCallback? onConnect;
 
   @override
   Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: 'EXISTING WALLET',
-      title: 'Add a wallet',
-      subtitle: 'Choose a method. Import options appear only when the secured wallet service confirms support.',
-      bottom: LoopActionDock(
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: _available && _value.text.trim().isNotEmpty
-                ? widget.onImported
-                : null,
-            child: Text(
-              _mode == _ImportMode.watchOnly
-                  ? 'Add watch-only wallet'
-                  : 'Import wallet securely',
-            ),
+    return LoopFocusPage(
+      archetype: LoopPageArchetype.intro,
+      title: '连接钱包',
+      onBack: onBack,
+      primaryAction: LoopButton(
+        key: const ValueKey<String>('external-wallet-connect'),
+        label: '选择钱包并签名',
+        primary: true,
+        block: true,
+        onPressed: capabilityAvailable ? onConnect : null,
+      ),
+      disclosure: const LoopDisclosure(
+        summary: '扫码连接与失败说明',
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(14, 0, 14, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              LoopNotice(
+                icon: 'mine',
+                title: '连接已有钱包就能挖矿',
+                body: '你钱包里的社区币不用搬家 —— 绑定后持仓自动计入算力。这也是外部钱包入口保留的原因。',
+                margin: EdgeInsets.only(bottom: 10),
+              ),
+              LoopNotice(
+                icon: 'close',
+                tone: LoopNoticeTone.danger,
+                title: '签名被拒绝',
+                body: '连接钱包需要一次签名以验证所有权，不会转移任何资产。取消签名不会改变任何状态。',
+                margin: EdgeInsets.only(bottom: 10),
+              ),
+              LoopNotice(
+                icon: 'clock',
+                tone: LoopNoticeTone.warn,
+                title: '连接超时',
+                body: '会话已过期，请回到这一页重新发起连接。',
+                margin: EdgeInsets.zero,
+              ),
+            ],
           ),
         ),
       ),
-      children: <Widget>[
-        SegmentedButton<_ImportMode>(
-          showSelectedIcon: false,
-          segments: const <ButtonSegment<_ImportMode>>[
-            ButtonSegment(value: _ImportMode.phrase, label: Text('Phrase')),
-            ButtonSegment(
-              value: _ImportMode.privateKey,
-              label: Text('Private key'),
-            ),
-            ButtonSegment(
-              value: _ImportMode.watchOnly,
-              label: Text('Watch only'),
-            ),
-          ],
-          selected: <_ImportMode>{_mode},
-          onSelectionChanged: (selection) => setState(() {
-            _mode = selection.first;
-            _value.clear();
-          }),
-        ),
-        const SizedBox(height: 22),
-        if (!_available) ...<Widget>[
-          LoopStateCard(
-            title: '$_label import is unavailable',
-            message: 'Nothing entered here will be processed. Choose another available method.',
-            icon: Icons.lock_outline_rounded,
-            tone: LoopTone.warning,
+      body: <Widget>[
+        const IdentityProgress(step: 1, total: 2, label: '选择钱包'),
+        const IdentityStepCopy('连接只验证所有权，不会转移资产。'),
+        if (!capabilityAvailable)
+          const LoopNotice(
+            key: ValueKey<String>('external-wallet-unavailable'),
+            icon: 'warn',
+            tone: LoopNoticeTone.warn,
+            title: '外部钱包连接暂不可用',
+            body: '缺少有效的 Reown Project ID 或 Privy Client ID。没有可用的连接通道，这里不会列出任何已安装的钱包。',
           ),
-          const SizedBox(height: 18),
-        ],
-        Text(_label, style: Theme.of(context).textTheme.labelLarge),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _value,
-          enabled: _available,
-          minLines: _mode == _ImportMode.phrase ? 4 : 1,
-          maxLines: _mode == _ImportMode.phrase ? 6 : 1,
-          autocorrect: false,
-          enableSuggestions: false,
-          obscureText: _mode == _ImportMode.privateKey,
-          keyboardType: TextInputType.visiblePassword,
-          decoration: InputDecoration(hintText: _hint),
-          onChanged: (_) => setState(() {}),
+        const LoopLabel('可连接的钱包'),
+        const LoopEmpty(
+          key: ValueKey<String>('external-wallet-list-unavailable'),
+          message: '已安装钱包清单暂不可读',
+          reason: '钱包发现由 Reown 会话提供；未建立会话前不展示任何钱包名称。',
         ),
-        const SizedBox(height: 16),
-        _PlainDisclosure(
-          icon: _mode == _ImportMode.watchOnly
-              ? Icons.visibility_outlined
-              : Icons.shield_outlined,
-          text: _mode == _ImportMode.watchOnly
-              ? 'Watch-only wallets can show balances and activity but cannot sign or move assets.'
-              : 'Sensitive material must remain inside the secured wallet boundary and must never be sent to LOOP servers.',
+        const LoopNotice(
+          icon: 'info',
+          title: '外部钱包只是登录凭证',
+          body: '它不是 LOOP 交易钱包，也不能授权任何交易。',
+          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
         ),
       ],
     );
   }
 }
 
-class _SecuritySetupScreen extends StatelessWidget {
-  const _SecuritySetupScreen({
+// ---------------------------------------------------------------------------
+// wallet-create · intro / focus
+// ---------------------------------------------------------------------------
+
+class WalletCreateScreen extends StatelessWidget {
+  const WalletCreateScreen({
+    required this.capabilityAvailable,
+    required this.onContinue,
+    super.key,
+    this.onBack,
+  });
+
+  final bool capabilityAvailable;
+  final VoidCallback onContinue;
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopFocusPage(
+      archetype: LoopPageArchetype.intro,
+      title: '创建 LOOP 钱包',
+      onBack: onBack,
+      primaryAction: LoopButton(
+        key: const ValueKey<String>('wallet-create-continue'),
+        label: '设置恢复方式',
+        primary: true,
+        block: true,
+        onPressed: capabilityAvailable ? onContinue : null,
+      ),
+      body: <Widget>[
+        const IdentityProgress(step: 2, total: 5, label: '创建钱包'),
+        const IdentityStepCopy('内置钱包由 Privy 在设备上创建，密钥不会经过 LOOP。'),
+        if (capabilityAvailable)
+          const LoopNotice(
+            key: ValueKey<String>('wallet-create-progress'),
+            icon: 'wallet',
+            title: '正在创建你的钱包',
+            body: '密钥在本地生成并写入安全区。完成前请不要关闭 App。',
+          )
+        else
+          const LoopNotice(
+            key: ValueKey<String>('wallet-create-unavailable'),
+            icon: 'warn',
+            tone: LoopNoticeTone.warn,
+            title: '钱包创建暂不可用',
+            body: 'Privy 尚未确认内置钱包能力。这一页不会伪造进度，也没有创建任何钱包。',
+          ),
+        const LoopLabel('这一步会做什么'),
+        const LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              title: '生成密钥对',
+              subtitle: '在设备本地生成，不上传',
+              position: LoopRowPosition.first,
+            ),
+            LoopRecordRow(
+              title: '写入安全区',
+              subtitle: '由系统钥匙串 / Keystore 保管',
+              position: LoopRowPosition.middle,
+            ),
+            LoopRecordRow(
+              title: '绑定 LOOP ID',
+              subtitle: '钱包地址随时可换，LOOP ID 不变',
+              position: LoopRowPosition.last,
+            ),
+          ],
+        ),
+        const LoopNotice(
+          icon: 'info',
+          title: 'LOOP 不使用助记词',
+          body: '恢复通过 Passkey、恢复密码或自动恢复完成；下一步会让你选择。',
+          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// wallet-recovery · intro / focus
+// ---------------------------------------------------------------------------
+
+class WalletRecoveryScreen extends StatelessWidget {
+  const WalletRecoveryScreen({
     required this.capabilities,
     required this.onContinue,
+    super.key,
+    this.onBack,
   });
 
   final PrivyWalletCapabilities capabilities;
   final VoidCallback onContinue;
+  final VoidCallback? onBack;
+
+  bool get _anyAvailable =>
+      capabilities.canUsePasskey ||
+      capabilities.canUseRecoveryPassword ||
+      capabilities.canUseCloudRecovery;
 
   @override
   Widget build(BuildContext context) {
-    return LoopPage(
-      eyebrow: 'ACCOUNT PROTECTION',
-      title: 'Protection setup is not connected',
-      subtitle: 'This build can report method availability, but it has no reviewed enrollment or local credential-storage adapter.',
-      bottom: LoopActionDock(
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            key: const ValueKey<String>('continue-without-protection-changes'),
+    return LoopFocusPage(
+      archetype: LoopPageArchetype.intro,
+      title: '恢复方式',
+      onBack: onBack,
+      primaryAction: LoopButtonPair(
+        children: <Widget>[
+          LoopButton(
+            key: const ValueKey<String>('wallet-recovery-later'),
+            label: '稍后设置',
             onPressed: onContinue,
-            child: const Text('Continue without changes'),
           ),
-        ),
-      ),
-      children: <Widget>[
-        const LoopStateCard(
-          key: ValueKey<String>('protection-setup-unavailable'),
-          title: 'Protection setup is not connected',
-          message: 'No passkey, biometric, or app PIN enrollment is performed here. Existing account and device protection remains unchanged.',
-          icon: Icons.lock_outline_rounded,
-          tone: LoopTone.warning,
-        ),
-        const LoopSectionLabel('Method availability'),
-        _SecurityAvailability(
-          icon: Icons.key_rounded,
-          title: 'Passkey',
-          detail: capabilities.canUsePasskey
-              ? 'Capability reported available; enrollment is not connected.'
-              : 'Capability is not available for this account.',
-          available: capabilities.canUsePasskey,
-        ),
-        const SizedBox(height: 10),
-        _SecurityAvailability(
-          icon: Icons.fingerprint_rounded,
-          title: 'Biometrics',
-          detail: capabilities.canUseBiometrics
-              ? 'Device capability reported available; enrollment is not connected.'
-              : 'Capability is not available on this device.',
-          available: capabilities.canUseBiometrics,
-        ),
-        const SizedBox(height: 10),
-        const _SecurityAvailability(
-          icon: Icons.pin_outlined,
-          title: 'Six-digit app PIN',
-          detail: 'Secure Storage is not connected. No app PIN is stored or checked.',
-          available: false,
-        ),
-        const SizedBox(height: 18),
-        const _PlainDisclosure(
-          icon: Icons.info_outline_rounded,
-          text: 'Continuing leaves every existing protection unchanged. A later security adapter must own enrollment, verification, retry limits, and storage before these controls can be enabled.',
-        ),
-      ],
-    );
-  }
-}
-
-class _ProfileSetupScreen extends StatefulWidget {
-  const _ProfileSetupScreen({required this.onComplete});
-
-  final VoidCallback onComplete;
-
-  @override
-  State<_ProfileSetupScreen> createState() => _ProfileSetupScreenState();
-}
-
-class _ProfileSetupScreenState extends State<_ProfileSetupScreen> {
-  static const _aliases = <String>[
-    'QuietComet',
-    'VelvetOrbit',
-    'NorthSignal',
-    'SilverCurrent',
-  ];
-  static const _topics = <String>[
-    'BTC',
-    'ETH',
-    'Solana',
-    'Stablecoins',
-    'DeFi',
-    'Memes',
-  ];
-  int _aliasIndex = 0;
-  final Set<String> _selectedTopics = <String>{'BTC', 'ETH'};
-  bool _notifications = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final alias = _aliases[_aliasIndex];
-    return LoopPage(
-      eyebrow: 'YOUR IDENTITY',
-      title: 'Start private',
-      subtitle: 'Your LOOP account stays stable when you add or replace a wallet. Chats show your alias, not a wallet address.',
-      bottom: LoopActionDock(
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: widget.onComplete,
-            child: const Text('Enter LOOP'),
-          ),
-        ),
-      ),
-      children: <Widget>[
-        LoopCard(
-          accent: true,
-          tone: LoopTone.conversation,
-          child: Row(
-            children: <Widget>[
-              const _AliasAvatar(size: 64),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'CHAT ALIAS',
-                      style: Theme.of(context).textTheme.labelMedium,
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      alias,
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                tooltip: 'Generate another alias',
-                onPressed: () => setState(
-                  () => _aliasIndex = (_aliasIndex + 1) % _aliases.length,
-                ),
-                icon: const Icon(Icons.shuffle_rounded),
-              ),
-            ],
-          ),
-        ),
-        const LoopSectionLabel('Follow first'),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _topics
-              .map((topic) {
-                final selected = _selectedTopics.contains(topic);
-                return FilterChip(
-                  selected: selected,
-                  label: Text(topic),
-                  onSelected: (value) => setState(() {
-                    if (value) {
-                      _selectedTopics.add(topic);
-                    } else {
-                      _selectedTopics.remove(topic);
-                    }
-                  }),
-                );
-              })
-              .toList(growable: false),
-        ),
-        const LoopSectionLabel('Stay informed'),
-        LoopCard(
-          child: SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            value: _notifications,
-            title: const Text('Enable notifications'),
-            subtitle: const Text(
-              'Security alerts and order updates. You can change categories later.',
-            ),
-            onChanged: (value) => setState(() => _notifications = value),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _UnknownAccountScreen extends StatelessWidget {
-  const _UnknownAccountScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return const LoopPage(
-      eyebrow: 'ACCOUNT',
-      title: 'Page unavailable',
-      subtitle: 'This account page could not be opened.',
-      children: <Widget>[
-        LoopStateCard(
-          title: 'Return to sign in',
-          message: 'No account or wallet changes were made.',
-          icon: Icons.route_outlined,
-        ),
-      ],
-    );
-  }
-}
-
-class _LoopWordmark extends StatelessWidget {
-  const _LoopWordmark();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Container(
-          width: 28,
-          height: 28,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: LoopColors.mint, width: 2),
-          ),
-          child: Container(
-            width: 7,
-            height: 7,
-            decoration: const BoxDecoration(
-              color: LoopColors.mint,
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Text(
-          'LOOP',
-          style: Theme.of(context).textTheme.titleMedium
-              ?.copyWith(letterSpacing: 2, color: LoopColors.chalk),
-        ),
-      ],
-    );
-  }
-}
-
-class _IdentityOrbit extends StatelessWidget {
-  const _IdentityOrbit({required this.size});
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      image: true,
-      label: 'One identity connects markets, conversations, and wallet actions',
-      child: SizedBox.square(
-        dimension: size,
-        child: Stack(
-          alignment: Alignment.center,
-          children: <Widget>[
-            Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: LoopColors.line),
-              ),
-            ),
-            Container(
-              width: size * 0.64,
-              height: size * 0.64,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: LoopColors.basalt,
-                border: Border.all(
-                  color: LoopColors.mint.withValues(alpha: 0.42),
-                ),
-                boxShadow: <BoxShadow>[
-                  BoxShadow(
-                    color: LoopColors.mint.withValues(alpha: 0.08),
-                    blurRadius: 28,
-                    spreadRadius: 4,
-                  ),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                'L',
-                style: Theme.of(context).textTheme.displayMedium
-                    ?.copyWith(color: LoopColors.mint),
-              ),
-            ),
-            Positioned(
-              top: 9,
-              child: _OrbitNode(
-                color: LoopColors.market,
-                icon: Icons.show_chart_rounded,
-              ),
-            ),
-            Positioned(
-              left: 3,
-              bottom: size * 0.18,
-              child: _OrbitNode(
-                color: LoopColors.chat,
-                icon: Icons.chat_bubble_outline_rounded,
-              ),
-            ),
-            Positioned(
-              right: 3,
-              bottom: size * 0.18,
-              child: _OrbitNode(
-                color: LoopColors.mint,
-                icon: Icons.bolt_rounded,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _OrbitNode extends StatelessWidget {
-  const _OrbitNode({required this.color, required this.icon});
-
-  final Color color;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 38,
-      height: 38,
-      decoration: BoxDecoration(
-        color: LoopColors.abyss,
-        shape: BoxShape.circle,
-        border: Border.all(color: color.withValues(alpha: 0.7)),
-      ),
-      child: Icon(icon, color: color, size: 18),
-    );
-  }
-}
-
-class _OnboardingArtifact extends StatelessWidget {
-  const _OnboardingArtifact({
-    required this.index,
-    required this.icon,
-    required this.color,
-  });
-
-  final int index;
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      image: true,
-      label: 'Onboarding illustration ${index + 1}',
-      child: AspectRatio(
-        aspectRatio: 1.18,
-        child: LoopCard(
-          padding: EdgeInsets.zero,
-          accent: true,
-          tone: switch (index) {
-            0 => LoopTone.market,
-            1 => LoopTone.conversation,
-            _ => LoopTone.positive,
-          },
-          child: Stack(
-            children: <Widget>[
-              Positioned(
-                top: 30,
-                left: 32,
-                right: 32,
-                child: Container(height: 1, color: LoopColors.line),
-              ),
-              Positioned(
-                left: 36,
-                bottom: 34,
-                right: 36,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    _TinyNode(color: LoopColors.market, active: index >= 0),
-                    Expanded(
-                      child: Container(
-                        height: 1,
-                        color: index >= 1 ? LoopColors.chat : LoopColors.line,
-                      ),
-                    ),
-                    _TinyNode(color: LoopColors.chat, active: index >= 1),
-                    Expanded(
-                      child: Container(
-                        height: 1,
-                        color: index >= 2 ? LoopColors.mint : LoopColors.line,
-                      ),
-                    ),
-                    _TinyNode(color: LoopColors.mint, active: index >= 2),
-                  ],
-                ),
-              ),
-              Center(
-                child: Container(
-                  width: 112,
-                  height: 112,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: color.withValues(alpha: 0.42)),
-                  ),
-                  child: Icon(icon, size: 48, color: color),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TinyNode extends StatelessWidget {
-  const _TinyNode({required this.color, required this.active});
-
-  final Color color;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 10,
-      height: 10,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: active ? color : LoopColors.line,
-        boxShadow: active
-            ? <BoxShadow>[
-                BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 10),
-              ]
-            : null,
-      ),
-    );
-  }
-}
-
-class _AccountMethodTile extends StatelessWidget {
-  const _AccountMethodTile({
-    required this.icon,
-    required this.title,
-    required this.detail,
-    required this.onTap,
-    this.enabled = true,
-    this.tone = LoopTone.neutral,
-  });
-
-  final IconData icon;
-  final String title;
-  final String detail;
-  final VoidCallback onTap;
-  final bool enabled;
-  final LoopTone tone;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = loopToneColor(tone);
-    return Opacity(
-      opacity: enabled ? 1 : 0.52,
-      child: LoopCard(
-        onTap: enabled ? onTap : null,
-        semanticLabel: '$title. $detail',
-        child: Row(
-          children: <Widget>[
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: LoopRadius.small,
-              ),
-              child: Icon(icon, color: color, size: 21),
-            ),
-            const SizedBox(width: 13),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(title, style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 3),
-                  Text(detail, style: Theme.of(context).textTheme.bodyMedium),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.chevron_right_rounded, color: LoopColors.vapor),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PlainDisclosure extends StatelessWidget {
-  const _PlainDisclosure({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Icon(icon, size: 18, color: LoopColors.vapor),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
-        ),
-      ],
-    );
-  }
-}
-
-class _ChoiceTile extends StatelessWidget {
-  const _ChoiceTile({
-    required this.title,
-    required this.detail,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String title;
-  final String detail;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopCard(
-      onTap: onTap,
-      accent: selected,
-      tone: LoopTone.market,
-      child: Row(
-        children: <Widget>[
-          Icon(icon, color: selected ? LoopColors.market : LoopColors.vapor),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 3),
-                Text(detail, style: Theme.of(context).textTheme.bodyMedium),
-              ],
-            ),
-          ),
-          Icon(
-            selected
-                ? Icons.radio_button_checked_rounded
-                : Icons.radio_button_off_rounded,
-            color: selected ? LoopColors.market : LoopColors.vapor,
+          LoopButton(
+            key: const ValueKey<String>('wallet-recovery-confirm'),
+            label: '确认',
+            primary: true,
+            onPressed: _anyAvailable ? onContinue : null,
           ),
         ],
       ),
-    );
-  }
-}
-
-class _StepRow extends StatelessWidget {
-  const _StepRow({
-    required this.number,
-    required this.title,
-    required this.detail,
-    this.last = false,
-  });
-
-  final String number;
-  final String title;
-  final String detail;
-  final bool last;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 13),
-      decoration: BoxDecoration(
-        border: last
-            ? null
-            : const Border(bottom: BorderSide(color: LoopColors.line)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            width: 28,
-            height: 28,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: LoopColors.mint.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              number,
-              style: Theme.of(context).textTheme.labelMedium
-                  ?.copyWith(color: LoopColors.mint),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 3),
-                Text(detail, style: Theme.of(context).textTheme.bodyMedium),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RecoveryMethodTile extends StatelessWidget {
-  const _RecoveryMethodTile({
-    required this.icon,
-    required this.title,
-    required this.detail,
-    required this.available,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String detail;
-  final bool available;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopCard(
-      onTap: onTap,
-      child: Row(
-        children: <Widget>[
-          Icon(icon, color: available ? LoopColors.mint : LoopColors.vapor),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text(detail, style: Theme.of(context).textTheme.bodyMedium),
-              ],
-            ),
-          ),
-          LoopStatusPill(
-            label: available ? 'Available' : 'Unavailable',
-            tone: available ? LoopTone.positive : LoopTone.neutral,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HiddenSeedPanel extends StatelessWidget {
-  const _HiddenSeedPanel({required this.wordCount});
-
-  final int wordCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopCard(
-      child: SizedBox(
-        height: 178,
-        child: Center(
+      disclosure: const LoopDisclosure(
+        summary: '其他恢复方式与跳过风险',
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(14, 0, 14, 14),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const Icon(
-                Icons.visibility_off_outlined,
-                color: LoopColors.vapor,
-                size: 30,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                '$wordCount recovery words hidden',
-                style: Theme.of(context).textTheme.titleMedium,
+              LoopNotice(
+                icon: 'warn',
+                tone: LoopNoticeTone.danger,
+                title: '跳过的后果',
+                body: '换设备或清除数据后可能永久失去资产访问权。恢复方式可用后请尽快设置。',
+                margin: EdgeInsets.zero,
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-}
-
-class _SeedWordGrid extends StatelessWidget {
-  const _SeedWordGrid({required this.words});
-
-  final List<String> words;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: '${words.length} recovery words revealed',
-      child: LoopCard(
-        accent: true,
-        tone: LoopTone.danger,
-        child: GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: words.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            childAspectRatio: 2.25,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-          ),
-          itemBuilder: (context, index) {
-            return Container(
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                color: LoopColors.elevated,
-                borderRadius: LoopRadius.small,
-              ),
-              child: Text(
-                '${index + 1}. ${words[index]}',
-                maxLines: 1,
-                overflow: TextOverflow.fade,
-                style: context.dataStyle.copyWith(fontSize: 12),
-              ),
-            );
-          },
+      body: <Widget>[
+        const IdentityProgress(step: 3, total: 5, label: '设置恢复方式'),
+        const IdentityStepCopy('建议至少设置一种长期可用的恢复凭证。'),
+        const LoopNotice(
+          icon: 'warn',
+          tone: LoopNoticeTone.warn,
+          title: '这一步决定你换手机后能不能拿回资产',
+          body: 'LOOP 没有助记词兜底，恢复方式是唯一的路。',
         ),
-      ),
+        if (!_anyAvailable)
+          const LoopNotice(
+            key: ValueKey<String>('wallet-recovery-unavailable'),
+            icon: 'warn',
+            tone: LoopNoticeTone.warn,
+            title: '暂时没有可用的恢复方式',
+            body: 'Privy 尚未确认任何恢复能力。下面的选项都不能在本地模拟或预先勾选。',
+          ),
+        const LoopLabel('选择方式'),
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            _choice(
+              title: 'Passkey（推荐）',
+              detail: '用设备生物识别，跟随系统钥匙串同步',
+              available: capabilities.canUsePasskey,
+              reason: '设备或 Privy 尚未确认 Passkey 能力',
+              position: LoopRowPosition.first,
+            ),
+            _choice(
+              title: '恢复密码',
+              detail: '自己设一个密码，忘了就找不回',
+              available: capabilities.canUseRecoveryPassword,
+              reason: '恢复密码通道尚未接入',
+              position: LoopRowPosition.middle,
+            ),
+            _choice(
+              title: '自动恢复',
+              detail: '凭登录方式恢复，最省事但依赖供应商',
+              available: capabilities.canUseCloudRecovery,
+              reason: '供应商恢复通道尚未接入',
+              position: LoopRowPosition.last,
+            ),
+          ],
+        ),
+        const LoopLabel('另外'),
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            _choice(
+              title: '社交恢复 2-of-3',
+              detail: '指定 3 个守护人，2 个同意即可恢复',
+              available: capabilities.canUseSocialRecovery,
+              reason: '守护人机制尚未接入',
+              position: LoopRowPosition.first,
+            ),
+            _choice(
+              title: '导出私钥',
+              detail: '随时可导出，这是你的逃生舱',
+              available: capabilities.canExportPrivateKey,
+              reason: '私钥导出通道尚未接入',
+              position: LoopRowPosition.last,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  LoopRecordRow _choice({
+    required String title,
+    required String detail,
+    required bool available,
+    required String reason,
+    required LoopRowPosition position,
+  }) {
+    return LoopRecordRow(
+      key: ValueKey<String>('recovery-$title'),
+      title: title,
+      subtitle: available ? detail : '$detail · $reason',
+      trailing: available ? '可用' : '不可用',
+      position: position,
+      semanticLabel: available ? '$title，能力可用' : '$title，不可用：$reason',
     );
   }
 }
 
-class _SecurityAvailability extends StatelessWidget {
-  const _SecurityAvailability({
-    required this.icon,
-    required this.title,
-    required this.detail,
-    required this.available,
+// ---------------------------------------------------------------------------
+// security-setup · intro / focus
+// ---------------------------------------------------------------------------
+
+class SecuritySetupScreen extends StatelessWidget {
+  const SecuritySetupScreen({
+    required this.capabilities,
+    required this.onContinue,
+    super.key,
+    this.onBack,
   });
 
-  final IconData icon;
-  final String title;
-  final String detail;
-  final bool available;
+  final PrivyWalletCapabilities capabilities;
+  final VoidCallback onContinue;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
-    return LoopCard(
-      child: Row(
-        children: <Widget>[
-          Icon(icon, color: available ? LoopColors.mint : LoopColors.vapor),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text(detail, style: Theme.of(context).textTheme.bodyMedium),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          LoopStatusPill(
-            label: available ? 'Available' : 'Unavailable',
-            tone: LoopTone.neutral,
-          ),
-        ],
+    return LoopFocusPage(
+      archetype: LoopPageArchetype.intro,
+      title: '安全设置',
+      onBack: onBack,
+      primaryAction: LoopButton(
+        key: const ValueKey<String>('security-setup-continue'),
+        label: '下一步',
+        primary: true,
+        block: true,
+        onPressed: onContinue,
       ),
+      body: <Widget>[
+        const IdentityProgress(step: 4, total: 5, label: '安全设置'),
+        const IdentityStepCopy('应用锁与交易验证由 Privy 与设备共同决定。'),
+        const LoopNotice(
+          key: ValueKey<String>('protection-setup-unavailable'),
+          icon: 'warn',
+          tone: LoopNoticeTone.warn,
+          title: '保护设置尚未接入',
+          body: '这里不会保存 PIN，也不会声称已经开启任何保护。可用性只说明能力，不代表已启用。',
+        ),
+        const LoopLabel('应用锁'),
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            _row(
+              title: '生物识别',
+              detail: '打开 App 与签名前验证',
+              available: capabilities.canUseBiometrics,
+              reason: '设备生物识别能力尚未确认',
+              position: LoopRowPosition.first,
+            ),
+            _row(
+              title: '6 位 PIN',
+              detail: '生物识别不可用时的备用',
+              available: capabilities.canUseApplicationPin,
+              reason: '应用 PIN 需要账号绑定的凭证生命周期决策',
+              position: LoopRowPosition.last,
+            ),
+          ],
+        ),
+        const LoopLabel('交易验证'),
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            _row(
+              title: 'MFA',
+              detail: 'SMS / TOTP / Passkey',
+              available: capabilities.canUseTransactionMfa,
+              reason: '钱包 MFA 的设置回调尚不存在',
+              position: LoopRowPosition.first,
+            ),
+            _row(
+              title: '大额交易二次验证',
+              detail: '超过阈值时重新验证身份',
+              available: capabilities.canUseTransactionMfa,
+              reason: '阈值与验证通道均未确定',
+              position: LoopRowPosition.last,
+            ),
+          ],
+        ),
+        const LoopNotice(
+          icon: 'info',
+          title: '设备不支持生物识别时',
+          body: '会退回到系统层面的锁屏验证，不会因此阻断使用；App 不会自行存储 PIN。',
+          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+        ),
+      ],
+    );
+  }
+
+  LoopRecordRow _row({
+    required String title,
+    required String detail,
+    required bool available,
+    required String reason,
+    required LoopRowPosition position,
+  }) {
+    return LoopRecordRow(
+      key: ValueKey<String>('security-$title'),
+      title: title,
+      subtitle: available ? detail : '$detail · $reason',
+      trailing: available ? '可用' : '不可用',
+      position: position,
+      semanticLabel: available ? '$title，能力可用，但尚未启用' : '$title，不可用：$reason',
     );
   }
 }
 
-class _AliasAvatar extends StatelessWidget {
-  const _AliasAvatar({this.size = 54});
-
-  final double size;
+class UnknownAccountScreen extends StatelessWidget {
+  const UnknownAccountScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: <Color>[LoopColors.market, LoopColors.chat],
+    return const LoopFocusPage(
+      archetype: LoopPageArchetype.state,
+      title: '页面不存在',
+      body: <Widget>[
+        LoopEmpty(
+          key: ValueKey<String>('unknown-account-surface'),
+          message: '这个账户页面不在 93 页产品清单里',
+          reason: '请返回社区。请求已被记录。',
         ),
-        border: Border.all(color: LoopColors.chalk.withValues(alpha: 0.18)),
-      ),
-      alignment: Alignment.center,
-      child: Icon(
-        Icons.blur_on_rounded,
-        color: LoopColors.abyss,
-        size: size * 0.5,
-      ),
+      ],
     );
   }
 }

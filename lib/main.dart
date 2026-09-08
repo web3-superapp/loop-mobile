@@ -4,6 +4,7 @@ import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
+import 'package:loop_mobile/features/profile/presentation/avatar_catalog.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/social_privacy/social_privacy_gateway.dart';
@@ -32,6 +33,12 @@ Future<void> main() async {
         ),
         profileGatewayProvider.overrideWith(
           (ref) => ref.watch(loopProfileGatewayProvider),
+        ),
+        profileActivationGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopProfileActivationGatewayProvider),
+        ),
+        avatarCatalogGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopAvatarCatalogGatewayProvider),
         ),
         privacyGatewayProvider.overrideWith(
           (ref) => ref.watch(loopPrivacyGatewayProvider),

@@ -5,7 +5,10 @@ enum PrivacyMode { unavailable, preview, production }
 
 enum PrivacyGatewayFailureKind {
   unavailable,
+  offline,
   versionConflict,
+  bootstrapRequired,
+  validationFailed,
   invalidData,
   unexpected,
 }
@@ -17,7 +20,10 @@ final class PrivacyGatewayException implements Exception {
 
   String get code => switch (kind) {
     PrivacyGatewayFailureKind.unavailable => 'privacy_unavailable',
+    PrivacyGatewayFailureKind.offline => 'privacy_offline',
     PrivacyGatewayFailureKind.versionConflict => 'privacy_version_conflict',
+    PrivacyGatewayFailureKind.bootstrapRequired => 'privacy_bootstrap_required',
+    PrivacyGatewayFailureKind.validationFailed => 'privacy_validation_failed',
     PrivacyGatewayFailureKind.invalidData => 'invalid_privacy_data',
     PrivacyGatewayFailureKind.unexpected => 'privacy_request_failed',
   };

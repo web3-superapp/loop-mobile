@@ -201,13 +201,23 @@ final class PrivacyController extends Notifier<PrivacyState> {
     );
   }
 
-  void editCopyTradeVisibility(CopyTradeVisibility value) {
+  void editAnonymousMode(bool value) {
     if (!state.canEdit) throw StateError('Privacy is not editable');
     state = PrivacyState._(
       mode: state.mode,
       phase: PrivacyPhase.ready,
       resource: state.resource,
-      draft: state.draft.withCopyTradeVisibility(value),
+      draft: state.draft.withAnonymousMode(value),
+    );
+  }
+
+  void editVisibility(PrivacyVisibilityFacet facet, PrivacyAudience audience) {
+    if (!state.canEdit) throw StateError('Privacy is not editable');
+    state = PrivacyState._(
+      mode: state.mode,
+      phase: PrivacyPhase.ready,
+      resource: state.resource,
+      draft: state.draft.withFacet(facet, audience),
     );
   }
 

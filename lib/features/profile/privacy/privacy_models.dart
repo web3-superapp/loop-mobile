@@ -12,62 +12,166 @@ final class InvalidPrivacyContractException implements Exception {
   String toString() => 'The Privacy contract value is invalid';
 }
 
-/// Owner preference only. It never grants copy-trading authorization.
-enum CopyTradeVisibility {
-  private,
-  followers,
-  public;
+/// Display preference only. It never grants an authorization, proves a social
+/// relationship, or shares a holding.
+enum PrivacyAudience {
+  self('self'),
+  everyone('everyone');
 
-  String get wireValue => switch (this) {
-    CopyTradeVisibility.private => 'private',
-    CopyTradeVisibility.followers => 'followers',
-    CopyTradeVisibility.public => 'public',
+  const PrivacyAudience(this.wireValue);
+
+  final String wireValue;
+
+  static PrivacyAudience fromWire(String value) {
+    for (final audience in values) {
+      if (audience.wireValue == value) return audience;
+    }
+    throw const InvalidPrivacyContractException();
+  }
+}
+
+/// The four V2 visibility facets. Copy-trade visibility is deliberately absent:
+/// copytrade is retired and must not return.
+enum PrivacyVisibilityFacet {
+  totalAssets('totalAssets', '总资产'),
+  miningPower('miningPower', '挖矿算力'),
+  communities('communities', '加入的社区'),
+  tradeHistory('tradeHistory', '交易记录');
+
+  const PrivacyVisibilityFacet(this.wireValue, this.label);
+
+  final String wireValue;
+  final String label;
+}
+
+@immutable
+final class PrivacyVisibility {
+  factory PrivacyVisibility({
+    PrivacyAudience totalAssets = PrivacyAudience.self,
+    PrivacyAudience miningPower = PrivacyAudience.self,
+    PrivacyAudience communities = PrivacyAudience.self,
+    PrivacyAudience tradeHistory = PrivacyAudience.self,
+  }) =>
+      PrivacyVisibility._(totalAssets, miningPower, communities, tradeHistory);
+
+  const PrivacyVisibility._(
+    this.totalAssets,
+    this.miningPower,
+    this.communities,
+    this.tradeHistory,
+  );
+
+  /// Fail-closed default: nothing is visible to anyone but the owner.
+  const PrivacyVisibility.defaults()
+    : totalAssets = PrivacyAudience.self,
+      miningPower = PrivacyAudience.self,
+      communities = PrivacyAudience.self,
+      tradeHistory = PrivacyAudience.self;
+
+  final PrivacyAudience totalAssets;
+  final PrivacyAudience miningPower;
+  final PrivacyAudience communities;
+  final PrivacyAudience tradeHistory;
+
+  PrivacyAudience operator [](PrivacyVisibilityFacet facet) => switch (facet) {
+    PrivacyVisibilityFacet.totalAssets => totalAssets,
+    PrivacyVisibilityFacet.miningPower => miningPower,
+    PrivacyVisibilityFacet.communities => communities,
+    PrivacyVisibilityFacet.tradeHistory => tradeHistory,
   };
 
-  static CopyTradeVisibility fromWire(String value) => switch (value) {
-    'private' => CopyTradeVisibility.private,
-    'followers' => CopyTradeVisibility.followers,
-    'public' => CopyTradeVisibility.public,
-    _ => throw const InvalidPrivacyContractException(),
-  };
+  PrivacyVisibility withFacet(
+    PrivacyVisibilityFacet facet,
+    PrivacyAudience audience,
+  ) => PrivacyVisibility(
+    totalAssets: facet == PrivacyVisibilityFacet.totalAssets
+        ? audience
+        : totalAssets,
+    miningPower: facet == PrivacyVisibilityFacet.miningPower
+        ? audience
+        : miningPower,
+    communities: facet == PrivacyVisibilityFacet.communities
+        ? audience
+        : communities,
+    tradeHistory: facet == PrivacyVisibilityFacet.tradeHistory
+        ? audience
+        : tradeHistory,
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PrivacyVisibility &&
+          other.totalAssets == totalAssets &&
+          other.miningPower == miningPower &&
+          other.communities == communities &&
+          other.tradeHistory == tradeHistory;
+
+  @override
+  int get hashCode =>
+      Object.hash(totalAssets, miningPower, communities, tradeHistory);
 }
 
 @immutable
 final class PrivacyValues {
   const PrivacyValues({
     required this.discoverable,
-    required this.copyTradeVisibility,
+    required this.anonymousMode,
+    this.visibility = const PrivacyVisibility.defaults(),
   });
 
   const PrivacyValues.defaults()
     : discoverable = false,
-      copyTradeVisibility = CopyTradeVisibility.private;
+      anonymousMode = false,
+      visibility = const PrivacyVisibility.defaults();
 
   factory PrivacyValues.copyOf(PrivacyValues source) => PrivacyValues(
     discoverable: source.discoverable,
-    copyTradeVisibility: source.copyTradeVisibility,
+    anonymousMode: source.anonymousMode,
+    visibility: source.visibility,
   );
 
+  /// Shows the LOOP ID and allows the owner to be found by search.
   final bool discoverable;
-  final CopyTradeVisibility copyTradeVisibility;
+
+  /// Shows the alias only; the wallet address is never displayed.
+  final bool anonymousMode;
+
+  final PrivacyVisibility visibility;
 
   PrivacyValues withDiscoverable(bool value) => PrivacyValues(
     discoverable: value,
-    copyTradeVisibility: copyTradeVisibility,
+    anonymousMode: anonymousMode,
+    visibility: visibility,
   );
 
-  PrivacyValues withCopyTradeVisibility(CopyTradeVisibility value) =>
-      PrivacyValues(discoverable: discoverable, copyTradeVisibility: value);
+  PrivacyValues withAnonymousMode(bool value) => PrivacyValues(
+    discoverable: discoverable,
+    anonymousMode: value,
+    visibility: visibility,
+  );
+
+  PrivacyValues withVisibility(PrivacyVisibility value) => PrivacyValues(
+    discoverable: discoverable,
+    anonymousMode: anonymousMode,
+    visibility: value,
+  );
+
+  PrivacyValues withFacet(
+    PrivacyVisibilityFacet facet,
+    PrivacyAudience audience,
+  ) => withVisibility(visibility.withFacet(facet, audience));
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is PrivacyValues &&
           other.discoverable == discoverable &&
-          other.copyTradeVisibility == copyTradeVisibility;
+          other.anonymousMode == anonymousMode &&
+          other.visibility == visibility;
 
   @override
-  int get hashCode => Object.hash(discoverable, copyTradeVisibility);
+  int get hashCode => Object.hash(discoverable, anonymousMode, visibility);
 }
 
 @immutable

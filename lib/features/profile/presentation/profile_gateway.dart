@@ -5,7 +5,13 @@ enum ProfileMode { unavailable, preview, production }
 
 enum ProfileGatewayFailureKind {
   unavailable,
+  offline,
   versionConflict,
+  idempotencyConflict,
+  bootstrapRequired,
+  validationFailed,
+  aliasReserved,
+  aliasBlocked,
   invalidData,
   unexpected,
 }
@@ -17,7 +23,14 @@ final class ProfileGatewayException implements Exception {
 
   String get code => switch (kind) {
     ProfileGatewayFailureKind.unavailable => 'profile_unavailable',
+    ProfileGatewayFailureKind.offline => 'profile_offline',
     ProfileGatewayFailureKind.versionConflict => 'profile_version_conflict',
+    ProfileGatewayFailureKind.idempotencyConflict =>
+      'profile_idempotency_conflict',
+    ProfileGatewayFailureKind.bootstrapRequired => 'profile_bootstrap_required',
+    ProfileGatewayFailureKind.validationFailed => 'profile_validation_failed',
+    ProfileGatewayFailureKind.aliasReserved => 'profile_alias_reserved',
+    ProfileGatewayFailureKind.aliasBlocked => 'profile_alias_blocked',
     ProfileGatewayFailureKind.invalidData => 'invalid_profile_data',
     ProfileGatewayFailureKind.unexpected => 'profile_request_failed',
   };
@@ -60,4 +73,42 @@ final class UnavailableProfileGateway implements ProfileGateway {
 
 final profileGatewayProvider = Provider<ProfileGateway>(
   (ref) => const UnavailableProfileGateway(),
+);
+
+/// One-time public-profile activation (`POST /v2/profile/loop-id`).
+///
+/// Separated from [ProfileGateway] because activation is a write command with
+/// an idempotency key, not an optimistic-concurrency replace.
+abstract interface class ProfileActivationGateway {
+  ProfileMode get mode;
+
+  /// Activates the owner's public profile. The implementation owns the durable
+  /// idempotency record: an identical retry must reuse the original key and
+  /// the original body, including the submitted interest order.
+  Future<ProfileResource> activate({
+    required String alias,
+    required String? avatarRef,
+    required List<ProfileInterest> interests,
+  });
+}
+
+final class UnavailableProfileActivationGateway
+    implements ProfileActivationGateway {
+  const UnavailableProfileActivationGateway();
+
+  @override
+  ProfileMode get mode => ProfileMode.unavailable;
+
+  @override
+  Future<ProfileResource> activate({
+    required String alias,
+    required String? avatarRef,
+    required List<ProfileInterest> interests,
+  }) => Future<ProfileResource>.error(
+    const ProfileGatewayException(ProfileGatewayFailureKind.unavailable),
+  );
+}
+
+final profileActivationGatewayProvider = Provider<ProfileActivationGateway>(
+  (ref) => const UnavailableProfileActivationGateway(),
 );

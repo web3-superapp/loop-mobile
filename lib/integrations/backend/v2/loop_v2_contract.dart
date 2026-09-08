@@ -201,9 +201,13 @@ abstract final class LoopV2Contract {
       'VERSION_CONFLICT' ||
       'IDEMPOTENCY_CONFLICT' ||
       'ACCOUNT_BOOTSTRAP_REQUIRED' ||
-      'SESSION_NOT_FOUND' => LoopBackendFailureKind.invalidRequest,
+      'SESSION_NOT_FOUND' ||
+      'VALIDATION_FAILED' ||
+      'ALIAS_RESERVED' ||
+      'ALIAS_BLOCKED' => LoopBackendFailureKind.invalidRequest,
       'REQUEST_TIMEOUT' => LoopBackendFailureKind.timeout,
       'RATE_LIMITED' ||
+      'NOT_FOUND' ||
       'CAPABILITY_UNAVAILABLE' ||
       'PROVIDER_DISCONNECTED' ||
       'INTERNAL_ERROR' => LoopBackendFailureKind.unavailable,

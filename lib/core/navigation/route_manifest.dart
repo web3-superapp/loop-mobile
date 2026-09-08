@@ -123,8 +123,12 @@ abstract final class LoopRouteManifest {
   /// replacement lands; the router records them as `info`, not `error`.
   /// `/notifications`: the notification router's system-notice intent stays on
   /// the legacy location until step 5 (D14) delivers the in-context notice.
+  /// `/profile/social-privacy`: the V1 social-privacy resource was retired by
+  /// the V2 privacy resource (step 2); the location stays recorded as info
+  /// until the remaining chat surfaces stop linking to it.
   static const List<String> informationalRetiredPaths = <String>[
     '/notifications',
+    '/profile/social-privacy',
   ];
 
   /// Retired locations that must never be mounted again. Each resolves to the
@@ -182,7 +186,6 @@ abstract final class LoopRouteManifest {
     '/chat/groups/create',
     '/chat/groups/:groupId/alias',
     '/profile/friends',
-    '/profile/social-privacy',
     '/preview/signing-review',
     '/preview/contract-facts',
     '/preview/asset-message',
@@ -216,7 +219,7 @@ abstract final class LoopRouteManifest {
       title: '邮箱验证码',
       prototypeOrder: 2,
       step: 2,
-      status: LoopRouteStatus.redirect,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'auth-wallet',
@@ -261,7 +264,7 @@ abstract final class LoopRouteManifest {
       title: '生成 LOOP ID',
       prototypeOrder: 7,
       step: 2,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
       legacyPath: '/auth/profile',
     ),
     LoopRouteEntry(

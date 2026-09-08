@@ -55,6 +55,10 @@ final class _FlutterLoopV2SecureKeyValueStore
   Future<void> delete(String key) => _storage.delete(key: key);
 }
 
+/// Platform-backed secure store shared by every V2 owner journal.
+const LoopV2SecureKeyValueStore loopV2SecureKeyValueStore =
+    _FlutterLoopV2SecureKeyValueStore();
+
 abstract final class LoopV2OwnerPartition {
   static String fromPrincipal(String principalKey, {Uuid uuid = const Uuid()}) {
     final principal = principalKey.trim();

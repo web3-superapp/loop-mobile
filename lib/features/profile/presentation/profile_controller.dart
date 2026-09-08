@@ -193,13 +193,41 @@ final class ProfileController extends Notifier<ProfileState> {
   }
 
   void editAlias(String? alias) {
+    _edit((draft) => draft.withAlias(alias));
+  }
+
+  void editAvatarRef(String? avatarRef) {
+    _edit((draft) => draft.withAvatarRef(avatarRef));
+  }
+
+  void editBio(String? bio) {
+    _edit((draft) => draft.withBio(bio));
+  }
+
+  void editInterests(List<ProfileInterest> interests) {
+    _edit((draft) => draft.withInterests(interests));
+  }
+
+  void toggleInterest(ProfileInterest interest) {
+    _edit((draft) {
+      final next = List<ProfileInterest>.of(draft.interests);
+      if (!next.remove(interest)) {
+        if (next.length >= profileMaximumInterests) {
+          throw const InvalidProfileContractException();
+        }
+        next.add(interest);
+      }
+      return draft.withInterests(next);
+    });
+  }
+
+  void _edit(ProfileValues Function(ProfileValues draft) apply) {
     if (!state.canEdit) throw StateError('Profile is not editable');
-    final updated = state.draft.withAlias(alias);
     state = ProfileState._(
       mode: state.mode,
       phase: ProfilePhase.ready,
       resource: state.resource,
-      draft: updated,
+      draft: apply(state.draft),
     );
   }
 
