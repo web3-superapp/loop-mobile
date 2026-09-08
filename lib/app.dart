@@ -409,6 +409,8 @@ GoRouter _buildRouter(
               context.push('/community/chat?id=$communityId'),
           onOpenVoiceRoom: (communityId) =>
               context.push('/chat/voice?id=$communityId'),
+          onOpenMiningPanel: (communityId) =>
+              context.push(MiningRoute.community(communityId)),
         ),
       ),
       GoRoute(

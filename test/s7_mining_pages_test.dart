@@ -7,6 +7,8 @@ import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
+import 'package:loop_mobile/core/navigation/launch_route.dart';
+
 import 'support/s7_fixtures.dart';
 import 'support/s7_page_harness.dart';
 
@@ -22,6 +24,30 @@ List<String> _figures(WidgetTester tester) {
 }
 
 void main() {
+  group('mining-community route identity', () {
+    test('the panel is addressed by the opaque communityId alone', () {
+      final location = MiningRoute.community(s7CommunityId);
+
+      expect(location, '/mining/community?communityId=$s7CommunityId');
+      expect(
+        MiningRoute.parse(Uri.parse(location), MiningRoute.communityPath),
+        s7CommunityId,
+      );
+      // A name, a slug or a bound address is never a route identity.
+      for (final rejected in <String>[
+        '/mining/community',
+        '/mining/community?communityId=frog-holders',
+        '/mining/community?communityId=$s7CommunityId&extra=1',
+      ]) {
+        expect(
+          MiningRoute.parse(Uri.parse(rejected), MiningRoute.communityPath),
+          isNull,
+          reason: rejected,
+        );
+      }
+    });
+  });
+
   group('mining · the tab', () {
     testWidgets('loading shows a skeleton and no power figure', (tester) async {
       await pumpS7Page(
@@ -148,6 +174,26 @@ void main() {
       expect(find.textContaining('空列表按契约成立'), findsOneWidget);
       expect(find.textContaining('不代表钱包没有持仓'), findsOneWidget);
       expect(_figures(tester), isEmpty);
+    });
+
+    testWidgets('the community mining panel is reachable from here', (
+      tester,
+    ) async {
+      var opened = false;
+      await pumpS7Page(
+        tester,
+        MiningAssetsScreen(onOpenCommunities: () => opened = true),
+        mining: FakeMiningGateway(),
+      );
+
+      final row = find.byKey(
+        const ValueKey<String>('mining-assets-open-communities'),
+      );
+      await scrollToS7Section(tester, row);
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+
+      expect(opened, isTrue);
     });
 
     testWidgets('the reference price carries the server reason', (

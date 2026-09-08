@@ -331,7 +331,7 @@ void main() {
   });
 
   group('launch-trade', () {
-    testWidgets('the form is visible but the main action is disabled', (
+    testWidgets('pending capability evidence closes the action and states it', (
       tester,
     ) async {
       await pumpS7Page(
@@ -348,11 +348,100 @@ void main() {
         find.byKey(const ValueKey<String>('launch-trade-submit')),
       );
       expect(submit.onPressed, isNull);
+      // The copy is the evidence reason the server published, not a code the
+      // client wrote down.
       expect(
         find.byKey(const ValueKey<String>('launch-trade-refusal')),
         findsOneWidget,
       );
-      expect(find.textContaining('返回 503'), findsOneWidget);
+      expect(find.textContaining('Launch 合约基线尚未交付'), findsWidgets);
+    });
+
+    testWidgets(
+      'settled evidence opens the action and the server still refuses',
+      (tester) async {
+        final gateway = FakeLaunchGateway(
+          intentFailure: LaunchFailureKind.unavailable,
+        );
+        await pumpS7Page(
+          tester,
+          const LaunchTradeScreen(launchId: s7LaunchId),
+          launch: gateway,
+          wallet: FakeWalletDirectory(activeWalletId: s7WalletId),
+          meta: s7MetaSnapshot(launchEvidencePending: false),
+        );
+
+        // A round and an amount are real inputs; without them the action
+        // stays closed even though the capability is open.
+        expect(
+          tester
+              .widget<LoopButton>(
+                find.byKey(const ValueKey<String>('launch-trade-submit')),
+              )
+              .onPressed,
+          isNull,
+        );
+        expect(find.textContaining('请先选择要参与的轮次'), findsOneWidget);
+
+        await tester.tap(find.byKey(const ValueKey<String>('launch-round-1')));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const ValueKey<String>('launch-trade-amount')),
+          '500',
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('launch-trade-submit')),
+        );
+        await tester.pumpAndSettle();
+
+        // The intent reached the gateway and the refusal shown is the one the
+        // server answered with.
+        expect(gateway.intents, <String>['$s7LaunchId:$s7RoundId:500']);
+        expect(find.text('服务端拒绝了这次认购'), findsOneWidget);
+      },
+    );
+
+    testWidgets('a malformed amount never becomes a request', (tester) async {
+      final gateway = FakeLaunchGateway();
+      await pumpS7Page(
+        tester,
+        const LaunchTradeScreen(launchId: s7LaunchId),
+        launch: gateway,
+        wallet: FakeWalletDirectory(activeWalletId: s7WalletId),
+        meta: s7MetaSnapshot(launchEvidencePending: false),
+      );
+
+      await tester.tap(find.byKey(const ValueKey<String>('launch-round-1')));
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('launch-trade-amount')),
+        '5,00',
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<LoopButton>(
+              find.byKey(const ValueKey<String>('launch-trade-submit')),
+            )
+            .onPressed,
+        isNull,
+      );
+      expect(find.textContaining('请输入一个有效的支付数量'), findsOneWidget);
+      expect(gateway.intents, isEmpty);
+    });
+
+    testWidgets('no payment wallet keeps the action closed', (tester) async {
+      await pumpS7Page(
+        tester,
+        const LaunchTradeScreen(launchId: s7LaunchId),
+        launch: FakeLaunchGateway(),
+        wallet: FakeWalletDirectory(),
+        meta: s7MetaSnapshot(launchEvidencePending: false),
+      );
+
+      expect(find.textContaining('还没有可用的支付钱包'), findsOneWidget);
     });
 
     testWidgets('there is no sell side before graduation', (tester) async {
@@ -660,6 +749,234 @@ void main() {
       )) {
         expect(button.label, isNot(contains('上传')));
       }
+    });
+
+    testWidgets('all five tracks are listed, with the implicit ones marked', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const LaunchApplyScreen(),
+        launch: FakeLaunchGateway(
+          projects: S7Answer<LaunchProjectPage>(
+            value: LaunchProjectPage(
+              items: <LaunchProject>[s7Project()],
+              nextCursor: null,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(ValueKey<String>('launch-apply-project-$s7ProjectId')),
+      );
+      await tester.pumpAndSettle();
+
+      for (final track in <String>[
+        'lbank/spot',
+        'binance/alpha',
+        'binance/perpetual',
+        'binance/spot',
+        'bithumb/spot',
+      ]) {
+        final row = find.byKey(ValueKey<String>('launch-milestone-$track'));
+        await scrollToS7Section(tester, row);
+        expect(row, findsOneWidget, reason: track);
+      }
+      // A track with no stored record says so; it never reads as "started".
+      expect(find.textContaining('尚无记录'), findsWidgets);
+      // Alpha and spot are separate tracks and neither implies the other.
+      expect(find.textContaining('Binance · Alpha'), findsOneWidget);
+      expect(find.textContaining('Binance · 现货'), findsOneWidget);
+    });
+
+    testWidgets('LISTED and FEATURED keep their two evidence times apart', (
+      tester,
+    ) async {
+      for (final state in <LaunchMilestoneState>[
+        LaunchMilestoneState.listed,
+        LaunchMilestoneState.featured,
+      ]) {
+        await pumpS7Page(
+          tester,
+          const LaunchApplyScreen(),
+          launch: FakeLaunchGateway(
+            projects: S7Answer<LaunchProjectPage>(
+              value: LaunchProjectPage(
+                items: <LaunchProject>[s7Project()],
+                nextCursor: null,
+              ),
+            ),
+            milestones: S7Answer<LaunchMilestones>(
+              value: s7Milestones(
+                items: <LaunchMilestone>[
+                  s7ListedMilestone(state: state),
+                  for (final track in launchMilestoneTracks.skip(1))
+                    s7ImplicitMilestone(venue: track.$1, marketType: track.$2),
+                ],
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(
+          find.byKey(ValueKey<String>('launch-apply-project-$s7ProjectId')),
+        );
+        await tester.pumpAndSettle();
+
+        final row = find.byKey(
+          const ValueKey<String>('launch-milestone-lbank/spot'),
+        );
+        await scrollToS7Section(tester, row);
+        expect(row, findsOneWidget, reason: state.name);
+        // Two different facts, rendered separately and never derived.
+        expect(
+          find.textContaining('复核记录于 2026-09-05 03:00 UTC'),
+          findsOneWidget,
+          reason: state.name,
+        );
+        expect(
+          find.textContaining('平台可核验于 2026-09-01 00:00 UTC'),
+          findsOneWidget,
+          reason: state.name,
+        );
+      }
+    });
+
+    testWidgets('a missing observedAt is an em dash, not the recorded time', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const LaunchApplyScreen(),
+        launch: FakeLaunchGateway(
+          projects: S7Answer<LaunchProjectPage>(
+            value: LaunchProjectPage(
+              items: <LaunchProject>[s7Project()],
+              nextCursor: null,
+            ),
+          ),
+          milestones: S7Answer<LaunchMilestones>(
+            value: s7Milestones(
+              items: <LaunchMilestone>[
+                LaunchMilestone(
+                  venueMilestoneId: s7MilestoneId,
+                  venue: LaunchVenue.lbank,
+                  marketType: LaunchMarketType.spot,
+                  state: LaunchMilestoneState.listed,
+                  evidence: LaunchMilestoneEvidence(
+                    digest: 'a' * 64,
+                    recordedAt: DateTime.utc(2026, 9, 5, 3),
+                    observedAt: null,
+                    reviewer: 'ops.alice',
+                  ),
+                  version: 2,
+                  updatedAt: DateTime.utc(2026, 9, 5, 3),
+                ),
+                for (final track in launchMilestoneTracks.skip(1))
+                  s7ImplicitMilestone(venue: track.$1, marketType: track.$2),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(ValueKey<String>('launch-apply-project-$s7ProjectId')),
+      );
+      await tester.pumpAndSettle();
+
+      final row = find.byKey(
+        const ValueKey<String>('launch-milestone-lbank/spot'),
+      );
+      await scrollToS7Section(tester, row);
+      expect(
+        find.textContaining('平台可核验时间 $launchMissingFigure（操作员未提供）'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('平台可核验于'), findsNothing);
+    });
+
+    testWidgets('a rejected write offers a reload that keeps the edits', (
+      tester,
+    ) async {
+      final gateway = FakeLaunchGateway(
+        projects: S7Answer<LaunchProjectPage>(
+          value: LaunchProjectPage(
+            items: <LaunchProject>[s7Project()],
+            nextCursor: null,
+          ),
+        ),
+        updateFailure: LaunchFailureKind.versionConflict,
+      );
+      await pumpS7Page(tester, const LaunchApplyScreen(), launch: gateway);
+
+      await tester.tap(
+        find.byKey(ValueKey<String>('launch-apply-project-$s7ProjectId')),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('launch-apply-narrative')),
+        '改过的叙事',
+      );
+      await scrollToS7Section(
+        tester,
+        find.byKey(const ValueKey<String>('launch-apply-save')),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('launch-apply-save')));
+      await tester.pumpAndSettle();
+
+      final reload = find.byKey(const ValueKey<String>('launch-apply-reload'));
+      await scrollToS7Section(tester, reload);
+      expect(reload, findsOneWidget);
+      await tester.tap(reload);
+      await tester.pumpAndSettle();
+
+      // The re-read refreshes the version; the typed edit is not discarded.
+      expect(find.text('改过的叙事'), findsOneWidget);
+    });
+
+    testWidgets('all four official links round-trip through the form', (
+      tester,
+    ) async {
+      final gateway = FakeLaunchGateway();
+      await pumpS7Page(
+        tester,
+        const LaunchApplyScreen(),
+        launch: gateway,
+        size: const Size(390, 3600),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('launch-apply-telegram')),
+        findsOneWidget,
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('launch-apply-name')),
+        'MoonCat',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('launch-apply-ticker')),
+        'MCAT',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('launch-apply-telegram')),
+        'https://t.me/mooncat',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('launch-apply-discord')),
+        'https://discord.gg/mooncat',
+      );
+      await scrollToS7Section(
+        tester,
+        find.byKey(const ValueKey<String>('launch-apply-save')),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('launch-apply-save')));
+      await tester.pumpAndSettle();
+
+      final links = gateway.created.single.officialLinks;
+      expect(links.telegram, 'https://t.me/mooncat');
+      expect(links.discord, 'https://discord.gg/mooncat');
     });
 
     testWidgets('a non-owner projection shows the trail as unavailable', (

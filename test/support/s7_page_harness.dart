@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
@@ -11,6 +12,8 @@ import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/referral_gateway.dart';
 import 'package:loop_mobile/features/mining/referral_models.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -281,6 +284,49 @@ final class FakeReferralGateway implements ReferralGateway {
   }
 }
 
+/// The wallet directory `launch-trade` reads to find the paying wallet. Only
+/// the active id matters here; every other wallet read stays unavailable.
+final class FakeWalletDirectory implements WalletReadGateway {
+  FakeWalletDirectory({this.activeWalletId});
+
+  final String? activeWalletId;
+
+  @override
+  LoopChainGatewayMode get mode => LoopChainGatewayMode.production;
+
+  Future<Never> _unavailable() => Future<Never>.error(
+    const LoopChainException(LoopChainFailureKind.unavailable),
+  );
+
+  @override
+  Future<LoopWalletDirectory> loadWallets() =>
+      Future<LoopWalletDirectory>.value(
+        LoopWalletDirectory(
+          wallets: const <LoopWalletAccount>[],
+          activeWalletId: activeWalletId,
+          observedAt: DateTime.utc(2026, 9, 9, 6),
+        ),
+      );
+
+  @override
+  Future<LoopWalletDirectory> setActiveWallet({
+    required String walletId,
+    required String? expectedActiveWalletId,
+  }) => _unavailable();
+
+  @override
+  Future<LoopWalletBalances> loadBalances(String walletId) => _unavailable();
+
+  @override
+  Future<LoopWalletActivityPage> loadActivity(
+    String walletId, {
+    String? cursor,
+  }) => _unavailable();
+
+  @override
+  Future<LoopWalletReceive> loadReceive(String walletId) => _unavailable();
+}
+
 /// A capability document where the three S7 ids can be flipped independently.
 ///
 /// `launch` and `mining` read `available` with **pending evidence**: the
@@ -290,6 +336,10 @@ LoopV2MetaSnapshot s7MetaSnapshot({
   LoopV2CapabilityAvailability mining = LoopV2CapabilityAvailability.available,
   LoopV2CapabilityAvailability referral =
       LoopV2CapabilityAvailability.available,
+  // Step 7's real server always reports pending Launch evidence. Setting this
+  // false is how a test proves the page is driven by the evidence rather than
+  // by a hard-coded reason code of its own.
+  bool launchEvidencePending = true,
 }) {
   return LoopV2MetaSnapshot(
     clientPolicy: LoopV2ClientPolicy(
@@ -343,9 +393,13 @@ LoopV2MetaSnapshot s7MetaSnapshot({
               _ => 'CAPABILITY_NOT_DELIVERED',
             },
             evidence: switch (id) {
-              LoopV2CapabilityId.launch => const LoopV2CapabilityEvidence(
-                status: LoopV2CapabilityEvidenceStatus.pending,
-                reasonCode: 'LAUNCH_CONTRACT_BASELINE_PENDING',
+              LoopV2CapabilityId.launch => LoopV2CapabilityEvidence(
+                status: launchEvidencePending
+                    ? LoopV2CapabilityEvidenceStatus.pending
+                    : LoopV2CapabilityEvidenceStatus.notApplicable,
+                reasonCode: launchEvidencePending
+                    ? 'LAUNCH_CONTRACT_BASELINE_PENDING'
+                    : null,
               ),
               LoopV2CapabilityId.mining ||
               LoopV2CapabilityId.referral => const LoopV2CapabilityEvidence(
@@ -370,6 +424,7 @@ Future<void> pumpS7Page(
   LaunchGateway? launch,
   MiningGateway? mining,
   ReferralGateway? referral,
+  WalletReadGateway? wallet,
   LoopV2MetaSnapshot? meta,
   Size size = const Size(390, 2600),
   bool settle = true,
@@ -386,6 +441,7 @@ Future<void> pumpS7Page(
         if (mining != null) miningGatewayProvider.overrideWithValue(mining),
         if (referral != null)
           referralGatewayProvider.overrideWithValue(referral),
+        if (wallet != null) walletReadGatewayProvider.overrideWithValue(wallet),
         loopV2MetaSnapshotProvider.overrideWith(
           (ref) async => meta ?? s7MetaSnapshot(),
         ),

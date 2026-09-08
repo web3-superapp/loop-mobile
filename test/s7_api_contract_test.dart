@@ -184,6 +184,58 @@ Map<String, Object?> _launchDetailBody() => <String, Object?>{
   'contractVersion': '2.0',
 };
 
+Map<String, Object?> _milestone({
+  required String venue,
+  required String marketType,
+  String state = 'PREPARING',
+  Object? venueMilestoneId,
+  int version = 0,
+  Object? updatedAt,
+  Object? digest,
+  Object? recordedAt,
+  Object? observedAt,
+  Object? reviewer,
+}) => <String, Object?>{
+  'venueMilestoneId': venueMilestoneId,
+  'venue': venue,
+  'marketType': marketType,
+  'state': state,
+  'evidence': <String, Object?>{
+    'digest': digest,
+    'recordedAt': recordedAt,
+    'observedAt': observedAt,
+    'reviewer': reviewer,
+  },
+  'version': version,
+  'updatedAt': updatedAt,
+};
+
+/// The five tracks 03 §8.4 fixes; the server always returns all of them.
+List<Object?> _allTracks({Map<String, Object?>? override}) {
+  const tracks = <(String, String)>[
+    ('lbank', 'spot'),
+    ('binance', 'alpha'),
+    ('binance', 'perpetual'),
+    ('binance', 'spot'),
+    ('bithumb', 'spot'),
+  ];
+  return <Object?>[
+    for (final (venue, marketType) in tracks)
+      if (override != null &&
+          override['venue'] == venue &&
+          override['marketType'] == marketType)
+        override
+      else
+        _milestone(venue: venue, marketType: marketType),
+  ];
+}
+
+Map<String, Object?> _milestonesBody(List<Object?> items) => <String, Object?>{
+  'projectId': _projectId,
+  'items': items,
+  'contractVersion': '2.0',
+};
+
 Map<String, Object?> _errorBody(String code, String category) =>
     <String, Object?>{
       'code': code,
@@ -576,32 +628,13 @@ void main() {
       );
     });
 
-    test('a milestone keeps recordedAt and observedAt apart', () async {
+    test('an implicit PREPARING row carries no id, version or time', () async {
       final milestones =
           await DioLoopV2LaunchApi(
             _dio(
               _RecordingAdapter(
                 statusCode: 200,
-                body: <String, Object?>{
-                  'projectId': _projectId,
-                  'items': <Object?>[
-                    <String, Object?>{
-                      'venueMilestoneId': _walletId,
-                      'venue': 'lbank',
-                      'marketType': 'alpha',
-                      'state': 'FEATURED',
-                      'evidence': <String, Object?>{
-                        'digest': 'b' * 64,
-                        'recordedAt': '2026-09-05T03:00:00.000Z',
-                        'observedAt': '2026-09-01T00:00:00.000Z',
-                        'reviewer': 'ops.alice',
-                      },
-                      'version': 2,
-                      'updatedAt': '2026-09-05T03:00:00.000Z',
-                    },
-                  ],
-                  'contractVersion': '2.0',
-                },
+                body: _milestonesBody(_allTracks()),
               ),
             ),
           ).getMilestones(
@@ -610,40 +643,38 @@ void main() {
             projectId: _projectId,
           );
 
-      final item = milestones.items.single;
-      expect(item.state, LaunchMilestoneState.featured);
-      expect(item.state.carriesEvidence, isTrue);
-      expect(item.marketType, LaunchMarketType.alpha);
-      // The two timestamps are different facts and neither is derived.
-      expect(item.evidence.recordedAt, isNot(item.evidence.observedAt));
+      expect(milestones.items, hasLength(5));
+      expect(milestones.items.every((item) => item.isImplicit), isTrue);
+      final first = milestones.items.first;
+      expect(first.venueMilestoneId, isNull);
+      expect(first.version, 0);
+      expect(first.updatedAt, isNull);
+      expect(first.state, LaunchMilestoneState.preparing);
+      expect(first.state.carriesEvidence, isFalse);
     });
 
-    test('an APPLIED milestone carries no evidence', () async {
+    test('a stored row keeps recordedAt and observedAt apart', () async {
       final milestones =
           await DioLoopV2LaunchApi(
             _dio(
               _RecordingAdapter(
                 statusCode: 200,
-                body: <String, Object?>{
-                  'projectId': _projectId,
-                  'items': <Object?>[
-                    <String, Object?>{
-                      'venueMilestoneId': _walletId,
-                      'venue': 'binance',
-                      'marketType': 'spot',
-                      'state': 'APPLIED',
-                      'evidence': <String, Object?>{
-                        'digest': null,
-                        'recordedAt': null,
-                        'observedAt': null,
-                        'reviewer': null,
-                      },
-                      'version': 1,
-                      'updatedAt': '2026-09-05T03:00:00.000Z',
-                    },
-                  ],
-                  'contractVersion': '2.0',
-                },
+                body: _milestonesBody(
+                  _allTracks(
+                    override: _milestone(
+                      venue: 'binance',
+                      marketType: 'alpha',
+                      state: 'FEATURED',
+                      venueMilestoneId: _walletId,
+                      version: 2,
+                      updatedAt: '2026-09-05T03:00:00.000Z',
+                      digest: 'b' * 64,
+                      recordedAt: '2026-09-05T03:00:00.000Z',
+                      observedAt: '2026-09-01T00:00:00.000Z',
+                      reviewer: 'ops.alice',
+                    ),
+                  ),
+                ),
               ),
             ),
           ).getMilestones(
@@ -652,8 +683,98 @@ void main() {
             projectId: _projectId,
           );
 
-      expect(milestones.items.single.state.carriesEvidence, isFalse);
-      expect(milestones.items.single.evidence.isEmpty, isTrue);
+      final stored = milestones.items.singleWhere((item) => !item.isImplicit);
+      expect(stored.state, LaunchMilestoneState.featured);
+      expect(stored.state.carriesEvidence, isTrue);
+      // Alpha is its own track and never implies the spot one.
+      expect(stored.marketType, LaunchMarketType.alpha);
+      expect(stored.trackKey, 'binance/alpha');
+      // Two different facts; neither is derived from the other.
+      expect(stored.evidence.recordedAt, isNot(stored.evidence.observedAt));
+    });
+
+    test('a stored row without a version or an update time is refused', () {
+      for (final broken in <Map<String, Object?>>[
+        _milestone(
+          venue: 'lbank',
+          marketType: 'spot',
+          state: 'APPLIED',
+          venueMilestoneId: _walletId,
+          updatedAt: '2026-09-05T03:00:00.000Z',
+        ),
+        _milestone(
+          venue: 'lbank',
+          marketType: 'spot',
+          state: 'APPLIED',
+          venueMilestoneId: _walletId,
+          version: 1,
+        ),
+      ]) {
+        final api = DioLoopV2LaunchApi(
+          _dio(
+            _RecordingAdapter(
+              statusCode: 200,
+              body: _milestonesBody(_allTracks(override: broken)),
+            ),
+          ),
+        );
+        expect(
+          () => api.getMilestones(
+            accessToken: _token,
+            clientVersion: _clientVersion,
+            projectId: _projectId,
+          ),
+          throwsA(isA<LoopBackendFailure>()),
+        );
+      }
+    });
+
+    test('an implicit row that is not PREPARING is refused', () {
+      final api = DioLoopV2LaunchApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _milestonesBody(
+              _allTracks(
+                override: _milestone(
+                  venue: 'lbank',
+                  marketType: 'spot',
+                  state: 'LISTED',
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getMilestones(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          projectId: _projectId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a missing track is a contract break, not an absent track', () {
+      final api = DioLoopV2LaunchApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _milestonesBody(_allTracks().take(4).toList()),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getMilestones(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          projectId: _projectId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
     });
   });
 

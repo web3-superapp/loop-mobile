@@ -29,6 +29,7 @@ class CommunityProfileScreen extends ConsumerStatefulWidget {
     this.onOpenMembers,
     this.onOpenChat,
     this.onOpenVoiceRoom,
+    this.onOpenMiningPanel,
   });
 
   final String? communityId;
@@ -36,6 +37,10 @@ class CommunityProfileScreen extends ConsumerStatefulWidget {
   final ValueChanged<String>? onOpenMembers;
   final ValueChanged<String>? onOpenChat;
   final ValueChanged<String>? onOpenVoiceRoom;
+
+  /// The community's own mining panel. Mining Power has no source here, so
+  /// the row is a way to the panel, never a figure.
+  final ValueChanged<String>? onOpenMiningPanel;
 
   @override
   ConsumerState<CommunityProfileScreen> createState() =>
@@ -178,6 +183,20 @@ class _CommunityProfileScreenState
           CommunityUnavailableCard(
             label: 'Mining Power',
             fact: detail.miningPower,
+          ),
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('community-profile-mining-panel'),
+                title: '社区挖矿面板',
+                subtitle: '权重、社区算力与我的贡献',
+                onTap: widget.onOpenMiningPanel == null
+                    ? null
+                    : () => widget.onOpenMiningPanel!(
+                        detail.community.communityId,
+                      ),
+              ),
+            ],
           ),
           const LoopLabel('公告'),
           CommunityUnavailableCard(label: '社区公告', fact: detail.announcements),

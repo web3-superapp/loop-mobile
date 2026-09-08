@@ -27,10 +27,20 @@ LoopEmpty _miningCapabilityBlock(
 
 /// `mining-assets` · the per-asset power breakdown.
 class MiningAssetsScreen extends ConsumerStatefulWidget {
-  const MiningAssetsScreen({super.key, this.onBack, this.onOpenRules});
+  const MiningAssetsScreen({
+    super.key,
+    this.onBack,
+    this.onOpenRules,
+    this.onOpenCommunities,
+  });
 
   final VoidCallback? onBack;
   final VoidCallback? onOpenRules;
+
+  /// The community directory, from which one community's mining panel is
+  /// reachable. There is no weighted-community list to link to directly: the
+  /// weights themselves are still under review.
+  final VoidCallback? onOpenCommunities;
 
   @override
   ConsumerState<MiningAssetsScreen> createState() => _MiningAssetsScreenState();
@@ -105,6 +115,17 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
             title: '空列表按契约成立',
             body: '服务端返回的计入与排除列表都是空的，这是契约规定的结果，不代表钱包没有持仓，也不代表某个资产被排除。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+          ),
+          const LoopLabel('社区权重'),
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('mining-assets-open-communities'),
+                title: '查看社区挖矿面板',
+                subtitle: '每个社区的权重由服务端审核结果授予',
+                onTap: widget.onOpenCommunities,
+              ),
+            ],
           ),
           const LoopLabel('参考价'),
           LaunchUnavailableCard(label: '挖矿参考价', fact: assets.referencePrice),

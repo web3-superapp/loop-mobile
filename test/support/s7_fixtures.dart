@@ -14,6 +14,7 @@ const s7ProjectId = '17f6a9b2-2f22-4c11-9f3a-1a2b3c4d5e6f';
 const s7RoundId = '9c1d6e2a-7c3b-4a55-8d21-0f1e2d3c4b5a';
 const s7CommunityId = '5b0c9d18-6a44-4f39-b0d2-9e8f7a6b5c4d';
 const s7MilestoneId = '2e4f6a80-1b2c-4d3e-9f01-a2b3c4d5e6f7';
+const s7WalletId = '4d5e6f70-8a9b-4c1d-8e2f-3a4b5c6d7e8f';
 
 const s7LaunchBaselinePending = 'LAUNCH_CONTRACT_BASELINE_PENDING';
 const s7ConfigPending = 'LAUNCH_CONFIG_PENDING_CONFIRMATION';
@@ -264,28 +265,59 @@ LaunchProject s7ForeignProject() => LaunchProject(
   configVersion: 'launchCatalogV1',
 );
 
+/// The five tracks 03 §8.4 fixes. `lbank/spot` carries reviewed evidence; the
+/// other four arrive as implicit `PREPARING` rows with no stored record.
 LaunchMilestones s7Milestones({List<LaunchMilestone>? items}) =>
     LaunchMilestones(
       projectId: s7ProjectId,
       items:
           items ??
           <LaunchMilestone>[
-            LaunchMilestone(
-              venueMilestoneId: s7MilestoneId,
-              venue: LaunchVenue.lbank,
-              marketType: LaunchMarketType.spot,
-              state: LaunchMilestoneState.listed,
-              evidence: LaunchMilestoneEvidence(
-                digest: 'a' * 64,
-                recordedAt: DateTime.utc(2026, 9, 5, 3),
-                observedAt: DateTime.utc(2026, 9, 1),
-                reviewer: 'ops.alice',
-              ),
-              version: 2,
-              updatedAt: DateTime.utc(2026, 9, 5, 3),
-            ),
+            s7ListedMilestone(),
+            for (final track in launchMilestoneTracks.skip(1))
+              s7ImplicitMilestone(venue: track.$1, marketType: track.$2),
           ],
     );
+
+LaunchMilestone s7ListedMilestone({
+  LaunchMilestoneState state = LaunchMilestoneState.listed,
+  LaunchVenue venue = LaunchVenue.lbank,
+  LaunchMarketType marketType = LaunchMarketType.spot,
+  DateTime? observedAt,
+}) => LaunchMilestone(
+  venueMilestoneId: s7MilestoneId,
+  venue: venue,
+  marketType: marketType,
+  state: state,
+  evidence: LaunchMilestoneEvidence(
+    digest: 'a' * 64,
+    recordedAt: DateTime.utc(2026, 9, 5, 3),
+    observedAt: observedAt ?? DateTime.utc(2026, 9),
+    reviewer: 'ops.alice',
+  ),
+  version: 2,
+  updatedAt: DateTime.utc(2026, 9, 5, 3),
+);
+
+/// A track the operator has never recorded against: no id, version 0, no
+/// update time and no evidence.
+LaunchMilestone s7ImplicitMilestone({
+  required LaunchVenue venue,
+  required LaunchMarketType marketType,
+}) => LaunchMilestone(
+  venueMilestoneId: null,
+  venue: venue,
+  marketType: marketType,
+  state: LaunchMilestoneState.preparing,
+  evidence: const LaunchMilestoneEvidence(
+    digest: null,
+    recordedAt: null,
+    observedAt: null,
+    reviewer: null,
+  ),
+  version: 0,
+  updatedAt: null,
+);
 
 // ---------------------------------------------------------------------------
 // mining
