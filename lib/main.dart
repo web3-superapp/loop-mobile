@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/features/chain/chain_gateway.dart';
+import 'package:loop_mobile/features/launch/launch_gateway.dart';
+import 'package:loop_mobile/features/mining/mining_gateway.dart';
+import 'package:loop_mobile/features/mining/referral_gateway.dart';
 import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/market/alerts/alerts_gateway.dart';
@@ -20,6 +23,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_communication_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s5_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_s7_providers.dart';
 import 'package:loop_mobile/integrations/sharing/system_chat_merge_export_sink.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
@@ -96,6 +100,18 @@ Future<void> main() async {
         ),
         notificationsGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2NotificationsGatewayProvider),
+        ),
+        // S7 launch catalogue, mining skeleton and referral graph. Each stays
+        // fail-closed until its Dio client, client metadata and authenticated
+        // session all exist.
+        launchGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2LaunchGatewayProvider),
+        ),
+        miningGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2MiningGatewayProvider),
+        ),
+        referralGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2ReferralGatewayProvider),
         ),
       ],
       child: const LoopApp(),
