@@ -130,12 +130,30 @@ abstract final class LoopRouteManifest {
   /// alias search were folded into `search` + `connections` in step 3; the
   /// two locations stay recorded as info while installed clients may still
   /// emit them.
+  /// `/chat/friends/requests` and `/chat/channel/:cid/alias`: step 4 folded
+  /// the V1 friend-request page into `dm-requests` and the CID-addressed
+  /// alias entry into `group-info`, which resolves the LOOP group itself.
   static const List<String> informationalRetiredPaths = <String>[
     '/notifications',
     '/profile/social-privacy',
     '/profile/friends',
     '/chat/friends/add',
+    '/chat/friends/requests',
+    '/chat/channel/:cid/alias',
   ];
+
+  static final RegExp _retiredChannelAliasPattern = RegExp(
+    r'^/chat/channel/[^/]+/alias$',
+  );
+
+  /// Whether one concrete unmatched location is a known retirement rather
+  /// than an error. The parameterised `/chat/channel/:cid/alias` entry can
+  /// never match a concrete path literally, so it is matched by shape.
+  static bool isInformationalRetiredPath(String? path) {
+    if (path == null) return false;
+    return informationalRetiredPaths.contains(path) ||
+        _retiredChannelAliasPattern.hasMatch(path);
+  }
 
   /// Retired locations that must never be mounted again. Each resolves to the
   /// unmatched handler, is recorded in [LoopRoutingErrorLog] and lands on
@@ -178,16 +196,16 @@ abstract final class LoopRouteManifest {
   ];
 
   /// Implemented entry points that have no slug in the frozen manifest but
-  /// are still reachable from mounted product code (Stream channel deep
-  /// links, friend/group creation flows, the local signing review used by the
-  /// Send/Swap drafts, and guarded chat component previews). They stay
-  /// mounted until the owning step folds them into a manifest page; the
-  /// manifest test lists them explicitly so nothing else can hide here.
+  /// are still reachable from mounted product code (the Stream channel deep
+  /// link, group creation and the group-Alias editor, the local signing
+  /// review used by the Send/Swap drafts, and guarded chat component
+  /// previews). They stay mounted until the owning step folds them into a
+  /// manifest page; the manifest test lists them explicitly so nothing else
+  /// can hide here. `/chat/channel/:cid` is a redirect only: it resolves a
+  /// server-issued CID onto `community-chat`, `dm` or `group`.
   static const List<String> supplementaryPaths = <String>[
     '/chat',
     '/chat/channel/:cid',
-    '/chat/channel/:cid/alias',
-    '/chat/friends/requests',
     '/chat/groups/create',
     '/chat/groups/:groupId/alias',
     '/preview/signing-review',
@@ -334,7 +352,7 @@ abstract final class LoopRouteManifest {
       title: '社区大群',
       prototypeOrder: 16,
       step: 4,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'community-ai',
@@ -343,7 +361,7 @@ abstract final class LoopRouteManifest {
       title: 'Community AI',
       prototypeOrder: 17,
       step: 4,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'community-members',
@@ -424,7 +442,7 @@ abstract final class LoopRouteManifest {
       title: '转发消息',
       prototypeOrder: 90,
       step: 4,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'chat-merge-preview',
@@ -433,7 +451,7 @@ abstract final class LoopRouteManifest {
       title: '合并转发预览',
       prototypeOrder: 91,
       step: 4,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     // 3-market · Market (9)
     LoopRouteEntry(

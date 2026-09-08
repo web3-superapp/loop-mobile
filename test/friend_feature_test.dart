@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/friends/friend_controllers.dart';
 import 'package:loop_mobile/features/chat/friends/friend_gateway.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
+import 'package:loop_mobile/features/chat/friends/friend_request_screen.dart';
 import 'package:loop_mobile/features/chat/friends/friend_screens.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
@@ -1063,12 +1064,12 @@ void main() {
       expect(find.byType(AddFriendPage), findsNothing);
       expect(router.routeInformationProvider.value.uri.path, '/community');
 
+      // Step 4 folded the V1 request inbox into `dm-requests`: the legacy
+      // location is no longer mounted and lands back on Community.
       router.go('/chat/friends/requests');
       await tester.pumpAndSettle();
-      expect(
-        router.routeInformationProvider.value.uri.path,
-        '/chat/friends/requests',
-      );
+      expect(find.byType(FriendRequestsPage), findsNothing);
+      expect(router.routeInformationProvider.value.uri.path, '/community');
     },
   );
 }

@@ -137,19 +137,10 @@ class StreamChatInboxPage extends ConsumerWidget {
           },
           icon: const Icon(Icons.arrow_back_rounded),
         ),
-        actions: <Widget>[
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: TextButton.icon(
-              key: const ValueKey<String>('stream-audio-room-entry'),
-              onPressed: () => unawaited(context.push<void>('/chat/voice')),
-              icon: const Icon(Icons.graphic_eq_rounded),
-              label: const Text('Audio Room'),
-              style: TextButton.styleFrom(foregroundColor: LoopColors.chat),
-            ),
-          ),
-          const ChatCreateMenuButton(),
-        ],
+        // Step 4 made every Audio Room a community resource: the lobby is
+        // reached from a community record, never from the generic inbox,
+        // because a room without a community has no locator.
+        actions: const <Widget>[ChatCreateMenuButton()],
       ),
       body: Stack(
         children: <Widget>[

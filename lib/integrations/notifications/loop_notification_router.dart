@@ -55,8 +55,14 @@ final class LoopChatNotificationIntent
 
   final LoopStreamChannelAddress channel;
 
+  /// The LOOP-assigned channel prefix decides the surface: a community
+  /// channel opens `community-chat`, a direct channel opens `dm`, a group
+  /// channel opens `group`. A channel with no recognised prefix keeps the
+  /// compatibility deep link, which itself redirects or fails closed.
   @override
-  String get location => '/chat/channel/${Uri.encodeComponent(channel.cid)}';
+  String get location =>
+      loopChatLocationForCid(channel.cid) ??
+      '/chat/channel/${Uri.encodeComponent(channel.cid)}';
 }
 
 /// Audio notifications can only open the foreground lobby. A notification can

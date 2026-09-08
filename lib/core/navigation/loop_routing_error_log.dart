@@ -70,7 +70,7 @@ final class LoopRoutingErrorLog {
   }) {
     final resolvedSeverity =
         severity ??
-        (LoopRouteManifest.informationalRetiredPaths.contains(
+        (LoopRouteManifest.isInformationalRetiredPath(
               Uri.tryParse(location)?.path,
             )
             ? LoopRoutingSeverity.info

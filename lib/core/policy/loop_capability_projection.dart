@@ -14,16 +14,32 @@ enum LoopCapabilityDecision { unknown, available, deferred, unavailable }
 
 @immutable
 final class LoopCapabilityProjection {
-  const LoopCapabilityProjection({required this.decision, this.reasonCode});
+  const LoopCapabilityProjection({
+    required this.decision,
+    this.reasonCode,
+    this.evidencePending = false,
+    this.evidenceReasonCode,
+  });
 
   const LoopCapabilityProjection.unknown()
     : decision = LoopCapabilityDecision.unknown,
-      reasonCode = null;
+      reasonCode = null,
+      evidencePending = false,
+      evidenceReasonCode = null;
 
   final LoopCapabilityDecision decision;
   final String? reasonCode;
 
+  /// A provider-evidence precondition the backend records separately from
+  /// availability. While it is pending the surface must stay closed even
+  /// though the capability itself reads `available`.
+  final bool evidencePending;
+  final String? evidenceReasonCode;
+
   bool get isAvailable => decision == LoopCapabilityDecision.available;
+
+  /// The only projection a feature may treat as fully open.
+  bool get isUsable => isAvailable && !evidencePending;
 }
 
 abstract final class LoopCapabilityProjector {
@@ -33,6 +49,7 @@ abstract final class LoopCapabilityProjector {
   ) {
     if (capabilities == null) return const LoopCapabilityProjection.unknown();
     final capability = capabilities[id];
+    final evidence = capability.evidence;
     return LoopCapabilityProjection(
       decision: switch (capability.availability) {
         LoopV2CapabilityAvailability.available =>
@@ -43,6 +60,9 @@ abstract final class LoopCapabilityProjector {
           LoopCapabilityDecision.unavailable,
       },
       reasonCode: capability.reasonCode,
+      evidencePending:
+          evidence.status == LoopV2CapabilityEvidenceStatus.pending,
+      evidenceReasonCode: evidence.reasonCode,
     );
   }
 }

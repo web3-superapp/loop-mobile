@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
@@ -517,6 +518,13 @@ LoopV2MetaSnapshot testMetaSnapshot({
   LoopV2CapabilityAvailability community =
       LoopV2CapabilityAvailability.available,
   LoopV2CapabilityAvailability search = LoopV2CapabilityAvailability.available,
+  LoopV2CapabilityAvailability communityChat =
+      LoopV2CapabilityAvailability.available,
+  LoopV2CapabilityAvailability voiceRooms =
+      LoopV2CapabilityAvailability.available,
+  LoopV2CapabilityAvailability communityAi =
+      LoopV2CapabilityAvailability.deferred,
+  bool voiceRoomEvidencePending = false,
 }) {
   return LoopV2MetaSnapshot(
     clientPolicy: LoopV2ClientPolicy(
@@ -551,6 +559,9 @@ LoopV2MetaSnapshot testMetaSnapshot({
             availability: switch (id) {
               LoopV2CapabilityId.community => community,
               LoopV2CapabilityId.search => search,
+              LoopV2CapabilityId.communityChat => communityChat,
+              LoopV2CapabilityId.voiceRooms => voiceRooms,
+              LoopV2CapabilityId.communityAi => communityAi,
               _ => LoopV2CapabilityAvailability.unavailable,
             },
             reasonCode: switch (id) {
@@ -562,12 +573,32 @@ LoopV2MetaSnapshot testMetaSnapshot({
                 search == LoopV2CapabilityAvailability.available
                     ? null
                     : 'SEARCH_RUNTIME_UNAVAILABLE',
+              LoopV2CapabilityId.communityChat =>
+                communityChat == LoopV2CapabilityAvailability.available
+                    ? null
+                    : 'COMMUNICATION_RUNTIME_UNAVAILABLE',
+              LoopV2CapabilityId.voiceRooms =>
+                voiceRooms == LoopV2CapabilityAvailability.available
+                    ? null
+                    : 'COMMUNICATION_RUNTIME_UNAVAILABLE',
+              LoopV2CapabilityId.communityAi =>
+                communityAi == LoopV2CapabilityAvailability.available
+                    ? null
+                    : 'COMMUNITY_AI_RUNTIME_DEFERRED',
               _ => 'NOT_CONNECTED',
             },
-            evidence: const LoopV2CapabilityEvidence(
-              status: LoopV2CapabilityEvidenceStatus.notApplicable,
-              reasonCode: null,
-            ),
+            // Decision 0005 keeps a provider-evidence flag on `voiceRooms`
+            // only; every other capability carries `notApplicable`.
+            evidence:
+                id == LoopV2CapabilityId.voiceRooms && voiceRoomEvidencePending
+                ? const LoopV2CapabilityEvidence(
+                    status: LoopV2CapabilityEvidenceStatus.pending,
+                    reasonCode: 'AUDIO_ROOM_USER_ROLE_EVIDENCE_PENDING',
+                  )
+                : const LoopV2CapabilityEvidence(
+                    status: LoopV2CapabilityEvidenceStatus.notApplicable,
+                    reasonCode: null,
+                  ),
           ),
       ],
     ),
@@ -581,6 +612,8 @@ Future<void> pumpCommunityPage(
   CommunityGateway? community,
   SocialGateway? social,
   SearchGateway? search,
+  ChatV2Gateway? chat,
+  VoiceRoomGateway? voiceRoom,
   LoopV2MetaSnapshot? meta,
   Size size = const Size(390, 1400),
   bool settle = true,
@@ -597,6 +630,9 @@ Future<void> pumpCommunityPage(
           communityGatewayProvider.overrideWithValue(community),
         if (social != null) socialGatewayProvider.overrideWithValue(social),
         if (search != null) searchGatewayProvider.overrideWithValue(search),
+        if (chat != null) chatV2GatewayProvider.overrideWithValue(chat),
+        if (voiceRoom != null)
+          voiceRoomGatewayProvider.overrideWithValue(voiceRoom),
         loopV2MetaSnapshotProvider.overrideWith(
           (ref) async => meta ?? testMetaSnapshot(),
         ),

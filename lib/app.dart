@@ -22,7 +22,15 @@ import 'package:loop_mobile/features/account/email_auth_controller.dart';
 import 'package:loop_mobile/features/account/loop_id_setup_screen.dart';
 import 'package:loop_mobile/features/account/privy_login_screen.dart';
 import 'package:loop_mobile/features/account/privy_otp_screen.dart';
+import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/features/chat/chat.dart';
+import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
+import 'package:loop_mobile/features/chat/v2/chat_search_screen.dart';
+import 'package:loop_mobile/features/chat/v2/community_chat_screen.dart';
+import 'package:loop_mobile/features/chat/v2/direct_message_screen.dart';
+import 'package:loop_mobile/features/chat/v2/group_screens.dart';
+import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
+import 'package:loop_mobile/features/community/community_ai_screen.dart';
 import 'package:loop_mobile/features/community/community_discover_screen.dart';
 import 'package:loop_mobile/features/community/community_members_screen.dart';
 import 'package:loop_mobile/features/community/community_profile_screen.dart';
@@ -49,6 +57,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart'
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_coordinator.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.dart';
+import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/notifications/loop_notification_event_source.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -209,6 +218,22 @@ class _LoopAppState extends ConsumerState<LoopApp> {
   }
 }
 
+/// Chooses between the labelled Development Preview surface and the V2
+/// production page for one chat route.
+///
+/// The Preview keeps its own fixture conversation, which decision 0025 binds
+/// to an exact conversation ID; production never sees it. The two never share
+/// a widget, so a fixture cannot leak into a server-backed surface.
+Widget _chatSurface({
+  required Widget Function() preview,
+  required Widget Function() production,
+}) => Consumer(
+  builder: (context, ref, child) =>
+      ref.watch(communicationGatewayProvider).mode == CommunicationMode.preview
+      ? preview()
+      : production(),
+);
+
 GoRouter _buildRouter(
   LoopSessionState Function() readSession,
   LoopRoutingErrorLog routingErrors,
@@ -355,11 +380,33 @@ GoRouter _buildRouter(
           onBack: () => _popOrHome(context),
           onOpenMembers: (communityId) =>
               context.push('/community/members?id=$communityId'),
+          onOpenChat: (communityId) =>
+              context.push('/community/chat?id=$communityId'),
+          onOpenVoiceRoom: (communityId) =>
+              context.push('/chat/voice?id=$communityId'),
         ),
       ),
       GoRoute(
         path: '/community/members',
         builder: (context, state) => CommunityMembersScreen(
+          communityId: state.uri.queryParameters['id'],
+          onBack: () => _popOrHome(context),
+        ),
+      ),
+      GoRoute(
+        path: '/community/chat',
+        builder: (context, state) => CommunityChatScreen(
+          communityId: state.uri.queryParameters['id'],
+          onBack: () => _popOrHome(context),
+          onOpenProfile: (communityId) =>
+              context.push('/community/profile?id=$communityId'),
+          onOpenVoiceRoom: (communityId) =>
+              context.push('/chat/voice?id=$communityId'),
+        ),
+      ),
+      GoRoute(
+        path: '/community/ai',
+        builder: (context, state) => CommunityAiScreen(
           communityId: state.uri.queryParameters['id'],
           onBack: () => _popOrHome(context),
         ),
@@ -422,10 +469,6 @@ GoRouter _buildRouter(
         builder: (context, state) => const SmartMoneyScreen(),
       ),
       GoRoute(
-        path: '/chat/friends/requests',
-        builder: (context, state) => const FriendRequestsPage(),
-      ),
-      GoRoute(
         path: '/chat/groups/create',
         builder: (context, state) => const CreateFriendGroupPage(),
       ),
@@ -436,55 +479,88 @@ GoRouter _buildRouter(
         ),
       ),
       GoRoute(
-        path: '/chat/channel/:cid/alias',
-        builder: (context, state) => StreamGroupAliasChannelRoutePage(
-          cid: state.pathParameters['cid'] ?? '',
-        ),
-      ),
-      GoRoute(
         path: '/chat/group',
-        builder: (context, state) => ChatPreviewRouteGuard(
-          surfaceLabel: 'Group conversation',
-          child: GroupChatPage(
-            conversationId:
-                PreviewConversationIdentity.readSingleConversationId(
-                  state.uri,
-                ) ??
-                '',
+        builder: (context, state) => _chatSurface(
+          preview: () => ChatPreviewRouteGuard(
+            surfaceLabel: 'Group conversation',
+            child: GroupChatPage(
+              conversationId:
+                  PreviewConversationIdentity.readSingleConversationId(
+                    state.uri,
+                  ) ??
+                  '',
+            ),
+          ),
+          production: () => GroupChatScreen(
+            channelCid: state.uri.queryParameters['cid'],
+            onBack: () => _popOrHome(context),
+            onOpenInfo: (cid) => context.push(
+              '/chat/group-info?cid=${Uri.encodeComponent(cid)}',
+            ),
           ),
         ),
       ),
       GoRoute(
         path: '/chat/dm',
-        builder: (context, state) => ChatPreviewRouteGuard(
-          surfaceLabel: 'Direct conversation',
-          child: DirectMessagePage(
-            conversationId:
-                PreviewConversationIdentity.readSingleConversationId(
-                  state.uri,
-                ) ??
-                '',
+        builder: (context, state) => _chatSurface(
+          preview: () => ChatPreviewRouteGuard(
+            surfaceLabel: 'Direct conversation',
+            child: DirectMessagePage(
+              conversationId:
+                  PreviewConversationIdentity.readSingleConversationId(
+                    state.uri,
+                  ) ??
+                  '',
+            ),
+          ),
+          production: () => DirectMessageScreen(
+            target: state.extra is DirectMessageTarget
+                ? state.extra! as DirectMessageTarget
+                : null,
+            channelCid: state.uri.queryParameters['cid'],
+            onBack: () => _popOrHome(context),
           ),
         ),
       ),
       GoRoute(
         path: '/chat/voice',
-        builder: (context, state) => const VoiceRoomPage(),
+        builder: (context, state) => _chatSurface(
+          preview: () => const VoiceRoomPage(),
+          production: () => VoiceRoomScreen(
+            communityId: state.uri.queryParameters['id'],
+            onBack: () => _popOrHome(context),
+            onOpenExpanded: (id) => context.push('/chat/voice/full?id=$id'),
+          ),
+        ),
       ),
       GoRoute(
         path: '/chat/voice/full',
-        builder: (context, state) => const VoiceRoomPage(),
+        builder: (context, state) => _chatSurface(
+          preview: () => const VoiceRoomPage(),
+          production: () => VoiceRoomScreen(
+            communityId: state.uri.queryParameters['id'],
+            expanded: true,
+            onBack: () => _popOrHome(context),
+          ),
+        ),
       ),
       GoRoute(
         path: '/chat/group-info',
-        builder: (context, state) => ChatPreviewRouteGuard(
-          surfaceLabel: 'Group information',
-          child: GroupInfoPage(
-            conversationId:
-                PreviewConversationIdentity.readSingleConversationId(
-                  state.uri,
-                ) ??
-                '',
+        builder: (context, state) => _chatSurface(
+          preview: () => ChatPreviewRouteGuard(
+            surfaceLabel: 'Group information',
+            child: GroupInfoPage(
+              conversationId:
+                  PreviewConversationIdentity.readSingleConversationId(
+                    state.uri,
+                  ) ??
+                  '',
+            ),
+          ),
+          production: () => GroupInfoScreen(
+            channelCid: state.uri.queryParameters['cid'],
+            onBack: () => _popOrHome(context),
+            onLeft: () => context.go('/community'),
           ),
         ),
       ),
@@ -495,24 +571,53 @@ GoRouter _buildRouter(
       ),
       GoRoute(
         path: '/chat/search',
-        builder: (context, state) => ChatPreviewRouteGuard(
-          surfaceLabel: 'Message search',
-          child: MessageSearchPage(
-            key: ValueKey<String>('preview-message-search-${state.uri}'),
-            conversationId:
-                PreviewConversationIdentity.hasConversationIdQuery(state.uri)
-                ? PreviewConversationIdentity.readSingleConversationId(
-                        state.uri,
-                      ) ??
-                      ''
-                : null,
+        builder: (context, state) => _chatSurface(
+          preview: () => ChatPreviewRouteGuard(
+            surfaceLabel: 'Message search',
+            child: MessageSearchPage(
+              key: ValueKey<String>('preview-message-search-${state.uri}'),
+              conversationId:
+                  PreviewConversationIdentity.hasConversationIdQuery(state.uri)
+                  ? PreviewConversationIdentity.readSingleConversationId(
+                          state.uri,
+                        ) ??
+                        ''
+                  : null,
+            ),
+          ),
+          production: () => ChatSearchScreen(
+            key: ValueKey<String>('chat-search-${state.uri}'),
+            originCid: state.uri.queryParameters['cid'],
+            onBack: () => _popOrHome(context),
+            onOpen: (cid) {
+              final location = loopChatLocationForCid(cid);
+              if (location != null) context.push(location);
+            },
           ),
         ),
       ),
       GoRoute(
-        path: '/chat/channel/:cid',
+        path: '/chat/forward',
+        builder: (context, state) => ChatForwardScreen(
+          sourceCid: state.uri.queryParameters['cid'],
+          onBack: () => _popOrHome(context),
+          onOpenMergePreview: () => context.push('/chat/merge-preview'),
+        ),
+      ),
+      GoRoute(
+        path: '/chat/merge-preview',
         builder: (context, state) =>
-            StreamChatChannelRoutePage(cid: state.pathParameters['cid'] ?? ''),
+            ChatMergePreviewScreen(onBack: () => _popOrHome(context)),
+      ),
+      // Compatibility deep link for installed clients and notification
+      // payloads: a channel CID resolves to the surface its LOOP-assigned
+      // prefix names, and an unknown shape falls through to the unmatched
+      // handler rather than opening a generic channel page.
+      GoRoute(
+        path: '/chat/channel/:cid',
+        redirect: (context, state) =>
+            loopChatLocationForCid(state.pathParameters['cid'] ?? '') ??
+            LoopRouteManifest.defaultPath,
       ),
       GoRoute(
         path: '/preview/token-card',
@@ -631,7 +736,13 @@ GoRouter _buildRouter(
         path: '/profile/connections',
         builder: (context, state) => ConnectionsScreen(
           onBack: () => _popOrHome(context),
-          onOpenConversation: (publicProfileId) => context.push('/chat/dm'),
+          // The identity travels as typed navigation state, never in the URL:
+          // a deep link must not be able to put an unverified alias in the
+          // conversation header.
+          onOpenConversation: (publicProfileId) => context.push(
+            '/chat/dm',
+            extra: DirectMessageTarget(publicProfileId: publicProfileId),
+          ),
         ),
       ),
       GoRoute(
@@ -930,8 +1041,9 @@ String _accountPath(String id) => switch (id) {
 String _profilePath(String id) => switch (id) {
   'profile' => LoopRouteManifest.pathFor('profile'),
   // `/profile/friends` and `/chat/friends/add` were folded into `search`
-  // and `connections`; only the request inbox is retained until D7.
-  'friend-requests' => '/chat/friends/requests',
+  // and `connections` in step 3; step 4 folded the V1 request inbox into the
+  // `dm-requests` page, so the profile row now opens that manifest slug.
+  'friend-requests' => LoopRouteManifest.pathFor('dm-requests'),
   'wallets' => LoopRouteManifest.pathFor('wallets'),
   'community-discover' => LoopRouteManifest.pathFor('community-discover'),
   'launch-history' => LoopRouteManifest.pathFor('launch-history'),
