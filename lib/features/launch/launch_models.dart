@@ -851,14 +851,39 @@ final class LaunchMilestone {
     required this.updatedAt,
   });
 
-  final String venueMilestoneId;
+  /// `null` for an implicit `PREPARING` row: the track is always listed, but
+  /// nothing has been stored for it yet.
+  final String? venueMilestoneId;
   final LaunchVenue venue;
   final LaunchMarketType marketType;
   final LaunchMilestoneState state;
   final LaunchMilestoneEvidence evidence;
+
+  /// `0` for an implicit `PREPARING` row.
   final int version;
-  final DateTime updatedAt;
+
+  /// `null` for an implicit `PREPARING` row.
+  final DateTime? updatedAt;
+
+  /// The track has no stored record. It is "尚无记录", not "准备中开始了".
+  bool get isImplicit => venueMilestoneId == null;
+
+  /// The track's stable identity. Two rows can share a venue only when they
+  /// carry different market types, so the pair addresses a track even while
+  /// the implicit row has no id of its own.
+  String get trackKey => '${venue.wireName}/${marketType.wireName}';
 }
+
+/// The five tracks 03 §8.4 lists. The server always returns all five, so a
+/// missing one is a contract break rather than an absent track.
+const List<(LaunchVenue, LaunchMarketType)> launchMilestoneTracks =
+    <(LaunchVenue, LaunchMarketType)>[
+      (LaunchVenue.lbank, LaunchMarketType.spot),
+      (LaunchVenue.binance, LaunchMarketType.alpha),
+      (LaunchVenue.binance, LaunchMarketType.perpetual),
+      (LaunchVenue.binance, LaunchMarketType.spot),
+      (LaunchVenue.bithumb, LaunchMarketType.spot),
+    ];
 
 @immutable
 final class LaunchMilestones {

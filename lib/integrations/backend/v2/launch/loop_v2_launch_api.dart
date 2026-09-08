@@ -1003,8 +1003,27 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
           map['evidence'],
           const <String>{'digest', 'recordedAt', 'observedAt', 'reviewer'},
         );
-        final milestoneId = LoopV2S7Codec.requireId(map, 'venueMilestoneId');
-        if (!seen.add(milestoneId)) LoopV2S7Codec.invalid();
+        // An implicit `PREPARING` row carries no id, no version and no
+        // update time: the track is listed, but nothing is stored for it.
+        final milestoneId = LoopV2S7Codec.optionalId(map, 'venueMilestoneId');
+        final version = LoopV2S7Codec.requireCount(map, 'version');
+        final updatedAt = LoopV2S7Codec.optionalTimestamp(map, 'updatedAt');
+        final implicit = milestoneId == null;
+        if (implicit &&
+            (state != LaunchMilestoneState.preparing ||
+                version != 0 ||
+                updatedAt != null)) {
+          LoopV2S7Codec.invalid();
+        }
+        if (!implicit && (version < 1 || updatedAt == null)) {
+          LoopV2S7Codec.invalid();
+        }
+        // A track is addressed by venue and market type; only a stored row
+        // also has an id, and neither may repeat.
+        if (!seen.add('${venue.wireName}/${marketType.wireName}') ||
+            (!implicit && !seen.add(milestoneId))) {
+          LoopV2S7Codec.invalid();
+        }
         items.add(
           LaunchMilestone(
             venueMilestoneId: milestoneId,
@@ -1035,10 +1054,16 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
                 maxLength: 64,
               ),
             ),
-            version: LoopV2S7Codec.requirePositiveInt(map, 'version'),
-            updatedAt: LoopV2S7Codec.requireTimestamp(map, 'updatedAt'),
+            version: version,
+            updatedAt: updatedAt,
           ),
         );
+      }
+      // 03 §8.4 fixes five tracks and the server always returns all five.
+      for (final track in launchMilestoneTracks) {
+        if (!seen.contains('${track.$1.wireName}/${track.$2.wireName}')) {
+          LoopV2S7Codec.invalid();
+        }
       }
       return LaunchMilestones(
         projectId: LoopV2S7Codec.requireId(root, 'projectId'),

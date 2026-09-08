@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
+import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -36,11 +38,33 @@ class LaunchTradeScreen extends ConsumerStatefulWidget {
 
 class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
   final TextEditingController _amount = TextEditingController();
+  String? _roundId;
+
+  @override
+  void initState() {
+    super.initState();
+    _amount.addListener(_onAmountChanged);
+  }
 
   @override
   void dispose() {
-    _amount.dispose();
+    _amount
+      ..removeListener(_onAmountChanged)
+      ..dispose();
     super.dispose();
+  }
+
+  void _onAmountChanged() => setState(() {});
+
+  /// The exact string the server accepts. A malformed amount keeps the action
+  /// disabled here rather than spending a request.
+  String? get _payAmount {
+    final raw = _amount.text.trim();
+    if (raw.isEmpty ||
+        !RegExp(r'^(0|[1-9][0-9]{0,77})(\.[0-9]{1,60})?$').hasMatch(raw)) {
+      return null;
+    }
+    return raw;
   }
 
   @override
@@ -58,6 +82,33 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
     }
     final detail = state.value;
     final trade = ref.watch(launchTradeControllerProvider);
+    final tradeController = ref.read(launchTradeControllerProvider.notifier);
+    // The paying wallet is a real input the page must resolve. It is read
+    // through the wallet port, never guessed from an address.
+    final walletState = ref.watch(walletDirectoryControllerProvider);
+    if (!blocked && walletState.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref.read(walletDirectoryControllerProvider.notifier).load(),
+          );
+        }
+      });
+    }
+    final walletId = ref.watch(activeWalletIdProvider);
+    final launchId = widget.launchId;
+    final payAmount = _payAmount;
+    final roundId = _roundId;
+    // The action is closed by the server's own capability evidence, never by
+    // a rule of our own. Everything else here is a real missing input.
+    final refusedByEvidence = capability.evidencePending;
+    final canSubmit =
+        !refusedByEvidence &&
+        !trade.busy &&
+        launchId != null &&
+        walletId != null &&
+        roundId != null &&
+        payAmount != null;
 
     return LoopFocusPage(
       key: const ValueKey<String>('launch-trade-screen'),
@@ -109,7 +160,11 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
             ),
           ),
           const LoopLabel('本轮参数'),
-          _TradeParameters(detail: detail),
+          _TradeParameters(
+            detail: detail,
+            selectedRoundId: roundId,
+            onSelect: (value) => setState(() => _roundId = value),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             child: LoopButton(
@@ -117,21 +172,36 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
               label: '买入',
               primary: true,
               block: true,
-              // Disabled by the server's own capability evidence, not by a
-              // client-side rule of our own.
-              onPressed: null,
-              semanticLabel: '买入，当前不可执行',
+              onPressed: canSubmit
+                  ? () => unawaited(
+                      tradeController.submit(
+                        launchId: launchId,
+                        walletId: walletId,
+                        roundId: roundId,
+                        payAmount: payAmount,
+                      ),
+                    )
+                  : null,
+              semanticLabel: canSubmit ? '买入' : '买入，当前不可执行',
             ),
           ),
           LoopNotice(
             key: const ValueKey<String>('launch-trade-refusal'),
             icon: 'shield',
             tone: LoopNoticeTone.warn,
-            title: '认购入口当前不可执行',
-            body: trade.refusalKind == null
-                ? '${launchReasonCodeText('LAUNCH_CONTRACT_BASELINE_PENDING')}'
-                      '服务端对每一次认购意图都会返回 503，本页因此不构造任何交易，也不打开签名。'
-                : launchFailureReason(trade.refusalKind),
+            title: trade.attempted ? '服务端拒绝了这次认购' : '认购入口当前不可执行',
+            // Before an attempt the page states the capability evidence the
+            // server published; after one it states what the server answered.
+            body: trade.refusalKind != null
+                ? launchFailureReason(trade.refusalKind)
+                : refusedByEvidence
+                ? '${launchReasonCodeText(capability.evidenceReasonCode)}'
+                      '本页因此不构造任何交易，也不打开签名。'
+                : _missingInputReason(
+                    walletId: walletId,
+                    roundId: roundId,
+                    payAmount: payAmount,
+                  ),
             margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const LoopNotice(
@@ -148,10 +218,29 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
   }
 }
 
+/// Why the action is closed when the capability itself is open. Each reason
+/// is a real missing input, not a restatement of the contract gap.
+String _missingInputReason({
+  required String? walletId,
+  required String? roundId,
+  required String? payAmount,
+}) {
+  if (walletId == null) return '还没有可用的支付钱包，请先在钱包中选择一个。';
+  if (roundId == null) return '请先选择要参与的轮次。';
+  if (payAmount == null) return '请输入一个有效的支付数量。';
+  return '可以提交；结果以服务端响应为准。';
+}
+
 class _TradeParameters extends StatelessWidget {
-  const _TradeParameters({required this.detail});
+  const _TradeParameters({
+    required this.detail,
+    required this.selectedRoundId,
+    required this.onSelect,
+  });
 
   final LaunchDetail? detail;
+  final String? selectedRoundId;
+  final ValueChanged<String> onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -171,6 +260,8 @@ class _TradeParameters extends StatelessWidget {
           launchRoundRow(
             round: rounds[index],
             position: launchRowPosition(index, rounds.length),
+            onTap: () => onSelect(rounds[index].roundId),
+            selected: rounds[index].roundId == selectedRoundId,
           ),
       ],
     );
@@ -388,8 +479,9 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
           LaunchUnavailableCard(label: '总量', fact: economy.totalSupply),
           LaunchUnavailableCard(label: '累计分发', fact: economy.distributed),
           LaunchUnavailableCard(label: '累计生态税', fact: economy.ecosystemTax),
+          // The economy response carries no configuration version, so the
+          // footer omits the segment rather than restating an assumed one.
           LaunchSourceFooter(
-            configVersion: 'launchCatalogV1',
             source: economy.source,
             observedAt: economy.observedAt,
           ),
@@ -420,6 +512,8 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
   final TextEditingController _narrative = TextEditingController();
   final TextEditingController _website = TextEditingController();
   final TextEditingController _x = TextEditingController();
+  final TextEditingController _telegram = TextEditingController();
+  final TextEditingController _discord = TextEditingController();
   String? _loadedProjectId;
 
   @override
@@ -429,6 +523,8 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
     _narrative.dispose();
     _website.dispose();
     _x.dispose();
+    _telegram.dispose();
+    _discord.dispose();
     super.dispose();
   }
 
@@ -440,6 +536,8 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
     _narrative.text = project?.narrative ?? '';
     _website.text = project?.officialLinks.website ?? '';
     _x.text = project?.officialLinks.x ?? '';
+    _telegram.text = project?.officialLinks.telegram ?? '';
+    _discord.text = project?.officialLinks.discord ?? '';
   }
 
   String? _optional(TextEditingController controller) {
@@ -453,9 +551,13 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
     // rather than widening what it accepts.
     ticker: _ticker.text.trim().toUpperCase(),
     narrative: _optional(_narrative),
+    // All four links round-trip: a link the server holds must survive an
+    // edit that did not touch it.
     officialLinks: LaunchOfficialLinks(
       website: _optional(_website),
       x: _optional(_x),
+      telegram: _optional(_telegram),
+      discord: _optional(_discord),
     ),
   );
 
@@ -543,7 +645,10 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
                 ],
               ),
           ],
-          if (selected != null) _ReviewStatusBlock(project: selected),
+          if (selected != null) ...<Widget>[
+            _ReviewStatusBlock(project: selected),
+            _MilestoneBlock(projectId: selected.projectId),
+          ],
           const LoopLabel('项目资料'),
           _ApplyForm(
             name: _name,
@@ -551,12 +656,14 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
             narrative: _narrative,
             website: _website,
             x: _x,
+            telegram: _telegram,
+            discord: _discord,
             enabled: editable && !state.busy,
             invalidField: state.invalidField,
           ),
           const LoopLabel('附件与主体审核'),
           _DeferredProviderBlock(project: selected),
-          if (state.writeFailureKind != null)
+          if (state.writeFailureKind != null) ...<Widget>[
             LoopNotice(
               key: const ValueKey<String>('launch-apply-write-failure'),
               icon: 'warn',
@@ -565,6 +672,20 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
               body: launchFailureReason(state.writeFailureKind),
               margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             ),
+            LoopButtonPair(
+              children: <Widget>[
+                LoopButton(
+                  key: const ValueKey<String>('launch-apply-reload'),
+                  label: '重新加载',
+                  // A version conflict is resolved by re-reading the server's
+                  // projection; the edits already typed stay in the fields.
+                  onPressed: state.busy
+                      ? null
+                      : () => unawaited(controller.reload()),
+                ),
+              ],
+            ),
+          ],
           LoopButtonPair(
             children: <Widget>[
               LoopButton(
@@ -621,6 +742,69 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
       semanticLabel:
           '${project.name}，${launchReviewStatusLabel(project.reviewStatus)}'
           '${selected ? '，已选中' : ''}',
+    );
+  }
+}
+
+/// The five exchange-listing tracks for one project.
+///
+/// 03 §8.4 fixes the tracks, so all five are always listed. A track with no
+/// stored record arrives as an implicit `PREPARING` row and says "尚无记录"
+/// rather than implying that preparation has begun.
+class _MilestoneBlock extends ConsumerStatefulWidget {
+  const _MilestoneBlock({required this.projectId});
+
+  final String projectId;
+
+  @override
+  ConsumerState<_MilestoneBlock> createState() => _MilestoneBlockState();
+}
+
+class _MilestoneBlockState extends ConsumerState<_MilestoneBlock> {
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(launchMilestonesControllerProvider);
+    final controller = ref.read(launchMilestonesControllerProvider.notifier);
+    scheduleMicrotask(() {
+      if (mounted) unawaited(controller.open(widget.projectId));
+    });
+    final milestones = state.value;
+    final items = milestones?.items ?? const <LaunchMilestone>[];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const LoopLabel('交易所上线进度'),
+        if (milestones == null)
+          LaunchStateBlock(
+            prefix: 'launch-milestones',
+            phase: state.phase,
+            failureKind: state.failureKind,
+            emptyMessage: '没有读到上线进度',
+            emptyReason: '进度由运营记录，本页不推断任何上线结论。',
+            onRetry: () => unawaited(controller.reload()),
+          )
+        else
+          LoopRecordGroup(
+            key: const ValueKey<String>('launch-apply-milestones'),
+            rows: <LoopRecordRow>[
+              for (var index = 0; index < items.length; index += 1)
+                launchMilestoneRow(
+                  milestone: items[index],
+                  position: launchRowPosition(index, items.length),
+                ),
+            ],
+          ),
+        const LoopNotice(
+          key: ValueKey<String>('launch-apply-milestone-notice'),
+          icon: 'shield',
+          title: 'Alpha 不等于现货',
+          body:
+              '每条赛道单独记录，互不推导。只有「已上线」与「已获推荐位」带经复核的证据；'
+              '复核记录时间与平台可核验时间是两个不同的事实，缺一不补。',
+          margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+        ),
+      ],
     );
   }
 }
@@ -701,6 +885,8 @@ class _ApplyForm extends StatelessWidget {
     required this.narrative,
     required this.website,
     required this.x,
+    required this.telegram,
+    required this.discord,
     required this.enabled,
     required this.invalidField,
   });
@@ -710,6 +896,8 @@ class _ApplyForm extends StatelessWidget {
   final TextEditingController narrative;
   final TextEditingController website;
   final TextEditingController x;
+  final TextEditingController telegram;
+  final TextEditingController discord;
   final bool enabled;
   final LaunchDraftField? invalidField;
 
@@ -770,6 +958,24 @@ class _ApplyForm extends StatelessWidget {
             controller: x,
             enabled: enabled,
             decoration: const InputDecoration(labelText: 'X（可留空，https://）'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            key: const ValueKey<String>('launch-apply-telegram'),
+            controller: telegram,
+            enabled: enabled,
+            decoration: const InputDecoration(
+              labelText: 'Telegram（可留空，https://）',
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            key: const ValueKey<String>('launch-apply-discord'),
+            controller: discord,
+            enabled: enabled,
+            decoration: const InputDecoration(
+              labelText: 'Discord（可留空，https://）',
+            ),
           ),
           if (!enabled)
             Padding(

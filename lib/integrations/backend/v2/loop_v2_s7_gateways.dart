@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
@@ -206,9 +208,11 @@ final class DioLoopV2LaunchGateway
       );
     }
     final writeOrigin = await origin();
-    // A changed draft is a new logical operation and gets a fresh key.
+    // The signature is a digest of the exact body that will be sent, so any
+    // changed field — including a link the name and ticker do not mention —
+    // is a new logical operation and gets a fresh key.
     return idempotent(
-      'launch:create:${draft.ticker}:${draft.name.trim()}',
+      'launch:create:${jsonEncode(draft.toRequestJson())}',
       (accessToken, key) => _api.createProject(
         accessToken: accessToken,
         clientVersion: clientVersion,

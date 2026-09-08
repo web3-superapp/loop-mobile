@@ -234,6 +234,8 @@ LoopRecordRow launchConfigSlotRow({
 LoopRecordRow launchRoundRow({
   required LaunchRound round,
   LoopRowPosition position = LoopRowPosition.single,
+  VoidCallback? onTap,
+  bool selected = false,
 }) {
   final pendingLabel = launchPendingConfirmationLabel(round.configVersion);
   final tier = round.eligibilityTier;
@@ -253,11 +255,16 @@ LoopRecordRow launchRoundRow({
     title: 'Round ${round.roundIndex}',
     subtitle: parts.join(' · '),
     trailingBadge: LoopBadge(
-      round.isConfirmed ? '已确认' : '待确认',
-      kind: round.isConfirmed ? LoopBadgeKind.launch : LoopBadgeKind.mute,
+      selected ? '已选择' : (round.isConfirmed ? '已确认' : '待确认'),
+      kind: selected || round.isConfirmed
+          ? LoopBadgeKind.launch
+          : LoopBadgeKind.mute,
     ),
+    onTap: onTap,
     position: position,
-    semanticLabel: 'Round ${round.roundIndex}，${parts.join('，')}',
+    semanticLabel:
+        'Round ${round.roundIndex}，${parts.join('，')}'
+        '${selected ? '，已选择' : ''}',
   );
 }
 
@@ -309,23 +316,28 @@ String launchTimestampLabel(DateTime observedAt) {
 /// version, the source and the observation time.
 class LaunchSourceFooter extends StatelessWidget {
   const LaunchSourceFooter({
-    required this.configVersion,
     required this.source,
     required this.observedAt,
     super.key,
+    this.configVersion,
   });
 
-  final String configVersion;
+  /// The version the response itself carried. A response without one omits
+  /// the segment rather than restating a version the client assumed.
+  final String? configVersion;
   final String source;
   final DateTime observedAt;
 
   @override
   Widget build(BuildContext context) {
+    final version = configVersion;
     return Padding(
       key: const ValueKey<String>('launch-source-footer'),
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
       child: Text(
-        '来源 $source · 版本 $configVersion · 观察于 ${launchTimestampLabel(observedAt)}',
+        '来源 $source'
+        '${version == null ? '' : ' · 版本 $version'}'
+        ' · 观察于 ${launchTimestampLabel(observedAt)}',
         style: LoopTypography.sora(
           size: 11,
           weight: FontWeight.w500,
@@ -442,4 +454,56 @@ class LaunchAxisBlock extends StatelessWidget {
       ],
     );
   }
+}
+
+/// One exchange-listing track. `LISTED` and `FEATURED` are the only states
+/// that carry reviewed evidence, and the two evidence timestamps are shown
+/// separately: `recordedAt` is the server clock when a reviewer filed it,
+/// `observedAt` is when the operator says it became verifiable on the venue.
+/// Neither is ever derived from the other.
+LoopRecordRow launchMilestoneRow({
+  required LaunchMilestone milestone,
+  LoopRowPosition position = LoopRowPosition.single,
+}) {
+  final track =
+      '${launchVenueLabel(milestone.venue)} · '
+      '${launchMarketTypeLabel(milestone.marketType)}';
+  final lines = <String>[];
+  if (milestone.isImplicit) {
+    // The track is always listed; nothing has been recorded against it.
+    lines.add('尚无记录');
+  } else {
+    lines.add('更新于 ${launchTimestampLabel(milestone.updatedAt!)}');
+  }
+  final evidence = milestone.evidence;
+  if (milestone.state.carriesEvidence) {
+    lines.add(
+      evidence.recordedAt == null
+          ? '复核记录时间 $launchMissingFigure'
+          : '复核记录于 ${launchTimestampLabel(evidence.recordedAt!)}',
+    );
+    lines.add(
+      evidence.observedAt == null
+          ? '平台可核验时间 $launchMissingFigure（操作员未提供）'
+          : '平台可核验于 ${launchTimestampLabel(evidence.observedAt!)}',
+    );
+    if (evidence.reviewer != null) lines.add('复核人 ${evidence.reviewer}');
+  } else {
+    lines.add('该状态不带证据');
+  }
+  return LoopRecordRow(
+    key: ValueKey<String>('launch-milestone-${milestone.trackKey}'),
+    title: track,
+    subtitle: lines.join('\n'),
+    trailingBadge: LoopBadge(
+      launchMilestoneStateLabel(milestone.state),
+      kind: milestone.state.carriesEvidence
+          ? LoopBadgeKind.launch
+          : LoopBadgeKind.mute,
+    ),
+    position: position,
+    semanticLabel:
+        '$track，${launchMilestoneStateLabel(milestone.state)}，'
+        '${lines.join('，')}',
+  );
 }
