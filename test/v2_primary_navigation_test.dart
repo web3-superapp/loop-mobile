@@ -119,13 +119,11 @@ void main() {
       expect(router.routeInformationProvider.value.uri.path, '/profile');
       expect(find.byType(LoopTabBar), findsNothing);
       expect(
-        find.byKey(const ValueKey<String>('profile-back-to-community')),
+        find.byKey(const ValueKey<String>('loop-topbar-back')),
         findsOneWidget,
       );
 
-      await tester.tap(
-        find.byKey(const ValueKey<String>('profile-back-to-community')),
-      );
+      await tester.tap(find.byKey(const ValueKey<String>('loop-topbar-back')));
       await tester.pumpAndSettle();
       expect(router.routeInformationProvider.value.uri.path, '/community');
       expect(find.byType(LoopTabBar), findsOneWidget);

@@ -7,6 +7,7 @@ import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/features/account/email_auth_controller.dart';
 import 'package:loop_mobile/features/account/privy_login_screen.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
 void main() {
@@ -32,7 +33,7 @@ void main() {
       find.byKey(const ValueKey('privy-apple-login-button')),
       findsNothing,
     );
-    expect(find.textContaining('not LOOP trading wallets'), findsOneWidget);
+    expect(find.textContaining('不是 LOOP 交易钱包'), findsOneWidget);
   });
 
   testWidgets('shows Apple only for the iOS composition', (tester) async {
@@ -49,16 +50,40 @@ void main() {
   ) async {
     await _pump(tester, showApple: false, reownProjectId: '');
 
-    expect(
-      tester
-          .widget<OutlinedButton>(
-            find.byKey(const ValueKey('privy-wallet-login-button')),
-          )
-          .onPressed,
-      isNull,
+    expect(_pressed(tester, 'privy-wallet-login-button'), isNull);
+    expect(find.textContaining('缺少有效的 Reown Project ID'), findsOneWidget);
+  });
+
+  testWidgets('sending a code pushes the dedicated OTP step', (tester) async {
+    var pushed = 0;
+    await _pump(tester, showApple: false, onCodeSent: () => pushed += 1);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('privy-email-field')),
+      'owner@example.com',
     );
+    await tester.tap(find.byKey(const ValueKey('privy-auth-primary-button')));
+    await tester.pumpAndSettle();
+
+    expect(pushed, 1);
+    // The second step never renders here.
+    expect(find.byKey(const ValueKey('privy-otp-field')), findsNothing);
+  });
+
+  testWidgets('an invalid address never leaves this step', (tester) async {
+    var pushed = 0;
+    await _pump(tester, showApple: false, onCodeSent: () => pushed += 1);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('privy-email-field')),
+      'not-an-address',
+    );
+    await tester.tap(find.byKey(const ValueKey('privy-auth-primary-button')));
+    await tester.pumpAndSettle();
+
+    expect(pushed, 0);
     expect(
-      find.textContaining('wallet connection remains unavailable'),
+      find.byKey(const ValueKey<String>('privy-auth-error')),
       findsOneWidget,
     );
   });
@@ -75,22 +100,8 @@ void main() {
     await tester.pump();
 
     expect(credential.calls, 1);
-    expect(
-      tester
-          .widget<OutlinedButton>(
-            find.byKey(const ValueKey('privy-wallet-login-button')),
-          )
-          .onPressed,
-      isNull,
-    );
-    expect(
-      tester
-          .widget<FilledButton>(
-            find.byKey(const ValueKey('privy-auth-primary-button')),
-          )
-          .onPressed,
-      isNull,
-    );
+    expect(_pressed(tester, 'privy-wallet-login-button'), isNull);
+    expect(_pressed(tester, 'privy-auth-primary-button'), isNull);
 
     pending.complete(
       const PrivyAccountSummary(privyUserId: 'did:privy:google'),
@@ -161,11 +172,16 @@ void main() {
   );
 }
 
+VoidCallback? _pressed(WidgetTester tester, String key) {
+  return tester.widget<LoopButton>(find.byKey(ValueKey<String>(key))).onPressed;
+}
+
 Future<void> _pump(
   WidgetTester tester, {
   required bool showApple,
   _CredentialGateway? credential,
   String reownProjectId = '26a5cc1adad234fcdf7762b8d2a2b28d',
+  VoidCallback? onCodeSent,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -186,7 +202,7 @@ Future<void> _pump(
         ),
         isIosIdentityPlatformProvider.overrideWithValue(showApple),
       ],
-      child: const MaterialApp(home: PrivyLoginScreen()),
+      child: MaterialApp(home: PrivyLoginScreen(onCodeSent: onCodeSent)),
     ),
   );
   await tester.pumpAndSettle();

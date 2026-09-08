@@ -131,6 +131,42 @@ void main() {
       }
     });
 
+    test('supplementary paths stay an explicit, non-manifest allowlist', () {
+      // The doc comment on `supplementaryPaths` promises this test names every
+      // entry, so nothing can be added without an assertion changing.
+      expect(LoopRouteManifest.supplementaryPaths, <String>[
+        '/chat',
+        '/chat/channel/:cid',
+        '/chat/channel/:cid/alias',
+        '/chat/friends/add',
+        '/chat/friends/requests',
+        '/chat/groups/create',
+        '/chat/groups/:groupId/alias',
+        '/profile/friends',
+        '/preview/signing-review',
+        '/preview/contract-facts',
+        '/preview/asset-message',
+        '/preview/token-card',
+      ]);
+      // `/profile/social-privacy` is no longer mounted: the V1 resource was
+      // retired by the V2 privacy resource and the location is now only
+      // recorded as informational.
+      expect(
+        LoopRouteManifest.supplementaryPaths,
+        isNot(contains('/profile/social-privacy')),
+      );
+      expect(
+        LoopRouteManifest.informationalRetiredPaths,
+        contains('/profile/social-privacy'),
+      );
+      final manifestPaths = LoopRouteManifest.entries
+          .map((entry) => entry.path)
+          .toSet();
+      for (final path in LoopRouteManifest.supplementaryPaths) {
+        expect(manifestPaths, isNot(contains(path)), reason: path);
+      }
+    });
+
     test('manifest keeps every retired Perp path unmounted', () {
       final perp = LoopRouteManifest.retiredPaths.where(
         (path) => path.startsWith('/perp'),
@@ -202,7 +238,20 @@ void main() {
     ) async {
       final router = await _pumpApp(tester);
       final pending = LoopRouteManifest.withStatus(LoopRouteStatus.pending);
-      expect(pending, hasLength(24));
+      // S2 connected `/auth/otp` (PrivyOtpScreen) and `/auth/loop-id`
+      // (LoopIdSetupScreen), so the manifest carries one fewer pending page
+      // and no redirect placeholder at all.
+      expect(pending, hasLength(23));
+      expect(
+        LoopRouteManifest.bySlug('auth-otp').status,
+        LoopRouteStatus.implemented,
+      );
+      expect(
+        LoopRouteManifest.bySlug('loop-id-setup').status,
+        LoopRouteStatus.implemented,
+      );
+      expect(LoopRouteManifest.withStatus(LoopRouteStatus.redirect), isEmpty);
+      expect(pending.map((entry) => entry.slug), isNot(contains('auth-otp')));
 
       for (final entry in <LoopRouteEntry>[
         LoopRouteManifest.bySlug('community-members'),

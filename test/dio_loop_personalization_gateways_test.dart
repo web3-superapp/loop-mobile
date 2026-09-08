@@ -2,8 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
-import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
-import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
 import 'package:loop_mobile/features/profile/social_privacy/social_privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/social_privacy/social_privacy_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_session.dart';
@@ -29,10 +27,6 @@ void main() {
                 version: isWrite ? 2 : 1,
                 updatedAt: updatedAt,
               ),
-              '/v1/profile/privacy' => _privacyBody(
-                version: isWrite ? 2 : 1,
-                updatedAt: updatedAt,
-              ),
               '/v1/profile/social-privacy' => _socialPrivacyBody(
                 version: isWrite ? 2 : 1,
                 updatedAt: updatedAt,
@@ -47,10 +41,6 @@ void main() {
         dio: fixture.dio,
         session: fixture.session,
       );
-      final privacy = DioLoopPrivacyGateway(
-        dio: fixture.dio,
-        session: fixture.session,
-      );
       final socialPrivacy = DioLoopSocialPrivacyGateway(
         dio: fixture.dio,
         session: fixture.session,
@@ -60,14 +50,6 @@ void main() {
       final savedProfile = await profile.replace(
         expectedVersion: 1,
         values: ProfileValues(alias: 'Alice', avatarRef: 'avatar:alice'),
-      );
-      final loadedPrivacy = await privacy.load();
-      final savedPrivacy = await privacy.replace(
-        expectedVersion: 1,
-        values: const PrivacyValues(
-          discoverable: true,
-          copyTradeVisibility: CopyTradeVisibility.followers,
-        ),
       );
       final loadedSocialPrivacy = await socialPrivacy.load();
       final savedSocialPrivacy = await socialPrivacy.replace(
@@ -80,12 +62,9 @@ void main() {
       );
 
       expect(profile.mode, ProfileMode.production);
-      expect(privacy.mode, PrivacyMode.production);
       expect(socialPrivacy.mode, SocialPrivacyMode.production);
       expect(loadedProfile.version, 1);
       expect(savedProfile.version, 2);
-      expect(loadedPrivacy.version, 1);
-      expect(savedPrivacy.version, 2);
       expect(loadedSocialPrivacy.version, 1);
       expect(savedSocialPrivacy.version, 2);
       expect(
@@ -93,8 +72,6 @@ void main() {
         <String>[
           'GET /v1/profile',
           'PUT /v1/profile',
-          'GET /v1/profile/privacy',
-          'PUT /v1/profile/privacy',
           'GET /v1/profile/social-privacy',
           'PUT /v1/profile/social-privacy',
         ],
@@ -109,8 +86,6 @@ void main() {
         'Bearer current-access-token-2',
         'Bearer current-access-token-3',
         'Bearer current-access-token-4',
-        'Bearer current-access-token-5',
-        'Bearer current-access-token-6',
       ]);
       expect(requests.every((request) => !_hasIdempotencyKey(request)), true);
       expect(requests[0].data, isNull);
@@ -123,14 +98,6 @@ void main() {
       });
       expect(requests[2].data, isNull);
       expect(requests[3].data, <String, Object?>{
-        'expected_version': 1,
-        'privacy': <String, Object?>{
-          'discoverable': true,
-          'copy_trade_visibility': 'followers',
-        },
-      });
-      expect(requests[4].data, isNull);
-      expect(requests[5].data, <String, Object?>{
         'expected_version': 1,
         'social_privacy': <String, Object?>{
           'friend_requests': 'enabled',
@@ -232,21 +199,14 @@ void main() {
       },
     );
 
-    test('rejects Privacy and Social Privacy type or enum drift', () async {
+    test('rejects Social Privacy type or enum drift', () async {
       final bodies = <Object?>[
         <String, Object?>{
           'version': 1,
-          'privacy': <String, Object?>{
-            'discoverable': 1,
-            'copy_trade_visibility': 'private',
-          },
-          'updated_at': updatedAt.toIso8601String(),
-        },
-        <String, Object?>{
-          'version': 1,
-          'privacy': <String, Object?>{
-            'discoverable': false,
-            'copy_trade_visibility': 'friends',
+          'social_privacy': <String, Object?>{
+            'friend_requests': true,
+            'group_invites': 'friends',
+            'direct_messages': 'friends',
           },
           'updated_at': updatedAt.toIso8601String(),
         },
@@ -265,32 +225,22 @@ void main() {
         handler.resolve(_successResponse(options, data: bodies[index++]));
       });
       addTearDown(fixture.dispose);
-      final privacy = DioLoopPrivacyGateway(
-        dio: fixture.dio,
-        session: fixture.session,
-      );
       final socialPrivacy = DioLoopSocialPrivacyGateway(
         dio: fixture.dio,
         session: fixture.session,
       );
 
-      await expectLater(
-        privacy.load(),
-        throwsA(_privacyFailure(PrivacyGatewayFailureKind.invalidData)),
-      );
-      await expectLater(
-        privacy.load(),
-        throwsA(_privacyFailure(PrivacyGatewayFailureKind.invalidData)),
-      );
-      await expectLater(
-        socialPrivacy.load(),
-        throwsA(
-          _socialPrivacyFailure(SocialPrivacyGatewayFailureKind.invalidData),
-        ),
-      );
+      for (var attempt = 0; attempt < bodies.length; attempt++) {
+        await expectLater(
+          socialPrivacy.load(),
+          throwsA(
+            _socialPrivacyFailure(SocialPrivacyGatewayFailureKind.invalidData),
+          ),
+        );
+      }
     });
 
-    test('maps exact CAS conflicts for all three resources', () async {
+    test('maps exact CAS conflicts for both live resources', () async {
       final fixture = await _fixture((options, handler) {
         handler.reject(
           _error(options, statusCode: 409, code: 'version_conflict'),
@@ -307,13 +257,6 @@ void main() {
           values: ProfileValues(alias: 'Alice', avatarRef: null),
         ),
         throwsA(_profileFailure(ProfileGatewayFailureKind.versionConflict)),
-      );
-      await expectLater(
-        DioLoopPrivacyGateway(
-          dio: fixture.dio,
-          session: fixture.session,
-        ).replace(expectedVersion: 1, values: const PrivacyValues.defaults()),
-        throwsA(_privacyFailure(PrivacyGatewayFailureKind.versionConflict)),
       );
       await expectLater(
         DioLoopSocialPrivacyGateway(
@@ -351,13 +294,6 @@ void main() {
           session: fixture.session,
         ).load(),
         throwsA(_profileFailure(ProfileGatewayFailureKind.unavailable)),
-      );
-      await expectLater(
-        DioLoopPrivacyGateway(
-          dio: fixture.dio,
-          session: fixture.session,
-        ).load(),
-        throwsA(_privacyFailure(PrivacyGatewayFailureKind.unavailable)),
       );
       await expectLater(
         DioLoopSocialPrivacyGateway(
@@ -414,13 +350,13 @@ void main() {
           handler.resolve(
             _successResponse(
               options,
-              data: _privacyBody(version: 1, updatedAt: updatedAt),
+              data: _profileBody(version: 1, updatedAt: updatedAt),
             ),
           );
         });
         addTearDown(fixture.dispose);
 
-        final resource = await DioLoopPrivacyGateway(
+        final resource = await DioLoopProfileGateway(
           dio: fixture.dio,
           session: fixture.session,
         ).load();
@@ -531,16 +467,6 @@ void main() {
         throwsA(_profileFailure(ProfileGatewayFailureKind.invalidData)),
       );
       await expectLater(
-        DioLoopPrivacyGateway(
-          dio: fixture.dio,
-          session: fixture.session,
-        ).replace(
-          expectedVersion: privacyMaximumVersion + 1,
-          values: const PrivacyValues.defaults(),
-        ),
-        throwsA(_privacyFailure(PrivacyGatewayFailureKind.invalidData)),
-      );
-      await expectLater(
         DioLoopSocialPrivacyGateway(
           dio: fixture.dio,
           session: fixture.session,
@@ -645,18 +571,6 @@ Map<String, Object?> _profileBody({
   'updated_at': updatedAt.toIso8601String(),
 };
 
-Map<String, Object?> _privacyBody({
-  required int version,
-  required DateTime updatedAt,
-}) => <String, Object?>{
-  'version': version,
-  'privacy': <String, Object?>{
-    'discoverable': true,
-    'copy_trade_visibility': 'followers',
-  },
-  'updated_at': updatedAt.toIso8601String(),
-};
-
 Map<String, Object?> _socialPrivacyBody({
   required int version,
   required DateTime updatedAt,
@@ -719,14 +633,6 @@ bool _hasIdempotencyKey(RequestOptions options) =>
 TypeMatcher<ProfileGatewayException> _profileFailure(
   ProfileGatewayFailureKind kind,
 ) => isA<ProfileGatewayException>().having(
-  (failure) => failure.kind,
-  'kind',
-  kind,
-);
-
-TypeMatcher<PrivacyGatewayException> _privacyFailure(
-  PrivacyGatewayFailureKind kind,
-) => isA<PrivacyGatewayException>().having(
   (failure) => failure.kind,
   'kind',
   kind,

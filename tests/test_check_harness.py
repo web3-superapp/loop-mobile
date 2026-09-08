@@ -172,6 +172,8 @@ FRIEND_FRONTEND_FIXTURE_FILES = (
     "lib/main.dart",
     "lib/main_preview.dart",
     "lib/features/profile/profile_screens.dart",
+    # Decision 0053 moved the Profile root's friends entry here.
+    "lib/features/profile/profile_v2_screens.dart",
     "lib/features/chat/chat_inbox_page.dart",
     "lib/features/chat/stream_chat_inbox_page.dart",
     "lib/features/chat/friends/chat_create_menu_button.dart",
@@ -1117,10 +1119,12 @@ class HarnessTests(unittest.TestCase):
             write_v2_navigation_fixture(root)
             path = root / "lib/app.dart"
             source = path.read_text(encoding="utf-8")
-            marker = "if (isAuthRoute) return '/community';"
+            marker = (
+                "if (credentialRoutes.contains(location)) return '/community';"
+            )
             mutated = source.replace(
                 marker,
-                "if (isAuthRoute) return '/market';\n"
+                "if (credentialRoutes.contains(location)) return '/market';\n"
                 f"      // {marker}",
                 1,
             )
@@ -1144,7 +1148,7 @@ class HarnessTests(unittest.TestCase):
             profile_end = source.index("String _accountPath(", profile_start)
             profile_slice = source[profile_start:profile_end]
             mutated_slice = profile_slice.replace(
-                "context.go('/community');",
+                "context.go(LoopRouteManifest.defaultPath);",
                 "context.go('/wallet');",
                 1,
             )
@@ -5645,13 +5649,13 @@ class HarnessTests(unittest.TestCase):
     def test_profile_ui_cannot_claim_an_unverified_save(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            surface = root / check_harness.PROFILE_SURFACE_PATH
+            surface = root / check_harness.PROFILE_V2_SURFACE_PATH
             surface.parent.mkdir(parents=True)
             surface.write_text(
-                "class _ProfileEdit {\n"
+                "class ProfileEditScreen {\n"
                 "  void save() => SnackBar(content: Text('All set'));\n"
                 "}\n"
-                "class _PrivacyCenter {}\n",
+                "class PrivacyCenterScreen {}\n",
                 encoding="utf-8",
             )
 
@@ -7277,10 +7281,10 @@ class HarnessTests(unittest.TestCase):
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            start = source.index("class _SecuritySetupScreen")
+            start = source.index("class SecuritySetupScreen")
             changed = source[start:].replace(
-                "children: <Widget>[",
-                "children: <Widget>[Switch(value: false, onChanged: (_) {}),",
+                "body: <Widget>[",
+                "body: <Widget>[Switch(value: false, onChanged: (_) {}),",
                 1,
             )
             path.write_text(source[:start] + changed, encoding="utf-8")
@@ -7301,7 +7305,7 @@ class HarnessTests(unittest.TestCase):
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
                 source.replace(
-                    "Secure Storage is not connected. No app PIN is stored or checked.",
+                    "会退回到系统层面的锁屏验证，不会因此阻断使用；App 不会自行存储 PIN。",
                     "Fallback protection stored by the app",
                     1,
                 ),
@@ -7322,10 +7326,10 @@ class HarnessTests(unittest.TestCase):
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            start = source.index("class _SecuritySetupScreen")
+            start = source.index("class SecuritySetupScreen")
             changed = source[start:].replace(
-                "children: <Widget>[",
-                "children: <Widget>[FilledButton(onPressed: () {}, child: const Text('Apply')),",
+                "body: <Widget>[",
+                "body: <Widget>[FilledButton(onPressed: () {}, child: const Text('Apply')),",
                 1,
             )
             path.write_text(source[:start] + changed, encoding="utf-8")

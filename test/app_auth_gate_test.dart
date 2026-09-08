@@ -42,13 +42,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Welcome to LOOP'), findsOneWidget);
-    expect(find.text('Login configuration incomplete'), findsOneWidget);
+    expect(find.text('欢迎来到 LOOP'), findsOneWidget);
+    expect(find.text('登录配置不完整'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('community-screen')),
       findsNothing,
     );
-    expect(find.text('Enter development preview'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('enter-development-preview-button')),
+      findsNothing,
+    );
+    expect(find.text('进入开发预览'), findsNothing);
   });
 
   testWidgets('signing out shows a non-interactive authentication boundary', (
@@ -107,7 +111,7 @@ void main() {
     await exit;
     await tester.pumpAndSettle();
 
-    expect(find.text('Welcome to LOOP'), findsOneWidget);
+    expect(find.text('欢迎来到 LOOP'), findsOneWidget);
   });
 
   testWidgets('explicit offline composition can enter and leave preview', (
@@ -126,8 +130,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final previewButton = find.text('Enter development preview');
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
+    final previewButton = find.byKey(
+      const ValueKey<String>('enter-development-preview-button'),
+    );
+    expect(find.text('进入开发预览'), findsOneWidget);
+    await tester.ensureVisible(previewButton);
     await tester.pump();
     await tester.tap(previewButton);
     await tester.pumpAndSettle();
@@ -142,10 +149,12 @@ void main() {
       find.byKey(const ValueKey<String>('community-profile-action')),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Sign out of LOOP'));
+    final signOut = find.byKey(const ValueKey<String>('profile-sign-out'));
+    await tester.scrollUntilVisible(signOut, 240);
+    await tester.tap(signOut);
     await tester.pumpAndSettle();
 
-    expect(find.text('Welcome to LOOP'), findsOneWidget);
+    expect(find.text('欢迎来到 LOOP'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('community-screen')),
       findsNothing,

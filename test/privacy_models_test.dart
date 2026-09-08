@@ -8,55 +8,103 @@ void main() {
       final resource = PrivacyResource.empty();
 
       expect(values.discoverable, isFalse);
-      expect(values.copyTradeVisibility, CopyTradeVisibility.private);
+      expect(values.anonymousMode, isFalse);
+      for (final facet in PrivacyVisibilityFacet.values) {
+        expect(values.visibility[facet], PrivacyAudience.self);
+      }
+      expect(values.visibility, const PrivacyVisibility.defaults());
+      expect(PrivacyVisibility(), const PrivacyVisibility.defaults());
       expect(resource.version, 0);
       expect(resource.values, values);
       expect(resource.updatedAt, isNull);
     });
 
-    test('round-trips only the reviewed copy-trade visibility values', () {
-      const exactWireValues = <CopyTradeVisibility, String>{
-        CopyTradeVisibility.private: 'private',
-        CopyTradeVisibility.followers: 'followers',
-        CopyTradeVisibility.public: 'public',
+    test('round-trips only the reviewed audience values', () {
+      const exactWireValues = <PrivacyAudience, String>{
+        PrivacyAudience.self: 'self',
+        PrivacyAudience.everyone: 'everyone',
       };
+      expect(exactWireValues.length, PrivacyAudience.values.length);
       for (final entry in exactWireValues.entries) {
         expect(entry.key.wireValue, entry.value);
-        expect(CopyTradeVisibility.fromWire(entry.value), entry.key);
+        expect(PrivacyAudience.fromWire(entry.value), entry.key);
       }
 
       for (final invalid in <String>[
         '',
-        'Private',
+        'Self',
         'friends',
-        'approved',
-        'followers ',
+        'followers',
+        'public',
+        'everyone ',
       ]) {
         expect(
-          () => CopyTradeVisibility.fromWire(invalid),
+          () => PrivacyAudience.fromWire(invalid),
           throwsA(isA<InvalidPrivacyContractException>()),
         );
       }
     });
 
-    test('edits only discoverability and copy-trade visibility', () {
+    test('exposes exactly the four reviewed visibility facets', () {
+      const exactWireValues = <PrivacyVisibilityFacet, String>{
+        PrivacyVisibilityFacet.totalAssets: 'totalAssets',
+        PrivacyVisibilityFacet.miningPower: 'miningPower',
+        PrivacyVisibilityFacet.communities: 'communities',
+        PrivacyVisibilityFacet.tradeHistory: 'tradeHistory',
+      };
+      expect(exactWireValues.length, PrivacyVisibilityFacet.values.length);
+      for (final entry in exactWireValues.entries) {
+        expect(entry.key.wireValue, entry.value);
+        expect(entry.key.label, isNotEmpty);
+      }
+
+      // Copy-trade visibility is retired; no facet may reintroduce it.
+      for (final facet in PrivacyVisibilityFacet.values) {
+        expect(facet.wireValue.toLowerCase(), isNot(contains('copy')));
+        expect(facet.name.toLowerCase(), isNot(contains('copy')));
+      }
+    });
+
+    test('edits discoverability, anonymous mode, and one facet at a time', () {
       const defaults = PrivacyValues.defaults();
       final discoverable = defaults.withDiscoverable(true);
-      final public = discoverable.withCopyTradeVisibility(
-        CopyTradeVisibility.public,
+      final anonymous = discoverable.withAnonymousMode(true);
+      final shared = anonymous.withFacet(
+        PrivacyVisibilityFacet.totalAssets,
+        PrivacyAudience.everyone,
       );
 
       expect(discoverable.discoverable, isTrue);
-      expect(discoverable.copyTradeVisibility, CopyTradeVisibility.private);
-      expect(public.discoverable, isTrue);
-      expect(public.copyTradeVisibility, CopyTradeVisibility.public);
+      expect(discoverable.anonymousMode, isFalse);
+      expect(anonymous.discoverable, isTrue);
+      expect(anonymous.anonymousMode, isTrue);
+      expect(
+        anonymous.visibility[PrivacyVisibilityFacet.totalAssets],
+        PrivacyAudience.self,
+      );
+      expect(
+        shared.visibility[PrivacyVisibilityFacet.totalAssets],
+        PrivacyAudience.everyone,
+      );
+      for (final facet in PrivacyVisibilityFacet.values) {
+        if (facet == PrivacyVisibilityFacet.totalAssets) continue;
+        expect(shared.visibility[facet], PrivacyAudience.self);
+      }
+
+      // Every edit returns a new value; no source is mutated in place.
       expect(defaults, const PrivacyValues.defaults());
+      expect(anonymous.visibility, const PrivacyVisibility.defaults());
+      expect(
+        shared.withVisibility(const PrivacyVisibility.defaults()).visibility,
+        const PrivacyVisibility.defaults(),
+      );
     });
 
     test('normalizes resource timestamps to UTC and copies values', () {
-      const source = PrivacyValues(
+      final source = PrivacyValues(
         discoverable: true,
-        copyTradeVisibility: CopyTradeVisibility.followers,
+        anonymousMode: true,
+        visibility: PrivacyVisibility(tradeHistory: PrivacyAudience.everyone),
       );
       final resource = PrivacyResource(
         version: 3,
@@ -74,9 +122,12 @@ void main() {
       expect(
         PrivacyResource(
           version: 0,
-          values: const PrivacyValues(
+          values: PrivacyValues(
             discoverable: true,
-            copyTradeVisibility: CopyTradeVisibility.public,
+            anonymousMode: true,
+            visibility: PrivacyVisibility(
+              communities: PrivacyAudience.everyone,
+            ),
           ),
           updatedAt: null,
         ).values.discoverable,
@@ -119,22 +170,35 @@ void main() {
     });
 
     test('has defensive value equality across values and resources', () {
-      const first = PrivacyValues(
+      final first = PrivacyValues(
         discoverable: true,
-        copyTradeVisibility: CopyTradeVisibility.followers,
+        anonymousMode: true,
+        visibility: PrivacyVisibility(miningPower: PrivacyAudience.everyone),
       );
-      const same = PrivacyValues(
+      final same = PrivacyValues(
         discoverable: true,
-        copyTradeVisibility: CopyTradeVisibility.followers,
+        anonymousMode: true,
+        visibility: PrivacyVisibility(miningPower: PrivacyAudience.everyone),
       );
-      const different = PrivacyValues(
+      final differentFacet = PrivacyValues(
         discoverable: true,
-        copyTradeVisibility: CopyTradeVisibility.public,
+        anonymousMode: true,
+        visibility: PrivacyVisibility(communities: PrivacyAudience.everyone),
+      );
+      final differentFlag = PrivacyValues(
+        discoverable: true,
+        anonymousMode: false,
+        visibility: PrivacyVisibility(miningPower: PrivacyAudience.everyone),
       );
 
       expect(first, same);
       expect(first.hashCode, same.hashCode);
-      expect(first, isNot(different));
+      expect(first, isNot(differentFacet));
+      expect(first, isNot(differentFlag));
+
+      final copiedValues = PrivacyValues.copyOf(first);
+      expect(copiedValues, first);
+      expect(identical(copiedValues, first), isFalse);
 
       final resource = PrivacyResource(
         version: 1,
@@ -153,7 +217,7 @@ void main() {
 
       expect(failure.code, 'invalid_privacy_contract');
       expect(failure.toString(), 'The Privacy contract value is invalid');
-      expect(failure.toString(), isNot(contains('followers')));
+      expect(failure.toString(), isNot(contains('everyone')));
     });
   });
 }

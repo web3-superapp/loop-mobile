@@ -188,13 +188,18 @@ final class LoopV2TermsGate {
 
 /// Capability IDs in the exact contract order of
 /// `loop-api/openapi/loop-api.v2.json`. `profile` and `avatarUpload` were
-/// added by loop-api decision 0030.
+/// added by loop-api decision 0030; `communityMining`, `communityPresence` and
+/// `search` by decision 0031. The parser requires the exact set, so this list
+/// must track the frozen contract even for modules this step does not consume.
 enum LoopV2CapabilityId {
   privyAuthentication('privyAuthentication'),
   accountSession('accountSession'),
   streamChatToken('streamChatToken'),
   streamVideoToken('streamVideoToken'),
   community('community'),
+  communityMining('communityMining'),
+  communityPresence('communityPresence'),
+  search('search'),
   bscRead('bscRead'),
   walletRead('walletRead'),
   privySwap('privySwap'),

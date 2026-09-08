@@ -26,13 +26,15 @@ class PrivyOtpScreen extends ConsumerStatefulWidget {
 class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
   final _codeController = TextEditingController();
   Timer? _ticker;
-  DateTime _now = DateTime.now();
 
   @override
   void initState() {
     super.initState();
+    // One repaint per second. The instant itself always comes from the
+    // controller's own clock, so the countdown and the controller's cooldown
+    // gate can never disagree.
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => _now = DateTime.now());
+      if (mounted) setState(() {});
     });
   }
 
@@ -48,8 +50,9 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
     final authState = ref.watch(emailAuthProvider);
     final controller = ref.read(emailAuthProvider.notifier);
     final destination = authState.submittedEmail;
-    final cooldown = authState.resendCooldownSeconds(_now);
-    final canResend = authState.canResend(_now);
+    final now = controller.clock();
+    final cooldown = authState.resendCooldownSeconds(now);
+    final canResend = authState.canResend(now);
 
     return LoopFocusPage(
       archetype: LoopPageArchetype.intro,

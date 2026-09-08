@@ -290,6 +290,12 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
               onTap: () => widget.onNavigate('security'),
             ),
             LoopRecordRow(
+              key: const ValueKey<String>('profile-open-friends'),
+              title: '我的好友',
+              subtitle: '好友与请求',
+              onTap: () => widget.onNavigate('friends'),
+            ),
+            LoopRecordRow(
               key: const ValueKey<String>('profile-open-connections'),
               title: '关注与粉丝',
               subtitle: '关系数据尚未接入',
@@ -517,6 +523,22 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               title: '无法保存',
               body: _validationMessage!,
             ),
+          // A failed save must never look like a success. The draft is kept
+          // and the sanitized reason is shown next to the save action.
+          if (state.phase == ProfilePhase.failure)
+            state.failureKind == ProfileGatewayFailureKind.offline
+                ? LoopOfflineState(
+                    key: const ValueKey<String>('profile-edit-offline'),
+                    pausedActions: const <String>['保存资料'],
+                    onRetry: () => unawaited(_save(controller)),
+                  )
+                : LoopNotice(
+                    key: const ValueKey<String>('profile-edit-failure'),
+                    icon: 'close',
+                    tone: LoopNoticeTone.danger,
+                    title: '保存未完成',
+                    body: profileFailureReason(state.failureKind),
+                  ),
           _AvatarPickerCard(
             selected: state.draft.avatarRef,
             alias: state.draft.alias,
@@ -657,11 +679,19 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   }
 
   Future<void> _save(ProfileController controller) async {
+    final expectedVersion = ref.read(profileControllerProvider).expectedVersion;
     await controller.save();
     if (!mounted) return;
     final state = ref.read(profileControllerProvider);
-    if (state.phase == ProfilePhase.ready && !state.isDirty) {
-      LoopToast.show(context, message: '资料已保存');
+    final version = state.resource?.version;
+    // The only evidence of a save is an advanced committed resource. The
+    // toast repeats that exact version instead of claiming success.
+    if (state.phase == ProfilePhase.ready &&
+        !state.isDirty &&
+        version != null &&
+        expectedVersion != null &&
+        version > expectedVersion) {
+      LoopToast.show(context, message: '已提交到版本 $version');
     }
   }
 }
@@ -993,11 +1023,19 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
   }
 
   Future<void> _save(PrivacyController controller) async {
+    final expectedVersion = ref.read(privacyControllerProvider).expectedVersion;
     await controller.save();
     if (!mounted) return;
     final state = ref.read(privacyControllerProvider);
-    if (state.phase == PrivacyPhase.ready && !state.isDirty) {
-      LoopToast.show(context, message: '隐私设置已保存');
+    final version = state.resource?.version;
+    // Only an advanced committed resource is evidence. The toast repeats that
+    // exact version; it never announces that preferences took effect.
+    if (state.phase == PrivacyPhase.ready &&
+        !state.isDirty &&
+        version != null &&
+        expectedVersion != null &&
+        version > expectedVersion) {
+      LoopToast.show(context, message: '已提交到版本 $version');
     }
   }
 }

@@ -8,6 +8,13 @@ import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/integrations/personalization/memory_profile_gateway.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
+
+const _aliasField = ValueKey<String>('profile-edit-alias-field');
+const _saveKey = ValueKey<String>('profile-edit-save');
+const _conflictKey = ValueKey<String>('profile-edit-conflict');
+const _validationKey = ValueKey<String>('profile-edit-validation');
 
 void main() {
   testWidgets('production is honestly unavailable and shows no fixture edit', (
@@ -19,85 +26,99 @@ void main() {
         alias: 'Session identity',
         address: 'No wallet connected',
         bio: 'Session-only presentation',
-        connections: 0,
-        groups: 0,
-        watchlistItems: 0,
       ),
     );
 
-    expect(find.text('Production connection unavailable'), findsOneWidget);
-    expect(find.text('Profile editing is not connected'), findsOneWidget);
-    expect(find.textContaining('No private request was sent'), findsOneWidget);
-    expect(find.byKey(const ValueKey('profile-alias-input')), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('profile-unavailable')),
+      findsOneWidget,
+    );
+    expect(find.byKey(_aliasField), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('profile-avatar-picker')),
+      findsNothing,
+    );
+    expect(_saveButton(tester).onPressed, isNull);
     expect(find.text('QuietComet'), findsNothing);
-    expect(find.textContaining('开发预览'), findsNothing);
-    expect(find.text('Profile changes saved.'), findsNothing);
+    expect(find.text('Session identity'), findsNothing);
+    expect(find.text('资料已保存'), findsNothing);
   });
 
   testWidgets(
     'production Home defaults contain no unlabelled account fixture',
     (tester) async {
-      await _pumpProfile(tester, surfaceId: 'profile');
+      await _pumpProfile(
+        tester,
+        surfaceId: 'profile',
+        identity: const ProfileIdentity(
+          alias: 'SessionFallback',
+          address: '0x7c4e…9f21',
+        ),
+      );
 
-      expect(find.text('Production connection unavailable'), findsOneWidget);
-      expect(find.text('Profile unavailable'), findsOneWidget);
-      expect(find.text('No wallet connected'), findsOneWidget);
-      expect(find.text('QuietComet'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('profile-unavailable')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('profile-identity-card')),
+        findsNothing,
+      );
+      expect(find.text('SessionFallback'), findsNothing);
       expect(find.text('0x7c4e…9f21'), findsNothing);
+      expect(find.text('QuietComet'), findsNothing);
       expect(find.textContaining('128'), findsNothing);
-      expect(find.textContaining('开发预览'), findsNothing);
     },
   );
 
-  testWidgets('Preview is labelled and saves one reviewed Alias resource', (
+  testWidgets('Preview saves exactly one reviewed Alias resource', (
     tester,
   ) async {
     final gateway = _previewGateway();
     await _pumpProfile(tester, gateway: gateway);
 
-    expect(find.text('开发预览 · in-memory Profile'), findsOneWidget);
-    expect(find.text('VERSION 1'), findsOneWidget);
-    expect(find.text('NO LOCAL CHANGES'), findsOneWidget);
-    expect(find.text('Only Alias is editable here'), findsOneWidget);
-    expect(find.text('Bio'), findsNothing);
-    expect(find.text('Profile visibility'), findsNothing);
-    expect(find.byType(DropdownButtonFormField<String>), findsNothing);
+    expect(find.byKey(_aliasField), findsOneWidget);
+    expect(_textField(tester).controller?.text, 'QuietComet');
+    // A clean draft cannot be resubmitted.
+    expect(_saveButton(tester).onPressed, isNull);
 
-    await tester.enterText(
-      find.byKey(const ValueKey('profile-alias-input')),
-      'NorthSignal',
-    );
+    await tester.enterText(find.byKey(_aliasField), 'NorthSignal');
     await tester.pumpAndSettle();
 
-    expect(find.text('UNSAVED DRAFT'), findsOneWidget);
-    await _tap(tester, find.byKey(const ValueKey('profile-save')));
+    expect(_saveButton(tester).onPressed, isNotNull);
+    expect(find.byKey(_validationKey), findsNothing);
 
-    expect(find.text('VERSION 2'), findsOneWidget);
-    expect(find.text('NO LOCAL CHANGES'), findsOneWidget);
-    expect((await gateway.load()).values.alias, 'NorthSignal');
-    expect(find.text('Profile changes saved.'), findsNothing);
+    await _tap(tester, find.byKey(_saveKey));
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    final committed = await gateway.load();
+    expect(committed.version, 2);
+    expect(committed.values.alias, 'NorthSignal');
+    expect(committed.values.avatarRef, isNull);
+    expect(_saveButton(tester).onPressed, isNull);
   });
 
   testWidgets('invalid Unicode Alias remains local and cannot be saved', (
     tester,
   ) async {
-    await _pumpProfile(tester, gateway: _previewGateway());
-    final input = find.byKey(const ValueKey('profile-alias-input'));
-    const validation =
-        'Use 1–40 visible characters. Control and text-direction override characters are not accepted.';
+    final gateway = _previewGateway();
+    await _pumpProfile(tester, gateway: gateway);
 
-    await tester.enterText(input, 'A' * 41);
+    await tester.enterText(find.byKey(_aliasField), 'unsafe\u202Ealias');
     await tester.pumpAndSettle();
 
-    expect(find.text(validation), findsOneWidget);
-    expect(find.text('NO LOCAL CHANGES'), findsOneWidget);
-    expect(_filledButton(tester, 'profile-save').onPressed, isNull);
+    expect(find.byKey(_validationKey), findsOneWidget);
+    expect(_saveButton(tester).onPressed, isNull);
+    // The rejected input never reached the draft or the gateway.
+    expect((await gateway.load()).values.alias, 'QuietComet');
 
-    await tester.enterText(input, 'unsafe\u202Ealias');
+    await tester.enterText(find.byKey(_aliasField), 'unsafe\u200Balias');
     await tester.pumpAndSettle();
 
-    expect(find.text(validation), findsOneWidget);
-    expect(_filledButton(tester, 'profile-save').onPressed, isNull);
+    expect(find.byKey(_validationKey), findsOneWidget);
+    expect(_saveButton(tester).onPressed, isNull);
+    expect((await gateway.load()).values.alias, 'QuietComet');
   });
 
   testWidgets('version conflict preserves the Alias draft until reload', (
@@ -105,66 +126,60 @@ void main() {
   ) async {
     final gateway = _previewGateway();
     await _pumpProfile(tester, gateway: gateway);
-    final input = find.byKey(const ValueKey('profile-alias-input'));
 
-    await tester.enterText(input, 'LocalDraft');
+    await tester.enterText(find.byKey(_aliasField), 'LocalDraft');
     await tester.pumpAndSettle();
     await gateway.replace(
       expectedVersion: 1,
       values: ProfileValues(alias: 'RemoteAlias', avatarRef: null),
     );
 
-    await _tap(tester, find.byKey(const ValueKey('profile-save')));
+    await _tap(tester, find.byKey(_saveKey));
 
-    expect(find.byKey(const ValueKey('profile-conflict')), findsOneWidget);
-    expect(find.text('UNSAVED DRAFT'), findsOneWidget);
+    expect(find.byKey(_conflictKey), findsOneWidget);
     expect(_textField(tester).controller?.text, 'LocalDraft');
     expect(find.text('RemoteAlias'), findsNothing);
-    expect(_outlinedButton(tester, 'profile-discard').onPressed, isNull);
+    // The draft is frozen: nothing can be edited or saved before a reload.
+    expect(_saveButton(tester).onPressed, isNull);
+    expect(_textField(tester).enabled, isFalse);
 
-    await _tap(tester, find.byKey(const ValueKey('profile-conflict-reload')));
+    await _tap(tester, find.text('重新载入'));
 
-    expect(find.byKey(const ValueKey('profile-conflict')), findsNothing);
+    expect(find.byKey(_conflictKey), findsNothing);
     expect(_textField(tester).controller?.text, 'RemoteAlias');
-    expect(find.text('VERSION 2'), findsOneWidget);
-    expect(find.text('NO LOCAL CHANGES'), findsOneWidget);
+    expect(_textField(tester).enabled, isTrue);
+    expect(_saveButton(tester).onPressed, isNull);
   });
 
   testWidgets(
-    'conflict reload keeps its draft visible through pending failure',
+    'conflict reload keeps its draft visible through a pending failure',
     (tester) async {
       final gateway = _DelayedConflictReloadProfileGateway();
       await _pumpProfile(tester, gateway: gateway);
-      final input = find.byKey(const ValueKey('profile-alias-input'));
 
-      await tester.enterText(input, 'LocalDraft');
+      await tester.enterText(find.byKey(_aliasField), 'LocalDraft');
       await tester.pumpAndSettle();
-      await _tap(tester, find.byKey(const ValueKey('profile-save')));
+      await _tap(tester, find.byKey(_saveKey));
 
-      await tester.ensureVisible(
-        find.byKey(const ValueKey('profile-conflict-reload')),
-      );
-      await tester.tap(find.byKey(const ValueKey('profile-conflict-reload')));
+      expect(find.byKey(_conflictKey), findsOneWidget);
+
+      await tester.ensureVisible(find.text('重新载入'));
+      await tester.tap(find.text('重新载入'));
       await tester.pump();
 
-      expect(find.text('Reloading the latest Profile…'), findsOneWidget);
-      expect(find.text('Reloading…'), findsOneWidget);
+      // Reload is in flight: the local draft is still the only thing shown.
       expect(_textField(tester).controller?.text, 'LocalDraft');
-      expect(find.byKey(const ValueKey('profile-conflict')), findsOneWidget);
+      expect(find.byKey(_conflictKey), findsOneWidget);
 
       gateway.reload.completeError(
         const ProfileGatewayException(ProfileGatewayFailureKind.unavailable),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Latest Profile could not be reloaded'), findsOneWidget);
-      expect(
-        find.textContaining('The Profile service is unavailable.'),
-        findsOneWidget,
-      );
-      expect(find.textContaining('draft is still preserved'), findsOneWidget);
+      expect(find.byKey(_conflictKey), findsOneWidget);
+      expect(find.textContaining('资料服务当前不可用'), findsOneWidget);
       expect(_textField(tester).controller?.text, 'LocalDraft');
-      expect(find.text('UNSAVED DRAFT'), findsOneWidget);
+      expect(_saveButton(tester).onPressed, isNull);
     },
   );
 
@@ -174,31 +189,24 @@ void main() {
     final gateway = _FailingSaveProfileGateway();
     await _pumpProfile(tester, gateway: gateway);
 
-    await tester.enterText(
-      find.byKey(const ValueKey('profile-alias-input')),
-      'LocalDraft',
-    );
+    await tester.enterText(find.byKey(_aliasField), 'LocalDraft');
     await tester.pumpAndSettle();
-    await _tap(tester, find.byKey(const ValueKey('profile-save')));
+    await _tap(tester, find.byKey(_saveKey));
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
 
-    expect(find.text('Changes were not saved'), findsOneWidget);
-    expect(
-      find.text(
-        'The Profile operation failed. Provider details were not exposed.',
-      ),
-      findsOneWidget,
-    );
+    expect(gateway.replaceCalls, 1);
     expect(find.textContaining('raw-provider-secret'), findsNothing);
-    expect(find.byKey(const ValueKey('profile-retry-save')), findsOneWidget);
-    expect(find.text('UNSAVED DRAFT'), findsOneWidget);
+    expect(find.textContaining('Exception'), findsNothing);
+    // No success is claimed and the untouched draft can be retried.
+    expect(find.text('资料已保存'), findsNothing);
+    expect(_textField(tester).controller?.text, 'LocalDraft');
+    expect(_saveButton(tester).onPressed, isNotNull);
 
-    await tester.enterText(
-      find.byKey(const ValueKey('profile-alias-input')),
-      'A' * 41,
-    );
+    await tester.enterText(find.byKey(_aliasField), 'unsafe\u202Ealias');
     await tester.pumpAndSettle();
 
-    expect(_outlinedButton(tester, 'profile-retry-save').onPressed, isNull);
+    expect(find.byKey(_validationKey), findsOneWidget);
     expect(gateway.replaceCalls, 1);
   });
 
@@ -218,18 +226,27 @@ void main() {
       gateway: gateway,
       identity: const ProfileIdentity(
         alias: 'SessionFallback',
-        address: 'No wallet connected',
-        bio: 'Session-only presentation',
-        connections: 0,
-        groups: 0,
-        watchlistItems: 0,
+        address: '0x7c4e…9f21',
       ),
     );
 
-    expect(find.text('SavedAlias'), findsOneWidget);
+    final card = find.byKey(const ValueKey<String>('profile-identity-card'));
+    expect(card, findsOneWidget);
+    expect(
+      find.descendant(of: card, matching: find.text('SavedAlias')),
+      findsOneWidget,
+    );
+    // The LOOP ID was never loaded, so nothing invents one.
+    expect(
+      find.descendant(of: card, matching: find.text('LOOP ID 不可读')),
+      findsOneWidget,
+    );
     expect(find.text('SessionFallback'), findsNothing);
-    expect(find.text('VERSION 4'), findsOneWidget);
-    expect(find.textContaining('开发预览'), findsWidgets);
+    expect(find.text('0x7c4e…9f21'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('profile-unavailable')),
+      findsNothing,
+    );
   });
 
   testWidgets('Profile edit supports a narrow screen at 2x text scale', (
@@ -242,7 +259,8 @@ void main() {
       textScaler: const TextScaler.linear(2),
     );
 
-    expect(find.byKey(const ValueKey('profile-alias-input')), findsOneWidget);
+    expect(find.byKey(_aliasField), findsOneWidget);
+    expect(find.byKey(_saveKey), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -269,7 +287,7 @@ void main() {
 
     await _pumpProfile(tester, gateway: second);
     expect(_textField(tester).controller?.text, 'SecondOwner');
-    expect(find.text('Loading Profile presentation…'), findsNothing);
+    expect(find.byKey(const ValueKey<String>('profile-loading')), findsNothing);
   });
 }
 
@@ -295,7 +313,7 @@ Future<void> _pumpProfile(
         theme: LoopTheme.dark,
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaler: textScaler),
-          child: child!,
+          child: LoopToastHost(child: child!),
         ),
         home: ProfileSurfaceScreen.fromId(surfaceId, identity: identity),
       ),
@@ -311,15 +329,11 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.pumpAndSettle();
 }
 
-FilledButton _filledButton(WidgetTester tester, String key) =>
-    tester.widget<FilledButton>(find.byKey(ValueKey<String>(key)));
+LoopButton _saveButton(WidgetTester tester) =>
+    tester.widget<LoopButton>(find.byKey(_saveKey));
 
-TextField _textField(WidgetTester tester) => tester.widget<TextField>(
-  find.byKey(const ValueKey<String>('profile-alias-input')),
-);
-
-OutlinedButton _outlinedButton(WidgetTester tester, String key) =>
-    tester.widget<OutlinedButton>(find.byKey(ValueKey<String>(key)));
+TextField _textField(WidgetTester tester) =>
+    tester.widget<TextField>(find.byKey(_aliasField));
 
 MemoryProfileGateway _previewGateway() => MemoryProfileGateway(
   initialResource: ProfileResource(

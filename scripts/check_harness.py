@@ -596,6 +596,10 @@ PROFILE_MEMORY_GATEWAY_PATH = Path(
     "lib/integrations/personalization/memory_profile_gateway.dart"
 )
 PROFILE_SURFACE_PATH = Path("lib/features/profile/profile_screens.dart")
+# Decision 0053: the V2 Profile, Profile edit and Privacy pages.
+PROFILE_V2_SURFACE_PATH = Path(
+    "lib/features/profile/profile_v2_screens.dart"
+)
 PROFILE_PREVIEW_ROOT_PATH = Path("lib/main_preview.dart")
 PROFILE_MEMORY_CONSTRUCTION_PATTERN = re.compile(r"\bMemoryProfileGateway\s*\(")
 PROFILE_MEMORY_REFERENCE_PATTERN = re.compile(r"\bMemoryProfileGateway\b")
@@ -662,11 +666,17 @@ PRIVACY_COPY_INTERACTION_PATTERN = re.compile(
     r"ScaffoldMessenger|SnackBar|FilteringTextInputFormatter)\b|"
     r"\baction\s*:|\bon[A-Z]\w*\s*:"
 )
-PRIVACY_VISIBILITY_WIRE_VALUES = {
-    "private": "private",
-    "followers": "followers",
-    "public": "public",
+# Decision 0053: the V2 privacy audience and the four reviewed facets.
+PRIVACY_AUDIENCE_WIRE_VALUES = {
+    "self": "self",
+    "everyone": "everyone",
 }
+PRIVACY_VISIBILITY_FACETS = (
+    "totalAssets",
+    "miningPower",
+    "communities",
+    "tradeHistory",
+)
 PRIVACY_POSITIVE_COMMIT_PATTERN = re.compile(
     r"\b(?:(?:settings?|privacy|preferences?|changes?)\s+(?:are\s+)?"
     r"(?:now\s+)?(?:saved|committed|applied|updated|live)|"
@@ -681,10 +691,13 @@ PRIVACY_POSITIVE_COMMIT_CJK_PATTERN = re.compile(
     r"(?:已保存|保存成功|已提交|提交成功|已应用|应用成功|已更新|更新成功|"
     r"已生效|生效)"
 )
+# Decision 0053 renamed the V2 privacy evidence: the copy-trade preference
+# became an audience enumeration plus four independent visibility facets.
 PRIVACY_BEHAVIOR_TEST_MARKERS = {
     Path("test/privacy_models_test.dart"): (
         "uses the exact fail-closed backend defaults",
-        "round-trips only the reviewed copy-trade visibility values",
+        "round-trips only the reviewed audience values",
+        "exposes exactly the four reviewed visibility facets",
         "enforces the version and timestamp biconditional",
         "keeps contract failures sanitized",
     ),
@@ -697,12 +710,12 @@ PRIVACY_BEHAVIOR_TEST_MARKERS = {
         "invalidation and disposal retire late work safely",
     ),
     Path("test/privacy_presentation_screen_test.dart"): (
-        "production Privacy fails closed without controls or preview claims",
-        "Preview edits both exact preferences and commits only advanced evidence",
-        "version conflict preserves both draft fields until reload",
+        "every load failure maps to one honest state, never empty",
+        "Preview edits anonymous mode and one facet, then saves once",
+        "version conflict preserves every draft field until reload",
         "mounted Privacy replaces the old owner after gateway rotation",
         "Privacy supports a 390pt screen at 2x Dynamic Type",
-        "legacy H3 controls and fake Copy permission save are absent",
+        "legacy copy-trade controls and permission saves are absent",
     ),
 }
 NOTIFICATION_PREFERENCES_GATEWAY_PATH = Path(
@@ -3160,7 +3173,7 @@ CHAT_PREVIEW_CONVERSATION_ID_TEST_MARKERS = {
     ),
 }
 CHAT_PREVIEW_CONVERSATION_ID_TEST_FINGERPRINT = (
-    "1ea04567658da05108e3ebb1519500374776759cce6fd275cbc1d7408f104c0d"
+    "2f25fa3842d9d0a340fd215b29312bcf25a3e01a214334a47b4458847fcb8c4a"
 )
 CHAT_PREVIEW_CONVERSATION_ID_SOURCE_FINGERPRINTS = {
     "resolver": "9b441d2d8c58355db0d3bc47100f6d85534a4f4569a646126496a62b68520547",
@@ -3496,8 +3509,11 @@ SECURITY_CAPABILITY_TRUTH_EXECUTABLE_TEST_EVIDENCE = {
             r"\bfind\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(",
             r"\bfind\.byType\s*\(\s*Switch\s*\)\s*,\s*findsNothing",
             r"\bfind\.textContaining\s*\([\s\S]*?\)\s*,\s*findsNothing",
-            r"\bfinal\s+continueWithoutChanges\s*=\s*find\.text\s*\(",
-            r"\b_tap\s*\(\s*tester\s*,\s*continueWithoutChanges\s*\)",
+            # Decision 0053: the continue-without-changes action is now the
+            # page's single keyed primary button.
+            r"\b_tap\s*\(\s*tester\s*,\s*find\.byKey\s*\(\s*const\s+"
+            r"ValueKey<String>\s*\(",
+            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*3\s*\)",
             r"\bexpect\s*\(\s*destinations\s*,\s*<String>\s*\[",
         ),
         "H5 keeps capability availability separate from configured protection": (
@@ -3517,7 +3533,8 @@ SECURITY_CAPABILITY_TRUTH_EXECUTABLE_TEST_EVIDENCE = {
             r"\brouter\.go\s*\(",
             r"\bfind\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(",
             r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNothing",
-            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*3\s*\)",
+            # Every reviewed A11 method stays unavailable in production.
+            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*4\s*\)",
             r"\bfind\.byType\s*\(\s*Switch\s*\)\s*,\s*findsNothing",
         ),
         "production LoopApp H5 keeps protection status unavailable": (
@@ -3543,10 +3560,11 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
     errors = require_fragments(
         root,
         {
+            # Decision 0053 rebuilt A11 on the V2 design system in zh-CN.
             "lib/features/account/account_screens.dart": (
                 "protection-setup-unavailable",
-                "Continue without changes",
-                "No app PIN is stored or checked",
+                "security-setup-continue",
+                "App 不会自行存储 PIN",
             ),
             "lib/features/profile/profile_screens.dart": (
                 "protection-status-unavailable",
@@ -3600,8 +3618,8 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
     account_path = root / "lib/features/account/account_screens.dart"
     if account_path.is_file():
         source = strip_dart_comments(read_text(account_path))
-        start = source.find("class _SecuritySetupScreen")
-        end = source.find("class _ProfileSetupScreen", start + 1)
+        start = source.find("class SecuritySetupScreen")
+        end = source.find("class UnknownAccountScreen", start + 1)
         if start < 0 or end < 0:
             errors.append("A11 security setup must retain one bounded reviewed slice")
         else:
@@ -3611,6 +3629,8 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
                 "Save protection",
                 "stored by the app",
                 "Fallback protection",
+                "保存保护设置",
+                "由 App 保存",
             ):
                 if marker in setup:
                     errors.append(
@@ -3631,13 +3651,20 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
                 is None
             ):
                 errors.append(
-                    "A11 must preserve exactly one truthful Continue without changes action"
+                    "A11 must preserve exactly one truthful continue-without-changes action"
+                )
+            # Every listed method states an availability, never an
+            # enrollment. Only positive trailing labels are inspected, so the
+            # page may still say that availability does not mean enabled.
+            if re.search(r"trailing\s*:\s*'(?:已开启|已启用|已设置)'", setup):
+                errors.append(
+                    "A11 must not present a capability as an enabled protection"
                 )
 
     profile_path = root / "lib/features/profile/profile_screens.dart"
     if profile_path.is_file():
         source = strip_dart_comments(read_text(profile_path))
-        start = source.find("class _SecurityCenter")
+        start = source.find("class _SecurityCenter")  # noqa: E501
         end = source.find("class _DeviceManagement", start + 1)
         if start < 0 or end < 0:
             errors.append("H5 Security Center must retain one bounded reviewed slice")
@@ -3679,7 +3706,21 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
                     errors.append(
                         f"H5 `{title}` must remain disabled until a typed setup adapter exists"
                     )
-            for destination in ("devices", "seed-backup", "social-recovery"):
+            # Decision 0053: LOOP has no recovery phrase, so the `seed-backup`
+            # information route is gone. Private-key export replaces it and
+            # stays disabled until a reviewed export adapter exists.
+            if "导出私钥" not in security:
+                errors.append(
+                    "H5 must keep a truthful private-key export entry in place "
+                    "of the retired recovery phrase"
+                )
+            if "onNavigate('seed-backup')" in security or "助记词" in (
+                security.replace("LOOP 不使用助记词", "")
+            ):
+                errors.append(
+                    "H5 must not restore a recovery-phrase surface or route"
+                )
+            for destination in ("devices", "social-recovery"):
                 if f"onNavigate('{destination}')" not in security:
                     errors.append(
                         f"H5 must preserve its truthful `{destination}` information route"
@@ -4454,10 +4495,20 @@ V2_SESSION_TEST_MARKERS = {
 V2_SECURE_STORAGE_OWNER = Path(
     "lib/integrations/backend/v2/loop_v2_session_store.dart"
 )
+# The activation journal (decision 0053) reuses the session store's secure
+# facade instead of opening a second platform store. It may name the facade
+# type, but only the owner above may import or instantiate the platform SDK.
+V2_SECURE_FACADE_CONSUMERS = frozenset(
+    {
+        V2_SECURE_STORAGE_OWNER,
+        Path("lib/integrations/backend/v2/profile/loop_v2_activation_store.dart"),
+    }
+)
 V2_SECURE_JOURNAL_RUNTIME_USERS = frozenset(
     {
         V2_SECURE_STORAGE_OWNER,
         Path("lib/integrations/backend/v2/loop_v2_session_providers.dart"),
+        Path("lib/integrations/backend/v2/profile/loop_v2_profile_providers.dart"),
     }
 )
 V2_SERIALIZED_JOURNAL_KEYS = (
@@ -4752,7 +4803,7 @@ def check_v2_session_contract(root: Path) -> list[str]:
             if re.search(
                 r"\b(?:LoopV2SecureKeyValueStore|FlutterLoopV2SecureKeyValueStore)\b",
                 executable,
-            ) and relative != V2_SECURE_STORAGE_OWNER:
+            ) and relative not in V2_SECURE_FACADE_CONSUMERS:
                 errors.append(
                     "the raw V2 secure key-value facade must not escape its "
                     f"session store: {relative}"
@@ -4920,6 +4971,12 @@ def check_v2_session_contract(root: Path) -> list[str]:
         root / "lib/integrations/backend/v2/loop_v2_meta_providers.dart"
     )
     meta_startup_path = root / "lib/app.dart"
+    # Decision 0053: capability availability may be projected for display copy
+    # (an unavailable reason code), through one pure projection that owns no
+    # routing, authentication or request. It is the only other reader.
+    capability_projection_path = (
+        root / "lib/core/policy/loop_capability_projection.dart"
+    )
     if lib_root.is_dir():
         for path in lib_root.rglob("*.dart"):
             if path == meta_provider_path:
@@ -4927,6 +4984,23 @@ def check_v2_session_contract(root: Path) -> list[str]:
             executable = strip_dart_comments_and_strings(read_text(path))
             references = executable.count("loopV2MetaSnapshotProvider")
             if references == 0:
+                continue
+            if path == capability_projection_path:
+                if references != 1 or not re.search(
+                    r"ref\.watch\(loopV2MetaSnapshotProvider\)\.value",
+                    executable,
+                ):
+                    errors.append(
+                        "the capability projection must read the D0 snapshot "
+                        "exactly once and only as an observed value"
+                    )
+                for forbidden in ("GoRouter", "context.go", "context.push",
+                                  "Dio", "authorize("):
+                    if forbidden in executable:
+                        errors.append(
+                            "the capability projection must stay pure: "
+                            f"{forbidden} is not allowed"
+                        )
                 continue
             if path != meta_startup_path:
                 errors.append(
@@ -7859,11 +7933,39 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
                 "returning to Community"
             )
 
+        # Decision 0053: `auth-otp` became a real credential route, so the
+        # gate names the credential set explicitly. A verified session must
+        # still leave every credential page for Community immediately.
         if re.search(
-            r"if\s*\(\s*isAuthRoute\s*\)\s*return\s*'/community'\s*;",
+            r"if\s*\(\s*credentialRoutes\.contains\(location\)\s*\)\s*"
+            r"return\s*'/community'\s*;",
             compact_source,
         ) is None:
             errors.append("authenticated entry must return directly to Community")
+        credential_routes = re.search(
+            r"const\s+credentialRoutes\s*=\s*<String>\{([^}]*)\}", compact_source
+        )
+        if credential_routes is None or sorted(
+            value.strip().strip("'")
+            for value in credential_routes.group(1).split(",")
+            if value.strip()
+        ) != ["/auth", "/auth/otp"]:
+            errors.append(
+                "the authenticated gate must cover exactly the two credential "
+                "routes `/auth` and `/auth/otp`"
+            )
+        signed_out_routes = re.search(
+            r"const\s+signedOutRoutes\s*=\s*<String>\{([^}]*)\}", compact_source
+        )
+        if signed_out_routes is None or sorted(
+            value.strip().strip("'")
+            for value in signed_out_routes.group(1).split(",")
+            if value.strip()
+        ) != ["/auth", "/auth/otp", "/auth/wallet", "/splash"]:
+            errors.append(
+                "signed-out sessions may reach only the reviewed pre-login "
+                "locations"
+            )
         for path, destination in (
             ("/", "/community"),
             ("/home", "/community"),
@@ -7883,11 +7985,14 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
         profile_slice = source[
             profile_start : profile_end if profile_end >= 0 else len(source)
         ]
+        # Decision 0053: the Profile root's back control is the shared topbar
+        # button supplied through `onBack`; the fallback destination is still
+        # Community and still direct-link safe.
         profile_fallback_fragments = (
-            "ValueKey<String>('profile-back-to-community')",
+            "onBack: back,",
             "Navigator.of(context).canPop()",
             "context.pop();",
-            "context.go('/community');",
+            "context.go(LoopRouteManifest.defaultPath);",
         )
         if profile_start < 0 or profile_end < 0 or any(
             fragment not in profile_slice
@@ -8834,9 +8939,14 @@ def check_profile_application_contract(root: Path) -> list[str]:
     if models_path.is_file():
         models_code = strip_dart_comments_and_strings(read_text(models_path))
         actual_values_fields = dart_class_fields(models_code, "ProfileValues")
+        # Decision 0053: the V2 profile resource adds bio and the closed
+        # interest enumeration. The set stays exact so an unreviewed field
+        # cannot appear.
         expected_values_fields = {
             ("final", "String?", "alias"),
             ("final", "String?", "avatarRef"),
+            ("final", "String?", "bio"),
+            ("final", "List<ProfileInterest>", "interests"),
         }
         if actual_values_fields != expected_values_fields:
             rendered_fields = ", ".join(
@@ -8846,16 +8956,22 @@ def check_profile_application_contract(root: Path) -> list[str]:
                 )
             ) or "none"
             errors.append(
-                "ProfileValues fields must be exactly nullable String alias "
-                "and nullable String avatarRef; found: " + rendered_fields
+                "ProfileValues fields must be exactly nullable String alias, "
+                "nullable String avatarRef, nullable String bio and a closed "
+                "ProfileInterest list; found: " + rendered_fields
             )
         actual_resource_fields = dart_class_fields(
             models_code, "ProfileResource"
         )
+        # Decision 0053: the server-owned identity fields join the resource.
+        # loopId stays nullable only because the frozen V1 transport has none.
         expected_resource_fields = {
             ("final", "int", "version"),
             ("final", "ProfileValues", "values"),
             ("final", "DateTime?", "updatedAt"),
+            ("final", "String?", "loopId"),
+            ("final", "ProfileStatus", "profileStatus"),
+            ("final", "DateTime?", "activatedAt"),
         }
         if actual_resource_fields != expected_resource_fields:
             rendered_fields = ", ".join(
@@ -8866,20 +8982,28 @@ def check_profile_application_contract(root: Path) -> list[str]:
             ) or "none"
             errors.append(
                 "ProfileResource fields must be exactly final int version, "
-                "final ProfileValues values, and final nullable DateTime "
-                "updatedAt; found: " + rendered_fields
+                "final ProfileValues values, final nullable DateTime updatedAt, "
+                "final nullable String loopId, final ProfileStatus "
+                "profileStatus and final nullable DateTime activatedAt; "
+                "found: " + rendered_fields
             )
 
-    surface_path = root / PROFILE_SURFACE_PATH
+    # Decision 0053: the Profile edit surface lives in profile_v2_screens.
+    surface_path = root / PROFILE_V2_SURFACE_PATH
     if surface_path.is_file():
         surface = strip_dart_comments(read_text(surface_path))
-        edit_start = surface.find("class _ProfileEdit")
-        privacy_start = surface.find("class _PrivacyCenter", edit_start)
+        edit_start = surface.find("class ProfileEditScreen")
+        privacy_start = surface.find("class PrivacyCenterScreen", edit_start)
         edit_surface = (
             surface[edit_start:privacy_start]
             if edit_start >= 0 and privacy_start > edit_start
             else ""
         )
+        if not edit_surface:
+            errors.append(
+                "Profile edit must remain one bounded reviewed surface in "
+                f"{PROFILE_V2_SURFACE_PATH}"
+            )
         if re.search(r"\b(?:ScaffoldMessenger|SnackBar)\b", edit_surface):
             errors.append(
                 "Profile edit must derive save evidence from ProfileState and "
@@ -8946,77 +9070,79 @@ def check_privacy_application_contract(root: Path) -> list[str]:
     if models_path.is_file():
         models_source = strip_dart_comments(read_text(models_path))
         models_code = strip_dart_comments_and_strings(models_source)
-        visibility_match = re.search(
-            r"enum\s+CopyTradeVisibility\s*\{(?P<body>.*?)\s*;",
-            models_code,
+        # Decision 0053: V2 privacy replaced the copy-trade preference with a
+        # closed audience enumeration and four independent visibility facets.
+        # Copytrade is retired and must never reappear here.
+        if re.search(r"\bCopyTradeVisibility\b", models_code):
+            errors.append(
+                "copy-trade visibility is retired and must not return to the "
+                "Privacy contract"
+            )
+        audience_match = re.search(
+            r"enum\s+PrivacyAudience\s*\{(?P<body>.*?)\s*;",
+            models_source,
             re.DOTALL,
         )
-        visibility_members = (
+        audience_members = (
             {
-                member.strip()
-                for member in visibility_match.group("body").split(",")
+                re.split(r"[(\s]", member.strip(), maxsplit=1)[0]
+                for member in audience_match.group("body").split(",")
                 if member.strip()
             }
-            if visibility_match
+            if audience_match
             else set()
         )
-        if visibility_members != {"private", "followers", "public"}:
+        if audience_members != set(PRIVACY_AUDIENCE_WIRE_VALUES):
             errors.append(
-                "CopyTradeVisibility must contain exactly private, followers, "
-                "and public"
+                "PrivacyAudience must contain exactly self and everyone"
             )
-
-        wire_getter_match = re.search(
-            r"String\s+get\s+wireValue\s*=>\s*switch\s*\(\s*this\s*\)\s*"
-            r"\{(?P<body>.*?)\}\s*;",
-            models_source,
-            re.DOTALL,
-        )
-        forward_wire_values = (
-            {
-                member: wire_value
-                for member, _, wire_value in re.findall(
-                    r"\bCopyTradeVisibility\.(\w+)\s*=>\s*(['\"])([^'\"]*)\2",
-                    wire_getter_match.group("body"),
-                )
-            }
-            if wire_getter_match
-            else {}
-        )
-        from_wire_match = re.search(
-            r"static\s+CopyTradeVisibility\s+fromWire\s*\(\s*String\s+\w+\s*"
-            r"\)\s*=>\s*switch\s*\([^)]*\)\s*\{(?P<body>.*?)\}\s*;",
-            models_source,
-            re.DOTALL,
-        )
-        reverse_wire_values = (
-            {
-                wire_value: member
-                for _, wire_value, member in re.findall(
-                    r"(['\"])([^'\"]*)\1\s*=>\s*CopyTradeVisibility\.(\w+)\b",
-                    from_wire_match.group("body"),
-                )
-            }
-            if from_wire_match
-            else {}
-        )
-        expected_reverse_wire_values = {
-            wire_value: member
-            for member, wire_value in PRIVACY_VISIBILITY_WIRE_VALUES.items()
+        audience_wire_values = {
+            member: wire_value
+            for member, _, wire_value in re.findall(
+                r"\b(\w+)\((['\"])([^'\"]*)\2\)",
+                audience_match.group("body") if audience_match else "",
+            )
         }
-        if (
-            forward_wire_values != PRIVACY_VISIBILITY_WIRE_VALUES
-            or reverse_wire_values != expected_reverse_wire_values
-        ):
+        if audience_wire_values != PRIVACY_AUDIENCE_WIRE_VALUES:
             errors.append(
-                "CopyTradeVisibility wire values must map exactly to private, "
-                "followers, and public in both directions"
+                "PrivacyAudience wire values must map exactly to self and "
+                "everyone"
+            )
+        facet_match = re.search(
+            r"enum\s+PrivacyVisibilityFacet\s*\{(?P<body>.*?)\s*;",
+            models_source,
+            re.DOTALL,
+        )
+        facet_wire_values = [
+            wire_value
+            for _, _, wire_value in re.findall(
+                r"\b(\w+)\((['\"])([^'\"]*)\2\s*,",
+                facet_match.group("body") if facet_match else "",
+            )
+        ]
+        if facet_wire_values != list(PRIVACY_VISIBILITY_FACETS):
+            errors.append(
+                "PrivacyVisibilityFacet must be exactly totalAssets, "
+                "miningPower, communities and tradeHistory, in contract order"
+            )
+        actual_visibility_fields = dart_class_fields(
+            models_code, "PrivacyVisibility"
+        )
+        expected_visibility_fields = {
+            ("final", "PrivacyAudience", facet)
+            for facet in PRIVACY_VISIBILITY_FACETS
+        }
+        if actual_visibility_fields != expected_visibility_fields:
+            errors.append(
+                "PrivacyVisibility must hold exactly one PrivacyAudience per "
+                "reviewed facet"
             )
 
         actual_values_fields = dart_class_fields(models_code, "PrivacyValues")
         expected_values_fields = {
             ("final", "bool", "discoverable"),
-            ("final", "CopyTradeVisibility", "copyTradeVisibility"),
+            ("final", "bool", "anonymousMode"),
+            ("final", "PrivacyVisibility", "visibility"),
         }
         if actual_values_fields != expected_values_fields:
             rendered_fields = ", ".join(
@@ -9026,8 +9152,9 @@ def check_privacy_application_contract(root: Path) -> list[str]:
                 )
             ) or "none"
             errors.append(
-                "PrivacyValues fields must be exactly final bool discoverable "
-                "and final CopyTradeVisibility copyTradeVisibility; found: "
+                "PrivacyValues fields must be exactly final bool discoverable, "
+                "final bool anonymousMode and final PrivacyVisibility "
+                "visibility; found: "
                 + rendered_fields
             )
 
@@ -9622,12 +9749,15 @@ FRIEND_FRONTEND_TEST_MARKERS = {
     Path("test/dio_loop_personalization_gateways_test.dart"): (
         "send exact authenticated GET and full-CAS PUT requests",
         "requires a strict no-store success envelope",
-        "maps exact CAS conflicts for all three resources",
+        # Decision 0053 retired the V1 privacy adapter; two live V1 resources
+        # remain (profile and social privacy).
+        "maps exact CAS conflicts for both live resources",
         "one strict 401 obtains a current token and then succeeds",
         "one bootstrap_required response reauthorizes then succeeds",
     ),
     Path("test/loop_personalization_providers_test.dart"): (
-        "missing transport or authenticated owner stays unavailable",
+        # Decision 0053: the V2 gateways also need client metadata.
+        "missing transport, client metadata, or owner stays unavailable",
         "verified owner and backend produce lazy production gateways",
         "principal and backend-provider rotation replace every gateway",
     ),
@@ -9861,11 +9991,12 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
             "lib/features/chat/chat_inbox_page.dart": (
                 "const ChatCreateMenuButton()",
             ),
-            "lib/features/profile/profile_screens.dart": (
+            # Decision 0053: the Profile root moved to profile_v2_screens; the
+            # Social privacy entry retired with the V2 privacy resource.
+            "lib/features/profile/profile_v2_screens.dart": (
                 "title: '我的好友'",
-                "onTap: () => onNavigate('friends')",
-                "title: 'Social privacy'",
-                "onTap: () => onNavigate('social-privacy')",
+                "onTap: () => widget.onNavigate('friends')",
+                "onTap: () => widget.onNavigate('privacy')",
             ),
             "lib/app.dart": (
                 "messageItem: loopStreamGroupMessageItemBuilder",
@@ -9877,9 +10008,10 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "path: '/chat/channel/:cid/alias'",
                 "builder: (context, state) => StreamGroupAliasChannelRoutePage(",
                 "path: '/profile/friends'",
-                "('/profile/social-privacy', 'social-privacy')",
                 "'friends' => '/profile/friends'",
-                "'social-privacy' => '/profile/social-privacy'",
+                # Decision 0053: the retired V1 social-privacy destination
+                # resolves to the V2 Privacy centre instead of a dead route.
+                "'social-privacy' => LoopRouteManifest.pathFor('privacy')",
             ),
             "lib/main.dart": (
                 "friendGatewayProvider.overrideWith(",

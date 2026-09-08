@@ -32,16 +32,23 @@ void main() {
         find.byKey(const ValueKey<String>('protection-setup-unavailable')),
         findsOneWidget,
       );
-      expect(find.text('Protection setup is not connected'), findsWidgets);
+      expect(find.text('保护设置尚未接入'), findsOneWidget);
       expect(find.byType(Switch), findsNothing);
+      expect(find.byType(TextField), findsNothing);
       expect(find.text('Save protection'), findsNothing);
       expect(find.textContaining('stored by the app'), findsNothing);
-      expect(find.textContaining('No app PIN is stored'), findsOneWidget);
+      expect(find.textContaining('App 不会自行存储 PIN'), findsOneWidget);
+      // A declared device capability is never reported as an enabled
+      // protection: the passed-in capabilities only relabel the rows.
+      expect(find.text('可用'), findsOneWidget);
+      expect(find.text('不可用'), findsNWidgets(3));
 
-      final continueWithoutChanges = find.text('Continue without changes');
-      await _tap(tester, continueWithoutChanges);
+      await _tap(
+        tester,
+        find.byKey(const ValueKey<String>('security-setup-continue')),
+      );
 
-      expect(destinations, <String>['profile-setup']);
+      expect(destinations, <String>['loop-id-setup']);
     },
   );
 
@@ -57,7 +64,7 @@ void main() {
             mfaAvailable: true,
             appLockAvailable: true,
             deviceManagementAvailable: true,
-            recoveryPhraseRevealAvailable: true,
+            privateKeyExportAvailable: true,
             socialRecoveryAvailable: true,
           ),
           onNavigate: destinations.add,
@@ -89,17 +96,43 @@ void main() {
       await _tap(tester, appLock);
       expect(destinations, isEmpty);
 
+      // LOOP has no seed phrase: the recovery-phrase surface was removed and
+      // its id is no longer routable from Profile.
+      expect(find.text('Recovery phrase'), findsNothing);
+      expect(ProfileSurfaceScreen.supportedIds, isNot(contains('seed-backup')));
+
+      // The key-export tile reports capability only; it opens nothing and
+      // reveals no key material here.
+      final keyExport = find.text('导出私钥');
+      expect(keyExport, findsOneWidget);
+      expect(_settingsSemantics(tester, '导出私钥').properties.enabled, isFalse);
+
       await _tap(tester, find.text('Devices & sessions'));
-      await _tap(tester, find.text('Recovery phrase'));
+      await _tap(tester, keyExport);
       await _tap(tester, find.text('Social recovery'));
 
-      expect(destinations, <String>[
-        'devices',
-        'seed-backup',
-        'social-recovery',
-      ]);
+      expect(destinations, <String>['devices', 'social-recovery']);
     },
   );
+
+  testWidgets('no recovery-phrase or seed surface is reachable from Profile', (
+    tester,
+  ) async {
+    for (final retiredId in <String>[
+      'seed-backup',
+      'seed',
+      'recovery-phrase',
+    ]) {
+      expect(ProfileSurfaceScreen.supportedIds, isNot(contains(retiredId)));
+
+      await _pumpPhone(tester, ProfileSurfaceScreen.fromId(retiredId));
+
+      expect(find.text('Setting unavailable'), findsOneWidget);
+      expect(find.text('No changes made'), findsOneWidget);
+      expect(find.textContaining('Recovery phrase'), findsNothing);
+      expect(find.byType(TextField), findsNothing);
+    }
+  });
 
   testWidgets('production LoopApp A11 keeps every setup method unavailable', (
     tester,
@@ -113,8 +146,8 @@ void main() {
       find.byKey(const ValueKey<String>('protection-setup-unavailable')),
       findsOneWidget,
     );
-    expect(find.text('Available'), findsNothing);
-    expect(find.text('Unavailable'), findsNWidgets(3));
+    expect(find.text('可用'), findsNothing);
+    expect(find.text('不可用'), findsNWidgets(4));
     expect(find.byType(Switch), findsNothing);
   });
 
@@ -133,6 +166,11 @@ void main() {
     expect(find.text('Available'), findsNothing);
     expect(find.text('Unavailable'), findsNWidgets(5));
     expect(find.text('Core protections ready'), findsNothing);
+    // The key-export tile stays unavailable and no seed surface is offered.
+    expect(find.text('导出私钥'), findsOneWidget);
+    expect(_settingsSemantics(tester, '导出私钥').properties.enabled, isFalse);
+    expect(find.textContaining('LOOP 不使用助记词'), findsOneWidget);
+    expect(find.text('Recovery phrase'), findsNothing);
   });
 
   test('A11 and H5 catalog copy reports current delivery truth', () {

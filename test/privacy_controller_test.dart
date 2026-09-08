@@ -49,14 +49,12 @@ void main() {
 
       final updated = await gateway.replace(
         expectedVersion: 1,
-        values: _values(
-          discoverable: true,
-          visibility: CopyTradeVisibility.followers,
-        ),
+        values: _values(discoverable: true, anonymousMode: true),
       );
       expect(updated.version, 2);
       expect(updated.values.discoverable, isTrue);
-      expect(updated.values.copyTradeVisibility, CopyTradeVisibility.followers);
+      expect(updated.values.anonymousMode, isTrue);
+      expect(updated.values.visibility, const PrivacyVisibility.defaults());
       expect(clockCalls, 2);
     });
 
@@ -70,7 +68,7 @@ void main() {
       await expectLater(
         gateway.replace(
           expectedVersion: 0,
-          values: _values(visibility: CopyTradeVisibility.public),
+          values: _values(shared: PrivacyVisibilityFacet.totalAssets),
         ),
         throwsA(_gatewayFailure(PrivacyGatewayFailureKind.versionConflict)),
       );
@@ -80,7 +78,7 @@ void main() {
       final maximum = _resource(
         privacyMaximumVersion,
         discoverable: true,
-        visibility: CopyTradeVisibility.followers,
+        anonymousMode: true,
       );
       final gateway = MemoryPrivacyGateway(initialResource: maximum);
 
@@ -91,7 +89,7 @@ void main() {
       await expectLater(
         gateway.replace(
           expectedVersion: privacyMaximumVersion,
-          values: _values(visibility: CopyTradeVisibility.public),
+          values: _values(shared: PrivacyVisibilityFacet.totalAssets),
         ),
         throwsA(_gatewayFailure(PrivacyGatewayFailureKind.unavailable)),
       );
@@ -128,8 +126,8 @@ void main() {
       );
     });
 
-    test('loads, edits both exact values, and discards', () async {
-      final initial = _resource(2, visibility: CopyTradeVisibility.followers);
+    test('loads, edits every exact value, and discards', () async {
+      final initial = _resource(2, anonymousMode: true);
       final container = _container(
         MemoryPrivacyGateway(initialResource: initial),
       );
@@ -143,10 +141,22 @@ void main() {
       expect(state.expectedVersion, 2);
 
       controller.editDiscoverable(true);
-      controller.editCopyTradeVisibility(CopyTradeVisibility.public);
+      controller.editAnonymousMode(false);
+      controller.editVisibility(
+        PrivacyVisibilityFacet.totalAssets,
+        PrivacyAudience.everyone,
+      );
       state = container.read(privacyControllerProvider);
       expect(state.draft.discoverable, isTrue);
-      expect(state.draft.copyTradeVisibility, CopyTradeVisibility.public);
+      expect(state.draft.anonymousMode, isFalse);
+      expect(
+        state.draft.visibility[PrivacyVisibilityFacet.totalAssets],
+        PrivacyAudience.everyone,
+      );
+      expect(
+        state.draft.visibility[PrivacyVisibilityFacet.tradeHistory],
+        PrivacyAudience.self,
+      );
       expect(state.isDirty, isTrue);
       expect(state.canSave, isTrue);
 
@@ -177,7 +187,7 @@ void main() {
         PrivacyPhase.loading,
       );
 
-      final loaded = _resource(7, visibility: CopyTradeVisibility.followers);
+      final loaded = _resource(7, anonymousMode: true);
       loadGate.complete(loaded);
       await firstLoad;
 
@@ -190,9 +200,10 @@ void main() {
       expect(gateway.replaceCalls, 1);
       expect(gateway.expectedVersions, <int>[7]);
       expect(gateway.candidates.single.discoverable, isTrue);
+      expect(gateway.candidates.single.anonymousMode, isTrue);
       expect(
-        gateway.candidates.single.copyTradeVisibility,
-        CopyTradeVisibility.followers,
+        gateway.candidates.single.visibility,
+        const PrivacyVisibility.defaults(),
       );
       expect(
         container.read(privacyControllerProvider).phase,
@@ -209,13 +220,7 @@ void main() {
         PrivacyPhase.saving,
       );
 
-      saveGate.complete(
-        _resource(
-          8,
-          discoverable: true,
-          visibility: CopyTradeVisibility.followers,
-        ),
-      );
+      saveGate.complete(_resource(8, discoverable: true, anonymousMode: true));
       await firstSave;
       final saved = container.read(privacyControllerProvider);
       expect(saved.phase, PrivacyPhase.ready);
@@ -236,7 +241,11 @@ void main() {
       final controller = container.read(privacyControllerProvider.notifier);
       await controller.load();
       controller.editDiscoverable(true);
-      controller.editCopyTradeVisibility(CopyTradeVisibility.followers);
+      controller.editAnonymousMode(true);
+      controller.editVisibility(
+        PrivacyVisibilityFacet.tradeHistory,
+        PrivacyAudience.everyone,
+      );
       final draft = container.read(privacyControllerProvider).draft;
 
       await controller.save();
@@ -253,7 +262,7 @@ void main() {
       final remote = _resource(
         4,
         discoverable: true,
-        visibility: CopyTradeVisibility.public,
+        shared: PrivacyVisibilityFacet.totalAssets,
       );
       var loadCalls = 0;
       var reloadFails = true;
@@ -276,7 +285,7 @@ void main() {
       final controller = container.read(privacyControllerProvider.notifier);
       await controller.load();
       controller.editDiscoverable(true);
-      controller.editCopyTradeVisibility(CopyTradeVisibility.followers);
+      controller.editAnonymousMode(true);
       final draft = container.read(privacyControllerProvider).draft;
 
       await controller.save();
@@ -288,8 +297,13 @@ void main() {
       expect(conflicted.draft, draft);
       expect(conflicted.canEdit, isFalse);
       expect(conflicted.canSave, isFalse);
+      expect(() => controller.editDiscoverable(false), throwsStateError);
+      expect(() => controller.editAnonymousMode(false), throwsStateError);
       expect(
-        () => controller.editCopyTradeVisibility(CopyTradeVisibility.public),
+        () => controller.editVisibility(
+          PrivacyVisibilityFacet.totalAssets,
+          PrivacyAudience.everyone,
+        ),
         throwsStateError,
       );
 
@@ -321,7 +335,7 @@ void main() {
       final gateway = _TestPrivacyGateway(
         onLoad: () async => loaded,
         onReplace: (_, values) async => mismatchValues
-            ? _resource(5, visibility: CopyTradeVisibility.public)
+            ? _resource(5, shared: PrivacyVisibilityFacet.totalAssets)
             : PrivacyResource(
                 version: 4,
                 values: values,
@@ -424,10 +438,7 @@ void main() {
 
         final stillActive = controller.load();
         expect(identical(active, stillActive), isTrue);
-        final newResource = _resource(
-          5,
-          visibility: CopyTradeVisibility.followers,
-        );
+        final newResource = _resource(5, anonymousMode: true);
         newLoad.complete(newResource);
         await active;
         expect(container.read(privacyControllerProvider).resource, newResource);
@@ -443,10 +454,7 @@ void main() {
           onLoad: () async => initial,
           onReplace: (_, _) => oldSave.future,
         );
-        final newInitial = _resource(
-          9,
-          visibility: CopyTradeVisibility.followers,
-        );
+        final newInitial = _resource(9, anonymousMode: true);
         final newSave = Completer<PrivacyResource>();
         final newGateway = _TestPrivacyGateway(
           mode: PrivacyMode.production,
@@ -473,11 +481,7 @@ void main() {
         expect(identical(active, stillActive), isTrue);
         expect(newGateway.replaceCalls, 1);
 
-        final saved = _resource(
-          10,
-          discoverable: true,
-          visibility: CopyTradeVisibility.followers,
-        );
+        final saved = _resource(10, discoverable: true, anonymousMode: true);
         newSave.complete(saved);
         await active;
         expect(container.read(privacyControllerProvider).resource, saved);
@@ -527,22 +531,34 @@ ProviderContainer _container(PrivacyGateway gateway) {
 
 PrivacyValues _values({
   bool discoverable = false,
-  CopyTradeVisibility visibility = CopyTradeVisibility.private,
+  bool anonymousMode = false,
+  PrivacyVisibilityFacet? shared,
 }) {
   return PrivacyValues(
     discoverable: discoverable,
-    copyTradeVisibility: visibility,
+    anonymousMode: anonymousMode,
+    visibility: shared == null
+        ? const PrivacyVisibility.defaults()
+        : const PrivacyVisibility.defaults().withFacet(
+            shared,
+            PrivacyAudience.everyone,
+          ),
   );
 }
 
 PrivacyResource _resource(
   int version, {
   bool discoverable = false,
-  CopyTradeVisibility visibility = CopyTradeVisibility.private,
+  bool anonymousMode = false,
+  PrivacyVisibilityFacet? shared,
 }) {
   return PrivacyResource(
     version: version,
-    values: _values(discoverable: discoverable, visibility: visibility),
+    values: _values(
+      discoverable: discoverable,
+      anonymousMode: anonymousMode,
+      shared: shared,
+    ),
     updatedAt: version == 0 ? null : DateTime.utc(2026, 8, 25, 1, version % 60),
   );
 }

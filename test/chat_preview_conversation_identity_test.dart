@@ -401,7 +401,12 @@ Future<GoRouter> _pumpPreviewApp(
     ),
   );
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Enter development preview'));
+  final previewButton = find.byKey(
+    const ValueKey<String>('enter-development-preview-button'),
+  );
+  await tester.ensureVisible(previewButton);
+  await tester.pump();
+  await tester.tap(previewButton);
   await tester.pumpAndSettle();
   return GoRouter.of(tester.element(find.byType(LoopTabBar)));
 }

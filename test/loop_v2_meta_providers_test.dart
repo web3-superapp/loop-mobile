@@ -132,7 +132,7 @@ void main() {
       repository.capabilitiesResult.complete(_capabilities());
       await tester.pumpAndSettle();
 
-      expect(find.text('Welcome to LOOP'), findsOneWidget);
+      expect(find.text('欢迎来到 LOOP'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('community-screen')),
         findsNothing,

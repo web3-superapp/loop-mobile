@@ -9,46 +9,77 @@ import 'package:loop_mobile/integrations/backend/loop_authenticated_session.dart
 import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.dart';
 import 'package:loop_mobile/integrations/personalization/loop_personalization_providers.dart';
 
-void main() {
-  test('missing transport or authenticated owner stays unavailable', () async {
-    final owner = await _owner('did:privy:owner-a');
-    addTearDown(owner.dispose);
-    final dio = Dio(BaseOptions(baseUrl: 'https://api-dev.quant-dinger.cc/'));
-    addTearDown(() => dio.close(force: true));
+const _metadata = LoopV2ClientMetadata(
+  clientVersion: '1.0.0',
+  platform: LoopV2Platform.ios,
+);
 
-    final containers = <ProviderContainer>[
-      ProviderContainer(
-        overrides: [
-          loopBackendDioProvider.overrideWithValue(null),
-          loopAuthenticatedSessionProvider.overrideWithValue(owner.session),
-        ],
-      ),
-      ProviderContainer(
+void main() {
+  test(
+    'missing transport, client metadata, or owner stays unavailable',
+    () async {
+      final owner = await _owner('did:privy:owner-a');
+      addTearDown(owner.dispose);
+      final dio = Dio(BaseOptions(baseUrl: 'https://api-dev.quant-dinger.cc/'));
+      addTearDown(() => dio.close(force: true));
+
+      final containers = <ProviderContainer>[
+        ProviderContainer(
+          overrides: [
+            loopBackendDioProvider.overrideWithValue(null),
+            loopV2ClientMetadataProvider.overrideWithValue(_metadata),
+            loopAuthenticatedSessionProvider.overrideWithValue(owner.session),
+          ],
+        ),
+        ProviderContainer(
+          overrides: [
+            loopBackendDioProvider.overrideWithValue(dio),
+            loopV2ClientMetadataProvider.overrideWithValue(_metadata),
+            loopAuthenticatedSessionProvider.overrideWithValue(null),
+          ],
+        ),
+      ];
+      for (final container in containers) {
+        expect(
+          container.read(loopProfileGatewayProvider).mode,
+          ProfileMode.unavailable,
+        );
+        expect(
+          container.read(loopPrivacyGatewayProvider).mode,
+          PrivacyMode.unavailable,
+        );
+        expect(
+          container.read(loopSocialPrivacyGatewayProvider).mode,
+          SocialPrivacyMode.unavailable,
+        );
+        container.dispose();
+      }
+
+      // The V2 profile module additionally refuses to build without client
+      // metadata; V1 Social Privacy does not carry a client-metadata header.
+      final withoutMetadata = ProviderContainer(
         overrides: [
           loopBackendDioProvider.overrideWithValue(dio),
-          loopAuthenticatedSessionProvider.overrideWithValue(null),
+          loopV2ClientMetadataProvider.overrideWithValue(null),
+          loopAuthenticatedSessionProvider.overrideWithValue(owner.session),
         ],
-      ),
-    ];
-    for (final container in containers) {
+      );
       expect(
-        container.read(loopProfileGatewayProvider).mode,
+        withoutMetadata.read(loopProfileGatewayProvider).mode,
         ProfileMode.unavailable,
       );
       expect(
-        container.read(loopPrivacyGatewayProvider).mode,
+        withoutMetadata.read(loopPrivacyGatewayProvider).mode,
         PrivacyMode.unavailable,
       );
-      expect(
-        container.read(loopSocialPrivacyGatewayProvider).mode,
-        SocialPrivacyMode.unavailable,
-      );
-      container.dispose();
-    }
-    expect(owner.requestTokens.calls, 0);
-  });
+      withoutMetadata.dispose();
+      expect(owner.requestTokens.calls, 0);
+    },
+  );
 
   test('verified owner and backend produce lazy production gateways', () async {
     final owner = await _owner('did:privy:owner-a');
@@ -58,6 +89,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         loopBackendDioProvider.overrideWithValue(dio),
+        loopV2ClientMetadataProvider.overrideWithValue(_metadata),
         loopAuthenticatedSessionProvider.overrideWithValue(owner.session),
       ],
     );
@@ -94,6 +126,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           loopBackendDioProvider.overrideWithValue(dioA),
+          loopV2ClientMetadataProvider.overrideWithValue(_metadata),
           loopAuthenticatedSessionProvider.overrideWithValue(ownerA.session),
         ],
       );
@@ -107,6 +140,7 @@ void main() {
 
       container.updateOverrides([
         loopBackendDioProvider.overrideWithValue(dioA),
+        loopV2ClientMetadataProvider.overrideWithValue(_metadata),
         loopAuthenticatedSessionProvider.overrideWithValue(ownerB.session),
       ]);
       final secondProfile = container.read(loopProfileGatewayProvider);
@@ -120,6 +154,7 @@ void main() {
 
       container.updateOverrides([
         loopBackendDioProvider.overrideWithValue(dioB),
+        loopV2ClientMetadataProvider.overrideWithValue(_metadata),
         loopAuthenticatedSessionProvider.overrideWithValue(ownerB.session),
       ]);
       expect(

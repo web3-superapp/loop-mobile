@@ -45,7 +45,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Enter development preview'));
+      final previewButton = find.byKey(
+        const ValueKey<String>('enter-development-preview-button'),
+      );
+      await tester.ensureVisible(previewButton);
+      await tester.pump();
+      await tester.tap(previewButton);
       await tester.pumpAndSettle();
       final router = GoRouter.of(
         tester.element(find.byKey(const ValueKey<String>('community-screen'))),
