@@ -145,7 +145,13 @@ final class LoopSupportPolicy {
     required this.escalationChannel,
   });
 
+  /// The server's own bound, counted in code points.
   static const maximumBodyLength = 2000;
+
+  /// The same bound expressed in UTF-16 units, which is what `String.length`
+  /// measures: one code point above the BMP is two units, so a body the server
+  /// accepts can be twice as long on the wire.
+  static const maximumWireBodyLength = maximumBodyLength * 2;
 
   final String configVersion;
   final int responseWindowHours;
@@ -185,6 +191,18 @@ final class LoopSupportTicketResult {
   final LoopSupportPolicy policy;
 }
 
+/// Why a typed body is not yet sendable. Every value names the server rule it
+/// would break, so the page never shows a disabled button without a reason.
+enum LoopSupportDraftProblem {
+  empty('请先描述你遇到的问题。'),
+  tooLong('正文超过 2000 码点，请精简后再提交。'),
+  unsafeCharacters('正文含有控制字符或不可见字符（例如换行、方向控制符），请删除后再提交。');
+
+  const LoopSupportDraftProblem(this.explanation);
+
+  final String explanation;
+}
+
 /// A validated draft. Length is counted in code points, exactly as the server
 /// does, and unsafe control characters are rejected before dispatch.
 @immutable
@@ -211,15 +229,25 @@ final class LoopSupportDraft {
     unicode: true,
   );
 
-  /// Whether [body] would be accepted, without throwing. Used to enable the
-  /// submit button rather than to decide the request.
-  static bool isSubmittable(String body) {
+  /// Why [body] cannot be sent, or `null` when it can. The page renders the
+  /// reason instead of leaving a disabled button unexplained; the same rule
+  /// decides the request, so the two can never disagree.
+  static LoopSupportDraftProblem? problemFor(String body) {
     final trimmed = body.trim();
     final runes = trimmed.runes.length;
-    return runes >= 1 &&
-        runes <= LoopSupportPolicy.maximumBodyLength &&
-        !_unsafeText.hasMatch(trimmed);
+    if (runes < 1) return LoopSupportDraftProblem.empty;
+    if (runes > LoopSupportPolicy.maximumBodyLength) {
+      return LoopSupportDraftProblem.tooLong;
+    }
+    if (_unsafeText.hasMatch(trimmed)) {
+      return LoopSupportDraftProblem.unsafeCharacters;
+    }
+    return null;
   }
+
+  /// Whether [body] would be accepted, without throwing. Used to enable the
+  /// submit button rather than to decide the request.
+  static bool isSubmittable(String body) => problemFor(body) == null;
 
   static int lengthOf(String body) => body.trim().runes.length;
 

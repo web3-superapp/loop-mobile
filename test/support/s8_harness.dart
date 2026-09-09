@@ -22,7 +22,6 @@ const s8CurrentSessionId = '0b2c1d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e';
 const s8OtherSessionId = '1c3d2e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f';
 const s8CurrentDeviceId = '2d4e3f50-6b7c-4d8e-8f90-1b2c3d4e5f60';
 const s8OtherDeviceId = '3e5f4061-7c8d-4e9f-8a01-2c3d4e5f6071';
-const s8TicketId = '4f60517 2-8d9e-4f0a-8b12-3d4e5f607182';
 const s8NotificationId = '5a716283-9e0f-4a1b-8c23-4e5f60718293';
 
 /// A port double that answers with a fixed value, a fixed failure, or never.
@@ -137,6 +136,7 @@ LoopSecuritySummary s8Summary({
           activeCount: 3,
           unlimitedCount: 1,
           indexerBlockNumber: '120659683',
+          approvalCoverageFromBlockNumber: '120600000',
           headBlockNumber: '120661145',
           observedAt: DateTime.utc(2026, 9, 9, 2),
         )

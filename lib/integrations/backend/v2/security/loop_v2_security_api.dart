@@ -376,6 +376,7 @@ final class DioLoopV2SecurityApi implements LoopV2SecurityApi {
     if (map['status'] != 'available') LoopV2ChainCodec.invalid();
     final freshness = LoopV2Contract.strictMap(map['freshness'], const <String>{
       'indexerBlockNumber',
+      'approvalCoverageFromBlockNumber',
       'headBlockNumber',
       'observedAt',
     });
@@ -391,6 +392,10 @@ final class DioLoopV2SecurityApi implements LoopV2SecurityApi {
       indexerBlockNumber: LoopV2ChainCodec.requireBlockNumber(
         freshness,
         'indexerBlockNumber',
+      ).toString(),
+      approvalCoverageFromBlockNumber: LoopV2ChainCodec.requireBlockNumber(
+        freshness,
+        'approvalCoverageFromBlockNumber',
       ).toString(),
       headBlockNumber: LoopV2ChainCodec.requireBlockNumber(
         freshness,

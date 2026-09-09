@@ -133,6 +133,23 @@ void main() {
       );
     });
 
+    testWidgets('the approvals block states where its coverage starts', (
+      tester,
+    ) async {
+      await pumpS8Page(
+        tester,
+        SecurityCenterScreen(onNavigate: (_) {}),
+        security: FakeSecurityGateway(),
+      );
+
+      final freshness = find.byKey(
+        const ValueKey<String>('security-approvals-freshness'),
+      );
+      await scrollToS8Section(tester, freshness);
+      expect(find.textContaining('授权记录自区块 120600000 起'), findsOneWidget);
+      expect(find.textContaining('索引高度 120659683'), findsOneWidget);
+    });
+
     testWidgets('the high-risk signal quotes the server policy', (
       tester,
     ) async {

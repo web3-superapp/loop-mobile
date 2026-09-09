@@ -107,6 +107,33 @@ void main() {
     expect(review.canonical.toString(), 'https://t.co/abcd1234');
   });
 
+  test('an uppercase scheme and host are normalised, not rejected', () {
+    final review = LoopUrlReview.review('HTTPS://APP.Example.ORG/Swap');
+
+    expect(review.verdict, LoopUrlVerdict.normalized);
+    expect(review.host, 'app.example.org');
+    // The path keeps its case: only the scheme and host are case-insensitive.
+    expect(review.canonical.toString(), 'https://app.example.org/Swap');
+  });
+
+  test('an IPv6 literal is flagged as an address, not a domain', () {
+    final review = LoopUrlReview.review('https://[2001:db8::1]/');
+
+    expect(review.findings, contains(LoopUrlFinding.ipLiteralHost));
+    expect(review.verdict, LoopUrlVerdict.flagged);
+    expect(review.confusableReading, isNull);
+  });
+
+  test('fullwidth Latin characters are blocked as confusables', () {
+    // `ｅ` is U+FF45, not the ASCII `e`.
+    final review = LoopUrlReview.review('https://ｅxample.com');
+
+    expect(review.verdict, LoopUrlVerdict.blocked);
+    expect(review.findings, contains(LoopUrlFinding.confusableCharacters));
+    expect(review.confusableReading, 'example.com');
+    expect(review.canonical, isNull);
+  });
+
   test('every blocking finding refuses a canonical address', () {
     for (final finding in LoopUrlFinding.values.where((f) => f.isBlocking)) {
       expect(finding.explanation, isNotEmpty, reason: finding.name);

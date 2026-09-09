@@ -335,6 +335,7 @@ class _SecurityApprovalsBlock extends StatelessWidget {
         activeCount: final active,
         unlimitedCount: final unlimited,
         indexerBlockNumber: final indexed,
+        approvalCoverageFromBlockNumber: final coverageFrom,
         headBlockNumber: final head,
         observedAt: final observedAt,
       ) =>
@@ -361,6 +362,7 @@ class _SecurityApprovalsBlock extends StatelessWidget {
             LoopProvenanceFooter(
               key: const ValueKey<String>('security-approvals-freshness'),
               text:
+                  '授权记录自区块 $coverageFrom 起 · '
                   '索引高度 $indexed / 链头 $head · '
                   '观察于 ${loopRelativeTime(observedAt)}',
             ),

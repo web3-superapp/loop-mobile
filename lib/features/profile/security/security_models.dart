@@ -284,6 +284,7 @@ final class LoopSecurityApprovalsAvailable extends LoopSecurityApprovalsBlock {
     required this.activeCount,
     required this.unlimitedCount,
     required this.indexerBlockNumber,
+    required this.approvalCoverageFromBlockNumber,
     required this.headBlockNumber,
     required this.observedAt,
   });
@@ -294,6 +295,12 @@ final class LoopSecurityApprovalsAvailable extends LoopSecurityApprovalsBlock {
 
   /// Kept as exact integer strings; never parsed into a `double`.
   final String indexerBlockNumber;
+
+  /// The first block whose `Approval` events were decoded. The counts are only
+  /// complete from here up: blocks below it were indexed for transfers only,
+  /// so an approval granted earlier would be invisible. The page states it
+  /// rather than implying the numbers cover all history.
+  final String approvalCoverageFromBlockNumber;
   final String headBlockNumber;
   final DateTime observedAt;
 }

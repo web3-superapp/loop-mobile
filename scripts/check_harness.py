@@ -3388,6 +3388,17 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
             "lib/features/profile/security/security_models.dart": (
                 "LoopSecurityCapabilityId",
                 "providerAccessTerminated",
+                "approvalCoverageFromBlockNumber",
+            ),
+            "lib/integrations/backend/v2/security/loop_v2_security_api.dart": (
+                "'approvalCoverageFromBlockNumber',",
+            ),
+            "test/s8_api_contract_test.dart": (
+                "a response claiming the provider was signed out is refused",
+                "an effect other than auditOnly is refused",
+                "a receipt for another session is refused",
+                "decodes the approval coverage start block",
+                "the register publishes no dependency version",
             ),
             "lib/core/navigation/surface_catalog.dart": (
                 "no protection setting is saved until reviewed enrollment and storage adapters exist",

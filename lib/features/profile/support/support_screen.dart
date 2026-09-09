@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -100,8 +101,8 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
     final page = state.resource.value;
     final policy = page?.policy;
     final length = LoopSupportDraft.lengthOf(_body.text);
-    final submittable =
-        !state.busy && !blocked && LoopSupportDraft.isSubmittable(_body.text);
+    final problem = LoopSupportDraft.problemFor(_body.text);
+    final submittable = !state.busy && !blocked && problem == null;
 
     return LoopDashboardPage(
       key: const ValueKey<String>('support-screen'),
@@ -149,9 +150,14 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
             child: TextField(
               key: const ValueKey<String>('support-body-field'),
               controller: _body,
-              maxLines: 5,
-              minLines: 3,
+              // The server refuses every control character, a newline
+              // included, so one is never typed rather than typed and then
+              // rejected.
+              maxLines: 1,
               enabled: !state.busy,
+              inputFormatters: <TextInputFormatter>[
+                FilteringTextInputFormatter.deny(RegExp(r'[\r\n]')),
+              ],
               onChanged: (_) => setState(() {}),
               decoration: const InputDecoration(
                 hintText: '描述你遇到的问题；不要填写私钥、助记词或验证码',
@@ -165,6 +171,20 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
               style: LoopMono.label,
             ),
           ),
+          if (problem != null && length > 0)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+              child: Text(
+                key: const ValueKey<String>('support-body-problem'),
+                problem.explanation,
+                style: LoopTypography.sora(
+                  size: 11,
+                  weight: FontWeight.w400,
+                  height: 1.5,
+                  color: LoopColors.text3,
+                ),
+              ),
+            ),
           if (state.commandFailureKind != null)
             LoopErrorState(
               key: const ValueKey<String>('support-command-error'),

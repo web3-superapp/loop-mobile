@@ -258,6 +258,42 @@ void main() {
       expect(gateway.created, isEmpty);
     });
 
+    testWidgets('an unsendable body says why, and a newline cannot be typed', (
+      tester,
+    ) async {
+      final gateway = FakeSupportGateway();
+      await pumpS8Page(
+        tester,
+        SupportScreen(onNavigate: (_) {}),
+        support: gateway,
+      );
+
+      final field = find.byKey(const ValueKey<String>('support-body-field'));
+      await scrollToS8Section(tester, field);
+      // A zero-width space is invisible but is a format character the server
+      // refuses, so the page names the rule instead of disabling in silence.
+      await tester.enterText(field, '权重\u200b问题');
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('support-body-problem')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('控制字符或不可见字符'), findsOneWidget);
+      final submit = find.byKey(const ValueKey<String>('support-submit'));
+      await scrollToS8Section(tester, submit);
+      expect(tester.widget<LoopButton>(submit).onPressed, isNull);
+
+      // The formatter keeps a newline out of the field in the first place.
+      await tester.enterText(field, '第一行\n第二行');
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(field).controller!.text, '第一行第二行');
+      expect(
+        find.byKey(const ValueKey<String>('support-body-problem')),
+        findsNothing,
+      );
+    });
+
     testWidgets('a ticket is submitted with the chosen category', (
       tester,
     ) async {

@@ -216,7 +216,10 @@ final class LoopUrlReview {
         findings: findings,
       );
     }
-    if (host.isEmpty || !host.contains('.')) {
+    // An IPv6 literal has colons and no dots, so it is recognised before the
+    // registrable-name rule rejects it for the missing dot.
+    final isIpLiteral = _ipv4.hasMatch(host) || host.contains(':');
+    if (host.isEmpty || (!isIpLiteral && !host.contains('.'))) {
       findings.add(LoopUrlFinding.missingHost);
       return LoopUrlReview._(
         input: input,
@@ -225,9 +228,7 @@ final class LoopUrlReview {
         findings: findings,
       );
     }
-    if (_ipv4.hasMatch(host) || host.contains(':')) {
-      findings.add(LoopUrlFinding.ipLiteralHost);
-    }
+    if (isIpLiteral) findings.add(LoopUrlFinding.ipLiteralHost);
     if (parsed.hasPort && parsed.port != 443) {
       findings.add(LoopUrlFinding.nonStandardPort);
     }

@@ -225,10 +225,13 @@ final class DioLoopV2SupportApi implements LoopV2SupportApi {
         maxLength: 36,
       ),
       category: category,
+      // The server counts code points; `String.length` counts UTF-16 units, so
+      // the wire bound is doubled. The exact code-point rule stays in
+      // `LoopSupportDraft`, which is what decides whether a body may be sent.
       body: LoopV2ChainCodec.requireText(
         map,
         'body',
-        maxLength: LoopSupportPolicy.maximumBodyLength,
+        maxLength: LoopSupportPolicy.maximumWireBodyLength,
       ),
       status: status,
       createdAt: LoopV2ChainCodec.requireTimestamp(map, 'createdAt'),
@@ -259,7 +262,7 @@ final class DioLoopV2SupportApi implements LoopV2SupportApi {
         : LoopV2ChainCodec.requireText(
             map,
             'note',
-            maxLength: LoopSupportPolicy.maximumBodyLength,
+            maxLength: LoopSupportPolicy.maximumWireBodyLength,
           );
     // Only an operator writes a note, and only after the first event.
     if (note != null && actor != LoopSupportActor.operator) {
