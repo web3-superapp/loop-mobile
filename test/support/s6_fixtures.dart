@@ -472,6 +472,8 @@ final class FakeWalletIntentsGateway implements WalletIntentsGateway {
     this.reportFailure,
     this.mode = LoopChainGatewayMode.production,
     this.pending = false,
+    this.preflightPending = false,
+    this.preparePending = false,
   });
 
   final LoopSendPreflight? preflight;
@@ -487,7 +489,15 @@ final class FakeWalletIntentsGateway implements WalletIntentsGateway {
 
   /// Applies to the broadcast report and to execute.
   final LoopChainFailureKind? reportFailure;
+
+  /// Holds the intent read open, so a page's loading state can be observed.
   final bool pending;
+
+  /// Holds the recipient preflight open (`send-to` step 2).
+  final bool preflightPending;
+
+  /// Holds every prepare open (`send-confirm`, `approval-guard`, `swap`).
+  final bool preparePending;
 
   @override
   final LoopChainGatewayMode mode;
@@ -504,6 +514,7 @@ final class FakeWalletIntentsGateway implements WalletIntentsGateway {
 
   Future<LoopWalletIntent> _prepared() {
     prepareCalls += 1;
+    if (preparePending) return Completer<LoopWalletIntent>().future;
     final kind = prepareFailure;
     if (kind != null) {
       return Future<LoopWalletIntent>.error(LoopChainException(kind));
@@ -516,6 +527,7 @@ final class FakeWalletIntentsGateway implements WalletIntentsGateway {
     required String walletId,
     required String address,
   }) {
+    if (preflightPending) return Completer<LoopSendPreflight>().future;
     final kind = failure;
     if (kind != null) {
       return Future<LoopSendPreflight>.error(LoopChainException(kind));
@@ -600,9 +612,7 @@ final class FakeWalletIntentsGateway implements WalletIntentsGateway {
   @override
   Future<LoopWalletIntent> loadIntent(String intentId) {
     intentReads += 1;
-    if (pending) {
-      return Future<LoopWalletIntent>.delayed(const Duration(days: 1));
-    }
+    if (pending) return Completer<LoopWalletIntent>().future;
     final kind = failure;
     if (kind != null) {
       return Future<LoopWalletIntent>.error(LoopChainException(kind));
@@ -621,11 +631,15 @@ final class FakeSwapQuoteGateway implements SwapQuoteGateway {
   FakeSwapQuoteGateway({
     this.quote,
     this.failure,
+    this.pending = false,
     this.mode = LoopChainGatewayMode.production,
   });
 
   final LoopSwapQuoteView? quote;
   final LoopChainFailureKind? failure;
+
+  /// Holds the quote open, so the page's own "报价中" state can be observed.
+  final bool pending;
 
   @override
   final LoopChainGatewayMode mode;
@@ -643,6 +657,7 @@ final class FakeSwapQuoteGateway implements SwapQuoteGateway {
   }) {
     quoteCalls += 1;
     slippages.add(slippageBps);
+    if (pending) return Completer<LoopSwapQuoteView>().future;
     final kind = failure;
     if (kind != null) {
       return Future<LoopSwapQuoteView>.error(LoopChainException(kind));
@@ -668,9 +683,7 @@ final class FakeApprovalsGateway implements ApprovalsGateway {
 
   @override
   Future<LoopApprovalInventory> loadApprovals(String walletId) {
-    if (pending) {
-      return Future<LoopApprovalInventory>.delayed(const Duration(days: 1));
-    }
+    if (pending) return Completer<LoopApprovalInventory>().future;
     final kind = failure;
     if (kind != null) {
       return Future<LoopApprovalInventory>.error(LoopChainException(kind));

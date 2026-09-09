@@ -84,6 +84,7 @@ final class FakeChatV2Gateway implements ChatV2Gateway {
     this.failure,
     this.operatorRequired = false,
     this.streamCid = testDirectCid,
+    this.pending = false,
   });
 
   @override
@@ -92,6 +93,9 @@ final class FakeChatV2Gateway implements ChatV2Gateway {
   CommunityFailureKind? failure;
   bool operatorRequired;
   String streamCid;
+
+  /// Never completes, so a page keeps its loading state.
+  bool pending;
 
   final List<String> commands = <String>[];
 
@@ -123,6 +127,7 @@ final class FakeChatV2Gateway implements ChatV2Gateway {
   @override
   Future<ChatOperation> openDirectChannel(String targetPublicProfileId) {
     commands.add('direct:$targetPublicProfileId');
+    if (pending) return Completer<ChatOperation>().future;
     final kind = failure;
     if (kind != null) {
       return Future<ChatOperation>.error(CommunityGatewayException(kind));
@@ -164,10 +169,14 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
   CommunityFailureKind? failure;
   String? notLiveReasonCode;
 
+  /// Never completes, so the page keeps its loading state.
+  bool pending = false;
+
   final List<String> commands = <String>[];
 
   Future<VoiceRoomSnapshot> _answer(String command) {
     commands.add(command);
+    if (pending) return Completer<VoiceRoomSnapshot>().future;
     final kind = failure;
     if (kind != null) {
       return Future<VoiceRoomSnapshot>.error(CommunityGatewayException(kind));
@@ -184,6 +193,7 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
   @override
   Future<VoiceRoomCurrent> loadCurrent(String communityId) {
     commands.add('current:$communityId');
+    if (pending) return Completer<VoiceRoomCurrent>().future;
     final kind = failure;
     if (kind != null) {
       return Future<VoiceRoomCurrent>.error(CommunityGatewayException(kind));
@@ -302,4 +312,19 @@ final class SeededChatForwardController extends ChatForwardController {
     messages: List<ChatForwardMessage>.unmodifiable(_messages),
     selected: <String>{for (final message in _messages) message.messageId},
   );
+}
+
+/// Publishes one exact forward state, so a page test can pin the block that a
+/// Stream failure routes to without driving the SDK.
+final class StubChatForwardController extends ChatForwardController {
+  StubChatForwardController(this._state);
+
+  final ChatForwardState _state;
+
+  @override
+  ChatForwardState build() => _state;
+
+  /// The page calls this from `initState`; the seeded state must survive it.
+  @override
+  Future<void> load(String sourceCid) async {}
 }

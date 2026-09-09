@@ -10,6 +10,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
+import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -66,6 +67,7 @@ final class ChatForwardState {
     this.selected = const <String>{},
     this.loading = false,
     this.failed = false,
+    this.offline = false,
     this.busy = false,
   });
 
@@ -75,6 +77,10 @@ final class ChatForwardState {
   final Set<String> selected;
   final bool loading;
   final bool failed;
+
+  /// The read never reached Stream. Nothing was forwarded and nothing was
+  /// disproved, so the page pauses instead of reporting a failure.
+  final bool offline;
   final bool busy;
 
   List<ChatForwardMessage> get selectedMessages => <ChatForwardMessage>[
@@ -104,6 +110,7 @@ final class ChatForwardState {
     Set<String>? selected,
     bool? loading,
     bool? failed,
+    bool? offline,
     bool? busy,
   }) => ChatForwardState(
     sourceCid: sourceCid ?? this.sourceCid,
@@ -112,6 +119,7 @@ final class ChatForwardState {
     selected: selected ?? this.selected,
     loading: loading ?? this.loading,
     failed: failed ?? this.failed,
+    offline: offline ?? this.offline,
     busy: busy ?? this.busy,
   );
 }
@@ -217,8 +225,15 @@ base class ChatForwardController extends Notifier<ChatForwardState> {
         messages: List<ChatForwardMessage>.unmodifiable(messages),
         targets: List<ChatForwardTarget>.unmodifiable(targets),
       );
-    } catch (_) {
-      state = ChatForwardState(sourceCid: sourceCid, failed: true);
+    } catch (error) {
+      // A query that never reached Stream is not "this conversation has no
+      // messages" and not "the read failed": it is a pause.
+      final offline = loopStreamFailureIsOffline(error);
+      state = ChatForwardState(
+        sourceCid: sourceCid,
+        failed: !offline,
+        offline: offline,
+      );
     }
   }
 
@@ -349,6 +364,16 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
             key: ValueKey<String>('chat-forward-loading'),
             type: LoopSkeletonType.list,
             rows: 4,
+          )
+        else if (state.offline)
+          LoopOfflineState(
+            key: const ValueKey<String>('chat-forward-state-offline'),
+            pausedActions: const <String>['读取消息', '选择目标', '转发'],
+            onRetry: () => unawaited(
+              ref
+                  .read(chatForwardControllerProvider.notifier)
+                  .load(widget.sourceCid!),
+            ),
           )
         else if (state.failed)
           LoopErrorState(

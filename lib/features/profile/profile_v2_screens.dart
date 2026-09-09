@@ -1085,6 +1085,23 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
               body: privacyFailureReason(state.failureKind),
               trailing: LoopButton(label: '重新载入', onPressed: controller.reload),
             ),
+          // A save that did not commit must say so next to the switches it
+          // failed to change; a silent no-op reads as "saved". Offline keeps
+          // its own block: nothing was submitted, so it pauses, not fails.
+          if (!state.requiresReload && state.phase == PrivacyPhase.failure)
+            state.failureKind == PrivacyGatewayFailureKind.offline
+                ? LoopOfflineState(
+                    key: const ValueKey<String>('privacy-save-offline'),
+                    pausedActions: const <String>['保存隐私设置'],
+                    onRetry: () => unawaited(_save(controller)),
+                  )
+                : LoopNotice(
+                    key: const ValueKey<String>('privacy-save-failure'),
+                    icon: 'close',
+                    tone: LoopNoticeTone.danger,
+                    title: '保存未完成',
+                    body: privacyFailureReason(state.failureKind),
+                  ),
           const LoopLabel('身份'),
           LoopTogglePreferenceRow(
             key: const ValueKey<String>('privacy-anonymous-mode'),

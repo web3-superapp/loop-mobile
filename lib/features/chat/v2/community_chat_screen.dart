@@ -178,6 +178,7 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
     return LoopStreamChannelSurface(
       key: ValueKey<String>('community-chat-${chat.channelCid}'),
       cid: chat.channelCid!,
+      keyPrefix: 'community-chat-channel',
       // The prototype's "@AI 提问 · 贴 CA 自动识别" hint is not reproduced: neither
       // capability exists yet, so the composer promises only a message.
       composerHint: '发消息',

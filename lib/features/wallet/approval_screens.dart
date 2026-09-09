@@ -256,6 +256,13 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
           ],
           if (MoneyPolicyNotice.covers(_failure))
             MoneyPolicyNotice(failure: _failure!)
+          // A prepare that never reached the server has not opened a wallet.
+          // The guard pauses; it never says the approval failed.
+          else if (MoneyOfflinePause.covers(_failure))
+            const MoneyOfflinePause(
+              blockKey: 'approval-guard-offline',
+              pausedActions: <String>['准备授权', '签名'],
+            )
           else if (_failure != null)
             LoopErrorState(
               key: const ValueKey<String>('approval-guard-error'),
@@ -516,6 +523,13 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
         else ...<Widget>[
           if (MoneyPolicyNotice.covers(_revokeFailure))
             MoneyPolicyNotice(failure: _revokeFailure!)
+          // The inventory above still renders: only the revoke prepare went
+          // offline, and it opened no wallet, so the row list stays readable.
+          else if (MoneyOfflinePause.covers(_revokeFailure))
+            const MoneyOfflinePause(
+              blockKey: 'approvals-revoke-offline',
+              pausedActions: <String>['回收授权', '改额度', '签名'],
+            )
           else if (_revokeFailure != null)
             LoopErrorState(
               key: const ValueKey<String>('approvals-revoke-error'),

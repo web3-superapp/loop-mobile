@@ -96,6 +96,17 @@ class _NotificationPreferencesScreenState
                 onPressed: () => unawaited(controller.reload()),
               ),
             )
+          // A save that never reached the server changed nothing on either
+          // side. It is a pause, not a failure: the switches keep the values
+          // that are still loaded and the page says which action stopped.
+          else if (state.failureKind == LoopChainFailureKind.offline)
+            LoopOfflineState(
+              key: const ValueKey<String>(
+                'notification-preferences-save-offline',
+              ),
+              pausedActions: const <String>['保存通知设置'],
+              onRetry: () => unawaited(controller.reload()),
+            )
           else if (state.failureKind != null)
             LoopErrorState(
               key: const ValueKey<String>('notification-preferences-error'),

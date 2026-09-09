@@ -216,6 +216,14 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
           ),
           if (MoneyPolicyNotice.covers(_failure))
             MoneyPolicyNotice(failure: _failure!)
+          // A quote that never reached the provider has not prepared, signed
+          // or executed anything. The step pauses instead of erroring.
+          else if (MoneyOfflinePause.covers(_failure))
+            MoneyOfflinePause(
+              blockKey: 'swap-quote-offline',
+              pausedActions: const <String>['获取报价', '兑换', '签名'],
+              onRetry: () => unawaited(_requestQuote(walletId)),
+            )
           else if (_failure != null)
             LoopErrorState(
               key: const ValueKey<String>('swap-quote-error'),

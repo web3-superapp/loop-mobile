@@ -465,3 +465,49 @@ class MoneyPolicyNotice extends StatelessWidget {
     );
   }
 }
+
+/// The paused state a funds step renders when it went offline **before**
+/// anything was handed to a wallet.
+///
+/// 01 §9 and the S6 ruling split the offline story in two:
+///
+/// * before the handoff — a preflight, a quote or a prepare that never reached
+///   the server has signed, broadcast and reported nothing. The step pauses,
+///   says which actions are paused, and offers a retry. It is not an error and
+///   it must not read as a refusal.
+/// * after the handoff — the wallet has already produced a hash or an
+///   authorization signature, so an offline report is
+///   [MoneySignStatus.reportRefused]: a locked state that keeps the produced
+///   value, never an offline state and never "nothing was submitted".
+///
+/// Every page that owns a pre-handoff failure therefore checks [covers] before
+/// it falls through to its error block.
+class MoneyOfflinePause extends StatelessWidget {
+  const MoneyOfflinePause({
+    required this.blockKey,
+    required this.pausedActions,
+    super.key,
+    this.onRetry,
+  });
+
+  /// The page's own key, so the assertion names this page and not a shared
+  /// block that happened to render.
+  final String blockKey;
+
+  /// The exact actions this step stopped doing. They are named, so the pause
+  /// cannot be read as "the transaction failed".
+  final List<String> pausedActions;
+  final VoidCallback? onRetry;
+
+  /// True when the failure happened before any wallet handoff and is a
+  /// connectivity observation rather than a server answer.
+  static bool covers(LoopChainException? failure) =>
+      failure != null && failure.kind == LoopChainFailureKind.offline;
+
+  @override
+  Widget build(BuildContext context) => LoopOfflineState(
+    key: ValueKey<String>(blockKey),
+    pausedActions: pausedActions,
+    onRetry: onRetry,
+  );
+}

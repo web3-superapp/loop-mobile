@@ -150,7 +150,7 @@ void main() {
         // its own not-connected state rather than showing any message.
         expect(
           find.byKey(
-            const ValueKey<String>('loop-stream-channel-not-connected'),
+            const ValueKey<String>('community-chat-channel-not-connected'),
           ),
           findsOneWidget,
         );
@@ -236,7 +236,7 @@ void main() {
       // Stream session the surface stops at its own not-connected state and
       // renders no message at all.
       expect(
-        find.byKey(const ValueKey<String>('loop-stream-channel-not-connected')),
+        find.byKey(const ValueKey<String>('dm-channel-not-connected')),
         findsOneWidget,
       );
     });

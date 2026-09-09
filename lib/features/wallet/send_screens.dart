@@ -463,7 +463,16 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
             icon: 'camera',
             body: '扫码与最近联系人尚未接入，请粘贴或手动输入完整地址后校验。',
           ),
-          if (_preflightFailure != null)
+          // An address check that never reached the server has not prepared an
+          // intent, opened a wallet or submitted anything. It pauses; only a
+          // server answer is an error.
+          if (MoneyOfflinePause.covers(_preflightFailure))
+            MoneyOfflinePause(
+              blockKey: 'send-recipient-preflight-offline',
+              pausedActions: const <String>['校验地址', '下一步', '签名'],
+              onRetry: () => unawaited(_check()),
+            )
+          else if (_preflightFailure != null)
             LoopErrorState(
               key: const ValueKey<String>('send-recipient-preflight-error'),
               title: '地址没有校验成功',

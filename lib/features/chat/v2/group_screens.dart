@@ -107,6 +107,7 @@ class GroupChatScreen extends ConsumerWidget {
                 (false, final String value) => LoopStreamChannelSurface(
                   key: ValueKey<String>('group-$value'),
                   cid: value,
+                  keyPrefix: 'group-channel',
                   composerHint: '发消息',
                   header: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,

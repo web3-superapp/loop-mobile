@@ -7,6 +7,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
+import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -60,6 +61,151 @@ final class ChatSearchHit {
   final DateTime createdAt;
 }
 
+/// Why one search did not produce results.
+///
+/// `offline` means the query never reached Stream, so nothing was searched and
+/// nothing was disproved. Any other failure is a server answer.
+final class ChatSearchException implements Exception {
+  const ChatSearchException({required this.offline});
+
+  final bool offline;
+}
+
+/// The one port `chat-search` reads through.
+///
+/// Chat content never enters LOOP's `/v2/search` domain, so the adapter below
+/// is the only place Stream's own `client.search` is called and the only place
+/// its types exist. The page consumes hits and a connectivity answer.
+abstract interface class ChatSearchGateway {
+  /// Whether a server-authorized chat session exists at all. False means the
+  /// page must not issue a query.
+  bool get connected;
+
+  Future<List<ChatSearchHit>> search({
+    required String query,
+    required ChatSearchScope scope,
+    required String? originCid,
+    required int limit,
+  });
+}
+
+/// The port before the backend has issued a Stream identity and token.
+final class UnconnectedChatSearchGateway implements ChatSearchGateway {
+  const UnconnectedChatSearchGateway();
+
+  @override
+  bool get connected => false;
+
+  @override
+  Future<List<ChatSearchHit>> search({
+    required String query,
+    required ChatSearchScope scope,
+    required String? originCid,
+    required int limit,
+  }) => Future<List<ChatSearchHit>>.error(
+    const ChatSearchException(offline: false),
+  );
+}
+
+final class _StreamChatSearchGateway implements ChatSearchGateway {
+  const _StreamChatSearchGateway({required this.client, required this.userId});
+
+  final StreamChatClient client;
+  final String userId;
+
+  @override
+  bool get connected => true;
+
+  @override
+  Future<List<ChatSearchHit>> search({
+    required String query,
+    required ChatSearchScope scope,
+    required String? originCid,
+    required int limit,
+  }) async {
+    final filter = _channelFilter(scope, originCid);
+    if (filter == null) return const <ChatSearchHit>[];
+    try {
+      final response = await client.search(
+        filter,
+        query: query,
+        paginationParams: PaginationParams(limit: limit),
+      );
+      return <ChatSearchHit>[
+        for (final result in response.results)
+          if (_hit(result) case final ChatSearchHit hit) hit,
+      ];
+    } catch (error) {
+      throw ChatSearchException(offline: loopStreamFailureIsOffline(error));
+    }
+  }
+
+  Filter? _channelFilter(ChatSearchScope scope, String? originCid) {
+    final membership = Filter.in_('members', <Object>[userId]);
+    return switch (scope) {
+      ChatSearchScope.currentConversation when originCid != null => Filter.and(
+        <Filter>[membership, Filter.equal('cid', originCid)],
+      ),
+      ChatSearchScope.currentConversation => null,
+      ChatSearchScope.all => membership,
+      // The LOOP backend assigns each channel ID prefix, so the scope is a
+      // server-owned fact rather than a guess about the conversation.
+      ChatSearchScope.community => Filter.and(<Filter>[
+        membership,
+        Filter.autoComplete('id', 'loop_community_'),
+      ]),
+      ChatSearchScope.group => Filter.and(<Filter>[
+        membership,
+        Filter.autoComplete('id', 'loop_group_'),
+      ]),
+      ChatSearchScope.direct => Filter.and(<Filter>[
+        membership,
+        Filter.autoComplete('id', 'loop_direct_'),
+      ]),
+    };
+  }
+
+  ChatSearchHit? _hit(GetMessageResponse result) {
+    final message = result.message;
+    final cid = result.channel?.cid;
+    final text = message.text;
+    if (cid == null || text == null || text.isEmpty || message.isDeleted) {
+      return null;
+    }
+    final surface = loopChatSurfaceForCid(cid);
+    if (surface == null) return null;
+    return ChatSearchHit(
+      messageId: message.id,
+      cid: cid,
+      // `message.user.name` is an account-level Stream value. A community or
+      // group hit therefore carries the neutral member label, exactly as the
+      // group message list does; a direct hit carries the conversation's own
+      // identity, which is the page the result opens.
+      senderLabel: chatSearchSenderLabel(surface),
+      channelLabel: switch (surface) {
+        LoopChatSurface.communityChat => '社区官方群',
+        LoopChatSurface.group => '群聊',
+        LoopChatSurface.direct => '私聊',
+      },
+      text: text,
+      createdAt: message.createdAt,
+    );
+  }
+}
+
+/// Production default: unconnected until the backend has authorized a session.
+final chatSearchGatewayProvider = Provider<ChatSearchGateway>((ref) {
+  final authorization = ref.watch(streamChatAuthorizationProvider);
+  final session = ref.watch(streamChatSdkSessionProvider);
+  final userId = session?.client.state.currentUser?.id;
+  if (authorization.value != StreamSessionAuthorization.authorized ||
+      session == null ||
+      userId == null) {
+    return const UnconnectedChatSearchGateway();
+  }
+  return _StreamChatSearchGateway(client: session.client, userId: userId);
+});
+
 /// `chat-search` · message search inside the channels the account can read.
 ///
 /// It uses Stream's own `client.search`; chat content never enters LOOP's
@@ -89,6 +235,7 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
   List<ChatSearchHit>? _hits;
   bool _searching = false;
   bool _failed = false;
+  bool _offline = false;
   int _generation = 0;
 
   @override
@@ -105,51 +252,14 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
     ChatSearchScope.direct,
   ];
 
-  Filter? _channelFilter(String userId) {
-    final origin = widget.originCid;
-    final membership = Filter.in_('members', <Object>[userId]);
-    return switch (_scope) {
-      ChatSearchScope.currentConversation when origin != null => Filter.and(
-        <Filter>[membership, Filter.equal('cid', origin)],
-      ),
-      ChatSearchScope.currentConversation => null,
-      ChatSearchScope.all => membership,
-      // The LOOP backend assigns each channel ID prefix, so the scope is a
-      // server-owned fact rather than a guess about the conversation.
-      ChatSearchScope.community => Filter.and(<Filter>[
-        membership,
-        Filter.autoComplete('id', 'loop_community_'),
-      ]),
-      ChatSearchScope.group => Filter.and(<Filter>[
-        membership,
-        Filter.autoComplete('id', 'loop_group_'),
-      ]),
-      ChatSearchScope.direct => Filter.and(<Filter>[
-        membership,
-        Filter.autoComplete('id', 'loop_direct_'),
-      ]),
-    };
-  }
-
   Future<void> _search() async {
     final text = _query.text.trim();
-    final session = ref.read(streamChatSdkSessionProvider);
-    final userId = session?.client.state.currentUser?.id;
-    if (text.length < _minimumQueryLength ||
-        session == null ||
-        userId == null) {
+    final gateway = ref.read(chatSearchGatewayProvider);
+    if (text.length < _minimumQueryLength || !gateway.connected) {
       setState(() {
         _hits = null;
         _failed = false;
-        _searching = false;
-      });
-      return;
-    }
-    final filter = _channelFilter(userId);
-    if (filter == null) {
-      setState(() {
-        _hits = const <ChatSearchHit>[];
-        _failed = false;
+        _offline = false;
         _searching = false;
       });
       return;
@@ -158,20 +268,28 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
     setState(() {
       _searching = true;
       _failed = false;
+      _offline = false;
     });
     try {
-      final response = await session.client.search(
-        filter,
+      final hits = await gateway.search(
         query: text,
-        paginationParams: const PaginationParams(limit: _limit),
+        scope: _scope,
+        originCid: widget.originCid,
+        limit: _limit,
       );
       if (!mounted || generation != _generation) return;
       setState(() {
-        _hits = <ChatSearchHit>[
-          for (final result in response.results)
-            if (_hit(result) case final ChatSearchHit hit) hit,
-        ];
+        _hits = hits;
         _searching = false;
+      });
+    } on ChatSearchException catch (failure) {
+      if (!mounted || generation != _generation) return;
+      // A query that never reached Stream searched nothing. It is a pause,
+      // not "no matching messages" and not a failed search.
+      setState(() {
+        _searching = false;
+        _offline = failure.offline;
+        _failed = !failure.offline;
       });
     } catch (_) {
       if (!mounted || generation != _generation) return;
@@ -182,40 +300,9 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
     }
   }
 
-  ChatSearchHit? _hit(GetMessageResponse result) {
-    final message = result.message;
-    final cid = result.channel?.cid;
-    final text = message.text;
-    if (cid == null || text == null || text.isEmpty || message.isDeleted) {
-      return null;
-    }
-    final surface = loopChatSurfaceForCid(cid);
-    if (surface == null) return null;
-    return ChatSearchHit(
-      messageId: message.id,
-      cid: cid,
-      // `message.user.name` is an account-level Stream value. A community or
-      // group hit therefore carries the neutral member label, exactly as the
-      // group message list does; a direct hit carries the conversation's own
-      // identity, which is the page the result opens.
-      senderLabel: chatSearchSenderLabel(surface),
-      channelLabel: switch (surface) {
-        LoopChatSurface.communityChat => '社区官方群',
-        LoopChatSurface.group => '群聊',
-        LoopChatSurface.direct => '私聊',
-      },
-      text: text,
-      createdAt: message.createdAt,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final authorization = ref.watch(streamChatAuthorizationProvider);
-    final connected =
-        authorization.value == StreamSessionAuthorization.authorized &&
-        ref.watch(streamChatSdkSessionProvider)?.client.state.currentUser !=
-            null;
+    final connected = ref.watch(chatSearchGatewayProvider).connected;
     final hits = _hits;
 
     return LoopStreamPage(
@@ -295,6 +382,15 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
           key: ValueKey<String>('chat-search-loading'),
           type: LoopSkeletonType.list,
           rows: 4,
+        ),
+      );
+    }
+    if (_offline) {
+      return SingleChildScrollView(
+        child: LoopOfflineState(
+          key: const ValueKey<String>('chat-search-state-offline'),
+          pausedActions: const <String>['搜索消息'],
+          onRetry: () => unawaited(_search()),
         ),
       );
     }

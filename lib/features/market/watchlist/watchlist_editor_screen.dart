@@ -118,7 +118,18 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
               onCopyDraft: () => unawaited(_copyDraft(state.draftAsText)),
               onReload: () => unawaited(controller.reload()),
             ),
-          ] else if (state.failureKind != null)
+          ]
+          // A save that never reached the server changed nothing on either
+          // side; the draft below is still exactly what was typed.
+          else if (state.failureKind == LoopChainFailureKind.offline)
+            LoopOfflineState(
+              key: const ValueKey<String>('watchlist-save-offline'),
+              pausedActions: const <String>['保存自选'],
+              onRetry: state.canSave
+                  ? () => unawaited(_save(controller))
+                  : null,
+            )
+          else if (state.failureKind != null)
             LoopErrorState(
               key: const ValueKey<String>('watchlist-save-error'),
               title: '自选没有保存',

@@ -177,6 +177,7 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
     return LoopStreamChannelSurface(
       key: ValueKey<String>('dm-$cid'),
       cid: cid,
+      keyPrefix: 'dm-channel',
       composerHint: '发消息',
       header: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

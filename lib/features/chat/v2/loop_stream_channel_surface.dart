@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
+import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
@@ -22,6 +23,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
     this.header,
     this.banner,
     this.notConnectedMessage = '需要服务端派发的 Stream 身份与短期 token 才能打开这个会话。',
+    this.keyPrefix = 'loop-stream-channel',
   });
 
   /// `messaging:<id>`. It is always server-supplied; the page never assembles
@@ -38,11 +40,16 @@ class LoopStreamChannelSurface extends ConsumerWidget {
   final Widget? banner;
   final String notConnectedMessage;
 
+  /// The key prefix for this surface's state blocks. A page passes its own
+  /// slug so an acceptance assertion names that page rather than the shared
+  /// surface that happened to render.
+  final String keyPrefix;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (parseLoopStreamChannelCid(cid) == null) {
-      return const _ChannelStateBlock(
-        key: ValueKey<String>('loop-stream-channel-invalid'),
+      return _ChannelStateBlock(
+        key: ValueKey<String>('$keyPrefix-invalid'),
         message: '这个会话链接不是 LOOP 支持的频道地址，本页没有发起任何连接。',
         icon: 'warn',
       );
@@ -52,17 +59,34 @@ class LoopStreamChannelSurface extends ConsumerWidget {
         .when(
           skipLoadingOnReload: false,
           skipLoadingOnRefresh: false,
-          loading: () => const _ChannelStateBlock(
-            key: ValueKey<String>('loop-stream-channel-connecting'),
+          loading: () => _ChannelStateBlock(
+            key: ValueKey<String>('$keyPrefix-connecting'),
             message: '正在恢复服务端授权的聊天会话…',
             loading: true,
           ),
-          error: (error, stackTrace) => _ChannelStateBlock(
-            key: const ValueKey<String>('loop-stream-channel-error'),
-            message: '聊天授权没有恢复成功，本页没有发起任何消息操作。',
-            icon: 'warn',
-            onRetry: () => ref.invalidate(streamChatAuthorizationProvider),
-          ),
+          // A token call that never reached the server has not refused
+          // anything: the conversation is paused, not broken. Only a server
+          // answer may render as an error.
+          error: (error, stackTrace) => loopStreamFailureIsOffline(error)
+              ? _ChannelStateBlock(
+                  key: ValueKey<String>('$keyPrefix-offline'),
+                  offlinePausedActions: const <String>[
+                    '打开会话',
+                    '发消息',
+                    '搜索',
+                    '转发',
+                  ],
+                  message: '设备当前离线，没有恢复聊天授权，也没有发送任何消息。',
+                  onRetry: () =>
+                      ref.invalidate(streamChatAuthorizationProvider),
+                )
+              : _ChannelStateBlock(
+                  key: ValueKey<String>('$keyPrefix-error'),
+                  message: '聊天授权没有恢复成功，本页没有发起任何消息操作。',
+                  icon: 'warn',
+                  onRetry: () =>
+                      ref.invalidate(streamChatAuthorizationProvider),
+                ),
           data: (authorization) {
             final session = ref.watch(streamChatSdkSessionProvider);
             final currentUser = session?.client.state.currentUser;
@@ -70,24 +94,21 @@ class LoopStreamChannelSurface extends ConsumerWidget {
                 session == null ||
                 currentUser == null) {
               return _ChannelStateBlock(
-                key: const ValueKey<String>(
-                  'loop-stream-channel-not-connected',
-                ),
+                key: ValueKey<String>('$keyPrefix-not-connected'),
                 message: notConnectedMessage,
                 icon: 'warn',
                 onRetry: () => ref.invalidate(streamChatAuthorizationProvider),
               );
             }
             return _MemberChannelBody(
-              key: ValueKey<String>(
-                'loop-stream-channel-$cid-${currentUser.id}',
-              ),
+              key: ValueKey<String>('$keyPrefix-$cid-${currentUser.id}'),
               client: session.client,
               cid: cid,
               userId: currentUser.id,
               composerHint: composerHint,
               header: header,
               banner: banner,
+              keyPrefix: keyPrefix,
             );
           },
         );
@@ -107,6 +128,7 @@ class _MemberChannelBody extends StatefulWidget {
     required this.composerHint,
     required this.header,
     required this.banner,
+    required this.keyPrefix,
     super.key,
   });
 
@@ -116,6 +138,7 @@ class _MemberChannelBody extends StatefulWidget {
   final String composerHint;
   final Widget? header;
   final Widget? banner;
+  final String keyPrefix;
 
   @override
   State<_MemberChannelBody> createState() => _MemberChannelBodyState();
@@ -170,15 +193,26 @@ class _MemberChannelBodyState extends State<_MemberChannelBody> {
       future: _channel,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const _ChannelStateBlock(
-            key: ValueKey<String>('loop-stream-channel-confirming'),
+          return _ChannelStateBlock(
+            key: ValueKey<String>('${widget.keyPrefix}-confirming'),
             message: '正在确认这个频道以及你的成员身份…',
             loading: true,
           );
         }
+        // The membership query is the same read: a query that never reached
+        // Stream did not disprove membership, so it pauses rather than
+        // claiming the account is not a member.
+        if (loopStreamFailureIsOffline(snapshot.error)) {
+          return _ChannelStateBlock(
+            key: ValueKey<String>('${widget.keyPrefix}-offline'),
+            offlinePausedActions: const <String>['打开会话', '发消息', '搜索', '转发'],
+            message: '设备当前离线，没有确认这个频道的成员身份，也没有发送任何消息。',
+            onRetry: () => setState(() => _channel = _load()),
+          );
+        }
         if (snapshot.hasError || snapshot.data == null) {
           return _ChannelStateBlock(
-            key: const ValueKey<String>('loop-stream-channel-unavailable'),
+            key: ValueKey<String>('${widget.keyPrefix}-unavailable'),
             message: '服务端没有确认你在这个频道的成员身份，LOOP 没有创建也没有打开任何频道。',
             icon: 'warn',
             onRetry: () => setState(() => _channel = _load()),
@@ -277,6 +311,7 @@ class _ChannelStateBlock extends StatelessWidget {
     this.icon = 'info',
     this.loading = false,
     this.onRetry,
+    this.offlinePausedActions,
   });
 
   final String message;
@@ -284,12 +319,23 @@ class _ChannelStateBlock extends StatelessWidget {
   final bool loading;
   final VoidCallback? onRetry;
 
+  /// Non-null makes this the offline block: the surface names the actions it
+  /// stopped instead of reporting a failure that never happened.
+  final List<String>? offlinePausedActions;
+
   @override
   Widget build(BuildContext context) {
     if (loading) {
       return const Padding(
         padding: EdgeInsets.symmetric(horizontal: 16),
         child: LoopSkeleton(type: LoopSkeletonType.list, rows: 4),
+      );
+    }
+    final paused = offlinePausedActions;
+    if (paused != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: LoopOfflineState(pausedActions: paused, onRetry: onRetry),
       );
     }
     return Padding(

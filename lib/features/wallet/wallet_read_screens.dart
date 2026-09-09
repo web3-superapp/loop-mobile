@@ -409,15 +409,26 @@ class _NetWorthScreenState extends ConsumerState<NetWorthScreen> {
         else ...<Widget>[
           WalletNetWorthCard(netWorth: balances!.netWorth),
           const LoopLabel('按资产'),
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              for (final row in balances.balances)
-                walletBalanceRow(
-                  row,
-                  onTap: () => _open(MarketAssetRoute.walletAsset(row.assetId)),
-                ),
-            ],
-          ),
+          // A registry with no readable row must say so. An unlabelled empty
+          // group would read as "this wallet holds nothing", which the read
+          // does not prove.
+          if (balances.balances.isEmpty)
+            const LoopEmpty(
+              key: ValueKey<String>('networth-empty'),
+              message: '这个钱包还没有可计入净值的资产',
+              reason: '净值只累计已登记且可读的资产；读不到的资产不会被当作 0。',
+            )
+          else
+            LoopRecordGroup(
+              rows: <LoopRecordRow>[
+                for (final row in balances.balances)
+                  walletBalanceRow(
+                    row,
+                    onTap: () =>
+                        _open(MarketAssetRoute.walletAsset(row.assetId)),
+                  ),
+              ],
+            ),
           WalletSnapshotFooter(snapshot: balances.snapshot),
           const LoopLabel('走势'),
           const LoopUnavailableCard(
@@ -1114,7 +1125,16 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          if (state.failureKind != null)
+          // A switch that never reached the server changed nothing: the
+          // active wallet below is still the server's own answer. Offline is
+          // therefore a pause, not a failed switch.
+          if (state.failureKind == LoopChainFailureKind.offline)
+            LoopOfflineState(
+              key: const ValueKey<String>('wallets-switch-offline'),
+              pausedActions: const <String>['切换活跃钱包'],
+              onRetry: () => unawaited(controller.reload()),
+            )
+          else if (state.failureKind != null)
             LoopErrorState(
               key: const ValueKey<String>('wallets-switch-error'),
               title: '活跃钱包没有切换',
@@ -1345,7 +1365,19 @@ class _TransactionHistoryScreenState
               '观察于 ${loopRelativeTime(page.freshness.observedAt)}',
             ].join(' · '),
           ),
-          if (state.failureKind != null)
+          // The pages already read stay on screen. A next page that never
+          // reached the server is a pause on "load more", not a broken tape.
+          if (state.failureKind == LoopChainFailureKind.offline)
+            LoopOfflineState(
+              key: const ValueKey<String>('tx-history-page-offline'),
+              pausedActions: const <String>['加载更多'],
+              onRetry: () => unawaited(
+                ref
+                    .read(walletActivityControllerProvider(walletId).notifier)
+                    .loadMore(),
+              ),
+            )
+          else if (state.failureKind != null)
             LoopErrorState(
               key: const ValueKey<String>('tx-history-page-error'),
               title: '这一页没有加载完',

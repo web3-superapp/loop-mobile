@@ -7,6 +7,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
 import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
+import 'package:loop_mobile/features/chat/v2/chat_search_screen.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
@@ -17,6 +18,8 @@ import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
+import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
+import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 import 'communication_test_harness.dart';
@@ -622,6 +625,9 @@ Future<void> pumpCommunityPage(
   GroupAliasResolverGateway? groupAliasResolver,
   ChatMergeExportSink? mergeExportSink,
   List<ChatForwardMessage>? selectedForward,
+  ChatForwardState? forwardState,
+  ChatSearchGateway? chatSearch,
+  Future<StreamSessionAuthorization> Function()? streamAuthorization,
   LoopV2MetaSnapshot? meta,
   Size size = const Size(390, 1400),
   bool settle = true,
@@ -650,6 +656,16 @@ Future<void> pumpCommunityPage(
         if (selectedForward != null)
           chatForwardControllerProvider.overrideWith(
             () => SeededChatForwardController(selectedForward),
+          ),
+        if (forwardState != null)
+          chatForwardControllerProvider.overrideWith(
+            () => StubChatForwardController(forwardState),
+          ),
+        if (chatSearch != null)
+          chatSearchGatewayProvider.overrideWithValue(chatSearch),
+        if (streamAuthorization != null)
+          streamChatAuthorizationProvider.overrideWith(
+            (ref) => streamAuthorization(),
           ),
         loopV2MetaSnapshotProvider.overrideWith(
           (ref) async => meta ?? testMetaSnapshot(),
