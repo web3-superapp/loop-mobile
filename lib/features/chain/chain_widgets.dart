@@ -1,8 +1,10 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/chain/chain_controllers.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 /// Whether an S5 page must stop at the capability gate instead of reading.
@@ -397,6 +399,67 @@ class LoopProvenanceFooter extends StatelessWidget {
         text,
         key: const ValueKey<String>('provenance-footer'),
         style: LoopMono.stamp.copyWith(color: LoopColors.text3),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// launch chain slot (decision 0038)
+// ---------------------------------------------------------------------------
+
+/// The "BSC 测试网" badge.
+///
+/// It states which chain the surface is bound to. It never disables anything,
+/// never carries a warning tone, and never appears on a surface bound to the
+/// primary chain: Market, Watchlist, Swap and Send can never render it,
+/// because their chain id is a constant.
+class LoopTestnetBadge extends StatelessWidget {
+  const LoopTestnetBadge({super.key, this.onLedger = false});
+
+  final bool onLedger;
+
+  @override
+  Widget build(BuildContext context) => LoopBadge(
+    key: const ValueKey<String>('loop-testnet-badge'),
+    loopTestnetBadgeLabel,
+    onLedger: onLedger,
+  );
+}
+
+/// The one-time explanation that accompanies the badge.
+///
+/// It is shown once per run across every Launch surface, it is dismissible,
+/// and it blocks nothing: closing it leaves every action exactly as it was.
+/// Pass [visible] the single fact that decides it — the published chain id is
+/// the testnet — never a guess of the client's own.
+class LoopTestnetNotice extends ConsumerWidget {
+  const LoopTestnetNotice({
+    required this.visible,
+    super.key,
+    this.margin = const EdgeInsets.fromLTRB(16, 14, 16, 0),
+  });
+
+  final bool visible;
+  final EdgeInsets margin;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!visible || ref.watch(loopTestnetNoticeDismissedProvider)) {
+      return const SizedBox.shrink();
+    }
+    return LoopNotice(
+      key: const ValueKey<String>('loop-testnet-notice'),
+      icon: 'info',
+      title: loopTestnetNoticeTitle,
+      body: loopTestnetNoticeBody,
+      margin: margin,
+      trailing: LoopIconButton(
+        key: const ValueKey<String>('loop-testnet-notice-dismiss'),
+        icon: 'close',
+        label: '关闭测试网说明',
+        onPressed: () =>
+            ref.read(loopTestnetNoticeDismissedProvider.notifier).dismiss(),
       ),
     );
   }

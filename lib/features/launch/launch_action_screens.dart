@@ -155,6 +155,14 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
+          // The chain the owner would be paying on. It is the launch's own
+          // published value, stated before the amount field, not after it.
+          LaunchChainBlock(
+            testnet: launchSurfaceIsTestnet(
+              capability: capability,
+              launch: detail?.launch,
+            ),
+          ),
           const LoopLabel('支付金额'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -344,6 +352,9 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
+          LaunchChainBlock(
+            testnet: launchSurfaceIsTestnet(capability: capability),
+          ),
           const LoopLabel('质押状态'),
           LaunchUnavailableCard(label: '我的质押', fact: stake.stake),
           const LoopLabel('可执行性'),

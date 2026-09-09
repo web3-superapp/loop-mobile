@@ -197,6 +197,13 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 '手续费保留 ${loopFormatDecimal(balances.gasReservePolicy.nativeReserve)} BNB'
                 ' · 由服务端配置 ${balances.gasReservePolicy.configVersion} 下发',
           ),
+          // Decision 0038: the Launch chain block exists only when the
+          // backend published one. Its balance is a testnet figure and is
+          // never added to the assets above or to the net worth.
+          if (balances.launchChain != null) ...<Widget>[
+            const LoopLabel('Launch 链'),
+            WalletLaunchChainCard(launchChain: balances.launchChain!),
+          ],
           const LoopLabel('资金动作'),
           // The prototype's Pay / 兑换 / 发送 / 跨链 entries stay in place and
           // each opens its own manifest slug. None of them can sign yet: every
@@ -259,7 +266,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('wallet-networks-entry'),
                 title: '网络与 RPC',
-                subtitle: '只有 BNB Smart Chain 一条网络',
+                // The page lists whatever the server published: the primary
+                // chain always, and the Launch slot when it differs from it.
+                subtitle: '已启用的网络与 RPC 端点健康',
                 onTap: () => _open('/wallet/networks'),
               ),
               LoopRecordRow(
@@ -1564,7 +1573,10 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
         heading: status == null
             ? '网络与 RPC'
             : '${status.rpc.healthyCount} / ${status.rpc.endpoints.length} 正常',
-        caption: '只有 BNB Smart Chain 一条网络；端点以不可逆引用显示，永远不下发 RPC 地址。',
+        caption: status?.launchChain == null
+            ? '只有 BNB Smart Chain 一条网络；端点以不可逆引用显示，永远不下发 RPC 地址。'
+            : '主网 BNB Smart Chain 加上服务端发布的 Launch 链；'
+                  '端点以不可逆引用显示，永远不下发 RPC 地址。',
       ),
       sections: <Widget>[
         if (blocked)
@@ -1612,6 +1624,12 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
               ),
             ],
           ),
+          // Decision 0038: a second row exists only when the backend published
+          // a Launch chain slot of its own. While the slot equals the primary
+          // chain the key is absent and this page shows nothing extra — not an
+          // unavailable placeholder. Custom RPC and testnets stay unavailable.
+          if (status.launchChain != null)
+            _LaunchChainRow(launchChain: status.launchChain!),
           const LoopLabel('RPC 端点'),
           if (status.rpc.endpoints.isEmpty)
             LoopUnavailableCard(
@@ -1688,10 +1706,44 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
           const LoopLabel('设置'),
           const LoopUnavailableCard(
             key: ValueKey<String>('networks-custom-rpc'),
-            label: '自定义 RPC 与测试网不可用',
+            label: '自定义 RPC 与自行添加网络不可用',
             reasonCode: 'WALLET_CUSTOM_RPC_DEFERRED',
           ),
         ],
+      ],
+    );
+  }
+}
+
+/// The `networks` row for the Launch chain slot (decision 0038).
+///
+/// It publishes no endpoint reference and no URL: testnet endpoint health is
+/// not part of the contract, so the row states the slot's own verification,
+/// its confirmation depth and the server's reason code instead.
+class _LaunchChainRow extends StatelessWidget {
+  const _LaunchChainRow({required this.launchChain});
+
+  final LoopLaunchChainStatus launchChain;
+
+  @override
+  Widget build(BuildContext context) {
+    final head = launchChain.head;
+    return LoopRecordGroup(
+      rows: <LoopRecordRow>[
+        LoopRecordRow(
+          key: const ValueKey<String>('networks-launch-chain-row'),
+          title: '${launchChain.name}（Launch）',
+          subtitle: launchChain.reasonCode == null
+              ? '${launchChain.chainId} · '
+                    '${launchChain.confirmations} 确认 · '
+                    '重组跟踪 ${launchChain.reorgDepthBlocks} 块'
+              : loopReasonCodeText(launchChain.reasonCode),
+          trailing: head == null ? null : '${head.blockNumber}',
+          trailingBadge: LoopBadge(
+            launchChain.isHealthy ? '正常' : '异常',
+            kind: launchChain.isHealthy ? LoopBadgeKind.up : LoopBadgeKind.down,
+          ),
+        ),
       ],
     );
   }

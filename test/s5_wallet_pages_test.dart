@@ -748,7 +748,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('networks-custom-rpc')),
       );
-      expect(find.textContaining('自定义 RPC 与测试网本步不开放'), findsOneWidget);
+      expect(find.textContaining('自定义 RPC 与自行添加网络本步不开放'), findsOneWidget);
     });
   });
 }

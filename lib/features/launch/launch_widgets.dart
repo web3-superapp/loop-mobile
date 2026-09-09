@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -366,6 +369,9 @@ LoopRecordRow launchCatalogRow({
   final config = configVersion == null
       ? launchPendingConfirmationLabel(null)
       : '配置 $configVersion';
+  // The chain is the launch's own published value. It is stated, never
+  // inferred from the segment or from the catalogue's own chain.
+  final testnet = launch.isTestnetChain;
   return LoopRecordRow(
     key: ValueKey<String>('launch-row-${launch.launchId}'),
     leading: LaunchTickerTile(ticker: launch.ticker),
@@ -373,10 +379,22 @@ LoopRecordRow launchCatalogRow({
     subtitle: '${launch.ticker} · $schedule · $config',
     // The trailing column is a state, never a figure: the four on-chain axes
     // are unavailable, so a number there would be an invention.
-    trailingBadge: const LoopBadge('链上待确认', kind: LoopBadgeKind.mute),
+    trailingBadge: Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        if (testnet) ...<Widget>[
+          const LoopTestnetBadge(),
+          const SizedBox(height: 4),
+        ],
+        const LoopBadge('链上待确认', kind: LoopBadgeKind.mute),
+      ],
+    ),
     onTap: onTap,
     position: position,
-    semanticLabel: '${launch.name}，${launch.ticker}，$schedule，链上状态待确认',
+    semanticLabel:
+        '${launch.name}，${launch.ticker}，$schedule，'
+        '${testnet ? '$loopTestnetBadgeLabel，' : ''}链上状态待确认',
   );
 }
 
@@ -506,4 +524,55 @@ LoopRecordRow launchMilestoneRow({
         '$track，${launchMilestoneStateLabel(milestone.state)}，'
         '${lines.join('，')}',
   );
+}
+
+/// Whether one Launch surface is bound to the Launch testnet slot.
+///
+/// A surface that has a launch record reads that record's own chain; a surface
+/// that has none — the catalogue, `loop-stake` — reads the chain the server
+/// published on the `launch` capability. Neither is ever inferred from the
+/// other, and neither is ever guessed by the client.
+bool launchSurfaceIsTestnet({
+  required LoopCapabilityProjection capability,
+  LaunchSummary? launch,
+}) => launch?.isTestnetChain ?? capability.isTestnetLaunchChain;
+
+/// The chain statement a Launch surface renders while it is on the testnet.
+///
+/// Two facts and no controls: the chain the server published for this surface
+/// with the "BSC 测试网" badge, and the one-time explanation shared by every
+/// Launch surface. On the primary chain it renders nothing at all, so a build
+/// whose Launch slot is `eip155:56` looks exactly as it did before.
+class LaunchChainBlock extends StatelessWidget {
+  const LaunchChainBlock({required this.testnet, super.key});
+
+  final bool testnet;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!testnet) return const SizedBox.shrink();
+    return Column(
+      key: const ValueKey<String>('launch-chain-block'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('launch-chain-row'),
+              title: loopChainName(loopLaunchTestnetChainId),
+              subtitle:
+                  '$loopLaunchTestnetChainId · Launch 链槽位；'
+                  '钱包余额、行情、兑换与授权仍在主网',
+              trailingBadge: const LoopTestnetBadge(),
+              semanticLabel:
+                  'Launch 运行在 $loopTestnetBadgeLabel，'
+                  '$loopLaunchTestnetChainId，主网功能不受影响',
+            ),
+          ],
+        ),
+        const LoopTestnetNotice(visible: true),
+      ],
+    );
+  }
 }

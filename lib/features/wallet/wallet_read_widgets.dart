@@ -170,3 +170,61 @@ class WalletNetWorthCard extends StatelessWidget {
     }
   }
 }
+
+/// The wallet page's Launch chain block (loop-api decision 0038).
+///
+/// It exists only when the backend published a `launchChain` — that is, only
+/// while the Launch slot differs from the primary chain. It holds exactly one
+/// native balance read with one `eth_getBalance`: no registry, no ERC-20 row,
+/// no pending amount, no valuation and no cross-check, so nothing here may be
+/// added to the wallet's net worth or read as a spendable main-chain figure.
+/// A failed read renders the server's own reason and never a `0`.
+class WalletLaunchChainCard extends StatelessWidget {
+  const WalletLaunchChainCard({required this.launchChain, super.key});
+
+  final LoopLaunchChainBalance launchChain;
+
+  @override
+  Widget build(BuildContext context) {
+    final native = launchChain.nativeBalance;
+    return Column(
+      key: const ValueKey<String>('wallet-launch-chain'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        if (native == null)
+          LoopUnavailableCard(
+            key: const ValueKey<String>('wallet-launch-chain-unavailable'),
+            label: '${launchChain.name}余额不可用',
+            reasonCode: launchChain.reasonCode ?? 'CAPABILITY_UNAVAILABLE',
+          )
+        else ...<Widget>[
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('wallet-launch-chain-row'),
+                title: native.symbol,
+                subtitle:
+                    '${launchChain.name} · '
+                    '可动用 ${loopFormatDecimal(native.spendableBalance)} · '
+                    '手续费保留 ${loopFormatDecimal(native.gasReserve)}',
+                trailing: loopFormatDecimal(native.displayBalance),
+                trailingBadge: launchChain.isTestnet
+                    ? const LoopTestnetBadge()
+                    : null,
+                semanticLabel:
+                    '${launchChain.name} ${native.symbol} '
+                    '${loopFormatDecimal(native.displayBalance)}',
+              ),
+            ],
+          ),
+          WalletSnapshotFooter(
+            key: const ValueKey<String>('wallet-launch-chain-snapshot'),
+            snapshot: native.snapshot,
+          ),
+        ],
+        LoopTestnetNotice(visible: launchChain.isTestnet),
+      ],
+    );
+  }
+}

@@ -113,6 +113,12 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
+          LaunchChainBlock(
+            testnet: launchSurfaceIsTestnet(
+              capability: capability,
+              launch: detail.launch,
+            ),
+          ),
           if (detail.project.narrative != null)
             LoopNotice(
               key: const ValueKey<String>('launch-detail-narrative'),
@@ -339,6 +345,12 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
+          LaunchChainBlock(
+            testnet: launchSurfaceIsTestnet(
+              capability: capability,
+              launch: detail.launch,
+            ),
+          ),
           const LoopLabel('轮次槽位'),
           _RoundsBlock(rounds: detail.rounds),
           const LoopLabel('合约限制'),

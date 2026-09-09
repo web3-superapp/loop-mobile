@@ -179,7 +179,7 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
             LoopRecordRow(
               key: const ValueKey<String>('settings-open-networks'),
               title: '网络与 RPC',
-              subtitle: '只有 BNB Smart Chain 一条网络',
+              subtitle: '已启用的网络与 RPC 端点健康',
               onTap: () => widget.onNavigate('networks'),
               position: LoopRowPosition.last,
             ),

@@ -111,3 +111,22 @@ final chainAssetControllerProvider = NotifierProvider.autoDispose
       LoopChainResourceState<LoopChainAssetView>,
       String
     >(ChainAssetController.new);
+
+/// Whether the one-time "Launch 当前运行在 BSC 测试网" explanation has been
+/// closed in this run.
+///
+/// It is shared by every Launch surface and by the signing exit, so the
+/// explanation appears once rather than once per page. Dismissing it is a
+/// convenience, never a stored decision and never a permission: the badge
+/// itself stays on every surface that is on the testnet.
+final class LoopTestnetNoticeController extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void dismiss() => state = true;
+}
+
+final loopTestnetNoticeDismissedProvider =
+    NotifierProvider<LoopTestnetNoticeController, bool>(
+      LoopTestnetNoticeController.new,
+    );

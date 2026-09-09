@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -290,6 +291,12 @@ class _MoneySignSheetState extends State<MoneySignSheet> {
         key: const ValueKey<String>('money-sign-sheet'),
         state: _state,
         title: moneyActionTitle(widget.intent.kind),
+        // Decision 0038: the sheet names the chain whenever it is not the
+        // primary one. Money actions never are, so this is `null` in every
+        // delivered build — the sheet reads the intent rather than assuming.
+        networkBadge: loopIsTestnetChainId(widget.intent.chainId)
+            ? loopTestnetBadgeLabel
+            : null,
         facts: <LoopSignFact>[
           for (final IntentField field in fields)
             LoopSignFact(

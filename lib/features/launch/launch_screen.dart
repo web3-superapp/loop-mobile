@@ -106,6 +106,11 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
           )
         else ...<Widget>[
           _EvidenceNotice(capability: capability),
+          // Decision 0038: the catalogue has no single launch, so the chain
+          // statement comes from the capability the server published.
+          LaunchChainBlock(
+            testnet: launchSurfaceIsTestnet(capability: capability),
+          ),
           LoopSegBar(
             key: const ValueKey<String>('launch-segments'),
             labels: <String>[

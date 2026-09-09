@@ -38,6 +38,7 @@ class LoopSignSheet extends StatelessWidget {
     required this.facts,
     super.key,
     this.title = '确认交易',
+    this.networkBadge,
     this.reason,
     this.onConfirm,
     this.onCancel,
@@ -54,6 +55,13 @@ class LoopSignSheet extends StatelessWidget {
   /// Prototype `#sign-title`. The showcase cards override the confirm label
   /// with the compact 「确认」 used by the inline examples.
   final String title;
+
+  /// A chain the owner must be told about before signing, e.g. "BSC 测试网"
+  /// (loop-api decision 0038). It is a statement of fact next to the sheet's
+  /// state: it never disables the confirmation and it never replaces the
+  /// network line among the facts. `null` on the primary chain, which is
+  /// every money action.
+  final String? networkBadge;
 
   /// Human explanation for failed / rejected / complete states.
   final String? reason;
@@ -104,7 +112,9 @@ class LoopSignSheet extends StatelessWidget {
     };
     return Semantics(
       container: true,
-      label: '$title · $stateLabel',
+      label: networkBadge == null
+          ? '$title · $stateLabel'
+          : '$title · $networkBadge · $stateLabel',
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Container(
@@ -127,6 +137,15 @@ class LoopSignSheet extends StatelessWidget {
                         Expanded(
                           child: Text(title, style: theme.textTheme.titleLarge),
                         ),
+                        if (networkBadge != null) ...<Widget>[
+                          LoopBadge(
+                            key: const ValueKey<String>(
+                              'loop-sign-sheet-network-badge',
+                            ),
+                            networkBadge!,
+                          ),
+                          const SizedBox(width: 6),
+                        ],
                         LoopBadge(
                           stateLabel,
                           kind:
