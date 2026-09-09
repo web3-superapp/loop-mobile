@@ -654,7 +654,8 @@ S5_PORT_DEFAULTS = (
     ),
 )
 S5_CAPABILITY_META_PATH = Path("lib/integrations/backend/v2/loop_v2_meta.dart")
-# The contract's 28 capability ids, in contract order.
+# The contract's 31 capability ids, in contract order (S8 added `security`,
+# `settings` and `support`).
 S5_CAPABILITY_IDS = (
     "privyAuthentication",
     "accountSession",
@@ -680,6 +681,9 @@ S5_CAPABILITY_IDS = (
     "pushNotifications",
     "profile",
     "avatarUpload",
+    "security",
+    "settings",
+    "support",
     "pay",
     "bridge",
     "dappExecution",
@@ -920,9 +924,6 @@ NOTIFICATION_PREFERENCES_BEHAVIOR_TEST_MARKERS = {
     ),
 }
 WALLET_PROVIDERLESS_CONTROL_BEHAVIOR_TEST_MARKERS = {
-    Path("test/bridge_preview_snapshot_test.dart"): (
-        "Bridge progress variants preserve one immutable route snapshot",
-    ),
     Path("test/wallet_preview_activity_test.dart"): (
         "each history filter returns only its labelled Preview category",
     ),
@@ -930,11 +931,14 @@ WALLET_PROVIDERLESS_CONTROL_BEHAVIOR_TEST_MARKERS = {
         # Step 5 retired the Preview history-chip and testnet-switch evidence
         # with the screens it exercised.
         "permission Preview exposes no fake revocation action",
-        "Bridge status consumes one snapshot and changes local layout",
         "transaction result remains an explicit state-layout Preview",
     ),
     Path("test/app_navigation_test.dart"): (
-        "Bridge status route requires the exact typed snapshot",
+        "Bridge status is reachable on its own and stays pending",
+    ),
+    Path("test/s8_deferred_pages_test.dart"): (
+        "bridge offers no amount, no route and no fee",
+        "bridge-status keeps all three steps pending with no source",
     ),
     Path("test/send_flow_truthfulness_test.dart"): (
         "transaction result catalog never claims a transfer occurred",
@@ -947,17 +951,6 @@ WALLET_PROVIDERLESS_CONTROL_BEHAVIOR_TEST_MARKERS = {
     ),
 }
 WALLET_PROVIDERLESS_CONTROL_EXECUTABLE_TEST_EVIDENCE = {
-    Path("test/bridge_preview_snapshot_test.dart"): {
-        "Bridge progress variants preserve one immutable route snapshot": (
-            r"\bpending\.withNeedsClaim\s*\(",
-            r"\bclaim\.sourceLabel\b",
-            r"\bpending\.progressSteps\b",
-            r"\bpendingSteps\.first\.complete\b",
-            r"\bpendingSteps\[\s*1\s*\]\.complete\b",
-            r"\bclaimSteps\.last\.warning\b",
-            r"\bexpect\s*\(",
-        ),
-    },
     Path("test/wallet_preview_activity_test.dart"): {
         "each history filter returns only its labelled Preview category": (
             r"\bWalletPreviewActivity\.filteredBy\s*\(",
@@ -973,13 +966,6 @@ WALLET_PROVIDERLESS_CONTROL_EXECUTABLE_TEST_EVIDENCE = {
             r"\bisNull\b",
             r"\bfindsNothing\b",
         ),
-        "Bridge status consumes one snapshot and changes local layout": (
-            r"\bBridgeStatusScreen\s*\(\s*snapshot\s*:\s*BridgePreviewSnapshot\.demo",
-            r"\btester\.tap\s*\(\s*find\.byType\s*\(\s*Switch\b",
-            r"\b_expectAllButtonStyleActionsDisabled\s*\(",
-            r"\bclaim\.onPressed\b",
-            r"\bisNull\b",
-        ),
         "transaction result remains an explicit state-layout Preview": (
             r"\bTransactionResultScreen\s*\(",
             r"(?:\btester\.tap\s*\([\s\S]*?){3}",
@@ -988,11 +974,24 @@ WALLET_PROVIDERLESS_CONTROL_EXECUTABLE_TEST_EVIDENCE = {
         ),
     },
     Path("test/app_navigation_test.dart"): {
-        "Bridge status route requires the exact typed snapshot": (
+        "Bridge status is reachable on its own and stays pending": (
             r"\brouter\.go\s*\(",
-            r"\bBridgePreviewSnapshot\.demo\.withNeedsClaim\s*\(",
-            r"\bextra\s*:\s*claimSnapshot\b",
+            r"\bfindsNWidgets\s*\(\s*3\s*\)",
+            r"\bfindsNothing\b",
             r"\bfindsOneWidget\b",
+        ),
+    },
+    Path("test/s8_deferred_pages_test.dart"): {
+        "bridge offers no amount, no route and no fee": (
+            r"\bawait\s+pumpS8Page\s*\(",
+            r"\bfind\.byType\s*\(\s*TextField\s*\)\s*,\s*findsNothing",
+            r"\bfind\.textContaining\s*\([\s\S]*?\)\s*,\s*findsNothing",
+        ),
+        "bridge-status keeps all three steps pending with no source": (
+            r"\bawait\s+pumpS8Page\s*\(",
+            r"\bfor\s*\(\s*var\s+index\s*=\s*1\s*;",
+            r"\bfindsNWidgets\s*\(\s*3\s*\)",
+            r"\bfindsNothing\b",
         ),
     },
     Path("test/send_flow_truthfulness_test.dart"): {
@@ -3276,9 +3275,9 @@ def check_chat_preview_conversation_id_contract(root: Path) -> list[str]:
 SECURITY_CAPABILITY_TRUTH_TEST_MARKERS = {
     Path("test/security_capability_truthfulness_test.dart"): (
         "A11 exposes no providerless protection switch or secure-storage claim",
-        "H5 keeps capability availability separate from configured protection",
+        "H5 states each protection method is off, with its reason",
         "production LoopApp A11 keeps every setup method unavailable",
-        "production LoopApp H5 keeps protection status unavailable",
+        "production LoopApp H5 fails closed with no adapter",
         "A11 and H5 catalog copy reports current delivery truth",
     ),
 }
@@ -3295,16 +3294,12 @@ SECURITY_CAPABILITY_TRUTH_EXECUTABLE_TEST_EVIDENCE = {
             r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*3\s*\)",
             r"\bexpect\s*\(\s*destinations\s*,\s*<String>\s*\[",
         ),
-        "H5 keeps capability availability separate from configured protection": (
-            r"\bfind\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(",
-            r"\bfinal\s+walletMfa\s*=\s*find\.text\s*\(",
-            r"\bfinal\s+appLock\s*=\s*find\.text\s*\(",
-            r"\bfinal\s+walletMfaSemantics\s*=\s*_settingsSemantics\s*\(",
-            r"\bfinal\s+appLockSemantics\s*=\s*_settingsSemantics\s*\(",
-            r"\bexpect\s*\(\s*walletMfaSemantics\.properties\.enabled\s*,\s*isFalse",
-            r"\bexpect\s*\(\s*appLockSemantics\.properties\.enabled\s*,\s*isFalse",
-            r"\b_tap\s*\(\s*tester\s*,\s*walletMfa\s*\)",
-            r"\b_tap\s*\(\s*tester\s*,\s*appLock\s*\)",
+        "H5 states each protection method is off, with its reason": (
+            r"\bawait\s+pumpS8Page\s*\(",
+            r"\bsecurity\s*:\s*FakeSecurityGateway\s*\(",
+            r"\bfind\.textContaining\s*\([\s\S]*?\)\s*,\s*findsNothing",
+            r"\bfor\s*\(\s*final\s+id\s+in\s+LoopSecurityCapabilityId\.values\s*\)",
+            r"\bfindsNWidgets\s*\(\s*6\s*\)",
             r"\bexpect\s*\(\s*destinations\s*,\s*<String>\s*\[",
         ),
         "production LoopApp A11 keeps every setup method unavailable": (
@@ -3316,12 +3311,12 @@ SECURITY_CAPABILITY_TRUTH_EXECUTABLE_TEST_EVIDENCE = {
             r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*4\s*\)",
             r"\bfind\.byType\s*\(\s*Switch\s*\)\s*,\s*findsNothing",
         ),
-        "production LoopApp H5 keeps protection status unavailable": (
+        "production LoopApp H5 fails closed with no adapter": (
             r"\bfinal\s+router\s*=\s*await\s+_pumpAuthenticatedLoopApp\s*\(",
             r"\brouter\.go\s*\(",
             r"\bfind\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(",
             r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNothing",
-            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*5\s*\)",
+            r"\bfind\.textContaining\s*\([\s\S]*?\)\s*,\s*findsNothing",
         ),
         "A11 and H5 catalog copy reports current delivery truth": (
             r"\bfinal\s+a11\s*=\s*SurfaceCatalog\.byPath\s*\(",
@@ -3345,10 +3340,17 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
                 "security-setup-continue",
                 "App 不会自行存储 PIN",
             ),
-            "lib/features/profile/profile_screens.dart": (
-                "protection-status-unavailable",
-                "Wallet multi-factor authentication",
-                "enrollment status is unknown",
+            # S8 (decision 0060) rebuilt H5 on `GET /v2/security/capabilities`
+            # and `GET /v2/security/summary`: six methods that are off, each
+            # with the server's own reason, and no local guess.
+            "lib/features/profile/security/security_screens.dart": (
+                "security-capability-block",
+                "security-method-",
+                "_securityMethodUnavailableLabel",
+            ),
+            "lib/features/profile/security/security_models.dart": (
+                "LoopSecurityCapabilityId",
+                "providerAccessTerminated",
             ),
             "lib/core/navigation/surface_catalog.dart": (
                 "no protection setting is saved until reviewed enrollment and storage adapters exist",
@@ -3440,70 +3442,66 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
                     "A11 must not present a capability as an enabled protection"
                 )
 
-    profile_path = root / "lib/features/profile/profile_screens.dart"
-    if profile_path.is_file():
-        source = strip_dart_comments(read_text(profile_path))
-        start = source.find("class _SecurityCenter")  # noqa: E501
-        end = source.find("class _DeviceManagement", start + 1)
+    security_path = root / "lib/features/profile/security/security_screens.dart"
+    if security_path.is_file():
+        source = strip_dart_comments(read_text(security_path))
+        start = source.find("class SecurityCenterScreen")
+        end = source.find("class _SecurityMethodGroup", start + 1)
         if start < 0 or end < 0:
             errors.append("H5 Security Center must retain one bounded reviewed slice")
         else:
             security = source[start:end]
             for marker in (
-                "_ProtectionSummary(",
                 "Core protections ready",
                 "Add another protection",
-                "Recovery is not set",
+                "\u9879\u4fdd\u62a4\u5df2\u5f00\u542f",
             ):
                 if marker in security:
                     errors.append(
-                        "H5 must not infer configured protection from capability availability: "
-                        + marker
+                        "H5 must not infer configured protection from capability "
+                        "availability: " + marker
                     )
             if re.search(r"['\"]\s*\$?\w*\s*/\s*3", security):
-                errors.append("H5 must not restore a capability-derived protection score")
+                errors.append(
+                    "H5 must not restore a capability-derived protection score"
+                )
             if "onNavigate('security-setup')" in security:
                 errors.append(
                     "H5 must not route MFA or App lock into providerless A11 setup"
                 )
-            for title in ("Wallet multi-factor authentication", "App lock"):
-                title_position = security.find(f"title: '{title}'")
-                tile_start = security.rfind(
-                    "_SettingsTile(", 0, title_position
-                )
-                tile_end = security.find(
-                    "_SettingsTile(", title_position + len(title)
-                )
-                if tile_end < 0:
-                    tile_end = len(security)
-                tile = (
-                    security[tile_start:tile_end]
-                    if title_position >= 0 and tile_start >= 0
-                    else ""
-                )
-                if re.search(r"\bonTap\s*:\s*null\s*,", tile) is None:
-                    errors.append(
-                        f"H5 `{title}` must remain disabled until a typed setup adapter exists"
-                    )
-            # Decision 0053: LOOP has no recovery phrase, so the `seed-backup`
-            # information route is gone. Private-key export replaces it and
-            # stays disabled until a reviewed export adapter exists.
-            if "导出私钥" not in security:
-                errors.append(
-                    "H5 must keep a truthful private-key export entry in place "
-                    "of the retired recovery phrase"
-                )
-            if "onNavigate('seed-backup')" in security or "助记词" in (
-                security.replace("LOOP 不使用助记词", "")
-            ):
+            if "onNavigate('seed-backup')" in security or "\u52a9\u8bb0\u8bcd" in security:
                 errors.append(
                     "H5 must not restore a recovery-phrase surface or route"
                 )
-            for destination in ("devices", "social-recovery"):
+            for destination in ("devices", "notif-settings"):
                 if f"onNavigate('{destination}')" not in security:
                     errors.append(
-                        f"H5 must preserve its truthful `{destination}` information route"
+                        f"H5 must preserve its truthful `{destination}` "
+                        "information route"
                     )
+        row_start = source.find("class _SecurityMethodRow")
+        row_end = source.find("class SecurityCenterScreen", row_start + 1)
+        if row_start >= 0 and row_end > row_start:
+            row = source[row_start:row_end]
+            if re.search(
+                r"LoopBadge\(\s*'(?:\u5df2\u5f00\u542f|\u5df2\u542f\u7528|\u5df2\u8bbe\u7f6e)'", row
+            ):
+                errors.append(
+                    "H5 must not present a capability as an enabled protection"
+                )
+            if "loopReasonCodeText(capability.reasonCode)" not in row:
+                errors.append(
+                    "H5 must render the server's own reason for every method"
+                )
+        for destination in ("social-recovery", "key-export"):
+            if (
+                re.search(r"onNavigate\(\s*'" + re.escape(destination) + r"'", source)
+                is None
+            ):
+                errors.append(
+                    f"H5 must preserve its truthful `{destination}` "
+                    "information route"
+                )
 
     errors.extend(
         check_behavior_test_evidence(root, SECURITY_CAPABILITY_TRUTH_TEST_MARKERS)
@@ -3607,9 +3605,9 @@ LOCAL_DISPLAY_PREFERENCES_EXECUTABLE_TEST_EVIDENCE = {
     },
     Path("test/local_settings_and_help_test.dart"): {
         "Reduce motion remains truthful when local saving is unavailable": (
-            r"\bfind\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(",
+            r"\bfind\.byKey\s*\(\s*reduceMotionRow\s*\)",
             r"\btester\.tap\s*\(",
-            r"\bproviderContainer\.read\s*\(\s*loopDisplayPreferencesProvider\s*\)\.reduceMotion",
+            r"\bcontainer\.read\s*\(\s*loopDisplayPreferencesProvider\s*\)\.reduceMotion",
             r"\bMediaQuery\.disableAnimationsOf\s*\(",
             r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsOneWidget",
         ),
@@ -3621,8 +3619,8 @@ LOCAL_DISPLAY_PREFERENCES_EXECUTABLE_TEST_EVIDENCE = {
         "restored device preference disables animations globally": (
             r"\bLoopDisplayPreferences\s*\(\s*reduceMotion\s*:\s*true",
             r"\bMediaQuery\.disableAnimationsOf\s*\(",
-            r"\bfind\.byType\s*\(\s*Switch\s*\)\s*,\s*findsOneWidget",
-            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*3\s*\)",
+            r"\bfind\.byKey\s*\(\s*reduceMotionRow\s*\)",
+            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsOneWidget",
         ),
         "system animation setting remains stricter than stored false": (
             r"\bFakeAccessibilityFeatures\s*\(\s*disableAnimations\s*:\s*true",
@@ -3678,13 +3676,15 @@ def check_local_display_preferences_contract(root: Path) -> list[str]:
                 "MediaQuery.disableAnimationsOf(context)",
                 "copyWith(disableAnimations: true)",
             ),
-            "lib/features/profile/profile_screens.dart": (
-                "reduce-motion-setting",
-                "Local storage unavailable",
-                "Retry local storage",
-                "Build-defined copy; localization is not connected",
-                "No conversion; markets show their actual quote asset",
-                "Dark design system only in this build",
+            # S8 (decision 0060) rebuilt H12 on the V2 design system in zh-CN
+            # and moved the two account values onto `GET /v2/settings`.
+            "lib/features/profile/settings/settings_screen.dart": (
+                "settings-reduce-motion",
+                "settings-retry-display-storage",
+                "\u672c\u673a\u4fdd\u5b58\u4e0d\u53ef\u7528",
+                "settings-theme",
+                "settings-language",
+                "settings-display-currency",
             ),
             "test/loop_display_preferences_test.dart": tuple(
                 marker
@@ -3827,31 +3827,43 @@ def check_local_display_preferences_contract(root: Path) -> list[str]:
                     + str(relative)
                 )
 
-    profile_path = root / "lib/features/profile/profile_screens.dart"
-    if profile_path.is_file():
-        source = strip_dart_comments(read_text(profile_path))
-        start = source.find("class _GeneralSettings")
-        end = source.find("class _AboutAndLegal", start + 1)
-        if start < 0 or end < 0:
+    settings_path = root / "lib/features/profile/settings/settings_screen.dart"
+    if settings_path.is_file():
+        source = strip_dart_comments(read_text(settings_path))
+        start = source.find("class _GeneralSettingsScreenState")
+        if start < 0:
             errors.append("H12 Settings must retain one bounded reviewed slice")
         else:
-            settings = source[start:end]
+            settings = source[start:]
             executable = strip_dart_comments_and_strings(settings)
-            if len(re.findall(r"\b_SwitchSetting\s*\(", executable)) != 1:
-                errors.append("H12 must expose exactly one implemented display switch")
-            for title in ("Language", "Display currency", "Theme"):
-                title_position = settings.find(f"title: '{title}'")
-                tile_start = settings.rfind("_SettingsTile(", 0, title_position)
-                tile_end = settings.find("_SettingsTile(", title_position + 1)
-                if tile_end < 0:
-                    tile_end = len(settings)
-                tile = (
-                    settings[tile_start:tile_end]
-                    if title_position >= 0 and tile_start >= 0
+            # Exactly one device-local control is implemented; everything else
+            # is either a fixed server value or a navigation entry.
+            if len(re.findall(r"\bsetReduceMotion\s*\(", executable)) != 1:
+                errors.append(
+                    "H12 must expose exactly one implemented display switch"
+                )
+            for key in (
+                "settings-language",
+                "settings-display-currency",
+                "settings-theme",
+            ):
+                position = settings.find("ValueKey<String>('" + key + "')")
+                row_start = settings.rfind("LoopRecordRow(", 0, position)
+                row_end = settings.find("LoopRecordRow(", position + 1)
+                if row_end < 0:
+                    row_end = len(settings)
+                row = (
+                    settings[row_start:row_end]
+                    if position >= 0 and row_start >= 0
                     else ""
                 )
-                if re.search(r"\bonTap\s*:\s*null\s*,", tile) is None:
-                    errors.append(f"H12 `{title}` must remain disabled")
+                if row == "" or re.search(r"\bonTap\s*:", row) is not None:
+                    errors.append("H12 `" + key + "` must remain read-only")
+            # The prototype's data-usage figure has no source, so the row is
+            # absent rather than filled with an invented number.
+            data_usage = "\u6570\u636e\u7528\u91cf"
+            if data_usage in settings.replace('\u6ca1\u6709"' + data_usage + '"', ""):
+                errors.append("H12 must not restore the sourceless data-usage row")
 
     errors.extend(
         check_behavior_test_evidence(root, LOCAL_DISPLAY_PREFERENCES_TEST_MARKERS)
@@ -5501,6 +5513,7 @@ def check_wallet_identity_readiness_contract(root: Path) -> list[str]:
                 "!session.canUseProviderBackedFeatures",
                 "r'^0x[0-9a-fA-F]{40}$'",
                 "WalletReadinessMode.invalidAddress",
+                "factory WalletReadiness.fromSession(LoopSessionState session)",
             ),
             # Step 5 retired `wallet_overview_screens.dart` and the Preview
             # `WalletManagerScreen` copy (decision 0057). Wallet identity is now
@@ -5513,7 +5526,11 @@ def check_wallet_identity_readiness_contract(root: Path) -> list[str]:
                 "地址不是账号标识",
                 "wallet.truncatedAddress",
             ),
-            "lib/features/wallet/wallet_management_screens.dart": (
+            # S8 (decision 0060) retired the last `WalletReadiness` consumer
+            # with the Preview DApp browser. The model and its unit test stay
+            # as retained history, so the lock follows the test that still
+            # exercises it.
+            "test/wallet_readiness_screen_test.dart": (
                 "WalletReadiness.fromSession",
             ),
             "lib/app.dart": (
@@ -5608,21 +5625,33 @@ def check_wallet_preview_route_contract(root: Path) -> list[str]:
                 "class WalletAssetScreen",
                 "MarketAssetRoute.isCanonical(assetId)",
             ),
-            "lib/features/wallet/wallet_management_screens.dart": (
-                "class DappBrowserScreen extends ConsumerStatefulWidget",
-                "WalletReadiness.fromSession",
-                "Current wallet identity",
-                "Wallet injection",
-                "typed domain is not trusted",
+            # S8 (decision 0060) replaced the Preview DApp browser with the
+            # offline `dapp` review: no wallet identity is rendered at all, so
+            # none can be invented.
+            "lib/features/wallet/deferred_screens.dart": (
+                "class DappReviewScreen",
+                "LoopUrlReview.review(value)",
+                "dapp-execution-unavailable",
+                "dapp-reputation-unavailable",
+            ),
+            "lib/core/security/loop_url_review.dart": (
+                "static const followsRedirects = false;",
+                "LoopUrlFinding.notHttps",
+                "LoopUrlFinding.confusableCharacters",
             ),
             "test/app_navigation_test.dart": (
                 # The `/wallet/asset` half of this test was retired with the
                 # typed Preview extra; the signing-review half survives.
                 "an orphan signing review returns to Wallet",
             ),
-            "test/wallet_preview_route_truthfulness_test.dart": (
-                "DApp preview uses only the current wallet identity and typed domain",
-                "DApp preview never invents a wallet for a verified account",
+            "test/s8_deferred_pages_test.dart": (
+                "a bare host is normalised and shown as read-only",
+                "a non-HTTPS address is blocked with its reason",
+                "an IDN homograph is blocked and its Latin reading named",
+                "the page states that it never opens the address",
+            ),
+            "test/loop_url_review_test.dart": (
+                "the review never resolves a redirect: the host is the typed host",
             ),
             "test/route_manifest_test.dart": (
                 "Wallet manifest maps every slug to its mounted route",
@@ -5653,25 +5682,29 @@ def check_wallet_preview_route_contract(root: Path) -> list[str]:
                     f"{marker}"
                 )
 
-    management_path = (
-        root / "lib/features/wallet/wallet_management_screens.dart"
-    )
-    if management_path.is_file():
-        source = read_text(management_path)
-        dapp_start = source.find("class DappBrowserScreen")
-        dapp_end = source.find("class ApprovalInterceptScreen", dapp_start)
-        dapp_source = source[dapp_start:dapp_end]
-        for marker in ("0x71E4", "Selected wallet"):
+    deferred_path = root / "lib/features/wallet/deferred_screens.dart"
+    if deferred_path.is_file():
+        source = read_text(deferred_path)
+        dapp_start = source.find("class DappReviewScreen")
+        dapp_source = source[dapp_start:] if dapp_start >= 0 else ""
+        for marker in ("0x71E4", "Selected wallet", "\u5df2\u8fde\u63a5", "Blockaid"):
             if marker in dapp_source:
                 errors.append(
-                    "DApp preview must not invent a wallet identity: "
-                    f"{marker}"
+                    "The DApp review must not invent a connection, a wallet "
+                    f"identity or a reputation source: {marker}"
                 )
         if re.search(r"(?i)0x[0-9a-f]{40}", dapp_source):
             errors.append(
-                "DApp preview wallet identity must come from "
-                "readiness.ethereumAddress, never an address literal"
+                "The DApp review renders no wallet address; it reviews a URL "
+                "and nothing else"
             )
+        # Reviewing is local and read-only: no request may leave this page.
+        for marker in ("Dio", "HttpClient", "launchUrl"):
+            if marker in dapp_source:
+                errors.append(
+                    "The DApp review must never open or fetch the address: "
+                    f"{marker}"
+                )
 
     catalog_path = root / "lib/core/navigation/surface_catalog.dart"
     if catalog_path.is_file():
@@ -5953,7 +5986,6 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
             "docs/decisions/0023-close-providerless-wallet-controls.md": (
                 "A selected filter renders only",
                 "allowance examples visible, but disable revocation",
-                "`BridgePreviewSnapshot.demo`. The status route requires",
                 "Transaction Result as an explicit state-layout Preview",
             ),
             "docs/failures/providerless-wallet-controls-without-effects.md": (
@@ -5963,18 +5995,15 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
                 "## Prevention",
                 "## Evidence",
             ),
-            "lib/features/wallet/bridge_preview_snapshot.dart": (
-                "enum BridgePreviewProgress",
-                "final class BridgePreviewStep",
-                "final class BridgePreviewSnapshot",
-                "const BridgePreviewSnapshot._",
-                "static const demo = BridgePreviewSnapshot._",
-                "BridgePreviewSnapshot withNeedsClaim(bool value)",
-                "List<BridgePreviewStep> get progressSteps",
-                "title: 'Source confirmed'",
-                "title: 'Relay processing'",
-                "Verified provider claim flow is unavailable",
-                "演示数据 · no destination receipt was queried",
+            # S8 (decision 0060) retired the Bridge Preview snapshot: there is
+            # no bridge runtime, so the status page shows three pending steps
+            # with no source instead of a simulated route.
+            "lib/features/wallet/deferred_screens.dart": (
+                "class BridgeScreen",
+                "class BridgeStatusScreen",
+                "static const steps = <(String, String)>[",
+                "bridge-status-no-source",
+                "BRIDGE_RUNTIME_DEFERRED",
             ),
             "lib/features/wallet/wallet_preview_activity.dart": (
                 "enum WalletPreviewActivityKind",
@@ -5984,20 +6013,6 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
                 "activity.kind == WalletPreviewActivityKind.swap",
                 "static const all = <WalletPreviewActivity>",
                 "List<WalletPreviewActivity>.unmodifiable(all.where(filter.includes))",
-            ),
-            "lib/features/wallet/trade_screens.dart": (
-                "const snapshot = BridgePreviewSnapshot.demo;",
-                "extra: snapshot",
-                "BridgeStatusScreen({required this.snapshot",
-                "snapshot.sourceLabel",
-                "snapshot.destinationLabel",
-                "for (final step in snapshot.progressSteps)",
-                "index: step.index",
-                "title: step.title",
-                "detail: step.detail",
-                "complete: step.complete",
-                "warning: step.warning",
-                "snapshot.withNeedsClaim(value)",
             ),
             # Step 5 retired the Preview wallet-history filter and the testnet
             # toggle with `TransactionHistoryScreen` and `NetworksScreen`
@@ -6028,13 +6043,6 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
                 "value: 'Not submitted'",
                 "label: const Text('No transaction to inspect')",
             ),
-            "lib/app.dart": (
-                "state.extra is BridgePreviewSnapshot ? null : '/wallet/bridge'",
-                "snapshot: state.extra! as BridgePreviewSnapshot",
-            ),
-            "test/bridge_preview_snapshot_test.dart": (
-                "Bridge progress variants preserve one immutable route snapshot",
-            ),
             "test/wallet_preview_activity_test.dart": (
                 "each history filter returns only its labelled Preview category",
             ),
@@ -6042,7 +6050,6 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
                 # Step 5 replaced the Preview history and network screens with
                 # the V2 `tx-history` and `networks` pages.
                 "permission Preview exposes no fake revocation action",
-                "Bridge status consumes one snapshot and changes local layout",
                 "transaction result remains an explicit state-layout Preview",
             ),
             "test/send_flow_truthfulness_test.dart": (
@@ -6050,8 +6057,11 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
                 "No request was sent or submitted. No pending receipt exists.",
             ),
             "test/app_navigation_test.dart": (
-                "Bridge status route requires the exact typed snapshot",
-                "wrong Bridge snapshot type",
+                "Bridge status is reachable on its own and stays pending",
+            ),
+            "test/s8_deferred_pages_test.dart": (
+                "bridge offers no amount, no route and no fee",
+                "bridge-status keeps all three steps pending with no source",
             ),
         },
     )
@@ -6075,34 +6085,40 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
         if re.search(r"\bonPressed\s*:(?!\s*null\b)", approvals_source):
             errors.append("Wallet allowance Preview cannot add an enabled action")
 
-    trade_path = root / "lib/features/wallet/trade_screens.dart"
-    if trade_path.is_file():
-        source = read_text(trade_path)
+    bridge_path = root / "lib/features/wallet/deferred_screens.dart"
+    if bridge_path.is_file():
+        source = read_text(bridge_path)
         bridge_start = source.find("class BridgeScreen")
-        bridge_source = source[bridge_start:]
+        bridge_end = source.find("class DappReviewScreen", bridge_start)
+        bridge_source = (
+            source[bridge_start:bridge_end] if bridge_start >= 0 else ""
+        )
+        # There is no bridge runtime, so no amount, route, fee, ETA or observed
+        # step may be rendered.
         for marker in (
-            "'Ethereum · 250 USDC'",
-            "'Arbitrum · 248.92 USDC'",
-            "'2–5 minutes'",
-            "'1.08 USDC'",
-            "'Ethereum · 14 confirmations'",
-            "'Provider is preparing the destination transfer'",
+            "USDC",
+            "Ethereum",
+            "Base",
             "'Source confirmed'",
-            "'Relay processing'",
             "complete: true",
+            "998.4",
         ):
             if marker in bridge_source:
                 errors.append(
-                    "Bridge Preview facts belong only to BridgePreviewSnapshot: "
-                    f"{marker}"
+                    "Bridge has no runtime: it must not render a route, an "
+                    f"amount or an observed step: {marker}"
                 )
-        if "extra: snapshot" not in bridge_source:
-            errors.append("Bridge progress navigation must carry its typed snapshot")
+        if "LoopBadge('等待')" not in bridge_source:
+            errors.append(
+                "Bridge progress must keep all three steps pending with no source"
+            )
         status_start = bridge_source.find("class BridgeStatusScreen")
-        status_end = bridge_source.find("class _BridgeStep", status_start)
-        status_source = bridge_source[status_start:status_end]
-        if re.search(r"\bonPressed\s*:(?!\s*null\b)", status_source):
-            errors.append("Bridge progress Preview cannot add an enabled action")
+        status_source = bridge_source[status_start:] if status_start >= 0 else ""
+        if re.search(r"\bonPressed\s*:\s*onOpenWallet\b", status_source) is None:
+            errors.append(
+                "Bridge progress may offer only the truthful return-to-wallet "
+                "action"
+            )
 
     send_path = root / "lib/features/wallet/send_screens.dart"
     if send_path.is_file():
@@ -7059,7 +7075,6 @@ def check_route_manifest_contract(root: Path) -> list[str]:
             "_pendingManifestRoutes",
             "LoopRouteManifest.withStatus(",
             "LoopPendingSurface(entry: entry)",
-            "LoopPendingSurface.unavailable(",
         ):
             if marker not in app_source:
                 errors.append(
@@ -8170,7 +8185,7 @@ def check_s5_truth_contract(root: Path) -> list[str]:
                 "S5 port is unavailable until lib/main.dart mounts its adapter"
             )
 
-    # 2. The capability enum follows the contract's 28 ids, in contract order.
+    # 2. The capability enum follows the contract's 31 ids, in contract order.
     meta_path = root / S5_CAPABILITY_META_PATH
     if meta_path.is_file():
         meta_source = strip_dart_comments(read_text(meta_path))

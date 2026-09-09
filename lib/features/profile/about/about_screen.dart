@@ -98,10 +98,12 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
                 LoopRecordRow(
                   key: ValueKey<String>('about-config-${entry.module}'),
                   title: entry.module,
+                  // The version is long, so it goes on its own line rather
+                  // than into the fixed-width value column.
                   subtitle: entry.effectiveAt == null
-                      ? '没有生效时间'
-                      : '生效于 ${loopRelativeTime(entry.effectiveAt!)}',
-                  trailing: entry.configVersion,
+                      ? entry.configVersion
+                      : '${entry.configVersion} · 生效于 '
+                            '${loopRelativeTime(entry.effectiveAt!)}',
                   position: LoopRowPosition.middle,
                 ),
             ],

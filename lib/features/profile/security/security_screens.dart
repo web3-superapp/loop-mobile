@@ -577,7 +577,7 @@ class _DeviceManagementScreenState
           title: '撤销能做到什么',
           body:
               '撤销会把该会话记为已撤销，并让 LOOP 拒绝之后携带它的请求。'
-              '它不会终止对方设备上的 Privy 登录，所以不要理解为"已下线"。'
+              '它不会终止对方设备上的 Privy 登录，所以不能理解为对方已经退出。'
               '退出本机请使用设置页的退出登录。',
         ),
         const SizedBox(height: 12),
@@ -865,7 +865,7 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
           key: ValueKey<String>('social-recovery-no-guardians'),
           icon: 'info',
           title: '这里没有守护人名单',
-          body: '还没有守护人资源，所以这一页不会显示"0 / 3"，也不会展示任何示例守护人。',
+          body: '还没有守护人资源，所以这一页不显示守护人计数，也不展示任何示例守护人。',
           margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
         ),
       ],

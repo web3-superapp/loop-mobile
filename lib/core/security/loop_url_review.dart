@@ -192,7 +192,30 @@ final class LoopUrlReview {
     if (parsed.userInfo.isNotEmpty) {
       findings.add(LoopUrlFinding.credentialsInUrl);
     }
-    final host = parsed.host.toLowerCase();
+    // Dart percent-encodes a non-ASCII host, so the readable form is recovered
+    // before it is inspected: the homograph must be seen, not hidden behind
+    // `%D0%B0`. A malformed escape is an unusable address, not a warning.
+    String host;
+    try {
+      host = Uri.decodeComponent(parsed.host).toLowerCase();
+    } on FormatException {
+      findings.add(LoopUrlFinding.unsafeCharacters);
+      return LoopUrlReview._(
+        input: input,
+        canonical: null,
+        host: null,
+        findings: findings,
+      );
+    }
+    if (_unsafe.hasMatch(host)) {
+      findings.add(LoopUrlFinding.unsafeCharacters);
+      return LoopUrlReview._(
+        input: input,
+        canonical: null,
+        host: null,
+        findings: findings,
+      );
+    }
     if (host.isEmpty || !host.contains('.')) {
       findings.add(LoopUrlFinding.missingHost);
       return LoopUrlReview._(

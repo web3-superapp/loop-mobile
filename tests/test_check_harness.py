@@ -3851,45 +3851,73 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected Signing Review origin guard: {result}",
         )
 
-    def test_dapp_preview_cannot_restore_a_fixture_wallet(self) -> None:
+    # S8 (decision 0060) replaced the Preview DApp browser with the offline
+    # `dapp` review, which renders no wallet identity and no connection at all.
+    def test_dapp_review_cannot_claim_a_connection_or_reputation(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            relative = "lib/features/wallet/wallet_management_screens.dart"
-            target = root / relative
-            target.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            target.write_text(
-                source.replace("Current wallet identity", "Selected wallet"),
-                encoding="utf-8",
-            )
-            result = check_harness.check_wallet_preview_route_contract(root)
-
-        self.assertTrue(
-            any("must not invent a wallet identity" in error for error in result),
-            msg=f"expected DApp wallet identity guard: {result}",
-        )
-
-    def test_dapp_preview_cannot_use_any_address_literal(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/wallet/wallet_management_screens.dart"
+            relative = "lib/features/wallet/deferred_screens.dart"
             target = root / relative
             target.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             target.write_text(
                 source.replace(
-                    "class ApprovalInterceptScreen",
-                    "const unsafeDappWallet = "
-                    "'0x6666666666666666666666666666666666666666';\n\n"
-                    "class ApprovalInterceptScreen",
+                    "class DappReviewScreen extends ConsumerStatefulWidget {",
+                    "class DappReviewScreen extends ConsumerStatefulWidget {\n"
+                    "  static const unsafeState = '\u5df2\u8fde\u63a5';",
                 ),
                 encoding="utf-8",
             )
             result = check_harness.check_wallet_preview_route_contract(root)
 
         self.assertTrue(
-            any("never an address literal" in error for error in result),
+            any("must not invent a connection" in error for error in result),
+            msg=f"expected DApp connection guard: {result}",
+        )
+
+    def test_dapp_review_cannot_use_any_address_literal(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/deferred_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "class DappReviewScreen extends ConsumerStatefulWidget {",
+                    "class DappReviewScreen extends ConsumerStatefulWidget {\n"
+                    "  static const unsafeWallet = "
+                    "'0x6666666666666666666666666666666666666666';",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_preview_route_contract(root)
+
+        self.assertTrue(
+            any("reviews a URL" in error for error in result),
             msg=f"expected generic DApp address-literal guard: {result}",
+        )
+
+    def test_dapp_review_cannot_open_or_fetch_the_address(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = "lib/features/wallet/deferred_screens.dart"
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            target.write_text(
+                source.replace(
+                    "class DappReviewScreen extends ConsumerStatefulWidget {",
+                    "class DappReviewScreen extends ConsumerStatefulWidget {\n"
+                    "  static void unsafeOpen() => launchUrl(Uri.parse('x'));",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_wallet_preview_route_contract(root)
+
+        self.assertTrue(
+            any("never open or fetch the address" in error for error in result),
+            msg=f"expected offline DApp review guard: {result}",
         )
 
     def test_wallet_catalog_cannot_restore_planned_capability_claims(self) -> None:
@@ -4440,153 +4468,68 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected additive Wallet action guard: {result}",
         )
 
-    def test_bridge_status_route_cannot_accept_missing_typed_state(self) -> None:
+    # S8 (decision 0060) retired the Bridge Preview snapshot. `bridge` and
+    # `bridge-status` are entry points with the server's deferred reason, so
+    # what is guarded now is the absence of a route, an amount and an
+    # observed step.
+    def test_bridge_cannot_restore_a_simulated_route(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            relative = "lib/app.dart"
+            relative = "lib/features/wallet/deferred_screens.dart"
             target = root / relative
             target.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             target.write_text(
                 source.replace(
-                    "state.extra is BridgePreviewSnapshot ? null : '/wallet/bridge'",
-                    "true ? null : '/wallet/bridge'",
+                    "class BridgeScreen extends ConsumerWidget {",
+                    "class BridgeScreen extends ConsumerWidget {\n"
+                    "  static const unsafeRoute = 'Ethereum';",
                 ),
                 encoding="utf-8",
             )
             result = check_harness.check_wallet_providerless_controls_contract(root)
 
         self.assertTrue(
-            any("state.extra is BridgePreviewSnapshot" in error for error in result),
-            msg=f"expected typed Bridge status route guard: {result}",
+            any("must not render a route" in error for error in result),
+            msg=f"expected Bridge deferred-route guard: {result}",
         )
 
-    def test_bridge_preview_navigation_must_carry_snapshot(self) -> None:
+    def test_bridge_progress_steps_cannot_become_observed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            relative = "lib/features/wallet/trade_screens.dart"
+            relative = "lib/features/wallet/deferred_screens.dart"
             target = root / relative
             target.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             target.write_text(
-                source.replace("extra: snapshot", "extra: null"),
+                source.replace("LoopBadge('\u7b49\u5f85')", "LoopBadge('\u5b8c\u6210')"),
                 encoding="utf-8",
             )
             result = check_harness.check_wallet_providerless_controls_contract(root)
 
         self.assertTrue(
-            any("must carry its typed snapshot" in error for error in result),
-            msg=f"expected Bridge snapshot navigation guard: {result}",
+            any("all three steps pending" in error for error in result),
+            msg=f"expected pending Bridge progress guard: {result}",
         )
 
-    def test_bridge_status_builder_cannot_fall_back_to_demo(self) -> None:
+    def test_bridge_progress_cannot_add_an_enabled_action(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            relative = "lib/app.dart"
+            relative = "lib/features/wallet/deferred_screens.dart"
             target = root / relative
             target.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             target.write_text(
-                source.replace(
-                    "snapshot: state.extra! as BridgePreviewSnapshot",
-                    "snapshot: BridgePreviewSnapshot.demo",
-                ),
+                source.replace("onPressed: onOpenWallet", "onPressed: () {}"),
                 encoding="utf-8",
             )
             result = check_harness.check_wallet_providerless_controls_contract(root)
 
         self.assertTrue(
-            any(
-                "snapshot: state.extra! as BridgePreviewSnapshot" in error
-                for error in result
-            ),
-            msg=f"expected Bridge builder origin guard: {result}",
+            any("return-to-wallet" in error for error in result),
+            msg=f"expected truthful Bridge progress action guard: {result}",
         )
 
-    def test_bridge_preview_switch_cannot_become_noop(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/wallet/trade_screens.dart"
-            target = root / relative
-            target.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            target.write_text(
-                source.replace("snapshot.withNeedsClaim(value)", "snapshot"),
-                encoding="utf-8",
-            )
-            result = check_harness.check_wallet_providerless_controls_contract(root)
-
-        self.assertTrue(
-            any("snapshot.withNeedsClaim(value)" in error for error in result),
-            msg=f"expected active Bridge Preview switch guard: {result}",
-        )
-
-    def test_bridge_facts_cannot_escape_the_typed_snapshot(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/wallet/trade_screens.dart"
-            target = root / relative
-            target.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            target.write_text(
-                source.replace(
-                    "value: snapshot.sourceLabel",
-                    "value: 'Ethereum · 250 USDC'",
-                ),
-                encoding="utf-8",
-            )
-            result = check_harness.check_wallet_providerless_controls_contract(root)
-
-        self.assertTrue(
-            any("Bridge Preview facts belong only" in error for error in result),
-            msg=f"expected single Bridge snapshot source guard: {result}",
-        )
-
-    def test_bridge_progress_facts_cannot_escape_the_typed_snapshot(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/wallet/trade_screens.dart"
-            target = root / relative
-            target.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            target.write_text(
-                source.replace(
-                    "title: step.title",
-                    "title: 'Source confirmed'",
-                ),
-                encoding="utf-8",
-            )
-            result = check_harness.check_wallet_providerless_controls_contract(root)
-
-        self.assertTrue(
-            any("Bridge Preview facts belong only" in error for error in result),
-            msg=f"expected typed Bridge progress-step guard: {result}",
-        )
-
-    def test_bridge_progress_preview_cannot_add_an_enabled_action(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            relative = "lib/features/wallet/trade_screens.dart"
-            target = root / relative
-            target.parent.mkdir(parents=True)
-            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            target.write_text(
-                source.replace(
-                    "class _BridgeStep",
-                    "final unsafeClaim = FilledButton(\n"
-                    "  onPressed: () {},\n"
-                    "  child: const Text('Claim now'),\n"
-                    ");\n\n"
-                    "class _BridgeStep",
-                ),
-                encoding="utf-8",
-            )
-            result = check_harness.check_wallet_providerless_controls_contract(root)
-
-        self.assertTrue(
-            any("Bridge progress Preview cannot add" in error for error in result),
-            msg=f"expected additive Bridge action guard: {result}",
-        )
 
     def test_transaction_result_success_cannot_claim_a_transfer(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -4825,11 +4768,11 @@ class HarnessTests(unittest.TestCase):
                     msg=f"expected fail-closed {provider} guard: {result}",
                 )
 
-    def test_capability_enum_must_hold_the_contracts_twenty_eight_ids(self) -> None:
+    def test_capability_enum_must_hold_the_contracts_thirty_one_ids(self) -> None:
         relative = str(check_harness.S5_CAPABILITY_META_PATH)
         source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
         mutations = (
-            # A twenty-eighth id the contract never listed.
+            # A thirty-second id the contract never listed.
             ("  communityAi('communityAi');", "  communityAi('communityAi'),\n  perpTrading('perpTrading');"),
             # A dropped id.
             ("  marketRead('marketRead'),\n", ""),
@@ -4851,11 +4794,11 @@ class HarnessTests(unittest.TestCase):
 
                 self.assertTrue(
                     any(
-                        "LoopV2CapabilityId must list exactly the contract's 28 ids"
+                        "LoopV2CapabilityId must list exactly the contract's 31 ids"
                         in error
                         for error in result
                     ),
-                    msg=f"expected 27-capability guard: {result}",
+                    msg=f"expected 31-capability guard: {result}",
                 )
 
     def test_swap_entry_point_must_be_gated_on_swappable_alone(self) -> None:
@@ -6734,20 +6677,23 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected A11 single-action guard: {result}",
         )
 
+    # S8 (decision 0060) rebuilt H5 on the two server projections; the guard
+    # now protects the same rule with the new source.
     def test_h5_cannot_restore_a_capability_derived_ready_summary(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            relative = Path("lib/features/profile/profile_screens.dart")
+            relative = Path("lib/features/profile/security/security_screens.dart")
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            start = source.index("class _SecurityCenter")
-            changed = source[start:].replace(
-                "Protection status is not connected",
-                "Core protections ready",
-                1,
+            path.write_text(
+                source.replace(
+                    "kicker: 'SECURITY POSTURE',",
+                    "kicker: 'SECURITY POSTURE',\n        stamp: 'Core protections ready',",
+                    1,
+                ),
+                encoding="utf-8",
             )
-            path.write_text(source[:start] + changed, encoding="utf-8")
 
             result = check_harness.check_security_capability_truth_contract(root)
 
@@ -6756,55 +6702,68 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected H5 ready-summary guard: {result}",
         )
 
-    def test_h5_wallet_mfa_must_remain_disabled_without_an_adapter(self) -> None:
+    def test_h5_cannot_present_a_method_as_enabled(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            relative = Path("lib/features/profile/profile_screens.dart")
+            relative = Path("lib/features/profile/security/security_screens.dart")
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            start = source.index("class _SecurityCenter")
-            changed = source[start:].replace(
-                "onTap: null,",
-                "onTap: () {},",
-                1,
+            path.write_text(
+                source.replace(
+                    "trailingBadge: const LoopBadge(_securityMethodUnavailableLabel),",
+                    "trailingBadge: const LoopBadge('\u5df2\u5f00\u542f'),",
+                    1,
+                ),
+                encoding="utf-8",
             )
-            path.write_text(source[:start] + changed, encoding="utf-8")
 
             result = check_harness.check_security_capability_truth_contract(root)
 
         self.assertTrue(
-            any(
-                "Wallet multi-factor authentication" in error
-                and "must remain disabled" in error
-                for error in result
-            ),
-            msg=f"expected H5 Wallet MFA adapter guard: {result}",
+            any("enabled protection" in error for error in result),
+            msg=f"expected H5 enabled-protection guard: {result}",
         )
 
-    def test_h5_app_lock_must_remain_disabled_without_an_adapter(self) -> None:
+    def test_h5_must_render_the_servers_own_reason(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            relative = Path("lib/features/profile/profile_screens.dart")
+            relative = Path("lib/features/profile/security/security_screens.dart")
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            start = source.index("class _SecurityCenter")
-            security = source[start:]
-            first = security.index("onTap: null,")
-            second = security.index("onTap: null,", first + 1)
-            security = (
-                security[:second]
-                + "onTap: () {},"
-                + security[second + len("onTap: null,") :]
+            path.write_text(
+                source.replace(
+                    "loopReasonCodeText(capability.reasonCode)",
+                    "'\u6682\u4e0d\u53ef\u7528'",
+                ),
+                encoding="utf-8",
             )
-            path.write_text(source[:start] + security, encoding="utf-8")
 
             result = check_harness.check_security_capability_truth_contract(root)
 
         self.assertTrue(
-            any("App lock" in error and "must remain disabled" in error for error in result),
-            msg=f"expected H5 App lock adapter guard: {result}",
+            any("server's own reason" in error for error in result),
+            msg=f"expected H5 server-reason guard: {result}",
+        )
+
+    def test_h5_must_keep_its_truthful_information_routes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/features/profile/security/security_screens.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace("'key-export',", "'unknown',", 1),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_security_capability_truth_contract(root)
+
+        self.assertTrue(
+            any("`key-export`" in error for error in result),
+            msg=f"expected H5 key-export route guard: {result}",
         )
 
     def test_security_truth_behavior_test_cannot_be_hollowed_out(self) -> None:
@@ -7043,24 +7002,50 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected display-store composition boundary: {result}",
         )
 
-    def test_general_settings_cannot_enable_unimplemented_language(self) -> None:
+    # S8 (decision 0060) moved the two account values onto `GET /v2/settings`;
+    # both stay read-only because the server publishes them as fixed.
+    def test_general_settings_cannot_enable_a_fixed_account_value(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            relative = Path("lib/features/profile/profile_screens.dart")
+            relative = Path("lib/features/profile/settings/settings_screen.dart")
             path = root / relative
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
-            language = """title: 'Language',
-              detail: 'Build-defined copy; localization is not connected',
-              onTap: null,"""
             path.write_text(
-                source.replace(language, language.replace("onTap: null", "onTap: () {}")),
+                source.replace(
+                    "key: const ValueKey<String>('settings-language'),",
+                    "key: const ValueKey<String>('settings-language'),\n"
+                    "                onTap: () {},",
+                    1,
+                ),
                 encoding="utf-8",
             )
 
             result = check_harness.check_local_display_preferences_contract(root)
 
-        self.assertIn("H12 `Language` must remain disabled", result)
+        self.assertIn("H12 `settings-language` must remain read-only", result)
+
+    def test_general_settings_cannot_restore_the_data_usage_row(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/features/profile/settings/settings_screen.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "title: '\u4e3b\u9898',",
+                    "title: '\u6570\u636e\u7528\u91cf',",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_local_display_preferences_contract(root)
+
+        self.assertIn(
+            "H12 must not restore the sourceless data-usage row", result
+        )
 
     def test_display_behavior_cannot_drop_latest_rapid_write(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
