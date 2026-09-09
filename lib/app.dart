@@ -410,6 +410,8 @@ GoRouter _buildRouter(
               context.push('/chat/voice?id=$communityId'),
           onOpenMiningPanel: (communityId) =>
               context.push(MiningRoute.community(communityId)),
+          onOpenToken: (assetId) =>
+              context.push(MarketAssetRoute.token(assetId)),
         ),
       ),
       GoRoute(

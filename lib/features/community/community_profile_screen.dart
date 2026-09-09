@@ -12,9 +12,13 @@ import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/features/chain/chain_models.dart';
+import 'package:loop_mobile/features/market/loop_sparkline.dart';
+import 'package:loop_mobile/features/market/token_card_chart.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
+import 'package:loop_mobile/widgets/loop_token_card.dart';
 
 /// `community-profile` · one community record.
 ///
@@ -30,6 +34,7 @@ class CommunityProfileScreen extends ConsumerStatefulWidget {
     this.onOpenChat,
     this.onOpenVoiceRoom,
     this.onOpenMiningPanel,
+    this.onOpenToken,
   });
 
   final String? communityId;
@@ -41,6 +46,9 @@ class CommunityProfileScreen extends ConsumerStatefulWidget {
   /// The community's own mining panel. Mining Power has no source here, so
   /// the row is a way to the panel, never a figure.
   final ValueChanged<String>? onOpenMiningPanel;
+
+  /// Opens the market `token` page for the bound asset's canonical id.
+  final ValueChanged<String>? onOpenToken;
 
   @override
   ConsumerState<CommunityProfileScreen> createState() =>
@@ -178,7 +186,10 @@ class _CommunityProfileScreenState
               reason: '该社区没有绑定合约地址，因此不展示任何代币卡片或市场数字。',
             )
           else
-            _BoundAssetCard(assetKey: detail.community.boundAssetKey!),
+            _BoundAssetCard(
+              assetKey: detail.community.boundAssetKey!,
+              onOpenToken: widget.onOpenToken,
+            ),
           const LoopLabel('挖矿'),
           CommunityUnavailableCard(
             label: 'Mining Power',
@@ -414,40 +425,44 @@ class _MembershipActions extends StatelessWidget {
   }
 }
 
+/// `.tcard.tcard-signature` for the community's bound asset.
+///
+/// The community module stores the address and never resolves it: it has no
+/// price, market cap, liquidity or holder source, and the card says so instead
+/// of rendering a figure. The one thing that *is* addressable by the canonical
+/// key is the market module's own `1h` candle series, so the card's line is a
+/// real read with its own unavailable state — never a decorative shape.
 class _BoundAssetCard extends StatelessWidget {
-  const _BoundAssetCard({required this.assetKey});
+  const _BoundAssetCard({required this.assetKey, this.onOpenToken});
 
   final String assetKey;
+  final ValueChanged<String>? onOpenToken;
 
   @override
   Widget build(BuildContext context) {
-    return LoopSurfaceCard(
+    return KeyedSubtree(
       key: const ValueKey<String>('community-bound-asset'),
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            'BOUND ASSET',
-            style: LoopTypography.mono(
-              size: 9.5,
-              weight: FontWeight.w600,
-              color: LoopColors.muted,
-              letterSpacing: 1.2,
-            ),
+      child: LoopTokenCard(
+        state: LoopTokenCardState.partial,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        model: LoopTokenCardModel(
+          symbol: loopTruncatedAssetId(assetKey),
+          identifier: assetKey,
+          priceReason: '价格无来源',
+          communityIcon: 'info',
+          communityLine:
+              '该地址由社区所有者登记，社区模块尚未解析它。价格、市值、流动性与持有人均无来源，'
+              '本卡片不展示任何市场数字；下面的走势线来自行情模块自己的读取。',
+          chartRangeLabel: '1H · 最近 $loopSparklineWindow 根收盘价',
+          chart: TokenCardSparkline(
+            assetId: assetKey,
+            keyPrefix: 'community-bound-asset-chart',
           ),
-          const SizedBox(height: 8),
-          SelectableText(assetKey, style: LoopTypography.mono(size: 12)),
-          const SizedBox(height: 10),
-          Text(
-            '该地址由社区所有者登记，服务端尚未解析。价格、市值、流动性与持有人均无来源，'
-            '本页不展示任何市场数字。',
-            style: LoopTypography.sora(
-              size: 12,
-              weight: FontWeight.w500,
-              color: LoopColors.muted,
-              height: 1.55,
-            ),
+        ),
+        actions: <LoopTokenCardAction>[
+          LoopTokenCardAction(
+            '资产事实',
+            onTap: onOpenToken == null ? null : () => onOpenToken!(assetKey),
           ),
         ],
       ),

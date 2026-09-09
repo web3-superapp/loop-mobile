@@ -484,10 +484,153 @@ class LoopLedgerCard extends StatelessWidget {
         semanticLabel: semanticLabel,
         decoration: decoration,
         borderRadius: LoopRadius.shell,
-        child: body,
+        // `.ledger-card::before`: a static dot texture under the content. It
+        // is painted, never animated, so reduced motion changes nothing here.
+        child: CustomPaint(
+          key: ValueKey<String>(
+            quiet ? 'loop-ledger-quiet-texture' : 'loop-ledger-texture',
+          ),
+          painter: LoopLedgerTexturePainter(
+            spec: quiet ? LoopLedgerTexture.quiet : LoopLedgerTexture.primary,
+          ),
+          child: body,
+        ),
       ),
     );
   }
+}
+
+/// The exact `.ledger-card::before` parameters, kept as values so they can be
+/// asserted without a golden image.
+///
+/// The prototype declares the layer as a radial-gradient dot grid under a
+/// linear mask:
+///
+/// ```css
+/// .ledger-card::before{
+///   opacity:.24;
+///   background-image:radial-gradient(rgba(5,6,4,.7) 1px,transparent 1px);
+///   background-size:9px 9px;
+///   mask-image:linear-gradient(105deg,transparent 28%,var(--ink))
+/// }
+/// .ledger-card.ledger-quiet::before{
+///   opacity:.12;background-image:radial-gradient(rgba(184,255,32,.5) 1px,transparent 1px)
+/// }
+/// ```
+@immutable
+final class LoopLedgerTexture {
+  const LoopLedgerTexture({
+    required this.dotColor,
+    required this.dotAlpha,
+    required this.layerOpacity,
+  });
+
+  /// `.ledger-card::before` — Ink dots at 70% under a 24% layer.
+  static const primary = LoopLedgerTexture(
+    dotColor: LoopColors.ink,
+    dotAlpha: 0.7,
+    layerOpacity: 0.24,
+  );
+
+  /// `.ledger-card.ledger-quiet::before` — Lime dots at 50% under a 12% layer.
+  static const quiet = LoopLedgerTexture(
+    dotColor: LoopColors.lime,
+    dotAlpha: 0.5,
+    layerOpacity: 0.12,
+  );
+
+  /// `background-size:9px 9px`.
+  static const double spacing = 9;
+
+  /// `radial-gradient(<color> 1px, transparent 1px)`.
+  static const double dotRadius = 1;
+
+  /// `mask-image:linear-gradient(105deg, …)`.
+  static const double maskAngleDegrees = 105;
+
+  /// The mask is fully transparent up to this stop and reaches full opacity at
+  /// the end of the gradient line.
+  static const double maskTransparentStop = 0.28;
+
+  final Color dotColor;
+  final double dotAlpha;
+  final double layerOpacity;
+
+  /// The alpha one dot is painted with before the mask is applied.
+  double get effectiveAlpha => dotAlpha * layerOpacity;
+
+  /// The CSS gradient-line length for [size] at [maskAngleDegrees].
+  ///
+  /// CSS measures 0deg as "to top" and turns clockwise, so the line length is
+  /// `|W·sin(theta)| + |H·cos(theta)|`.
+  static double maskLineLength(Size size) {
+    final theta = maskAngleDegrees * math.pi / 180;
+    return (size.width * math.sin(theta)).abs() +
+        (size.height * math.cos(theta)).abs();
+  }
+
+  /// Where [point] falls on the mask gradient line, as `0..1` from its start.
+  static double maskPosition(Offset point, Size size) {
+    final length = maskLineLength(size);
+    if (length <= 0) return 1;
+    final theta = maskAngleDegrees * math.pi / 180;
+    // Screen coordinates put y downwards, so "to top" is -y.
+    final dx = math.sin(theta);
+    final dy = -math.cos(theta);
+    final projected =
+        (point.dx - size.width / 2) * dx + (point.dy - size.height / 2) * dy;
+    return (projected / length + 0.5).clamp(0.0, 1.0);
+  }
+
+  /// The mask multiplier at [point]: 0 before the transparent stop, then a
+  /// linear ramp to 1 at the end of the gradient line.
+  static double maskFactor(Offset point, Size size) {
+    // An empty box has no gradient line and nothing to paint on.
+    if (size.isEmpty) return 0;
+    final position = maskPosition(point, size);
+    if (position <= maskTransparentStop) return 0;
+    return (position - maskTransparentStop) / (1 - maskTransparentStop);
+  }
+
+  /// The dot centres for [size], in the CSS background grid's own order.
+  static List<Offset> dotCenters(Size size) {
+    if (size.isEmpty) return const <Offset>[];
+    final centers = <Offset>[];
+    for (var y = spacing / 2; y < size.height; y += spacing) {
+      for (var x = spacing / 2; x < size.width; x += spacing) {
+        centers.add(Offset(x, y));
+      }
+    }
+    return List<Offset>.unmodifiable(centers);
+  }
+}
+
+/// Paints [LoopLedgerTexture] behind a ledger card's content.
+class LoopLedgerTexturePainter extends CustomPainter {
+  const LoopLedgerTexturePainter({required this.spec});
+
+  final LoopLedgerTexture spec;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    for (final center in LoopLedgerTexture.dotCenters(size)) {
+      final factor = LoopLedgerTexture.maskFactor(center, size);
+      if (factor <= 0) continue;
+      canvas.drawCircle(
+        center,
+        LoopLedgerTexture.dotRadius,
+        Paint()
+          ..color = spec.dotColor.withValues(
+            alpha: spec.effectiveAlpha * factor,
+          ),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant LoopLedgerTexturePainter oldDelegate) =>
+      oldDelegate.spec != spec;
 }
 
 /// `.chalk-card`: high-contrast explanation, confirmation or review surface.

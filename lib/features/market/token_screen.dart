@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/market/loop_candle_chart.dart';
+import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_read_gateway.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
@@ -18,7 +19,9 @@ import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/features/market/token_card_chart.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_token_card.dart';
 
 /// `token` · one registry asset's facts.
 ///
@@ -148,6 +151,40 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
                   detail.capability.reasonCode ??
                   'BSC_CHAIN_RUNTIME_UNAVAILABLE',
             ),
+          // `.tcard.tcard-signature.tcard-token-hero`. The card carries the
+          // identity and the small close line only: the price, the change and
+          // the three metrics are rendered once each, with their own source and
+          // observation time, in the hero and the fact list below. Repeating
+          // them here would put the same figure on screen three times without
+          // its provenance.
+          LoopTokenCard(
+            key: const ValueKey<String>('token-card'),
+            state: detail.capability.suppressesLiveFigures
+                ? LoopTokenCardState.partial
+                : LoopTokenCardState.normal,
+            model: LoopTokenCardModel(
+              symbol: detail.asset.symbol,
+              identifier: loopTruncatedAssetId(assetId),
+              chartRangeLabel: '1H · 最近 $loopSparklineWindow 根收盘价',
+              chart: TokenCardSparkline(
+                assetId: assetId,
+                keyPrefix: 'token-card-chart',
+              ),
+            ),
+            actions: <LoopTokenCardAction>[
+              LoopTokenCardAction(
+                '图表',
+                onTap: () => _open(MarketAssetRoute.chart(assetId)),
+              ),
+              if (detail.community case MarketCommunityBound(
+                communityId: final communityId,
+              ))
+                LoopTokenCardAction(
+                  '社区',
+                  onTap: () => _open('/community/profile?id=$communityId'),
+                ),
+            ],
+          ),
           const LoopLabel('K 线'),
           _TokenCandleBlock(
             assetId: assetId,

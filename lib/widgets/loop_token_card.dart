@@ -59,6 +59,7 @@ final class LoopTokenCardModel {
     required this.symbol,
     required this.identifier,
     this.price,
+    this.priceReason,
     this.change,
     this.changeUp,
     this.metrics = const <LoopTokenMetric>[],
@@ -75,6 +76,11 @@ final class LoopTokenCardModel {
   /// Short contract / identifier line under the symbol.
   final String identifier;
   final String? price;
+
+  /// Why there is no [price]. Rendered in place of the figure when the owner
+  /// has no readable quote, so the slot never falls back to an em dash — an
+  /// unavailable fact states its reason or says nothing at all.
+  final String? priceReason;
   final String? change;
   final bool? changeUp;
   final List<LoopTokenMetric> metrics;
@@ -200,7 +206,10 @@ class LoopTokenCard extends StatelessWidget {
                   if (state == LoopTokenCardState.risk &&
                       model.riskFacts.isNotEmpty)
                     _RiskBar(facts: model.riskFacts, foreground: foreground),
-                  if (state == LoopTokenCardState.normal && model.chart != null)
+                  // Identifying carries no series yet; every other state may
+                  // render one, and the chart owns its own unavailable copy.
+                  if (state != LoopTokenCardState.loading &&
+                      model.chart != null)
                     _Chart(model: model, chalk: chalk),
                   if (model.metrics.isNotEmpty)
                     _Metrics(
@@ -319,20 +328,49 @@ class _Head extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Text(
-                  state == LoopTokenCardState.loading
-                      ? '识别中'
-                      : model.price ?? '—',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LoopTypography.mono(
-                    size: 17,
-                    weight: FontWeight.w700,
-                    height: 1.05,
-                    letterSpacing: -0.68,
-                    color: muted ? secondary : foreground,
+                if (state == LoopTokenCardState.loading)
+                  Text(
+                    '识别中',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopTypography.mono(
+                      size: 17,
+                      weight: FontWeight.w700,
+                      height: 1.05,
+                      letterSpacing: -0.68,
+                      color: secondary,
+                    ),
+                  )
+                else if (model.price != null)
+                  Text(
+                    model.price!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopTypography.mono(
+                      size: 17,
+                      weight: FontWeight.w700,
+                      height: 1.05,
+                      letterSpacing: -0.68,
+                      color: muted ? secondary : foreground,
+                    ),
+                  )
+                // No quote and a stated reason: the reason is the fact. No
+                // quote and no reason: the slot stays empty rather than
+                // inventing an em dash the owner never claimed.
+                else if (model.priceReason != null)
+                  Text(
+                    model.priceReason!,
+                    key: const ValueKey<String>('loop-token-card-price-reason'),
+                    maxLines: 2,
+                    textAlign: TextAlign.end,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopTypography.sora(
+                      size: 11,
+                      weight: FontWeight.w500,
+                      height: 1.35,
+                      color: secondary,
+                    ),
                   ),
-                ),
                 if (model.change != null || state == LoopTokenCardState.partial)
                   Padding(
                     padding: const EdgeInsets.only(top: 5),
