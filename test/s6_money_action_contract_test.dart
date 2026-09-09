@@ -182,13 +182,28 @@ void main() {
   });
 
   group('payload cross-check', () {
+    // Decision 0038 gave the Launch module its own chain slot. A money action
+    // never moves with it: a send, approve, revoke or swap payload built for
+    // any other chain is rejected by the transport, so it can never reach a
+    // review, a sheet or a wallet.
     test('a payload built for another chain is refused', () {
       final body = s6IntentBody();
       (body['unsignedTransaction']! as Map<String, Object?>)['chainId'] = 97;
-      final intent = LoopV2IntentCodec.intent(body);
 
-      expect(intent.numericChainId, 56);
-      expect(intent.payloadMatchesReview, isFalse);
+      expect(
+        () => LoopV2IntentCodec.intent(body),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('an intent announcing another chain is refused', () {
+      final body = s6IntentBody();
+      body['chainId'] = 'eip155:97';
+
+      expect(
+        () => LoopV2IntentCodec.intent(body),
+        throwsA(isA<LoopBackendFailure>()),
+      );
     });
 
     test('an ERC-20 call with a third word is refused', () {

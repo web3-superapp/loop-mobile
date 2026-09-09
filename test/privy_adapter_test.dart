@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/integrations/privy/privy_device_signer.dart';
 import 'package:loop_mobile/integrations/privy/privy_fixture_adapter.dart';
@@ -16,16 +17,19 @@ final class _RecordingSigner implements PrivyDeviceSigner {
   int signatureCalls = 0;
   Map<String, Object?>? lastTransaction;
   String? lastFrom;
+  String? lastChainId;
 
   @override
   bool get isReady => ready;
 
   @override
   Future<String> sendTransaction({
+    required String chainId,
     required String fromAddress,
     required Map<String, Object?> transaction,
   }) async {
     sendCalls += 1;
+    lastChainId = chainId;
     lastFrom = fromAddress;
     lastTransaction = transaction;
     return hash;
@@ -74,6 +78,7 @@ void main() {
     payloadDigest: 'a' * 64,
     title: '确认发送',
     kind: IntentKind.transfer,
+    chainId: loopPrimaryChainId,
     payload: const DeviceTransactionPayload(
       fromAddress: '0x1111111111111111111111111111111111111111',
       transaction: <String, Object?>{'chainId': 56, 'value': '0x0'},

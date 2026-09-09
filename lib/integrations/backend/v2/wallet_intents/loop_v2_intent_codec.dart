@@ -1,4 +1,5 @@
 import 'package:decimal/decimal.dart';
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_codec.dart';
@@ -495,6 +496,19 @@ abstract final class LoopV2IntentCodec {
     );
   }
 
+  /// The primary chain id, and nothing else (decision 0038).
+  static String _primaryChainId(Map<String, Object?> source, String key) {
+    if (source[key] != loopPrimaryChainId) _invalid();
+    return loopPrimaryChainId;
+  }
+
+  /// The primary chain's numeric EIP-155 reference, and nothing else.
+  static int _primaryChainReference(Map<String, Object?> source, String key) {
+    final reference = loopChainReference(loopPrimaryChainId);
+    if (source[key] != reference) _invalid();
+    return reference;
+  }
+
   static LoopUnsignedTransaction? _unsignedTransaction(Object? raw) {
     if (raw == null) return null;
     final map = LoopV2Contract.strictMap(raw, const <String>{
@@ -513,12 +527,9 @@ abstract final class LoopV2IntentCodec {
     final type = map['type'];
     if (type != 'eip1559' && type != 'legacy') _invalid();
     return LoopUnsignedTransaction(
-      chainId: LoopV2ChainCodec.requireInt(
-        map,
-        'chainId',
-        minimum: 1,
-        maximum: 2147483647,
-      ),
+      // The signable payload's own chain must be the primary chain too: the
+      // owner reviewed a BNB Smart Chain transaction, not a testnet one.
+      chainId: _primaryChainReference(map, 'chainId'),
       from: _address(map, 'from'),
       to: _address(map, 'to'),
       data: LoopV2ChainCodec.requireString(
@@ -764,12 +775,11 @@ abstract final class LoopV2IntentCodec {
         pattern: LoopV2Contract.uuidV4Pattern,
         maxLength: 36,
       ),
-      chainId: LoopV2ChainCodec.requireString(
-        map,
-        'chainId',
-        pattern: LoopV2ChainCodec.chainIdPattern,
-        maxLength: 32,
-      ),
+      // Decision 0038: send, approve, revoke and swap are locked to the
+      // primary chain. Only a Launch intent may ever carry another slot, and
+      // this module never produces one, so anything else is an invalid
+      // payload rather than a wallet action on an unreviewed chain.
+      chainId: _primaryChainId(map, 'chainId'),
       review: review,
       reviewSha256: LoopV2ChainCodec.requireString(
         map,

@@ -1,3 +1,4 @@
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -111,6 +112,10 @@ final class MoneyActionSigner {
         LoopIntentKind.approve || LoopIntentKind.revoke => IntentKind.approval,
         LoopIntentKind.swap => IntentKind.swap,
       },
+      // The chain is the server's own canonical value. Money actions are
+      // locked to the primary chain, and the signing exit refuses anything
+      // else rather than trusting a payload that arrived on another chain.
+      chainId: intent.chainId,
       payload: payload,
       observedAt: intent.factsObservedAt,
       expiresAt: intent.expiresAt,
@@ -141,6 +146,15 @@ final class MoneyActionSigner {
       return const MoneySignOutcome(
         status: MoneySignStatus.refused,
         reasonCode: 'SIGNING_PAYLOAD_UNAVAILABLE',
+      );
+    }
+    // 3. The chain the owner reviewed must be one this kind of action may be
+    // signed on. Send, approve, revoke and swap are the primary chain only
+    // (decision 0038); the Launch slot is not a money action.
+    if (!signingIntent.chainIsPermitted) {
+      return const MoneySignOutcome(
+        status: MoneySignStatus.refused,
+        reasonCode: 'INTENT_CHAIN_NOT_PERMITTED',
       );
     }
 
@@ -271,7 +285,10 @@ List<IntentField> moneyActionFields(LoopWalletIntent intent) {
         ),
       ]);
   }
-  fields.add(IntentField(label: '网络', value: 'BNB Smart Chain'));
+  // The chain is the intent's own value (decision 0038). Money actions are
+  // locked to the primary chain, so this line reads "BNB Smart Chain" in
+  // every delivered build — but it is read, never asserted.
+  fields.add(IntentField(label: '网络', value: loopChainName(intent.chainId)));
   fields.add(
     IntentField(
       label: '最高网络费',

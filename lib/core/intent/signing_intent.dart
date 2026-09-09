@@ -1,3 +1,5 @@
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
+
 enum SigningAuthority { loopBackend, privyWallet }
 
 enum IntentProvider { hyperliquidCore, wallet }
@@ -6,7 +8,13 @@ enum OrderDirection { buy, sell }
 
 enum PerpOrderType { market, limit }
 
-enum IntentKind { perpOrder, transfer, swap, approval }
+/// The operations that may reach a signing exit.
+///
+/// [launchPurchase] is the only kind the Launch chain slot admits (loop-api
+/// decision 0038). It has no server route yet — `POST /v2/launch/{id}/intents`
+/// answers `503` — so it exists here as the one slot that may ever carry a
+/// non-primary chain, and every other kind is locked to the primary chain.
+enum IntentKind { perpOrder, transfer, swap, approval, launchPurchase }
 
 enum IntentOrigin { localPreview, backendCanonical }
 
@@ -70,6 +78,7 @@ final class SigningIntent {
     required this.observedAt,
     required this.expiresAt,
     required List<IntentField> fields,
+    this.chainId = loopPrimaryChainId,
     this.payloadDigest,
     this.payload,
   }) : fields = List<IntentField>.unmodifiable(fields);
@@ -86,6 +95,7 @@ final class SigningIntent {
     required String payloadDigest,
     required String title,
     required IntentKind kind,
+    required String chainId,
     required SigningPayload payload,
     required DateTime observedAt,
     required DateTime expiresAt,
@@ -101,6 +111,7 @@ final class SigningIntent {
       observedAt: observedAt,
       expiresAt: expiresAt,
       fields: fields,
+      chainId: chainId,
       payloadDigest: payloadDigest,
       payload: payload,
     );
@@ -246,6 +257,11 @@ final class SigningIntent {
   final DateTime expiresAt;
   final List<IntentField> fields;
 
+  /// The chain this intent will be signed on, carried verbatim from the
+  /// server's canonical intent. The client never derives, defaults or upgrades
+  /// it: a locally built preview is always the primary chain.
+  final String chainId;
+
   /// The server's `reviewSha256`. Non-null exactly for a backend-canonical
   /// intent; it is what binds the displayed facts to the signed payload.
   final String? payloadDigest;
@@ -264,7 +280,24 @@ final class SigningIntent {
       authority == SigningAuthority.privyWallet &&
       origin == IntentOrigin.backendCanonical &&
       payload != null &&
-      payloadDigest != null;
+      payloadDigest != null &&
+      chainIsPermitted;
+
+  /// Whether [chainId] is one this kind of intent may ever be signed on.
+  ///
+  /// Only [IntentKind.launchPurchase] may leave the primary chain, and only
+  /// for the single published Launch slot. Send, approve, revoke and swap are
+  /// locked to the primary chain: a wallet intent that arrived carrying the
+  /// testnet is refused here, before any wallet is opened.
+  bool get chainIsPermitted {
+    if (!loopKnownChainIds.contains(chainId)) return false;
+    if (chainId == loopPrimaryChainId) return true;
+    return kind == IntentKind.launchPurchase;
+  }
+
+  /// True when the owner must be told this signature happens on the Launch
+  /// testnet. It is a statement of fact on the sheet, never a blocker.
+  bool get isTestnetChain => loopIsTestnetChainId(chainId);
 
   String? validateAt(DateTime now) {
     if (kind == IntentKind.perpOrder) {
@@ -281,6 +314,12 @@ final class SigningIntent {
       if (builderFee != '0 USDC') {
         return 'builder_fee_forbidden';
       }
+    }
+    // The chain is part of what the owner is being asked to authorize. A
+    // wallet intent on the Launch testnet, or any chain the client does not
+    // know, is refused rather than signed on a chain nobody reviewed.
+    if (!chainIsPermitted) {
+      return 'intent_chain_not_permitted';
     }
     if (!expiresAt.isAfter(now)) {
       return 'intent_stale';

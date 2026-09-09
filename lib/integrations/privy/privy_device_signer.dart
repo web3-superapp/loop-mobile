@@ -1,3 +1,4 @@
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:privy_flutter/privy_flutter.dart';
 
 /// Narrow device-signing surface of the Privy embedded wallet.
@@ -13,9 +14,12 @@ abstract interface class PrivyDeviceSigner {
   /// Broadcasts one transaction through the embedded wallet whose address is
   /// [fromAddress] and returns the transaction hash.
   ///
-  /// [transaction] is forwarded verbatim; this method never edits, reorders or
-  /// supplements a field.
+  /// [chainId] is the CAIP id of the intent's own chain. It is passed so the
+  /// device can refuse a payload whose chain it cannot select; it is never
+  /// used to rewrite the payload. [transaction] is forwarded verbatim; this
+  /// method never edits, reorders or supplements a field.
   Future<String> sendTransaction({
+    required String chainId,
     required String fromAddress,
     required Map<String, Object?> transaction,
   });
@@ -51,6 +55,7 @@ final class UnavailablePrivyDeviceSigner implements PrivyDeviceSigner {
 
   @override
   Future<String> sendTransaction({
+    required String chainId,
     required String fromAddress,
     required Map<String, Object?> transaction,
   }) => throw const PrivySigningException('privy_wallet_unavailable');
@@ -82,9 +87,30 @@ final class SdkPrivyDeviceSigner implements PrivyDeviceSigner {
 
   @override
   Future<String> sendTransaction({
+    required String chainId,
     required String fromAddress,
     required Map<String, Object?> transaction,
   }) async {
+    // The chain has to be one this client knows, and the payload has to agree
+    // with the intent it came from. A transaction whose own `chainId` differs
+    // from the reviewed chain would be broadcast somewhere nobody reviewed.
+    if (!loopKnownChainIds.contains(chainId) ||
+        transaction['chainId'] != loopChainReference(chainId)) {
+      throw const PrivySigningException('privy_chain_mismatch');
+    }
+    // privy_flutter 0.10.1 exposes exactly six Ethereum RPC methods through
+    // `EmbeddedEthereumWalletProvider.request` — `eth_sign`, `personal_sign`,
+    // `secp256k1_sign`, `eth_signTypedData_v4`, `eth_signTransaction` and
+    // `eth_sendTransaction` — and nothing else; `wallet_switchEthereumChain`
+    // and `wallet_addEthereumChain` are rejected by the SDK before they reach
+    // the platform. There is therefore no way for this client to select a
+    // chain, and no device evidence that the native side honours the
+    // transaction's own `chainId`. Signing anyway would broadcast on whatever
+    // chain the wallet happens to be on, so a non-primary chain fails closed
+    // here until that evidence exists.
+    if (chainId != loopPrimaryChainId) {
+      throw const PrivySigningException('privy_chain_switch_unsupported');
+    }
     final user = _user;
     if (user == null) {
       throw const PrivySigningException('privy_session_required');

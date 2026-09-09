@@ -58,6 +58,7 @@ final class PrivyWalletSigningGateway implements WalletSigningGateway {
           transaction: final transaction,
         ) =>
           await signer.sendTransaction(
+            chainId: intent.chainId,
             fromAddress: from,
             transaction: transaction,
           ),
