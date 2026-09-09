@@ -388,6 +388,7 @@ Map<String, Object?> s6ApprovalsBody({
   },
   'freshness': <String, Object?>{
     'indexerBlockNumber': '120695200',
+    'approvalCoverageFromBlockNumber': '120600000',
     'headBlockNumber': '120695250',
     'observedAt': '2026-09-09T13:35:28.315Z',
   },

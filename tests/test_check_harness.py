@@ -4566,6 +4566,78 @@ class HarnessTests(unittest.TestCase):
                     msg=f"expected signing admission guard: {result}",
                 )
 
+    def test_signing_sheet_cannot_become_dismissible_mid_signature(self) -> None:
+        relative = "lib/features/wallet/money_actions_widgets.dart"
+        source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+        mutations = (
+            ("isDismissible: false", "isDismissible: true"),
+            (
+                "canPop: _state != LoopSignSheetState.signing",
+                "canPop: true",
+            ),
+        )
+        for original, replacement in mutations:
+            with self.subTest(mutation=original):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    target = root / relative
+                    target.parent.mkdir(parents=True)
+                    self.assertIn(original, source)
+                    target.write_text(
+                        source.replace(original, replacement, 1), encoding="utf-8"
+                    )
+                    result = check_harness.check_s6_money_action_contract(root)
+
+                self.assertTrue(
+                    any("signing sheet must" in error for error in result),
+                    msg=f"expected signing-sheet lock guard: {result}",
+                )
+
+    def test_refused_report_cannot_reopen_the_confirmation(self) -> None:
+        relative = "lib/features/wallet/money_actions_widgets.dart"
+        source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+        original = "        case MoneySignStatus.reportRefused:\n"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            self.assertIn(original, source)
+            target.write_text(
+                source.replace(original, original + "          _submitted = false;\n", 1),
+                encoding="utf-8",
+            )
+            result = check_harness.check_s6_money_action_contract(root)
+
+        self.assertTrue(
+            any("never re-enable the confirmation" in error for error in result),
+            msg=f"expected refused-report lock guard: {result}",
+        )
+
+    def test_failure_after_a_handoff_cannot_claim_nothing_was_submitted(
+        self,
+    ) -> None:
+        relative = "lib/features/wallet/money_actions_signing.dart"
+        source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            target = root / relative
+            target.parent.mkdir(parents=True)
+            self.assertIn("status: MoneySignStatus.reportRefused,", source)
+            target.write_text(
+                source.replace(
+                    "status: MoneySignStatus.reportRefused,",
+                    "status: MoneySignStatus.walletRejected,",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_s6_money_action_contract(root)
+
+        self.assertTrue(
+            any("never project as" in error for error in result),
+            msg=f"expected post-handoff projection guard: {result}",
+        )
+
     def test_mounted_source_cannot_import_the_retained_hyperliquid_adapters(
         self,
     ) -> None:

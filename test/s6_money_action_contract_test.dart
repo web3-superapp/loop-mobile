@@ -3,10 +3,14 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
+import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/approvals/loop_v2_approvals_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_failure.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_module_request.dart';
 import 'package:loop_mobile/integrations/backend/v2/swap/loop_v2_swap_api.dart';
+import 'package:loop_mobile/integrations/privy/privy_device_signer.dart';
 import 'package:loop_mobile/integrations/backend/v2/wallet_intents/loop_v2_intent_codec.dart';
 import 'package:loop_mobile/integrations/backend/v2/wallet_intents/loop_v2_wallet_intents_api.dart';
 
@@ -174,6 +178,207 @@ void main() {
       final intent = LoopV2IntentCodec.intent(body);
 
       expect(intent.payloadMatchesReview, isFalse);
+    });
+  });
+
+  group('payload cross-check', () {
+    test('a payload built for another chain is refused', () {
+      final body = s6IntentBody();
+      (body['unsignedTransaction']! as Map<String, Object?>)['chainId'] = 97;
+      final intent = LoopV2IntentCodec.intent(body);
+
+      expect(intent.numericChainId, 56);
+      expect(intent.payloadMatchesReview, isFalse);
+    });
+
+    test('an ERC-20 call with a third word is refused', () {
+      final intent = LoopV2IntentCodec.intent(
+        s6IntentBody(
+          unsignedTransaction: s6UnsignedTransaction(
+            data: '$s6TransferData${'0' * 64}',
+          ),
+        ),
+      );
+
+      expect(intent.payloadMatchesReview, isFalse);
+    });
+
+    test('a swap keyed to another intent is refused', () {
+      final body = s6SwapIntentBody();
+      ((body['authorizationPayload']! as Map<String, Object?>)['headers']!
+              as Map<String, Object?>)['privy-idempotency-key'] =
+          s6OtherIntentId;
+      final intent = LoopV2IntentCodec.intent(body);
+
+      expect(intent.payloadMatchesReview, isFalse);
+    });
+
+    test('a swap endpoint on another chain is refused', () {
+      final body = s6SwapIntentBody();
+      (((body['authorizationPayload']! as Map<String, Object?>)['body']!
+                  as Map<String, Object?>)['destination']!
+              as Map<String, Object?>)['caip2'] =
+          'eip155:97';
+      final intent = LoopV2IntentCodec.intent(body);
+
+      expect(intent.payloadMatchesReview, isFalse);
+    });
+
+    test('the approval coverage start is part of the freshness', () {
+      final inventory = LoopV2IntentCodec.approvals(s6ApprovalsBody());
+
+      expect(
+        inventory.freshness.approvalCoverageFromBlockNumber,
+        BigInt.from(120600000),
+      );
+    });
+  });
+
+  group('policy refusals', () {
+    LoopChainException refusal({
+      required int statusCode,
+      required String code,
+      Map<String, Object?>? detailsSafe,
+    }) {
+      final options = RequestOptions(path: '/v2/wallet-intents/send');
+      final error = s5ErrorResponse(
+        options,
+        statusCode: statusCode,
+        code: code,
+        category: statusCode == 403 ? 'authorization' : 'validation',
+        userMessageKey: 'errors.policy.blocked',
+      );
+      (error.response!.data! as Map<String, Object?>)['detailsSafe'] =
+          detailsSafe;
+      return loopChainExceptionForV2(
+        LoopV2Contract.mapDioFailure(
+          error,
+          allowedCodes: LoopV2ModuleRequest.moneyActionWriteErrors,
+        ),
+      );
+    }
+
+    test('the rule and its two figures survive the boundary', () {
+      final failure = refusal(
+        statusCode: 403,
+        code: 'POLICY_BLOCKED',
+        detailsSafe: <String, Object?>{
+          'reasonCode': 'CANARY_CEILING_EXCEEDED',
+          'exposureUsd': '750.51',
+          'ceilingUsd': '20',
+        },
+      );
+
+      expect(failure.kind, LoopChainFailureKind.permissionDenied);
+      expect(failure.reasonCode, 'CANARY_CEILING_EXCEEDED');
+      expect(failure.exposureUsd, '750.51');
+      expect(failure.ceilingUsd, '20');
+      expect(MoneyPolicyNotice.covers(failure), isTrue);
+      final text = moneyPolicyRefusalText(failure);
+      expect(text, contains('750.51'));
+      expect(text, contains('本步暂不可调'));
+    });
+
+    test('a rule that compares nothing renders no figures', () {
+      final failure = refusal(
+        statusCode: 403,
+        code: 'POLICY_BLOCKED',
+        detailsSafe: <String, Object?>{
+          'reasonCode': 'ASSET_NOT_IN_CANARY_ALLOWLIST',
+          'exposureUsd': '750.51',
+          'ceilingUsd': '20',
+        },
+      );
+
+      final text = moneyPolicyRefusalText(failure);
+      expect(text, contains('灰度名单'));
+      expect(text, isNot(contains('750.51')));
+    });
+
+    test('each rule gets its own sentence', () {
+      final seen = <String>{};
+      for (final rule in const <String>[
+        MoneyPolicyRule.assetNotInAllowlist,
+        MoneyPolicyRule.canaryCeilingExceeded,
+        MoneyPolicyRule.unlimitedExposureExceedsCeiling,
+        MoneyPolicyRule.assetBlocked,
+        MoneyPolicyRule.priceImpactBlocked,
+        MoneyPolicyRule.nativeAssetNotApprovable,
+      ]) {
+        final text = moneyPolicyRefusalText(
+          LoopChainException(
+            LoopChainFailureKind.permissionDenied,
+            reasonCode: rule,
+          ),
+        );
+        expect(seen.add(text), isTrue, reason: rule);
+      }
+    });
+
+    test('a native approval is a named refusal, not a generic error', () {
+      final failure = refusal(
+        statusCode: 422,
+        code: 'VALIDATION_FAILED',
+        detailsSafe: <String, Object?>{
+          'reasonCode': 'NATIVE_ASSET_NOT_APPROVABLE',
+        },
+      );
+
+      expect(failure.kind, LoopChainFailureKind.validationFailed);
+      expect(MoneyPolicyNotice.covers(failure), isTrue);
+      expect(moneyPolicyRefusalText(failure), contains('原生 BNB 没有授权面'));
+    });
+
+    test('an unlisted details key never reaches a page', () {
+      final failure = refusal(
+        statusCode: 403,
+        code: 'POLICY_BLOCKED',
+        detailsSafe: <String, Object?>{
+          'reasonCode': 'CANARY_CEILING_EXCEEDED',
+          'walletAddress': '0x00000000000000000000000000000000000000a1',
+          'exposureUsd': 750.51,
+        },
+      );
+
+      expect(failure.reasonCode, 'CANARY_CEILING_EXCEEDED');
+      // A numeric amount is not an exact decimal string, so it is dropped
+      // rather than rendered.
+      expect(failure.exposureUsd, isNull);
+      expect(failure.hasCeilingFigures, isFalse);
+      expect(moneyPolicyRefusalText(failure), isNot(contains('750.51')));
+    });
+
+    test('a plain validation failure is not a policy refusal', () {
+      final failure = refusal(statusCode: 422, code: 'VALIDATION_FAILED');
+
+      expect(failure.reasonCode, isNull);
+      expect(MoneyPolicyNotice.covers(failure), isFalse);
+    });
+  });
+
+  group('wallet failure classification', () {
+    test('only a recognised decline proves nothing was broadcast', () {
+      expect(
+        privyWalletFailureCode('User rejected the request'),
+        'privy_broadcast_rejected',
+      );
+      expect(
+        privyWalletFailureCode('Request rejected by user'),
+        'privy_broadcast_rejected',
+      );
+      for (final message in const <String>[
+        'Unexpected error',
+        'PlatformException(channel-error)',
+        'timeout',
+        'rejected',
+        '',
+      ]) {
+        expect(
+          privyWalletFailureCode(message),
+          'wallet_outcome_unknown',
+          reason: message,
+        );
+      }
     });
   });
 

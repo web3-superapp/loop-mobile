@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,6 +35,10 @@ final class RecordingSigningGateway implements WalletSigningGateway {
 
   final List<SigningIntent> handoffs = <SigningIntent>[];
 
+  /// Holds the wallet open so a test can observe the `signing` state.
+  final Completer<void> gate = Completer<void>();
+  bool holdOpen = false;
+
   @override
   String get label => 'Recording wallet';
 
@@ -42,6 +48,7 @@ final class RecordingSigningGateway implements WalletSigningGateway {
     required DateTime now,
   }) async {
     handoffs.add(intent);
+    if (holdOpen) await gate.future;
     return WalletHandoffResult(
       accepted: accepted,
       code: code,

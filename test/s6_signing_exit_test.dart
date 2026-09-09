@@ -226,19 +226,56 @@ void main() {
     });
 
     test(
-      'an unresolved report locks rather than inviting a new signature',
+      'any refused report locks and carries what the wallet produced',
       () async {
-        final intents = FakeWalletIntentsGateway(
-          reportFailure: LoopChainFailureKind.outcomeUnknown,
-        );
-        final wallet = RecordingSigningGateway();
-        final signer = MoneyActionSigner(intents: intents, wallet: wallet);
+        // A refused report is not a refused transaction: the wallet already
+        // broadcast, so every failure kind — including a definite rejection —
+        // locks rather than reading as "nothing was submitted".
+        for (final kind in <LoopChainFailureKind>[
+          LoopChainFailureKind.outcomeUnknown,
+          LoopChainFailureKind.versionConflict,
+          LoopChainFailureKind.validationFailed,
+          LoopChainFailureKind.offline,
+        ]) {
+          final intents = FakeWalletIntentsGateway(reportFailure: kind);
+          final wallet = RecordingSigningGateway();
+          final signer = MoneyActionSigner(intents: intents, wallet: wallet);
 
-        final outcome = await signer.sign(s6Intent(), now: now);
+          final outcome = await signer.sign(s6Intent(), now: now);
 
-        expect(outcome.status, MoneySignStatus.locked);
-        expect(wallet.handoffs, hasLength(1));
+          expect(
+            outcome.status,
+            MoneySignStatus.reportRefused,
+            reason: kind.name,
+          );
+          expect(outcome.isLocked, isTrue, reason: kind.name);
+          expect(outcome.txHash, wallet.value, reason: kind.name);
+          expect(outcome.opensResult, isTrue, reason: kind.name);
+          expect(wallet.handoffs, hasLength(1), reason: kind.name);
+        }
       },
     );
+
+    test('a refused execute locks the swap with its signature', () async {
+      final intents = FakeWalletIntentsGateway(
+        reportFailure: LoopChainFailureKind.versionConflict,
+      );
+      final wallet = RecordingSigningGateway(value: 'authorization-signature');
+      final signer = MoneyActionSigner(intents: intents, wallet: wallet);
+      final swap = LoopV2IntentCodec.intent(
+        s6SwapIntentBody(state: 'awaiting_signature')
+          ..['signing'] = <String, Object?>{
+            'mode': 'privy_authorization_signature',
+            'allowed': true,
+            'reasonCode': null,
+          },
+      );
+
+      final outcome = await signer.sign(swap, now: now);
+
+      expect(outcome.status, MoneySignStatus.reportRefused);
+      expect(outcome.txHash, 'authorization-signature');
+      expect(intents.executeCalls, 1);
+    });
   });
 }

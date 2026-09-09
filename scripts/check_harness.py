@@ -8007,8 +8007,89 @@ def check_s6_money_action_contract(root: Path) -> list[str]:
             "lib/features/wallet/tx_result_screen.dart": (
                 "intent.state == LoopIntentState.confirmed",
             ),
+            # The approval inventory is only complete from its coverage start:
+            # the page states that height rather than implying full history.
+            "lib/features/wallet/money_actions_models.dart": (
+                "approvalCoverageFromBlockNumber",
+            ),
+            "lib/integrations/backend/v2/wallet_intents/loop_v2_intent_codec.dart": (
+                "'approvalCoverageFromBlockNumber',",
+            ),
+            "lib/features/wallet/approval_screens.dart": (
+                "授权记录自区块 ",
+            ),
+            # A refusal is only explainable when the rule is named, and the
+            # scalar slots it travels in are read through an allowlist.
+            "lib/integrations/backend/loop_backend_failure.dart": (
+                "final class LoopFailureDetails",
+                "static LoopFailureDetails? tryRead(Object? raw)",
+            ),
+            "lib/integrations/privy/privy_device_signer.dart": (
+                "String privyWalletFailureCode(String message)",
+                "return 'wallet_outcome_unknown';",
+            ),
         },
     )
+
+    # 6. The signing exit locks once the wallet has been opened.
+    sheet_path = root / "lib/features/wallet/money_actions_widgets.dart"
+    if sheet_path.is_file():
+        source = strip_dart_comments(read_text(sheet_path))
+        for fragment, message in (
+            (
+                "isDismissible: false",
+                "the signing sheet must not be dismissible by a tap or a drag",
+            ),
+            (
+                "canPop: _state != LoopSignSheetState.signing",
+                "the signing sheet must refuse to pop while the wallet is open",
+            ),
+            (
+                "widget.latch?.enteredSigning = true",
+                "the signing sheet must record that the wallet was opened, so a "
+                "torn-down sheet cannot read as a cancellation",
+            ),
+        ):
+            if fragment not in source:
+                errors.append(message)
+        confirm_start = source.find("Future<void> _confirm()")
+        confirm_end = source.find("Widget build(BuildContext context)", confirm_start)
+        confirm = source[confirm_start:confirm_end] if confirm_start >= 0 else ""
+        refused_at = confirm.find("case MoneySignStatus.reportRefused:")
+        next_case = confirm.find("case MoneySignStatus.", refused_at + 10)
+        branch = confirm[refused_at:next_case] if refused_at >= 0 else ""
+        if not branch:
+            errors.append(
+                "the signing sheet must handle MoneySignStatus.reportRefused"
+            )
+        elif "_submitted = false" in branch:
+            errors.append(
+                "a refused report must never re-enable the confirmation: the "
+                "wallet already produced a result"
+            )
+
+    # 7. Nothing after a successful handoff may report that nothing happened.
+    signer_path = root / "lib/features/wallet/money_actions_signing.dart"
+    if signer_path.is_file():
+        source = strip_dart_comments(read_text(signer_path))
+        marker = source.find("final produced = handoff.value!;")
+        if marker < 0:
+            errors.append(
+                "the signing exit must bind the wallet result before reporting "
+                "it, so every later failure is known to follow a broadcast"
+            )
+        else:
+            after = source[marker:]
+            if "MoneySignStatus.walletRejected" in after:
+                errors.append(
+                    "a failure after a successful handoff must never project as "
+                    "walletRejected: the wallet already produced a result"
+                )
+            if after.count("MoneySignStatus.reportRefused") < 2:
+                errors.append(
+                    "both the failure and the catch-all after a handoff must "
+                    "project as reportRefused"
+                )
 
     # 1. `backendCanonical` is the only origin a wallet may ever receive, and
     #    only one factory may produce it.

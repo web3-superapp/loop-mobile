@@ -951,7 +951,190 @@ void main() {
       expect(intents.reportCalls, 1);
     });
   });
+  group('review findings', () {
+    testWidgets('the approval inventory states its coverage start', (
+      tester,
+    ) async {
+      await pumpS6Page(
+        tester,
+        const ApprovalsScreen(),
+        wallet: FakeWalletReadGateway(),
+        intents: FakeWalletIntentsGateway(),
+        approvals: FakeApprovalsGateway(),
+      );
+
+      expect(find.textContaining('授权记录自区块 120600000 起'), findsOneWidget);
+      expect(find.textContaining('更早授予的授权不会出现在这里'), findsOneWidget);
+    });
+
+    testWidgets('a closed write switch never blocks the two reads', (
+      tester,
+    ) async {
+      await pumpS6Page(
+        tester,
+        const ApprovalsScreen(),
+        wallet: FakeWalletReadGateway(),
+        intents: FakeWalletIntentsGateway(),
+        approvals: FakeApprovalsGateway(),
+        sendApprovals: LoopV2CapabilityAvailability.unavailable,
+        privySwap: LoopV2CapabilityAvailability.unavailable,
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('approvals-capability-block')),
+        findsNothing,
+      );
+      expect(find.text('USDT'), findsOneWidget);
+    });
+
+    testWidgets('a swap result never waits on the send capability', (
+      tester,
+    ) async {
+      await pumpS6Page(
+        tester,
+        const TransactionResultScreen(intentId: s6IntentId),
+        wallet: FakeWalletReadGateway(),
+        intents: FakeWalletIntentsGateway(
+          reported: s6SwapIntent(state: 'submitted'),
+        ),
+        sendApprovals: LoopV2CapabilityAvailability.unavailable,
+        privySwap: LoopV2CapabilityAvailability.unavailable,
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('tx-result-capability-block')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('tx-result-pending')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the sheet cannot be dismissed while the wallet is open', (
+      tester,
+    ) async {
+      final wallet = RecordingSigningGateway()..holdOpen = true;
+      await _pumpSheet(tester, s6Intent(), wallet);
+
+      await tester.tap(find.text('确认签名'));
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey<String>('loop-sign-sheet-signing')),
+        findsOneWidget,
+      );
+      // A back gesture must not leave a signature in flight unwatched.
+      final popped = await tester.binding.handlePopRoute();
+      await tester.pump();
+      expect(popped, isTrue);
+      expect(
+        find.byKey(const ValueKey<String>('loop-sign-sheet-signing')),
+        findsOneWidget,
+      );
+
+      wallet.gate.complete();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a refused report never reads as nothing submitted', (
+      tester,
+    ) async {
+      final intents = FakeWalletIntentsGateway(
+        reportFailure: LoopChainFailureKind.versionConflict,
+      );
+      final wallet = RecordingSigningGateway();
+      await _pumpSheet(tester, s6Intent(), wallet, intents: intents);
+
+      await tester.tap(find.text('确认签名'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('loop-sign-sheet-complete')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('可能已经上链'), findsOneWidget);
+      expect(find.textContaining('没有提交任何交易'), findsNothing);
+      // The confirmation is gone: signing again would risk a second broadcast.
+      expect(find.text('确认签名'), findsNothing);
+      expect(wallet.handoffs, hasLength(1));
+    });
+
+    testWidgets('a confirmation is announced once, not on every rebuild', (
+      tester,
+    ) async {
+      await pumpS6Page(
+        tester,
+        const TransactionResultScreen(
+          intentId: s6IntentId,
+          pollInterval: Duration(milliseconds: 30),
+        ),
+        wallet: FakeWalletReadGateway(),
+        intents: FakeWalletIntentsGateway(reported: _confirmed()),
+        settle: false,
+      );
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('交易已确认'), findsOneWidget);
+
+      // The toast expires; further reads of the same state must not fire it
+      // again.
+      await tester.pump(const Duration(seconds: 5));
+      expect(find.text('交易已确认'), findsNothing);
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(find.text('交易已确认'), findsNothing);
+    });
+
+    testWidgets('polling gives up after repeated failures', (tester) async {
+      final intents = FakeWalletIntentsGateway(
+        failure: LoopChainFailureKind.unexpected,
+      );
+      await pumpS6Page(
+        tester,
+        const TransactionResultScreen(
+          intentId: s6IntentId,
+          pollInterval: Duration(milliseconds: 20),
+          maximumPollFailures: 2,
+        ),
+        wallet: FakeWalletReadGateway(),
+        intents: intents,
+        settle: false,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      final reads = intents.intentReads;
+      expect(reads, lessThanOrEqualTo(2));
+
+      await tester.pump(const Duration(seconds: 5));
+      expect(intents.intentReads, reads);
+      expect(
+        find.byKey(const ValueKey<String>('tx-result-state-error')),
+        findsOneWidget,
+      );
+    });
+  });
 }
+
+/// A confirmed intent with a receipt the result page can render.
+LoopWalletIntent _confirmed() => LoopV2IntentCodec.intent(
+  s6IntentBody(
+    state: 'confirmed',
+    result: <String, Object?>{
+      'transactionHash': s6TxHash,
+      'providerActionId': null,
+      'reasonCode': null,
+      'receipt': <String, Object?>{
+        'status': 'success',
+        'blockNumber': '120695300',
+        'blockHash': s5BlockHash,
+        'gasUsed': '41550',
+        'effectiveGasPrice': '50000000',
+        'confirmations': 18,
+        'observedAt': '2026-09-09T13:40:00.000Z',
+      },
+    },
+  ),
+);
 
 /// Mounts the signing exit alone so its own states can be exercised.
 Future<void> _pumpSheet(

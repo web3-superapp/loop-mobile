@@ -116,6 +116,39 @@ Five constraints shaped the result:
   explicit gaps with the server's own reason codes.
 - `pay`, `bridge`, `bridge-status` and `dapp` stay unavailable for step 8.
 
+## Review amendments (2026-09-09)
+
+The S6 review found three failures of the rules above and nine smaller gaps.
+All are folded into the decision rather than tracked separately:
+
+1. **A refused report is not a refused transaction.** Once the wallet returns a
+   hash or a signature, every later failure — including a definite rejection —
+   projects as `MoneySignStatus.reportRefused`: locked, carrying what the wallet
+   produced, never re-opening the confirmation, and never saying "nothing was
+   submitted". The sheet also stops being dismissible the moment the wallet
+   opens (`isDismissible: false` plus `PopScope`), and a sheet torn down after
+   that point still returns a locked outcome rather than reading as a cancel.
+2. **A Privy failure is unknown by default.** Only a message the client can read
+   as the owner declining proves nothing was broadcast; everything else locks.
+3. **A refusal must name its rule.** The envelope's `detailsSafe` is read
+   through a fixed scalar allowlist (`reasonCode`, `exposureUsd`, `ceilingUsd`),
+   carried on `LoopChainException`, and rendered as one of the six rules the
+   contract defines. Only the two ceiling rules render figures.
+4. The approval inventory carries `freshness.approvalCoverageFromBlockNumber`
+   and states it ("授权记录自区块 N 起"): the list is complete only from there up.
+5. The two read surfaces — `approvals` and `tx-result` — wait on their adapter
+   alone. The write switch and `sendApprovals` govern prepare/report/execute,
+   not reads, and a swap result is not a `sendApprovals` fact.
+6. `payloadMatchesReview` also pins the chain id, requires exactly two words for
+   an ERC-20 call, and requires the swap payload's `privy-idempotency-key` to be
+   this intent and both endpoints' `caip2` to be this chain.
+7. `tx-result` polls with exponential back-off, stops after five consecutive
+   failures with a manual retry, and announces `confirmed` only on the
+   transition into it.
+8. The sheet's `policyRejected` branch was unreachable — `signing.reasonCode`
+   has its own vocabulary — and was removed; a policy refusal is a `403` on
+   prepare, which the page renders.
+
 ## Verification
 
 `bin/dart format`, `bin/flutter analyze`, `bin/flutter test`,
