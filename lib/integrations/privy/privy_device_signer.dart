@@ -94,8 +94,12 @@ final class SdkPrivyDeviceSigner implements PrivyDeviceSigner {
     // The chain has to be one this client knows, and the payload has to agree
     // with the intent it came from. A transaction whose own `chainId` differs
     // from the reviewed chain would be broadcast somewhere nobody reviewed.
-    if (!loopKnownChainIds.contains(chainId) ||
-        transaction['chainId'] != loopChainReference(chainId)) {
+    // The membership check comes first as its own statement: `loopChainReference`
+    // throws on an unknown chain rather than answering with the primary one.
+    if (!loopKnownChainIds.contains(chainId)) {
+      throw const PrivySigningException('privy_chain_mismatch');
+    }
+    if (transaction['chainId'] != loopChainReference(chainId)) {
       throw const PrivySigningException('privy_chain_mismatch');
     }
     // privy_flutter 0.10.1 exposes exactly six Ethereum RPC methods through

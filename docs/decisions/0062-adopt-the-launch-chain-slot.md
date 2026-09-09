@@ -59,11 +59,16 @@ Launch slot equals the primary chain**: `GET /v2/chain/status.launchChain`,
    other.
 
 5. **The badge is a statement of fact and never a blocker.** `LoopTestnetBadge`
-   ("BSC 测试网") plus one dismissible explanation, shared across every Launch
-   surface through `loopTestnetNoticeDismissedProvider` so it appears once per
-   run rather than once per page. Closing it changes nothing: the badge stays,
-   every action stays exactly as it was, and the five reviewed states are
-   untouched. Market, Watchlist, Swap, Send and approvals can never render it —
+   ("BSC 测试网") names the chain. On the Launch surfaces and the wallet's Launch
+   block it is accompanied by one dismissible explanation, shared through
+   `loopTestnetNoticeDismissedProvider` so it appears once per run rather than
+   once per page; closing it changes nothing, because the badge stays, every
+   action stays exactly as it was, and the five reviewed states are untouched.
+   **The sign sheet carries the badge only.** A confirmation is not the place
+   to read an explanation for the first time, and it must not grow a control
+   whose only effect is to change the sheet while a signature is pending, so
+   `LoopSignSheet` takes a `networkBadge` string and nothing else. Market,
+   Watchlist, Swap, Send and approvals can never render any of it —
    `scripts/check_harness.py` fails if they reference the slot at all.
 
 6. **The wallet's Launch block is one native balance, not a portfolio.** It

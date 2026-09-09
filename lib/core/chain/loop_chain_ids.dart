@@ -21,11 +21,17 @@ const Set<String> loopKnownChainIds = <String>{
   loopLaunchTestnetChainId,
 };
 
-/// zh-CN network name for one published chain id. It is only ever called with
-/// a value a strict parser already accepted.
+/// zh-CN network name for one published chain id.
+///
+/// It is only ever called with a value a strict parser already accepted, so an
+/// unknown chain is a programming error rather than a network to name. It
+/// throws instead of falling back to the primary chain: labelling an unknown
+/// chain "BNB Smart Chain" would tell the owner something the payload never
+/// said.
 String loopChainName(String chainId) => switch (chainId) {
+  loopPrimaryChainId => 'BNB Smart Chain',
   loopLaunchTestnetChainId => 'BSC 测试网',
-  _ => 'BNB Smart Chain',
+  _ => throw ArgumentError.value(chainId, 'chainId', 'not a known chain slot'),
 };
 
 /// True when the value is the Launch testnet slot. This is the single
@@ -34,10 +40,16 @@ String loopChainName(String chainId) => switch (chainId) {
 bool loopIsTestnetChainId(String chainId) =>
     chainId == loopLaunchTestnetChainId;
 
-/// The numeric EIP-155 reference of one known chain id, e.g. `56`. It is the
-/// value an `eth_sendTransaction` payload carries, so the two can be compared
-/// without either side parsing a string at a call site.
+/// The numeric EIP-155 reference of one known chain id, e.g. `56`.
+///
+/// It is the value an `eth_sendTransaction` payload carries, so the two can be
+/// compared without either side parsing a string at a call site. An unknown
+/// chain throws rather than answering `56`: a caller comparing a payload
+/// against a defaulted reference would accept a transaction for a chain nobody
+/// published. Callers that may hold an unvalidated value check
+/// [loopKnownChainIds] first.
 int loopChainReference(String chainId) => switch (chainId) {
+  loopPrimaryChainId => 56,
   loopLaunchTestnetChainId => 97,
-  _ => 56,
+  _ => throw ArgumentError.value(chainId, 'chainId', 'not a known chain slot'),
 };

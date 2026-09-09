@@ -345,7 +345,7 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
       capability['capabilityId'],
       LoopV2CapabilityId.tryParse,
     );
-    final launchChainId = _launchChainId(evidence['launchChainId'], id);
+    final launchChainId = _launchChainId(evidence, id);
     return LoopV2Capability(
       id: id,
       availability: _enumValue(
@@ -366,11 +366,14 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
 
   /// The optional `evidence.launchChainId` (decision 0038).
   ///
-  /// Absent everywhere in the ordinary case. Present it is a closed enum, and
-  /// it may only appear on `launch`: a document that publishes it elsewhere is
-  /// rejected rather than partially trusted.
-  String? _launchChainId(Object? value, LoopV2CapabilityId id) {
-    if (value == null) return null;
+  /// The key is **absent** everywhere in the ordinary case, and absence is the
+  /// only shape that means "Launch runs on the primary chain". A published key
+  /// is a closed enum on `launch` alone, so an explicit `null` — like a value
+  /// on any other capability — is a document that does not describe a chain
+  /// slot and is rejected rather than read as absence.
+  String? _launchChainId(Map<String, Object?> evidence, LoopV2CapabilityId id) {
+    if (!evidence.containsKey('launchChainId')) return null;
+    final value = evidence['launchChainId'];
     if (id != LoopV2CapabilityId.launch ||
         value is! String ||
         !loopKnownChainIds.contains(value)) {

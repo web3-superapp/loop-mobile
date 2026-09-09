@@ -1727,22 +1727,40 @@ class _LaunchChainRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reasonCode = launchChain.reasonCode;
+    // "The backend chose the testnet but configured no endpoint" is not an
+    // abnormal chain — it is a slot that was never wired up, and there is no
+    // height or health to report for it. It renders as the unavailable card
+    // the rest of the page uses for a missing source.
+    if (reasonCode == 'LAUNCH_CHAIN_RPC_NOT_CONFIGURED') {
+      return LoopUnavailableCard(
+        key: const ValueKey<String>('networks-launch-chain-unavailable'),
+        label: '${launchChain.name}（Launch）未配置 RPC',
+        reasonCode: reasonCode!,
+      );
+    }
     final head = launchChain.head;
+    // Three states, not two: verified is 正常, a verification that has not
+    // finished yet is 待校验 — neither a fault nor a proof — and only an
+    // unreachable or mismatched endpoint is 异常.
+    final pending = reasonCode == 'LAUNCH_CHAIN_VERIFICATION_PENDING';
+    final (String badge, LoopBadgeKind kind) = switch (launchChain.isHealthy) {
+      true => ('正常', LoopBadgeKind.up),
+      false when pending => ('待校验', LoopBadgeKind.mute),
+      false => ('异常', LoopBadgeKind.down),
+    };
     return LoopRecordGroup(
       rows: <LoopRecordRow>[
         LoopRecordRow(
           key: const ValueKey<String>('networks-launch-chain-row'),
           title: '${launchChain.name}（Launch）',
-          subtitle: launchChain.reasonCode == null
+          subtitle: reasonCode == null
               ? '${launchChain.chainId} · '
                     '${launchChain.confirmations} 确认 · '
                     '重组跟踪 ${launchChain.reorgDepthBlocks} 块'
-              : loopReasonCodeText(launchChain.reasonCode),
+              : loopReasonCodeText(reasonCode),
           trailing: head == null ? null : '${head.blockNumber}',
-          trailingBadge: LoopBadge(
-            launchChain.isHealthy ? '正常' : '异常',
-            kind: launchChain.isHealthy ? LoopBadgeKind.up : LoopBadgeKind.down,
-          ),
+          trailingBadge: LoopBadge(badge, kind: kind),
         ),
       ],
     );

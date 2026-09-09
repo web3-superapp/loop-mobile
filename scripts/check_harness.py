@@ -8367,6 +8367,10 @@ def check_s6_money_action_contract(root: Path) -> list[str]:
 # backend rather than chosen by the client.
 S9_CHAIN_IDS_PATH = Path("lib/core/chain/loop_chain_ids.dart")
 S9_PRIMARY_CHAIN_ID = "eip155:56"
+# Every `eip155:<reference>` the identity file names, so the closed set is
+# checked as a set rather than against a blocklist someone has to keep current.
+S9_CHAIN_REFERENCE_PATTERN = re.compile(r"eip155:(\d+)")
+S9_ALLOWED_CHAIN_REFERENCES = {56, 97}
 S9_LAUNCH_TESTNET_CHAIN_ID = "eip155:97"
 # The testnet chain id is declared once. Every other file names the constant,
 # so a new surface cannot acquire a second chain by pasting a literal.
@@ -8428,12 +8432,23 @@ def check_s9_dual_chain_contract(root: Path) -> list[str]:
                     f"{S9_CHAIN_IDS_PATH} must declare `{expected}`; the two "
                     "chain slots are named constants, never inline literals"
                 )
-        for forbidden in ("eip155:1'", "eip155:137", "eip155:8453"):
-            if forbidden in source:
-                errors.append(
-                    f"{S9_CHAIN_IDS_PATH} names `{forbidden}`; LOOP has exactly "
-                    "two chain slots and no chain list"
-                )
+        # Every EIP-155 reference the file names, deduplicated. Enumerating a
+        # blocklist would only catch the chains someone thought of; the whole
+        # rule is that the set is closed, so the set itself is what is checked.
+        references = {
+            int(match)
+            for match in S9_CHAIN_REFERENCE_PATTERN.findall(source)
+        }
+        if references != S9_ALLOWED_CHAIN_REFERENCES:
+            unexpected = sorted(references - S9_ALLOWED_CHAIN_REFERENCES)
+            missing = sorted(S9_ALLOWED_CHAIN_REFERENCES - references)
+            errors.append(
+                f"{S9_CHAIN_IDS_PATH} names EIP-155 chains "
+                f"{sorted(references)}; LOOP has exactly two chain slots "
+                f"({sorted(S9_ALLOWED_CHAIN_REFERENCES)}) and no chain list"
+                + (f"; unexpected {unexpected}" if unexpected else "")
+                + (f"; missing {missing}" if missing else "")
+            )
 
     # 2. The testnet literal exists in exactly one file.
     lib_root = root / "lib"

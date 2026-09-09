@@ -438,6 +438,60 @@ void main() {
 
       expect(repository.getCapabilities(), throwsA(_invalidPayload));
     });
+
+    // Absence is the only shape that means "Launch runs on the primary
+    // chain". An explicit `null` is a published key that names no chain, so
+    // reading it as absence would let a malformed document pass as the
+    // ordinary one.
+    test('an explicit null on launch is an invalid document', () {
+      final repository = DioLoopV2MetaRepository.withClient(
+        _metaDio(_capabilitiesBody(explicitNullLaunchChainId: true)),
+      );
+
+      expect(repository.getCapabilities(), throwsA(_invalidPayload));
+    });
+
+    test('an explicit null on another capability is invalid too', () {
+      final repository = DioLoopV2MetaRepository.withClient(
+        _metaDio(
+          _capabilitiesBody(
+            explicitNullLaunchChainId: true,
+            onCapability: LoopV2CapabilityId.bscRead,
+          ),
+        ),
+      );
+
+      expect(repository.getCapabilities(), throwsA(_invalidPayload));
+    });
+  });
+
+  group('chain identities', () {
+    test('an unknown chain is never named or numbered as the primary', () {
+      expect(loopChainName(loopPrimaryChainId), 'BNB Smart Chain');
+      expect(loopChainName(loopLaunchTestnetChainId), 'BSC 测试网');
+      expect(loopChainReference(loopPrimaryChainId), 56);
+      expect(loopChainReference(loopLaunchTestnetChainId), 97);
+      // Falling back to the primary chain would label an unpublished chain
+      // "BNB Smart Chain" and compare a payload against a reference nobody
+      // sent, so both throw instead.
+      for (final unknown in const <String>[
+        'eip155:1',
+        'eip155:42161',
+        'solana:mainnet',
+        '',
+      ]) {
+        expect(
+          () => loopChainName(unknown),
+          throwsArgumentError,
+          reason: '$unknown must not borrow the primary chain name',
+        );
+        expect(
+          () => loopChainReference(unknown),
+          throwsArgumentError,
+          reason: '$unknown must not borrow the primary chain reference',
+        );
+      }
+    });
   });
 
   group('signing · only a Launch intent may leave the primary chain', () {
@@ -453,7 +507,12 @@ void main() {
           payload: DeviceTransactionPayload(
             fromAddress: '0x1111111111111111111111111111111111111111',
             transaction: <String, Object?>{
-              'chainId': loopChainReference(chainId),
+              // `loopChainReference` throws on an unknown chain, which is the
+              // point of the identity guard; the fixture keeps a plain number
+              // so the intent-level refusal is what the test observes.
+              'chainId': loopKnownChainIds.contains(chainId)
+                  ? loopChainReference(chainId)
+                  : 0,
               'value': '0x0',
             },
           ),
@@ -700,6 +759,7 @@ Map<String, Object?> _overviewBody({String chainId = loopPrimaryChainId}) =>
 
 Map<String, Object?> _capabilitiesBody({
   String? launchChainId,
+  bool explicitNullLaunchChainId = false,
   LoopV2CapabilityId onCapability = LoopV2CapabilityId.launch,
 }) => <String, Object?>{
   'contractVersion': '2.0',
@@ -714,7 +774,9 @@ Map<String, Object?> _capabilitiesBody({
         'evidence': <String, Object?>{
           'status': 'pending',
           'reasonCode': 'LAUNCH_CONTRACT_BASELINE_PENDING',
-          if (launchChainId != null && id == onCapability)
+          if (id == onCapability && explicitNullLaunchChainId)
+            'launchChainId': null
+          else if (launchChainId != null && id == onCapability)
             'launchChainId': launchChainId,
         },
       },

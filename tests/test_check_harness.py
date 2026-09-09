@@ -4391,6 +4391,48 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected the single-declaration guard: {result}",
         )
 
+    def test_s9_chain_identity_set_must_stay_exactly_two(self) -> None:
+        # A blocklist only catches the chains someone thought of, so the guard
+        # compares the whole set of EIP-155 references the file names.
+        for literal in ("eip155:42161", "eip155:1", "eip155:8453"):
+            with self.subTest(literal=literal):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = self._s9_root(temporary)
+                    target = root / check_harness.S9_CHAIN_IDS_PATH
+                    target.write_text(
+                        target.read_text(encoding="utf-8")
+                        + f"\nconst String extraChainId = '{literal}';\n",
+                        encoding="utf-8",
+                    )
+
+                    result = check_harness.check_s9_dual_chain_contract(root)
+
+                self.assertTrue(
+                    any(
+                        "LOOP has exactly two chain slots" in error
+                        for error in result
+                    ),
+                    msg=f"expected the closed chain-set guard: {result}",
+                )
+
+    def test_s9_chain_identity_set_must_keep_both_slots(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._s9_root(temporary)
+            target = root / check_harness.S9_CHAIN_IDS_PATH
+            target.write_text(
+                target.read_text(encoding="utf-8").replace(
+                    check_harness.S9_LAUNCH_TESTNET_CHAIN_ID, "eip155:56"
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_s9_dual_chain_contract(root)
+
+        self.assertTrue(
+            any("missing [97]" in error for error in result),
+            msg=f"expected the missing-slot guard: {result}",
+        )
+
     def test_s9_primary_chain_surfaces_must_not_render_the_slot(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = self._s9_root(temporary)

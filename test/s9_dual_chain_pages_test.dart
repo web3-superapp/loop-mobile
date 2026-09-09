@@ -276,18 +276,12 @@ void main() {
         chain: FakeChainGateway(
           status: S5Answer<LoopChainStatus>(
             value: s5Status(
-              launchChain: LoopLaunchChainStatus(
-                chainId: 'eip155:97',
-                chainReference: 97,
-                verification: LoopChainVerification.verified,
-                confirmations: 5,
-                reorgDepthBlocks: 15,
+              launchChain: _launchChainStatus(
                 head: LoopChainHead(
                   blockNumber: BigInt.from(52000000),
                   blockHash: s5BlockHash,
                   observedAt: DateTime.utc(2026, 9, 9, 10, 45, 5),
                 ),
-                reasonCode: null,
               ),
             ),
           ),
@@ -301,6 +295,107 @@ void main() {
 
       expect(find.text('BSC 测试网（Launch）'), findsOneWidget);
       expect(find.textContaining('eip155:97'), findsOneWidget);
+    });
+
+    testWidgets('an unconfigured Launch RPC is unavailable, not abnormal', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const NetworksScreen(),
+        chain: FakeChainGateway(
+          status: S5Answer<LoopChainStatus>(
+            value: s5Status(
+              launchChain: _launchChainStatus(
+                verification: LoopChainVerification.unknown,
+                head: null,
+                reasonCode: 'LAUNCH_CHAIN_RPC_NOT_CONFIGURED',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('networks-launch-chain-unavailable')),
+      );
+
+      // A slot that was never wired up has no height and no health to report,
+      // so it never reads as a chain that is misbehaving.
+      expect(
+        find.byKey(const ValueKey<String>('networks-launch-chain-row')),
+        findsNothing,
+      );
+      expect(find.text('异常'), findsNothing);
+      expect(
+        find.textContaining(
+          loopReasonCodeText('LAUNCH_CHAIN_RPC_NOT_CONFIGURED'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a pending verification is 待校验, never 异常', (tester) async {
+      await pumpS5Page(
+        tester,
+        const NetworksScreen(),
+        chain: FakeChainGateway(
+          status: S5Answer<LoopChainStatus>(
+            value: s5Status(
+              launchChain: _launchChainStatus(
+                verification: LoopChainVerification.unknown,
+                head: null,
+                reasonCode: 'LAUNCH_CHAIN_VERIFICATION_PENDING',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('networks-launch-chain-row')),
+      );
+
+      // "Not proven yet" is neither a fault nor a proof.
+      expect(find.text('待校验'), findsOneWidget);
+      expect(find.text('异常'), findsNothing);
+      // The primary chain row and its endpoint are untouched by the Launch
+      // slot's pending verification.
+      expect(find.text('正常'), findsNWidgets(2));
+    });
+
+    testWidgets('an unreachable or mismatched slot stays 异常', (tester) async {
+      for (final (verification, reasonCode)
+          in const <(LoopChainVerification, String)>[
+            (LoopChainVerification.unreachable, 'LAUNCH_CHAIN_RPC_UNREACHABLE'),
+            (LoopChainVerification.mismatched, 'LAUNCH_CHAIN_ID_MISMATCH'),
+          ]) {
+        await pumpS5Page(
+          tester,
+          const NetworksScreen(),
+          chain: FakeChainGateway(
+            status: S5Answer<LoopChainStatus>(
+              value: s5Status(
+                launchChain: _launchChainStatus(
+                  verification: verification,
+                  head: null,
+                  reasonCode: reasonCode,
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await scrollToS5Section(
+          tester,
+          find.byKey(const ValueKey<String>('networks-launch-chain-row')),
+        );
+
+        expect(find.text('异常'), findsOneWidget, reason: reasonCode);
+        expect(find.text('待校验'), findsNothing, reason: reasonCode);
+      }
     });
   });
 
@@ -386,4 +481,18 @@ LoopLaunchChainBalance _launchChainBalance() => LoopLaunchChainBalance(
       confirmations: 5,
     ),
   ),
+);
+
+LoopLaunchChainStatus _launchChainStatus({
+  LoopChainVerification verification = LoopChainVerification.verified,
+  LoopChainHead? head,
+  String? reasonCode,
+}) => LoopLaunchChainStatus(
+  chainId: 'eip155:97',
+  chainReference: 97,
+  verification: verification,
+  confirmations: 5,
+  reorgDepthBlocks: 15,
+  head: head,
+  reasonCode: reasonCode,
 );
