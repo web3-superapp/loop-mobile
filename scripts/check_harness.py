@@ -128,6 +128,10 @@ REQUIRED_FILES = (
     "docs/decisions/0054-adopt-v2-community-social-graph-and-search.md",
     "docs/decisions/0057-adopt-v2-chain-market-and-wallet-read.md",
     "docs/decisions/0058-adopt-v2-launch-catalog-and-mining-skeleton.md",
+    "docs/decisions/0062-adopt-the-launch-chain-slot.md",
+    "lib/core/chain/loop_chain_ids.dart",
+    "test/s9_dual_chain_test.dart",
+    "test/s9_dual_chain_pages_test.dart",
     "test/community_api_contract_test.dart",
     "test/community_idempotency_test.dart",
     "test/community_pages_test.dart",
@@ -8357,6 +8361,161 @@ def check_s6_money_action_contract(root: Path) -> list[str]:
     return errors
 
 
+# --- S9 · dual chain slots (decision 0062 / loop-api 0038) -------------------
+# LOOP has exactly two named chain slots. The primary chain never moves; the
+# Launch slot alone may point at the BSC testnet, and it is published by the
+# backend rather than chosen by the client.
+S9_CHAIN_IDS_PATH = Path("lib/core/chain/loop_chain_ids.dart")
+S9_PRIMARY_CHAIN_ID = "eip155:56"
+S9_LAUNCH_TESTNET_CHAIN_ID = "eip155:97"
+# The testnet chain id is declared once. Every other file names the constant,
+# so a new surface cannot acquire a second chain by pasting a literal.
+S9_TESTNET_LITERAL_ALLOWED = (Path("lib/core/chain/loop_chain_ids.dart"),)
+# Market, Watchlist, Swap, Send and approvals are bound to the primary chain.
+# None of them may reference the Launch slot, its badge or its explanation.
+S9_PRIMARY_ONLY_PATHS = (
+    Path("lib/features/market"),
+    Path("lib/features/wallet/swap_screens.dart"),
+    Path("lib/features/wallet/send_screens.dart"),
+    Path("lib/features/wallet/approval_screens.dart"),
+)
+S9_TESTNET_MARKERS = (
+    "loopLaunchTestnetChainId",
+    "LoopTestnetBadge",
+    "loopTestnetBadgeLabel",
+    "LoopTestnetNotice",
+    S9_LAUNCH_TESTNET_CHAIN_ID,
+)
+# The signing exit carries the chain and refuses to leave the primary chain
+# for anything but a Launch intent.
+S9_SIGNING_INTENT_PATH = Path("lib/core/intent/signing_intent.dart")
+S9_SIGNING_INTENT_MARKERS = (
+    "IntentKind.launchPurchase",
+    "chainIsPermitted",
+    "launchPurchase",
+)
+# privy_flutter 0.10.1 exposes no chain-selection call, so the device signer
+# fails closed off the primary chain instead of broadcasting blind.
+S9_DEVICE_SIGNER_PATH = Path("lib/integrations/privy/privy_device_signer.dart")
+S9_DEVICE_SIGNER_MARKERS = (
+    "privy_chain_switch_unsupported",
+    "privy_chain_mismatch",
+)
+# Money intents are locked to the primary chain by the transport itself.
+S9_INTENT_CODEC_PATH = Path(
+    "lib/integrations/backend/v2/wallet_intents/loop_v2_intent_codec.dart"
+)
+
+
+def check_s9_dual_chain_contract(root: Path) -> list[str]:
+    """Lock the two chain slots recorded by decision 0062."""
+
+    errors: list[str] = []
+
+    # 1. The chain identities are declared once, and there are exactly two.
+    chain_ids_path = root / S9_CHAIN_IDS_PATH
+    if not chain_ids_path.is_file():
+        errors.append(f"missing chain identity source: {S9_CHAIN_IDS_PATH}")
+    else:
+        source = strip_dart_comments(read_text(chain_ids_path))
+        for expected in (
+            f"const String loopPrimaryChainId = '{S9_PRIMARY_CHAIN_ID}';",
+            "const String loopLaunchTestnetChainId = "
+            f"'{S9_LAUNCH_TESTNET_CHAIN_ID}';",
+        ):
+            if expected not in source:
+                errors.append(
+                    f"{S9_CHAIN_IDS_PATH} must declare `{expected}`; the two "
+                    "chain slots are named constants, never inline literals"
+                )
+        for forbidden in ("eip155:1'", "eip155:137", "eip155:8453"):
+            if forbidden in source:
+                errors.append(
+                    f"{S9_CHAIN_IDS_PATH} names `{forbidden}`; LOOP has exactly "
+                    "two chain slots and no chain list"
+                )
+
+    # 2. The testnet literal exists in exactly one file.
+    lib_root = root / "lib"
+    if lib_root.is_dir():
+        for path in sorted(lib_root.rglob("*.dart")):
+            relative = path.relative_to(root)
+            if relative in S9_TESTNET_LITERAL_ALLOWED:
+                continue
+            if S9_LAUNCH_TESTNET_CHAIN_ID in strip_dart_comments(
+                read_text(path)
+            ):
+                errors.append(
+                    f"{relative} writes the literal "
+                    f"`{S9_LAUNCH_TESTNET_CHAIN_ID}`; use "
+                    "loopLaunchTestnetChainId so the slot stays declared once"
+                )
+
+    # 3. The primary-chain surfaces never learn about the Launch slot.
+    for relative in S9_PRIMARY_ONLY_PATHS:
+        target = root / relative
+        if not target.exists():
+            errors.append(f"missing primary-chain surface: {relative}")
+            continue
+        paths = (
+            sorted(target.rglob("*.dart")) if target.is_dir() else [target]
+        )
+        for path in paths:
+            source = strip_dart_comments(read_text(path))
+            for marker in S9_TESTNET_MARKERS:
+                if marker in source:
+                    errors.append(
+                        f"{path.relative_to(root)} references `{marker}`; "
+                        "Market, Watchlist, Swap, Send and approvals are bound "
+                        "to the primary chain and never render the Launch slot"
+                    )
+
+    # 4. The signing intent carries its chain and refuses to leave the primary
+    #    chain for anything but a Launch intent.
+    intent_path = root / S9_SIGNING_INTENT_PATH
+    if not intent_path.is_file():
+        errors.append(f"missing signing intent: {S9_SIGNING_INTENT_PATH}")
+    else:
+        source = strip_dart_comments(read_text(intent_path))
+        for marker in S9_SIGNING_INTENT_MARKERS:
+            if marker not in source:
+                errors.append(
+                    f"{S9_SIGNING_INTENT_PATH} must declare `{marker}`; only a "
+                    "Launch intent may ever be signed off the primary chain"
+                )
+
+    # 5. The device signer fails closed on a chain it cannot select.
+    signer_path = root / S9_DEVICE_SIGNER_PATH
+    if not signer_path.is_file():
+        errors.append(f"missing device signer: {S9_DEVICE_SIGNER_PATH}")
+    else:
+        source = strip_dart_comments(read_text(signer_path))
+        for marker in S9_DEVICE_SIGNER_MARKERS:
+            if marker not in source:
+                errors.append(
+                    f"{S9_DEVICE_SIGNER_PATH} must refuse with `{marker}`; "
+                    "privy_flutter 0.10.1 exposes no chain-selection call, so "
+                    "a non-primary chain fails closed"
+                )
+
+    # 6. The money-intent transport pins the primary chain.
+    codec_path = root / S9_INTENT_CODEC_PATH
+    if not codec_path.is_file():
+        errors.append(f"missing intent codec: {S9_INTENT_CODEC_PATH}")
+    else:
+        source = strip_dart_comments(read_text(codec_path))
+        if "_primaryChainId(" not in source or (
+            "_primaryChainReference(" not in source
+        ):
+            errors.append(
+                f"{S9_INTENT_CODEC_PATH} must pin send/approve/revoke/swap to "
+                "the primary chain; a money payload on another chain is an "
+                "invalid payload, not a signable one"
+            )
+
+    return errors
+
+
 def check_providerless_application_contract(root: Path) -> list[str]:
     """Keep transport and deterministic fakes outside production features."""
 
@@ -10079,6 +10238,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_s5_truth_contract(root))
     errors.extend(check_s6_money_action_contract(root))
     errors.extend(check_s7_truth_contract(root))
+    errors.extend(check_s9_dual_chain_contract(root))
     errors.extend(check_providerless_application_contract(root))
     errors.extend(check_watchlist_application_contract(root))
     errors.extend(check_profile_application_contract(root))
@@ -10109,7 +10269,7 @@ def main() -> int:
         "V2 community truth, pins, "
         "Spot-only product, New Pairs source-scoped truth, Chat snapshot, Preview request truth and exact conversation identity, security capability truth, device-local display preferences, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
         "S5 chain/market/wallet-read truth, S6 money-action truth, "
-        "S7 launch/mining/referral truth, "
+        "S7 launch/mining/referral truth, S9 dual chain slots, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, and secret rules are consistent."
     )

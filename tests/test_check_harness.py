@@ -4348,6 +4348,106 @@ class HarnessTests(unittest.TestCase):
             )
         return root
 
+    def _s9_root(self, temporary: str) -> Path:
+        """Copies every file `check_s9_dual_chain_contract` inspects."""
+
+        root = Path(temporary)
+        relatives = [
+            str(check_harness.S9_CHAIN_IDS_PATH),
+            str(check_harness.S9_SIGNING_INTENT_PATH),
+            str(check_harness.S9_DEVICE_SIGNER_PATH),
+            str(check_harness.S9_INTENT_CODEC_PATH),
+        ]
+        for path in sorted((REPOSITORY_ROOT / "lib").rglob("*.dart")):
+            relatives.append(str(path.relative_to(REPOSITORY_ROOT)))
+        for relative in dict.fromkeys(relatives):
+            target = root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(
+                (REPOSITORY_ROOT / relative).read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+        return root
+
+    def test_s9_repository_satisfies_the_dual_chain_guard(self) -> None:
+        self.assertEqual(
+            check_harness.check_s9_dual_chain_contract(REPOSITORY_ROOT), []
+        )
+
+    def test_s9_testnet_literal_is_declared_once(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._s9_root(temporary)
+            target = root / "lib/features/market/market_screen.dart"
+            target.write_text(
+                "const String leak = 'eip155:97';\n"
+                + target.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_s9_dual_chain_contract(root)
+
+        self.assertTrue(
+            any("writes the literal `eip155:97`" in error for error in result),
+            msg=f"expected the single-declaration guard: {result}",
+        )
+
+    def test_s9_primary_chain_surfaces_must_not_render_the_slot(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._s9_root(temporary)
+            target = root / "lib/features/wallet/swap_screens.dart"
+            target.write_text(
+                "// leak\nconst Object badge = LoopTestnetBadge;\n"
+                + target.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_s9_dual_chain_contract(root)
+
+        self.assertTrue(
+            any("LoopTestnetBadge" in error for error in result),
+            msg=f"expected the primary-chain surface guard: {result}",
+        )
+
+    def test_s9_device_signer_must_fail_closed_off_the_primary_chain(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._s9_root(temporary)
+            target = root / check_harness.S9_DEVICE_SIGNER_PATH
+            target.write_text(
+                target.read_text(encoding="utf-8").replace(
+                    "privy_chain_switch_unsupported", "privy_chain_ok", 1
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_s9_dual_chain_contract(root)
+
+        self.assertTrue(
+            any(
+                "privy_chain_switch_unsupported" in error for error in result
+            ),
+            msg=f"expected the fail-closed chain guard: {result}",
+        )
+
+    def test_s9_money_intents_stay_pinned_to_the_primary_chain(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._s9_root(temporary)
+            target = root / check_harness.S9_INTENT_CODEC_PATH
+            target.write_text(
+                target.read_text(encoding="utf-8").replace(
+                    "_primaryChainReference(", "_anyChainReference("
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_s9_dual_chain_contract(root)
+
+        self.assertTrue(
+            any("pin send/approve/revoke/swap" in error for error in result),
+            msg=f"expected the money-intent chain guard: {result}",
+        )
+
     def test_s7_ports_must_default_fail_closed(self) -> None:
         for relative, provider, port, unavailable in check_harness.S7_PORT_DEFAULTS:
             with self.subTest(provider=provider):
