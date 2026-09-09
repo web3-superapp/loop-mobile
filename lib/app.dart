@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:loop_mobile/core/theme/loop_scroll_behavior.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
@@ -195,6 +198,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       theme: LoopTheme.dark,
       darkTheme: LoopTheme.dark,
       themeMode: ThemeMode.dark,
+      scrollBehavior: const LoopScrollBehavior(),
       routerConfig: router,
       builder: (context, child) {
         Widget content = child ?? const SizedBox.shrink();
