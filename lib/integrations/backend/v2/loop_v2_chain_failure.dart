@@ -9,10 +9,10 @@ import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 LoopChainFailureKind loopChainFailureKindForV2(LoopBackendFailure failure) {
   return switch (failure.code) {
     'PERMISSION_DENIED' ||
-    'POLICY_BLOCKED' ||
-    // The same answer with a jurisdiction rule behind it: the request arrived
-    // and was refused, so it is never retried and never rendered as an error.
-    'REGION_BLOCKED' => LoopChainFailureKind.permissionDenied,
+    'POLICY_BLOCKED' => LoopChainFailureKind.permissionDenied,
+    // A jurisdiction rule, not an account one. It is kept apart so the copy
+    // never suggests switching account or asset.
+    'REGION_BLOCKED' => LoopChainFailureKind.regionBlocked,
     // The command needs a second factor the product has not delivered; it is
     // a permanent refusal, never a retryable failure.
     'AUTH_STEP_UP_REQUIRED' => LoopChainFailureKind.stepUpRequired,

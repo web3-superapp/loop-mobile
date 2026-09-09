@@ -96,7 +96,7 @@ WatchlistSnapshot previewWatchlistSnapshot() => WatchlistSnapshot(
         ),
         WatchlistItem(
           assetId: 'eip155:56:0x1111111111111111111111111111111111111111',
-          reasonCode: 'ASSET_NOT_IN_REGISTRY',
+          reasonCode: 'ASSET_NOT_READABLE',
         ),
       ],
     ),

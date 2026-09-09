@@ -466,6 +466,7 @@ class MoneyPolicyNotice extends StatelessWidget {
   static bool covers(LoopChainException? failure) =>
       failure != null &&
       (failure.kind == LoopChainFailureKind.permissionDenied ||
+          failure.kind == LoopChainFailureKind.regionBlocked ||
           failure.kind == LoopChainFailureKind.stepUpRequired ||
           (failure.kind == LoopChainFailureKind.validationFailed &&
               failure.reasonCode == MoneyPolicyRule.nativeAssetNotApprovable));
@@ -479,6 +480,8 @@ class MoneyPolicyNotice extends StatelessWidget {
       denied: true,
       title: stepUp
           ? '这一步需要二次验证，没有提交任何交易'
+          : failure.kind == LoopChainFailureKind.regionBlocked
+          ? '当前地区不能执行此操作，没有提交任何交易'
           : failure.reasonCode == MoneyPolicyRule.nativeAssetNotApprovable
           ? '原生资产不能授权'
           : '被策略拒绝，没有提交任何交易',
@@ -486,6 +489,8 @@ class MoneyPolicyNotice extends StatelessWidget {
           ? '这一步需要二次验证。二次验证尚未开放，服务端已拒绝，'
                 '没有签名、没有广播，也没有提交任何交易。'
                 '请到安全中心查看当前可用的验证方式。'
+          : failure.kind == LoopChainFailureKind.regionBlocked
+          ? loopChainPermissionPurpose(failure.kind)
           : moneyPolicyRefusalText(failure),
       settingsLabel: '前往安全中心',
       onOpenSettings: stepUp ? onOpenSecurity : null,

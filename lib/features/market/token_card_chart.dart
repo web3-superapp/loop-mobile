@@ -20,12 +20,18 @@ class TokenCardSparkline extends ConsumerStatefulWidget {
     required this.assetId,
     super.key,
     this.keyPrefix = 'token-card-sparkline',
+    this.unavailableText,
   });
 
   final String assetId;
 
   /// The owning page's key prefix, so an assertion names that page.
   final String keyPrefix;
+
+  /// Short copy for the not-drawn states, used by a page that already renders
+  /// the same series' full reason elsewhere on screen. It must point at that
+  /// block rather than restate it — the reason is still shown exactly once.
+  final String? unavailableText;
 
   @override
   ConsumerState<TokenCardSparkline> createState() => _TokenCardSparklineState();
@@ -57,13 +63,14 @@ class _TokenCardSparklineState extends ConsumerState<TokenCardSparkline> {
         // the server never sent.
         text: state.phase == LoopChainViewPhase.loading
             ? '1H K 线读取中，读到之前不画任何走势。'
-            : loopChainFailureReason(state.failureKind),
+            : widget.unavailableText ??
+                  loopChainFailureReason(state.failureKind),
       );
     }
     if (block is MarketCandlesUnavailable) {
       return _TokenCardChartNotice(
         blockKey: '${widget.keyPrefix}-unavailable',
-        text: loopReasonCodeText(block.reasonCode),
+        text: widget.unavailableText ?? loopReasonCodeText(block.reasonCode),
       );
     }
     final available = block as MarketCandlesAvailable;
@@ -71,7 +78,7 @@ class _TokenCardSparklineState extends ConsumerState<TokenCardSparkline> {
     if (closes.isEmpty) {
       return _TokenCardChartNotice(
         blockKey: '${widget.keyPrefix}-empty',
-        text: '这个区间没有成交，只画有成交的桶，空桶不会补 0。',
+        text: widget.unavailableText ?? '这个区间没有成交，只画有成交的桶，空桶不会补 0。',
       );
     }
     return LoopSparkline(

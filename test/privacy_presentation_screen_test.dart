@@ -77,6 +77,9 @@ void main() {
       // A refusal the server issued is its own state: it is neither a fault
       // the page can retry nor an absent capability.
       PrivacyGatewayFailureKind.permissionDenied: 'privacy-permission',
+      // A jurisdiction refusal shares the state but not the copy: it never
+      // suggests another account, because none would change the answer.
+      PrivacyGatewayFailureKind.regionBlocked: 'privacy-permission',
       PrivacyGatewayFailureKind.stepUpRequired: 'privacy-permission',
       PrivacyGatewayFailureKind.versionConflict: 'privacy-error',
       PrivacyGatewayFailureKind.bootstrapRequired: 'privacy-error',

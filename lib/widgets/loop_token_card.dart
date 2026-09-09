@@ -206,9 +206,11 @@ class LoopTokenCard extends StatelessWidget {
                   if (state == LoopTokenCardState.risk &&
                       model.riskFacts.isNotEmpty)
                     _RiskBar(facts: model.riskFacts, foreground: foreground),
-                  // Identifying carries no series yet; every other state may
-                  // render one, and the chart owns its own unavailable copy.
-                  if (state != LoopTokenCardState.loading &&
+                  // The prototype draws a `tcard-chart` only in the two states
+                  // that have a series: 正常 and 已毕业. 识别中 / 数据缺失 /
+                  // 风险事实 carry no chart slot at all.
+                  if ((state == LoopTokenCardState.normal ||
+                          state == LoopTokenCardState.graduated) &&
                       model.chart != null)
                     _Chart(model: model, chalk: chalk),
                   if (model.metrics.isNotEmpty)
@@ -371,11 +373,13 @@ class _Head extends StatelessWidget {
                       color: secondary,
                     ),
                   ),
-                if (model.change != null || state == LoopTokenCardState.partial)
+                // A card that never read the 24h fact says nothing about it;
+                // only an owner that did read one supplies [change].
+                if (model.change != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 5),
                     child: Text(
-                      model.change ?? '无 24H 数据',
+                      model.change!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: LoopTypography.mono(

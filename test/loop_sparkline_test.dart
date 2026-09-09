@@ -145,9 +145,12 @@ void main() {
         find.byKey(const ValueKey<String>('token-card-chart-line')),
         findsNothing,
       );
+      // The card slot points at the K-line terminal rather than restating the
+      // whole sentence, so the reason still appears exactly once.
+      expect(find.text('1H 走势不可用，原因见下方 K 线。'), findsOneWidget);
       expect(
         find.textContaining(loopReasonCodeText('MARKET_POOL_NOT_INDEXED')),
-        findsWidgets,
+        findsOneWidget,
       );
     });
   });

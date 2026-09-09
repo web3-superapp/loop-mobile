@@ -81,6 +81,7 @@ class LoopChainStateBlock extends StatelessWidget {
     this.emptyMessage = '这里还没有内容',
     this.emptyReason,
     this.permissionTitle = '当前账号没有权限',
+    this.onOpenSecurity,
     this.skeleton = LoopSkeletonType.list,
     this.rows = 3,
     this.keyPrefix = 'chain',
@@ -92,6 +93,10 @@ class LoopChainStateBlock extends StatelessWidget {
   final String emptyMessage;
   final String? emptyReason;
   final String permissionTitle;
+
+  /// Only the step-up branch uses it: step-up is not delivered, so the security
+  /// centre is the one destination that could ever change the answer.
+  final VoidCallback? onOpenSecurity;
   final LoopSkeletonType skeleton;
   final int rows;
   final String keyPrefix;
@@ -125,13 +130,20 @@ class LoopChainStateBlock extends StatelessWidget {
           reason: loopChainFailureReason(failureKind),
         );
       case LoopChainViewPhase.permission:
+        final stepUp = failureKind == LoopChainFailureKind.stepUpRequired;
         return LoopPermissionState(
           key: ValueKey<String>('$keyPrefix-state-permission'),
           icon: 'shield',
-          title: failureKind == LoopChainFailureKind.stepUpRequired
+          // The server answered; the block never offers a retry.
+          denied: true,
+          title: stepUp
               ? '这一步需要二次验证'
+              : failureKind == LoopChainFailureKind.regionBlocked
+              ? '当前地区不能执行此操作'
               : permissionTitle,
           purpose: loopChainPermissionPurpose(failureKind),
+          settingsLabel: '前往安全中心',
+          onOpenSettings: stepUp ? onOpenSecurity : null,
         );
       case LoopChainViewPhase.error:
         return LoopErrorState(
@@ -183,12 +195,18 @@ String? loopChainPreviewKicker(LoopChainGatewayMode mode) =>
 ///
 /// It states the rule, what did not happen, and the one alternative that
 /// actually exists. It never offers a setting the product has not delivered.
-String loopChainPermissionPurpose(LoopChainFailureKind? kind) =>
-    kind == LoopChainFailureKind.stepUpRequired
-    ? '${loopChainFailureReason(kind)}请到安全中心查看当前可用的验证方式；'
-          '本页已读到的内容不受影响。'
-    : '${loopChainFailureReason(kind)}所需权限与策略由服务端授予，客户端无法调整；'
-          '可以换一个已获授权的账号或资产，本页已读到的内容不受影响。';
+String loopChainPermissionPurpose(LoopChainFailureKind? kind) => switch (kind) {
+  LoopChainFailureKind.stepUpRequired =>
+    '${loopChainFailureReason(kind)}请到安全中心查看当前可用的验证方式；'
+        '本页已读到的内容不受影响。',
+  // A jurisdiction rule is not an account one, so no alternative account or
+  // asset is offered — there is none.
+  LoopChainFailureKind.regionBlocked =>
+    '${loopChainFailureReason(kind)}本页已读到的内容不受影响。',
+  _ =>
+    '${loopChainFailureReason(kind)}所需权限与策略由服务端授予，客户端无法调整；'
+        '可以换一个已获授权的账号或资产，本页已读到的内容不受影响。',
+};
 
 /// The block a page renders when the server refused a **command** it issued
 /// from an already-loaded page.
@@ -211,6 +229,7 @@ class LoopChainCommandPermission extends StatelessWidget {
   /// True when this failure is a server refusal rather than a fault.
   static bool covers(LoopChainFailureKind? kind) =>
       kind == LoopChainFailureKind.permissionDenied ||
+      kind == LoopChainFailureKind.regionBlocked ||
       kind == LoopChainFailureKind.stepUpRequired;
 
   final String blockKey;
@@ -225,7 +244,11 @@ class LoopChainCommandPermission extends StatelessWidget {
       key: ValueKey<String>(blockKey),
       icon: 'shield',
       denied: true,
-      title: stepUp ? '这一步需要二次验证' : title,
+      title: stepUp
+          ? '这一步需要二次验证'
+          : failureKind == LoopChainFailureKind.regionBlocked
+          ? '当前地区不能执行此操作'
+          : title,
       purpose: loopChainPermissionPurpose(failureKind),
       settingsLabel: '前往安全中心',
       onOpenSettings: stepUp ? onOpenSecurity : null,

@@ -257,18 +257,19 @@ void main() {
         ),
       );
 
-      // Two independent blocks read the same series and therefore state the
-      // same reason: the Token Card's small line and the K-line terminal. Both
-      // render the reason instead of a shape; neither invents a figure.
-      expect(
-        find.byKey(const ValueKey<String>('token-card-chart-unavailable')),
-        findsOneWidget,
-      );
+      // The reason is stated exactly once, by the K-line terminal. The Token
+      // Card's line slot draws nothing and points at that block instead of
+      // repeating the whole sentence.
       expect(
         find.byKey(const ValueKey<String>('candles-unavailable')),
         findsOneWidget,
       );
-      expect(find.textContaining('没有已登记的 PancakeSwap V3 池'), findsNWidgets(2));
+      expect(find.textContaining('没有已登记的 PancakeSwap V3 池'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('token-card-chart-unavailable')),
+        findsOneWidget,
+      );
+      expect(find.text('1H 走势不可用，原因见下方 K 线。'), findsOneWidget);
     });
 
     testWidgets('security facts render with their own source and time', (

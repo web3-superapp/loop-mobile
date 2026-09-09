@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show PointMode;
 
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -486,14 +487,19 @@ class LoopLedgerCard extends StatelessWidget {
         borderRadius: LoopRadius.shell,
         // `.ledger-card::before`: a static dot texture under the content. It
         // is painted, never animated, so reduced motion changes nothing here.
-        child: CustomPaint(
-          key: ValueKey<String>(
-            quiet ? 'loop-ledger-quiet-texture' : 'loop-ledger-texture',
+        // The boundary keeps the grid out of the parent's repaints, and
+        // `isComplex` lets the engine cache the raster.
+        child: RepaintBoundary(
+          child: CustomPaint(
+            key: ValueKey<String>(
+              quiet ? 'loop-ledger-quiet-texture' : 'loop-ledger-texture',
+            ),
+            isComplex: true,
+            painter: LoopLedgerTexturePainter(
+              spec: quiet ? LoopLedgerTexture.quiet : LoopLedgerTexture.primary,
+            ),
+            child: body,
           ),
-          painter: LoopLedgerTexturePainter(
-            spec: quiet ? LoopLedgerTexture.quiet : LoopLedgerTexture.primary,
-          ),
-          child: body,
         ),
       ),
     );
@@ -592,6 +598,39 @@ final class LoopLedgerTexture {
     return (position - maskTransparentStop) / (1 - maskTransparentStop);
   }
 
+  /// How many alpha steps the mask ramp is quantised into.
+  ///
+  /// The ramp is a visual gradient, not a fact, so a step finer than the eye
+  /// can resolve only costs draw calls. Quantising lets every dot in a step be
+  /// drawn by one [Canvas.drawPoints] call instead of one call per dot, which
+  /// caps the painter at [maskSteps] calls whatever the card's size.
+  static const int maskSteps = 12;
+
+  /// The dots of one card, bucketed by quantised mask alpha.
+  ///
+  /// The mask is evaluated once per dot here and never again during painting.
+  /// Buckets with no visible dot are omitted, so a fully masked corner costs
+  /// nothing.
+  static List<({double alpha, List<Offset> points})> dotBuckets(Size size) {
+    final buckets = <int, List<Offset>>{};
+    for (final center in dotCenters(size)) {
+      final factor = maskFactor(center, size);
+      if (factor <= 0) continue;
+      final step = (factor * maskSteps).ceil().clamp(1, maskSteps);
+      (buckets[step] ??= <Offset>[]).add(center);
+    }
+    final steps = buckets.keys.toList()..sort();
+    return List<({double alpha, List<Offset> points})>.unmodifiable(
+      <({double alpha, List<Offset> points})>[
+        for (final step in steps)
+          (
+            alpha: step / maskSteps,
+            points: List<Offset>.unmodifiable(buckets[step]!),
+          ),
+      ],
+    );
+  }
+
   /// The dot centres for [size], in the CSS background grid's own order.
   static List<Offset> dotCenters(Size size) {
     if (size.isEmpty) return const <Offset>[];
@@ -606,6 +645,10 @@ final class LoopLedgerTexture {
 }
 
 /// Paints [LoopLedgerTexture] behind a ledger card's content.
+///
+/// One [Canvas.drawPoints] call per quantised mask step, never one per dot: a
+/// 360x200 card holds roughly 900 dots and would otherwise cost 900 draw calls
+/// on every raster.
 class LoopLedgerTexturePainter extends CustomPainter {
   const LoopLedgerTexturePainter({required this.spec});
 
@@ -614,16 +657,18 @@ class LoopLedgerTexturePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (size.isEmpty) return;
-    for (final center in LoopLedgerTexture.dotCenters(size)) {
-      final factor = LoopLedgerTexture.maskFactor(center, size);
-      if (factor <= 0) continue;
-      canvas.drawCircle(
-        center,
-        LoopLedgerTexture.dotRadius,
+    for (final bucket in LoopLedgerTexture.dotBuckets(size)) {
+      canvas.drawPoints(
+        PointMode.points,
+        bucket.points,
         Paint()
           ..color = spec.dotColor.withValues(
-            alpha: spec.effectiveAlpha * factor,
-          ),
+            alpha: spec.effectiveAlpha * bucket.alpha,
+          )
+          // A round cap turns a point into the CSS dot; the stroke width is
+          // the gradient's diameter.
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = LoopLedgerTexture.dotRadius * 2,
       );
     }
   }

@@ -149,12 +149,6 @@ final class DioLoopV2ProfileApi implements LoopV2ProfileApi {
   static const _readErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
-    403: <String>{
-      'PERMISSION_DENIED',
-      'POLICY_BLOCKED',
-      'AUTH_STEP_UP_REQUIRED',
-      'REGION_BLOCKED',
-    },
     404: <String>{'NOT_FOUND'},
     409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED', 'VERSION_CONFLICT'},
     500: <String>{'INTERNAL_ERROR'},
@@ -167,12 +161,6 @@ final class DioLoopV2ProfileApi implements LoopV2ProfileApi {
   static const _profileWriteErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
-    403: <String>{
-      'PERMISSION_DENIED',
-      'POLICY_BLOCKED',
-      'AUTH_STEP_UP_REQUIRED',
-      'REGION_BLOCKED',
-    },
     404: <String>{'NOT_FOUND'},
     409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED', 'VERSION_CONFLICT'},
     422: <String>{'VALIDATION_FAILED', 'ALIAS_RESERVED', 'ALIAS_BLOCKED'},
@@ -186,12 +174,6 @@ final class DioLoopV2ProfileApi implements LoopV2ProfileApi {
   static const _activationErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
-    403: <String>{
-      'PERMISSION_DENIED',
-      'POLICY_BLOCKED',
-      'AUTH_STEP_UP_REQUIRED',
-      'REGION_BLOCKED',
-    },
     404: <String>{'NOT_FOUND'},
     409: <String>{
       'ACCOUNT_BOOTSTRAP_REQUIRED',
@@ -209,12 +191,6 @@ final class DioLoopV2ProfileApi implements LoopV2ProfileApi {
   static const _privacyWriteErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
-    403: <String>{
-      'PERMISSION_DENIED',
-      'POLICY_BLOCKED',
-      'AUTH_STEP_UP_REQUIRED',
-      'REGION_BLOCKED',
-    },
     404: <String>{'NOT_FOUND'},
     409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED', 'VERSION_CONFLICT'},
     422: <String>{'VALIDATION_FAILED'},

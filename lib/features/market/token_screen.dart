@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -151,24 +152,44 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
                   detail.capability.reasonCode ??
                   'BSC_CHAIN_RUNTIME_UNAVAILABLE',
             ),
-          // `.tcard.tcard-signature.tcard-token-hero`. The card carries the
-          // identity and the small close line only: the price, the change and
-          // the three metrics are rendered once each, with their own source and
-          // observation time, in the hero and the fact list below. Repeating
-          // them here would put the same figure on screen three times without
-          // its provenance.
+          // `.tcard.tcard-signature.tcard-token-hero` — the prototype's own
+          // signature card: quote, chart, three metrics, actions. Every figure
+          // comes from the same `MarketAssetDetail` the fact list reads, and an
+          // unavailable one renders its `reasonCode` instead of a number. The
+          // card's own provenance line names the source and observation time of
+          // the quote it shows.
           LoopTokenCard(
             key: const ValueKey<String>('token-card'),
-            state: detail.capability.suppressesLiveFigures
-                ? LoopTokenCardState.partial
-                : LoopTokenCardState.normal,
+            state: LoopTokenCardState.normal,
             model: LoopTokenCardModel(
               symbol: detail.asset.symbol,
               identifier: loopTruncatedAssetId(assetId),
+              price: detail.price.isAvailable
+                  ? loopFormatUsd(detail.price.value!)
+                  : null,
+              priceReason: detail.price.isAvailable
+                  ? null
+                  : loopReasonCodeText(detail.price.reasonCode),
+              change: detail.priceChange24h.isAvailable
+                  ? loopFormatPercent(detail.priceChange24h.value!)
+                  : null,
+              changeUp: detail.priceChange24h.isAvailable
+                  ? detail.priceChange24h.value! >= Decimal.zero
+                  : null,
+              metrics: <LoopTokenMetric>[
+                _cardMetric('市值', detail.marketCap),
+                _cardMetric('流动性', detail.liquidityUsd),
+                _cardMetric('持有人', detail.holderCount, usd: false),
+              ],
+              communityIcon: 'info',
+              communityLine: detail.price.isAvailable
+                  ? '报价 ${loopFactProvenance(detail.price)}'
+                  : '本卡片的每个数字都取自下方同一份事实，缺失的一项显示服务端原因而不是 0。',
               chartRangeLabel: '1H · 最近 $loopSparklineWindow 根收盘价',
               chart: TokenCardSparkline(
                 assetId: assetId,
                 keyPrefix: 'token-card-chart',
+                unavailableText: '1H 走势不可用，原因见下方 K 线。',
               ),
             ),
             actions: <LoopTokenCardAction>[
@@ -267,6 +288,18 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
     );
   }
 }
+
+/// One Token Card metric cell from a fact. An unavailable fact renders the
+/// server's own reason, never `0` and never an em dash.
+LoopTokenMetric _cardMetric(String label, LoopFact fact, {bool usd = true}) =>
+    LoopTokenMetric(
+      label,
+      fact.isAvailable
+          ? (usd
+                ? loopFormatUsd(fact.value!)
+                : loopFormatDecimal(fact.value!, maxFractionDigits: 0))
+          : loopReasonCodeText(fact.reasonCode),
+    );
 
 class _TokenHero extends StatelessWidget {
   const _TokenHero({required this.assetId, required this.detail});

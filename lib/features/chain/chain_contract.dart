@@ -24,6 +24,10 @@ enum LoopChainFailureKind {
   /// The indexer has never run. The list is not empty — it is unknown.
   indexingDelayed,
   permissionDenied,
+
+  /// `403 REGION_BLOCKED`: refused by jurisdiction, not by account. Switching
+  /// account or asset cannot change it, so the copy must not suggest either.
+  regionBlocked,
   notFound,
 
   /// The server requires a second verification factor for this command. Step
@@ -233,6 +237,9 @@ String loopChainFailureReason(LoopChainFailureKind? kind) => switch (kind) {
   LoopChainFailureKind.indexingDelayed =>
     '链上索引尚未运行或未追上最新区块，这里不是"没有记录"，而是暂时读不到。',
   LoopChainFailureKind.permissionDenied => '当前账号无权执行此操作，服务端已拒绝。',
+  LoopChainFailureKind.regionBlocked =>
+    '服务端按当前地区规则拒绝了这次请求，没有发生任何变化。'
+        '这与账号或资产无关，换一个也不会改变结果。',
   LoopChainFailureKind.stepUpRequired => '这一步需要二次验证。二次验证尚未开放，服务端已拒绝，没有发生任何变化。',
   LoopChainFailureKind.notFound => '目标不存在、未登记，或对当前账号不可见。',
   LoopChainFailureKind.versionConflict => '数据已被其他设备修改。请重新加载后再提交，本次没有覆盖任何内容。',
@@ -388,6 +395,7 @@ LoopChainViewPhase loopChainPhaseForFailure(LoopChainFailureKind? kind) =>
       LoopChainFailureKind.unavailable ||
       LoopChainFailureKind.indexingDelayed => LoopChainViewPhase.unavailable,
       LoopChainFailureKind.permissionDenied ||
+      LoopChainFailureKind.regionBlocked ||
       LoopChainFailureKind.stepUpRequired => LoopChainViewPhase.permission,
       null => LoopChainViewPhase.empty,
       _ => LoopChainViewPhase.error,

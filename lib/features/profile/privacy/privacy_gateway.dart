@@ -7,8 +7,11 @@ enum PrivacyGatewayFailureKind {
   unavailable,
   offline,
 
-  /// `403 PERMISSION_DENIED` / `POLICY_BLOCKED` / `REGION_BLOCKED`.
+  /// `403 PERMISSION_DENIED` / `POLICY_BLOCKED`.
   permissionDenied,
+
+  /// `403 REGION_BLOCKED`: refused by jurisdiction, not by account.
+  regionBlocked,
 
   /// `403 AUTH_STEP_UP_REQUIRED`.
   stepUpRequired,
@@ -28,6 +31,7 @@ final class PrivacyGatewayException implements Exception {
     PrivacyGatewayFailureKind.unavailable => 'privacy_unavailable',
     PrivacyGatewayFailureKind.offline => 'privacy_offline',
     PrivacyGatewayFailureKind.permissionDenied => 'privacy_permission_denied',
+    PrivacyGatewayFailureKind.regionBlocked => 'privacy_region_blocked',
     PrivacyGatewayFailureKind.stepUpRequired => 'privacy_step_up_required',
     PrivacyGatewayFailureKind.versionConflict => 'privacy_version_conflict',
     PrivacyGatewayFailureKind.bootstrapRequired => 'privacy_bootstrap_required',

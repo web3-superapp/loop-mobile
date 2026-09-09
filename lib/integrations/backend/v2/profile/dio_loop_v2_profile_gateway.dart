@@ -365,8 +365,8 @@ ProfileGatewayFailureKind profileFailureKindForV2(LoopBackendFailure failure) {
     // understood. `REGION_BLOCKED` joins the three because it is the same
     // answer with a different rule behind it.
     'PERMISSION_DENIED' ||
-    'POLICY_BLOCKED' ||
-    'REGION_BLOCKED' => ProfileGatewayFailureKind.permissionDenied,
+    'POLICY_BLOCKED' => ProfileGatewayFailureKind.permissionDenied,
+    'REGION_BLOCKED' => ProfileGatewayFailureKind.regionBlocked,
     'AUTH_STEP_UP_REQUIRED' => ProfileGatewayFailureKind.stepUpRequired,
     'ALIAS_RESERVED' => ProfileGatewayFailureKind.aliasReserved,
     'ALIAS_BLOCKED' => ProfileGatewayFailureKind.aliasBlocked,
@@ -392,8 +392,8 @@ ProfileGatewayFailureKind profileFailureKindForV2(LoopBackendFailure failure) {
 PrivacyGatewayFailureKind privacyFailureKindForV2(LoopBackendFailure failure) {
   return switch (failure.code) {
     'PERMISSION_DENIED' ||
-    'POLICY_BLOCKED' ||
-    'REGION_BLOCKED' => PrivacyGatewayFailureKind.permissionDenied,
+    'POLICY_BLOCKED' => PrivacyGatewayFailureKind.permissionDenied,
+    'REGION_BLOCKED' => PrivacyGatewayFailureKind.regionBlocked,
     'AUTH_STEP_UP_REQUIRED' => PrivacyGatewayFailureKind.stepUpRequired,
     'VALIDATION_FAILED' => PrivacyGatewayFailureKind.validationFailed,
     'VERSION_CONFLICT' => PrivacyGatewayFailureKind.versionConflict,

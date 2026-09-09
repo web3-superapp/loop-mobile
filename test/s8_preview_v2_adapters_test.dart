@@ -48,18 +48,44 @@ void main() {
       );
     });
 
-    test('only the Preview root composes them', () {
-      // A production build must never be able to reach a fixture. The Preview
-      // root is the one file allowed to name either class.
+    test('only the Preview root names either adapter, anywhere in lib', () {
+      // A production build must never be able to reach a fixture, and checking
+      // `main.dart` alone would miss a reference smuggled in through any other
+      // composition root, feature or provider. The whole source tree is
+      // scanned; only the two adapters themselves and the Preview root may
+      // name them.
       const memoryClasses = <String>[
         'MemoryWatchlistGateway',
         'MemoryNotificationsGateway',
       ];
-      final production = File('lib/main.dart').readAsStringSync();
+      const allowed = <String>{
+        'lib/main_preview.dart',
+        'lib/integrations/market/memory_watchlist_gateway.dart',
+        'lib/integrations/notifications/memory_notifications_gateway.dart',
+      };
+
+      final offenders = <String>[];
+      final scanned = <String>[];
+      for (final entity in Directory('lib').listSync(recursive: true)) {
+        if (entity is! File || !entity.path.endsWith('.dart')) continue;
+        final relative = entity.path.replaceAll(r'\', '/');
+        scanned.add(relative);
+        if (allowed.contains(relative)) continue;
+        final source = entity.readAsStringSync();
+        for (final name in memoryClasses) {
+          if (source.contains(name)) offenders.add('$relative -> $name');
+        }
+      }
+
+      // The scan must actually have read the tree, or an empty walk would pass.
+      expect(scanned.length, greaterThan(200));
+      expect(scanned, containsAll(allowed));
+      expect(offenders, isEmpty);
+
+      // And the Preview root really does compose both.
       final preview = File('lib/main_preview.dart').readAsStringSync();
       for (final name in memoryClasses) {
-        expect(production.contains(name), isFalse, reason: name);
-        expect(preview.contains(name), isTrue, reason: name);
+        expect(preview.contains('$name('), isTrue, reason: name);
       }
     });
   });
@@ -76,7 +102,7 @@ void main() {
       // the editor must still be able to remove it.
       final unreadable = snapshot.groups.last.items.last;
       expect(unreadable.isReadable, isFalse);
-      expect(unreadable.reasonCode, 'ASSET_NOT_IN_REGISTRY');
+      expect(unreadable.reasonCode, 'ASSET_NOT_READABLE');
 
       final replaced = await gateway.replace(
         expectedVersion: 1,

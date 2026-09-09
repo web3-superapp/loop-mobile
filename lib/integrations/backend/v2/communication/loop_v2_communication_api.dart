@@ -97,6 +97,7 @@ final class DioLoopV2CommunicationApi implements LoopV2CommunicationApi {
   /// widens the shared S3 catalogues rather than accepting an unknown code.
   static const readErrors = <int, Set<String>>{
     ...LoopV2ModuleRequest.readErrors,
+    403: <String>{'PERMISSION_DENIED'},
     429: <String>{'RATE_LIMITED'},
   };
 

@@ -1,3 +1,5 @@
+import 'dart:ui' show PointMode;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -95,6 +97,61 @@ void main() {
     );
   });
 
+  group('the texture is cheap to raster', () {
+    test('one draw call per quantised mask step, never one per dot', () {
+      // A large card holds hundreds of dots; the painter must not turn each
+      // one into its own draw call.
+      const size = Size(360, 220);
+      final dots = LoopLedgerTexture.dotCenters(size).length;
+      expect(dots, greaterThan(600));
+
+      final buckets = LoopLedgerTexture.dotBuckets(size);
+      expect(buckets.length, lessThanOrEqualTo(LoopLedgerTexture.maskSteps));
+
+      final canvas = _CountingCanvas();
+      const LoopLedgerTexturePainter(spec: LoopLedgerTexture.primary)
+          .paint(canvas, size);
+
+      expect(canvas.drawCalls, buckets.length);
+      expect(canvas.drawCalls, lessThanOrEqualTo(LoopLedgerTexture.maskSteps));
+      // Every visible dot is still painted — the cap is a grouping, not a cull.
+      expect(
+        canvas.pointsDrawn,
+        buckets.fold<int>(0, (a, b) => a + b.points.length),
+      );
+      expect(canvas.pointsDrawn, greaterThan(0));
+      expect(canvas.pointsDrawn, lessThan(dots));
+    });
+
+    test('a fully masked area costs no call at all', () {
+      // Every dot in a tiny box sits inside the transparent 28%.
+      final canvas = _CountingCanvas();
+      const LoopLedgerTexturePainter(spec: LoopLedgerTexture.primary)
+          .paint(canvas, Size.zero);
+      expect(canvas.drawCalls, 0);
+    });
+
+    testWidgets('the painter is isolated and marked complex', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(body: LoopLedgerCard(child: Text('primary'))),
+        ),
+      );
+
+      final paint = tester.widget<CustomPaint>(
+        find.byKey(const ValueKey<String>('loop-ledger-texture')),
+      );
+      expect(paint.isComplex, isTrue);
+      expect(
+        find.ancestor(
+          of: find.byKey(const ValueKey<String>('loop-ledger-texture')),
+          matching: find.byType(RepaintBoundary),
+        ),
+        findsWidgets,
+      );
+    });
+  });
+
   group('the card mounts the texture', () {
     testWidgets('both variants paint their own spec', (tester) async {
       await tester.pumpWidget(
@@ -150,4 +207,24 @@ void main() {
 LoopLedgerTexturePainter _painterOf(WidgetTester tester, String key) {
   final paint = tester.widget<CustomPaint>(find.byKey(ValueKey<String>(key)));
   return paint.painter! as LoopLedgerTexturePainter;
+}
+
+/// A canvas that records only what the texture painter is allowed to call.
+class _CountingCanvas implements Canvas {
+  int drawCalls = 0;
+  int pointsDrawn = 0;
+
+  @override
+  void drawPoints(PointMode pointMode, List<Offset> points, Paint paint) {
+    drawCalls++;
+    pointsDrawn += points.length;
+  }
+
+  @override
+  void noSuchMethod(Invocation invocation) {
+    throw UnsupportedError(
+      'the texture painter must only call drawPoints, not '
+      '${invocation.memberName}',
+    );
+  }
 }

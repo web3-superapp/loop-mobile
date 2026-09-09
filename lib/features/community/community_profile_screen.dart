@@ -443,7 +443,10 @@ class _BoundAssetCard extends StatelessWidget {
     return KeyedSubtree(
       key: const ValueKey<String>('community-bound-asset'),
       child: LoopTokenCard(
-        state: LoopTokenCardState.partial,
+        // The prototype's community-profile card is the plain signature card
+        // with a chart slot. Its honesty comes from the stated reasons below,
+        // not from a state enum: 数据缺失 carries no chart slot at all.
+        state: LoopTokenCardState.normal,
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         model: LoopTokenCardModel(
           symbol: loopTruncatedAssetId(assetKey),

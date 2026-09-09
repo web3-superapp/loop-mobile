@@ -248,7 +248,9 @@ void main() {
       LoopColors.lime,
     );
 
-    expect(find.text('无 24H 数据'), findsOneWidget);
+    // 数据缺失 never fabricates a 24h claim it did not read: the slot is
+    // simply absent unless the owner supplies a change it can prove.
+    expect(find.text('无 24H 数据'), findsNothing);
     expect(find.text('数据不可得'), findsNWidgets(3));
     expect(
       tester.widget<Text>(find.text('数据不可得').first).style?.color,

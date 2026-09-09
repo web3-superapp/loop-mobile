@@ -160,6 +160,7 @@ LoopResourcePhase profileResourcePhase(ProfileState state) {
     ProfileGatewayFailureKind.unavailable => LoopResourcePhase.unavailable,
     ProfileGatewayFailureKind.offline => LoopResourcePhase.offline,
     ProfileGatewayFailureKind.permissionDenied ||
+    ProfileGatewayFailureKind.regionBlocked ||
     ProfileGatewayFailureKind.stepUpRequired => LoopResourcePhase.permission,
     null => LoopResourcePhase.empty,
     _ => LoopResourcePhase.error,
@@ -178,6 +179,7 @@ LoopResourcePhase privacyResourcePhase(PrivacyState state) {
     PrivacyGatewayFailureKind.unavailable => LoopResourcePhase.unavailable,
     PrivacyGatewayFailureKind.offline => LoopResourcePhase.offline,
     PrivacyGatewayFailureKind.permissionDenied ||
+    PrivacyGatewayFailureKind.regionBlocked ||
     PrivacyGatewayFailureKind.stepUpRequired => LoopResourcePhase.permission,
     null => LoopResourcePhase.empty,
     _ => LoopResourcePhase.error,
@@ -189,7 +191,10 @@ String profileFailureReason(ProfileGatewayFailureKind? kind) => switch (kind) {
   ProfileGatewayFailureKind.offline => '设备当前离线，资料未能读取，也没有提交任何修改。',
   ProfileGatewayFailureKind.permissionDenied =>
     '服务端按当前策略拒绝了对账号资料的读取或写入，没有发生任何变化。'
-        '所需权限由服务端授予，客户端无法调整；可以先在设置里查看账号状态，或稍后重试。',
+        '所需权限由服务端授予，客户端无法调整。',
+  ProfileGatewayFailureKind.regionBlocked =>
+    '服务端按当前地区规则拒绝了对账号资料的读取或写入，没有发生任何变化。'
+        '这与账号无关，换一个账号也不会改变结果。',
   ProfileGatewayFailureKind.stepUpRequired =>
     '这一步需要二次验证。二次验证尚未开放，服务端已拒绝，没有发生任何变化。'
         '请到安全中心查看当前可用的验证方式。',
@@ -210,6 +215,9 @@ String privacyFailureReason(PrivacyGatewayFailureKind? kind) => switch (kind) {
   PrivacyGatewayFailureKind.permissionDenied =>
     '服务端按当前策略拒绝了对隐私设置的读取或写入，没有发生任何变化。'
         '所需权限由服务端授予，客户端无法调整；这些开关的当前取值仍以服务端为准。',
+  PrivacyGatewayFailureKind.regionBlocked =>
+    '服务端按当前地区规则拒绝了对隐私设置的读取或写入，没有发生任何变化。'
+        '这与账号无关，换一个账号也不会改变结果。',
   PrivacyGatewayFailureKind.stepUpRequired =>
     '修改隐私设置需要二次验证。二次验证尚未开放，服务端已拒绝，没有发生任何变化。'
         '请到安全中心查看当前可用的验证方式。',
@@ -571,6 +579,8 @@ class _ProfileStateBlock extends StatelessWidget {
         denied: true,
         title: state.failureKind == ProfileGatewayFailureKind.stepUpRequired
             ? '这一步需要二次验证'
+            : state.failureKind == ProfileGatewayFailureKind.regionBlocked
+            ? '当前地区不能读取或修改资料'
             : '当前账号无权读取或修改资料',
         purpose: profileFailureReason(state.failureKind),
         settingsLabel: '前往安全中心',
@@ -700,6 +710,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 onRetry: () => unawaited(_save(controller)),
               ),
               ProfileGatewayFailureKind.permissionDenied ||
+              ProfileGatewayFailureKind.regionBlocked ||
               ProfileGatewayFailureKind.stepUpRequired => LoopPermissionState(
                 key: const ValueKey<String>('profile-edit-permission'),
                 icon: 'shield',
@@ -708,6 +719,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                     state.failureKind ==
                         ProfileGatewayFailureKind.stepUpRequired
                     ? '这一步需要二次验证'
+                    : state.failureKind ==
+                          ProfileGatewayFailureKind.regionBlocked
+                    ? '当前地区不能修改资料'
                     : '当前账号无权修改资料',
                 purpose: profileFailureReason(state.failureKind),
                 settingsLabel: '前往安全中心',
@@ -1165,6 +1179,7 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
               // the refusal might not hold, so the block offers the only real
               // next step instead.
               PrivacyGatewayFailureKind.permissionDenied ||
+              PrivacyGatewayFailureKind.regionBlocked ||
               PrivacyGatewayFailureKind.stepUpRequired => LoopPermissionState(
                 key: const ValueKey<String>('privacy-save-permission'),
                 icon: 'shield',
@@ -1173,6 +1188,9 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
                     state.failureKind ==
                         PrivacyGatewayFailureKind.stepUpRequired
                     ? '这一步需要二次验证'
+                    : state.failureKind ==
+                          PrivacyGatewayFailureKind.regionBlocked
+                    ? '当前地区不能修改隐私设置'
                     : '当前账号无权修改隐私设置',
                 purpose: privacyFailureReason(state.failureKind),
                 settingsLabel: '前往安全中心',
@@ -1325,6 +1343,8 @@ class _PrivacyStateBlock extends StatelessWidget {
         denied: true,
         title: state.failureKind == PrivacyGatewayFailureKind.stepUpRequired
             ? '这一步需要二次验证'
+            : state.failureKind == PrivacyGatewayFailureKind.regionBlocked
+            ? '当前地区不能读取或修改隐私设置'
             : '当前账号无权读取或修改隐私设置',
         purpose: privacyFailureReason(state.failureKind),
         settingsLabel: '前往安全中心',
