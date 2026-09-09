@@ -594,8 +594,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      // The refusal is pinned to this page's own key, so the assertion names
+      // approval-guard rather than a shared block.
       expect(
-        find.byKey(const ValueKey<String>('money-policy-blocked')),
+        find.byKey(const ValueKey<String>('approval-guard-permission')),
         findsOneWidget,
       );
       // A blocked action names the rule and says the limit is not adjustable

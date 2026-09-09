@@ -664,4 +664,198 @@ void main() {
       expect(find.textContaining('不要重新签名'), findsOneWidget);
     });
   });
+
+  // Permission on a funds page is the server's own refusal — `403
+  // PERMISSION_DENIED` / `POLICY_BLOCKED` / `REGION_BLOCKED` /
+  // `AUTH_STEP_UP_REQUIRED`. It is not a device permission, and it is not an
+  // error: the request arrived, was understood and was answered "no". Every
+  // page therefore renders its own `LoopPermissionState`, names the rule, and
+  // offers a retry nowhere. Each assertion uses the page's own key so a shared
+  // block can never stand in for a missing one.
+  group('money-action Permission', () {
+    testWidgets('send-to · a refused preflight names the rule, not a retry', (
+      tester,
+    ) async {
+      final intents = FakeWalletIntentsGateway(
+        failure: LoopChainFailureKind.permissionDenied,
+      );
+      await pumpS6Page(
+        tester,
+        const SendRecipientScreen(draft: _draft),
+        wallet: FakeWalletReadGateway(),
+        intents: intents,
+      );
+      await _check(tester);
+
+      expect(
+        find.byKey(const ValueKey<String>('send-to-permission')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('send-recipient-preflight-error')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('send-recipient-preflight-offline')),
+        findsNothing,
+      );
+      expect(intents.prepareCalls, 0);
+    });
+
+    testWidgets('send-confirm · a refused prepare signs nothing', (
+      tester,
+    ) async {
+      final wallet = RecordingSigningGateway();
+      await pumpS6Page(
+        tester,
+        SendConfirmScreen(draft: _draft, clock: _fresh),
+        wallet: FakeWalletReadGateway(),
+        intents: FakeWalletIntentsGateway(
+          prepareFailure: LoopChainFailureKind.permissionDenied,
+        ),
+        signing: wallet,
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('send-confirm-permission')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('send-confirm-state-error')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('send-confirm-sign')),
+        findsNothing,
+      );
+      expect(wallet.handoffs, isEmpty);
+    });
+
+    testWidgets('swap · a refused quote blocks the route entry', (
+      tester,
+    ) async {
+      final intents = FakeWalletIntentsGateway();
+      await pumpS6Page(
+        tester,
+        SwapScreen(clock: _fresh),
+        wallet: _twoAssetWallet(),
+        intents: intents,
+        quotes: FakeSwapQuoteGateway(
+          failure: LoopChainFailureKind.permissionDenied,
+        ),
+      );
+      await _swapInputs(tester);
+      await tester.tap(find.byKey(const ValueKey<String>('swap-quote-action')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('swap-permission')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('swap-quote-error')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('swap-quote-offline')),
+        findsNothing,
+      );
+      expect(intents.prepareCalls, 0);
+    });
+
+    testWidgets('approval-guard · a step-up refusal opens the security centre', (
+      tester,
+    ) async {
+      await pumpS6Page(
+        tester,
+        ApprovalGuardScreen(request: _guardRequest, clock: _fresh),
+        wallet: FakeWalletReadGateway(),
+        intents: FakeWalletIntentsGateway(
+          prepareFailure: LoopChainFailureKind.stepUpRequired,
+        ),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('approval-guard-exact')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('approval-guard-permission')),
+        findsOneWidget,
+      );
+      // Step-up is not delivered, so the only offer is the one page that could
+      // ever change the answer.
+      expect(find.text('前往安全中心'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('approval-guard-error')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('approvals · a refused revoke keeps the rows it read', (
+      tester,
+    ) async {
+      final wallet = RecordingSigningGateway();
+      await pumpS6Page(
+        tester,
+        ApprovalsScreen(clock: _fresh),
+        wallet: FakeWalletReadGateway(),
+        intents: FakeWalletIntentsGateway(
+          prepareFailure: LoopChainFailureKind.permissionDenied,
+        ),
+        approvals: FakeApprovalsGateway(),
+        signing: wallet,
+      );
+
+      await tester.tap(
+        find.byKey(ValueKey<String>('approval-$s5UsdtAssetId-$s6Spender')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('approval-action-revoke')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('approvals-revoke-permission')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('approvals-revoke-error')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('approvals-freshness')),
+        findsOneWidget,
+      );
+      expect(wallet.handoffs, isEmpty);
+    });
+
+    testWidgets('tx-result · a refused read never claims an outcome', (
+      tester,
+    ) async {
+      await pumpS6Page(
+        tester,
+        const TransactionResultScreen(intentId: s6IntentId),
+        wallet: FakeWalletReadGateway(),
+        intents: FakeWalletIntentsGateway(
+          failure: LoopChainFailureKind.permissionDenied,
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('tx-result-state-permission')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('tx-result-state-error')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('tx-result-state-offline')),
+        findsNothing,
+      );
+      expect(find.textContaining('已确认'), findsNothing);
+    });
+  });
 }

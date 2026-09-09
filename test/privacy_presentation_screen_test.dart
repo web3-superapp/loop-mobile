@@ -17,6 +17,7 @@ const _stateKeys = <String>[
   'privacy-offline',
   'privacy-unavailable',
   'privacy-empty',
+  'privacy-permission',
   'privacy-error',
 ];
 
@@ -73,6 +74,10 @@ void main() {
     const expected = <PrivacyGatewayFailureKind, String>{
       PrivacyGatewayFailureKind.unavailable: 'privacy-unavailable',
       PrivacyGatewayFailureKind.offline: 'privacy-offline',
+      // A refusal the server issued is its own state: it is neither a fault
+      // the page can retry nor an absent capability.
+      PrivacyGatewayFailureKind.permissionDenied: 'privacy-permission',
+      PrivacyGatewayFailureKind.stepUpRequired: 'privacy-permission',
       PrivacyGatewayFailureKind.versionConflict: 'privacy-error',
       PrivacyGatewayFailureKind.bootstrapRequired: 'privacy-error',
       PrivacyGatewayFailureKind.validationFailed: 'privacy-error',

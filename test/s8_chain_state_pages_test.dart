@@ -1062,4 +1062,91 @@ void main() {
       },
     );
   });
+
+  // A refused command is the Permission state of an already-loaded page: the
+  // server answered, so the page keeps what it read and offers no retry.
+  group('watchlist-edit · refused save', () {
+    testWidgets('a refused save is a permission state and keeps the draft', (
+      tester,
+    ) async {
+      final watchlist = FakeWatchlistGateway(
+        replaceFailure: LoopChainFailureKind.permissionDenied,
+      );
+      await pumpS5Page(
+        tester,
+        const WatchlistEditorScreen(),
+        watchlist: watchlist,
+      );
+
+      await tester.tap(
+        find.byKey(ValueKey<String>('watchlist-remove-$s5UsdtAssetId')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('watchlist-remove-confirm')),
+      );
+      await tester.pumpAndSettle();
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('watchlist-save')),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('watchlist-save')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('watchlist-save-permission')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('watchlist-save-error')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('watchlist-save-offline')),
+        findsNothing,
+      );
+      expect(find.text('自选已保存'), findsNothing);
+      expect(find.text('2 个自选资产'), findsOneWidget);
+    });
+  });
+
+  group('alerts · refused command', () {
+    testWidgets('a refused delete keeps the alert and states the refusal', (
+      tester,
+    ) async {
+      final alerts = FakeAlertsGateway(
+        commandFailure: LoopChainFailureKind.permissionDenied,
+      );
+      await pumpS5Page(tester, const PriceAlertsScreen(), alerts: alerts);
+
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('alert-$s5AlertId')),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('alert-$s5AlertId')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('alert-editor-delete')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('alerts-command-permission')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('alerts-command-error')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('alerts-command-offline')),
+        findsNothing,
+      );
+      expect(find.text('提醒已删除'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('alert-$s5AlertId')),
+        findsOneWidget,
+      );
+    });
+  });
 }

@@ -578,6 +578,54 @@ void main() {
         findsNothing,
       );
     });
+
+    testWidgets('a refused read is a permission state, not an error', (
+      tester,
+    ) async {
+      await _pumpProfile(
+        tester,
+        'profile-edit',
+        profile: _ProfileGateway(
+          failure: const ProfileGatewayException(
+            ProfileGatewayFailureKind.permissionDenied,
+          ),
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('profile-permission')),
+        findsOneWidget,
+      );
+      // A refusal is not a fault the page may retry, and it never degrades
+      // into an editable form.
+      expect(find.byKey(const ValueKey<String>('profile-error')), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('profile-edit-alias-field')),
+        findsNothing,
+      );
+      expect(find.textContaining('客户端无法调整'), findsOneWidget);
+    });
+
+    testWidgets('a step-up refusal points at the security centre', (
+      tester,
+    ) async {
+      await _pumpProfile(
+        tester,
+        'profile-edit',
+        profile: _ProfileGateway(
+          failure: const ProfileGatewayException(
+            ProfileGatewayFailureKind.stepUpRequired,
+          ),
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('profile-permission')),
+        findsOneWidget,
+      );
+      expect(find.text('这一步需要二次验证'), findsOneWidget);
+      expect(find.text('前往安全中心'), findsOneWidget);
+    });
   });
 
   group('privacy', () {
@@ -656,6 +704,43 @@ void main() {
       expect(
         find.byKey(const ValueKey<String>('privacy-save-failure')),
         findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('privacy-save-offline')),
+        findsNothing,
+      );
+      expect(find.textContaining('已提交到版本'), findsNothing);
+    });
+
+    testWidgets('a refused save is a permission state with no retry', (
+      tester,
+    ) async {
+      await _pumpProfile(
+        tester,
+        'privacy',
+        privacy: _PrivacyGateway(
+          saveFailure: const PrivacyGatewayException(
+            PrivacyGatewayFailureKind.permissionDenied,
+          ),
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('privacy-discoverable')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey<String>('privacy-save')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('privacy-save-permission')),
+        findsOneWidget,
+      );
+      // The server answered; it is neither an error nor a pause, and no
+      // version was written.
+      expect(
+        find.byKey(const ValueKey<String>('privacy-save-failure')),
+        findsNothing,
       );
       expect(
         find.byKey(const ValueKey<String>('privacy-save-offline')),
@@ -771,6 +856,45 @@ void main() {
       );
       expect(
         find.byKey(const ValueKey<String>('notification-preferences-error')),
+        findsNothing,
+      );
+      expect(find.text('通知设置已保存'), findsNothing);
+    });
+
+    testWidgets('a refused save states the refusal, never a saved intent', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const NotificationPreferencesScreen(),
+        notifications: FakeNotificationsGateway(
+          writeFailure: LoopChainFailureKind.permissionDenied,
+        ),
+      );
+
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('notification-switch-community.all')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('notification-switch-community.all')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('notification-preferences-permission'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('notification-preferences-error')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('notification-preferences-save-offline'),
+        ),
         findsNothing,
       );
       expect(find.text('通知设置已保存'), findsNothing);

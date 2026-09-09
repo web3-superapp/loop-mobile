@@ -257,7 +257,18 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('没有已登记的 PancakeSwap V3 池'), findsOneWidget);
+      // Two independent blocks read the same series and therefore state the
+      // same reason: the Token Card's small line and the K-line terminal. Both
+      // render the reason instead of a shape; neither invents a figure.
+      expect(
+        find.byKey(const ValueKey<String>('token-card-chart-unavailable')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('candles-unavailable')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('没有已登记的 PancakeSwap V3 池'), findsNWidgets(2));
     });
 
     testWidgets('security facts render with their own source and time', (
