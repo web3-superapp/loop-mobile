@@ -12,7 +12,6 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_controllers.dart';
 import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
-import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/features/wallet/transfer_amount.dart';
@@ -50,7 +49,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   bool _confirmPriceImpact = false;
 
   LoopSwapQuoteView? _quote;
-  LoopChainFailureKind? _failure;
+  LoopChainException? _failure;
   bool _busy = false;
 
   static const List<int> _slippageChoices = <int>[50, 100, 300];
@@ -215,13 +214,13 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
               ],
             ),
           ),
-          if (_failure == LoopChainFailureKind.permissionDenied)
-            const MoneyPolicyNotice(policy: null)
+          if (MoneyPolicyNotice.covers(_failure))
+            MoneyPolicyNotice(failure: _failure!)
           else if (_failure != null)
             LoopErrorState(
               key: const ValueKey<String>('swap-quote-error'),
               title: '没有取到报价',
-              reason: loopChainFailureReason(_failure),
+              reason: loopChainFailureReason(_failure!.kind),
               onRetry: () => unawaited(_requestQuote(walletId)),
             ),
           if (quote != null) ...<Widget>[
@@ -373,13 +372,13 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     } on LoopChainException catch (failure) {
       if (!mounted) return;
       setState(() {
-        _failure = failure.kind;
+        _failure = failure;
         _busy = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _failure = LoopChainFailureKind.unexpected;
+        _failure = const LoopChainException(LoopChainFailureKind.unexpected);
         _busy = false;
       });
     }
@@ -405,13 +404,13 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
         clock: widget.clock,
       );
       if (!mounted || outcome == null) return;
-      if (outcome.intent != null || outcome.status == MoneySignStatus.locked) {
+      if (outcome.opensResult) {
         _open('/wallet/tx/result?intentId=${intent.intentId}');
       }
     } on LoopChainException catch (failure) {
       if (!mounted) return;
       setState(() {
-        _failure = failure.kind;
+        _failure = failure;
         _busy = false;
         // A consumed or expired quote can never be reused: the page drops it
         // so the owner re-quotes instead of confirming stale numbers.
@@ -420,7 +419,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _failure = LoopChainFailureKind.unexpected;
+        _failure = const LoopChainException(LoopChainFailureKind.unexpected);
         _busy = false;
       });
     }

@@ -117,6 +117,9 @@ abstract final class LoopV2Contract {
         category: category,
         retryable: retryable,
         userMessageKey: userMessageKey,
+        // `detailsSafe` is an open object on the wire, so it is read through a
+        // fixed scalar allowlist rather than carried through as-is.
+        detailsSafe: LoopFailureDetails.tryRead(detailsSafe),
       );
     } on LoopBackendFailure catch (failure) {
       return LoopBackendFailure(failure.kind, statusCode: statusCode);

@@ -117,8 +117,12 @@ final class SdkPrivyDeviceSigner implements PrivyDeviceSigner {
           throw const PrivySigningException('privy_broadcast_unreadable');
         }
         return hash;
-      case Failure<EthereumRpcResponse>():
-        throw const PrivySigningException('privy_broadcast_rejected');
+      case Failure<EthereumRpcResponse>(error: final error):
+        // Only a message the client can recognise as the owner declining
+        // proves nothing was broadcast. Every other failure — a channel
+        // error, a timeout, an unmapped provider string — may have reached
+        // the network, so it locks rather than inviting a second signature.
+        throw PrivySigningException(privyWalletFailureCode(error.message));
     }
   }
 
@@ -150,8 +154,40 @@ final class SdkPrivyDeviceSigner implements PrivyDeviceSigner {
           throw const PrivySigningException('privy_signature_unreadable');
         }
         return trimmed;
-      case Failure<String>():
-        throw const PrivySigningException('privy_signature_rejected');
+      case Failure<String>(error: final error):
+        // An authorization signature never leaves the device, but an unmapped
+        // failure still cannot prove that: it stays unknown.
+        final code = privyWalletFailureCode(error.message);
+        throw PrivySigningException(
+          code == 'privy_broadcast_rejected'
+              ? 'privy_signature_rejected'
+              : code,
+        );
     }
   }
+}
+
+/// Classifies one wallet failure message.
+///
+/// Only a message the client can read as the owner declining proves that
+/// nothing was broadcast. Every other failure — a channel error, a timeout, an
+/// unmapped provider string — may already have reached the network, so it maps
+/// to the unknown outcome and locks rather than inviting a second signature.
+String privyWalletFailureCode(String message) {
+  const declined = <String>[
+    'user rejected',
+    'user denied',
+    'user cancelled',
+    'user canceled',
+    'rejected by user',
+    'denied by user',
+    'cancelled by user',
+    'request rejected',
+    'user declined',
+  ];
+  final normalized = message.toLowerCase();
+  for (final marker in declined) {
+    if (normalized.contains(marker)) return 'privy_broadcast_rejected';
+  }
+  return 'wallet_outcome_unknown';
 }

@@ -711,7 +711,13 @@ final class LoopWalletIntent {
   /// This is not a second source of truth — `reviewSha256` is — but it catches
   /// a review and a payload that do not describe the same call before the
   /// wallet is ever opened.
+  /// The numeric chain of [chainId], e.g. `56` for `eip155:56`.
+  int? get numericChainId =>
+      int.tryParse(chainId.substring(chainId.lastIndexOf(':') + 1));
+
   bool get payloadMatchesReview {
+    final expectedChainId = numericChainId;
+    if (expectedChainId == null) return false;
     final transaction = unsignedTransaction;
     if (transaction == null) {
       // A provider-authorized swap carries no call data: the quote snapshot in
@@ -719,15 +725,23 @@ final class LoopWalletIntent {
       final payload = authorizationPayload;
       final swap = review.swap;
       if (payload == null || swap == null) return false;
+      // The idempotency key the provider will see is this intent. A payload
+      // keyed to another intent would let one confirmation submit a different
+      // operation.
+      if (payload.headers['privy-idempotency-key'] != intentId) return false;
       final body = payload.body;
       if (body['base_amount'] != swap.quote.inputAmount.raw) return false;
       if (body['slippage_bps'] != swap.quote.slippageBps) return false;
       final source = body['source'];
       final destination = body['destination'];
       if (source is! Map || destination is! Map) return false;
-      return _assetMatches(source, review.asset) &&
-          _assetMatches(destination, swap.destinationAsset);
+      return _swapEndpointMatches(source, review.asset, chainId) &&
+          _swapEndpointMatches(destination, swap.destinationAsset, chainId);
     }
+
+    // The device signs for one chain. A payload built for another chain would
+    // spend a different balance than the one reviewed.
+    if (transaction.chainId != expectedChainId) return false;
 
     final decoded = review.decodedCall;
     if (decoded == null) {
@@ -741,8 +755,10 @@ final class LoopWalletIntent {
     if (transaction.to != review.asset.address) return false;
     if (transaction.value != '0x0') return false;
 
+    // `transfer` and `approve` take exactly two words. A longer body is a
+    // different call than the one that was decoded and shown.
     final words = _dataWords(transaction.data);
-    if (words.length < 2) return false;
+    if (words.length != 2) return false;
     final target = switch (decoded.functionName) {
       LoopDecodedFunction.transfer => review.recipient?.address,
       LoopDecodedFunction.approve => review.spender?.address,
@@ -752,7 +768,12 @@ final class LoopWalletIntent {
     return words[1] == _padAmount(review.amount.raw);
   }
 
-  static bool _assetMatches(Map<Object?, Object?> wire, LoopIntentAsset asset) {
+  static bool _swapEndpointMatches(
+    Map<Object?, Object?> wire,
+    LoopIntentAsset asset,
+    String chainId,
+  ) {
+    if (wire['caip2'] != chainId) return false;
     final address = wire['asset_address'];
     if (address is! String) return false;
     return asset.isNative ? address == 'native' : address == asset.address;
@@ -967,11 +988,18 @@ final class LoopApprovalSummary {
 final class LoopApprovalFreshness {
   const LoopApprovalFreshness({
     required this.indexerBlockNumber,
+    required this.approvalCoverageFromBlockNumber,
     required this.headBlockNumber,
     required this.observedAt,
   });
 
   final BigInt indexerBlockNumber;
+
+  /// The first block whose `Approval` events were decoded. The inventory is
+  /// only complete from here up: blocks below it were indexed for transfers
+  /// only, so an approval granted earlier would be invisible. The page states
+  /// it rather than implying the list covers all history.
+  final BigInt approvalCoverageFromBlockNumber;
   final BigInt headBlockNumber;
   final DateTime observedAt;
 }

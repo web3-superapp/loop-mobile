@@ -6,10 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_controllers.dart';
+import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
-import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -26,12 +26,20 @@ class TransactionResultScreen extends ConsumerStatefulWidget {
     this.onBack,
     this.onNavigate,
     this.pollInterval = const Duration(seconds: 4),
+    this.maximumPollFailures = 5,
   });
 
   final String? intentId;
   final VoidCallback? onBack;
   final void Function(String location)? onNavigate;
+
+  /// The base interval. Each consecutive failure doubles the wait, so a server
+  /// that is down is not hammered by a page left open.
   final Duration pollInterval;
+
+  /// After this many consecutive failed reads the page stops on its own and
+  /// offers a manual retry instead of polling forever.
+  final int maximumPollFailures;
 
   @override
   ConsumerState<TransactionResultScreen> createState() =>
@@ -41,37 +49,81 @@ class TransactionResultScreen extends ConsumerStatefulWidget {
 class _TransactionResultScreenState
     extends ConsumerState<TransactionResultScreen> {
   Timer? _poll;
-  bool _announced = false;
+  int _consecutiveFailures = 0;
+  bool _pollingStopped = false;
+
+  /// The `intentId:state` this page has already announced. A toast fires on a
+  /// transition into `confirmed`, never on every rebuild or re-read of the
+  /// same state.
+  String? _announced;
 
   @override
   void initState() {
     super.initState();
-    final intentId = widget.intentId;
-    if (intentId == null) return;
+    if (widget.intentId == null) return;
     scheduleMicrotask(() {
-      if (mounted) {
-        unawaited(
-          ref.read(walletIntentControllerProvider(intentId).notifier).load(),
-        );
-      }
+      if (mounted) unawaited(_read(initial: true));
     });
-    _poll = Timer.periodic(widget.pollInterval, (_) {
-      if (!mounted) return;
-      final controller = ref.read(
-        walletIntentControllerProvider(intentId).notifier,
-      );
-      if (!controller.keepsPolling) {
-        _poll?.cancel();
-        return;
-      }
-      unawaited(controller.reload());
-    });
+    _schedule(widget.pollInterval);
   }
 
   @override
   void dispose() {
     _poll?.cancel();
     super.dispose();
+  }
+
+  void _schedule(Duration delay) {
+    _poll?.cancel();
+    _poll = Timer(delay, _tick);
+  }
+
+  Future<void> _tick() async {
+    if (!mounted || _pollingStopped) return;
+    final intentId = widget.intentId;
+    if (intentId == null) return;
+    final controller = ref.read(
+      walletIntentControllerProvider(intentId).notifier,
+    );
+    if (!controller.keepsPolling) return;
+    await _read();
+    if (!mounted || _pollingStopped) return;
+    if (!controller.keepsPolling) return;
+    // Exponential back-off, capped, so a page left open on a failing server
+    // settles instead of retrying every few seconds forever.
+    final multiplier = 1 << _consecutiveFailures.clamp(0, 4);
+    _schedule(widget.pollInterval * multiplier);
+  }
+
+  /// Reads once and records whether the read succeeded, so the page can stop
+  /// on its own rather than claim it is still watching.
+  Future<void> _read({bool initial = false}) async {
+    final intentId = widget.intentId;
+    if (intentId == null) return;
+    final controller = ref.read(
+      walletIntentControllerProvider(intentId).notifier,
+    );
+    await (initial ? controller.load() : controller.reload());
+    if (!mounted) return;
+    final failed =
+        ref.read(walletIntentControllerProvider(intentId)).failureKind != null;
+    setState(() {
+      _consecutiveFailures = failed ? _consecutiveFailures + 1 : 0;
+      if (_consecutiveFailures >= widget.maximumPollFailures) {
+        _pollingStopped = true;
+        _poll?.cancel();
+      }
+    });
+  }
+
+  /// Restarts polling after the owner asks for it.
+  Future<void> _retry() async {
+    setState(() {
+      _pollingStopped = false;
+      _consecutiveFailures = 0;
+    });
+    await _read();
+    if (mounted && !_pollingStopped) _schedule(widget.pollInterval);
   }
 
   void _open(String location) {
@@ -108,18 +160,25 @@ class _TransactionResultScreenState
       );
     }
 
-    final blocked = sendCapabilityBlocks(ref);
+    // The result page is a read. It must stay readable for every kind — a
+    // swap result is not a `sendApprovals` fact — and while the write switch
+    // is closed, because a submitted intent still has a state to report.
+    final blocked = moneyReadBlocks(
+      ref.watch(walletIntentsGatewayProvider).mode,
+    );
     final state = ref.watch(walletIntentControllerProvider(intentId));
     final intent = state.value;
-    if (intent != null &&
-        intent.state == LoopIntentState.confirmed &&
-        !_announced) {
-      _announced = true;
-      // The one place a success toast may fire: the server reported a receipt
-      // with enough confirmations. Nothing earlier proves on-chain completion.
-      scheduleMicrotask(() {
-        if (mounted) LoopToast.show(context, message: '交易已确认');
-      });
+    if (intent != null && intent.state == LoopIntentState.confirmed) {
+      // The one place a success toast may fire, and only on the transition
+      // into `confirmed`: a rebuild or a re-read of the same state is not a
+      // new event, and nothing earlier proves on-chain completion.
+      final announcement = '${intent.intentId}:${intent.state.wireName}';
+      if (_announced != announcement) {
+        _announced = announcement;
+        scheduleMicrotask(() {
+          if (mounted) LoopToast.show(context, message: '交易已确认');
+        });
+      }
     }
 
     return LoopFocusPage(
@@ -138,10 +197,10 @@ class _TransactionResultScreenState
       ),
       body: <Widget>[
         if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('tx-result-capability-block'),
+          const LoopUnavailableCard(
+            key: ValueKey<String>('tx-result-capability-block'),
             label: '交易状态当前不可读',
-            reasonCode: sendCapabilityReason(ref),
+            reasonCode: 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
           )
         else if (intent == null)
           LoopChainStateBlock(
@@ -150,11 +209,7 @@ class _TransactionResultScreenState
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
             emptyMessage: '这笔操作没有可读状态',
-            onRetry: () => unawaited(
-              ref
-                  .read(walletIntentControllerProvider(intentId).notifier)
-                  .reload(),
-            ),
+            onRetry: () => unawaited(_retry()),
           )
         else ...<Widget>[
           _ResultBanner(intent: intent),
@@ -168,6 +223,17 @@ class _TransactionResultScreenState
                   '${loopReasonCodeText(intent.result.reasonCode)}'
                   ' 本页只会继续查询，不会重复提交；请勿再次签名。',
             ),
+          if (intent.state == LoopIntentState.awaitingSignature ||
+              intent.state == LoopIntentState.prepared)
+            const LoopNotice(
+              key: ValueKey<String>('tx-result-unreported'),
+              icon: 'warn',
+              tone: LoopNoticeTone.warn,
+              title: '服务端还没有记录到这次提交',
+              body:
+                  '如果钱包已经广播过这笔交易，它可能已经上链，只是上报没有成功。'
+                  '请稍后回到这里重试；在服务端接受上报之前不要重新签名。',
+            ),
           if (intent.state == LoopIntentState.submitted)
             const LoopNotice(
               key: ValueKey<String>('tx-result-pending'),
@@ -175,6 +241,21 @@ class _TransactionResultScreenState
               tone: LoopNoticeTone.warn,
               title: '已提交，等待回执',
               body: '提交成功不代表链上已完成。确认需要 15 个区块确认后由服务端对账给出。',
+            ),
+          if (_pollingStopped)
+            LoopNotice(
+              key: const ValueKey<String>('tx-result-polling-stopped'),
+              icon: 'warn',
+              tone: LoopNoticeTone.warn,
+              title: '已停止自动查询',
+              body:
+                  '连续 ${widget.maximumPollFailures} 次读取失败，本页不再自动重试，'
+                  '以免持续打扰服务端。这笔操作的状态没有改变，请手动重试。',
+              trailing: LoopButton(
+                key: const ValueKey<String>('tx-result-poll-retry'),
+                label: '重试',
+                onPressed: () => unawaited(_retry()),
+              ),
             ),
           _ResultFacts(intent: intent),
           const LoopLabel('分享'),

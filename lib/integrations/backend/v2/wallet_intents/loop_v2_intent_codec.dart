@@ -1007,6 +1007,7 @@ abstract final class LoopV2IntentCodec {
     });
     final freshness = LoopV2Contract.strictMap(map['freshness'], const <String>{
       'indexerBlockNumber',
+      'approvalCoverageFromBlockNumber',
       'headBlockNumber',
       'observedAt',
     });
@@ -1032,6 +1033,10 @@ abstract final class LoopV2IntentCodec {
         indexerBlockNumber: LoopV2ChainCodec.requireBlockNumber(
           freshness,
           'indexerBlockNumber',
+        ),
+        approvalCoverageFromBlockNumber: LoopV2ChainCodec.requireBlockNumber(
+          freshness,
+          'approvalCoverageFromBlockNumber',
         ),
         headBlockNumber: LoopV2ChainCodec.requireBlockNumber(
           freshness,

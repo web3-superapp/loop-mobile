@@ -10,7 +10,6 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_controllers.dart';
 import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
-import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/features/wallet/transfer_amount.dart';
@@ -72,7 +71,7 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
   );
 
   LoopWalletIntent? _intent;
-  LoopChainFailureKind? _failure;
+  LoopChainException? _failure;
   bool _busy = false;
 
   DateTime get _now => (widget.clock ?? DateTime.now)().toUtc();
@@ -255,13 +254,13 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
               onPressed: _busy ? null : () => setState(() => _intent = null),
             ),
           ],
-          if (_failure == LoopChainFailureKind.permissionDenied)
-            const MoneyPolicyNotice(policy: null)
+          if (MoneyPolicyNotice.covers(_failure))
+            MoneyPolicyNotice(failure: _failure!)
           else if (_failure != null)
             LoopErrorState(
               key: const ValueKey<String>('approval-guard-error'),
               title: '授权没有准备成功',
-              reason: loopChainFailureReason(_failure),
+              reason: loopChainFailureReason(_failure!.kind),
             ),
         ],
       ],
@@ -334,13 +333,13 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
     } on LoopChainException catch (failure) {
       if (!mounted) return;
       setState(() {
-        _failure = failure.kind;
+        _failure = failure;
         _busy = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _failure = LoopChainFailureKind.unexpected;
+        _failure = const LoopChainException(LoopChainFailureKind.unexpected);
         _busy = false;
       });
     }
@@ -358,7 +357,7 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
     if (outcome == null) return;
-    if (outcome.intent != null || outcome.status == MoneySignStatus.locked) {
+    if (outcome.opensResult) {
       _open('/wallet/tx/result?intentId=${intent.intentId}');
     }
   }
@@ -438,7 +437,7 @@ class ApprovalsScreen extends ConsumerStatefulWidget {
 
 class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
   bool _busy = false;
-  LoopChainFailureKind? _revokeFailure;
+  LoopChainException? _revokeFailure;
 
   void _open(String location, {Object? extra}) {
     final navigate = widget.onNavigate;
@@ -451,7 +450,9 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final blocked = sendCapabilityBlocks(ref);
+    // The approval inventory is a read: it stays available while the write
+    // switch is closed, so it waits on its own adapter and nothing else.
+    final blocked = moneyReadBlocks(ref.watch(approvalsGatewayProvider).mode);
     final walletId = watchActiveMoneyWalletId(ref, blocked: blocked);
     final state = walletId == null
         ? null
@@ -492,10 +493,10 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
       ),
       sections: <Widget>[
         if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('approvals-capability-block'),
+          const LoopUnavailableCard(
+            key: ValueKey<String>('approvals-capability-block'),
             label: '授权盘点当前不可用',
-            reasonCode: sendCapabilityReason(ref),
+            reasonCode: 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
           )
         else if (walletId == null || state == null || !state.isReady)
           LoopChainStateBlock(
@@ -513,11 +514,13 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                   ),
           )
         else ...<Widget>[
-          if (_revokeFailure != null)
+          if (MoneyPolicyNotice.covers(_revokeFailure))
+            MoneyPolicyNotice(failure: _revokeFailure!)
+          else if (_revokeFailure != null)
             LoopErrorState(
               key: const ValueKey<String>('approvals-revoke-error'),
               title: '回收没有准备成功',
-              reason: loopChainFailureReason(_revokeFailure),
+              reason: loopChainFailureReason(_revokeFailure!.kind),
             ),
           const LoopLabel('按额度排序'),
           if (inventory!.items.isEmpty)
@@ -535,6 +538,8 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
           LoopProvenanceFooter(
             key: const ValueKey<String>('approvals-freshness'),
             text:
+                '授权记录自区块 '
+                '${inventory.freshness.approvalCoverageFromBlockNumber} 起 · '
                 '索引高度 ${inventory.freshness.indexerBlockNumber} / 链头 '
                 '${inventory.freshness.headBlockNumber} · 观察于 '
                 '${loopRelativeTime(inventory.freshness.observedAt, now: widget.clock?.call())}',
@@ -544,6 +549,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
             title: '数据来源',
             body:
                 '候选来自链上 Approval 事件，每一行的额度都是当场重读的 allowance()。'
+                '覆盖起点以下的区块只索引了转账，更早授予的授权不会出现在这里。'
                 '回收会发送一笔 approve(spender, 0) 交易并产生网络费。',
           ),
         ],
@@ -654,19 +660,21 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
         clock: widget.clock,
       );
       if (!mounted || outcome == null) return;
-      if (outcome.intent != null || outcome.status == MoneySignStatus.locked) {
+      if (outcome.opensResult) {
         _open('/wallet/tx/result?intentId=${intent.intentId}');
       }
     } on LoopChainException catch (failure) {
       if (!mounted) return;
       setState(() {
-        _revokeFailure = failure.kind;
+        _revokeFailure = failure;
         _busy = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _revokeFailure = LoopChainFailureKind.unexpected;
+        _revokeFailure = const LoopChainException(
+          LoopChainFailureKind.unexpected,
+        );
         _busy = false;
       });
     }

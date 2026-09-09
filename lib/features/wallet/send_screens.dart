@@ -278,7 +278,7 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
   );
 
   LoopSendPreflight? _preflight;
-  LoopChainFailureKind? _preflightFailure;
+  LoopChainException? _preflightFailure;
   bool _checking = false;
 
   static final RegExp _addressPattern = RegExp(r'^0x[0-9a-fA-F]{40}$');
@@ -325,13 +325,15 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
     } on LoopChainException catch (failure) {
       if (!mounted) return;
       setState(() {
-        _preflightFailure = failure.kind;
+        _preflightFailure = failure;
         _checking = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _preflightFailure = LoopChainFailureKind.unexpected;
+        _preflightFailure = const LoopChainException(
+          LoopChainFailureKind.unexpected,
+        );
         _checking = false;
       });
     }
@@ -465,7 +467,7 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
             LoopErrorState(
               key: const ValueKey<String>('send-recipient-preflight-error'),
               title: '地址没有校验成功',
-              reason: loopChainFailureReason(_preflightFailure),
+              reason: loopChainFailureReason(_preflightFailure!.kind),
               onRetry: () => unawaited(_check()),
             ),
           if (preflight != null) ..._recipientNotices(preflight),
@@ -579,7 +581,7 @@ class SendConfirmScreen extends ConsumerStatefulWidget {
 class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
   LoopWalletIntent? _intent;
   LoopWalletIntent? _pendingOther;
-  LoopChainFailureKind? _failure;
+  LoopChainException? _failure;
   bool _busy = false;
   bool _started = false;
 
@@ -654,15 +656,15 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
                 _open('/wallet/tx/result?intentId=${other.intentId}'),
             onCancel: () => unawaited(_cancelOther(other)),
           )
-        else if (_failure == LoopChainFailureKind.permissionDenied)
-          const MoneyPolicyNotice(policy: null)
+        else if (MoneyPolicyNotice.covers(_failure))
+          MoneyPolicyNotice(failure: _failure!)
         else if (intent == null)
           LoopChainStateBlock(
             keyPrefix: 'send-confirm',
             phase: _failure == null
                 ? LoopChainViewPhase.loading
-                : loopChainPhaseForFailure(_failure),
-            failureKind: _failure,
+                : loopChainPhaseForFailure(_failure!.kind),
+            failureKind: _failure?.kind,
             skeleton: LoopSkeletonType.detail,
             onRetry: () => unawaited(_prepare(force: true)),
           )
@@ -756,13 +758,13 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
     } on LoopChainException catch (failure) {
       if (!mounted) return;
       setState(() {
-        _failure = failure.kind;
+        _failure = failure;
         _busy = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _failure = LoopChainFailureKind.unexpected;
+        _failure = const LoopChainException(LoopChainFailureKind.unexpected);
         _busy = false;
       });
     }
@@ -782,7 +784,7 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
     } on LoopChainException catch (failure) {
       if (!mounted) return;
       setState(() {
-        _failure = failure.kind;
+        _failure = failure;
         _busy = false;
       });
     }
@@ -800,7 +802,9 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
     if (outcome == null) return;
-    if (outcome.intent != null || outcome.status == MoneySignStatus.locked) {
+    // A locked outcome — including a broadcast the server did not accept —
+    // has only one honest next screen.
+    if (outcome.opensResult) {
       _open('/wallet/tx/result?intentId=${intent.intentId}');
     }
   }

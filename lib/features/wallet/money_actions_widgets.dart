@@ -22,6 +22,15 @@ bool moneyActionBlocks(
   LoopCapabilityProjection capability,
 ) => mode != LoopChainGatewayMode.preview && !capability.isAvailable;
 
+/// Whether a money-action *read* must stop.
+///
+/// The write switch and the canary only govern prepare, report and execute:
+/// the intent reads and the approval inventory stay readable while writing is
+/// closed. A read therefore waits on nothing but its own adapter, and lets the
+/// server's own answer drive every other state.
+bool moneyReadBlocks(LoopChainGatewayMode mode) =>
+    mode == LoopChainGatewayMode.unavailable;
+
 /// zh-CN label for one intent state.
 String moneyIntentStateLabel(LoopIntentState state) => switch (state) {
   LoopIntentState.prepared => '待确认',
@@ -130,17 +139,41 @@ Future<MoneySignOutcome?> showMoneySignSheet(
   required MoneyActionSigner signer,
   DateTime Function()? clock,
   VoidCallback? onAdjustPolicy,
-}) {
-  return showLoopSheet<MoneySignOutcome>(
+}) async {
+  // The latch survives the route: if the sheet is ever torn down after the
+  // wallet was opened, the caller still learns that something may exist.
+  final latch = MoneySignLatch();
+  final outcome = await showLoopSheet<MoneySignOutcome>(
     context,
-    isDismissible: true,
+    // A signing sheet is never dismissed by a stray tap or a drag. Before the
+    // wallet opens the sheet's own cancel action closes it; after it opens,
+    // nothing does.
+    isDismissible: false,
     builder: (context) => MoneySignSheet(
       intent: intent,
       signer: signer,
       clock: clock,
+      latch: latch,
       onAdjustPolicy: onAdjustPolicy,
     ),
   );
+  if (outcome != null) return outcome;
+  if (!latch.enteredSigning) return null;
+  // The sheet went away after the wallet was opened. Whatever happened, the
+  // owner must be sent to the result page rather than back to a live
+  // confirmation.
+  return MoneySignOutcome(
+    status: MoneySignStatus.reportRefused,
+    reasonCode: 'SIGNING_INTERRUPTED',
+    txHash: latch.txHash,
+  );
+}
+
+/// Records that the wallet was opened, so an interrupted sheet cannot be
+/// mistaken for a cancellation.
+final class MoneySignLatch {
+  bool enteredSigning = false;
+  String? txHash;
 }
 
 /// The stateful body of the signing exit.
@@ -150,12 +183,17 @@ class MoneySignSheet extends StatefulWidget {
     required this.signer,
     super.key,
     this.clock,
+    this.latch,
     this.onAdjustPolicy,
   });
 
   final LoopWalletIntent intent;
   final MoneyActionSigner signer;
   final DateTime Function()? clock;
+
+  /// Set once the wallet is opened, so a torn-down sheet still reports that
+  /// something may exist.
+  final MoneySignLatch? latch;
   final VoidCallback? onAdjustPolicy;
 
   @override
@@ -176,22 +214,23 @@ class _MoneySignSheetState extends State<MoneySignSheet> {
     _state = _initialState();
   }
 
+  /// The sheet only ever opens on a server intent, and `signing.reasonCode`
+  /// has its own vocabulary (`BSC_CALL_REVERTED`, `SIMULATION_UNAVAILABLE`,
+  /// `GAS_ESTIMATE_UNAVAILABLE`, `INTENT_EXPIRED`, `INTENT_SUPERSEDED`,
+  /// `USER_CANCELLED`, `INTENT_<STATE>`). A policy refusal never arrives here
+  /// — it is a `403` on prepare, which the page renders — so there is no
+  /// `policyRejected` branch to reach.
   LoopSignSheetState _initialState() {
     final intent = widget.intent;
-    if (!intent.canSignAt(_now) || !intent.payloadMatchesReview) {
-      final reason = intent.payloadMatchesReview
-          ? intent.blockedReasonAt(_now)
-          : 'REVIEW_PAYLOAD_MISMATCH';
-      _reason = loopReasonCodeText(reason);
-      // A canary ceiling refusal is a policy decision, not a failure, and gets
-      // its own state so the copy can say which rule stopped it.
-      if (reason == 'POLICY_BLOCKED') {
-        _reason = moneyPolicyBlockedText(widget.intent.policy);
-        return LoopSignSheetState.policyRejected;
-      }
-      return LoopSignSheetState.simulationFailed;
+    if (intent.canSignAt(_now) && intent.payloadMatchesReview) {
+      return LoopSignSheetState.pending;
     }
-    return LoopSignSheetState.pending;
+    _reason = loopReasonCodeText(
+      intent.payloadMatchesReview
+          ? intent.blockedReasonAt(_now)
+          : 'REVIEW_PAYLOAD_MISMATCH',
+    );
+    return LoopSignSheetState.simulationFailed;
   }
 
   Future<void> _confirm() async {
@@ -201,7 +240,11 @@ class _MoneySignSheetState extends State<MoneySignSheet> {
       _state = LoopSignSheetState.signing;
       _reason = null;
     });
+    // From here the wallet is open. The sheet cannot be dismissed and the
+    // confirmation cannot be re-enabled by anything below.
+    widget.latch?.enteredSigning = true;
     final outcome = await widget.signer.sign(widget.intent, now: _now);
+    widget.latch?.txHash = outcome.txHash;
     if (!mounted) return;
     setState(() {
       _outcome = outcome;
@@ -212,6 +255,15 @@ class _MoneySignSheetState extends State<MoneySignSheet> {
         case MoneySignStatus.locked:
           _state = LoopSignSheetState.complete;
           _reason = '这笔操作已提交且结果未知，已锁定。请在结果页查看，不要重复提交。';
+        case MoneySignStatus.reportRefused:
+          // The wallet already produced a result: this is not "nothing was
+          // submitted", and the confirmation stays closed.
+          _state = LoopSignSheetState.complete;
+          _reason = outcome.txHash == null
+              ? '钱包已经签名，但服务端没有记录到这次提交。请在结果页查看状态，不要重复签名。'
+              : '钱包已经广播（${outcome.txHash}），但服务端没有接受这次上报'
+                    '（${outcome.reasonCode}）。这笔交易可能已经上链。'
+                    '请在结果页查看并稍后重新上报，不要重复签名。';
         case MoneySignStatus.refused:
           _state = LoopSignSheetState.simulationFailed;
           _reason = loopReasonCodeText(outcome.reasonCode);
@@ -230,24 +282,30 @@ class _MoneySignSheetState extends State<MoneySignSheet> {
   Widget build(BuildContext context) {
     final signingIntent = MoneyActionSigner.toSigningIntent(widget.intent);
     final fields = signingIntent?.fields ?? moneyActionFields(widget.intent);
-    return LoopSignSheet(
-      key: const ValueKey<String>('money-sign-sheet'),
-      state: _state,
-      title: moneyActionTitle(widget.intent.kind),
-      facts: <LoopSignFact>[
-        for (final IntentField field in fields)
-          LoopSignFact(
-            field.label,
-            field.value,
-            down:
-                field.label == '模拟结果' &&
-                widget.intent.simulation.status != LoopSimulationStatus.passed,
-          ),
-      ],
-      reason: _reason,
-      onConfirm: _confirm,
-      onCancel: () => Navigator.of(context).pop(_outcome),
-      onAdjustPolicy: widget.onAdjustPolicy,
+    return PopScope(
+      // While the wallet is open there is no way out of this sheet: a back
+      // gesture must not leave a signature in flight with nothing watching it.
+      canPop: _state != LoopSignSheetState.signing,
+      child: LoopSignSheet(
+        key: const ValueKey<String>('money-sign-sheet'),
+        state: _state,
+        title: moneyActionTitle(widget.intent.kind),
+        facts: <LoopSignFact>[
+          for (final IntentField field in fields)
+            LoopSignFact(
+              field.label,
+              field.value,
+              down:
+                  field.label == '模拟结果' &&
+                  widget.intent.simulation.status !=
+                      LoopSimulationStatus.passed,
+            ),
+        ],
+        reason: _reason,
+        onConfirm: _confirm,
+        onCancel: () => Navigator.of(context).pop(_outcome),
+        onAdjustPolicy: widget.onAdjustPolicy,
+      ),
     );
   }
 }
@@ -323,37 +381,87 @@ class MoneyIntentReviewCard extends StatelessWidget {
   }
 }
 
-/// zh-CN copy for a policy refusal.
+/// The refusal rules the server names in `detailsSafe.reasonCode`.
 ///
-/// A blocked action is not an error: it names the rule that stopped it. The
-/// only rule that can fire today is the server's canary ceiling, and there is
-/// no user-owned limit to adjust until the security centre ships — so the copy
-/// says that rather than offering a setting that does not exist.
-String moneyPolicyBlockedText(LoopIntentPolicy policy) =>
-    '这笔操作超过了服务端的单笔上限 '
-    '${loopFormatUsd(policy.canaryMaxUsd)}（策略 ${policy.configVersion}）。'
-    '这是 LOOP 服务端配置的灰度上限，不是你的钱包策略：'
-    '安全中心的自定义上限尚未交付，本步暂不可调。请降低本次金额。';
+/// A refusal is only explainable when the rule is named: "blocked by policy"
+/// is not an explanation. These are the six the frozen contract defines; an
+/// unlisted or absent rule falls back to a sentence that states what did not
+/// happen and claims nothing about why.
+abstract final class MoneyPolicyRule {
+  static const assetNotInAllowlist = 'ASSET_NOT_IN_CANARY_ALLOWLIST';
+  static const canaryCeilingExceeded = 'CANARY_CEILING_EXCEEDED';
+  static const unlimitedExposureExceedsCeiling =
+      'UNLIMITED_EXPOSURE_EXCEEDS_CEILING';
+  static const assetBlocked = 'ASSET_BLOCKED';
+  static const priceImpactBlocked = 'PRICE_IMPACT_BLOCKED';
+  static const nativeAssetNotApprovable = 'NATIVE_ASSET_NOT_APPROVABLE';
 
-/// The block a money-action page renders when the server refused on policy.
+  /// Only the two ceiling rules compare figures, so only they may render them.
+  static bool comparesFigures(String? reasonCode) =>
+      reasonCode == canaryCeilingExceeded ||
+      reasonCode == unlimitedExposureExceedsCeiling;
+}
+
+/// zh-CN copy for one server refusal.
+///
+/// A blocked action is not an error: it names the rule that stopped it, and
+/// says the ceiling is the server's grey-release limit rather than a wallet
+/// setting the owner chose — the security centre's own limit is not delivered,
+/// so the copy never offers an adjustment that does not exist.
+String moneyPolicyRefusalText(LoopChainException failure) {
+  final rule = failure.reasonCode;
+  // The two figures are rendered only for the rules that compared them, and
+  // only when the server sent both.
+  final figures =
+      MoneyPolicyRule.comparesFigures(rule) && failure.hasCeilingFigures
+      ? '本次敞口 \$${failure.exposureUsd} · 上限 \$${failure.ceilingUsd}。'
+      : '';
+  return switch (rule) {
+    MoneyPolicyRule.assetNotInAllowlist =>
+      '这个资产不在本步的灰度名单里，服务端拒绝了这笔操作。名单由服务端配置，'
+          '客户端无法调整；请换一个已登记的资产。',
+    MoneyPolicyRule.canaryCeilingExceeded =>
+      '$figures这笔操作超过了服务端配置的灰度单笔上限。'
+          '这不是你的钱包策略：安全中心的自定义上限尚未交付，本步暂不可调，请降低本次金额。',
+    MoneyPolicyRule.unlimitedExposureExceedsCeiling =>
+      '$figures无限授权按实际敞口（min(额度, 当前余额)）计算，已超过服务端的灰度上限。'
+          '安全中心的自定义上限尚未交付，本步暂不可调；请改用限额授权，或先降低该资产余额。',
+    MoneyPolicyRule.assetBlocked => '该资产在注册表里已被标记为 blocked，服务端不接受针对它的任何资金动作。',
+    MoneyPolicyRule.priceImpactBlocked =>
+      '这笔兑换的价格影响达到了硬阻断阈值，服务端拒绝执行。请减小金额或稍后再试。',
+    MoneyPolicyRule.nativeAssetNotApprovable =>
+      '原生 BNB 没有授权面：它不是 ERC-20，没有 allowance 可以授权或回收。'
+          '这一步不适用于原生资产。',
+    _ =>
+      '服务端按当前策略拒绝了这笔操作，没有提交任何交易。'
+          '安全中心的自定义上限尚未交付，本步暂不可调。',
+  };
+}
+
+/// The block a money-action page renders when the server refused it by rule.
 class MoneyPolicyNotice extends StatelessWidget {
-  const MoneyPolicyNotice({required this.policy, super.key});
+  const MoneyPolicyNotice({required this.failure, super.key});
 
-  /// `null` when the refusal happened before an intent existed.
-  final LoopIntentPolicy? policy;
+  final LoopChainException failure;
+
+  /// True when this failure should be rendered as a named refusal rather than
+  /// a retryable error.
+  static bool covers(LoopChainException? failure) =>
+      failure != null &&
+      (failure.kind == LoopChainFailureKind.permissionDenied ||
+          (failure.kind == LoopChainFailureKind.validationFailed &&
+              failure.reasonCode == MoneyPolicyRule.nativeAssetNotApprovable));
 
   @override
   Widget build(BuildContext context) {
-    final value = policy;
     return LoopNotice(
       key: const ValueKey<String>('money-policy-blocked'),
       icon: 'shield',
       tone: LoopNoticeTone.danger,
-      title: '被策略拒绝，没有提交任何交易',
-      body: value == null
-          ? '服务端按当前的灰度上限拒绝了这笔操作。安全中心的自定义上限尚未交付，'
-                '本步暂不可调，请降低本次金额。'
-          : moneyPolicyBlockedText(value),
+      title: failure.reasonCode == MoneyPolicyRule.nativeAssetNotApprovable
+          ? '原生资产不能授权'
+          : '被策略拒绝，没有提交任何交易',
+      body: moneyPolicyRefusalText(failure),
     );
   }
 }

@@ -51,9 +51,26 @@ enum LoopChainFailureKind {
 }
 
 final class LoopChainException implements Exception {
-  const LoopChainException(this.kind);
+  const LoopChainException(
+    this.kind, {
+    this.reasonCode,
+    this.exposureUsd,
+    this.ceilingUsd,
+  });
 
   final LoopChainFailureKind kind;
+
+  /// The server's own rule name when it named one (`detailsSafe.reasonCode`).
+  /// A refusal that carries a rule is explained by that rule, never by a
+  /// generic sentence the client invented.
+  final String? reasonCode;
+
+  /// The two exact decimal figures a ceiling rule compared. They are present
+  /// together or not at all, and only the ceiling rules carry them.
+  final String? exposureUsd;
+  final String? ceilingUsd;
+
+  bool get hasCeilingFigures => exposureUsd != null && ceilingUsd != null;
 
   @override
   String toString() => 'LoopChainException(${kind.name})';

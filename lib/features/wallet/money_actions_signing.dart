@@ -21,6 +21,15 @@ enum MoneySignStatus {
   /// The submission happened but its outcome is unresolved. The intent is
   /// locked: poll it, never resubmit.
   locked,
+
+  /// The wallet produced a result — a broadcast hash or a signature — and the
+  /// server refused or never received the report.
+  ///
+  /// This is the most dangerous state in the flow: something may already be on
+  /// chain while the server has no record of it. It is locked, it must never
+  /// read as "nothing was submitted", and it must never re-open the
+  /// confirmation. The hash travels with it so the owner can report it later.
+  reportRefused,
 }
 
 /// The outcome of one signing attempt.
@@ -29,6 +38,7 @@ final class MoneySignOutcome {
     required this.status,
     required this.reasonCode,
     this.intent,
+    this.txHash,
   });
 
   final MoneySignStatus status;
@@ -39,7 +49,20 @@ final class MoneySignOutcome {
   /// The server's state after the report or execute call, when one landed.
   final LoopWalletIntent? intent;
 
+  /// What the wallet produced when the server has not acknowledged it.
+  /// Present only for [MoneySignStatus.reportRefused].
+  final String? txHash;
+
   bool get isSubmitted => status == MoneySignStatus.submitted;
+
+  /// True when the operation may already exist and the client must stop
+  /// acting: poll the result, never sign again.
+  bool get isLocked =>
+      status == MoneySignStatus.locked ||
+      status == MoneySignStatus.reportRefused;
+
+  /// True when the result page is the only honest next screen.
+  bool get opensResult => intent != null || isLocked;
 }
 
 /// The one path from a server intent to a wallet signature.
@@ -133,16 +156,21 @@ final class MoneyActionSigner {
       );
     }
 
+    // Past this line the wallet has already produced a result. Whatever
+    // happens next, the operation may exist on chain: nothing below may report
+    // that nothing was submitted, and nothing below may re-open the
+    // confirmation.
+    final produced = handoff.value!;
     try {
       final reported = switch (intent.signing.mode) {
         LoopSigningMode.deviceEthSendTransaction =>
           await intents.reportBroadcast(
             intentId: intent.intentId,
-            txHash: handoff.value!,
+            txHash: produced,
           ),
         LoopSigningMode.privyAuthorizationSignature => await intents.execute(
           intentId: intent.intentId,
-          authorizationSignature: handoff.value!,
+          authorizationSignature: produced,
         ),
       };
       return MoneySignOutcome(
@@ -153,13 +181,18 @@ final class MoneyActionSigner {
         intent: reported,
       );
     } on LoopChainException catch (failure) {
-      // The wallet already produced a signature. An unresolved reporting
-      // outcome is a lock, never an invitation to sign again.
+      // The server refused or never received the report. A rejected report is
+      // not a rejected transaction: the hash may already be on chain.
       return MoneySignOutcome(
-        status: loopChainOutcomeIsUnresolved(failure.kind)
-            ? MoneySignStatus.locked
-            : MoneySignStatus.walletRejected,
-        reasonCode: failure.kind.name,
+        status: MoneySignStatus.reportRefused,
+        reasonCode: failure.reasonCode ?? failure.kind.name,
+        txHash: produced,
+      );
+    } catch (_) {
+      return MoneySignOutcome(
+        status: MoneySignStatus.reportRefused,
+        reasonCode: 'REPORT_OUTCOME_UNKNOWN',
+        txHash: produced,
       );
     }
   }
