@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 
 /// Presentation models for the `launch` module (loop-api decision 0036).
@@ -95,6 +96,10 @@ final class LaunchSummary {
   final String projectId;
   final String name;
   final String ticker;
+
+  /// The chain slot this launch was created on (decision 0038):
+  /// [loopPrimaryChainId] or [loopLaunchTestnetChainId]. It is the server's
+  /// own value; the client never derives or defaults it.
   final String chainId;
 
   /// `null` for the whole of step 7: there is no deployed contract.
@@ -106,6 +111,10 @@ final class LaunchSummary {
   /// The confirmed configuration version, or `null` → "待确认".
   final String? configVersion;
   final DateTime createdAt;
+
+  /// True when this launch lives on the BSC testnet slot, which is the only
+  /// condition for the "BSC 测试网" badge. It never blocks anything.
+  bool get isTestnetChain => loopIsTestnetChainId(chainId);
 }
 
 @immutable

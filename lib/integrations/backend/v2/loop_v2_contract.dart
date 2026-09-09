@@ -153,6 +153,37 @@ abstract final class LoopV2Contract {
     return result;
   }
 
+  /// A strict map whose key set has an optional tail.
+  ///
+  /// Every key in [expectedKeys] must be present, every key in [optionalKeys]
+  /// may be present or absent, and any other key is an invalid payload. The
+  /// absence of an optional key is a meaning of its own — decision 0038 omits
+  /// `launchChain` entirely while the Launch slot equals the primary chain —
+  /// so callers read it with `containsKey` rather than defaulting it to null.
+  static Map<String, Object?> strictMapWithOptional(
+    Object? value,
+    Set<String> expectedKeys,
+    Set<String> optionalKeys,
+  ) {
+    if (value is! Map) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+    }
+    final result = <String, Object?>{};
+    for (final entry in value.entries) {
+      final key = entry.key;
+      if (key is! String ||
+          result.containsKey(key) ||
+          !(expectedKeys.contains(key) || optionalKeys.contains(key))) {
+        throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+      }
+      result[key] = entry.value;
+    }
+    if (!expectedKeys.every(result.containsKey)) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+    }
+    return result;
+  }
+
   static String requiredString(
     Map<String, Object?> source,
     String key, {

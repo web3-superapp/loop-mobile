@@ -329,6 +329,63 @@ final class LoopNetWorthUnavailable extends LoopNetWorth {
   final String reasonCode;
 }
 
+/// The native balance held on the Launch chain slot (decision 0038).
+///
+/// One asset and one `eth_getBalance`: there is no registry, no ERC-20 row, no
+/// pending amount and no valuation on that slot, so nothing here may be
+/// presented as a portfolio figure.
+@immutable
+final class LoopLaunchChainNativeBalance {
+  const LoopLaunchChainNativeBalance({
+    required this.assetId,
+    required this.symbol,
+    required this.decimals,
+    required this.rawValue,
+    required this.displayBalance,
+    required this.availableBalance,
+    required this.spendableBalance,
+    required this.gasReserve,
+    required this.snapshot,
+  });
+
+  final String assetId;
+  final String symbol;
+  final int decimals;
+
+  /// The exact integer minor-unit string, kept verbatim for auditing.
+  final String rawValue;
+  final Decimal displayBalance;
+  final Decimal availableBalance;
+  final Decimal spendableBalance;
+  final Decimal gasReserve;
+  final LoopBalanceSnapshot snapshot;
+}
+
+/// The optional `launchChain` block of `GET /v2/wallets/{id}/balances`.
+///
+/// The key is **absent** while the Launch slot equals the primary chain, so a
+/// `null` field on [LoopWalletBalances] means "no Launch block on this page",
+/// never "the read failed". A failure is this object with
+/// [nativeBalance] `null` and the server's own [reasonCode].
+@immutable
+final class LoopLaunchChainBalance {
+  const LoopLaunchChainBalance({
+    required this.chainId,
+    required this.available,
+    required this.reasonCode,
+    required this.nativeBalance,
+  });
+
+  final String chainId;
+  final bool available;
+  final String? reasonCode;
+  final LoopLaunchChainNativeBalance? nativeBalance;
+
+  bool get isTestnet => loopIsTestnetChainId(chainId);
+
+  String get name => loopChainName(chainId);
+}
+
 @immutable
 final class LoopWalletBalances {
   LoopWalletBalances({
@@ -337,6 +394,7 @@ final class LoopWalletBalances {
     required this.gasReservePolicy,
     required List<LoopAssetBalanceRow> balances,
     required this.netWorth,
+    this.launchChain,
   }) : balances = List<LoopAssetBalanceRow>.unmodifiable(balances);
 
   final String walletId;
@@ -344,6 +402,12 @@ final class LoopWalletBalances {
   final LoopGasReservePolicy gasReservePolicy;
   final List<LoopAssetBalanceRow> balances;
   final LoopNetWorth netWorth;
+
+  /// Decision 0038. `null` is the ordinary case: the backend omits the key
+  /// while the Launch slot equals the primary chain, and the wallet page then
+  /// shows no Launch block at all. A testnet slot that failed to read is a
+  /// non-null value carrying its own reason, never a missing key.
+  final LoopLaunchChainBalance? launchChain;
 
   LoopAssetBalanceRow? rowFor(String assetId) {
     for (final row in balances) {

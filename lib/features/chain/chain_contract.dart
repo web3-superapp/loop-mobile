@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 
 /// Narrow, feature-facing failure taxonomy shared by the S5 ports
 /// (`chain`, `wallet`, `market`, `watchlist`, `alerts`, `notifications`).
@@ -246,7 +247,8 @@ String loopChainFailureReason(LoopChainFailureKind? kind) => switch (kind) {
   LoopChainFailureKind.bootstrapRequired => '账号尚未完成初始化，请稍后重试。',
   LoopChainFailureKind.validationFailed => '输入内容不符合要求（例如资产未登记或阈值非法），请修改后重试。',
   LoopChainFailureKind.chainMismatch =>
-    '该资产不属于 BNB Smart Chain，本步只支持 eip155:56。',
+    '该链不在本步支持的范围内：钱包、行情、Swap 与授权只走主链 BNB Smart Chain，'
+        'Launch 只走后端发布的 launch 链。',
   LoopChainFailureKind.rateLimited => '请求过于频繁，请稍等片刻再试。',
   LoopChainFailureKind.idempotencyConflict => '同一操作已被提交过且内容不同，请检查最新状态后再试。',
   LoopChainFailureKind.insufficientBalance =>
@@ -278,6 +280,14 @@ String loopReasonCodeText(String? reasonCode) => switch (reasonCode) {
   'BSC_CHAIN_VERIFICATION_PENDING' => '端点已配置，chainId 校验尚未完成，暂不展示链上数字。',
   'BSC_RPC_UNREACHABLE' => 'RPC 端点当前不可达。',
   'BSC_CHAIN_ID_MISMATCH' => '端点返回的不是 BNB Smart Chain（chainId 56），整页不可用。',
+  // launch chain slot (decision 0038) — only ever about the testnet slot
+  'LAUNCH_CHAIN_RPC_NOT_CONFIGURED' =>
+    '后端把 Launch 指向了 BSC 测试网，但没有配置测试网 RPC，测试网读数不可得。',
+  'LAUNCH_CHAIN_VERIFICATION_PENDING' => '测试网端点已配置，chainId 校验尚未完成，暂不展示测试网数字。',
+  'LAUNCH_CHAIN_RPC_UNREACHABLE' => '测试网 RPC 端点当前不可达。',
+  'LAUNCH_CHAIN_ID_MISMATCH' =>
+    '端点返回的不是 BSC 测试网（chainId 97），Launch 链相关内容整块不可用。',
+  'BSC_BALANCE_CALL_FAILED' => '链已校验，但这次余额读取本身失败了，因此不显示数字，也不显示 0。',
   'BSC_INDEXER_NOT_STARTED' => '转账索引尚未运行，待确认金额与活动记录暂时读不到。',
   'BSC_POOL_INDEXER_NOT_STARTED' => '池事件索引尚未运行，成交与派生 K 线暂时读不到。',
   'NATIVE_TRANSFER_SCAN_NOT_SUPPORTED' => '原生 BNB 转账历史本步没有来源，不展示空列表。',
@@ -313,7 +323,7 @@ String loopReasonCodeText(String? reasonCode) => switch (reasonCode) {
   'MINING_RUNTIME_DEFERRED' => '挖矿数据尚未交付，不展示任何算力或收益数字。',
   'MARKET_CHART_TOOLS_DEFERRED' => '指标与画线工具没有服务端来源，本步不提供。',
   'WALLET_NETWORTH_TREND_DEFERRED' => '净值走势与 24h 涨跌没有后端来源，本步不展示。',
-  'WALLET_CUSTOM_RPC_DEFERRED' => '自定义 RPC 与测试网本步不开放。',
+  'WALLET_CUSTOM_RPC_DEFERRED' => '自定义 RPC 与自行添加网络本步不开放；这里只显示服务端发布的网络。',
   'WALLET_SECURITY_FACTS_DEFERRED' => '安全中心与 DApp 状态尚未接入，不展示任何数量。',
   // S6 · money actions (write switch, canary, intent lifecycle)
   'WALLET_INTENT_RUNTIME_UNAVAILABLE' => '资金动作模块已启用，但服务端的 intent 运行时尚未组装完成。',
@@ -342,6 +352,7 @@ String loopReasonCodeText(String? reasonCode) => switch (reasonCode) {
   'PRICE_IMPACT_ABOVE_HARD_LIMIT' => '价格影响超过 5%，按策略硬阻断。',
   'PRICE_IMPACT_UNAVAILABLE' => '无法为这笔兑换定价，因此无法判断价格影响，按阻断处理。',
   'SIGNING_PAYLOAD_UNAVAILABLE' => '服务端没有下发可签名的 payload，本次不能进入钱包。',
+  'INTENT_CHAIN_NOT_PERMITTED' => '这笔操作的链不在允许范围内：发送、授权、回收与兑换只能在主网签名，本次没有进入钱包。',
   // D20 security / settings / support (decision 0037)
   'V2_SECURITY_RUNTIME_DEFERRED' => '安全模块尚未启用，设备与安全事件都读不到。',
   'SECURITY_RUNTIME_UNAVAILABLE' => '安全模块已启用，但服务端依赖尚未组装完成。',
@@ -377,6 +388,21 @@ String loopReasonCodeText(String? reasonCode) => switch (reasonCode) {
   null => '该字段当前没有可信来源。',
   _ => '该字段当前没有可信来源。',
 };
+
+/// The badge every Launch surface and every sign sheet shows while the Launch
+/// chain slot is the BSC testnet. It is a statement of fact, never a blocker.
+const String loopTestnetBadgeLabel = 'BSC 测试网';
+
+/// Title of the one-time explanation that accompanies the badge.
+const String loopTestnetNoticeTitle = 'Launch 当前运行在 BSC 测试网';
+
+/// The one-time explanation. It never says anything is broken: the Launch
+/// module points at `eip155:97` on purpose, and everything else stays on the
+/// main chain.
+const String loopTestnetNoticeBody =
+    'Launch 目录、详情与签名单当前指向 BSC 测试网（$loopLaunchTestnetChainId），'
+    '测试网上的代币没有真实价值。钱包余额、行情、兑换与授权仍然只走 BNB Smart Chain 主网，'
+    '不受影响。这条说明可以关闭，不会阻断任何操作。';
 
 /// The reviewed page states for an S5 surface.
 enum LoopChainViewPhase {

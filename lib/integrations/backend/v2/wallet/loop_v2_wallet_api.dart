@@ -148,14 +148,21 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      final root = LoopV2Contract.strictMap(response.data, const <String>{
-        'walletId',
-        'snapshot',
-        'gasReservePolicy',
-        'balances',
-        'netWorth',
-        'contractVersion',
-      });
+      final root = LoopV2Contract.strictMapWithOptional(
+        response.data,
+        const <String>{
+          'walletId',
+          'snapshot',
+          'gasReservePolicy',
+          'balances',
+          'netWorth',
+          'contractVersion',
+        },
+        // Present only while the Launch chain slot differs from the primary
+        // chain (decision 0038). Absent means the wallet page shows no Launch
+        // block at all, not that a read failed.
+        const <String>{'launchChain'},
+      );
       LoopV2ChainCodec.requireContractVersion(root);
       if (root['walletId'] != target) LoopV2ChainCodec.invalid();
 
@@ -220,6 +227,7 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
         ),
         balances: rows,
         netWorth: _netWorth(root['netWorth']),
+        launchChain: _launchChain(root),
       );
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(
@@ -657,6 +665,102 @@ final class DioLoopV2WalletApi implements LoopV2WalletApi {
       status: status,
       reasonCode: LoopV2ChainCodec.optionalReasonCode(map, 'reasonCode'),
       blockDelta: LoopV2ChainCodec.optionalInt(map, 'blockDelta'),
+    );
+  }
+
+  /// The optional `launchChain` block (decision 0038).
+  ///
+  /// One native balance read with one `eth_getBalance`; there is no registry,
+  /// no ERC-20 row, no pending amount, no valuation and no cross-check on that
+  /// slot, so the strict key set stays exactly this narrow.
+  static LoopLaunchChainBalance? _launchChain(Map<String, Object?> root) {
+    if (!root.containsKey('launchChain')) return null;
+    final map = LoopV2Contract.strictMap(root['launchChain'], const <String>{
+      'chainId',
+      'availability',
+      'reasonCode',
+      'nativeBalance',
+    });
+    final chainId = LoopV2ChainCodec.requireKnownChainId(map, 'chainId');
+    final availability = map['availability'];
+    if (availability != 'available' && availability != 'unavailable') {
+      LoopV2ChainCodec.invalid();
+    }
+    final available = availability == 'available';
+    final reasonCode = LoopV2ChainCodec.optionalReasonCode(map, 'reasonCode');
+    final raw = map['nativeBalance'];
+    // The two halves must agree: an unavailable slot never carries a figure,
+    // and an available one never carries a reason instead of a figure.
+    if (!available) {
+      if (raw != null || reasonCode == null) LoopV2ChainCodec.invalid();
+      return LoopLaunchChainBalance(
+        chainId: chainId,
+        available: false,
+        reasonCode: reasonCode,
+        nativeBalance: null,
+      );
+    }
+    if (raw == null || reasonCode != null) LoopV2ChainCodec.invalid();
+    final balance = LoopV2Contract.strictMap(raw, const <String>{
+      'assetId',
+      'symbol',
+      'decimals',
+      'rawValue',
+      'displayBalance',
+      'availableBalance',
+      'spendableBalance',
+      'gasReserve',
+      'snapshot',
+    });
+    final assetId = LoopV2ChainCodec.requireAssetId(balance, 'assetId');
+    // The balance belongs to the slot it was read on; a row keyed to another
+    // chain is a different fact and must not be rendered here.
+    if (assetId != '$chainId:native') LoopV2ChainCodec.invalid();
+    final snapshot = LoopV2Contract.strictMap(
+      balance['snapshot'],
+      const <String>{'blockNumber', 'blockHash', 'observedAt', 'confirmations'},
+    );
+    return LoopLaunchChainBalance(
+      chainId: chainId,
+      available: true,
+      reasonCode: null,
+      nativeBalance: LoopLaunchChainNativeBalance(
+        assetId: assetId,
+        symbol: LoopV2ChainCodec.requireText(balance, 'symbol', maxLength: 32),
+        decimals: LoopV2ChainCodec.requireInt(balance, 'decimals', maximum: 36),
+        rawValue: LoopV2ChainCodec.requireRawAmount(balance, 'rawValue'),
+        displayBalance: LoopV2ChainCodec.requireDecimal(
+          balance,
+          'displayBalance',
+        ),
+        availableBalance: LoopV2ChainCodec.requireDecimal(
+          balance,
+          'availableBalance',
+        ),
+        spendableBalance: LoopV2ChainCodec.requireDecimal(
+          balance,
+          'spendableBalance',
+        ),
+        gasReserve: LoopV2ChainCodec.requireDecimal(balance, 'gasReserve'),
+        snapshot: LoopBalanceSnapshot(
+          blockNumber: LoopV2ChainCodec.requireBlockNumber(
+            snapshot,
+            'blockNumber',
+          ),
+          blockHash: LoopV2ChainCodec.requireString(
+            snapshot,
+            'blockHash',
+            pattern: LoopV2ChainCodec.hashPattern,
+            maxLength: 66,
+          ),
+          observedAt: LoopV2ChainCodec.requireTimestamp(snapshot, 'observedAt'),
+          confirmations: LoopV2ChainCodec.requireInt(
+            snapshot,
+            'confirmations',
+            minimum: 1,
+          ),
+        ),
+      ),
     );
   }
 

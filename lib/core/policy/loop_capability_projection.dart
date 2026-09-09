@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/policy/loop_client_policy.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
@@ -19,13 +20,15 @@ final class LoopCapabilityProjection {
     this.reasonCode,
     this.evidencePending = false,
     this.evidenceReasonCode,
+    this.launchChainId,
   });
 
   const LoopCapabilityProjection.unknown()
     : decision = LoopCapabilityDecision.unknown,
       reasonCode = null,
       evidencePending = false,
-      evidenceReasonCode = null;
+      evidenceReasonCode = null,
+      launchChainId = null;
 
   final LoopCapabilityDecision decision;
   final String? reasonCode;
@@ -35,6 +38,18 @@ final class LoopCapabilityProjection {
   /// though the capability itself reads `available`.
   final bool evidencePending;
   final String? evidenceReasonCode;
+
+  /// Decision 0038: the chain slot the `launch` module points at, published
+  /// only while it differs from the primary chain. `null` on every other
+  /// capability and whenever Launch runs on the primary chain.
+  final String? launchChainId;
+
+  /// The single condition for the "BSC 测试网" badge and its one-time
+  /// explanation. It never closes a surface.
+  bool get isTestnetLaunchChain {
+    final chainId = launchChainId;
+    return chainId != null && loopIsTestnetChainId(chainId);
+  }
 
   bool get isAvailable => decision == LoopCapabilityDecision.available;
 
@@ -63,6 +78,7 @@ abstract final class LoopCapabilityProjector {
       evidencePending:
           evidence.status == LoopV2CapabilityEvidenceStatus.pending,
       evidenceReasonCode: evidence.reasonCode,
+      launchChainId: evidence.launchChainId,
     );
   }
 }

@@ -280,10 +280,17 @@ final class LoopV2CapabilityEvidence {
   const LoopV2CapabilityEvidence({
     required this.status,
     required this.reasonCode,
+    this.launchChainId,
   });
 
   final LoopV2CapabilityEvidenceStatus status;
   final String? reasonCode;
+
+  /// Decision 0038: the `launch` capability — and only that one — carries the
+  /// chain slot the Launch module points at, and only while that slot differs
+  /// from the primary chain. `null` therefore means "Launch runs on the
+  /// primary chain", exactly as every build before S9.
+  final String? launchChainId;
 }
 
 @immutable

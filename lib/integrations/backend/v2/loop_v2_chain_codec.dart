@@ -53,6 +53,92 @@ abstract final class LoopV2ChainCodec {
     if (root['contractVersion'] != contractVersion) invalid();
   }
 
+  /// One of the exactly two chain ids the backend may publish (decision
+  /// 0038): the primary chain, or the Launch slot's BSC testnet. There is no
+  /// chain list, so any other value is an invalid payload rather than a new
+  /// network the client silently adopts.
+  static String requireKnownChainId(Map<String, Object?> source, String key) {
+    final value = source[key];
+    if (value is! String || !loopKnownChainIds.contains(value)) invalid();
+    return value;
+  }
+
+  /// `{blockNumber, blockHash, observedAt}`, or `null` when the slot has no
+  /// verified head.
+  static LoopChainHead? optionalChainHead(
+    Map<String, Object?> source,
+    String key,
+  ) {
+    if (source[key] == null) return null;
+    final map = LoopV2Contract.strictMap(source[key], const <String>{
+      'blockNumber',
+      'blockHash',
+      'observedAt',
+    });
+    return LoopChainHead(
+      blockNumber: requireBlockNumber(map, 'blockNumber'),
+      blockHash: requireString(
+        map,
+        'blockHash',
+        pattern: hashPattern,
+        maxLength: 66,
+      ),
+      observedAt: requireTimestamp(map, 'observedAt'),
+    );
+  }
+
+  /// The `verification` enum shared by the primary chain, one endpoint and
+  /// the Launch chain slot.
+  static LoopChainVerification requireVerification(
+    Map<String, Object?> source,
+    String key,
+  ) {
+    final value = source[key];
+    if (value is! String) invalid();
+    final parsed = LoopChainVerification.tryParse(value);
+    if (parsed == null) invalid();
+    return parsed;
+  }
+
+  /// The optional `launchChain` projection of `GET /v2/chain/status`.
+  ///
+  /// The key is **absent** whenever the Launch slot equals the primary chain,
+  /// which is the ordinary case; it is never `null` and never a placeholder.
+  static LoopLaunchChainStatus? optionalLaunchChain(
+    Map<String, Object?> root,
+    String key,
+  ) {
+    if (!root.containsKey(key)) return null;
+    final map = LoopV2Contract.strictMap(root[key], const <String>{
+      'chainId',
+      'chainReference',
+      'verification',
+      'confirmations',
+      'reorgDepthBlocks',
+      'head',
+      'reasonCode',
+    });
+    final chainId = requireKnownChainId(map, 'chainId');
+    final reference = requireInt(map, 'chainReference', minimum: 1);
+    // The numeric reference and the CAIP id are two halves of one fact; a
+    // payload where they disagree is not partially trusted.
+    if ('eip155:$reference' != chainId) invalid();
+    final verification = requireVerification(map, 'verification');
+    final head = optionalChainHead(map, 'head');
+    if (head != null && verification != LoopChainVerification.verified) {
+      invalid();
+    }
+    return LoopLaunchChainStatus(
+      chainId: chainId,
+      chainReference: reference,
+      verification: verification,
+      confirmations: requireInt(map, 'confirmations', minimum: 1),
+      reorgDepthBlocks: requireInt(map, 'reorgDepthBlocks', minimum: 1),
+      head: head,
+      reasonCode: optionalReasonCode(map, 'reasonCode'),
+    );
+  }
+
   static bool requireBool(Map<String, Object?> source, String key) {
     final value = source[key];
     if (value is! bool) invalid();

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/network/loop_dio_factory.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
@@ -332,12 +333,21 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
       'reasonCode',
       'evidence',
     });
-    final evidence = LoopV2Contract.strictMap(
+    final evidence = LoopV2Contract.strictMapWithOptional(
       capability['evidence'],
       const <String>{'status', 'reasonCode'},
+      // `launchChainId` belongs to `launch` alone (decision 0038); the key is
+      // absent while the Launch slot equals the primary chain, and its
+      // presence on any other capability is an invalid payload.
+      const <String>{'launchChainId'},
     );
+    final id = _enumValue(
+      capability['capabilityId'],
+      LoopV2CapabilityId.tryParse,
+    );
+    final launchChainId = _launchChainId(evidence['launchChainId'], id);
     return LoopV2Capability(
-      id: _enumValue(capability['capabilityId'], LoopV2CapabilityId.tryParse),
+      id: id,
       availability: _enumValue(
         capability['availability'],
         LoopV2CapabilityAvailability.tryParse,
@@ -349,8 +359,24 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
           LoopV2CapabilityEvidenceStatus.tryParse,
         ),
         reasonCode: _nullableReasonCode(evidence['reasonCode']),
+        launchChainId: launchChainId,
       ),
     );
+  }
+
+  /// The optional `evidence.launchChainId` (decision 0038).
+  ///
+  /// Absent everywhere in the ordinary case. Present it is a closed enum, and
+  /// it may only appear on `launch`: a document that publishes it elsewhere is
+  /// rejected rather than partially trusted.
+  String? _launchChainId(Object? value, LoopV2CapabilityId id) {
+    if (value == null) return null;
+    if (id != LoopV2CapabilityId.launch ||
+        value is! String ||
+        !loopKnownChainIds.contains(value)) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+    }
+    return value;
   }
 
   void _validateBaseline(Map<String, Object?> root) {

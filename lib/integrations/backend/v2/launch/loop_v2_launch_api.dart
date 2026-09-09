@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
@@ -225,9 +226,10 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
         LoopV2S7Codec.tickerPattern,
         maxLength: 12,
       ),
-      chainId: LoopV2S7Codec.requireEnum(map, 'chainId', const <String>{
-        'eip155:56',
-      }),
+      // Decision 0038: a launch carries the chain slot it was created on.
+      // The set is closed — an unknown chain is an invalid payload, never a
+      // network the client silently adopts.
+      chainId: LoopV2S7Codec.requireEnum(map, 'chainId', loopKnownChainIds),
       contractAddress: LoopV2S7Codec.requireNull(map, 'contractAddress'),
       configDigest: LoopV2S7Codec.optionalPattern(
         map,

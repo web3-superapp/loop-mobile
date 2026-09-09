@@ -1,5 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+
+/// The two chain slots are a cross-cutting identity, not a chain-module fact:
+/// signing, Launch and the wallet page all read them.
+export 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 
 /// Canonical CAIP-19 asset identity. The ticker is never an identity: it is
 /// display text that two different contracts may share.
@@ -354,6 +359,40 @@ final class LoopRegistryCounts {
   final int registeredPoolCount;
 }
 
+/// The Launch chain slot's own health (`launchChain`, decision 0038).
+///
+/// It carries no endpoint list: testnet endpoint health is not published, so
+/// the page states the slot's verification and its own reason code instead.
+@immutable
+final class LoopLaunchChainStatus {
+  const LoopLaunchChainStatus({
+    required this.chainId,
+    required this.chainReference,
+    required this.verification,
+    required this.confirmations,
+    required this.reorgDepthBlocks,
+    required this.head,
+    required this.reasonCode,
+  });
+
+  final String chainId;
+  final int chainReference;
+  final LoopChainVerification verification;
+  final int confirmations;
+  final int reorgDepthBlocks;
+
+  /// Non-null only while [verification] is `verified`.
+  final LoopChainHead? head;
+  final String? reasonCode;
+
+  bool get isTestnet => loopIsTestnetChainId(chainId);
+
+  bool get isHealthy =>
+      verification == LoopChainVerification.verified && reasonCode == null;
+
+  String get name => loopChainName(chainId);
+}
+
 /// `GET /v2/chain/status` — the whole `networks` page.
 @immutable
 final class LoopChainStatus {
@@ -362,12 +401,18 @@ final class LoopChainStatus {
     required this.rpc,
     required this.indexer,
     required this.registry,
+    this.launchChain,
   });
 
   final LoopChainInfo chain;
   final LoopRpcHealth rpc;
   final List<LoopIndexerLaneStatus> indexer;
   final LoopRegistryCounts registry;
+
+  /// The Launch chain slot (decision 0038). `null` is the ordinary case: the
+  /// backend omits the key entirely while the slot equals [chain], so the
+  /// `networks` page shows no testnet row at all — not an unavailable one.
+  final LoopLaunchChainStatus? launchChain;
 
   /// A mismatched chain id makes the whole page unusable, whatever else the
   /// endpoints report.

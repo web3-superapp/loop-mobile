@@ -48,13 +48,20 @@ final class DioLoopV2ChainApi implements LoopV2ChainApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      final root = LoopV2Contract.strictMap(response.data, const <String>{
-        'chain',
-        'rpc',
-        'indexer',
-        'registry',
-        'contractVersion',
-      });
+      final root = LoopV2Contract.strictMapWithOptional(
+        response.data,
+        const <String>{
+          'chain',
+          'rpc',
+          'indexer',
+          'registry',
+          'contractVersion',
+        },
+        // Present only while the Launch chain slot differs from the primary
+        // chain (decision 0038). Absent is the ordinary case and means "the
+        // Launch module runs on the primary chain".
+        const <String>{'launchChain'},
+      );
       LoopV2ChainCodec.requireContractVersion(root);
 
       final chain = LoopV2Contract.strictMap(root['chain'], const <String>{
@@ -81,7 +88,10 @@ final class DioLoopV2ChainApi implements LoopV2ChainApi {
       if (rawStatus != 'available' && rawStatus != 'unavailable') {
         LoopV2ChainCodec.invalid();
       }
-      final verification = _verification(rpc, 'verification');
+      final verification = LoopV2ChainCodec.requireVerification(
+        rpc,
+        'verification',
+      );
 
       LoopChainHead? head;
       if (rpc['head'] != null) {
@@ -145,7 +155,10 @@ final class DioLoopV2ChainApi implements LoopV2ChainApi {
               'blockNumber',
             ),
             blockLagBlocks: LoopV2ChainCodec.optionalInt(map, 'blockLagBlocks'),
-            chainVerification: _verification(map, 'chainVerification'),
+            chainVerification: LoopV2ChainCodec.requireVerification(
+              map,
+              'chainVerification',
+            ),
             observedAt: LoopV2ChainCodec.requireTimestamp(map, 'observedAt'),
           ),
         );
@@ -201,14 +214,17 @@ final class DioLoopV2ChainApi implements LoopV2ChainApi {
         );
       }
 
+      // The primary chain must stay `eip155:56`: `chain`, `rpc`, `indexer` and
+      // `registry` never describe anything else, whatever the Launch slot is.
+      if (chain['chainId'] != loopPrimaryChainId) LoopV2ChainCodec.invalid();
+      final launchChain = LoopV2ChainCodec.optionalLaunchChain(
+        root,
+        'launchChain',
+      );
+
       return LoopChainStatus(
         chain: LoopChainInfo(
-          chainId: LoopV2ChainCodec.requireString(
-            chain,
-            'chainId',
-            pattern: LoopV2ChainCodec.chainIdPattern,
-            maxLength: 32,
-          ),
+          chainId: LoopV2ChainCodec.requireKnownChainId(chain, 'chainId'),
           name: LoopV2ChainCodec.requireText(chain, 'name', maxLength: 64),
           reference: LoopV2ChainCodec.requireInt(
             chain,
@@ -248,6 +264,7 @@ final class DioLoopV2ChainApi implements LoopV2ChainApi {
             'registeredPoolCount',
           ),
         ),
+        launchChain: launchChain,
       );
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(
@@ -285,16 +302,5 @@ final class DioLoopV2ChainApi implements LoopV2ChainApi {
         allowedCodes: LoopV2ModuleRequest.chainReadErrors,
       );
     }
-  }
-
-  static LoopChainVerification _verification(
-    Map<String, Object?> source,
-    String key,
-  ) {
-    final value = source[key];
-    if (value is! String) LoopV2ChainCodec.invalid();
-    final parsed = LoopChainVerification.tryParse(value);
-    if (parsed == null) LoopV2ChainCodec.invalid();
-    return parsed;
   }
 }
