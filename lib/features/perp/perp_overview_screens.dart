@@ -485,13 +485,13 @@ class _PerpConfirmScreenState extends State<PerpConfirmScreen> {
                       ?.copyWith(color: LoopColors.danger),
                 ),
               ),
+            // Retained history. The local preview review surface was retired
+            // with step 6: the signing exit now accepts only a
+            // backend-canonical intent, and Perp has no such route.
             FilledButton.icon(
-              onPressed: hasFacts && validationError == null
-                  ? () =>
-                        context.push('/preview/signing-review', extra: _intent)
-                  : null,
+              onPressed: null,
               icon: const Icon(Icons.lock_outline_rounded),
-              label: const Text('Continue to intent review'),
+              label: const Text('Intent review retired'),
             ),
             const SizedBox(height: 7),
             Text(

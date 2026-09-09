@@ -187,6 +187,10 @@ abstract final class LoopRouteManifest {
     '/perp/risk',
     '/chat/meeting',
     '/wallet/transaction',
+    // Step 6 moved `approval-guard` under `/wallet` and retired the local
+    // signing review with the Preview intents that fed it.
+    '/preview/approval',
+    '/preview/signing-review',
     '/wallet/dapps',
     '/wallet/protection',
     '/launchpad/list',
@@ -197,9 +201,9 @@ abstract final class LoopRouteManifest {
 
   /// Implemented entry points that have no slug in the frozen manifest but
   /// are still reachable from mounted product code (the Stream channel deep
-  /// link, group creation and the group-Alias editor, the local signing
-  /// review used by the Send/Swap drafts, and guarded chat component
-  /// previews). They stay mounted until the owning step folds them into a
+  /// link, group creation and the group-Alias editor, and guarded chat
+  /// component previews). They stay mounted until the owning step folds them
+  /// into a
   /// manifest page; the manifest test lists them explicitly so nothing else
   /// can hide here. `/chat/channel/:cid` is a redirect only: it resolves a
   /// server-issued CID onto `community-chat`, `dm` or `group`.
@@ -208,7 +212,6 @@ abstract final class LoopRouteManifest {
     '/chat/channel/:cid',
     '/chat/groups/create',
     '/chat/groups/:groupId/alias',
-    '/preview/signing-review',
     '/preview/contract-facts',
     '/preview/asset-message',
     '/preview/token-card',
@@ -554,7 +557,7 @@ abstract final class LoopRouteManifest {
       title: '项目详情',
       prototypeOrder: 36,
       step: 7,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'launch-tier',
@@ -563,7 +566,7 @@ abstract final class LoopRouteManifest {
       title: '我的资格',
       prototypeOrder: 37,
       step: 7,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'loop-stake',
@@ -572,7 +575,7 @@ abstract final class LoopRouteManifest {
       title: 'LOOP 质押',
       prototypeOrder: 38,
       step: 7,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'launch-trade',
@@ -581,7 +584,7 @@ abstract final class LoopRouteManifest {
       title: 'Launch 认购',
       prototypeOrder: 39,
       step: 7,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'launch-holders',
@@ -590,7 +593,7 @@ abstract final class LoopRouteManifest {
       title: '内盘持有人',
       prototypeOrder: 40,
       step: 7,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'launch-graduation',
@@ -599,7 +602,7 @@ abstract final class LoopRouteManifest {
       title: '毕业与迁移',
       prototypeOrder: 41,
       step: 7,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'launch-history',
@@ -608,7 +611,7 @@ abstract final class LoopRouteManifest {
       title: '参与记录',
       prototypeOrder: 42,
       step: 7,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'launch-rounds',
@@ -617,7 +620,7 @@ abstract final class LoopRouteManifest {
       title: '销售轮次规则',
       prototypeOrder: 43,
       step: 7,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'loop-economy',
@@ -626,7 +629,7 @@ abstract final class LoopRouteManifest {
       title: '生态经济面板',
       prototypeOrder: 44,
       step: 7,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'launch-apply',
@@ -635,7 +638,7 @@ abstract final class LoopRouteManifest {
       title: '申请发射',
       prototypeOrder: 45,
       step: 7,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
       legacyPath: '/launchpad/apply',
     ),
     // 5-mining · Mining (6)
@@ -656,7 +659,7 @@ abstract final class LoopRouteManifest {
       title: '算力明细',
       prototypeOrder: 47,
       step: 7,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'mining-rewards',
@@ -665,7 +668,7 @@ abstract final class LoopRouteManifest {
       title: '奖励与领取',
       prototypeOrder: 48,
       step: 7,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'mining-rank',
@@ -674,7 +677,7 @@ abstract final class LoopRouteManifest {
       title: '排行榜',
       prototypeOrder: 49,
       step: 7,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'mining-community',
@@ -683,7 +686,7 @@ abstract final class LoopRouteManifest {
       title: '社区挖矿面板',
       prototypeOrder: 50,
       step: 7,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     LoopRouteEntry(
       slug: 'mining-rules',
@@ -692,7 +695,7 @@ abstract final class LoopRouteManifest {
       title: '权重与价格保护',
       prototypeOrder: 51,
       step: 7,
-      status: LoopRouteStatus.pending,
+      status: LoopRouteStatus.implemented,
     ),
     // 6-wallet · Wallet (19)
     LoopRouteEntry(
@@ -844,12 +847,13 @@ abstract final class LoopRouteManifest {
     ),
     LoopRouteEntry(
       slug: 'approval-guard',
-      path: '/preview/approval',
+      path: '/wallet/approval-guard',
       module: LoopRouteModule.wallet,
       title: '授权拦截',
       prototypeOrder: 66,
       step: 6,
       status: LoopRouteStatus.implemented,
+      legacyPath: '/preview/approval',
     ),
     LoopRouteEntry(
       slug: 'approvals',

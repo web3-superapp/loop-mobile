@@ -40,7 +40,7 @@ void main() {
       (
         'Launch',
         '/launch',
-        find.byKey(const ValueKey<String>('launchpad-unavailable')),
+        find.byKey(const ValueKey<String>('launch-screen')),
       ),
       ('行情', '/market', find.byKey(const ValueKey<String>('market-screen'))),
       ('钱包', '/wallet', find.byKey(const ValueKey<String>('wallet-screen'))),
@@ -71,10 +71,7 @@ void main() {
     router.go('/launchpad');
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/launch');
-    expect(
-      find.byKey(const ValueKey<String>('launchpad-unavailable')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const ValueKey<String>('launch-screen')), findsOneWidget);
   });
 
   testWidgets('unknown routes fall back directly to Community', (tester) async {

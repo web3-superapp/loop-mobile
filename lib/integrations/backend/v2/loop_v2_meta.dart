@@ -191,9 +191,10 @@ final class LoopV2TermsGate {
 /// added by loop-api decision 0030; `communityMining`, `communityPresence` and
 /// `search` by decision 0031; `marketRead`, `priceAlerts` and
 /// `notificationsFeed` by loop-api decision 0034 and the step-5 market and
-/// alerts modules, `referral` by the step-7 launch/mining/referral module and
-/// `security`, `settings` and `support` by the step-8 decision 0037 module,
-/// for 31 ids in the exact order of `openapi/loop-api.v2.json`.
+/// alerts modules; `referral` by the step-7 launch/mining/referral module; and
+/// `security`, `settings` and `support` by the step-8 decision 0037 module
+/// that steps 6 and 7 already read, for 31 ids in the exact order of
+/// `openapi/loop-api.v2.json`.
 /// The parser requires the exact set, so this list must track the frozen
 /// contract even for modules a given step does not consume.
 enum LoopV2CapabilityId {

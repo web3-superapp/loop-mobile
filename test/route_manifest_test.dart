@@ -139,7 +139,6 @@ void main() {
         '/chat/channel/:cid',
         '/chat/groups/create',
         '/chat/groups/:groupId/alias',
-        '/preview/signing-review',
         '/preview/contract-facts',
         '/preview/asset-message',
         '/preview/token-card',
@@ -223,6 +222,10 @@ void main() {
       );
       expect(
         LoopRouteManifest.bySlug('approval-guard').path,
+        '/wallet/approval-guard',
+      );
+      expect(
+        LoopRouteManifest.bySlug('approval-guard').legacyPath,
         '/preview/approval',
       );
     });
@@ -255,32 +258,30 @@ void main() {
       },
     );
 
-    testWidgets('pending manifest routes render the truthful pending surface', (
-      tester,
-    ) async {
-      final router = await _pumpApp(tester);
+    testWidgets('every manifest slug is now connected', (tester) async {
+      await _pumpApp(tester);
       final pending = LoopRouteManifest.withStatus(LoopRouteStatus.pending);
       // S2 connected `/auth/otp` and `/auth/loop-id`; S3 connected
       // `community-discover`, `community-profile` and `community-members`;
       // S4 connected `community-chat`, `community-ai`, `chat-forward` and
-      // `chat-merge-preview`; S8 connected `key-export`.
-      expect(pending, hasLength(15));
-      expect(
-        LoopRouteManifest.bySlug('auth-otp').status,
-        LoopRouteStatus.implemented,
-      );
-      expect(
-        LoopRouteManifest.bySlug('loop-id-setup').status,
-        LoopRouteStatus.implemented,
-      );
+      // `chat-merge-preview`; S7 connected the ten remaining Launch pages and
+      // the five remaining Mining pages; S8 connected `key-export`, the last
+      // one. The pending surface stays mounted for a future slug but has none.
+      expect(pending, isEmpty);
       expect(LoopRouteManifest.withStatus(LoopRouteStatus.redirect), isEmpty);
-      expect(pending.map((entry) => entry.slug), isNot(contains('auth-otp')));
 
       for (final slug in <String>[
+        'auth-otp',
+        'loop-id-setup',
         'community-chat',
         'community-ai',
         'chat-forward',
         'chat-merge-preview',
+        'launch-trade',
+        'mining-rules',
+        'launch-apply',
+        'loop-stake',
+        'mining-rank',
         'key-export',
       ]) {
         expect(
@@ -288,39 +289,8 @@ void main() {
           LoopRouteStatus.implemented,
           reason: slug,
         );
-        expect(pending.map((entry) => entry.slug), isNot(contains(slug)));
       }
-
-      for (final entry in <LoopRouteEntry>[
-        LoopRouteManifest.bySlug('launch-trade'),
-        LoopRouteManifest.bySlug('mining-rules'),
-        LoopRouteManifest.bySlug('launch-apply'),
-      ]) {
-        router.go(entry.path);
-        await tester.pumpAndSettle();
-
-        expect(router.routeInformationProvider.value.uri.path, entry.path);
-        expect(
-          find.byType(LoopPendingSurface),
-          findsOneWidget,
-          reason: entry.slug,
-        );
-        expect(find.text(LoopPendingSurface.pendingHeadline), findsOneWidget);
-        expect(find.text(entry.title), findsOneWidget, reason: entry.slug);
-        expect(
-          find.text('来源：${entry.module.label} 第 ${entry.step} 步'),
-          findsOneWidget,
-          reason: entry.slug,
-        );
-        expect(find.byType(LoopTabBar), findsNothing, reason: entry.slug);
-        expect(find.byType(FilledButton), findsNothing, reason: entry.slug);
-        expect(find.byType(TextField), findsNothing, reason: entry.slug);
-        expect(find.textContaining('演示数据'), findsNothing, reason: entry.slug);
-      }
-
-      await tester.tap(find.byKey(const ValueKey<String>('loop-pending-back')));
-      await tester.pumpAndSettle();
-      expect(router.routeInformationProvider.value.uri.path, '/community');
+      expect(find.byType(LoopPendingSurface), findsNothing);
     });
 
     testWidgets('Pay stays an informational unavailable manifest route', (

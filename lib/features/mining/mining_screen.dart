@@ -1,317 +1,222 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/features/launch/launch_contract.dart';
+import 'package:loop_mobile/features/launch/launch_widgets.dart';
+import 'package:loop_mobile/features/mining/mining_controllers.dart';
+import 'package:loop_mobile/features/mining/mining_models.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_pages.dart';
 
-/// Truthful UI-first Mining destination.
+/// `mining` · the Mining destination.
 ///
-/// Mining is backend delivery D19. Until D10, D12, D18, and D19 provide
-/// versioned facts, the app must not estimate power, rank, reward, or claims.
-class MiningScreen extends StatelessWidget {
-  const MiningScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      key: const ValueKey<String>('mining-screen'),
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                color: LoopColors.lime,
-                shape: BoxShape.circle,
-              ),
-              child: SizedBox.square(dimension: 9),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'LOOP',
-              style: Theme.of(context).textTheme.labelLarge
-                  ?.copyWith(color: LoopColors.chalk, letterSpacing: 1.1),
-            ),
-          ],
-        ),
-      ),
-      body: Stack(
-        children: <Widget>[
-          const Positioned.fill(child: ColoredBox(color: LoopColors.ink)),
-          SafeArea(
-            top: false,
-            bottom: false,
-            child: CustomScrollView(
-              key: const ValueKey<String>('mining-scroll'),
-              slivers: <Widget>[
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
-                  sliver: SliverList.list(
-                    children: <Widget>[
-                      Text(
-                        'MINING / D19',
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              color: LoopColors.lime,
-                              letterSpacing: 1.7,
-                            ),
-                      ),
-                      const SizedBox(height: 10),
-                      Semantics(
-                        header: true,
-                        child: Text(
-                          '我的挖矿',
-                          style: Theme.of(context).textTheme.displayMedium
-                              ?.copyWith(fontWeight: FontWeight.w800),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '算力、排行、奖励与五级邀请属于后端 D19。权威公式和快照未交付前，客户端不进行本地估算。',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 22),
-                      const _MiningUnavailableHero(),
-                      const SizedBox(height: 30),
-                      Text(
-                        'DELIVERY DEPENDENCIES',
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(letterSpacing: 1.5),
-                      ),
-                      const SizedBox(height: 12),
-                      const _DependencyLedger(),
-                      const SizedBox(height: 16),
-                      const _MiningTruthNotice(),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MiningUnavailableHero extends StatelessWidget {
-  const _MiningUnavailableHero();
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      container: true,
-      label: '挖矿功能未开放，没有算力、排行或奖励数据',
-      child: DecoratedBox(
-        key: const ValueKey<String>('mining-unavailable'),
-        decoration: const BoxDecoration(
-          color: LoopColors.lime,
-          borderRadius: BorderRadius.all(Radius.circular(28)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Wrap(
-                spacing: 10,
-                runSpacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: <Widget>[
-                  Text(
-                    'MINING POWER',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: LoopColors.ink.withValues(alpha: 0.68),
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                  const _MiningStatusPill(),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Text(
-                '尚未开放',
-                style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                  color: LoopColors.ink,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                '当前没有可验证的算力、收益、待领取奖励、排名或邀请加成。',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: LoopColors.ink.withValues(alpha: 0.78),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Divider(color: Color(0x33050604)),
-              const SizedBox(height: 14),
-              Text(
-                'NO POWER · NO REWARD · NO CLAIM',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: LoopColors.ink,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.0,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MiningStatusPill extends StatelessWidget {
-  const _MiningStatusPill();
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: LoopColors.ink,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Text(
-          'D19 · UNAVAILABLE',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: LoopColors.lime,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.8,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DependencyLedger extends StatelessWidget {
-  const _DependencyLedger();
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      key: const ValueKey<String>('mining-dependency-ledger'),
-      decoration: BoxDecoration(
-        color: LoopColors.graphite,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: LoopColors.chalk.withValues(alpha: 0.12)),
-      ),
-      child: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 18, vertical: 2),
-        child: Column(
-          children: <Widget>[
-            _DependencyRow(step: '01', module: 'D10', title: 'BSC 资产注册与索引'),
-            _DependencyRow(step: '02', module: 'D12', title: '钱包余额与快照证据'),
-            _DependencyRow(
-              step: '03',
-              module: 'D18',
-              title: 'Launch 链上参与与奖励依据',
-            ),
-            _DependencyRow(
-              step: '04',
-              module: 'D19',
-              title: '算力、排行、奖励与邀请公式',
-              showDivider: false,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DependencyRow extends StatelessWidget {
-  const _DependencyRow({
-    required this.step,
-    required this.module,
-    required this.title,
-    this.showDivider = true,
+/// The mining formula is backend delivery D19 and no version is approved yet,
+/// so every figure on this page is the em dash plus the server's own reason.
+/// The client never estimates power, output, accumulation or a claim.
+class MiningScreen extends ConsumerStatefulWidget {
+  const MiningScreen({
+    super.key,
+    this.onOpenAssets,
+    this.onOpenRewards,
+    this.onOpenRank,
+    this.onOpenRules,
+    this.onOpenReferral,
   });
 
-  final String step;
-  final String module;
-  final String title;
-  final bool showDivider;
+  final VoidCallback? onOpenAssets;
+  final VoidCallback? onOpenRewards;
+  final VoidCallback? onOpenRank;
+  final VoidCallback? onOpenRules;
+  final VoidCallback? onOpenReferral;
 
   @override
+  ConsumerState<MiningScreen> createState() => _MiningScreenState();
+}
+
+class _MiningScreenState extends ConsumerState<MiningScreen> {
+  @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              SizedBox(
-                width: 26,
-                child: Text(
-                  step,
-                  style: Theme.of(context).textTheme.labelSmall
-                      ?.copyWith(color: LoopColors.muted, letterSpacing: 0.8),
-                ),
+    final capability = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.mining),
+    );
+    final blocked = launchCapabilityBlocks(capability);
+    final state = ref.watch(miningSummaryControllerProvider);
+    final controller = ref.read(miningSummaryControllerProvider.notifier);
+    if (!blocked && state.phase == LaunchViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) unawaited(controller.load());
+      });
+    }
+    final summary = state.value;
+
+    return LoopDashboardPage(
+      key: const ValueKey<String>('mining-screen'),
+      archetype: LoopPageArchetype.record,
+      title: '我的挖矿',
+      kicker: 'MINING POWER',
+      tabPage: true,
+      actions: <Widget>[
+        LoopIconButton(
+          key: const ValueKey<String>('mining-rules-action'),
+          icon: 'info',
+          label: '挖矿规则',
+          onPressed: widget.onOpenRules,
+        ),
+      ],
+      primary: LoopFolioPrimary(
+        variant: LoopFolioVariant.quiet,
+        archetype: LoopFolioArchetype.record,
+        kicker: 'MINING POWER',
+        heading: launchMissingFigure,
+        caption: '算力、今日预估、累计与待领取都要等挖矿公式版本被批准后才能计算。',
+        stamp: summary?.formula.pendingVersion == null
+            ? null
+            : '待批准（${summary!.formula.pendingVersion}）',
+      ),
+      sections: <Widget>[
+        if (blocked)
+          LoopEmpty(
+            key: const ValueKey<String>('mining-capability-unavailable'),
+            icon: 'warn',
+            message: '挖矿当前不可用',
+            reason: capability.reasonCode == null
+                ? '尚未读取到能力清单，本页不请求任何挖矿数据。'
+                : '服务端原因：${capability.reasonCode}。',
+          )
+        else if (summary == null)
+          LaunchStateBlock(
+            prefix: 'mining',
+            phase: state.phase,
+            failureKind: state.failureKind,
+            skeleton: LoopSkeletonType.detail,
+            emptyMessage: '没有读到挖矿摘要',
+            emptyReason: '服务端没有返回任何算力口径。',
+            onRetry: () => unawaited(controller.reload()),
+          )
+        else ...<Widget>[
+          const LoopLabel('算力与产出'),
+          LaunchEmptyMetricGrid(
+            key: const ValueKey<String>('mining-metrics'),
+            metrics: <(String, String)>[
+              ('我的算力', summary.power.reasonCode),
+              ('全网算力', summary.networkPower.reasonCode),
+              ('今日预估', summary.estimatedToday.reasonCode),
+              ('累计已挖', summary.accumulated.reasonCode),
+              ('待领取', summary.claimable.reasonCode),
+              ('邀请加成', summary.referralBoost.reasonCode),
+            ],
+          ),
+          const LoopLabel('公式版本'),
+          _FormulaBlock(formula: summary.formula),
+          const LoopLabel('结算快照'),
+          _SnapshotBlock(snapshot: summary.snapshot),
+          const LoopLabel('相关页面'),
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('mining-open-assets'),
+                title: '算力明细',
+                subtitle: '每个资产的贡献与排除状态',
+                onTap: widget.onOpenAssets,
+                position: LoopRowPosition.first,
               ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      module,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: LoopColors.lime,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(title, style: Theme.of(context).textTheme.titleMedium),
-                  ],
-                ),
+              LoopRecordRow(
+                key: const ValueKey<String>('mining-open-rewards'),
+                title: '奖励与领取',
+                subtitle: '领取入口当前不可执行',
+                onTap: widget.onOpenRewards,
+                position: LoopRowPosition.middle,
               ),
-              const SizedBox(width: 10),
-              Text(
-                '待交付',
-                style: Theme.of(context).textTheme.labelSmall
-                    ?.copyWith(color: LoopColors.chalk.withValues(alpha: 0.48)),
+              LoopRecordRow(
+                key: const ValueKey<String>('mining-open-rank'),
+                title: '算力排行榜',
+                subtitle: '用户榜与社区榜',
+                onTap: widget.onOpenRank,
+                position: LoopRowPosition.middle,
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('mining-open-referral'),
+                title: '邀请关系加成',
+                subtitle: '只计入 Mining Power，不是收入或佣金',
+                onTap: widget.onOpenReferral,
+                position: LoopRowPosition.last,
               ),
             ],
           ),
-        ),
-        if (showDivider)
-          Divider(color: LoopColors.chalk.withValues(alpha: 0.1), height: 1),
+          const LoopNotice(
+            key: ValueKey<String>('mining-truth-notice'),
+            icon: 'shield',
+            title: '不做本地估算',
+            body:
+                '挖矿公式属于后端交付 D19，目前没有任何已批准的版本。'
+                '客户端不会累计积分、估算收益或创建领取操作；缺少来源与「算力为零」是两回事。',
+            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+          ),
+          const SizedBox(height: 20),
+        ],
       ],
     );
   }
 }
 
-class _MiningTruthNotice extends StatelessWidget {
-  const _MiningTruthNotice();
+class _FormulaBlock extends StatelessWidget {
+  const _FormulaBlock({required this.formula});
+
+  final MiningFormulaGate formula;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: LoopColors.lime.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: LoopColors.lime.withValues(alpha: 0.28)),
+    final pending = formula.pendingVersion;
+    return LoopRecordGroup(
+      key: const ValueKey<String>('mining-formula'),
+      rows: <LoopRecordRow>[
+        LoopRecordRow(
+          key: const ValueKey<String>('mining-formula-row'),
+          title: '挖矿公式',
+          subtitle: launchReasonCodeText(formula.reasonCode),
+          trailing: pending ?? launchMissingFigure,
+          trailingCaption: pending == null ? null : '待批准',
+          semanticLabel: pending == null ? '挖矿公式尚未确定' : '挖矿公式待批准，版本 $pending',
+        ),
+      ],
+    );
+  }
+}
+
+class _SnapshotBlock extends StatelessWidget {
+  const _SnapshotBlock({required this.snapshot});
+
+  final MiningSnapshotRef snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (snapshot) {
+      MiningSnapshotUnavailable(:final reasonCode) => LoopEmpty(
+        key: const ValueKey<String>('mining-snapshot-unavailable'),
+        icon: 'clock',
+        message: '还没有结算快照',
+        reason: launchReasonCodeText(reasonCode),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            const Icon(Icons.lock_outline_rounded, color: LoopColors.lime),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                '此页面不会发起请求，也不会在本地累计积分、估算收益或创建领取操作。缺少或过期的价格与快照必须保持不可用。',
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: LoopColors.chalk.withValues(alpha: 0.72)),
-              ),
+      MiningSnapshotComputed(
+        :final blockNumber,
+        :final formulaVersion,
+        :final computedAt,
+      ) =>
+        LoopRecordGroup(
+          key: const ValueKey<String>('mining-snapshot'),
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('mining-snapshot-row'),
+              title: '最近一次结算快照',
+              subtitle:
+                  '区块 $blockNumber · 公式 $formulaVersion · '
+                  '${launchTimestampLabel(computedAt)}',
             ),
           ],
         ),
-      ),
-    );
+    };
   }
 }

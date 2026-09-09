@@ -11,7 +11,9 @@ enum LoopTokenCardState {
   /// Identifying: placeholders everywhere, actions disabled.
   loading,
 
-  /// LOOP Launch asset that graduated: Lime border, ecosystem tax metric.
+  /// LOOP Launch asset that graduated: Lime border. It carries no ecosystem
+  /// tax metric: no tax rate exists until the Launch contract baseline is
+  /// delivered, so the owner supplies only figures it can prove.
   graduated,
 
   /// Partial data: metrics unavailable, trading disabled.

@@ -123,6 +123,34 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('the graduated state carries no ecosystem tax label', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      LoopTokenCard(
+        state: LoopTokenCardState.graduated,
+        model: const LoopTokenCardModel(
+          symbol: 'BONEZ',
+          identifier: '0x9c4b...7f82',
+          badge: 'GRADUATED',
+          metrics: <LoopTokenMetric>[
+            LoopTokenMetric('市值', r'$2.4M'),
+            LoopTokenMetric('持有人', '4,120'),
+          ],
+        ),
+      ),
+    );
+
+    // No tax rate exists until the Launch contract baseline is delivered.
+    expect(find.textContaining('生态税'), findsNothing);
+    expect(find.text('1%'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('loop-token-card-graduated')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('graduated, partial and risk states keep their exact facts', (
     tester,
   ) async {
@@ -141,16 +169,18 @@ void main() {
               badge: 'GRADUATED',
               metrics: <LoopTokenMetric>[
                 LoopTokenMetric('市值', r'$2.4M'),
-                LoopTokenMetric('生态税', '1%', accent: true),
+                LoopTokenMetric('流动性', r'$412K', accent: true),
                 LoopTokenMetric('持有人', '4,120'),
               ],
               communityIcon: 'graduate',
-              communityLine: '08-22 毕业 · 累计生态税 \$18,400 已回流 LOOP',
+              communityLine: '08-22 毕业 · 外盘流动性已建立',
             ),
             actions: <LoopTokenCardAction>[
               LoopTokenCardAction('毕业详情', onTap: () {}),
             ],
           ),
+          // The graduated state carries no ecosystem-tax metric: there is no
+          // proven tax rate while the Launch contract baseline is pending.
           LoopTokenCard(
             state: LoopTokenCardState.partial,
             model: const LoopTokenCardModel(
@@ -212,7 +242,11 @@ void main() {
       LoopColors.lime.withValues(alpha: 0.32),
     );
     expect(find.text('GRADUATED'), findsOneWidget);
-    expect(tester.widget<Text>(find.text('1%')).style?.color, LoopColors.lime);
+    // The accent metric is a liquidity figure the owner can prove, not a tax.
+    expect(
+      tester.widget<Text>(find.text(r'$412K')).style?.color,
+      LoopColors.lime,
+    );
 
     expect(find.text('无 24H 数据'), findsOneWidget);
     expect(find.text('数据不可得'), findsNWidgets(3));

@@ -213,13 +213,13 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('wallet-swap-entry'),
                 title: '兑换',
-                subtitle: 'Swap 需要统一签名出口，尚未交付',
+                subtitle: '通过 Privy 报价并在统一签名出口确认',
                 onTap: () => _open('/wallet/swap'),
               ),
               LoopRecordRow(
                 key: const ValueKey<String>('wallet-send-entry'),
                 title: '发送',
-                subtitle: '发送需要统一签名出口，尚未交付',
+                subtitle: '服务端构造交易，本机签名并广播',
                 onTap: () => _open('/wallet/send'),
               ),
               LoopRecordRow(
@@ -233,11 +233,17 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           const LoopLabel('安全与连接'),
           const LoopUnavailableCard(
             key: ValueKey<String>('wallet-security-unavailable'),
-            label: '安全中心 / 授权盘点 / DApp 浏览器状态不可用',
+            label: '安全中心 / DApp 浏览器状态不可用',
             reasonCode: 'WALLET_SECURITY_FACTS_DEFERRED',
           ),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('wallet-approvals-entry'),
+                title: '授权盘点',
+                subtitle: '当场重读的 allowance()，回收会发送 approve(spender, 0)',
+                onTap: () => _open('/wallet/approvals'),
+              ),
               LoopRecordRow(
                 key: const ValueKey<String>('wallet-security-entry'),
                 title: '安全中心',

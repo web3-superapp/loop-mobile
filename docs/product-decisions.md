@@ -36,11 +36,34 @@ Product priority and current delivery are separate:
 
 ## Launchpad delivery
 
-- Launch remains the third first-class destination at `/launch`, but only the
-  existing non-actionable placeholder is in the current release.
-- G2 project discovery, G3 project details/participation and G4 project applications remain deferred. Production and Development Preview do not fabricate projects, eligibility, allocations or applications for them.
-- Without a reviewed launch source, G1 does not claim that launches are live, absent, approved, eligible or complete. Issuer facts, eligibility and participation prerequisites remain explicitly not connected.
-- G1 exposes no amount, allocation, funding, wallet, signing, claim or submission action. Any future participation requires its own backend/compliance contract and the shared canonical wallet review boundary.
+- Launch remains the third first-class destination at `/launch`. All eleven
+  Launch pages and all six Mining pages are mounted against the V2 launch,
+  mining and referral modules (decision 0058); the non-actionable placeholder
+  they replaced is retired with decision 0027.
+- The mounted surface is an **off-chain catalogue and application flow**. The
+  Launch contract baseline and the mining formula version are both undelivered,
+  so every on-chain and formula-derived figure — the four state axes, price,
+  caps, fees, supply, holders, graduation progress, power, output, rewards,
+  rank and referral boost — renders the em dash with the server's own
+  `reasonCode`, never `0` and never a fixture. Configuration slots without a
+  confirmed version render "待确认（configVersion）".
+- Catalogue segments come only from `scheduleStatus`, and `awaitingSchedule` is
+  its own segment. "已毕业" is a liquidity-axis fact and stays unavailable; an
+  ended schedule never implies graduation.
+- `launch-apply` is a real owner-scoped resource: draft, compare-and-set edit,
+  submit, and the server's six review states, with a returned application
+  editable and re-submittable. Attachments and KYB have no provider and expose
+  no upload control.
+- `launch-trade` keeps its form visible and its main action disabled on the
+  server's permanent `503`; there is no sell side before graduation.
+  `loop-stake` is non-executable as a whole page, and Launch eligibility does
+  not depend on staking. `mining-rewards` disables its claim on the server's
+  `claimExecutable: false`. No Launch or Mining path constructs a transaction
+  or opens the signing sheet.
+- `referral` reads `GET /v2/referral`: one invite code per account, per-level
+  counts grouped by the server's `validationStatus`, and an unavailable boost.
+  Only `valid` edges count as effective relationships. Every figure is a Mining
+  Power input — never a commission, a payout or a downline income.
 
 ## Communication
 

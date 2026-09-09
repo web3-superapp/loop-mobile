@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_screen.dart';
-import 'package:loop_mobile/features/mining/mining_screen.dart';
+import 'package:loop_mobile/core/navigation/route_manifest.dart';
 
 void main() {
   test('Lime Ledger foundation keeps the four canonical V2 colors', () {
@@ -154,69 +154,20 @@ void main() {
   });
 
   group('Mining UI foundation', () {
-    testWidgets('Mining stays unavailable without D19 facts', (tester) async {
-      await _pumpMining(tester);
+    // The D19 placeholder this group used to assert was retired with decision
+    // 0058: `mining` now reads the V2 module and renders the server's own
+    // unavailable reasons. Its five states, its em-dash metrics and its
+    // disabled claim live in `test/s7_mining_pages_test.dart`.
+    test('Mining is a mounted V2 destination, not a placeholder', () {
+      final mining = LoopRouteManifest.forModule(LoopRouteModule.mining);
 
-      expect(find.byKey(const ValueKey<String>('mining-screen')), findsOne);
+      expect(mining, hasLength(6));
+      expect(mining.first.slug, 'mining');
+      expect(mining.first.tab, isTrue);
       expect(
-        find.byKey(const ValueKey<String>('mining-unavailable')),
-        findsOne,
+        mining.every((entry) => entry.status == LoopRouteStatus.implemented),
+        isTrue,
       );
-      expect(
-        find.byKey(const ValueKey<String>('mining-dependency-ledger')),
-        findsOne,
-      );
-      expect(find.text('MINING / D19'), findsOne);
-      expect(find.text('尚未开放'), findsOne);
-      expect(find.textContaining('客户端不进行本地估算'), findsOne);
-      expect(find.text('D10'), findsOne);
-      expect(find.text('D12'), findsOne);
-      expect(find.text('D18'), findsOne);
-      expect(find.text('D19'), findsOne);
-      expect(find.textContaining('不会在本地累计积分'), findsOne);
-      expect(
-        tester.widget<Text>(find.text('01')).style?.color,
-        LoopColors.muted,
-      );
-
-      for (final inventedFact in <String>[
-        '50,000',
-        '#1,284',
-        '82.4 LOOP',
-        '3,912 LOOP',
-        '164.8 LOOP',
-        '20,000',
-        '4,347',
-        r'$1.84B',
-      ]) {
-        expect(
-          find.textContaining(inventedFact),
-          findsNothing,
-          reason: inventedFact,
-        );
-      }
-
-      expect(find.byType(TextField), findsNothing);
-      expect(find.byType(TextFormField), findsNothing);
-      expect(find.byType(FilledButton), findsNothing);
-      expect(find.byType(ElevatedButton), findsNothing);
-      expect(find.byType(OutlinedButton), findsNothing);
-      expect(find.byType(FloatingActionButton), findsNothing);
-    });
-
-    testWidgets('remains usable at phone width and 2x text scale', (
-      tester,
-    ) async {
-      await _pumpMining(
-        tester,
-        size: const Size(390, 844),
-        textScaler: const TextScaler.linear(2),
-      );
-
-      final notice = find.textContaining('此页面不会发起请求');
-      await tester.scrollUntilVisible(notice, 240);
-      expect(notice, findsOne);
-      expect(tester.takeException(), isNull);
     });
   });
 }
@@ -252,29 +203,6 @@ Future<void> _pumpCommunity(
         child: child!,
       ),
       home: ProviderScope(child: CommunityScreen(onNavigate: onNavigate)),
-    ),
-  );
-  await tester.pumpAndSettle();
-}
-
-Future<void> _pumpMining(
-  WidgetTester tester, {
-  Size size = const Size(900, 1400),
-  TextScaler textScaler = TextScaler.noScaling,
-}) async {
-  tester.view.devicePixelRatio = 1;
-  tester.view.physicalSize = size;
-  addTearDown(tester.view.resetDevicePixelRatio);
-  addTearDown(tester.view.resetPhysicalSize);
-
-  await tester.pumpWidget(
-    MaterialApp(
-      theme: LoopTheme.dark,
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(textScaler: textScaler),
-        child: child!,
-      ),
-      home: const MiningScreen(),
     ),
   );
   await tester.pumpAndSettle();

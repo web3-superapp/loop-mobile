@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
-import 'package:loop_mobile/features/community/referral_screen.dart';
 import 'package:loop_mobile/features/community/search_controller.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/features/community/search_screen.dart';
@@ -477,78 +476,6 @@ void main() {
         settle: false,
       );
       expect(find.byType(LoopSkeleton), findsOneWidget);
-    });
-  });
-
-  group('referral', () {
-    testWidgets('the five ratios come from the server as decimal strings', (
-      tester,
-    ) async {
-      await pumpCommunityPage(
-        tester,
-        const ReferralScreen(),
-        community: FakeCommunityGateway(),
-      );
-
-      for (final label in <String>[
-        'L1 · 10%',
-        'L2 · 5%',
-        'L3 · 3%',
-        'L4 · 2%',
-        'L5 · 1%',
-      ]) {
-        expect(find.text(label), findsOneWidget, reason: label);
-      }
-      expect(find.textContaining('五级关系加成 · referralRulesV1'), findsOne);
-    });
-
-    testWidgets('relationship counts and the invite code stay unavailable', (
-      tester,
-    ) async {
-      await pumpCommunityPage(
-        tester,
-        const ReferralScreen(),
-        community: FakeCommunityGateway(),
-      );
-
-      final edges = find.byKey(
-        const ValueKey<String>('community-unavailable-REFERRAL_GRAPH_DEFERRED'),
-      );
-      await scrollToCommunitySection(tester, edges);
-      expect(edges, findsOneWidget);
-
-      final invite = find.byKey(
-        const ValueKey<String>('community-unavailable-INVITE_CODE_DEFERRED'),
-      );
-      await scrollToCommunitySection(tester, invite);
-      expect(invite, findsOneWidget);
-
-      // The share action has no invite code, so it stays disabled.
-      final button = tester.widget<LoopButton>(
-        find.byKey(const ValueKey<String>('referral-invite-action')),
-      );
-      expect(button.onPressed, isNull);
-      expect(find.textContaining('不是收入、佣金或返佣'), findsWidgets);
-      // No relationship figure is invented for any level.
-      expect(find.text('182'), findsNothing);
-    });
-
-    testWidgets('a failed rules read is an error, not an empty page', (
-      tester,
-    ) async {
-      await pumpCommunityPage(
-        tester,
-        const ReferralScreen(),
-        community: FakeCommunityGateway(
-          failure: CommunityFailureKind.unexpected,
-        ),
-      );
-
-      expect(
-        find.byKey(const ValueKey<String>('community-state-error')),
-        findsOneWidget,
-      );
-      expect(find.textContaining('%'), findsNothing);
     });
   });
 

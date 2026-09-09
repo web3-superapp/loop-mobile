@@ -11,7 +11,7 @@ import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/app/session/loop_communication_retirement.dart';
 import 'package:loop_mobile/app/session/post_auth_bootstrap_coordinator.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
-import 'package:loop_mobile/core/intent/signing_intent.dart';
+import 'package:loop_mobile/core/navigation/launch_route.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
@@ -35,19 +35,22 @@ import 'package:loop_mobile/features/community/community_discover_screen.dart';
 import 'package:loop_mobile/features/community/community_members_screen.dart';
 import 'package:loop_mobile/features/community/community_profile_screen.dart';
 import 'package:loop_mobile/features/community/community_screen.dart';
-import 'package:loop_mobile/features/community/referral_screen.dart';
 import 'package:loop_mobile/features/community/search_screen.dart';
-import 'package:loop_mobile/features/launchpad/launchpad_screen.dart';
+import 'package:loop_mobile/features/launch/launch_action_screens.dart';
+import 'package:loop_mobile/features/launch/launch_detail_screens.dart';
+import 'package:loop_mobile/features/launch/launch_screen.dart';
 import 'package:loop_mobile/features/market/market.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
+import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
+import 'package:loop_mobile/features/mining/referral_screen.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
-import 'package:loop_mobile/features/review/signing_review_surface.dart';
 import 'package:loop_mobile/features/social/blocklist_screen.dart';
 import 'package:loop_mobile/features/social/connections_screen.dart';
 import 'package:loop_mobile/features/social/dm_requests_screen.dart';
 import 'package:loop_mobile/features/shell/loop_pending_surface.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/features/wallet/wallet_screens.dart';
@@ -312,14 +315,36 @@ GoRouter _buildRouter(
             path: '/mining',
             pageBuilder: (context, state) => LoopTabPage<void>(
               key: state.pageKey,
-              child: const MiningScreen(),
+              child: MiningScreen(
+                onOpenAssets: () =>
+                    context.push(LoopRouteManifest.pathFor('mining-assets')),
+                onOpenRewards: () =>
+                    context.push(LoopRouteManifest.pathFor('mining-rewards')),
+                onOpenRank: () =>
+                    context.push(LoopRouteManifest.pathFor('mining-rank')),
+                onOpenRules: () =>
+                    context.push(LoopRouteManifest.pathFor('mining-rules')),
+                onOpenReferral: () =>
+                    context.push(LoopRouteManifest.pathFor('referral')),
+              ),
             ),
           ),
           GoRoute(
             path: '/launch',
             pageBuilder: (context, state) => LoopTabPage<void>(
               key: state.pageKey,
-              child: const LaunchpadScreen(),
+              child: LaunchScreen(
+                onOpenLaunch: (launchId) =>
+                    context.push(LaunchRoute.detail(launchId)),
+                onOpenStake: () =>
+                    context.push(LoopRouteManifest.pathFor('loop-stake')),
+                onOpenRules: () =>
+                    context.push(LoopRouteManifest.pathFor('launch-rounds')),
+                onOpenEconomy: () =>
+                    context.push(LoopRouteManifest.pathFor('loop-economy')),
+                onOpenApply: () =>
+                    context.push(LoopRouteManifest.pathFor('launch-apply')),
+              ),
             ),
           ),
           GoRoute(
@@ -383,6 +408,8 @@ GoRouter _buildRouter(
               context.push('/community/chat?id=$communityId'),
           onOpenVoiceRoom: (communityId) =>
               context.push('/chat/voice?id=$communityId'),
+          onOpenMiningPanel: (communityId) =>
+              context.push(MiningRoute.community(communityId)),
         ),
       ),
       GoRoute(
@@ -673,25 +700,30 @@ GoRouter _buildRouter(
       ),
       GoRoute(
         path: '/wallet/send',
-        builder: (context, state) => const SendAssetScreen(),
+        builder: (context, state) =>
+            SendAssetScreen(onBack: () => _popOrHome(context)),
       ),
+      // The Send draft travels as typed navigation state: an asset, a wallet
+      // and the exact text the owner typed never belong in a URL.
       GoRoute(
         path: '/wallet/send/to',
         redirect: (context, state) =>
-            state.extra is TransferDraft ? null : '/wallet/send',
-        builder: (context, state) =>
-            SendRecipientScreen(draft: state.extra! as TransferDraft),
+            state.extra is SendDraft ? null : '/wallet/send',
+        builder: (context, state) => SendRecipientScreen(
+          draft: state.extra! as SendDraft,
+          onBack: () => _popOrHome(context),
+        ),
       ),
       GoRoute(
         path: '/wallet/send/confirm',
         redirect: (context, state) {
           final draft = state.extra;
-          return draft is TransferDraft && draft.recipient.trim().isNotEmpty
-              ? null
-              : '/wallet/send';
+          return draft is SendDraft && draft.isComplete ? null : '/wallet/send';
         },
-        builder: (context, state) =>
-            SendConfirmScreen(draft: state.extra! as TransferDraft),
+        builder: (context, state) => SendConfirmScreen(
+          draft: state.extra! as SendDraft,
+          onBack: () => _popOrHome(context),
+        ),
       ),
       GoRoute(
         path: WalletRoute.receivePath,
@@ -702,14 +734,19 @@ GoRouter _buildRouter(
       ),
       GoRoute(
         path: '/wallet/swap',
-        builder: (context, state) => const SwapScreen(),
+        builder: (context, state) =>
+            SwapScreen(onBack: () => _popOrHome(context)),
       ),
+      // The quote object itself travels to the detail page, so the read-only
+      // view can never show a different quote from the one being confirmed.
       GoRoute(
         path: '/wallet/swap/route',
         redirect: (context, state) =>
-            state.extra is SwapPreviewSnapshot ? null : '/wallet/swap',
-        builder: (context, state) =>
-            SwapRouteScreen(snapshot: state.extra! as SwapPreviewSnapshot),
+            state.extra is LoopSwapQuoteView ? null : '/wallet/swap',
+        builder: (context, state) => SwapRouteScreen(
+          quote: state.extra! as LoopSwapQuoteView,
+          onBack: () => _popOrHome(context),
+        ),
       ),
       // D21: `bridge` and `bridge-status` are entry points only. The status
       // page is reachable on its own because there is nothing to carry into
@@ -728,10 +765,15 @@ GoRouter _buildRouter(
           onOpenWallet: () => context.go(LoopRouteManifest.pathFor('wallet')),
         ),
       ),
-      // Manifest `tx-result` (legacy `/wallet/transaction`).
+      // Manifest `tx-result` (legacy `/wallet/transaction`). The intent id is
+      // an opaque server id and is the only thing this page needs, so it may
+      // travel in the query and survive a cold restore.
       GoRoute(
         path: '/wallet/tx/result',
-        builder: (context, state) => const TransactionResultScreen(),
+        builder: (context, state) => TransactionResultScreen(
+          intentId: _intentIdOf(state.uri),
+          onBack: () => _popOrHome(context),
+        ),
       ),
       GoRoute(
         path: WalletRoute.historyPath,
@@ -750,25 +792,26 @@ GoRouter _buildRouter(
         builder: (context, state) =>
             DappReviewScreen(onBack: () => _popOrHome(context)),
       ),
+      // Manifest `approval-guard` (legacy `/preview/approval`). The guard is a
+      // real money action now, so it lives under `/wallet`.
       GoRoute(
-        path: '/preview/approval',
-        builder: (context, state) => const ApprovalInterceptScreen(),
+        path: '/wallet/approval-guard',
+        redirect: (context, state) =>
+            state.extra is ApprovalGuardRequest ? null : '/wallet/approvals',
+        builder: (context, state) => ApprovalGuardScreen(
+          request: state.extra! as ApprovalGuardRequest,
+          onBack: () => _popOrHome(context),
+        ),
       ),
       GoRoute(
         path: '/wallet/approvals',
-        builder: (context, state) => const ApprovalsScreen(),
+        builder: (context, state) =>
+            ApprovalsScreen(onBack: () => _popOrHome(context)),
       ),
       GoRoute(
         path: '/wallet/networks',
         builder: (context, state) =>
             NetworksScreen(onBack: () => _popOrHome(context)),
-      ),
-      GoRoute(
-        path: '/preview/signing-review',
-        redirect: (context, state) =>
-            state.extra is SigningIntent ? null : '/wallet',
-        builder: (context, state) =>
-            SigningReviewPage(intent: state.extra! as SigningIntent),
       ),
       ..._profileRoutes,
       GoRoute(
@@ -804,6 +847,8 @@ GoRouter _buildRouter(
         builder: (context, state) =>
             PayScreen(onBack: () => _popOrHome(context)),
       ),
+      ..._launchRoutes,
+      ..._miningRoutes,
       ..._pendingManifestRoutes,
       // Illegal locations are recorded and land on Community.
       GoRoute(
@@ -818,6 +863,135 @@ GoRouter _buildRouter(
         UnknownRouteScreen(location: state.uri.toString()),
   );
 }
+
+/// The eleven Launch pages. Each record page carries its subject as the exact
+/// `launchId` query parameter produced by [LaunchRoute]; a missing or
+/// malformed value fails closed into the page's unavailable state rather than
+/// substituting another project.
+final List<RouteBase> _launchRoutes = <RouteBase>[
+  GoRoute(
+    path: LaunchRoute.detailPath,
+    builder: (context, state) => LaunchDetailScreen(
+      launchId: LaunchRoute.parse(state.uri, LaunchRoute.detailPath),
+      onBack: () => _popOrHome(context),
+      onOpenTier: () => _pushLaunchChild(context, state, LaunchRoute.tierPath),
+      onOpenRounds: () =>
+          _pushLaunchChild(context, state, LaunchRoute.roundsPath),
+      onOpenTrade: () =>
+          _pushLaunchChild(context, state, LaunchRoute.tradePath),
+      onOpenHolders: () =>
+          _pushLaunchChild(context, state, LaunchRoute.holdersPath),
+      onOpenGraduation: () =>
+          _pushLaunchChild(context, state, LaunchRoute.graduationPath),
+      onOpenHistory: () =>
+          _pushLaunchChild(context, state, LaunchRoute.historyPath),
+    ),
+  ),
+  GoRoute(
+    path: LaunchRoute.tierPath,
+    builder: (context, state) => LaunchTierScreen(
+      launchId: LaunchRoute.parse(state.uri, LaunchRoute.tierPath),
+      onBack: () => _popOrHome(context),
+      onOpenStake: () => context.push(LoopRouteManifest.pathFor('loop-stake')),
+    ),
+  ),
+  GoRoute(
+    path: LaunchRoute.tradePath,
+    builder: (context, state) => LaunchTradeScreen(
+      launchId: LaunchRoute.parse(state.uri, LaunchRoute.tradePath),
+      onBack: () => _popOrHome(context),
+      onOpenHolders: () =>
+          _pushLaunchChild(context, state, LaunchRoute.holdersPath),
+    ),
+  ),
+  GoRoute(
+    path: LaunchRoute.holdersPath,
+    builder: (context, state) => LaunchHoldersScreen(
+      launchId: LaunchRoute.parse(state.uri, LaunchRoute.holdersPath),
+      onBack: () => _popOrHome(context),
+    ),
+  ),
+  GoRoute(
+    path: LaunchRoute.graduationPath,
+    builder: (context, state) => LaunchGraduationScreen(
+      launchId: LaunchRoute.parse(state.uri, LaunchRoute.graduationPath),
+      onBack: () => _popOrHome(context),
+    ),
+  ),
+  GoRoute(
+    path: LaunchRoute.historyPath,
+    builder: (context, state) => LaunchHistoryScreen(
+      launchId: LaunchRoute.parse(state.uri, LaunchRoute.historyPath),
+      onBack: () => _popOrHome(context),
+    ),
+  ),
+  GoRoute(
+    path: LaunchRoute.roundsPath,
+    builder: (context, state) => LaunchRoundsScreen(
+      launchId: LaunchRoute.parse(state.uri, LaunchRoute.roundsPath),
+      onBack: () => _popOrHome(context),
+    ),
+  ),
+  GoRoute(
+    path: '/launch/loop-stake',
+    builder: (context, state) =>
+        LoopStakeScreen(onBack: () => _popOrHome(context)),
+  ),
+  GoRoute(
+    path: '/launch/loop-economy',
+    builder: (context, state) =>
+        LoopEconomyScreen(onBack: () => _popOrHome(context)),
+  ),
+  GoRoute(
+    path: '/launch/apply',
+    builder: (context, state) =>
+        LaunchApplyScreen(onBack: () => _popOrHome(context)),
+  ),
+];
+
+/// Carries the current page's launch identity to a sibling record page. When
+/// the current location has no canonical identity the sibling is opened
+/// without one and renders its own unavailable state.
+void _pushLaunchChild(BuildContext context, GoRouterState state, String path) {
+  final launchId = LaunchRoute.parse(state.uri, state.uri.path);
+  context.push(launchId == null ? path : LaunchRoute.location(path, launchId));
+}
+
+/// The five Mining child pages.
+final List<RouteBase> _miningRoutes = <RouteBase>[
+  GoRoute(
+    path: '/mining/assets',
+    builder: (context, state) => MiningAssetsScreen(
+      onBack: () => _popOrHome(context),
+      onOpenRules: () =>
+          context.push(LoopRouteManifest.pathFor('mining-rules')),
+    ),
+  ),
+  GoRoute(
+    path: '/mining/rewards',
+    builder: (context, state) =>
+        MiningRewardsScreen(onBack: () => _popOrHome(context)),
+  ),
+  GoRoute(
+    path: '/mining/rank',
+    builder: (context, state) =>
+        MiningRankScreen(onBack: () => _popOrHome(context)),
+  ),
+  GoRoute(
+    path: MiningRoute.communityPath,
+    builder: (context, state) => MiningCommunityScreen(
+      communityId: MiningRoute.parse(state.uri, MiningRoute.communityPath),
+      onBack: () => _popOrHome(context),
+    ),
+  ),
+  GoRoute(
+    path: '/mining/rules',
+    builder: (context, state) => MiningRulesScreen(
+      onBack: () => _popOrHome(context),
+      onOpenReferral: () => context.push(LoopRouteManifest.pathFor('referral')),
+    ),
+  ),
+];
 
 /// Every manifest slug without a dedicated screen mounts the pending surface,
 /// so all 93 routes are reachable and none silently falls through.
@@ -981,6 +1155,19 @@ Widget _systemSurface(BuildContext context, WidgetRef ref, String id) {
 }
 
 /// Pops when the page was pushed, otherwise lands on the manifest default.
+/// The opaque intent id carried by `/wallet/tx/result?intentId=`.
+///
+/// A value that is not a canonical UUIDv4 is dropped rather than requested:
+/// the result page then renders its empty state instead of asking the server
+/// about an id a deep link invented.
+String? _intentIdOf(Uri uri) {
+  final value = uri.queryParameters['intentId'];
+  if (value == null || !LoopV2Contract.uuidV4Pattern.hasMatch(value)) {
+    return null;
+  }
+  return value;
+}
+
 void _popOrHome(BuildContext context) {
   if (Navigator.of(context).canPop()) {
     context.pop();
