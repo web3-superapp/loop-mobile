@@ -187,6 +187,10 @@ abstract final class LoopRouteManifest {
     '/perp/risk',
     '/chat/meeting',
     '/wallet/transaction',
+    // Step 6 moved `approval-guard` under `/wallet` and retired the local
+    // signing review with the Preview intents that fed it.
+    '/preview/approval',
+    '/preview/signing-review',
     '/wallet/dapps',
     '/wallet/protection',
     '/launchpad/list',
@@ -197,9 +201,9 @@ abstract final class LoopRouteManifest {
 
   /// Implemented entry points that have no slug in the frozen manifest but
   /// are still reachable from mounted product code (the Stream channel deep
-  /// link, group creation and the group-Alias editor, the local signing
-  /// review used by the Send/Swap drafts, and guarded chat component
-  /// previews). They stay mounted until the owning step folds them into a
+  /// link, group creation and the group-Alias editor, and guarded chat
+  /// component previews). They stay mounted until the owning step folds them
+  /// into a
   /// manifest page; the manifest test lists them explicitly so nothing else
   /// can hide here. `/chat/channel/:cid` is a redirect only: it resolves a
   /// server-issued CID onto `community-chat`, `dm` or `group`.
@@ -208,7 +212,6 @@ abstract final class LoopRouteManifest {
     '/chat/channel/:cid',
     '/chat/groups/create',
     '/chat/groups/:groupId/alias',
-    '/preview/signing-review',
     '/preview/contract-facts',
     '/preview/asset-message',
     '/preview/token-card',
@@ -844,12 +847,13 @@ abstract final class LoopRouteManifest {
     ),
     LoopRouteEntry(
       slug: 'approval-guard',
-      path: '/preview/approval',
+      path: '/wallet/approval-guard',
       module: LoopRouteModule.wallet,
       title: '授权拦截',
       prototypeOrder: 66,
       step: 6,
       status: LoopRouteStatus.implemented,
+      legacyPath: '/preview/approval',
     ),
     LoopRouteEntry(
       slug: 'approvals',

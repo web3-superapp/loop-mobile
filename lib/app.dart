@@ -11,7 +11,6 @@ import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/app/session/loop_communication_retirement.dart';
 import 'package:loop_mobile/app/session/post_auth_bootstrap_coordinator.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
-import 'package:loop_mobile/core/intent/signing_intent.dart';
 import 'package:loop_mobile/core/navigation/launch_route.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
@@ -47,11 +46,11 @@ import 'package:loop_mobile/features/mining/referral_screen.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
-import 'package:loop_mobile/features/review/signing_review_surface.dart';
 import 'package:loop_mobile/features/social/blocklist_screen.dart';
 import 'package:loop_mobile/features/social/connections_screen.dart';
 import 'package:loop_mobile/features/social/dm_requests_screen.dart';
 import 'package:loop_mobile/features/shell/loop_pending_surface.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/features/wallet/wallet_screens.dart';
@@ -701,25 +700,30 @@ GoRouter _buildRouter(
       ),
       GoRoute(
         path: '/wallet/send',
-        builder: (context, state) => const SendAssetScreen(),
+        builder: (context, state) =>
+            SendAssetScreen(onBack: () => _popOrHome(context)),
       ),
+      // The Send draft travels as typed navigation state: an asset, a wallet
+      // and the exact text the owner typed never belong in a URL.
       GoRoute(
         path: '/wallet/send/to',
         redirect: (context, state) =>
-            state.extra is TransferDraft ? null : '/wallet/send',
-        builder: (context, state) =>
-            SendRecipientScreen(draft: state.extra! as TransferDraft),
+            state.extra is SendDraft ? null : '/wallet/send',
+        builder: (context, state) => SendRecipientScreen(
+          draft: state.extra! as SendDraft,
+          onBack: () => _popOrHome(context),
+        ),
       ),
       GoRoute(
         path: '/wallet/send/confirm',
         redirect: (context, state) {
           final draft = state.extra;
-          return draft is TransferDraft && draft.recipient.trim().isNotEmpty
-              ? null
-              : '/wallet/send';
+          return draft is SendDraft && draft.isComplete ? null : '/wallet/send';
         },
-        builder: (context, state) =>
-            SendConfirmScreen(draft: state.extra! as TransferDraft),
+        builder: (context, state) => SendConfirmScreen(
+          draft: state.extra! as SendDraft,
+          onBack: () => _popOrHome(context),
+        ),
       ),
       GoRoute(
         path: WalletRoute.receivePath,
@@ -730,14 +734,19 @@ GoRouter _buildRouter(
       ),
       GoRoute(
         path: '/wallet/swap',
-        builder: (context, state) => const SwapScreen(),
+        builder: (context, state) =>
+            SwapScreen(onBack: () => _popOrHome(context)),
       ),
+      // The quote object itself travels to the detail page, so the read-only
+      // view can never show a different quote from the one being confirmed.
       GoRoute(
         path: '/wallet/swap/route',
         redirect: (context, state) =>
-            state.extra is SwapPreviewSnapshot ? null : '/wallet/swap',
-        builder: (context, state) =>
-            SwapRouteScreen(snapshot: state.extra! as SwapPreviewSnapshot),
+            state.extra is LoopSwapQuoteView ? null : '/wallet/swap',
+        builder: (context, state) => SwapRouteScreen(
+          quote: state.extra! as LoopSwapQuoteView,
+          onBack: () => _popOrHome(context),
+        ),
       ),
       GoRoute(
         path: '/wallet/bridge',
@@ -750,10 +759,15 @@ GoRouter _buildRouter(
         builder: (context, state) =>
             BridgeStatusScreen(snapshot: state.extra! as BridgePreviewSnapshot),
       ),
-      // Manifest `tx-result` (legacy `/wallet/transaction`).
+      // Manifest `tx-result` (legacy `/wallet/transaction`). The intent id is
+      // an opaque server id and is the only thing this page needs, so it may
+      // travel in the query and survive a cold restore.
       GoRoute(
         path: '/wallet/tx/result',
-        builder: (context, state) => const TransactionResultScreen(),
+        builder: (context, state) => TransactionResultScreen(
+          intentId: _intentIdOf(state.uri),
+          onBack: () => _popOrHome(context),
+        ),
       ),
       GoRoute(
         path: WalletRoute.historyPath,
@@ -771,25 +785,26 @@ GoRouter _buildRouter(
         path: '/wallet/dapp',
         builder: (context, state) => const DappBrowserScreen(),
       ),
+      // Manifest `approval-guard` (legacy `/preview/approval`). The guard is a
+      // real money action now, so it lives under `/wallet`.
       GoRoute(
-        path: '/preview/approval',
-        builder: (context, state) => const ApprovalInterceptScreen(),
+        path: '/wallet/approval-guard',
+        redirect: (context, state) =>
+            state.extra is ApprovalGuardRequest ? null : '/wallet/approvals',
+        builder: (context, state) => ApprovalGuardScreen(
+          request: state.extra! as ApprovalGuardRequest,
+          onBack: () => _popOrHome(context),
+        ),
       ),
       GoRoute(
         path: '/wallet/approvals',
-        builder: (context, state) => const ApprovalsScreen(),
+        builder: (context, state) =>
+            ApprovalsScreen(onBack: () => _popOrHome(context)),
       ),
       GoRoute(
         path: '/wallet/networks',
         builder: (context, state) =>
             NetworksScreen(onBack: () => _popOrHome(context)),
-      ),
-      GoRoute(
-        path: '/preview/signing-review',
-        redirect: (context, state) =>
-            state.extra is SigningIntent ? null : '/wallet',
-        builder: (context, state) =>
-            SigningReviewPage(intent: state.extra! as SigningIntent),
       ),
       ..._profileRoutes,
       GoRoute(
@@ -1132,6 +1147,19 @@ Widget _systemSurface(BuildContext context, WidgetRef ref, String id) {
 }
 
 /// Pops when the page was pushed, otherwise lands on the manifest default.
+/// The opaque intent id carried by `/wallet/tx/result?intentId=`.
+///
+/// A value that is not a canonical UUIDv4 is dropped rather than requested:
+/// the result page then renders its empty state instead of asking the server
+/// about an id a deep link invented.
+String? _intentIdOf(Uri uri) {
+  final value = uri.queryParameters['intentId'];
+  if (value == null || !LoopV2Contract.uuidV4Pattern.hasMatch(value)) {
+    return null;
+  }
+  return value;
+}
+
 void _popOrHome(BuildContext context) {
   if (Navigator.of(context).canPop()) {
     context.pop();

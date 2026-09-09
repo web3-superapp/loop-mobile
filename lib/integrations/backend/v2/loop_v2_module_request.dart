@@ -94,6 +94,51 @@ abstract final class LoopV2ModuleRequest {
     },
   };
 
+  /// S6 money-action reads (`preflight`, intent reads, approval inventory).
+  /// They add `403 POLICY_BLOCKED`, which the canary ceiling can answer with.
+  static const moneyActionReadErrors = <int, Set<String>>{
+    400: <String>{'INVALID_REQUEST'},
+    401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
+    403: <String>{'POLICY_BLOCKED'},
+    404: <String>{'NOT_FOUND'},
+    409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED'},
+    422: <String>{'CHAIN_MISMATCH', 'VALIDATION_FAILED'},
+    500: <String>{'INTERNAL_ERROR'},
+    503: <String>{
+      'CAPABILITY_UNAVAILABLE',
+      'INDEXING_DELAYED',
+      'PROVIDER_DISCONNECTED',
+      'REQUEST_TIMEOUT',
+    },
+  };
+
+  /// S6 money-action writes. The five conflict codes are outcomes, not
+  /// transport faults: a `SUBMISSION_UNKNOWN` reply means the operation is
+  /// locked and must never be resubmitted.
+  static const moneyActionWriteErrors = <int, Set<String>>{
+    400: <String>{'INVALID_REQUEST'},
+    401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
+    403: <String>{'POLICY_BLOCKED'},
+    404: <String>{'NOT_FOUND'},
+    409: <String>{
+      'ACCOUNT_BOOTSTRAP_REQUIRED',
+      'IDEMPOTENCY_CONFLICT',
+      'INSUFFICIENT_BALANCE',
+      'DATA_STALE',
+      'QUOTE_EXPIRED',
+      'SIMULATION_FAILED',
+      'SUBMISSION_UNKNOWN',
+    },
+    422: <String>{'CHAIN_MISMATCH', 'VALIDATION_FAILED'},
+    500: <String>{'INTERNAL_ERROR'},
+    503: <String>{
+      'CAPABILITY_UNAVAILABLE',
+      'INDEXING_DELAYED',
+      'PROVIDER_DISCONNECTED',
+      'REQUEST_TIMEOUT',
+    },
+  };
+
   /// An idempotent create: one canonical UUIDv4 per logical operation.
   static const chainIdempotentWriteErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},

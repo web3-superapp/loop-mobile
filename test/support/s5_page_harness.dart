@@ -432,6 +432,13 @@ LoopV2MetaSnapshot s5MetaSnapshot({
       LoopV2CapabilityAvailability.available,
   LoopV2CapabilityAvailability notificationsFeed =
       LoopV2CapabilityAvailability.available,
+  LoopV2CapabilityAvailability sendApprovals =
+      LoopV2CapabilityAvailability.unavailable,
+  LoopV2CapabilityAvailability privySwap =
+      LoopV2CapabilityAvailability.unavailable,
+  // The Privy BSC swap device evidence is pending until a real device proves
+  // it; a test may clear it to exercise the open path.
+  bool swapEvidencePending = true,
 }) {
   return LoopV2MetaSnapshot(
     clientPolicy: LoopV2ClientPolicy(
@@ -470,6 +477,8 @@ LoopV2MetaSnapshot s5MetaSnapshot({
               LoopV2CapabilityId.watchlist => watchlist,
               LoopV2CapabilityId.priceAlerts => priceAlerts,
               LoopV2CapabilityId.notificationsFeed => notificationsFeed,
+              LoopV2CapabilityId.sendApprovals => sendApprovals,
+              LoopV2CapabilityId.privySwap => privySwap,
               _ => LoopV2CapabilityAvailability.unavailable,
             },
             reasonCode: switch (id) {
@@ -497,12 +506,25 @@ LoopV2MetaSnapshot s5MetaSnapshot({
                 notificationsFeed == LoopV2CapabilityAvailability.available
                     ? null
                     : 'PUSH_RUNTIME_DEFERRED',
+              LoopV2CapabilityId.sendApprovals =>
+                sendApprovals == LoopV2CapabilityAvailability.available
+                    ? null
+                    : 'BSC_WRITES_DISABLED',
+              LoopV2CapabilityId.privySwap =>
+                privySwap == LoopV2CapabilityAvailability.available
+                    ? null
+                    : 'BSC_WRITES_DISABLED',
               _ => 'CAPABILITY_NOT_DELIVERED',
             },
-            evidence: const LoopV2CapabilityEvidence(
-              status: LoopV2CapabilityEvidenceStatus.notApplicable,
-              reasonCode: null,
-            ),
+            evidence: id == LoopV2CapabilityId.privySwap && swapEvidencePending
+                ? const LoopV2CapabilityEvidence(
+                    status: LoopV2CapabilityEvidenceStatus.pending,
+                    reasonCode: 'PRIVY_BSC_SWAP_DEVICE_EVIDENCE_PENDING',
+                  )
+                : const LoopV2CapabilityEvidence(
+                    status: LoopV2CapabilityEvidenceStatus.notApplicable,
+                    reasonCode: null,
+                  ),
           ),
       ],
     ),

@@ -22,6 +22,12 @@ LoopChainFailureKind loopChainFailureKindForV2(LoopBackendFailure failure) {
     'CAPABILITY_UNAVAILABLE' ||
     'PROVIDER_DISCONNECTED' => LoopChainFailureKind.unavailable,
     'INVALID_REQUEST' => LoopChainFailureKind.invalidData,
+    'INSUFFICIENT_BALANCE' => LoopChainFailureKind.insufficientBalance,
+    'SIMULATION_FAILED' => LoopChainFailureKind.simulationFailed,
+    'QUOTE_EXPIRED' => LoopChainFailureKind.quoteExpired,
+    // The server already accepted one submission whose outcome is unresolved.
+    // The client must poll it; a second attempt is forbidden.
+    'SUBMISSION_UNKNOWN' => LoopChainFailureKind.submissionUnknown,
     _ => switch (failure.kind) {
       LoopBackendFailureKind.connection ||
       LoopBackendFailureKind.timeout => LoopChainFailureKind.offline,
@@ -39,6 +45,22 @@ LoopChainFailureKind loopChainFailureKindForV2(LoopBackendFailure failure) {
   };
 }
 
+/// Projects one backend failure onto the feature-facing exception, carrying the
+/// server's own rule name and the two figures it compared.
+///
+/// The rule is what makes a refusal explainable: "blocked by policy" is not an
+/// explanation, "this asset is not in the canary allowlist" is. Nothing outside
+/// the allowlisted scalar slots crosses this boundary.
+LoopChainException loopChainExceptionForV2(LoopBackendFailure failure) {
+  final details = failure.detailsSafe;
+  return LoopChainException(
+    loopChainFailureKindForV2(failure),
+    reasonCode: details?.reasonCode,
+    exposureUsd: details?.exposureUsd,
+    ceilingUsd: details?.ceilingUsd,
+  );
+}
+
 /// Runs one authenticated S5 request and maps every transport failure onto the
 /// narrow feature-facing kind. No provider detail ever escapes.
 Future<T> executeChainRequest<T>(
@@ -48,7 +70,7 @@ Future<T> executeChainRequest<T>(
   try {
     return await session.execute(request);
   } on LoopBackendFailure catch (failure) {
-    throw LoopChainException(loopChainFailureKindForV2(failure));
+    throw loopChainExceptionForV2(failure);
   } on LoopChainException {
     rethrow;
   } catch (_) {

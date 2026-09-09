@@ -19,10 +19,12 @@ import 'package:loop_mobile/integrations/personalization/shared_preferences_disp
 import 'package:loop_mobile/integrations/personalization/loop_personalization_providers.dart';
 import 'package:loop_mobile/integrations/social/loop_social_providers.dart';
 import 'package:loop_mobile/integrations/social/loop_group_alias_providers.dart';
+import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_communication_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s5_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_s6_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s7_providers.dart';
 import 'package:loop_mobile/integrations/sharing/system_chat_merge_export_sink.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
@@ -100,6 +102,18 @@ Future<void> main() async {
         ),
         notificationsGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2NotificationsGatewayProvider),
+        ),
+        // S6 money actions. Availability here is transport assembly only: the
+        // write switch, the canary ceiling and the device evidence stay
+        // server-owned, and every page still reads its capability gate.
+        walletIntentsGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2WalletIntentsGatewayProvider),
+        ),
+        swapQuoteGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2SwapQuoteGatewayProvider),
+        ),
+        approvalsGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2ApprovalsGatewayProvider),
         ),
         // S7 launch catalogue, mining skeleton and referral graph. Each stays
         // fail-closed until its Dio client, client metadata and authenticated

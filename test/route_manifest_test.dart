@@ -139,7 +139,6 @@ void main() {
         '/chat/channel/:cid',
         '/chat/groups/create',
         '/chat/groups/:groupId/alias',
-        '/preview/signing-review',
         '/preview/contract-facts',
         '/preview/asset-message',
         '/preview/token-card',
@@ -223,6 +222,10 @@ void main() {
       );
       expect(
         LoopRouteManifest.bySlug('approval-guard').path,
+        '/wallet/approval-guard',
+      );
+      expect(
+        LoopRouteManifest.bySlug('approval-guard').legacyPath,
         '/preview/approval',
       );
     });

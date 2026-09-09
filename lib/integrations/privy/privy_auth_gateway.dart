@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/integrations/privy/privy_device_signer.dart';
+import 'package:loop_mobile/integrations/privy/privy_production_adapter.dart';
 import 'package:privy_flutter/privy_flutter.dart';
 
 enum PrivySessionKind {
@@ -242,7 +244,11 @@ class UnconfiguredPrivyAuthGateway
   }
 }
 
-class PrivySdkAuthGateway implements PrivyAuthGateway, PrivyCredentialGateway {
+class PrivySdkAuthGateway
+    implements
+        PrivyAuthGateway,
+        PrivyCredentialGateway,
+        PrivyDeviceSigningHost {
   PrivySdkAuthGateway._(this._privy);
 
   factory PrivySdkAuthGateway.create(AppConfig config) {
@@ -262,6 +268,12 @@ class PrivySdkAuthGateway implements PrivyAuthGateway, PrivyCredentialGateway {
 
   final Privy _privy;
   PrivyUser? _currentUser;
+
+  /// The device signer bound to the session Privy currently reports. It is
+  /// rebuilt on every read so a logout or a session change can never leave a
+  /// stale wallet able to sign.
+  @override
+  PrivyDeviceSigner get deviceSigner => SdkPrivyDeviceSigner(_currentUser);
   String? _walletCreationOwner;
   Future<PrivyWalletCreationResult>? _walletCreation;
 

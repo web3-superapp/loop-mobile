@@ -117,6 +117,9 @@ abstract final class LoopV2Contract {
         category: category,
         retryable: retryable,
         userMessageKey: userMessageKey,
+        // `detailsSafe` is an open object on the wire, so it is read through a
+        // fixed scalar allowlist rather than carried through as-is.
+        detailsSafe: LoopFailureDetails.tryRead(detailsSafe),
       );
     } on LoopBackendFailure catch (failure) {
       return LoopBackendFailure(failure.kind, statusCode: statusCode);
@@ -207,7 +210,12 @@ abstract final class LoopV2Contract {
       'ALIAS_BLOCKED' ||
       'DATA_STALE' ||
       'RESOURCE_CONFLICT' ||
-      'PROFILE_ACTIVATION_REQUIRED' => LoopBackendFailureKind.invalidRequest,
+      'PROFILE_ACTIVATION_REQUIRED' ||
+      'CHAIN_MISMATCH' ||
+      'INSUFFICIENT_BALANCE' ||
+      'QUOTE_EXPIRED' ||
+      'SIMULATION_FAILED' ||
+      'SUBMISSION_UNKNOWN' => LoopBackendFailureKind.invalidRequest,
       'REQUEST_TIMEOUT' => LoopBackendFailureKind.timeout,
       'RATE_LIMITED' ||
       'NOT_FOUND' ||
@@ -215,6 +223,7 @@ abstract final class LoopV2Contract {
       'POLICY_BLOCKED' ||
       'CAPABILITY_UNAVAILABLE' ||
       'PROVIDER_DISCONNECTED' ||
+      'INDEXING_DELAYED' ||
       'INTERNAL_ERROR' => LoopBackendFailureKind.unavailable,
       _ => LoopBackendFailureKind.invalidPayload,
     };

@@ -33,14 +33,44 @@ enum LoopChainFailureKind {
   chainMismatch,
   rateLimited,
   idempotencyConflict,
+
+  /// The wallet cannot cover the amount, the maximum fee or the gas reserve.
+  insufficientBalance,
+
+  /// The exact payload could not be pre-executed, so it may never be signed.
+  simulationFailed,
+
+  /// The 30 s quote is gone. A new quote is required; nothing was submitted.
+  quoteExpired,
+
+  /// The operation was already submitted once and its outcome is unresolved.
+  /// It is locked: poll it, never resubmit.
+  submissionUnknown,
   invalidData,
   unexpected,
 }
 
 final class LoopChainException implements Exception {
-  const LoopChainException(this.kind);
+  const LoopChainException(
+    this.kind, {
+    this.reasonCode,
+    this.exposureUsd,
+    this.ceilingUsd,
+  });
 
   final LoopChainFailureKind kind;
+
+  /// The server's own rule name when it named one (`detailsSafe.reasonCode`).
+  /// A refusal that carries a rule is explained by that rule, never by a
+  /// generic sentence the client invented.
+  final String? reasonCode;
+
+  /// The two exact decimal figures a ceiling rule compared. They are present
+  /// together or not at all, and only the ceiling rules carry them.
+  final String? exposureUsd;
+  final String? ceilingUsd;
+
+  bool get hasCeilingFigures => exposureUsd != null && ceilingUsd != null;
 
   @override
   String toString() => 'LoopChainException(${kind.name})';
@@ -207,6 +237,12 @@ String loopChainFailureReason(LoopChainFailureKind? kind) => switch (kind) {
     '该资产不属于 BNB Smart Chain，本步只支持 eip155:56。',
   LoopChainFailureKind.rateLimited => '请求过于频繁，请稍等片刻再试。',
   LoopChainFailureKind.idempotencyConflict => '同一操作已被提交过且内容不同，请检查最新状态后再试。',
+  LoopChainFailureKind.insufficientBalance =>
+    '余额不足以覆盖这笔金额、最高网络费或手续费保留，没有提交任何交易。',
+  LoopChainFailureKind.simulationFailed => '这笔交易的预执行没有通过，因此不能签名。请返回确认页重新准备一次。',
+  LoopChainFailureKind.quoteExpired => '报价已过期，没有提交任何兑换。请重新报价后再确认。',
+  LoopChainFailureKind.submissionUnknown =>
+    '这笔操作已经提交过一次且结果未知，已锁定。请只查看最新状态，不要重复提交。',
   LoopChainFailureKind.invalidData => '服务返回的数据不符合约定，本页没有采纳任何内容。',
   LoopChainFailureKind.unexpected => '操作没有完成，未暴露供应商细节。',
   null => '操作没有完成。',
@@ -217,7 +253,8 @@ String loopChainFailureReason(LoopChainFailureKind? kind) => switch (kind) {
 bool loopChainOutcomeIsUnresolved(LoopChainFailureKind kind) =>
     kind == LoopChainFailureKind.offline ||
     kind == LoopChainFailureKind.cancelled ||
-    kind == LoopChainFailureKind.outcomeUnknown;
+    kind == LoopChainFailureKind.outcomeUnknown ||
+    kind == LoopChainFailureKind.submissionUnknown;
 
 /// zh-CN explanation for one server `reasonCode`.
 ///
@@ -265,7 +302,34 @@ String loopReasonCodeText(String? reasonCode) => switch (reasonCode) {
   'MARKET_CHART_TOOLS_DEFERRED' => '指标与画线工具没有服务端来源，本步不提供。',
   'WALLET_NETWORTH_TREND_DEFERRED' => '净值走势与 24h 涨跌没有后端来源，本步不展示。',
   'WALLET_CUSTOM_RPC_DEFERRED' => '自定义 RPC 与测试网本步不开放。',
-  'WALLET_SECURITY_FACTS_DEFERRED' => '安全中心、授权盘点与 DApp 状态尚未接入，不展示任何数量。',
+  'WALLET_SECURITY_FACTS_DEFERRED' => '安全中心与 DApp 状态尚未接入，不展示任何数量。',
+  // S6 · money actions (write switch, canary, intent lifecycle)
+  'WALLET_INTENT_RUNTIME_UNAVAILABLE' => '资金动作模块已启用，但服务端的 intent 运行时尚未组装完成。',
+  'BSC_WRITES_DISABLED' => '链上写入开关当前关闭，本步只能查看，不能签名或广播。',
+  'PRIVY_NOT_CONFIGURED' => 'Privy 凭据尚未配置，兑换报价与执行都不可用。',
+  'PRIVY_BSC_SWAP_DEVICE_EVIDENCE_PENDING' =>
+    'Privy BSC 兑换尚未取得真机证据，可以报价与查看，但不能确认执行。',
+  'SWAP_SIMULATION_PROVIDER_PENDING' =>
+    '兑换没有可用的预执行来源，本步不可执行；接入 Provider 模拟后才会开放。',
+  'GOPLUS_ADDRESS_SCREENING_NOT_CONFIGURED' =>
+    '未配置 GoPlus 密钥，无法查询该地址是否命中已知诈骗地址库。这不是"安全"，是没有结论。',
+  'GOPLUS_APPROVAL_FACTS_NOT_CONFIGURED' => '未配置 GoPlus 密钥，授权风险事实没有来源。',
+  'ALLOWANCE_READ_FAILED' => '这一行的 allowance 读不到，因此不显示额度，也不显示 0。',
+  'BSC_CALL_REVERTED' => '按这份精确 payload 预执行时被链上拒绝，因此不能签名。',
+  'SIMULATION_UNAVAILABLE' => '预执行没有返回可验证结果，因此不能签名。',
+  'GAS_ESTIMATE_UNAVAILABLE' => '无法估算 gas，因此不能构造可签名的交易。',
+  'INTENT_EXPIRED' => '这次操作的事实已过期，需要重新准备一次。',
+  'INTENT_SUPERSEDED' => '同一钱包已经准备了新的操作，这一笔被取代，未提交。',
+  'USER_CANCELLED' => '这次操作已由你取消，没有提交任何交易。',
+  'TX_PENDING_VERIFICATION' => '哈希已上报，节点尚未看到这笔交易，服务端会继续对账。',
+  'TX_PAYLOAD_MISMATCH' => '上报的交易与本次准备的 payload 不一致，已拒绝并记录审计事件。',
+  'TX_REVERTED' => '链上回执为 reverted：交易已上链但执行失败，网络费已消耗。',
+  'RECEIPT_LOST' => '曾经读到过回执，现在读不到了，结果重新变为未知，等待对账。',
+  'PRIVY_SWAP_REJECTED' => 'Privy 明确拒绝了这次兑换，没有提交到链上。',
+  'PROVIDER_RESULT_AMBIGUOUS' => '供应商没有返回可判定的结果，本次已锁定，只能等待对账，不重发。',
+  'PRICE_IMPACT_ABOVE_HARD_LIMIT' => '价格影响超过 5%，按策略硬阻断。',
+  'PRICE_IMPACT_UNAVAILABLE' => '无法为这笔兑换定价，因此无法判断价格影响，按阻断处理。',
+  'SIGNING_PAYLOAD_UNAVAILABLE' => '服务端没有下发可签名的 payload，本次不能进入钱包。',
   null => '该字段当前没有可信来源。',
   _ => '该字段当前没有可信来源。',
 };
