@@ -4,6 +4,10 @@ import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 enum GroupAliasGatewayMode { unavailable, preview, production }
 
 enum GroupAliasGatewayFailureKind {
+  /// The request never reached the server: the device has no usable
+  /// connection. It is kept apart from [unavailable] so a page can say
+  /// "设备离线" instead of blaming the service.
+  offline,
   unavailable,
   notFound,
   immutable,
@@ -19,6 +23,7 @@ final class GroupAliasGatewayException implements Exception {
   final GroupAliasGatewayFailureKind kind;
 
   String get code => switch (kind) {
+    GroupAliasGatewayFailureKind.offline => 'group_alias_offline',
     GroupAliasGatewayFailureKind.unavailable => 'group_alias_unavailable',
     GroupAliasGatewayFailureKind.notFound => 'group_alias_not_found',
     GroupAliasGatewayFailureKind.immutable => 'group_alias_immutable',

@@ -499,6 +499,7 @@ class _GroupAliasBoundaryBanner extends StatelessWidget {
 
 String _groupAliasFailureMessage(GroupAliasGatewayFailureKind? kind) =>
     switch (kind) {
+      GroupAliasGatewayFailureKind.offline => '设备当前离线，没有读到群昵称，也没有提交任何昵称。',
       GroupAliasGatewayFailureKind.unavailable => '群昵称服务当前不可用，没有昵称被显示为已保留。',
       GroupAliasGatewayFailureKind.notFound =>
         '当前没有可见的群昵称；也可能已不再是这个 Stream 群的成员。',

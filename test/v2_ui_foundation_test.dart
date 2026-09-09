@@ -125,6 +125,26 @@ void main() {
       );
     });
 
+    testWidgets('the search panel names the only global search entry', (
+      tester,
+    ) async {
+      await _pumpCommunity(tester);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-search-toggle')),
+      );
+      await tester.pumpAndSettle();
+
+      // 01 §3 / §12.2: the one sentence a user must be able to read here.
+      expect(
+        find.byKey(const ValueKey<String>('community-search-entry-note')),
+        findsOne,
+      );
+      expect(find.textContaining('全局资产与社区搜索从社区 Tab 顶部进入'), findsOne);
+      // The retired Home entry must not be described anywhere.
+      expect(find.textContaining('从首页'), findsNothing);
+    });
+
     testWidgets('the profile action reaches the profile domain', (
       tester,
     ) async {

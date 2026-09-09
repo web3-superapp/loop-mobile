@@ -157,7 +157,13 @@ class GroupInfoScreen extends ConsumerStatefulWidget {
 class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   GroupId? _groupId;
   bool _resolving = false;
-  bool _resolveFailed = false;
+
+  /// Why the exit is closed. `null` means the resolve has not failed.
+  ///
+  /// The kind is kept rather than a boolean so an offline device, a group the
+  /// server will not confirm, and a broken response each get their own block
+  /// instead of one indistinguishable failure.
+  GroupAliasGatewayFailureKind? _resolveFailure;
 
   @override
   void initState() {
@@ -172,12 +178,16 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     try {
       channelId = GroupAliasStreamChannelId.fromCid(cid);
     } on InvalidGroupAliasContractException {
-      if (mounted) setState(() => _resolveFailed = true);
+      if (mounted) {
+        setState(
+          () => _resolveFailure = GroupAliasGatewayFailureKind.invalidData,
+        );
+      }
       return;
     }
     setState(() {
       _resolving = true;
-      _resolveFailed = false;
+      _resolveFailure = null;
     });
     try {
       final groupId = await ref
@@ -188,11 +198,17 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
         _groupId = groupId;
         _resolving = false;
       });
+    } on GroupAliasGatewayException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _resolving = false;
+        _resolveFailure = error.kind;
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _resolving = false;
-        _resolveFailed = true;
+        _resolveFailure = GroupAliasGatewayFailureKind.unexpected;
       });
     }
   }
@@ -261,11 +277,31 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           const LoopLabel('退出'),
           if (_resolving)
             const LoopSkeleton(
-              key: ValueKey<String>('group-info-resolving'),
+              key: ValueKey<String>('group-info-state-loading'),
               type: LoopSkeletonType.list,
               rows: 1,
             )
-          else if (_resolveFailed)
+          else if (_resolveFailure == GroupAliasGatewayFailureKind.offline)
+            LoopOfflineState(
+              key: const ValueKey<String>('group-info-state-offline'),
+              onRetry: () => unawaited(_resolveGroup()),
+              pausedActions: const <String>['退出群聊'],
+            )
+          else if (_resolveFailure == GroupAliasGatewayFailureKind.notFound)
+            const LoopEmpty(
+              key: ValueKey<String>('group-info-state-empty'),
+              icon: 'info',
+              message: '没有可退出的群成员关系',
+              reason: '服务端没有确认这个群，或当前账号已经不是成员。这不代表退出失败。',
+            )
+          else if (_resolveFailure == GroupAliasGatewayFailureKind.unavailable)
+            const LoopEmpty(
+              key: ValueKey<String>('group-info-state-unavailable'),
+              icon: 'warn',
+              message: '退出操作当前不可用',
+              reason: '群成员关系服务暂时不可用，本页没有提交任何变更。',
+            )
+          else if (_resolveFailure != null)
             LoopErrorState(
               key: const ValueKey<String>('group-info-resolve-failed'),
               reason: '没有确认这个群的服务端标识，因此不提供退出操作，也没有提交任何变更。',

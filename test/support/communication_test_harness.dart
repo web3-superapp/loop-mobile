@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
@@ -238,10 +239,19 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
 }
 
 /// Resolves the one LOOP group `group-info` needs to offer an exit.
+///
+/// [failure] drives the offline / empty / unavailable / error blocks from one
+/// place; [pending] keeps the resolve in flight so the loading skeleton stays.
 final class FakeGroupAliasResolverGateway implements GroupAliasResolverGateway {
-  FakeGroupAliasResolverGateway({this.groupId = testResolvedGroupId});
+  FakeGroupAliasResolverGateway({
+    this.groupId = testResolvedGroupId,
+    this.failure,
+    this.pending = false,
+  });
 
   final String groupId;
+  final GroupAliasGatewayFailureKind? failure;
+  final bool pending;
   final List<GroupAliasStreamChannelId> calls = <GroupAliasStreamChannelId>[];
 
   @override
@@ -250,6 +260,11 @@ final class FakeGroupAliasResolverGateway implements GroupAliasResolverGateway {
   @override
   Future<GroupId> resolveGroup(GroupAliasStreamChannelId channelId) {
     calls.add(channelId);
+    if (pending) return Completer<GroupId>().future;
+    final kind = failure;
+    if (kind != null) {
+      return Future<GroupId>.error(GroupAliasGatewayException(kind));
+    }
     return Future<GroupId>.value(GroupId.fromWire(groupId));
   }
 }

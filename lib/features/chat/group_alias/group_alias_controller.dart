@@ -366,6 +366,9 @@ final class GroupAliasController extends Notifier<GroupAliasState> {
       groupId: groupId,
       mode: mode,
       phase: switch (kind) {
+        // Offline joins `unavailable` here: this surface only decides whether
+        // the alias action opens, and neither observation opens it.
+        GroupAliasGatewayFailureKind.offline ||
         GroupAliasGatewayFailureKind.unavailable => GroupAliasPhase.unavailable,
         GroupAliasGatewayFailureKind.notFound => GroupAliasPhase.notFound,
         _ => GroupAliasPhase.failure,
@@ -397,7 +400,8 @@ final class GroupAliasController extends Notifier<GroupAliasState> {
       groupId: groupId,
       mode: mode,
       phase:
-          kind == GroupAliasGatewayFailureKind.unavailable &&
+          (kind == GroupAliasGatewayFailureKind.unavailable ||
+                  kind == GroupAliasGatewayFailureKind.offline) &&
               previous.resource == null
           ? GroupAliasPhase.unavailable
           : kind == GroupAliasGatewayFailureKind.notFound
@@ -556,6 +560,7 @@ final class GroupAliasResolverController
       channelId: channelId,
       mode: mode,
       phase: switch (kind) {
+        GroupAliasGatewayFailureKind.offline ||
         GroupAliasGatewayFailureKind.unavailable =>
           GroupAliasResolverPhase.unavailable,
         GroupAliasGatewayFailureKind.notFound =>

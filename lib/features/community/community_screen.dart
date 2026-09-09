@@ -418,6 +418,12 @@ class _CommunitySearchPanelState extends State<_CommunitySearchPanel> {
             ),
           ),
           const SizedBox(height: 12),
+          const LoopNotice(
+            key: ValueKey<String>('community-search-entry-note'),
+            body: '全局资产与社区搜索从社区 Tab 顶部进入。这是唯一的全局搜索入口。',
+            margin: EdgeInsets.zero,
+          ),
+          const SizedBox(height: 12),
           LoopButtonPair(
             padded: false,
             children: <Widget>[

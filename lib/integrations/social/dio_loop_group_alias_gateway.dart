@@ -520,6 +520,13 @@ GroupAliasGatewayFailureKind _readFailureKind(LoopBackendFailure failure) {
       (failure.statusCode == 400 && failure.code == 'invalid_request')) {
     return GroupAliasGatewayFailureKind.invalidData;
   }
+  // House convention (see loop_v2_chain_failure.dart / loop_v2_community_api
+  // .dart): a read that never reached the server is offline, not a service
+  // outage. A read is idempotent, so a timeout is the same observation.
+  if (failure.kind == LoopBackendFailureKind.connection ||
+      failure.kind == LoopBackendFailureKind.timeout) {
+    return GroupAliasGatewayFailureKind.offline;
+  }
   if (_isTemporarilyUnavailable(failure)) {
     return GroupAliasGatewayFailureKind.unavailable;
   }
