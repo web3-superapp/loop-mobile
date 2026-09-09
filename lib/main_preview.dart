@@ -12,6 +12,10 @@ import 'package:loop_mobile/features/profile/social_privacy/social_privacy_gatew
 import 'package:loop_mobile/features/profile/social_privacy/social_privacy_models.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
+import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
+import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
+import 'package:loop_mobile/integrations/market/memory_watchlist_gateway.dart';
+import 'package:loop_mobile/integrations/notifications/memory_notifications_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/memory_privacy_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/memory_profile_gateway.dart';
 import 'package:loop_mobile/integrations/personalization/memory_social_privacy_gateway.dart';
@@ -75,10 +79,14 @@ Future<void> main() async {
         chatMergeExportSinkProvider.overrideWithValue(
           const SystemChatMergeExportSink(),
         ),
-        // Step 5 retired the Preview Watchlist and notification-preference
-        // adapters with the V1 modules they implemented (decision 0057). Both
-        // surfaces are unavailable in Preview rather than showing a fixture
-        // written against a contract that no longer exists.
+        // Rewritten against the V2 contracts (decision 0061): ten categories,
+        // a locked `security.event`, a version compare-and-set, and delivery
+        // that stays unavailable whatever is saved. Both surfaces carry the
+        // visible 演示数据 label.
+        watchlistGatewayProvider.overrideWithValue(MemoryWatchlistGateway()),
+        notificationsGatewayProvider.overrideWithValue(
+          MemoryNotificationsGateway(),
+        ),
         privacyGatewayProvider.overrideWithValue(
           MemoryPrivacyGateway(
             initialResource: PrivacyResource(
