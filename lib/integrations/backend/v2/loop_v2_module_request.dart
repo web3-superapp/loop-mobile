@@ -15,6 +15,12 @@ abstract final class LoopV2ModuleRequest {
   static const readErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
+    403: <String>{
+      'PERMISSION_DENIED',
+      'POLICY_BLOCKED',
+      'AUTH_STEP_UP_REQUIRED',
+      'REGION_BLOCKED',
+    },
     404: <String>{'NOT_FOUND'},
     409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED', 'VERSION_CONFLICT'},
     500: <String>{'INTERNAL_ERROR'},
@@ -42,7 +48,12 @@ abstract final class LoopV2ModuleRequest {
   static const writeErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
-    403: <String>{'PERMISSION_DENIED', 'POLICY_BLOCKED'},
+    403: <String>{
+      'PERMISSION_DENIED',
+      'POLICY_BLOCKED',
+      'AUTH_STEP_UP_REQUIRED',
+      'REGION_BLOCKED',
+    },
     404: <String>{'NOT_FOUND'},
     409: <String>{
       'ACCOUNT_BOOTSTRAP_REQUIRED',
@@ -66,6 +77,12 @@ abstract final class LoopV2ModuleRequest {
   static const chainReadErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
+    403: <String>{
+      'PERMISSION_DENIED',
+      'POLICY_BLOCKED',
+      'AUTH_STEP_UP_REQUIRED',
+      'REGION_BLOCKED',
+    },
     404: <String>{'NOT_FOUND'},
     409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED', 'VERSION_CONFLICT'},
     422: <String>{'CHAIN_MISMATCH', 'VALIDATION_FAILED'},
@@ -82,7 +99,12 @@ abstract final class LoopV2ModuleRequest {
   static const casWriteErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
-    403: <String>{'PERMISSION_DENIED', 'POLICY_BLOCKED'},
+    403: <String>{
+      'PERMISSION_DENIED',
+      'POLICY_BLOCKED',
+      'AUTH_STEP_UP_REQUIRED',
+      'REGION_BLOCKED',
+    },
     404: <String>{'NOT_FOUND'},
     409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED', 'VERSION_CONFLICT'},
     422: <String>{'CHAIN_MISMATCH', 'VALIDATION_FAILED'},
@@ -99,7 +121,12 @@ abstract final class LoopV2ModuleRequest {
   static const moneyActionReadErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
-    403: <String>{'POLICY_BLOCKED'},
+    403: <String>{
+      'POLICY_BLOCKED',
+      'PERMISSION_DENIED',
+      'AUTH_STEP_UP_REQUIRED',
+      'REGION_BLOCKED',
+    },
     404: <String>{'NOT_FOUND'},
     409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED'},
     422: <String>{'CHAIN_MISMATCH', 'VALIDATION_FAILED'},
@@ -118,7 +145,12 @@ abstract final class LoopV2ModuleRequest {
   static const moneyActionWriteErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
-    403: <String>{'POLICY_BLOCKED'},
+    403: <String>{
+      'POLICY_BLOCKED',
+      'PERMISSION_DENIED',
+      'AUTH_STEP_UP_REQUIRED',
+      'REGION_BLOCKED',
+    },
     404: <String>{'NOT_FOUND'},
     409: <String>{
       'ACCOUNT_BOOTSTRAP_REQUIRED',
@@ -143,7 +175,12 @@ abstract final class LoopV2ModuleRequest {
   static const chainIdempotentWriteErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
-    403: <String>{'PERMISSION_DENIED', 'POLICY_BLOCKED'},
+    403: <String>{
+      'PERMISSION_DENIED',
+      'POLICY_BLOCKED',
+      'AUTH_STEP_UP_REQUIRED',
+      'REGION_BLOCKED',
+    },
     404: <String>{'NOT_FOUND'},
     409: <String>{
       'ACCOUNT_BOOTSTRAP_REQUIRED',

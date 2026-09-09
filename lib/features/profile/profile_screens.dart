@@ -127,7 +127,10 @@ class ProfileSurfaceScreen extends StatelessWidget {
       'devices' => DeviceManagementScreen(onBack: onBack),
       'key-export' => KeyExportScreen(onBack: onBack),
       'social-recovery' => SocialRecoveryScreen(onBack: onBack),
-      'notif-settings' => NotificationPreferencesScreen(onBack: onBack),
+      'notif-settings' => NotificationPreferencesScreen(
+        onBack: onBack,
+        onOpenSecurity: () => navigate('security'),
+      ),
       'connections' => const _ConnectionsScreen(),
       'blocklist' => const _BlocklistScreen(),
       'settings' => GeneralSettingsScreen(

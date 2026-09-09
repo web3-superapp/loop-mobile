@@ -123,6 +123,13 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
               pausedActions: const <String>['新建提醒', '修改提醒', '删除提醒'],
               onRetry: () => unawaited(controller.reload()),
             )
+          else if (LoopChainCommandPermission.covers(state.failureKind))
+            LoopChainCommandPermission(
+              blockKey: 'alerts-command-permission',
+              failureKind: state.failureKind,
+              title: '当前账号无权修改价格提醒',
+              onOpenSecurity: () => _open('/profile/security'),
+            )
           else if (state.failureKind != null)
             LoopErrorState(
               key: const ValueKey<String>('alerts-command-error'),

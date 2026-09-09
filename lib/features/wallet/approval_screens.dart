@@ -255,7 +255,11 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
             ),
           ],
           if (MoneyPolicyNotice.covers(_failure))
-            MoneyPolicyNotice(failure: _failure!)
+            MoneyPolicyNotice(
+              blockKey: 'approval-guard-permission',
+              failure: _failure!,
+              onOpenSecurity: () => _open('/profile/security'),
+            )
           // A prepare that never reached the server has not opened a wallet.
           // The guard pauses; it never says the approval failed.
           else if (MoneyOfflinePause.covers(_failure))
@@ -522,7 +526,11 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
           )
         else ...<Widget>[
           if (MoneyPolicyNotice.covers(_revokeFailure))
-            MoneyPolicyNotice(failure: _revokeFailure!)
+            MoneyPolicyNotice(
+              blockKey: 'approvals-revoke-permission',
+              failure: _revokeFailure!,
+              onOpenSecurity: () => _open('/profile/security'),
+            )
           // The inventory above still renders: only the revoke prepare went
           // offline, and it opened no wallet, so the row list stays readable.
           else if (MoneyOfflinePause.covers(_revokeFailure))

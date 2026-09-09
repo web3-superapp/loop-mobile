@@ -438,30 +438,57 @@ String moneyPolicyRefusalText(LoopChainException failure) {
   };
 }
 
-/// The block a money-action page renders when the server refused it by rule.
+/// The block a money-action page renders when the server refused it.
+///
+/// A refusal is the Permission state of a funds page: the request arrived, was
+/// understood, and was answered "no". It is rendered as a [LoopPermissionState]
+/// rather than an error, because a retry would claim the answer might change.
+/// The block always states which rule or policy stopped the step, what did not
+/// happen, and the one route that exists — the security centre for a step-up,
+/// and nothing at all for a policy ceiling the client cannot adjust.
+///
+/// [blockKey] is the page's own key, so an assertion names this page rather
+/// than a shared block that happened to render.
 class MoneyPolicyNotice extends StatelessWidget {
-  const MoneyPolicyNotice({required this.failure, super.key});
+  const MoneyPolicyNotice({
+    required this.failure,
+    super.key,
+    this.blockKey = 'money-policy-blocked',
+    this.onOpenSecurity,
+  });
 
   final LoopChainException failure;
+  final String blockKey;
+  final VoidCallback? onOpenSecurity;
 
   /// True when this failure should be rendered as a named refusal rather than
   /// a retryable error.
   static bool covers(LoopChainException? failure) =>
       failure != null &&
       (failure.kind == LoopChainFailureKind.permissionDenied ||
+          failure.kind == LoopChainFailureKind.stepUpRequired ||
           (failure.kind == LoopChainFailureKind.validationFailed &&
               failure.reasonCode == MoneyPolicyRule.nativeAssetNotApprovable));
 
   @override
   Widget build(BuildContext context) {
-    return LoopNotice(
-      key: const ValueKey<String>('money-policy-blocked'),
+    final stepUp = failure.kind == LoopChainFailureKind.stepUpRequired;
+    return LoopPermissionState(
+      key: ValueKey<String>(blockKey),
       icon: 'shield',
-      tone: LoopNoticeTone.danger,
-      title: failure.reasonCode == MoneyPolicyRule.nativeAssetNotApprovable
+      denied: true,
+      title: stepUp
+          ? '这一步需要二次验证，没有提交任何交易'
+          : failure.reasonCode == MoneyPolicyRule.nativeAssetNotApprovable
           ? '原生资产不能授权'
           : '被策略拒绝，没有提交任何交易',
-      body: moneyPolicyRefusalText(failure),
+      purpose: stepUp
+          ? '这一步需要二次验证。二次验证尚未开放，服务端已拒绝，'
+                '没有签名、没有广播，也没有提交任何交易。'
+                '请到安全中心查看当前可用的验证方式。'
+          : moneyPolicyRefusalText(failure),
+      settingsLabel: '前往安全中心',
+      onOpenSettings: stepUp ? onOpenSecurity : null,
     );
   }
 }

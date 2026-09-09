@@ -215,7 +215,11 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             ),
           ),
           if (MoneyPolicyNotice.covers(_failure))
-            MoneyPolicyNotice(failure: _failure!)
+            MoneyPolicyNotice(
+              blockKey: 'swap-permission',
+              failure: _failure!,
+              onOpenSecurity: () => _open('/profile/security'),
+            )
           // A quote that never reached the provider has not prepared, signed
           // or executed anything. The step pauses instead of erroring.
           else if (MoneyOfflinePause.covers(_failure))

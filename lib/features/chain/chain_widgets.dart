@@ -128,8 +128,10 @@ class LoopChainStateBlock extends StatelessWidget {
         return LoopPermissionState(
           key: ValueKey<String>('$keyPrefix-state-permission'),
           icon: 'shield',
-          title: permissionTitle,
-          purpose: loopChainFailureReason(failureKind),
+          title: failureKind == LoopChainFailureKind.stepUpRequired
+              ? '这一步需要二次验证'
+              : permissionTitle,
+          purpose: loopChainPermissionPurpose(failureKind),
         );
       case LoopChainViewPhase.error:
         return LoopErrorState(
@@ -140,6 +142,94 @@ class LoopChainStateBlock extends StatelessWidget {
       case LoopChainViewPhase.ready:
         return const SizedBox.shrink();
     }
+  }
+}
+
+/// Visible Preview truth label for a chain-backed page.
+///
+/// Reads and writes made under a Preview adapter stay in the running process:
+/// they never reach an account, a provider or a chain. Production and
+/// unavailable modes render nothing, so the label can never appear outside
+/// Preview.
+class LoopChainPreviewNotice extends StatelessWidget {
+  const LoopChainPreviewNotice({
+    required this.mode,
+    required this.resource,
+    super.key,
+  });
+
+  final LoopChainGatewayMode mode;
+  final String resource;
+
+  @override
+  Widget build(BuildContext context) {
+    if (mode != LoopChainGatewayMode.preview) return const SizedBox.shrink();
+    return LoopNotice(
+      key: const ValueKey<String>('chain-preview-notice'),
+      icon: 'info',
+      tone: LoopNoticeTone.warn,
+      title: '演示数据',
+      body: '$resource只存在于本次开发预览运行中，不会写入账号，也不会调用任何服务端。',
+      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+    );
+  }
+}
+
+/// `开发预览` eyebrow for a Preview-backed chain page.
+String? loopChainPreviewKicker(LoopChainGatewayMode mode) =>
+    mode == LoopChainGatewayMode.preview ? '开发预览' : null;
+
+/// The sentence a refused read or write renders.
+///
+/// It states the rule, what did not happen, and the one alternative that
+/// actually exists. It never offers a setting the product has not delivered.
+String loopChainPermissionPurpose(LoopChainFailureKind? kind) =>
+    kind == LoopChainFailureKind.stepUpRequired
+    ? '${loopChainFailureReason(kind)}请到安全中心查看当前可用的验证方式；'
+          '本页已读到的内容不受影响。'
+    : '${loopChainFailureReason(kind)}所需权限与策略由服务端授予，客户端无法调整；'
+          '可以换一个已获授权的账号或资产，本页已读到的内容不受影响。';
+
+/// The block a page renders when the server refused a **command** it issued
+/// from an already-loaded page.
+///
+/// [LoopChainStateBlock] covers a refused read; this covers a refused write,
+/// where the page keeps rendering the resource it already read. A refusal is
+/// not an error: the request arrived, was understood and was answered "no".
+/// Offering a retry would claim the answer might change, so the block names
+/// the rule instead and — for a step-up — points at the security centre, the
+/// only place that could ever change it.
+class LoopChainCommandPermission extends StatelessWidget {
+  const LoopChainCommandPermission({
+    required this.blockKey,
+    required this.failureKind,
+    required this.title,
+    super.key,
+    this.onOpenSecurity,
+  });
+
+  /// True when this failure is a server refusal rather than a fault.
+  static bool covers(LoopChainFailureKind? kind) =>
+      kind == LoopChainFailureKind.permissionDenied ||
+      kind == LoopChainFailureKind.stepUpRequired;
+
+  final String blockKey;
+  final LoopChainFailureKind? failureKind;
+  final String title;
+  final VoidCallback? onOpenSecurity;
+
+  @override
+  Widget build(BuildContext context) {
+    final stepUp = failureKind == LoopChainFailureKind.stepUpRequired;
+    return LoopPermissionState(
+      key: ValueKey<String>(blockKey),
+      icon: 'shield',
+      denied: true,
+      title: stepUp ? '这一步需要二次验证' : title,
+      purpose: loopChainPermissionPurpose(failureKind),
+      settingsLabel: '前往安全中心',
+      onOpenSettings: stepUp ? onOpenSecurity : null,
+    );
   }
 }
 

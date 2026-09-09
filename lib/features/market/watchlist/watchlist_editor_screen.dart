@@ -68,6 +68,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
       key: const ValueKey<String>('watchlist-editor-screen'),
       archetype: LoopPageArchetype.listing,
       title: '自选管理',
+      kicker: loopChainPreviewKicker(mode),
       onBack: widget.onBack,
       actions: <Widget>[
         LoopIconButton(
@@ -86,6 +87,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
         stamp: state.isDirty ? 'UNSAVED' : 'EDIT',
       ),
       sections: <Widget>[
+        LoopChainPreviewNotice(mode: mode, resource: '自选列表'),
         if (blocked)
           LoopUnavailableCard(
             key: const ValueKey<String>('watchlist-capability-block'),
@@ -128,6 +130,15 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
               onRetry: state.canSave
                   ? () => unawaited(_save(controller))
                   : null,
+            )
+          // The server answered and refused. A retry would claim the answer
+          // might change; the draft below is untouched either way.
+          else if (LoopChainCommandPermission.covers(state.failureKind))
+            LoopChainCommandPermission(
+              blockKey: 'watchlist-save-permission',
+              failureKind: state.failureKind,
+              title: '当前账号无权保存自选',
+              onOpenSecurity: () => _open('/profile/security'),
             )
           else if (state.failureKind != null)
             LoopErrorState(

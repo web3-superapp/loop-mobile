@@ -6,6 +6,15 @@ enum ProfileMode { unavailable, preview, production }
 enum ProfileGatewayFailureKind {
   unavailable,
   offline,
+
+  /// `403 PERMISSION_DENIED` / `POLICY_BLOCKED` / `REGION_BLOCKED`: the server
+  /// knows the owner and still refuses. It is a policy answer, never a
+  /// retryable transport fault.
+  permissionDenied,
+
+  /// `403 AUTH_STEP_UP_REQUIRED`: the command needs a second factor. Step-up
+  /// is not delivered, so the only honest next step is the security centre.
+  stepUpRequired,
   versionConflict,
   idempotencyConflict,
   bootstrapRequired,
@@ -24,6 +33,8 @@ final class ProfileGatewayException implements Exception {
   String get code => switch (kind) {
     ProfileGatewayFailureKind.unavailable => 'profile_unavailable',
     ProfileGatewayFailureKind.offline => 'profile_offline',
+    ProfileGatewayFailureKind.permissionDenied => 'profile_permission_denied',
+    ProfileGatewayFailureKind.stepUpRequired => 'profile_step_up_required',
     ProfileGatewayFailureKind.versionConflict => 'profile_version_conflict',
     ProfileGatewayFailureKind.idempotencyConflict =>
       'profile_idempotency_conflict',

@@ -6,6 +6,12 @@ enum PrivacyMode { unavailable, preview, production }
 enum PrivacyGatewayFailureKind {
   unavailable,
   offline,
+
+  /// `403 PERMISSION_DENIED` / `POLICY_BLOCKED` / `REGION_BLOCKED`.
+  permissionDenied,
+
+  /// `403 AUTH_STEP_UP_REQUIRED`.
+  stepUpRequired,
   versionConflict,
   bootstrapRequired,
   validationFailed,
@@ -21,6 +27,8 @@ final class PrivacyGatewayException implements Exception {
   String get code => switch (kind) {
     PrivacyGatewayFailureKind.unavailable => 'privacy_unavailable',
     PrivacyGatewayFailureKind.offline => 'privacy_offline',
+    PrivacyGatewayFailureKind.permissionDenied => 'privacy_permission_denied',
+    PrivacyGatewayFailureKind.stepUpRequired => 'privacy_step_up_required',
     PrivacyGatewayFailureKind.versionConflict => 'privacy_version_conflict',
     PrivacyGatewayFailureKind.bootstrapRequired => 'privacy_bootstrap_required',
     PrivacyGatewayFailureKind.validationFailed => 'privacy_validation_failed',

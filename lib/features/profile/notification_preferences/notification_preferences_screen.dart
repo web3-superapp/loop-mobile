@@ -19,9 +19,17 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 /// write carries `true`, because the server refuses `false` rather than
 /// ignoring it. Delivery stays unavailable — there is no push channel.
 class NotificationPreferencesScreen extends ConsumerStatefulWidget {
-  const NotificationPreferencesScreen({super.key, this.onBack});
+  const NotificationPreferencesScreen({
+    super.key,
+    this.onBack,
+    this.onOpenSecurity,
+  });
 
   final VoidCallback? onBack;
+
+  /// Only the refusal block uses it: step-up is not delivered, so the security
+  /// centre is the one honest destination for a `AUTH_STEP_UP_REQUIRED`.
+  final VoidCallback? onOpenSecurity;
 
   @override
   ConsumerState<NotificationPreferencesScreen> createState() =>
@@ -56,6 +64,7 @@ class _NotificationPreferencesScreenState
       key: const ValueKey<String>('notification-preferences-screen'),
       archetype: LoopPageArchetype.action,
       title: '通知设置',
+      kicker: loopChainPreviewKicker(mode),
       onBack: widget.onBack,
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('notification-preferences-folio'),
@@ -65,6 +74,7 @@ class _NotificationPreferencesScreenState
         caption: '安全事件始终开启且无法关闭；这里保存的是意图，不代表已经能送达。',
       ),
       sections: <Widget>[
+        LoopChainPreviewNotice(mode: mode, resource: '通知设置'),
         if (blocked)
           LoopUnavailableCard(
             key: const ValueKey<String>('notification-capability-block'),
@@ -106,6 +116,13 @@ class _NotificationPreferencesScreenState
               ),
               pausedActions: const <String>['保存通知设置'],
               onRetry: () => unawaited(controller.reload()),
+            )
+          else if (LoopChainCommandPermission.covers(state.failureKind))
+            LoopChainCommandPermission(
+              blockKey: 'notification-preferences-permission',
+              failureKind: state.failureKind,
+              title: '当前账号无权修改通知设置',
+              onOpenSecurity: widget.onOpenSecurity,
             )
           else if (state.failureKind != null)
             LoopErrorState(

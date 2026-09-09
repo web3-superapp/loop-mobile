@@ -472,6 +472,14 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
               pausedActions: const <String>['校验地址', '下一步', '签名'],
               onRetry: () => unawaited(_check()),
             )
+          // The server read the address and refused to answer for it. It is a
+          // refusal, not a failed read: retrying cannot change it.
+          else if (MoneyPolicyNotice.covers(_preflightFailure))
+            MoneyPolicyNotice(
+              blockKey: 'send-to-permission',
+              failure: _preflightFailure!,
+              onOpenSecurity: () => _open('/profile/security'),
+            )
           else if (_preflightFailure != null)
             LoopErrorState(
               key: const ValueKey<String>('send-recipient-preflight-error'),
@@ -666,7 +674,11 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
             onCancel: () => unawaited(_cancelOther(other)),
           )
         else if (MoneyPolicyNotice.covers(_failure))
-          MoneyPolicyNotice(failure: _failure!)
+          MoneyPolicyNotice(
+            blockKey: 'send-confirm-permission',
+            failure: _failure!,
+            onOpenSecurity: () => _open('/profile/security'),
+          )
         else if (intent == null)
           LoopChainStateBlock(
             keyPrefix: 'send-confirm',

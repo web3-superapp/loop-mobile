@@ -133,7 +133,20 @@ class LoopPreviewModeNotice extends StatelessWidget {
 }
 
 /// The five reviewed states for a Profile-backed page.
-enum LoopResourcePhase { loading, empty, error, offline, unavailable, ready }
+///
+/// [permission] is the server's own refusal — `403 PERMISSION_DENIED`,
+/// `POLICY_BLOCKED`, `REGION_BLOCKED` or `AUTH_STEP_UP_REQUIRED`. It is not a
+/// device permission and never a retryable error: the request arrived, was
+/// understood, and was refused.
+enum LoopResourcePhase {
+  loading,
+  empty,
+  error,
+  offline,
+  permission,
+  unavailable,
+  ready,
+}
 
 LoopResourcePhase profileResourcePhase(ProfileState state) {
   if (state.phase == ProfilePhase.initial ||
@@ -146,6 +159,8 @@ LoopResourcePhase profileResourcePhase(ProfileState state) {
   return switch (state.failureKind) {
     ProfileGatewayFailureKind.unavailable => LoopResourcePhase.unavailable,
     ProfileGatewayFailureKind.offline => LoopResourcePhase.offline,
+    ProfileGatewayFailureKind.permissionDenied ||
+    ProfileGatewayFailureKind.stepUpRequired => LoopResourcePhase.permission,
     null => LoopResourcePhase.empty,
     _ => LoopResourcePhase.error,
   };
@@ -162,6 +177,8 @@ LoopResourcePhase privacyResourcePhase(PrivacyState state) {
   return switch (state.failureKind) {
     PrivacyGatewayFailureKind.unavailable => LoopResourcePhase.unavailable,
     PrivacyGatewayFailureKind.offline => LoopResourcePhase.offline,
+    PrivacyGatewayFailureKind.permissionDenied ||
+    PrivacyGatewayFailureKind.stepUpRequired => LoopResourcePhase.permission,
     null => LoopResourcePhase.empty,
     _ => LoopResourcePhase.error,
   };
@@ -170,6 +187,12 @@ LoopResourcePhase privacyResourcePhase(PrivacyState state) {
 String profileFailureReason(ProfileGatewayFailureKind? kind) => switch (kind) {
   ProfileGatewayFailureKind.unavailable => '资料服务当前不可用，没有任何修改被保存。',
   ProfileGatewayFailureKind.offline => '设备当前离线，资料未能读取，也没有提交任何修改。',
+  ProfileGatewayFailureKind.permissionDenied =>
+    '服务端按当前策略拒绝了对账号资料的读取或写入，没有发生任何变化。'
+        '所需权限由服务端授予，客户端无法调整；可以先在设置里查看账号状态，或稍后重试。',
+  ProfileGatewayFailureKind.stepUpRequired =>
+    '这一步需要二次验证。二次验证尚未开放，服务端已拒绝，没有发生任何变化。'
+        '请到安全中心查看当前可用的验证方式。',
   ProfileGatewayFailureKind.versionConflict => '资料在别处已被修改。请重新载入后再保存。',
   ProfileGatewayFailureKind.idempotencyConflict => '提交冲突，已重置，请再试一次。',
   ProfileGatewayFailureKind.bootstrapRequired => '账号尚未完成初始化，请稍后重试。',
@@ -184,6 +207,12 @@ String profileFailureReason(ProfileGatewayFailureKind? kind) => switch (kind) {
 String privacyFailureReason(PrivacyGatewayFailureKind? kind) => switch (kind) {
   PrivacyGatewayFailureKind.unavailable => '隐私服务当前不可用，没有任何修改被保存。',
   PrivacyGatewayFailureKind.offline => '设备当前离线，隐私设置未能读取，也没有提交任何修改。',
+  PrivacyGatewayFailureKind.permissionDenied =>
+    '服务端按当前策略拒绝了对隐私设置的读取或写入，没有发生任何变化。'
+        '所需权限由服务端授予，客户端无法调整；这些开关的当前取值仍以服务端为准。',
+  PrivacyGatewayFailureKind.stepUpRequired =>
+    '修改隐私设置需要二次验证。二次验证尚未开放，服务端已拒绝，没有发生任何变化。'
+        '请到安全中心查看当前可用的验证方式。',
   PrivacyGatewayFailureKind.versionConflict => '隐私设置在别处已被修改。请重新载入后再保存。',
   PrivacyGatewayFailureKind.bootstrapRequired => '账号尚未完成初始化，请稍后重试。',
   PrivacyGatewayFailureKind.validationFailed => '提交的隐私设置不被接受，请检查后重试。',
@@ -298,6 +327,7 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
             state: state,
             onRetry: () =>
                 ref.read(profileControllerProvider.notifier).reload(),
+            onOpenSecurity: () => widget.onNavigate('security'),
           )
         else
           _ProfileIdentityCard(
@@ -494,11 +524,16 @@ class _ProfileStateBlock extends StatelessWidget {
     required this.phase,
     required this.state,
     required this.onRetry,
+    this.onOpenSecurity,
   });
 
   final LoopResourcePhase phase;
   final ProfileState state;
   final VoidCallback onRetry;
+
+  /// Only the permission block uses it: step-up is not delivered, so the one
+  /// honest destination is the security centre.
+  final VoidCallback? onOpenSecurity;
 
   @override
   Widget build(BuildContext context) {
@@ -526,6 +561,20 @@ class _ProfileStateBlock extends StatelessWidget {
         key: ValueKey<String>('profile-empty'),
         message: '还没有可展示的资料',
         reason: '账号资料尚未读取。',
+      ),
+      // A refusal is not an error: the request arrived and the server answered
+      // "no". Retrying it would claim otherwise, so the block offers the only
+      // real next step instead.
+      LoopResourcePhase.permission => LoopPermissionState(
+        key: const ValueKey<String>('profile-permission'),
+        icon: 'shield',
+        denied: true,
+        title: state.failureKind == ProfileGatewayFailureKind.stepUpRequired
+            ? '这一步需要二次验证'
+            : '当前账号无权读取或修改资料',
+        purpose: profileFailureReason(state.failureKind),
+        settingsLabel: '前往安全中心',
+        onOpenSettings: onOpenSecurity,
       ),
       LoopResourcePhase.error => LoopErrorState(
         key: const ValueKey<String>('profile-error'),
@@ -621,6 +670,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             phase: phase,
             state: state,
             onRetry: controller.reload,
+            onOpenSecurity: () => widget.onNavigate('security'),
           )
         else ...<Widget>[
           if (state.requiresReload)
@@ -643,19 +693,34 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           // A failed save must never look like a success. The draft is kept
           // and the sanitized reason is shown next to the save action.
           if (state.phase == ProfilePhase.failure)
-            state.failureKind == ProfileGatewayFailureKind.offline
-                ? LoopOfflineState(
-                    key: const ValueKey<String>('profile-edit-offline'),
-                    pausedActions: const <String>['保存资料'],
-                    onRetry: () => unawaited(_save(controller)),
-                  )
-                : LoopNotice(
-                    key: const ValueKey<String>('profile-edit-failure'),
-                    icon: 'close',
-                    tone: LoopNoticeTone.danger,
-                    title: '保存未完成',
-                    body: profileFailureReason(state.failureKind),
-                  ),
+            switch (state.failureKind) {
+              ProfileGatewayFailureKind.offline => LoopOfflineState(
+                key: const ValueKey<String>('profile-edit-offline'),
+                pausedActions: const <String>['保存资料'],
+                onRetry: () => unawaited(_save(controller)),
+              ),
+              ProfileGatewayFailureKind.permissionDenied ||
+              ProfileGatewayFailureKind.stepUpRequired => LoopPermissionState(
+                key: const ValueKey<String>('profile-edit-permission'),
+                icon: 'shield',
+                denied: true,
+                title:
+                    state.failureKind ==
+                        ProfileGatewayFailureKind.stepUpRequired
+                    ? '这一步需要二次验证'
+                    : '当前账号无权修改资料',
+                purpose: profileFailureReason(state.failureKind),
+                settingsLabel: '前往安全中心',
+                onOpenSettings: () => widget.onNavigate('security'),
+              ),
+              _ => LoopNotice(
+                key: const ValueKey<String>('profile-edit-failure'),
+                icon: 'close',
+                tone: LoopNoticeTone.danger,
+                title: '保存未完成',
+                body: profileFailureReason(state.failureKind),
+              ),
+            },
           _AvatarPickerCard(
             selected: state.draft.avatarRef,
             alias: state.draft.alias,
@@ -1074,6 +1139,7 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
             phase: phase,
             state: state,
             onRetry: controller.reload,
+            onOpenSecurity: () => widget.onNavigate('security'),
           )
         else ...<Widget>[
           if (state.requiresReload)
@@ -1089,19 +1155,37 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
           // failed to change; a silent no-op reads as "saved". Offline keeps
           // its own block: nothing was submitted, so it pauses, not fails.
           if (!state.requiresReload && state.phase == PrivacyPhase.failure)
-            state.failureKind == PrivacyGatewayFailureKind.offline
-                ? LoopOfflineState(
-                    key: const ValueKey<String>('privacy-save-offline'),
-                    pausedActions: const <String>['保存隐私设置'],
-                    onRetry: () => unawaited(_save(controller)),
-                  )
-                : LoopNotice(
-                    key: const ValueKey<String>('privacy-save-failure'),
-                    icon: 'close',
-                    tone: LoopNoticeTone.danger,
-                    title: '保存未完成',
-                    body: privacyFailureReason(state.failureKind),
-                  ),
+            switch (state.failureKind) {
+              PrivacyGatewayFailureKind.offline => LoopOfflineState(
+                key: const ValueKey<String>('privacy-save-offline'),
+                pausedActions: const <String>['保存隐私设置'],
+                onRetry: () => unawaited(_save(controller)),
+              ),
+              // The server answered: it refused. Offering a retry would claim
+              // the refusal might not hold, so the block offers the only real
+              // next step instead.
+              PrivacyGatewayFailureKind.permissionDenied ||
+              PrivacyGatewayFailureKind.stepUpRequired => LoopPermissionState(
+                key: const ValueKey<String>('privacy-save-permission'),
+                icon: 'shield',
+                denied: true,
+                title:
+                    state.failureKind ==
+                        PrivacyGatewayFailureKind.stepUpRequired
+                    ? '这一步需要二次验证'
+                    : '当前账号无权修改隐私设置',
+                purpose: privacyFailureReason(state.failureKind),
+                settingsLabel: '前往安全中心',
+                onOpenSettings: () => widget.onNavigate('security'),
+              ),
+              _ => LoopNotice(
+                key: const ValueKey<String>('privacy-save-failure'),
+                icon: 'close',
+                tone: LoopNoticeTone.danger,
+                title: '保存未完成',
+                body: privacyFailureReason(state.failureKind),
+              ),
+            },
           const LoopLabel('身份'),
           LoopTogglePreferenceRow(
             key: const ValueKey<String>('privacy-anonymous-mode'),
@@ -1200,11 +1284,13 @@ class _PrivacyStateBlock extends StatelessWidget {
     required this.phase,
     required this.state,
     required this.onRetry,
+    this.onOpenSecurity,
   });
 
   final LoopResourcePhase phase;
   final PrivacyState state;
   final VoidCallback onRetry;
+  final VoidCallback? onOpenSecurity;
 
   @override
   Widget build(BuildContext context) {
@@ -1232,6 +1318,17 @@ class _PrivacyStateBlock extends StatelessWidget {
         key: ValueKey<String>('privacy-empty'),
         message: '还没有可展示的隐私设置',
         reason: '隐私偏好尚未读取。',
+      ),
+      LoopResourcePhase.permission => LoopPermissionState(
+        key: const ValueKey<String>('privacy-permission'),
+        icon: 'shield',
+        denied: true,
+        title: state.failureKind == PrivacyGatewayFailureKind.stepUpRequired
+            ? '这一步需要二次验证'
+            : '当前账号无权读取或修改隐私设置',
+        purpose: privacyFailureReason(state.failureKind),
+        settingsLabel: '前往安全中心',
+        onOpenSettings: onOpenSecurity,
       ),
       LoopResourcePhase.error => LoopErrorState(
         key: const ValueKey<String>('privacy-error'),

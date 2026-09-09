@@ -222,6 +222,7 @@ abstract final class LoopV2Contract {
       'AUTH_STEP_UP_REQUIRED' ||
       'PERMISSION_DENIED' ||
       'POLICY_BLOCKED' ||
+      'REGION_BLOCKED' ||
       'CAPABILITY_UNAVAILABLE' ||
       'PROVIDER_DISCONNECTED' ||
       'INDEXING_DELAYED' ||

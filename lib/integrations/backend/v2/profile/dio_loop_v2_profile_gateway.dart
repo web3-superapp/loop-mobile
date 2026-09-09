@@ -361,6 +361,13 @@ bool _isTerminalRejection(ProfileGatewayFailureKind kind) =>
 
 ProfileGatewayFailureKind profileFailureKindForV2(LoopBackendFailure failure) {
   return switch (failure.code) {
+    // A server refusal, not a transport fault: the request arrived and was
+    // understood. `REGION_BLOCKED` joins the three because it is the same
+    // answer with a different rule behind it.
+    'PERMISSION_DENIED' ||
+    'POLICY_BLOCKED' ||
+    'REGION_BLOCKED' => ProfileGatewayFailureKind.permissionDenied,
+    'AUTH_STEP_UP_REQUIRED' => ProfileGatewayFailureKind.stepUpRequired,
     'ALIAS_RESERVED' => ProfileGatewayFailureKind.aliasReserved,
     'ALIAS_BLOCKED' => ProfileGatewayFailureKind.aliasBlocked,
     'VALIDATION_FAILED' => ProfileGatewayFailureKind.validationFailed,
@@ -384,6 +391,10 @@ ProfileGatewayFailureKind profileFailureKindForV2(LoopBackendFailure failure) {
 
 PrivacyGatewayFailureKind privacyFailureKindForV2(LoopBackendFailure failure) {
   return switch (failure.code) {
+    'PERMISSION_DENIED' ||
+    'POLICY_BLOCKED' ||
+    'REGION_BLOCKED' => PrivacyGatewayFailureKind.permissionDenied,
+    'AUTH_STEP_UP_REQUIRED' => PrivacyGatewayFailureKind.stepUpRequired,
     'VALIDATION_FAILED' => PrivacyGatewayFailureKind.validationFailed,
     'VERSION_CONFLICT' => PrivacyGatewayFailureKind.versionConflict,
     'ACCOUNT_BOOTSTRAP_REQUIRED' => PrivacyGatewayFailureKind.bootstrapRequired,
