@@ -143,6 +143,17 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
                 ? '尚未读取到能力清单，本页不请求任何 Launch 数据。'
                 : '服务端原因：${capability.reasonCode}。',
           )
+        // A detail read that has not landed must not be shown as "no round to
+        // join": loading, offline and a failed read each get their own block,
+        // and none of them is evidence about the round configuration.
+        else if (state.phase != LaunchViewPhase.ready)
+          LaunchStateBlock(
+            prefix: 'launch-trade',
+            phase: state.phase,
+            failureKind: state.failureKind,
+            emptyMessage: '这个 Launch 没有可读的认购信息',
+            onRetry: () => unawaited(controller.reload()),
+          )
         else ...<Widget>[
           const LoopLabel('支付金额'),
           Padding(

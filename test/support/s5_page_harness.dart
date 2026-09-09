@@ -77,6 +77,7 @@ final class FakeWalletReadGateway implements WalletReadGateway {
     S5Answer<LoopWalletActivityPage>? activity,
     S5Answer<LoopWalletReceive>? receive,
     this.switchFailure,
+    this.activityMoreFailure,
     this.mode = LoopChainGatewayMode.production,
   }) : directory =
            directory ?? S5Answer<LoopWalletDirectory>(value: s5Directory()),
@@ -90,6 +91,11 @@ final class FakeWalletReadGateway implements WalletReadGateway {
   final S5Answer<LoopWalletActivityPage> activity;
   final S5Answer<LoopWalletReceive> receive;
   final LoopChainFailureKind? switchFailure;
+
+  /// Applies only to a paged read, i.e. `loadActivity(cursor: …)`. The first
+  /// page still lands, so a test can drive a "next page failed" state without
+  /// blanking the tape that already loaded.
+  final LoopChainFailureKind? activityMoreFailure;
 
   int directoryReads = 0;
   final List<String> switched = <String>[];
@@ -131,6 +137,10 @@ final class FakeWalletReadGateway implements WalletReadGateway {
     String? cursor,
   }) {
     activityCursors.add(cursor);
+    final more = activityMoreFailure;
+    if (cursor != null && more != null) {
+      return Future<LoopWalletActivityPage>.error(LoopChainException(more));
+    }
     return activity.resolve();
   }
 

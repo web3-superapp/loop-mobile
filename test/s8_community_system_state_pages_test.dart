@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/community/community_profile_screen.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/features/community/search_screen.dart';
 import 'package:loop_mobile/features/profile/about/about_screen.dart';
+import 'package:loop_mobile/features/social/blocklist_screen.dart';
 import 'package:loop_mobile/features/profile/settings/settings_screen.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -336,6 +337,29 @@ void main() {
         find.byKey(const ValueKey<String>('community-state-empty')),
         findsNothing,
       );
+    });
+  });
+
+  group('blocklist', () {
+    testWidgets('a pending blocklist read shows the skeleton and no count', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const BlocklistScreen(),
+        social: FakeSocialGateway()..pending = true,
+        settle: false,
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('community-state-loading')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('community-state-empty')),
+        findsNothing,
+      );
+      expect(find.textContaining('已屏蔽'), findsNothing);
     });
   });
 
