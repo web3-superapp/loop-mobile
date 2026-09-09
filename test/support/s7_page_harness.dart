@@ -340,6 +340,9 @@ LoopV2MetaSnapshot s7MetaSnapshot({
   // false is how a test proves the page is driven by the evidence rather than
   // by a hard-coded reason code of its own.
   bool launchEvidencePending = true,
+  // Decision 0038: the backend publishes this only while the Launch slot
+  // differs from the primary chain, so `null` is the ordinary document.
+  String? launchChainId,
 }) {
   return LoopV2MetaSnapshot(
     clientPolicy: LoopV2ClientPolicy(
@@ -400,6 +403,7 @@ LoopV2MetaSnapshot s7MetaSnapshot({
                 reasonCode: launchEvidencePending
                     ? 'LAUNCH_CONTRACT_BASELINE_PENDING'
                     : null,
+                launchChainId: launchChainId,
               ),
               LoopV2CapabilityId.mining ||
               LoopV2CapabilityId.referral => const LoopV2CapabilityEvidence(

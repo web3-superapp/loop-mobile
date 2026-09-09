@@ -973,6 +973,7 @@ LoopAssetBalanceRow s5Row({
 LoopWalletBalances s5Balances({
   List<LoopAssetBalanceRow>? rows,
   LoopNetWorth? netWorth,
+  LoopLaunchChainBalance? launchChain,
 }) => LoopWalletBalances(
   walletId: s5WalletId,
   snapshot: LoopBalanceSnapshot(
@@ -987,6 +988,7 @@ LoopWalletBalances s5Balances({
     nativeReserve: s5Decimal('0.005'),
   ),
   balances: rows ?? <LoopAssetBalanceRow>[s5Row()],
+  launchChain: launchChain,
   netWorth:
       netWorth ??
       LoopNetWorthValued(
@@ -1053,7 +1055,9 @@ LoopWalletReceive s5Receive() => LoopWalletReceive(
 LoopChainStatus s5Status({
   bool mismatched = false,
   LoopEndpointStatus endpointStatus = LoopEndpointStatus.healthy,
+  LoopLaunchChainStatus? launchChain,
 }) => LoopChainStatus(
+  launchChain: launchChain,
   chain: const LoopChainInfo(
     chainId: 'eip155:56',
     name: 'BNB Smart Chain',

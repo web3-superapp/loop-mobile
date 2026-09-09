@@ -1,3 +1,4 @@
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
@@ -41,12 +42,13 @@ LaunchSummary s7LaunchSummary({
   String ticker = 'MCAT',
   LaunchScheduleStatus scheduleStatus = LaunchScheduleStatus.unscheduled,
   String? configVersion,
+  String chainId = loopPrimaryChainId,
 }) => LaunchSummary(
   launchId: launchId,
   projectId: s7ProjectId,
   name: name,
   ticker: ticker,
-  chainId: 'eip155:56',
+  chainId: chainId,
   contractAddress: null,
   configDigest: null,
   scheduleStatus: scheduleStatus,
@@ -108,8 +110,9 @@ LaunchDetail s7Detail({
   LaunchConfig? config,
   List<LaunchRound>? rounds,
   LaunchUnavailable? configPending,
+  String chainId = loopPrimaryChainId,
 }) => LaunchDetail(
-  launch: s7LaunchSummary(),
+  launch: s7LaunchSummary(chainId: chainId),
   project: const LaunchProjectBrief(
     projectId: s7ProjectId,
     name: 'MoonCat',
