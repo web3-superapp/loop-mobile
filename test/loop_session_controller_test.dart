@@ -369,6 +369,89 @@ void main() {
     });
 
     test(
+      'a rotated principal starts from idle, not the last failure',
+      () async {
+        gateway.walletCreationOperation =
+            Future<PrivyWalletCreationResult>.error(
+              const PrivyGatewayException('钱包创建失败，请稍后重试。'),
+            );
+        await container
+            .read(loopWalletProvisioningProvider.notifier)
+            .ensureWallet();
+        expect(
+          container.read(loopWalletProvisioningProvider).stage,
+          LoopWalletProvisioningStage.failed,
+        );
+
+        await container.read(loopSessionProvider.notifier).exit();
+        expect(
+          container.read(loopSessionProvider).mode,
+          LoopSessionMode.signedOut,
+        );
+        // One account's failed attempt is not a fact about the next account.
+        expect(
+          container.read(loopWalletProvisioningProvider).stage,
+          LoopWalletProvisioningStage.idle,
+        );
+
+        gateway.walletCreationOperation = null;
+        container
+            .read(loopSessionProvider.notifier)
+            .acceptAuthenticated(
+              const PrivyAccountSummary(privyUserId: 'did:privy:new'),
+            );
+        final provisioning = container.read(loopWalletProvisioningProvider);
+        expect(provisioning.stage, LoopWalletProvisioningStage.idle);
+        expect(provisioning.errorMessage, isNull);
+
+        // The new principal is asked on its own behalf rather than inheriting
+        // the old principal's recorded attempt.
+        await container
+            .read(loopWalletProvisioningProvider.notifier)
+            .ensureWallet();
+        expect(gateway.walletCreationPrincipals, <String>[
+          'did:privy:old',
+          'did:privy:new',
+        ]);
+        expect(
+          container.read(loopWalletProvisioningProvider).stage,
+          LoopWalletProvisioningStage.created,
+        );
+      },
+    );
+
+    test('a creation that outlives its principal publishes nothing', () async {
+      final walletGate = Completer<PrivyWalletCreationResult>();
+      gateway.walletCreationOperation = walletGate.future;
+      final creation = container
+          .read(loopWalletProvisioningProvider.notifier)
+          .createWallet();
+      expect(container.read(loopWalletProvisioningProvider).isCreating, isTrue);
+
+      gateway.emitAuthenticated('did:privy:new');
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        container.read(loopWalletProvisioningProvider).stage,
+        LoopWalletProvisioningStage.idle,
+      );
+
+      walletGate.complete(
+        const PrivyWalletCreationResult(
+          privyUserId: 'did:privy:old',
+          wallet: PrivyWalletSummary(address: '0xold'),
+        ),
+      );
+
+      expect(await creation, isFalse);
+      // The rotated principal keeps its own untouched state: neither the old
+      // attempt's failure nor its success is attributed to it.
+      expect(
+        container.read(loopWalletProvisioningProvider).stage,
+        LoopWalletProvisioningStage.idle,
+      );
+    });
+
+    test(
       'a manual retry joins the automatic attempt instead of racing',
       () async {
         final walletGate = Completer<PrivyWalletCreationResult>();

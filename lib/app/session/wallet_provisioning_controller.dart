@@ -54,8 +54,32 @@ final class LoopWalletProvisioningController
   Future<bool>? _operation;
   String? _autoAttemptedPrincipal;
 
+  /// Bumped whenever the verified principal changes. A creation that started
+  /// under an earlier principal may not publish its outcome, because the
+  /// account the page is now showing is not the one that was asked.
+  var _principalGeneration = 0;
+
   @override
-  LoopWalletProvisioning build() => const LoopWalletProvisioning.idle();
+  LoopWalletProvisioning build() {
+    ref.listen<String?>(
+      loopSessionProvider.select(
+        (session) => session.canUseProviderBackedFeatures
+            ? session.account?.privyUserId
+            : null,
+      ),
+      (previous, next) {
+        if (previous == next) return;
+        // Sign-out and account rotation both land here. One account's failed
+        // attempt is not a fact about the next one, and a flight started for
+        // the old principal must not be joined by the new one, so the state
+        // and the shared flight are both dropped.
+        _principalGeneration += 1;
+        _operation = null;
+        state = const LoopWalletProvisioning.idle();
+      },
+    );
+    return const LoopWalletProvisioning.idle();
+  }
 
   /// The automatic attempt, made once per verified principal.
   ///
@@ -79,9 +103,11 @@ final class LoopWalletProvisioningController
 
   /// The explicit attempt made from a wallet page's empty state.
   ///
-  /// Returns whether a wallet now exists for the current principal. It shares
-  /// the automatic attempt's single flight, so the button cannot race the
-  /// login-time call.
+  /// Returns whether a wallet now exists **for the principal that is still
+  /// signed in**: a creation whose account rotated while it was in flight
+  /// reports `false` and publishes nothing, because its answer is about an
+  /// account this session no longer holds. It shares the automatic attempt's
+  /// single flight, so the button cannot race the login-time call.
   Future<bool> createWallet() {
     final active = _operation;
     if (active != null) return active;
@@ -95,19 +121,20 @@ final class LoopWalletProvisioningController
   }
 
   Future<bool> _create() async {
+    final generation = _principalGeneration;
     state = const LoopWalletProvisioning(
       stage: LoopWalletProvisioningStage.creating,
     );
     try {
       await ref.read(loopSessionProvider.notifier).createWallet();
     } on PrivyGatewayException catch (error) {
-      _fail(error.userMessage);
+      _fail(generation, error.userMessage);
       return false;
     } catch (_) {
-      _fail('钱包创建没有完成，账号与登录状态没有变化，可以稍后再试。');
+      _fail(generation, '钱包创建没有完成，账号与登录状态没有变化，可以稍后再试。');
       return false;
     }
-    if (!ref.mounted) return true;
+    if (!ref.mounted || generation != _principalGeneration) return false;
     state = const LoopWalletProvisioning(
       stage: LoopWalletProvisioningStage.created,
     );
@@ -119,8 +146,8 @@ final class LoopWalletProvisioningController
     return true;
   }
 
-  void _fail(String message) {
-    if (!ref.mounted) return;
+  void _fail(int generation, String message) {
+    if (!ref.mounted || generation != _principalGeneration) return;
     state = LoopWalletProvisioning(
       stage: LoopWalletProvisioningStage.failed,
       errorMessage: message,

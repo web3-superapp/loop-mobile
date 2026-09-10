@@ -313,7 +313,7 @@ void main() {
       expect(privy.creationPrincipals, hasLength(1));
     });
 
-    testWidgets('a session that may not create a wallet offers no button', (
+    testWidgets('a session with no account at all offers no button', (
       tester,
     ) async {
       await pumpS5Page(
@@ -328,6 +328,28 @@ void main() {
         find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
         findsNothing,
       );
+    });
+
+    testWidgets('a cached unverified session may not open a real wallet', (
+      tester,
+    ) async {
+      final privy = WalletCreatingTestPrivyGateway(
+        restoreKind: PrivySessionKind.authenticatedUnverified,
+      );
+      await pumpS5Page(
+        tester,
+        const WalletScreen(),
+        wallet: FakeWalletReadGateway(directory: emptyDirectoryAnswer()),
+        privy: privy,
+      );
+
+      expect(find.text('这个账号还没有钱包'), findsOneWidget);
+      expect(find.textContaining('当前会话未完成验证'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
+        findsNothing,
+      );
+      expect(privy.creationPrincipals, isEmpty);
     });
 
     testWidgets('a read wallet list with no active wallet is not "no wallet"', (
@@ -430,6 +452,24 @@ void main() {
 
       expect(find.text('净值不可用'), findsWidgets);
       expect(find.textContaining('价格来源尚未配置'), findsWidgets);
+    });
+
+    testWidgets('a walletless account is offered a wallet, not a skeleton', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const NetWorthScreen(),
+        wallet: FakeWalletReadGateway(directory: emptyDirectoryAnswer()),
+        privy: WalletCreatingTestPrivyGateway(),
+      );
+
+      expect(find.text('这个账号还没有钱包'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('networth-create-wallet')),
+        findsOneWidget,
+      );
+      expect(find.byType(LoopSkeleton), findsNothing);
     });
   });
 
@@ -874,6 +914,27 @@ void main() {
       // The repeated row is not appended twice.
       expect(find.text('收到 WBNB'), findsOneWidget);
     });
+
+    testWidgets('a walletless account is offered a wallet, not a skeleton', (
+      tester,
+    ) async {
+      final wallet = FakeWalletReadGateway(directory: emptyDirectoryAnswer());
+      await pumpS5Page(
+        tester,
+        const TransactionHistoryScreen(),
+        wallet: wallet,
+        privy: WalletCreatingTestPrivyGateway(),
+      );
+
+      expect(find.text('这个账号还没有钱包'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('tx-history-create-wallet')),
+        findsOneWidget,
+      );
+      expect(find.byType(LoopSkeleton), findsNothing);
+      // No wallet means no wallet id, so the activity read never started.
+      expect(wallet.activityCursors, isEmpty);
+    });
   });
 
   group('networks', () {
@@ -976,14 +1037,25 @@ S5Answer<LoopWalletDirectory> emptyDirectoryAnswer() =>
 
 /// A verified session whose Privy wallet creation can be driven by a test.
 class WalletCreatingTestPrivyGateway implements PrivyAuthGateway {
-  WalletCreatingTestPrivyGateway({this.failure, this.pending});
+  WalletCreatingTestPrivyGateway({
+    this.failure,
+    this.pending,
+    this.restoreKind = PrivySessionKind.authenticated,
+  });
 
   final PrivyGatewayException? failure;
   final Future<PrivyWalletCreationResult>? pending;
+
+  /// A cached unverified session restores without an account, which is how
+  /// `LoopSessionState.authenticatedUnverified` is reached.
+  final PrivySessionKind restoreKind;
   final List<String> creationPrincipals = <String>[];
 
   @override
   Future<PrivySessionSnapshot> restoreSession() async {
+    if (restoreKind != PrivySessionKind.authenticated) {
+      return PrivySessionSnapshot(restoreKind);
+    }
     return const PrivySessionSnapshot(
       PrivySessionKind.authenticated,
       account: PrivyAccountSummary(privyUserId: 'did:privy:test-widget'),
