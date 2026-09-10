@@ -171,6 +171,7 @@ final class DioLoopV2CommunityGateway implements CommunityGateway {
   Future<CommunityMemberDirectory> listMembers(
     String communityId, {
     CommunityMemberFilter role = CommunityMemberFilter.all,
+    String? q,
     String? cursor,
   }) => _read(
     (accessToken) => _api.listMembers(
@@ -178,6 +179,7 @@ final class DioLoopV2CommunityGateway implements CommunityGateway {
       clientVersion: _clientVersion,
       communityId: communityId,
       role: role,
+      q: q,
       cursor: cursor,
     ),
   );

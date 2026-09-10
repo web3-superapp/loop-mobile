@@ -31,9 +31,14 @@ abstract interface class CommunityGateway {
     CommunityProfileEdit edit,
   );
 
+  /// Lists the member directory. `q` narrows the page to a member alias
+  /// prefix; the server owns the normalization and the length bound. A cursor
+  /// is bound to the query it was issued for, so a caller that changes `q`
+  /// must start again at the first page.
   Future<CommunityMemberDirectory> listMembers(
     String communityId, {
     CommunityMemberFilter role,
+    String? q,
     String? cursor,
   });
 
@@ -105,6 +110,7 @@ final class UnavailableCommunityGateway implements CommunityGateway {
   Future<CommunityMemberDirectory> listMembers(
     String communityId, {
     CommunityMemberFilter role = CommunityMemberFilter.all,
+    String? q,
     String? cursor,
   }) => _unavailable();
 

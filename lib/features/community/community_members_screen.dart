@@ -10,7 +10,6 @@ import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/social/public_profile_sheet.dart';
-import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -102,6 +101,31 @@ class CommunityMembersScreen extends ConsumerStatefulWidget {
 
 class _CommunityMembersScreenState
     extends ConsumerState<CommunityMembersScreen> {
+  final TextEditingController _query = TextEditingController();
+  final FocusNode _queryFocus = FocusNode();
+
+  /// The field is revealed by the topbar control, as in the prototype; the
+  /// directory itself is always the whole page.
+  bool _searchOpen = false;
+
+  @override
+  void dispose() {
+    _query.dispose();
+    _queryFocus.dispose();
+    super.dispose();
+  }
+
+  void _toggleSearch(CommunityMembersController controller) {
+    final open = !_searchOpen;
+    setState(() => _searchOpen = open);
+    if (open) {
+      _queryFocus.requestFocus();
+      return;
+    }
+    _query.clear();
+    unawaited(controller.clearSearch());
+  }
+
   @override
   Widget build(BuildContext context) {
     final capability = ref.watch(
@@ -129,9 +153,9 @@ class _CommunityMembersScreenState
       actions: <Widget>[
         LoopIconButton(
           key: const ValueKey<String>('community-members-search'),
-          icon: 'search',
-          label: '搜索成员',
-          onPressed: () => unawaited(_explainMemberSearch()),
+          icon: _searchOpen ? 'close' : 'search',
+          label: _searchOpen ? '关闭搜索' : '搜索成员',
+          onPressed: () => _toggleSearch(controller),
         ),
       ],
       folio: LoopFolioPrimary(
@@ -142,54 +166,90 @@ class _CommunityMembersScreenState
         caption: 'Owner / Admin / 成员 三级权限。',
         stamp: counts == null ? null : '${counts.all}',
       ),
-      filters: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: <Widget>[
-              _filterSeg(
-                controller,
-                state,
-                CommunityMemberFilter.all,
-                counts == null ? '全部' : '全部 ${counts.all}',
-              ),
-              _filterSeg(
-                controller,
-                state,
-                CommunityMemberFilter.owner,
-                counts == null ? 'Owner' : 'Owner ${counts.owner}',
-              ),
-              _filterSeg(
-                controller,
-                state,
-                CommunityMemberFilter.admin,
-                counts == null ? 'Admin' : 'Admin ${counts.admin}',
-              ),
-              // The governance view is only opened to a viewer the server
-              // told may ban, and it carries no count: `counts` stays the
-              // non-banned directory's.
-              if (state.viewer?.canBan ?? false)
-                _filterSeg(
-                  controller,
-                  state,
-                  CommunityMemberFilter.banned,
-                  '已封禁',
-                ),
-              // Presence has no source; the segment stays disabled with its
-              // server reason rather than showing a fabricated online count.
-              const Padding(
-                padding: EdgeInsets.only(right: 8),
-                child: LoopSeg(
-                  key: ValueKey<String>('members-seg-online'),
-                  label: '在线',
-                  selected: false,
-                  onSelected: null,
+      filters: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          if (_searchOpen)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: TextField(
+                key: const ValueKey<String>('community-members-search-field'),
+                controller: _query,
+                focusNode: _queryFocus,
+                textInputAction: TextInputAction.search,
+                maxLength: memberSearchMaximumRunes,
+                onChanged: controller.search,
+                decoration: InputDecoration(
+                  labelText: '按别名搜索成员',
+                  hintText: '输入别名开头即可',
+                  counterText: '',
+                  suffixIcon: !state.isSearching
+                      ? null
+                      : IconButton(
+                          key: const ValueKey<String>(
+                            'community-members-search-clear',
+                          ),
+                          tooltip: '清除',
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: () {
+                            _query.clear();
+                            unawaited(controller.clearSearch());
+                            _queryFocus.requestFocus();
+                          },
+                        ),
                 ),
               ),
-            ],
+            ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: <Widget>[
+                  _filterSeg(
+                    controller,
+                    state,
+                    CommunityMemberFilter.all,
+                    counts == null ? '全部' : '全部 ${counts.all}',
+                  ),
+                  _filterSeg(
+                    controller,
+                    state,
+                    CommunityMemberFilter.owner,
+                    counts == null ? 'Owner' : 'Owner ${counts.owner}',
+                  ),
+                  _filterSeg(
+                    controller,
+                    state,
+                    CommunityMemberFilter.admin,
+                    counts == null ? 'Admin' : 'Admin ${counts.admin}',
+                  ),
+                  // The governance view is only opened to a viewer the server
+                  // told may ban, and it carries no count: `counts` stays the
+                  // non-banned directory's.
+                  if (state.viewer?.canBan ?? false)
+                    _filterSeg(
+                      controller,
+                      state,
+                      CommunityMemberFilter.banned,
+                      '已封禁',
+                    ),
+                  // Presence has no source; the segment stays disabled with its
+                  // server reason rather than showing a fabricated online count.
+                  const Padding(
+                    padding: EdgeInsets.only(right: 8),
+                    child: LoopSeg(
+                      key: ValueKey<String>('members-seg-online'),
+                      label: '在线',
+                      selected: false,
+                      onSelected: null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
       ),
       collection: ListView(
         key: const ValueKey<String>('community-members-list'),
@@ -225,8 +285,10 @@ class _CommunityMembersScreenState
             CommunityStateBlock(
               phase: state.phase,
               failureKind: state.failureKind,
-              emptyMessage: '这个筛选下没有成员',
-              emptyReason: '这个角色下没有成员。',
+              emptyMessage: state.isSearching ? '没有匹配的成员' : '这个筛选下没有成员',
+              emptyReason: state.isSearching
+                  ? '别名要从开头对上才算匹配，换个开头再试。'
+                  : '这个角色下没有成员。',
               permissionTitle: '没有权限查看成员目录',
               onRetry: () => unawaited(controller.reload()),
             )
@@ -355,37 +417,6 @@ class _CommunityMembersScreenState
       semanticLabel: '${entry.profile.displayName}，${entry.role.label}，$status',
     );
   }
-
-  /// Member search has no backend in this step; the control explains that
-  /// rather than filtering the loaded page and calling it a search.
-  Future<void> _explainMemberSearch() => showLoopSheet<void>(
-    context,
-    barrierLabel: '关闭成员搜索说明',
-    builder: (sheetContext) => Padding(
-      key: const ValueKey<String>('member-search-unavailable-sheet'),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          const LoopEmpty(
-            message: '成员搜索暂不可用',
-            reason:
-                '成员目录没有搜索接口，本页只能按角色分段翻页。'
-                '要按别名找人，请使用全局搜索的「用户」域。',
-            margin: EdgeInsets.zero,
-          ),
-          const SizedBox(height: 14),
-          LoopButton(
-            key: const ValueKey<String>('member-search-close'),
-            label: '知道了',
-            block: true,
-            onPressed: () => Navigator.of(sheetContext).pop(),
-          ),
-        ],
-      ),
-    ),
-  );
 
   Future<void> _openMemberSheet(
     CommunityMemberEntry entry,

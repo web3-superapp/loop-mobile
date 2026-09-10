@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_discover_screen.dart';
 import 'package:loop_mobile/features/community/community_members_screen.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
@@ -802,7 +803,7 @@ void main() {
 
       await tester.tap(seg);
       await tester.pumpAndSettle();
-      expect(gateway.commands, contains('members:banned:null'));
+      expect(gateway.commands, contains('members:banned:null:null'));
       expect(find.text('已封禁'), findsWidgets);
 
       // A banned row offers only the restore, and the second confirmation
@@ -839,7 +840,7 @@ void main() {
       // A filtered view is read again rather than mislabelled with the
       // default directory the command answered with.
       expect(
-        gateway.commands.where((c) => c == 'members:banned:null'),
+        gateway.commands.where((c) => c == 'members:banned:null:null'),
         hasLength(2),
       );
       expect(find.text('解除封禁已生效'), findsOneWidget);
@@ -926,6 +927,176 @@ void main() {
 
       expect(find.byType(LoopSkeleton), findsOneWidget);
       expect(find.textContaining('名成员'), findsNothing);
+    });
+  });
+
+  group('community-members · alias search', () {
+    Finder searchToggle() =>
+        find.byKey(const ValueKey<String>('community-members-search'));
+    Finder searchField() =>
+        find.byKey(const ValueKey<String>('community-members-search-field'));
+
+    /// A pending debounce timer schedules no frame, so `pumpAndSettle` alone
+    /// would return before it fires: the clock is advanced explicitly first.
+    Future<void> settleSearch(WidgetTester tester) async {
+      await tester.pump(CommunityMembersController.searchDebounce);
+      await tester.pumpAndSettle();
+    }
+
+    Future<FakeCommunityGateway> openSearch(WidgetTester tester) async {
+      final gateway = FakeCommunityGateway(members: testDirectory());
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: gateway,
+      );
+      expect(searchField(), findsNothing);
+      await tester.tap(searchToggle());
+      await tester.pumpAndSettle();
+      expect(searchField(), findsOneWidget);
+      gateway.commands.clear();
+      return gateway;
+    }
+
+    testWidgets('the placeholder sheet is gone; the control opens a field', (
+      tester,
+    ) async {
+      await openSearch(tester);
+      expect(
+        find.byKey(const ValueKey<String>('member-search-unavailable-sheet')),
+        findsNothing,
+      );
+      expect(find.text('成员搜索暂不可用'), findsNothing);
+    });
+
+    testWidgets('one keystroke is not one request: the field is debounced', (
+      tester,
+    ) async {
+      final gateway = await openSearch(tester);
+
+      await tester.enterText(searchField(), 'f');
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(gateway.commands, isEmpty);
+
+      await tester.enterText(searchField(), 'fr');
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(gateway.commands, isEmpty);
+
+      await tester.enterText(searchField(), 'fro');
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(gateway.commands, isEmpty);
+
+      // Only the settled text is ever asked for, exactly once.
+      await settleSearch(tester);
+      expect(gateway.commands, <String>['members:all:fro:null']);
+    });
+
+    testWidgets('the trimmed query reaches the gateway as q', (tester) async {
+      final gateway = await openSearch(tester);
+
+      await tester.enterText(searchField(), '  Frog  ');
+      await settleSearch(tester);
+
+      expect(gateway.commands, <String>['members:all:Frog:null']);
+    });
+
+    testWidgets('a query with no match states it without a zero count', (
+      tester,
+    ) async {
+      final gateway = await openSearch(tester);
+      gateway.membersByQuery = <String?, CommunityMemberDirectory>{
+        'zzz': testDirectory(items: const <CommunityMemberEntry>[]),
+      };
+
+      await tester.enterText(searchField(), 'zzz');
+      await settleSearch(tester);
+
+      expect(find.text('没有匹配的成员'), findsOneWidget);
+      // The counts describe the whole directory, so the segments do not move.
+      expect(find.text('全部 128'), findsOneWidget);
+      // The field survives its own empty result, so the query can be edited.
+      expect(searchField(), findsOneWidget);
+    });
+
+    testWidgets('the clear control drops q and reads the directory again', (
+      tester,
+    ) async {
+      final gateway = await openSearch(tester);
+      gateway.membersByQuery = <String?, CommunityMemberDirectory>{
+        'zzz': testDirectory(items: const <CommunityMemberEntry>[]),
+      };
+
+      await tester.enterText(searchField(), 'zzz');
+      await settleSearch(tester);
+      expect(find.text('没有匹配的成员'), findsOneWidget);
+
+      final clear = find.byKey(
+        const ValueKey<String>('community-members-search-clear'),
+      );
+      expect(clear, findsOneWidget);
+      await tester.tap(clear);
+      await tester.pumpAndSettle();
+
+      expect(gateway.commands.last, 'members:all:null:null');
+      expect(find.text('没有匹配的成员'), findsNothing);
+      expect(find.text('frog_member'), findsOneWidget);
+    });
+
+    testWidgets('closing the control clears the query as well', (tester) async {
+      final gateway = await openSearch(tester);
+
+      await tester.enterText(searchField(), 'fro');
+      await settleSearch(tester);
+      expect(gateway.commands, <String>['members:all:fro:null']);
+
+      await tester.tap(searchToggle());
+      await tester.pumpAndSettle();
+
+      expect(searchField(), findsNothing);
+      expect(gateway.commands.last, 'members:all:null:null');
+    });
+
+    testWidgets('a keystroke during a read is coalesced into one more read', (
+      tester,
+    ) async {
+      final gateway = await openSearch(tester);
+      gateway.readDelay = const Duration(milliseconds: 500);
+
+      await tester.enterText(searchField(), 'f');
+      await tester.pump(CommunityMembersController.searchDebounce);
+      // The first read is now in the air.
+      expect(gateway.commands, <String>['members:all:f:null']);
+
+      // A keystroke while it is in flight must not start a second read.
+      await tester.enterText(searchField(), 'fr');
+      await tester.pump(CommunityMembersController.searchDebounce);
+      expect(gateway.commands, <String>['members:all:f:null']);
+
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+
+      // Exactly one follow-up, for the latest text.
+      expect(gateway.commands, <String>[
+        'members:all:f:null',
+        'members:all:fr:null',
+      ]);
+    });
+
+    testWidgets('a refused search keeps the five-state contract', (
+      tester,
+    ) async {
+      final gateway = await openSearch(tester);
+      gateway.failure = CommunityFailureKind.rateLimited;
+
+      await tester.enterText(searchField(), 'fro');
+      await settleSearch(tester);
+
+      expect(
+        find.byKey(const ValueKey<String>('community-state-error')),
+        findsOneWidget,
+      );
+      expect(searchField(), findsOneWidget);
     });
   });
 }

@@ -230,24 +230,40 @@ final class FakeCommunityGateway implements CommunityGateway {
   /// existing test keeps its single-view behaviour.
   Map<CommunityMemberFilter, CommunityMemberDirectory> membersByFilter;
 
+  /// Per-query directories, keyed by the `q` the gateway was called with. A
+  /// missing entry falls back to [membersByFilter] and then to [members].
+  Map<String?, CommunityMemberDirectory> membersByQuery =
+      <String?, CommunityMemberDirectory>{};
+
   /// Set when the application must be accepted; otherwise `writeFailure`
   /// (or `failure`) decides the refusal.
   CommunityDetail? createdDetail;
 
   final List<String> commands = <String>[];
 
+  /// Holds every read for this long, so a test can drive a keystroke while a
+  /// request is still in the air.
+  Duration? readDelay;
+
   Future<T> _read<T>(T? value) {
     if (pending) return Completer<T>().future;
-    final kind = failure;
-    if (kind != null) {
-      return Future<T>.error(CommunityGatewayException(kind));
+    final delay = readDelay;
+    Future<T> answer() {
+      final kind = failure;
+      if (kind != null) {
+        return Future<T>.error(CommunityGatewayException(kind));
+      }
+      if (value == null) {
+        return Future<T>.error(
+          const CommunityGatewayException(CommunityFailureKind.notFound),
+        );
+      }
+      return Future<T>.value(value);
     }
-    if (value == null) {
-      return Future<T>.error(
-        const CommunityGatewayException(CommunityFailureKind.notFound),
-      );
-    }
-    return Future<T>.value(value);
+
+    return delay == null
+        ? answer()
+        : Future<void>.delayed(delay).then((_) => answer());
   }
 
   Future<T> _write<T>(String command, T? value) {
@@ -304,10 +320,11 @@ final class FakeCommunityGateway implements CommunityGateway {
   Future<CommunityMemberDirectory> listMembers(
     String communityId, {
     CommunityMemberFilter role = CommunityMemberFilter.all,
+    String? q,
     String? cursor,
   }) {
-    commands.add('members:${role.wireName}:$cursor');
-    return _read(membersByFilter[role] ?? members);
+    commands.add('members:${role.wireName}:$q:$cursor');
+    return _read(membersByQuery[q] ?? membersByFilter[role] ?? members);
   }
 
   @override

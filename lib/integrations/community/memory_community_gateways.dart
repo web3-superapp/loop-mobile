@@ -256,6 +256,7 @@ final class MemoryCommunityGateway implements CommunityGateway {
   Future<CommunityMemberDirectory> listMembers(
     String communityId, {
     CommunityMemberFilter role = CommunityMemberFilter.all,
+    String? q,
     String? cursor,
   }) async {
     final community = _byId(communityId);
@@ -285,13 +286,18 @@ final class MemoryCommunityGateway implements CommunityGateway {
         miningPower: _previewMining,
       ),
     ];
+    // The preview mirrors the server's prefix rule, lower-cased only: it is a
+    // display sample, never a claim about a real directory.
+    final prefix = q?.trim().toLowerCase() ?? '';
     final items = <CommunityMemberEntry>[
       for (final entry in all)
-        if (role == CommunityMemberFilter.all ||
-            (role == CommunityMemberFilter.owner &&
-                entry.role == CommunityRole.owner) ||
-            (role == CommunityMemberFilter.admin &&
-                entry.role == CommunityRole.admin))
+        if ((role == CommunityMemberFilter.all ||
+                (role == CommunityMemberFilter.owner &&
+                    entry.role == CommunityRole.owner) ||
+                (role == CommunityMemberFilter.admin &&
+                    entry.role == CommunityRole.admin)) &&
+            (prefix.isEmpty ||
+                (entry.profile.alias ?? '').toLowerCase().startsWith(prefix)))
           entry,
     ];
     return CommunityMemberDirectory(

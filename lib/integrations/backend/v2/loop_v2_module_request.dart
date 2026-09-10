@@ -39,6 +39,24 @@ abstract final class LoopV2ModuleRequest {
     },
   };
 
+  /// The community member directory. It adds the two codes only this read can
+  /// answer with: `403` for the `banned` governance view and `429` when the
+  /// alias-prefix query exhausts the shared public search quota.
+  static const memberListErrors = <int, Set<String>>{
+    400: <String>{'INVALID_REQUEST'},
+    401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
+    403: <String>{'PERMISSION_DENIED'},
+    404: <String>{'NOT_FOUND'},
+    409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED', 'VERSION_CONFLICT'},
+    429: <String>{'RATE_LIMITED'},
+    500: <String>{'INTERNAL_ERROR'},
+    503: <String>{
+      'CAPABILITY_UNAVAILABLE',
+      'PROVIDER_DISCONNECTED',
+      'REQUEST_TIMEOUT',
+    },
+  };
+
   static const writeErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},

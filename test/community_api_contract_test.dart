@@ -734,6 +734,150 @@ void main() {
         }
       },
     );
+
+    test('a member alias prefix is trimmed and sent as q', () async {
+      RequestOptions? captured;
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          captured = options;
+          handler.resolve(_response(options, memberBody()));
+        }),
+      );
+
+      await api.listMembers(
+        accessToken: 'token',
+        clientVersion: clientVersion,
+        communityId: communityId,
+        role: CommunityMemberFilter.admin,
+        q: '  Frog  ',
+        cursor: 'Zzz-9_9.Yyy-8_8',
+      );
+
+      expect(captured?.queryParameters, <String, Object?>{
+        'role': 'admin',
+        'q': 'Frog',
+        'cursor': 'Zzz-9_9.Yyy-8_8',
+      });
+      expect(captured?.headers.containsKey('idempotency-key'), isFalse);
+    });
+
+    test('an absent or blank member prefix sends no q at all', () async {
+      RequestOptions? captured;
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          captured = options;
+          handler.resolve(_response(options, memberBody()));
+        }),
+      );
+
+      for (final query in <String?>[null, '', '   ']) {
+        await api.listMembers(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          communityId: communityId,
+          role: CommunityMemberFilter.all,
+          q: query,
+        );
+        expect(
+          captured?.queryParameters.containsKey('q'),
+          isFalse,
+          reason: 'q=${query ?? 'null'}',
+        );
+      }
+    });
+
+    test(
+      'a member prefix the alias rules reject is never dispatched',
+      () async {
+        var dispatched = false;
+        final api = DioLoopV2CommunityApi(
+          _dio((options, handler) {
+            dispatched = true;
+            handler.resolve(_response(options, memberBody()));
+          }),
+        );
+
+        for (final query in <String>['fr\u0000og', 'fr\u200bog', 'a' * 257]) {
+          await expectLater(
+            api.listMembers(
+              accessToken: 'token',
+              clientVersion: clientVersion,
+              communityId: communityId,
+              role: CommunityMemberFilter.all,
+              q: query,
+            ),
+            throwsA(
+              isA<LoopBackendFailure>().having(
+                (failure) => failure.kind,
+                'kind',
+                LoopBackendFailureKind.invalidRequest,
+              ),
+            ),
+          );
+        }
+        expect(dispatched, isFalse);
+      },
+    );
+
+    test('a rate-limited member search keeps its catalogue code', () async {
+      final api = DioLoopV2CommunityApi(
+        _dio(
+          (options, handler) => handler.reject(
+            _errorResponse(
+              options,
+              statusCode: 429,
+              code: 'RATE_LIMITED',
+              category: 'rateLimit',
+              userMessageKey: 'errors.rateLimit.exceeded',
+              retryable: true,
+            ),
+          ),
+        ),
+      );
+
+      try {
+        await api.listMembers(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          communityId: communityId,
+          role: CommunityMemberFilter.all,
+          q: 'fro',
+        );
+        fail('the member search must not succeed');
+      } on LoopBackendFailure catch (failure) {
+        expect(failure.code, 'RATE_LIMITED');
+        expect(communityFailureKindForV2(failure).name, 'rateLimited');
+      }
+    });
+
+    test('the banned governance view keeps its 403 code', () async {
+      final api = DioLoopV2CommunityApi(
+        _dio(
+          (options, handler) => handler.reject(
+            _errorResponse(
+              options,
+              statusCode: 403,
+              code: 'PERMISSION_DENIED',
+              category: 'authorization',
+              userMessageKey: 'errors.permission.denied',
+            ),
+          ),
+        ),
+      );
+
+      try {
+        await api.listMembers(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          communityId: communityId,
+          role: CommunityMemberFilter.banned,
+        );
+        fail('the governance view must not succeed');
+      } on LoopBackendFailure catch (failure) {
+        expect(failure.code, 'PERMISSION_DENIED');
+        expect(communityFailureKindForV2(failure).name, 'permissionDenied');
+      }
+    });
   });
 }
 

@@ -443,12 +443,18 @@ final communityProfileControllerProvider =
 // community-members · directory and governance
 // ---------------------------------------------------------------------------
 
+/// The server's bound for the member-directory alias prefix (`q`), in Unicode
+/// code points. The field stops the caller at the bound rather than spending a
+/// request the server would reject.
+const int memberSearchMaximumRunes = 40;
+
 @immutable
 final class CommunityMembersState {
   const CommunityMembersState({
     required this.mode,
     required this.phase,
     required this.filter,
+    this.query = '',
     this.community,
     this.viewer,
     this.counts,
@@ -474,6 +480,10 @@ final class CommunityMembersState {
   final CommunityGatewayMode mode;
   final CommunityViewPhase phase;
   final CommunityMemberFilter filter;
+
+  /// The trimmed member alias prefix the page is currently narrowed by. Empty
+  /// means the whole directory; the server owns the normalization.
+  final String query;
   final CommunitySummary? community;
   final CommunityViewer? viewer;
   final CommunityMemberCounts? counts;
@@ -485,6 +495,9 @@ final class CommunityMembersState {
 
   bool get canLoadMore => nextCursor != null && !loadingMore && !busy;
 
+  /// True when the page is narrowed by a search rather than a role filter.
+  bool get isSearching => query.isNotEmpty;
+
   bool get isPreview => mode == CommunityGatewayMode.preview;
 
   /// Governance visibility comes only from the server's `viewer` flags.
@@ -493,13 +506,29 @@ final class CommunityMembersState {
 
 final class CommunityMembersController extends Notifier<CommunityMembersState>
     with CommunitySingleFlight {
+  /// One keystroke is not one request: the field settles for this long before
+  /// the directory is read again.
+  static const searchDebounce = Duration(milliseconds: 300);
+
   String? _communityId;
+  Timer? _searchTimer;
+
+  /// The query the last completed request actually asked for. The drain loop
+  /// compares it with `state.query` so a keystroke that arrived while a read
+  /// was in flight still reaches the server exactly once.
+  String _appliedQuery = '';
+  String _requestedQuery = '';
+  bool _draining = false;
 
   @override
   CommunityMembersState build() {
     nextGeneration();
     final mode = ref.watch(communityGatewayProvider).mode;
-    ref.onDispose(nextGeneration);
+    ref.onDispose(() {
+      _searchTimer?.cancel();
+      _searchTimer = null;
+      nextGeneration();
+    });
     return CommunityMembersState.initial(mode);
   }
 
@@ -528,6 +557,67 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
     return _fetch(filter: state.filter, append: true);
   }
 
+  /// Records a keystroke. The request is debounced; the state's `query`
+  /// changes at once so the page can render the field and its clear control.
+  void search(String raw) {
+    final next = raw.trim();
+    if (next == state.query) return;
+    _searchTimer?.cancel();
+    _searchTimer = null;
+    state = _withQuery(next);
+    if (next.isEmpty) {
+      unawaited(_drainSearch());
+      return;
+    }
+    _searchTimer = Timer(searchDebounce, () {
+      _searchTimer = null;
+      unawaited(_drainSearch());
+    });
+  }
+
+  /// Clears the query and reads the whole directory again, without waiting for
+  /// the debounce.
+  Future<void> clearSearch() {
+    _searchTimer?.cancel();
+    _searchTimer = null;
+    if (state.query.isEmpty) return Future<void>.value();
+    state = _withQuery('');
+    return _drainSearch();
+  }
+
+  CommunityMembersState _withQuery(String query) => CommunityMembersState(
+    mode: state.mode,
+    phase: state.phase,
+    filter: state.filter,
+    query: query,
+    community: state.community,
+    viewer: state.viewer,
+    counts: state.counts,
+    items: state.items,
+    nextCursor: state.nextCursor,
+    failureKind: state.failureKind,
+    busy: state.busy,
+    loadingMore: state.loadingMore,
+  );
+
+  /// Single flight with coalescing: at most one read is in the air, and when
+  /// the query moved on while it was, exactly one more read follows for the
+  /// latest text. The bound stops a pathological loop from spinning.
+  Future<void> _drainSearch() async {
+    if (_draining) return;
+    _draining = true;
+    try {
+      for (var attempt = 0; attempt < 8; attempt += 1) {
+        final target = state.query;
+        if (target == _appliedQuery) return;
+        await _fetch(filter: state.filter, append: false);
+        if (_requestedQuery == target) _appliedQuery = target;
+      }
+    } finally {
+      _draining = false;
+    }
+  }
+
   CommunityMembersState _apply(
     CommunityMembersState previous,
     CommunityMemberDirectory directory, {
@@ -543,6 +633,10 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
           ? CommunityViewPhase.empty
           : CommunityViewPhase.ready,
       filter: filter,
+      // The live query, not the one this read started with: a keystroke that
+      // arrived in flight must survive the answer it did not ask for, so the
+      // drain loop can still see that the text moved on.
+      query: state.query,
       community: directory.community,
       viewer: directory.viewer,
       counts: directory.counts,
@@ -557,21 +651,25 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
   }) => single(() async {
     final id = _communityId;
     final previous = state;
+    final query = previous.query;
     if (id == null) {
       state = CommunityMembersState(
         mode: previous.mode,
         phase: CommunityViewPhase.error,
         filter: filter,
+        query: query,
         failureKind: CommunityFailureKind.notFound,
       );
       return;
     }
     final gateway = ref.read(communityGatewayProvider);
     final generation = nextGeneration();
+    _requestedQuery = query;
     state = CommunityMembersState(
       mode: previous.mode,
       phase: append ? previous.phase : CommunityViewPhase.loading,
       filter: filter,
+      query: query,
       community: previous.community,
       viewer: previous.viewer,
       counts: previous.counts,
@@ -583,6 +681,9 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
       final directory = await gateway.listMembers(
         id,
         role: filter,
+        q: query.isEmpty ? null : query,
+        // A cursor is bound to the query it was issued for, so a page is only
+        // continued while the query is unchanged.
         cursor: append ? previous.nextCursor : null,
       );
       if (!isCurrent(generation)) return;
@@ -595,6 +696,7 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
             ? communityPhaseForFailure(error.kind)
             : CommunityViewPhase.ready,
         filter: filter,
+        query: state.query,
         community: previous.community,
         viewer: previous.viewer,
         counts: previous.counts,
@@ -608,6 +710,7 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
         mode: previous.mode,
         phase: CommunityViewPhase.error,
         filter: filter,
+        query: state.query,
         failureKind: CommunityFailureKind.unexpected,
       );
     }
@@ -627,6 +730,7 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
       mode: previous.mode,
       phase: previous.phase,
       filter: previous.filter,
+      query: previous.query,
       community: previous.community,
       viewer: previous.viewer,
       counts: previous.counts,
@@ -657,6 +761,7 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
           mode: previous.mode,
           phase: previous.phase,
           filter: previous.filter,
+          query: previous.query,
           community: previous.community,
           viewer: previous.viewer,
           counts: previous.counts,
@@ -672,6 +777,7 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
           mode: previous.mode,
           phase: previous.phase,
           filter: previous.filter,
+          query: previous.query,
           community: previous.community,
           viewer: previous.viewer,
           counts: previous.counts,

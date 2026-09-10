@@ -273,6 +273,7 @@ final class _RecordingCommunityApi implements LoopV2CommunityApi {
     required String clientVersion,
     required String communityId,
     required CommunityMemberFilter role,
+    String? q,
     String? cursor,
   }) => _read(directory);
 

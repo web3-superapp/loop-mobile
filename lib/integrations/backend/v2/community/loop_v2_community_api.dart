@@ -68,6 +68,7 @@ abstract interface class LoopV2CommunityApi {
     required String clientVersion,
     required String communityId,
     required CommunityMemberFilter role,
+    String? q,
     String? cursor,
   });
 
@@ -111,6 +112,16 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
   static const communitiesPath = '/v2/communities';
   static const referralRulesPath = '/v2/mining/referral/rules';
 
+  /// The contract's raw bound for `q`, before the server normalizes it.
+  static const maximumMemberQueryLength = 256;
+
+  /// Control, formatting (zero width included), surrogate, line-separator and
+  /// paragraph-separator code points; the same set the alias rules reject.
+  static final RegExp _unsafeQueryCharacters = RegExp(
+    r'[\p{Cc}\p{Cf}\p{Cs}\p{Zl}\p{Zp}]',
+    unicode: true,
+  );
+
   final Dio _dio;
 
   static String _requireId(String value) {
@@ -118,6 +129,21 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
       throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
     }
     return value;
+  }
+
+  /// Member-directory alias prefix. The server owns the NFKC/lower-case
+  /// normalization and the 1-40 code point bound; the client only trims,
+  /// drops an all-whitespace query, and refuses text the contract's character
+  /// rules would reject anyway rather than spending a request on it.
+  static Map<String, Object?>? _memberQuery(String? q) {
+    if (q == null) return null;
+    final trimmed = q.trim();
+    if (trimmed.isEmpty) return null;
+    if (trimmed.length > maximumMemberQueryLength ||
+        _unsafeQueryCharacters.hasMatch(trimmed)) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+    }
+    return <String, Object?>{'q': trimmed};
   }
 
   static Map<String, Object?>? _cursorQuery(String? cursor) {
@@ -420,6 +446,7 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
     required String clientVersion,
     required String communityId,
     required CommunityMemberFilter role,
+    String? q,
     String? cursor,
   }) {
     final id = _requireId(communityId);
@@ -428,11 +455,12 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
         '$communitiesPath/$id/members',
         queryParameters: <String, Object?>{
           'role': role.wireName,
+          ...?_memberQuery(q),
           ...?_cursorQuery(cursor),
         },
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       ),
-      allowedCodes: LoopV2ModuleRequest.readErrors,
+      allowedCodes: LoopV2ModuleRequest.memberListErrors,
     );
   }
 
