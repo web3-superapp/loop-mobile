@@ -14,6 +14,84 @@ final RegExp _forbiddenDisplayCodePoint = RegExp(
   unicode: true,
 );
 
+/// The group the star on `token` writes into.
+///
+/// The server generates no key: `PUT /v2/watchlist` takes whatever key the
+/// client sends, as long as it matches `^[a-z0-9][a-z0-9_-]{0,31}$` and is
+/// unique in the document. So "the default group" is a client convention, and
+/// this constant is the whole of it — one key, looked up by equality, created
+/// in the same replacement that adds the first asset.
+const String watchlistDefaultGroupKey = 'default';
+const String watchlistDefaultGroupName = '自选';
+
+/// Why a proposed group name cannot be written.
+///
+/// The same function answers for the input field and for the controller, so
+/// what the field explains is exactly what the write would refuse.
+enum WatchlistGroupNameIssue {
+  empty,
+  tooLong,
+  invalidCharacters,
+  duplicate,
+  groupLimitReached,
+
+  /// The page is not showing a committed resource, so there is nothing to add
+  /// a group to. Only the controller can answer this one.
+  notEditable,
+}
+
+/// Validates a new group name against the write contract.
+///
+/// `null` means the name is writable. The bounds are the server's own
+/// (`watchlist-v2-service.ts`): trimmed, 1–40 code points, and no control,
+/// format, surrogate or line/paragraph separator code point.
+WatchlistGroupNameIssue? watchlistGroupNameIssue(
+  String name, {
+  required Iterable<WatchlistGroup> existing,
+}) {
+  final groups = existing.toList(growable: false);
+  if (groups.length >= watchlistMaxGroups) {
+    return WatchlistGroupNameIssue.groupLimitReached;
+  }
+  final trimmed = name.trim();
+  if (trimmed.isEmpty) return WatchlistGroupNameIssue.empty;
+  if (trimmed.runes.length > watchlistMaxNameCodePoints) {
+    return WatchlistGroupNameIssue.tooLong;
+  }
+  if (_forbiddenDisplayCodePoint.hasMatch(trimmed)) {
+    return WatchlistGroupNameIssue.invalidCharacters;
+  }
+  if (groups.any((group) => group.name == trimmed)) {
+    return WatchlistGroupNameIssue.duplicate;
+  }
+  return null;
+}
+
+/// The sentence the input field and the editor both show for one issue.
+String watchlistGroupNameIssueText(WatchlistGroupNameIssue issue) =>
+    switch (issue) {
+      WatchlistGroupNameIssue.empty => '分组名称不能为空。',
+      WatchlistGroupNameIssue.tooLong =>
+        '分组名称最多 $watchlistMaxNameCodePoints 个字符。',
+      WatchlistGroupNameIssue.invalidCharacters => '分组名称里有服务端不接受的不可见字符。',
+      WatchlistGroupNameIssue.duplicate => '已经有同名分组了。',
+      WatchlistGroupNameIssue.groupLimitReached =>
+        '分组已达上限 $watchlistMaxGroups 个，先移除一个再新建。',
+      WatchlistGroupNameIssue.notEditable => '自选还没有读取成功，暂时不能新建分组。',
+    };
+
+/// The first free `g<n>` key, so a new group never collides with an existing
+/// one. The key is an identity the owner never sees; the name is what they
+/// typed, and the two are deliberately independent.
+String nextWatchlistGroupKey(Iterable<String> existingKeys) {
+  final taken = existingKeys.toSet();
+  for (var index = 1; index <= watchlistMaxGroups + 1; index += 1) {
+    final candidate = 'g$index';
+    if (!taken.contains(candidate)) return candidate;
+  }
+  throw const InvalidWatchlistContractException();
+}
+
 /// Sanitized validation failure for a value outside the Watchlist contract.
 /// The rejected value is deliberately never included in the error.
 final class InvalidWatchlistContractException implements Exception {
@@ -161,6 +239,12 @@ final class WatchlistSnapshot {
   final int itemCount;
 
   bool get isEmpty => itemCount == 0;
+
+  /// Whether [assetId] is watched in any group. The Watchlist is one list to
+  /// the owner even though the resource groups it, so the star on `token`
+  /// asks this and never "is it in the default group".
+  bool containsAsset(String assetId) =>
+      groups.any((group) => group.items.any((item) => item.assetId == assetId));
 
   /// Assets in Watchlist order, de-duplicated across groups — the same order
   /// `GET /v2/market/overview` returns them in.

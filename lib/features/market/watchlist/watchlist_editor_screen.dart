@@ -101,7 +101,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
             phase: state.phase,
             failureKind: state.failureKind,
             emptyMessage: '还没有自选资产',
-            emptyReason: '在行情页打开一个资产后加入自选，这里会列出它。',
+            emptyReason: '打开代币页，点右上角星标即可加入自选。',
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -151,10 +151,19 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
             ),
           const LoopLabel('分组'),
           if (state.groups.isEmpty)
-            const LoopEmpty(
-              key: ValueKey<String>('watchlist-no-groups'),
+            LoopEmpty(
+              key: const ValueKey<String>('watchlist-no-groups'),
               message: '还没有分组',
-              reason: '自选分组来自服务端资源，本页只编辑已存在的分组。',
+              reason:
+                  '有两条路：在代币页点右上角星标，资产会进入默认分组「$watchlistDefaultGroupName」；'
+                  '或者在这里先建一个分组。',
+              action: LoopButton(
+                key: const ValueKey<String>('watchlist-new-group-empty'),
+                label: '新建分组',
+                onPressed: state.busy
+                    ? null
+                    : () => unawaited(_createGroup(controller, state)),
+              ),
             )
           else
             Padding(
@@ -177,13 +186,26 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
                 ),
               ),
             ),
+          if (state.groups.isNotEmpty)
+            LoopButtonPair(
+              children: <Widget>[
+                LoopButton(
+                  key: const ValueKey<String>('watchlist-new-group'),
+                  label: '新建分组',
+                  onPressed:
+                      state.busy || state.groups.length >= watchlistMaxGroups
+                      ? null
+                      : () => unawaited(_createGroup(controller, state)),
+                ),
+              ],
+            ),
           if (group != null) ...<Widget>[
             const LoopLabel('拖动排序 · 左滑删除'),
             if (group.items.isEmpty)
               const LoopEmpty(
                 key: ValueKey<String>('watchlist-group-empty'),
                 message: '这个分组还没有资产',
-                reason: '在行情页打开一个资产后加入自选。',
+                reason: '打开代币页，点右上角星标即可加入自选。',
               )
             else
               _ReorderableWatchlist(
@@ -220,10 +242,36 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
           const LoopNotice(
             key: ValueKey<String>('watchlist-notice'),
             title: '自选不是行情',
-            body: '这里不展示价格与涨跌。加入自选前，资产必须已经登记在 registry 里，否则服务端会整份拒绝。',
+            body:
+                '这里不展示价格与涨跌。本页只排序、移除与建分组；加入资产在代币页点星标。'
+                '资产必须已经登记在 registry 里，否则服务端会整份拒绝。',
           ),
         ],
       ],
+    );
+  }
+
+  /// Asks for a name, then adds the group to the draft.
+  ///
+  /// The field validates against the same bounds the server does, so the
+  /// refusal is named before a save can be spent on it.
+  Future<void> _createGroup(
+    WatchlistEditorController controller,
+    WatchlistEditorState state,
+  ) async {
+    final name = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _NewGroupSheet(groups: state.groups),
+    );
+    if (name == null || !mounted) return;
+    final issue = controller.createGroup(name);
+    if (issue == null || !mounted) return;
+    LoopToast.show(
+      context,
+      message: watchlistGroupNameIssueText(issue),
+      kind: LoopToastKind.err,
     );
   }
 
@@ -280,6 +328,93 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
       ),
     );
     if (confirmed ?? false) controller.removeAt(index);
+  }
+}
+
+/// One name, validated live against the write contract.
+class _NewGroupSheet extends StatefulWidget {
+  const _NewGroupSheet({required this.groups});
+
+  final List<WatchlistGroup> groups;
+
+  @override
+  State<_NewGroupSheet> createState() => _NewGroupSheetState();
+}
+
+class _NewGroupSheetState extends State<_NewGroupSheet> {
+  final TextEditingController _name = TextEditingController();
+  WatchlistGroupNameIssue? _issue;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final issue = watchlistGroupNameIssue(_name.text, existing: widget.groups);
+    if (issue != null) {
+      setState(() => _issue = issue);
+      return;
+    }
+    Navigator.of(context).pop(_name.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopSheet(
+      title: '新建分组',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          TextField(
+            key: const ValueKey<String>('watchlist-group-name-field'),
+            controller: _name,
+            autofocus: true,
+            maxLength: watchlistMaxNameCodePoints,
+            textInputAction: TextInputAction.done,
+            decoration: const InputDecoration(
+              labelText: '分组名称',
+              hintText: '1–$watchlistMaxNameCodePoints 个字符',
+            ),
+            onChanged: (_) {
+              if (_issue != null) setState(() => _issue = null);
+            },
+            onSubmitted: (_) => _submit(),
+          ),
+          if (_issue case final issue?) ...<Widget>[
+            const SizedBox(height: 10),
+            Text(
+              watchlistGroupNameIssueText(issue),
+              key: const ValueKey<String>('watchlist-group-name-error'),
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+          ],
+          const SizedBox(height: 16),
+          LoopButtonPair(
+            padded: false,
+            children: <Widget>[
+              LoopButton(
+                label: '取消',
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              LoopButton(
+                key: const ValueKey<String>('watchlist-group-name-confirm'),
+                label: '添加分组',
+                primary: true,
+                onPressed: _submit,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '分组只在保存后才会提交到服务端，最多 $watchlistMaxGroups 个。',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
   }
 }
 

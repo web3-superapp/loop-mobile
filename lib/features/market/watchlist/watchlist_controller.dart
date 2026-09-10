@@ -192,6 +192,34 @@ final class WatchlistEditorController extends Notifier<WatchlistEditorState>
     }
   });
 
+  /// Adds an empty group to the draft under a fresh key.
+  ///
+  /// Nothing is written here: the group travels in the next compare-and-set
+  /// like every other change, so 放弃修改 undoes it. The returned issue is the
+  /// same one the input field showed, re-checked against the draft the save
+  /// would actually send.
+  WatchlistGroupNameIssue? createGroup(String name) {
+    if (!state.isReady || state.busy) {
+      return WatchlistGroupNameIssue.notEditable;
+    }
+    final groups = List<WatchlistGroup>.of(state.groups);
+    final issue = watchlistGroupNameIssue(name, existing: groups);
+    if (issue != null) return issue;
+    groups.add(
+      WatchlistGroup(
+        key: nextWatchlistGroupKey(groups.map((group) => group.key)),
+        name: name.trim(),
+        items: const <WatchlistItem>[],
+      ),
+    );
+    state = state.copyWith(
+      draft: groups,
+      selectedGroupIndex: groups.length - 1,
+      clearFailure: true,
+    );
+    return null;
+  }
+
   void selectGroup(int index) {
     if (index < 0 || index >= state.groups.length) return;
     state = state.copyWith(selectedGroupIndex: index);

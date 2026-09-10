@@ -15,6 +15,8 @@ import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_read_gateway.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
+import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
+import 'package:loop_mobile/features/market/watchlist/watchlist_membership_controller.dart';
 import 'package:loop_mobile/features/notifications/notification_controllers.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -23,6 +25,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/features/market/token_card_chart.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_token_card.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// `token` · one registry asset's facts.
 ///
@@ -57,6 +60,30 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
       return;
     }
     context.push(location);
+  }
+
+  /// Adds or removes this asset, then says which of the two happened. A
+  /// refusal names the server's own reason; nothing on screen moves unless the
+  /// server answered with the document that now exists.
+  Future<void> _toggleWatchlist(String assetId) async {
+    final result = await ref
+        .read(watchlistMembershipControllerProvider(assetId).notifier)
+        .toggle();
+    if (!mounted) return;
+    switch (result.outcome) {
+      case WatchlistToggleOutcome.added:
+        LoopToast.show(context, message: '已加入自选', kind: LoopToastKind.ok);
+      case WatchlistToggleOutcome.removed:
+        LoopToast.show(context, message: '已移出自选', kind: LoopToastKind.ok);
+      case WatchlistToggleOutcome.failed:
+        LoopToast.show(
+          context,
+          message: result.failureKind == LoopChainFailureKind.versionConflict
+              ? '自选已在其他设备上改动，这次没有保存。请重试。'
+              : loopChainFailureReason(result.failureKind),
+          kind: LoopToastKind.err,
+        );
+    }
   }
 
   @override
@@ -96,6 +123,32 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
     }
     final detail = state.value;
 
+    // The star is a write on a different resource, so it reads its own
+    // capability and its own gateway mode: a Market outage must not claim the
+    // asset is unwatched, and a Watchlist outage must not hide the price.
+    final watchlistCapability = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.watchlist),
+    );
+    final watchlistMode = ref.watch(watchlistGatewayProvider).mode;
+    final watchlistBlocked = loopChainCapabilityBlocks(
+      watchlistMode,
+      watchlistCapability,
+    );
+    final membership = ref.watch(
+      watchlistMembershipControllerProvider(assetId),
+    );
+    if (!watchlistBlocked && membership.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref
+                .read(watchlistMembershipControllerProvider(assetId).notifier)
+                .load(),
+          );
+        }
+      });
+    }
+
     return LoopDashboardPage(
       key: ValueKey<String>('token-screen-$assetId'),
       archetype: LoopPageArchetype.record,
@@ -109,11 +162,17 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           label: '价格提醒',
           onPressed: () => _open(MarketAssetRoute.alerts(assetId)),
         ),
+        // The star is the whole "add to watchlist" path: it states membership
+        // and toggles it. It never navigates, because the editor can only
+        // reorder and remove what is already there.
         LoopIconButton(
           key: const ValueKey<String>('token-watchlist-action'),
           icon: 'star',
-          label: '管理自选',
-          onPressed: () => _open('/market/watchlist'),
+          label: watchlistBlocked ? '自选当前不可用' : membership.actionLabel,
+          color: membership.isWatched ? LoopColors.lime : null,
+          onPressed: watchlistBlocked || membership.busy
+              ? null
+              : () => unawaited(_toggleWatchlist(assetId)),
         ),
       ],
       primary: _TokenHero(assetId: assetId, detail: detail),

@@ -185,7 +185,7 @@ class _WatchlistBlock extends StatelessWidget {
           return LoopEmpty(
             key: const ValueKey<String>('market-watchlist-empty'),
             message: '还没有自选资产',
-            reason: '在自选管理里加入资产后，这里会显示它们的价格事实。',
+            reason: '在代币页点星标加入自选，这里会显示它们的价格事实。',
             action: LoopButton(label: '管理自选', onPressed: onManage),
           );
         }

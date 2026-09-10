@@ -255,21 +255,38 @@ final class FakeMarketReadGateway implements MarketReadGateway {
 final class FakeWatchlistGateway implements WatchlistGateway {
   FakeWatchlistGateway({
     S5Answer<WatchlistSnapshot>? snapshot,
+    this.reloadSnapshot,
     this.replaceFailure,
+    this.replaceFailures,
     this.mode = LoopChainGatewayMode.production,
   }) : snapshot = snapshot ?? S5Answer<WatchlistSnapshot>(value: s5Watchlist());
 
   final S5Answer<WatchlistSnapshot> snapshot;
+
+  /// Answers every `load()` after the first. A conflict retry re-reads, so
+  /// this is how a test says "another device already moved the version on".
+  final S5Answer<WatchlistSnapshot>? reloadSnapshot;
+
   final LoopChainFailureKind? replaceFailure;
+
+  /// One failure per `replace()` call, consumed in order. An exhausted list
+  /// falls through to [replaceFailure], so a conflict that clears on the
+  /// retry is `<LoopChainFailureKind>[versionConflict]`.
+  final List<LoopChainFailureKind>? replaceFailures;
 
   final List<int> expectedVersions = <int>[];
   final List<List<WatchlistGroup>> written = <List<WatchlistGroup>>[];
+  int loads = 0;
 
   @override
   final LoopChainGatewayMode mode;
 
   @override
-  Future<WatchlistSnapshot> load() => snapshot.resolve();
+  Future<WatchlistSnapshot> load() {
+    final reload = reloadSnapshot;
+    loads += 1;
+    return loads > 1 && reload != null ? reload.resolve() : snapshot.resolve();
+  }
 
   @override
   Future<WatchlistSnapshot> replace({
@@ -278,7 +295,10 @@ final class FakeWatchlistGateway implements WatchlistGateway {
   }) {
     expectedVersions.add(expectedVersion);
     written.add(groups);
-    final failure = replaceFailure;
+    final scripted = replaceFailures;
+    final failure = scripted != null && scripted.isNotEmpty
+        ? scripted.removeAt(0)
+        : replaceFailure;
     if (failure != null) {
       return Future<WatchlistSnapshot>.error(LoopChainException(failure));
     }
