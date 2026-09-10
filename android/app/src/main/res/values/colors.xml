@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- LOOP Ink; matches the in-app ground so the launch frame does not flash. -->
+    <color name="ic_launcher_background">#050604</color>
+    <color name="loop_ink">#050604</color>
+</resources>
