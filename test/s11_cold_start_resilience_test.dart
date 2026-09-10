@@ -377,6 +377,248 @@ void main() {
     });
   });
 
+  group('S11b · a premature unauthenticated is not a sign-out', () {
+    const unauthenticated = PrivySessionSnapshot(
+      PrivySessionKind.unauthenticated,
+    );
+    const authenticated = PrivySessionSnapshot(
+      PrivySessionKind.authenticated,
+      account: PrivyAccountSummary(privyUserId: 'did:privy:s11b'),
+    );
+
+    testWidgets(
+      'the stream saying Unauthenticated then Authenticated never shows the '
+      'form',
+      (tester) async {
+        final sessions = StreamController<PrivySessionSnapshot>.broadcast();
+        addTearDown(sessions.close);
+        // `getAuthState` is still pending: the only word so far is the
+        // stream's, and its first word is the premature one.
+        final gateway = _RestoreGateway(
+          pending: Completer<PrivySessionSnapshot>().future,
+          sessions: sessions.stream,
+        );
+        final container = ProviderContainer(
+          overrides: [privyAuthGatewayProvider.overrideWithValue(gateway)],
+        );
+        addTearDown(container.dispose);
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(home: PrivyLoginScreen()),
+          ),
+        );
+        await tester.pump();
+        expect(
+          find.byKey(const ValueKey<String>('privy-restoring-screen')),
+          findsOneWidget,
+        );
+
+        sessions.add(unauthenticated);
+        await tester.pump();
+        _expectNoCredentialForm(tester);
+        expect(
+          container.read(loopSessionProvider).mode,
+          LoopSessionMode.restoring,
+        );
+
+        await tester.pump(
+          LoopSessionController.defaultUnauthenticatedGrace -
+              const Duration(milliseconds: 1),
+        );
+        _expectNoCredentialForm(tester);
+
+        sessions.add(authenticated);
+        await tester.pump();
+        final session = container.read(loopSessionProvider);
+        expect(session.mode, LoopSessionMode.authenticated);
+        expect(session.account?.privyUserId, 'did:privy:s11b');
+      },
+    );
+
+    testWidgets(
+      'an Unauthenticated that stands becomes the form after 2500ms',
+      (tester) async {
+        final gateway = _RestoreGateway(answer: unauthenticated);
+        final container = ProviderContainer(
+          overrides: [privyAuthGatewayProvider.overrideWithValue(gateway)],
+        );
+        addTearDown(container.dispose);
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(home: PrivyLoginScreen()),
+          ),
+        );
+        await tester.pump();
+        expect(gateway.restoreCalls, 1);
+        expect(
+          container.read(loopSessionProvider).mode,
+          LoopSessionMode.restoring,
+        );
+        _expectNoCredentialForm(tester);
+
+        await tester.pump(
+          LoopSessionController.defaultUnauthenticatedGrace -
+              const Duration(milliseconds: 1),
+        );
+        _expectNoCredentialForm(tester);
+
+        await tester.pump(const Duration(milliseconds: 1));
+        expect(
+          container.read(loopSessionProvider).mode,
+          LoopSessionMode.signedOut,
+        );
+        expect(find.text('欢迎来到 LOOP'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey<String>('privy-email-field')),
+          findsOneWidget,
+        );
+      },
+    );
+
+    test(
+      'a restore answering Unauthenticated still loses to the stream',
+      () async {
+        final sessions = StreamController<PrivySessionSnapshot>.broadcast();
+        addTearDown(sessions.close);
+        final gateway = _RestoreGateway(
+          answer: unauthenticated,
+          sessions: sessions.stream,
+        );
+        final container = ProviderContainer(
+          overrides: [
+            privyAuthGatewayProvider.overrideWithValue(gateway),
+            loopSessionUnauthenticatedGraceProvider.overrideWithValue(
+              const Duration(milliseconds: 500),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        container.read(loopSessionProvider);
+        await pumpEventQueue();
+        expect(gateway.restoreCalls, 1);
+        expect(
+          container.read(loopSessionProvider).mode,
+          LoopSessionMode.restoring,
+        );
+
+        sessions.add(authenticated);
+        await Future<void>.delayed(Duration.zero);
+        expect(
+          container.read(loopSessionProvider).mode,
+          LoopSessionMode.authenticated,
+        );
+
+        // The cancelled grace cannot fire behind the session it lost to.
+        await Future<void>.delayed(const Duration(milliseconds: 600));
+        expect(
+          container.read(loopSessionProvider).mode,
+          LoopSessionMode.authenticated,
+        );
+      },
+    );
+
+    test(
+      'a credential revoked after login signs the owner out at once',
+      () async {
+        final sessions = StreamController<PrivySessionSnapshot>.broadcast();
+        addTearDown(sessions.close);
+        final gateway = _RestoreGateway(sessions: sessions.stream);
+        final container = ProviderContainer(
+          overrides: [privyAuthGatewayProvider.overrideWithValue(gateway)],
+        );
+        addTearDown(container.dispose);
+
+        container.read(loopSessionProvider);
+        await pumpEventQueue();
+        expect(
+          container.read(loopSessionProvider).mode,
+          LoopSessionMode.authenticated,
+        );
+
+        sessions.add(unauthenticated);
+        await Future<void>.delayed(Duration.zero);
+        expect(
+          container.read(loopSessionProvider).mode,
+          LoopSessionMode.signedOut,
+        );
+      },
+    );
+
+    test(
+      'a sign-out the owner asked for does not wait for the grace',
+      () async {
+        final gateway = _RestoreGateway(answer: unauthenticated);
+        final container = ProviderContainer(
+          overrides: [
+            privyAuthGatewayProvider.overrideWithValue(gateway),
+            loopSessionUnauthenticatedGraceProvider.overrideWithValue(
+              const Duration(milliseconds: 500),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        container.read(loopSessionProvider);
+        await pumpEventQueue();
+        expect(
+          container.read(loopSessionProvider).mode,
+          LoopSessionMode.restoring,
+        );
+
+        await container.read(loopSessionProvider.notifier).exit();
+        expect(
+          container.read(loopSessionProvider).mode,
+          LoopSessionMode.signedOut,
+        );
+
+        await Future<void>.delayed(const Duration(milliseconds: 600));
+        expect(
+          container.read(loopSessionProvider).mode,
+          LoopSessionMode.signedOut,
+        );
+      },
+    );
+
+    testWidgets('the grace timer never outlives the wait it measures', (
+      tester,
+    ) async {
+      final sessions = StreamController<PrivySessionSnapshot>.broadcast();
+      addTearDown(sessions.close);
+      final gateway = _RestoreGateway(
+        answer: unauthenticated,
+        sessions: sessions.stream,
+      );
+      final container = ProviderContainer(
+        overrides: [privyAuthGatewayProvider.overrideWithValue(gateway)],
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: PrivyLoginScreen()),
+        ),
+      );
+      await tester.pump();
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.restoring,
+      );
+
+      sessions.add(authenticated);
+      await tester.pump();
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.authenticated,
+      );
+
+      // The test ends well inside the 2500ms window and inside the 12s restore
+      // deadline. A surviving timer of either kind fails this test.
+    });
+  });
+
   group('S11 · privy_flutter 0.10.1 failure mapping', () {
     test('transport messages map to network', () {
       for (final message in const <String>[
@@ -797,6 +1039,15 @@ void main() {
   });
 }
 
+void _expectNoCredentialForm(WidgetTester tester) {
+  expect(
+    find.byKey(const ValueKey<String>('privy-restoring-screen')),
+    findsOneWidget,
+  );
+  expect(find.text('欢迎来到 LOOP'), findsNothing);
+  expect(find.byKey(const ValueKey<String>('privy-email-field')), findsNothing);
+}
+
 const _config = AppConfig(
   privyAppId: '',
   privyAppClientId: '',
@@ -824,11 +1075,18 @@ final class _RestoreGateway implements PrivyAuthGateway {
   _RestoreGateway({
     this.failure,
     this.pending,
+    this.answer = const PrivySessionSnapshot(
+      PrivySessionKind.authenticated,
+      account: PrivyAccountSummary(privyUserId: 'did:privy:s11'),
+    ),
     Stream<PrivySessionSnapshot>? sessions,
   }) : _sessions = sessions ?? const Stream<PrivySessionSnapshot>.empty();
 
   Object? failure;
   Future<PrivySessionSnapshot>? pending;
+
+  /// What `getAuthState` answers once it answers at all.
+  PrivySessionSnapshot answer;
   final Stream<PrivySessionSnapshot> _sessions;
   var restoreCalls = 0;
 
@@ -839,12 +1097,7 @@ final class _RestoreGateway implements PrivyAuthGateway {
     if (held != null) return held;
     final error = failure;
     if (error != null) return Future<PrivySessionSnapshot>.error(error);
-    return Future<PrivySessionSnapshot>.value(
-      const PrivySessionSnapshot(
-        PrivySessionKind.authenticated,
-        account: PrivyAccountSummary(privyUserId: 'did:privy:s11'),
-      ),
-    );
+    return Future<PrivySessionSnapshot>.value(answer);
   }
 
   @override

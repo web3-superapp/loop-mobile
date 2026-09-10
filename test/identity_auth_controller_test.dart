@@ -33,6 +33,12 @@ void main() {
           ),
         ),
         privyAuthGatewayProvider.overrideWithValue(sessionGateway),
+        // This suite starts from a signed-out session. The cold-start grace of
+        // decision 0064 §5 is not its subject, so it is zeroed and the
+        // restore's "unauthenticated" answer lands before the first test line.
+        loopSessionUnauthenticatedGraceProvider.overrideWithValue(
+          Duration.zero,
+        ),
         privyCredentialGatewayProvider.overrideWithValue(credentialGateway),
         externalWalletCredentialGatewayProvider.overrideWithValue(
           externalGateway,
@@ -41,7 +47,8 @@ void main() {
     );
     addTearDown(container.dispose);
     container.read(loopSessionProvider);
-    await Future<void>.delayed(Duration.zero);
+    await pumpEventQueue();
+    expect(container.read(loopSessionProvider).mode, LoopSessionMode.signedOut);
   });
 
   test(

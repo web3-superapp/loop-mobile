@@ -184,13 +184,89 @@ instead of handing back the Future that never answered. A failure arriving from
 a superseded attempt is ignored by generation, because — unlike a snapshot — it
 carries no new fact about the credential.
 
+### 5. A cold start holds the first `Unauthenticated` for 2500 ms
+
+The 2026-09-10 simulator run reproduced the flash **after** §1–§4 shipped, on a
+healthy network: about 25 seconds into a cold start the screenshot was the
+credential form (`privy_login_screen`), and a few seconds later the app entered
+Community on its own. The backend saw exactly one `/v2/account/me` 200 and no
+other request — so Privy was logged in the whole time. LOOP had read a
+*premature* `Unauthenticated` as the answer.
+
+The SDK makes that premature answer routine. In privy_flutter 0.10.1
+`AuthStateManager.authStateStream` is a `BehaviorSubject.seeded(NotReady())`
+fed by the native EventChannel; Android's `AuthHandler.kt` forwards whatever
+`privy.getAuthState()` currently is. While a stored credential is still being
+read and refreshed, the native side can publish `Unauthenticated` first and
+`Authenticated` a moment later. Both LOOP paths were exposed:
+`LoopSessionController.build()` subscribes to `watchSession()` before
+`_startRestore` runs, so the stream's first word arrives first; and
+`getAuthState()` reads the same manager, so the restore can return that same
+premature `Unauthenticated`. `_receiveSnapshot` published either one straight
+to `signedOut`. (`isReady` / `awaitReady` are deprecated in 0.10.1 and would
+not help: "ready" there means only "not `NotReady`", which an early
+`Unauthenticated` already satisfies. LOOP calls neither.)
+
+The cold start therefore holds the first `Unauthenticated` instead of
+publishing it:
+
+- The hold is offered **once**, and **only** from `restoring` — the cold-start
+  wait. `authenticated`, `authenticatedUnverified`, `preview`, `signingOut`,
+  `signedOut` and the undecided `restoreUnavailable` all take an
+  `Unauthenticated` immediately, so a credential revoked after login still
+  signs the owner out on the spot and the undecided frame keeps its
+  explanation and its 重试.
+- The window is `defaultUnauthenticatedGrace`, **2500 ms**, injectable through
+  `loopSessionUnauthenticatedGraceProvider`. An `Authenticated` or
+  `AuthenticatedUnverified` arriving inside it is published at once and cancels
+  the wait. A second `Unauthenticated` inside it does not extend it.
+- `retryRestore()` spends the grace before it starts: a retry is not a cold
+  start, and an owner who pressed 重试 is owed Privy's answer as it stands.
+- `exit()` is unaffected. It sets `_localSignOutBarrier` before anything else,
+  and `_receiveSnapshot` returns early behind that barrier, so a sign-out the
+  owner asked for is immediate.
+- When the window expires while the cold-start `getAuthState` is **still in
+  flight**, the session stays `restoring` rather than falling to the form:
+  nothing has answered yet, and that case already belongs to §4's 12-second
+  deadline, whose outcome is the branded frame with a 重试 — never the
+  credential form. Once the grace is spent, the restore's own
+  `Unauthenticated` is published the moment it arrives.
+
+Both timers are released the moment the session leaves `restoring`: the same
+`listenSelf` hook that retires the restore deadline retires the grace, and
+`ref.onDispose` cancels both.
+
+The window costs a logged-out owner up to 2500 ms of the branded launch frame
+before the form appears. That is the price of never claiming a sign-out Privy
+did not mean, and it is spent on the frame the owner already sees rather than
+on a new one.
+
+### Alternatives rejected for §5
+
+- **Ignore the stream until `getAuthState` answers.** It fixes only one of the
+  two paths; `getAuthState` returns the same premature `Unauthenticated`.
+- **Gate on `isReady` / `awaitReady`.** Deprecated in 0.10.1, and "ready" is
+  merely "not `NotReady`" — an early `Unauthenticated` passes the gate.
+- **Wait for the second stream event, with no clock.** A session that really is
+  logged out emits exactly one `Unauthenticated` and nothing more, so the owner
+  would wait forever for a second event that never comes.
+- **Treat every `Unauthenticated` as provisional.** It would delay the honest
+  sign-out that follows a revoked credential, which the product must show
+  immediately.
+
 ## Open risk
 
 Privy may report `Unauthenticated` — rather than throwing or hanging — when it
 cannot reach its backend to validate a cached session. In that case this
-decision does not change the behaviour: the credential form still appears. The
-mapping above is the honest limit of what privy_flutter 0.10.1 exposes, and the
-12-second window only covers the case where nothing is reported at all.
-Confirming the native behaviour on both platforms needs a device run with the
-network cut at cold start; until then the acceptance record should keep
-冷启动网络抖动 as device-unverified.
+decision does not change the behaviour: after the §5 window the credential form
+still appears. The mapping in §2 is the honest limit of what privy_flutter
+0.10.1 exposes, §4's 12-second window only covers the case where nothing is
+reported at all, and §5's 2500 ms only covers a premature answer that is
+corrected quickly.
+
+2500 ms is a judgement, not a measurement: the 2026-09-10 trace shows only that
+the correction arrived 「几秒后」, and if the real gap on a slow link is longer
+the flash returns. The number is injectable precisely so a device run can
+retune it. Confirming the native ordering and the correction latency on both
+platforms needs a device run with the network cut at cold start; until then the
+acceptance record should keep 冷启动网络抖动 as device-unverified.

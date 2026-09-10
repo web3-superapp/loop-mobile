@@ -92,15 +92,37 @@ final loopSessionRestoreWindowProvider = Provider<Duration>(
   (ref) => LoopSessionController.defaultRestoreWindow,
 );
 
+/// How long a cold start holds an `unauthenticated` answer before it is
+/// allowed to become a sign-out. Overridable so tests can shorten it.
+///
+/// privy_flutter 0.10.1 restores a session in two steps, and the first step is
+/// not the answer: `AuthStateManager.authStateStream` is a
+/// `BehaviorSubject.seeded(NotReady())` fed by the native EventChannel, and the
+/// native side may publish `Unauthenticated` before it has finished reading the
+/// stored credential and publish `Authenticated` a moment later.
+/// `Privy.getAuthState()` reads the same manager, so it can return that same
+/// premature `Unauthenticated` too. Signing the owner out on the first one is
+/// what put the credential form on screen during a cold start that was, in
+/// fact, already logged in (decision 0064 §5).
+final loopSessionUnauthenticatedGraceProvider = Provider<Duration>(
+  (ref) => LoopSessionController.defaultUnauthenticatedGrace,
+);
+
 class LoopSessionController extends Notifier<LoopSessionState> {
   static const defaultRestoreWindow = Duration(seconds: 12);
+  static const defaultUnauthenticatedGrace = Duration(milliseconds: 2500);
 
   StreamSubscription<PrivySessionSnapshot>? _subscription;
   Future<void>? _exitOperation;
   Future<void>? _restoreOperation;
   Timer? _restoreDeadline;
+  Timer? _unauthenticatedGrace;
   var _restoreGeneration = 0;
   var _localSignOutBarrier = false;
+
+  /// The cold-start grace is offered once. After it is spent, every
+  /// `unauthenticated` answer is taken at face value again.
+  var _unauthenticatedGraceSpent = false;
 
   @override
   LoopSessionState build() {
@@ -111,11 +133,14 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     // session reaches any other state - including the undecided third one -
     // it is retired, so no timer outlives the wait it was measuring.
     listenSelf((previous, next) {
-      if (next.mode != LoopSessionMode.restoring) _cancelRestoreDeadline();
+      if (next.mode == LoopSessionMode.restoring) return;
+      _cancelRestoreDeadline();
+      _cancelUnauthenticatedGrace();
     });
     ref.onDispose(() {
       _subscription?.cancel();
       _cancelRestoreDeadline();
+      _cancelUnauthenticatedGrace();
     });
     Future<void>.microtask(() => _startRestore(gateway));
     return const LoopSessionState.restoring();
@@ -128,6 +153,9 @@ class LoopSessionController extends Notifier<LoopSessionState> {
   /// `getAuthState` instead of handing back the Future that never answered.
   Future<void> retryRestore() {
     if (!state.isRestoreUnavailable) return Future<void>.value();
+    // A retry is not a cold start. The owner pressed 重试 and is owed Privy's
+    // answer as it stands, so the grace window is not offered a second time.
+    _unauthenticatedGraceSpent = true;
     state = const LoopSessionState.restoring();
     return _startRestore(ref.read(privyAuthGatewayProvider));
   }
@@ -176,6 +204,42 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     );
   }
 
+  /// Whether this `unauthenticated` snapshot is held instead of published.
+  ///
+  /// Only the cold-start wait may hold one, and only once. Anything else - a
+  /// session that already reached the product, the undecided state that is
+  /// already showing its explanation and retry, a preview, a sign-out the owner
+  /// asked for - takes the answer immediately, so a credential revoked after
+  /// login still signs the owner out on the spot.
+  bool _holdUnauthenticated() {
+    if (state.mode != LoopSessionMode.restoring) return false;
+    // Already waiting: a second premature `Unauthenticated` must not extend the
+    // window it is being measured against.
+    if (_unauthenticatedGrace != null) return true;
+    if (_unauthenticatedGraceSpent) return false;
+    _unauthenticatedGraceSpent = true;
+    _unauthenticatedGrace = Timer(
+      ref.read(loopSessionUnauthenticatedGraceProvider),
+      _unauthenticatedGraceExpired,
+    );
+    return true;
+  }
+
+  void _cancelUnauthenticatedGrace() {
+    _unauthenticatedGrace?.cancel();
+    _unauthenticatedGrace = null;
+  }
+
+  void _unauthenticatedGraceExpired() {
+    _unauthenticatedGrace = null;
+    if (!ref.mounted || state.mode != LoopSessionMode.restoring) return;
+    // A cold-start restore still in flight has not answered at all yet. That
+    // case belongs to the 12-second deadline and its branded frame, never to
+    // the credential form.
+    if (_restoreOperation != null) return;
+    state = const LoopSessionState.signedOut();
+  }
+
   Future<void> _restore(PrivyAuthGateway gateway, int generation) async {
     try {
       final snapshot = await gateway.restoreSession();
@@ -221,6 +285,13 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     if (_localSignOutBarrier) return;
     if (state.mode == LoopSessionMode.preview &&
         snapshot.kind != PrivySessionKind.authenticated) {
+      return;
+    }
+    // Decision 0064 §5: a cold start may be told "unauthenticated" before Privy
+    // has finished restoring. Hold that answer for the grace window; an
+    // `authenticated` arriving inside it cancels the wait and wins.
+    if (snapshot.kind == PrivySessionKind.unauthenticated &&
+        _holdUnauthenticated()) {
       return;
     }
     state = switch (snapshot.kind) {
