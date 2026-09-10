@@ -236,6 +236,23 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
               ],
             ),
             if (_panel != CommunityPanel.none)
+              // Veils the page below the header only, so the header toggles
+              // keep switching panels while a tap anywhere else closes them.
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                top: MediaQuery.paddingOf(context).top + 72,
+                child: GestureDetector(
+                  key: const ValueKey<String>('community-panel-scrim'),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _closePanel,
+                  child: const ExcludeSemantics(
+                    child: ColoredBox(color: LoopColors.veil),
+                  ),
+                ),
+              ),
+            if (_panel != CommunityPanel.none)
               Positioned(
                 left: 0,
                 right: 0,
@@ -401,6 +418,8 @@ class _CommunitySearchPanelState extends State<_CommunitySearchPanel> {
   @override
   Widget build(BuildContext context) {
     return LoopSurfaceCard(
+      background: LoopColors.elevated,
+      borderColor: LoopColors.hairline,
       key: const ValueKey<String>('community-search-panel'),
       margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
       child: Column(
@@ -467,6 +486,10 @@ class _CommunityMessagePanel extends StatelessWidget {
     final liveVoice = home?.liveVoice;
     return LoopSurfaceCard(
       key: const ValueKey<String>('community-message-panel'),
+      // Floats over page content, so it needs an opaque surface: the page
+      // card fill is translucent by design and would show the page through.
+      background: LoopColors.elevated,
+      borderColor: LoopColors.hairline,
       margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

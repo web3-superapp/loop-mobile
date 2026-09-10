@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/features/community/community_screen.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
 
@@ -123,6 +124,55 @@ void main() {
         find.byKey(const ValueKey<String>('community-message-panel')),
         findsNothing,
       );
+    });
+
+    testWidgets('floating panels are opaque and close from the scrim', (
+      tester,
+    ) async {
+      await _pumpCommunity(tester);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-message-toggle')),
+      );
+      await tester.pumpAndSettle();
+      final panel = tester.widget<LoopSurfaceCard>(
+        find.byKey(const ValueKey<String>('community-message-panel')),
+      );
+      // The page card fill is translucent by design; a panel floating over
+      // page content must paint an opaque surface so nothing shows through.
+      expect(panel.background, LoopColors.elevated);
+      expect(panel.background!.a, 1.0);
+      expect(
+        find.byKey(const ValueKey<String>('community-panel-scrim')),
+        findsOne,
+      );
+
+      await tester.tapAt(
+        tester
+            .getRect(
+              find.byKey(const ValueKey<String>('community-panel-scrim')),
+            )
+            .bottomCenter
+            .translate(0, -8),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('community-message-panel')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('community-panel-scrim')),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-search-toggle')),
+      );
+      await tester.pumpAndSettle();
+      final search = tester.widget<LoopSurfaceCard>(
+        find.byKey(const ValueKey<String>('community-search-panel')),
+      );
+      expect(search.background, LoopColors.elevated);
     });
 
     testWidgets('the search panel names the only global search entry', (
