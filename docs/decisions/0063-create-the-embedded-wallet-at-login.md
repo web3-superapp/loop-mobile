@@ -109,10 +109,15 @@ sentence on the page was the folio's wrong one.
   anywhere in the product.
 - The wallet tab's five reviewed states are unchanged; the empty state is a
   sixth block beside them, not a replacement for any of them.
-- `WalletReadiness` (`lib/features/wallet/wallet_readiness.dart`) remains
-  unmounted. It projects the same fact from the session alone, but the pages
-  read the server's directory, which is the only thing that can distinguish an
-  empty list from an unread one.
+- `WalletReadiness` (`lib/features/wallet/wallet_readiness.dart`) and its unit
+  test are **deleted**. It projected "does this session need a wallet" from the
+  Privy session alone, which cannot tell an empty `GET /v2/wallets` from an
+  unread one; its last consumer went with the Preview DApp browser in S8
+  (decision 0060), so it had none left. The verified-session gate it stated is
+  now stated by `LoopWalletProvisioningController`, and
+  `check_wallet_identity_readiness_contract` locks it there instead. The Perp
+  account page's own `createWallet()` call is left untouched: decision 0016
+  unmounted that page, so it is not a second product path.
 
 ## Alternatives rejected
 

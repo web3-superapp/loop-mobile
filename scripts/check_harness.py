@@ -5560,13 +5560,13 @@ def check_wallet_identity_readiness_contract(root: Path) -> list[str]:
                 "complete Embedded Ethereum wallet address",
                 "No QR code",
             ),
-            "lib/features/wallet/wallet_readiness.dart": (
-                "enum WalletReadinessMode",
-                "!session.canUseProviderBackedFeatures",
-                "r'^0x[0-9a-fA-F]{40}$'",
-                "WalletReadinessMode.invalidAddress",
-                "factory WalletReadiness.fromSession(LoopSessionState session)",
-            ),
+            # Decision 0063 deleted `wallet_readiness.dart` and its unit test.
+            # The model projected "does this session need a wallet" from the
+            # Privy session alone, which cannot tell an empty `GET /v2/wallets`
+            # from an unread one; the pages read the server's directory, and
+            # `LoopWalletProvisioningController` owns the verified-session gate
+            # the model used to state. Its last consumer went with the Preview
+            # DApp browser in S8 (decision 0060), so nothing was rewired.
             # Step 5 retired `wallet_overview_screens.dart` and the Preview
             # `WalletManagerScreen` copy (decision 0057). Wallet identity is now
             # addressed only by the opaque `walletId`, and Receive renders a
@@ -5578,12 +5578,18 @@ def check_wallet_identity_readiness_contract(root: Path) -> list[str]:
                 "地址不是账号标识",
                 "wallet.truncatedAddress",
             ),
-            # S8 (decision 0060) retired the last `WalletReadiness` consumer
-            # with the Preview DApp browser. The model and its unit test stay
-            # as retained history, so the lock follows the test that still
-            # exercises it.
-            "test/wallet_readiness_screen_test.dart": (
-                "WalletReadiness.fromSession",
+            # Decision 0063: the verified-session gate is now stated by
+            # `LoopWalletProvisioningController`, and the wallet pages state
+            # the empty answer from the server's own directory.
+            "lib/app/session/wallet_provisioning_controller.dart": (
+                "!session.canUseProviderBackedFeatures",
+                "if (account.wallet != null) return;",
+                "LoopWalletProvisioningStage.failed",
+            ),
+            "test/loop_session_controller_test.dart": (
+                "a development preview session never asks Privy for a wallet",
+                "an unverified session never asks Privy for a wallet",
+                "a failed creation is a wallet fact, never a login one",
             ),
             # Step 6 replaced the Preview transfer draft with the typed
             # `SendDraft`, whose route guard is locked by the money-action

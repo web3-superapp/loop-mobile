@@ -3711,10 +3711,12 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected principal-bound wallet guard: {result}",
         )
 
-    def test_wallet_readiness_must_keep_verified_session_gate(self) -> None:
+    # Decision 0063 deleted `wallet_readiness.dart`; the verified-session gate
+    # it stated now lives on the controller that actually creates the wallet.
+    def test_wallet_provisioning_must_keep_verified_session_gate(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            relative = "lib/features/wallet/wallet_readiness.dart"
+            relative = "lib/app/session/wallet_provisioning_controller.dart"
             target = root / relative
             target.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
@@ -3726,7 +3728,7 @@ class HarnessTests(unittest.TestCase):
 
         self.assertTrue(
             any("!session.canUseProviderBackedFeatures" in error for error in result),
-            msg=f"expected verified Wallet gate: {result}",
+            msg=f"expected verified wallet-creation gate: {result}",
         )
 
     # Step 5 retired the Preview wallet-identity clipboard slice and its
