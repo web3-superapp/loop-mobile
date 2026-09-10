@@ -446,7 +446,7 @@ void main() {
   });
 
   testWidgets(
-    'group list cell sanitizes preview and avatar while direct keeps default item',
+    'group list cell sanitizes preview and avatar while direct keeps official chrome',
     (tester) async {
       var tapped = false;
       final channelHarness = _ChannelHarness.group(
@@ -479,27 +479,45 @@ void main() {
       expect(find.textContaining('stream-sender'), findsNothing);
       expect(find.byType(StreamChannelAvatar), findsNothing);
       expect(find.byType(StreamTypingIndicator), findsNothing);
+      // Decision 0065: every cell carries LOOP's timestamp formatter, so the
+      // inbox never falls back to Stream's 12-hour clock or English weekday.
+      expect(
+        tester
+            .widget<ChannelLastMessageDate>(find.byType(ChannelLastMessageDate))
+            .formatter,
+        isNotNull,
+      );
       await tester.tap(find.byType(StreamChannelListTile));
       expect(tapped, isTrue);
+      await _disposeHarness(tester, channelHarness);
 
       final directHarness = _ChannelHarness.direct(
         member: _member(userId: 'direct-sender', accountName: 'Direct Friend'),
         senderId: 'direct-sender',
+        // `StreamChannelName` derives an unnamed channel from the connected
+        // user, which this offline harness has no way to supply.
+        channelName: 'Direct Friend',
       );
       addTearDown(directHarness.dispose);
-      final directDefault = StreamChannelListItem(
-        channel: directHarness.channel,
-      );
-      expect(
-        identical(
-          loopStreamChannelListIdentityItem(directDefault),
-          directDefault,
+      await _pumpInChannel(
+        tester,
+        harness: directHarness,
+        child: loopStreamChannelListIdentityItem(
+          StreamChannelListItem(channel: directHarness.channel),
         ),
-        isTrue,
       );
 
-      directHarness.dispose();
-      await _disposeHarness(tester, channelHarness);
+      // A direct cell keeps Stream's own avatar and subtitle — only the
+      // timestamp formatter is LOOP's.
+      expect(find.byType(StreamChannelAvatar), findsOneWidget);
+      expect(find.byType(StreamTypingIndicator), findsOneWidget);
+      expect(
+        tester
+            .widget<ChannelLastMessageDate>(find.byType(ChannelLastMessageDate))
+            .formatter,
+        isNotNull,
+      );
+      await _disposeHarness(tester, directHarness);
     },
   );
 }
@@ -605,10 +623,12 @@ final class _ChannelHarness {
   factory _ChannelHarness.direct({
     required Member member,
     required String senderId,
+    String? channelName,
   }) => _ChannelHarness._create(
     channelId: 'loop_direct_8e7d73c5',
     member: member,
     senderId: senderId,
+    channelName: channelName,
   );
 
   factory _ChannelHarness._create({

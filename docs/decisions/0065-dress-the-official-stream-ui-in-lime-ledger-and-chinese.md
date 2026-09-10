@@ -85,6 +85,7 @@ Source of truth is `docs/prototype/style-v2.css` (`.msg`, `.msg-txt`,
 | timestamp (LOOP renders every time in tabular mono) | `LoopMono.stamp` | `…metadata.timestampTextStyle`, `editedTextStyle`, `statusTextStyle` |
 | `.composer button` `background:var(--lime)`, `color:var(--ink)` | `LoopColors.lime` / `LoopColors.ink` | `colorScheme.accentPrimary` / `textOnAccent` — the primary-solid `StreamButton` the composer's send key is |
 | `.composer input` `background:var(--card)`, `border:1px solid var(--line)` | `LoopColors.card` / `LoopColors.line` | `colorScheme.backgroundElevation1` / `borderDefault` |
+| neither bubble carries an outline | — | `…bubble.side` is `BorderSide.none` for both alignments; Stream's default hairline on the incoming bubble is dropped rather than restated |
 | page ground `var(--ink)` | `LoopColors.ink` | `colorScheme.backgroundApp`, `backgroundElevation0`, `StreamMessageListViewThemeData.backgroundColor`, the three `StreamAppBarThemeData`s |
 | highlighted (jumped-to) message | `LoopColors.limeSoft` | `colorScheme.backgroundHighlight`, `StreamMessageListViewThemeData.messageHighlightColor` |
 | read receipt ✓✓ | `LoopColors.lime` (read) / `LoopColors.text2` (sent, delivered, pending) | `colorScheme.accentPrimary` / `textSecondary`, read by `StreamSendingIndicator` |
@@ -103,6 +104,16 @@ Stream's convention (a bright own bubble with dark text where Stream expects a
 dark tint with bright text), and the ladder encodes that inversion rather than
 fighting it at each call site.
 
+**One accepted deviation.** The prototype's `.composer` bar is `var(--ink)`
+with a `var(--line)` top edge, and the field inside it is `var(--card)`. Stream
+10.3 gives the composer bar no colour of its own — the field is the only
+painted surface, drawn with `backgroundElevation1` — so LOOP sets that token to
+`--card` and lets the field's `--line` outline do the separating. The bar
+itself therefore reads as the page ground rather than as a distinct strip.
+This is a deliberate, recorded deviation: matching the prototype exactly would
+mean wrapping the official composer in a LOOP-drawn container, which is chrome
+LOOP does not own on this surface.
+
 The remark in the S12 brief that the other party's bubble is "Graphite" is
 resolved to the prototype's `--card` (`rgba(243,245,239,.06)`), which over the
 Ink page ground renders within a hair of Graphite `#171A16` while staying the
@@ -113,9 +124,13 @@ exact token the prototype uses.
 `stream_chat_localizations` is not in the lockfile, and the ruling forbids
 changing it. `lib/integrations/communication/stream_chat_localizations_zh.dart`
 therefore implements `StreamChatLocalizations` directly — all 226 members of
-`Translations`, plus a `DefaultAccessibilityTranslations` subclass for the
-accessibility labels — and `LoopStreamChatLocalizationsDelegate` is registered
-on `MaterialApp.router`.
+`Translations` — and `LoopStreamChatLocalizationsDelegate` is registered on
+`MaterialApp.router`. The 68 accessibility labels are a second class that
+**`implements AccessibilityTranslations`** rather than extending
+`DefaultAccessibilityTranslations`: extending would let a member added upstream
+fall through to English silently, and a screen-reader label is exactly the
+place where that would go unnoticed. Implementing the interface makes the
+compiler the check.
 
 The delegate answers `isSupported` for **every** locale. This is deliberate:
 LOOP ships one language, and switching the application locale to `zh` would
@@ -142,7 +157,12 @@ yesterday. Jiffy's locale is set inside `StreamChat.didChangeDependencies` from
 `Localizations.localeOf(context)`, which — per §3 — stays `en`. Setting the
 global Jiffy locale from LOOP would be overwritten by that call.
 
-So both are formatted by LOOP instead:
+A third is the `/chat` inbox: `ChannelLastMessageDate` falls back to Stream's
+`formatDate`, whose today bucket is Jiffy's 12-hour `jm`, whose within-a-week
+bucket is Jiffy's English weekday and whose older bucket is `M/d/yyyy`. Only
+its 「昨天」 comes from the localizations.
+
+All three are formatted by LOOP instead:
 
 - `loopStreamClockLabel` returns `HH:mm`, always. It is installed globally as
   the `messageFooter` component builder, which is Stream's own documented
@@ -153,20 +173,44 @@ So both are formatted by LOOP instead:
   its colour from the injected scheme.
 - `loopStreamDayLabel` returns 今天 / 昨天 / 周一…周日 / `M月d日` / `y年M月d日`,
   and is passed as `dateDivider` and `floatingDateDivider` to every
-  `StreamMessageListView` LOOP mounts (three call sites, locked by a test that
-  counts them).
+  `StreamMessageListView` LOOP mounts. A test walks **every** `.dart` file
+  under `lib/` and requires the count of `StreamMessageListView(` in a file to
+  equal the count of `builders: loopStreamMessageListViewBuilders()`, so a list
+  mounted by a page added later cannot silently fall back.
+- `loopStreamChannelListDateLabel` is the same ladder with the clock in the
+  today slot — `15:39`, then 昨天 / 周X / `M月d日` / `y年M月d日` — and is passed
+  through `loopStreamChannelListTimestamp` to **both** branches of
+  `loopStreamChannelListIdentityItem`. The direct branch used to return the
+  official cell untouched; `StreamChannelListItem.copyWith` exposes no
+  timestamp slot and `_DefaultStreamChannelListItem` is private, so the direct
+  cell is now composed from Stream's own public sub-widgets —
+  `StreamChannelAvatar`, `StreamChannelName`, `ChannelListTileSubtitle` with
+  its typing indicator and delivery status, `StreamChannelListTile` — with only
+  the timestamp replaced. The same recursive scan requires every
+  `ChannelLastMessageDate(` in `lib/` to pass a `formatter:`.
 
-`intl` was considered for both and rejected: its non-`en` `DateFormat` needs
-`initializeDateFormatting`, it is only a transitive package here, and the two
+All three share one bucket function, so the day ladders cannot drift apart.
+
+`intl` was considered for all three and rejected: its non-`en` `DateFormat`
+needs `initializeDateFormatting`, it is only a transitive package here, and the
 formats LOOP needs are exact and fully testable without it.
 
 ## Consequences
 
 - Every official Stream surface in the app is Lime Ledger and Chinese, from one
-  place, without a per-page opt-in.
+  place, without a per-page opt-in. Every date and time an official widget
+  prints — the message footer, the day separator, the inbox row — is LOOP's
+  Chinese 24-hour ladder; no Jiffy-formatted English label survives on a
+  mounted surface.
 - Adding a new page that mounts official Stream widgets inherits the theme and
-  the copy for free; only a new `StreamMessageListView` must remember
-  `builders: loopStreamMessageListViewBuilders()`, which a test enforces.
+  the copy for free. Two things still need wiring, and both are locked by
+  recursive scans over `lib/`: a new `StreamMessageListView` needs
+  `builders: loopStreamMessageListViewBuilders()`, and a new
+  `ChannelLastMessageDate` needs a `formatter:`.
+- The remaining Jiffy-formatted strings in the SDK are `fromNow()` in
+  `StreamUserListTile` and `ChannelInfo` (「最后在线」). Neither widget is
+  mounted by LOOP today and neither has a formatter hook; mounting one would
+  need its own decision.
 - `pubspec.yaml` and `pubspec.lock` are unchanged.
 - `loopStreamChatThemeData()` moves out of the feature module into
   `lib/integrations/communication/`, next to the rest of the Stream adapter.

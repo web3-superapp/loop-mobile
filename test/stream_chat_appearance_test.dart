@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -79,6 +80,30 @@ void main() {
       expect(loopStreamClockLabel(DateTime(2026, 9, 10, 12, 0)), '12:00');
     });
 
+    test('the inbox row prints the clock today, then the day ladder', () {
+      final now = DateTime(2026, 9, 10, 15, 39);
+      expect(
+        loopStreamChannelListDateLabel(DateTime(2026, 9, 10, 8, 4), now: now),
+        '08:04',
+      );
+      expect(
+        loopStreamChannelListDateLabel(DateTime(2026, 9, 9, 23, 59), now: now),
+        '昨天',
+      );
+      expect(
+        loopStreamChannelListDateLabel(DateTime(2026, 9, 7, 8, 0), now: now),
+        '周一',
+      );
+      expect(
+        loopStreamChannelListDateLabel(DateTime(2026, 8, 20, 8, 0), now: now),
+        '8月20日',
+      );
+      expect(
+        loopStreamChannelListDateLabel(DateTime(2025, 12, 24, 8, 0), now: now),
+        '2025年12月24日',
+      );
+    });
+
     test('day separators read 今天 / 昨天 / weekday / date', () {
       final now = DateTime(2026, 9, 10, 15, 39);
       expect(loopStreamDayLabel(now, now: now), '今天');
@@ -127,47 +152,76 @@ void main() {
       expect(copy.retryLabel, '重试');
     });
 
-    test('no member of the Stream translation surface is left in English', () {
-      // A Latin letter is allowed only where the string is a product name, a
-      // placeholder or a pure count.
-      const Set<String> allowed = <String>{
-        'streamChatLabel',
-        'giphyLabel',
-        'commandUsernameLabel',
-        'emptyMessagePreviewText',
-      };
-      final Map<String, String> plain = <String, String>{
-        'launchUrlError': copy.launchUrlError,
-        'loadingUsersError': copy.loadingUsersError,
-        'noUsersLabel': copy.noUsersLabel,
-        'retryLabel': copy.retryLabel,
-        'userOnlineText': copy.userOnlineText,
-        'threadLabel': copy.threadLabel,
-        'sendLabel': copy.sendLabel,
-        'cancelLabel': copy.cancelLabel,
-        'okLabel': copy.okLabel,
-        'deleteLabel': copy.deleteLabel,
-        'flagLabel': copy.flagLabel,
-        'downloadLabel': copy.downloadLabel,
-        'viewLabel': copy.viewLabel,
-        'confirmLabel': copy.confirmLabel,
-        'loadingLabel': copy.loadingLabel,
-        'draftLabel': copy.draftLabel,
-        'connectionErrorTitle': copy.connectionErrorTitle,
-        'genericErrorTitle': copy.genericErrorTitle,
-        'uploadErrorLabel': copy.uploadErrorLabel,
-        'tryAgainLabel': copy.tryAgainLabel,
-        'startAChatLabel': copy.startAChatLabel,
-        'youText': copy.youText,
-      };
-      for (final MapEntry<String, String> entry in plain.entries) {
-        if (allowed.contains(entry.key)) continue;
-        expect(
-          RegExp('[A-Za-z]').hasMatch(entry.value),
-          isFalse,
-          reason: '${entry.key} still renders Latin copy: ${entry.value}',
-        );
+    test('no Chinese-copy literal in the delegate is left in English', () {
+      // Scans the delegate's own source rather than a hand-picked sample, so
+      // a member translated back to English cannot slip through.
+      const String path =
+          'lib/integrations/communication/stream_chat_localizations_zh.dart';
+      final source = File(path).readAsStringSync();
+      // Product names and format identifiers that are correct as Latin.
+      const List<String> allowed = <String>[
+        'Stream Chat',
+        'Giphy',
+        'GIF',
+        'MB',
+        'zh_Hans',
+      ];
+      final literal = RegExp(r"'([^'\\\n]*)'");
+      final interpolation = RegExp(r'\$\{[^}]*\}|\$[A-Za-z_][A-Za-z0-9_]*');
+      var scanned = 0;
+      for (final String line in source.split('\n')) {
+        final trimmed = line.trimLeft();
+        // Imports and doc comments are code, not copy.
+        if (trimmed.startsWith('import ') || trimmed.startsWith('//')) continue;
+        for (final RegExpMatch match in literal.allMatches(line)) {
+          var value = match.group(1)!;
+          if (value.isEmpty) continue;
+          value = value.replaceAll(interpolation, '');
+          for (final String token in allowed) {
+            value = value.replaceAll(token, '');
+          }
+          if (value.trim().isEmpty) continue;
+          scanned += 1;
+          expect(
+            RegExp('[A-Za-z]').hasMatch(value),
+            isFalse,
+            reason: 'still renders Latin copy on "$line"',
+          );
+        }
       }
+      // A scan that matched nothing would pass vacuously.
+      expect(scanned, greaterThan(200));
+    });
+
+    test('the accessibility labels are Chinese and complete', () {
+      // `implements` rather than `extends`: an English default can never be
+      // inherited, so the compiler already proves every member is supplied.
+      const AccessibilityTranslations a11y =
+          LoopStreamChatAccessibilityTranslations();
+      expect(a11y.localeName, 'zh_Hans');
+      expect(a11y.messageReadStatusLabel, '已读');
+      expect(a11y.messageDeliveredStatusLabel, '已送达');
+      expect(a11y.messageSentStatusLabel, '已发送');
+      expect(a11y.messageSendingStatusLabel, '发送中');
+      expect(a11y.attachmentPickerTooltip, '附件');
+      expect(a11y.attachmentPickerOpenedAnnouncement, '附件面板已打开');
+      expect(a11y.recordingStartedAnnouncement, '开始录音');
+      expect(a11y.attachmentsAddedAnnouncement(count: 3), '已添加 3 个附件');
+      expect(a11y.unreadMessagesLabel(count: 2), '2 条未读');
+      expect(a11y.slowModeTooltip(seconds: 5), '慢速模式，还需等待 5 秒');
+      expect(a11y.imageAttachmentLabel(), '图片附件');
+      expect(a11y.imageAttachmentLabel(title: 'a.png'), '图片附件，a.png');
+      expect(a11y.formatDuration(const Duration(seconds: 9)), '9 秒');
+      expect(
+        a11y.formatDuration(const Duration(minutes: 2, seconds: 5)),
+        '2 分5 秒',
+      );
+      expect(
+        a11y.formatDateTime(DateTime(2026, 9, 10, 15, 39)),
+        contains('15:39'),
+      );
+      expect(a11y.removePollOptionTooltip(), '删除选项');
+      expect(a11y.removePollOptionTooltip(optionText: ' A '), '删除选项 A');
     });
   });
 
@@ -241,23 +295,70 @@ void main() {
       },
     );
 
-    test('every official message list passes the Chinese day separator', () {
-      const List<String> surfaces = <String>[
-        'lib/features/chat/v2/loop_stream_channel_surface.dart',
-        'lib/features/chat/group_alias/group_alias_stream_message_identity.dart',
-      ];
-      for (final String path in surfaces) {
-        final source = File(path).readAsStringSync();
-        final lists = 'StreamMessageListView('.allMatches(source).length;
-        final builders = 'builders: loopStreamMessageListViewBuilders()'
+    test('every official message list in lib passes the Chinese separator', () {
+      // Recursive, so a list mounted by a page added later cannot silently
+      // fall back to Jiffy's English weekday.
+      var lists = 0;
+      for (final File file in _dartSources()) {
+        final source = file.readAsStringSync();
+        final mounted = 'StreamMessageListView('.allMatches(source).length;
+        if (mounted == 0) continue;
+        lists += mounted;
+        final wired = 'builders: loopStreamMessageListViewBuilders()'
             .allMatches(source)
             .length;
         expect(
-          builders,
-          lists,
-          reason: '$path mounts $lists message lists but wires $builders',
+          wired,
+          mounted,
+          reason: '${file.path} mounts $mounted message lists, wires $wired',
         );
       }
+      expect(lists, greaterThan(0));
+    });
+
+    test('every inbox timestamp in lib carries a LOOP formatter', () {
+      var constructed = 0;
+      for (final File file in _dartSources()) {
+        final source = file.readAsStringSync();
+        for (final Match match in 'ChannelLastMessageDate('.allMatches(
+          source,
+        )) {
+          constructed += 1;
+          final tail = source.substring(
+            match.end,
+            math.min(match.end + 300, source.length),
+          );
+          final call = tail.substring(0, tail.indexOf(');') + 1);
+          expect(
+            call,
+            contains('formatter:'),
+            reason: '${file.path} builds a timestamp with no formatter',
+          );
+        }
+      }
+      expect(constructed, greaterThan(0));
+
+      // Both branches of the inbox cell must reach that one helper.
+      const String inbox =
+          'lib/features/chat/group_alias/group_alias_stream_message_identity.dart';
+      final source = File(inbox).readAsStringSync();
+      final tiles = 'StreamChannelListTile('.allMatches(source).length;
+      final timestamps = 'loopStreamChannelListTimestamp(channel)'
+          .allMatches(source)
+          .length;
+      expect(timestamps, tiles);
+      expect(
+        source.contains('return defaultItem;'),
+        isFalse,
+        reason: 'a direct cell must not fall back to the unformatted default',
+      );
     });
   });
 }
+
+/// Every Dart source under `lib/`, so a scan cannot miss a new page.
+Iterable<File> _dartSources() =>
+    Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'));

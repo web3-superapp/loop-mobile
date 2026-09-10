@@ -24,37 +24,71 @@ String loopStreamClockLabel(DateTime dateTime) {
   return '$hour:$minute';
 }
 
-/// `今天` / `昨天` / `周三` / `9月10日` / `2025年9月10日`.
-String loopStreamDayLabel(DateTime dateTime, {DateTime? now}) {
+/// Which bucket a date falls into, relative to today.
+enum _LoopDayBucket { today, yesterday, thisWeek, thisYear, older }
+
+_LoopDayBucket _loopDayBucket(DateTime dateTime, DateTime? now) {
   final local = dateTime.toLocal();
   final today = now?.toLocal() ?? DateTime.now();
   final day = DateTime(local.year, local.month, local.day);
   final anchor = DateTime(today.year, today.month, today.day);
   final difference = anchor.difference(day).inDays;
-  if (difference == 0) return '今天';
-  if (difference == 1) return '昨天';
-  if (difference > 1 && difference < 7) {
-    const List<String> weekdays = <String>[
-      '周一',
-      '周二',
-      '周三',
-      '周四',
-      '周五',
-      '周六',
-      '周日',
-    ];
-    return weekdays[day.weekday - 1];
+  if (difference == 0) return _LoopDayBucket.today;
+  if (difference == 1) return _LoopDayBucket.yesterday;
+  // Six days, not seven: a date exactly a week old carries today's weekday
+  // and its label would be ambiguous. This matches Stream's own window.
+  if (difference > 1 && difference < 7) return _LoopDayBucket.thisWeek;
+  if (day.year == anchor.year) return _LoopDayBucket.thisYear;
+  return _LoopDayBucket.older;
+}
+
+const List<String> _loopWeekdays = <String>[
+  '周一',
+  '周二',
+  '周三',
+  '周四',
+  '周五',
+  '周六',
+  '周日',
+];
+
+/// `今天` / `昨天` / `周三` / `9月10日` / `2025年9月10日`.
+String loopStreamDayLabel(DateTime dateTime, {DateTime? now}) {
+  final local = dateTime.toLocal();
+  return switch (_loopDayBucket(dateTime, now)) {
+    _LoopDayBucket.today => '今天',
+    _LoopDayBucket.yesterday => '昨天',
+    _LoopDayBucket.thisWeek => _loopWeekdays[local.weekday - 1],
+    _LoopDayBucket.thisYear => '${local.month}月${local.day}日',
+    _LoopDayBucket.older => '${local.year}年${local.month}月${local.day}日',
+  };
+}
+
+/// The timestamp on one `/chat` inbox row.
+///
+/// Stream's own `formatDate` prints the 12-hour clock for today, then the
+/// English weekday and `M/d/yyyy`; only its 「昨天」 comes from the
+/// localizations. LOOP prints the whole ladder itself: `HH:mm` today, then
+/// 昨天 / 周X / `M月d日` / `y年M月d日`.
+String loopStreamChannelListDateLabel(DateTime dateTime, {DateTime? now}) {
+  if (_loopDayBucket(dateTime, now) == _LoopDayBucket.today) {
+    return loopStreamClockLabel(dateTime);
   }
-  if (day.year == anchor.year) return '${day.month}月${day.day}日';
-  return '${day.year}年${day.month}月${day.day}日';
+  return loopStreamDayLabel(dateTime, now: now);
 }
 
 /// LOOP's Chinese accessibility labels for the official Stream widgets.
+///
+/// It implements [AccessibilityTranslations] outright rather than extending
+/// the English default, so a member added upstream fails the build instead of
+/// silently reading English to a screen reader.
 class LoopStreamChatAccessibilityTranslations
-    extends DefaultAccessibilityTranslations {
+    implements AccessibilityTranslations {
   /// Creates the Chinese accessibility labels.
-  const LoopStreamChatAccessibilityTranslations()
-    : super(localeName: 'zh_Hans');
+  const LoopStreamChatAccessibilityTranslations();
+
+  @override
+  String get localeName => 'zh_Hans';
 
   @override
   String get sendMessageTooltip => '发送消息';
@@ -69,7 +103,73 @@ class LoopStreamChatAccessibilityTranslations
   String slowModeTooltip({required int seconds}) => '慢速模式，还需等待 $seconds 秒';
 
   @override
+  String get recordVoiceRecordingLabel => '录制语音';
+
+  @override
+  String get cancelRecordingTooltip => '取消录音';
+
+  @override
+  String get stopRecordingTooltip => '停止录音';
+
+  @override
+  String get sendRecordingTooltip => '发送录音';
+
+  @override
+  String recordingDurationLabel({required Duration duration}) =>
+      '录音时长 ${formatDuration(duration)}';
+
+  @override
+  String voiceRecordingPreviewPlayLabel({required Duration duration}) =>
+      '播放语音，${formatDuration(duration)}';
+
+  @override
+  String voiceRecordingPreviewPauseLabel({required Duration duration}) =>
+      '暂停语音，${formatDuration(duration)}';
+
+  @override
   String get attachmentPickerTooltip => '附件';
+
+  @override
+  String get attachmentPickerOpenHint => '打开附件面板';
+
+  @override
+  String get attachmentPickerCloseHint => '关闭附件面板';
+
+  @override
+  String get attachmentPickerOpenTapHint => '点按打开附件面板';
+
+  @override
+  String get attachmentPickerCloseTapHint => '点按关闭附件面板';
+
+  @override
+  String get attachmentPickerOpenedAnnouncement => '附件面板已打开';
+
+  @override
+  String get attachmentPickerClosedAnnouncement => '附件面板已关闭';
+
+  @override
+  String voiceRecordingAttachmentLabel({Duration? duration}) =>
+      duration == null ? '语音消息' : '语音消息，${formatDuration(duration)}';
+
+  @override
+  String videoAttachmentLabel({String? title}) =>
+      title == null ? '视频附件' : '视频附件，$title';
+
+  @override
+  String get gifAttachmentLabel => '动图附件';
+
+  @override
+  String imageAttachmentLabel({String? title}) =>
+      title == null ? '图片附件' : '图片附件，$title';
+
+  @override
+  String get voiceRecordingPlayTooltip => '播放语音';
+
+  @override
+  String get voiceRecordingPauseTooltip => '暂停语音';
+
+  @override
+  String get voiceRecordingLoadingTooltip => '语音加载中';
 
   @override
   String get channelInfoLabel => '会话信息';
@@ -78,15 +178,24 @@ class LoopStreamChatAccessibilityTranslations
   String get messageActionsLabel => '消息操作';
 
   @override
-  String get gifAttachmentLabel => 'GIF 附件';
+  String galleryImageLabel({DateTime? createdAt}) =>
+      createdAt == null ? '图片' : '图片，${formatDateTime(createdAt)}';
 
   @override
-  String imageAttachmentLabel({String? title}) =>
-      title == null ? '图片附件' : '图片附件：$title';
+  String galleryVideoLabel({DateTime? createdAt, Duration? duration}) {
+    final parts = <String>[
+      '视频',
+      if (duration != null) formatDuration(duration),
+      if (createdAt != null) formatDateTime(createdAt),
+    ];
+    return parts.join('，');
+  }
 
   @override
-  String videoAttachmentLabel({String? title}) =>
-      title == null ? '视频附件' : '视频附件：$title';
+  String get selectMediaTapHint => '点按选择';
+
+  @override
+  String get deselectMediaTapHint => '点按取消选择';
 
   @override
   String get outgoingMessagePreviewLabel => '我发送的消息';
@@ -94,6 +203,12 @@ class LoopStreamChatAccessibilityTranslations
   @override
   String incomingMessagePreviewLabel({String? senderName}) =>
       senderName == null ? '收到的消息' : '来自 $senderName 的消息';
+
+  @override
+  String get pollPreviewLabel => '投票';
+
+  @override
+  String get draftPreviewLabel => '草稿';
 
   @override
   String get messageSendingStatusLabel => '发送中';
@@ -123,12 +238,93 @@ class LoopStreamChatAccessibilityTranslations
   String get channelPinnedLabel => '已置顶';
 
   @override
+  String get savePollTooltip => '保存投票';
+
+  @override
+  String removePollOptionTooltip({String? optionText}) {
+    final trimmed = optionText?.trim();
+    if (trimmed == null || trimmed.isEmpty) return '删除选项';
+    return '删除选项 $trimmed';
+  }
+
+  @override
+  String get recordingStartedAnnouncement => '开始录音';
+
+  @override
+  String get recordingLockedAnnouncement => '录音已锁定';
+
+  @override
+  String get recordingStoppedAnnouncement => '录音已停止';
+
+  @override
+  String get recordingCancelledAnnouncement => '录音已取消';
+
+  @override
+  String get recordingCompletedAnnouncement => '录音已完成';
+
+  @override
+  String get imageAttachmentAddedAnnouncement => '已添加图片附件';
+
+  @override
+  String get imageAttachmentRemovedAnnouncement => '已移除图片附件';
+
+  @override
+  String get videoAttachmentAddedAnnouncement => '已添加视频附件';
+
+  @override
+  String get videoAttachmentRemovedAnnouncement => '已移除视频附件';
+
+  @override
+  String get gifAttachmentAddedAnnouncement => '已添加动图附件';
+
+  @override
+  String get gifAttachmentRemovedAnnouncement => '已移除动图附件';
+
+  @override
+  String get fileAttachmentAddedAnnouncement => '已添加文件附件';
+
+  @override
+  String get fileAttachmentRemovedAnnouncement => '已移除文件附件';
+
+  @override
+  String get voiceRecordingAttachmentAddedAnnouncement => '已添加语音附件';
+
+  @override
+  String get voiceRecordingAttachmentRemovedAnnouncement => '已移除语音附件';
+
+  @override
+  String get attachmentAddedAnnouncement => '已添加附件';
+
+  @override
+  String get attachmentRemovedAnnouncement => '已移除附件';
+
+  @override
+  String attachmentsAddedAnnouncement({required int count}) => '已添加 $count 个附件';
+
+  @override
+  String attachmentsRemovedAnnouncement({required int count}) =>
+      '已移除 $count 个附件';
+
+  @override
   String formatDateTime(DateTime dateTime) =>
       '${loopStreamDayLabel(dateTime)} ${loopStreamClockLabel(dateTime)}';
 
   @override
   String formatRecentDateTime(DateTime date) =>
       '${loopStreamDayLabel(date)} ${loopStreamClockLabel(date)}';
+
+  @override
+  String formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    final seconds = duration.inSeconds.remainder(60);
+    final parts = <String>[
+      if (hours > 0) '$hours 小时',
+      if (minutes > 0) '$minutes 分',
+      if (seconds > 0 || (hours == 0 && minutes == 0)) '$seconds 秒',
+    ];
+    return parts.join('');
+  }
 }
 
 /// LOOP's Chinese copy for every string the official Stream widgets read.

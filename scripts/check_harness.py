@@ -9356,7 +9356,7 @@ FRIEND_FRONTEND_TEST_MARKERS = {
         "group user mention candidates are hidden and cannot be selected",
         "group conversation labels never fall back to member identity",
         "group channel chrome hides stock typing and global identities",
-        "group list cell sanitizes preview and avatar while direct keeps default item",
+        "group list cell sanitizes preview and avatar while direct keeps official chrome",
     ),
     Path("test/group_alias_resolver_test.dart"): (
         "keeps only the validated messaging channel ID",
@@ -10035,8 +10035,37 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "Group Stream Alias projection must require the exact immutable v1 field set and canonical values"
             )
 
-        list_item_start = stream_identity.find(
+        # Decision 0065 gave the direct branch its own cell so the inbox
+        # timestamp can carry LOOP's Chinese 24-hour formatter. The dispatcher
+        # still discriminates on the same Alias predicate, and the two cells
+        # are now scanned separately: only the group cell may not restore the
+        # stock global identity projections, while the direct cell is expected
+        # to keep them.
+        dispatch_start = stream_identity.find(
             "Widget loopStreamChannelListIdentityItem"
+        )
+        dispatch_end = stream_identity.find(
+            "class _LoopStreamDirectChannelListItem", dispatch_start + 1
+        )
+        dispatch_section = (
+            stream_identity[dispatch_start:dispatch_end]
+            if dispatch_start >= 0 and dispatch_end > dispatch_start
+            else ""
+        )
+        if any(
+            marker not in dispatch_section
+            for marker in (
+                "loopStreamChannelUsesGroupMessageAlias(defaultItem.props.channel.cid)",
+                "_LoopStreamDirectChannelListItem(props: defaultItem.props)",
+                "_LoopStreamGroupChannelListItem(props: defaultItem.props)",
+            )
+        ):
+            errors.append(
+                "Group Stream channel list must route group cells to the safe item and direct cells to the official one"
+            )
+
+        list_item_start = stream_identity.find(
+            "class _LoopStreamGroupChannelListItem"
         )
         list_item_end = stream_identity.find(
             "class LoopStreamGroupChannelHeader", list_item_start + 1
@@ -10049,8 +10078,6 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
         if any(
             marker not in list_item_section
             for marker in (
-                "return defaultItem;",
-                "_LoopStreamGroupChannelListItem(props: defaultItem.props)",
                 "sanitizeLoopGroupMessageForDisplay(",
                 "resolveLoopGroupConversationLabel(",
                 "avatar: const CircleAvatar(",
@@ -10060,6 +10087,25 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
         ):
             errors.append(
                 "Group Stream channel list item must sanitize its preview and use a neutral group identity"
+            )
+
+        # Every inbox timestamp goes through the one LOOP formatter, so no cell
+        # falls back to Stream's 12-hour clock or English weekday.
+        if "ChannelLastMessageDate(" in stream_identity and any(
+            marker not in stream_identity
+            for marker in (
+                "Widget loopStreamChannelListTimestamp(Channel channel) =>",
+                "formatter: (context, date) => loopStreamChannelListDateLabel(date)",
+            )
+        ):
+            errors.append(
+                "Stream channel list timestamps must use the LOOP 24-hour Chinese formatter"
+            )
+        if stream_identity.count(
+            "StreamChannelListTile("
+        ) != stream_identity.count("loopStreamChannelListTimestamp(channel)"):
+            errors.append(
+                "Every Stream channel list tile must pass the LOOP timestamp formatter"
             )
 
         safe_page_start = stream_identity.find("class LoopStreamGroupChannelPage")

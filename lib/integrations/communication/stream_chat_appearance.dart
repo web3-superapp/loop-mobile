@@ -135,15 +135,11 @@ loopStreamMessageItemTheme() => StreamMessageItemThemeData(
         _ => _isOutgoing(layout) ? LoopColors.lime : LoopColors.card,
       },
     ),
-    side: StreamMessageLayoutBorderSide.resolveWith(
-      (layout) => switch (layout.contentKind) {
-        StreamMessageContentKind.jumbomoji => BorderSide.none,
-        _ =>
-          _isOutgoing(layout)
-              ? const BorderSide(color: LoopColors.lime)
-              : const BorderSide(color: LoopColors.line),
-      },
-    ),
+    // The prototype draws no outline on either bubble: the own bubble is a
+    // solid Lime fill and the other one is `--card` over the Ink page.
+    // Stream's default hairline on the incoming bubble is dropped rather than
+    // restated in a LOOP colour.
+    side: StreamMessageLayoutBorderSide.all(BorderSide.none),
     shape: StreamMessageLayoutProperty.resolveWith(
       (layout) => RoundedRectangleBorder(
         borderRadius: switch ((layout.alignment, layout.stackPosition)) {

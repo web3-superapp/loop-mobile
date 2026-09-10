@@ -4,6 +4,7 @@ import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
+import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// Neutral sender label used when the current Stream member projection cannot
@@ -141,17 +142,78 @@ String resolveLoopGroupConversationLabel(Map<String, Object?> extraData) {
   }
 }
 
-/// Replaces only group cells in an official [StreamChannelListView].
+/// The timestamp on one inbox row, in LOOP's Chinese 24-hour ladder.
 ///
-/// The caller-provided [defaultItem] is returned unchanged for known direct
-/// channels. Group cells retain official tap/long-press, unread, mute, pin,
-/// timestamp, and live channel state while removing typing/global avatars and
-/// sanitizing the last-message preview.
+/// `ChannelLastMessageDate` falls back to Stream's `formatDate`, whose today
+/// bucket is Jiffy's 12-hour `jm` and whose weekday and numeric date bypass
+/// the localizations entirely. Every LOOP row passes this formatter instead.
+Widget loopStreamChannelListTimestamp(Channel channel) =>
+    ChannelLastMessageDate(
+      channel: channel,
+      formatter: (context, date) => loopStreamChannelListDateLabel(date),
+    );
+
+/// Replaces every cell in an official [StreamChannelListView].
+///
+/// Both branches keep official tap/long-press, unread, mute, pin and live
+/// channel state, and both carry LOOP's timestamp formatter. A direct cell
+/// keeps Stream's own avatar, name and subtitle widgets; only a group cell
+/// removes the typing/global avatar projections and sanitizes the
+/// last-message preview.
 Widget loopStreamChannelListIdentityItem(StreamChannelListItem defaultItem) {
   if (!loopStreamChannelUsesGroupMessageAlias(defaultItem.props.channel.cid)) {
-    return defaultItem;
+    return _LoopStreamDirectChannelListItem(props: defaultItem.props);
   }
   return _LoopStreamGroupChannelListItem(props: defaultItem.props);
+}
+
+/// Stream's own direct cell, rebuilt only so the timestamp can carry LOOP's
+/// formatter.
+///
+/// `StreamChannelListItem.copyWith` exposes no timestamp slot and
+/// `_DefaultStreamChannelListItem` is private, so the official sub-widgets are
+/// composed here instead. Every one of them — avatar, name, subtitle with its
+/// typing indicator and delivery status — is Stream's, unchanged.
+class _LoopStreamDirectChannelListItem extends StatelessWidget {
+  const _LoopStreamDirectChannelListItem({required this.props});
+
+  final StreamChannelListItemProps props;
+
+  @override
+  Widget build(BuildContext context) {
+    final channel = props.channel;
+    final state = channel.state!;
+    return StreamBuilder<bool>(
+      initialData: channel.isMuted,
+      stream: channel.isMutedStream,
+      builder: (context, mutedSnapshot) => StreamBuilder<bool>(
+        initialData: channel.isPinned,
+        stream: channel.isPinnedStream,
+        builder: (context, pinnedSnapshot) => StreamBuilder<int>(
+          initialData: state.unreadCount,
+          stream: state.unreadCountStream,
+          builder: (context, unreadSnapshot) => StreamChannelListTile(
+            avatar: props.leading ?? StreamChannelAvatar(channel: channel),
+            title: props.title ?? StreamChannelName(channel: channel),
+            subtitle:
+                props.subtitle ??
+                ChannelListTileSubtitle(
+                  channel: channel,
+                  sendingIndicatorBuilder: props.sendingIndicatorBuilder,
+                ),
+            timestamp:
+                props.trailing ?? loopStreamChannelListTimestamp(channel),
+            unreadCount: unreadSnapshot.data ?? state.unreadCount,
+            isMuted: mutedSnapshot.data ?? channel.isMuted,
+            isPinned: pinnedSnapshot.data ?? channel.isPinned,
+            onTap: props.onTap,
+            onLongPress: props.onLongPress,
+            selected: props.selected,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _LoopStreamGroupChannelListItem extends StatelessWidget {
@@ -201,7 +263,7 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
                       message: displayMessage,
                       channel: channelState.channel,
                     ),
-              timestamp: ChannelLastMessageDate(channel: channel),
+              timestamp: loopStreamChannelListTimestamp(channel),
               unreadCount: state.unreadCount,
               isMuted: mutedSnapshot.data ?? channel.isMuted,
               isPinned: pinnedSnapshot.data ?? channel.isPinned,

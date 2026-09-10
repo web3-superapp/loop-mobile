@@ -741,6 +741,53 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected safe group channel-list item guard: {result}",
         )
 
+    def test_channel_list_timestamp_must_keep_the_loop_formatter(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = (
+                root
+                / "lib/features/chat/group_alias/group_alias_stream_message_identity.dart"
+            )
+            source = path.read_text(encoding="utf-8")
+            marker = (
+                "formatter: (context, date) => loopStreamChannelListDateLabel(date)"
+            )
+            self.assertIn(marker, source)
+            path.write_text(source.replace(marker, "", 1), encoding="utf-8")
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("24-hour Chinese formatter" in error for error in result),
+            msg=f"expected LOOP channel-list timestamp guard: {result}",
+        )
+
+    def test_direct_channel_list_cell_cannot_drop_the_loop_timestamp(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = (
+                root
+                / "lib/features/chat/group_alias/group_alias_stream_message_identity.dart"
+            )
+            source = path.read_text(encoding="utf-8")
+            marker = "_LoopStreamDirectChannelListItem(props: defaultItem.props)"
+            self.assertIn(marker, source)
+            path.write_text(
+                source.replace(marker, "defaultItem", 1),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any(
+                "route group cells to the safe item" in error for error in result
+            ),
+            msg=f"expected direct channel-list cell guard: {result}",
+        )
+
     def test_group_channel_route_cannot_bypass_safe_page(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
