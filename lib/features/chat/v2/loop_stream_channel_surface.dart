@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
@@ -283,6 +283,7 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
         Expanded(
           child: StreamMessageListView(
             key: const ValueKey<String>('loop-stream-message-list'),
+            builders: loopStreamMessageListViewBuilders(),
             onEditMessageTap: _edit,
             onReplyTap: _reply,
             enableSafeArea: false,
@@ -363,13 +364,3 @@ class LoopChannelPinnedNotice extends StatelessWidget {
     margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
   );
 }
-
-/// Lime Ledger colours for the official Stream widgets. Stream 10.3 derives
-/// most of its palette from the ambient Material theme, so only the surfaces
-/// it owns outright are restated here.
-StreamChatThemeData loopStreamChatThemeData() => StreamChatThemeData(
-  messageListViewTheme: const StreamMessageListViewThemeData(
-    backgroundColor: LoopColors.ink,
-    messageHighlightColor: LoopColors.limeSoft,
-  ),
-);

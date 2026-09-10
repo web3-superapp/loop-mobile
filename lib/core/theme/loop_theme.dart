@@ -113,6 +113,11 @@ abstract final class LoopRadius {
   /// Floating Chalk tab bar radius (chapter 5.4).
   static const double tabBarValue = 23;
 
+  /// Chat bubble tail corner (`.msg-txt` in `docs/prototype/style-v2.css`:
+  /// `border-radius:5px 16px 16px 16px`). The other three corners are
+  /// [controlValue].
+  static const double bubbleTailValue = 5;
+
   static const BorderRadius shell = BorderRadius.all(
     Radius.circular(shellValue),
   );
@@ -126,6 +131,7 @@ abstract final class LoopRadius {
   static const BorderRadius tabBar = BorderRadius.all(
     Radius.circular(tabBarValue),
   );
+  static const Radius bubbleTail = Radius.circular(bubbleTailValue);
   static const BorderRadius pill = BorderRadius.all(Radius.circular(999));
 
   // Existing aliases.

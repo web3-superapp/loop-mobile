@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
+import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// Neutral sender label used when the current Stream member projection cannot
@@ -304,6 +305,7 @@ class _LoopStreamGroupChannelPageState
       appBarSurfaceStyle: StreamChannelHeader.resolveSurfaceStyle(context),
       bottomSurfaceStyle: StreamMessageComposer.resolveSurfaceStyle(context),
       body: StreamMessageListView(
+        builders: loopStreamMessageListViewBuilders(),
         onEditMessageTap: _edit,
         onReplyTap: _reply,
         threadBuilder: (_, parentMessage) =>
@@ -407,6 +409,7 @@ class _LoopStreamGroupThreadPageState
       appBarSurfaceStyle: StreamThreadHeader.resolveSurfaceStyle(context),
       bottomSurfaceStyle: StreamMessageComposer.resolveSurfaceStyle(context),
       body: StreamMessageListView(
+        builders: loopStreamMessageListViewBuilders(),
         parentMessage: widget.parent,
         onReplyTap: _reply,
         onEditMessageTap: _edit,

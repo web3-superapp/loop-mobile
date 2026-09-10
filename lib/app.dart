@@ -66,6 +66,8 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_coordinator.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
+import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
+import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/notifications/loop_notification_event_source.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -90,6 +92,9 @@ final _loopStreamComponentBuilders = StreamComponentBuilders(
     ),
     messageItem: loopStreamGroupMessageItemBuilder,
     mentionItem: loopStreamGroupMentionItemBuilder,
+    // Decision 0065: LOOP prints a 24-hour clock, so the footer's timestamp
+    // no longer follows Jiffy's locale-driven 12-hour format.
+    messageFooter: loopStreamMessageFooterBuilder,
   ),
 );
 
@@ -233,6 +238,13 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     return MaterialApp.router(
       title: 'LOOP',
       debugShowCheckedModeBanner: false,
+      // The official Stream widgets are the only localized surface in the
+      // app; every LOOP page writes its Chinese copy directly. The delegate
+      // answers for any locale, so the application locale — and with it
+      // `MaterialLocalizations` — stays the framework default.
+      localizationsDelegates: const <LocalizationsDelegate<Object>>[
+        LoopStreamChatLocalizationsDelegate(),
+      ],
       theme: LoopTheme.dark,
       darkTheme: LoopTheme.dark,
       themeMode: ThemeMode.dark,
@@ -247,12 +259,26 @@ class _LoopAppState extends ConsumerState<LoopApp> {
           );
         }
         if (streamSession != null) {
-          content = StreamChat(
-            key: ObjectKey(streamSession.client),
-            client: streamSession.client,
-            configData: _loopStreamConfiguration,
-            componentBuilders: _loopStreamComponentBuilders,
-            child: content,
+          // Decision 0065: Stream 10.3 resolves its palette from a
+          // `StreamTheme` theme extension that `StreamChat` reads off the
+          // ambient Material theme, so the Lime Ledger tokens are injected
+          // here, one level above the official widgets.
+          final theme = Theme.of(context);
+          content = Theme(
+            data: theme.copyWith(
+              extensions: [
+                ...theme.extensions.values,
+                loopStreamTheme(platform: theme.platform),
+              ],
+            ),
+            child: StreamChat(
+              key: ObjectKey(streamSession.client),
+              client: streamSession.client,
+              themeData: loopStreamChatThemeData(),
+              configData: _loopStreamConfiguration,
+              componentBuilders: _loopStreamComponentBuilders,
+              child: content,
+            ),
           );
         }
         // One toast host above the router: fixed above the tab bar, z 90.
