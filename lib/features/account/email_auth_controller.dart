@@ -411,8 +411,7 @@ class EmailAuthController extends Notifier<EmailAuthState> {
   void _acceptLoginResult(PrivyAccountSummary account) {
     final current = ref.read(loopSessionProvider);
     final isPreAuthentication =
-        current.mode == LoopSessionMode.restoring ||
-        current.mode == LoopSessionMode.signedOut;
+        current.isRestoring || current.mode == LoopSessionMode.signedOut;
     final alreadyAcceptedSamePrincipal =
         current.mode == LoopSessionMode.authenticated &&
         current.account?.privyUserId == account.privyUserId;

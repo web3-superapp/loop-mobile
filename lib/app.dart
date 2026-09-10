@@ -15,6 +15,7 @@ import 'package:loop_mobile/app/session/loop_communication_retirement.dart';
 import 'package:loop_mobile/app/session/post_auth_bootstrap_coordinator.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/app/session/wallet_provisioning_controller.dart';
+import 'package:loop_mobile/core/network/loop_connectivity_signal.dart';
 import 'package:loop_mobile/core/navigation/launch_route.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
@@ -111,6 +112,9 @@ class _LoopAppState extends ConsumerState<LoopApp> {
   late final LoopNotificationCoordinator notificationCoordinator;
   late final PostAuthBootstrapCoordinator postAuthBootstrapCoordinator;
   late final PostAuthProfileRedirectCoordinator postAuthProfileCoordinator;
+  late final LoopV2MetaObserver metaObserver;
+  AppLifecycleListener? _lifecycleListener;
+  StreamSubscription<void>? _connectivitySubscription;
 
   @override
   void initState() {
@@ -123,9 +127,26 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       (previous, next) {},
       fireImmediately: true,
     );
+    // Decision 0064: the observation may now recover from a cold start that
+    // hit a dead network. The observer never gates login or routing; it only
+    // re-arms a read that already failed.
+    metaObserver = ref.read(loopV2MetaObserverProvider);
+    _lifecycleListener = AppLifecycleListener(
+      onResume: () =>
+          metaObserver.observe(LoopV2MetaObservationTrigger.appResumed),
+    );
+    _connectivitySubscription = ref
+        .read(loopConnectivitySignalProvider)
+        .onRestored
+        .listen(
+          (_) => metaObserver.observe(
+            LoopV2MetaObservationTrigger.connectivityRestored,
+          ),
+        );
     router = _buildRouter(
       () => ref.read(loopSessionProvider),
       ref.read(loopRoutingErrorLogProvider),
+      () => metaObserver.observe(LoopV2MetaObservationTrigger.navigation),
     );
     notificationCoordinator = LoopNotificationCoordinator(
       source: ref.read(loopNotificationEventSourceProvider),
@@ -192,6 +213,10 @@ class _LoopAppState extends ConsumerState<LoopApp> {
 
   @override
   void dispose() {
+    unawaited(_connectivitySubscription?.cancel());
+    _connectivitySubscription = null;
+    _lifecycleListener?.dispose();
+    _lifecycleListener = null;
     unawaited(notificationCoordinator.dispose());
     router.dispose();
     super.dispose();
@@ -255,11 +280,16 @@ Widget _chatSurface({
 
 GoRouter _buildRouter(
   LoopSessionState Function() readSession,
-  LoopRoutingErrorLog routingErrors,
-) {
+  LoopRoutingErrorLog routingErrors, [
+  VoidCallback? onNavigation,
+]) {
   return GoRouter(
     initialLocation: '/auth',
     redirect: (context, state) {
+      // Decision 0064: opening a page re-arms a D0 observation that failed.
+      // The callback is single-flight inside the observer and never decides
+      // this redirect, so routing stays independent of the observation.
+      onNavigation?.call();
       final session = readSession();
       final location = state.matchedLocation;
       // Credential pages reachable before a verified session. Everything else

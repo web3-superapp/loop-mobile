@@ -81,7 +81,7 @@ final class LoopNotificationCoordinator {
     if (deferred == null) return;
 
     final session = _readSession();
-    if (session.mode == LoopSessionMode.restoring) return;
+    if (session.isRestoring) return;
     if (session.mode != LoopSessionMode.authenticated) {
       _clearDeferredInteraction();
       return;
@@ -144,7 +144,7 @@ final class LoopNotificationCoordinator {
 
   LoopNotificationSessionContext _currentContext() {
     final session = _readSession();
-    if (session.mode == LoopSessionMode.restoring) {
+    if (session.isRestoring) {
       return const LoopNotificationSessionContext.restoring();
     }
     if (session.mode != LoopSessionMode.authenticated) {
@@ -174,7 +174,7 @@ final class LoopNotificationCoordinator {
     final deferred = _deferredInteraction;
     if (_disposed || deferred == null) return;
     final session = _readSession();
-    if (session.mode == LoopSessionMode.restoring) return;
+    if (session.isRestoring) return;
     if (session.mode != LoopSessionMode.authenticated) {
       _clearDeferredInteraction();
       return;

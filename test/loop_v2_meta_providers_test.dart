@@ -63,6 +63,9 @@ void main() {
     );
   });
 
+  // Decision 0064 moved the retry ladder out to LoopV2MetaObserver. The
+  // provider itself still installs none, so a container that never creates the
+  // observer reads exactly once and stops.
   test(
     'snapshot does not automatically retry a failed metadata read',
     () async {
@@ -103,6 +106,19 @@ void main() {
 
       expect(repository.policyCalls, 1);
       expect(repository.capabilityCalls, 1);
+      expect(
+        find.byKey(const ValueKey<String>('community-screen')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+
+      // Decision 0064: the failure is now retried on a bounded ladder, and
+      // none of those attempts may block or move the authenticated UI.
+      for (final delay in LoopV2MetaObserver.retryBackoff) {
+        await tester.pump(delay);
+        await tester.pump();
+      }
+      expect(repository.policyCalls, 1 + LoopV2MetaObserver.maxRetries);
       expect(
         find.byKey(const ValueKey<String>('community-screen')),
         findsOneWidget,

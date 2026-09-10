@@ -102,10 +102,93 @@ class PrivySessionSnapshot {
   final PrivyAccountSummary? account;
 }
 
+/// What Privy told us about a failure.
+///
+/// privy_flutter 0.10.1 carries no error code across the platform channel:
+/// `PrivyException` has a single `message` field and
+/// `ExceptionConversion.convertToPrivyException` keeps a `PlatformException`
+/// code only for the four MFA cases. Classification is therefore a message
+/// mapping, documented in decision 0064, and it is deliberately biased to
+/// [network]: only an explicit authentication answer may be read as
+/// "signed out".
+enum PrivyFailureKind {
+  /// The device could not reach Privy. The session state stays undecided.
+  network,
+
+  /// Privy answered about the credential itself: it is absent or rejected.
+  authentication,
+
+  /// Privy failed for a reason we cannot classify. Treated exactly like
+  /// [network] by every caller, because an unclassified failure is not an
+  /// answer about the credential.
+  unknown,
+}
+
+/// Maps a privy_flutter 0.10.1 `PrivyException.message` onto a
+/// [PrivyFailureKind]. Network markers are tested first: when a message
+/// mentions both a transport and a credential, the transport explains it and
+/// LOOP must not read it as a sign-out.
+abstract final class PrivyFailureClassifier {
+  static const networkMarkers = <String>[
+    'network',
+    'internet',
+    'offline',
+    'connection',
+    'connect',
+    'timed out',
+    'timeout',
+    'unreachable',
+    'unavailable',
+    'socket',
+    'hostname',
+    'dns',
+    'ssl',
+    'tls',
+    'certificate',
+  ];
+
+  static const authenticationMarkers = <String>[
+    'unauthenticated',
+    'not authenticated',
+    'unauthorized',
+    'no user',
+    'no authenticated user',
+    'no active session',
+    'not logged in',
+    'logged out',
+    'session expired',
+    'token expired',
+    'expired token',
+    'invalid token',
+    'invalid credential',
+    'invalid refresh',
+    '401',
+    '403',
+  ];
+
+  static PrivyFailureKind of(String message) {
+    final normalized = message.toLowerCase();
+    for (final marker in networkMarkers) {
+      if (normalized.contains(marker)) return PrivyFailureKind.network;
+    }
+    for (final marker in authenticationMarkers) {
+      if (normalized.contains(marker)) return PrivyFailureKind.authentication;
+    }
+    return PrivyFailureKind.unknown;
+  }
+}
+
 class PrivyGatewayException implements Exception {
-  const PrivyGatewayException(this.userMessage);
+  const PrivyGatewayException(
+    this.userMessage, {
+    this.kind = PrivyFailureKind.unknown,
+  });
 
   final String userMessage;
+
+  /// Why the call failed. Only [PrivyFailureKind.authentication] is Privy
+  /// answering that the credential is gone.
+  final PrivyFailureKind kind;
 
   @override
   String toString() => userMessage;
@@ -281,8 +364,14 @@ class PrivySdkAuthGateway
   Future<PrivySessionSnapshot> restoreSession() async {
     try {
       return _mapAuthState(await _privy.getAuthState());
-    } on PrivyException {
-      throw const PrivyGatewayException('无法恢复登录状态，请检查网络后重试。');
+    } on PrivyException catch (error) {
+      final kind = PrivyFailureClassifier.of(error.message);
+      throw PrivyGatewayException(
+        kind == PrivyFailureKind.authentication
+            ? '登录状态已失效，请重新登录。'
+            : '暂时无法确认登录状态，请检查网络后重试。',
+        kind: kind,
+      );
     }
   }
 

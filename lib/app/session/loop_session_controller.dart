@@ -7,6 +7,11 @@ import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
 enum LoopSessionMode {
   restoring,
+
+  /// Privy could not be reached, or failed for a reason it did not explain.
+  /// The session is undecided: LOOP has no sign-out answer and must never
+  /// show the credential form from here (decision 0064).
+  restoreUnavailable,
   signingOut,
   signedOut,
   preview,
@@ -25,6 +30,12 @@ class LoopSessionState {
   const LoopSessionState({required this.mode, this.account, this.errorMessage});
 
   const LoopSessionState.restoring() : this(mode: LoopSessionMode.restoring);
+
+  const LoopSessionState.restoreUnavailable({String? errorMessage})
+    : this(
+        mode: LoopSessionMode.restoreUnavailable,
+        errorMessage: errorMessage,
+      );
 
   const LoopSessionState.signingOut() : this(mode: LoopSessionMode.signingOut);
 
@@ -45,6 +56,15 @@ class LoopSessionState {
 
   bool get isPreview => mode == LoopSessionMode.preview;
 
+  /// The session is still undecided: Privy has not answered yet, or the
+  /// answer could not be obtained. Neither variant is a sign-out.
+  bool get isRestoring =>
+      mode == LoopSessionMode.restoring ||
+      mode == LoopSessionMode.restoreUnavailable;
+
+  /// The undecided state that owes the owner an explanation and a retry.
+  bool get isRestoreUnavailable => mode == LoopSessionMode.restoreUnavailable;
+
   /// Provider-backed wallet, Stream bootstrap, and trading actions require a
   /// fully verified session. Cached unverified sessions remain visible but are
   /// deliberately restricted to offline/read-only product surfaces.
@@ -63,6 +83,7 @@ class LoopSessionState {
 class LoopSessionController extends Notifier<LoopSessionState> {
   StreamSubscription<PrivySessionSnapshot>? _subscription;
   Future<void>? _exitOperation;
+  Future<void>? _restoreOperation;
   var _localSignOutBarrier = false;
 
   @override
@@ -71,8 +92,29 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     _subscription?.cancel();
     _subscription = gateway.watchSession().listen(_receiveSnapshot);
     ref.onDispose(() => _subscription?.cancel());
-    Future<void>.microtask(() => _restore(gateway));
+    Future<void>.microtask(() => _startRestore(gateway));
     return const LoopSessionState.restoring();
+  }
+
+  /// Asks Privy again after a restore that could not be completed. Only the
+  /// undecided state may retry, and only one restore runs at a time.
+  Future<void> retryRestore() {
+    final active = _restoreOperation;
+    if (active != null) return active;
+    if (!state.isRestoreUnavailable) return Future<void>.value();
+    state = const LoopSessionState.restoring();
+    return _startRestore(ref.read(privyAuthGatewayProvider));
+  }
+
+  Future<void> _startRestore(PrivyAuthGateway gateway) {
+    final active = _restoreOperation;
+    if (active != null) return active;
+    late final Future<void> operation;
+    operation = _restore(gateway).whenComplete(() {
+      if (identical(_restoreOperation, operation)) _restoreOperation = null;
+    });
+    _restoreOperation = operation;
+    return operation;
   }
 
   Future<void> _restore(PrivyAuthGateway gateway) async {
@@ -81,16 +123,27 @@ class LoopSessionController extends Notifier<LoopSessionState> {
       if (!ref.mounted) return;
       // Never let a stale unauthenticated restore overwrite a session that
       // completed while restoration was in flight.
-      if (state.mode == LoopSessionMode.restoring ||
+      if (state.isRestoring ||
           snapshot.kind == PrivySessionKind.authenticated) {
         _receiveSnapshot(snapshot);
       }
     } on PrivyGatewayException catch (error) {
-      if (!ref.mounted) return;
-      if (state.mode == LoopSessionMode.restoring) {
-        state = LoopSessionState.signedOut(errorMessage: error.userMessage);
-      }
+      _failRestore(error.kind, error.userMessage);
+    } catch (_) {
+      // An unclassified failure is not Privy answering that the credential is
+      // gone. The session stays undecided rather than falling to the form.
+      _failRestore(PrivyFailureKind.unknown, '暂时无法确认登录状态，请检查网络后重试。');
     }
+  }
+
+  void _failRestore(PrivyFailureKind kind, String message) {
+    if (!ref.mounted || !state.isRestoring) return;
+    // Only an explicit authentication answer signs the owner out. Network and
+    // unclassified failures keep the session undecided so the credential form
+    // never claims a sign-out Privy did not report.
+    state = kind == PrivyFailureKind.authentication
+        ? LoopSessionState.signedOut(errorMessage: message)
+        : LoopSessionState.restoreUnavailable(errorMessage: message);
   }
 
   void _receiveSnapshot(PrivySessionSnapshot snapshot) {
@@ -100,7 +153,10 @@ class LoopSessionController extends Notifier<LoopSessionState> {
       return;
     }
     state = switch (snapshot.kind) {
-      PrivySessionKind.notReady => const LoopSessionState.restoring(),
+      // `notReady` is Privy still deciding; it must not drop the explanation
+      // and the retry the undecided state is already showing.
+      PrivySessionKind.notReady =>
+        state.isRestoreUnavailable ? state : const LoopSessionState.restoring(),
       PrivySessionKind.unauthenticated => const LoopSessionState.signedOut(),
       PrivySessionKind.authenticatedUnverified => const LoopSessionState(
         mode: LoopSessionMode.authenticatedUnverified,

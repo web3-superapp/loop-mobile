@@ -39,8 +39,19 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(loopSessionProvider);
-    if (session.mode == LoopSessionMode.restoring) {
-      return const PrivySessionRestoreScreen();
+    // Decision 0064: restoring and "temporarily unreachable" are both
+    // undecided. Only an explicit Privy sign-out reaches the form below.
+    if (session.isRestoring) {
+      return PrivySessionRestoreScreen(
+        unreachableMessage: session.isRestoreUnavailable
+            ? (session.errorMessage ?? '暂时无法确认登录状态，请检查网络后重试。')
+            : null,
+        onRetry: session.isRestoreUnavailable
+            ? () => unawaited(
+                ref.read(loopSessionProvider.notifier).retryRestore(),
+              )
+            : null,
+      );
     }
     if (session.mode == LoopSessionMode.signingOut) {
       return const PrivySessionSignOutScreen();
@@ -289,35 +300,85 @@ class _AuthMethod extends StatelessWidget {
   }
 }
 
+/// The branded launch frame for both undecided session states.
+///
+/// With [unreachableMessage] null it is the plain "正在恢复登录…" frame. With a
+/// message it becomes the third state of decision 0064: the same brand frame
+/// carrying the five-state Offline vocabulary (the `offline` icon and the
+/// danger notice tone) plus a retry. It is never the credential form.
 class PrivySessionRestoreScreen extends StatelessWidget {
-  const PrivySessionRestoreScreen({super.key});
+  const PrivySessionRestoreScreen({
+    super.key,
+    this.unreachableMessage,
+    this.onRetry,
+  });
+
+  /// Why the session could not be confirmed. Null while Privy is still
+  /// answering.
+  final String? unreachableMessage;
+
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
+    final message = unreachableMessage;
+    final unreachable = message != null;
     return Scaffold(
-      key: const ValueKey<String>('privy-restoring-screen'),
+      key: unreachable
+          ? const ValueKey<String>('privy-restore-unavailable-screen')
+          : const ValueKey<String>('privy-restoring-screen'),
       body: SafeArea(
         child: Center(
           child: Semantics(
-            label: 'LOOP 正在恢复登录状态',
+            label: unreachable ? 'LOOP 暂时无法确认登录状态' : 'LOOP 正在恢复登录状态',
             liveRegion: true,
-            child: const Column(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                LoopBrandMark(
+                const LoopBrandMark(
                   kind: LoopBrandMarkKind.appIcon,
                   height: 72,
                   semanticLabel: 'LOOP',
                 ),
-                SizedBox(height: 24),
-                SizedBox(
-                  width: 160,
-                  child: LinearProgressIndicator(
-                    minHeight: 3,
-                    backgroundColor: LoopColors.line2,
-                    valueColor: AlwaysStoppedAnimation<Color>(LoopColors.lime),
+                const SizedBox(height: 24),
+                if (!unreachable)
+                  const SizedBox(
+                    width: 160,
+                    child: LinearProgressIndicator(
+                      minHeight: 3,
+                      backgroundColor: LoopColors.line2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        LoopColors.lime,
+                      ),
+                    ),
+                  )
+                else ...<Widget>[
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: LoopNotice(
+                      key: const ValueKey<String>(
+                        'privy-restore-unavailable-notice',
+                      ),
+                      icon: 'offline',
+                      tone: LoopNoticeTone.danger,
+                      title: '暂时无法确认登录状态',
+                      body: '$message\n未收到 Privy 的“未登录”答复，因此不会要求你重新登录。',
+                    ),
                   ),
-                ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: LoopSpacing.page,
+                    ),
+                    child: LoopButton(
+                      key: const ValueKey<String>(
+                        'privy-restore-unavailable-retry',
+                      ),
+                      label: '重试',
+                      primary: true,
+                      onPressed: onRetry,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
