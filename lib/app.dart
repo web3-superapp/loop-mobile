@@ -1348,6 +1348,10 @@ String _profilePath(String id) => switch (id) {
   'friend-requests' => LoopRouteManifest.pathFor('dm-requests'),
   'wallets' => LoopRouteManifest.pathFor('wallets'),
   'community-discover' => LoopRouteManifest.pathFor('community-discover'),
+  // Not a route of its own: the same manifest page narrowed to the owner's
+  // memberships, which is what 我的社区 opens once the aggregate reports any.
+  'community-joined' =>
+    '${LoopRouteManifest.pathFor('community-discover')}?membership=joined',
   'launch-history' => LoopRouteManifest.pathFor('launch-history'),
   'launch-tier' => LoopRouteManifest.pathFor('launch-tier'),
   'profile-edit' => LoopRouteManifest.pathFor('profile-edit'),

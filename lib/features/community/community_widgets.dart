@@ -149,6 +149,19 @@ const String communityMissingFigure = '—';
 String communityMemberCountLabel(int? memberCount) =>
     memberCount == null ? communityMissingFigure : '$memberCount 名成员';
 
+/// The one label for a server-confirmed membership, shared by the community
+/// home rows and the profile page's 我的社区 entry.
+///
+/// A muted or banned membership is reported as that state rather than as its
+/// role: the account still holds `member`/`admin`, but saying so here would
+/// read as an entitlement the server has suspended.
+String communityMembershipLabel(CommunityMembership membership) =>
+    switch (membership.status) {
+      CommunityMemberStatus.active => membership.role.label,
+      CommunityMemberStatus.muted => '已禁言',
+      CommunityMemberStatus.banned => '已封禁',
+    };
+
 /// Square monogram tile for a community.
 ///
 /// `logoRef` is a `avatar:preset/community-01..12` reference the frozen local

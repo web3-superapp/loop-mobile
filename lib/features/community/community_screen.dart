@@ -296,11 +296,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
   LoopRecordRow _joinedRow(List<JoinedCommunity> items, int index) {
     final entry = items[index];
     final community = entry.community;
-    final status = switch (entry.membership.status) {
-      CommunityMemberStatus.active => entry.membership.role.label,
-      CommunityMemberStatus.muted => '已禁言',
-      CommunityMemberStatus.banned => '已封禁',
-    };
+    final status = communityMembershipLabel(entry.membership);
     return LoopRecordRow(
       key: ValueKey<String>('community-joined-${community.communityId}'),
       leading: CommunityLogoTile(name: community.name),

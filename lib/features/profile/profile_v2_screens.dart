@@ -7,6 +7,11 @@ import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/policy/loop_client_policy.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/community/community_controllers.dart';
+import 'package:loop_mobile/features/community/community_gateway.dart';
+import 'package:loop_mobile/features/community/community_models.dart';
+import 'package:loop_mobile/features/community/community_state.dart';
+import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_catalog.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_controller.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
@@ -349,19 +354,7 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
           reason: '资产与挖矿数据源尚未接入，这里不展示任何推测数字。',
         ),
         const LoopLabel('我的社区'),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            LoopRecordRow(
-              key: const ValueKey<String>('profile-open-communities'),
-              title: '我的社区',
-              // Membership has no source yet, so the row states that instead
-              // of showing a count.
-              subtitle: '社区成员关系尚未接入',
-              trailing: '未接入',
-              onTap: () => widget.onNavigate('community-discover'),
-            ),
-          ],
-        ),
+        ProfileCommunitiesRow(onNavigate: widget.onNavigate),
         const LoopLabel('Launch'),
         LoopRecordGroup(
           rows: <LoopRecordRow>[
@@ -435,6 +428,114 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
             ),
           ),
         const SizedBox(height: 20),
+      ],
+    );
+  }
+}
+
+/// The 我的社区 entry on `profile`.
+///
+/// Membership is not a profile fact. It is only ever the `joined` block of
+/// `community`'s own home aggregate, so this row reads that aggregate through
+/// the existing [CommunityHomeController] instead of adding a second source,
+/// and states the aggregate's phase rather than claiming the relationship is
+/// unconnected.
+///
+/// The row stays a navigation entry in every phase: a failure is reported
+/// here in one line and carries the owner to the community directory, which
+/// is the page that owns the full five-state block and its retry.
+class ProfileCommunitiesRow extends ConsumerStatefulWidget {
+  const ProfileCommunitiesRow({required this.onNavigate, super.key});
+
+  /// Profile-screen destination id, resolved by the composition root.
+  final ValueChanged<String> onNavigate;
+
+  /// The paginated directory narrowed to the owner's own communities.
+  static const joinedDestination = 'community-joined';
+
+  /// The public directory, used whenever there is nothing joined to open.
+  static const discoverDestination = 'community-discover';
+
+  /// How many joined communities the subtitle names before the trailing count
+  /// takes over.
+  static const namedLimit = 2;
+
+  @override
+  ConsumerState<ProfileCommunitiesRow> createState() =>
+      _ProfileCommunitiesRowState();
+}
+
+class _ProfileCommunitiesRowState extends ConsumerState<ProfileCommunitiesRow> {
+  /// `名称（Owner）· 名称（成员）`, capped at [ProfileCommunitiesRow.namedLimit].
+  /// A muted or banned membership reads as that state, not as its role.
+  static String _namedCommunities(List<JoinedCommunity> joined) => joined
+      .take(ProfileCommunitiesRow.namedLimit)
+      .map(
+        (entry) =>
+            '${entry.community.name}（${communityMembershipLabel(entry.membership)}）',
+      )
+      .join(' · ');
+
+  @override
+  Widget build(BuildContext context) {
+    final capability = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.community),
+    );
+    final mode = ref.watch(communityGatewayProvider).mode;
+    final state = ref.watch(communityHomeControllerProvider);
+    final blocked = communityCapabilityBlocks(mode, capability);
+    if (!blocked && state.phase == CommunityViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(ref.read(communityHomeControllerProvider.notifier).load());
+        }
+      });
+    }
+
+    final home = state.value;
+    final isReady = state.phase == CommunityViewPhase.ready && home != null;
+    final joined = home?.joined ?? const <JoinedCommunity>[];
+    final truncated = home?.joinedTruncated ?? false;
+
+    final String trailing;
+    final String subtitle;
+    if (blocked) {
+      trailing = communityMissingFigure;
+      subtitle = '社区模块当前不可用，未读取成员关系';
+    } else if (isReady) {
+      // `truncated` means the aggregate could not carry every membership, so
+      // the count is a floor and is marked as one.
+      trailing = truncated ? '${joined.length}+ 个已加入' : '${joined.length} 个已加入';
+      subtitle = joined.isEmpty ? '还没有加入社区，从发现社区开始' : _namedCommunities(joined);
+    } else {
+      trailing = communityMissingFigure;
+      subtitle = switch (state.phase) {
+        CommunityViewPhase.loading => '正在读取社区成员关系',
+        CommunityViewPhase.offline => '设备当前离线，未读到社区成员关系',
+        CommunityViewPhase.unavailable => '社区服务当前不可用，未读取成员关系',
+        CommunityViewPhase.permission => '需要先完成 LOOP ID 激活才能读取成员关系',
+        // `empty` cannot reach here: a ready aggregate with no membership is
+        // handled above, and this state carries no other empty answer.
+        CommunityViewPhase.empty ||
+        CommunityViewPhase.error ||
+        CommunityViewPhase.ready => '社区成员关系读取失败，打开社区目录可重试',
+      };
+    }
+
+    return LoopRecordGroup(
+      rows: <LoopRecordRow>[
+        LoopRecordRow(
+          key: const ValueKey<String>('profile-open-communities'),
+          title: '我的社区',
+          subtitle: subtitle,
+          trailing: trailing,
+          semanticLabel: '我的社区，$trailing，$subtitle',
+          onTap: () => widget.onNavigate(
+            isReady && joined.isNotEmpty
+                ? ProfileCommunitiesRow.joinedDestination
+                : ProfileCommunitiesRow.discoverDestination,
+          ),
+        ),
       ],
     );
   }

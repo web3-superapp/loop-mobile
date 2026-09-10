@@ -136,8 +136,11 @@ void main() {
         await tester.pumpAndSettle();
         expect(destinations.last, entry.$2);
       }
-      // Unconnected sources say so instead of showing a count.
-      expect(find.text('未接入'), findsNWidgets(3));
+      // Unconnected sources say so instead of showing a count. 我的社区 is no
+      // longer one of them: it reads the community aggregate, which this
+      // harness leaves closed, so it states that rather than "未接入".
+      expect(find.text('未接入'), findsNWidgets(2));
+      expect(find.text('社区成员关系尚未接入'), findsNothing);
     });
 
     testWidgets('the primary action opens the edit page', (tester) async {
