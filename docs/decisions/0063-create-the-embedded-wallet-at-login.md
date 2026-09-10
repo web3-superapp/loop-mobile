@@ -88,6 +88,12 @@ sentence on the page was the folio's wrong one.
    that names no active wallet is a fourth answer and gets its own sentence
    pointing at 我的钱包; it is not "no wallet" either.
 
+   The four wallet surfaces that address the active wallet — `networth`,
+   `asset`, `receive` and `tx-history` — render the same creation block rather
+   than the skeleton they used to hold forever, because their read never
+   starts without a wallet id. A surface opened with an explicit `walletId` is
+   unaffected: it has a wallet to read.
+
 7. **The button shares the automatic attempt's single flight.** It is disabled
    while any creation is in flight — including the one made at login — so one
    session can never open two wallets, and a failure renders the provider's

@@ -64,6 +64,11 @@ bool _directoryIsEmpty(LoopChainResourceState<LoopWalletDirectory> directory) {
   return directory.isReady && value != null && value.isEmpty;
 }
 
+/// The same answer, read from the provider. It is evaluated unconditionally so
+/// a page's dependencies cannot change between builds.
+bool _noWalletYet(WidgetRef ref) =>
+    _directoryIsEmpty(ref.watch(walletDirectoryControllerProvider));
+
 // ---------------------------------------------------------------------------
 // wallet
 // ---------------------------------------------------------------------------
@@ -392,6 +397,8 @@ class _NetWorthScreenState extends ConsumerState<NetWorthScreen> {
   Widget build(BuildContext context) {
     final blocked = _walletBlocked(ref);
     final walletId = _watchActiveWalletId(ref, blocked: blocked);
+    // A walletless account is not a page that is still loading.
+    final noWalletYet = _noWalletYet(ref) && walletId == null;
     final state = walletId == null
         ? null
         : ref.watch(walletBalancesControllerProvider(walletId));
@@ -437,6 +444,8 @@ class _NetWorthScreenState extends ConsumerState<NetWorthScreen> {
             label: '钱包读取当前不可用',
             reasonCode: _walletBlockReason(ref),
           )
+        else if (noWalletYet)
+          const WalletCreationBlock(keyPrefix: 'networth')
         else if (walletId == null || state == null || !state.isReady)
           LoopChainStateBlock(
             keyPrefix: 'networth',
@@ -546,6 +555,8 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
     }
     final blocked = _walletBlocked(ref);
     final walletId = _watchActiveWalletId(ref, blocked: blocked);
+    // A walletless account is not a page that is still loading.
+    final noWalletYet = _noWalletYet(ref) && walletId == null;
     final balancesState = walletId == null
         ? null
         : ref.watch(walletBalancesControllerProvider(walletId));
@@ -614,6 +625,8 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
             label: '钱包读取当前不可用',
             reasonCode: _walletBlockReason(ref),
           )
+        else if (noWalletYet)
+          const WalletCreationBlock(keyPrefix: 'wallet-asset')
         else if (walletId == null ||
             balancesState == null ||
             !balancesState.isReady)
@@ -902,6 +915,8 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
     final blocked = _walletBlocked(ref);
     final walletId =
         widget.walletId ?? _watchActiveWalletId(ref, blocked: blocked);
+    // A walletless account is not a page that is still loading.
+    final noWalletYet = _noWalletYet(ref) && walletId == null;
     final state = walletId == null
         ? null
         : ref.watch(walletReceiveControllerProvider(walletId));
@@ -941,6 +956,8 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
             label: '钱包读取当前不可用',
             reasonCode: _walletBlockReason(ref),
           )
+        else if (noWalletYet)
+          const WalletCreationBlock(keyPrefix: 'receive')
         else if (walletId == null || state == null || !state.isReady)
           LoopChainStateBlock(
             keyPrefix: 'receive',
@@ -1347,6 +1364,8 @@ class _TransactionHistoryScreenState
     final blocked = _walletBlocked(ref);
     final walletId =
         widget.walletId ?? _watchActiveWalletId(ref, blocked: blocked);
+    // A walletless account is not a page that is still loading.
+    final noWalletYet = _noWalletYet(ref) && walletId == null;
     final state = walletId == null
         ? null
         : ref.watch(walletActivityControllerProvider(walletId));
@@ -1384,6 +1403,8 @@ class _TransactionHistoryScreenState
             label: '钱包活动当前不可用',
             reasonCode: _walletBlockReason(ref),
           )
+        else if (noWalletYet)
+          const WalletCreationBlock(keyPrefix: 'tx-history')
         else if (walletId == null || state == null || page == null)
           LoopChainStateBlock(
             keyPrefix: 'tx-history',

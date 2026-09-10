@@ -593,6 +593,24 @@ void main() {
       expect(find.text('付款链接已复制'), findsOneWidget);
     });
 
+    testWidgets('a walletless account is offered a wallet, not a skeleton', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const ReceiveScreen(),
+        wallet: FakeWalletReadGateway(directory: emptyDirectoryAnswer()),
+        privy: WalletCreatingTestPrivyGateway(),
+      );
+
+      expect(find.text('这个账号还没有钱包'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('receive-create-wallet')),
+        findsOneWidget,
+      );
+      expect(find.byType(LoopSkeleton), findsNothing);
+    });
+
     testWidgets('an unavailable receive read states its reason', (
       tester,
     ) async {
