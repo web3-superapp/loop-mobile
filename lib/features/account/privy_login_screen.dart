@@ -6,6 +6,7 @@ import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/email_auth_controller.dart';
+import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -44,7 +45,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
     if (session.isRestoring) {
       return PrivySessionRestoreScreen(
         unreachableMessage: session.isRestoreUnavailable
-            ? (session.errorMessage ?? '暂时无法确认登录状态，请检查网络后重试。')
+            ? (session.errorMessage ?? loopUndecidedSessionMessage)
             : null,
         onRetry: session.isRestoreUnavailable
             ? () => unawaited(

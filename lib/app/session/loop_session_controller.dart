@@ -80,10 +80,26 @@ class LoopSessionState {
   }
 }
 
+/// How long a restore may stay silent before the owner is told that LOOP has
+/// no answer yet. Overridable so tests can shorten it.
+///
+/// The window exists because `Privy.getAuthState()` can simply never complete:
+/// on iOS the native SDK awaits readiness and reports no transport failure at
+/// all, so a dead link produces a pending Future rather than a
+/// `PrivyException`. Without a deadline the owner would watch the launch frame
+/// forever with nothing to press.
+final loopSessionRestoreWindowProvider = Provider<Duration>(
+  (ref) => LoopSessionController.defaultRestoreWindow,
+);
+
 class LoopSessionController extends Notifier<LoopSessionState> {
+  static const defaultRestoreWindow = Duration(seconds: 12);
+
   StreamSubscription<PrivySessionSnapshot>? _subscription;
   Future<void>? _exitOperation;
   Future<void>? _restoreOperation;
+  Timer? _restoreDeadline;
+  var _restoreGeneration = 0;
   var _localSignOutBarrier = false;
 
   @override
@@ -91,16 +107,26 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     final gateway = ref.watch(privyAuthGatewayProvider);
     _subscription?.cancel();
     _subscription = gateway.watchSession().listen(_receiveSnapshot);
-    ref.onDispose(() => _subscription?.cancel());
+    // The deadline belongs to `restoring` and to nothing else: the moment the
+    // session reaches any other state - including the undecided third one -
+    // it is retired, so no timer outlives the wait it was measuring.
+    listenSelf((previous, next) {
+      if (next.mode != LoopSessionMode.restoring) _cancelRestoreDeadline();
+    });
+    ref.onDispose(() {
+      _subscription?.cancel();
+      _cancelRestoreDeadline();
+    });
     Future<void>.microtask(() => _startRestore(gateway));
     return const LoopSessionState.restoring();
   }
 
-  /// Asks Privy again after a restore that could not be completed. Only the
-  /// undecided state may retry, and only one restore runs at a time.
+  /// Asks Privy again after a restore that could not be completed.
+  ///
+  /// Only the undecided state may retry. A restore abandoned by the deadline
+  /// no longer owns `_restoreOperation`, so this really does issue a second
+  /// `getAuthState` instead of handing back the Future that never answered.
   Future<void> retryRestore() {
-    final active = _restoreOperation;
-    if (active != null) return active;
     if (!state.isRestoreUnavailable) return Future<void>.value();
     state = const LoopSessionState.restoring();
     return _startRestore(ref.read(privyAuthGatewayProvider));
@@ -109,35 +135,80 @@ class LoopSessionController extends Notifier<LoopSessionState> {
   Future<void> _startRestore(PrivyAuthGateway gateway) {
     final active = _restoreOperation;
     if (active != null) return active;
+    final generation = ++_restoreGeneration;
     late final Future<void> operation;
-    operation = _restore(gateway).whenComplete(() {
+    operation = _restore(gateway, generation).whenComplete(() {
       if (identical(_restoreOperation, operation)) _restoreOperation = null;
     });
     _restoreOperation = operation;
+    _armRestoreDeadline(generation);
     return operation;
   }
 
-  Future<void> _restore(PrivyAuthGateway gateway) async {
+  void _armRestoreDeadline(int generation) {
+    if (state.mode != LoopSessionMode.restoring) return;
+    _cancelRestoreDeadline();
+    _restoreDeadline = Timer(
+      ref.read(loopSessionRestoreWindowProvider),
+      () => _restoreDeadlineExpired(generation),
+    );
+  }
+
+  void _cancelRestoreDeadline() {
+    _restoreDeadline?.cancel();
+    _restoreDeadline = null;
+  }
+
+  void _restoreDeadlineExpired(int generation) {
+    _restoreDeadline = null;
+    if (!ref.mounted ||
+        generation != _restoreGeneration ||
+        state.mode != LoopSessionMode.restoring) {
+      return;
+    }
+    // The call in flight is deliberately not cancelled. It may still answer,
+    // and `_restore` publishes that answer because `isRestoring` covers the
+    // undecided state as well. Dropping the operation identity is what lets
+    // `retryRestore` start a second one in the meantime.
+    _restoreOperation = null;
+    state = const LoopSessionState.restoreUnavailable(
+      errorMessage: loopUndecidedSessionMessage,
+    );
+  }
+
+  Future<void> _restore(PrivyAuthGateway gateway, int generation) async {
     try {
       final snapshot = await gateway.restoreSession();
       if (!ref.mounted) return;
       // Never let a stale unauthenticated restore overwrite a session that
-      // completed while restoration was in flight.
+      // completed while restoration was in flight. A late answer from a call
+      // the deadline already gave up on is still an answer, so it is not
+      // filtered by generation.
       if (state.isRestoring ||
           snapshot.kind == PrivySessionKind.authenticated) {
         _receiveSnapshot(snapshot);
       }
     } on PrivyGatewayException catch (error) {
-      _failRestore(error.kind, error.userMessage);
+      _failRestore(error.kind, error.userMessage, generation);
     } catch (_) {
       // An unclassified failure is not Privy answering that the credential is
       // gone. The session stays undecided rather than falling to the form.
-      _failRestore(PrivyFailureKind.unknown, '暂时无法确认登录状态，请检查网络后重试。');
+      _failRestore(
+        PrivyFailureKind.unknown,
+        loopUndecidedSessionMessage,
+        generation,
+      );
     }
   }
 
-  void _failRestore(PrivyFailureKind kind, String message) {
-    if (!ref.mounted || !state.isRestoring) return;
+  void _failRestore(PrivyFailureKind kind, String message, int generation) {
+    // A failure from a superseded attempt must not overwrite the state a newer
+    // one is already working on; unlike a snapshot, it carries no new fact.
+    if (!ref.mounted ||
+        generation != _restoreGeneration ||
+        !state.isRestoring) {
+      return;
+    }
     // Only an explicit authentication answer signs the owner out. Network and
     // unclassified failures keep the session undecided so the credential form
     // never claims a sign-out Privy did not report.

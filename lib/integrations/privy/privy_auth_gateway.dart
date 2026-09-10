@@ -102,6 +102,13 @@ class PrivySessionSnapshot {
   final PrivyAccountSummary? account;
 }
 
+/// The copy for "LOOP has no answer about this session yet".
+///
+/// It deliberately names no cause: the failure may be the radio, the provider,
+/// or something neither side explained, and asserting a network problem the
+/// device has not observed would be a claim rather than a fact.
+const loopUndecidedSessionMessage = '暂时无法确认登录状态，请稍后重试。';
+
 /// What Privy told us about a failure.
 ///
 /// privy_flutter 0.10.1 carries no error code across the platform channel:
@@ -147,6 +154,12 @@ abstract final class PrivyFailureClassifier {
     'certificate',
   ];
 
+  /// Credential markers, matched on word boundaries.
+  ///
+  /// A bare substring test would read `401` out of a request id such as
+  /// `14013` and `no user` out of `no users found`, and an accidental match
+  /// here signs the owner out. Every marker therefore has to stand as its own
+  /// word or phrase.
   static const authenticationMarkers = <String>[
     'unauthenticated',
     'not authenticated',
@@ -166,13 +179,18 @@ abstract final class PrivyFailureClassifier {
     '403',
   ];
 
+  static final _authenticationPatterns = <RegExp>[
+    for (final marker in authenticationMarkers)
+      RegExp('\\b${RegExp.escape(marker)}\\b'),
+  ];
+
   static PrivyFailureKind of(String message) {
     final normalized = message.toLowerCase();
     for (final marker in networkMarkers) {
       if (normalized.contains(marker)) return PrivyFailureKind.network;
     }
-    for (final marker in authenticationMarkers) {
-      if (normalized.contains(marker)) return PrivyFailureKind.authentication;
+    for (final pattern in _authenticationPatterns) {
+      if (pattern.hasMatch(normalized)) return PrivyFailureKind.authentication;
     }
     return PrivyFailureKind.unknown;
   }
@@ -366,12 +384,12 @@ class PrivySdkAuthGateway
       return _mapAuthState(await _privy.getAuthState());
     } on PrivyException catch (error) {
       final kind = PrivyFailureClassifier.of(error.message);
-      throw PrivyGatewayException(
-        kind == PrivyFailureKind.authentication
-            ? '登录状态已失效，请重新登录。'
-            : '暂时无法确认登录状态，请检查网络后重试。',
-        kind: kind,
-      );
+      throw PrivyGatewayException(switch (kind) {
+        PrivyFailureKind.authentication => '登录状态已失效，请重新登录。',
+        PrivyFailureKind.network => '暂时无法确认登录状态，请检查网络后重试。',
+        // An unclassified failure names no cause, so the copy claims none.
+        PrivyFailureKind.unknown => loopUndecidedSessionMessage,
+      }, kind: kind);
     }
   }
 

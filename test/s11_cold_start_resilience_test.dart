@@ -175,6 +175,165 @@ void main() {
       },
     );
 
+    testWidgets(
+      'a restore that never answers becomes undecided after 12 seconds',
+      (tester) async {
+        final gate = Completer<PrivySessionSnapshot>();
+        final gateway = _RestoreGateway(pending: gate.future);
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [privyAuthGatewayProvider.overrideWithValue(gateway)],
+            child: const MaterialApp(home: PrivyLoginScreen()),
+          ),
+        );
+        await tester.pump();
+        expect(gateway.restoreCalls, 1);
+        expect(
+          find.byKey(const ValueKey<String>('privy-restoring-screen')),
+          findsOneWidget,
+        );
+
+        await tester.pump(
+          LoopSessionController.defaultRestoreWindow -
+              const Duration(milliseconds: 1),
+        );
+        expect(
+          find.byKey(const ValueKey<String>('privy-restoring-screen')),
+          findsOneWidget,
+        );
+
+        await tester.pump(const Duration(milliseconds: 1));
+        expect(
+          find.byKey(
+            const ValueKey<String>('privy-restore-unavailable-screen'),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('privy-restore-unavailable-retry')),
+          findsOneWidget,
+        );
+        expect(find.text('欢迎来到 LOOP'), findsNothing);
+        expect(
+          find.textContaining(loopUndecidedSessionMessage),
+          findsOneWidget,
+        );
+
+        // The abandoned call is still alive; retry must issue a second one.
+        gateway.pending = null;
+        await tester.tap(
+          find.byKey(const ValueKey<String>('privy-restore-unavailable-retry')),
+        );
+        await tester.pumpAndSettle();
+        expect(gateway.restoreCalls, 2);
+        expect(
+          find.byKey(
+            const ValueKey<String>('privy-restore-unavailable-screen'),
+          ),
+          findsNothing,
+        );
+
+        gate.complete(
+          const PrivySessionSnapshot(PrivySessionKind.unauthenticated),
+        );
+        await tester.pumpAndSettle();
+      },
+    );
+
+    test(
+      'the timeout does not cancel the call, and a late answer lands',
+      () async {
+        final gate = Completer<PrivySessionSnapshot>();
+        final gateway = _RestoreGateway(pending: gate.future);
+        final container = ProviderContainer(
+          overrides: [
+            privyAuthGatewayProvider.overrideWithValue(gateway),
+            loopSessionRestoreWindowProvider.overrideWithValue(
+              const Duration(milliseconds: 10),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        expect(
+          container.read(loopSessionProvider).mode,
+          LoopSessionMode.restoring,
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+        final undecided = container.read(loopSessionProvider);
+        expect(undecided.mode, LoopSessionMode.restoreUnavailable);
+        expect(undecided.errorMessage, loopUndecidedSessionMessage);
+        expect(gateway.restoreCalls, 1);
+
+        gate.complete(
+          const PrivySessionSnapshot(
+            PrivySessionKind.authenticated,
+            account: PrivyAccountSummary(privyUserId: 'did:privy:late'),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        final session = container.read(loopSessionProvider);
+        expect(session.mode, LoopSessionMode.authenticated);
+        expect(session.account?.privyUserId, 'did:privy:late');
+      },
+    );
+
+    test('a superseded failure cannot overwrite a newer restore', () async {
+      final gate = Completer<PrivySessionSnapshot>();
+      final gateway = _RestoreGateway(pending: gate.future);
+      final container = ProviderContainer(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(gateway),
+          loopSessionRestoreWindowProvider.overrideWithValue(
+            const Duration(milliseconds: 10),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.restoring,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.restoreUnavailable,
+      );
+
+      // A second attempt is in flight when the abandoned first one fails.
+      final second = Completer<PrivySessionSnapshot>();
+      gateway.pending = second.future;
+      final retry = container.read(loopSessionProvider.notifier).retryRestore();
+      expect(gateway.restoreCalls, 2);
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.restoring,
+      );
+
+      gate.completeError(
+        const PrivyGatewayException(
+          '登录状态已失效，请重新登录。',
+          kind: PrivyFailureKind.authentication,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.restoring,
+      );
+
+      second.complete(
+        const PrivySessionSnapshot(PrivySessionKind.unauthenticated),
+      );
+      await retry;
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.signedOut,
+      );
+    });
+
     test('a notReady event never drops the undecided explanation', () async {
       final controller = StreamController<PrivySessionSnapshot>.broadcast();
       addTearDown(controller.close);
@@ -263,6 +422,21 @@ void main() {
         PrivyFailureClassifier.of('Unknown AuthState type: something'),
         PrivyFailureKind.unknown,
       );
+    });
+
+    test('credential markers only match on word boundaries', () {
+      for (final message in const <String>[
+        'Error in getAuthState: request 14013 failed',
+        'Error in getAuthState: request 4030 failed',
+        'no users found for this query',
+        'code 1401',
+      ]) {
+        expect(
+          PrivyFailureClassifier.of(message),
+          PrivyFailureKind.unknown,
+          reason: message,
+        );
+      }
     });
 
     test('a transport word wins over a credential word', () {
@@ -662,10 +836,7 @@ final class _RestoreGateway implements PrivyAuthGateway {
   Future<PrivySessionSnapshot> restoreSession() {
     restoreCalls += 1;
     final held = pending;
-    if (held != null) {
-      pending = null;
-      return held;
-    }
+    if (held != null) return held;
     final error = failure;
     if (error != null) return Future<PrivySessionSnapshot>.error(error);
     return Future<PrivySessionSnapshot>.value(

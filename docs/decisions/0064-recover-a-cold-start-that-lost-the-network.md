@@ -155,11 +155,42 @@ outage from it.
 - **Blocking the launch on the capability document.** Rejected by decision 0050
   and unchanged here: the observation still cannot gate login or routing.
 
+### 4. A restore that never answers is also an answer
+
+`Privy.getAuthState()` can fail to complete rather than fail. The two native
+sides do not behave the same way:
+
+- **iOS.** The native SDK awaits readiness before resolving the auth state and
+  surfaces no transport failure of its own. With a dead link the platform-channel
+  call simply stays pending: no `PrivyException`, no `Unauthenticated`, nothing
+  for the message mapping in §2 to classify. The Future may never complete.
+- **Android.** The native side does report a distinct `getAuthStateError`, which
+  arrives as a `PrivyException` and is classified by §2.
+
+The classification in §2 is therefore an Android-shaped answer, and on iOS the
+**only** available signal is elapsed time. `LoopSessionController` gives a
+restore a bounded window — `defaultRestoreWindow`, 12 seconds, injectable
+through `loopSessionRestoreWindowProvider` — after which the session moves to
+`restoreUnavailable` carrying `loopUndecidedSessionMessage`
+(「暂时无法确认登录状态，请稍后重试。」, which asserts no cause because none was
+observed).
+
+The deadline does **not** cancel the call in flight. Privy may still answer
+minutes later, and `_restore` publishes that answer because `isRestoring`
+covers the undecided state as well: a late `Authenticated` lands and the owner
+is routed without touching anything. What the deadline does drop is the
+*operation identity*, so `retryRestore()` issues a genuinely new `getAuthState`
+instead of handing back the Future that never answered. A failure arriving from
+a superseded attempt is ignored by generation, because — unlike a snapshot — it
+carries no new fact about the credential.
+
 ## Open risk
 
-Privy may report `Unauthenticated` — rather than throwing — when it cannot
-reach its backend to validate a cached session. In that case this decision does
-not change the behaviour: the credential form still appears. The mapping above
-is the honest limit of what privy_flutter 0.10.1 exposes. Confirming the native
-behaviour needs a device run with the network cut at cold start; until then the
-acceptance record should keep 冷启动网络抖动 as device-unverified.
+Privy may report `Unauthenticated` — rather than throwing or hanging — when it
+cannot reach its backend to validate a cached session. In that case this
+decision does not change the behaviour: the credential form still appears. The
+mapping above is the honest limit of what privy_flutter 0.10.1 exposes, and the
+12-second window only covers the case where nothing is reported at all.
+Confirming the native behaviour on both platforms needs a device run with the
+network cut at cold start; until then the acceptance record should keep
+冷启动网络抖动 as device-unverified.
