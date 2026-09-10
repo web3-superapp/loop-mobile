@@ -205,11 +205,7 @@ class CommunityLogoTile extends StatelessWidget {
       ),
       child: Text(
         monogramFor(name),
-        style: LoopTypography.mono(
-          size: size / 3.4,
-          weight: FontWeight.w600,
-          color: LoopColors.chalk,
-        ),
+        style: LoopTypography.figure(size / 3.4, color: LoopColors.chalk),
       ),
     );
   }
@@ -284,17 +280,10 @@ Future<bool> confirmCommunityAction(
         children: <Widget>[
           Text(
             title,
-            style: LoopTypography.sora(size: 18, weight: FontWeight.w700),
+            style: LoopTypography.heading(18, weight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
-          Text(
-            body,
-            style: LoopTypography.sora(
-              size: 13,
-              weight: FontWeight.w500,
-              color: LoopColors.muted,
-            ),
-          ),
+          Text(body, style: LoopTypography.body(13, color: LoopColors.muted)),
           const SizedBox(height: 18),
           LoopButtonPair(
             padded: false,
@@ -343,7 +332,7 @@ Future<CommunityProfileEdit?> showCommunityProfileEditSheet(
         children: <Widget>[
           Text(
             '编辑社区资料',
-            style: LoopTypography.sora(size: 18, weight: FontWeight.w700),
+            style: LoopTypography.heading(18, weight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -489,18 +478,13 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
         children: <Widget>[
           Text(
             '申请入驻',
-            style: LoopTypography.sora(size: 18, weight: FontWeight.w700),
+            style: LoopTypography.heading(18, weight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Text(
             '提交后社区状态为「审核中」，你是所有者。验证标记只能由运维核验后设置，'
             '本表单不会带来任何 Mining 权重结论。',
-            style: LoopTypography.sora(
-              size: 12,
-              weight: FontWeight.w500,
-              color: LoopColors.muted,
-              height: 1.55,
-            ),
+            style: LoopTypography.caption(12, color: LoopColors.muted),
           ),
           const SizedBox(height: 14),
           TextField(
@@ -565,11 +549,7 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
           const SizedBox(height: 8),
           Text(
             '绑定地址只做登记，暂时不会显示价格、市值或持有人。',
-            style: LoopTypography.sora(
-              size: 11.5,
-              weight: FontWeight.w500,
-              color: LoopColors.muted,
-            ),
+            style: LoopTypography.caption(11, color: LoopColors.muted),
           ),
           const SizedBox(height: 16),
           LoopButtonPair(

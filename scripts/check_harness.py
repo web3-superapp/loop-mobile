@@ -92,6 +92,7 @@ REQUIRED_FILES = (
     "docs/decisions/0047-connect-backend-social-and-server-created-chat.md",
     "docs/decisions/0048-adopt-v2-five-destination-ui-foundation.md",
     "docs/decisions/0049-connect-v2-account-device-session.md",
+    "docs/decisions/0069-adopt-the-seven-band-type-ladder.md",
     "docs/failures/flutter-gradle-version-floor.md",
     "docs/failures/gitnexus-generated-source-pollution.md",
     "docs/failures/providerless-notification-fixtures.md",
@@ -422,7 +423,7 @@ TOKEN_CARD_RENDER_IMPORTS = {
             ),
             (
                 "'package:loop_mobile/core/theme/loop_theme.dart' show "
-                "LoopColors, LoopRadius"
+                "LoopColors, LoopRadius, LoopType, LoopTypography"
             ),
             "'package:loop_mobile/features/chat/attachments/token_card_attachment.dart'",
         }
@@ -7482,6 +7483,68 @@ def check_production_chat_audio_room_entry(root: Path) -> list[str]:
     )
     return errors
 
+TYPOGRAPHY_GUARDED_TREES = ("lib/features", "lib/widgets")
+TYPOGRAPHY_GUARD_ALLOWLIST = (
+    "lib/core/theme/loop_theme.dart",
+    "lib/integrations/communication/stream_chat_appearance.dart",
+)
+TYPOGRAPHY_FORBIDDEN_LITERALS = {
+    "fontSize:": "a size belongs to a band step in LoopType / LoopTypography",
+    "fontWeight:": (
+        "a weight belongs to a band; restate one with "
+        "LoopTypography.withWeight so the variable Sora axis moves too"
+    ),
+    "fontFamily:": (
+        "a family belongs to LoopFonts; a page never names Sora, "
+        "IBM Plex Mono, Noto Sans SC or 'monospace' itself"
+    ),
+}
+
+
+def check_typography_band_contract(root: Path) -> list[str]:
+    """Keep every page on the seven type bands (decision 0069).
+
+    The prototype's Latin voice (Sora) has no CJK coverage and the bundled
+    Noto Sans SC statics are matched by weight, so a hand-written `fontSize`
+    or `fontWeight` produces a 中英 line whose two halves disagree. Sizes,
+    weights and families therefore live only in `LoopTypography` / `LoopType`.
+    """
+
+    errors: list[str] = []
+    for tree in TYPOGRAPHY_GUARDED_TREES:
+        tree_root = root / tree
+        if not tree_root.is_dir():
+            continue
+        for path in sorted(tree_root.rglob("*.dart")):
+            relative = path.relative_to(root)
+            if relative.as_posix() in TYPOGRAPHY_GUARD_ALLOWLIST:
+                continue
+            executable = strip_dart_comments(read_text(path))
+            for literal, reason in TYPOGRAPHY_FORBIDDEN_LITERALS.items():
+                if literal in executable:
+                    errors.append(
+                        f"{relative} hand-writes `{literal}`: {reason}"
+                    )
+
+    # The bundled font files and their licences have to stay registered, or
+    # every Han glyph silently falls back to whatever the device installs.
+    fonts_dir = root / "assets" / "fonts"
+    pubspec = read_text(root / "pubspec.yaml") if (root / "pubspec.yaml").is_file() else ""
+    for asset in (
+        "NotoSansSC-Regular.ttf",
+        "NotoSansSC-Medium.ttf",
+        "NotoSansSC-Bold.ttf",
+        "OFL-NotoSansSC.txt",
+    ):
+        if not (fonts_dir / asset).is_file():
+            errors.append(f"assets/fonts/{asset} is missing; CJK text has no bundled face")
+        elif asset.endswith(".ttf") and f"assets/fonts/{asset}" not in pubspec:
+            errors.append(f"assets/fonts/{asset} is not registered in pubspec.yaml")
+    if "family: Noto Sans SC" not in pubspec:
+        errors.append("pubspec.yaml does not declare the `Noto Sans SC` family")
+    return errors
+
+
 def check_source_guards(root: Path) -> list[str]:
     forbidden = {
         "PrivyLogLevel.debug": "Privy debug logging can expose OTPs and access tokens",
@@ -10445,6 +10508,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_perp_positions_application_contract(root))
     errors.extend(check_source_guards(root))
     errors.extend(check_user_visible_copy(root))
+    errors.extend(check_typography_band_contract(root))
     errors.extend(check_records(root))
     visible, visible_error = git_visible_paths(root)
     if visible_error:
@@ -10469,6 +10533,7 @@ def main() -> int:
         "Spot-only product, New Pairs source-scoped truth, Chat snapshot, Preview request truth and exact conversation identity, security capability truth, device-local display preferences, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
         "S5 chain/market/wallet-read truth, S6 money-action truth, "
         "S7 launch/mining/referral truth, S9 dual chain slots, "
+        "seven-band typography with bundled Noto Sans SC, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, user-visible copy, "
         "and secret rules are consistent."

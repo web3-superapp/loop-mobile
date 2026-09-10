@@ -117,10 +117,10 @@ class LoopPendingSurface extends StatelessWidget {
                           Text(
                             sourceLine,
                             key: const ValueKey<String>('loop-pending-source'),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: LoopColors.chalk,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: LoopTypography.withWeight(
+                              LoopType.bodySm,
+                              FontWeight.w600,
+                            ).copyWith(color: LoopColors.chalk),
                           ),
                         ],
                       ),

@@ -29,8 +29,14 @@ void main() {
       final textStyle = theme.text!.textStyle!;
       expect(textStyle.resolve(_outgoing)!.color, LoopColors.ink);
       expect(textStyle.resolve(_incoming)!.color, LoopColors.chalk);
-      // The prototype's `.msg-txt` body size; nothing new is introduced.
-      expect(textStyle.resolve(_incoming)!.fontSize, 11);
+      // Band 4 (`LoopType.body`), the same size as the in-house bubble in
+      // chat_components.dart. See decision 0069.
+      expect(textStyle.resolve(_incoming)!.fontSize, 14);
+      expect(textStyle.resolve(_incoming)!.fontWeight, FontWeight.w500);
+      expect(
+        textStyle.resolve(_incoming)!.fontFamilyFallback,
+        contains('Noto Sans SC'),
+      );
     });
 
     test('the tail corner sits on the sender side, 5 against 16', () {

@@ -501,8 +501,7 @@ class _RoundControl extends StatelessWidget {
               Text(
                 label,
                 maxLines: 1,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontSize: 9,
+                style: LoopType.captionSm.copyWith(
                   color: onTap == null ? LoopColors.vapor : color,
                 ),
               ),

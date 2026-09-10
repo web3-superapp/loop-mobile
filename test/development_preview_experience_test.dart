@@ -57,6 +57,13 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('NightOwl'), findsWidgets);
+    // The type ladder (decision 0069) made the transcript taller than one
+    // viewport, so the token card sits below the lazily built window.
+    await tester.drag(
+      find.byType(CustomScrollView).first,
+      const Offset(0, -260),
+    );
+    await tester.pumpAndSettle();
     expect(find.text('GLYPH'), findsWidgets);
 
     await tester.enterText(find.byType(TextField), 'Local preview hello');

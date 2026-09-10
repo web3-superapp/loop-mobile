@@ -525,11 +525,7 @@ class _StepIndexTile extends StatelessWidget {
       ),
       child: Text(
         index.toString().padLeft(2, '0'),
-        style: LoopTypography.mono(
-          size: 12,
-          weight: FontWeight.w700,
-          color: LoopColors.chalk,
-        ),
+        style: LoopTypography.figure(13, color: LoopColors.chalk),
       ),
     );
   }

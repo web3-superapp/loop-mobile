@@ -67,8 +67,9 @@ class ChatAvatar extends StatelessWidget {
                     ? Icon(icon, size: size * 0.46, color: LoopColors.chalk)
                     : Text(
                         initials,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          fontSize: size * 0.28,
+                        style: LoopTypography.label(
+                          size * 0.28,
+                          weight: FontWeight.w700,
                           color: LoopColors.chalk,
                         ),
                       ),
@@ -258,11 +259,9 @@ class ConversationRow extends StatelessWidget {
                               child: Text(
                                 '${conversation.unreadCount}',
                                 textAlign: TextAlign.center,
-                                style: Theme.of(context).textTheme.labelMedium
-                                    ?.copyWith(
-                                      color: LoopColors.abyss,
-                                      fontSize: 10,
-                                    ),
+                                style: LoopType.monoStamp.copyWith(
+                                  color: LoopColors.abyss,
+                                ),
                               ),
                             ),
                         ],
@@ -689,10 +688,7 @@ class _MessageBubble extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-        child: Text(
-          message.text,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 14),
-        ),
+        child: Text(message.text, style: LoopType.body),
       ),
     );
   }

@@ -214,10 +214,7 @@ class _PerpTradeScreenState extends ConsumerState<PerpTradeScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: <Widget>[
-                  Text(
-                    market.markPrice,
-                    style: context.dataStyle.copyWith(fontSize: 18),
-                  ),
+                  Text(market.markPrice, style: LoopType.monoTitle),
                   const SizedBox(height: 4),
                   Text(
                     market.change,
@@ -426,13 +423,12 @@ class _BookRow extends StatelessWidget {
           Expanded(
             child: Text(
               price,
-              style: context.dataStyle.copyWith(
+              style: LoopType.monoBody.copyWith(
                 color: ask ? LoopColors.danger : LoopColors.mint,
-                fontSize: 12,
               ),
             ),
           ),
-          Text(size, style: context.dataStyle.copyWith(fontSize: 12)),
+          Text(size, style: LoopType.monoBody),
         ],
       ),
     );
@@ -526,8 +522,7 @@ class _PerpConfirmScreenState extends State<PerpConfirmScreen> {
               ),
               Text(
                 _intent.revision.split('-').take(2).join('-'),
-                style: Theme.of(context).textTheme.labelMedium
-                    ?.copyWith(fontFamily: 'monospace'),
+                style: LoopType.monoStamp,
               ),
             ],
           ),

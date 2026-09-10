@@ -1239,14 +1239,7 @@ class _HistoryEvent extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          SizedBox(
-            width: 64,
-            child: Text(
-              time,
-              style: Theme.of(context).textTheme.labelMedium
-                  ?.copyWith(fontFamily: 'monospace'),
-            ),
-          ),
+          SizedBox(width: 64, child: Text(time, style: LoopType.monoStamp)),
           LoopAssetMark(symbol: symbol, size: 34),
           const SizedBox(width: 11),
           Expanded(
@@ -1263,10 +1256,7 @@ class _HistoryEvent extends StatelessWidget {
           Text(
             amount,
             textAlign: TextAlign.right,
-            style: context.dataStyle.copyWith(
-              color: loopToneColor(tone),
-              fontSize: 12,
-            ),
+            style: LoopType.monoBody.copyWith(color: loopToneColor(tone)),
           ),
         ],
       ),

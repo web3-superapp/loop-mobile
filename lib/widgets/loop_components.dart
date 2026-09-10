@@ -23,7 +23,7 @@ class LoopTopbar extends StatelessWidget {
     this.onBack,
     this.backLabel = '返回',
     this.actions = const <Widget>[],
-    this.minHeight = 68,
+    this.minHeight = LoopLayout.topbarContentHeight,
     this.updating = false,
   });
 
@@ -351,13 +351,7 @@ class LoopFolioPrimary extends StatelessWidget {
                         opacity: kickerOpacity,
                         child: Text(
                           kicker!.toUpperCase(),
-                          style: LoopTypography.mono(
-                            size: 9,
-                            weight: FontWeight.w600,
-                            height: 1.2,
-                            letterSpacing: 1.17,
-                            color: foreground,
-                          ),
+                          style: LoopTypography.eyebrow(11, color: foreground),
                         ),
                       ),
                     ),
@@ -373,11 +367,8 @@ class LoopFolioPrimary extends StatelessWidget {
                             header: true,
                             child: Text(
                               heading,
-                              style: LoopTypography.sora(
-                                size: compact ? 24 : archetype.headingSize,
-                                weight: FontWeight.w800,
-                                height: 0.96,
-                                letterSpacing: -1.25,
+                              style: LoopTypography.display(
+                                compact ? 24 : archetype.headingSize,
                                 color: headingColor,
                               ),
                             ),
@@ -396,12 +387,7 @@ class LoopFolioPrimary extends StatelessWidget {
                         opacity: captionOpacity,
                         child: Text(
                           caption!,
-                          style: LoopTypography.sora(
-                            size: 10.5,
-                            weight: FontWeight.w600,
-                            height: 1.48,
-                            color: foreground,
-                          ),
+                          style: LoopTypography.caption(12, color: foreground),
                         ),
                       ),
                     ),
@@ -427,11 +413,8 @@ class LoopFolioPrimary extends StatelessWidget {
                     ),
                     child: Text(
                       stamp!.toUpperCase(),
-                      style: LoopTypography.mono(
-                        size: 8,
-                        weight: FontWeight.w600,
-                        height: 1,
-                        letterSpacing: 0.64,
+                      style: LoopTypography.eyebrow(
+                        11,
                         color: variant == LoopFolioVariant.quiet
                             ? LoopColors.lime
                             : foreground,
@@ -939,19 +922,12 @@ class LoopRecordRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 if (trailing != null)
-                  Text(
-                    trailing!,
-                    style: LoopTypography.mono(
-                      size: 12.5,
-                      weight: FontWeight.w700,
-                    ),
-                  ),
+                  Text(trailing!, style: LoopTypography.figure(13)),
                 if (trailingCaption != null)
                   Text(
                     trailingCaption!,
-                    style: LoopTypography.mono(
-                      size: 11.5,
-                      weight: FontWeight.w700,
+                    style: LoopTypography.figure(
+                      11,
                       color: switch (trailingCaptionUp) {
                         true => LoopColors.lime,
                         false => LoopColors.chalk,
@@ -1114,12 +1090,7 @@ class LoopNotice extends StatelessWidget {
             LoopNoticeTone.danger => (LoopColors.card2, LoopColors.line2),
           };
     final foreground = chalk ? LoopColors.ink : LoopColors.chalk;
-    final bodyStyle = LoopTypography.sora(
-      size: 11,
-      weight: FontWeight.w400,
-      height: 1.55,
-      color: foreground,
-    );
+    final bodyStyle = LoopTypography.caption(11, color: foreground);
     final structured = happened != null;
     final label = <String?>[
       title,
@@ -1160,8 +1131,9 @@ class LoopNotice extends StatelessWidget {
                           padding: const EdgeInsets.only(bottom: 2),
                           child: Text(
                             title!,
-                            style: bodyStyle.copyWith(
-                              fontWeight: FontWeight.w700,
+                            style: LoopTypography.withWeight(
+                              bodyStyle,
+                              FontWeight.w700,
                             ),
                           ),
                         ),
@@ -1217,7 +1189,7 @@ class _NoticeSegment extends StatelessWidget {
         children: <InlineSpan>[
           TextSpan(
             text: '$label ',
-            style: style.copyWith(fontWeight: FontWeight.w700),
+            style: LoopTypography.withWeight(style, FontWeight.w700),
           ),
           TextSpan(text: text),
         ],
@@ -1268,11 +1240,9 @@ class LoopBadge extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: LoopTypography.sora(
-          size: 9,
+        style: LoopTypography.label(
+          12,
           weight: FontWeight.w700,
-          height: 1.2,
-          letterSpacing: 0.27,
           color: foreground,
         ),
       ),
@@ -1320,8 +1290,10 @@ class LoopSeg extends StatelessWidget {
               child: Text(
                 label,
                 maxLines: 1,
-                style: LoopTypography.sora(
-                  size: 11,
+                // `.seg{font-size:11px;font-weight:600}` / `.seg.on{700}` —
+                // the selected chip is the only one that goes bold.
+                style: LoopTypography.label(
+                  12,
                   weight: selected ? FontWeight.w700 : FontWeight.w600,
                   color: selected ? LoopColors.ink : LoopColors.text2,
                 ),
@@ -1446,10 +1418,9 @@ class LoopButton extends StatelessWidget {
             child: Text(
               label,
               textAlign: TextAlign.center,
-              style: LoopTypography.sora(
-                size: 12,
+              style: LoopTypography.label(
+                12,
                 weight: FontWeight.w700,
-                height: 1.2,
                 color: foreground,
               ),
             ),
@@ -1535,11 +1506,7 @@ class LoopKeyValue extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: LoopTypography.sora(
-                size: 11,
-                weight: FontWeight.w400,
-                color: LoopColors.text2,
-              ),
+              style: LoopTypography.caption(11, color: LoopColors.text2),
             ),
           ),
           const SizedBox(width: 14),
@@ -1547,8 +1514,8 @@ class LoopKeyValue extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: LoopTypography.mono(
-                size: 11,
+              style: LoopTypography.figure(
+                11,
                 weight: FontWeight.w500,
                 color: switch (valueUp) {
                   true => LoopColors.lime,
@@ -1636,7 +1603,7 @@ class _LoopComposerState extends State<LoopComposer> {
                 maxLines: 4,
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => _send(),
-                style: LoopTypography.sora(size: 11, weight: FontWeight.w400),
+                style: LoopTypography.caption(11),
                 decoration: InputDecoration(
                   hintText: widget.hintText,
                   isDense: true,
@@ -1746,20 +1713,11 @@ class LoopPowerHint extends StatelessWidget {
                   if (figure != null)
                     TextSpan(
                       text: ' $figure',
-                      style: LoopTypography.mono(
-                        size: 11,
-                        weight: FontWeight.w600,
-                        color: accent,
-                      ),
+                      style: LoopTypography.figure(11, color: accent),
                     ),
                 ],
               ),
-              style: LoopTypography.sora(
-                size: 11,
-                weight: FontWeight.w400,
-                height: 1.5,
-                color: foreground,
-              ),
+              style: LoopTypography.caption(11, color: foreground),
             ),
           ),
         ],
@@ -2139,12 +2097,7 @@ class LoopEmpty extends StatelessWidget {
       iconSize >= 15 && iconSize <= 20,
       'LoopEmpty keeps the inline glyph between 15 and 20 px.',
     );
-    final copy = LoopTypography.sora(
-      size: 11,
-      weight: FontWeight.w400,
-      height: 1.5,
-      color: LoopColors.text3,
-    );
+    final copy = LoopTypography.caption(11);
     return Padding(
       padding: margin,
       child: Semantics(
@@ -2238,12 +2191,7 @@ class LoopPageBlock extends StatelessWidget {
                 Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: LoopTypography.sora(
-                    size: 11,
-                    weight: FontWeight.w400,
-                    height: 1.55,
-                    color: LoopColors.text3,
-                  ),
+                  style: LoopTypography.caption(11, color: LoopColors.text3),
                 ),
                 if (action != null) ...<Widget>[
                   const SizedBox(height: 18),
@@ -2538,8 +2486,8 @@ class _LoopDisclosureState extends State<LoopDisclosure> {
                         child: ExcludeSemantics(
                           child: Text(
                             widget.summary,
-                            style: LoopTypography.sora(
-                              size: 12,
+                            style: LoopTypography.label(
+                              12,
                               weight: FontWeight.w700,
                             ),
                           ),
@@ -2548,10 +2496,9 @@ class _LoopDisclosureState extends State<LoopDisclosure> {
                       ExcludeSemantics(
                         child: Text(
                           _open ? '−' : '+',
-                          style: LoopTypography.mono(
-                            size: 16,
-                            weight: FontWeight.w600,
-                            height: 1,
+                          style: LoopTypography.figure(
+                            17,
+                            height: 1.15,
                             color: LoopColors.lime,
                           ),
                         ),

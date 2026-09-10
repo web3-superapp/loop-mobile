@@ -258,10 +258,16 @@ class LoopStatusPill extends StatelessWidget {
                 Icon(icon, color: color, size: 14),
                 const SizedBox(width: 5),
               ],
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelMedium
-                    ?.copyWith(color: color),
+              // The pill must survive any text scale: the ground is sized by
+              // the label, so the label has to be allowed to shrink.
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelMedium
+                      ?.copyWith(color: color),
+                ),
               ),
             ],
           ),
@@ -299,8 +305,10 @@ class LoopAssetMark extends StatelessWidget {
         ),
         child: Text(
           _markForSymbol(symbol),
-          style: Theme.of(context).textTheme.titleMedium
-              ?.copyWith(color: resolved, fontWeight: FontWeight.w700),
+          style: LoopTypography.withWeight(
+            LoopType.title,
+            FontWeight.w700,
+          ).copyWith(color: resolved),
         ),
       ),
     );
@@ -348,10 +356,7 @@ class LoopMetric extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           value,
-          style: context.dataStyle.copyWith(
-            fontSize: 16,
-            color: LoopColors.chalk,
-          ),
+          style: LoopType.monoTitle.copyWith(color: LoopColors.chalk),
         ),
         if (detail != null) ...<Widget>[
           const SizedBox(height: 3),
@@ -481,9 +486,8 @@ class LoopContextRail extends StatelessWidget {
                   ),
                   child: Text(
                     compact ? item.$2.characters.take(1).toString() : item.$2,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    style: LoopType.captionSm.copyWith(
                       color: selected ? item.$3 : LoopColors.vapor,
-                      fontSize: compact ? 9 : 10,
                       letterSpacing: selected ? 0.7 : 0.4,
                     ),
                   ),

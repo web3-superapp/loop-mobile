@@ -133,10 +133,7 @@ class ContractFactsPreviewPage extends StatelessWidget {
             children: <Widget>[
               Text(
                 '0x71e4…9a2c',
-                style: context.dataStyle.copyWith(
-                  color: LoopColors.chalk,
-                  fontSize: 15,
-                ),
+                style: LoopType.monoTitle.copyWith(color: LoopColors.chalk),
               ),
               const SizedBox(height: 7),
               Text(

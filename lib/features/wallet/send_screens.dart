@@ -521,7 +521,7 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
                         : '可动用 ${loopFormatDecimal(spendable)} '
                               '${widget.draft.symbol}'
                               '（已扣除手续费保留）',
-                    style: Theme.of(context).textTheme.labelSmall,
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
               ),

@@ -161,19 +161,14 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
         children: <Widget>[
           Text(
             'Referral 说明',
-            style: LoopTypography.sora(size: 18, weight: FontWeight.w700),
+            style: LoopTypography.heading(18, weight: FontWeight.w700),
           ),
           const SizedBox(height: 10),
           Text(
             '每个账号只有一个邀请码。被邀请人激活 LOOP ID 并绑定钱包后，关系进入下一个验证阶段；'
             '「有效」需要挖矿公式版本被批准，因此当前不会出现有效关系。'
             '加成只计入 Mining Power，不是收入、佣金或返佣。',
-            style: LoopTypography.sora(
-              size: 13,
-              weight: FontWeight.w500,
-              color: LoopColors.muted,
-              height: 1.6,
-            ),
+            style: LoopTypography.body(13, color: LoopColors.muted),
           ),
           const SizedBox(height: 16),
           LoopButton(
@@ -254,12 +249,7 @@ class _LevelBlock extends StatelessWidget {
           child: Text(
             '「有效」只统计已验证的关系，其余一律显示为待验证，'
             '不计入任何加成。',
-            style: LoopTypography.sora(
-              size: 11.5,
-              weight: FontWeight.w500,
-              color: LoopColors.text2,
-              height: 1.6,
-            ),
+            style: LoopTypography.caption(11, color: LoopColors.text2),
           ),
         ),
       ],
@@ -305,9 +295,8 @@ class _LevelTile extends StatelessWidget {
       ),
       child: Text(
         'L$level',
-        style: LoopTypography.mono(
-          size: 12,
-          weight: FontWeight.w700,
+        style: LoopTypography.figure(
+          13,
           color: level == 1 ? LoopColors.ink : LoopColors.chalk,
         ),
       ),
@@ -449,12 +438,7 @@ class _RulesFooter extends StatelessWidget {
         '${launchTimestampLabel(rules.effectiveAt)} · '
         '最大深度 L${rules.maximumDepth} · '
         '绑定窗口 ${rules.claimWindowDays} 天 · 作用于 ${rules.appliesTo}',
-        style: LoopTypography.sora(
-          size: 11,
-          weight: FontWeight.w500,
-          color: LoopColors.text3,
-          height: 1.6,
-        ),
+        style: LoopTypography.caption(11, color: LoopColors.text3),
       ),
     );
   }
@@ -499,17 +483,12 @@ class _ClaimFormState extends State<_ClaimForm> {
         children: <Widget>[
           Text(
             '绑定邀请码',
-            style: LoopTypography.sora(size: 18, weight: FontWeight.w700),
+            style: LoopTypography.heading(18, weight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Text(
             '一个账号只能绑定一次，关系锁定后不可更换。不能绑定自己的邀请码，也不能绑定自己下级的邀请码。',
-            style: LoopTypography.sora(
-              size: 12,
-              weight: FontWeight.w500,
-              color: LoopColors.muted,
-              height: 1.55,
-            ),
+            style: LoopTypography.caption(12, color: LoopColors.muted),
           ),
           const SizedBox(height: 14),
           TextField(

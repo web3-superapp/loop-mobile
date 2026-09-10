@@ -357,7 +357,7 @@ class MoneyIntentReviewCard extends StatelessWidget {
                     ? '本次没有可用的新鲜行情，因此不展示估值。'
                     : '预估价值 ${loopFormatUsd(intent.policy.valueUsd!)} · '
                           '来源 ${intent.policy.priceSource ?? '未标注'}',
-                style: Theme.of(context).textTheme.labelSmall,
+                style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
           ),

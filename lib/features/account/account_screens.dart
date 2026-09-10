@@ -155,17 +155,17 @@ class IdentityProgress extends StatelessWidget {
                       children: <InlineSpan>[
                         TextSpan(
                           text: step.toString().padLeft(2, '0'),
-                          style: LoopTypography.mono(
-                            size: 12,
-                            weight: FontWeight.w600,
+                          style: LoopTypography.figure(
+                            13,
                             color: LoopColors.lime,
                           ),
                         ),
                         TextSpan(
                           text: ' / ${total.toString().padLeft(2, '0')}',
-                          style: LoopTypography.mono(
-                            size: 12,
+                          style: LoopTypography.figure(
+                            12,
                             weight: FontWeight.w500,
+                            height: 1.5,
                             color: LoopColors.text3,
                           ),
                         ),
@@ -174,8 +174,8 @@ class IdentityProgress extends StatelessWidget {
                   ),
                   Text(
                     label,
-                    style: LoopTypography.mono(
-                      size: 11,
+                    style: LoopTypography.figure(
+                      11,
                       weight: FontWeight.w500,
                       color: LoopColors.text2,
                     ),
@@ -224,12 +224,7 @@ class IdentityStepCopy extends StatelessWidget {
           key: const ValueKey<String>('identity-step-copy'),
           text,
           textAlign: TextAlign.center,
-          style: LoopTypography.sora(
-            size: 14,
-            weight: FontWeight.w500,
-            height: 1.5,
-            color: LoopColors.text2,
-          ),
+          style: LoopTypography.body(14, color: LoopColors.text2),
         ),
       ),
     );
@@ -321,8 +316,8 @@ class SplashScreen extends StatelessWidget {
             const SizedBox(height: 14),
             Text(
               versionLabel,
-              style: LoopTypography.mono(
-                size: 10,
+              style: LoopTypography.figure(
+                11,
                 weight: FontWeight.w500,
                 color: LoopColors.text3,
               ),

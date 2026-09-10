@@ -168,10 +168,8 @@ class LoopSignSheet extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         reason!,
-                        style: LoopTypography.sora(
-                          size: 11.5,
-                          weight: FontWeight.w400,
-                          height: 1.6,
+                        style: LoopTypography.caption(
+                          11,
                           color: LoopColors.text2,
                         ),
                       ),
@@ -233,17 +231,13 @@ class _SigningBody extends StatelessWidget {
         Text(
           '正在签名并广播',
           textAlign: TextAlign.center,
-          style: LoopTypography.sora(size: 13, weight: FontWeight.w700),
+          style: LoopTypography.title(13, weight: FontWeight.w700),
         ),
         const SizedBox(height: 4),
         Text(
           '请勿关闭 App',
           textAlign: TextAlign.center,
-          style: LoopTypography.sora(
-            size: 11.5,
-            weight: FontWeight.w400,
-            color: LoopColors.text3,
-          ),
+          style: LoopTypography.caption(11, color: LoopColors.text3),
         ),
         const SizedBox(height: 12),
         LoopButtonPair(

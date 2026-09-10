@@ -389,9 +389,8 @@ class _MonogramFallback extends StatelessWidget {
           text,
           maxLines: 1,
           overflow: TextOverflow.clip,
-          style: LoopTypography.mono(
-            size: size * 0.34,
-            weight: FontWeight.w600,
+          style: LoopTypography.figure(
+            size * 0.34,
             color: foreground ?? LoopColors.chalk,
           ),
         ),

@@ -501,7 +501,7 @@ class _AssetField extends StatelessWidget {
               balance == null
                   ? '读不到可用余额，这里不做估算。'
                   : '可动用 ${loopFormatDecimal(balance!)}',
-              style: Theme.of(context).textTheme.labelSmall,
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
         ),

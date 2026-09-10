@@ -172,10 +172,9 @@ class LoopToastView extends StatelessWidget {
                         Expanded(
                           child: Text(
                             entry.message,
-                            style: LoopTypography.sora(
-                              size: 11,
+                            style: LoopTypography.label(
+                              12,
                               weight: FontWeight.w700,
-                              height: 1.4,
                               color: LoopColors.ink,
                             ),
                           ),

@@ -130,8 +130,10 @@ void main() {
     expect(title.fontFamilyFallback, contains('Noto Sans SC'));
 
     expect(text.displayMedium!.fontSize, 32);
-    expect(text.bodyMedium!.fontSize, 12);
-    expect(text.bodyMedium!.height, 1.5);
+    expect(text.bodyLarge!.fontSize, 14);
+    expect(text.bodyLarge!.fontWeight, FontWeight.w500);
+    expect(text.bodyMedium!.fontSize, 13);
+    expect(text.bodyMedium!.height, 1.55);
 
     for (final mono in <TextStyle>[
       LoopMono.display,
@@ -143,9 +145,70 @@ void main() {
     ]) {
       expect(mono.fontFamily, 'IBM Plex Mono');
       expect(mono.fontFeatures, contains(const FontFeature.tabularFigures()));
+      expect(mono.fontFamilyFallback, contains('Noto Sans SC'));
     }
     expect(LoopMono.display.fontSize, 32);
     expect(LoopTypography.mono(size: 12).fontFamily, 'IBM Plex Mono');
+  });
+
+  test('the seven bands are the whole vocabulary', () {
+    // Band 1-6 are proportional and lead with Sora, so a mixed 中英 line
+    // resolves Latin from Sora and Han from the bundled Noto Sans SC.
+    final proportional = <String, TextStyle>{
+      'displayXl': LoopType.displayXl,
+      'display': LoopType.display,
+      'displaySm': LoopType.displaySm,
+      'headingLg': LoopType.headingLg,
+      'heading': LoopType.heading,
+      'headingSm': LoopType.headingSm,
+      'titleLg': LoopType.titleLg,
+      'title': LoopType.title,
+      'titleSm': LoopType.titleSm,
+      'bodyLg': LoopType.bodyLg,
+      'body': LoopType.body,
+      'bodySm': LoopType.bodySm,
+      'caption': LoopType.caption,
+      'captionSm': LoopType.captionSm,
+      'action': LoopType.action,
+      'label': LoopType.label,
+    };
+    proportional.forEach((name, style) {
+      expect(style.fontFamily, 'Sora', reason: name);
+      expect(style.fontFamilyFallback?.first, 'Noto Sans SC', reason: name);
+      expect(
+        style.fontVariations,
+        contains(FontVariation.weight(style.fontWeight!.value.toDouble())),
+        reason: name,
+      );
+      expect(
+        style.leadingDistribution,
+        TextLeadingDistribution.even,
+        reason: name,
+      );
+      // Nothing in the ladder drops below the prototype's 11px screen floor
+      // (`.scr :is(.label,.badge,…,small){font-size:11px}`).
+      expect(style.fontSize, greaterThanOrEqualTo(11), reason: name);
+    });
+
+    // Band 6b (eyebrow) and band 7 are the only fixed-width styles.
+    for (final MapEntry<String, TextStyle> entry in <String, TextStyle>{
+      'eyebrow': LoopType.eyebrow,
+      'monoDisplay': LoopType.monoDisplay,
+      'monoTitle': LoopType.monoTitle,
+      'monoQuote': LoopType.monoQuote,
+      'monoValue': LoopType.monoValue,
+      'monoBody': LoopType.monoBody,
+      'monoStamp': LoopType.monoStamp,
+    }.entries) {
+      expect(entry.value.fontFamily, 'IBM Plex Mono', reason: entry.key);
+      expect(entry.value.fontSize, greaterThanOrEqualTo(11), reason: entry.key);
+    }
+
+    // Restating a weight has to move the variable axis with it, otherwise the
+    // Sora file keeps rendering the previous weight.
+    final bold = LoopTypography.withWeight(LoopType.body, FontWeight.w700);
+    expect(bold.fontWeight, FontWeight.w700);
+    expect(bold.fontVariations, contains(const FontVariation.weight(700)));
   });
 
   test('buttons and sheets take the token sizes and veil', () {

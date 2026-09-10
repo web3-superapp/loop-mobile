@@ -996,12 +996,7 @@ class _ApplyForm extends StatelessWidget {
               padding: const EdgeInsets.only(top: 10),
               child: Text(
                 '当前状态下资料为只读。只有草稿与被退回的申请可以修改。',
-                style: LoopTypography.sora(
-                  size: 11.5,
-                  weight: FontWeight.w500,
-                  color: LoopColors.text2,
-                  height: 1.6,
-                ),
+                style: LoopTypography.caption(11, color: LoopColors.text2),
               ),
             ),
         ],

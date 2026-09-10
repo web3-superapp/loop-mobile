@@ -112,13 +112,13 @@ StreamColorScheme loopStreamColorScheme() => StreamColorScheme.dark(
 bool _isOutgoing(StreamMessageLayoutData layout) =>
     layout.alignment == StreamMessageAlignment.end;
 
-/// The prototype's `.msg-txt` body: 11 / 1.55, Ink on Lime, Chalk on Card.
-TextStyle _bubbleTextStyle(Color color) => LoopTypography.sora(
-  size: 11,
-  weight: FontWeight.w400,
-  height: 1.55,
-  color: color,
-);
+/// The prototype's `.msg-txt` bubble, on band 4. `.msg-txt` carries no
+/// `data-primary-body` tag only because it predates that contract layer: a
+/// message *is* the primary body of the chat page, and it is set at the same
+/// 14px as the in-house bubble in `chat_components.dart`. Ink on Lime for the
+/// sender's own message, Chalk on Card for everyone else's.
+TextStyle _bubbleTextStyle(Color color) =>
+    LoopTypography.body(14, color: color);
 
 /// The Lime Ledger message row: bubble, text and metadata.
 ///
@@ -193,12 +193,7 @@ loopStreamMessageItemTheme() => StreamMessageItemThemeData(
   ),
   metadata: StreamMessageMetadataStyle(
     usernameTextStyle: StreamMessageLayoutProperty.all(
-      LoopTypography.sora(
-        size: 11,
-        weight: FontWeight.w400,
-        height: 1.2,
-        color: LoopColors.text3,
-      ),
+      LoopTypography.caption(11),
     ),
     usernameColor: StreamMessageLayoutProperty.all(LoopColors.text3),
     // Every timestamp in LOOP is tabular mono (`LoopMono.stamp`).
@@ -249,18 +244,8 @@ StreamChatThemeData loopStreamChatThemeData() => StreamChatThemeData(
     backgroundColor: LoopColors.card,
     indicatorColor: LoopColors.lime,
     side: const BorderSide(color: LoopColors.line),
-    titleTextStyle: LoopTypography.sora(
-      size: 11,
-      weight: FontWeight.w600,
-      height: 1.2,
-      color: LoopColors.text2,
-    ),
-    subtitleTextStyle: LoopTypography.sora(
-      size: 11,
-      weight: FontWeight.w400,
-      height: 1.45,
-      color: LoopColors.text3,
-    ),
+    titleTextStyle: LoopTypography.label(12, color: LoopColors.text2),
+    subtitleTextStyle: LoopTypography.caption(11),
   ),
 );
 

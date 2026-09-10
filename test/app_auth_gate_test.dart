@@ -154,6 +154,10 @@ void main() {
     await tester.pumpAndSettle();
     final signOut = find.byKey(const ValueKey<String>('profile-sign-out'));
     await tester.scrollUntilVisible(signOut, 240);
+    // scrollUntilVisible stops as soon as the row is built; on a taller page
+    // that can still leave it under the viewport edge.
+    await tester.ensureVisible(signOut);
+    await tester.pumpAndSettle();
     await tester.tap(signOut);
     await tester.pumpAndSettle();
 

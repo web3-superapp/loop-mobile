@@ -95,7 +95,7 @@ class LoopFocusPage extends StatelessWidget {
                 kicker: kicker,
                 onBack: onBack,
                 actions: actions,
-                minHeight: 72,
+                minHeight: LoopLayout.topbarContentHeight,
                 updating: updating,
               ),
               ?folio,
@@ -194,7 +194,7 @@ class LoopDashboardPage extends StatelessWidget {
                   kicker: kicker,
                   onBack: onBack,
                   actions: actions,
-                  minHeight: 72,
+                  minHeight: LoopLayout.topbarContentHeight,
                   updating: updating,
                 ),
               ),
@@ -221,10 +221,10 @@ class _StickyTopbar extends SliverPersistentHeaderDelegate {
   final double topPadding;
 
   @override
-  double get minExtent => 72 + topPadding;
+  double get minExtent => LoopLayout.topbarHeight + topPadding;
 
   @override
-  double get maxExtent => 72 + topPadding;
+  double get maxExtent => LoopLayout.topbarHeight + topPadding;
 
   @override
   Widget build(
@@ -309,7 +309,7 @@ class LoopStreamPage extends StatelessWidget {
                 kicker: kicker,
                 onBack: onBack,
                 actions: actions,
-                minHeight: 72,
+                minHeight: LoopLayout.topbarContentHeight,
                 updating: updating,
               ),
               ?folio,

@@ -33,7 +33,7 @@ import 'package:flutter/material.dart'
         Widget,
         immutable;
 import 'package:loop_mobile/core/theme/loop_theme.dart'
-    show LoopColors, LoopRadius;
+    show LoopColors, LoopRadius, LoopType, LoopTypography;
 import 'package:loop_mobile/features/chat/attachments/token_card_attachment.dart';
 
 enum LoopTokenCardViewState {
@@ -165,14 +165,7 @@ class LoopTokenCardView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: <Widget>[
                   Expanded(
-                    child: Text(
-                      previewPrice!,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontFamily: 'monospace',
-                        fontSize: 20,
-                        letterSpacing: -0.2,
-                      ),
-                    ),
+                    child: Text(previewPrice!, style: LoopType.monoTitle),
                   ),
                   if (previewChange != null)
                     Text(
@@ -363,8 +356,10 @@ class _TokenCardAssetMark extends StatelessWidget {
           mark,
           maxLines: 1,
           overflow: TextOverflow.clip,
-          style: Theme.of(context).textTheme.titleMedium
-              ?.copyWith(color: color, fontWeight: FontWeight.w700),
+          style: LoopTypography.withWeight(
+            LoopType.title,
+            FontWeight.w700,
+          ).copyWith(color: color),
         ),
       ),
     );

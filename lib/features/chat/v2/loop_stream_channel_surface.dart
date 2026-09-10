@@ -425,12 +425,7 @@ class LoopChatHeaderStrip extends StatelessWidget {
               stated.join(' · '),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: LoopTypography.sora(
-                size: 10,
-                weight: FontWeight.w400,
-                height: 1.4,
-                color: LoopColors.text3,
-              ),
+              style: LoopTypography.caption(11),
             ),
           ),
         ],

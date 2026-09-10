@@ -95,11 +95,7 @@ class LoopProfileAvatar extends StatelessWidget {
       ),
       child: Text(
         monogram,
-        style: LoopTypography.mono(
-          size: size / 4.5,
-          weight: FontWeight.w600,
-          color: LoopColors.chalk,
-        ),
+        style: LoopTypography.figure(size / 4.5, color: LoopColors.chalk),
       ),
     );
   }
@@ -559,8 +555,8 @@ class _ProfileIdentityCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             alias ?? '尚未设置别名',
-            style: LoopTypography.sora(
-              size: 18,
+            style: LoopTypography.heading(
+              18,
               weight: FontWeight.w700,
               color: LoopColors.ink,
             ),
@@ -568,8 +564,8 @@ class _ProfileIdentityCard extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             loopId ?? 'LOOP ID 不可读',
-            style: LoopTypography.mono(
-              size: 11.5,
+            style: LoopTypography.figure(
+              11,
               weight: FontWeight.w500,
               color: LoopColors.ink.withValues(alpha: 0.64),
             ),
@@ -579,9 +575,8 @@ class _ProfileIdentityCard extends StatelessWidget {
             Text(
               resource.values.bio!,
               textAlign: TextAlign.center,
-              style: LoopTypography.sora(
-                size: 12,
-                weight: FontWeight.w400,
+              style: LoopTypography.caption(
+                12,
                 color: LoopColors.ink.withValues(alpha: 0.72),
               ),
             ),
@@ -611,8 +606,8 @@ class _ProfileIdentityCard extends StatelessWidget {
                   child: ExcludeSemantics(
                     child: Text(
                       '编辑资料',
-                      style: LoopTypography.sora(
-                        size: 11,
+                      style: LoopTypography.label(
+                        12,
                         weight: FontWeight.w700,
                         color: LoopColors.chalk,
                       ),
@@ -1047,9 +1042,8 @@ class _AvatarPickerCard extends ConsumerWidget {
               key: const ValueKey<String>('profile-avatar-unavailable'),
               '预设头像清单暂不可读，保留当前头像。',
               textAlign: TextAlign.center,
-              style: LoopTypography.sora(
-                size: 12,
-                weight: FontWeight.w400,
+              style: LoopTypography.caption(
+                12,
                 color: LoopColors.ink.withValues(alpha: 0.72),
               ),
             ),
@@ -1080,9 +1074,8 @@ class _AvatarPickerCard extends ConsumerWidget {
                 ? '自定义头像上传暂不可用，只能选择预设头像。'
                 : '自定义头像上传暂不可用（$uploadReasonCode），只能选择预设头像。',
             textAlign: TextAlign.center,
-            style: LoopTypography.sora(
-              size: 11,
-              weight: FontWeight.w400,
+            style: LoopTypography.caption(
+              11,
               color: LoopColors.ink.withValues(alpha: 0.64),
             ),
           ),
@@ -1369,11 +1362,7 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
             draft.anonymousMode
                 ? '公开别名，不公开钱包地址与资产明细。'
                 : '别名与钱包地址都可能出现在公开位置；关闭前请先确认。',
-            style: LoopTypography.sora(
-              size: 11,
-              weight: FontWeight.w400,
-              color: LoopColors.text2,
-            ),
+            style: LoopTypography.caption(11, color: LoopColors.text2),
           ),
         ),
       ),

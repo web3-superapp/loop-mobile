@@ -264,11 +264,9 @@ class LoopTabItem extends StatelessWidget {
                         label,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: LoopTypography.sora(
-                          size: 11,
+                        style: LoopTypography.label(
+                          12,
                           weight: FontWeight.w700,
-                          height: 1.2,
-                          letterSpacing: 0.17,
                           color: color,
                         ),
                       ),

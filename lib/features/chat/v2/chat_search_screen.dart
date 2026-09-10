@@ -328,7 +328,7 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
               enabled: connected,
               textInputAction: TextInputAction.search,
               onSubmitted: (_) => unawaited(_search()),
-              style: LoopTypography.sora(size: 11, weight: FontWeight.w400),
+              style: LoopTypography.caption(11),
               decoration: InputDecoration(
                 hintText: '搜消息',
                 isDense: true,

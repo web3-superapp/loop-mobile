@@ -177,12 +177,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
               child: Text(
                 key: const ValueKey<String>('support-body-problem'),
                 problem.explanation,
-                style: LoopTypography.sora(
-                  size: 11,
-                  weight: FontWeight.w400,
-                  height: 1.5,
-                  color: LoopColors.text3,
-                ),
+                style: LoopTypography.caption(11, color: LoopColors.text3),
               ),
             ),
           if (state.commandFailureKind != null)

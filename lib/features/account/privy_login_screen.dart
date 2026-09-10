@@ -98,12 +98,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
           child: Text(
             '登录后自动创建钱包，持仓即产生算力。',
             textAlign: TextAlign.center,
-            style: LoopTypography.sora(
-              size: 14,
-              weight: FontWeight.w500,
-              height: 1.5,
-              color: LoopColors.text2,
-            ),
+            style: LoopTypography.body(14, color: LoopColors.text2),
           ),
         ),
         if (!config.canInitializePrivy && !previewEnabled)
@@ -195,11 +190,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
           child: Text(
             '继续即表示同意用户协议与隐私政策',
             textAlign: TextAlign.center,
-            style: LoopTypography.sora(
-              size: 11,
-              weight: FontWeight.w400,
-              color: LoopColors.text3,
-            ),
+            style: LoopTypography.caption(11, color: LoopColors.text3),
           ),
         ),
         if (previewEnabled) ...<Widget>[
@@ -224,11 +215,7 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
             child: Text(
               '开发预览 · 不会创建钱包、连接 Stream、提交交易或伪造 Provider 状态。',
               textAlign: TextAlign.center,
-              style: LoopTypography.sora(
-                size: 11,
-                weight: FontWeight.w400,
-                color: LoopColors.text3,
-              ),
+              style: LoopTypography.caption(11, color: LoopColors.text3),
             ),
           ),
         ],
@@ -288,11 +275,7 @@ class _AuthMethod extends StatelessWidget {
               padding: const EdgeInsets.only(top: 6),
               child: Text(
                 '暂不可用 · $unavailableReason',
-                style: LoopTypography.sora(
-                  size: 11,
-                  weight: FontWeight.w400,
-                  color: LoopColors.text3,
-                ),
+                style: LoopTypography.caption(11, color: LoopColors.text3),
               ),
             ),
         ],
@@ -415,11 +398,7 @@ class PrivySessionSignOutScreen extends StatelessWidget {
                 const SizedBox(height: 18),
                 Text(
                   '正在安全退出',
-                  style: LoopTypography.sora(
-                    size: 13,
-                    weight: FontWeight.w500,
-                    color: LoopColors.text2,
-                  ),
+                  style: LoopTypography.body(13, color: LoopColors.text2),
                 ),
               ],
             ),

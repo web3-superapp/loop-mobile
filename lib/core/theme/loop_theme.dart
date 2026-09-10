@@ -242,28 +242,65 @@ abstract final class LoopLayout {
 
   /// Width from which the desktop navigation rail replaces the bar.
   static const double railBreakpoint = 900;
+
+  /// Topbar reserve. Derived from the type ladder, not chosen: 6 top padding
+  /// + one 11px eyebrow line at 1.25 + two 24px title lines at the heading
+  /// band's 1.22 leading (6 + 13.75 + 58.56 = 78.31), rounded to 80. A page
+  /// title wraps to two lines in Chinese far more often than in English, so
+  /// the second line is reserved rather than clipped.
+  static const double topbarHeight = 80;
+
+  /// Content box inside [topbarHeight], after the bar's own top padding.
+  static const double topbarContentHeight = 74;
 }
 
-/// Font families (chapter 4.2). Sora ships as a variable font; Noto Sans SC is
-/// not bundled and CJK falls back to the platform stack.
+/// Font families (chapter 4.2). Sora ships as a variable font and carries the
+/// Latin/figure voice; Noto Sans SC ships as three static weights (Regular /
+/// Medium / Bold, GB2312-complete subset) and carries every CJK glyph. Because
+/// Sora has no CJK coverage, a mixed 中英 line resolves per glyph: Latin from
+/// Sora, Han from Noto Sans SC — the same order the prototype declares in
+/// `body{font-family:var(--body),'Noto Sans SC',…}`.
 abstract final class LoopFonts {
   static const String display = 'Sora';
   static const String body = 'Sora';
   static const String mono = 'IBM Plex Mono';
 
+  /// The bundled CJK family. It leads every fallback list so Chinese renders
+  /// in the shipped file instead of whatever the device happens to install.
+  static const String cjk = 'Noto Sans SC';
+
+  /// Fallback chain for the proportional bands. Bundled CJK first, then the
+  /// platform stacks for scripts we do not ship (Japanese kana, Korean,
+  /// Cyrillic beyond the subset, emoji-adjacent symbols).
   static const List<String> cjkFallback = <String>[
+    cjk,
     'PingFang SC',
-    'Noto Sans SC',
     'Source Han Sans SC',
     'Hiragino Sans GB',
     'Microsoft YaHei',
     'sans-serif',
   ];
+
+  /// Fallback chain for the fixed-width band. IBM Plex Mono has no Han
+  /// coverage, so a Chinese eyebrow label still resolves to the bundled CJK
+  /// file rather than the system monospace face.
+  static const List<String> monoFallback = <String>[
+    cjk,
+    'PingFang SC',
+    'Menlo',
+    'monospace',
+  ];
 }
 
 /// Type builders. Weight is applied twice on purpose: `fontWeight` for
 /// matching/semantics and `fontVariations` so the variable Sora file renders
-/// the exact weight instead of synthesising it.
+/// the exact weight instead of synthesising it. The Noto Sans SC statics are
+/// matched by `fontWeight` alone and ignore the variation axis.
+///
+/// Leading is distributed evenly ([TextLeadingDistribution.even]) because a
+/// mixed 中英 line resolves two files with different ascent/descent ratios;
+/// proportional leading would shift the baseline whenever a run switches
+/// script.
 abstract final class LoopTypography {
   static TextStyle sora({
     required double size,
@@ -279,6 +316,7 @@ abstract final class LoopTypography {
       fontWeight: weight,
       fontVariations: <FontVariation>[FontVariation.weight(weight.value * 1.0)],
       height: height,
+      leadingDistribution: TextLeadingDistribution.even,
       letterSpacing: letterSpacing,
       color: color,
     );
@@ -294,67 +332,248 @@ abstract final class LoopTypography {
   }) {
     return TextStyle(
       fontFamily: LoopFonts.mono,
-      fontFamilyFallback: const <String>['Menlo', 'monospace'],
+      fontFamilyFallback: LoopFonts.monoFallback,
       fontSize: size,
       fontWeight: weight,
       height: height,
+      leadingDistribution: TextLeadingDistribution.even,
       letterSpacing: letterSpacing,
       color: color,
       fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
     );
   }
+
+  // ---------------------------------------------------------------------
+  // The seven bands. Every band fixes weight, line height and a tracking
+  // ratio expressed in `em`; a call site may only choose a step size from the
+  // band's documented ladder. Feature code never writes `fontSize`,
+  // `fontWeight` or `fontFamily` — see `scripts/check_harness.py`.
+  // ---------------------------------------------------------------------
+
+  /// Band 1 · display — brand statements and hero figures.
+  /// Prototype `.hero-num` / `.folio-heading` / `.mining-power-value`
+  /// (`800 32px/1.1 -1.5px`, `800 27px/.96 -1.25px`, `800 44px/.95 -2px`).
+  /// Line height is lifted to 1.15: the prototype values are Latin-only and a
+  /// two-line Chinese heading overlaps below ~1.1.
+  static TextStyle display(double size, {Color color = LoopColors.chalk}) =>
+      sora(
+        size: size,
+        weight: FontWeight.w800,
+        height: 1.15,
+        letterSpacing: size * -0.046,
+        color: color,
+      );
+
+  /// Band 2 · heading — page titles and section headings.
+  /// Prototype `.topbar h2` (`800 24px/1.12 -.65px`) and `.sheet-head h3`.
+  static TextStyle heading(
+    double size, {
+    FontWeight weight = FontWeight.w800,
+    Color color = LoopColors.chalk,
+  }) => sora(
+    size: size,
+    weight: weight,
+    height: 1.22,
+    letterSpacing: size * -0.027,
+    color: color,
+  );
+
+  /// Band 3 · title — card and row titles (`.row-t`, `.tcard-id b`).
+  static TextStyle title(
+    double size, {
+    FontWeight weight = FontWeight.w700,
+    Color color = LoopColors.chalk,
+  }) => sora(
+    size: size,
+    weight: weight,
+    height: 1.35,
+    letterSpacing: size * -0.012,
+    color: color,
+  );
+
+  /// Band 4 · body — running prose. Prototype `[data-primary-body]`
+  /// (`14px/1.5`) at the document weight 500; 1.55 gives Han glyphs, which
+  /// fill their em box, the extra leading Latin does not need.
+  static TextStyle body(double size, {Color color = LoopColors.chalk}) =>
+      sora(size: size, weight: FontWeight.w500, height: 1.55, color: color);
+
+  /// Band 5 · caption — supporting copy. Prototype `[data-support-copy]`
+  /// (`12px/1.45`) with the on-screen floor of 11px
+  /// (`.scr :is(.label,.badge,…,small){font-size:11px}`).
+  static TextStyle caption(double size, {Color color = LoopColors.text3}) =>
+      sora(size: size, weight: FontWeight.w500, height: 1.45, color: color);
+
+  /// Band 6 · label — controls and inline labels. Prototype
+  /// `[data-primary-control]` (`14px`) and `.tab` (`700 11px .015em`).
+  static TextStyle label(
+    double size, {
+    FontWeight weight = FontWeight.w600,
+    Color color = LoopColors.text3,
+  }) => sora(
+    size: size,
+    weight: weight,
+    height: 1.25,
+    letterSpacing: size * 0.008,
+    color: color,
+  );
+
+  /// Band 6b · eyebrow — the one fixed-width label. Prototype `.label`
+  /// (`600 10px/1.2 var(--mono)`, `letter-spacing:.15em`, uppercase) raised to
+  /// the 11px screen floor.
+  static TextStyle eyebrow(double size, {Color color = LoopColors.text3}) =>
+      mono(
+        size: size,
+        weight: FontWeight.w600,
+        height: 1.25,
+        letterSpacing: size * 0.15,
+        color: color,
+      );
+
+  /// Band 7 · mono — figures, amounts, addresses, IDs and timestamps only.
+  static TextStyle figure(
+    double size, {
+    FontWeight weight = FontWeight.w600,
+    double height = 1.35,
+    Color color = LoopColors.chalk,
+  }) => mono(
+    size: size,
+    weight: weight,
+    height: height,
+    letterSpacing: size * -0.008,
+    color: color,
+  );
+
+  /// Restate [style] at [weight]. Sora is variable, so `copyWith(fontWeight:)`
+  /// alone leaves `fontVariations` pinned to the old axis value and the file
+  /// keeps rendering the previous weight. Always go through this.
+  static TextStyle withWeight(TextStyle style, FontWeight weight) {
+    if (style.fontFamily == LoopFonts.mono) {
+      return style.copyWith(fontWeight: weight);
+    }
+    return style.copyWith(
+      fontWeight: weight,
+      fontVariations: <FontVariation>[FontVariation.weight(weight.value * 1.0)],
+    );
+  }
+}
+
+/// The named steps of the seven bands. This is the whole vocabulary available
+/// to pages: `lib/features/**` and `lib/widgets/**` take a step from here (or
+/// the `TextTheme` slot that mirrors it) and never a raw number.
+///
+/// | band | step | size | weight | height | tracking |
+/// | --- | --- | --- | --- | --- | --- |
+/// | display | `displayXl` | 42 | 800 | 1.15 | -0.046em |
+/// | display | `display` | 32 | 800 | 1.15 | -0.046em |
+/// | display | `displaySm` | 27 | 800 | 1.15 | -0.046em |
+/// | heading | `headingLg` | 24 | 800 | 1.22 | -0.027em |
+/// | heading | `heading` | 21 | 700 | 1.22 | -0.027em |
+/// | heading | `headingSm` | 18 | 700 | 1.22 | -0.027em |
+/// | title | `titleLg` | 17 | 700 | 1.35 | -0.012em |
+/// | title | `title` | 15 | 600 | 1.35 | -0.012em |
+/// | title | `titleSm` | 13 | 600 | 1.35 | -0.012em |
+/// | body | `bodyLg` | 15 | 500 | 1.55 | 0 |
+/// | body | `body` | 14 | 500 | 1.55 | 0 |
+/// | body | `bodySm` | 13 | 500 | 1.55 | 0 |
+/// | caption | `caption` | 12 | 500 | 1.45 | 0 |
+/// | caption | `captionSm` | 11 | 500 | 1.45 | 0 |
+/// | label | `action` | 14 | 700 | 1.25 | +0.008em |
+/// | label | `label` | 12 | 600 | 1.25 | +0.008em |
+/// | label | `eyebrow` | 11 | 600 | 1.25 | +0.15em, mono |
+/// | mono | `monoDisplay` | 32 | 600 | 1.05 | -0.008em |
+/// | mono | `monoTitle` | 20 | 600 | 1.15 | -0.008em |
+/// | mono | `monoQuote` | 17 | 600 | 1.15 | -0.008em |
+/// | mono | `monoValue` | 13 | 600 | 1.35 | -0.008em |
+/// | mono | `monoBody` | 12 | 500 | 1.5 | -0.008em |
+/// | mono | `monoStamp` | 11 | 500 | 1.35 | -0.008em |
+abstract final class LoopType {
+  // Band 1 · display.
+  static final TextStyle displayXl = LoopTypography.display(42);
+  static final TextStyle display = LoopTypography.display(32);
+  static final TextStyle displaySm = LoopTypography.display(27);
+
+  // Band 2 · heading.
+  static final TextStyle headingLg = LoopTypography.heading(24);
+  static final TextStyle heading = LoopTypography.heading(
+    21,
+    weight: FontWeight.w700,
+  );
+  static final TextStyle headingSm = LoopTypography.heading(
+    18,
+    weight: FontWeight.w700,
+  );
+
+  // Band 3 · title.
+  static final TextStyle titleLg = LoopTypography.title(17);
+  static final TextStyle title = LoopTypography.title(
+    15,
+    weight: FontWeight.w600,
+  );
+  static final TextStyle titleSm = LoopTypography.title(
+    13,
+    weight: FontWeight.w600,
+  );
+
+  // Band 4 · body.
+  static final TextStyle bodyLg = LoopTypography.body(15);
+  static final TextStyle body = LoopTypography.body(14);
+  static final TextStyle bodySm = LoopTypography.body(
+    13,
+    color: LoopColors.text2,
+  );
+
+  // Band 5 · caption.
+  static final TextStyle caption = LoopTypography.caption(12);
+  static final TextStyle captionSm = LoopTypography.caption(11);
+
+  // Band 6 · label.
+  static final TextStyle action = LoopTypography.label(
+    14,
+    weight: FontWeight.w700,
+    color: LoopColors.chalk,
+  );
+  static final TextStyle label = LoopTypography.label(12);
+  static final TextStyle eyebrow = LoopTypography.eyebrow(11);
+
+  // Band 7 · mono.
+  static final TextStyle monoDisplay = LoopTypography.figure(32, height: 1.05);
+  static final TextStyle monoTitle = LoopTypography.figure(20, height: 1.15);
+  static final TextStyle monoQuote = LoopTypography.figure(17, height: 1.15);
+  static final TextStyle monoValue = LoopTypography.figure(13);
+  static final TextStyle monoBody = LoopTypography.figure(
+    12,
+    weight: FontWeight.w500,
+    height: 1.5,
+    color: LoopColors.text2,
+  );
+  static final TextStyle monoStamp = LoopTypography.figure(
+    11,
+    weight: FontWeight.w500,
+    color: LoopColors.text2,
+  );
 }
 
 /// `LoopMono` styles: the fixed-width set every number, address, ticker and
-/// time must use. Feature code takes these instead of `fontFamily: 'monospace'`.
+/// time must use. These are band 7 (plus the mono eyebrow) under the names the
+/// feature slices already call; new code should prefer [LoopType].
 abstract final class LoopMono {
-  /// Main figure (balance, price) — up to 32px.
-  static final TextStyle display = LoopTypography.mono(
-    size: 32,
-    weight: FontWeight.w600,
-    height: 1.05,
-    letterSpacing: -0.8,
-  );
+  /// Main figure (balance, price).
+  static final TextStyle display = LoopType.monoDisplay;
 
   /// Card headline figure.
-  static final TextStyle headline = LoopTypography.mono(
-    size: 22,
-    weight: FontWeight.w600,
-    height: 1.1,
-    letterSpacing: -0.4,
-  );
+  static final TextStyle headline = LoopType.monoTitle;
 
   /// Row trailing value.
-  static final TextStyle value = LoopTypography.mono(
-    size: 14,
-    weight: FontWeight.w500,
-    height: 1.3,
-    letterSpacing: -0.2,
-  );
+  static final TextStyle value = LoopType.monoValue;
 
   /// Body-sized figure inside prose.
-  static final TextStyle body = LoopTypography.mono(
-    size: 12,
-    weight: FontWeight.w400,
-    height: 1.5,
-  );
+  static final TextStyle body = LoopType.monoBody;
 
-  /// Uppercase mono label (`.label` in the prototype): 10px / 600 / .15em.
-  static final TextStyle label = LoopTypography.mono(
-    size: 10,
-    weight: FontWeight.w600,
-    height: 1.2,
-    letterSpacing: 1.5,
-    color: LoopColors.text3,
-  );
+  /// Uppercase mono eyebrow (`.label` in the prototype).
+  static final TextStyle label = LoopType.eyebrow;
 
   /// Address / hash / timestamp stamp.
-  static final TextStyle stamp = LoopTypography.mono(
-    size: 11,
-    weight: FontWeight.w400,
-    height: 1.3,
-    color: LoopColors.text2,
-  );
+  static final TextStyle stamp = LoopType.monoStamp;
 }
 
 abstract final class LoopTheme {
@@ -371,105 +590,32 @@ abstract final class LoopTheme {
     ).copyWith(tertiary: LoopColors.lime, onTertiary: LoopColors.ink);
 
     final base = ThemeData.dark(useMaterial3: true);
-    final textTheme = base.textTheme
-        .copyWith(
-          // Brand-scale display figures.
-          displayLarge: LoopTypography.sora(
-            size: 42,
-            weight: FontWeight.w800,
-            height: 0.98,
-            letterSpacing: -1.8,
-          ),
-          // Main data 32.
-          displayMedium: LoopTypography.sora(
-            size: 32,
-            weight: FontWeight.w800,
-            height: 1.02,
-            letterSpacing: -1.1,
-          ),
-          displaySmall: LoopTypography.sora(
-            size: 28,
-            weight: FontWeight.w800,
-            height: 1.06,
-            letterSpacing: -0.9,
-          ),
-          // Page title 24 / 800 / tight.
-          headlineLarge: LoopTypography.sora(
-            size: 24,
-            weight: FontWeight.w800,
-            height: 1.12,
-            letterSpacing: -0.65,
-          ),
-          headlineMedium: LoopTypography.sora(
-            size: 21,
-            weight: FontWeight.w700,
-            height: 1.16,
-            letterSpacing: -0.4,
-          ),
-          headlineSmall: LoopTypography.sora(
-            size: 18,
-            weight: FontWeight.w700,
-            height: 1.2,
-            letterSpacing: -0.3,
-          ),
-          titleLarge: LoopTypography.sora(
-            size: 17,
-            weight: FontWeight.w700,
-            height: 1.24,
-            letterSpacing: -0.2,
-          ),
-          titleMedium: LoopTypography.sora(
-            size: 14,
-            weight: FontWeight.w600,
-            height: 1.3,
-          ),
-          titleSmall: LoopTypography.sora(
-            size: 13,
-            weight: FontWeight.w600,
-            height: 1.3,
-          ),
-          bodyLarge: LoopTypography.sora(
-            size: 14,
-            weight: FontWeight.w400,
-            height: 1.5,
-          ),
-          // Body baseline 12 / 1.5.
-          bodyMedium: LoopTypography.sora(
-            size: 12,
-            weight: FontWeight.w400,
-            height: 1.5,
-            color: LoopColors.text2,
-          ),
-          bodySmall: LoopTypography.sora(
-            size: 11,
-            weight: FontWeight.w400,
-            height: 1.45,
-            color: LoopColors.text3,
-          ),
-          labelLarge: LoopTypography.sora(
-            size: 13,
-            weight: FontWeight.w700,
-            height: 1.2,
-          ),
-          labelMedium: LoopTypography.sora(
-            size: 11,
-            weight: FontWeight.w700,
-            height: 1.2,
-            letterSpacing: 0.17,
-            color: LoopColors.text3,
-          ),
-          labelSmall: LoopTypography.sora(
-            size: 10,
-            weight: FontWeight.w600,
-            height: 1.2,
-            letterSpacing: 0.3,
-            color: LoopColors.text3,
-          ),
-        )
-        .apply(
-          fontFamily: LoopFonts.body,
-          fontFamilyFallback: LoopFonts.cjkFallback,
-        );
+    // The Material slots are a view onto the seven bands; nothing here invents
+    // a size. `.apply` is deliberately not used — it would overwrite the mono
+    // band's family on the slots that carry figures.
+    final textTheme = base.textTheme.copyWith(
+      // Band 1 · display.
+      displayLarge: LoopType.displayXl,
+      displayMedium: LoopType.display,
+      displaySmall: LoopType.displaySm,
+      // Band 2 · heading.
+      headlineLarge: LoopType.headingLg,
+      headlineMedium: LoopType.heading,
+      headlineSmall: LoopType.headingSm,
+      // Band 3 · title.
+      titleLarge: LoopType.titleLg,
+      titleMedium: LoopType.title,
+      titleSmall: LoopType.titleSm,
+      // Band 4 · body.
+      bodyLarge: LoopType.body,
+      bodyMedium: LoopType.bodySm,
+      // Band 5 · caption.
+      bodySmall: LoopType.caption,
+      // Band 6 · label.
+      labelLarge: LoopType.action,
+      labelMedium: LoopType.label,
+      labelSmall: LoopType.captionSm,
+    );
 
     return base.copyWith(
       colorScheme: colorScheme,
@@ -497,7 +643,7 @@ abstract final class LoopTheme {
         backgroundColor: LoopColors.ink,
         foregroundColor: LoopColors.chalk,
         surfaceTintColor: Colors.transparent,
-        toolbarHeight: 68,
+        toolbarHeight: LoopLayout.topbarHeight,
         titleTextStyle: textTheme.headlineLarge,
       ),
       dividerTheme: const DividerThemeData(
@@ -536,10 +682,10 @@ abstract final class LoopTheme {
           size: 21,
         ),
         selectedLabelTextStyle: textTheme.labelLarge,
-        unselectedLabelTextStyle: textTheme.labelLarge?.copyWith(
-          color: LoopColors.text2,
-          fontWeight: FontWeight.w600,
-        ),
+        unselectedLabelTextStyle: LoopTypography.withWeight(
+          textTheme.labelLarge!,
+          FontWeight.w600,
+        ).copyWith(color: LoopColors.text2),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,

@@ -107,12 +107,7 @@ class _TokenCardChartNotice extends StatelessWidget {
         text,
         maxLines: 3,
         overflow: TextOverflow.ellipsis,
-        style: LoopTypography.sora(
-          size: 11,
-          weight: FontWeight.w400,
-          height: 1.45,
-          color: LoopColors.muted,
-        ),
+        style: LoopTypography.caption(11, color: LoopColors.muted),
       ),
     );
   }

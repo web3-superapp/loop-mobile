@@ -356,28 +356,21 @@ class _DiscoverHero extends StatelessWidget {
               children: <Widget>[
                 Text(
                   'DISCOVER',
-                  style: LoopTypography.mono(
-                    size: 9.5,
-                    weight: FontWeight.w600,
+                  style: LoopTypography.eyebrow(
+                    11,
                     color: LoopColors.ink.withValues(alpha: 0.6),
-                    letterSpacing: 1.2,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '发现新社区',
-                  style: LoopTypography.sora(
-                    size: 19,
-                    weight: FontWeight.w800,
-                    color: LoopColors.ink,
-                  ),
+                  style: LoopTypography.heading(18, color: LoopColors.ink),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   '按成员数或创建时间浏览已验证社区，本次共 $discoverCount 个。',
-                  style: LoopTypography.sora(
-                    size: 12,
-                    weight: FontWeight.w500,
+                  style: LoopTypography.caption(
+                    12,
                     color: LoopColors.ink.withValues(alpha: 0.72),
                   ),
                 ),
@@ -492,12 +485,7 @@ class _CommunityMessagePanel extends StatelessWidget {
         children: <Widget>[
           Text(
             'MESSAGE CENTER',
-            style: LoopTypography.mono(
-              size: 9.5,
-              weight: FontWeight.w600,
-              color: LoopColors.muted,
-              letterSpacing: 1.2,
-            ),
+            style: LoopTypography.eyebrow(11, color: LoopColors.muted),
           ),
           const SizedBox(height: 10),
           if (unread != null)

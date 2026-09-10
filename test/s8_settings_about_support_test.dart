@@ -308,7 +308,19 @@ void main() {
       await scrollToS8Section(tester, field);
       await tester.enterText(field, '  为什么我的币没有权重  ');
       await tester.pumpAndSettle();
-      await tester.tap(find.text('挖矿'));
+      // The category bar scrolls horizontally; the Mining chip sits past the
+      // right edge at 390pt once the labels take the label band (decision
+      // 0069).
+      final miningChip = find.text('挖矿');
+      await tester.scrollUntilVisible(
+        miningChip,
+        60,
+        scrollable: find.descendant(
+          of: find.byKey(const ValueKey<String>('support-category-bar')),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await tester.tap(miningChip);
       await tester.pumpAndSettle();
 
       final submit = find.byKey(const ValueKey<String>('support-submit'));

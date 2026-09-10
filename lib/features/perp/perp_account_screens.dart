@@ -119,10 +119,7 @@ class _PerpAccountPreview extends StatelessWidget {
                       icon: Icons.warning_amber_rounded,
                     ),
                     const Spacer(),
-                    Text(
-                      '32.4%',
-                      style: context.dataStyle.copyWith(fontSize: 18),
-                    ),
+                    Text('32.4%', style: LoopType.monoTitle),
                   ],
                 ),
                 const SizedBox(height: 13),
@@ -1030,7 +1027,7 @@ class _TransferAccount extends StatelessWidget {
             ],
           ),
         ),
-        Text(balance, style: context.dataStyle.copyWith(fontSize: 12)),
+        Text(balance, style: LoopType.monoBody),
       ],
     );
   }
@@ -1267,8 +1264,7 @@ class PerpFundingScreen extends StatelessWidget {
                     ),
                     Text(
                       '0.0082%',
-                      style: context.dataStyle.copyWith(
-                        fontSize: 20,
+                      style: LoopType.monoTitle.copyWith(
                         color: LoopColors.mint,
                       ),
                     ),

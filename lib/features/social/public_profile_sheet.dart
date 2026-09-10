@@ -190,10 +190,7 @@ class _PublicProfileSheetState<T extends Object>
                     Text(
                       identity.displayName,
                       key: const ValueKey<String>('public-profile-name'),
-                      style: LoopTypography.sora(
-                        size: 17,
-                        weight: FontWeight.w700,
-                      ),
+                      style: LoopTypography.title(17),
                     ),
                     // The LOOP ID row is drawn only when the caller actually
                     // has one; it is never derived from display copy.
@@ -202,8 +199,10 @@ class _PublicProfileSheetState<T extends Object>
                       Text(
                         loopId,
                         key: const ValueKey<String>('public-profile-loop-id'),
-                        style: LoopTypography.mono(
-                          size: 12,
+                        style: LoopTypography.figure(
+                          12,
+                          weight: FontWeight.w500,
+                          height: 1.5,
                           color: LoopColors.muted,
                         ),
                       ),
@@ -256,11 +255,7 @@ class _PublicProfileSheetState<T extends Object>
           Text(
             '私聊还不能从这里发起，聊天开放后可用。',
             key: const ValueKey<String>('public-profile-dm-reason'),
-            style: LoopTypography.sora(
-              size: 11.5,
-              weight: FontWeight.w500,
-              color: LoopColors.muted,
-            ),
+            style: LoopTypography.caption(11, color: LoopColors.muted),
           ),
           if (_failureKind != null) ...<Widget>[
             const SizedBox(height: 12),

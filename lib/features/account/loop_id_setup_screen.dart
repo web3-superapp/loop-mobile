@@ -198,20 +198,16 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
                   Text(
                     key: const ValueKey<String>('loop-id-value'),
                     state.loopId ?? '—',
-                    style: LoopTypography.mono(
-                      size: 19,
-                      weight: FontWeight.w600,
+                    style: LoopTypography.figure(
+                      20,
+                      height: 1.15,
                       color: LoopColors.chalk,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '系统生成，不可更改',
-                    style: LoopTypography.sora(
-                      size: 11,
-                      weight: FontWeight.w400,
-                      color: LoopColors.text3,
-                    ),
+                    style: LoopTypography.caption(11, color: LoopColors.text3),
                   ),
                 ],
               ),
@@ -262,11 +258,7 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
                   const SizedBox(height: 5),
                   Text(
                     '随时可改 · 别人看到的是这个名字。「换一个」只是本地建议，不代表已被占用或可用。',
-                    style: LoopTypography.sora(
-                      size: 11,
-                      weight: FontWeight.w400,
-                      color: LoopColors.text3,
-                    ),
+                    style: LoopTypography.caption(11, color: LoopColors.text3),
                   ),
                 ],
               ),
@@ -335,11 +327,7 @@ class _LoopIdAvatarCard extends ConsumerWidget {
               key: const ValueKey<String>('loop-id-avatar-unavailable'),
               '预设头像清单暂不可读，先用首字母头像继续。',
               textAlign: TextAlign.center,
-              style: LoopTypography.sora(
-                size: 11,
-                weight: FontWeight.w400,
-                color: LoopColors.text3,
-              ),
+              style: LoopTypography.caption(11, color: LoopColors.text3),
             ),
             data: (presets) => Wrap(
               alignment: WrapAlignment.center,
@@ -368,11 +356,7 @@ class _LoopIdAvatarCard extends ConsumerWidget {
                 ? '自定义头像上传暂不可用，只能选择预设头像。'
                 : '自定义头像上传暂不可用（$uploadReasonCode），只能选择预设头像。',
             textAlign: TextAlign.center,
-            style: LoopTypography.sora(
-              size: 11,
-              weight: FontWeight.w400,
-              color: LoopColors.text3,
-            ),
+            style: LoopTypography.caption(11, color: LoopColors.text3),
           ),
         ],
       ),

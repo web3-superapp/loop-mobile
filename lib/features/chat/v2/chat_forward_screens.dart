@@ -603,19 +603,16 @@ class _ChatMergePreviewScreenState
                           Text(
                             '$chatMergeAnonymousLabel · '
                             '${communityObservedAtLabel(row.createdAt)}',
-                            style: LoopTypography.mono(
-                              size: 9.5,
-                              weight: FontWeight.w600,
+                            style: LoopTypography.figure(
+                              11,
                               color: LoopColors.inkText3,
                             ),
                           ),
                           const SizedBox(height: 5),
                           Text(
                             row.text,
-                            style: LoopTypography.sora(
-                              size: 11,
-                              weight: FontWeight.w400,
-                              height: 1.55,
+                            style: LoopTypography.caption(
+                              11,
                               color: LoopColors.ink,
                             ),
                           ),

@@ -274,7 +274,7 @@ class _Head extends StatelessWidget {
         ),
         child: Text(
           '⋯',
-          style: LoopTypography.mono(size: 18, color: secondary),
+          style: LoopTypography.figure(17, height: 1.15, color: secondary),
         ),
       ),
       LoopTokenCardState.partial => _GlyphLogo(icon: 'question'),
@@ -305,8 +305,8 @@ class _Head extends StatelessWidget {
                           : model.symbol,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopTypography.sora(
-                        size: 14,
+                      style: LoopTypography.label(
+                        14,
                         weight: FontWeight.w700,
                         color: muted ? secondary : foreground,
                       ),
@@ -319,7 +319,11 @@ class _Head extends StatelessWidget {
                   model.identifier,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LoopTypography.mono(size: 11, color: secondary),
+                  style: LoopTypography.figure(
+                    11,
+                    weight: FontWeight.w500,
+                    color: secondary,
+                  ),
                 ),
               ],
             ),
@@ -335,11 +339,9 @@ class _Head extends StatelessWidget {
                     '识别中',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: LoopTypography.mono(
-                      size: 17,
-                      weight: FontWeight.w700,
-                      height: 1.05,
-                      letterSpacing: -0.68,
+                    style: LoopTypography.figure(
+                      17,
+                      height: 1.15,
                       color: secondary,
                     ),
                   )
@@ -348,11 +350,9 @@ class _Head extends StatelessWidget {
                     model.price!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: LoopTypography.mono(
-                      size: 17,
-                      weight: FontWeight.w700,
-                      height: 1.05,
-                      letterSpacing: -0.68,
+                    style: LoopTypography.figure(
+                      17,
+                      height: 1.15,
                       color: muted ? secondary : foreground,
                     ),
                   )
@@ -366,12 +366,7 @@ class _Head extends StatelessWidget {
                     maxLines: 2,
                     textAlign: TextAlign.end,
                     overflow: TextOverflow.ellipsis,
-                    style: LoopTypography.sora(
-                      size: 11,
-                      weight: FontWeight.w500,
-                      height: 1.35,
-                      color: secondary,
-                    ),
+                    style: LoopTypography.caption(11, color: secondary),
                   ),
                 // A card that never read the 24h fact says nothing about it;
                 // only an owner that did read one supplies [change].
@@ -382,10 +377,8 @@ class _Head extends StatelessWidget {
                       model.change!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopTypography.mono(
-                        size: 11,
-                        weight: FontWeight.w600,
-                        height: 1,
+                      style: LoopTypography.figure(
+                        11,
                         color: switch (model.changeUp) {
                           true => LoopColors.lime,
                           false => LoopColors.chalk,
@@ -443,10 +436,8 @@ class _Chart extends StatelessWidget {
                 height: 18,
                 child: Text(
                   model.chartRangeLabel!,
-                  style: LoopTypography.mono(
-                    size: 11,
-                    weight: FontWeight.w600,
-                    letterSpacing: 0.16,
+                  style: LoopTypography.eyebrow(
+                    11,
                     color: chalk ? LoopColors.inkText2 : LoopColors.muted,
                   ),
                 ),
@@ -490,20 +481,14 @@ class _Metrics extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       metrics[index].label.toUpperCase(),
-                      style: LoopTypography.sora(
-                        size: 11,
-                        weight: FontWeight.w400,
-                        letterSpacing: 0.66,
-                        color: labelColor,
-                      ),
+                      style: LoopTypography.caption(11, color: labelColor),
                     ),
                     Text(
                       metrics[index].value,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopTypography.mono(
-                        size: 12.5,
-                        weight: FontWeight.w700,
+                      style: LoopTypography.figure(
+                        13,
                         color: metrics[index].accent
                             ? LoopColors.lime
                             : valueColor,
@@ -545,15 +530,7 @@ class _CommunityLine extends StatelessWidget {
           LoopIcon(icon, size: 17, color: accent ? LoopColors.lime : color),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              text,
-              style: LoopTypography.sora(
-                size: 11,
-                weight: FontWeight.w400,
-                height: 1.4,
-                color: color,
-              ),
-            ),
+            child: Text(text, style: LoopTypography.caption(11, color: color)),
           ),
         ],
       ),
@@ -598,12 +575,7 @@ class _RiskBar extends StatelessWidget {
                 for (final fact in facts)
                   Text(
                     '${fact.fact} —— 来源 ${fact.source}，观察于 ${fact.observedLabel}',
-                    style: LoopTypography.sora(
-                      size: 11,
-                      weight: FontWeight.w400,
-                      height: 1.5,
-                      color: foreground,
-                    ),
+                    style: LoopTypography.caption(11, color: foreground),
                   ),
               ],
             ),
@@ -662,8 +634,8 @@ class _Actions extends StatelessWidget {
                           child: Text(
                             actions[index].label,
                             textAlign: TextAlign.center,
-                            style: LoopTypography.sora(
-                              size: 11,
+                            style: LoopTypography.label(
+                              12,
                               weight: FontWeight.w700,
                               color: actions[index].buy
                                   ? LoopColors.lime

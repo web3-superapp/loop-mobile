@@ -207,7 +207,7 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
                     const SizedBox(height: 6),
                     Text(
                       '只授权本次交易需要的额度。',
-                      style: Theme.of(context).textTheme.labelSmall,
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                 ),
@@ -623,7 +623,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
           const SizedBox(height: 6),
           Text(
             loopReasonCodeText(row.riskFacts.reasonCode),
-            style: Theme.of(context).textTheme.labelSmall,
+            style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 16),
           LoopButton(

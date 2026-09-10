@@ -297,10 +297,7 @@ class _CommunityIdentityCard extends StatelessWidget {
                     Flexible(
                       child: Text(
                         community.name,
-                        style: LoopTypography.sora(
-                          size: 17,
-                          weight: FontWeight.w700,
-                        ),
+                        style: LoopTypography.title(17),
                       ),
                     ),
                     if (community.isVerified) ...<Widget>[
@@ -316,20 +313,16 @@ class _CommunityIdentityCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   community.slug,
-                  style: LoopTypography.mono(
-                    size: 11.5,
+                  style: LoopTypography.figure(
+                    11,
+                    weight: FontWeight.w500,
                     color: LoopColors.muted,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   community.description ?? '这个社区还没有填写简介。',
-                  style: LoopTypography.sora(
-                    size: 12.5,
-                    weight: FontWeight.w500,
-                    color: LoopColors.muted,
-                    height: 1.6,
-                  ),
+                  style: LoopTypography.caption(12, color: LoopColors.muted),
                 ),
               ],
             ),

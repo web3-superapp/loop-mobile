@@ -94,11 +94,7 @@ class PerpSnapshotBanner extends StatelessWidget {
               ),
             ),
             if (state == PerpSnapshotState.preview)
-              Text(
-                'NO SUBMISSION',
-                style: Theme.of(context).textTheme.labelMedium
-                    ?.copyWith(fontFamily: 'monospace'),
-              ),
+              Text('NO SUBMISSION', style: LoopType.monoStamp),
           ],
         ),
       ),
@@ -484,11 +480,7 @@ class _CandlePainter extends CustomPainter {
         final value = high - ((high - low) * index / 4);
         painter.text = TextSpan(
           text: value.toStringAsFixed(0),
-          style: const TextStyle(
-            color: LoopColors.vapor,
-            fontSize: 9,
-            fontFamily: 'monospace',
-          ),
+          style: LoopType.monoStamp.copyWith(color: LoopColors.vapor),
         );
         painter.layout();
         painter.paint(

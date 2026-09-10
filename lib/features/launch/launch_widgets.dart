@@ -144,18 +144,14 @@ class LaunchEmptyMetric extends StatelessWidget {
             children: <Widget>[
               Text(
                 label,
-                style: LoopTypography.mono(
-                  size: 9,
-                  weight: FontWeight.w600,
-                  color: LoopColors.text3,
-                ),
+                style: LoopTypography.figure(11, color: LoopColors.text3),
               ),
               const SizedBox(height: 4),
               Text(
                 launchMissingFigure,
-                style: LoopTypography.mono(
-                  size: 20,
-                  weight: FontWeight.w700,
+                style: LoopTypography.figure(
+                  20,
+                  height: 1.15,
                   color: LoopColors.chalk,
                 ),
               ),
@@ -164,12 +160,7 @@ class LaunchEmptyMetric extends StatelessWidget {
                 note == null
                     ? launchReasonCodeText(reasonCode)
                     : '$note · ${launchReasonCodeText(reasonCode)}',
-                style: LoopTypography.sora(
-                  size: 11,
-                  weight: FontWeight.w500,
-                  color: LoopColors.text2,
-                  height: 1.5,
-                ),
+                style: LoopTypography.caption(11, color: LoopColors.text2),
               ),
             ],
           ),
@@ -288,11 +279,7 @@ class _RoundIndexTile extends StatelessWidget {
       ),
       child: Text(
         '$index',
-        style: LoopTypography.mono(
-          size: 12,
-          weight: FontWeight.w700,
-          color: LoopColors.chalk,
-        ),
+        style: LoopTypography.figure(13, color: LoopColors.chalk),
       ),
     );
   }
@@ -341,11 +328,7 @@ class LaunchSourceFooter extends StatelessWidget {
         '来源 $source'
         '${version == null ? '' : ' · 版本 $version'}'
         ' · 观察于 ${launchTimestampLabel(observedAt)}',
-        style: LoopTypography.sora(
-          size: 11,
-          weight: FontWeight.w500,
-          color: LoopColors.text3,
-        ),
+        style: LoopTypography.caption(11, color: LoopColors.text3),
       ),
     );
   }
@@ -420,8 +403,8 @@ class LaunchTickerTile extends StatelessWidget {
       ),
       child: Text(
         String.fromCharCodes(runes),
-        style: LoopTypography.mono(
-          size: size / 4.4,
+        style: LoopTypography.figure(
+          size / 4.4,
           weight: FontWeight.w700,
           color: LoopColors.chalk,
         ),
@@ -461,12 +444,7 @@ class LaunchAxisBlock extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Text(
             '链上信息暂时读不到，因此这一页不显示合约地址、总量、税率或上限。',
-            style: LoopTypography.sora(
-              size: 11,
-              weight: FontWeight.w500,
-              color: LoopColors.text3,
-              height: 1.6,
-            ),
+            style: LoopTypography.caption(11, color: LoopColors.text3),
           ),
         ),
       ],
