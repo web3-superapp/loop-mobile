@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
+import 'package:loop_mobile/app/session/wallet_provisioning_controller.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
@@ -258,6 +260,143 @@ void main() {
       ]);
     },
   );
+
+  group('post-login wallet provisioning', () {
+    test('a verified session without a wallet gets exactly one', () async {
+      final provisioning = container.read(
+        loopWalletProvisioningProvider.notifier,
+      );
+
+      await provisioning.ensureWallet();
+
+      expect(gateway.walletCreationPrincipals, <String>['did:privy:old']);
+      expect(
+        container.read(loopSessionProvider).account?.wallet?.address,
+        '0x123',
+      );
+      expect(
+        container.read(loopWalletProvisioningProvider).stage,
+        LoopWalletProvisioningStage.created,
+      );
+
+      // The account now owns a wallet, so a second pass asks for nothing.
+      await provisioning.ensureWallet();
+      expect(gateway.walletCreationPrincipals, <String>['did:privy:old']);
+    });
+
+    test('an account that already owns a wallet is never asked', () async {
+      gateway.emitAuthenticated('did:privy:old', walletAddress: '0xabc');
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        container.read(loopSessionProvider).account?.wallet?.address,
+        '0xabc',
+      );
+
+      await container
+          .read(loopWalletProvisioningProvider.notifier)
+          .ensureWallet();
+
+      expect(gateway.walletCreationPrincipals, isEmpty);
+      expect(
+        container.read(loopWalletProvisioningProvider).stage,
+        LoopWalletProvisioningStage.idle,
+      );
+    });
+
+    test('a failed creation is a wallet fact, never a login one', () async {
+      gateway.walletCreationOperation = Future<PrivyWalletCreationResult>.error(
+        const PrivyGatewayException('钱包创建失败，请稍后重试。'),
+      );
+
+      await container
+          .read(loopWalletProvisioningProvider.notifier)
+          .ensureWallet();
+
+      final provisioning = container.read(loopWalletProvisioningProvider);
+      expect(provisioning.stage, LoopWalletProvisioningStage.failed);
+      expect(provisioning.errorMessage, '钱包创建失败，请稍后重试。');
+      final session = container.read(loopSessionProvider);
+      expect(session.mode, LoopSessionMode.authenticated);
+      expect(session.account?.wallet, isNull);
+      expect(session.errorMessage, isNull);
+    });
+
+    test(
+      'a development preview session never asks Privy for a wallet',
+      () async {
+        gateway.restoresAuthenticated = false;
+        final preview = ProviderContainer(
+          overrides: [
+            privyAuthGatewayProvider.overrideWithValue(gateway),
+            developmentPreviewEnabledProvider.overrideWithValue(true),
+          ],
+        );
+        addTearDown(preview.dispose);
+        expect(
+          preview.read(loopSessionProvider.notifier).enterPreview(),
+          isTrue,
+        );
+        await Future<void>.delayed(Duration.zero);
+        expect(preview.read(loopSessionProvider).mode, LoopSessionMode.preview);
+
+        await preview
+            .read(loopWalletProvisioningProvider.notifier)
+            .ensureWallet();
+
+        expect(gateway.walletCreationPrincipals, isEmpty);
+        expect(
+          preview.read(loopWalletProvisioningProvider).stage,
+          LoopWalletProvisioningStage.idle,
+        );
+      },
+    );
+
+    test('an unverified session never asks Privy for a wallet', () async {
+      gateway.emit(
+        const PrivySessionSnapshot(PrivySessionKind.authenticatedUnverified),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.authenticatedUnverified,
+      );
+
+      await container
+          .read(loopWalletProvisioningProvider.notifier)
+          .ensureWallet();
+
+      expect(gateway.walletCreationPrincipals, isEmpty);
+    });
+
+    test(
+      'a manual retry joins the automatic attempt instead of racing',
+      () async {
+        final walletGate = Completer<PrivyWalletCreationResult>();
+        gateway.walletCreationOperation = walletGate.future;
+        final provisioning = container.read(
+          loopWalletProvisioningProvider.notifier,
+        );
+
+        final automatic = provisioning.ensureWallet();
+        expect(
+          container.read(loopWalletProvisioningProvider).isCreating,
+          isTrue,
+        );
+        final manual = provisioning.createWallet();
+
+        walletGate.complete(
+          const PrivyWalletCreationResult(
+            privyUserId: 'did:privy:old',
+            wallet: PrivyWalletSummary(address: '0x123'),
+          ),
+        );
+        await automatic;
+
+        expect(await manual, isTrue);
+        expect(gateway.walletCreationPrincipals, <String>['did:privy:old']);
+      },
+    );
+  });
 }
 
 final class _LogoutGateway implements PrivyAuthGateway {
@@ -270,17 +409,31 @@ final class _LogoutGateway implements PrivyAuthGateway {
 
   Future<void> dispose() => _snapshots.close();
 
-  void emitAuthenticated(String principalKey) {
+  void emit(PrivySessionSnapshot snapshot) => _snapshots.add(snapshot);
+
+  void emitAuthenticated(String principalKey, {String? walletAddress}) {
     _snapshots.add(
       PrivySessionSnapshot(
         PrivySessionKind.authenticated,
-        account: PrivyAccountSummary(privyUserId: principalKey),
+        account: PrivyAccountSummary(
+          privyUserId: principalKey,
+          wallet: walletAddress == null
+              ? null
+              : PrivyWalletSummary(address: walletAddress),
+        ),
       ),
     );
   }
 
+  /// A restore that answers "signed out", so a test can install a Preview
+  /// session without a later authenticated restore replacing it.
+  var restoresAuthenticated = true;
+
   @override
   Future<PrivySessionSnapshot> restoreSession() async {
+    if (!restoresAuthenticated) {
+      return const PrivySessionSnapshot(PrivySessionKind.unauthenticated);
+    }
     return const PrivySessionSnapshot(
       PrivySessionKind.authenticated,
       account: PrivyAccountSummary(privyUserId: 'did:privy:old'),

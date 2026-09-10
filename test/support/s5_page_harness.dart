@@ -19,6 +19,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
+import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 import 's5_fixtures.dart';
@@ -552,6 +553,7 @@ Future<void> pumpS5Page(
   AlertsGateway? alerts,
   NotificationsGateway? notifications,
   LoopV2MetaSnapshot? meta,
+  PrivyAuthGateway? privy,
   Size size = const Size(390, 2400),
   bool settle = true,
 }) async {
@@ -571,6 +573,9 @@ Future<void> pumpS5Page(
         if (alerts != null) alertsGatewayProvider.overrideWithValue(alerts),
         if (notifications != null)
           notificationsGatewayProvider.overrideWithValue(notifications),
+        // Only the pages that render a session-dependent block pass this. It
+        // is the same seam the app uses, so no page gets a second one.
+        if (privy != null) privyAuthGatewayProvider.overrideWithValue(privy),
         loopV2MetaSnapshotProvider.overrideWith(
           (ref) async => meta ?? s5MetaSnapshot(),
         ),

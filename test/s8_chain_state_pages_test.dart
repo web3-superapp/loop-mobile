@@ -829,6 +829,52 @@ void main() {
         wallet: FakeWalletReadGateway(
           directory: S5Answer<LoopWalletDirectory>(
             value: LoopWalletDirectory(
+              wallets: <LoopWalletAccount>[
+                LoopWalletAccount(
+                  walletId: s5WalletId,
+                  address: s5Address,
+                  kind: LoopWalletKind.embedded,
+                  status: LoopWalletStatus.active,
+                  isActive: false,
+                  firstSeenAt: DateTime.utc(2026, 9, 8),
+                  lastSeenAt: DateTime.utc(2026, 9, 8),
+                ),
+              ],
+              activeWalletId: null,
+              observedAt: DateTime.utc(2026, 9, 8, 5, 12),
+            ),
+          ),
+        ),
+      );
+
+      // `_WalletList` is rendered twice, so "no connected external wallet" is
+      // its own statement rather than a blank below the embedded list.
+      expect(
+        find.byKey(const ValueKey<String>('wallets-empty-没有已连接的外部钱包')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('wallets-empty-没有嵌入式钱包')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('wallets-state-empty')),
+        findsNothing,
+      );
+      expect(find.text('使用中'), findsNothing);
+    });
+
+    testWidgets('a directory with no wallet at all is the creation state', (
+      tester,
+    ) async {
+      // Decision 0063: "the account owns no wallet" is a read result with one
+      // action, not two per-class blanks and not a failed read.
+      await pumpS5Page(
+        tester,
+        const WalletManagerScreen(),
+        wallet: FakeWalletReadGateway(
+          directory: S5Answer<LoopWalletDirectory>(
+            value: LoopWalletDirectory(
               wallets: const <LoopWalletAccount>[],
               activeWalletId: null,
               observedAt: DateTime.utc(2026, 9, 8, 5, 12),
@@ -837,21 +883,19 @@ void main() {
         ),
       );
 
-      // `_WalletList` is rendered twice, so "no embedded wallet" and "no
-      // connected external wallet" are two separate statements, not one blank.
       expect(
-        find.byKey(const ValueKey<String>('wallets-empty-没有嵌入式钱包')),
+        find.byKey(const ValueKey<String>('wallets-no-wallet')),
         findsOneWidget,
       );
-      expect(
-        find.byKey(const ValueKey<String>('wallets-empty-没有已连接的外部钱包')),
-        findsOneWidget,
-      );
+      expect(find.text('这个账号还没有钱包'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('wallets-state-empty')),
         findsNothing,
       );
-      expect(find.text('使用中'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('wallets-empty-没有嵌入式钱包')),
+        findsNothing,
+      );
     });
   });
 

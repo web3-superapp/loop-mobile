@@ -55,6 +55,15 @@ String? _watchActiveWalletId(WidgetRef ref, {required bool blocked}) {
   return directory.value?.activeWalletId;
 }
 
+/// Whether `GET /v2/wallets` answered, and answered "no wallet".
+///
+/// A directory that has not been read, or whose read failed, is never empty:
+/// it is unknown, and the state block says so instead.
+bool _directoryIsEmpty(LoopChainResourceState<LoopWalletDirectory> directory) {
+  final value = directory.value;
+  return directory.isReady && value != null && value.isEmpty;
+}
+
 // ---------------------------------------------------------------------------
 // wallet
 // ---------------------------------------------------------------------------
@@ -123,6 +132,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       ],
       primary: _WalletPrimary(
         directory: directory.value,
+        directoryIsEmpty: _directoryIsEmpty(directory),
         balances: balances,
         onOpenNetWorth: () => _open('/wallet/networth'),
       ),
@@ -133,13 +143,29 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             label: '钱包读取当前不可用',
             reasonCode: _walletBlockReason(ref),
           )
+        // Three different answers, three different blocks: the list was not
+        // read, the list was read and is empty, or a wallet is active.
+        else if (_directoryIsEmpty(directory))
+          const WalletCreationBlock(keyPrefix: 'wallet-directory')
+        else if (walletId == null && directory.isReady)
+          LoopEmpty(
+            key: const ValueKey<String>('wallet-directory-no-active'),
+            message: '还没有选定当前钱包',
+            reason: '这个账号已经有钱包，但服务端没有标记活跃钱包。到“我的钱包”里选一个后，余额才会读取。',
+            action: LoopButton(
+              key: const ValueKey<String>('wallet-directory-pick'),
+              label: '我的钱包',
+              primary: true,
+              onPressed: () => _open('/wallet/manage'),
+            ),
+          )
         else if (walletId == null)
           LoopChainStateBlock(
             keyPrefix: 'wallet-directory',
             phase: directory.phase,
             failureKind: directory.failureKind,
-            emptyMessage: '这个账号还没有钱包',
-            emptyReason: 'Privy 报告的钱包会自动出现在这里。',
+            emptyMessage: '钱包清单还没有读到',
+            emptyReason: '这不是“没有钱包”，只是这次没有读到清单。',
             onRetry: () => unawaited(
               ref.read(walletDirectoryControllerProvider.notifier).reload(),
             ),
@@ -288,11 +314,16 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 class _WalletPrimary extends StatelessWidget {
   const _WalletPrimary({
     required this.directory,
+    required this.directoryIsEmpty,
     required this.balances,
     required this.onOpenNetWorth,
   });
 
   final LoopWalletDirectory? directory;
+
+  /// The directory was read and holds no wallet. Without it the caption could
+  /// not tell "you have no wallet" from "the list was not read".
+  final bool directoryIsEmpty;
   final LoopWalletBalances? balances;
   final VoidCallback onOpenNetWorth;
 
@@ -310,10 +341,17 @@ class _WalletPrimary extends StatelessWidget {
       archetype: LoopFolioArchetype.record,
       kicker: 'WALLET LEDGER',
       heading: heading,
-      caption: active == null
-          ? '钱包清单尚未读取成功，本页不展示任何余额。'
-          : '${active.truncatedAddress} · '
-                '${netWorth is LoopNetWorthValued && netWorth.partial ? '部分资产未估值' : '净值不是可用余额'}',
+      // Three answers the caption must keep apart: the list was never read,
+      // the list was read and holds no wallet, and the list holds wallets but
+      // names no active one. Only the first is a failed read.
+      caption: switch ((active, directoryIsEmpty, directory)) {
+        (final LoopWalletAccount active, _, _) =>
+          '${active.truncatedAddress} · '
+              '${netWorth is LoopNetWorthValued && netWorth.partial ? '部分资产未估值' : '净值不是可用余额'}',
+        (_, true, _) => '这个账号还没有钱包，创建后余额会出现在这里。',
+        (_, _, null) => '钱包清单尚未读取成功，本页不展示任何余额。',
+        _ => '还没有选定当前钱包，本页不展示任何余额。',
+      },
       stamp: netWorth is LoopNetWorthValued ? 'NET WORTH' : null,
       trailing: LoopIconButton(
         key: const ValueKey<String>('wallet-networth-entry'),
@@ -1129,10 +1167,14 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
             keyPrefix: 'wallets',
             phase: state.phase,
             failureKind: state.failureKind,
-            emptyMessage: '这个账号还没有钱包',
-            emptyReason: 'Privy 报告的钱包会自动出现在这里，服务端不接受客户端选择的地址。',
+            emptyMessage: '钱包清单还没有读到',
+            emptyReason: '这不是“没有钱包”，只是这次没有读到清单。',
             onRetry: () => unawaited(controller.reload()),
           )
+        // The list was read and holds nothing. That is a different answer from
+        // the block above, and it is the one this page can act on.
+        else if (directory.isEmpty)
+          const WalletCreationBlock(keyPrefix: 'wallets')
         else ...<Widget>[
           // A switch that never reached the server changed nothing: the
           // active wallet below is still the server's own answer. Offline is

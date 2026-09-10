@@ -81,6 +81,15 @@ final class LoopWalletDirectory {
   final String? activeWalletId;
   final DateTime observedAt;
 
+  /// The server answered, and the answer was "this account owns no wallet".
+  ///
+  /// It is a read result, never the absence of one: a page may render it only
+  /// after the directory reached [LoopChainViewPhase.ready], because a failed
+  /// or unfinished read produces no directory at all.
+  bool get isEmpty => wallets.isEmpty;
+
+  bool get isNotEmpty => wallets.isNotEmpty;
+
   List<LoopWalletAccount> get embedded => wallets
       .where((wallet) => wallet.kind == LoopWalletKind.embedded)
       .toList(growable: false);

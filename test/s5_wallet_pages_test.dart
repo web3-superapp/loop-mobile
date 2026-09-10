@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +9,7 @@ import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/s5_fixtures.dart';
@@ -198,6 +201,152 @@ void main() {
 
       expect(find.textContaining('没有回退到演示数据'), findsOneWidget);
       expect(find.text('这个账号还没有钱包'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('an empty directory is "no wallet yet", never "not read"', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const WalletScreen(),
+        wallet: FakeWalletReadGateway(directory: emptyDirectoryAnswer()),
+        privy: WalletCreatingTestPrivyGateway(),
+      );
+
+      expect(find.text('这个账号还没有钱包'), findsOneWidget);
+      expect(find.textContaining('尚未读取成功'), findsNothing);
+      expect(find.textContaining('创建后余额会出现在这里'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets(
+      'creating a wallet re-reads the directory it was missing from',
+      (tester) async {
+        final privy = WalletCreatingTestPrivyGateway();
+        final wallet = FakeWalletReadGateway(directory: emptyDirectoryAnswer());
+        await pumpS5Page(
+          tester,
+          const WalletScreen(),
+          wallet: wallet,
+          privy: privy,
+        );
+        expect(wallet.directoryReads, 1);
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(privy.creationPrincipals, <String>['did:privy:test-widget']);
+        // The server projects `/v2/wallets` from Privy, so the list this page
+        // rendered predates the wallet and is read again.
+        expect(wallet.directoryReads, 2);
+        expect(find.text('钱包已创建'), findsOneWidget);
+      },
+    );
+
+    testWidgets('a failed creation states the provider reason and stays', (
+      tester,
+    ) async {
+      final privy = WalletCreatingTestPrivyGateway(
+        failure: const PrivyGatewayException('Privy 暂时不能创建钱包。'),
+      );
+      await pumpS5Page(
+        tester,
+        const WalletScreen(),
+        wallet: FakeWalletReadGateway(directory: emptyDirectoryAnswer()),
+        privy: privy,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Privy 暂时不能创建钱包。'), findsOneWidget);
+      expect(find.text('这个账号还没有钱包'), findsOneWidget);
+      expect(find.text('钱包已创建'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the button is disabled while a creation is in flight', (
+      tester,
+    ) async {
+      final gate = Completer<PrivyWalletCreationResult>();
+      final privy = WalletCreatingTestPrivyGateway(pending: gate.future);
+      await pumpS5Page(
+        tester,
+        const WalletScreen(),
+        wallet: FakeWalletReadGateway(directory: emptyDirectoryAnswer()),
+        privy: privy,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
+      );
+      await tester.pump();
+
+      expect(find.text('创建中…'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
+      );
+      await tester.pump();
+      expect(privy.creationPrincipals, hasLength(1));
+
+      gate.complete(
+        const PrivyWalletCreationResult(
+          privyUserId: 'did:privy:test-widget',
+          wallet: PrivyWalletSummary(address: walletCreationAddress),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(privy.creationPrincipals, hasLength(1));
+    });
+
+    testWidgets('a session that may not create a wallet offers no button', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const WalletScreen(),
+        wallet: FakeWalletReadGateway(directory: emptyDirectoryAnswer()),
+      );
+
+      expect(find.text('这个账号还没有钱包'), findsOneWidget);
+      expect(find.textContaining('当前会话未完成验证'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a read wallet list with no active wallet is not "no wallet"', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const WalletScreen(),
+        wallet: FakeWalletReadGateway(
+          directory: S5Answer<LoopWalletDirectory>(
+            value: s5Directory(activeWalletId: null),
+          ),
+        ),
+        privy: WalletCreatingTestPrivyGateway(),
+      );
+
+      expect(find.text('还没有选定当前钱包'), findsOneWidget);
+      expect(find.text('这个账号还没有钱包'), findsNothing);
+      expect(find.textContaining('尚未读取成功'), findsNothing);
     });
   });
 
@@ -549,6 +698,48 @@ void main() {
       await tester.pumpAndSettle();
       expect(wallet.switched, isEmpty);
     });
+
+    testWidgets('an empty list offers the one creation path, not a retry', (
+      tester,
+    ) async {
+      final privy = WalletCreatingTestPrivyGateway();
+      await pumpS5Page(
+        tester,
+        const WalletManagerScreen(),
+        wallet: FakeWalletReadGateway(directory: emptyDirectoryAnswer()),
+        privy: privy,
+      );
+
+      expect(find.text('这个账号还没有钱包'), findsOneWidget);
+      expect(find.textContaining('还没有读到'), findsNothing);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('wallets-create-wallet')),
+      );
+      await tester.pumpAndSettle();
+      expect(privy.creationPrincipals, <String>['did:privy:test-widget']);
+    });
+
+    testWidgets('a failed read still says the list was not read', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const WalletManagerScreen(),
+        wallet: FakeWalletReadGateway(
+          directory: S5Answer<LoopWalletDirectory>(
+            failure: LoopChainFailureKind.unexpected,
+          ),
+        ),
+        privy: WalletCreatingTestPrivyGateway(),
+      );
+
+      expect(find.text('这个账号还没有钱包'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('wallets-create-wallet')),
+        findsNothing,
+      );
+    });
   });
 
   group('tx-history', () {
@@ -751,4 +942,74 @@ void main() {
       expect(find.textContaining('自定义 RPC 与自行添加网络本步不开放'), findsOneWidget);
     });
   });
+}
+
+const walletCreationAddress = '0x00000000000000000000000000000000000000c3';
+
+/// `GET /v2/wallets` answered, and answered "this account owns no wallet".
+S5Answer<LoopWalletDirectory> emptyDirectoryAnswer() =>
+    S5Answer<LoopWalletDirectory>(
+      value: LoopWalletDirectory(
+        wallets: const <LoopWalletAccount>[],
+        activeWalletId: null,
+        observedAt: DateTime.utc(2026, 9, 9, 5),
+      ),
+    );
+
+/// A verified session whose Privy wallet creation can be driven by a test.
+class WalletCreatingTestPrivyGateway implements PrivyAuthGateway {
+  WalletCreatingTestPrivyGateway({this.failure, this.pending});
+
+  final PrivyGatewayException? failure;
+  final Future<PrivyWalletCreationResult>? pending;
+  final List<String> creationPrincipals = <String>[];
+
+  @override
+  Future<PrivySessionSnapshot> restoreSession() async {
+    return const PrivySessionSnapshot(
+      PrivySessionKind.authenticated,
+      account: PrivyAccountSummary(privyUserId: 'did:privy:test-widget'),
+    );
+  }
+
+  @override
+  Stream<PrivySessionSnapshot> watchSession() => const Stream.empty();
+
+  @override
+  Future<PrivyWalletCreationResult> createFirstEthereumWallet({
+    required String expectedPrivyUserId,
+  }) {
+    creationPrincipals.add(expectedPrivyUserId);
+    final held = pending;
+    if (held != null) return held;
+    final reason = failure;
+    if (reason != null) {
+      return Future<PrivyWalletCreationResult>.error(reason);
+    }
+    return Future<PrivyWalletCreationResult>.value(
+      PrivyWalletCreationResult(
+        privyUserId: expectedPrivyUserId,
+        wallet: const PrivyWalletSummary(address: walletCreationAddress),
+      ),
+    );
+  }
+
+  @override
+  Future<String> getCurrentAccessToken() async => 'test-access-token';
+
+  @override
+  Future<void> logout() async {}
+
+  @override
+  Future<void> sendEmailCode(String email) {
+    throw UnsupportedError('This gateway does not send OTPs.');
+  }
+
+  @override
+  Future<PrivyAccountSummary> verifyEmailCode({
+    required String email,
+    required String code,
+  }) {
+    throw UnsupportedError('This gateway does not verify OTPs.');
+  }
 }

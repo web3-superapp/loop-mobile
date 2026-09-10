@@ -14,6 +14,7 @@ import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/app/session/loop_communication_retirement.dart';
 import 'package:loop_mobile/app/session/post_auth_bootstrap_coordinator.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
+import 'package:loop_mobile/app/session/wallet_provisioning_controller.dart';
 import 'package:loop_mobile/core/navigation/launch_route.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
@@ -58,6 +59,7 @@ import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/features/wallet/wallet_screens.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
+import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_coordinator.dart';
@@ -137,7 +139,18 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       // signed-out bootstrap owner.
       await Future<void>.delayed(Duration.zero);
       if (!mounted) return;
-      await ref.read(loopBootstrapSessionProvider)?.authorize();
+      final authorization = await ref
+          .read(loopBootstrapSessionProvider)
+          ?.authorize();
+      // Decision 0063: the embedded wallet is created once the LOOP session
+      // exists, so the login page's promise holds without the owner having to
+      // find a button. A wallet that cannot be created is a wallet fact and
+      // never rolls the session back, so the result is deliberately dropped
+      // here and read from the provisioning state instead.
+      if (!mounted || authorization != LoopBootstrapAuthorization.authorized) {
+        return;
+      }
+      await ref.read(loopWalletProvisioningProvider.notifier).ensureWallet();
     });
     postAuthProfileCoordinator = PostAuthProfileRedirectCoordinator(
       readProfile: () async {

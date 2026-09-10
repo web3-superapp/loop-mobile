@@ -1,5 +1,10 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/app/session/loop_session_controller.dart';
+import 'package:loop_mobile/app/session/wallet_provisioning_controller.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -7,6 +12,7 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// Whether the wallet pages must stop at the capability gate.
 bool walletCapabilityBlocks(
@@ -226,5 +232,70 @@ class WalletLaunchChainCard extends StatelessWidget {
         LoopTestnetNotice(visible: launchChain.isTestnet),
       ],
     );
+  }
+}
+
+/// The "this account owns no wallet yet" block.
+///
+/// It is a read result, not a missing read: a page may only build it after
+/// `GET /v2/wallets` answered `ready` with an empty list. Every other outcome
+/// — loading, error, offline, unavailable, permission — belongs to
+/// [LoopChainStateBlock], which says the list was not read rather than that
+/// there is nothing in it.
+///
+/// The button calls the one creation path the product has. It is disabled
+/// while any attempt is in flight, including the automatic one made at login,
+/// and a failed attempt renders the provider's own sentence.
+class WalletCreationBlock extends ConsumerWidget {
+  const WalletCreationBlock({required this.keyPrefix, super.key});
+
+  final String keyPrefix;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(loopSessionProvider);
+    final provisioning = ref.watch(loopWalletProvisioningProvider);
+    final canCreate =
+        session.canUseProviderBackedFeatures && session.account != null;
+
+    if (!canCreate) {
+      return LoopEmpty(
+        key: ValueKey<String>('$keyPrefix-no-wallet'),
+        message: '这个账号还没有钱包',
+        reason: session.isPreview
+            ? '开发预览不会创建真实钱包，也不会调用 Privy。'
+            : '当前会话未完成验证，暂时不能创建钱包。重新登录后可以再试。',
+      );
+    }
+
+    final reason = switch (provisioning.stage) {
+      LoopWalletProvisioningStage.creating => '正在向 Privy 申请嵌入式钱包，完成后清单会自动刷新。',
+      LoopWalletProvisioningStage.failed =>
+        '上一次创建没有完成：${provisioning.errorMessage ?? '原因未知'}'
+            ' 登录状态没有变化，可以再试一次。',
+      _ => 'LOOP 会为这个账号创建一个 Privy 嵌入式钱包。地址是公开的链上事实，不是账号标识。',
+    };
+
+    return LoopEmpty(
+      key: ValueKey<String>('$keyPrefix-no-wallet'),
+      message: '这个账号还没有钱包',
+      reason: reason,
+      action: LoopButton(
+        key: ValueKey<String>('$keyPrefix-create-wallet'),
+        label: provisioning.isCreating ? '创建中…' : '创建钱包',
+        primary: true,
+        onPressed: provisioning.isCreating
+            ? null
+            : () => unawaited(_create(context, ref)),
+      ),
+    );
+  }
+
+  Future<void> _create(BuildContext context, WidgetRef ref) async {
+    final created = await ref
+        .read(loopWalletProvisioningProvider.notifier)
+        .createWallet();
+    if (!context.mounted || !created) return;
+    LoopToast.show(context, message: '钱包已创建', kind: LoopToastKind.ok);
   }
 }
