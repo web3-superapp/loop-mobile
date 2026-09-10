@@ -17,6 +17,7 @@ import 'package:loop_mobile/features/market/market_read_gateway.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_membership_controller.dart';
+import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/features/notifications/notification_controllers.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -75,6 +76,21 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
         LoopToast.show(context, message: '已加入自选', kind: LoopToastKind.ok);
       case WatchlistToggleOutcome.removed:
         LoopToast.show(context, message: '已移出自选', kind: LoopToastKind.ok);
+      // Refused on device, so the sentence names the limit rather than the
+      // server's `VALIDATION_FAILED`, which is about an unregistered asset.
+      case WatchlistToggleOutcome.itemLimitReached:
+        LoopToast.show(
+          context,
+          message: '自选已达 $watchlistMaxItems 项，先在自选管理里移除一个再加入。',
+          kind: LoopToastKind.warn,
+        );
+      case WatchlistToggleOutcome.groupLimitReached:
+        LoopToast.show(
+          context,
+          message:
+              '分组已达 $watchlistMaxGroups 个，无法新建默认分组「$watchlistDefaultGroupName」。',
+          kind: LoopToastKind.warn,
+        );
       case WatchlistToggleOutcome.failed:
         LoopToast.show(
           context,
@@ -130,13 +146,16 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
       loopCapabilityProvider(LoopV2CapabilityId.watchlist),
     );
     final watchlistMode = ref.watch(watchlistGatewayProvider).mode;
-    final watchlistBlocked = loopChainCapabilityBlocks(
-      watchlistMode,
-      watchlistCapability,
-    );
     final membership = ref.watch(
       watchlistMembershipControllerProvider(assetId),
     );
+    // `loopChainCapabilityBlocks` only exempts Preview from the capability
+    // document; it says nothing about a production build with no transport.
+    // The controller's own `unavailable` phase is that second answer, and both
+    // close the star.
+    final watchlistBlocked =
+        loopChainCapabilityBlocks(watchlistMode, watchlistCapability) ||
+        membership.phase == LoopChainViewPhase.unavailable;
     if (!watchlistBlocked && membership.phase == LoopChainViewPhase.loading) {
       scheduleMicrotask(() {
         if (mounted) {
@@ -170,6 +189,11 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           icon: 'star',
           label: watchlistBlocked ? '自选当前不可用' : membership.actionLabel,
           color: membership.isWatched ? LoopColors.lime : null,
+          // An unread list has no on/off state to report; claiming
+          // `false` would say the asset is not watched.
+          toggled: watchlistBlocked || !membership.isKnown
+              ? null
+              : membership.isWatched,
           onPressed: watchlistBlocked || membership.busy
               ? null
               : () => unawaited(_toggleWatchlist(assetId)),

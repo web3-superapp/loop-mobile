@@ -101,6 +101,7 @@ class LoopIconButton extends StatelessWidget {
     super.key,
     this.onPressed,
     this.color,
+    this.toggled,
   });
 
   final String icon;
@@ -108,11 +109,16 @@ class LoopIconButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final Color? color;
 
+  /// Whether this button reports an on/off state a screen reader should hear.
+  /// `null` — the default — is a plain button with no toggle semantics.
+  final bool? toggled;
+
   @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
       label: label,
+      toggled: toggled,
       enabled: onPressed != null,
       child: Material(
         type: MaterialType.transparency,

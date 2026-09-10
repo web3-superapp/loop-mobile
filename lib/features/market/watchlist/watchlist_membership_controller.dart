@@ -8,10 +8,30 @@ import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 
 /// What one star press did.
 ///
-/// [failed] is the only outcome that carries a reason; the other two are
-/// committed facts, because the server answered with the resource that now
-/// exists.
-enum WatchlistToggleOutcome { added, removed, failed }
+/// [added] and [removed] are committed facts, because the server answered with
+/// the resource that now exists. The two limit outcomes are refusals this
+/// client made *before* writing, so they name the limit rather than borrowing
+/// the server's `VALIDATION_FAILED` sentence — which says the asset is not
+/// registered, and would be a lie here. [failed] is the only outcome that
+/// carries a server reason.
+enum WatchlistToggleOutcome {
+  added,
+  removed,
+
+  /// The document already holds `watchlistMaxItems` assets.
+  itemLimitReached,
+
+  /// There is no default group and no room to create one.
+  groupLimitReached,
+  failed,
+}
+
+/// A refusal composed on device: no request was made.
+final class _WatchlistLimitReached implements Exception {
+  const _WatchlistLimitReached(this.outcome);
+
+  final WatchlistToggleOutcome outcome;
+}
 
 @immutable
 final class WatchlistToggleResult {
@@ -148,6 +168,7 @@ final class WatchlistMembershipController
     state = state.copyWith(busy: true, clearFailure: true);
     try {
       final current = state.snapshot ?? await _read();
+      if (!current.containsAsset(assetId)) _refuseIfFull(current);
       final adding = !current.containsAsset(assetId);
       try {
         return _commit(await _write(current, adding: adding), adding: adding);
@@ -160,8 +181,14 @@ final class WatchlistMembershipController
         if (fresh.containsAsset(assetId) == adding) {
           return _commit(fresh, adding: adding);
         }
+        if (adding) _refuseIfFull(fresh);
         return _commit(await _write(fresh, adding: adding), adding: adding);
       }
+    } on _WatchlistLimitReached catch (refusal) {
+      // Nothing was sent, so nothing failed: the list on screen is still the
+      // committed one and keeps its read state.
+      state = state.copyWith(busy: false, clearFailure: true);
+      return WatchlistToggleResult(refusal.outcome);
     } on LoopChainException catch (error) {
       _fail(error.kind);
       return WatchlistToggleResult(
@@ -209,14 +236,31 @@ final class WatchlistMembershipController
     );
   }
 
-  /// Appends the asset to the default group, creating that group in the same
-  /// replacement when the owner has none. Both server limits are checked here
-  /// so a refusal names the limit instead of arriving as a bare
-  /// `VALIDATION_FAILED`.
-  List<WatchlistGroup> _withAsset(WatchlistSnapshot snapshot) {
+  /// Refuses an add the server would reject, before any request is made.
+  ///
+  /// The server answers both of these with `VALIDATION_FAILED`, whose sentence
+  /// is about an unregistered asset. Naming the limit here is the only way the
+  /// owner learns what is actually in the way.
+  void _refuseIfFull(WatchlistSnapshot snapshot) {
     if (snapshot.itemCount >= watchlistMaxItems) {
-      throw const LoopChainException(LoopChainFailureKind.validationFailed);
+      throw const _WatchlistLimitReached(
+        WatchlistToggleOutcome.itemLimitReached,
+      );
     }
+    final hasDefaultGroup = snapshot.groups.any(
+      (group) => group.key == watchlistDefaultGroupKey,
+    );
+    if (!hasDefaultGroup && snapshot.groups.length >= watchlistMaxGroups) {
+      throw const _WatchlistLimitReached(
+        WatchlistToggleOutcome.groupLimitReached,
+      );
+    }
+  }
+
+  /// Appends the asset to the default group, creating that group in the same
+  /// replacement when the owner has none. [_refuseIfFull] has already proved
+  /// there is room for both.
+  List<WatchlistGroup> _withAsset(WatchlistSnapshot snapshot) {
     final groups = List<WatchlistGroup>.of(snapshot.groups);
     final item = WatchlistItem(assetId: assetId);
     final index = groups.indexWhere(
@@ -228,9 +272,6 @@ final class WatchlistMembershipController
         items: <WatchlistItem>[...group.items, item],
       );
       return groups;
-    }
-    if (groups.length >= watchlistMaxGroups) {
-      throw const LoopChainException(LoopChainFailureKind.validationFailed);
     }
     groups.add(
       WatchlistGroup(
