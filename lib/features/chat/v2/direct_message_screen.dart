@@ -183,12 +183,15 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           CommunityPreviewNotice(mode: state.mode, resource: '私聊'),
-          const LoopNotice(
-            key: ValueKey<String>('dm-protection-note'),
-            icon: 'info',
-            title: '不声明端到端加密',
-            body: '私聊由 Stream Chat 承载，保护能力取决于供应商策略，LOOP 不做端到端加密承诺。',
-            margin: EdgeInsets.fromLTRB(16, 10, 16, 4),
+          LoopChatHeaderFold(
+            collapsed: loopChatKeyboardIsUp(context),
+            child: const LoopNotice(
+              key: ValueKey<String>('dm-protection-note'),
+              icon: 'info',
+              title: '不声明端到端加密',
+              body: '私聊由 Stream Chat 承载，保护能力取决于供应商策略，LOOP 不做端到端加密承诺。',
+              margin: EdgeInsets.fromLTRB(16, 10, 16, 4),
+            ),
           ),
         ],
       ),

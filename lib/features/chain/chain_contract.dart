@@ -439,6 +439,7 @@ final class LoopChainResourceState<T> {
     this.value,
     this.failureKind,
     this.busy = false,
+    this.refreshing = false,
   });
 
   factory LoopChainResourceState.initial(LoopChainGatewayMode mode) {
@@ -461,6 +462,14 @@ final class LoopChainResourceState<T> {
   /// only disables its actions.
   final bool busy;
 
+  /// A read is in flight over a value this block already holds.
+  ///
+  /// The page keeps showing what it read last time and marks it 更新中; it does
+  /// not fall back to a skeleton, because replacing readable data with a grey
+  /// placeholder loses information the user already had. Only a block with no
+  /// value at all loads as a skeleton.
+  final bool refreshing;
+
   bool get isPreview => mode == LoopChainGatewayMode.preview;
 
   bool get isReady => phase == LoopChainViewPhase.ready && value != null;
@@ -472,6 +481,7 @@ final class LoopChainResourceState<T> {
         : LoopChainViewPhase.ready,
     value: value,
     busy: busy,
+    refreshing: value != null,
   );
 
   LoopChainResourceState<T> ready(T next) => LoopChainResourceState<T>(
@@ -496,5 +506,6 @@ final class LoopChainResourceState<T> {
     value: value,
     failureKind: next ? null : failureKind,
     busy: next,
+    refreshing: refreshing,
   );
 }

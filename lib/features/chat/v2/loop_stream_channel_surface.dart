@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
@@ -364,3 +366,105 @@ class LoopChannelPinnedNotice extends StatelessWidget {
     margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
   );
 }
+
+/// One line of channel context above the message list.
+///
+/// Presence and the pinned announcement used to be two full-width cards. On a
+/// phone that is most of the first screen, and with the keyboard raised it was
+/// the part of the conversation the user could no longer read. They are one
+/// strip now (decision 0071):
+///
+/// * every segment the server actually stated, joined by `·`, one line;
+/// * nothing at all when the server stated none — an absent fact is not a
+///   card explaining its own absence;
+/// * nothing while the keyboard is up, because a person who is typing is
+///   reading the messages, not the header.
+///
+/// The strip sits above the list in the same column, so it can never cover a
+/// message.
+class LoopChatHeaderStrip extends StatelessWidget {
+  const LoopChatHeaderStrip({
+    super.key,
+    this.segments = const <String>[],
+    this.collapsed,
+  });
+
+  /// Already-formatted, server-stated segments (`在线 128`, `公告 …`). A caller
+  /// passes nothing for a fact it does not have; this widget never invents a
+  /// zero, a dash or a placeholder sentence.
+  final List<String> segments;
+
+  /// Whether the keyboard is up. Pass [loopChatKeyboardIsUp] read from the
+  /// screen's own context: a `Scaffold` body's `MediaQuery` has already had
+  /// `viewInsets.bottom` removed, so a widget under one cannot see the
+  /// keyboard for itself. `null` falls back to the ambient inset.
+  final bool? collapsed;
+
+  @override
+  Widget build(BuildContext context) {
+    final stated = segments
+        .map((segment) => segment.trim())
+        .where((segment) => segment.isNotEmpty)
+        .toList(growable: false);
+    if (stated.isEmpty) return const SizedBox.shrink();
+    if (collapsed ?? loopChatKeyboardIsUp(context)) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      key: const ValueKey<String>('loop-chat-header-strip'),
+      padding: const EdgeInsets.fromLTRB(16, 7, 16, 7),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: LoopColors.line)),
+      ),
+      child: Row(
+        children: <Widget>[
+          const LoopIcon('info', size: 15, color: LoopColors.text3),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              stated.join(' · '),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LoopTypography.sora(
+                size: 10,
+                weight: FontWeight.w400,
+                height: 1.4,
+                color: LoopColors.text3,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Header context that folds away while the keyboard is up.
+///
+/// A chat header explains the room; once the user is typing, the messages are
+/// what they need to see. This wrapper takes the header out of the column for
+/// exactly as long as the keyboard covers the screen, and puts it back when
+/// the keyboard goes down. It never overlays the list.
+class LoopChatHeaderFold extends StatelessWidget {
+  const LoopChatHeaderFold({required this.child, super.key, this.collapsed});
+
+  final Widget child;
+
+  /// See [LoopChatHeaderStrip.collapsed].
+  final bool? collapsed;
+
+  @override
+  Widget build(BuildContext context) =>
+      (collapsed ?? loopChatKeyboardIsUp(context))
+      ? const SizedBox.shrink()
+      : child;
+}
+
+/// Whether the software keyboard currently covers part of the screen.
+///
+/// Read it from the screen's own `build` context, above its `Scaffold`: with
+/// `resizeToAvoidBottomInset` the Scaffold hands its body a `MediaQuery` whose
+/// `viewInsets.bottom` is already zero, so a widget inside the body would
+/// always answer "no".
+bool loopChatKeyboardIsUp(BuildContext context) =>
+    MediaQuery.viewInsetsOf(context).bottom > 0;

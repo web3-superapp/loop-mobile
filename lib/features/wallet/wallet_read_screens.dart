@@ -121,6 +121,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       archetype: LoopPageArchetype.record,
       title: '钱包',
       tabPage: true,
+      // Balances the page already read stay on screen while the next read
+      // runs; only the 更新中 mark changes.
+      updating: balancesState?.refreshing ?? false,
       actions: <Widget>[
         LoopIconButton(
           key: const ValueKey<String>('wallet-manage-action'),

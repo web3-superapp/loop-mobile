@@ -113,14 +113,17 @@ class GroupChatScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       CommunityPreviewNotice(mode: mode, resource: '群聊'),
-                      const LoopNotice(
-                        key: ValueKey<String>('group-scope-note'),
-                        icon: 'info',
-                        title: '普通群与社区的区别',
-                        body:
-                            '普通群没有社区币、没有 Mining Weight，也没有 Community AI。'
-                            '带币社区在「社区」栏。',
-                        margin: EdgeInsets.fromLTRB(16, 10, 16, 4),
+                      LoopChatHeaderFold(
+                        collapsed: loopChatKeyboardIsUp(context),
+                        child: const LoopNotice(
+                          key: ValueKey<String>('group-scope-note'),
+                          icon: 'info',
+                          title: '普通群与社区的区别',
+                          body:
+                              '普通群没有社区币、没有 Mining Weight，也没有 Community AI。'
+                              '带币社区在「社区」栏。',
+                          margin: EdgeInsets.fromLTRB(16, 10, 16, 4),
+                        ),
                       ),
                     ],
                   ),

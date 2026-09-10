@@ -60,6 +60,7 @@ class CommunityStateBlock extends StatelessWidget {
     this.permissionTitle = '当前账号没有权限',
     this.skeleton = LoopSkeletonType.list,
     this.rows = 3,
+    this.refreshing = false,
   });
 
   final CommunityViewPhase phase;
@@ -70,6 +71,10 @@ class CommunityStateBlock extends StatelessWidget {
   final String permissionTitle;
   final LoopSkeletonType skeleton;
   final int rows;
+
+  /// `CommunityResourceState.refreshing`: a re-read over data the page already
+  /// shows. The block marks it instead of covering the data with a skeleton.
+  final bool refreshing;
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +118,10 @@ class CommunityStateBlock extends StatelessWidget {
           onRetry: onRetry,
         );
       case CommunityViewPhase.ready:
-        return const SizedBox.shrink();
+        return LoopUpdatingBadge(
+          key: const ValueKey<String>('community-state-updating'),
+          visible: refreshing,
+        );
     }
   }
 }
@@ -126,11 +134,15 @@ class CommunityUnavailableCard extends StatelessWidget {
     required this.fact,
     super.key,
     this.margin = const EdgeInsets.symmetric(horizontal: 16),
+    this.action,
   });
 
   final String label;
   final LoopUnavailableFact fact;
   final EdgeInsets margin;
+
+  /// The one next step, when one exists.
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -139,6 +151,7 @@ class CommunityUnavailableCard extends StatelessWidget {
       message: label,
       reason: communityUnavailableReason(fact.reasonCode),
       margin: margin,
+      action: action,
     );
   }
 }

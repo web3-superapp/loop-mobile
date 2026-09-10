@@ -35,6 +35,7 @@ final class CommunityResourceState<T> {
     this.value,
     this.failureKind,
     this.busy = false,
+    this.refreshing = false,
   });
 
   factory CommunityResourceState.initial(CommunityGatewayMode mode) {
@@ -57,6 +58,11 @@ final class CommunityResourceState<T> {
   /// only disables its actions.
   final bool busy;
 
+  /// A read is in flight over a value this block already holds. The page keeps
+  /// what it read last time and marks it 更新中 rather than falling back to a
+  /// skeleton; only a block with no value at all loads as a skeleton.
+  final bool refreshing;
+
   bool get isPreview => mode == CommunityGatewayMode.preview;
 
   bool get isReady => phase == CommunityViewPhase.ready && value != null;
@@ -68,6 +74,7 @@ final class CommunityResourceState<T> {
         : CommunityViewPhase.ready,
     value: value,
     busy: busy,
+    refreshing: value != null,
   );
 
   CommunityResourceState<T> ready(T next) => CommunityResourceState<T>(
@@ -92,5 +99,6 @@ final class CommunityResourceState<T> {
     value: value,
     failureKind: next ? null : failureKind,
     busy: next,
+    refreshing: refreshing,
   );
 }

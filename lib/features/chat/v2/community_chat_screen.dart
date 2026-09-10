@@ -18,7 +18,8 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 /// The channel is entered only through the server's own `chat.channelCid`.
 /// `syncing` is shown as "聊天权限同步中", never as unavailable, because LOOP has
 /// already recorded the membership intent. The pinned announcement and the
-/// online count have no source in this step and stay unavailable.
+/// online count have no source in this step, so the header strip states
+/// neither and takes no room (decision 0071).
 class CommunityChatScreen extends ConsumerStatefulWidget {
   const CommunityChatScreen({
     required this.communityId,
@@ -182,21 +183,18 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
       // The prototype's "@AI 提问 · 贴 CA 自动识别" hint is not reproduced: neither
       // capability exists yet, so the composer promises only a message.
       composerHint: '发消息',
+      // Presence and the pinned announcement are one line, and only when the
+      // server stated them. `onlineCount` and `announcements` are both
+      // `{status: unavailable}` projections in this step, so the strip is
+      // handed nothing and renders nothing: an absent fact does not earn a
+      // card explaining its own absence, and the message list keeps the room.
       header: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           CommunityPreviewNotice(mode: state.mode, resource: '社区官方群'),
-          CommunityUnavailableCard(
-            key: const ValueKey<String>('community-chat-online-unavailable'),
-            label: '在线人数',
-            fact: detail.onlineCount,
-          ),
-          CommunityUnavailableCard(
-            key: const ValueKey<String>(
-              'community-chat-announcement-unavailable',
-            ),
-            label: '置顶公告',
-            fact: detail.announcements,
+          LoopChatHeaderStrip(
+            key: const ValueKey<String>('community-chat-header-strip'),
+            collapsed: loopChatKeyboardIsUp(context),
           ),
         ],
       ),

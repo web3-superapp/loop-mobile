@@ -66,6 +66,9 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
       archetype: LoopPageArchetype.listing,
       title: '行情',
       tabPage: true,
+      // A re-read over an overview the page already shows is marked, not
+      // replaced by a skeleton.
+      updating: state.refreshing,
       actions: <Widget>[
         LoopIconButton(
           key: const ValueKey<String>('market-search-action'),

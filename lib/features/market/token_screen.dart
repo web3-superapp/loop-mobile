@@ -174,6 +174,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
       title: detail?.asset.symbol ?? 'Token',
       kicker: detail?.asset.name,
       onBack: widget.onBack,
+      updating: state.refreshing,
       actions: <Widget>[
         LoopIconButton(
           key: const ValueKey<String>('token-alerts-action'),

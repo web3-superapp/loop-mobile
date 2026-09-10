@@ -51,6 +51,7 @@ class LoopFocusPage extends StatelessWidget {
     this.primaryAction,
     this.disclosure,
     this.primaryActionBeforeDisclosure = true,
+    this.updating = false,
   });
 
   final LoopPageArchetype archetype;
@@ -69,6 +70,9 @@ class LoopFocusPage extends StatelessWidget {
   /// reachable on the first screen. Set false only when the disclosure is the
   /// page's own risk copy and must be read before acting.
   final bool primaryActionBeforeDisclosure;
+
+  /// The page is re-reading data it already shows (`state.refreshing`).
+  final bool updating;
 
   static const LoopLayoutMode layoutMode = LoopLayoutMode.focus;
 
@@ -92,6 +96,7 @@ class LoopFocusPage extends StatelessWidget {
                 onBack: onBack,
                 actions: actions,
                 minHeight: 72,
+                updating: updating,
               ),
               ?folio,
               // Focus bodies are short step pages: build them eagerly so
@@ -146,6 +151,7 @@ class LoopDashboardPage extends StatelessWidget {
     this.onBack,
     this.actions = const <Widget>[],
     this.tabPage = false,
+    this.updating = false,
   });
 
   final LoopPageArchetype archetype;
@@ -160,6 +166,9 @@ class LoopDashboardPage extends StatelessWidget {
 
   /// Top-level tab page: bottom inset comes from the shell.
   final bool tabPage;
+
+  /// The page is re-reading data it already shows (`state.refreshing`).
+  final bool updating;
 
   static const LoopLayoutMode layoutMode = LoopLayoutMode.dashboard;
 
@@ -186,6 +195,7 @@ class LoopDashboardPage extends StatelessWidget {
                   onBack: onBack,
                   actions: actions,
                   minHeight: 72,
+                  updating: updating,
                 ),
               ),
             ),
@@ -252,6 +262,7 @@ class LoopStreamPage extends StatelessWidget {
     this.filters,
     this.composer,
     this.tabPage = false,
+    this.updating = false,
   });
 
   final LoopPageArchetype archetype;
@@ -268,6 +279,9 @@ class LoopStreamPage extends StatelessWidget {
   final Widget collection;
   final LoopComposer? composer;
   final bool tabPage;
+
+  /// The page is re-reading data it already shows (`state.refreshing`).
+  final bool updating;
 
   static const LoopLayoutMode layoutMode = LoopLayoutMode.stream;
 
@@ -296,6 +310,7 @@ class LoopStreamPage extends StatelessWidget {
                 onBack: onBack,
                 actions: actions,
                 minHeight: 72,
+                updating: updating,
               ),
               ?folio,
               ?filters,

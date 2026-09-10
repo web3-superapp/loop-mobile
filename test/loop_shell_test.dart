@@ -66,7 +66,7 @@ void main() {
     expect(decoration.boxShadow, LoopDepth.tabBar);
   });
 
-  testWidgets('selected tab uses the Lime gradient and Ink, others Ink 62%', (
+  testWidgets('one Lime indicator marks the selection; the cells stay bare', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
@@ -109,20 +109,39 @@ void main() {
       false,
     ]);
 
-    BoxDecoration decorationOf(String label) {
-      final container = tester.widget<AnimatedContainer>(
-        find.descendant(
-          of: find.widgetWithText(LoopTabItem, label),
-          matching: find.byType(AnimatedContainer),
-        ),
-      );
-      return container.decoration! as BoxDecoration;
-    }
+    // Exactly one Lime ground exists, and it is not inside a cell: the cells
+    // draw no background of their own, so nothing can appear or disappear.
+    final indicator = find.byKey(const ValueKey<String>('loop-tab-indicator'));
+    expect(indicator, findsOneWidget);
+    final decoration =
+        tester.widget<Container>(indicator).decoration! as BoxDecoration;
+    expect(decoration.gradient, isA<LinearGradient>());
+    expect(
+      (decoration.gradient! as LinearGradient).colors.last,
+      LoopColors.lime,
+    );
+    expect(
+      find.descendant(of: find.byType(LoopTabItem), matching: indicator),
+      findsNothing,
+    );
+    expect(
+      tester.getCenter(indicator).dx,
+      moreOrLessEquals(
+        tester.getCenter(find.widgetWithText(LoopTabItem, '行情')).dx,
+      ),
+    );
 
-    final market = decorationOf('行情');
-    expect(market.gradient, isA<LinearGradient>());
-    expect((market.gradient! as LinearGradient).colors.last, LoopColors.lime);
-    expect(decorationOf('钱包').gradient, isNull);
+    // Material's ripple and press wash are off: a grey block under the finger
+    // would read as a second, contradicting selection.
+    final ink = tester.widget<InkWell>(
+      find.descendant(
+        of: find.widgetWithText(LoopTabItem, '钱包'),
+        matching: find.byType(InkWell),
+      ),
+    );
+    expect(ink.splashFactory, NoSplash.splashFactory);
+    expect(ink.highlightColor, Colors.transparent);
+    expect(ink.hoverColor, Colors.transparent);
 
     Color labelColor(String label) => tester
         .widget<Text>(
@@ -153,11 +172,83 @@ void main() {
       ),
     );
 
+    // The indicator travels: mid-flight it is between the two tabs, and it is
+    // still the same single widget — nothing was created or destroyed.
+    final from = tester.getCenter(indicator).dx;
     await tester.tap(find.widgetWithText(LoopTabItem, '钱包'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
     expect(selected, 4);
-    expect(decorationOf('钱包').gradient, isNotNull);
+    expect(find.byKey(const ValueKey<String>('loop-tab-indicator')), findsOne);
+    final travelling = tester.getCenter(indicator).dx;
+    expect(travelling, greaterThan(from));
+    await tester.pumpAndSettle();
+    expect(
+      tester.getCenter(indicator).dx,
+      moreOrLessEquals(
+        tester.getCenter(find.widgetWithText(LoopTabItem, '钱包')).dx,
+      ),
+    );
+    expect(travelling, lessThan(tester.getCenter(indicator).dx));
+    expect(labelColor('钱包'), LoopColors.ink);
+    expect(labelColor('行情'), LoopColors.inkMuted);
     semantics.dispose();
+  });
+
+  testWidgets('reduced motion moves the indicator without animating', (
+    tester,
+  ) async {
+    var selected = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: LoopTheme.dark,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: true),
+          child: child!,
+        ),
+        home: StatefulBuilder(
+          builder: (context, setState) => Scaffold(
+            bottomNavigationBar: LoopTabBar(
+              selectedIndex: selected,
+              onSelect: (index) => setState(() => selected = index),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final indicator = find.byKey(const ValueKey<String>('loop-tab-indicator'));
+    expect(find.byType(AnimatedAlign), findsNothing);
+    expect(
+      tester.getCenter(indicator).dx,
+      moreOrLessEquals(
+        tester.getCenter(find.widgetWithText(LoopTabItem, '社区')).dx,
+      ),
+    );
+
+    await tester.tap(find.widgetWithText(LoopTabItem, '钱包'));
+    // One frame, no elapsed time: the indicator is already at the destination.
+    await tester.pump();
+    expect(selected, 4);
+    expect(
+      tester.getCenter(indicator).dx,
+      moreOrLessEquals(
+        tester.getCenter(find.widgetWithText(LoopTabItem, '钱包')).dx,
+      ),
+    );
+    expect(
+      tester
+          .widget<Text>(
+            find.descendant(
+              of: find.widgetWithText(LoopTabItem, '钱包'),
+              matching: find.text('钱包'),
+            ),
+          )
+          .style!
+          .color,
+      LoopColors.ink,
+    );
   });
 
   testWidgets('tab pages fade and child pages push; reduced motion disables', (

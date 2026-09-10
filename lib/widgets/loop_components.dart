@@ -24,6 +24,7 @@ class LoopTopbar extends StatelessWidget {
     this.backLabel = '返回',
     this.actions = const <Widget>[],
     this.minHeight = 68,
+    this.updating = false,
   });
 
   final String title;
@@ -34,6 +35,10 @@ class LoopTopbar extends StatelessWidget {
   final String backLabel;
   final List<Widget> actions;
   final double minHeight;
+
+  /// The page is re-reading data it already shows. The topbar wears the
+  /// 更新中 mark; the page keeps its content and its actions.
+  final bool updating;
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +87,10 @@ class LoopTopbar extends StatelessWidget {
                 ],
               ),
             ),
+            if (updating) ...<Widget>[
+              const SizedBox(width: 8),
+              const LoopUpdatingBadge(),
+            ],
             for (final action in actions) ...<Widget>[
               const SizedBox(width: 6),
               action,
@@ -1779,7 +1788,20 @@ class LoopPowerHint extends StatelessWidget {
 // Skeleton (.sk / .sk-row / .sk-circle)
 // ---------------------------------------------------------------------------
 
-enum LoopSkeletonType { list, detail, chart }
+enum LoopSkeletonType {
+  list,
+  detail,
+  chart,
+
+  /// One or more inline list rows, without the list block's own page padding.
+  row,
+
+  /// One card-shaped placeholder: label line, figure line, meta line.
+  card,
+
+  /// One figure block: the number, then its caption.
+  figure,
+}
 
 /// `.sk`: Card2 block, radius 8, 1.4s opacity pulse to 45% (static under
 /// reduced motion). Skeletons keep the final layout and claim nothing.
@@ -1856,9 +1878,26 @@ class _LoopSkeletonBlockState extends State<LoopSkeletonBlock>
   }
 }
 
-/// The three prototype skeleton layouts (`skeleton-states`).
+/// The prototype skeleton layouts (`skeleton-states`) plus the three inline
+/// shapes a single block loads with.
+///
+/// A skeleton draws the layout that is about to arrive and nothing else: a
+/// list loads as rows, a card as a card, a figure as a figure. A block never
+/// borrows the whole page's shape, so nothing jumps when the data lands.
 class LoopSkeleton extends StatelessWidget {
   const LoopSkeleton({required this.type, super.key, this.rows = 3});
+
+  /// Inline list rows, for a block that already sits inside page padding.
+  const LoopSkeleton.row({Key? key, int rows = 3})
+    : this(type: LoopSkeletonType.row, rows: rows, key: key);
+
+  /// One card-shaped placeholder.
+  const LoopSkeleton.card({Key? key})
+    : this(type: LoopSkeletonType.card, key: key);
+
+  /// One figure-shaped placeholder (balance, count, price).
+  const LoopSkeleton.figure({Key? key})
+    : this(type: LoopSkeletonType.figure, key: key);
 
   final LoopSkeletonType type;
 
@@ -1868,9 +1907,11 @@ class LoopSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = switch (type) {
-      LoopSkeletonType.list => '列表加载中',
+      LoopSkeletonType.list || LoopSkeletonType.row => '列表加载中',
       LoopSkeletonType.detail => '详情加载中',
       LoopSkeletonType.chart => '图表加载中',
+      LoopSkeletonType.card => '卡片加载中',
+      LoopSkeletonType.figure => '数字加载中',
     };
     return Semantics(
       container: true,
@@ -1960,7 +2001,90 @@ class LoopSkeleton extends StatelessWidget {
               ],
             ),
           ),
+          // The inline shapes carry no page padding: the block that owns them
+          // already has its own.
+          LoopSkeletonType.row => Column(
+            key: const ValueKey<String>('loop-skeleton-row'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              for (var index = 0; index < rows.clamp(1, 8); index++)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: LoopSkeletonBlock(
+                          height: 12,
+                          widthFactor: <double>[0.46, 0.58, 0.38][index % 3],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const LoopSkeletonBlock(width: 46, height: 12),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          LoopSkeletonType.card => Container(
+            key: const ValueKey<String>('loop-skeleton-card'),
+            padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+            decoration: BoxDecoration(
+              color: LoopColors.card,
+              borderRadius: LoopRadius.control,
+              border: Border.all(color: LoopColors.line),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                LoopSkeletonBlock(height: 10, widthFactor: 0.28),
+                SizedBox(height: 10),
+                LoopSkeletonBlock(height: 20, widthFactor: 0.54),
+                SizedBox(height: 10),
+                LoopSkeletonBlock(height: 10, widthFactor: 0.4),
+              ],
+            ),
+          ),
+          LoopSkeletonType.figure => const Column(
+            key: ValueKey<String>('loop-skeleton-figure'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              LoopSkeletonBlock(height: 24, widthFactor: 0.42),
+              SizedBox(height: 6),
+              LoopSkeletonBlock(height: 10, widthFactor: 0.24),
+            ],
+          ),
         },
+      ),
+    );
+  }
+}
+
+/// The corner mark a block wears while it re-reads data it already has.
+///
+/// A refresh is not a load: the block keeps the values it read last time and
+/// says only that a newer answer is on the way. It never covers content,
+/// never disables an action and never claims the new answer arrived.
+class LoopUpdatingBadge extends StatelessWidget {
+  const LoopUpdatingBadge({super.key, this.visible = true, this.label = '更新中'});
+
+  final bool visible;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!visible) return const SizedBox.shrink();
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      label: label,
+      child: ExcludeSemantics(
+        child: LoopBadge(
+          label,
+          key: const ValueKey<String>('loop-updating-badge'),
+        ),
       ),
     );
   }
@@ -1970,8 +2094,15 @@ class LoopSkeleton extends StatelessWidget {
 // Empty and recovery states (.empty + chapter 9 contract)
 // ---------------------------------------------------------------------------
 
-/// `.empty` (refined): dashed Line border, radius 20, centred Text3 copy,
-/// one explanation of why and exactly one next step.
+/// `.empty` (S16-C): an inline strip, not a framed panel.
+///
+/// A missing collection is a sentence, not a room. The block is one 17px
+/// Text3 glyph, one line of copy, an optional second line and an optional
+/// action; its height follows its content, it draws no border and it claims
+/// no vertical space it does not use. The 190 call sites keep their existing
+/// arguments and the `loop-empty` key: only the presentation changed.
+///
+/// Whole-page unavailability is a different job — use [LoopPageBlock].
 class LoopEmpty extends StatelessWidget {
   const LoopEmpty({
     required this.message,
@@ -1980,7 +2111,12 @@ class LoopEmpty extends StatelessWidget {
     this.reason,
     this.action,
     this.margin = const EdgeInsets.symmetric(horizontal: 16),
+    this.iconSize = compactIconSize,
+    this.padding = const EdgeInsets.symmetric(vertical: 10),
   });
+
+  /// `.ico-sm` — the inline glyph size for a state strip.
+  static const double compactIconSize = 17;
 
   final String message;
   final String icon;
@@ -1990,57 +2126,131 @@ class LoopEmpty extends StatelessWidget {
   final Widget? action;
   final EdgeInsets margin;
 
+  /// Kept inside the prototype's inline glyph range (`.ico-xs`..`.ico`).
+  final double iconSize;
+
+  /// Inner padding. It stays small on purpose; a state strip is a line of
+  /// copy, so nothing here reserves a panel's worth of space.
+  final EdgeInsets padding;
+
   @override
   Widget build(BuildContext context) {
+    assert(
+      iconSize >= 15 && iconSize <= 20,
+      'LoopEmpty keeps the inline glyph between 15 and 20 px.',
+    );
+    final copy = LoopTypography.sora(
+      size: 11,
+      weight: FontWeight.w400,
+      height: 1.5,
+      color: LoopColors.text3,
+    );
     return Padding(
       padding: margin,
       child: Semantics(
         container: true,
-        child: Container(
+        child: Padding(
           key: const ValueKey<String>('loop-empty'),
-          padding: const EdgeInsets.fromLTRB(22, 34, 22, 34),
-          decoration: BoxDecoration(
-            borderRadius: LoopRadius.card,
-            border: Border.all(color: LoopColors.line),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          padding: padding,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              LoopIcon(
-                icon,
-                size: 34,
-                color: LoopColors.text3,
-                semanticLabel: message,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: LoopTypography.sora(
-                  size: 11,
-                  weight: FontWeight.w400,
-                  height: 1.5,
+              Padding(
+                // Optical alignment with the first text line.
+                padding: const EdgeInsets.only(top: 1),
+                child: LoopIcon(
+                  icon,
+                  size: iconSize,
                   color: LoopColors.text3,
+                  semanticLabel: message,
                 ),
               ),
-              if (reason != null) ...<Widget>[
-                const SizedBox(height: 6),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(message, style: copy),
+                    if (reason != null) ...<Widget>[
+                      const SizedBox(height: 2),
+                      Text(reason!, style: copy),
+                    ],
+                    if (action != null) ...<Widget>[
+                      const SizedBox(height: 10),
+                      Align(alignment: Alignment.centerLeft, child: action!),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The whole-page counterpart of [LoopEmpty].
+///
+/// A page that has nothing to show is the one place that earns the room: the
+/// brand mark, one heading, one explanation and at most one next step,
+/// centred in the space the page already owns. Blocks inside a page never
+/// use it — they use [LoopEmpty].
+class LoopPageBlock extends StatelessWidget {
+  const LoopPageBlock({
+    required this.title,
+    required this.message,
+    super.key,
+    this.action,
+    this.margin = const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+  });
+
+  final String title;
+  final String message;
+  final Widget? action;
+  final EdgeInsets margin;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      child: Center(
+        key: const ValueKey<String>('loop-page-block'),
+        child: Padding(
+          padding: margin,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 320),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const LoopBrandMark(
+                  kind: LoopBrandMarkKind.appIcon,
+                  height: 40,
+                ),
+                const SizedBox(height: 16),
                 Text(
-                  reason!,
+                  title,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  message,
                   textAlign: TextAlign.center,
                   style: LoopTypography.sora(
                     size: 11,
                     weight: FontWeight.w400,
-                    height: 1.5,
+                    height: 1.55,
                     color: LoopColors.text3,
                   ),
                 ),
+                if (action != null) ...<Widget>[
+                  const SizedBox(height: 18),
+                  action!,
+                ],
               ],
-              if (action != null) ...<Widget>[
-                const SizedBox(height: 18),
-                action!,
-              ],
-            ],
+            ),
           ),
         ),
       ),

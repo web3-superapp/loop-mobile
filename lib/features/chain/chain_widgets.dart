@@ -87,6 +87,7 @@ class LoopChainStateBlock extends StatelessWidget {
     this.skeleton = LoopSkeletonType.list,
     this.rows = 3,
     this.keyPrefix = 'chain',
+    this.refreshing = false,
   });
 
   final LoopChainViewPhase phase;
@@ -102,6 +103,10 @@ class LoopChainStateBlock extends StatelessWidget {
   final LoopSkeletonType skeleton;
   final int rows;
   final String keyPrefix;
+
+  /// `LoopChainResourceState.refreshing`: a re-read over data the page already
+  /// shows. The block marks it instead of covering the data with a skeleton.
+  final bool refreshing;
 
   @override
   Widget build(BuildContext context) {
@@ -154,7 +159,10 @@ class LoopChainStateBlock extends StatelessWidget {
           onRetry: onRetry,
         );
       case LoopChainViewPhase.ready:
-        return const SizedBox.shrink();
+        return LoopUpdatingBadge(
+          key: ValueKey<String>('$keyPrefix-state-updating'),
+          visible: refreshing,
+        );
     }
   }
 }
@@ -260,12 +268,17 @@ class LoopChainCommandPermission extends StatelessWidget {
 
 /// Renders one `{status: unavailable, reasonCode}` block. It never renders a
 /// figure, a zero, or a fixture in place of the missing fact.
+///
+/// It is an inline strip, like every other state block since decision 0071:
+/// one glyph, what is missing, why, and — when there is one — the single step
+/// that could change the answer.
 class LoopUnavailableCard extends StatelessWidget {
   const LoopUnavailableCard({
     required this.label,
     required this.reasonCode,
     super.key,
     this.margin = const EdgeInsets.symmetric(horizontal: 16),
+    this.action,
   });
 
   LoopUnavailableCard.fact({
@@ -273,11 +286,13 @@ class LoopUnavailableCard extends StatelessWidget {
     required LoopUnavailable fact,
     Key? key,
     EdgeInsets margin = const EdgeInsets.symmetric(horizontal: 16),
+    Widget? action,
   }) : this(
          label: label,
          reasonCode: fact.reasonCode,
          key: key,
          margin: margin,
+         action: action,
        );
 
   final String label;
@@ -287,6 +302,9 @@ class LoopUnavailableCard extends StatelessWidget {
   final String? reasonCode;
   final EdgeInsets margin;
 
+  /// The one next step, when one exists. A block with no next step shows none.
+  final Widget? action;
+
   @override
   Widget build(BuildContext context) {
     return LoopEmpty(
@@ -295,6 +313,7 @@ class LoopUnavailableCard extends StatelessWidget {
       message: label,
       reason: loopReasonCodeText(reasonCode),
       margin: margin,
+      action: action,
     );
   }
 }
