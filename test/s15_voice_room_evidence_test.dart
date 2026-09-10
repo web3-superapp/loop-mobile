@@ -202,7 +202,7 @@ void main() {
         find.byKey(const ValueKey<String>('voiceroom-evidence-pending')),
         findsNothing,
       );
-      expect(find.textContaining('不能创建通话'), findsNothing);
+      expect(find.textContaining('语音房还在验证中'), findsNothing);
       expect(voice.commands, contains('current:$testCommunityId'));
     });
 

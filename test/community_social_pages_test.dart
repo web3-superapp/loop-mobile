@@ -563,7 +563,7 @@ void main() {
         find.byKey(const ValueKey<String>('search-domain-unavailable-launch')),
         findsOneWidget,
       );
-      expect(find.textContaining('Launch 检索源尚未接入'), findsOneWidget);
+      expect(find.textContaining('Launch 搜索还没有开放'), findsOneWidget);
     });
 
     testWidgets('a result opens through its destination kind', (tester) async {
@@ -671,7 +671,8 @@ void main() {
         findsOneWidget,
       );
       expect(gateway.queries, isEmpty);
-      expect(find.textContaining('SEARCH_RUNTIME_UNAVAILABLE'), findsOneWidget);
+      expect(find.textContaining('SEARCH_RUNTIME_UNAVAILABLE'), findsNothing);
+      expect(find.textContaining('请稍后再试'), findsOneWidget);
     });
   });
 }

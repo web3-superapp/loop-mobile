@@ -115,7 +115,7 @@ void main() {
       );
       await scrollToS7Section(tester, snapshot);
       expect(snapshot, findsOneWidget);
-      expect(find.textContaining('还没有任何已结算的算力快照'), findsOneWidget);
+      expect(find.textContaining('还没有任何一次算力结算'), findsOneWidget);
     });
 
     testWidgets('the capability gate stops the read', (tester) async {
@@ -171,8 +171,8 @@ void main() {
         mining: FakeMiningGateway(),
       );
 
-      expect(find.textContaining('空列表按契约成立'), findsOneWidget);
-      expect(find.textContaining('不代表钱包没有持仓'), findsOneWidget);
+      expect(find.textContaining('空列表是正常结果'), findsOneWidget);
+      expect(find.textContaining('不代表你的钱包没有持仓'), findsOneWidget);
       expect(_figures(tester), isEmpty);
     });
 
@@ -231,7 +231,7 @@ void main() {
         find.byKey(const ValueKey<String>('mining-rewards-claim-notice')),
         findsOneWidget,
       );
-      expect(find.textContaining('奖励发放权限尚未确定'), findsWidgets);
+      expect(find.textContaining('奖励发放还没有开启'), findsWidgets);
     });
 
     testWidgets('an empty ledger is not "no output"', (tester) async {
@@ -324,7 +324,7 @@ void main() {
         find.byKey(const ValueKey<String>('mining-community-weight-pending')),
         findsOneWidget,
       );
-      expect(find.textContaining('权重仍在审核中'), findsOneWidget);
+      expect(find.textContaining('权重还在审核中'), findsOneWidget);
       expect(_figures(tester), isEmpty);
     });
 
@@ -438,7 +438,7 @@ void main() {
         find.byKey(const ValueKey<String>('launch-unavailable-已批准的公式版本')),
         findsOneWidget,
       );
-      expect(find.textContaining('没有已批准的挖矿公式版本'), findsWidgets);
+      expect(find.textContaining('挖矿公式还没有批准'), findsWidgets);
     });
 
     testWidgets('the referral ladder comes from the server, verbatim', (

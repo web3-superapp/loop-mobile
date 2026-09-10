@@ -129,6 +129,8 @@ REQUIRED_FILES = (
     "docs/decisions/0057-adopt-v2-chain-market-and-wallet-read.md",
     "docs/decisions/0058-adopt-v2-launch-catalog-and-mining-skeleton.md",
     "docs/decisions/0062-adopt-the-launch-chain-slot.md",
+    "docs/decisions/0070-speak-to-the-user-not-to-the-backlog.md",
+    "docs/copy-glossary.md",
     "lib/core/chain/loop_chain_ids.dart",
     "test/s9_dual_chain_test.dart",
     "test/s9_dual_chain_pages_test.dart",
@@ -6978,9 +6980,11 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             "'/chat'",
             "'/profile'",
         ),
+        # The page states the formula is unapproved in the user's words; the
+        # backend step id it used to cite is banned copy (decision 0070).
         "lib/features/mining/mining_screen.dart": (
             "class MiningScreen",
-            "D19",
+            "挖矿公式还没有批准的版本",
         ),
         # Step 5 moved the Wallet destination to the V2 read-only screens. The
         # prototype's four funds-action entries stay in place and each opens
@@ -7492,6 +7496,133 @@ def check_source_guards(root: Path) -> list[str]:
         for fragment, reason in forbidden.items():
             if fragment in text:
                 errors.append(f"{path.relative_to(root)} contains forbidden `{fragment}`: {reason}")
+    return errors
+
+
+# ---------------------------------------------------------------------------
+# User-visible copy (decision 0070)
+# ---------------------------------------------------------------------------
+
+# A literal is user-visible zh-CN copy when it carries a CJK ideograph. Wire
+# constants, `reasonCode` keys and env-var names never do, so the vocabulary
+# rules below apply to copy only and leave the transport layer alone.
+CJK_CHARACTER = re.compile(r"[\u4e00-\u9fff]")
+
+# Step ids never belong on a screen, in any language.
+COPY_STEP_ID = (
+    re.compile(r"[（(]D\d+[)）]"),
+    re.compile(r"(?<![A-Za-z0-9_])[DS]\d+ ·"),
+)
+
+# These only fire inside zh-CN copy; the same fragments are legitimate as wire
+# constants and as the keys of a `reasonCode` -> sentence map.
+COPY_INTERNAL_VOCABULARY = (
+    (re.compile(r"rule:"), "a rule id"),
+    (re.compile(r"_PENDING\b|_UNAVAILABLE\b"), "a reason code"),
+    (re.compile(r"口径|观测|投影|聚合"), "internal vocabulary"),
+)
+
+# Diagnostics are written for engineers, never rendered on a surface.
+COPY_LOGGING_CALLS = ("debugPrint(", "developer.log(", "assert(", "LoopLog.")
+
+
+def _dart_string_literals(source: str) -> list[tuple[int, str]]:
+    """Every Dart string literal in `source`, as `(line, body)` pairs.
+
+    Comments are skipped so a `// D19` note never counts as copy.
+    """
+
+    literals: list[tuple[int, str]] = []
+    index = 0
+    line = 1
+    length = len(source)
+    while index < length:
+        character = source[index]
+        if character == "\n":
+            line += 1
+            index += 1
+            continue
+        if source.startswith("//", index):
+            while index < length and source[index] != "\n":
+                index += 1
+            continue
+        if source.startswith("/*", index):
+            depth = 1
+            index += 2
+            while index < length and depth:
+                if source[index] == "\n":
+                    line += 1
+                if source.startswith("/*", index):
+                    depth += 1
+                    index += 2
+                    continue
+                if source.startswith("*/", index):
+                    depth -= 1
+                    index += 2
+                    continue
+                index += 1
+            continue
+        if character in "'\"":
+            raw = index > 0 and source[index - 1] == "r"
+            quote = character * 3 if source.startswith(character * 3, index) else character
+            opened = line
+            index += len(quote)
+            body: list[str] = []
+            while index < length:
+                if source[index] == "\\" and not raw:
+                    if source[index + 1 : index + 2] == "\n":
+                        line += 1
+                    body.append(source[index : index + 2])
+                    index += 2
+                    continue
+                if source.startswith(quote, index):
+                    index += len(quote)
+                    break
+                if source[index] == "\n":
+                    line += 1
+                    if len(quote) == 1:
+                        break
+                body.append(source[index])
+                index += 1
+            literals.append((opened, "".join(body)))
+            continue
+        index += 1
+    return literals
+
+
+def check_user_visible_copy(root: Path) -> list[str]:
+    """Keep internal identifiers and internal vocabulary out of the UI.
+
+    Step ids (`D19`), rule ids (`rule:…`), reason codes and the words 口径 /
+    观测 / 投影 / 聚合 are how the product talks to itself. `docs/copy-glossary.md`
+    holds the replacement table; a screen says what cannot be done now instead.
+    """
+
+    errors: list[str] = []
+    for path in sorted((root / "lib").rglob("*.dart")):
+        source = read_text(path)
+        lines = source.splitlines()
+        relative = path.relative_to(root)
+        for line, literal in _dart_string_literals(source):
+            physical = lines[line - 1] if 0 < line <= len(lines) else ""
+            if any(call in physical for call in COPY_LOGGING_CALLS):
+                continue
+            excerpt = literal if len(literal) <= 60 else f"{literal[:60]}…"
+            for pattern in COPY_STEP_ID:
+                if pattern.search(literal):
+                    errors.append(
+                        f"{relative}:{line} shows a step id in `{excerpt}`: "
+                        "user-visible copy carries no D-numbers"
+                    )
+                    break
+            if not CJK_CHARACTER.search(literal):
+                continue
+            for pattern, label in COPY_INTERNAL_VOCABULARY:
+                if pattern.search(literal):
+                    errors.append(
+                        f"{relative}:{line} shows {label} in `{excerpt}`: "
+                        "see docs/copy-glossary.md for the replacement"
+                    )
     return errors
 
 
@@ -8359,7 +8490,7 @@ def check_s6_money_action_contract(root: Path) -> list[str]:
                 "the Swap confirmation must be gated on capability.isUsable, "
                 "which folds in the pending device evidence"
             )
-        if "真机证据未取得" not in source:
+        if "兑换还在验证中" not in source:
             errors.append(
                 "the Swap confirmation must name the pending device evidence"
             )
@@ -10313,6 +10444,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_notification_preferences_application_contract(root))
     errors.extend(check_perp_positions_application_contract(root))
     errors.extend(check_source_guards(root))
+    errors.extend(check_user_visible_copy(root))
     errors.extend(check_records(root))
     visible, visible_error = git_visible_paths(root)
     if visible_error:
@@ -10338,7 +10470,8 @@ def main() -> int:
         "S5 chain/market/wallet-read truth, S6 money-action truth, "
         "S7 launch/mining/referral truth, S9 dual chain slots, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
-        "verification, authenticated social/friend/group boundaries, records, and secret rules are consistent."
+        "verification, authenticated social/friend/group boundaries, records, user-visible copy, "
+        "and secret rules are consistent."
     )
     return 0
 

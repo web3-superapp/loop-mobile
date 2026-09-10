@@ -82,7 +82,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
         heading: overview == null
             ? launchMissingFigure
             : '${overview.segments.total} 个已登记项目',
-        caption: '目录、申请与轮次配置来自 LOOP 数据库；链上状态、价格与毕业进度尚无来源。',
+        caption: '目录、申请与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。',
         stamp: overview == null ? null : 'OFF-CHAIN',
       ),
       sections: <Widget>[
@@ -91,9 +91,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
             key: const ValueKey<String>('launch-capability-unavailable'),
             icon: 'warn',
             message: 'Launch 当前不可用',
-            reason: capability.reasonCode == null
-                ? '尚未读取到能力清单，本页不请求任何 Launch 数据。'
-                : '服务端原因：${capability.reasonCode}。',
+            reason: '请稍后再试。',
           )
         else if (overview == null)
           LaunchStateBlock(

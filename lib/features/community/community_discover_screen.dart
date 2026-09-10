@@ -32,8 +32,8 @@ enum CommunityDiscoverSegment {
 
   /// The step that will give the segment a source.
   String get deferredReason => switch (this) {
-    CommunityDiscoverSegment.power => '社区算力排序需要挖矿口径（D19）确定后才有来源。',
-    CommunityDiscoverSegment.discussion => '讨论量排序需要 Stream 接通（D7）后才有来源。',
+    CommunityDiscoverSegment.power => '算力排序暂时不能用，挖矿开放后再试。',
+    CommunityDiscoverSegment.discussion => '讨论量排序暂时不能用，聊天开放后再试。',
     _ => '',
   };
 }
@@ -123,7 +123,7 @@ class _CommunityDiscoverScreenState
         heading: state.phase == CommunityViewPhase.ready
             ? '${state.items.length} 个社区'
             : communityMissingFigure,
-        caption: '排序只使用可核查事实：服务端维护的成员数与创建时间。热门不等于推荐。',
+        caption: '排序只用成员数和创建时间这两项可核对的信息。热门不等于推荐。',
         stamp: state.recommendation == null ? null : 'RULE',
       ),
       filters: Padding(
@@ -171,16 +171,14 @@ class _CommunityDiscoverScreenState
               ),
               icon: 'warn',
               message: '社区模块当前不可用',
-              reason: capability.reasonCode == null
-                  ? '尚未读取到能力清单，本页不请求社区目录。'
-                  : '服务端原因：${capability.reasonCode}。',
+              reason: '请稍后再试。',
             )
           else if (state.phase != CommunityViewPhase.ready)
             CommunityStateBlock(
               phase: state.phase,
               failureKind: state.failureKind,
               emptyMessage: '没有符合条件的社区',
-              emptyReason: '该排序下服务端没有返回任何社区。',
+              emptyReason: '这个排序下没有社区。',
               onRetry: () => unawaited(controller.reload()),
             )
           else ...<Widget>[

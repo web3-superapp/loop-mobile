@@ -385,7 +385,7 @@ final class MarketCandlesUnavailable extends MarketCandleBlock {
 
 /// zh-CN copy for a candle `labelKey`. Unknown keys keep a neutral sentence.
 String marketCandleLabelText(String? labelKey) => switch (labelKey) {
-  'market.candles.onChainSwapAggregate' => '链上成交聚合',
+  'market.candles.onChainSwapAggregate' => '按成交价折算',
   null => '',
   _ => '来源标注 $labelKey',
 };

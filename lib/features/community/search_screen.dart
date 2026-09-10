@@ -152,9 +152,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
               key: const ValueKey<String>('search-capability-unavailable'),
               icon: 'warn',
               message: '搜索当前不可用',
-              reason: capability.reasonCode == null
-                  ? '尚未读取到能力清单，本页不发起任何搜索请求。'
-                  : '服务端原因：${capability.reasonCode}。',
+              reason: '请稍后再试。',
             )
           else if (state.domainUnavailable)
             LoopEmpty(
@@ -173,8 +171,8 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                   ? '没有匹配的结果'
                   : '输入至少 $searchMinimumRunes 个字符开始搜索',
               emptyReason: searchQueryIsSubmittable(state.query)
-                  ? '服务端在该域下没有返回任何结果。'
-                  : '搜索按前缀匹配，只返回已激活且允许被发现的账号与已验证的社区。',
+                  ? '这个分类下没有结果。'
+                  : '搜索按开头匹配，只显示允许被搜到的账号与已验证的社区。',
               onRetry: () => unawaited(controller.submit(state.query)),
             )
           else ...<Widget>[

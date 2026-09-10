@@ -63,7 +63,7 @@ void main() {
         findsOne,
       );
       expect(find.text('社区模块当前不可用'), findsOne);
-      expect(find.textContaining('尚未读取到能力清单'), findsOne);
+      expect(find.textContaining('社区还没有准备好'), findsOne);
       expect(find.text('—'), findsWidgets);
 
       for (final inventedFact in <String>[
@@ -216,7 +216,7 @@ void main() {
         textScaler: const TextScaler.linear(2),
       );
 
-      final notice = find.textContaining('尚未读取到能力清单');
+      final notice = find.textContaining('社区还没有准备好');
       await tester.scrollUntilVisible(notice, 240);
       expect(notice, findsOne);
       expect(tester.takeException(), isNull);

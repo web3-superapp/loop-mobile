@@ -106,7 +106,7 @@ void main() {
       );
 
       expect(find.text('读不到'), findsOneWidget);
-      expect(find.textContaining('RPC 端点当前不可达'), findsWidgets);
+      expect(find.textContaining('链上节点当前连不上'), findsWidgets);
       expect(find.text('0'), findsNothing);
     });
 
@@ -183,7 +183,7 @@ void main() {
         find.byKey(const ValueKey<String>('wallet-capability-block')),
         findsOneWidget,
       );
-      expect(find.textContaining('没有配置任何 BSC RPC 端点'), findsOneWidget);
+      expect(find.textContaining('链上数据暂时读不到'), findsOneWidget);
     });
 
     testWidgets('a disconnected provider is an error, not an empty wallet', (
@@ -199,7 +199,7 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('没有回退到演示数据'), findsOneWidget);
+      expect(find.textContaining('没有执行任何操作'), findsOneWidget);
       expect(find.text('这个账号还没有钱包'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('wallet-directory-create-wallet')),
@@ -451,7 +451,7 @@ void main() {
       );
 
       expect(find.text('净值不可用'), findsWidgets);
-      expect(find.textContaining('价格来源尚未配置'), findsWidgets);
+      expect(find.textContaining('暂时读不到价格'), findsWidgets);
     });
 
     testWidgets('a walletless account is offered a wallet, not a skeleton', (
@@ -665,7 +665,7 @@ void main() {
       );
 
       expect(find.byKey(const ValueKey<String>('receive-qr')), findsNothing);
-      expect(find.textContaining('没有回退到演示数据'), findsOneWidget);
+      expect(find.textContaining('没有执行任何操作'), findsOneWidget);
     });
   });
 
@@ -863,11 +863,11 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey<String>('tx-history-seg-3')));
       await tester.pumpAndSettle();
-      expect(find.textContaining('原生 BNB 转账历史本步没有来源'), findsOneWidget);
+      expect(find.textContaining('BNB 转账记录暂时读不到'), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey<String>('tx-history-seg-4')));
       await tester.pumpAndSettle();
-      expect(find.textContaining('跨链与挖矿领取记录本步没有来源'), findsOneWidget);
+      expect(find.textContaining('跨链与挖矿领取记录暂时读不到'), findsOneWidget);
     });
 
     testWidgets('an indexer that never ran is unavailable, not empty', (
@@ -883,7 +883,7 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('不是"没有记录"'), findsOneWidget);
+      expect(find.textContaining('不是没有记录'), findsOneWidget);
       expect(find.text('还没有链上活动'), findsNothing);
     });
 
@@ -1018,7 +1018,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('networks-custom-rpc')),
       );
-      expect(find.textContaining('自定义 RPC 与自行添加网络本步不开放'), findsOneWidget);
+      expect(find.textContaining('自定义网络还没有开放'), findsOneWidget);
     });
   });
 }

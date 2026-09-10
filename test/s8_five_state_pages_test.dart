@@ -291,7 +291,7 @@ void main() {
             find.byKey(ValueKey<String>('${testCase.slug}-state-permission')),
             findsOneWidget,
           );
-          expect(find.textContaining('当前账号无权执行此操作'), findsWidgets);
+          expect(find.textContaining('当前账号没有执行这个操作的权限'), findsWidgets);
           expect(find.byKey(ValueKey<String>(testCase.readyKey)), findsNothing);
         },
       );
@@ -674,7 +674,7 @@ void main() {
 
       expect(chat.commands, contains('leave-group:$testResolvedGroupId'));
       expect(find.text('已退出群聊'), findsNothing);
-      expect(find.textContaining('当前账号无权执行此操作'), findsOneWidget);
+      expect(find.textContaining('当前账号没有执行这个操作的权限'), findsOneWidget);
       // The page never asks the device for a permission of its own.
       expect(find.textContaining('去系统设置'), findsNothing);
     });

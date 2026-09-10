@@ -3730,6 +3730,51 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_source_guards(root)
         self.assertEqual(3, len(result))
 
+    def test_user_visible_copy_rejects_internal_identifiers(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "demo" / "demo_screen.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "// D19 belongs in a comment, never on a screen.\n"
+                "const step = '社区算力排序需要挖矿口径（D19）确定后才有来源。';\n"
+                "const eyebrow = 'D8 · Margin account';\n"
+                "const rule = '推荐由 rule:verified-members-v1 生成。';\n"
+                "const code = '服务端原因：MINING_RUNTIME_UNAVAILABLE。';\n"
+                "const projection = '在线人数只来自服务端观测。';\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_user_visible_copy(root)
+
+        joined = "\n".join(result)
+        self.assertIn("shows a step id", joined)
+        self.assertIn("shows a rule id", joined)
+        self.assertIn("shows a reason code", joined)
+        self.assertIn("shows internal vocabulary", joined)
+        # The step id trips both the D-number rule and the 口径 rule, so the
+        # one line is reported twice; every other line is reported once.
+        self.assertEqual(6, len(result))
+
+    def test_user_visible_copy_allows_wire_constants_and_logs(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "integrations" / "backend" / "v2" / "codec.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "const wire = 'rule:verified-members-v1';\n"
+                "const reason = 'MINING_RUNTIME_UNAVAILABLE';\n"
+                "const env = 'LOOP_BACKEND_BASE_URL';\n"
+                "const level = 'L1 · 我直接邀请并已验证的人';\n"
+                "void trace() { debugPrint('投影失败'); }\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_user_visible_copy(root)
+
+        self.assertEqual([], result)
+
+    def test_repository_copy_carries_no_internal_identifiers(self) -> None:
+        self.assertEqual([], check_harness.check_user_visible_copy(REPOSITORY_ROOT))
+
     def test_wallet_creation_must_remain_principal_bound(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

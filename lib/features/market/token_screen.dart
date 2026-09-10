@@ -268,7 +268,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
               communityIcon: 'info',
               communityLine: detail.price.isAvailable
                   ? '报价 ${loopFactProvenance(detail.price)}'
-                  : '本卡片的每个数字都取自下方同一份事实，缺失的一项显示服务端原因而不是 0。',
+                  : '这张卡片的每个数字都取自下方同一份数据，读不到的一项会说明原因，不会显示 0。',
               chartRangeLabel: '1H · 最近 $loopSparklineWindow 根收盘价',
               chart: TokenCardSparkline(
                 assetId: assetId,
@@ -328,8 +328,8 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           _SecurityBlock(block: detail.security),
           const LoopNotice(
             key: ValueKey<String>('token-facts-notice'),
-            title: '只给带来源与时间的事实',
-            body: '这里不输出评级、评分或综合结论。缺少某一项表示来源没有报告它，不代表安全或不安全。',
+            title: '只给标注出处和时间的数据',
+            body: '这里不给评级、评分或结论。少了某一项只表示读不到，不代表安全或不安全。',
           ),
           const LoopLabel('通知'),
           _TokenNotificationFeed(assetId: assetId),
@@ -339,7 +339,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('token-holders-entry'),
                 title: '持有人分布',
-                subtitle: '持有人总数来自 GoPlus；分布与集中度本步没有来源',
+                subtitle: '持有人总数来自 GoPlus；分布与集中度暂时读不到',
                 onTap: () => _open(MarketAssetRoute.holders(assetId)),
               ),
               LoopRecordRow(
@@ -414,7 +414,7 @@ class _TokenHero extends StatelessWidget {
         archetype: LoopFolioArchetype.record,
         kicker: 'TOKEN FACTS',
         heading: loopTruncatedAssetId(assetId),
-        caption: '资产事实尚未读取成功，本页不展示任何推测数字。',
+        caption: '资产数据暂时读不到，这里不显示数字。',
       );
     }
     final price = resolved.price;
@@ -769,8 +769,8 @@ class _SecurityBlock extends StatelessWidget {
         if (facts.isEmpty) {
           return const LoopEmpty(
             key: ValueKey<String>('token-security-empty'),
-            message: '来源没有报告任何合约事实',
-            reason: '缺少某一项只表示来源没有报告它，不代表安全或不安全。',
+            message: '暂时读不到合约信息',
+            reason: '少了某一项只表示读不到，不代表安全或不安全。',
           );
         }
         return LoopSurfaceCard(
@@ -845,7 +845,7 @@ class _TokenNotificationFeedState
       return const LoopEmpty(
         key: ValueKey<String>('token-feed-empty'),
         message: '还没有与这个资产相关的通知',
-        reason: '价格提醒触发后会出现在这里；推送通道尚未接入。',
+        reason: '价格提醒触发后会出现在这里。推送还没有开放。',
       );
     }
     return LoopRecordGroup(

@@ -95,12 +95,12 @@ String launchPendingConfirmationLabel(String? configVersion) =>
 /// zh-CN copy for a failed S7 operation. It states what did not happen; it
 /// never claims a result the server did not confirm.
 String launchFailureReason(LaunchFailureKind? kind) => switch (kind) {
-  LaunchFailureKind.offline => '设备当前离线，本页没有读到任何服务端数据，也没有提交任何操作。',
+  LaunchFailureKind.offline => '设备已离线，这一页没有读到数据，也没有提交任何操作。',
   LaunchFailureKind.cancelled => '请求已被取消，结果未知。请查看最新状态后再决定是否重试。',
-  LaunchFailureKind.outcomeUnknown => '服务返回的数据不符合约定，结果未确认。请刷新查看最新状态，不要重复提交。',
+  LaunchFailureKind.outcomeUnknown => '返回的数据不完整，结果未确认。请刷新查看最新状态，不要重复提交。',
   LaunchFailureKind.unavailable => '该能力当前不可用，没有执行任何操作，也没有回退到演示数据。',
-  LaunchFailureKind.permissionDenied => '当前账号无权执行此操作，服务端已拒绝。',
-  LaunchFailureKind.policyBlocked => '服务端策略拒绝了本次操作（例如绑定窗口已经关闭）。',
+  LaunchFailureKind.permissionDenied => '当前账号没有执行这个操作的权限。',
+  LaunchFailureKind.policyBlocked => '这次操作没有通过，可能是绑定窗口已经关闭。',
   LaunchFailureKind.notFound => '目标不存在、已被移除，或对当前账号不可见。',
   LaunchFailureKind.stale => '当前状态不允许这个操作，请刷新后按最新状态重新决定。',
   LaunchFailureKind.versionConflict => '资料已被其他设备修改。请重新加载后再提交，本次没有覆盖任何内容。',
@@ -108,8 +108,8 @@ String launchFailureReason(LaunchFailureKind? kind) => switch (kind) {
   LaunchFailureKind.bootstrapRequired => '账号尚未完成初始化，请稍后重试。',
   LaunchFailureKind.validationFailed => '输入内容不符合要求，请修改后重试。',
   LaunchFailureKind.idempotencyConflict => '同一操作已被提交过且内容不同，请检查最新状态后再试。',
-  LaunchFailureKind.invalidData => '服务返回的数据不符合约定，本页没有采纳任何内容。',
-  LaunchFailureKind.unexpected => '操作没有完成，未暴露供应商细节。',
+  LaunchFailureKind.invalidData => '返回的数据不完整，这一页没有采用任何内容。',
+  LaunchFailureKind.unexpected => '操作没有完成，请稍后再试。',
   null => '操作没有完成。',
 };
 
@@ -125,29 +125,41 @@ bool launchOutcomeIsUnresolved(LaunchFailureKind kind) =>
 /// An unknown code keeps a neutral sentence rather than inventing a cause. No
 /// entry restates a rate, a cap, a supply or a tax: those numbers do not exist
 /// until the contract and formula baselines are delivered.
+/// zh-CN sentence for one `reviewReasonCode` on a returned Launch application.
+///
+/// The code is an internal identifier; it never reaches the screen. An
+/// unrecognised code keeps a neutral sentence rather than inventing a cause.
+String launchReviewReasonText(String reasonCode) => switch (reasonCode) {
+  'narrative_too_short' => '项目简介太短，请补充后重新提交。',
+  'narrative_missing' => '缺少项目简介，请补充后重新提交。',
+  'links_unreachable' => '官方链接打不开，请检查后重新提交。',
+  'ticker_conflict' => '代号已被占用，请换一个再提交。',
+  'duplicate_submission' => '这个项目已经提交过，请勿重复申请。',
+  _ => '申请被退回，请补充材料后重新提交。',
+};
+
 String launchReasonCodeText(String? reasonCode) => switch (reasonCode) {
   // launch · contract baseline
-  'LAUNCH_CONTRACT_BASELINE_PENDING' =>
-    'Launch 合约基线尚未交付，链上状态、购买、退款、领取与建池全部无法证明，本页不构造任何交易。',
-  'LAUNCH_CONFIG_PENDING_CONFIRMATION' => '该配置槽位还没有已确认的版本，数值待确认。',
-  'LAUNCH_POOL_EVIDENCE_UNAVAILABLE' => '没有可引用的流动性池证据，毕业步骤保持待触发。',
-  'LAUNCH_ECONOMY_CONTRACT_PENDING' => '总量、发行与生态税需要合约基线，本页只展示可从库中证明的计数。',
-  'LAUNCH_RUNTIME_UNAVAILABLE' => 'Launch 模块已启用，但服务端依赖尚未配齐。',
-  'TIER_MODE_PENDING' => '资格模式尚未配置，当前没有资格结论；资格不依赖质押。',
-  'STAKING_CONTRACT_PENDING' => '质押合约尚未交付，本页整页不可执行。',
-  'KYB_PROVIDER_NOT_SELECTED' => 'KYB 服务商尚未选定，主体审核状态待接入。',
-  'ATTACHMENT_STORAGE_NOT_SELECTED' => '附件存储尚未选定，本页不提供上传。',
+  'LAUNCH_CONTRACT_BASELINE_PENDING' => 'Launch 合约还没有上线，链上状态、购买、退款与领取都暂时不可用。',
+  'LAUNCH_CONFIG_PENDING_CONFIRMATION' => '这一项还没有确认的配置，数值待定。',
+  'LAUNCH_POOL_EVIDENCE_UNAVAILABLE' => '还读不到流动性池信息，毕业步骤保持待触发。',
+  'LAUNCH_ECONOMY_CONTRACT_PENDING' => '总量、发行与生态税要等合约上线，这里只显示 LOOP 能核对的数量。',
+  'LAUNCH_RUNTIME_UNAVAILABLE' => 'Launch 暂时不可用，稍后再试。',
+  'TIER_MODE_PENDING' => '这次发射的资格规则还没有配置。资格不依赖质押。',
+  'STAKING_CONTRACT_PENDING' => '质押还没有开放，这一页暂时不能操作。',
+  'KYB_PROVIDER_NOT_SELECTED' => '开放后会在这里显示审核状态。',
+  'ATTACHMENT_STORAGE_NOT_SELECTED' => '暂时不能上传附件。',
   // mining · formula baseline
-  'MINING_FORMULA_BASELINE_PENDING' => '没有已批准的挖矿公式版本，算力、产量、排行与邀请加成全部无法计算。',
-  'MINING_SNAPSHOT_NOT_AVAILABLE' => '还没有任何已结算的算力快照。',
-  'MINING_RUNTIME_UNAVAILABLE' => 'Mining 模块已启用，但服务端依赖尚未配齐。',
-  'REWARD_AUTHORITY_PENDING' => '奖励发放权限尚未确定，待领取数量无法证明，领取入口保持禁用。',
-  'COMMUNITY_WEIGHT_PENDING_REVIEW' => '该社区的挖矿权重仍在审核中，尚未授予数值。',
+  'MINING_FORMULA_BASELINE_PENDING' => '挖矿公式还没有批准，算力、产量、排行与邀请加成都暂时不可用。',
+  'MINING_SNAPSHOT_NOT_AVAILABLE' => '还没有任何一次算力结算。',
+  'MINING_RUNTIME_UNAVAILABLE' => '挖矿暂时不可用，稍后再试。',
+  'REWARD_AUTHORITY_PENDING' => '奖励发放还没有开启，暂时不能领取。',
+  'COMMUNITY_WEIGHT_PENDING_REVIEW' => '这个社区的挖矿权重还在审核中。',
   // referral
-  'REFERRAL_RUNTIME_UNAVAILABLE' => 'Referral 模块已启用，但服务端依赖尚未配齐。',
+  'REFERRAL_RUNTIME_UNAVAILABLE' => '邀请暂时不可用，稍后再试。',
   'PROFILE_ACTIVATION_REQUIRED' => '需要先完成 LOOP ID 激活，才会有绑定窗口。',
-  null => '该字段当前没有可信来源。',
-  _ => '该字段当前没有可信来源。',
+  null => '这一项暂时读不到。',
+  _ => '这一项暂时读不到。',
 };
 
 /// The reviewed page states for an S7 surface.

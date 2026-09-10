@@ -90,8 +90,8 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
         kicker: 'MARKET SIGNALS',
         heading: watchlistCount == null ? '行情信号' : '$watchlistCount 个自选资产',
         caption: overview == null
-            ? '行情尚未读取成功，本页不展示任何推测数字。'
-            : '每个数字都带来源与观察时间 · '
+            ? '行情暂时读不到，这里不显示数字。'
+            : '每个数字都标注出处和时间 · '
                   '本次读取于 ${loopRelativeTime(overview.observedAt)}',
         stamp: watchlistCount == null ? null : '$watchlistCount WATCHED',
       ),
@@ -108,7 +108,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
             phase: state.phase,
             failureKind: state.failureKind,
             emptyMessage: '暂时没有可展示的行情',
-            emptyReason: '加入自选后，这里会显示带来源的价格事实。',
+            emptyReason: '加入自选后，这里会显示价格，并标注出处。',
             onRetry: () => unawaited(
               ref.read(marketOverviewControllerProvider.notifier).reload(),
             ),
@@ -132,7 +132,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
                 key: const ValueKey<String>('market-new-pairs-entry'),
                 title: '新币发现',
                 subtitle: overview.newPairsAvailable
-                    ? '已登记池与新对，按来源标注展示'
+                    ? '已登记的池与新交易对，均标注出处'
                     : loopReasonCodeText(overview.newPairsReasonCode),
                 trailingBadge: overview.newPairsAvailable
                     ? null
@@ -155,7 +155,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
           const LoopNotice(
             key: ValueKey<String>('market-truth-notice'),
             title: '不只看价格',
-            body: 'LOOP 只展示带来源与观察时间的事实，不输出评分、评级或结论。缺来源时显示原因，不显示 0。',
+            body: 'LOOP 只显示标注了出处和时间的数据，不给评分、评级或结论。读不到时会说明原因，不会显示 0。',
           ),
         ],
       ],
@@ -225,7 +225,7 @@ class _TrendingBlock extends StatelessWidget {
               const LoopEmpty(
                 key: ValueKey<String>('market-trending-empty'),
                 message: '暂时没有可排序的资产',
-                reason: 'registry 里还没有带成交量事实的资产。',
+                reason: '还没有可以显示成交量的资产。',
               )
             else
               LoopRecordGroup(

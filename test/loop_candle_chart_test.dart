@@ -177,16 +177,16 @@ void main() {
     test('a quality marker exists for every non-fresh quality', () {
       expect(loopFactQualityMarker(LoopFactQuality.fresh), isNull);
       expect(loopFactQualityMarker(LoopFactQuality.stale), '数据可能过期');
-      expect(loopFactQualityMarker(LoopFactQuality.derived), '链上成交聚合');
+      expect(loopFactQualityMarker(LoopFactQuality.derived), '按成交价折算');
       expect(loopFactQualityMarker(LoopFactQuality.proxied), '以 WBNB 计价');
     });
 
     test('an unknown reason code keeps a neutral sentence', () {
-      expect(loopReasonCodeText('SOMETHING_NEW'), '该字段当前没有可信来源。');
-      expect(loopReasonCodeText(null), '该字段当前没有可信来源。');
+      expect(loopReasonCodeText('SOMETHING_NEW'), '这一项暂时读不到。');
+      expect(loopReasonCodeText(null), '这一项暂时读不到。');
       expect(
         loopReasonCodeText('BSC_CHAIN_ID_MISMATCH'),
-        contains('chainId 56'),
+        contains('不是 BNB Smart Chain'),
       );
     });
   });

@@ -105,7 +105,7 @@ void main() {
       );
       await scrollToS7Section(tester, boost);
       expect(boost, findsOneWidget);
-      expect(find.textContaining('没有已批准的挖矿公式版本'), findsWidgets);
+      expect(find.textContaining('挖矿公式还没有批准'), findsWidgets);
       // The prototype's final boost figure never returns.
       expect(find.textContaining('2,840'), findsNothing);
       expect(find.textContaining('182 位'), findsNothing);

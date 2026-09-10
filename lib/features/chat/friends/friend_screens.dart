@@ -87,7 +87,7 @@ class _FriendListPageState extends ConsumerState<FriendListPage> {
       return const <Widget>[
         LoopStateCard(
           key: ValueKey<String>('friends-service-unavailable'),
-          title: '好友服务尚未接入',
+          title: '好友还没有开放',
           message: '后端好友目录与关系接口完成前，这里不会展示演示好友，也不会发起网络请求。',
           icon: Icons.people_outline_rounded,
           tone: LoopTone.warning,
@@ -278,7 +278,7 @@ class _AddFriendPageState extends ConsumerState<AddFriendPage> {
         if (state.phase == FriendSearchPhase.unavailable)
           const LoopStateCard(
             key: ValueKey<String>('friend-search-unavailable'),
-            title: '用户搜索尚未接入',
+            title: '用户搜索还没有开放',
             message: '后端发现与好友请求接口完成前，生产环境不会搜索用户或创建本地假关系。',
             icon: Icons.person_search_outlined,
             tone: LoopTone.warning,
@@ -563,8 +563,8 @@ class _CreateFriendGroupPageState extends ConsumerState<CreateFriendGroupPage> {
         if (group.phase == FriendGroupPhase.unavailable)
           const LoopStateCard(
             key: ValueKey<String>('friend-group-unavailable'),
-            title: '建群服务尚未接入',
-            message: '后端完成好友校验与 Stream 建群契约前，生产环境不会创建频道或写入成员。',
+            title: '创建群聊还没有开放',
+            message: '创建群聊还没有开放，这里不会创建任何群或添加成员。',
             icon: Icons.group_add_outlined,
             tone: LoopTone.warning,
           )

@@ -1014,7 +1014,7 @@ abstract final class LoopRouteManifest {
       slug: 'server-error',
       path: '/system/error',
       module: LoopRouteModule.system,
-      title: '服务端错误',
+      title: '服务出错',
       prototypeOrder: 83,
       step: 1,
       status: LoopRouteStatus.implemented,

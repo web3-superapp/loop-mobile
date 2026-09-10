@@ -25,7 +25,7 @@ void main() {
         onSecondaryAction: () {},
       ),
     );
-    expect(find.text('服务状态未接入'), findsOneWidget);
+    expect(find.text('服务状态还没有开放'), findsOneWidget);
     expect(find.text('服务暂时不可用'), findsNothing);
     expect(find.text('重试'), findsNothing);
     expect(find.text('联系客服'), findsNothing);
@@ -59,7 +59,7 @@ void main() {
       find.bySemanticsLabel(RegExp('错误 502.*追踪号 7f3a2c9e')),
       findsOneWidget,
     );
-    expect(find.text('服务状态未接入'), findsNothing);
+    expect(find.text('服务状态还没有开放'), findsNothing);
     expect(find.text('返回 LOOP'), findsNothing);
     await tester.tap(find.text('重试'));
     await tester.tap(find.text('联系客服'));

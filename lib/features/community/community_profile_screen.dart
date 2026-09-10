@@ -97,7 +97,7 @@ class _CommunityProfileScreenState
         kicker: 'COMMUNITY RECORD',
         heading: community?.name ?? communityMissingFigure,
         caption: community == null
-            ? '社区档案尚未读取成功，本页不展示任何推测数字。'
+            ? '社区资料暂时读不到，这里不显示数字。'
             : '${community.memberCount} 名成员 · 创建于 '
                   '${communityObservedAtLabel(community.createdAt)}',
         stamp: community == null
@@ -124,9 +124,7 @@ class _CommunityProfileScreenState
             ),
             icon: 'warn',
             message: '社区模块当前不可用',
-            reason: capability.reasonCode == null
-                ? '尚未读取到能力清单，本页不请求社区档案。'
-                : '服务端原因：${capability.reasonCode}。',
+            reason: '请稍后再试。',
           )
         else if (detail == null)
           CommunityStateBlock(
@@ -183,7 +181,7 @@ class _CommunityProfileScreenState
             const LoopEmpty(
               key: ValueKey<String>('community-profile-no-asset'),
               message: '未绑定资产',
-              reason: '该社区没有绑定合约地址，因此不展示任何代币卡片或市场数字。',
+              reason: '这个社区没有绑定代币，因此不显示代币卡片或行情。',
             )
           else
             _BoundAssetCard(
@@ -231,7 +229,7 @@ class _CommunityProfileScreenState
     final confirmed = await confirmCommunityAction(
       context,
       title: '提交社区资料修改？',
-      body: '短链接与验证状态不能通过本接口修改。是否接受由服务端判定。',
+      body: '短链接与验证状态不能在这里修改。',
       confirmLabel: '提交',
       sheetKey: 'community-edit-confirm-sheet',
     );
@@ -256,9 +254,7 @@ class _CommunityProfileScreenState
     final confirmed = await confirmCommunityAction(
       context,
       title: joined ? '加入这个社区？' : '退出这个社区？',
-      body: joined
-          ? '加入后你会出现在成员目录里。是否继续由服务端判定。'
-          : '退出后你将从成员目录中移除。社区所有者需要先转让所有权才能退出。',
+      body: joined ? '加入后你会出现在成员列表里。' : '退出后你将从成员目录中移除。社区所有者需要先转让所有权才能退出。',
       confirmLabel: joined ? '加入' : '退出',
       sheetKey: 'community-membership-sheet',
     );
@@ -417,7 +413,7 @@ class _MembershipActions extends StatelessWidget {
             title: '所有者不能直接退出',
             body:
                 '先在「成员」页对某位成员执行「转让所有者」，你会变成普通成员，'
-                '之后才能退出。服务端在转让前会拒绝所有者的退出请求。',
+                '之后才能退出。转让之前，所有者不能退出社区。',
             margin: EdgeInsets.fromLTRB(16, 0, 16, 14),
           ),
       ],
@@ -451,11 +447,11 @@ class _BoundAssetCard extends StatelessWidget {
         model: LoopTokenCardModel(
           symbol: loopTruncatedAssetId(assetKey),
           identifier: assetKey,
-          priceReason: '价格无来源',
+          priceReason: '暂无价格',
           communityIcon: 'info',
           communityLine:
-              '该地址由社区所有者登记，社区模块尚未解析它。价格、市值、流动性与持有人均无来源，'
-              '本卡片不展示任何市场数字；下面的走势线来自行情模块自己的读取。',
+              '这个地址由社区所有者登记，还没有解析。价格、市值、流动性与持有人暂时都读不到，'
+              '这张卡片不显示行情数字，下面的走势线来自行情页。',
           chartRangeLabel: '1H · 最近 $loopSparklineWindow 根收盘价',
           chart: TokenCardSparkline(
             assetId: assetKey,

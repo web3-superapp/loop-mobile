@@ -261,10 +261,10 @@ class _MoneySignSheetState extends State<MoneySignSheet> {
           // submitted", and the confirmation stays closed.
           _state = LoopSignSheetState.complete;
           _reason = outcome.txHash == null
-              ? '钱包已经签名，但服务端没有记录到这次提交。请在结果页查看状态，不要重复签名。'
-              : '钱包已经广播（${outcome.txHash}），但服务端没有接受这次上报'
-                    '（${outcome.reasonCode}）。这笔交易可能已经上链。'
-                    '请在结果页查看并稍后重新上报，不要重复签名。';
+              ? '钱包已经签名，但这次提交还没有记录到。请到结果页查看状态，不要重复签名。'
+              : '钱包已经广播（${outcome.txHash}），但这次上报没有被接受。'
+                    '这笔交易可能已经上链，请在结果页查看并稍后重新上报，'
+                    '不要重复签名。';
         case MoneySignStatus.refused:
           _state = LoopSignSheetState.simulationFailed;
           _reason = loopReasonCodeText(outcome.reasonCode);
@@ -273,7 +273,7 @@ class _MoneySignSheetState extends State<MoneySignSheet> {
           _submitted = false;
         case MoneySignStatus.walletRejected:
           _state = LoopSignSheetState.simulationFailed;
-          _reason = '钱包没有完成签名，没有提交任何交易（${outcome.reasonCode}）。';
+          _reason = '钱包没有完成签名，没有提交任何交易。';
           _submitted = false;
       }
     });
@@ -425,23 +425,22 @@ String moneyPolicyRefusalText(LoopChainException failure) {
       : '';
   return switch (rule) {
     MoneyPolicyRule.assetNotInAllowlist =>
-      '这个资产不在本步的灰度名单里，服务端拒绝了这笔操作。名单由服务端配置，'
-          '客户端无法调整；请换一个已登记的资产。',
+      '这个资产还不在可操作的名单里，这笔操作没有通过。名单由 LOOP 维护，'
+          '不能在应用里自行调整；请换一个已登记的资产。',
     MoneyPolicyRule.canaryCeilingExceeded =>
-      '$figures这笔操作超过了服务端配置的灰度单笔上限。'
-          '这不是你的钱包策略：安全中心的自定义上限尚未交付，本步暂不可调，请降低本次金额。',
+      '$figures这笔操作超过了当前的单笔上限。'
+          '这不是你自己设的限额。自定义上限还没有开放，请降低本次金额。',
     MoneyPolicyRule.unlimitedExposureExceedsCeiling =>
-      '$figures无限授权按实际敞口（min(额度, 当前余额)）计算，已超过服务端的灰度上限。'
-          '安全中心的自定义上限尚未交付，本步暂不可调；请改用限额授权，或先降低该资产余额。',
-    MoneyPolicyRule.assetBlocked => '该资产在注册表里已被标记为 blocked，服务端不接受针对它的任何资金动作。',
-    MoneyPolicyRule.priceImpactBlocked =>
-      '这笔兑换的价格影响达到了硬阻断阈值，服务端拒绝执行。请减小金额或稍后再试。',
+      '$figures无限授权按当前余额计算敞口，已超过当前上限。'
+          '自定义上限还没有开放。请改用限额授权，或先降低这个资产的余额。',
+    MoneyPolicyRule.assetBlocked => '这个资产已被屏蔽，不能进行任何资金操作。',
+    MoneyPolicyRule.priceImpactBlocked => '这笔兑换的价格影响过大，已被阻止。请减小金额或稍后再试。',
     MoneyPolicyRule.nativeAssetNotApprovable =>
       '原生 BNB 没有授权面：它不是 ERC-20，没有 allowance 可以授权或回收。'
           '这一步不适用于原生资产。',
     _ =>
-      '服务端按当前策略拒绝了这笔操作，没有提交任何交易。'
-          '安全中心的自定义上限尚未交付，本步暂不可调。',
+      '当前策略不允许这笔操作，没有提交任何交易。'
+          '自定义上限还没有开放。',
   };
 }
 
@@ -493,7 +492,7 @@ class MoneyPolicyNotice extends StatelessWidget {
           ? '原生资产不能授权'
           : '被策略拒绝，没有提交任何交易',
       purpose: stepUp
-          ? '这一步需要二次验证。二次验证尚未开放，服务端已拒绝，'
+          ? '这一步需要二次验证，二次验证还没有开放，'
                 '没有签名、没有广播，也没有提交任何交易。'
                 '请到安全中心查看当前可用的验证方式。'
           : failure.kind == LoopChainFailureKind.regionBlocked

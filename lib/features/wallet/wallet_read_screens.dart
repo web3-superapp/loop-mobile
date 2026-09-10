@@ -159,7 +159,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           LoopEmpty(
             key: const ValueKey<String>('wallet-directory-no-active'),
             message: '还没有选定当前钱包',
-            reason: '这个账号已经有钱包，但服务端没有标记活跃钱包。到“我的钱包”里选一个后，余额才会读取。',
+            reason: '这个账号已经有钱包，但还没有选定当前钱包。到“我的钱包”里选一个后才会显示余额。',
             action: LoopButton(
               key: const ValueKey<String>('wallet-directory-pick'),
               label: '我的钱包',
@@ -210,7 +210,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           if (balances!.balances.isEmpty)
             const LoopEmpty(
               key: ValueKey<String>('wallet-balances-empty'),
-              message: 'registry 里还没有可读资产',
+              message: '还没有可读取的资产',
               reason: '登记资产后，这里会为每一个资产恒定保留一行。',
             )
           else
@@ -229,7 +229,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             key: const ValueKey<String>('wallet-gas-reserve'),
             text:
                 '手续费保留 ${loopFormatDecimal(balances.gasReservePolicy.nativeReserve)} BNB'
-                ' · 由服务端配置 ${balances.gasReservePolicy.configVersion} 下发',
+                ' · 配置 ${balances.gasReservePolicy.configVersion}',
           ),
           // Decision 0038: the Launch chain block exists only when the
           // backend published one. Its balance is a testnet figure and is
@@ -260,7 +260,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('wallet-send-entry'),
                 title: '发送',
-                subtitle: '服务端构造交易，本机签名并广播',
+                subtitle: '交易由 LOOP 构造，在本机签名并广播',
                 onTap: () => _open('/wallet/send'),
               ),
               LoopRecordRow(
@@ -357,8 +357,8 @@ class _WalletPrimary extends StatelessWidget {
           '${active.truncatedAddress} · '
               '${netWorth is LoopNetWorthValued && netWorth.partial ? '部分资产未估值' : '净值不是可用余额'}',
         (_, true, _) => '这个账号还没有钱包，创建后余额会出现在这里。',
-        (_, _, null) => '钱包清单尚未读取成功，本页不展示任何余额。',
-        _ => '还没有选定当前钱包，本页不展示任何余额。',
+        (_, _, null) => '钱包列表暂时读不到，这里不显示余额。',
+        _ => '还没有选定当前钱包，这里不显示余额。',
       },
       stamp: netWorth is LoopNetWorthValued ? 'NET WORTH' : null,
       trailing: LoopIconButton(
@@ -435,7 +435,7 @@ class _NetWorthScreenState extends ConsumerState<NetWorthScreen> {
           LoopNetWorthUnavailable() => '净值不可用',
           null => '净值明细',
         },
-        caption: '这是展示信息，不是可用余额；24h 涨跌与走势图没有后端来源。',
+        caption: '这是展示信息，不是可用余额。24h 涨跌与走势图暂时读不到。',
         stamp: netWorth is LoopNetWorthValued && netWorth.partial
             ? 'PARTIAL'
             : null,
@@ -654,10 +654,10 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
             key: ValueKey<String>('wallet-asset-missing-row'),
             icon: 'warn',
             message: '这个资产不在可读清单里',
-            reason: '只有登记在 registry 里的资产才会有余额行。',
+            reason: '只有已登记的资产才会显示余额。',
           )
         else ...<Widget>[
-          const LoopLabel('余额口径'),
+          const LoopLabel('余额说明'),
           _BalanceBreakdown(row: row, snapshot: balancesState.value!.snapshot),
           const LoopLabel('资产事实'),
           _RegistryFactsCard(state: registry, assetId: assetId),
@@ -880,7 +880,7 @@ class _RegistryFactsCard extends StatelessWidget {
             <String>[
               '名称与精度只来自链上调用',
               if (asset.source.blockNumber != null)
-                '观测高度 ${asset.source.blockNumber}',
+                '区块高度 ${asset.source.blockNumber}',
               if (asset.source.verifiedAt != null)
                 '校验于 ${loopRelativeTime(asset.source.verifiedAt!)}',
             ].join(' · '),
@@ -982,7 +982,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
             key: ValueKey<String>('receive-no-network'),
             icon: 'warn',
             message: '没有可接收的网络',
-            reason: '服务端没有下发任何可接收网络。',
+            reason: '暂时读不到可接收的网络。',
           )
         else ...<Widget>[
           _ReceiveQrCard(network: network),
@@ -1397,7 +1397,7 @@ class _TransactionHistoryScreenState
         archetype: LoopFolioArchetype.record,
         kicker: 'WALLET ACTIVITY',
         heading: page == null ? '交易历史' : '${page.items.length} 笔',
-        caption: '只包含 registry 资产的 ERC-20 转账；每条带交易哈希、区块与确认数。',
+        caption: '只包含已登记资产的 ERC-20 转账，每条带交易哈希、区块与确认数。',
       ),
       sections: <Widget>[
         if (blocked)
@@ -1641,7 +1641,7 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
             : '${status.rpc.healthyCount} / ${status.rpc.endpoints.length} 正常',
         caption: status?.launchChain == null
             ? '只有 BNB Smart Chain 一条网络；端点以不可逆引用显示，永远不下发 RPC 地址。'
-            : '主网 BNB Smart Chain 加上服务端发布的 Launch 链；'
+            : '主网 BNB Smart Chain 加上 LOOP 发布的 Launch 链；'
                   '端点以不可逆引用显示，永远不下发 RPC 地址。',
       ),
       sections: <Widget>[
@@ -1766,7 +1766,7 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
           LoopProvenanceFooter(
             key: const ValueKey<String>('networks-registry'),
             text:
-                'registry 可读资产 ${status.registry.readableAssetCount} 个 · '
+                '可读资产 ${status.registry.readableAssetCount} 个 · '
                 '已登记池 ${status.registry.registeredPoolCount} 个',
           ),
           const LoopLabel('设置'),

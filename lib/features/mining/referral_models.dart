@@ -217,12 +217,12 @@ final class ReferralOverview {
 /// zh-CN copy for one referral level. The description is a relationship depth,
 /// never a rank or a progression.
 String referralLevelDescription(int level) => switch (level) {
-  1 => 'L1 · 我直接邀请并经服务端验证的人',
+  1 => 'L1 · 我直接邀请并已验证的人',
   2 => 'L2 · 我的 L1 再邀请的人',
   3 => 'L3 · 我的 L2 再邀请的人',
   4 => 'L4 · 我的 L3 再邀请的人',
   5 => 'L5 · 我的 L4 再邀请的人',
-  _ => '服务端定义的关系层级',
+  _ => '邀请关系的层级',
 };
 
 /// Normalises what the user typed before it leaves the device.

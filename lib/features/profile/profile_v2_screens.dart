@@ -195,13 +195,13 @@ String profileFailureReason(ProfileGatewayFailureKind? kind) => switch (kind) {
   ProfileGatewayFailureKind.unavailable => '资料服务当前不可用，没有任何修改被保存。',
   ProfileGatewayFailureKind.offline => '设备当前离线，资料未能读取，也没有提交任何修改。',
   ProfileGatewayFailureKind.permissionDenied =>
-    '服务端按当前策略拒绝了对账号资料的读取或写入，没有发生任何变化。'
-        '所需权限由服务端授予，客户端无法调整。',
+    '当前策略不允许读取或修改账号资料，没有发生任何变化。'
+        '这项权限不能在应用里自行调整。',
   ProfileGatewayFailureKind.regionBlocked =>
-    '服务端按当前地区规则拒绝了对账号资料的读取或写入，没有发生任何变化。'
+    '你所在的地区暂时不能读取或修改账号资料，没有发生任何变化。'
         '这与账号无关，换一个账号也不会改变结果。',
   ProfileGatewayFailureKind.stepUpRequired =>
-    '这一步需要二次验证。二次验证尚未开放，服务端已拒绝，没有发生任何变化。'
+    '这一步需要二次验证，二次验证还没有开放，没有发生任何变化。'
         '请到安全中心查看当前可用的验证方式。',
   ProfileGatewayFailureKind.versionConflict => '资料在别处已被修改。请重新载入后再保存。',
   ProfileGatewayFailureKind.idempotencyConflict => '提交冲突，已重置，请再试一次。',
@@ -210,7 +210,7 @@ String profileFailureReason(ProfileGatewayFailureKind? kind) => switch (kind) {
   ProfileGatewayFailureKind.aliasReserved => '该名称属于 LOOP 保留词，请换一个再试。',
   ProfileGatewayFailureKind.aliasBlocked => '该名称包含不允许的词，请换一个再试。',
   ProfileGatewayFailureKind.invalidData => '服务返回的资料不符合约定，没有采纳任何内容。',
-  ProfileGatewayFailureKind.unexpected => '资料操作没有完成，未暴露供应商细节。',
+  ProfileGatewayFailureKind.unexpected => '资料操作没有完成，请稍后再试。',
   null => '资料操作没有完成。',
 };
 
@@ -218,19 +218,19 @@ String privacyFailureReason(PrivacyGatewayFailureKind? kind) => switch (kind) {
   PrivacyGatewayFailureKind.unavailable => '隐私服务当前不可用，没有任何修改被保存。',
   PrivacyGatewayFailureKind.offline => '设备当前离线，隐私设置未能读取，也没有提交任何修改。',
   PrivacyGatewayFailureKind.permissionDenied =>
-    '服务端按当前策略拒绝了对隐私设置的读取或写入，没有发生任何变化。'
-        '所需权限由服务端授予，客户端无法调整；这些开关的当前取值仍以服务端为准。',
+    '当前策略不允许读取或修改隐私设置，没有发生任何变化。'
+        '这项权限不能在应用里自行调整；开关的当前状态以 LOOP 记录为准。',
   PrivacyGatewayFailureKind.regionBlocked =>
-    '服务端按当前地区规则拒绝了对隐私设置的读取或写入，没有发生任何变化。'
+    '你所在的地区暂时不能读取或修改隐私设置，没有发生任何变化。'
         '这与账号无关，换一个账号也不会改变结果。',
   PrivacyGatewayFailureKind.stepUpRequired =>
-    '修改隐私设置需要二次验证。二次验证尚未开放，服务端已拒绝，没有发生任何变化。'
+    '修改隐私设置需要二次验证，二次验证还没有开放，没有发生任何变化。'
         '请到安全中心查看当前可用的验证方式。',
   PrivacyGatewayFailureKind.versionConflict => '隐私设置在别处已被修改。请重新载入后再保存。',
   PrivacyGatewayFailureKind.bootstrapRequired => '账号尚未完成初始化，请稍后重试。',
   PrivacyGatewayFailureKind.validationFailed => '提交的隐私设置不被接受，请检查后重试。',
   PrivacyGatewayFailureKind.invalidData => '服务返回的隐私设置不符合约定，没有采纳任何内容。',
-  PrivacyGatewayFailureKind.unexpected => '隐私操作没有完成，未暴露供应商细节。',
+  PrivacyGatewayFailureKind.unexpected => '隐私操作没有完成，请稍后再试。',
   null => '隐私操作没有完成。',
 };
 
@@ -351,7 +351,7 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
         const LoopEmpty(
           key: ValueKey<String>('profile-metrics-unavailable'),
           message: 'LOOP 余额、质押与算力暂不可读',
-          reason: '资产与挖矿数据源尚未接入，这里不展示任何推测数字。',
+          reason: '资产与挖矿数据还没有开放，这里不显示任何数字。',
         ),
         const LoopLabel('我的社区'),
         ProfileCommunitiesRow(onNavigate: widget.onNavigate),
@@ -361,16 +361,16 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-launch-history'),
               title: '参与记录',
-              subtitle: 'Launch 参与数据尚未接入',
-              trailing: '未接入',
+              subtitle: 'Launch 参与数据还没有开放',
+              trailing: '未开放',
               position: LoopRowPosition.first,
               onTap: () => widget.onNavigate('launch-history'),
             ),
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-launch-tier'),
               title: '我的资格',
-              subtitle: '质押与 Tier 数据尚未接入',
-              trailing: '未接入',
+              subtitle: '质押与 Tier 数据还没有开放',
+              trailing: '未开放',
               position: LoopRowPosition.last,
               onTap: () => widget.onNavigate('launch-tier'),
             ),
@@ -406,7 +406,7 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-connections'),
               title: '关注与粉丝',
-              subtitle: '关系数据尚未接入',
+              subtitle: '关注数据还没有开放',
               onTap: () => widget.onNavigate('connections'),
             ),
             LoopRecordRow(
@@ -511,7 +511,7 @@ class _ProfileCommunitiesRowState extends ConsumerState<ProfileCommunitiesRow> {
       trailing = communityMissingFigure;
       subtitle = switch (state.phase) {
         CommunityViewPhase.loading => '正在读取社区成员关系',
-        CommunityViewPhase.offline => '设备当前离线，未读到社区成员关系',
+        CommunityViewPhase.offline => '设备已离线，没有读到社区成员关系',
         CommunityViewPhase.unavailable => '社区服务当前不可用，未读取成员关系',
         CommunityViewPhase.permission => '需要先完成 LOOP ID 激活才能读取成员关系',
         // `empty` cannot reach here: a ready aggregate with no membership is

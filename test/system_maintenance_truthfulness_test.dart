@@ -25,7 +25,7 @@ void main() {
         onSecondaryAction: () {},
       ),
     );
-    expect(find.text('维护状态未接入'), findsOneWidget);
+    expect(find.text('维护状态还没有开放'), findsOneWidget);
     expect(find.text('维护通知已生效'), findsNothing);
     expect(find.text('再次检查'), findsNothing);
     expect(find.text('查看服务状态'), findsNothing);
@@ -53,7 +53,7 @@ void main() {
     );
     expect(find.text('03:00–05:00 UTC'), findsOneWidget);
     expect(find.text('WINDOW'), findsOneWidget);
-    expect(find.text('维护状态未接入'), findsNothing);
+    expect(find.text('维护状态还没有开放'), findsNothing);
     expect(find.text('返回 LOOP'), findsNothing);
     await tester.tap(find.text('再次检查'));
     await tester.tap(find.text('查看服务状态'));

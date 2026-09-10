@@ -356,7 +356,7 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
           const LoopEmpty(
             key: ValueKey<String>('chat-forward-missing-source'),
             icon: 'warn',
-            message: '缺少来源会话',
+            message: '找不到原会话',
             reason: '请从会话页进入转发，本页不会猜测要转发哪个会话的消息。',
           )
         else if (state.loading)
@@ -501,7 +501,7 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
     final confirmed = await confirmCommunityAction(
       context,
       title: '转发到这个会话？',
-      body: '已选择的消息会以新消息发出，并标注来源会话。已删除或没有正文的消息会被跳过。',
+      body: '选中的消息会作为新消息发出，并标注来自哪个会话。已删除或没有正文的消息会跳过。',
       confirmLabel: '转发',
       sheetKey: 'chat-forward-confirm-sheet',
     );
@@ -630,7 +630,7 @@ class _ChatMergePreviewScreenState
             key: ValueKey<String>('chat-merge-privacy-note'),
             icon: 'shield',
             title: '不输出身份',
-            body: '钱包地址、昵称与内部 ID 永远不会进入合并长图，合并结果也不会上传到 LOOP 服务端。',
+            body: '钱包地址、昵称与内部编号不会出现在长图里，长图也不会上传。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           LoopButtonPair(

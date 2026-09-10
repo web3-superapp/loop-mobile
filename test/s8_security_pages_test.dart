@@ -391,7 +391,7 @@ void main() {
       final error = find.byKey(const ValueKey<String>('devices-command-error'));
       await scrollToS8Section(tester, error);
       expect(error, findsOneWidget);
-      expect(find.textContaining('二次验证尚未开放'), findsWidgets);
+      expect(find.textContaining('二次验证还没有开放'), findsWidgets);
       expect(
         find.byKey(const ValueKey<String>('devices-revoke-outcome')),
         findsNothing,

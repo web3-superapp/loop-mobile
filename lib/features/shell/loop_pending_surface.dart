@@ -23,7 +23,7 @@ class LoopPendingSurface extends StatelessWidget {
   final LoopRouteEntry entry;
   final bool _unavailable;
 
-  static const String pendingHeadline = '该页面尚未接入';
+  static const String pendingHeadline = '该页面还没有开放';
   static const String unavailableHeadline = 'Pay 暂不可用';
 
   /// Pay is the only fail-closed manifest page in this step; the wording is
@@ -31,7 +31,7 @@ class LoopPendingSurface extends StatelessWidget {
   static const String unavailableMessage =
       'Pay 尚未开放。此页面不会扫码、不会请求相机权限、不会收集支付信息，也不会提交任何交易。';
 
-  String get sourceLine => '来源：${entry.module.label} 第 ${entry.step} 步';
+  String get sourceLine => '所属模块：${entry.module.label}';
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +110,7 @@ class LoopPendingSurface extends StatelessWidget {
                           Text(
                             _unavailable
                                 ? unavailableMessage
-                                : '这是冻结原型中的「${entry.title}」页面。它已在 93 route 清单中登记并可达，但页面内容与数据尚未接入；当前不显示任何数字或可执行动作。',
+                                : '「${entry.title}」还没有开放，这里暂时不显示任何内容，也不能执行任何操作。',
                             style: theme.textTheme.bodyMedium,
                           ),
                           const SizedBox(height: LoopSpacing.tight),

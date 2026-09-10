@@ -642,7 +642,7 @@ _connectivityCopy(LoopConnectivityScope scope) => switch (scope) {
     tone: LoopNoticeTone.danger,
   ),
   LoopConnectivityScope.marketDataUnavailable => (
-    title: '行情来源暂时不可用',
+    title: '行情暂时不可用',
     body: '其他功能正常。价格与图表可能不准，依赖当前价格的动作已暂停。',
     banner: '行情不可用 · 价格可能已过期',
     icon: 'warn',
@@ -679,16 +679,16 @@ class _OfflinePage extends StatelessWidget {
         onBack: onBack,
         folio: const LoopFolioPrimary(
           kicker: 'CONNECTIVITY',
-          heading: '连接状态未接入',
-          caption: '打开此页不代表设备离线或服务故障；实时状态要由已接入的来源报告。',
+          heading: '连接状态还没有开放',
+          caption: '打开这一页不代表设备离线或服务故障。',
           stamp: 'UNKNOWN',
           archetype: LoopFolioArchetype.state,
         ),
         body: const <Widget>[
           _SourceUnavailableNotice(
             keyName: 'connectivity-source-unavailable',
-            title: '没有已接入的连接状态来源',
-            body: '设备网络与 LOOP 服务的状态尚未由任何来源提供；此页不会推断离线。',
+            title: '读不到连接状态',
+            body: '暂时读不到设备网络与 LOOP 服务的状态，这一页不会替你判断是否离线。',
           ),
         ],
         primaryAction: _returnAction(onContinue),
@@ -736,8 +736,8 @@ class _OfflinePage extends StatelessWidget {
         if (outage == null)
           const _SourceUnavailableNotice(
             keyName: 'partial-outage-source-unavailable',
-            title: '没有按链拆分的故障来源',
-            body: '单条链或单一服务是否可用，必须由已接入的来源逐条报告；此页不会推断某条链不可用。',
+            title: '没有分链的故障信息',
+            body: '暂时读不到单条链的状态，这一页不会替你判断某条链是否可用。',
           )
         else
           LoopNotice(
@@ -791,7 +791,7 @@ class _ServerErrorPage extends StatelessWidget {
         onBack: onBack,
         folio: const LoopFolioPrimary(
           kicker: 'SERVICE STATUS',
-          heading: '服务状态未接入',
+          heading: '服务状态还没有开放',
           caption: '打开此页不代表某个请求返回了错误或未确认的结果。',
           stamp: 'UNKNOWN',
           archetype: LoopFolioArchetype.state,
@@ -800,7 +800,7 @@ class _ServerErrorPage extends StatelessWidget {
           _SourceUnavailableNotice(
             keyName: 'service-error-source-unavailable',
             title: '没有请求错误上下文',
-            body: '必须由发生请求的功能提供一次确切的错误观测，此页才会报告服务不可用。',
+            body: '只有在某个功能真的出错时，这一页才会显示服务不可用。',
           ),
         ],
         primaryAction: _returnAction(onContinue),
@@ -867,7 +867,7 @@ class _ForceUpdatePage extends StatelessWidget {
         onBack: onBack,
         folio: const LoopFolioPrimary(
           kicker: 'VERSION POLICY',
-          heading: '版本策略未接入',
+          heading: '版本策略还没有开放',
           caption: '打开此页不代表当前版本不受支持或不安全。',
           stamp: 'UNKNOWN',
           archetype: LoopFolioArchetype.state,
@@ -919,7 +919,7 @@ class _ForceUpdatePage extends StatelessWidget {
             key: ValueKey<String>('force-update-store-unavailable'),
             icon: 'info',
             title: '已确认需要更新',
-            body: '尚未接入经审核的应用商店跳转；请手动前往商店安装受支持的版本。',
+            body: '暂时不能直接跳转商店，请手动前往应用商店更新。',
           ),
       ],
       primaryAction: onUpdate == null
@@ -967,7 +967,7 @@ class _MaintenancePage extends StatelessWidget {
         onBack: onBack,
         folio: const LoopFolioPrimary(
           kicker: 'MAINTENANCE',
-          heading: '维护状态未接入',
+          heading: '维护状态还没有开放',
           caption: '打开此页不代表有计划中或进行中的维护。',
           stamp: 'UNKNOWN',
           archetype: LoopFolioArchetype.state,
@@ -1040,7 +1040,7 @@ class _RegionPage extends StatelessWidget {
         onBack: onBack,
         folio: const LoopFolioPrimary(
           kicker: 'REGION POLICY',
-          heading: '地区策略未接入',
+          heading: '地区策略还没有开放',
           caption: '打开此页不代表你所在的地区或账号受限。',
           stamp: 'UNKNOWN',
           archetype: LoopFolioArchetype.state,
@@ -1387,7 +1387,7 @@ class _TokenCardStatesPage extends StatelessWidget {
         if (items.isEmpty)
           const _SourceUnavailableNotice(
             keyName: 'token-card-showcase-unavailable',
-            title: '组件示例未接入',
+            title: '组件示例还没有开放',
             body: '正式会话不注入演示资产；Token Card 出现在聊天流、社区主页、行情列表与搜索结果中，由各自的数据源驱动。',
           )
         else ...<Widget>[
@@ -1416,7 +1416,7 @@ class _TokenCardStatesPage extends StatelessWidget {
           const LoopNotice(
             margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
             title: '风险态只列事实',
-            body: '每条带来源与观察时间，不给「危险」「不安全」这类结论 —— 判断权留给用户。',
+            body: '每条都标注出处和时间，不给「危险」「不安全」这类结论 —— 判断权留给你。',
           ),
         ],
         const SizedBox(height: 20),
@@ -1463,8 +1463,8 @@ class _SignSheetStatesPage extends StatelessWidget {
         if (items.isEmpty)
           const _SourceUnavailableNotice(
             keyName: 'sign-sheet-showcase-unavailable',
-            title: '组件示例未接入',
-            body: '正式会话不注入演示交易；真实签名由 Send / Swap / 授权流程携带同源 payload 进入此弹层。',
+            title: '组件示例还没有开放',
+            body: '正式会话不会注入演示交易；真实签名来自发送、兑换与授权流程。',
           )
         else ...<Widget>[
           LoopNotice(

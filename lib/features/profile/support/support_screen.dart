@@ -20,27 +20,27 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 const List<(String, String)> _supportAnswers = <(String, String)>[
   (
     '算力是怎么算的',
-    '挖矿权重的公式还没有冻结，客户端不展示任何算力数字。等公式与配置版本下发后，'
+    '挖矿公式还没有定下来，因此暂时不显示算力。公式确定后，'
         '挖矿页会连同 configVersion 一起显示。',
   ),
   (
     '为什么我的币没有权重',
-    '只有已登记的资产才会进入挖矿口径。资产是否登记以链上索引与登记表为准，'
+    '只有已登记的资产才会计入挖矿。是否登记以 LOOP 的登记表为准，'
         '不以钱包里是否出现过为准。',
   ),
   (
     '怎么参与 Launch',
-    'Launch 轮次、快照与限额由合约参数决定。参数尚未确认前，Launch 页只展示已下发的'
-        '轮次状态，不展示任何额度承诺。',
+    'Launch 轮次、快照与限额由合约参数决定。参数确认前，Launch 页只展示已有的'
+        '轮次状态，不承诺任何额度。',
   ),
   (
     '换手机怎么恢复账户',
-    '账号身份在 Privy。恢复密码、Passkey、自动恢复与社交恢复本步都不可用，'
+    '账号身份由 Privy 保管。恢复密码、Passkey、自动恢复与社交恢复暂时都不可用，'
         '安全中心会显示每一项的具体原因。',
   ),
   (
     '内盘买入为什么被拒绝',
-    '未毕业的 Launch 资产只能买入且只能走它自己的通道；被拒绝时服务端会返回具体的'
+    '未毕业的 Launch 资产只能买入，且只能走它自己的通道；被拒绝时会给出具体的'
         '错误码，交易页会原样显示。',
   ),
 ];
@@ -237,7 +237,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
               key: ValueKey<String>('support-more-tickets'),
               icon: 'info',
               title: '还有更早的工单',
-              body: '本步只显示最新的一页；更早的工单需要在后续版本翻页查看。',
+              body: '目前只显示最新的一页，更早的工单暂时看不到。',
               margin: EdgeInsets.fromLTRB(16, 12, 16, 0),
             ),
         ],
@@ -264,7 +264,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
             LoopRecordRow(
               key: const ValueKey<String>('support-open-community'),
               title: 'LOOP 官方社区',
-              subtitle: '成员数与在线状态没有后端来源，这里不显示数字',
+              subtitle: '成员数与在线状态暂时读不到，这里不显示数字',
               onTap: () => widget.onNavigate('community-discover'),
             ),
           ],
@@ -272,7 +272,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
         if (policy != null)
           LoopProvenanceFooter(
             key: const ValueKey<String>('support-escalation'),
-            text: '紧急问题请在工单正文里写明；本步没有独立的加急通道。',
+            text: '紧急问题请在工单正文里写明，目前没有单独的加急通道。',
           ),
         const SizedBox(height: 20),
       ],

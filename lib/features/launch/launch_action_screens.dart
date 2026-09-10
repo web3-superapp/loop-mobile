@@ -130,7 +130,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
         kicker: 'BUY QUOTE',
         // No quote: price, fee and cap are all contract facts.
         heading: launchMissingFigure,
-        caption: '价格、手续费、预计获得与剩余额度都需要合约读数，本步无法报价。',
+        caption: '价格、手续费与剩余额度暂时读不到，现在无法报价。',
         stamp: 'DISABLED',
       ),
       body: <Widget>[
@@ -139,9 +139,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
             key: const ValueKey<String>('launch-trade-capability-unavailable'),
             icon: 'warn',
             message: '内盘认购当前不可用',
-            reason: capability.reasonCode == null
-                ? '尚未读取到能力清单，本页不请求任何 Launch 数据。'
-                : '服务端原因：${capability.reasonCode}。',
+            reason: '请稍后再试。',
           )
         // A detail read that has not landed must not be shown as "no round to
         // join": loading, offline and a failed read each get their own block,
@@ -174,7 +172,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
               ),
               decoration: const InputDecoration(
                 labelText: '支付数量',
-                helperText: '输入可见，但本步无法提交：报价与额度都没有来源。',
+                helperText: '可以填写，但暂时不能提交：报价与额度还读不到。',
               ),
             ),
           ),
@@ -208,7 +206,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
             key: const ValueKey<String>('launch-trade-refusal'),
             icon: 'shield',
             tone: LoopNoticeTone.warn,
-            title: trade.attempted ? '服务端拒绝了这次认购' : '认购入口当前不可执行',
+            title: trade.attempted ? '这次认购没有通过' : '认购入口当前不可执行',
             // Before an attempt the page states the capability evidence the
             // server published; after one it states what the server answered.
             body: trade.refusalKind != null
@@ -247,7 +245,7 @@ String _missingInputReason({
   if (walletId == null) return '还没有可用的支付钱包，请先在钱包中选择一个。';
   if (roundId == null) return '请先选择要参与的轮次。';
   if (payAmount == null) return '请输入一个有效的支付数量。';
-  return '可以提交；结果以服务端响应为准。';
+  return '可以提交，结果以提交后的状态为准。';
 }
 
 class _TradeParameters extends StatelessWidget {
@@ -337,9 +335,7 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
             key: const ValueKey<String>('loop-stake-capability-unavailable'),
             icon: 'warn',
             message: 'LOOP 质押当前不可用',
-            reason: capability.reasonCode == null
-                ? '尚未读取到能力清单，本页不请求任何质押数据。'
-                : '服务端原因：${capability.reasonCode}。',
+            reason: '请稍后再试。',
           )
         else if (stake == null)
           LaunchStateBlock(
@@ -348,7 +344,7 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
             emptyMessage: '没有读到质押状态',
-            emptyReason: '质押合约尚未交付。',
+            emptyReason: '质押还没有开放。',
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -376,7 +372,7 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
             key: ValueKey<String>('loop-stake-notice'),
             icon: 'lock',
             title: '资格不依赖质押',
-            body: 'Launch 资格由服务端的资格模式配置决定，与是否质押 LOOP 无关。本页不承诺任何倍率、等待期或权益。',
+            body: 'Launch 资格由每次发射自己的规则决定，与是否质押 LOOP 无关。这里不承诺任何倍率、等待期或权益。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),
@@ -429,7 +425,7 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
         heading: economy == null
             ? launchMissingFigure
             : '${economy.confirmedRoundCount} 个已确认轮次',
-        caption: '这里只展示可以从 LOOP 数据库证明的计数；总量、发行与生态税没有来源。',
+        caption: '这里只显示 LOOP 能核对的数量；总量、发行与生态税暂时读不到。',
         stamp: economy == null ? null : 'LOOP DB',
       ),
       sections: <Widget>[
@@ -438,9 +434,7 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
             key: const ValueKey<String>('loop-economy-capability-unavailable'),
             icon: 'warn',
             message: '生态账本当前不可用',
-            reason: capability.reasonCode == null
-                ? '尚未读取到能力清单，本页不请求任何账本数据。'
-                : '服务端原因：${capability.reasonCode}。',
+            reason: '请稍后再试。',
           )
         else if (economy == null)
           LaunchStateBlock(
@@ -449,7 +443,7 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
             emptyMessage: '没有读到账本计数',
-            emptyReason: '服务端没有返回可证明的计数。',
+            emptyReason: '暂时读不到可核对的数量。',
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -497,7 +491,7 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
                 ),
             ],
           ),
-          const LoopLabel('无法证明的口径'),
+          const LoopLabel('暂时无法核对的项目'),
           LaunchUnavailableCard(label: '总量', fact: economy.totalSupply),
           LaunchUnavailableCard(label: '累计分发', fact: economy.distributed),
           LaunchUnavailableCard(label: '累计生态税', fact: economy.ecosystemTax),
@@ -613,7 +607,7 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
         heading: selected == null
             ? '新建申请'
             : launchReviewStatusLabel(selected.reviewStatus),
-        caption: '提交不代表通过。审核由人工推进，结果、配置与上线时间以服务端状态为准。',
+        caption: '提交不代表通过。审核由人工进行，结果与上线时间以最新状态为准。',
         stamp: selected == null ? null : 'v${selected.materialVersion}',
       ),
       sections: <Widget>[
@@ -622,9 +616,7 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
             key: const ValueKey<String>('launch-apply-capability-unavailable'),
             icon: 'warn',
             message: '申请入口当前不可用',
-            reason: capability.reasonCode == null
-                ? '尚未读取到能力清单，本页不提交任何申请。'
-                : '服务端原因：${capability.reasonCode}。',
+            reason: '请稍后再试。',
           )
         else if (state.phase != LaunchViewPhase.ready)
           LaunchStateBlock(
@@ -733,7 +725,7 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
             key: ValueKey<String>('launch-apply-notice'),
             icon: 'info',
             title: '提交不代表通过',
-            body: '审核由人工推进，状态只会由服务端改变。通过后项目才会进入目录，并等待排期与配置确认。',
+            body: '审核由人工进行。通过后项目才会进入目录，再等待排期确认。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),
@@ -822,7 +814,7 @@ class _MilestoneBlockState extends ConsumerState<_MilestoneBlock> {
           icon: 'shield',
           title: 'Alpha 不等于现货',
           body:
-              '每条赛道单独记录，互不推导。只有「已上线」与「已获推荐位」带经复核的证据；'
+              '每条赛道单独记录，互不推导。只有「已上线」与「已获推荐位」附有复核过的材料；'
               '复核记录时间与平台可核验时间是两个不同的事实，缺一不补。',
           margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
         ),
@@ -892,7 +884,7 @@ class _ReviewStatusBlock extends StatelessWidget {
             icon: 'warn',
             tone: LoopNoticeTone.warn,
             title: '退回原因',
-            body: '服务端原因代码：$reason。请按此修改后重新提交。',
+            body: launchReviewReasonText(reason),
             margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
       ],
@@ -1030,8 +1022,8 @@ class _DeferredProviderBlock extends StatelessWidget {
       return const LoopEmpty(
         key: ValueKey<String>('launch-apply-providers-pending'),
         icon: 'info',
-        message: '附件与主体审核待接入',
-        reason: '附件存储与 KYB 服务商尚未选定，本页不提供上传，也不显示任何审核结论。',
+        message: '附件上传与主体审核暂未开放',
+        reason: '开放后可以在这里上传材料并查看审核状态。',
       );
     }
     return Column(
@@ -1041,7 +1033,7 @@ class _DeferredProviderBlock extends StatelessWidget {
         LoopEmpty(
           key: const ValueKey<String>('launch-apply-kyb'),
           icon: 'shield',
-          message: '主体审核（KYB）待接入',
+          message: '主体审核还没有开放',
           reason: launchReasonCodeText(current.kyb.reasonCode),
         ),
       ],

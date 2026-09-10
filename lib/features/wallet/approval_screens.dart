@@ -291,7 +291,7 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
           Text('确认无限授权', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 10),
           Text(
-            '无限额度（MAX_UINT256）不会随时间或本次交易结束而失效。'
+            '无限额度不会随时间或这笔交易结束而失效。'
             '该 Spender 之后可以在不再询问你的情况下转走这个代币的全部余额。'
             '只有你在授权盘点里发送一笔 approve(spender, 0) 才会收回。',
             style: Theme.of(context).textTheme.bodyMedium,
@@ -568,7 +568,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
           ),
           const LoopNotice(
             key: ValueKey<String>('approvals-source-notice'),
-            title: '数据来源',
+            title: '数据出处',
             body:
                 '候选来自链上 Approval 事件，每一行的额度都是当场重读的 allowance()。'
                 '覆盖起点以下的区块只索引了转账，更早授予的授权不会出现在这里。'

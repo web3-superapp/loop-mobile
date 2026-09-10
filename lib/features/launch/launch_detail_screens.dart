@@ -87,7 +87,7 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
         heading: detail?.launch.name ?? launchMissingFigure,
         // No countdown, no round label, no progress: all three are contract
         // facts. The caption states what the record can and cannot prove.
-        caption: '项目资料与轮次配置来自 LOOP 数据库；四轴链上状态、价格与毕业进度尚无来源。',
+        caption: '项目资料与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。',
         stamp: detail == null
             ? null
             : launchPendingConfirmationLabel(pendingVersion),
@@ -98,9 +98,7 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
             key: const ValueKey<String>('launch-detail-capability-unavailable'),
             icon: 'warn',
             message: '项目详情当前不可用',
-            reason: capability.reasonCode == null
-                ? '尚未读取到能力清单，本页不请求任何 Launch 数据。'
-                : '服务端原因：${capability.reasonCode}。',
+            reason: '请稍后再试。',
           )
         else if (detail == null)
           LaunchStateBlock(
@@ -129,7 +127,7 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
             ),
           const LoopLabel('链上四轴'),
           LaunchAxisBlock(state: detail.launch.onChainState),
-          const LoopLabel('配置槽位'),
+          const LoopLabel('配置'),
           if (config == null)
             const LoopEmpty(
               key: ValueKey<String>('launch-detail-no-config'),
@@ -173,7 +171,7 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('launch-detail-open-tier'),
                 title: '我的资格',
-                subtitle: '资格模式与结果由服务端配置决定，不依赖质押',
+                subtitle: '资格规则由每次发射自己决定，不依赖质押',
                 onTap: widget.onOpenTier,
                 position: LoopRowPosition.first,
               ),
@@ -194,7 +192,7 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('launch-detail-open-history'),
                 title: '我的参与记录',
-                subtitle: '记录来源不可得，空列表不代表没有参与',
+                subtitle: '记录暂时读不到，空列表不代表你没有参与',
                 onTap: widget.onOpenHistory,
                 position: LoopRowPosition.last,
               ),
@@ -240,7 +238,7 @@ class _RoundsBlock extends StatelessWidget {
         key: ValueKey<String>('launch-rounds-empty'),
         icon: 'warn',
         message: '还没有配置任何轮次',
-        reason: '轮次数量由服务端配置决定，本页不假设固定的轮数。',
+        reason: '轮次数量由每次发射自己决定。',
       );
     }
     return LoopRecordGroup(
@@ -318,8 +316,8 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
         // fixed three-round story.
         heading: detail == null
             ? launchMissingFigure
-            : '${detail.rounds.length} 个轮次槽位',
-        caption: '轮数、时间、价格、资格与上限都由服务端配置版本决定；未确认的槽位显示为待确认。',
+            : '${detail.rounds.length} 个轮次',
+        caption: '轮数、时间、价格、资格与上限都由这次发射的配置决定；还没确认的显示为待确认。',
         stamp: detail == null
             ? null
             : launchPendingConfirmationLabel(config?.configVersion),
@@ -330,9 +328,7 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
             key: const ValueKey<String>('launch-rounds-capability-unavailable'),
             icon: 'warn',
             message: '轮次规则当前不可用',
-            reason: capability.reasonCode == null
-                ? '尚未读取到能力清单，本页不请求任何 Launch 数据。'
-                : '服务端原因：${capability.reasonCode}。',
+            reason: '请稍后再试。',
           )
         else if (detail == null)
           LaunchStateBlock(
@@ -351,7 +347,7 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
               launch: detail.launch,
             ),
           ),
-          const LoopLabel('轮次槽位'),
+          const LoopLabel('轮次'),
           _RoundsBlock(rounds: detail.rounds),
           const LoopLabel('合约限制'),
           if (config == null)
@@ -390,7 +386,7 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
             key: const ValueKey<String>('launch-rounds-notice'),
             icon: 'shield',
             tone: LoopNoticeTone.warn,
-            title: '规则以服务端确认版本为准',
+            title: '以最终确认的规则为准',
             body:
                 '本页不写入任何固定的轮数、手续费率、持仓上限或毕业市值。'
                 '${launchReasonCodeText('LAUNCH_CONFIG_PENDING_CONFIRMATION')}',
@@ -442,7 +438,7 @@ class _LaunchGraduationScreenState
         kicker: 'GRADUATION PROGRESS',
         // Never a percentage: progress needs the liquidity axis.
         heading: launchMissingFigure,
-        caption: '毕业进度是流动性轴的事实。合约基线交付前没有任何可证明的进度。',
+        caption: '毕业进度看的是流动性。合约上线前还没有可核对的进度。',
         stamp: 'PENDING',
       ),
       sections: <Widget>[
@@ -453,9 +449,7 @@ class _LaunchGraduationScreenState
             ),
             icon: 'warn',
             message: '毕业进度当前不可用',
-            reason: capability.reasonCode == null
-                ? '尚未读取到能力清单，本页不请求任何 Launch 数据。'
-                : '服务端原因：${capability.reasonCode}。',
+            reason: '请稍后再试。',
           )
         else if (detail == null)
           LaunchStateBlock(
@@ -479,7 +473,7 @@ class _LaunchGraduationScreenState
                   ),
                   leading: _StepIndexTile(index: index + 1),
                   title: launchGraduationStepLabel(steps[index].step),
-                  subtitle: '每一步完成后才进入下一步，由服务端权威状态推进',
+                  subtitle: '每一步完成后才进入下一步',
                   trailingBadge: const LoopBadge(
                     '待触发',
                     kind: LoopBadgeKind.mute,
@@ -490,9 +484,9 @@ class _LaunchGraduationScreenState
                 ),
             ],
           ),
-          const LoopLabel('流动性池证据'),
+          const LoopLabel('流动性池信息'),
           LaunchUnavailableCard(
-            label: '池地址与锁定证据',
+            label: '池地址与锁定信息',
             fact: detail.graduation.poolEvidence,
           ),
           const LoopLabel('流动性状态'),
@@ -504,7 +498,7 @@ class _LaunchGraduationScreenState
             title: '毕业不是排期状态',
             body:
                 '「已结束」只表示排期结束，不等于已毕业。'
-                '是否毕业只能由流动性轴与池证据证明，两者当前都不可得。',
+                '是否毕业要看流动性和交易池，两项目前都读不到。',
             margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),
@@ -596,9 +590,7 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
             key: const ValueKey<String>('launch-tier-capability-unavailable'),
             icon: 'warn',
             message: '资格查询当前不可用',
-            reason: capability.reasonCode == null
-                ? '尚未读取到能力清单，本页不请求任何 Launch 数据。'
-                : '服务端原因：${capability.reasonCode}。',
+            reason: '请稍后再试。',
           )
         else if (eligibility == null)
           LaunchStateBlock(
@@ -643,7 +635,7 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('launch-tier-depends-on-staking'),
                 title: '是否依赖质押',
-                subtitle: '资格模式由服务端配置决定，与 LOOP 质押数量无关',
+                subtitle: '资格规则由这次发射决定，与 LOOP 质押数量无关',
                 trailing: eligibility.dependsOnStaking ? '是' : '否',
                 position: LoopRowPosition.last,
               ),
@@ -669,7 +661,7 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
             key: ValueKey<String>('launch-tier-notice'),
             icon: 'info',
             title: '资格不是等级，也不是权益',
-            body: '资格是一次发射的准入结果，会随配置版本与快照变化；本页不展示任何分级门槛、手续费率或时间窗口。',
+            body: '资格是这次发射的准入结果，会随配置和快照变化。这里不显示任何门槛、费率或时间窗口。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),
@@ -726,9 +718,7 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
             ),
             icon: 'warn',
             message: '持有人分布当前不可用',
-            reason: capability.reasonCode == null
-                ? '尚未读取到能力清单，本页不请求任何 Launch 数据。'
-                : '服务端原因：${capability.reasonCode}。',
+            reason: '请稍后再试。',
           )
         else if (holders == null)
           LaunchStateBlock(
@@ -750,7 +740,7 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
             key: ValueKey<String>('launch-holders-notice'),
             icon: 'shield',
             title: '空白不是「没有持有人」',
-            body: '这里没有可核验的合约读数，因此不展示任何地址、比例或上限。缺少来源与「分布为零」是两回事。',
+            body: '暂时读不到合约信息，因此不显示地址、比例或上限。读不到不等于「分布为零」。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),
@@ -796,7 +786,7 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
         archetype: LoopFolioArchetype.record,
         kicker: 'PARTICIPATION LOG',
         heading: launchMissingFigure,
-        caption: '购买、权益与退款记录都需要链上证据；当前无法证明，因此不展示任何笔数或盈亏。',
+        caption: '购买、权益与退款记录都要看链上数据，目前读不到，因此不显示笔数或盈亏。',
         stamp: 'UNAVAILABLE',
       ),
       sections: <Widget>[
@@ -807,9 +797,7 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
             ),
             icon: 'warn',
             message: '参与记录当前不可用',
-            reason: capability.reasonCode == null
-                ? '尚未读取到能力清单，本页不请求任何 Launch 数据。'
-                : '服务端原因：${capability.reasonCode}。',
+            reason: '请稍后再试。',
           )
         else if (history == null)
           LaunchStateBlock(
@@ -821,13 +809,13 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          const LoopLabel('记录来源'),
+          const LoopLabel('记录出处'),
           LaunchUnavailableCard(label: '购买、权益与退款记录', fact: history.source),
           const LoopNotice(
             key: ValueKey<String>('launch-history-notice'),
             icon: 'shield',
             title: '空列表不代表没有参与',
-            body: '服务端明确标注了「无法证明」而不是「没有记录」。合约基线交付后，这里才会出现可核验的购买、权益与退款条目。',
+            body: '这里是「暂时读不到」，不是「没有记录」。合约上线后才会出现可核对的购买、权益与退款。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),

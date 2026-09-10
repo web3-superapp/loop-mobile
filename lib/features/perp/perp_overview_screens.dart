@@ -23,7 +23,7 @@ class PerpMarketScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasFacts = snapshotState == PerpSnapshotState.preview;
     return LoopPage(
-      eyebrow: 'D1 · Hyperliquid Core',
+      eyebrow: 'Hyperliquid Core',
       title: 'Perpetual markets',
       subtitle: 'BTC, ETH, and SOL only. Perpetuals live inside Market, never as a bottom tab.',
       actions: <Widget>[
@@ -132,7 +132,7 @@ class _PerpTradeScreenState extends ConsumerState<PerpTradeScreen> {
     final market = PerpPreviewData.market(widget.symbol);
     final hasFacts = widget.snapshotState == PerpSnapshotState.preview;
     return LoopPage(
-      eyebrow: 'D2 · ${market.symbol}-PERP',
+      eyebrow: '${market.symbol}-PERP',
       title: 'Build an order',
       subtitle: 'Simulate the order shape before a backend-mediated execution review.',
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 172),
@@ -468,7 +468,7 @@ class _PerpConfirmScreenState extends State<PerpConfirmScreen> {
     final hasFacts = widget.snapshotState == PerpSnapshotState.preview;
     final validationError = _intent.validateAt(DateTime.now().toUtc());
     return LoopPage(
-      eyebrow: 'D3 · Immutable intent',
+      eyebrow: 'Immutable intent',
       title: 'Confirm order preview',
       subtitle: 'Review every critical field. LOOP will not infer, refresh, or silently replace this intent.',
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 176),

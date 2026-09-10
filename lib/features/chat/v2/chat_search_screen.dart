@@ -372,7 +372,7 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
           key: ValueKey<String>('chat-search-not-connected'),
           icon: 'warn',
           message: '聊天搜索当前不可用',
-          reason: '需要服务端派发的 Stream 身份与短期 token 才能检索会话内容，本页没有发起任何请求。',
+          reason: '聊天搜索暂时不可用，这一页没有发起任何请求。',
         ),
       );
     }

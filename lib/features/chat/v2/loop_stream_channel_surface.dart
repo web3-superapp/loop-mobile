@@ -24,7 +24,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
     super.key,
     this.header,
     this.banner,
-    this.notConnectedMessage = '需要服务端派发的 Stream 身份与短期 token 才能打开这个会话。',
+    this.notConnectedMessage = '这个会话暂时打不开，稍后再试。',
     this.keyPrefix = 'loop-stream-channel',
   });
 
@@ -63,7 +63,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
           skipLoadingOnRefresh: false,
           loading: () => _ChannelStateBlock(
             key: ValueKey<String>('$keyPrefix-connecting'),
-            message: '正在恢复服务端授权的聊天会话…',
+            message: '正在恢复聊天会话…',
             loading: true,
           ),
           // A token call that never reached the server has not refused
@@ -215,7 +215,7 @@ class _MemberChannelBodyState extends State<_MemberChannelBody> {
         if (snapshot.hasError || snapshot.data == null) {
           return _ChannelStateBlock(
             key: ValueKey<String>('${widget.keyPrefix}-unavailable'),
-            message: '服务端没有确认你在这个频道的成员身份，LOOP 没有创建也没有打开任何频道。',
+            message: '你还不是这个群的成员，LOOP 没有打开任何会话。',
             icon: 'warn',
             onRetry: () => setState(() => _channel = _load()),
           );

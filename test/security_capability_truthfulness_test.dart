@@ -35,7 +35,7 @@ void main() {
         find.byKey(const ValueKey<String>('protection-setup-unavailable')),
         findsOneWidget,
       );
-      expect(find.text('保护设置尚未接入'), findsOneWidget);
+      expect(find.text('保护设置还没有开放'), findsOneWidget);
       expect(find.byType(Switch), findsNothing);
       expect(find.byType(TextField), findsNothing);
       expect(find.text('Save protection'), findsNothing);

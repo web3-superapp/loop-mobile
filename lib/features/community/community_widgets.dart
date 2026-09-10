@@ -42,7 +42,7 @@ class CommunityPreviewNotice extends StatelessWidget {
       icon: 'info',
       tone: LoopNoticeTone.warn,
       title: '演示数据',
-      body: '$resource只存在于本次开发预览运行中，不会写入账号，也不会调用任何服务端。',
+      body: '$resource只存在于这次开发预览里，不会写入账号，也不会上传。',
       margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
     );
   }
@@ -564,7 +564,7 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
           ),
           const SizedBox(height: 8),
           Text(
-            '绑定地址只被登记，D10 之前服务端不解析它，因此不会显示价格、市值或持有人。',
+            '绑定地址只做登记，暂时不会显示价格、市值或持有人。',
             style: LoopTypography.sora(
               size: 11.5,
               weight: FontWeight.w500,

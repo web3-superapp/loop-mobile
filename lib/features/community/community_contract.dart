@@ -113,11 +113,11 @@ final class LoopPublicProfile {
 /// zh-CN copy for a failed community/social/search operation. It states what
 /// did not happen; it never claims a result the server did not confirm.
 String communityFailureReason(CommunityFailureKind? kind) => switch (kind) {
-  CommunityFailureKind.offline => '设备当前离线，本页没有读到任何服务端数据，也没有提交任何操作。',
+  CommunityFailureKind.offline => '设备已离线，这一页没有读到数据，也没有提交任何操作。',
   CommunityFailureKind.cancelled => '请求已被取消，结果未知。请查看最新状态后再决定是否重试。',
-  CommunityFailureKind.outcomeUnknown => '服务返回的数据不符合约定，结果未确认。请刷新查看最新状态，不要重复提交。',
+  CommunityFailureKind.outcomeUnknown => '返回的数据不完整，结果未确认。请刷新查看最新状态，不要重复提交。',
   CommunityFailureKind.unavailable => '社区服务当前不可用，没有执行任何操作。',
-  CommunityFailureKind.permissionDenied => '当前账号无权执行此操作，服务端已拒绝。',
+  CommunityFailureKind.permissionDenied => '当前账号没有执行这个操作的权限。',
   CommunityFailureKind.notFound => '目标不存在、已被移除，或对当前账号不可见。',
   CommunityFailureKind.stale => '状态已经改变（可能已被他人处理）。请刷新后重新决定。',
   CommunityFailureKind.activationRequired => '需要先完成 LOOP ID 激活才能执行社区与社交操作。',
@@ -128,8 +128,8 @@ String communityFailureReason(CommunityFailureKind? kind) => switch (kind) {
   CommunityFailureKind.aliasBlocked => '该名称在运营屏蔽名单内，请换一个再试。',
   CommunityFailureKind.rateLimited => '搜索过于频繁，请稍等片刻再试。',
   CommunityFailureKind.idempotencyConflict => '同一操作已被提交过且内容不同，请检查最新状态后再试。',
-  CommunityFailureKind.invalidData => '服务返回的数据不符合约定，本页没有采纳任何内容。',
-  CommunityFailureKind.unexpected => '操作没有完成，未暴露供应商细节。',
+  CommunityFailureKind.invalidData => '返回的数据不完整，这一页没有采用任何内容。',
+  CommunityFailureKind.unexpected => '操作没有完成，请稍后再试。',
   null => '操作没有完成。',
 };
 
@@ -154,7 +154,7 @@ String communityApplyFailureReason(CommunityFailureKind? kind) =>
       CommunityFailureKind.aliasBlocked => '社区名称在当前的运营屏蔽名单内，请换一个名称再提交。',
       CommunityFailureKind.resourceConflict => '这个短链接已经被另一个社区占用，请换一个再提交。',
       CommunityFailureKind.validationFailed =>
-        '名称或简介归一化后超出长度限制（名称 1–40，简介 ≤280），请修改后再提交。',
+        '名称或简介太长（名称 1–40 字，简介不超过 280 字），请修改后再提交。',
       CommunityFailureKind.activationRequired =>
         '需要先完成 LOOP ID 激活才能申请社区。激活后可以重新提交这份申请。',
       _ => communityFailureReason(kind),
@@ -163,20 +163,20 @@ String communityApplyFailureReason(CommunityFailureKind? kind) =>
 /// zh-CN explanation for one server `reasonCode`. An unknown code keeps a
 /// neutral sentence rather than inventing a cause.
 String communityUnavailableReason(String reasonCode) => switch (reasonCode) {
-  'STREAM_UNREAD_NOT_CONNECTED' => '未读计数需要 Stream 接通后才有来源。',
-  'STREAM_VOICE_NOT_CONNECTED' => '语音房状态需要 Stream 接通后才有来源。',
-  'STREAM_PRESENCE_NOT_CONNECTED' => '在线人数需要 Stream 在线状态接通后才有来源。',
-  'MINING_FORMULA_BASELINE_PENDING' => '算力口径尚未确定，不展示任何算力数字。',
-  'COMMUNITY_ANNOUNCEMENTS_DEFERRED' => '社区公告尚未接入，不展示示例内容。',
-  'COMMUNITY_LINKS_DEFERRED' => '官方链接尚未接入，不展示未核验的地址。',
-  'MESSAGE_PREVIEW_DEFERRED' => '消息正文预览尚未接入，不展示任何正文。',
-  'AI_MODERATION_DEFERRED' => 'AI 巡查标记尚未接入，不展示任何风险结论。',
-  'ASSET_REGISTRY_DEFERRED' => '资产检索源尚未接入。',
-  'LAUNCH_MODULE_DEFERRED' => 'Launch 检索源尚未接入。',
-  'DAPP_DIRECTORY_DEFERRED' => 'DApp 目录尚未接入。',
-  'REFERRAL_GRAPH_DEFERRED' => '邀请关系数据尚未接入，不展示任何人数。',
-  'INVITE_CODE_DEFERRED' => '邀请码尚未接入，分享入口保持禁用。',
-  'COMMUNITY_RUNTIME_UNAVAILABLE' => '社区模块已启用，但服务端依赖尚未配齐。',
-  'SEARCH_RUNTIME_UNAVAILABLE' => '搜索模块已启用，但服务端依赖尚未配齐。',
-  _ => '该字段当前没有可信来源。',
+  'STREAM_UNREAD_NOT_CONNECTED' => '未读数暂时读不到。',
+  'STREAM_VOICE_NOT_CONNECTED' => '语音房状态暂时读不到。',
+  'STREAM_PRESENCE_NOT_CONNECTED' => '在线人数暂时读不到。',
+  'MINING_FORMULA_BASELINE_PENDING' => '挖矿规则还没有确定，暂时不显示算力。',
+  'COMMUNITY_ANNOUNCEMENTS_DEFERRED' => '社区公告还没有开放。',
+  'COMMUNITY_LINKS_DEFERRED' => '官方链接还没有开放。',
+  'MESSAGE_PREVIEW_DEFERRED' => '消息预览还没有开放。',
+  'AI_MODERATION_DEFERRED' => 'AI 巡查还没有开放。',
+  'ASSET_REGISTRY_DEFERRED' => '资产搜索还没有开放。',
+  'LAUNCH_MODULE_DEFERRED' => 'Launch 搜索还没有开放。',
+  'DAPP_DIRECTORY_DEFERRED' => 'DApp 目录还没有开放。',
+  'REFERRAL_GRAPH_DEFERRED' => '邀请数据还没有开放。',
+  'INVITE_CODE_DEFERRED' => '邀请码还没有开放，暂时不能分享。',
+  'COMMUNITY_RUNTIME_UNAVAILABLE' => '社区暂时不可用，稍后再试。',
+  'SEARCH_RUNTIME_UNAVAILABLE' => '搜索暂时不可用，稍后再试。',
+  _ => '这一项暂时读不到。',
 };

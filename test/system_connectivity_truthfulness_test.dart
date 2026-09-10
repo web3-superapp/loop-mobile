@@ -30,7 +30,7 @@ void main() {
         onSecondaryAction: () => generic += 1,
       ),
     );
-    expect(find.text('连接状态未接入'), findsOneWidget);
+    expect(find.text('连接状态还没有开放'), findsOneWidget);
     expect(find.text('UNKNOWN'), findsOneWidget);
     expect(find.text('当前设备离线'), findsNothing);
     expect(find.text('无法连接到服务器'), findsNothing);
@@ -52,7 +52,7 @@ void main() {
   ) async {
     final cases = <(LoopConnectivityScope, String, String)>[
       (LoopConnectivityScope.fullyOffline, '当前设备离线', '完全离线'),
-      (LoopConnectivityScope.marketDataUnavailable, '行情来源暂时不可用', '行情来源暂时不可用'),
+      (LoopConnectivityScope.marketDataUnavailable, '行情暂时不可用', '行情暂时不可用'),
       (
         LoopConnectivityScope.tradingServiceUnavailable,
         '交易服务暂时不可用',
@@ -74,7 +74,7 @@ void main() {
       );
       expect(find.text(heading), findsWidgets, reason: scope.name);
       expect(find.text(notice), findsWidgets, reason: scope.name);
-      expect(find.text('连接状态未接入'), findsNothing, reason: scope.name);
+      expect(find.text('连接状态还没有开放'), findsNothing, reason: scope.name);
       expect(find.text('返回 LOOP'), findsNothing, reason: scope.name);
       // No lastSyncAt and no per-chain source: neither may be invented.
       expect(
@@ -167,7 +167,7 @@ void main() {
       textScale: 2,
     );
     expect(find.text('行情不可用 · 价格可能已过期'), findsOneWidget);
-    expect(find.bySemanticsLabel(RegExp('行情来源暂时不可用')), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('行情暂时不可用')), findsOneWidget);
     await tester.tap(find.text('重试'));
     expect(retries, 1);
     semantics.dispose();

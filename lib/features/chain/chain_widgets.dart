@@ -191,7 +191,7 @@ class LoopChainPreviewNotice extends StatelessWidget {
       icon: 'info',
       tone: LoopNoticeTone.warn,
       title: '演示数据',
-      body: '$resource只存在于本次开发预览运行中，不会写入账号，也不会调用任何服务端。',
+      body: '$resource只存在于这次开发预览里，不会写入账号，也不会上传。',
       margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
     );
   }
@@ -214,7 +214,7 @@ String loopChainPermissionPurpose(LoopChainFailureKind? kind) => switch (kind) {
   LoopChainFailureKind.regionBlocked =>
     '${loopChainFailureReason(kind)}本页已读到的内容不受影响。',
   _ =>
-    '${loopChainFailureReason(kind)}所需权限与策略由服务端授予，客户端无法调整；'
+    '${loopChainFailureReason(kind)}这项权限不能在应用里自行调整；'
         '可以换一个已获授权的账号或资产，本页已读到的内容不受影响。',
 };
 

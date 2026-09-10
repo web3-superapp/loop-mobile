@@ -161,7 +161,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                         ? communityMissingFigure
                         : '$joinedCount 个已加入的社区',
                     caption: home == null
-                        ? '社区聚合尚未读取成功，本页不展示任何推测数字。'
+                        ? '社区数据暂时读不到，这一页不显示任何数字。'
                         : '发现 ${home.discover.length} 个已验证社区 · '
                               '数据观察于 ${communityObservedAtLabel(home.observedAt)}',
                     stamp: home == null ? null : 'DATABASE',
@@ -169,7 +169,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                 ],
               ),
               sections: <Widget>[
-                CommunityPreviewNotice(mode: mode, resource: '社区聚合'),
+                CommunityPreviewNotice(mode: mode, resource: '社区数据'),
                 if (communityCapabilityBlocks(mode, capability))
                   _CommunityCapabilityBlock(
                     reasonCode: capability.reasonCode,
@@ -181,7 +181,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     phase: state.phase,
                     failureKind: state.failureKind,
                     emptyMessage: '还没有加入任何社区',
-                    emptyReason: '加入社区后，这里会列出服务端确认的成员关系。',
+                    emptyReason: '加入社区后，这里会列出你的社区。',
                     onRetry: () => unawaited(
                       ref
                           .read(communityHomeControllerProvider.notifier)
@@ -194,7 +194,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     const LoopEmpty(
                       key: ValueKey<String>('community-joined-empty'),
                       message: '还没有加入任何社区',
-                      reason: '从"发现社区"开始，加入后这里会显示服务端确认的成员关系。',
+                      reason: '从"发现社区"开始，加入后这里会显示你的社区。',
                     )
                   else
                     LoopRecordGroup(
@@ -227,8 +227,8 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     icon: 'info',
                     title: '推荐依据',
                     body:
-                        '推荐列表由版本化规则 ${home.recommendation.ruleVersion} 生成，'
-                        '只使用成员数与创建时间等可核查事实，不是个性化算法推荐。',
+                        '推荐只按成员数与创建时间排列，'
+                        '不是个性化算法推荐。',
                     margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                   ),
                 ],
@@ -325,9 +325,9 @@ class _CommunityCapabilityBlock extends StatelessWidget {
       icon: 'warn',
       message: '社区模块当前不可用',
       reason: switch (decision) {
-        LoopCapabilityDecision.unknown => '尚未读取到能力清单，本页不请求社区数据，也不展示任何数字。',
-        LoopCapabilityDecision.deferred => '服务端尚未启用 community 模块。',
-        _ => reasonCode == null ? '服务端已声明该模块当前不可用。' : '服务端原因：$reasonCode。',
+        LoopCapabilityDecision.unknown => '社区还没有准备好，请稍后再试。',
+        LoopCapabilityDecision.deferred => '社区还没有开放。',
+        _ => '请稍后再试。',
       },
     );
   }
@@ -374,7 +374,7 @@ class _DiscoverHero extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '按成员数或创建时间浏览已验证社区。$discoverCount 个推荐来自本次聚合。',
+                  '按成员数或创建时间浏览已验证社区，本次共 $discoverCount 个。',
                   style: LoopTypography.sora(
                     size: 12,
                     weight: FontWeight.w500,

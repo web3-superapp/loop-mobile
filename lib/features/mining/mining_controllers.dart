@@ -330,7 +330,7 @@ String referralClaimFailureReason(LaunchFailureKind? kind) => switch (kind) {
   LaunchFailureKind.policyBlocked => '绑定窗口已经关闭：邀请码只能在账号激活后 7 天内绑定一次。',
   LaunchFailureKind.notFound => '这个邀请码不存在。请向邀请人确认后再试；邀请码不可枚举，多次尝试不会提高成功率。',
   LaunchFailureKind.validationFailed => '这个邀请码不能绑定：不能邀请自己，也不能绑定自己下级的邀请码。',
-  LaunchFailureKind.stale => '这个账号已经绑定过邀请人。关系一旦锁定就不能更换，只能由服务端作废。',
+  LaunchFailureKind.stale => '这个账号已经绑定过邀请人。绑定后不能更换。',
   LaunchFailureKind.idempotencyConflict => '同一次绑定已经用不同的邀请码提交过，请刷新查看最新状态。',
   _ => launchFailureReason(kind),
 };

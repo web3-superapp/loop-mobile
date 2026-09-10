@@ -244,7 +244,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
             title: '自选不是行情',
             body:
                 '这里不展示价格与涨跌。本页只排序、移除与建分组；加入资产在代币页点星标。'
-                '资产必须已经登记在 registry 里，否则服务端会整份拒绝。',
+                '资产必须已经在 LOOP 登记，否则整份自选表都不会保存。',
           ),
         ],
       ],
@@ -305,7 +305,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Text(
-              '${item.displayName} 会从这个分组移除。移除只在你保存后才会提交到服务端。',
+              '${item.displayName} 会从这个分组移除。保存后才会生效。',
               style: Theme.of(sheetContext).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
@@ -409,7 +409,7 @@ class _NewGroupSheetState extends State<_NewGroupSheet> {
           ),
           const SizedBox(height: 10),
           Text(
-            '分组只在保存后才会提交到服务端，最多 $watchlistMaxGroups 个。',
+            '分组保存后才会生效，最多 $watchlistMaxGroups 个。',
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],

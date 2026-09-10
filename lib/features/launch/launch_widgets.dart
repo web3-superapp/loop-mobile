@@ -460,7 +460,7 @@ class LaunchAxisBlock extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Text(
-            '快照区块与状态摘要同样不可得，因此本页不显示合约地址、总量、税率或上限。',
+            '链上信息暂时读不到，因此这一页不显示合约地址、总量、税率或上限。',
             style: LoopTypography.sora(
               size: 11,
               weight: FontWeight.w500,
@@ -507,7 +507,7 @@ LoopRecordRow launchMilestoneRow({
     );
     if (evidence.reviewer != null) lines.add('复核人 ${evidence.reviewer}');
   } else {
-    lines.add('该状态不带证据');
+    lines.add('这一状态没有可查材料');
   }
   return LoopRecordRow(
     key: ValueKey<String>('launch-milestone-${milestone.trackKey}'),
@@ -562,7 +562,7 @@ class LaunchChainBlock extends StatelessWidget {
               key: const ValueKey<String>('launch-chain-row'),
               title: loopChainName(loopLaunchTestnetChainId),
               subtitle:
-                  '$loopLaunchTestnetChainId · Launch 链槽位；'
+                  '$loopLaunchTestnetChainId · Launch 链；'
                   '钱包余额、行情、兑换与授权仍在主网',
               trailingBadge: const LoopTestnetBadge(),
               semanticLabel:

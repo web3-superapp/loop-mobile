@@ -8,7 +8,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 enum LoopNotificationCategory {
   miningSettlement('mining.settlement', '挖矿', '每日结算完成', null),
   miningWeight('mining.weight', '挖矿', '权重变化', '持有币的 Mining Weight 调整时'),
-  launchRound('launch.round', 'Launch', '快照与开始提醒', null),
+  launchRound('launch.round', 'Launch', '资格快照与开始提醒', null),
   launchGraduation('launch.graduation', 'Launch', '毕业通知', null),
   tradeResult('trade.result', '交易', '成交结果', null),
   tradePriceAlert('trade.priceAlert', '交易', '价格提醒', '关闭后价格提醒仍会记录事件，但不会生成通知'),

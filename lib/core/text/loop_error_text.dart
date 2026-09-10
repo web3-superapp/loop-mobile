@@ -82,7 +82,7 @@ abstract final class LoopErrorText {
       code: 'CAPABILITY_UNAVAILABLE',
       userMessageKey: 'errors.capability.unavailable',
       title: '功能暂不可用',
-      message: '该能力尚未接入或暂时关闭，稍后可以再试。',
+      message: '这个功能暂时不可用，稍后再试。',
       retryable: true,
     ),
     LoopErrorCopy(
@@ -124,7 +124,7 @@ abstract final class LoopErrorText {
       code: 'INTERNAL_ERROR',
       userMessageKey: 'errors.internal',
       title: '服务内部错误',
-      message: '服务端发生错误。结果未确认，请查看最新状态后再决定是否重试。',
+      message: '出了点问题，结果未确认。请查看最新状态后再决定是否重试。',
       retryable: false,
     ),
     LoopErrorCopy(

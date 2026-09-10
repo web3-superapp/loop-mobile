@@ -41,7 +41,7 @@ class PayScreen extends ConsumerWidget {
         archetype: LoopFolioArchetype.listing,
         kicker: 'SCAN TO PAY',
         heading: '扫码支付尚未开放',
-        caption: '本步只保留入口：相机、收款码与支付商接入都没有启用，也不会请求相机权限。',
+        caption: '扫码支付还没有开放，这里不会打开相机，也不会生成收款码。',
       ),
       sections: <Widget>[
         LoopUnavailableCard(
@@ -92,7 +92,7 @@ class BridgeScreen extends ConsumerWidget {
         archetype: LoopFolioArchetype.action,
         kicker: 'BRIDGE INTENT',
         heading: '跨链尚未开放',
-        caption: '没有接入任何跨链路由，因此这里不提供来源链、目标链、数量、费用与到账时间。',
+        caption: '跨链还没有开放，这里不显示来源链、目标链、数量、费用与到账时间。',
       ),
       sections: <Widget>[
         LoopUnavailableCard(
@@ -134,7 +134,7 @@ class BridgeStatusScreen extends ConsumerWidget {
   /// The three reviewed steps. Each one is a separate state, and none of them
   /// can be observed while there is no bridge runtime.
   static const steps = <(String, String)>[
-    ('源链确认', '来源链上的交易被确认'),
+    ('源链确认', '转出链上的交易被确认'),
     ('中继处理', '跨链中继完成消息传递'),
     ('目标链到账', '目标链上收到资产'),
   ];
@@ -157,12 +157,12 @@ class BridgeStatusScreen extends ConsumerWidget {
         archetype: LoopFolioArchetype.state,
         kicker: 'BRIDGE PROGRESS',
         heading: '没有可跟踪的跨链',
-        caption: '源链确认、中继处理与目标链到账是三个独立状态；现在三个都没有来源。',
+        caption: '转出确认、中转处理与到账是三个独立状态，目前都读不到。',
       ),
       sections: <Widget>[
         LoopUnavailableCard(
           key: const ValueKey<String>('bridge-status-unavailable'),
-          label: '跨链进度没有来源',
+          label: '读不到跨链进度',
           reasonCode: _reasonFor(capability, deferredReasonCode),
         ),
         const LoopLabel('步骤'),
@@ -347,7 +347,7 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
         const LoopLabel('域名信誉'),
         const LoopUnavailableCard(
           key: ValueKey<String>('dapp-reputation-unavailable'),
-          label: '没有域名信誉来源',
+          label: '读不到域名信誉',
           reasonCode: DappReviewScreen.reputationReasonCode,
         ),
         const LoopLabel('连接与签名'),

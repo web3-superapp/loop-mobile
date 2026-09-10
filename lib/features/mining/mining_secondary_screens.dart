@@ -20,9 +20,7 @@ LoopEmpty _miningCapabilityBlock(
   key: ValueKey<String>(key),
   icon: 'warn',
   message: '$subject当前不可用',
-  reason: capability.reasonCode == null
-      ? '尚未读取到能力清单，本页不请求任何挖矿数据。'
-      : '服务端原因：${capability.reasonCode}。',
+  reason: '请稍后再试。',
 );
 
 /// `mining-assets` · the per-asset power breakdown.
@@ -81,7 +79,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
         archetype: LoopFolioArchetype.record,
         kicker: 'POWER FORMULA',
         heading: launchMissingFigure,
-        caption: '每个资产的贡献需要公式、权重与参考价三者同时就位，当前都没有来源。',
+        caption: '每个资产的贡献需要公式、权重与参考价三项齐备，目前都还读不到。',
         stamp: 'UNAVAILABLE',
       ),
       sections: <Widget>[
@@ -97,7 +95,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
             phase: state.phase,
             failureKind: state.failureKind,
             emptyMessage: '没有读到算力明细',
-            emptyReason: '服务端没有返回任何资产口径。',
+            emptyReason: '暂时读不到资产数据。',
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -108,12 +106,12 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
             reasonCode: assets.totalPower.reasonCode,
           ),
           const LoopLabel('计入与排除的资产'),
-          LaunchUnavailableCard(label: '资产明细来源', fact: assets.source),
+          LaunchUnavailableCard(label: '资产明细出处', fact: assets.source),
           const LoopNotice(
             key: ValueKey<String>('mining-assets-empty-notice'),
             icon: 'info',
-            title: '空列表按契约成立',
-            body: '服务端返回的计入与排除列表都是空的，这是契约规定的结果，不代表钱包没有持仓，也不代表某个资产被排除。',
+            title: '空列表是正常结果',
+            body: '计入与排除列表都是空的。这不代表你的钱包没有持仓，也不代表某个资产被排除。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const LoopLabel('社区权重'),
@@ -122,7 +120,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('mining-assets-open-communities'),
                 title: '查看社区挖矿面板',
-                subtitle: '每个社区的权重由服务端审核结果授予',
+                subtitle: '每个社区的权重按审核结果授予',
                 onTap: widget.onOpenCommunities,
               ),
             ],
@@ -133,7 +131,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
             key: ValueKey<String>('mining-assets-price-notice'),
             icon: 'shield',
             title: '参考价不是瞬时成交价',
-            body: '参考价由服务端的多来源计算得出，具体规则与阈值要等公式版本批准后才公开；本页不展示任何倍率或价格。',
+            body: '参考价由多个渠道的价格计算得出，具体规则等公式批准后才公开。这里不显示任何倍率或价格。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),
@@ -181,7 +179,7 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
         archetype: LoopFolioArchetype.record,
         kicker: 'CLAIMABLE REWARD',
         heading: launchMissingFigure,
-        caption: '待领取数量需要发放权限与结算快照，两者当前都不存在。',
+        caption: '还没有发生过结算，因此没有可领取的数量。',
         stamp: 'NOT CLAIMABLE',
       ),
       sections: <Widget>[
@@ -197,11 +195,11 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
             phase: state.phase,
             failureKind: state.failureKind,
             emptyMessage: '没有读到奖励记录',
-            emptyReason: '服务端没有返回任何奖励口径。',
+            emptyReason: '暂时读不到奖励数据。',
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          const LoopLabel('奖励口径'),
+          const LoopLabel('奖励规则'),
           LaunchEmptyMetricGrid(
             key: const ValueKey<String>('mining-rewards-metrics'),
             metrics: <(String, String)>[
@@ -237,7 +235,7 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
             key: ValueKey<String>('mining-rewards-ledger-notice'),
             icon: 'info',
             title: '没有记录不等于没有产出',
-            body: '账本为空是因为还没有任何一次结算发生过；公式批准并产生快照之后，这里才会出现可核验的条目。',
+            body: '还没有发生过结算，所以账本是空的。公式批准并完成第一次结算后，这里才会有可核对的条目。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),
@@ -285,7 +283,7 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
         archetype: LoopFolioArchetype.record,
         kicker: 'NETWORK POSITION',
         heading: launchMissingFigure,
-        caption: '排名只能来自服务端已结算的算力快照，当前没有任何快照。',
+        caption: '排名要等算力结算之后才有，目前还没有结算过。',
         stamp: 'UNAVAILABLE',
       ),
       sections: <Widget>[
@@ -317,7 +315,7 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
               phase: state.phase,
               failureKind: state.failureKind,
               emptyMessage: '没有读到排行榜',
-              emptyReason: '服务端没有返回任何排行口径。',
+              emptyReason: '暂时读不到排行数据。',
               onRetry: () => unawaited(controller.reload()),
             )
           else ...<Widget>[
@@ -333,14 +331,14 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
               body:
                   '${miningRuleKeyText(rank.display.ruleKey)}'
                   '未满足条件时显示「${miningRuleKeyText(rank.display.anonymousMemberKey)}」。'
-                  '这条规则已经写入契约，不会因为榜单何时上线而改变。',
+                  '这条规则不会因为榜单何时上线而改变。',
               margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             ),
             const LoopNotice(
               key: ValueKey<String>('mining-rank-notice'),
               icon: 'info',
               title: '排名不是静态权益',
-              body: '其他账号或社区的算力变化会改变名次；榜单只会来自最近一次服务端快照，不会由客户端计算。',
+              body: '其他账号或社区的算力变化会改变名次。榜单只来自最近一次结算，不会在这台设备上计算。',
               margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
             ),
           ],
@@ -390,7 +388,7 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
         archetype: LoopFolioArchetype.record,
         kicker: 'COMMUNITY POWER',
         heading: launchMissingFigure,
-        caption: '社区总算力、我的贡献与参与人数都依赖挖矿公式，当前没有来源。',
+        caption: '社区总算力、我的贡献与参与人数都要等挖矿公式确定，目前还读不到。',
         stamp: 'UNAVAILABLE',
       ),
       sections: <Widget>[
@@ -413,7 +411,7 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
         else ...<Widget>[
           const LoopLabel('社区权重'),
           _WeightBlock(weight: community.weight),
-          const LoopLabel('算力口径'),
+          const LoopLabel('算力规则'),
           LaunchEmptyMetricGrid(
             key: const ValueKey<String>('mining-community-metrics'),
             metrics: <(String, String)>[
@@ -443,7 +441,7 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
             key: ValueKey<String>('mining-community-notice'),
             icon: 'shield',
             title: '权重由平台综合评定',
-            body: '权重来自服务端的审核结果，评审因子公开、量化分值不公开。未通过审核的社区没有权重，也不会有任何算力。',
+            body: '权重按审核结果给出，评审因子公开、具体分值不公开。未通过审核的社区没有权重，也不会有算力。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),
@@ -534,7 +532,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
         heading: draft == null
             ? launchMissingFigure
             : miningRuleKeyText(draft.expressionKey),
-        caption: '规则以服务端已批准的公式版本为准；下面展示的是尚未批准的草案。',
+        caption: '规则以已批准的公式为准。下面是还没批准的草案。',
         stamp: draft == null ? null : '待批准（${draft.configVersion}）',
       ),
       sections: <Widget>[
@@ -551,7 +549,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
             emptyMessage: '没有读到规则',
-            emptyReason: '服务端没有返回任何公式版本。',
+            emptyReason: '暂时读不到公式版本。',
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -569,7 +567,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
               key: ValueKey<String>('mining-rules-no-pending'),
               icon: 'info',
               message: '没有待批准的版本',
-              reason: '服务端目前没有任何草案版本。',
+              reason: '目前没有草案版本。',
             )
           else
             for (final version in rules.pendingApproval)

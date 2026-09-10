@@ -50,7 +50,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
         archetype: LoopFolioArchetype.record,
         kicker: 'PRODUCT RECORD',
         heading: clientVersion.isEmpty ? 'LOOP' : 'LOOP · $clientVersion',
-        caption: '版本与构建号由本机读取；服务端只下发合约版本、规则快照与开源清单。',
+        caption: '版本与构建号来自这台设备；协议版本、规则与开源清单由 LOOP 提供。',
         stamp: about == null ? null : 'CONTRACT ${about.contractVersion}',
       ),
       sections: <Widget>[
@@ -62,7 +62,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
               title: '客户端版本',
               subtitle: clientVersion.isEmpty
                   ? '构建配置里没有合法的版本号，这里不编造一个'
-                  : '由 --dart-define 的构建配置读取，不上传给服务端',
+                  : '来自这台设备的构建配置，不会上传',
               trailing: clientVersion.isEmpty ? null : clientVersion,
               trailingBadge: clientVersion.isEmpty
                   ? const LoopBadge('未配置')
@@ -83,7 +83,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
             keyPrefix: 'about',
             phase: state.phase,
             failureKind: state.failureKind,
-            emptyMessage: '读不到服务端的产品记录',
+            emptyMessage: '暂时读不到产品记录',
             skeleton: LoopSkeletonType.detail,
             onRetry: () =>
                 unawaited(ref.read(aboutControllerProvider.notifier).reload()),
@@ -91,7 +91,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
         else ...<Widget>[
           const LoopLabel('法务'),
           _AboutTermsBlock(termsGate: about!.termsGate),
-          const LoopLabel('规则快照'),
+          const LoopLabel('当前规则'),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               for (final entry in about.configVersions)
@@ -110,7 +110,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
           ),
           LoopProvenanceFooter(
             key: const ValueKey<String>('about-config-note'),
-            text: '规则快照只用于展示；客户端不会把任何一个版本固定下来。',
+            text: '这里只用于查看，不会固定任何一个版本。',
           ),
           const LoopLabel('开源许可'),
           LoopNotice(
@@ -149,7 +149,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
         if (about != null)
           LoopUnavailableCard(
             key: const ValueKey<String>('about-client-build-note'),
-            label: '服务端不发布客户端版本',
+            label: 'LOOP 不发布客户端版本',
             reasonCode: about.clientBuildReasonCode,
           ),
         const SizedBox(height: 20),
@@ -177,7 +177,7 @@ class _AboutTermsBlock extends StatelessWidget {
         LoopRecordRow(
           key: const ValueKey<String>('about-terms-version'),
           title: '协议版本',
-          subtitle: '服务端已下发版本槽位；文档地址本步仍未下发，所以这里没有可打开的链接。',
+          subtitle: '已经有版本号，但还没有可打开的文档链接。',
           trailing: termsGate.requiredVersion,
         ),
       ],

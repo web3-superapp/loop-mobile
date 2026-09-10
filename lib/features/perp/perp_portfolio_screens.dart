@@ -42,7 +42,7 @@ class _PerpPositionsPreview extends StatelessWidget {
     final hasFacts = snapshotState == PerpSnapshotState.preview;
     return LoopPage(
       key: const ValueKey<String>('perp-preview-positions'),
-      eyebrow: 'D4 · Provider positions · 开发预览',
+      eyebrow: 'Provider positions · 开发预览',
       title: 'Positions',
       subtitle: 'PnL and liquidation values render only from a fresh, correlated Hyperliquid snapshot.',
       actions: <Widget>[
@@ -171,7 +171,7 @@ class _PerpPositionsLiveState extends ConsumerState<_PerpPositionsLive>
 
     return LoopPage(
       key: const ValueKey<String>('perp-live-positions'),
-      eyebrow: 'D4 · Hyperliquid Testnet',
+      eyebrow: 'Hyperliquid Testnet',
       title: 'Positions',
       subtitle: 'Short-lived Core Perp positions read through the LOOP backend. Continuation pages are live keyset reads, not one point-in-time snapshot.',
       actions: <Widget>[
@@ -740,7 +740,7 @@ class PerpPositionScreen extends ConsumerWidget {
     const position = PerpPreviewData.ethPosition;
     return LoopPage(
       key: const ValueKey<String>('perp-preview-position-detail'),
-      eyebrow: 'D5 · ${position.id} · 开发预览',
+      eyebrow: '${position.id} · 开发预览',
       title: '${position.symbol} position',
       subtitle: 'Inspect liquidation and margin facts without exposing a production mutation path.',
       children: <Widget>[
@@ -915,7 +915,7 @@ class _PerpPositionLiveUnavailable extends StatelessWidget {
   Widget build(BuildContext context) {
     return LoopPage(
       key: const ValueKey<String>('perp-position-live-unavailable'),
-      eyebrow: 'D5 · Hyperliquid Testnet',
+      eyebrow: 'Hyperliquid Testnet',
       title: 'Position detail',
       subtitle: 'The production detail projection is intentionally unavailable until it can share a fresh D4 position without adding a second source of truth.',
       children: <Widget>[
@@ -966,7 +966,7 @@ class PerpOrdersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasFacts = snapshotState == PerpSnapshotState.preview;
     return LoopPage(
-      eyebrow: 'D6 · Provider orders',
+      eyebrow: 'Provider orders',
       title: 'Open orders',
       subtitle: 'Order controls are intentionally inert until production mutation gates are complete.',
       actions: <Widget>[
@@ -1119,7 +1119,7 @@ class PerpHistoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasFacts = snapshotState == PerpSnapshotState.preview;
     return LoopPage(
-      eyebrow: 'D7 · Provider history',
+      eyebrow: 'Provider history',
       title: 'Trade history',
       subtitle: 'Preview fills and funding events demonstrate structure only; exports remain disabled.',
       actions: <Widget>[

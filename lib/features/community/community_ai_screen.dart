@@ -58,8 +58,8 @@ class CommunityAiScreen extends ConsumerWidget {
         kicker: 'COMMUNITY BRIEF',
         heading: 'Community AI',
         caption:
-            '摘要与问答会保留来源与观察时间，不替代项目方公告，也不替你做投资决定。'
-            '当前还没有可用的运行时，本页不展示任何示例回答或统计数字。',
+            '摘要与问答都会标注出处和时间，不替代项目方公告，也不替你做投资决定。'
+            '功能还没有开放，这里不显示任何示例回答或数字。',
       ),
       sections: <Widget>[
         LoopEmpty(
@@ -83,7 +83,7 @@ class CommunityAiScreen extends ConsumerWidget {
                 ),
                 title: _communityAiScopes[index].$2,
                 subtitle: _communityAiScopes[index].$3,
-                trailingBadge: const LoopBadge('未接入'),
+                trailingBadge: const LoopBadge('未开放'),
                 position: index == 0
                     ? LoopRowPosition.first
                     : index == _communityAiScopes.length - 1
@@ -96,7 +96,7 @@ class CommunityAiScreen extends ConsumerWidget {
           key: ValueKey<String>('community-ai-scope-note'),
           icon: 'info',
           title: '只给数据和事实',
-          body: '未来的 AI 只提供带来源与观察时间的客观信息，不输出评级或综合结论，也不替你做投资决定。',
+          body: '之后的 AI 只提供标注出处和时间的客观信息，不输出评级或结论，也不替你做投资决定。',
           margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
         ),
         LoopEmpty(

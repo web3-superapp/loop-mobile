@@ -370,15 +370,15 @@ String communicationUnavailableReason(String? reasonCode) =>
         '官方群已达到服务商的成员上限，暂时无法进入。你的 LOOP 社区成员资格不受影响。',
       'COMMUNITY_CHANNEL_PROVISION_FAILED' => '官方群创建或同步失败，需要运维介入后才能进入。',
       'COMMUNITY_MEMBERSHIP_REQUIRED' => '需要先加入该社区，才能进入官方群。',
-      'VOICE_ROOM_RUNTIME_UNAVAILABLE' => '通信模块已启用，但服务端依赖尚未配齐。',
+      'VOICE_ROOM_RUNTIME_UNAVAILABLE' => '聊天暂时不可用，稍后再试。',
       'COMMUNITY_VOICE_ROOM_NOT_LIVE' => '该社区当前没有进行中的语音房。',
-      'COMMUNICATION_RUNTIME_UNAVAILABLE' => '通信模块已启用，但服务端依赖尚未配齐。',
-      'V2_COMMUNICATION_RUNTIME_DEFERRED' => '通信模块在当前环境尚未启用。',
+      'COMMUNICATION_RUNTIME_UNAVAILABLE' => '聊天暂时不可用，稍后再试。',
+      'V2_COMMUNICATION_RUNTIME_DEFERRED' => '聊天在当前环境还没有开放。',
       'AUDIO_ROOM_USER_ROLE_EVIDENCE_PENDING' =>
-        '语音房入口需要服务商角色权限证据：必须先证明 audio_room 的 user 角色不能创建通话，'
-            '客户端才允许连接。证据到位前本页不发起任何语音连接。',
-      'STREAM_PARTICIPANT_COUNT_NOT_OBSERVED' => '服务商没有返回可信的在线人数，因此不展示任何数字。',
-      'COMMUNITY_AI_RUNTIME_DEFERRED' => 'Community AI 运行时尚未接入，本页所有功能区都不可用。',
-      null => '该字段当前没有可信来源。',
-      _ => '该字段当前没有可信来源。',
+        '语音房还在验证中，'
+            '验证通过前这一页不会发起任何语音连接。',
+      'STREAM_PARTICIPANT_COUNT_NOT_OBSERVED' => '在线人数暂时读不到，因此不显示数字。',
+      'COMMUNITY_AI_RUNTIME_DEFERRED' => 'Community AI 还没有开放，这一页暂时不可用。',
+      null => '这一项暂时读不到。',
+      _ => '这一项暂时读不到。',
     };

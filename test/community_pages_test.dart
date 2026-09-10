@@ -81,8 +81,10 @@ void main() {
         find.byKey(const ValueKey<String>('community-discover-hero')),
         findsOneWidget,
       );
-      // The rule version is cited; the page never calls it a recommendation.
-      expect(find.textContaining('rule:verified-members-v1'), findsOneWidget);
+      // The rule is described in plain language; its internal id never
+      // reaches the screen, and the page never calls it a recommendation.
+      expect(find.textContaining('rule:'), findsNothing);
+      expect(find.textContaining('推荐只按成员数与创建时间排列'), findsOneWidget);
     });
 
     testWidgets('an empty aggregate never renders a zero', (tester) async {
@@ -269,8 +271,8 @@ void main() {
       expect(seg('newest').onSelected, isNotNull);
       expect(seg('power').onSelected, isNull);
       expect(seg('discussion').onSelected, isNull);
-      expect(find.textContaining('挖矿口径（D19）'), findsOneWidget);
-      expect(find.textContaining('Stream 接通（D7）'), findsOneWidget);
+      expect(find.textContaining('算力排序暂时不能用'), findsOneWidget);
+      expect(find.textContaining('讨论量排序暂时不能用'), findsOneWidget);
     });
 
     testWidgets('choosing 新社区 refetches with the newest sort', (tester) async {
@@ -384,7 +386,7 @@ void main() {
       final card = find.byKey(const ValueKey<String>('community-bound-asset'));
       await scrollToCommunitySection(tester, card);
       expect(card, findsOneWidget);
-      expect(find.textContaining('尚未解析'), findsOneWidget);
+      expect(find.textContaining('还没有解析'), findsOneWidget);
       expect(find.textContaining(r'$'), findsNothing);
     });
 
@@ -470,7 +472,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('已加入社区'), findsNothing);
-      expect(find.textContaining('无权执行此操作'), findsWidgets);
+      expect(find.textContaining('没有执行这个操作的权限'), findsWidgets);
     });
 
     testWidgets('only the owner is offered the profile edit action', (

@@ -146,7 +146,7 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
                 icon: 'clock',
                 message: '需要人工处理',
                 reason:
-                    '服务端已经受理这次请求，但需要人工介入才能完成。'
+                    '这次请求已经收到，需要人工处理才能完成。'
                     '这里不提供重试：重新提交会开出第二个操作。请联系支持后再回到这个会话。',
               ),
               LoopNotice(
@@ -154,7 +154,7 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
                 icon: 'info',
                 tone: LoopNoticeTone.warn,
                 title: '不要重复提交',
-                body: '这次请求已经记录在服务端，重复发起不会加快处理，反而会产生一条新的待处理操作。',
+                body: '这次请求已经记录，重复发起不会更快，只会多出一条待处理记录。',
                 margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
               ),
             ],
@@ -168,7 +168,7 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
           failureKind: state.failureKind,
           skeleton: LoopSkeletonType.list,
           emptyMessage: '还没有打开这个私聊',
-          emptyReason: '服务端还没有返回可用的会话地址。',
+          emptyReason: '这个会话暂时打不开。',
           onRetry: () => unawaited(controller.resolve()),
         ),
       );
@@ -254,7 +254,7 @@ class _FriendshipRequired extends StatelessWidget {
           reason: requestSent
               ? '消息请求已经发出。对方接受之前，这里不会出现会话。'
               : '私聊需要双方成为好友。先发送一条消息请求，对方接受后这个会话才会打开。'
-                    '服务端对不可达的账号统一返回同一个结果，因此这里不代表对方一定存在。',
+                    '这个结果不代表对方账号一定存在。',
         ),
         if (!requestSent)
           Padding(

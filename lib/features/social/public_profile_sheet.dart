@@ -224,7 +224,7 @@ class _PublicProfileSheetState<T extends Object>
               key: ValueKey<String>('public-profile-not-targetable'),
               icon: 'warn',
               message: '这个成员没有可用的公开资料',
-              reason: '服务端没有为该账号返回公开资料标识，因此不能关注，也不能作为任何操作的目标。',
+              reason: '这个账号没有公开资料，不能关注，也不能进行其他操作。',
               margin: EdgeInsets.zero,
             )
           else ...<Widget>[
@@ -232,7 +232,7 @@ class _PublicProfileSheetState<T extends Object>
               const LoopNotice(
                 key: ValueKey<String>('public-profile-follow-unknown'),
                 icon: 'info',
-                body: '当前关注状态没有随本页下发，按钮结果以服务端返回为准。',
+                body: '这里读不到当前的关注状态，以操作后的结果为准。',
                 margin: EdgeInsets.only(bottom: 12),
               ),
             LoopButton(
@@ -254,7 +254,7 @@ class _PublicProfileSheetState<T extends Object>
           ),
           const SizedBox(height: 6),
           Text(
-            '私聊要等 Stream 会话接通（D7）后才能从这里发起。',
+            '私聊还不能从这里发起，聊天开放后可用。',
             key: const ValueKey<String>('public-profile-dm-reason'),
             style: LoopTypography.sora(
               size: 11.5,

@@ -199,7 +199,7 @@ void main() {
 
       final row = _rowWidget(tester);
       expect(row.trailing, '—');
-      expect(row.subtitle, '设备当前离线，未读到社区成员关系');
+      expect(row.subtitle, '设备已离线，没有读到社区成员关系');
 
       // The entry point survives the failure and hands the owner to the page
       // that owns the retry.

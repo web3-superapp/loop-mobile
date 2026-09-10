@@ -190,7 +190,7 @@ void main() {
       );
 
       await expectPermission(tester, 'wallet-directory');
-      expect(find.textContaining('无权执行此操作'), findsOneWidget);
+      expect(find.textContaining('没有执行这个操作的权限'), findsOneWidget);
     });
 
     testWidgets('networth reads a refused account as a permission state', (

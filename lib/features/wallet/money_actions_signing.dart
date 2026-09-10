@@ -254,7 +254,7 @@ List<IntentField> moneyActionFields(LoopWalletIntent intent) {
         IntentField(
           label: '额度',
           value: review.amount.isUnlimited
-              ? '无限（MAX_UINT256）'
+              ? '无限额度'
               : '${review.amount.display} ${review.asset.symbol}',
         ),
       ]);
@@ -306,7 +306,7 @@ List<IntentField> moneyActionFields(LoopWalletIntent intent) {
 /// zh-CN label for the pre-execution result. It never says "safe".
 String moneySimulationLabel(LoopIntentSimulation simulation) =>
     switch (simulation.status) {
-      LoopSimulationStatus.passed => '预执行通过（eth_call）',
-      LoopSimulationStatus.reverted => '预执行被拒绝',
-      LoopSimulationStatus.unavailable => '预执行不可用',
+      LoopSimulationStatus.passed => '试算通过',
+      LoopSimulationStatus.reverted => '试算被拒绝',
+      LoopSimulationStatus.unavailable => '试算不可用',
     };

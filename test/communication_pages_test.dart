@@ -581,7 +581,7 @@ void main() {
         find.byKey(const ValueKey<String>('voiceroom-evidence-pending')),
         findsOneWidget,
       );
-      expect(find.textContaining('不能创建通话'), findsOneWidget);
+      expect(find.textContaining('语音房还在验证中'), findsOneWidget);
       // The page must not read the room while the evidence is missing.
       expect(voice.commands, isEmpty);
     });

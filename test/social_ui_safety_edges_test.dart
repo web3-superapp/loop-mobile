@@ -238,7 +238,7 @@ void main() {
                 find.byKey(const ValueKey<String>('group-alias-reserved')),
                 findsOneWidget,
               );
-              expect(find.textContaining('Stream 成员投影仍待确认'), findsOneWidget);
+              expect(find.textContaining('群里的显示还在同步'), findsOneWidget);
               expect(
                 find.byKey(
                   const ValueKey<String>('group-alias-retry-projection'),

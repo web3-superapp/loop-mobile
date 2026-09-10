@@ -102,7 +102,7 @@ void main() {
             LoopEmpty(
               key: const ValueKey<String>('with-action'),
               message: '还没有内容',
-              reason: '服务端还没有返回这个列表。',
+              reason: '这个列表暂时读不到。',
               action: LoopButton(label: '重试', onPressed: () {}),
             ),
           ],
@@ -112,7 +112,7 @@ void main() {
           .getSize(find.byKey(const ValueKey<String>('loop-empty')))
           .height;
 
-      expect(find.text('服务端还没有返回这个列表。'), findsOneWidget);
+      expect(find.text('这个列表暂时读不到。'), findsOneWidget);
       expect(find.text('重试'), findsOneWidget);
       expect(withAction, greaterThan(oneLine));
     });
@@ -151,7 +151,7 @@ void main() {
         tester,
         LoopPageBlock(
           title: '这个页面当前不可用',
-          message: '服务端还没有开放这项功能。',
+          message: '这项功能还没有开放。',
           action: LoopButton(label: '返回', onPressed: () {}),
         ),
       );

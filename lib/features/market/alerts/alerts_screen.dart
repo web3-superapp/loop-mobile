@@ -165,7 +165,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
           const LoopNotice(
             key: ValueKey<String>('alerts-push-notice'),
             title: '推送尚不可用',
-            body: '没有接入 FCM / APNs，提醒只会出现在应用内的通知列表里。评估器只用新鲜价格，过期价格不会触发。',
+            body: '推送还没有开放，提醒只出现在应用内的通知列表里。只有最新价格会触发提醒。',
             tone: LoopNoticeTone.warn,
           ),
           LoopRecordGroup(
@@ -459,7 +459,7 @@ class _AlertNotificationFeedState
       return const LoopEmpty(
         key: ValueKey<String>('alerts-feed-empty'),
         message: '还没有触发记录',
-        reason: '提醒触发后会在这里留下一条带来源与观察时间的记录。',
+        reason: '提醒触发后会在这里留下一条记录，标注出处和时间。',
       );
     }
     return Column(

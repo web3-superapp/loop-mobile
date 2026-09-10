@@ -238,7 +238,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
         archetype: LoopFolioArchetype.record,
         kicker: 'GROUP RECORD',
         heading: '群信息',
-        caption: '成员、通知与退出操作按风险从低到高排列。本页只展示服务端确认过的事实。',
+        caption: '成员、通知与退出按风险从低到高排列。这里只显示已确认的信息。',
         stamp: 'PRIVATE',
       ),
       sections: <Widget>[
@@ -296,7 +296,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
               key: ValueKey<String>('group-info-state-empty'),
               icon: 'info',
               message: '没有可退出的群成员关系',
-              reason: '服务端没有确认这个群，或当前账号已经不是成员。这不代表退出失败。',
+              reason: '找不到这个群，或者你已经不是成员了。这不代表退出失败。',
             )
           else if (_resolveFailure == GroupAliasGatewayFailureKind.unavailable)
             const LoopEmpty(
@@ -308,7 +308,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           else if (_resolveFailure != null)
             LoopErrorState(
               key: const ValueKey<String>('group-info-resolve-failed'),
-              reason: '没有确认这个群的服务端标识，因此不提供退出操作，也没有提交任何变更。',
+              reason: '这个群的信息还没确认，暂时不能退出，也没有提交任何改动。',
               onRetry: () => unawaited(_resolveGroup()),
             )
           else
@@ -334,7 +334,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     final confirmed = await confirmCommunityAction(
       context,
       title: '退出这个群聊？',
-      body: '退出后你将不再收到这个群的消息。群创建者不能退出，是否接受由服务端判定。',
+      body: '退出后你不会再收到这个群的消息。群创建者不能退出。',
       confirmLabel: '退出',
       sheetKey: 'group-leave-confirm-sheet',
     );

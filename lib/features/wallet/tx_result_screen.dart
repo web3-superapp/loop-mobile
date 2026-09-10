@@ -148,13 +148,13 @@ class _TransactionResultScreenState
           key: ValueKey<String>('tx-result-folio'),
           kicker: 'TRANSACTION RESULT',
           heading: '没有可展示的结果',
-          caption: '结果页只展示一笔具体操作，需要它的 intentId。',
+          caption: '结果页只展示一笔具体操作，需要指定是哪一笔。',
         ),
         body: const <Widget>[
           LoopEmpty(
             key: ValueKey<String>('tx-result-empty'),
             message: '这里还没有要展示的操作',
-            reason: '从发送、授权或兑换的签名弹层进入时，这一页会展示那一笔的服务端状态。',
+            reason: '从发送、授权或兑换的签名页进来时，这一页会显示那一笔的状态。',
           ),
         ],
       );
@@ -190,7 +190,7 @@ class _TransactionResultScreenState
         key: const ValueKey<String>('tx-result-folio'),
         kicker: 'TRANSACTION RESULT',
         heading: intent == null ? '正在读取结果' : _headline(intent),
-        caption: intent == null ? '结果只来自服务端对账，本页不会自己判断成败。' : _caption(intent),
+        caption: intent == null ? '结果以链上核对为准，这一页不会自己判断成败。' : _caption(intent),
         stamp: intent == null
             ? null
             : moneyIntentStateLabel(intent.state).toUpperCase(),
@@ -229,10 +229,10 @@ class _TransactionResultScreenState
               key: ValueKey<String>('tx-result-unreported'),
               icon: 'warn',
               tone: LoopNoticeTone.warn,
-              title: '服务端还没有记录到这次提交',
+              title: '这次提交还没有记录到',
               body:
                   '如果钱包已经广播过这笔交易，它可能已经上链，只是上报没有成功。'
-                  '请稍后回到这里重试；在服务端接受上报之前不要重新签名。',
+                  '请稍后回到这里重试，在提交被接受之前不要重新签名。',
             ),
           if (intent.state == LoopIntentState.submitted)
             const LoopNotice(
@@ -240,7 +240,7 @@ class _TransactionResultScreenState
               icon: 'clock',
               tone: LoopNoticeTone.warn,
               title: '已提交，等待回执',
-              body: '提交成功不代表链上已完成。确认需要 15 个区块确认后由服务端对账给出。',
+              body: '提交成功不代表链上已完成，还需要 15 个区块确认。',
             ),
           if (_pollingStopped)
             LoopNotice(
@@ -250,7 +250,7 @@ class _TransactionResultScreenState
               title: '已停止自动查询',
               body:
                   '连续 ${widget.maximumPollFailures} 次读取失败，本页不再自动重试，'
-                  '以免持续打扰服务端。这笔操作的状态没有改变，请手动重试。',
+                  '已停止自动重试。这笔操作的状态没有改变，请手动重试。',
               trailing: LoopButton(
                 key: const ValueKey<String>('tx-result-poll-retry'),
                 label: '重试',
@@ -286,7 +286,7 @@ class _TransactionResultScreenState
             key: ValueKey<String>('tx-result-power'),
             icon: 'mine',
             title: '算力影响不可用',
-            body: '挖矿算力与日产出没有服务端来源，本页不展示任何数字。',
+            body: '挖矿算力与日产出暂时读不到，这里不显示数字。',
           ),
           MoneyFactsFooter(intent: intent),
         ],
@@ -351,7 +351,7 @@ class _ResultBanner extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             intent.result.reasonCode == null
-                ? '服务端记录的最新状态。'
+                ? '最新状态。'
                 : loopReasonCodeText(intent.result.reasonCode),
             style: Theme.of(context).textTheme.bodyMedium,
           ),

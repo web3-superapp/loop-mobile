@@ -114,8 +114,8 @@ class _FullChartScreenState extends ConsumerState<FullChartScreen> {
         ),
         const LoopNotice(
           key: ValueKey<String>('chart-full-interval-notice'),
-          title: '周期与契约一一对应',
-          body: '可选周期为 15m / 1H / 4H / 1D / 1W。原型里的 1m 没有后端来源，因此没有出现在这里。',
+          title: '可选周期',
+          body: '可选周期为 15m / 1H / 4H / 1D / 1W。1m 暂时不可用。',
         ),
       ],
     );
@@ -221,7 +221,7 @@ class _HolderDistributionScreenState
           const LoopNotice(
             key: ValueKey<String>('token-holders-notice'),
             title: '没有分布就不画分布',
-            body: '前十 / 前百集中度需要全量历史，本步没有来源。这里不展示任何推测比例或示例地址。',
+            body: '前十 / 前百集中度暂时读不到，这里不显示任何比例或地址。',
           ),
         ],
       ],
@@ -351,7 +351,7 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
           key: const ValueKey<String>('token-trades-empty'),
           message: _segment == 1 ? '这一页没有大单' : '这一页没有成交',
           reason: _segment == 1
-              ? '大单是本地按报价金额筛选的视图，不是服务端事实。'
+              ? '大单是按成交金额在本机筛出来的，不是官方标注。'
               : '索引器已经读到这个区间，但其中没有成交。',
         )
       else
@@ -362,7 +362,7 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
       const LoopNotice(
         key: ValueKey<String>('token-trades-notice'),
         title: '不下发对手方地址',
-        body: '服务端只告诉你哪一笔是你自己的钱包发起的。"大单"是本地按金额筛选的视图，"聪明钱"没有来源。',
+        body: '这里只能标出哪一笔是你自己的钱包发起的。"大单"是按金额在本机筛出来的，"聪明钱"暂时没有数据。',
       ),
     ];
   }
@@ -467,7 +467,7 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
         heading: block is MarketNewPairsAvailable
             ? '${block.items.length} 个新对'
             : '新币发现',
-        caption: '流动性、合约状态与来源标注优先于短时价格表现。',
+        caption: '先看流动性、合约状态与数据出处，再看短期价格。',
       ),
       sections: <Widget>[
         if (blocked)
@@ -500,8 +500,8 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
               if (block.items.isEmpty)
                 const LoopEmpty(
                   key: ValueKey<String>('new-pairs-empty'),
-                  message: '来源当前没有报告新的池',
-                  reason: '这是来源的结果，不是筛选后的结论。',
+                  message: '当前没有新的池',
+                  reason: '这是数据本身的结果，不是筛选后的结论。',
                 )
               else
                 LoopRecordGroup(
@@ -546,7 +546,7 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
         const LoopNotice(
           key: ValueKey<String>('new-pairs-notice'),
           title: '预筛不等于结论',
-          body: '没有风险预筛来源时，这里不会按其它字段自行判定风险。新池流动性薄，价格易被操纵。',
+          body: '读不到风险预筛数据时，这里不会自行判断风险。新池流动性薄，价格容易被操纵。',
           tone: LoopNoticeTone.warn,
         ),
       ],
@@ -593,7 +593,7 @@ class _SmartMoneyScreenState extends ConsumerState<SmartMoneyScreen> {
         key: ValueKey<String>('smart-money-folio'),
         archetype: LoopFolioArchetype.listing,
         kicker: 'PUBLIC WALLET WATCH',
-        heading: '聪明钱追踪未交付',
+        heading: '暂未开放',
         caption: '这里不会展示任何地址、胜率或跟随建议。',
       ),
       body: <Widget>[
@@ -622,7 +622,7 @@ class _SmartMoneyScreenState extends ConsumerState<SmartMoneyScreen> {
         const LoopNotice(
           key: ValueKey<String>('smart-money-notice'),
           title: '胜率不是预测',
-          body: '即使这项交付，地址标签与胜率也只是公开链上数据的历史统计，不构成跟随建议。',
+          body: '即使开放，地址标签与胜率也只是公开链上数据的历史统计，不构成跟随建议。',
         ),
       ],
     );

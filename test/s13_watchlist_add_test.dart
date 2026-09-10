@@ -247,7 +247,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(watchlist.expectedVersions, <int>[4]);
-      expect(find.textContaining('设备当前离线'), findsOneWidget);
+      expect(find.textContaining('设备已离线'), findsOneWidget);
       expect(tester.widget<LoopIconButton>(star).label, '加入自选');
     });
 
@@ -267,7 +267,7 @@ void main() {
 
       // The server refused, so the asset is still watched.
       expect(tester.widget<LoopIconButton>(star).label, '移出自选');
-      expect(find.textContaining('当前账号无权执行此操作'), findsOneWidget);
+      expect(find.textContaining('当前账号没有执行这个操作的权限'), findsOneWidget);
     });
 
     testWidgets('a full Watchlist names the item limit, not the asset', (
@@ -425,7 +425,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(watchlist.written, isEmpty);
-      expect(find.textContaining('设备当前离线'), findsOneWidget);
+      expect(find.textContaining('设备已离线'), findsOneWidget);
     });
 
     testWidgets('a closed gateway disables the star even when the capability '

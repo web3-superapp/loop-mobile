@@ -94,8 +94,8 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             ? '进行中'
             : '已结束',
         caption: snapshot == null
-            ? '语音房状态尚未读取成功，本页不展示任何推测人数。'
-            : '进入前确认主持人、发言人与录音说明。在线人数只来自服务端观测。',
+            ? '语音房状态暂时读不到，这里不显示人数。'
+            : '进入前请确认主持人、发言人与录音说明。',
         stamp: snapshot == null
             ? null
             : (snapshot.room.isLive ? 'LIVE' : 'ENDED'),
@@ -223,7 +223,7 @@ class _RoomFacts extends StatelessWidget {
               key: const ValueKey<String>('voiceroom-role'),
               title: '我的角色',
               subtitle: snapshot.viewer.hasJoined
-                  ? '由服务端授予，不代表 Stream 的通话角色'
+                  ? '由 LOOP 授予，不是通话里的角色'
                   : '尚未加入这个房间',
               trailing: snapshot.viewer.role?.label ?? communityMissingFigure,
               position: LoopRowPosition.first,
@@ -239,7 +239,7 @@ class _RoomFacts extends StatelessWidget {
             ),
             LoopRecordRow(
               key: const ValueKey<String>('voiceroom-observed'),
-              title: '服务端观测在线人数',
+              title: '当前在线人数',
               subtitle: observed.isAvailable
                   ? '观察于 ${communityObservedAtLabel(observed.observedAt!)}'
                   : communicationUnavailableReason(
@@ -293,7 +293,7 @@ class _MediaSection extends StatelessWidget {
         key: ValueKey<String>('voiceroom-media-unavailable'),
         icon: 'warn',
         message: '语音连接不可用',
-        reason: '服务端返回的通话地址不符合约定，本页没有发起任何连接。',
+        reason: '这个语音房暂时打不开，没有发起任何连接。',
       );
     }
     // The authorized room is handed straight to the reviewed lobby: no scoped
@@ -378,7 +378,7 @@ class _HostControls extends StatelessWidget {
           const LoopEmpty(
             key: ValueKey<String>('voiceroom-invite-empty'),
             message: '没有待邀请的举手',
-            reason: '有人举手后，这里会按服务端分配的顺序号列出。',
+            reason: '有人举手后会按顺序列在这里。',
           )
         else if (pending.isNotEmpty)
           LoopRecordGroup(
@@ -414,7 +414,7 @@ class _HostControls extends StatelessWidget {
             icon: 'warn',
             message: '移出发言当前不可用',
             reason:
-                '服务端的房间资源没有下发发言人名单，因此这里没有可选的移出目标。'
+                '暂时读不到发言人名单，没有可以移出的人。'
                 '举手队列只是发言申请，不能当作发言人使用。',
           ),
         LoopButtonPair(
@@ -465,7 +465,7 @@ class _ViewerActions extends StatelessWidget {
       return const LoopEmpty(
         key: ValueKey<String>('voiceroom-ended'),
         message: '这个语音房已经结束',
-        reason: '房间结束后所有操作都会被服务端拒绝。',
+        reason: '房间结束后所有操作都会失效。',
       );
     }
     if (!viewer.hasJoined) {

@@ -263,7 +263,7 @@ class CapabilityChoiceRow extends StatelessWidget {
       trailing: available ? '可用' : '不可用',
       position: position,
       semanticLabel: available
-          ? '$title，能力可用，但尚未启用'
+          ? '$title，可用但未开启'
           : '$title，不可用：$unavailableReason',
     );
   }
@@ -410,7 +410,7 @@ class ExternalWalletScreen extends StatelessWidget {
         const LoopEmpty(
           key: ValueKey<String>('external-wallet-list-unavailable'),
           message: '已安装钱包清单暂不可读',
-          reason: '钱包发现由 Reown 会话提供；未建立会话前不展示任何钱包名称。',
+          reason: '连接钱包后才会显示可用的钱包名称。',
         ),
         const LoopNotice(
           icon: 'info',
@@ -556,8 +556,8 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
 
   String _reason(WalletRecoveryMethod method) => switch (method) {
     WalletRecoveryMethod.passkey => '设备或 Privy 尚未确认 Passkey 能力',
-    WalletRecoveryMethod.password => '恢复密码通道尚未接入',
-    WalletRecoveryMethod.cloud => '供应商恢复通道尚未接入',
+    WalletRecoveryMethod.password => '恢复密码还没有开放',
+    WalletRecoveryMethod.cloud => '账号恢复还没有开放',
   };
 
   bool get _anyAvailable => WalletRecoveryMethod.values.any(_available);
@@ -600,14 +600,14 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
                     title: '社交恢复 2-of-3',
                     detail: '指定 3 个守护人，2 个同意即可恢复',
                     available: widget.capabilities.canUseSocialRecovery,
-                    reason: '守护人机制尚未接入',
+                    reason: '守护人还没有开放',
                     position: LoopRowPosition.first,
                   ),
                   _capabilityRow(
                     title: '导出私钥',
                     detail: '随时可导出，这是你的逃生舱',
                     available: widget.capabilities.canExportPrivateKey,
-                    reason: '私钥导出通道尚未接入',
+                    reason: '私钥导出还没有开放',
                     position: LoopRowPosition.last,
                   ),
                 ],
@@ -755,7 +755,7 @@ class SecuritySetupScreen extends StatelessWidget {
           key: ValueKey<String>('protection-setup-unavailable'),
           icon: 'warn',
           tone: LoopNoticeTone.warn,
-          title: '保护设置尚未接入',
+          title: '保护设置还没有开放',
           body: '这里不会保存 PIN，也不会声称已经开启任何保护。可用性只说明能力，不代表已启用。',
         ),
         const LoopLabel('应用锁'),
@@ -819,7 +819,7 @@ class SecuritySetupScreen extends StatelessWidget {
       subtitle: available ? detail : '$detail · $reason',
       trailing: available ? '可用' : '不可用',
       position: position,
-      semanticLabel: available ? '$title，能力可用，但尚未启用' : '$title，不可用：$reason',
+      semanticLabel: available ? '$title，可用但未开启' : '$title，不可用：$reason',
     );
   }
 }

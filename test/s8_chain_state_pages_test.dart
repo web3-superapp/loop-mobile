@@ -627,7 +627,7 @@ void main() {
         find.byKey(const ValueKey<String>('new-pairs-empty')),
         findsOneWidget,
       );
-      expect(find.text('来源当前没有报告新的池'), findsOneWidget);
+      expect(find.text('当前没有新的池'), findsOneWidget);
       // A source that reported nothing is not a missing source.
       expect(
         find.byKey(const ValueKey<String>('new-pairs-unavailable')),

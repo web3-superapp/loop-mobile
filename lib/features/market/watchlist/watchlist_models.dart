@@ -73,7 +73,7 @@ String watchlistGroupNameIssueText(WatchlistGroupNameIssue issue) =>
       WatchlistGroupNameIssue.empty => '分组名称不能为空。',
       WatchlistGroupNameIssue.tooLong =>
         '分组名称最多 $watchlistMaxNameCodePoints 个字符。',
-      WatchlistGroupNameIssue.invalidCharacters => '分组名称里有服务端不接受的不可见字符。',
+      WatchlistGroupNameIssue.invalidCharacters => '分组名称里有不能使用的隐藏字符。',
       WatchlistGroupNameIssue.duplicate => '已经有同名分组了。',
       WatchlistGroupNameIssue.groupLimitReached =>
         '分组已达上限 $watchlistMaxGroups 个，先移除一个再新建。',

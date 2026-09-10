@@ -113,7 +113,7 @@ class _GroupAliasResolverPageState
       GroupAliasResolverPhase.notFound => '这个频道不是可见群组，或当前账号已不是成员；没有开放群昵称操作。',
       GroupAliasResolverPhase.unavailable => '暂时无法确认群组成员关系；没有开放群昵称操作。',
       GroupAliasResolverPhase.failure ||
-      GroupAliasResolverPhase.resolved => '服务响应不符合群组解析契约；没有开放群昵称操作。',
+      GroupAliasResolverPhase.resolved => '这个群的信息暂时读不到，群昵称暂时不能修改。',
     };
     final isLoading =
         state.phase == GroupAliasResolverPhase.initial ||
@@ -239,7 +239,7 @@ class _GroupAliasPageState extends ConsumerState<GroupAliasPage> {
           key: const ValueKey<String>('group-alias-reserved'),
           title: resource.alias,
           message: resource.requiresProjectionRetry
-              ? '昵称已由 LOOP 永久保留，Stream 成员投影仍待确认。只能用完全相同的值重试。'
+              ? '昵称已经为你保留，群里的显示还在同步。请用完全相同的昵称重试。'
               : '这个昵称已在当前群永久保留，不能修改。它不会暴露公开 Profile 或 Stream 用户身份。',
           icon: resource.requiresProjectionRetry
               ? Icons.sync_problem_rounded
@@ -255,7 +255,7 @@ class _GroupAliasPageState extends ConsumerState<GroupAliasPage> {
                       : () =>
                             unawaited(controller.reserveAlias(resource.alias)),
                   icon: const Icon(Icons.sync_rounded),
-                  label: const Text('重试投影'),
+                  label: const Text('重试同步'),
                 )
               : null,
         ),
@@ -430,7 +430,7 @@ class _GroupAliasSearchState extends ConsumerState<_GroupAliasSearch> {
             const <Widget>[
               LoopStateCard(
                 title: '没有找到匹配昵称',
-                message: '未确认投影、已离群和当前用户本人不会出现在结果中。',
+                message: '还没同步完成的成员、已退群的成员和你自己不会出现在结果里。',
                 icon: Icons.person_search_outlined,
               ),
             ],
@@ -488,7 +488,7 @@ class _GroupAliasBoundaryBanner extends StatelessWidget {
         GroupAliasGatewayMode.production => 'LOOP 群组身份边界',
         GroupAliasGatewayMode.unavailable => '生产连接不可用',
       },
-      message: '群昵称由 LOOP 后端保留；Stream 只接收服务端投影。客户端不会把它映射为公开 Profile、钱包或 Stream user ID。',
+      message: '群昵称只在这个群里显示，不会关联到你的公开资料或钱包地址。',
       icon: Icons.privacy_tip_outlined,
       tone: mode == GroupAliasGatewayMode.unavailable
           ? LoopTone.warning
@@ -505,7 +505,7 @@ String _groupAliasFailureMessage(GroupAliasGatewayFailureKind? kind) =>
         '当前没有可见的群昵称；也可能已不再是这个 Stream 群的成员。',
       GroupAliasGatewayFailureKind.immutable => '这个账号已在当前群永久保留了另一个昵称，不能修改。',
       GroupAliasGatewayFailureKind.taken => '这个昵称已经被当前群的其他成员永久保留，请换一个。',
-      GroupAliasGatewayFailureKind.invalidData => '昵称或服务响应不符合当前群昵称契约。',
+      GroupAliasGatewayFailureKind.invalidData => '这个昵称不可用，请换一个再试。',
       GroupAliasGatewayFailureKind.outcomeUnknown => '请求可能已经提交，只能用完全相同的昵称继续确认。',
       GroupAliasGatewayFailureKind.unexpected => '群昵称操作暂时失败，没有结果被显示为已确认。',
       null => '群昵称当前不可用。',

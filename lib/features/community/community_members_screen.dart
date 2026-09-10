@@ -38,7 +38,7 @@ enum CommunityGovernanceAction {
       '被封禁的成员会离开官方频道，并从默认成员目录中移除；你之后可以在「已封禁」分段里解除封禁。封禁不改动个人关注关系。',
     CommunityGovernanceAction.unban =>
       '解除封禁会把该成员恢复为活跃成员，加入时间不变，并重新加回官方频道。对方不需要重新申请加入。',
-    _ => '结果由服务端判定，本次操作会写入社区审计。',
+    _ => '这次操作会记入社区日志。',
   };
 }
 
@@ -139,7 +139,7 @@ class _CommunityMembersScreenState
         archetype: LoopFolioArchetype.listing,
         kicker: 'MEMBER DIRECTORY',
         heading: counts == null ? communityMissingFigure : '${counts.all} 名成员',
-        caption: 'Owner / Admin / 成员 三级权限。计数与排序都来自服务端。',
+        caption: 'Owner / Admin / 成员 三级权限。',
         stamp: counts == null ? null : '${counts.all}',
       ),
       filters: Padding(
@@ -219,16 +219,14 @@ class _CommunityMembersScreenState
               ),
               icon: 'warn',
               message: '社区模块当前不可用',
-              reason: capability.reasonCode == null
-                  ? '尚未读取到能力清单，本页不请求成员目录。'
-                  : '服务端原因：${capability.reasonCode}。',
+              reason: '请稍后再试。',
             )
           else if (state.phase != CommunityViewPhase.ready)
             CommunityStateBlock(
               phase: state.phase,
               failureKind: state.failureKind,
               emptyMessage: '这个筛选下没有成员',
-              emptyReason: '服务端没有返回符合该角色的成员。',
+              emptyReason: '这个角色下没有成员。',
               permissionTitle: '没有权限查看成员目录',
               onRetry: () => unawaited(controller.reload()),
             )
@@ -274,7 +272,7 @@ class _CommunityMembersScreenState
             icon: 'info',
             title: '三级权限',
             body:
-                'Owner / Admin / 成员。所有治理动作由服务端判定，本页只按服务端返回的权限显示入口；'
+                'Owner / Admin / 成员。这里只显示你有权限做的操作；'
                 '禁言只影响聊天，不影响治理权限。',
             margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
           ),

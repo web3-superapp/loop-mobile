@@ -95,7 +95,7 @@ void main() {
       );
       await scrollToS7Section(tester, graduated);
       expect(graduated, findsOneWidget);
-      expect(find.textContaining('Launch 合约基线尚未交付'), findsWidgets);
+      expect(find.textContaining('Launch 合约还没有上线'), findsWidgets);
     });
 
     testWidgets('the capability gate stops the read', (tester) async {
@@ -110,7 +110,8 @@ void main() {
         find.byKey(const ValueKey<String>('launch-capability-unavailable')),
         findsOneWidget,
       );
-      expect(find.textContaining('LAUNCH_RUNTIME_UNAVAILABLE'), findsOneWidget);
+      expect(find.textContaining('LAUNCH_RUNTIME_UNAVAILABLE'), findsNothing);
+      expect(find.textContaining('请稍后再试'), findsOneWidget);
     });
 
     testWidgets('offline and error are distinct states', (tester) async {
@@ -217,7 +218,7 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('4 个轮次槽位'), findsOneWidget);
+      expect(find.textContaining('4 个轮次'), findsOneWidget);
       for (var index = 1; index <= 4; index += 1) {
         final row = find.byKey(ValueKey<String>('launch-round-$index'));
         await scrollToS7Section(tester, row);
@@ -244,7 +245,7 @@ void main() {
         find.byKey(const ValueKey<String>('launch-rounds-empty')),
         findsOneWidget,
       );
-      expect(find.textContaining('本页不假设固定的轮数'), findsOneWidget);
+      expect(find.textContaining('轮次数量由每次发射自己决定'), findsOneWidget);
     });
   });
 
@@ -320,7 +321,7 @@ void main() {
 
       expect(find.text('不可执行'), findsOneWidget);
       expect(find.byType(TextField), findsNothing);
-      expect(find.textContaining('质押合约尚未交付'), findsWidgets);
+      expect(find.textContaining('质押还没有开放'), findsWidgets);
       // No stake or unstake action exists at all.
       for (final button in tester.widgetList<LoopButton>(
         find.byType(LoopButton),
@@ -354,7 +355,7 @@ void main() {
         find.byKey(const ValueKey<String>('launch-trade-refusal')),
         findsOneWidget,
       );
-      expect(find.textContaining('Launch 合约基线尚未交付'), findsWidgets);
+      expect(find.textContaining('Launch 合约还没有上线'), findsWidgets);
     });
 
     testWidgets(
@@ -399,7 +400,7 @@ void main() {
         // The intent reached the gateway and the refusal shown is the one the
         // server answered with.
         expect(gateway.intents, <String>['$s7LaunchId:$s7RoundId:500']);
-        expect(find.text('服务端拒绝了这次认购'), findsOneWidget);
+        expect(find.text('这次认购没有通过'), findsOneWidget);
       },
     );
 
@@ -651,7 +652,7 @@ void main() {
         find.byKey(const ValueKey<String>('launch-apply-returned-reason')),
         findsOneWidget,
       );
-      expect(find.textContaining('narrative_too_short'), findsOneWidget);
+      expect(find.textContaining('项目简介太短'), findsOneWidget);
       final submit = tester.widget<LoopButton>(
         find.byKey(const ValueKey<String>('launch-apply-submit')),
       );
@@ -743,7 +744,7 @@ void main() {
       final kyb = find.byKey(const ValueKey<String>('launch-apply-kyb'));
       await scrollToS7Section(tester, kyb);
       expect(kyb, findsOneWidget);
-      expect(find.textContaining('KYB 服务商尚未选定'), findsOneWidget);
+      expect(find.textContaining('主体审核还没有开放'), findsOneWidget);
       for (final button in tester.widgetList<LoopButton>(
         find.byType(LoopButton),
       )) {

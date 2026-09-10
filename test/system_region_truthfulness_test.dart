@@ -27,7 +27,7 @@ void main() {
         onSecondaryAction: () {},
       ),
     );
-    expect(find.text('地区策略未接入'), findsOneWidget);
+    expect(find.text('地区策略还没有开放'), findsOneWidget);
     expect(find.textContaining('不会从设备语言、SIM 或 IP 推断'), findsOneWidget);
     expect(find.text('部分功能在当前地区不可用'), findsNothing);
     expect(find.text('继续使用 LOOP'), findsNothing);
@@ -59,7 +59,7 @@ void main() {
     expect(find.text('部分功能在当前地区不可用'), findsOneWidget);
     expect(find.text('REGION_BLOCKED'), findsOneWidget);
     expect(find.textContaining('资产保持只读可见'), findsOneWidget);
-    expect(find.text('地区策略未接入'), findsNothing);
+    expect(find.text('地区策略还没有开放'), findsNothing);
     expect(find.text('返回 LOOP'), findsNothing);
     expect(find.textContaining('Spot'), findsNothing);
     await tester.tap(find.text('继续使用 LOOP'));

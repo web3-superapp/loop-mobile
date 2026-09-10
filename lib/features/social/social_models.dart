@@ -161,5 +161,5 @@ final class MessageRequestOutcome {
 String blockReasonText(String reasonCode) => switch (reasonCode) {
   'user_request' => '由你手动屏蔽',
   'message_request_report' => '举报陌生人请求时自动屏蔽',
-  _ => '服务端记录的屏蔽原因',
+  _ => '屏蔽原因',
 };

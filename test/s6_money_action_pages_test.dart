@@ -55,7 +55,7 @@ void main() {
         find.byKey(const ValueKey<String>('send-capability-block')),
         findsOneWidget,
       );
-      expect(find.textContaining('链上写入开关当前关闭'), findsOneWidget);
+      expect(find.textContaining('链上操作当前已关闭'), findsOneWidget);
     });
 
     testWidgets('loading shows a skeleton and no balance', (tester) async {
@@ -146,7 +146,7 @@ void main() {
         intents: FakeWalletIntentsGateway(),
       );
 
-      expect(find.textContaining('具体数值没有服务端来源'), findsOneWidget);
+      expect(find.textContaining('具体数值暂时读不到'), findsOneWidget);
     });
   });
 
@@ -181,7 +181,7 @@ void main() {
         find.byKey(const ValueKey<String>('send-recipient-contract')),
         findsOneWidget,
       );
-      expect(find.textContaining('未配置 GoPlus 密钥'), findsOneWidget);
+      expect(find.textContaining('暂时无法核对这个地址是否在已知诈骗名单里'), findsOneWidget);
     });
 
     testWidgets('an unchecked recipient cannot continue', (tester) async {
@@ -387,7 +387,7 @@ void main() {
         find.byKey(const ValueKey<String>('swap-evidence-pending')),
         findsOneWidget,
       );
-      expect(find.textContaining('真机证据'), findsWidgets);
+      expect(find.textContaining('兑换还在验证中'), findsWidgets);
     });
 
     testWidgets('a quote is only requested once both assets are chosen', (
@@ -452,7 +452,7 @@ void main() {
 
       expect(find.text('滑点上限'), findsWidgets);
       expect(find.text('价格影响'), findsOneWidget);
-      expect(find.textContaining('未配置（LOOP_SWAP_FEE_BPS 待决策）'), findsOneWidget);
+      expect(find.textContaining('未设置'), findsOneWidget);
     });
 
     testWidgets('an unreachable provider is an error, not an empty quote', (
@@ -491,7 +491,7 @@ void main() {
         find.byKey(const ValueKey<String>('swap-route-fees')),
         findsOneWidget,
       );
-      expect(find.textContaining('报价来源 privy'), findsOneWidget);
+      expect(find.textContaining('报价方 privy'), findsOneWidget);
       expect(find.textContaining('逐跳明细'), findsOneWidget);
     });
   });
@@ -602,7 +602,7 @@ void main() {
       );
       // A blocked action names the rule and says the limit is not adjustable
       // yet; it never offers a setting that does not exist.
-      expect(find.textContaining('本步暂不可调'), findsOneWidget);
+      expect(find.textContaining('自定义上限还没有开放'), findsOneWidget);
     });
 
     testWidgets('a closed write switch stops the guard', (tester) async {
@@ -884,7 +884,7 @@ void main() {
 
       expect(find.text('0.01 WBNB'), findsOneWidget);
       expect(find.text(s6RecipientChecksum), findsOneWidget);
-      expect(find.text('预执行通过（eth_call）'), findsOneWidget);
+      expect(find.text('试算通过'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('loop-sign-sheet-pending')),
         findsOneWidget,
@@ -900,7 +900,7 @@ void main() {
         find.byKey(const ValueKey<String>('loop-sign-sheet-simulationFailed')),
         findsOneWidget,
       );
-      expect(find.textContaining('预执行没有返回可验证结果'), findsOneWidget);
+      expect(find.textContaining('试算没有返回可核对的结果'), findsOneWidget);
     });
 
     testWidgets('one confirmation submits once and then completes', (

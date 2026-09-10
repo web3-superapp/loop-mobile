@@ -104,9 +104,7 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
               key: const ValueKey<String>('connections-capability-unavailable'),
               icon: 'warn',
               message: '关注关系当前不可用',
-              reason: capability.reasonCode == null
-                  ? '尚未读取到能力清单，本页不请求关注关系。'
-                  : '服务端原因：${capability.reasonCode}。',
+              reason: '请稍后再试。',
             )
           else if (state.phase != CommunityViewPhase.ready)
             CommunityStateBlock(
@@ -253,7 +251,7 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
       context,
       title: following ? '取消关注？' : '关注这个账号？',
       body: following
-          ? '取消关注后你不再看到对方的公开动态。是否接受由服务端判定。'
+          ? '取消关注后，你不会再看到对方的公开动态。'
           : '关注是单向的，不需要对方同意。对方需要开启"可被发现"才能被关注。',
       confirmLabel: following ? '取消关注' : '关注',
       sheetKey: 'connections-follow-sheet',

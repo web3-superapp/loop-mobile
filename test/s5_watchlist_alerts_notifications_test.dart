@@ -42,7 +42,7 @@ void main() {
 
       expect(find.text('3 个自选资产'), findsOneWidget);
       expect(find.text('不可读'), findsOneWidget);
-      expect(find.textContaining('该资产已不可读'), findsOneWidget);
+      expect(find.textContaining('这个资产已经读不到'), findsOneWidget);
       // No price is rendered: the Watchlist is not a market fact.
       expect(find.textContaining('\$'), findsNothing);
     });
@@ -634,7 +634,7 @@ void main() {
       );
 
       expect(find.text('推送尚不可用'), findsOneWidget);
-      expect(find.textContaining('推送通道尚未接入'), findsWidgets);
+      expect(find.textContaining('推送还没有开放'), findsWidgets);
     });
 
     testWidgets('an unavailable capability stops the page', (tester) async {

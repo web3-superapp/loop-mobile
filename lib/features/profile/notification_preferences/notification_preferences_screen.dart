@@ -148,7 +148,7 @@ class _NotificationPreferencesScreenState
           const LoopNotice(
             key: ValueKey<String>('notification-preferences-notice'),
             title: '开关只是意图',
-            body: '目前只有"价格提醒"会影响应用内通知是否生成。其他类别的生产者尚未交付，推送恒不可用。',
+            body: '目前只有"价格提醒"会生成应用内通知，其他类别还没有开放。推送暂时不可用。',
           ),
         ],
       ],

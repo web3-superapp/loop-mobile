@@ -185,7 +185,7 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
           title: '这一页只说明状态',
           body:
               'LOOP 不会在本地模拟"已开启"。多因素验证、Passkey、恢复与导出都由 Privy 提供，'
-              '在方案、平台与真机证据齐备之前，它们对所有账号都不可用。',
+              '在完成验证之前，它们对所有账号都不可用。',
         ),
         const SizedBox(height: 12),
       ],
@@ -308,7 +308,7 @@ class _SecurityDevicesBlock extends StatelessWidget {
                 body:
                     '最近 ${policy.windowHours} 小时内新建了 $recent 个会话，达到提示阈值 '
                     '${policy.newSessionThreshold}（规则 ${policy.configVersion}）。'
-                    '这只是提示：服务端没有因此强制二次验证或冷却。',
+                    '这只是提示，不会因此要求二次验证或冷却。',
                 margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               ),
           ],
@@ -390,7 +390,7 @@ class _SecurityEventsBlock extends StatelessWidget {
         const LoopEmpty(
           key: ValueKey<String>('security-events-empty'),
           message: '还没有安全事件',
-          reason: '本步唯一会写入安全事件的动作是撤销其他设备的会话。',
+          reason: '目前只有"撤销其他设备"会记录一条安全事件。',
         ),
       LoopSecurityEventsAvailable(items: final items) => LoopRecordGroup(
         rows: <LoopRecordRow>[
@@ -472,7 +472,7 @@ class _DeviceManagementScreenState
         heading: directory == null
             ? '设备管理'
             : '${directory.deviceCount} 台设备 · ${directory.activeCount} 个会话',
-        caption: '设备名称与地理位置没有后端来源，这里只显示平台、客户端版本与最后一次观测时间。',
+        caption: '这里不显示设备名称和位置，只显示平台、版本与最后活跃时间。',
       ),
       sections: <Widget>[
         if (blocked)
@@ -520,7 +520,7 @@ class _DeviceManagementScreenState
                     '最近 ${directory.riskSignals.policy.windowHours} 小时内新建了 '
                     '${directory.riskSignals.newSessions24h} 个会话，达到提示阈值 '
                     '${directory.riskSignals.policy.newSessionThreshold}。'
-                    '这只是提示，服务端没有因此强制二次验证。',
+                    '这只是提示，不会因此要求二次验证。',
               ),
             if (directory.currentSessionId == null)
               const LoopNotice(
@@ -548,7 +548,7 @@ class _DeviceManagementScreenState
                 key: ValueKey<String>('devices-truncated'),
                 icon: 'info',
                 title: '列表已被截断',
-                body: '服务端最多返回 100 条会话，这里没有翻页入口。',
+                body: '最多显示 100 条会话，暂时不能翻页。',
               ),
             const LoopLabel('全部设备'),
             Padding(
@@ -603,7 +603,7 @@ class _DeviceManagementScreenState
       title: device.displayName,
       subtitle: revoked
           ? '已于 ${loopRelativeTime(device.revokedAt!)}撤销'
-          : '最后观测 ${loopRelativeTime(device.lastSeenAt)} · '
+          : '最后活跃 ${loopRelativeTime(device.lastSeenAt)} · '
                 '${device.authStrength.label}',
       trailingBadge: badge,
       position: LoopRowPosition.middle,
@@ -636,7 +636,7 @@ class _RevokeConfirmSheet extends StatelessWidget {
         ),
         LoopKeyValue(label: '平台', value: device.platform.label),
         LoopKeyValue(label: '客户端版本', value: device.clientVersion),
-        LoopKeyValue(label: '最后观测', value: loopRelativeTime(device.lastSeenAt)),
+        LoopKeyValue(label: '最后活跃', value: loopRelativeTime(device.lastSeenAt)),
         const LoopNotice(
           key: ValueKey<String>('device-revoke-sheet-effect'),
           icon: 'warn',
@@ -717,7 +717,7 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
           key: ValueKey<String>('key-export-escape-hatch'),
           icon: 'parachute',
           title: '这是你的逃生舱',
-          body: '这个入口在产品上常驻可用，不会被关闭。它现在不可执行，是因为导出通道还没有接入。',
+          body: '这个入口一直都在，只是导出功能还没有开放。',
           margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
         ),
         const LoopNotice(
@@ -867,7 +867,7 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
           key: ValueKey<String>('social-recovery-no-guardians'),
           icon: 'info',
           title: '这里没有守护人名单',
-          body: '还没有守护人资源，所以这一页不显示守护人计数，也不展示任何示例守护人。',
+          body: '守护人还没有开放，这里不显示任何守护人。',
           margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
         ),
       ],

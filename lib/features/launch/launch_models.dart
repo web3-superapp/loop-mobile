@@ -661,7 +661,7 @@ String launchEligibilityModeLabel(LaunchEligibilityMode mode) => switch (mode) {
 
 String launchEligibilityModeDescription(LaunchEligibilityMode mode) =>
     switch (mode) {
-      LaunchEligibilityMode.whitelist => '资格由运营维护的白名单快照决定。',
+      LaunchEligibilityMode.whitelist => '资格由运营维护的白名单决定。',
       LaunchEligibilityMode.community => '资格由社区成员关系决定。',
       LaunchEligibilityMode.activity => '资格由账号活跃度决定。',
       LaunchEligibilityMode.unavailable => '本次发射还没有配置资格模式，因此没有资格结论。',
@@ -815,12 +815,12 @@ enum LaunchMilestoneState {
 String launchMilestoneStateLabel(LaunchMilestoneState state) => switch (state) {
   LaunchMilestoneState.preparing => '准备中',
   LaunchMilestoneState.applied => '已申请',
-  LaunchMilestoneState.evidencePending => '待补证据',
+  LaunchMilestoneState.evidencePending => '待补材料',
   LaunchMilestoneState.listed => '已上线',
   LaunchMilestoneState.featured => '已获推荐位',
   LaunchMilestoneState.rejected => '已拒绝',
   LaunchMilestoneState.deferred => '已搁置',
-  LaunchMilestoneState.evidenceInvalid => '证据无效',
+  LaunchMilestoneState.evidenceInvalid => '材料无效',
   LaunchMilestoneState.delisted => '已下架',
 };
 

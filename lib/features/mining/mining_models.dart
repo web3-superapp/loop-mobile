@@ -363,7 +363,7 @@ String miningRuleKeyText(String key) => switch (key) {
     '算力 = 持有量 × 参考价 × 权重',
   'mining.rules.dailyOutput.shareOfNetworkPower' => '每日产出 = 我的算力 ÷ 全网算力 × 当日产量',
   'mining.rules.weight.loopFixedMaximum' => 'LOOP 采用固定的最高权重档位（数值待批准）。',
-  'mining.rules.weight.communityReviewed' => '社区币权重由服务端审核结果授予（区间待批准）。',
+  'mining.rules.weight.communityReviewed' => '社区币权重按审核结果授予，区间待批准。',
   'mining.rules.reviewFactor.communityQuality' => '社区质量',
   'mining.rules.reviewFactor.communityScale' => '社区规模',
   'mining.rules.reviewFactor.tokenLiquidity' => 'Token 流动性',
@@ -372,10 +372,10 @@ String miningRuleKeyText(String key) => switch (key) {
   'mining.rules.reviewFactor.userQuality' => '用户质量',
   'mining.rules.reviewFactor.partnershipDepth' => '与 LOOP 的合作深度',
   'mining.rules.priceGuard.twap' => 'TWAP 时间加权均价：避免单笔成交扭曲参考价。',
-  'mining.rules.priceGuard.multiPeriodMultiSource' => '多周期与多来源比对：交叉验证异常波动。',
+  'mining.rules.priceGuard.multiPeriodMultiSource' => '多周期、多渠道比对，交叉验证异常波动。',
   'mining.rules.priceGuard.liquidityCap' => 'Liquidity Cap：低流动性资产限制可计入价值。',
   'mining.rank.anonymousMember' => '匿名成员',
   'mining.rank.display.aliasOrAnonymous' =>
     '排行条目只在该账号可被发现且未开启匿名模式时显示别名，否则显示「匿名成员」。',
-  _ => '服务端定义的规则项。',
+  _ => 'LOOP 定义的规则项。',
 };

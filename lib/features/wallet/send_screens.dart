@@ -181,7 +181,7 @@ class _SendAssetScreenState extends ConsumerState<SendAssetScreen> {
           if (balances!.balances.isEmpty)
             const LoopEmpty(
               key: ValueKey<String>('send-assets-empty'),
-              message: 'registry 里还没有可读资产',
+              message: '还没有可读取的资产',
               reason: '登记资产后，这里会为每一个资产恒定保留一行。',
             )
           else
@@ -209,7 +209,7 @@ class _SendAssetScreenState extends ConsumerState<SendAssetScreen> {
             icon: 'mine',
             tone: LoopNoticeTone.warn,
             title: '发送会降低算力',
-            body: '转出有权重的社区币，算力会按持仓同步下降。具体数值没有服务端来源，本步不展示任何估算。',
+            body: '转出有权重的社区币后，算力会随持仓下降。具体数值暂时读不到，这里不做估算。',
           ),
         ],
       ],
@@ -461,7 +461,7 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
           const LoopNotice(
             key: ValueKey<String>('send-recipient-scan-unavailable'),
             icon: 'camera',
-            body: '扫码与最近联系人尚未接入，请粘贴或手动输入完整地址后校验。',
+            body: '扫码与最近联系人还没有开放，请粘贴或输入完整地址。',
           ),
           // An address check that never reached the server has not prepared an
           // intent, opened a wallet or submitted anything. It pauses; only a
@@ -517,7 +517,7 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
                   const SizedBox(height: 6),
                   Text(
                     spendable == null
-                        ? '可动用余额读不到，本页不展示任何估算。'
+                        ? '读不到可用余额，这里不做估算。'
                         : '可动用 ${loopFormatDecimal(spendable)} '
                               '${widget.draft.symbol}'
                               '（已扣除手续费保留）',
@@ -562,7 +562,7 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
       ),
       LoopProvenanceFooter(
         key: const ValueKey<String>('send-recipient-basis'),
-        text: '首次收款方判定来源：你自己的已索引 ERC-20 转账（${preflight.basis}）',
+        text: '首次收款方的判断依据：你自己的 ERC-20 转账记录（${preflight.basis}）',
       ),
     ];
   }
@@ -634,7 +634,7 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
         key: const ValueKey<String>('send-confirm-folio'),
         kicker: 'FINAL REVIEW',
         heading: '${widget.draft.amount ?? ''} ${widget.draft.symbol}'.trim(),
-        caption: '收款方、网络费与预执行结果全部确认后才请求签名。',
+        caption: '收款方、网络费与试算结果全部确认后才会请求签名。',
         stamp: 'SIGN',
       ),
       primaryAction: intent == null
@@ -696,7 +696,7 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
               key: const ValueKey<String>('send-confirm-simulation-failed'),
               icon: 'warn',
               tone: LoopNoticeTone.danger,
-              title: '预执行没有通过，不能签名',
+              title: '试算没有通过，不能签名',
               body: loopReasonCodeText(intent.simulation.reasonCode),
             ),
           MoneyCountdown(
@@ -708,7 +708,7 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
                     icon: 'clock',
                     tone: LoopNoticeTone.warn,
                     title: '事实已过期',
-                    body: '余额、费用与预执行结果都属于一个观察时刻。请重新准备一次再签名。',
+                    body: '余额、费用与试算结果都取自同一时刻。请重新准备一次再签名。',
                   )
                 : const SizedBox.shrink(),
           ),
@@ -724,7 +724,7 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
             icon: 'mine',
             tone: LoopNoticeTone.warn,
             title: '算力会随持仓下降',
-            body: '转出后算力按持仓同步下降。具体数值没有服务端来源，本步不展示任何估算。',
+            body: '转出后算力会随持仓下降。具体数值暂时读不到，这里不做估算。',
           ),
         ],
       ],

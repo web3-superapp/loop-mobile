@@ -41,7 +41,7 @@ class _PerpAccountPreview extends StatelessWidget {
     final hasFacts = snapshotState == PerpSnapshotState.preview;
     return LoopPage(
       key: const ValueKey<String>('perp-preview-account'),
-      eyebrow: 'D8 · Margin account · 开发预览',
+      eyebrow: 'Margin account · 开发预览',
       title: 'Perp account',
       subtitle: 'A read-only account projection; LOOP does not maintain a second ledger.',
       actions: <Widget>[
@@ -245,7 +245,7 @@ class _PerpAccountLiveState extends ConsumerState<_PerpAccountLive>
 
     return LoopPage(
       key: const ValueKey<String>('perp-live-account'),
-      eyebrow: 'D8 · Hyperliquid Testnet',
+      eyebrow: 'Hyperliquid Testnet',
       title: 'Perp account',
       subtitle: 'A short-lived backend projection of your Hyperliquid account. LOOP does not maintain a second ledger.',
       actions: <Widget>[
@@ -868,7 +868,7 @@ class _PerpTransferScreenState extends State<PerpTransferScreen> {
   Widget build(BuildContext context) {
     final hasFacts = widget.snapshotState == PerpSnapshotState.preview;
     return LoopPage(
-      eyebrow: 'D9 · Official account transfer',
+      eyebrow: 'Official account transfer',
       title: 'Move USDC',
       subtitle: 'Preview the exact source and destination. No custom bridge, router, or LOOP ledger is involved.',
       children: <Widget>[
@@ -1056,7 +1056,7 @@ class _PerpDepositScreenState extends State<PerpDepositScreen> {
   Widget build(BuildContext context) {
     final hasFacts = widget.snapshotState == PerpSnapshotState.preview;
     return LoopPage(
-      eyebrow: 'D10 · Official bridge',
+      eyebrow: 'Official bridge',
       title: 'Deposit & withdraw',
       subtitle: 'Network and amount details are visible for review; address copy and submission are disabled.',
       children: <Widget>[
@@ -1229,7 +1229,7 @@ class PerpFundingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasFacts = snapshotState == PerpSnapshotState.preview;
     return LoopPage(
-      eyebrow: 'D11 · Funding ledger',
+      eyebrow: 'Funding ledger',
       title: 'Funding rates',
       subtitle: 'Rates and settlement times are preview projections, not forecasts or live market facts.',
       children: <Widget>[
@@ -1404,7 +1404,7 @@ class _PerpRiskScreenState extends State<PerpRiskScreen> {
   Widget build(BuildContext context) {
     final hasFacts = widget.snapshotState == PerpSnapshotState.preview;
     return LoopPage(
-      eyebrow: 'D12 · First-use gate',
+      eyebrow: 'First-use gate',
       title: 'Leverage changes the loss',
       subtitle: 'This acknowledgement is required before a production order review. Preview state is not persisted.',
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 166),

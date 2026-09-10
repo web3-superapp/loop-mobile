@@ -48,7 +48,7 @@ void main() {
       expect(shown['数量'], '0.01 WBNB');
       expect(shown['收款方'], s6RecipientChecksum);
       expect(shown['最高网络费'], '0.0000020775 BNB');
-      expect(shown['模拟结果'], '预执行通过（eth_call）');
+      expect(shown['模拟结果'], '试算通过');
       // The same object produced both halves, so the review and the payload
       // cannot describe different calls.
       expect(intent.payloadMatchesReview, isTrue);

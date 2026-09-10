@@ -182,7 +182,7 @@ final List<_StateCase> _cases = <_StateCase>[
     readyKey: 'launch-rounds-notice',
     // Same rule as launch-trade: "还没有配置任何轮次" is a read conclusion.
     alsoUnreadKeys: <String>['launch-rounds-empty', 'launch-rounds-list'],
-    unreadText: '个轮次槽位',
+    unreadText: '个轮次',
     emptyContract:
         '轮次页的空态是「配置里没有轮次」，由 LaunchDetail.rounds 决定，'
         '写在 launch-rounds-empty 上，不经过 LaunchStateBlock。',
@@ -525,7 +525,7 @@ void main() {
         find.byKey(const ValueKey<String>('launch-rounds-state-empty')),
         findsNothing,
       );
-      expect(find.text('0 个轮次槽位'), findsOneWidget);
+      expect(find.text('0 个轮次'), findsOneWidget);
     });
 
     testWidgets('launch-trade says there is no round only after it read one', (

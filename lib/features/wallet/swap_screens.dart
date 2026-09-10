@@ -163,7 +163,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
               key: const ValueKey<String>('swap-evidence-pending'),
               icon: 'warn',
               tone: LoopNoticeTone.warn,
-              title: '真机证据未取得，暂不能执行',
+              title: '兑换还在验证中，暂时不能执行',
               body: loopReasonCodeText(capability.evidenceReasonCode),
             ),
           _AssetField(
@@ -269,7 +269,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             key: ValueKey<String>('swap-power-notice'),
             icon: 'mine',
             title: '算力影响不可用',
-            body: '买入后的算力变化没有服务端来源，本页不展示任何估算。',
+            body: '买入后的算力变化暂时读不到，这里不做估算。',
           ),
         ],
       ],
@@ -318,7 +318,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
           label: expired
               ? '报价已过期 · 重新报价'
               : capability.evidencePending
-              ? '真机证据未取得'
+              ? '兑换还在验证中'
               : '兑换（${moneyCountdownLabel(remaining)}）',
           primary: true,
           block: true,
@@ -499,7 +499,7 @@ class _AssetField extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               balance == null
-                  ? '可动用余额读不到，本页不展示任何估算。'
+                  ? '读不到可用余额，这里不做估算。'
                   : '可动用 ${loopFormatDecimal(balance!)}',
               style: Theme.of(context).textTheme.labelSmall,
             ),
@@ -627,7 +627,7 @@ class _QuoteFacts extends StatelessWidget {
                 LoopKeyValue(
                   label: '平台费',
                   value: value.platformFeeBps == null
-                      ? '未配置（LOOP_SWAP_FEE_BPS 待决策）'
+                      ? '未设置'
                       : '${value.platformFeeBps} bps',
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
@@ -645,7 +645,7 @@ class _QuoteFacts extends StatelessWidget {
         LoopProvenanceFooter(
           key: const ValueKey<String>('swap-quote-provenance'),
           text:
-              '报价来源 ${value.provider} · 报价于 '
+              '报价方 ${value.provider} · 报价于 '
               '${loopRelativeTime(value.quotedAt, now: clock?.call())} · '
               '策略 ${quote.policy.configVersion}'
               '${quote.policy.isPendingProductConfirmation ? '（待产品确认）' : ''}',
@@ -689,7 +689,7 @@ class _PriceImpactNotice extends StatelessWidget {
 String swapPriceImpactLabel(LoopSwapPriceImpact impact) {
   final value = impact.value;
   if (!impact.available || value == null) {
-    return '无法定价（${impact.reasonCode ?? 'PRICE_IMPACT_UNAVAILABLE'}）';
+    return '无法定价';
   }
   return loopFormatPercent(value * Decimal.fromInt(100));
 }
@@ -722,7 +722,7 @@ class SwapRouteScreen extends StatelessWidget {
         heading:
             '${value.estimatedOutputAmount.display} '
             '${quote.destinationAsset.symbol}',
-        caption: '报价来源、最少获得、滑点与价格影响逐项公开。',
+        caption: '报价方、最少获得、滑点与价格影响逐项公开。',
         stamp: 'FINAL',
       ),
       primaryAction: LoopButton(
@@ -781,7 +781,7 @@ class SwapRouteScreen extends StatelessWidget {
                 LoopKeyValue(
                   label: 'LOOP 服务费',
                   value: value.platformFeeBps == null
-                      ? '未配置（LOOP_SWAP_FEE_BPS 待决策）'
+                      ? '未设置'
                       : '${value.platformFeeBps} bps',
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
@@ -804,14 +804,14 @@ class SwapRouteScreen extends StatelessWidget {
         LoopProvenanceFooter(
           key: const ValueKey<String>('swap-route-provenance'),
           text:
-              '报价来源 ${value.provider} · 定价来源 '
+              '报价方 ${value.provider} · 定价出处 '
               '${value.priceImpact.priceSource ?? '未标注'} · '
               '有效期 ${quote.policy.quoteTtlSeconds} 秒',
         ),
         const LoopNotice(
           key: ValueKey<String>('swap-route-notice'),
           title: '只展示最终报价',
-          body: '逐跳明细只在供应商提供数据时才可能出现；本步供应商没有提供，因此这里不展示任何路径推测。',
+          body: '只有报价方提供路径时才会显示逐跳明细，这次没有提供。',
         ),
       ],
     );

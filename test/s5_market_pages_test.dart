@@ -93,7 +93,7 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('没有以该资产为 base 的交易对'), findsWidgets);
+      expect(find.textContaining('没有找到这个资产的交易对'), findsWidgets);
       expect(find.text('\$0'), findsNothing);
       expect(find.text('0'), findsNothing);
     });
@@ -162,7 +162,7 @@ void main() {
       );
 
       expect(find.byType(LoopErrorState), findsOneWidget);
-      expect(find.textContaining('没有采纳任何内容'), findsOneWidget);
+      expect(find.textContaining('没有采用任何内容'), findsOneWidget);
     });
 
     testWidgets('an unavailable capability stops the page before any read', (
@@ -182,7 +182,7 @@ void main() {
         find.byKey(const ValueKey<String>('market-capability-block')),
         findsOneWidget,
       );
-      expect(find.textContaining('服务端依赖尚未配齐'), findsOneWidget);
+      expect(find.textContaining('行情暂时不可用'), findsOneWidget);
     });
   });
 
@@ -217,7 +217,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('token-swap-unavailable')),
       );
-      expect(find.textContaining('Swap 尚未交付'), findsOneWidget);
+      expect(find.textContaining('兑换还没有开放'), findsOneWidget);
     });
 
     testWidgets(
@@ -230,7 +230,7 @@ void main() {
         );
 
         expect(find.byType(LoopCandleChart), findsOneWidget);
-        expect(find.text('链上成交聚合'), findsOneWidget);
+        expect(find.text('按成交价折算'), findsOneWidget);
         expect(
           find.byKey(const ValueKey<String>('candles-open-marker')),
           findsOneWidget,
@@ -264,7 +264,7 @@ void main() {
         find.byKey(const ValueKey<String>('candles-unavailable')),
         findsOneWidget,
       );
-      expect(find.textContaining('没有已登记的 PancakeSwap V3 池'), findsOneWidget);
+      expect(find.textContaining('还没有 PancakeSwap V3 交易池'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('token-card-chart-unavailable')),
         findsOneWidget,
@@ -286,7 +286,7 @@ void main() {
         find.byKey(const ValueKey<String>('token-security-facts')),
       );
       expect(find.textContaining('合约已验证开源 —— 来源 GoPlus，观察于'), findsOneWidget);
-      expect(find.textContaining('不输出评级、评分或综合结论'), findsOneWidget);
+      expect(find.textContaining('不给评级、评分或结论'), findsOneWidget);
     });
 
     testWidgets('a blocked asset hides every fact', (tester) async {
@@ -402,7 +402,7 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('token-holders-distribution')),
       );
-      expect(find.textContaining('持有人分布需要全量历史'), findsOneWidget);
+      expect(find.textContaining('持有人分布暂时读不到'), findsOneWidget);
       // No invented concentration percentages.
       expect(find.textContaining('%'), findsNothing);
     });
@@ -423,7 +423,7 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('池事件索引尚未运行'), findsOneWidget);
+      expect(find.textContaining('成交与 K 线暂时读不到'), findsOneWidget);
     });
 
     testWidgets('a row marks ownership and confirmation, not an address', (
@@ -512,7 +512,7 @@ void main() {
         find.byKey(const ValueKey<String>('new-pairs-unavailable')),
         findsOneWidget,
       );
-      expect(find.textContaining('GeckoTerminal 未启用'), findsWidgets);
+      expect(find.textContaining('新币发现与相关行情暂时读不到'), findsWidgets);
       await scrollToS5Section(
         tester,
         find.byKey(const ValueKey<String>('new-pairs-risk-screening')),
@@ -533,7 +533,7 @@ void main() {
         find.byKey(const ValueKey<String>('smart-money-unavailable')),
         findsOneWidget,
       );
-      expect(find.textContaining('聪明钱追踪尚未交付'), findsOneWidget);
+      expect(find.textContaining('聪明钱追踪还没有开放'), findsOneWidget);
       expect(find.textContaining('胜率'), findsWidgets);
       expect(find.textContaining('0x'), findsNothing);
     });

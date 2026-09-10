@@ -331,7 +331,7 @@ void main() {
             find.byKey(const ValueKey<String>('community-state-permission')),
             findsOneWidget,
           );
-          expect(find.textContaining('当前账号无权执行此操作'), findsWidgets);
+          expect(find.textContaining('当前账号没有执行这个操作的权限'), findsWidgets);
           expect(
             find.byKey(const ValueKey<String>('community-state-empty')),
             findsNothing,
@@ -385,7 +385,7 @@ void main() {
             find.byKey(ValueKey<String>('${testCase.slug}-state-permission')),
             findsOneWidget,
           );
-          expect(find.textContaining('当前账号无权执行此操作'), findsWidgets);
+          expect(find.textContaining('当前账号没有执行这个操作的权限'), findsWidgets);
         },
       );
     }

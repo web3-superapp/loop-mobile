@@ -102,9 +102,7 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
               key: const ValueKey<String>('blocklist-capability-unavailable'),
               icon: 'warn',
               message: '屏蔽名单当前不可用',
-              reason: capability.reasonCode == null
-                  ? '尚未读取到能力清单，本页不请求屏蔽名单。'
-                  : '服务端原因：${capability.reasonCode}。',
+              reason: '请稍后再试。',
             )
           else if (!state.kind.isSupported)
             LoopEmpty(
@@ -113,7 +111,7 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
               ),
               icon: 'warn',
               message: '"${_segmentLabels[state.kind]}" 屏蔽暂不可用',
-              reason: '合约与域名屏蔽还没有服务端来源，本页不列出任何条目，也不发起请求。',
+              reason: '合约与域名屏蔽还没有开放，这里不会列出任何条目。',
             )
           else if (state.phase != CommunityViewPhase.ready)
             CommunityStateBlock(
@@ -162,7 +160,7 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
             key: ValueKey<String>('blocklist-deferred-kinds'),
             icon: 'warn',
             message: '合约与域名屏蔽暂不可用',
-            reason: '这两类屏蔽还没有服务端来源，分段保持禁用，本页不列出任何条目，也不发起请求。',
+            reason: '这两类屏蔽还没有开放，这里不会列出任何条目。',
             margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
           ),
           const LoopNotice(

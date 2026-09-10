@@ -291,7 +291,7 @@ void main() {
       expect(MoneyPolicyNotice.covers(failure), isTrue);
       final text = moneyPolicyRefusalText(failure);
       expect(text, contains('750.51'));
-      expect(text, contains('本步暂不可调'));
+      expect(text, contains('自定义上限还没有开放'));
     });
 
     test('a rule that compares nothing renders no figures', () {
@@ -306,7 +306,7 @@ void main() {
       );
 
       final text = moneyPolicyRefusalText(failure);
-      expect(text, contains('灰度名单'));
+      expect(text, contains('不在可操作的名单里'));
       expect(text, isNot(contains('750.51')));
     });
 

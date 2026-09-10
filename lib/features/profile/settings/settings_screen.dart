@@ -70,7 +70,7 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
         archetype: LoopFolioArchetype.action,
         kicker: 'ACCOUNT SETTINGS',
         heading: '设置',
-        caption: '语言与货币单位由服务端固定下发，本步只读；减少动效只保存在这台设备上。',
+        caption: '语言与货币单位暂时固定，不能修改；减少动效只保存在这台设备上。',
       ),
       sections: <Widget>[
         const LoopLabel('通用'),
@@ -96,14 +96,14 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('settings-language'),
                 title: '语言',
-                subtitle: '由服务端固定为 ${settings.policy.fixed.language}，本步不可更改',
+                subtitle: '暂时固定为 ${settings.policy.fixed.language}，不能修改',
                 trailing: settings.values.languageLabel,
                 position: LoopRowPosition.first,
               ),
               LoopRecordRow(
                 key: const ValueKey<String>('settings-display-currency'),
                 title: '货币单位',
-                subtitle: '由服务端固定，本步不可更改；行情仍显示各自的报价币',
+                subtitle: '暂时固定，不能修改；行情仍显示各自的报价币',
                 trailing: settings.values.displayCurrency,
                 position: LoopRowPosition.last,
               ),
@@ -191,7 +191,7 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
             LoopRecordRow(
               key: const ValueKey<String>('settings-open-about'),
               title: '关于与法务',
-              subtitle: '版本、规则快照与开源许可',
+              subtitle: '版本、规则与开源许可',
               onTap: () => widget.onNavigate('about'),
               position: LoopRowPosition.first,
             ),
@@ -217,7 +217,7 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
           key: ValueKey<String>('settings-data-usage-absent'),
           icon: 'info',
           title: '没有"数据用量"',
-          body: '流量统计没有任何后端或系统来源，与其显示一个编造的数字，不如不显示这一行。',
+          body: '读不到流量统计，与其显示一个编造的数字，不如不显示。',
           margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
         ),
         if (widget.onSignOut != null)

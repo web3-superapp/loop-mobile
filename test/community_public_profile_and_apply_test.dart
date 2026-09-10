@@ -98,7 +98,7 @@ void main() {
             .onPressed,
         isNull,
       );
-      expect(find.textContaining('Stream 会话接通（D7）'), findsOneWidget);
+      expect(find.textContaining('私聊还不能从这里发起'), findsOneWidget);
     });
 
     testWidgets('the follow badge repeats the server answer', (tester) async {
@@ -352,7 +352,7 @@ void main() {
         (CommunityFailureKind.aliasReserved, 'LOOP 保留词'),
         (CommunityFailureKind.aliasBlocked, '运营屏蔽名单'),
         (CommunityFailureKind.resourceConflict, '短链接已经被另一个社区占用'),
-        (CommunityFailureKind.validationFailed, '超出长度限制'),
+        (CommunityFailureKind.validationFailed, '名称或简介太长'),
         (CommunityFailureKind.activationRequired, '先完成 LOOP ID 激活'),
       ]) {
         final opened = <String>[];

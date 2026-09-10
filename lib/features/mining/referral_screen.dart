@@ -82,9 +82,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
             key: const ValueKey<String>('referral-capability-unavailable'),
             icon: 'warn',
             message: '邀请关系当前不可用',
-            reason: capability.reasonCode == null
-                ? '尚未读取到能力清单，本页不请求任何邀请数据。'
-                : '服务端原因：${capability.reasonCode}。',
+            reason: '请稍后再试。',
           )
         else if (overview == null)
           LaunchStateBlock(
@@ -93,7 +91,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
             emptyMessage: '没有读到邀请关系',
-            emptyReason: '服务端没有返回邀请码或关系计数。',
+            emptyReason: '暂时读不到邀请码和邀请人数。',
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -126,7 +124,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
             key: ValueKey<String>('referral-mining-only'),
             icon: 'info',
             title: '只计入 Mining Power',
-            body: '这是 Mining Power 加成，不是收入、佣金或返佣。分享完成不代表关系成立：关系是否有效由服务端验证。',
+            body: '这是 Mining Power 加成，不是收入、佣金或返佣。分享完成不代表关系成立，还需要验证。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),
@@ -254,7 +252,7 @@ class _LevelBlock extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Text(
-            '「有效」只统计服务端标记为 valid 的关系；其余状态一律显示为待验证，'
+            '「有效」只统计已验证的关系，其余一律显示为待验证，'
             '不计入任何加成。',
             style: LoopTypography.sora(
               size: 11.5,
@@ -428,7 +426,7 @@ class _BindingBlock extends StatelessWidget {
             key: ValueKey<String>('referral-claim-success'),
             icon: 'check',
             title: '关系已锁定',
-            body: '服务端已确认这条关系。关系一旦锁定就不能更换，只能由服务端作废。',
+            body: '这条关系已确认。绑定后不能更换。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
       ],

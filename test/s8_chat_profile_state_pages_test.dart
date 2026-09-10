@@ -603,7 +603,7 @@ void main() {
         find.byKey(const ValueKey<String>('profile-edit-alias-field')),
         findsNothing,
       );
-      expect(find.textContaining('客户端无法调整'), findsOneWidget);
+      expect(find.textContaining('不能在应用里自行调整'), findsOneWidget);
     });
 
     testWidgets('a step-up refusal points at the security centre', (

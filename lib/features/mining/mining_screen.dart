@@ -82,9 +82,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             key: const ValueKey<String>('mining-capability-unavailable'),
             icon: 'warn',
             message: '挖矿当前不可用',
-            reason: capability.reasonCode == null
-                ? '尚未读取到能力清单，本页不请求任何挖矿数据。'
-                : '服务端原因：${capability.reasonCode}。',
+            reason: '请稍后再试。',
           )
         else if (summary == null)
           LaunchStateBlock(
@@ -93,7 +91,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             failureKind: state.failureKind,
             skeleton: LoopSkeletonType.detail,
             emptyMessage: '没有读到挖矿摘要',
-            emptyReason: '服务端没有返回任何算力口径。',
+            emptyReason: '暂时读不到算力数据。',
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
@@ -111,7 +109,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
           ),
           const LoopLabel('公式版本'),
           _FormulaBlock(formula: summary.formula),
-          const LoopLabel('结算快照'),
+          const LoopLabel('结算记录'),
           _SnapshotBlock(snapshot: summary.snapshot),
           const LoopLabel('相关页面'),
           LoopRecordGroup(
@@ -151,8 +149,8 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             icon: 'shield',
             title: '不做本地估算',
             body:
-                '挖矿公式属于后端交付 D19，目前没有任何已批准的版本。'
-                '客户端不会累计积分、估算收益或创建领取操作；缺少来源与「算力为零」是两回事。',
+                '挖矿公式还没有批准的版本。'
+                'LOOP 不会在这台设备上累计积分或估算收益。读不到不等于「算力为零」。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),
@@ -197,7 +195,7 @@ class _SnapshotBlock extends StatelessWidget {
       MiningSnapshotUnavailable(:final reasonCode) => LoopEmpty(
         key: const ValueKey<String>('mining-snapshot-unavailable'),
         icon: 'clock',
-        message: '还没有结算快照',
+        message: '还没有结算记录',
         reason: launchReasonCodeText(reasonCode),
       ),
       MiningSnapshotComputed(
@@ -210,7 +208,7 @@ class _SnapshotBlock extends StatelessWidget {
           rows: <LoopRecordRow>[
             LoopRecordRow(
               key: const ValueKey<String>('mining-snapshot-row'),
-              title: '最近一次结算快照',
+              title: '最近一次结算',
               subtitle:
                   '区块 $blockNumber · 公式 $formulaVersion · '
                   '${launchTimestampLabel(computedAt)}',

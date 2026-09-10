@@ -73,9 +73,7 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
               key: const ValueKey<String>('dm-requests-capability-unavailable'),
               icon: 'warn',
               message: '陌生人请求当前不可用',
-              reason: capability.reasonCode == null
-                  ? '尚未读取到能力清单，本页不请求陌生人列表。'
-                  : '服务端原因：${capability.reasonCode}。',
+              reason: '请稍后再试。',
             )
           else if (state.phase != CommunityViewPhase.ready)
             CommunityStateBlock(
@@ -119,8 +117,8 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
             icon: 'info',
             title: '这一步能做什么',
             body:
-                '接受会在服务端建立关系；忽略进入 24 小时冷却；举报等于拒绝加屏蔽。'
-                '消息正文与 AI 巡查标记还没有来源，本页不展示任何正文或风险结论。',
+                '接受后建立联系；忽略后 24 小时内不再提醒；举报等于拒绝并屏蔽。'
+                '消息预览与 AI 巡查还没有开放，这里不显示正文或风险提示。',
             margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
           ),
         ],
@@ -142,7 +140,7 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
       context,
       title: '$label这个请求？',
       body: switch (decision) {
-        MessageRequestDecision.accept => '接受后服务端会建立关系。如果任一方向存在屏蔽，服务端会拒绝。',
+        MessageRequestDecision.accept => '接受后会建立联系。如果任一方屏蔽了对方，则无法建立。',
         MessageRequestDecision.ignore => '忽略后对方在 24 小时内不能再次发起请求。',
         MessageRequestDecision.report => '举报会拒绝请求、屏蔽发起人并写入审计，同时断开双向关注。',
       },
