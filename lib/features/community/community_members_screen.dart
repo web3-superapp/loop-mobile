@@ -293,6 +293,17 @@ class _CommunityMembersScreenState
               onRetry: () => unawaited(controller.reload()),
             )
           else ...<Widget>[
+            // A search re-read keeps the rows it already read; the mark says a
+            // newer answer is on the way instead of a skeleton hiding a page
+            // that is still readable. Same widget, key and copy every other
+            // community surface uses for this.
+            if (state.refreshing)
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
+                child: LoopUpdatingBadge(
+                  key: ValueKey<String>('community-state-updating'),
+                ),
+              ),
             if (state.failureKind != null)
               LoopNotice(
                 key: const ValueKey<String>('community-members-action-failure'),

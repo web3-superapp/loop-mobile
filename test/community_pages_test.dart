@@ -1083,6 +1083,85 @@ void main() {
       ]);
     });
 
+    testWidgets('a search re-read keeps the rows and marks them 更新中', (
+      tester,
+    ) async {
+      final gateway = await openSearch(tester);
+      expect(find.text('frog_member'), findsOneWidget);
+
+      // A first search over a directory that is already on screen.
+      gateway.readDelay = const Duration(milliseconds: 500);
+      await tester.enterText(searchField(), 'fro');
+      await tester.pump(CommunityMembersController.searchDebounce);
+
+      // The rows survive the re-read: no skeleton, no blank list.
+      expect(find.byType(LoopSkeleton), findsNothing);
+      expect(find.text('frog_member'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('community-state-updating')),
+        findsOneWidget,
+      );
+      // The old cursor belongs to the old query, so 载入更多 is withdrawn.
+      expect(
+        find.byKey(const ValueKey<String>('community-members-load-more')),
+        findsNothing,
+      );
+
+      gateway.readDelay = null;
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('community-state-updating')),
+        findsNothing,
+      );
+      expect(find.text('frog_member'), findsOneWidget);
+    });
+
+    testWidgets('a first open and a role switch still load as a skeleton', (
+      tester,
+    ) async {
+      // A held read, not a never-completing one: the skeleton animates, so the
+      // frame is advanced explicitly rather than settled while it is up.
+      final gateway = FakeCommunityGateway(members: testDirectory())
+        ..readDelay = const Duration(milliseconds: 500);
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: gateway,
+        settle: false,
+      );
+
+      // A first open has nothing to keep.
+      expect(find.byType(LoopSkeleton), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('community-state-updating')),
+        findsNothing,
+      );
+
+      await tester.pump(const Duration(milliseconds: 600));
+      gateway.readDelay = null;
+      await tester.pumpAndSettle();
+      expect(find.text('frog_member'), findsOneWidget);
+
+      // A role segment is a different directory, not the same one narrowed.
+      gateway.readDelay = const Duration(milliseconds: 500);
+      await tester.tap(find.byKey(const ValueKey<String>('members-seg-admin')));
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(LoopSkeleton), findsOneWidget);
+      expect(find.text('frog_member'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('community-state-updating')),
+        findsNothing,
+      );
+
+      await tester.pump(const Duration(milliseconds: 600));
+      gateway.readDelay = null;
+      await tester.pumpAndSettle();
+      expect(find.text('frog_member'), findsOneWidget);
+    });
+
     testWidgets('a refused search keeps the five-state contract', (
       tester,
     ) async {

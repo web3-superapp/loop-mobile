@@ -41,6 +41,7 @@ alias prefix on the same read the page already performs.
 | Debounce | 300 ms, in the controller rather than the widget, so the rule survives a rebuild. `CommunityMembersController.searchDebounce` is the single source and the tests read it rather than repeating the number. |
 | Single flight | The existing `CommunitySingleFlight` guard still allows one read at a time. A keystroke that lands while a read is in the air does not start a second one; when the read returns, the drain loop issues exactly one more for the latest text. A read never answers for text the caller has moved past without a follow-up. |
 | Clear | The field carries a clear control and the topbar toggle also clears. Both drop `q` and read the whole directory again immediately, without waiting out the debounce. |
+| Loading | A search re-read is a narrowing of the directory already on screen, so decision 0071's rule applies: the rows stay and wear the 更新中 mark rather than being replaced by a skeleton per settled keystroke. `CommunityMembersState.refreshing` carries it and the page renders 0071's own `LoopUpdatingBadge` under the same `community-state-updating` key every other community surface uses. A first open and a role switch are different directories with nothing comparable to keep, and still load as a skeleton. The stale cursor is dropped either way, so 载入更多 is withdrawn while a re-read is in the air. |
 | Empty result | 「没有匹配的成员」 with 「别名要从开头对上才算匹配，换个开头再试。」. It is the ordinary `empty` phase, not a new state: the segment counts stay the server's directory counts, and the field survives its own empty answer so the query can be edited. |
 | Five states | Unchanged. A refused search is the same `error` / `offline` / `permission` / `unavailable` block the directory already renders, with the field still on screen; `429` reaches it as `rateLimited` through the existing catalogue mapping. |
 | Transport | `q` is trimmed by the transport, dropped when blank, and refused before dispatch when it carries a control, format, surrogate or line/paragraph separator code point or exceeds the contract's 256-character raw bound — the client never spends a quota slot on a request the contract already rejects. Normalization and the code-point bound stay the server's. |
@@ -61,6 +62,11 @@ A cursor is bound to the query it was issued for, so changing the text always
 restarts at the first page — 「载入更多」 keeps working under a query, and a
 mixed page of two different searches is not reachable.
 
+Because the rows survive a re-read, the page no longer blanks itself once per
+settled keystroke — which is the same complaint decision 0071 answered for
+every other block, applied to the one interaction that did not exist when 0071
+landed.
+
 Refused, and still refused: fuzzy or substring matching, searching by `loopId`
 or wallet address, sorting results by relevance, and any client-side filtering
 of an already-loaded page. A search the server did not perform is not a
@@ -73,7 +79,9 @@ search.
   request), the trimmed query reaching the gateway as `q`, an empty result
   that keeps the server's counts and the field, the clear control and the
   topbar toggle both dropping `q`, a keystroke during a read producing exactly
-  one follow-up, and a refusal keeping the five-state block.
+  one follow-up, a re-read keeping its rows under the 更新中 mark with
+  载入更多 withdrawn until the answer lands, a first open and a role switch
+  still loading as a skeleton, and a refusal keeping the five-state block.
 - `test/community_api_contract_test.dart`: `q` trimmed onto the wire beside
   `role` and `cursor` with no `Idempotency-Key`, a blank or absent query
   sending no `q` at all, an unsafe or over-long prefix never dispatched, and

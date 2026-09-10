@@ -463,6 +463,7 @@ final class CommunityMembersState {
     this.failureKind,
     this.busy = false,
     this.loadingMore = false,
+    this.refreshing = false,
   });
 
   factory CommunityMembersState.initial(CommunityGatewayMode mode) {
@@ -492,6 +493,13 @@ final class CommunityMembersState {
   final CommunityFailureKind? failureKind;
   final bool busy;
   final bool loadingMore;
+
+  /// A search re-read is in flight over results this page already shows
+  /// (decision 0071). The rows stay and wear the 更新中 mark instead of being
+  /// replaced by a skeleton. Only a narrowing of the same directory qualifies:
+  /// opening the page and switching role segment are different directories and
+  /// still load as a skeleton.
+  final bool refreshing;
 
   bool get canLoadMore => nextCursor != null && !loadingMore && !busy;
 
@@ -598,6 +606,7 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
     failureKind: state.failureKind,
     busy: state.busy,
     loadingMore: state.loadingMore,
+    refreshing: state.refreshing,
   );
 
   /// Single flight with coalescing: at most one read is in the air, and when
@@ -610,7 +619,7 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
       for (var attempt = 0; attempt < 8; attempt += 1) {
         final target = state.query;
         if (target == _appliedQuery) return;
-        await _fetch(filter: state.filter, append: false);
+        await _fetch(filter: state.filter, append: false, searchRefresh: true);
         if (_requestedQuery == target) _appliedQuery = target;
       }
     } finally {
@@ -648,6 +657,7 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
   Future<void> _fetch({
     required CommunityMemberFilter filter,
     required bool append,
+    bool searchRefresh = false,
   }) => single(() async {
     final id = _communityId;
     final previous = state;
@@ -665,17 +675,25 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
     final gateway = ref.read(communityGatewayProvider);
     final generation = nextGeneration();
     _requestedQuery = query;
+    // A narrowing of the same directory keeps the rows it already read and
+    // marks them 更新中; a first open or a role switch has nothing comparable
+    // to keep and still loads as a skeleton. The cursor is dropped either way,
+    // because it is bound to the query that issued it.
+    final keepRows = !append && searchRefresh && previous.items.isNotEmpty;
     state = CommunityMembersState(
       mode: previous.mode,
-      phase: append ? previous.phase : CommunityViewPhase.loading,
+      phase: append || keepRows ? previous.phase : CommunityViewPhase.loading,
       filter: filter,
       query: query,
       community: previous.community,
       viewer: previous.viewer,
       counts: previous.counts,
-      items: append ? previous.items : const <CommunityMemberEntry>[],
+      items: append || keepRows
+          ? previous.items
+          : const <CommunityMemberEntry>[],
       nextCursor: append ? previous.nextCursor : null,
       loadingMore: append,
+      refreshing: keepRows,
     );
     try {
       final directory = await gateway.listMembers(
