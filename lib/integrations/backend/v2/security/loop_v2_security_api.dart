@@ -252,6 +252,11 @@ final class DioLoopV2SecurityApi implements LoopV2SecurityApi {
           map['evidence'],
           const <String>{'status', 'reasonCode'},
         );
+        // `/v2/security/capabilities` is its own document: all six Privy
+        // items are permanently `unavailable` with pending evidence, and the
+        // `confirmed` status decision 0068 added to `/v2/meta/capabilities`
+        // does not reach it. Widening this would claim a device-verified
+        // Privy feature that has none.
         if (evidence['status'] != 'pending') LoopV2ChainCodec.invalid();
         items.add(
           LoopSecurityCapability(

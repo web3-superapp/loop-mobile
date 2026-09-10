@@ -572,7 +572,9 @@ void main() {
         tester,
         const VoiceRoomScreen(communityId: testCommunityId),
         voiceRoom: voice,
-        meta: testMetaSnapshot(voiceRoomEvidencePending: true),
+        meta: testMetaSnapshot(
+          voiceRoomEvidence: LoopV2CapabilityEvidenceStatus.pending,
+        ),
       );
 
       expect(

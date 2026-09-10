@@ -520,6 +520,10 @@ final class FakeSearchGateway implements SearchGateway {
   }
 }
 
+/// The operator reference `voiceRooms` publishes with `confirmed` evidence
+/// (decision 0068). It is an audit string, never product copy.
+const testVoiceRoomEvidenceReference = 'ops/stream/audio-room-role-2026-09-10';
+
 /// A capability document that reports every id as `available`, so a page's
 /// own state is what the test observes.
 LoopV2MetaSnapshot testMetaSnapshot({
@@ -532,7 +536,8 @@ LoopV2MetaSnapshot testMetaSnapshot({
       LoopV2CapabilityAvailability.available,
   LoopV2CapabilityAvailability communityAi =
       LoopV2CapabilityAvailability.deferred,
-  bool voiceRoomEvidencePending = false,
+  LoopV2CapabilityEvidenceStatus voiceRoomEvidence =
+      LoopV2CapabilityEvidenceStatus.notApplicable,
 }) {
   return LoopV2MetaSnapshot(
     clientPolicy: LoopV2ClientPolicy(
@@ -596,13 +601,28 @@ LoopV2MetaSnapshot testMetaSnapshot({
               _ => 'NOT_CONNECTED',
             },
             // Decision 0005 keeps a provider-evidence flag on `voiceRooms`
-            // only; every other capability carries `notApplicable`.
-            evidence:
-                id == LoopV2CapabilityId.voiceRooms && voiceRoomEvidencePending
-                ? const LoopV2CapabilityEvidence(
-                    status: LoopV2CapabilityEvidenceStatus.pending,
-                    reasonCode: 'AUDIO_ROOM_USER_ROLE_EVIDENCE_PENDING',
-                  )
+            // only; every other capability carries `notApplicable`. Decision
+            // 0068 lets that flag reach `confirmed`, which is the only status
+            // that publishes a `reference`.
+            evidence: id == LoopV2CapabilityId.voiceRooms
+                ? switch (voiceRoomEvidence) {
+                    LoopV2CapabilityEvidenceStatus.pending =>
+                      const LoopV2CapabilityEvidence(
+                        status: LoopV2CapabilityEvidenceStatus.pending,
+                        reasonCode: 'AUDIO_ROOM_USER_ROLE_EVIDENCE_PENDING',
+                      ),
+                    LoopV2CapabilityEvidenceStatus.confirmed =>
+                      const LoopV2CapabilityEvidence(
+                        status: LoopV2CapabilityEvidenceStatus.confirmed,
+                        reasonCode: null,
+                        reference: testVoiceRoomEvidenceReference,
+                      ),
+                    LoopV2CapabilityEvidenceStatus.notApplicable =>
+                      const LoopV2CapabilityEvidence(
+                        status: LoopV2CapabilityEvidenceStatus.notApplicable,
+                        reasonCode: null,
+                      ),
+                  }
                 : const LoopV2CapabilityEvidence(
                     status: LoopV2CapabilityEvidenceStatus.notApplicable,
                     reasonCode: null,

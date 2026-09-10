@@ -259,9 +259,15 @@ enum LoopV2CapabilityAvailability {
   }
 }
 
+/// `evidence.status`. `notApplicable` means the capability has no provider
+/// precondition of its own; `pending` means one exists and has not been met,
+/// and is the only value that closes a surface. `confirmed` (decision 0068)
+/// means the operator has recorded the precondition as met and carries the
+/// reference that records it.
 enum LoopV2CapabilityEvidenceStatus {
   notApplicable('notApplicable'),
-  pending('pending');
+  pending('pending'),
+  confirmed('confirmed');
 
   const LoopV2CapabilityEvidenceStatus(this.wireName);
 
@@ -280,11 +286,20 @@ final class LoopV2CapabilityEvidence {
   const LoopV2CapabilityEvidence({
     required this.status,
     required this.reasonCode,
+    this.reference,
     this.launchChainId,
   });
 
   final LoopV2CapabilityEvidenceStatus status;
   final String? reasonCode;
+
+  /// Decision 0068: the operational reference that records how the provider
+  /// precondition was met. It is published only with `confirmed`, where it is
+  /// mandatory; every other status omits the key entirely, so `null` here
+  /// means "no confirmation to reference" and never "confirmed without one".
+  /// It is an operator's audit string, not product copy, and no surface
+  /// renders it.
+  final String? reference;
 
   /// Decision 0038: the `launch` capability — and only that one — carries the
   /// chain slot the Launch module points at, and only while that slot differs

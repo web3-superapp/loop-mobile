@@ -31,6 +31,10 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
   static const clientPolicyPath = '/v2/meta/client-policy';
   static const capabilitiesPath = '/v2/meta/capabilities';
 
+  /// `evidence.reference` is an operator's audit string of 1–120 characters
+  /// (decision 0068).
+  static const evidenceReferenceMaxLength = 120;
+
   /// `configVersion` / `effectiveAt` identify the mutable policy snapshot and
   /// are validated by shape only (decision 0029); they are never pinned.
   static final RegExp configVersionPattern = RegExp(
@@ -338,14 +342,25 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
       const <String>{'status', 'reasonCode'},
       // `launchChainId` belongs to `launch` alone (decision 0038); the key is
       // absent while the Launch slot equals the primary chain, and its
-      // presence on any other capability is an invalid payload.
-      const <String>{'launchChainId'},
+      // presence on any other capability is an invalid payload. `reference`
+      // belongs to `voiceRooms` alone (decision 0068) and only while its
+      // evidence reads `confirmed`.
+      const <String>{'launchChainId', 'reference'},
     );
     final id = _enumValue(
       capability['capabilityId'],
       LoopV2CapabilityId.tryParse,
     );
     final launchChainId = _launchChainId(evidence, id);
+    final status = _enumValue(
+      evidence['status'],
+      LoopV2CapabilityEvidenceStatus.tryParse,
+    );
+    final reasonCode = _nullableReasonCode(evidence['reasonCode']);
+    if (status == LoopV2CapabilityEvidenceStatus.confirmed &&
+        reasonCode != null) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+    }
     return LoopV2Capability(
       id: id,
       availability: _enumValue(
@@ -354,14 +369,45 @@ final class DioLoopV2MetaRepository implements LoopV2MetaRepository {
       ),
       reasonCode: _nullableReasonCode(capability['reasonCode']),
       evidence: LoopV2CapabilityEvidence(
-        status: _enumValue(
-          evidence['status'],
-          LoopV2CapabilityEvidenceStatus.tryParse,
-        ),
-        reasonCode: _nullableReasonCode(evidence['reasonCode']),
+        status: status,
+        reasonCode: reasonCode,
+        reference: _evidenceReference(evidence, id, status),
         launchChainId: launchChainId,
       ),
     );
+  }
+
+  /// The optional `evidence.reference` (decision 0068).
+  ///
+  /// `confirmed` is a claim that an operator recorded the provider
+  /// precondition as met, and the reference is what records it, so the two
+  /// are one fact: a `confirmed` without a reference is refused rather than
+  /// read as an unreferenced confirmation, and a reference published beside
+  /// `pending` or `notApplicable` describes a confirmation the same document
+  /// denies. Only `voiceRooms` carries the pair; the key on any other
+  /// capability — which also refuses `confirmed` there, since the reference is
+  /// mandatory — is an invalid payload.
+  String? _evidenceReference(
+    Map<String, Object?> evidence,
+    LoopV2CapabilityId id,
+    LoopV2CapabilityEvidenceStatus status,
+  ) {
+    final present = evidence.containsKey('reference');
+    if (status != LoopV2CapabilityEvidenceStatus.confirmed) {
+      if (present) {
+        throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+      }
+      return null;
+    }
+    final value = evidence['reference'];
+    if (!present ||
+        id != LoopV2CapabilityId.voiceRooms ||
+        value is! String ||
+        value.isEmpty ||
+        value.length > evidenceReferenceMaxLength) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidPayload);
+    }
+    return value;
   }
 
   /// The optional `evidence.launchChainId` (decision 0038).

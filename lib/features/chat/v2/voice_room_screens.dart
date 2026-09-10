@@ -52,6 +52,10 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
 
     // Decision 0005: while the provider role evidence is pending the whole
     // page stays closed, even though the capability itself reads `available`.
+    // Decision 0068 adds the answer that opens it again: once the operator
+    // records the `audio_room` role evidence the status reads `confirmed`,
+    // and the page runs its ordinary five states against the pre-created
+    // room and the member role it already required.
     final evidencePending =
         mode != CommunityGatewayMode.preview && capability.evidencePending;
     final blocked =

@@ -34,8 +34,11 @@ final class LoopCapabilityProjection {
   final String? reasonCode;
 
   /// A provider-evidence precondition the backend records separately from
-  /// availability. While it is pending the surface must stay closed even
-  /// though the capability itself reads `available`.
+  /// availability. `pending` is the only status that sets it: a capability
+  /// with no such precondition (`notApplicable`) and one whose precondition
+  /// the operator has recorded as met (`confirmed`, decision 0068) both leave
+  /// the surface to its own five states. While it is pending the surface must
+  /// stay closed even though the capability itself reads `available`.
   final bool evidencePending;
   final String? evidenceReasonCode;
 
@@ -75,8 +78,13 @@ abstract final class LoopCapabilityProjector {
           LoopCapabilityDecision.unavailable,
       },
       reasonCode: capability.reasonCode,
-      evidencePending:
-          evidence.status == LoopV2CapabilityEvidenceStatus.pending,
+      // Written as a switch so a status added to the contract has to be
+      // classified here rather than defaulting to "open".
+      evidencePending: switch (evidence.status) {
+        LoopV2CapabilityEvidenceStatus.pending => true,
+        LoopV2CapabilityEvidenceStatus.notApplicable ||
+        LoopV2CapabilityEvidenceStatus.confirmed => false,
+      },
       evidenceReasonCode: evidence.reasonCode,
       launchChainId: evidence.launchChainId,
     );
