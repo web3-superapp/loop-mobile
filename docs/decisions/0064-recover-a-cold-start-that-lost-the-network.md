@@ -184,7 +184,7 @@ instead of handing back the Future that never answered. A failure arriving from
 a superseded attempt is ignored by generation, because — unlike a snapshot — it
 carries no new fact about the credential.
 
-### 5. A cold start holds the first `Unauthenticated` for 2500 ms
+### 5. A cold start holds the first sign-out answer for 4000 ms
 
 The 2026-09-10 simulator run reproduced the flash **after** §1–§4 shipped, on a
 healthy network: about 25 seconds into a cold start the screenshot was the
@@ -207,21 +207,28 @@ to `signedOut`. (`isReady` / `awaitReady` are deprecated in 0.10.1 and would
 not help: "ready" there means only "not `NotReady`", which an early
 `Unauthenticated` already satisfies. LOOP calls neither.)
 
-The cold start therefore holds the first `Unauthenticated` instead of
-publishing it:
+The cold start therefore holds the first sign-out answer instead of publishing
+it:
 
+- **Both shapes of the answer are held.** The `Unauthenticated` snapshot, and a
+  restore failure whose message §2 classifies as `authentication`, are the same
+  event seen from two sides of the platform channel — the native side reports a
+  premature "no session" either as a state or as a `getAuthStateError`. The
+  failure keeps its explanation: if the window expires with nothing better, the
+  sign-out carries the message it arrived with.
 - The hold is offered **once**, and **only** from `restoring` — the cold-start
   wait. `authenticated`, `authenticatedUnverified`, `preview`, `signingOut`,
-  `signedOut` and the undecided `restoreUnavailable` all take an
-  `Unauthenticated` immediately, so a credential revoked after login still
-  signs the owner out on the spot and the undecided frame keeps its
-  explanation and its 重试.
-- The window is `defaultUnauthenticatedGrace`, **2500 ms**, injectable through
+  `signedOut` and the undecided `restoreUnavailable` all take a sign-out answer
+  immediately, so a credential revoked after login still signs the owner out on
+  the spot and the undecided frame keeps its explanation and its 重试.
+- The window is `defaultUnauthenticatedGrace`, **4000 ms**, injectable through
   `loopSessionUnauthenticatedGraceProvider`. An `Authenticated` or
   `AuthenticatedUnverified` arriving inside it is published at once and cancels
-  the wait. A second `Unauthenticated` inside it does not extend it.
+  the wait. A second premature answer inside it does not extend it, though it
+  may supply an explanation the first one lacked.
 - `retryRestore()` spends the grace before it starts: a retry is not a cold
-  start, and an owner who pressed 重试 is owed Privy's answer as it stands.
+  start, and an owner who pressed 重试 is owed Privy's answer as it stands —
+  including an authentication failure, which reaches the form immediately.
 - `exit()` is unaffected. It sets `_localSignOutBarrier` before anything else,
   and `_receiveSnapshot` returns early behind that barrier, so a sign-out the
   owner asked for is immediate.
@@ -236,7 +243,7 @@ Both timers are released the moment the session leaves `restoring`: the same
 `listenSelf` hook that retires the restore deadline retires the grace, and
 `ref.onDispose` cancels both.
 
-The window costs a logged-out owner up to 2500 ms of the branded launch frame
+The window costs a logged-out owner up to 4000 ms of the branded launch frame
 before the form appears. That is the price of never claiming a sign-out Privy
 did not mean, and it is spent on the frame the owner already sees rather than
 on a new one.
@@ -261,10 +268,10 @@ cannot reach its backend to validate a cached session. In that case this
 decision does not change the behaviour: after the §5 window the credential form
 still appears. The mapping in §2 is the honest limit of what privy_flutter
 0.10.1 exposes, §4's 12-second window only covers the case where nothing is
-reported at all, and §5's 2500 ms only covers a premature answer that is
+reported at all, and §5's 4000 ms only covers a premature answer that is
 corrected quickly.
 
-2500 ms is a judgement, not a measurement: the 2026-09-10 trace shows only that
+4000 ms is a judgement, not a measurement: the 2026-09-10 trace shows only that
 the correction arrived 「几秒后」, and if the real gap on a slow link is longer
 the flash returns. The number is injectable precisely so a device run can
 retune it. Confirming the native ordering and the correction latency on both

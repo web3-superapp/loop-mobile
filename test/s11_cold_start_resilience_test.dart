@@ -54,7 +54,12 @@ void main() {
         ),
       );
       final container = ProviderContainer(
-        overrides: [privyAuthGatewayProvider.overrideWithValue(gateway)],
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(gateway),
+          loopSessionUnauthenticatedGraceProvider.overrideWithValue(
+            const Duration(milliseconds: 500),
+          ),
+        ],
       );
       addTearDown(container.dispose);
 
@@ -62,8 +67,16 @@ void main() {
         container.read(loopSessionProvider).mode,
         LoopSessionMode.restoring,
       );
-      await Future<void>.delayed(Duration.zero);
+      // Decision 0064 §5: on a cold start the answer waits out the grace
+      // window first. It is still the only failure kind that reaches the form,
+      // and it still carries its explanation there.
+      await pumpEventQueue();
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.restoring,
+      );
 
+      await Future<void>.delayed(const Duration(milliseconds: 600));
       final session = container.read(loopSessionProvider);
       expect(session.mode, LoopSessionMode.signedOut);
       expect(session.isRestoring, isFalse);
@@ -437,7 +450,7 @@ void main() {
     );
 
     testWidgets(
-      'an Unauthenticated that stands becomes the form after 2500ms',
+      'an Unauthenticated that stands becomes the form after the window',
       (tester) async {
         final gateway = _RestoreGateway(answer: unauthenticated);
         final container = ProviderContainer(
@@ -519,6 +532,86 @@ void main() {
         );
       },
     );
+
+    test('a cold-start authentication failure waits out the same window', () async {
+      final sessions = StreamController<PrivySessionSnapshot>.broadcast();
+      addTearDown(sessions.close);
+      final gateway = _RestoreGateway(
+        failure: const PrivyGatewayException(
+          '登录状态已失效，请重新登录。',
+          kind: PrivyFailureKind.authentication,
+        ),
+        sessions: sessions.stream,
+      );
+      final container = ProviderContainer(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(gateway),
+          loopSessionUnauthenticatedGraceProvider.overrideWithValue(
+            const Duration(milliseconds: 500),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      container.read(loopSessionProvider);
+      await pumpEventQueue();
+      expect(gateway.restoreCalls, 1);
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.restoring,
+      );
+
+      // The exception is the same premature answer seen from the other side of
+      // the platform channel, so a stream `Authenticated` still wins.
+      sessions.add(authenticated);
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.authenticated,
+      );
+
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.authenticated,
+      );
+    });
+
+    test('an authentication failure after 重试 is immediate', () async {
+      final gateway = _RestoreGateway(
+        failure: const PrivyGatewayException(
+          '暂时无法确认登录状态，请检查网络后重试。',
+          kind: PrivyFailureKind.network,
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          privyAuthGatewayProvider.overrideWithValue(gateway),
+          loopSessionUnauthenticatedGraceProvider.overrideWithValue(
+            const Duration(milliseconds: 500),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      container.read(loopSessionProvider);
+      await pumpEventQueue();
+      expect(
+        container.read(loopSessionProvider).mode,
+        LoopSessionMode.restoreUnavailable,
+      );
+
+      gateway.failure = const PrivyGatewayException(
+        '登录状态已失效，请重新登录。',
+        kind: PrivyFailureKind.authentication,
+      );
+      await container.read(loopSessionProvider.notifier).retryRestore();
+
+      // A retry is not a cold start: the owner gets the answer as it stands.
+      final session = container.read(loopSessionProvider);
+      expect(session.mode, LoopSessionMode.signedOut);
+      expect(session.errorMessage, '登录状态已失效，请重新登录。');
+    });
 
     test(
       'a credential revoked after login signs the owner out at once',
@@ -614,7 +707,7 @@ void main() {
         LoopSessionMode.authenticated,
       );
 
-      // The test ends well inside the 2500ms window and inside the 12s restore
+      // The test ends well inside the grace window and inside the 12s restore
       // deadline. A surviving timer of either kind fails this test.
     });
   });

@@ -92,8 +92,10 @@ final loopSessionRestoreWindowProvider = Provider<Duration>(
   (ref) => LoopSessionController.defaultRestoreWindow,
 );
 
-/// How long a cold start holds an `unauthenticated` answer before it is
-/// allowed to become a sign-out. Overridable so tests can shorten it.
+/// How long a cold start holds a sign-out answer - an `Unauthenticated`
+/// snapshot, or a failure classified as an authentication answer - before it
+/// is allowed to reach the credential form. Overridable so tests can shorten
+/// it.
 ///
 /// privy_flutter 0.10.1 restores a session in two steps, and the first step is
 /// not the answer: `AuthStateManager.authStateStream` is a
@@ -110,18 +112,22 @@ final loopSessionUnauthenticatedGraceProvider = Provider<Duration>(
 
 class LoopSessionController extends Notifier<LoopSessionState> {
   static const defaultRestoreWindow = Duration(seconds: 12);
-  static const defaultUnauthenticatedGrace = Duration(milliseconds: 2500);
+  static const defaultUnauthenticatedGrace = Duration(milliseconds: 4000);
 
   StreamSubscription<PrivySessionSnapshot>? _subscription;
   Future<void>? _exitOperation;
   Future<void>? _restoreOperation;
   Timer? _restoreDeadline;
   Timer? _unauthenticatedGrace;
+
+  /// The explanation the held sign-out carries, if it had one. A snapshot has
+  /// none; a classified authentication failure does.
+  String? _heldSignOutMessage;
   var _restoreGeneration = 0;
   var _localSignOutBarrier = false;
 
-  /// The cold-start grace is offered once. After it is spent, every
-  /// `unauthenticated` answer is taken at face value again.
+  /// The cold-start grace is offered once. After it is spent, every sign-out
+  /// answer is taken at face value again.
   var _unauthenticatedGraceSpent = false;
 
   @override
@@ -204,20 +210,30 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     );
   }
 
-  /// Whether this `unauthenticated` snapshot is held instead of published.
+  /// Whether this sign-out answer is held instead of published.
+  ///
+  /// Both shapes of a premature answer come through here: the `Unauthenticated`
+  /// snapshot, and the failure whose message decision 0064 §2 classifies as an
+  /// authentication answer. They are the same event seen from two sides of the
+  /// platform channel.
   ///
   /// Only the cold-start wait may hold one, and only once. Anything else - a
   /// session that already reached the product, the undecided state that is
   /// already showing its explanation and retry, a preview, a sign-out the owner
   /// asked for - takes the answer immediately, so a credential revoked after
   /// login still signs the owner out on the spot.
-  bool _holdUnauthenticated() {
+  bool _holdPrematureSignOut({String? errorMessage}) {
     if (state.mode != LoopSessionMode.restoring) return false;
-    // Already waiting: a second premature `Unauthenticated` must not extend the
-    // window it is being measured against.
-    if (_unauthenticatedGrace != null) return true;
+    // Already waiting: a second premature answer must not extend the window it
+    // is being measured against, but it may supply the explanation the first
+    // one lacked.
+    if (_unauthenticatedGrace != null) {
+      _heldSignOutMessage ??= errorMessage;
+      return true;
+    }
     if (_unauthenticatedGraceSpent) return false;
     _unauthenticatedGraceSpent = true;
+    _heldSignOutMessage = errorMessage;
     _unauthenticatedGrace = Timer(
       ref.read(loopSessionUnauthenticatedGraceProvider),
       _unauthenticatedGraceExpired,
@@ -228,16 +244,19 @@ class LoopSessionController extends Notifier<LoopSessionState> {
   void _cancelUnauthenticatedGrace() {
     _unauthenticatedGrace?.cancel();
     _unauthenticatedGrace = null;
+    _heldSignOutMessage = null;
   }
 
   void _unauthenticatedGraceExpired() {
     _unauthenticatedGrace = null;
+    final message = _heldSignOutMessage;
+    _heldSignOutMessage = null;
     if (!ref.mounted || state.mode != LoopSessionMode.restoring) return;
     // A cold-start restore still in flight has not answered at all yet. That
     // case belongs to the 12-second deadline and its branded frame, never to
     // the credential form.
     if (_restoreOperation != null) return;
-    state = const LoopSessionState.signedOut();
+    state = LoopSessionState.signedOut(errorMessage: message);
   }
 
   Future<void> _restore(PrivyAuthGateway gateway, int generation) async {
@@ -276,9 +295,15 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     // Only an explicit authentication answer signs the owner out. Network and
     // unclassified failures keep the session undecided so the credential form
     // never claims a sign-out Privy did not report.
-    state = kind == PrivyFailureKind.authentication
-        ? LoopSessionState.signedOut(errorMessage: message)
-        : LoopSessionState.restoreUnavailable(errorMessage: message);
+    if (kind != PrivyFailureKind.authentication) {
+      state = LoopSessionState.restoreUnavailable(errorMessage: message);
+      return;
+    }
+    // Decision 0064 §5: on a cold start this is the same premature answer the
+    // stream can publish, only surfaced as an exception. It waits out the same
+    // window before it is allowed to become the credential form.
+    if (_holdPrematureSignOut(errorMessage: message)) return;
+    state = LoopSessionState.signedOut(errorMessage: message);
   }
 
   void _receiveSnapshot(PrivySessionSnapshot snapshot) {
@@ -291,7 +316,7 @@ class LoopSessionController extends Notifier<LoopSessionState> {
     // has finished restoring. Hold that answer for the grace window; an
     // `authenticated` arriving inside it cancels the wait and wins.
     if (snapshot.kind == PrivySessionKind.unauthenticated &&
-        _holdUnauthenticated()) {
+        _holdPrematureSignOut()) {
       return;
     }
     state = switch (snapshot.kind) {
