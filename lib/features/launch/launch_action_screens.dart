@@ -837,7 +837,10 @@ class _ReviewStatusBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reason = project.reviewReasonCode;
+    // The server's own sentence for the applicant (decision 0041). It is
+    // rendered verbatim: the client neither translates `reviewReasonCode`
+    // itself nor reads the code back out of this text.
+    final reason = project.reviewReasonText;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -891,7 +894,7 @@ class _ReviewStatusBlock extends StatelessWidget {
             icon: 'warn',
             tone: LoopNoticeTone.warn,
             title: '退回原因',
-            body: launchReviewReasonText(reason),
+            body: reason,
             margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
       ],

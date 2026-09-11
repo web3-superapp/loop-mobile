@@ -126,19 +126,6 @@ bool launchOutcomeIsUnresolved(LaunchFailureKind kind) =>
 /// An unknown code keeps a neutral sentence rather than inventing a cause. No
 /// entry restates a rate, a cap, a supply or a tax: those numbers do not exist
 /// until the contract and formula baselines are delivered.
-/// zh-CN sentence for one `reviewReasonCode` on a returned Launch application.
-///
-/// The code is an internal identifier; it never reaches the screen. An
-/// unrecognised code keeps a neutral sentence rather than inventing a cause.
-String launchReviewReasonText(String reasonCode) => switch (reasonCode) {
-  'narrative_too_short' => '项目简介太短，请补充后重新提交。',
-  'narrative_missing' => '缺少项目简介，请补充后重新提交。',
-  'links_unreachable' => '官方链接打不开，请检查后重新提交。',
-  'ticker_conflict' => '代号已被占用，请换一个再提交。',
-  'duplicate_submission' => '这个项目已经提交过，请勿重复申请。',
-  _ => '申请被退回，请补充材料后重新提交。',
-};
-
 String launchReasonCodeText(String? reasonCode) => switch (reasonCode) {
   // launch · contract baseline
   'LAUNCH_CONTRACT_BASELINE_PENDING' => 'Launch 合约还没有上线，链上状态、购买、退款与领取都暂时不可用。',

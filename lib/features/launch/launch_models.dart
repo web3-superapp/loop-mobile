@@ -277,6 +277,7 @@ final class LaunchProject {
     required this.materialVersion,
     required this.reviewStatus,
     required this.reviewReasonCode,
+    required this.reviewReasonText,
     required this.kyb,
     required this.attachments,
     required this.submittedAt,
@@ -295,7 +296,19 @@ final class LaunchProject {
   final LaunchOfficialLinks officialLinks;
   final int materialVersion;
   final LaunchReviewStatus reviewStatus;
+
+  /// The machine-readable review reason. It is a contract identifier for
+  /// analytics and branching only and never reaches the screen; the sentence
+  /// the applicant reads is [reviewReasonText].
   final String? reviewReasonCode;
+
+  /// The server's own zh-CN sentence for [reviewReasonCode] (decision 0041).
+  ///
+  /// It is rendered verbatim. The client never parses it back into a code and
+  /// never branches on it: a branch reads [reviewStatus] or
+  /// [reviewReasonCode]. It is null exactly when [reviewReasonCode] is null,
+  /// which a non-owner projection always is.
+  final String? reviewReasonText;
   final LaunchKyb kyb;
   final LaunchUnavailable attachments;
   final DateTime? submittedAt;

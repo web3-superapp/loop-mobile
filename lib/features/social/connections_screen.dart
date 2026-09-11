@@ -101,8 +101,13 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
               title: '关注关系当前不可用',
             )
           : null,
+      onRefresh: controller.refresh,
+      updating: state.refreshing,
       collection: ListView(
         key: const ValueKey<String>('connections-list'),
+        // A short list must still overscroll, or the gesture would exist only
+        // on the accounts that happen to follow enough people.
+        physics: loopRefreshablePhysics(controller.refresh),
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '关注关系'),

@@ -24,6 +24,7 @@ final class ConnectionsState {
     this.failureKind,
     this.busy = false,
     this.loadingMore = false,
+    this.refreshing = false,
   });
 
   factory ConnectionsState.initial(CommunityGatewayMode mode) {
@@ -48,6 +49,10 @@ final class ConnectionsState {
   final bool busy;
   final bool loadingMore;
 
+  /// A re-read over rows this page already shows. They stay on screen wearing
+  /// the 更新中 mark; only a page with no rows at all loads as a skeleton.
+  final bool refreshing;
+
   bool get canLoadMore => nextCursor != null && !loadingMore && !busy;
 
   bool get isPreview => mode == CommunityGatewayMode.preview;
@@ -70,6 +75,15 @@ final class ConnectionsController extends Notifier<ConnectionsState>
 
   Future<void> reload() => _fetch(direction: state.direction, append: false);
 
+  /// Pull-to-refresh over the current direction.
+  ///
+  /// It re-reads page one without clearing the rows: they stay on screen
+  /// marked 更新中 instead of collapsing into a skeleton, because replacing
+  /// readable rows with grey blocks loses what the user already had. A page
+  /// that has read nothing yet has nothing to keep and loads normally.
+  Future<void> refresh() =>
+      _fetch(direction: state.direction, append: false, refresh: true);
+
   Future<void> selectDirection(ConnectionDirection direction) {
     if (direction == state.direction &&
         state.phase == CommunityViewPhase.ready) {
@@ -86,18 +100,25 @@ final class ConnectionsController extends Notifier<ConnectionsState>
   Future<void> _fetch({
     required ConnectionDirection direction,
     required bool append,
+    bool refresh = false,
   }) => single(() async {
     final gateway = ref.read(socialGatewayProvider);
     final previous = state;
     final generation = nextGeneration();
+    // A pull over rows that are already there keeps them and marks them
+    // 更新中; a first open or a direction switch is a different list and still
+    // loads as a skeleton. The cursor is dropped either way, because page one
+    // reissues it.
+    final keepRows = !append && refresh && previous.items.isNotEmpty;
     state = ConnectionsState(
       mode: previous.mode,
-      phase: append ? previous.phase : CommunityViewPhase.loading,
+      phase: append || keepRows ? previous.phase : CommunityViewPhase.loading,
       direction: direction,
-      items: append ? previous.items : const <ConnectionEntry>[],
+      items: append || keepRows ? previous.items : const <ConnectionEntry>[],
       counts: previous.counts,
       nextCursor: append ? previous.nextCursor : null,
       loadingMore: append,
+      refreshing: keepRows,
     );
     try {
       final page = await gateway.listConnections(
@@ -120,7 +141,7 @@ final class ConnectionsController extends Notifier<ConnectionsState>
       );
     } on CommunityGatewayException catch (error) {
       if (!isCurrent(generation)) return;
-      state = _failed(previous, direction, append, error.kind);
+      state = _failed(previous, direction, append, error.kind, keepRows);
     } catch (_) {
       if (!isCurrent(generation)) return;
       state = _failed(
@@ -128,24 +149,28 @@ final class ConnectionsController extends Notifier<ConnectionsState>
         direction,
         append,
         CommunityFailureKind.unexpected,
+        keepRows,
       );
     }
   });
 
   /// A failed page keeps what was already loaded: only a first page that has
-  /// nothing to show falls back to a whole-page state.
+  /// nothing to show falls back to a whole-page state. A failed pull keeps the
+  /// rows too — the user still has what the last successful read returned, and
+  /// the failure is reported next to them.
   static ConnectionsState _failed(
     ConnectionsState previous,
     ConnectionDirection direction,
     bool append,
     CommunityFailureKind kind,
+    bool keepRows,
   ) => ConnectionsState(
     mode: previous.mode,
-    phase: append && previous.items.isNotEmpty
+    phase: (append || keepRows) && previous.items.isNotEmpty
         ? CommunityViewPhase.ready
         : communityPhaseForFailure(kind),
     direction: direction,
-    items: append ? previous.items : const <ConnectionEntry>[],
+    items: append || keepRows ? previous.items : const <ConnectionEntry>[],
     counts: previous.counts,
     nextCursor: append ? previous.nextCursor : null,
     failureKind: kind,
@@ -248,6 +273,7 @@ final class BlocklistState {
     this.failureKind,
     this.busy = false,
     this.loadingMore = false,
+    this.refreshing = false,
   });
 
   factory BlocklistState.initial(CommunityGatewayMode mode) {
@@ -272,6 +298,10 @@ final class BlocklistState {
   final bool busy;
   final bool loadingMore;
 
+  /// A re-read over rows this page already shows. They stay on screen wearing
+  /// the 更新中 mark; only a page with no rows at all loads as a skeleton.
+  final bool refreshing;
+
   bool get canLoadMore => nextCursor != null && !loadingMore && !busy;
 
   bool get isPreview => mode == CommunityGatewayMode.preview;
@@ -293,6 +323,14 @@ final class BlocklistController extends Notifier<BlocklistState>
   }
 
   Future<void> reload() => _fetch(kind: state.kind, append: false);
+
+  /// Pull-to-refresh over the current segment: the rows already read stay on
+  /// screen marked 更新中 instead of collapsing into a skeleton. A segment
+  /// with no backend has nothing to re-read and issues no request.
+  Future<void> refresh() {
+    if (!state.kind.isSupported) return Future<void>.value();
+    return _fetch(kind: state.kind, append: false, refresh: true);
+  }
 
   /// `contract` and `domain` have no backend: the segment can be selected but
   /// the page shows the unavailable explanation and issues no request.
@@ -318,66 +356,76 @@ final class BlocklistController extends Notifier<BlocklistState>
     return _fetch(kind: state.kind, append: true);
   }
 
-  Future<void> _fetch({required BlockKind kind, required bool append}) =>
-      single(() async {
-        final gateway = ref.read(socialGatewayProvider);
-        final previous = state;
-        final generation = nextGeneration();
-        state = BlocklistState(
-          mode: previous.mode,
-          phase: append ? previous.phase : CommunityViewPhase.loading,
-          kind: kind,
-          items: append ? previous.items : const <BlockEntry>[],
-          userCount: previous.userCount,
-          nextCursor: append ? previous.nextCursor : null,
-          loadingMore: append,
-        );
-        try {
-          final page = await gateway.listBlocks(
-            kind: kind,
-            cursor: append ? previous.nextCursor : null,
-          );
-          if (!isCurrent(generation)) return;
-          final merged = append
-              ? <BlockEntry>[...previous.items, ...page.items]
-              : page.items;
-          state = BlocklistState(
-            mode: previous.mode,
-            phase: merged.isEmpty
-                ? CommunityViewPhase.empty
-                : CommunityViewPhase.ready,
-            kind: kind,
-            items: List<BlockEntry>.unmodifiable(merged),
-            userCount: page.userCount,
-            nextCursor: page.nextCursor,
-          );
-        } on CommunityGatewayException catch (error) {
-          if (!isCurrent(generation)) return;
-          state = _failed(previous, kind, append, error.kind);
-        } catch (_) {
-          if (!isCurrent(generation)) return;
-          state = _failed(
-            previous,
-            kind,
-            append,
-            CommunityFailureKind.unexpected,
-          );
-        }
-      });
+  Future<void> _fetch({
+    required BlockKind kind,
+    required bool append,
+    bool refresh = false,
+  }) => single(() async {
+    final gateway = ref.read(socialGatewayProvider);
+    final previous = state;
+    final generation = nextGeneration();
+    // A pull over rows that are already there keeps them and marks them
+    // 更新中; a first open or a segment switch is a different list and
+    // still loads as a skeleton.
+    final keepRows = !append && refresh && previous.items.isNotEmpty;
+    state = BlocklistState(
+      mode: previous.mode,
+      phase: append || keepRows ? previous.phase : CommunityViewPhase.loading,
+      kind: kind,
+      items: append || keepRows ? previous.items : const <BlockEntry>[],
+      userCount: previous.userCount,
+      nextCursor: append ? previous.nextCursor : null,
+      loadingMore: append,
+      refreshing: keepRows,
+    );
+    try {
+      final page = await gateway.listBlocks(
+        kind: kind,
+        cursor: append ? previous.nextCursor : null,
+      );
+      if (!isCurrent(generation)) return;
+      final merged = append
+          ? <BlockEntry>[...previous.items, ...page.items]
+          : page.items;
+      state = BlocklistState(
+        mode: previous.mode,
+        phase: merged.isEmpty
+            ? CommunityViewPhase.empty
+            : CommunityViewPhase.ready,
+        kind: kind,
+        items: List<BlockEntry>.unmodifiable(merged),
+        userCount: page.userCount,
+        nextCursor: page.nextCursor,
+      );
+    } on CommunityGatewayException catch (error) {
+      if (!isCurrent(generation)) return;
+      state = _failed(previous, kind, append, error.kind, keepRows);
+    } catch (_) {
+      if (!isCurrent(generation)) return;
+      state = _failed(
+        previous,
+        kind,
+        append,
+        CommunityFailureKind.unexpected,
+        keepRows,
+      );
+    }
+  });
 
-  /// A failed page keeps what was already loaded.
+  /// A failed page keeps what was already loaded, and so does a failed pull.
   static BlocklistState _failed(
     BlocklistState previous,
     BlockKind kind,
     bool append,
     CommunityFailureKind failureKind,
+    bool keepRows,
   ) => BlocklistState(
     mode: previous.mode,
-    phase: append && previous.items.isNotEmpty
+    phase: (append || keepRows) && previous.items.isNotEmpty
         ? CommunityViewPhase.ready
         : communityPhaseForFailure(failureKind),
     kind: kind,
-    items: append ? previous.items : const <BlockEntry>[],
+    items: append || keepRows ? previous.items : const <BlockEntry>[],
     userCount: previous.userCount,
     nextCursor: append ? previous.nextCursor : null,
     failureKind: failureKind,
@@ -457,6 +505,7 @@ final class MessageRequestsState {
     this.failureKind,
     this.busy = false,
     this.loadingMore = false,
+    this.refreshing = false,
   });
 
   factory MessageRequestsState.initial(CommunityGatewayMode mode) {
@@ -477,6 +526,10 @@ final class MessageRequestsState {
   final CommunityFailureKind? failureKind;
   final bool busy;
   final bool loadingMore;
+
+  /// A re-read over rows this page already shows. They stay on screen wearing
+  /// the 更新中 mark; only a page with no rows at all loads as a skeleton.
+  final bool refreshing;
 
   bool get canLoadMore => nextCursor != null && !loadingMore && !busy;
 
@@ -500,58 +553,76 @@ final class MessageRequestsController extends Notifier<MessageRequestsState>
 
   Future<void> reload() => _fetch(append: false);
 
+  /// Pull-to-refresh over the request list: the rows already read stay on
+  /// screen marked 更新中 instead of collapsing into a skeleton.
+  Future<void> refresh() => _fetch(append: false, refresh: true);
+
   Future<void> loadMore() {
     if (!state.canLoadMore) return Future<void>.value();
     return _fetch(append: true);
   }
 
-  Future<void> _fetch({required bool append}) => single(() async {
-    final gateway = ref.read(socialGatewayProvider);
-    final previous = state;
-    final generation = nextGeneration();
-    state = MessageRequestsState(
-      mode: previous.mode,
-      phase: append ? previous.phase : CommunityViewPhase.loading,
-      items: append ? previous.items : const <MessageRequestEntry>[],
-      nextCursor: append ? previous.nextCursor : null,
-      loadingMore: append,
-    );
-    try {
-      final page = await gateway.listMessageRequests(
-        cursor: append ? previous.nextCursor : null,
-      );
-      if (!isCurrent(generation)) return;
-      final merged = append
-          ? <MessageRequestEntry>[...previous.items, ...page.items]
-          : page.items;
+  Future<void> _fetch({required bool append, bool refresh = false}) => single(
+    () async {
+      final gateway = ref.read(socialGatewayProvider);
+      final previous = state;
+      final generation = nextGeneration();
+      // A pull over rows that are already there keeps them and marks them
+      // 更新中; a first open has nothing to keep and loads as a skeleton.
+      final keepRows = !append && refresh && previous.items.isNotEmpty;
       state = MessageRequestsState(
         mode: previous.mode,
-        phase: merged.isEmpty
-            ? CommunityViewPhase.empty
-            : CommunityViewPhase.ready,
-        items: List<MessageRequestEntry>.unmodifiable(merged),
-        nextCursor: page.nextCursor,
+        phase: append || keepRows ? previous.phase : CommunityViewPhase.loading,
+        items: append || keepRows
+            ? previous.items
+            : const <MessageRequestEntry>[],
+        nextCursor: append ? previous.nextCursor : null,
+        loadingMore: append,
+        refreshing: keepRows,
       );
-    } on CommunityGatewayException catch (error) {
-      if (!isCurrent(generation)) return;
-      state = _failed(previous, append, error.kind);
-    } catch (_) {
-      if (!isCurrent(generation)) return;
-      state = _failed(previous, append, CommunityFailureKind.unexpected);
-    }
-  });
+      try {
+        final page = await gateway.listMessageRequests(
+          cursor: append ? previous.nextCursor : null,
+        );
+        if (!isCurrent(generation)) return;
+        final merged = append
+            ? <MessageRequestEntry>[...previous.items, ...page.items]
+            : page.items;
+        state = MessageRequestsState(
+          mode: previous.mode,
+          phase: merged.isEmpty
+              ? CommunityViewPhase.empty
+              : CommunityViewPhase.ready,
+          items: List<MessageRequestEntry>.unmodifiable(merged),
+          nextCursor: page.nextCursor,
+        );
+      } on CommunityGatewayException catch (error) {
+        if (!isCurrent(generation)) return;
+        state = _failed(previous, append, error.kind, keepRows);
+      } catch (_) {
+        if (!isCurrent(generation)) return;
+        state = _failed(
+          previous,
+          append,
+          CommunityFailureKind.unexpected,
+          keepRows,
+        );
+      }
+    },
+  );
 
-  /// A failed page keeps what was already loaded.
+  /// A failed page keeps what was already loaded, and so does a failed pull.
   static MessageRequestsState _failed(
     MessageRequestsState previous,
     bool append,
     CommunityFailureKind kind,
+    bool keepRows,
   ) => MessageRequestsState(
     mode: previous.mode,
-    phase: append && previous.items.isNotEmpty
+    phase: (append || keepRows) && previous.items.isNotEmpty
         ? CommunityViewPhase.ready
         : communityPhaseForFailure(kind),
-    items: append ? previous.items : const <MessageRequestEntry>[],
+    items: append || keepRows ? previous.items : const <MessageRequestEntry>[],
     nextCursor: append ? previous.nextCursor : null,
     failureKind: kind,
   );

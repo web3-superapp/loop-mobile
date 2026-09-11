@@ -375,10 +375,24 @@ final class FakeSocialGateway implements SocialGateway {
   MessageRequestEntry? sentRequest;
   MessageRequestOutcome? outcome;
 
+  /// Holds the next list read open so a test can observe the page while a
+  /// read is still in flight. The read that takes it clears it, so later reads
+  /// answer immediately.
+  Completer<void>? hold;
+
   final List<String> commands = <String>[];
 
   Future<T> _read<T>(T? value) {
     if (pending) return Completer<T>().future;
+    final held = hold;
+    if (held != null) {
+      hold = null;
+      return held.future.then<T>((_) => _answer<T>(value));
+    }
+    return _answer<T>(value);
+  }
+
+  Future<T> _answer<T>(T? value) {
     final kind = failure;
     if (kind != null) {
       return Future<T>.error(CommunityGatewayException(kind));

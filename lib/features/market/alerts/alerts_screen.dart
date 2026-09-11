@@ -78,6 +78,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
     return LoopDashboardPage(
       key: const ValueKey<String>('alerts-screen'),
       onRefresh: controller.reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.listing,
       title: '价格提醒',
       onBack: widget.onBack,

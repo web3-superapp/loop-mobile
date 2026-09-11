@@ -113,6 +113,7 @@ Map<String, Object?> _project({
   'materialVersion': 1,
   'reviewStatus': reviewStatus,
   'reviewReasonCode': null,
+  'reviewReasonText': null,
   'kyb': <String, Object?>{
     'status': 'unavailable',
     'state': 'unavailable',
@@ -571,6 +572,76 @@ void main() {
       expect(project.version, isNull);
       expect(project.isOwnerProjection, isFalse);
       expect(project.canEdit, isFalse);
+    });
+
+    test(
+      'the review reason arrives as a code and as its own sentence',
+      () async {
+        const sentence = '官方链接无法访问或核对，换成可访问的链接后可以重新提交。';
+        final body = _project(reviewStatus: 'returned')
+          ..['reviewReasonCode'] = 'official_links_unreachable'
+          ..['reviewReasonText'] = sentence;
+        final project =
+            await DioLoopV2LaunchApi(
+              _dio(
+                _RecordingAdapter(
+                  statusCode: 200,
+                  body: <String, Object?>{
+                    'project': body,
+                    'contractVersion': '2.0',
+                  },
+                ),
+              ),
+            ).getProject(
+              accessToken: _token,
+              clientVersion: _clientVersion,
+              projectId: _projectId,
+            );
+
+        // The client keeps the code for non-display use and takes the sentence
+        // exactly as the server wrote it; it never derives one from the other.
+        expect(project.reviewReasonCode, 'official_links_unreachable');
+        expect(project.reviewReasonText, sentence);
+      },
+    );
+
+    test('a review reason missing half of its pair is a broken payload', () {
+      final codeOnly = _project(reviewStatus: 'returned')
+        ..['reviewReasonCode'] = 'ticker_conflict';
+      final textOnly = _project(reviewStatus: 'returned')
+        ..['reviewReasonText'] = '这个代币符号已被占用，换一个后可以重新提交。';
+      // The field itself is part of the contract: an older server that never
+      // sends it is refused rather than silently read as "no reason".
+      final absent = _project()..remove('reviewReasonText');
+
+      for (final broken in <Map<String, Object?>>[codeOnly, textOnly, absent]) {
+        final api = DioLoopV2LaunchApi(
+          _dio(
+            _RecordingAdapter(
+              statusCode: 200,
+              body: <String, Object?>{
+                'project': broken,
+                'contractVersion': '2.0',
+              },
+            ),
+          ),
+        );
+
+        expect(
+          () => api.getProject(
+            accessToken: _token,
+            clientVersion: _clientVersion,
+            projectId: _projectId,
+          ),
+          throwsA(
+            isA<LoopBackendFailure>().having(
+              (failure) => failure.kind,
+              'kind',
+              LoopBackendFailureKind.invalidPayload,
+            ),
+          ),
+        );
+      }
     });
 
     test('the purchase intent always surfaces the server 503', () {

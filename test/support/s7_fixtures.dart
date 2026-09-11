@@ -217,6 +217,7 @@ LaunchProject s7Project({
   int version = 1,
   int? nullableVersion,
   String? reviewReasonCode,
+  String? reviewReasonText,
   String? launchId,
   DateTime? submittedAt,
 }) => LaunchProject(
@@ -228,6 +229,11 @@ LaunchProject s7Project({
   materialVersion: version,
   reviewStatus: reviewStatus,
   reviewReasonCode: reviewReasonCode,
+  // The contract pairs the two: a code always arrives with the server's own
+  // sentence, and neither exists without the other.
+  reviewReasonText: reviewReasonCode == null
+      ? null
+      : reviewReasonText ?? '材料还不完整，补齐后可以重新提交审核。',
   kyb: const LaunchKyb(
     status: 'unavailable',
     state: 'unavailable',
@@ -253,6 +259,7 @@ LaunchProject s7ForeignProject() => LaunchProject(
   materialVersion: 3,
   reviewStatus: LaunchReviewStatus.approved,
   reviewReasonCode: null,
+  reviewReasonText: null,
   kyb: const LaunchKyb(
     status: 'unavailable',
     state: 'unavailable',

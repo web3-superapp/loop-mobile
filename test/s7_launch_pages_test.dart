@@ -640,7 +640,8 @@ void main() {
             items: <LaunchProject>[
               s7Project(
                 reviewStatus: LaunchReviewStatus.returned,
-                reviewReasonCode: 'narrative_too_short',
+                reviewReasonCode: 'official_links_unreachable',
+                reviewReasonText: '官方链接无法访问或核对，换成可访问的链接后可以重新提交。',
               ),
             ],
             nextCursor: null,
@@ -658,7 +659,10 @@ void main() {
         find.byKey(const ValueKey<String>('launch-apply-returned-reason')),
         findsOneWidget,
       );
-      expect(find.textContaining('项目简介太短'), findsOneWidget);
+      // The server's sentence, verbatim. The code that produced it is a
+      // contract identifier and never reaches the screen.
+      expect(find.text('官方链接无法访问或核对，换成可访问的链接后可以重新提交。'), findsOneWidget);
+      expect(find.textContaining('official_links_unreachable'), findsNothing);
       final submit = tester.widget<LoopButton>(
         find.byKey(const ValueKey<String>('launch-apply-submit')),
       );

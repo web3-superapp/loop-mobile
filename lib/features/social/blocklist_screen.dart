@@ -42,6 +42,9 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
     final mode = ref.watch(socialGatewayProvider).mode;
     final state = ref.watch(blocklistControllerProvider);
     final controller = ref.read(blocklistControllerProvider.notifier);
+    // The contract and domain segments have no backend, so there is nothing a
+    // pull could re-read while one of them is selected.
+    final refresh = state.kind.isSupported ? controller.refresh : null;
     if (!communityCapabilityBlocks(mode, capability) &&
         state.kind.isSupported &&
         state.phase == CommunityViewPhase.loading) {
@@ -99,8 +102,13 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
               title: '屏蔽名单当前不可用',
             )
           : null,
+      onRefresh: refresh,
+      updating: state.refreshing,
       collection: ListView(
         key: const ValueKey<String>('blocklist-list'),
+        // A short list must still overscroll, or the gesture would exist only
+        // on an account that has blocked enough people.
+        physics: loopRefreshablePhysics(refresh),
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '屏蔽名单'),

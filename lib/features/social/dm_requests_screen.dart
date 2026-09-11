@@ -70,8 +70,13 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
               title: '陌生人请求当前不可用',
             )
           : null,
+      onRefresh: controller.refresh,
+      updating: state.refreshing,
       collection: ListView(
         key: const ValueKey<String>('dm-requests-list'),
+        // A short list must still overscroll, or the gesture would exist only
+        // while the inbox is full.
+        physics: loopRefreshablePhysics(controller.refresh),
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '陌生人请求'),

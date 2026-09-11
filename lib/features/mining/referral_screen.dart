@@ -54,6 +54,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
     return LoopDashboardPage(
       key: const ValueKey<String>('referral-screen'),
       onRefresh: controller.reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: 'Referral Boost',
       kicker: 'MINING POWER · SERVER VERIFIED',

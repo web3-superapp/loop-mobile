@@ -283,6 +283,7 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
     'materialVersion',
     'reviewStatus',
     'reviewReasonCode',
+    'reviewReasonText',
     'kyb',
     'attachments',
     'submittedAt',
@@ -307,6 +308,22 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
       }),
     );
     if (review == null) LoopV2S7Codec.invalid();
+    // Decision 0041: the code is the contract and the text is its display
+    // projection, so they arrive or stay absent together. A text without a
+    // code, or a code the server forgot to project, is a broken payload and
+    // is refused rather than half-rendered.
+    final reasonCode = LoopV2S7Codec.optionalPattern(
+      map,
+      'reviewReasonCode',
+      LoopV2S7Codec.reviewReasonPattern,
+      maxLength: 64,
+    );
+    final reasonText = LoopV2S7Codec.optionalText(
+      map,
+      'reviewReasonText',
+      maxLength: 256,
+    );
+    if ((reasonCode == null) != (reasonText == null)) LoopV2S7Codec.invalid();
     final kybMap = LoopV2Contract.strictMap(map['kyb'], const <String>{
       'status',
       'state',
@@ -325,12 +342,8 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
       officialLinks: _officialLinks(map['officialLinks']),
       materialVersion: LoopV2S7Codec.requirePositiveInt(map, 'materialVersion'),
       reviewStatus: review,
-      reviewReasonCode: LoopV2S7Codec.optionalPattern(
-        map,
-        'reviewReasonCode',
-        LoopV2S7Codec.reviewReasonPattern,
-        maxLength: 64,
-      ),
+      reviewReasonCode: reasonCode,
+      reviewReasonText: reasonText,
       kyb: LaunchKyb(
         status: LoopV2S7Codec.requireEnum(kybMap, 'status', const <String>{
           'unavailable',

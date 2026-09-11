@@ -14,6 +14,7 @@ final class AlertsState {
     this.page,
     this.failureKind,
     this.busy = false,
+    this.refreshing = false,
   });
 
   factory AlertsState.initial(LoopChainGatewayMode mode) {
@@ -33,6 +34,11 @@ final class AlertsState {
   final LoopChainFailureKind? failureKind;
   final bool busy;
 
+  /// A re-read over the list this page already shows. The alerts stay on
+  /// screen wearing the 更新中 mark; only a page that has read nothing yet
+  /// loads as a skeleton.
+  final bool refreshing;
+
   bool get isReady => phase == LoopChainViewPhase.ready && page != null;
 
   List<LoopPriceAlert> get items => page?.items ?? const <LoopPriceAlert>[];
@@ -43,12 +49,14 @@ final class AlertsState {
     LoopChainFailureKind? failureKind,
     bool clearFailure = false,
     bool? busy,
+    bool? refreshing,
   }) => AlertsState(
     mode: mode,
     phase: phase ?? this.phase,
     page: page ?? this.page,
     failureKind: clearFailure ? null : (failureKind ?? this.failureKind),
     busy: busy ?? this.busy,
+    refreshing: refreshing ?? this.refreshing,
   );
 }
 
@@ -76,6 +84,9 @@ final class AlertsController extends Notifier<AlertsState>
           ? LoopChainViewPhase.loading
           : LoopChainViewPhase.ready,
       clearFailure: true,
+      // A list that is already on screen is being re-read, not loaded: it
+      // keeps its rows and says 更新中 instead of blanking into a skeleton.
+      refreshing: state.page != null,
     );
     try {
       final page = await ref.read(alertsGatewayProvider).listAlerts();
@@ -147,6 +158,7 @@ final class AlertsController extends Notifier<AlertsState>
           : LoopChainViewPhase.ready,
       failureKind: kind,
       busy: false,
+      refreshing: false,
     );
   }
 }

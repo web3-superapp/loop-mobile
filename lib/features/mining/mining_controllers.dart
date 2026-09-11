@@ -178,6 +178,7 @@ final class ReferralState {
     this.claimShapeInvalid = false,
     this.busy = false,
     this.claimed = false,
+    this.refreshing = false,
   });
 
   factory ReferralState.initial(LaunchGatewayMode mode) {
@@ -201,6 +202,11 @@ final class ReferralState {
 
   /// A binding was confirmed by the server in this session.
   final bool claimed;
+
+  /// A re-read over an overview this page already shows. The invite code and
+  /// the relationship counts stay on screen wearing the 更新中 mark; only a
+  /// page that has read nothing yet loads as a skeleton.
+  final bool refreshing;
 
   bool get isReady => phase == LaunchViewPhase.ready && value != null;
 }
@@ -229,6 +235,8 @@ final class ReferralController extends Notifier<ReferralState>
           ? LaunchViewPhase.loading
           : LaunchViewPhase.ready,
       value: state.value,
+      // An overview that is already on screen is being re-read, not loaded.
+      refreshing: state.value != null,
     );
     try {
       final overview = await gateway.loadOverview();
