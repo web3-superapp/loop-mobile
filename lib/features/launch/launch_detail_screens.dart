@@ -86,7 +86,7 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
         kicker: 'LAUNCH RECORD',
-        heading: detail?.launch.name ?? launchMissingHeading,
+        heading: detail?.launch.name ?? launchMissingName,
         // No countdown, no round label, no progress: all three are contract
         // facts. The caption states what the record can and cannot prove.
         caption: '项目资料与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。',
@@ -580,7 +580,7 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
         kicker: 'ELIGIBILITY',
         // The tier is `null` by contract: the heading says it has no value,
         // never a guessed "Public".
-        heading: eligibility?.tier ?? launchMissingHeading,
+        heading: eligibility?.tier ?? launchMissingResult,
         caption: '这是当前资格结果，不是等级；资格不依赖 LOOP 质押。',
         stamp: eligibility == null
             ? null

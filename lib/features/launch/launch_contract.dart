@@ -98,6 +98,12 @@ const String launchMissingFigure = '—';
 /// has no number to show yet.
 const String launchMissingHeading = '暂无数值';
 
+/// The same placeholder for a heading that was never a number. A missing
+/// project name is not a missing figure, and neither is a missing eligibility
+/// result; saying 暂无数值 there would describe the wrong kind of gap.
+const String launchMissingName = '暂无名称';
+const String launchMissingResult = '暂无结果';
+
 /// What a configuration slot says while no version of it is confirmed.
 ///
 /// The version that will confirm it is a backend identifier. It says nothing a
