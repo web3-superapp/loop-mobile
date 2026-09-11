@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
@@ -55,6 +56,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('launch-screen'),
+      onRefresh: controller.reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.listing,
       title: 'Launch',
       kicker: 'LAUNCH DESK · 链下目录',
@@ -85,15 +88,15 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
         caption: '目录、申请与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。',
         stamp: overview == null ? null : 'OFF-CHAIN',
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>('launch-capability-unavailable'),
+              title: 'Launch 当前不可用',
+              capability: capability,
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopEmpty(
-            key: const ValueKey<String>('launch-capability-unavailable'),
-            icon: 'warn',
-            message: 'Launch 当前不可用',
-            reason: '请稍后再试。',
-          )
-        else if (overview == null)
+        if (overview == null)
           LaunchStateBlock(
             prefix: 'launch',
             phase: state.phase,

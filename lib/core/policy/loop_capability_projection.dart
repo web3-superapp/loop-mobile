@@ -21,9 +21,10 @@ final class LoopCapabilityProjection {
     this.evidencePending = false,
     this.evidenceReasonCode,
     this.launchChainId,
+    this.unreachable = false,
   });
 
-  const LoopCapabilityProjection.unknown()
+  const LoopCapabilityProjection.unknown({this.unreachable = false})
     : decision = LoopCapabilityDecision.unknown,
       reasonCode = null,
       evidencePending = false,
@@ -32,6 +33,18 @@ final class LoopCapabilityProjection {
 
   final LoopCapabilityDecision decision;
   final String? reasonCode;
+
+  /// The capability observation itself failed: LOOP was not reached.
+  ///
+  /// This is a third fact, kept apart from the other two on purpose. "LOOP
+  /// answered and closed this capability" carries the server's own
+  /// `reasonCode` and no retry on this device can change it. "This build never
+  /// had a backend to ask" is a configuration fact. "The request did not get
+  /// through" is the user's network or LOOP being down, and it is the only one
+  /// whose next step is *try again on another network*. None of the three is
+  /// derived from either of the others, and an unreachable gate never borrows
+  /// a `reasonCode` the server never sent.
+  final bool unreachable;
 
   /// A provider-evidence precondition the backend records separately from
   /// availability. `pending` is the only status that sets it: a capability
@@ -56,6 +69,10 @@ final class LoopCapabilityProjection {
 
   bool get isAvailable => decision == LoopCapabilityDecision.available;
 
+  /// The capability document was never observed, so the server said nothing
+  /// about this gate at all. It says nothing about *why*: see [unreachable].
+  bool get isUnobserved => decision == LoopCapabilityDecision.unknown;
+
   /// The only projection a feature may treat as fully open.
   bool get isUsable => isAvailable && !evidencePending;
 }
@@ -63,9 +80,12 @@ final class LoopCapabilityProjection {
 abstract final class LoopCapabilityProjector {
   static LoopCapabilityProjection of(
     LoopV2Capabilities? capabilities,
-    LoopV2CapabilityId id,
-  ) {
-    if (capabilities == null) return const LoopCapabilityProjection.unknown();
+    LoopV2CapabilityId id, {
+    bool unreachable = false,
+  }) {
+    if (capabilities == null) {
+      return LoopCapabilityProjection.unknown(unreachable: unreachable);
+    }
     final capability = capabilities[id];
     final evidence = capability.evidence;
     return LoopCapabilityProjection(
@@ -96,7 +116,13 @@ abstract final class LoopCapabilityProjector {
 final loopCapabilityProvider =
     Provider.family<LoopCapabilityProjection, LoopV2CapabilityId>((ref, id) {
       final snapshot = ref.watch(loopV2MetaSnapshotProvider).value;
-      return LoopCapabilityProjector.of(snapshot?.capabilities, id);
+      return LoopCapabilityProjector.of(
+        snapshot?.capabilities,
+        id,
+        // A failed observation is the one case where the client, not the
+        // server, is the reason there is no answer.
+        unreachable: ref.watch(loopV2MetaUnreachableProvider),
+      );
     });
 
 /// Pure projection of the D0 version gate for the dismissible soft prompt.

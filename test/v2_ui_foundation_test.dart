@@ -64,7 +64,13 @@ void main() {
       );
       expect(find.text('社区模块当前不可用'), findsOne);
       expect(find.textContaining('社区还没有准备好'), findsOne);
-      expect(find.text('—'), findsWidgets);
+      // A closed gate takes the whole page, so there is no folio left to put a
+      // figure in — not even the em dash that stands in for one.
+      expect(
+        find.byKey(const ValueKey<String>('community-folio')),
+        findsNothing,
+      );
+      expect(find.textContaining('个已加入的社区'), findsNothing);
 
       for (final inventedFact in <String>[
         '38 VERIFIED',

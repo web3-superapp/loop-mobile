@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
@@ -52,6 +53,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('referral-screen'),
+      onRefresh: controller.reload,
       archetype: LoopPageArchetype.record,
       title: 'Referral Boost',
       kicker: 'MINING POWER · SERVER VERIFIED',
@@ -75,15 +77,15 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
             : '${overview.validRelationships} 个有效关系 · '
                   '${overview.pendingRelationships} 个待验证；加成只计入 Mining Power。',
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>('referral-capability-unavailable'),
+              title: '邀请关系当前不可用',
+              capability: capability,
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopEmpty(
-            key: const ValueKey<String>('referral-capability-unavailable'),
-            icon: 'warn',
-            message: '邀请关系当前不可用',
-            reason: '请稍后再试。',
-          )
-        else if (overview == null)
+        if (overview == null)
           LaunchStateBlock(
             prefix: 'referral',
             phase: state.phase,

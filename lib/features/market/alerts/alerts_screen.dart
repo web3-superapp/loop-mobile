@@ -77,6 +77,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('alerts-screen'),
+      onRefresh: controller.reload,
       archetype: LoopPageArchetype.listing,
       title: '价格提醒',
       onBack: widget.onBack,
@@ -98,14 +99,16 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         caption: '触发一次后提醒会停下来，重新编辑才会再次生效。',
         stamp: state.isReady ? '${armed.length} ACTIVE' : null,
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>('alerts-capability-block'),
+              title: '价格提醒当前不可用',
+              capability: capability,
+              fallbackReasonCode: 'ALERTS_RUNTIME_UNAVAILABLE',
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('alerts-capability-block'),
-            label: '价格提醒当前不可用',
-            reasonCode: capability.reasonCode ?? 'ALERTS_RUNTIME_UNAVAILABLE',
-          )
-        else if (!state.isReady)
+        if (!state.isReady)
           LoopChainStateBlock(
             keyPrefix: 'alerts',
             phase: state.phase,

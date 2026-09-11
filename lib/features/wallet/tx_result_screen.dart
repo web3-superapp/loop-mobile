@@ -195,14 +195,15 @@ class _TransactionResultScreenState
             ? null
             : moneyIntentStateLabel(intent.state).toUpperCase(),
       ),
+      block: blocked
+          ? const LoopCapabilityPageBlock(
+              key: ValueKey<String>('tx-result-capability-block'),
+              title: '交易状态当前不可读',
+              reasonCode: 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
+            )
+          : null,
       body: <Widget>[
-        if (blocked)
-          const LoopUnavailableCard(
-            key: ValueKey<String>('tx-result-capability-block'),
-            label: '交易状态当前不可读',
-            reasonCode: 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
-          )
-        else if (intent == null)
+        if (intent == null)
           LoopChainStateBlock(
             keyPrefix: 'tx-result',
             phase: state.phase,

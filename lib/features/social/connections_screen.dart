@@ -94,19 +94,19 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
           ),
         ),
       ),
+      block: communityCapabilityBlocks(mode, capability)
+          ? CommunityCapabilityPageBlock(
+              key: const ValueKey<String>('connections-capability-unavailable'),
+              capability: capability,
+              title: '关注关系当前不可用',
+            )
+          : null,
       collection: ListView(
         key: const ValueKey<String>('connections-list'),
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '关注关系'),
-          if (communityCapabilityBlocks(mode, capability))
-            LoopEmpty(
-              key: const ValueKey<String>('connections-capability-unavailable'),
-              icon: 'warn',
-              message: '关注关系当前不可用',
-              reason: '请稍后再试。',
-            )
-          else if (state.phase != CommunityViewPhase.ready)
+          if (state.phase != CommunityViewPhase.ready)
             CommunityStateBlock(
               phase: state.phase,
               failureKind: state.failureKind,

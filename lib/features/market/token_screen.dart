@@ -170,6 +170,9 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
 
     return LoopDashboardPage(
       key: ValueKey<String>('token-screen-$assetId'),
+      onRefresh: ref
+          .read(marketAssetControllerProvider(assetId).notifier)
+          .reload,
       archetype: LoopPageArchetype.record,
       title: detail?.asset.symbol ?? 'Token',
       kicker: detail?.asset.name,
@@ -201,14 +204,16 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
         ),
       ],
       primary: _TokenHero(assetId: assetId, detail: detail),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>('token-capability-block'),
+              title: '行情模块当前不可用',
+              capability: capability,
+              fallbackReasonCode: 'MARKET_RUNTIME_UNAVAILABLE',
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('token-capability-block'),
-            label: '行情模块当前不可用',
-            reasonCode: capability.reasonCode ?? 'MARKET_RUNTIME_UNAVAILABLE',
-          )
-        else if (!state.isReady || detail == null)
+        if (!state.isReady || detail == null)
           LoopChainStateBlock(
             keyPrefix: 'token',
             phase: state.phase,

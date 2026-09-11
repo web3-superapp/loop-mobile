@@ -168,15 +168,23 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                   ),
                 ],
               ),
+              block: communityCapabilityBlocks(mode, capability)
+                  ? CommunityCapabilityPageBlock(
+                      key: const ValueKey<String>(
+                        'community-capability-unavailable',
+                      ),
+                      capability: capability,
+                      title: '社区模块当前不可用',
+                      deferredMessage: '社区还没有开放。',
+                      unknownMessage: '社区还没有准备好，请稍后再试。',
+                    )
+                  : null,
+              onRefresh: () =>
+                  ref.read(communityHomeControllerProvider.notifier).reload(),
+              updating: state.refreshing,
               sections: <Widget>[
                 CommunityPreviewNotice(mode: mode, resource: '社区数据'),
-                if (communityCapabilityBlocks(mode, capability))
-                  _CommunityCapabilityBlock(
-                    reasonCode: capability.reasonCode,
-                    decision: capability.decision,
-                  )
-                else if (state.phase != CommunityViewPhase.ready ||
-                    home == null)
+                if (state.phase != CommunityViewPhase.ready || home == null)
                   CommunityStateBlock(
                     phase: state.phase,
                     failureKind: state.failureKind,
@@ -305,30 +313,6 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
       onTap: () => _open('/community/profile?id=${community.communityId}'),
       position: communityRowPosition(index, items.length),
       semanticLabel: '${community.name}，$status，${community.memberCount} 名成员',
-    );
-  }
-}
-
-class _CommunityCapabilityBlock extends StatelessWidget {
-  const _CommunityCapabilityBlock({
-    required this.reasonCode,
-    required this.decision,
-  });
-
-  final String? reasonCode;
-  final LoopCapabilityDecision decision;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopEmpty(
-      key: const ValueKey<String>('community-capability-unavailable'),
-      icon: 'warn',
-      message: '社区模块当前不可用',
-      reason: switch (decision) {
-        LoopCapabilityDecision.unknown => '社区还没有准备好，请稍后再试。',
-        LoopCapabilityDecision.deferred => '社区还没有开放。',
-        _ => '请稍后再试。',
-      },
     );
   }
 }

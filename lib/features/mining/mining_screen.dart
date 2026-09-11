@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
@@ -55,6 +56,8 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('mining-screen'),
+      onRefresh: controller.reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '我的挖矿',
       kicker: 'MINING POWER',
@@ -75,15 +78,15 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
         caption: '算力、今日预估、累计与待领取都要等挖矿公式版本被批准后才能计算。',
         stamp: summary?.formula.pendingVersion == null ? null : '待批准',
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>('mining-capability-unavailable'),
+              title: '挖矿当前不可用',
+              capability: capability,
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopEmpty(
-            key: const ValueKey<String>('mining-capability-unavailable'),
-            icon: 'warn',
-            message: '挖矿当前不可用',
-            reason: '请稍后再试。',
-          )
-        else if (summary == null)
+        if (summary == null)
           LaunchStateBlock(
             prefix: 'mining',
             phase: state.phase,

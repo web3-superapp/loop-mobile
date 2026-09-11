@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
@@ -67,6 +68,8 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('launch-detail-screen'),
+      onRefresh: controller.reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: detail?.launch.ticker ?? '项目详情',
       kicker: 'LAUNCH RECORD',
@@ -89,15 +92,17 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
         caption: '项目资料与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。',
         stamp: detail == null ? null : launchPendingConfirmationLabel,
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>(
+                'launch-detail-capability-unavailable',
+              ),
+              title: '项目详情当前不可用',
+              capability: capability,
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopEmpty(
-            key: const ValueKey<String>('launch-detail-capability-unavailable'),
-            icon: 'warn',
-            message: '项目详情当前不可用',
-            reason: '请稍后再试。',
-          )
-        else if (detail == null)
+        if (detail == null)
           LaunchStateBlock(
             prefix: 'launch-detail',
             phase: state.phase,
@@ -300,6 +305,8 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('launch-rounds-screen'),
+      onRefresh: controller.reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '销售轮次规则',
       kicker: 'ROUND CONFIGURATION',
@@ -316,15 +323,17 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
         caption: '轮数、时间、价格、资格与上限都由这次发射的配置决定；还没确认的显示为待确认。',
         stamp: detail == null ? null : launchPendingConfirmationLabel,
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>(
+                'launch-rounds-capability-unavailable',
+              ),
+              title: '轮次规则当前不可用',
+              capability: capability,
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopEmpty(
-            key: const ValueKey<String>('launch-rounds-capability-unavailable'),
-            icon: 'warn',
-            message: '轮次规则当前不可用',
-            reason: '请稍后再试。',
-          )
-        else if (detail == null)
+        if (detail == null)
           LaunchStateBlock(
             prefix: 'launch-rounds',
             phase: state.phase,
@@ -421,6 +430,8 @@ class _LaunchGraduationScreenState
 
     return LoopDashboardPage(
       key: const ValueKey<String>('launch-graduation-screen'),
+      onRefresh: controller.reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '毕业与迁移',
       kicker: 'GRADUATION PROGRESS',
@@ -434,17 +445,17 @@ class _LaunchGraduationScreenState
         caption: '毕业进度看的是流动性。合约上线前还没有可核对的进度。',
         stamp: 'PENDING',
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>(
+                'launch-graduation-capability-unavailable',
+              ),
+              title: '毕业进度当前不可用',
+              capability: capability,
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopEmpty(
-            key: const ValueKey<String>(
-              'launch-graduation-capability-unavailable',
-            ),
-            icon: 'warn',
-            message: '毕业进度当前不可用',
-            reason: '请稍后再试。',
-          )
-        else if (detail == null)
+        if (detail == null)
           LaunchStateBlock(
             prefix: 'launch-graduation',
             phase: state.phase,
@@ -557,6 +568,8 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('launch-tier-screen'),
+      onRefresh: controller.reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '我的资格',
       kicker: 'ELIGIBILITY',
@@ -573,15 +586,15 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
             ? null
             : launchEligibilityModeLabel(eligibility.mode),
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>('launch-tier-capability-unavailable'),
+              title: '资格查询当前不可用',
+              capability: capability,
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopEmpty(
-            key: const ValueKey<String>('launch-tier-capability-unavailable'),
-            icon: 'warn',
-            message: '资格查询当前不可用',
-            reason: '请稍后再试。',
-          )
-        else if (eligibility == null)
+        if (eligibility == null)
           LaunchStateBlock(
             prefix: 'launch-tier',
             phase: state.phase,
@@ -688,6 +701,8 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('launch-holders-screen'),
+      onRefresh: controller.reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '内盘持有人',
       kicker: 'HOLDER DISTRIBUTION',
@@ -700,17 +715,17 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
         caption: '持有人数量、集中度、我的仓位与单地址上限都需要合约读数，当前全部不可得。',
         stamp: 'UNAVAILABLE',
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>(
+                'launch-holders-capability-unavailable',
+              ),
+              title: '持有人分布当前不可用',
+              capability: capability,
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopEmpty(
-            key: const ValueKey<String>(
-              'launch-holders-capability-unavailable',
-            ),
-            icon: 'warn',
-            message: '持有人分布当前不可用',
-            reason: '请稍后再试。',
-          )
-        else if (holders == null)
+        if (holders == null)
           LaunchStateBlock(
             prefix: 'launch-holders',
             phase: state.phase,
@@ -767,6 +782,8 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('launch-history-screen'),
+      onRefresh: controller.reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '我的参与记录',
       kicker: 'PARTICIPATION LOG',
@@ -779,17 +796,17 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
         caption: '购买、权益与退款记录都要看链上数据，目前读不到，因此不显示笔数或盈亏。',
         stamp: 'UNAVAILABLE',
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>(
+                'launch-history-capability-unavailable',
+              ),
+              title: '参与记录当前不可用',
+              capability: capability,
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopEmpty(
-            key: const ValueKey<String>(
-              'launch-history-capability-unavailable',
-            ),
-            icon: 'warn',
-            message: '参与记录当前不可用',
-            reason: '请稍后再试。',
-          )
-        else if (history == null)
+        if (history == null)
           LaunchStateBlock(
             prefix: 'launch-history',
             phase: state.phase,

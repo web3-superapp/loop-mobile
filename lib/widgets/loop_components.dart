@@ -2159,6 +2159,28 @@ class LoopPageBlock extends StatelessWidget {
     this.margin = const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
   });
 
+  /// The one whole-page state that carries no server reason, because the
+  /// client never reached LOOP.
+  ///
+  /// "LOOP did not answer" and "LOOP answered that a provider is down" are two
+  /// different facts with two different next steps — change network and try
+  /// again, versus wait, because nothing on this device can change it. They
+  /// never share a sentence and are never derived from one another.
+  const LoopPageBlock.unreachable({Key? key, Widget? action})
+    : this(
+        title: unreachableTitle,
+        message: unreachableMessage,
+        action: action,
+        key: key,
+      );
+
+  /// Heading for [LoopPageBlock.unreachable].
+  static const String unreachableTitle = '现在连不上 LOOP';
+
+  /// Body for [LoopPageBlock.unreachable]. It names no provider and no rule,
+  /// because none was received.
+  static const String unreachableMessage = '这一页没有读到任何内容，也没有提交任何操作。请检查网络后重试。';
+
   final String title;
   final String message;
   final Widget? action;

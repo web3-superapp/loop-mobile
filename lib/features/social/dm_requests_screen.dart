@@ -63,19 +63,19 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
             ? '${state.items.length}'
             : null,
       ),
+      block: communityCapabilityBlocks(mode, capability)
+          ? CommunityCapabilityPageBlock(
+              key: const ValueKey<String>('dm-requests-capability-unavailable'),
+              capability: capability,
+              title: '陌生人请求当前不可用',
+            )
+          : null,
       collection: ListView(
         key: const ValueKey<String>('dm-requests-list'),
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '陌生人请求'),
-          if (communityCapabilityBlocks(mode, capability))
-            LoopEmpty(
-              key: const ValueKey<String>('dm-requests-capability-unavailable'),
-              icon: 'warn',
-              message: '陌生人请求当前不可用',
-              reason: '请稍后再试。',
-            )
-          else if (state.phase != CommunityViewPhase.ready)
+          if (state.phase != CommunityViewPhase.ready)
             CommunityStateBlock(
               phase: state.phase,
               failureKind: state.failureKind,

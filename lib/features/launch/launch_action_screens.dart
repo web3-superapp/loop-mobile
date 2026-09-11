@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
@@ -133,18 +134,20 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
         caption: '价格、手续费与剩余额度暂时读不到，现在无法报价。',
         stamp: 'DISABLED',
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>(
+                'launch-trade-capability-unavailable',
+              ),
+              title: '内盘认购当前不可用',
+              capability: capability,
+            )
+          : null,
       body: <Widget>[
-        if (blocked)
-          LoopEmpty(
-            key: const ValueKey<String>('launch-trade-capability-unavailable'),
-            icon: 'warn',
-            message: '内盘认购当前不可用',
-            reason: '请稍后再试。',
-          )
         // A detail read that has not landed must not be shown as "no round to
         // join": loading, offline and a failed read each get their own block,
         // and none of them is evidence about the round configuration.
-        else if (state.phase != LaunchViewPhase.ready)
+        if (state.phase != LaunchViewPhase.ready)
           LaunchStateBlock(
             prefix: 'launch-trade',
             phase: state.phase,
@@ -329,15 +332,15 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
         caption: '质押数量、可用余额与解除等待期都需要质押合约；本页整页不可执行。',
         stamp: 'NOT EXECUTABLE',
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>('loop-stake-capability-unavailable'),
+              title: 'LOOP 质押当前不可用',
+              capability: capability,
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopEmpty(
-            key: const ValueKey<String>('loop-stake-capability-unavailable'),
-            icon: 'warn',
-            message: 'LOOP 质押当前不可用',
-            reason: '请稍后再试。',
-          )
-        else if (stake == null)
+        if (stake == null)
           LaunchStateBlock(
             prefix: 'loop-stake',
             phase: state.phase,
@@ -428,15 +431,17 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
         caption: '这里只显示 LOOP 能核对的数量；总量、发行与生态税暂时读不到。',
         stamp: economy == null ? null : 'LOOP DB',
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>(
+                'loop-economy-capability-unavailable',
+              ),
+              title: '生态账本当前不可用',
+              capability: capability,
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopEmpty(
-            key: const ValueKey<String>('loop-economy-capability-unavailable'),
-            icon: 'warn',
-            message: '生态账本当前不可用',
-            reason: '请稍后再试。',
-          )
-        else if (economy == null)
+        if (economy == null)
           LaunchStateBlock(
             prefix: 'loop-economy',
             phase: state.phase,
@@ -610,15 +615,17 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
         caption: '提交不代表通过。审核由人工进行，结果与上线时间以最新状态为准。',
         stamp: selected == null ? null : 'v${selected.materialVersion}',
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>(
+                'launch-apply-capability-unavailable',
+              ),
+              title: '申请入口当前不可用',
+              capability: capability,
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopEmpty(
-            key: const ValueKey<String>('launch-apply-capability-unavailable'),
-            icon: 'warn',
-            message: '申请入口当前不可用',
-            reason: '请稍后再试。',
-          )
-        else if (state.phase != LaunchViewPhase.ready)
+        if (state.phase != LaunchViewPhase.ready)
           LaunchStateBlock(
             prefix: 'launch-apply',
             phase: state.phase,

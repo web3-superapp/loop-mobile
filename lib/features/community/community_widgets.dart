@@ -22,6 +22,48 @@ bool communityCapabilityBlocks(
   LoopCapabilityProjection capability,
 ) => mode != CommunityGatewayMode.preview && !capability.isAvailable;
 
+/// The whole-page block a closed community gate renders.
+///
+/// It keeps two answers apart that used to share one sentence: the capability
+/// document was never read, so LOOP was not reached at all and the next step
+/// belongs to the user's own network; or LOOP answered and closed the surface,
+/// which nothing on this device can change.
+class CommunityCapabilityPageBlock extends StatelessWidget {
+  const CommunityCapabilityPageBlock({
+    required this.capability,
+    required this.title,
+    super.key,
+    this.deferredMessage,
+    this.unknownMessage,
+  });
+
+  final LoopCapabilityProjection capability;
+  final String title;
+
+  /// What a surface that exists but has not been switched on says. Surfaces
+  /// that never had their own sentence keep the neutral one.
+  final String? deferredMessage;
+
+  /// What a surface says while no capability document has been read but LOOP
+  /// was never actually asked — a build with no backend, or a read still in
+  /// flight. A *failed* read is not this; it gets the unreachable page.
+  final String? unknownMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    // The read did not get through: that is the network, not a closed surface.
+    if (capability.unreachable) return const LoopPageBlock.unreachable();
+    return LoopPageBlock(
+      title: title,
+      message: switch (capability.decision) {
+        LoopCapabilityDecision.unknown => unknownMessage ?? '请稍后再试。',
+        LoopCapabilityDecision.deferred => deferredMessage ?? '请稍后再试。',
+        _ => '请稍后再试。',
+      },
+    );
+  }
+}
+
 /// Visible Preview truth label. Reads and writes made here stay in the
 /// running Preview and never reach an account or a provider.
 class CommunityPreviewNotice extends StatelessWidget {

@@ -90,6 +90,7 @@ final class CommunityDiscoverState {
     this.recommendation,
     this.failureKind,
     this.loadingMore = false,
+    this.refreshing = false,
   });
 
   factory CommunityDiscoverState.initial(
@@ -117,6 +118,10 @@ final class CommunityDiscoverState {
   final CommunityRecommendation? recommendation;
   final CommunityFailureKind? failureKind;
   final bool loadingMore;
+
+  /// A re-read over rows this page already shows. The directory stays on
+  /// screen marked 更新中; only a page with no rows at all loads as a skeleton.
+  final bool refreshing;
 
   bool get canLoadMore => nextCursor != null && !loadingMore;
 
@@ -173,6 +178,26 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
   Future<void> loadMore() {
     if (!state.canLoadMore) return Future<void>.value();
     return _fetch(append: true);
+  }
+
+  /// Pull-to-refresh over the directory.
+  ///
+  /// It re-reads page one without clearing the rows: they stay on screen
+  /// marked 更新中 instead of collapsing into a skeleton, because replacing
+  /// readable rows with grey blocks loses what the user already had. A page
+  /// that has read nothing yet has nothing to keep and loads normally.
+  Future<void> refresh() {
+    if (state.items.isEmpty) return reload();
+    state = CommunityDiscoverState(
+      mode: state.mode,
+      phase: CommunityViewPhase.ready,
+      sort: state.sort,
+      membership: _membership,
+      items: state.items,
+      recommendation: state.recommendation,
+      refreshing: true,
+    );
+    return _fetch(append: false);
   }
 
   Future<void> _fetch({required bool append}) => single(() async {
@@ -552,6 +577,11 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
   }
 
   Future<void> reload() => _fetch(filter: state.filter, append: false);
+
+  /// Pull-to-refresh over the member list: the rows already read stay on
+  /// screen and are marked 更新中, exactly as a search re-read does.
+  Future<void> refresh() =>
+      _fetch(filter: state.filter, append: false, searchRefresh: true);
 
   Future<void> selectFilter(CommunityMemberFilter filter) {
     if (filter == state.filter && state.phase == CommunityViewPhase.ready) {

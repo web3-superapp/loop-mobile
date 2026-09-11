@@ -318,6 +318,71 @@ class LoopUnavailableCard extends StatelessWidget {
   }
 }
 
+/// The whole-page counterpart of [LoopUnavailableCard].
+///
+/// A capability gate closes the page, not a block inside it, so it renders a
+/// [LoopPageBlock] in the room the page scaffold hands it (`block:`) instead
+/// of the inline strip a section uses.
+///
+/// It keeps two answers apart that used to share one sentence:
+///
+/// * the capability read did not get through, so LOOP was never reached and
+///   there is no server reason to render. The next step belongs to the user:
+///   change network and try again.
+/// * LOOP answered and closed the capability, naming its own `reasonCode`.
+///   Nothing on the device can change that, so the page renders the server's
+///   sentence and offers no network advice — "wait" is the honest next step.
+///
+/// The client never invents a `reasonCode` for the first case; an unreachable
+/// gate ignores [fallbackReasonCode] entirely.
+class LoopCapabilityPageBlock extends StatelessWidget {
+  const LoopCapabilityPageBlock({
+    required this.title,
+    super.key,
+    this.reasonCode,
+    this.unreachable = false,
+    this.action,
+  });
+
+  /// Reads both facts off one projection.
+  LoopCapabilityPageBlock.of({
+    required String title,
+    required LoopCapabilityProjection capability,
+    Key? key,
+    String? fallbackReasonCode,
+    Widget? action,
+  }) : this(
+         title: title,
+         reasonCode: capability.reasonCode ?? fallbackReasonCode,
+         unreachable: capability.unreachable,
+         action: action,
+         key: key,
+       );
+
+  /// What the user cannot do on this page. Ignored while [unreachable], where
+  /// the page cannot honestly name the capability that failed.
+  final String title;
+
+  /// The server's own rule name, when the server answered.
+  final String? reasonCode;
+
+  /// The capability read did not get through: LOOP itself was not reached.
+  final bool unreachable;
+
+  /// At most one next step.
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    if (unreachable) return LoopPageBlock.unreachable(action: action);
+    return LoopPageBlock(
+      title: title,
+      message: loopReasonCodeText(reasonCode),
+      action: action,
+    );
+  }
+}
+
 /// One rendered market fact: the figure, its quality marker and its source.
 ///
 /// An unavailable fact renders its explanation, never `0` and never `—`.

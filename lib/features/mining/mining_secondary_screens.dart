@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
@@ -12,15 +13,17 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
 /// The capability gate copy shared by the five secondary mining pages.
-LoopEmpty _miningCapabilityBlock(
+/// The whole-page block a closed mining gate renders. It carries the reason
+/// the server published instead of a sentence the client invented, and says so
+/// plainly when the capability document was never read at all.
+Widget _miningCapabilityBlock(
   String key,
   String subject,
   LoopCapabilityProjection capability,
-) => LoopEmpty(
+) => LoopCapabilityPageBlock.of(
   key: ValueKey<String>(key),
-  icon: 'warn',
-  message: '$subject当前不可用',
-  reason: '请稍后再试。',
+  title: '$subject当前不可用',
+  capability: capability,
 );
 
 /// `mining-assets` · the per-asset power breakdown.
@@ -62,6 +65,8 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('mining-assets-screen'),
+      onRefresh: controller.reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '算力明细',
       kicker: 'POWER FORMULA',
@@ -82,14 +87,15 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
         caption: '每个资产的贡献需要公式、权重与参考价三项齐备，目前都还读不到。',
         stamp: 'UNAVAILABLE',
       ),
+      block: blocked
+          ? _miningCapabilityBlock(
+              'mining-assets-capability-unavailable',
+              '算力明细',
+              capability,
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          _miningCapabilityBlock(
-            'mining-assets-capability-unavailable',
-            '算力明细',
-            capability,
-          )
-        else if (assets == null)
+        if (assets == null)
           LaunchStateBlock(
             prefix: 'mining-assets',
             phase: state.phase,
@@ -170,6 +176,8 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('mining-rewards-screen'),
+      onRefresh: controller.reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '奖励与领取',
       kicker: 'CLAIMABLE REWARD',
@@ -182,14 +190,15 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
         caption: '还没有发生过结算，因此没有可领取的数量。',
         stamp: 'NOT CLAIMABLE',
       ),
+      block: blocked
+          ? _miningCapabilityBlock(
+              'mining-rewards-capability-unavailable',
+              '奖励与领取',
+              capability,
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          _miningCapabilityBlock(
-            'mining-rewards-capability-unavailable',
-            '奖励与领取',
-            capability,
-          )
-        else if (rewards == null)
+        if (rewards == null)
           LaunchStateBlock(
             prefix: 'mining-rewards',
             phase: state.phase,
@@ -274,6 +283,8 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('mining-rank-screen'),
+      onRefresh: controller.reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '算力排行榜',
       kicker: 'NETWORK POSITION',
@@ -286,14 +297,15 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
         caption: '排名要等算力结算之后才有，目前还没有结算过。',
         stamp: 'UNAVAILABLE',
       ),
+      block: blocked
+          ? _miningCapabilityBlock(
+              'mining-rank-capability-unavailable',
+              '排行榜',
+              capability,
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          _miningCapabilityBlock(
-            'mining-rank-capability-unavailable',
-            '排行榜',
-            capability,
-          )
-        else ...<Widget>[
+        ...<Widget>[
           LoopSegBar(
             key: const ValueKey<String>('mining-rank-scope'),
             labels: <String>[
@@ -379,6 +391,8 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('mining-community-screen'),
+      onRefresh: controller.reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: community?.community.name ?? '社区挖矿面板',
       kicker: 'COMMUNITY POWER',
@@ -391,14 +405,15 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
         caption: '社区总算力、我的贡献与参与人数都要等挖矿公式确定，目前还读不到。',
         stamp: 'UNAVAILABLE',
       ),
+      block: blocked
+          ? _miningCapabilityBlock(
+              'mining-community-capability-unavailable',
+              '社区挖矿面板',
+              capability,
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          _miningCapabilityBlock(
-            'mining-community-capability-unavailable',
-            '社区挖矿面板',
-            capability,
-          )
-        else if (community == null)
+        if (community == null)
           LaunchStateBlock(
             prefix: 'mining-community',
             phase: state.phase,
@@ -516,6 +531,8 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('mining-rules-screen'),
+      onRefresh: controller.reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '权重与价格保护',
       kicker: 'POWER RULES',
@@ -530,14 +547,15 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
         caption: '规则以已批准的公式为准。下面是还没批准的草案。',
         stamp: draft == null ? null : '待批准',
       ),
+      block: blocked
+          ? _miningCapabilityBlock(
+              'mining-rules-capability-unavailable',
+              '挖矿规则',
+              capability,
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          _miningCapabilityBlock(
-            'mining-rules-capability-unavailable',
-            '挖矿规则',
-            capability,
-          )
-        else if (rules == null)
+        if (rules == null)
           LaunchStateBlock(
             prefix: 'mining-rules',
             phase: state.phase,

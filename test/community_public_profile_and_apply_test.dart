@@ -396,11 +396,19 @@ void main() {
         ),
       );
 
-      final action = find.byKey(
-        const ValueKey<String>('community-apply-action'),
+      // A closed gate takes the whole page: the directory, the rule notice
+      // and the application entry all go with it, so there is no entry left to
+      // press rather than a disabled one.
+      expect(
+        find.byKey(
+          const ValueKey<String>('community-discover-capability-unavailable'),
+        ),
+        findsOneWidget,
       );
-      await scrollToCommunitySection(tester, action);
-      expect(tester.widget<LoopButton>(action).onPressed, isNull);
+      expect(
+        find.byKey(const ValueKey<String>('community-apply-action')),
+        findsNothing,
+      );
     });
   });
 

@@ -31,15 +31,49 @@ bool _walletBlocked(WidgetRef ref) => walletCapabilityBlocks(
   ref.watch(loopCapabilityProvider(LoopV2CapabilityId.bscRead)),
 );
 
-String _walletBlockReason(WidgetRef ref) {
+/// The gate that actually closed the wallet pages.
+///
+/// A wallet read needs both gates, so the page reports the one that is shut
+/// and keeps its projection: "LOOP never answered" and "LOOP answered that the
+/// chain node is down" are two different facts, and the second one's reason is
+/// the server's, never the client's guess. [fallback] is used only when the
+/// server closed the gate without naming a rule.
+({LoopCapabilityProjection capability, String fallback}) _walletBlockGate(
+  WidgetRef ref,
+) {
   final walletRead = ref.watch(
     loopCapabilityProvider(LoopV2CapabilityId.walletRead),
   );
-  final bscRead = ref.watch(loopCapabilityProvider(LoopV2CapabilityId.bscRead));
   if (!walletRead.isAvailable) {
-    return walletRead.reasonCode ?? 'WALLET_RUNTIME_UNAVAILABLE';
+    return (capability: walletRead, fallback: 'WALLET_RUNTIME_UNAVAILABLE');
   }
-  return bscRead.reasonCode ?? 'BSC_CHAIN_RUNTIME_UNAVAILABLE';
+  return (
+    capability: ref.watch(loopCapabilityProvider(LoopV2CapabilityId.bscRead)),
+    fallback: 'BSC_CHAIN_RUNTIME_UNAVAILABLE',
+  );
+}
+
+/// The whole-page block a closed wallet gate renders.
+Widget _walletPageBlock(
+  WidgetRef ref, {
+  required Key key,
+  required String title,
+}) {
+  final gate = _walletBlockGate(ref);
+  return LoopCapabilityPageBlock.of(
+    key: key,
+    title: title,
+    capability: gate.capability,
+    fallbackReasonCode: gate.fallback,
+  );
+}
+
+/// One pull re-reads the wallet directory and, when a wallet is selected, that
+/// wallet's balances. Neither read clears what it already put on screen.
+Future<void> _refreshWallet(WidgetRef ref, String? walletId) async {
+  await ref.read(walletDirectoryControllerProvider.notifier).reload();
+  if (walletId == null) return;
+  await ref.read(walletBalancesControllerProvider(walletId).notifier).reload();
 }
 
 /// Loads the wallet directory once and returns the active wallet id.
@@ -124,6 +158,16 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       // Balances the page already read stay on screen while the next read
       // runs; only the 更新中 mark changes.
       updating: balancesState?.refreshing ?? false,
+      // Pull to re-read the directory and the balances of the active wallet.
+      // The rows that were read stay on screen; only the 更新中 mark changes.
+      onRefresh: () => _refreshWallet(ref, walletId),
+      block: blocked
+          ? _walletPageBlock(
+              ref,
+              key: const ValueKey<String>('wallet-capability-block'),
+              title: '钱包读取当前不可用',
+            )
+          : null,
       actions: <Widget>[
         LoopIconButton(
           key: const ValueKey<String>('wallet-manage-action'),
@@ -145,15 +189,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         onOpenNetWorth: () => _open('/wallet/networth'),
       ),
       sections: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('wallet-capability-block'),
-            label: '钱包读取当前不可用',
-            reasonCode: _walletBlockReason(ref),
-          )
         // Three different answers, three different blocks: the list was not
         // read, the list was read and is empty, or a wallet is active.
-        else if (_directoryIsEmpty(directory))
+        if (_directoryIsEmpty(directory))
           const WalletCreationBlock(keyPrefix: 'wallet-directory')
         else if (walletId == null && directory.isReady)
           LoopEmpty(
@@ -423,6 +461,12 @@ class _NetWorthScreenState extends ConsumerState<NetWorthScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('networth-screen'),
+      onRefresh: walletId == null
+          ? null
+          : () => ref
+                .read(walletBalancesControllerProvider(walletId).notifier)
+                .reload(),
+      updating: state?.refreshing ?? false,
       archetype: LoopPageArchetype.listing,
       title: '净值明细',
       onBack: widget.onBack,
@@ -440,14 +484,15 @@ class _NetWorthScreenState extends ConsumerState<NetWorthScreen> {
             ? 'PARTIAL'
             : null,
       ),
+      block: blocked
+          ? _walletPageBlock(
+              ref,
+              key: const ValueKey<String>('networth-capability-block'),
+              title: '钱包读取当前不可用',
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('networth-capability-block'),
-            label: '钱包读取当前不可用',
-            reasonCode: _walletBlockReason(ref),
-          )
-        else if (noWalletYet)
+        if (noWalletYet)
           const WalletCreationBlock(keyPrefix: 'networth')
         else if (walletId == null || state == null || !state.isReady)
           LoopChainStateBlock(
@@ -591,6 +636,12 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
 
     return LoopDashboardPage(
       key: ValueKey<String>('wallet-asset-$assetId'),
+      onRefresh: walletId == null
+          ? null
+          : () => ref
+                .read(walletBalancesControllerProvider(walletId).notifier)
+                .reload(),
+      updating: balancesState?.refreshing ?? false,
       archetype: LoopPageArchetype.record,
       title: asset?.symbol ?? row?.symbol ?? '钱包资产',
       kicker: asset?.name,
@@ -621,14 +672,15 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
           null => '余额尚未读取成功。',
         },
       ),
+      block: blocked
+          ? _walletPageBlock(
+              ref,
+              key: const ValueKey<String>('wallet-asset-capability-block'),
+              title: '钱包读取当前不可用',
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('wallet-asset-capability-block'),
-            label: '钱包读取当前不可用',
-            reasonCode: _walletBlockReason(ref),
-          )
-        else if (noWalletYet)
+        if (noWalletYet)
           const WalletCreationBlock(keyPrefix: 'wallet-asset')
         else if (walletId == null ||
             balancesState == null ||
@@ -952,14 +1004,15 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
         caption: '二维码与完整地址绑定当前网络，复制前请再次核对。',
         stamp: network == null ? null : 'QR READY',
       ),
+      block: blocked
+          ? _walletPageBlock(
+              ref,
+              key: const ValueKey<String>('receive-capability-block'),
+              title: '钱包读取当前不可用',
+            )
+          : null,
       body: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('receive-capability-block'),
-            label: '钱包读取当前不可用',
-            reasonCode: _walletBlockReason(ref),
-          )
-        else if (noWalletYet)
+        if (noWalletYet)
           const WalletCreationBlock(keyPrefix: 'receive')
         else if (walletId == null || state == null || !state.isReady)
           LoopChainStateBlock(
@@ -1164,6 +1217,8 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('wallets-screen'),
+      onRefresh: controller.reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '我的钱包',
       onBack: widget.onBack,
@@ -1175,14 +1230,15 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
         caption: '一个 LOOP ID 可以绑定多个钱包；地址是公开的链上事实，不是账号标识。',
         stamp: directory == null ? null : '${directory.wallets.length} WALLETS',
       ),
+      block: blocked
+          ? _walletPageBlock(
+              ref,
+              key: const ValueKey<String>('wallets-capability-block'),
+              title: '钱包清单当前不可用',
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('wallets-capability-block'),
-            label: '钱包清单当前不可用',
-            reasonCode: _walletBlockReason(ref),
-          )
-        else if (!state.isReady || directory == null)
+        if (!state.isReady || directory == null)
           LoopChainStateBlock(
             keyPrefix: 'wallets',
             phase: state.phase,
@@ -1389,6 +1445,12 @@ class _TransactionHistoryScreenState
 
     return LoopDashboardPage(
       key: const ValueKey<String>('tx-history-screen'),
+      onRefresh: walletId == null
+          ? null
+          : () => ref
+                .read(walletActivityControllerProvider(walletId).notifier)
+                .reload(),
+      updating: state?.refreshing ?? false,
       archetype: LoopPageArchetype.record,
       title: '交易历史',
       onBack: widget.onBack,
@@ -1399,14 +1461,15 @@ class _TransactionHistoryScreenState
         heading: page == null ? '交易历史' : '${page.items.length} 笔',
         caption: '只包含已登记资产的 ERC-20 转账，每条带交易哈希、区块与确认数。',
       ),
+      block: blocked
+          ? _walletPageBlock(
+              ref,
+              key: const ValueKey<String>('tx-history-capability-block'),
+              title: '钱包活动当前不可用',
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('tx-history-capability-block'),
-            label: '钱包活动当前不可用',
-            reasonCode: _walletBlockReason(ref),
-          )
-        else if (noWalletYet)
+        if (noWalletYet)
           const WalletCreationBlock(keyPrefix: 'tx-history')
         else if (walletId == null || state == null || page == null)
           LoopChainStateBlock(
@@ -1629,6 +1692,8 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('networks-screen'),
+      onRefresh: ref.read(chainStatusControllerProvider.notifier).reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '网络与 RPC',
       onBack: widget.onBack,
@@ -1644,14 +1709,16 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
             : '主网 BNB Smart Chain 加上 LOOP 发布的 Launch 链；'
                   '端点以不可逆引用显示，永远不下发 RPC 地址。',
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>('networks-capability-block'),
+              title: '链上读取当前不可用',
+              capability: capability,
+              fallbackReasonCode: 'BSC_RPC_NOT_CONFIGURED',
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('networks-capability-block'),
-            label: '链上读取当前不可用',
-            reasonCode: capability.reasonCode ?? 'BSC_RPC_NOT_CONFIGURED',
-          )
-        else if (!state.isReady || status == null)
+        if (!state.isReady || status == null)
           LoopChainStateBlock(
             keyPrefix: 'networks',
             phase: state.phase,

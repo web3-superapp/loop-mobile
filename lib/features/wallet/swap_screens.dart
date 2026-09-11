@@ -126,14 +126,16 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
         stamp: quote == null ? null : 'REVIEW QUOTE',
       ),
       primaryAction: _primaryAction(capability, quote),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>('swap-capability-block'),
+              title: '兑换当前不可用',
+              capability: capability,
+              fallbackReasonCode: 'PRIVY_NOT_CONFIGURED',
+            )
+          : null,
       body: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('swap-capability-block'),
-            label: '兑换当前不可用',
-            reasonCode: capability.reasonCode ?? 'PRIVY_NOT_CONFIGURED',
-          )
-        else if (walletId == null || balancesState == null)
+        if (walletId == null || balancesState == null)
           LoopChainStateBlock(
             keyPrefix: 'swap-directory',
             phase: ref.watch(walletDirectoryControllerProvider).phase,

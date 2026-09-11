@@ -92,19 +92,19 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
           ),
         ),
       ),
+      block: communityCapabilityBlocks(mode, capability)
+          ? CommunityCapabilityPageBlock(
+              key: const ValueKey<String>('blocklist-capability-unavailable'),
+              capability: capability,
+              title: '屏蔽名单当前不可用',
+            )
+          : null,
       collection: ListView(
         key: const ValueKey<String>('blocklist-list'),
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '屏蔽名单'),
-          if (communityCapabilityBlocks(mode, capability))
-            LoopEmpty(
-              key: const ValueKey<String>('blocklist-capability-unavailable'),
-              icon: 'warn',
-              message: '屏蔽名单当前不可用',
-              reason: '请稍后再试。',
-            )
-          else if (!state.kind.isSupported)
+          if (!state.kind.isSupported)
             LoopEmpty(
               key: ValueKey<String>(
                 'blocklist-kind-unavailable-${state.kind.wireName}',

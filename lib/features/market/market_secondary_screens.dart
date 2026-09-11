@@ -27,11 +27,19 @@ bool _marketBlocked(WidgetRef ref) {
   return loopChainCapabilityBlocks(mode, capability);
 }
 
-String _marketBlockReason(WidgetRef ref) =>
-    ref
-        .watch(loopCapabilityProvider(LoopV2CapabilityId.marketRead))
-        .reasonCode ??
-    'MARKET_RUNTIME_UNAVAILABLE';
+/// The whole-page block a closed market gate renders. It keeps the server's
+/// own reason when the server answered, and says the client never reached LOOP
+/// when it did not.
+Widget _marketPageBlock(
+  WidgetRef ref, {
+  required Key key,
+  required String title,
+}) => LoopCapabilityPageBlock.of(
+  key: key,
+  title: title,
+  capability: ref.watch(loopCapabilityProvider(LoopV2CapabilityId.marketRead)),
+  fallbackReasonCode: 'MARKET_RUNTIME_UNAVAILABLE',
+);
 
 Widget _invalidAssetPage(String title, VoidCallback? onBack) => LoopFocusPage(
   key: ValueKey<String>('invalid-asset-$title'),
@@ -83,13 +91,12 @@ class _FullChartScreenState extends ConsumerState<FullChartScreen> {
         archetype: LoopPageArchetype.record,
         title: '全屏 K 线',
         onBack: widget.onBack,
-        body: <Widget>[
-          LoopUnavailableCard(
-            key: const ValueKey<String>('chart-full-capability-block'),
-            label: '行情模块当前不可用',
-            reasonCode: _marketBlockReason(ref),
-          ),
-        ],
+        block: _marketPageBlock(
+          ref,
+          key: const ValueKey<String>('chart-full-capability-block'),
+          title: '行情模块当前不可用',
+        ),
+        body: const <Widget>[],
       );
     }
     return LoopFocusPage(
@@ -166,6 +173,10 @@ class _HolderDistributionScreenState
 
     return LoopDashboardPage(
       key: ValueKey<String>('token-holders-$assetId'),
+      onRefresh: ref
+          .read(marketHoldersControllerProvider(assetId).notifier)
+          .reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.listing,
       title: '持有人分布',
       onBack: widget.onBack,
@@ -182,14 +193,15 @@ class _HolderDistributionScreenState
             ? loopFactProvenance(count)
             : loopReasonCodeText(count.reasonCode),
       ),
+      block: blocked
+          ? _marketPageBlock(
+              ref,
+              key: const ValueKey<String>('token-holders-capability-block'),
+              title: '行情模块当前不可用',
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('token-holders-capability-block'),
-            label: '行情模块当前不可用',
-            reasonCode: _marketBlockReason(ref),
-          )
-        else if (!state.isReady || holders == null)
+        if (!state.isReady || holders == null)
           LoopChainStateBlock(
             keyPrefix: 'token-holders',
             phase: state.phase,
@@ -278,6 +290,10 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
 
     return LoopDashboardPage(
       key: ValueKey<String>('token-trades-$assetId'),
+      onRefresh: ref
+          .read(marketTradesControllerProvider(assetId).notifier)
+          .reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.listing,
       title: '交易活动',
       onBack: widget.onBack,
@@ -290,14 +306,15 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
             : '链上成交',
         caption: '来自已登记 PancakeSwap V3 池的 Swap 事件，每条带交易哈希、区块与确认状态。',
       ),
+      block: blocked
+          ? _marketPageBlock(
+              ref,
+              key: const ValueKey<String>('token-trades-capability-block'),
+              title: '行情模块当前不可用',
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('token-trades-capability-block'),
-            label: '行情模块当前不可用',
-            reasonCode: _marketBlockReason(ref),
-          )
-        else if (!state.isReady || block == null)
+        if (!state.isReady || block == null)
           LoopChainStateBlock(
             keyPrefix: 'token-trades',
             phase: state.phase,
@@ -457,6 +474,8 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
 
     return LoopDashboardPage(
       key: const ValueKey<String>('new-pairs-screen'),
+      onRefresh: ref.read(marketNewPairsControllerProvider.notifier).reload,
+      updating: state.refreshing,
       archetype: LoopPageArchetype.listing,
       title: '新币发现',
       onBack: widget.onBack,
@@ -469,14 +488,15 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
             : '新币发现',
         caption: '先看流动性、合约状态与数据出处，再看短期价格。',
       ),
+      block: blocked
+          ? _marketPageBlock(
+              ref,
+              key: const ValueKey<String>('new-pairs-capability-block'),
+              title: '行情模块当前不可用',
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('new-pairs-capability-block'),
-            label: '行情模块当前不可用',
-            reasonCode: _marketBlockReason(ref),
-          )
-        else if (!state.isReady || page == null || block == null)
+        if (!state.isReady || page == null || block == null)
           LoopChainStateBlock(
             keyPrefix: 'new-pairs',
             phase: state.phase,
@@ -596,14 +616,15 @@ class _SmartMoneyScreenState extends ConsumerState<SmartMoneyScreen> {
         heading: '暂未开放',
         caption: '这里不会展示任何地址、胜率或跟随建议。',
       ),
+      block: blocked
+          ? _marketPageBlock(
+              ref,
+              key: const ValueKey<String>('smart-money-capability-block'),
+              title: '行情模块当前不可用',
+            )
+          : null,
       body: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('smart-money-capability-block'),
-            label: '行情模块当前不可用',
-            reasonCode: _marketBlockReason(ref),
-          )
-        else if (!state.isReady || fact == null)
+        if (!state.isReady || fact == null)
           LoopChainStateBlock(
             keyPrefix: 'smart-money',
             phase: state.phase,

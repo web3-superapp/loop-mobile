@@ -251,6 +251,17 @@ class _CommunityMembersScreenState
           ),
         ],
       ),
+      block: id != null && communityCapabilityBlocks(mode, capability)
+          ? CommunityCapabilityPageBlock(
+              key: const ValueKey<String>(
+                'community-members-capability-unavailable',
+              ),
+              capability: capability,
+              title: '社区模块当前不可用',
+            )
+          : null,
+      onRefresh: id == null ? null : controller.refresh,
+      updating: state.refreshing,
       collection: ListView(
         key: const ValueKey<String>('community-members-list'),
         padding: const EdgeInsets.only(bottom: 24),
@@ -271,15 +282,6 @@ class _CommunityMembersScreenState
               icon: 'warn',
               message: '缺少社区标识',
               reason: '请从社区档案进入，本页不会猜测要打开哪个社区。',
-            )
-          else if (communityCapabilityBlocks(mode, capability))
-            LoopEmpty(
-              key: const ValueKey<String>(
-                'community-members-capability-unavailable',
-              ),
-              icon: 'warn',
-              message: '社区模块当前不可用',
-              reason: '请稍后再试。',
             )
           else if (state.phase != CommunityViewPhase.ready)
             CommunityStateBlock(

@@ -115,69 +115,69 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
         },
         caption: '这里不打安全评分。每一项只显示它自己的状态与原因；未开启就是未开启。',
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>('security-capability-block'),
+              title: '安全中心当前不可用',
+              capability: capability,
+              fallbackReasonCode: 'SECURITY_RUNTIME_UNAVAILABLE',
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('security-capability-block'),
-            label: '安全中心当前不可用',
-            reasonCode: capability.reasonCode ?? 'SECURITY_RUNTIME_UNAVAILABLE',
+        const LoopLabel('账户保护'),
+        if (!methods.isReady)
+          LoopChainStateBlock(
+            keyPrefix: 'security-methods',
+            phase: methods.phase,
+            failureKind: methods.failureKind,
+            emptyMessage: '没有可展示的安全能力',
+            onRetry: () => unawaited(
+              ref
+                  .read(securityCapabilitiesControllerProvider.notifier)
+                  .reload(),
+            ),
+          )
+        else
+          _SecurityMethodGroup(
+            capabilities: methods.value!,
+            onNavigate: widget.onNavigate,
+          ),
+        const LoopLabel('设备'),
+        if (!summary.isReady)
+          LoopChainStateBlock(
+            keyPrefix: 'security-summary',
+            phase: summary.phase,
+            failureKind: summary.failureKind,
+            emptyMessage: '还没有安全汇总',
+            onRetry: () => unawaited(
+              ref.read(securitySummaryControllerProvider.notifier).reload(),
+            ),
           )
         else ...<Widget>[
-          const LoopLabel('账户保护'),
-          if (!methods.isReady)
-            LoopChainStateBlock(
-              keyPrefix: 'security-methods',
-              phase: methods.phase,
-              failureKind: methods.failureKind,
-              emptyMessage: '没有可展示的安全能力',
-              onRetry: () => unawaited(
-                ref
-                    .read(securityCapabilitiesControllerProvider.notifier)
-                    .reload(),
+          _SecurityDevicesBlock(
+            block: resource!.devices,
+            onOpenDevices: () => widget.onNavigate('devices'),
+          ),
+          const LoopLabel('授权盘点'),
+          _SecurityApprovalsBlock(block: resource.approvals),
+          const LoopLabel('通知'),
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('security-notification-lock'),
+                title: '安全事件通知',
+                subtitle: '始终开启，无法关闭；保存的是意图，不代表已经能送达。',
+                trailingBadge: const LoopBadge('已开启', kind: LoopBadgeKind.up),
+                onTap: () => widget.onNavigate('notif-settings'),
               ),
-            )
-          else
-            _SecurityMethodGroup(
-              capabilities: methods.value!,
-              onNavigate: widget.onNavigate,
-            ),
-          const LoopLabel('设备'),
-          if (!summary.isReady)
-            LoopChainStateBlock(
-              keyPrefix: 'security-summary',
-              phase: summary.phase,
-              failureKind: summary.failureKind,
-              emptyMessage: '还没有安全汇总',
-              onRetry: () => unawaited(
-                ref.read(securitySummaryControllerProvider.notifier).reload(),
-              ),
-            )
-          else ...<Widget>[
-            _SecurityDevicesBlock(
-              block: resource!.devices,
-              onOpenDevices: () => widget.onNavigate('devices'),
-            ),
-            const LoopLabel('授权盘点'),
-            _SecurityApprovalsBlock(block: resource.approvals),
-            const LoopLabel('通知'),
-            LoopRecordGroup(
-              rows: <LoopRecordRow>[
-                LoopRecordRow(
-                  key: const ValueKey<String>('security-notification-lock'),
-                  title: '安全事件通知',
-                  subtitle: '始终开启，无法关闭；保存的是意图，不代表已经能送达。',
-                  trailingBadge: const LoopBadge('已开启', kind: LoopBadgeKind.up),
-                  onTap: () => widget.onNavigate('notif-settings'),
-                ),
-              ],
-            ),
-            const LoopLabel('最近安全事件'),
-            _SecurityEventsBlock(block: resource.recentSecurityEvents),
-            LoopProvenanceFooter(
-              key: const ValueKey<String>('security-observed-at'),
-              text: '观察于 ${loopRelativeTime(resource.observedAt)}',
-            ),
-          ],
+            ],
+          ),
+          const LoopLabel('最近安全事件'),
+          _SecurityEventsBlock(block: resource.recentSecurityEvents),
+          LoopProvenanceFooter(
+            key: const ValueKey<String>('security-observed-at'),
+            text: '观察于 ${loopRelativeTime(resource.observedAt)}',
+          ),
         ],
         const LoopNotice(
           key: ValueKey<String>('security-scope-notice'),
@@ -474,104 +474,104 @@ class _DeviceManagementScreenState
             : '${directory.deviceCount} 台设备 · ${directory.activeCount} 个会话',
         caption: '这里不显示设备名称和位置，只显示平台、版本与最后活跃时间。',
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>('devices-capability-block'),
+              title: '设备管理当前不可用',
+              capability: capability,
+              fallbackReasonCode: 'SECURITY_RUNTIME_UNAVAILABLE',
+            )
+          : null,
       sections: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('devices-capability-block'),
-            label: '设备管理当前不可用',
-            reasonCode: capability.reasonCode ?? 'SECURITY_RUNTIME_UNAVAILABLE',
+        if (state.commandFailureKind != null)
+          LoopErrorState(
+            key: const ValueKey<String>('devices-command-error'),
+            title: '撤销没有完成',
+            reason: loopChainFailureReason(state.commandFailureKind),
+            onRetry: () => unawaited(controller.reload()),
+          ),
+        if (state.outcome != null)
+          LoopNotice(
+            key: const ValueKey<String>('devices-revoke-outcome'),
+            icon: 'info',
+            tone: LoopNoticeTone.warn,
+            title: '已记录撤销，对方访问未终止',
+            body:
+                'LOOP 已把该会话标记为已撤销，并拒绝之后携带它的请求。'
+                '对方设备的 Privy 访问令牌不受影响'
+                '（providerAccessTerminated: '
+                '${state.outcome!.providerAccessTerminated}）。',
+          ),
+        if (!state.resource.isReady)
+          LoopChainStateBlock(
+            keyPrefix: 'devices',
+            phase: state.resource.phase,
+            failureKind: state.resource.failureKind,
+            emptyMessage: '没有可显示的设备会话',
+            onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          if (state.commandFailureKind != null)
-            LoopErrorState(
-              key: const ValueKey<String>('devices-command-error'),
-              title: '撤销没有完成',
-              reason: loopChainFailureReason(state.commandFailureKind),
-              onRetry: () => unawaited(controller.reload()),
-            ),
-          if (state.outcome != null)
+          if (directory!.riskSignals.highRiskNewDevice)
             LoopNotice(
-              key: const ValueKey<String>('devices-revoke-outcome'),
-              icon: 'info',
+              key: const ValueKey<String>('devices-high-risk-notice'),
+              icon: 'warn',
               tone: LoopNoticeTone.warn,
-              title: '已记录撤销，对方访问未终止',
+              title: '最近新增了多个会话',
               body:
-                  'LOOP 已把该会话标记为已撤销，并拒绝之后携带它的请求。'
-                  '对方设备的 Privy 访问令牌不受影响'
-                  '（providerAccessTerminated: '
-                  '${state.outcome!.providerAccessTerminated}）。',
+                  '最近 ${directory.riskSignals.policy.windowHours} 小时内新建了 '
+                  '${directory.riskSignals.newSessions24h} 个会话，达到提示阈值 '
+                  '${directory.riskSignals.policy.newSessionThreshold}。'
+                  '这只是提示，不会因此要求二次验证。',
             ),
-          if (!state.resource.isReady)
-            LoopChainStateBlock(
-              keyPrefix: 'devices',
-              phase: state.resource.phase,
-              failureKind: state.resource.failureKind,
-              emptyMessage: '没有可显示的设备会话',
-              onRetry: () => unawaited(controller.reload()),
+          if (directory.currentSessionId == null)
+            const LoopNotice(
+              key: ValueKey<String>('devices-current-unknown'),
+              icon: 'info',
+              title: '无法标记当前设备',
+              body: '本机没有可用的会话标识，因此列表里没有任何一行被标为"当前"。',
+            ),
+          const LoopLabel('会话'),
+          if (directory.devices.isEmpty)
+            const LoopEmpty(
+              key: ValueKey<String>('devices-state-empty'),
+              message: '还没有设备会话',
+              reason: '这个账号还没有完成过一次设备初始化。',
             )
-          else ...<Widget>[
-            if (directory!.riskSignals.highRiskNewDevice)
-              LoopNotice(
-                key: const ValueKey<String>('devices-high-risk-notice'),
-                icon: 'warn',
-                tone: LoopNoticeTone.warn,
-                title: '最近新增了多个会话',
-                body:
-                    '最近 ${directory.riskSignals.policy.windowHours} 小时内新建了 '
-                    '${directory.riskSignals.newSessions24h} 个会话，达到提示阈值 '
-                    '${directory.riskSignals.policy.newSessionThreshold}。'
-                    '这只是提示，不会因此要求二次验证。',
-              ),
-            if (directory.currentSessionId == null)
-              const LoopNotice(
-                key: ValueKey<String>('devices-current-unknown'),
-                icon: 'info',
-                title: '无法标记当前设备',
-                body: '本机没有可用的会话标识，因此列表里没有任何一行被标为"当前"。',
-              ),
-            const LoopLabel('会话'),
-            if (directory.devices.isEmpty)
-              const LoopEmpty(
-                key: ValueKey<String>('devices-state-empty'),
-                message: '还没有设备会话',
-                reason: '这个账号还没有完成过一次设备初始化。',
-              )
-            else
-              LoopRecordGroup(
-                rows: <LoopRecordRow>[
-                  for (final device in directory.devices)
-                    _deviceRow(device, busy: state.busy),
-                ],
-              ),
-            if (directory.truncated)
-              const LoopNotice(
-                key: ValueKey<String>('devices-truncated'),
-                icon: 'info',
-                title: '列表已被截断',
-                body: '最多显示 100 条会话，暂时不能翻页。',
-              ),
-            const LoopLabel('全部设备'),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-              child: LoopButton(
-                key: const ValueKey<String>('devices-revoke-all'),
-                label: '下线所有其他设备',
-                block: true,
-                // Always refused: it needs a second factor that does not exist.
-                onPressed: null,
-              ),
+          else
+            LoopRecordGroup(
+              rows: <LoopRecordRow>[
+                for (final device in directory.devices)
+                  _deviceRow(device, busy: state.busy),
+              ],
             ),
-            LoopUnavailableCard.fact(
-              key: const ValueKey<String>('devices-revoke-all-unavailable'),
-              label: '需要二次验证，当前不可执行',
-              fact: directory.revokeAll,
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          if (directory.truncated)
+            const LoopNotice(
+              key: ValueKey<String>('devices-truncated'),
+              icon: 'info',
+              title: '列表已被截断',
+              body: '最多显示 100 条会话，暂时不能翻页。',
             ),
-            LoopProvenanceFooter(
-              key: const ValueKey<String>('devices-observed-at'),
-              text: '观察于 ${loopRelativeTime(directory.observedAt)}',
+          const LoopLabel('全部设备'),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            child: LoopButton(
+              key: const ValueKey<String>('devices-revoke-all'),
+              label: '下线所有其他设备',
+              block: true,
+              // Always refused: it needs a second factor that does not exist.
+              onPressed: null,
             ),
-          ],
+          ),
+          LoopUnavailableCard.fact(
+            key: const ValueKey<String>('devices-revoke-all-unavailable'),
+            label: '需要二次验证，当前不可执行',
+            fact: directory.revokeAll,
+            margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          ),
+          LoopProvenanceFooter(
+            key: const ValueKey<String>('devices-observed-at'),
+            text: '观察于 ${loopRelativeTime(directory.observedAt)}',
+          ),
         ],
         const LoopNotice(
           key: ValueKey<String>('devices-effect-notice'),
@@ -700,6 +700,14 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
 
     return LoopFocusPage(
       key: const ValueKey<String>('key-export-screen'),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>('key-export-capability-block'),
+              title: '导出私钥当前不可用',
+              capability: capability,
+              fallbackReasonCode: 'SECURITY_RUNTIME_UNAVAILABLE',
+            )
+          : null,
       archetype: LoopPageArchetype.action,
       title: '导出私钥',
       onBack: widget.onBack,
@@ -729,13 +737,7 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
               '私钥泄露等于资产全部丢失。不要截图、不要发给任何人、不要存在联网笔记里。'
               '没有任何人能帮你找回被盗的资产。',
         ),
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('key-export-capability-block'),
-            label: '导出私钥当前不可用',
-            reasonCode: capability.reasonCode ?? 'SECURITY_RUNTIME_UNAVAILABLE',
-          )
-        else if (method == null)
+        if (method == null)
           LoopChainStateBlock(
             keyPrefix: 'key-export',
             phase: methods.phase,
@@ -816,6 +818,14 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
 
     return LoopFocusPage(
       key: const ValueKey<String>('social-recovery-screen'),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>('social-recovery-capability-block'),
+              title: '社交恢复当前不可用',
+              capability: capability,
+              fallbackReasonCode: 'SECURITY_RUNTIME_UNAVAILABLE',
+            )
+          : null,
       archetype: LoopPageArchetype.action,
       title: '社交恢复',
       onBack: widget.onBack,
@@ -838,13 +848,7 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
               '守护人需要在自己的 App 里主动确认，未确认的不计入 2-of-3。',
           margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
         ),
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('social-recovery-capability-block'),
-            label: '社交恢复当前不可用',
-            reasonCode: capability.reasonCode ?? 'SECURITY_RUNTIME_UNAVAILABLE',
-          )
-        else if (method == null)
+        if (method == null)
           LoopChainStateBlock(
             keyPrefix: 'social-recovery',
             phase: methods.phase,

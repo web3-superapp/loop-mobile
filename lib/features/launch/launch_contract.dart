@@ -194,6 +194,7 @@ final class LaunchResourceState<T> {
     this.value,
     this.failureKind,
     this.busy = false,
+    this.refreshing = false,
   });
 
   factory LaunchResourceState.initial(LaunchGatewayMode mode) {
@@ -214,6 +215,14 @@ final class LaunchResourceState<T> {
   /// only disables its actions.
   final bool busy;
 
+  /// A read is in flight over a value this block already holds.
+  ///
+  /// The page keeps what it read last time and marks it 更新中; it does not
+  /// fall back to a skeleton, because replacing readable data with a grey
+  /// placeholder loses information the user already had. Only a block with no
+  /// value at all loads as a skeleton.
+  final bool refreshing;
+
   bool get isReady => phase == LaunchViewPhase.ready && value != null;
 
   LaunchResourceState<T> loading() => LaunchResourceState<T>(
@@ -221,6 +230,7 @@ final class LaunchResourceState<T> {
     phase: value == null ? LaunchViewPhase.loading : LaunchViewPhase.ready,
     value: value,
     busy: busy,
+    refreshing: value != null,
   );
 
   LaunchResourceState<T> ready(T next) => LaunchResourceState<T>(
@@ -243,6 +253,7 @@ final class LaunchResourceState<T> {
     mode: mode,
     phase: phase,
     value: value,
+    refreshing: refreshing,
     failureKind: next ? null : failureKind,
     busy: next,
   );

@@ -69,6 +69,22 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
       // A re-read over an overview the page already shows is marked, not
       // replaced by a skeleton.
       updating: state.refreshing,
+      // Pull to re-read the overview. The Watchlist, the trending ordering and
+      // the discovery entries arrive in one read, so one gesture refreshes the
+      // page without replacing what it already shows.
+      onRefresh: () =>
+          ref.read(marketOverviewControllerProvider.notifier).reload(),
+      // A closed capability is not an empty section: the page has nothing at
+      // all, so it renders the whole-page block instead of a strip under the
+      // folio.
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>('market-capability-block'),
+              title: '行情模块当前不可用',
+              capability: capability,
+              fallbackReasonCode: 'MARKET_RUNTIME_UNAVAILABLE',
+            )
+          : null,
       actions: <Widget>[
         LoopIconButton(
           key: const ValueKey<String>('market-search-action'),
@@ -96,13 +112,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
         stamp: watchlistCount == null ? null : '$watchlistCount WATCHED',
       ),
       sections: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('market-capability-block'),
-            label: '行情模块当前不可用',
-            reasonCode: capability.reasonCode ?? 'MARKET_RUNTIME_UNAVAILABLE',
-          )
-        else if (!state.isReady || overview == null)
+        if (!state.isReady || overview == null)
           LoopChainStateBlock(
             keyPrefix: 'market',
             phase: state.phase,

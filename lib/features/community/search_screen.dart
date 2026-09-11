@@ -142,19 +142,21 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
           ),
         ],
       ),
+      // A search is a query the user submits, not a feed: there is nothing to
+      // pull down on, so the page takes no refresh gesture.
+      block: communityCapabilityBlocks(mode, capability)
+          ? CommunityCapabilityPageBlock(
+              key: const ValueKey<String>('search-capability-unavailable'),
+              capability: capability,
+              title: '搜索当前不可用',
+            )
+          : null,
       collection: ListView(
         key: const ValueKey<String>('search-results'),
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '搜索结果'),
-          if (communityCapabilityBlocks(mode, capability))
-            LoopEmpty(
-              key: const ValueKey<String>('search-capability-unavailable'),
-              icon: 'warn',
-              message: '搜索当前不可用',
-              reason: '请稍后再试。',
-            )
-          else if (state.domainUnavailable)
+          if (state.domainUnavailable)
             LoopEmpty(
               key: ValueKey<String>(
                 'search-domain-unavailable-${state.domain.wireName}',

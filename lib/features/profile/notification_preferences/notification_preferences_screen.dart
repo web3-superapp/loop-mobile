@@ -73,16 +73,17 @@ class _NotificationPreferencesScreenState
         heading: resource == null ? '通知设置' : '${resource.enabledCount} 项开启',
         caption: '安全事件始终开启且无法关闭；这里保存的是意图，不代表已经能送达。',
       ),
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>('notification-capability-block'),
+              title: '通知设置当前不可用',
+              capability: capability,
+              fallbackReasonCode: 'NOTIFICATIONS_RUNTIME_UNAVAILABLE',
+            )
+          : null,
       sections: <Widget>[
         LoopChainPreviewNotice(mode: mode, resource: '通知设置'),
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('notification-capability-block'),
-            label: '通知设置当前不可用',
-            reasonCode:
-                capability.reasonCode ?? 'NOTIFICATIONS_RUNTIME_UNAVAILABLE',
-          )
-        else if (!state.isReady || resource == null)
+        if (!state.isReady || resource == null)
           LoopChainStateBlock(
             keyPrefix: 'notification-preferences',
             phase: state.phase,

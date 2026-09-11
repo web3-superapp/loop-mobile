@@ -86,16 +86,19 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
         caption: '排序与移除只影响自选列表，不改变钱包持仓，也不是行情事实。',
         stamp: state.isDirty ? 'UNSAVED' : 'EDIT',
       ),
+      // An edit surface takes no pull-to-refresh: a background re-read would
+      // drop an ordering the user has not saved yet.
+      block: blocked
+          ? LoopCapabilityPageBlock.of(
+              key: const ValueKey<String>('watchlist-capability-block'),
+              title: '自选编辑当前不可用',
+              capability: capability,
+              fallbackReasonCode: 'WATCHLIST_RUNTIME_UNAVAILABLE',
+            )
+          : null,
       sections: <Widget>[
         LoopChainPreviewNotice(mode: mode, resource: '自选列表'),
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('watchlist-capability-block'),
-            label: '自选编辑当前不可用',
-            reasonCode:
-                capability.reasonCode ?? 'WATCHLIST_RUNTIME_UNAVAILABLE',
-          )
-        else if (!state.isReady)
+        if (!state.isReady)
           LoopChainStateBlock(
             keyPrefix: 'watchlist',
             phase: state.phase,

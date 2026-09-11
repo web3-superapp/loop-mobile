@@ -66,11 +66,20 @@ bool sendCapabilityBlocks(WidgetRef ref) => moneyActionBlocks(
   ref.watch(loopCapabilityProvider(LoopV2CapabilityId.sendApprovals)),
 );
 
-String sendCapabilityReason(WidgetRef ref) =>
-    ref
-        .watch(loopCapabilityProvider(LoopV2CapabilityId.sendApprovals))
-        .reasonCode ??
-    'WALLET_INTENT_RUNTIME_UNAVAILABLE';
+/// The whole-page block a closed send/approval gate renders. A blocked action
+/// page shows no pinned confirmation button: there is nothing to confirm.
+Widget sendCapabilityPageBlock(
+  WidgetRef ref, {
+  required Key key,
+  required String title,
+}) => LoopCapabilityPageBlock.of(
+  key: key,
+  title: title,
+  capability: ref.watch(
+    loopCapabilityProvider(LoopV2CapabilityId.sendApprovals),
+  ),
+  fallbackReasonCode: 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
+);
 
 /// Loads the wallet directory once and returns the active wallet id.
 String? watchActiveMoneyWalletId(WidgetRef ref, {required bool blocked}) {
@@ -146,14 +155,15 @@ class _SendAssetScreenState extends ConsumerState<SendAssetScreen> {
         caption: '余额与网络先展示，再进入收款地址。',
         stamp: 'STEP 1',
       ),
+      block: blocked
+          ? sendCapabilityPageBlock(
+              ref,
+              key: const ValueKey<String>('send-capability-block'),
+              title: '发送当前不可用',
+            )
+          : null,
       body: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('send-capability-block'),
-            label: '发送当前不可用',
-            reasonCode: sendCapabilityReason(ref),
-          )
-        else if (walletId == null)
+        if (walletId == null)
           LoopChainStateBlock(
             keyPrefix: 'send-directory',
             phase: directory.phase,
@@ -399,137 +409,136 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
               )
             : null,
       ),
+      block: blocked
+          ? sendCapabilityPageBlock(
+              ref,
+              key: const ValueKey<String>('send-recipient-capability-block'),
+              title: '发送当前不可用',
+            )
+          : null,
       body: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('send-recipient-capability-block'),
-            label: '发送当前不可用',
-            reasonCode: sendCapabilityReason(ref),
-          )
-        else ...<Widget>[
-          const LoopLabel('收款地址'),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: LoopSurfaceCard(
-              child: TextField(
-                key: const ValueKey<String>('send-recipient-field'),
-                controller: _address,
-                autocorrect: false,
-                enableSuggestions: false,
-                maxLength: 42,
-                maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                onChanged: (_) => setState(() {
+        const LoopLabel('收款地址'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: LoopSurfaceCard(
+            child: TextField(
+              key: const ValueKey<String>('send-recipient-field'),
+              controller: _address,
+              autocorrect: false,
+              enableSuggestions: false,
+              maxLength: 42,
+              maxLengthEnforcement: MaxLengthEnforcement.enforced,
+              onChanged: (_) => setState(() {
+                _preflight = null;
+                _preflightFailure = null;
+              }),
+              onSubmitted: (_) => unawaited(_check()),
+              decoration: const InputDecoration(
+                labelText: '完整收款地址（BNB Smart Chain）',
+                hintText: '0x…',
+                counterText: '',
+              ),
+            ),
+          ),
+        ),
+        LoopButtonPair(
+          children: <Widget>[
+            LoopButton(
+              key: const ValueKey<String>('send-recipient-paste'),
+              label: '粘贴',
+              onPressed: () async {
+                final data = await Clipboard.getData(Clipboard.kTextPlain);
+                final text = data?.text?.trim() ?? '';
+                if (!mounted || text.isEmpty) return;
+                setState(() {
+                  _address.text = text;
                   _preflight = null;
                   _preflightFailure = null;
-                }),
-                onSubmitted: (_) => unawaited(_check()),
-                decoration: const InputDecoration(
-                  labelText: '完整收款地址（BNB Smart Chain）',
-                  hintText: '0x…',
-                  counterText: '',
+                });
+              },
+            ),
+            LoopButton(
+              key: const ValueKey<String>('send-recipient-check'),
+              label: _checking ? '校验中' : '校验地址',
+              primary: true,
+              onPressed:
+                  _checking || !_addressPattern.hasMatch(_address.text.trim())
+                  ? null
+                  : () => unawaited(_check()),
+            ),
+          ],
+        ),
+        const LoopNotice(
+          key: ValueKey<String>('send-recipient-scan-unavailable'),
+          icon: 'camera',
+          body: '扫码与最近联系人还没有开放，请粘贴或输入完整地址。',
+        ),
+        // An address check that never reached the server has not prepared an
+        // intent, opened a wallet or submitted anything. It pauses; only a
+        // server answer is an error.
+        if (MoneyOfflinePause.covers(_preflightFailure))
+          MoneyOfflinePause(
+            blockKey: 'send-recipient-preflight-offline',
+            pausedActions: const <String>['校验地址', '下一步', '签名'],
+            onRetry: () => unawaited(_check()),
+          )
+        // The server read the address and refused to answer for it. It is a
+        // refusal, not a failed read: retrying cannot change it.
+        else if (MoneyPolicyNotice.covers(_preflightFailure))
+          MoneyPolicyNotice(
+            blockKey: 'send-to-permission',
+            failure: _preflightFailure!,
+            onOpenSecurity: () => _open('/profile/security'),
+          )
+        else if (_preflightFailure != null)
+          LoopErrorState(
+            key: const ValueKey<String>('send-recipient-preflight-error'),
+            title: '地址没有校验成功',
+            reason: loopChainFailureReason(_preflightFailure!.kind),
+            onRetry: () => unawaited(_check()),
+          ),
+        if (preflight != null) ..._recipientNotices(preflight),
+        const LoopLabel('金额'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: LoopSurfaceCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                TextField(
+                  key: const ValueKey<String>('send-amount-field'),
+                  controller: _amount,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  // The amount stays the exact text all the way to the wire.
+                  inputFormatters: <TextInputFormatter>[
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                  ],
+                  maxLength: TransferAmount.maxWireLength,
+                  maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    labelText: '发送数量（${widget.draft.symbol}）',
+                    counterText: '',
+                    errorText: overSpendable ? '超过可动用余额' : null,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 6),
+                Text(
+                  spendable == null
+                      ? '读不到可用余额，这里不做估算。'
+                      : '可动用 ${loopFormatDecimal(spendable)} '
+                            '${widget.draft.symbol}'
+                            '（已扣除手续费保留）',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
             ),
           ),
-          LoopButtonPair(
-            children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('send-recipient-paste'),
-                label: '粘贴',
-                onPressed: () async {
-                  final data = await Clipboard.getData(Clipboard.kTextPlain);
-                  final text = data?.text?.trim() ?? '';
-                  if (!mounted || text.isEmpty) return;
-                  setState(() {
-                    _address.text = text;
-                    _preflight = null;
-                    _preflightFailure = null;
-                  });
-                },
-              ),
-              LoopButton(
-                key: const ValueKey<String>('send-recipient-check'),
-                label: _checking ? '校验中' : '校验地址',
-                primary: true,
-                onPressed:
-                    _checking || !_addressPattern.hasMatch(_address.text.trim())
-                    ? null
-                    : () => unawaited(_check()),
-              ),
-            ],
-          ),
-          const LoopNotice(
-            key: ValueKey<String>('send-recipient-scan-unavailable'),
-            icon: 'camera',
-            body: '扫码与最近联系人还没有开放，请粘贴或输入完整地址。',
-          ),
-          // An address check that never reached the server has not prepared an
-          // intent, opened a wallet or submitted anything. It pauses; only a
-          // server answer is an error.
-          if (MoneyOfflinePause.covers(_preflightFailure))
-            MoneyOfflinePause(
-              blockKey: 'send-recipient-preflight-offline',
-              pausedActions: const <String>['校验地址', '下一步', '签名'],
-              onRetry: () => unawaited(_check()),
-            )
-          // The server read the address and refused to answer for it. It is a
-          // refusal, not a failed read: retrying cannot change it.
-          else if (MoneyPolicyNotice.covers(_preflightFailure))
-            MoneyPolicyNotice(
-              blockKey: 'send-to-permission',
-              failure: _preflightFailure!,
-              onOpenSecurity: () => _open('/profile/security'),
-            )
-          else if (_preflightFailure != null)
-            LoopErrorState(
-              key: const ValueKey<String>('send-recipient-preflight-error'),
-              title: '地址没有校验成功',
-              reason: loopChainFailureReason(_preflightFailure!.kind),
-              onRetry: () => unawaited(_check()),
-            ),
-          if (preflight != null) ..._recipientNotices(preflight),
-          const LoopLabel('金额'),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: LoopSurfaceCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  TextField(
-                    key: const ValueKey<String>('send-amount-field'),
-                    controller: _amount,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    // The amount stays the exact text all the way to the wire.
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                    ],
-                    maxLength: TransferAmount.maxWireLength,
-                    maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                    onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      labelText: '发送数量（${widget.draft.symbol}）',
-                      counterText: '',
-                      errorText: overSpendable ? '超过可动用余额' : null,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    spendable == null
-                        ? '读不到可用余额，这里不做估算。'
-                        : '可动用 ${loopFormatDecimal(spendable)} '
-                              '${widget.draft.symbol}'
-                              '（已扣除手续费保留）',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (balancesState.value != null)
-            WalletSnapshotFooter(snapshot: balancesState.value!.snapshot),
-        ],
+        ),
+        if (balancesState.value != null)
+          WalletSnapshotFooter(snapshot: balancesState.value!.snapshot),
       ],
     );
   }
@@ -658,14 +667,15 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
                     : null,
               ),
             ),
+      block: blocked
+          ? sendCapabilityPageBlock(
+              ref,
+              key: const ValueKey<String>('send-confirm-capability-block'),
+              title: '发送当前不可用',
+            )
+          : null,
       body: <Widget>[
-        if (blocked)
-          LoopUnavailableCard(
-            key: const ValueKey<String>('send-confirm-capability-block'),
-            label: '发送当前不可用',
-            reasonCode: sendCapabilityReason(ref),
-          )
-        else if (other != null)
+        if (other != null)
           _PendingIntentBlock(
             intent: other,
             busy: _busy,

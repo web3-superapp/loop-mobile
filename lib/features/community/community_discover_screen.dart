@@ -151,6 +151,17 @@ class _CommunityDiscoverScreenState
           ),
         ),
       ),
+      block: communityCapabilityBlocks(mode, capability)
+          ? CommunityCapabilityPageBlock(
+              key: const ValueKey<String>(
+                'community-discover-capability-unavailable',
+              ),
+              capability: capability,
+              title: '社区模块当前不可用',
+            )
+          : null,
+      onRefresh: controller.refresh,
+      updating: state.refreshing,
       collection: ListView(
         key: const ValueKey<String>('community-discover-list'),
         padding: const EdgeInsets.only(bottom: 24),
@@ -164,16 +175,7 @@ class _CommunityDiscoverScreenState
                 message: '"${segment.label}" 暂不可用',
                 reason: segment.deferredReason,
               ),
-          if (communityCapabilityBlocks(mode, capability))
-            LoopEmpty(
-              key: const ValueKey<String>(
-                'community-discover-capability-unavailable',
-              ),
-              icon: 'warn',
-              message: '社区模块当前不可用',
-              reason: '请稍后再试。',
-            )
-          else if (state.phase != CommunityViewPhase.ready)
+          if (state.phase != CommunityViewPhase.ready)
             CommunityStateBlock(
               phase: state.phase,
               failureKind: state.failureKind,

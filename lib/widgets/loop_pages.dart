@@ -35,6 +35,39 @@ double loopChildPageBottomInset(BuildContext context) => math.max(
   MediaQuery.paddingOf(context).bottom,
 );
 
+/// Wraps a page's scrolling region in the standard pull-to-refresh gesture.
+///
+/// A refresh re-reads what the page already shows: the values stay on screen
+/// and the topbar keeps the 更新中 mark, so pulling never falls back to a
+/// skeleton. The gesture is a plain drag, so it behaves the same under
+/// `reduceMotion`; the only thing that moves is the indicator that says a read
+/// is running, which is exactly the fact the user asked for.
+///
+/// A page with nothing to re-read — a step in an action, a device-local
+/// setting, a whole-page block — passes no callback and gets no gesture.
+Widget loopRefreshable({
+  required Widget child,
+  required Future<void> Function()? onRefresh,
+  double edgeOffset = 0,
+}) {
+  if (onRefresh == null) return child;
+  return RefreshIndicator(
+    key: const ValueKey<String>('loop-page-refresh'),
+    onRefresh: onRefresh,
+    edgeOffset: edgeOffset,
+    displacement: 24,
+    strokeWidth: 2.2,
+    color: LoopColors.mint,
+    backgroundColor: LoopColors.card2,
+    child: child,
+  );
+}
+
+/// The physics a refreshable region needs: a short page must still overscroll,
+/// or the gesture would exist only on pages that happen to be long.
+ScrollPhysics? loopRefreshablePhysics(Future<void> Function()? onRefresh) =>
+    onRefresh == null ? null : const AlwaysScrollableScrollPhysics();
+
 /// `focus`: single-task step page. Topbar, optional folio, scrolling body,
 /// then the primary action pinned so it is reachable on the first screen;
 /// extra copy lives in a disclosure.
@@ -52,6 +85,7 @@ class LoopFocusPage extends StatelessWidget {
     this.disclosure,
     this.primaryActionBeforeDisclosure = true,
     this.updating = false,
+    this.block,
   });
 
   final LoopPageArchetype archetype;
@@ -61,6 +95,15 @@ class LoopFocusPage extends StatelessWidget {
   final List<Widget> actions;
   final LoopFolioPrimary? folio;
   final List<Widget> body;
+
+  /// The page has nothing to show at all (a closed capability, a whole-page
+  /// refusal). It takes the room the body, the folio and the pinned action
+  /// would have used; only the topbar stays, so the user can leave.
+  ///
+  /// A block inside a page that did load is not this — that is a `LoopEmpty`
+  /// strip — and a page that is still reading is not this either, that is a
+  /// `LoopSkeleton`.
+  final Widget? block;
 
   /// Pinned under the body (`.btn-pair` / `.btn-block`).
   final Widget? primaryAction;
@@ -98,22 +141,26 @@ class LoopFocusPage extends StatelessWidget {
                 minHeight: LoopLayout.topbarContentHeight,
                 updating: updating,
               ),
-              ?folio,
-              // Focus bodies are short step pages: build them eagerly so
-              // every control exists for ensureVisible / assistive tech.
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.only(
-                    bottom: primaryAction == null ? bottom : 12,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: body,
+              if (block != null)
+                Expanded(child: block!)
+              else ...<Widget>[
+                ?folio,
+                // Focus bodies are short step pages: build them eagerly so
+                // every control exists for ensureVisible / assistive tech.
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.only(
+                      bottom: primaryAction == null ? bottom : 12,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: body,
+                    ),
                   ),
                 ),
-              ),
-              if (!primaryActionBeforeDisclosure) ?disclosure,
-              if (primaryAction != null)
+              ],
+              if (block == null && !primaryActionBeforeDisclosure) ?disclosure,
+              if (block == null && primaryAction != null)
                 Padding(
                   padding: EdgeInsets.fromLTRB(
                     LoopSpacing.page,
@@ -125,7 +172,9 @@ class LoopFocusPage extends StatelessWidget {
                   ),
                   child: primaryAction,
                 ),
-              if (primaryActionBeforeDisclosure && disclosure != null)
+              if (block == null &&
+                  primaryActionBeforeDisclosure &&
+                  disclosure != null)
                 Padding(
                   padding: EdgeInsets.only(bottom: bottom),
                   child: disclosure,
@@ -152,6 +201,8 @@ class LoopDashboardPage extends StatelessWidget {
     this.actions = const <Widget>[],
     this.tabPage = false,
     this.updating = false,
+    this.block,
+    this.onRefresh,
   });
 
   final LoopPageArchetype archetype;
@@ -170,6 +221,15 @@ class LoopDashboardPage extends StatelessWidget {
   /// The page is re-reading data it already shows (`state.refreshing`).
   final bool updating;
 
+  /// The page has nothing to show at all. It replaces the primary region and
+  /// every section; the topbar stays so the user can leave. See
+  /// [LoopFocusPage.block] for how it differs from an inline empty strip.
+  final Widget? block;
+
+  /// Pull-to-refresh over the reads this page owns. A blocked page has nothing
+  /// to re-read, so the gesture is withheld while [block] is set.
+  final Future<void> Function()? onRefresh;
+
   static const LoopLayoutMode layoutMode = LoopLayoutMode.dashboard;
 
   @override
@@ -177,37 +237,50 @@ class LoopDashboardPage extends StatelessWidget {
     final bottom = tabPage
         ? MediaQuery.paddingOf(context).bottom
         : loopChildPageBottomInset(context);
+    final topPadding = MediaQuery.paddingOf(context).top;
+    final refresh = block == null ? onRefresh : null;
     return Semantics(
       container: true,
       identifier: loopPageIdentifier(archetype, layoutMode),
       explicitChildNodes: true,
       child: Scaffold(
         key: ValueKey<String>('loop-page-${layoutMode.name}'),
-        body: CustomScrollView(
-          slivers: <Widget>[
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _StickyTopbar(
-                topPadding: MediaQuery.paddingOf(context).top,
-                child: LoopTopbar(
-                  title: title,
-                  kicker: kicker,
-                  onBack: onBack,
-                  actions: actions,
-                  minHeight: LoopLayout.topbarContentHeight,
-                  updating: updating,
+        body: loopRefreshable(
+          onRefresh: refresh,
+          // The sticky topbar scrolls inside this view, so the indicator is
+          // pushed below it rather than over the title.
+          edgeOffset: LoopLayout.topbarHeight + topPadding,
+          child: CustomScrollView(
+            physics: loopRefreshablePhysics(refresh),
+            slivers: <Widget>[
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _StickyTopbar(
+                  topPadding: topPadding,
+                  child: LoopTopbar(
+                    title: title,
+                    kicker: kicker,
+                    onBack: onBack,
+                    actions: actions,
+                    minHeight: LoopLayout.topbarContentHeight,
+                    updating: updating,
+                  ),
                 ),
               ),
-            ),
-            SliverToBoxAdapter(
-              child: KeyedSubtree(
-                key: const ValueKey<String>('loop-page-primary'),
-                child: primary,
-              ),
-            ),
-            SliverList.list(children: sections),
-            SliverPadding(padding: EdgeInsets.only(bottom: bottom)),
-          ],
+              if (block != null)
+                SliverFillRemaining(hasScrollBody: false, child: block!)
+              else ...<Widget>[
+                SliverToBoxAdapter(
+                  child: KeyedSubtree(
+                    key: const ValueKey<String>('loop-page-primary'),
+                    child: primary,
+                  ),
+                ),
+                SliverList.list(children: sections),
+              ],
+              SliverPadding(padding: EdgeInsets.only(bottom: bottom)),
+            ],
+          ),
         ),
       ),
     );
@@ -263,6 +336,8 @@ class LoopStreamPage extends StatelessWidget {
     this.composer,
     this.tabPage = false,
     this.updating = false,
+    this.block,
+    this.onRefresh,
   });
 
   final LoopPageArchetype archetype;
@@ -282,6 +357,14 @@ class LoopStreamPage extends StatelessWidget {
 
   /// The page is re-reading data it already shows (`state.refreshing`).
   final bool updating;
+
+  /// The page has nothing to show at all: it replaces the folio, the filters,
+  /// the collection and the composer. See [LoopFocusPage.block].
+  final Widget? block;
+
+  /// Pull-to-refresh over the collection this page owns. The collection must
+  /// be a scrolling region; a blocked page takes no gesture.
+  final Future<void> Function()? onRefresh;
 
   static const LoopLayoutMode layoutMode = LoopLayoutMode.stream;
 
@@ -312,18 +395,25 @@ class LoopStreamPage extends StatelessWidget {
                 minHeight: LoopLayout.topbarContentHeight,
                 updating: updating,
               ),
-              ?folio,
-              ?filters,
-              Expanded(
-                child: KeyedSubtree(
-                  key: const ValueKey<String>('loop-page-collection'),
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: bottom),
-                    child: collection,
+              if (block != null)
+                Expanded(child: block!)
+              else ...<Widget>[
+                ?folio,
+                ?filters,
+                Expanded(
+                  child: KeyedSubtree(
+                    key: const ValueKey<String>('loop-page-collection'),
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: bottom),
+                      child: loopRefreshable(
+                        onRefresh: onRefresh,
+                        child: collection,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              ?composer,
+                ?composer,
+              ],
             ],
           ),
         ),

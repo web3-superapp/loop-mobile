@@ -108,6 +108,17 @@ class _CommunityProfileScreenState
                 CommunityVerification.rejected => 'REJECTED',
               },
       ),
+      block: id != null && communityCapabilityBlocks(mode, capability)
+          ? CommunityCapabilityPageBlock(
+              key: const ValueKey<String>(
+                'community-profile-capability-unavailable',
+              ),
+              capability: capability,
+              title: '社区模块当前不可用',
+            )
+          : null,
+      onRefresh: id == null ? null : controller.reload,
+      updating: state.refreshing,
       sections: <Widget>[
         CommunityPreviewNotice(mode: mode, resource: '社区档案'),
         if (id == null)
@@ -116,15 +127,6 @@ class _CommunityProfileScreenState
             icon: 'warn',
             message: '缺少社区标识',
             reason: '请从社区列表或搜索结果进入，本页不会猜测要打开哪个社区。',
-          )
-        else if (communityCapabilityBlocks(mode, capability))
-          LoopEmpty(
-            key: const ValueKey<String>(
-              'community-profile-capability-unavailable',
-            ),
-            icon: 'warn',
-            message: '社区模块当前不可用',
-            reason: '请稍后再试。',
           )
         else if (detail == null)
           CommunityStateBlock(

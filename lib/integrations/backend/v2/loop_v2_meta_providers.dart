@@ -36,6 +36,17 @@ final loopV2MetaSnapshotProvider =
       );
     }, retry: (retryCount, error) => null);
 
+/// Whether the last D0 observation failed, i.e. LOOP was not reached.
+///
+/// It is a status, not the document: it carries no capability, no policy, no
+/// reason code and no identity, and it starts no request of its own. It exists
+/// so a surface can tell "the client never got an answer" apart from "LOOP
+/// answered and closed this capability" — two facts with two different next
+/// steps that must never share a sentence.
+final loopV2MetaUnreachableProvider = Provider<bool>(
+  (ref) => ref.watch(loopV2MetaSnapshotProvider).hasError,
+);
+
 /// Why a D0 observation was started. Recorded for tests and diagnostics only;
 /// every trigger runs the same single request pair.
 enum LoopV2MetaObservationTrigger {

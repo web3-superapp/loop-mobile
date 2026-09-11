@@ -111,7 +111,11 @@ void main() {
         findsOneWidget,
       );
       expect(find.textContaining('LAUNCH_RUNTIME_UNAVAILABLE'), findsNothing);
-      expect(find.textContaining('请稍后再试'), findsOneWidget);
+      // The page renders the reason LOOP published, not a sentence the client
+      // invented. This gate named no rule, so it keeps the neutral sentence —
+      // and it is never the "check your network" one, because LOOP answered.
+      expect(find.textContaining('暂时读不到'), findsOneWidget);
+      expect(find.text(LoopPageBlock.unreachableTitle), findsNothing);
     });
 
     testWidgets('offline and error are distinct states', (tester) async {
