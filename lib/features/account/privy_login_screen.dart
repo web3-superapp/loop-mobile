@@ -290,7 +290,7 @@ class _AuthMethod extends StatelessWidget {
 /// message it becomes the third state of decision 0064: the same brand frame
 /// carrying the five-state Offline vocabulary (the `offline` icon and the
 /// danger notice tone) plus a retry. It is never the credential form.
-class PrivySessionRestoreScreen extends StatelessWidget {
+class PrivySessionRestoreScreen extends StatefulWidget {
   const PrivySessionRestoreScreen({
     super.key,
     this.unreachableMessage,
@@ -303,10 +303,78 @@ class PrivySessionRestoreScreen extends StatelessWidget {
 
   final VoidCallback? onRetry;
 
+  /// What the frame says about itself from the very first paint.
+  ///
+  /// It used to say nothing at all: a 72 px mark and a 3 px bar on the Ink
+  /// ground, which is the same ground the native launch screen paints. On a
+  /// cold start with no network the mark and the bar are the only thing on
+  /// screen until the restore window closes, and an owner cannot tell that
+  /// from a launch that died. The sentence costs nothing and is true from the
+  /// first frame.
+  static const String restoringTitle = '正在恢复登录状态';
+  static const String restoringMessage = '正在确认这台设备上的登录状态。';
+
+  /// The wait is bounded by [LoopSessionController.defaultRestoreWindow], so
+  /// this line promises only what the deadline already guarantees: an
+  /// actionable frame arrives whether or not Privy ever answers.
+  static const String slowMessage = '还没有收到答复。再等一会儿，这里会给出可以操作的下一步。';
+
+  /// How long the silent wait may last before the frame admits it is slow.
+  /// Presentation only: it changes no session state and decides nothing.
+  static const Duration slowAfter = Duration(seconds: 3);
+
+  @override
+  State<PrivySessionRestoreScreen> createState() =>
+      _PrivySessionRestoreScreenState();
+}
+
+class _PrivySessionRestoreScreenState extends State<PrivySessionRestoreScreen> {
+  Timer? _slowTimer;
+  var _slow = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _armSlowTimer();
+  }
+
+  @override
+  void didUpdateWidget(PrivySessionRestoreScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if ((oldWidget.unreachableMessage == null) !=
+        (widget.unreachableMessage == null)) {
+      _armSlowTimer();
+    }
+  }
+
+  /// The hint belongs to the silent wait and to nothing else. Reaching the
+  /// undecided state retires it, because that frame carries its own
+  /// explanation and its own retry.
+  void _armSlowTimer() {
+    _slowTimer?.cancel();
+    _slowTimer = null;
+    if (widget.unreachableMessage != null) {
+      _slow = false;
+      return;
+    }
+    _slowTimer = Timer(PrivySessionRestoreScreen.slowAfter, () {
+      _slowTimer = null;
+      if (mounted) setState(() => _slow = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _slowTimer?.cancel();
+    _slowTimer = null;
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final message = unreachableMessage;
+    final message = widget.unreachableMessage;
     final unreachable = message != null;
+    final onRetry = widget.onRetry;
     return Scaffold(
       key: unreachable
           ? const ValueKey<String>('privy-restore-unavailable-screen')
@@ -325,7 +393,31 @@ class PrivySessionRestoreScreen extends StatelessWidget {
                   semanticLabel: 'LOOP',
                 ),
                 const SizedBox(height: 24),
-                if (!unreachable)
+                if (!unreachable) ...<Widget>[
+                  Text(
+                    PrivySessionRestoreScreen.restoringTitle,
+                    key: const ValueKey<String>('privy-restoring-title'),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 6),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: LoopSpacing.page,
+                    ),
+                    child: Text(
+                      _slow
+                          ? PrivySessionRestoreScreen.slowMessage
+                          : PrivySessionRestoreScreen.restoringMessage,
+                      key: const ValueKey<String>('privy-restoring-message'),
+                      textAlign: TextAlign.center,
+                      style: LoopTypography.caption(
+                        11,
+                        color: LoopColors.text3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
                   const SizedBox(
                     width: 160,
                     child: LinearProgressIndicator(
@@ -335,8 +427,8 @@ class PrivySessionRestoreScreen extends StatelessWidget {
                         LoopColors.lime,
                       ),
                     ),
-                  )
-                else ...<Widget>[
+                  ),
+                ] else ...<Widget>[
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 420),
                     child: LoopNotice(

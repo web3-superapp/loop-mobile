@@ -70,6 +70,7 @@ import 'package:loop_mobile/integrations/communication/stream_chat_appearance.da
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/notifications/loop_notification_event_source.dart';
+import 'package:loop_mobile/widgets/loop_page_recovery.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart'
@@ -202,6 +203,13 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         }
       },
     );
+    // The banner the failed check raises is the only surface that reports it,
+    // so it is also the only one that can ask for the read again. The
+    // coordinator keeps ownership of the read; the controller only knows how
+    // to start it.
+    ref
+        .read(loopProfileLandingProvider.notifier)
+        .bindRecheck(postAuthProfileCoordinator.resolve);
     ref.listenManual<LoopSessionState>(loopSessionProvider, (previous, next) {
       if (previous?.mode != next.mode) router.refresh();
       notificationCoordinator.onIdentityMayHaveChanged();
@@ -282,7 +290,15 @@ class _LoopAppState extends ConsumerState<LoopApp> {
           );
         }
         // One toast host above the router: fixed above the tab bar, z 90.
-        return LoopToastHost(child: content);
+        // The recovery scope sits above it so every page — including one whose
+        // whole body is a block — can offer the read again. It re-arms the
+        // public capability observation, which is the read that leaves a page
+        // unreachable in the first place; it starts no product request and
+        // decides nothing about what the answer means.
+        return LoopPageRecoveryScope(
+          retry: metaObserver.retryObservation,
+          child: LoopToastHost(child: content),
+        );
       },
     );
   }

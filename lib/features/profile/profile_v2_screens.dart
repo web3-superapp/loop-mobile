@@ -1463,22 +1463,63 @@ class _PrivacyStateBlock extends StatelessWidget {
 /// Shown inside the shell when the post-login `GET /v2/profile` check failed.
 ///
 /// Login is never blocked by that failure, so the banner is the only place
-/// that says so. It claims nothing about the stored profile, and the check
-/// runs again on the next start.
+/// that says so. It claims nothing about the stored profile.
+///
+/// The check runs once per accepted principal, which used to mean that a
+/// single moment of bad network pinned this warning to every page for the rest
+/// of the session — the copy said "下次启动会重新检查" and that was literally
+/// the only way out. So the banner carries the two things it was missing:
+///
+/// * 重试 reads the profile again. It shows that a read is running and cannot
+///   start a second one, and it announces nothing itself: the answer is
+///   published by the coordinator, so a retry that fails leaves the warning
+///   exactly where it was.
+/// * 关闭 puts the warning away for this run. It is not an answer either —
+///   nothing about the profile changes, and the next published answer brings
+///   the warning back if it is still unread.
 class ProfileAvailabilityBanner extends ConsumerWidget {
   const ProfileAvailabilityBanner({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final landing = ref.watch(loopProfileLandingProvider);
-    if (!landing.isUnavailable) return const SizedBox.shrink();
+    if (!landing.shouldWarn) return const SizedBox.shrink();
+    final controller = ref.read(loopProfileLandingProvider.notifier);
+    final rechecking = landing.rechecking;
+    // A policy refusal is an answer, so it keeps the close action and nothing
+    // else; only a read that could answer differently is worth repeating.
+    final retryable = loopProfileRecheckCanHelp(landing.failureKind);
     return LoopNotice(
       key: const ValueKey<String>('profile-availability-banner'),
       icon: 'warn',
       tone: LoopNoticeTone.warn,
       title: '资料状态暂不可读',
-      body: '${profileFailureReason(landing.failureKind)} 你可以继续浏览；下次启动会重新检查。',
+      body: rechecking
+          ? '正在重新读取资料状态。'
+          : '${profileFailureReason(landing.failureKind)}'
+                '${retryable ? ' 你可以继续浏览，也可以现在重试。' : ' 你可以继续浏览。'}',
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (retryable) ...<Widget>[
+            LoopButton(
+              key: const ValueKey<String>('profile-availability-retry'),
+              label: rechecking ? '正在重试…' : '重试',
+              onPressed: rechecking
+                  ? null
+                  : () => unawaited(controller.recheck()),
+            ),
+            const SizedBox(width: 4),
+          ],
+          LoopIconButton(
+            key: const ValueKey<String>('profile-availability-dismiss'),
+            icon: 'close',
+            label: '收起资料状态提示',
+            onPressed: controller.dismiss,
+          ),
+        ],
+      ),
     );
   }
 }

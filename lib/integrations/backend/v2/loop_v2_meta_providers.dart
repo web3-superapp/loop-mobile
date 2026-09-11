@@ -55,6 +55,9 @@ enum LoopV2MetaObservationTrigger {
   connectivityRestored,
   appResumed,
   navigation,
+
+  /// The owner pressed 重试 on a page that could not be read.
+  ownerRetry,
 }
 
 /// Keeps the D0 observation alive across a cold start that hit a dead network.
@@ -141,6 +144,34 @@ final class LoopV2MetaObserver {
     if (!_ref.read(loopV2MetaSnapshotProvider).hasError) return;
     _consecutiveFailures = 0;
     _start(trigger);
+  }
+
+  /// The owner asked for the read again, from a page that never reached LOOP.
+  ///
+  /// It differs from [observe] in exactly two ways, both of which follow from
+  /// a person having pressed a button. It is awaitable, so the page can show
+  /// that a read is running instead of looking inert; and it does not stand
+  /// down for a scheduled backoff — the owner asked now, so the pending wait
+  /// is cancelled and the ladder starts over from the first rung.
+  ///
+  /// Everything else is unchanged. It stays single-flight, because a read
+  /// already in flight is the read that was asked for. It refuses to touch a
+  /// *completed* observation, so a gate the server closed can never be retried
+  /// into a different answer, and no capability, policy or reason code is
+  /// derived here.
+  Future<void> retryObservation() async {
+    if (_disposed || _inFlight) return;
+    if (!_ref.read(loopV2MetaSnapshotProvider).hasError) return;
+    _retryTimer?.cancel();
+    _retryTimer = null;
+    _consecutiveFailures = 0;
+    _start(LoopV2MetaObservationTrigger.ownerRetry);
+    try {
+      await _ref.read(loopV2MetaSnapshotProvider.future);
+    } on Object {
+      // The observation publishes what it answered. The caller only needs to
+      // know that the read finished.
+    }
   }
 
   void _start(LoopV2MetaObservationTrigger trigger) {

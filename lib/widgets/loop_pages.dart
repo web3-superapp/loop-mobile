@@ -45,6 +45,20 @@ double loopChildPageBottomInset(BuildContext context) => math.max(
 ///
 /// A page with nothing to re-read — a step in an action, a device-local
 /// setting, a whole-page block — passes no callback and gets no gesture.
+///
+/// The region that installs the gesture also guarantees the gesture can
+/// happen. A `RefreshIndicator` only ever hears a scrollable that overscrolls,
+/// so a collection whose rows are shorter than the viewport has no pull at all
+/// unless something makes it always scrollable. A vertical scroll view with no
+/// controller of its own already gets that from `ScrollView`'s primary
+/// inheritance; one that owns a controller — the usual shape once a list
+/// paginates — does not, and would silently lose the gesture exactly when its
+/// first page is short.
+///
+/// So the refreshable region states it instead of trusting each caller to
+/// remember: a descendant that declares no physics is always scrollable, while
+/// one that declares its own keeps it, because `Scrollable` applies the
+/// widget's physics over the configuration's rather than the other way round.
 Widget loopRefreshable({
   required Widget child,
   required Future<void> Function()? onRefresh,
@@ -57,14 +71,41 @@ Widget loopRefreshable({
     edgeOffset: edgeOffset,
     displacement: 24,
     strokeWidth: 2.2,
-    color: LoopColors.mint,
-    backgroundColor: LoopColors.card2,
-    child: child,
+    // The indicator is a Chalk chip with an Ink arc, the same pairing the tab
+    // bar uses. Both colours are opaque on purpose: the translucent card token
+    // it used before composited with whatever it was dragged over, and over
+    // the Lime folio that came out as a dark olive smudge rather than a
+    // control. A chip that does not take its colour from the page behind it
+    // reads the same on Ink and on Lime.
+    color: LoopColors.ink,
+    backgroundColor: LoopColors.chalk,
+    child: Builder(
+      builder: (context) {
+        final ambient = ScrollConfiguration.of(context);
+        return ScrollConfiguration(
+          // The platform's own physics stay underneath: a configuration's
+          // physics is used as given rather than applied on top of the
+          // platform default, so composing it here is what keeps Android
+          // clamping and iOS bouncing instead of replacing them.
+          behavior: ambient.copyWith(
+            physics: AlwaysScrollableScrollPhysics(
+              parent: ambient.getScrollPhysics(context),
+            ),
+          ),
+          child: child,
+        );
+      },
+    ),
   );
 }
 
 /// The physics a refreshable region needs: a short page must still overscroll,
 /// or the gesture would exist only on pages that happen to be long.
+///
+/// [loopRefreshable] now supplies this as the ambient default, so a collection
+/// that states nothing gets it anyway. It stays because a scroll view that
+/// builds its own physics — the dashboard's `CustomScrollView` does — is
+/// clearer stating it, and because passing it remains correct.
 ScrollPhysics? loopRefreshablePhysics(Future<void> Function()? onRefresh) =>
     onRefresh == null ? null : const AlwaysScrollableScrollPhysics();
 
@@ -351,6 +392,10 @@ class LoopStreamPage extends StatelessWidget {
   final Widget? filters;
 
   /// The scrollable region (`[data-collection-region]`).
+  ///
+  /// It does not have to state overscroll physics: while [onRefresh] is set,
+  /// the refreshable region makes always-scrollable the ambient default, so a
+  /// collection shorter than the viewport still has the gesture.
   final Widget collection;
   final LoopComposer? composer;
   final bool tabPage;

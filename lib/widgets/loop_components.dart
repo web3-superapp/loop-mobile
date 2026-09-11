@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show PointMode;
 
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_page_recovery.dart';
 
 /// Global components of the Lime Ledger system (01 handover chapter 6.1),
 /// each mapped from its `style-v2.css` class. Colours, radii and spacing come
@@ -2255,14 +2257,14 @@ class LoopEmpty extends StatelessWidget {
 /// brand mark, one heading, one explanation and at most one next step,
 /// centred in the space the page already owns. Blocks inside a page never
 /// use it — they use [LoopEmpty].
-class LoopPageBlock extends StatelessWidget {
+class LoopPageBlock extends StatefulWidget {
   const LoopPageBlock({
     required this.title,
     required this.message,
     super.key,
     this.action,
     this.margin = const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-  });
+  }) : recoverable = false;
 
   /// The one whole-page state that carries no server reason, because the
   /// client never reached LOOP.
@@ -2271,13 +2273,18 @@ class LoopPageBlock extends StatelessWidget {
   /// different facts with two different next steps — change network and try
   /// again, versus wait, because nothing on this device can change it. They
   /// never share a sentence and are never derived from one another.
-  const LoopPageBlock.unreachable({Key? key, Widget? action})
-    : this(
-        title: unreachableTitle,
-        message: unreachableMessage,
-        action: action,
-        key: key,
-      );
+  ///
+  /// This is also the only block that may ask again, because it is the only
+  /// one whose answer a second read can change. The action itself comes from
+  /// the ambient [LoopPageRecoveryScope]; without one the page keeps the plain
+  /// block it had.
+  const LoopPageBlock.unreachable({
+    super.key,
+    this.action,
+    this.margin = const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+  }) : title = unreachableTitle,
+       message = unreachableMessage,
+       recoverable = true;
 
   /// Heading for [LoopPageBlock.unreachable].
   static const String unreachableTitle = '现在连不上 LOOP';
@@ -2286,19 +2293,71 @@ class LoopPageBlock extends StatelessWidget {
   /// because none was received.
   static const String unreachableMessage = '这一页没有读到任何内容，也没有提交任何操作。请检查网络后重试。';
 
+  /// Copy for the retry action, its running state, and what a retry that
+  /// changed nothing is allowed to say.
+  static const String retryLabel = '重试';
+  static const String retryingLabel = '正在重试…';
+  static const String retryFailedMessage = '刚才这次还是没连上。等网络恢复后再试一次。';
+
   final String title;
   final String message;
   final Widget? action;
   final EdgeInsets margin;
 
+  /// Whether a second read could change this page's answer.
+  ///
+  /// Only the unreachable state can: LOOP was never reached, so another read
+  /// on a working network genuinely answers something else. A gate the server
+  /// closed carries the server's own reason, and no retry on this device can
+  /// move it — offering one there would only promise a change that cannot
+  /// happen.
+  final bool recoverable;
+
+  @override
+  State<LoopPageBlock> createState() => _LoopPageBlockState();
+}
+
+class _LoopPageBlockState extends State<LoopPageBlock> {
+  /// Single-flight: while a read is running the action is disabled, so a
+  /// second tap cannot start a second one.
+  var _retrying = false;
+
+  /// A retry finished and this block is still the page. That read did not get
+  /// through either — the page says so and stays exactly where it is. It never
+  /// falls back to a skeleton and never reports a success it did not observe:
+  /// a read that *did* get through replaces this block from the outside.
+  var _retryFailed = false;
+
+  Future<void> _retry(LoopPageRetry retry) async {
+    if (_retrying) return;
+    setState(() {
+      _retrying = true;
+      _retryFailed = false;
+    });
+    try {
+      await retry();
+    } on Object {
+      // The observation publishes its own failure. This block only has to
+      // stop saying that a read is running.
+    }
+    if (!mounted) return;
+    setState(() {
+      _retrying = false;
+      _retryFailed = true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final retry = widget.recoverable
+        ? LoopPageRecoveryScope.maybeOf(context)
+        : null;
     return Semantics(
       container: true,
       child: Center(
         key: const ValueKey<String>('loop-page-block'),
         child: Padding(
-          padding: margin,
+          padding: widget.margin,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 320),
             child: Column(
@@ -2310,19 +2369,49 @@ class LoopPageBlock extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  title,
+                  widget.title,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  message,
+                  widget.message,
                   textAlign: TextAlign.center,
                   style: LoopTypography.caption(11, color: LoopColors.text3),
                 ),
-                if (action != null) ...<Widget>[
+                if (retry != null && _retryFailed && !_retrying) ...<Widget>[
+                  const SizedBox(height: 8),
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      LoopPageBlock.retryFailedMessage,
+                      key: const ValueKey<String>(
+                        'loop-page-block-retry-failed',
+                      ),
+                      textAlign: TextAlign.center,
+                      style: LoopTypography.caption(
+                        11,
+                        color: LoopColors.text2,
+                      ),
+                    ),
+                  ),
+                ],
+                if (retry != null) ...<Widget>[
                   const SizedBox(height: 18),
-                  action!,
+                  LoopButton(
+                    key: const ValueKey<String>('loop-page-block-retry'),
+                    label: _retrying
+                        ? LoopPageBlock.retryingLabel
+                        : LoopPageBlock.retryLabel,
+                    primary: true,
+                    onPressed: _retrying
+                        ? null
+                        : () => unawaited(_retry(retry)),
+                  ),
+                ],
+                if (widget.action != null) ...<Widget>[
+                  SizedBox(height: retry == null ? 18 : 10),
+                  widget.action!,
                 ],
               ],
             ),
