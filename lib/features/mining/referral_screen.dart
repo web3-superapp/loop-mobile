@@ -74,7 +74,6 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
             ? '加成只计入 Mining Power，不是收入、佣金或返佣。'
             : '${overview.validRelationships} 个有效关系 · '
                   '${overview.pendingRelationships} 个待验证；加成只计入 Mining Power。',
-        stamp: overview?.rules.configVersion,
       ),
       sections: <Widget>[
         if (blocked)
@@ -340,7 +339,6 @@ class _BindingBlock extends StatelessWidget {
                     '深度 L${inviter.depth} · '
                     '${referralValidationStatusLabel(inviter.validationStatus)} · '
                     '锁定于 ${launchTimestampLabel(inviter.lockedAt)}',
-                trailingCaption: inviter.configVersion,
               ),
             ],
           )
@@ -434,8 +432,7 @@ class _RulesFooter extends StatelessWidget {
       key: const ValueKey<String>('referral-rules-footer'),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: Text(
-        '规则版本 ${rules.configVersion} · 生效于 '
-        '${launchTimestampLabel(rules.effectiveAt)} · '
+        '生效于 ${launchTimestampLabel(rules.effectiveAt)} · '
         '最大深度 L${rules.maximumDepth} · '
         '绑定窗口 ${rules.claimWindowDays} 天 · 作用于 ${rules.appliesTo}',
         style: LoopTypography.caption(11, color: LoopColors.text3),

@@ -208,8 +208,7 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
           LoopProvenanceFooter(
             key: const ValueKey<String>('settings-version'),
             text: settings.updatedAt == null
-                ? '账号设置尚未写入过（版本 ${settings.version}，规则 '
-                      '${settings.policy.configVersion}）'
+                ? '账号设置尚未写入过（版本 ${settings.version}）'
                 : '版本 ${settings.version} · 更新于 '
                       '${loopRelativeTime(settings.updatedAt!)}',
           ),

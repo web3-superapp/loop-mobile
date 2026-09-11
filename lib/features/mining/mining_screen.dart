@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
@@ -72,9 +73,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
         kicker: 'MINING POWER',
         heading: launchMissingFigure,
         caption: '算力、今日预估、累计与待领取都要等挖矿公式版本被批准后才能计算。',
-        stamp: summary?.formula.pendingVersion == null
-            ? null
-            : '待批准（${summary!.formula.pendingVersion}）',
+        stamp: summary?.formula.pendingVersion == null ? null : '待批准',
       ),
       sections: <Widget>[
         if (blocked)
@@ -160,6 +159,9 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
   }
 }
 
+/// The formula gate. The row says whether a formula is waiting for approval;
+/// the version waiting for it is a backend identifier, so it stays inside the
+/// collapsed 详情 rather than on the row.
 class _FormulaBlock extends StatelessWidget {
   const _FormulaBlock({required this.formula});
 
@@ -168,17 +170,39 @@ class _FormulaBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pending = formula.pendingVersion;
-    return LoopRecordGroup(
-      key: const ValueKey<String>('mining-formula'),
-      rows: <LoopRecordRow>[
-        LoopRecordRow(
-          key: const ValueKey<String>('mining-formula-row'),
-          title: '挖矿公式',
-          subtitle: launchReasonCodeText(formula.reasonCode),
-          trailing: pending ?? launchMissingFigure,
-          trailingCaption: pending == null ? null : '待批准',
-          semanticLabel: pending == null ? '挖矿公式尚未确定' : '挖矿公式待批准，版本 $pending',
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopRecordGroup(
+          key: const ValueKey<String>('mining-formula'),
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('mining-formula-row'),
+              title: '挖矿公式',
+              // A pending draft already carries the block's own sentence in
+              // 算力与产出 above; repeating it here would be the same screen
+              // saying one thing twice.
+              subtitle: pending == null
+                  ? launchReasonCodeText(formula.reasonCode)
+                  : '批准后，上面的数字才会有来源。',
+              trailing: pending == null ? launchMissingFigure : '待批准',
+              semanticLabel: pending == null ? '挖矿公式尚未确定' : '挖矿公式待批准',
+            ),
+          ],
         ),
+        if (pending != null)
+          LoopDisclosure(
+            key: const ValueKey<String>('mining-formula-details'),
+            summary: '详情',
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              child: Text(
+                '待批准的公式版本 $pending',
+                key: const ValueKey<String>('mining-formula-pending-version'),
+                style: LoopTypography.caption(11, color: LoopColors.text3),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -198,20 +222,14 @@ class _SnapshotBlock extends StatelessWidget {
         message: '还没有结算记录',
         reason: launchReasonCodeText(reasonCode),
       ),
-      MiningSnapshotComputed(
-        :final blockNumber,
-        :final formulaVersion,
-        :final computedAt,
-      ) =>
+      MiningSnapshotComputed(:final blockNumber, :final computedAt) =>
         LoopRecordGroup(
           key: const ValueKey<String>('mining-snapshot'),
           rows: <LoopRecordRow>[
             LoopRecordRow(
               key: const ValueKey<String>('mining-snapshot-row'),
               title: '最近一次结算',
-              subtitle:
-                  '区块 $blockNumber · 公式 $formulaVersion · '
-                  '${launchTimestampLabel(computedAt)}',
+              subtitle: '区块 $blockNumber · ${launchTimestampLabel(computedAt)}',
             ),
           ],
         ),

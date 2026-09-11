@@ -646,9 +646,8 @@ class _QuoteFacts extends StatelessWidget {
           key: const ValueKey<String>('swap-quote-provenance'),
           text:
               '报价方 ${value.provider} · 报价于 '
-              '${loopRelativeTime(value.quotedAt, now: clock?.call())} · '
-              '策略 ${quote.policy.configVersion}'
-              '${quote.policy.isPendingProductConfirmation ? '（待产品确认）' : ''}',
+              '${loopRelativeTime(value.quotedAt, now: clock?.call())}'
+              '${quote.policy.isPendingProductConfirmation ? ' · 待产品确认' : ''}',
         ),
       ],
     );

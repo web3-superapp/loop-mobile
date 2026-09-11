@@ -64,7 +64,6 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
     }
     final detail = state.value;
     final config = detail?.config;
-    final pendingVersion = detail?.pendingConfigVersion;
 
     return LoopDashboardPage(
       key: const ValueKey<String>('launch-detail-screen'),
@@ -88,9 +87,7 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
         // No countdown, no round label, no progress: all three are contract
         // facts. The caption states what the record can and cannot prove.
         caption: '项目资料与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。',
-        stamp: detail == null
-            ? null
-            : launchPendingConfirmationLabel(pendingVersion),
+        stamp: detail == null ? null : launchPendingConfirmationLabel,
       ),
       sections: <Widget>[
         if (blocked)
@@ -147,7 +144,6 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
                   launchConfigSlotRow(
                     label: config.slots.entries[index].$1,
                     slot: config.slots.entries[index].$2,
-                    configVersion: config.configVersion,
                     position: launchRowPosition(
                       index,
                       config.slots.entries.length,
@@ -318,9 +314,7 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
             ? launchMissingFigure
             : '${detail.rounds.length} 个轮次',
         caption: '轮数、时间、价格、资格与上限都由这次发射的配置决定；还没确认的显示为待确认。',
-        stamp: detail == null
-            ? null
-            : launchPendingConfirmationLabel(config?.configVersion),
+        stamp: detail == null ? null : launchPendingConfirmationLabel,
       ),
       sections: <Widget>[
         if (blocked)
@@ -369,7 +363,6 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
                   launchConfigSlotRow(
                     label: config.slots.entries[index].$1,
                     slot: config.slots.entries[index].$2,
-                    configVersion: config.configVersion,
                     position: launchRowPosition(
                       index,
                       config.slots.entries.length,
@@ -621,11 +614,12 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
               ),
               LoopRecordRow(
                 key: const ValueKey<String>('launch-tier-config-version'),
-                title: '配置版本',
+                title: '资格规则',
+                // The version that carries the rule is a backend identifier;
+                // when it takes effect is the part a reader can use.
                 subtitle: eligibility.effectiveAt == null
                     ? '尚未生效'
                     : '生效于 ${launchTimestampLabel(eligibility.effectiveAt!)}',
-                trailing: eligibility.configVersion ?? launchMissingFigure,
                 position: LoopRowPosition.middle,
               ),
               LoopRecordRow(

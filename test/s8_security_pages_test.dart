@@ -169,7 +169,7 @@ void main() {
       await scrollToS8Section(tester, notice);
       expect(notice, findsOneWidget);
       expect(find.textContaining('阈值 2'), findsOneWidget);
-      expect(find.textContaining('deviceRiskV1'), findsOneWidget);
+      expect(find.textContaining('deviceRiskV1'), findsNothing);
     });
   });
 

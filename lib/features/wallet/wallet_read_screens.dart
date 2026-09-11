@@ -228,8 +228,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           LoopProvenanceFooter(
             key: const ValueKey<String>('wallet-gas-reserve'),
             text:
-                '手续费保留 ${loopFormatDecimal(balances.gasReservePolicy.nativeReserve)} BNB'
-                ' · 配置 ${balances.gasReservePolicy.configVersion}',
+                '手续费保留 '
+                '${loopFormatDecimal(balances.gasReservePolicy.nativeReserve)} BNB',
           ),
           // Decision 0038: the Launch chain block exists only when the
           // backend published one. Its balance is a testnet figure and is

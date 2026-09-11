@@ -236,7 +236,7 @@ class _TrendingBlock extends StatelessWidget {
               ),
             LoopProvenanceFooter(
               key: const ValueKey<String>('market-trending-rules'),
-              text: '${rules.orderingLabel} · 规则 ${rules.configVersion}',
+              text: rules.orderingLabel,
             ),
           ],
         );

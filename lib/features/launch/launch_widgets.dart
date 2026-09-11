@@ -122,13 +122,22 @@ class LaunchEmptyMetric extends StatelessWidget {
     required this.reasonCode,
     super.key,
     this.note,
+    this.showReason = true,
   });
 
   final String label;
   final String reasonCode;
 
-  /// An extra sentence the page owns, such as "待确认（configVersion）".
+  /// An extra sentence the page owns, such as "待确认".
   final String? note;
+
+  /// Whether this metric prints the reason under its own figure.
+  ///
+  /// [LaunchEmptyMetricGrid] turns it off when every metric in the grid would
+  /// print the same sentence and states it once for the whole block instead.
+  /// The reason stays in the metric's semantic label either way, so a screen
+  /// reader still hears it on each figure.
+  final bool showReason;
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +146,9 @@ class LaunchEmptyMetric extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Semantics(
         container: true,
-        label: '$label，暂无数值。${launchReasonCodeText(reasonCode)}',
+        label:
+            '$label，暂无数值。'
+            '${launchMetricReasonLine(reasonCode: reasonCode, note: note)}',
         child: ExcludeSemantics(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,13 +166,13 @@ class LaunchEmptyMetric extends StatelessWidget {
                   color: LoopColors.chalk,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                note == null
-                    ? launchReasonCodeText(reasonCode)
-                    : '$note · ${launchReasonCodeText(reasonCode)}',
-                style: LoopTypography.caption(11, color: LoopColors.text2),
-              ),
+              if (showReason) ...<Widget>[
+                const SizedBox(height: 4),
+                Text(
+                  launchMetricReasonLine(reasonCode: reasonCode, note: note),
+                  style: LoopTypography.caption(11, color: LoopColors.text2),
+                ),
+              ],
             ],
           ),
         ),
@@ -170,8 +181,20 @@ class LaunchEmptyMetric extends StatelessWidget {
   }
 }
 
+/// The one sentence a figure-less metric prints under its em dash.
+String launchMetricReasonLine({required String reasonCode, String? note}) =>
+    note == null
+    ? launchReasonCodeText(reasonCode)
+    : '$note · ${launchReasonCodeText(reasonCode)}';
+
 /// A grid of [LaunchEmptyMetric]s. Every S7 dashboard block uses it so no page
 /// can accidentally render one figure and one placeholder side by side.
+///
+/// One missing baseline is what empties most of these figures at once, so the
+/// same sentence would otherwise print under every one of them. The sentence
+/// shared by the most metrics is stated once for the block; a metric whose
+/// reason differs — "待领取" under a reward authority that is separately closed
+/// — keeps its own line, because that one is not the block's story.
 class LaunchEmptyMetricGrid extends StatelessWidget {
   const LaunchEmptyMetricGrid({required this.metrics, super.key, this.note});
 
@@ -179,36 +202,67 @@ class LaunchEmptyMetricGrid extends StatelessWidget {
   final List<(String, String)> metrics;
   final String? note;
 
+  /// The reason line carried by more metrics than any other, or `null` when no
+  /// line repeats and every metric speaks for itself.
+  String? get _sharedReason {
+    final counts = <String, int>{};
+    for (final metric in metrics) {
+      final line = launchMetricReasonLine(reasonCode: metric.$2, note: note);
+      counts[line] = (counts[line] ?? 0) + 1;
+    }
+    String? shared;
+    var best = 1;
+    for (final entry in counts.entries) {
+      if (entry.value > best) {
+        shared = entry.key;
+        best = entry.value;
+      }
+    }
+    return shared;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final shared = _sharedReason;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
+        if (shared != null)
+          Padding(
+            key: const ValueKey<String>('launch-metric-grid-reason'),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 2),
+            child: Text(
+              shared,
+              style: LoopTypography.caption(11, color: LoopColors.text2),
+            ),
+          ),
         for (final metric in metrics)
           LaunchEmptyMetric(
             label: metric.$1,
             reasonCode: metric.$2,
             note: note,
+            showReason:
+                shared !=
+                launchMetricReasonLine(reasonCode: metric.$2, note: note),
           ),
       ],
     );
   }
 }
 
-/// One configuration slot row: the confirmed value, or "待确认（configVersion）"
-/// with the server's own reason. Nothing here is ever a client default.
+/// One configuration slot row: the confirmed value, or "待确认" with the
+/// server's own reason. Nothing here is ever a client default, and the
+/// version that confirmed the slot stays off the row.
 LoopRecordRow launchConfigSlotRow({
   required String label,
   required LaunchConfigSlot slot,
-  required String? configVersion,
   LoopRowPosition position = LoopRowPosition.single,
 }) {
-  final pendingLabel = launchPendingConfirmationLabel(configVersion);
   return switch (slot) {
     LaunchConfigSlotConfirmed(:final value) => LoopRecordRow(
       key: ValueKey<String>('launch-slot-$label'),
       title: label,
-      subtitle: '已确认版本 ${configVersion ?? launchMissingFigure}',
+      subtitle: '已确认',
       trailing: value,
       position: position,
       semanticLabel: '$label，$value',
@@ -216,10 +270,11 @@ LoopRecordRow launchConfigSlotRow({
     LaunchConfigSlotPending(:final reasonCode) => LoopRecordRow(
       key: ValueKey<String>('launch-slot-$label'),
       title: label,
-      subtitle: '$pendingLabel · ${launchReasonCodeText(reasonCode)}',
+      subtitle:
+          '$launchPendingConfirmationLabel · ${launchReasonCodeText(reasonCode)}',
       trailing: launchMissingFigure,
       position: position,
-      semanticLabel: '$label，$pendingLabel',
+      semanticLabel: '$label，$launchPendingConfirmationLabel',
     ),
   };
 }
@@ -231,7 +286,7 @@ LoopRecordRow launchRoundRow({
   VoidCallback? onTap,
   bool selected = false,
 }) {
-  final pendingLabel = launchPendingConfirmationLabel(round.configVersion);
+  const pendingLabel = launchPendingConfirmationLabel;
   final tier = round.eligibilityTier;
   final parts = <String>[
     tier == null ? '资格 $pendingLabel' : '资格 ${launchTierLabel(tier)}',
@@ -302,32 +357,26 @@ String launchTimestampLabel(DateTime observedAt) {
       '${two(value.hour)}:${two(value.minute)} UTC';
 }
 
-/// The provenance footer every S7 catalogue block carries: the configuration
-/// version, the source and the observation time.
+/// The provenance footer every S7 catalogue block carries: the source and the
+/// observation time. The configuration version behind the block is a backend
+/// identifier and stays off the footer.
 class LaunchSourceFooter extends StatelessWidget {
   const LaunchSourceFooter({
     required this.source,
     required this.observedAt,
     super.key,
-    this.configVersion,
   });
 
-  /// The version the response itself carried. A response without one omits
-  /// the segment rather than restating a version the client assumed.
-  final String? configVersion;
   final String source;
   final DateTime observedAt;
 
   @override
   Widget build(BuildContext context) {
-    final version = configVersion;
     return Padding(
       key: const ValueKey<String>('launch-source-footer'),
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
       child: Text(
-        '来源 $source'
-        '${version == null ? '' : ' · 版本 $version'}'
-        ' · 观察于 ${launchTimestampLabel(observedAt)}',
+        '来源 $source · 观察于 ${launchTimestampLabel(observedAt)}',
         style: LoopTypography.caption(11, color: LoopColors.text3),
       ),
     );
@@ -348,10 +397,9 @@ LoopRecordRow launchCatalogRow({
     LaunchScheduleStatus.live => '发射中',
     LaunchScheduleStatus.ended => '已结束',
   };
-  final configVersion = launch.configVersion;
-  final config = configVersion == null
-      ? launchPendingConfirmationLabel(null)
-      : '配置 $configVersion';
+  final config = launch.configVersion == null
+      ? launchPendingConfirmationLabel
+      : '配置已确认';
   // The chain is the launch's own published value. It is stated, never
   // inferred from the segment or from the catalogue's own chain.
   final testnet = launch.isTestnetChain;

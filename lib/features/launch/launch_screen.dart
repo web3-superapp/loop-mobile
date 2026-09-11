@@ -143,7 +143,6 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
           const LoopLabel('LOOP 质押'),
           LaunchUnavailableCard(label: 'LOOP 质押', fact: overview.staking),
           LaunchSourceFooter(
-            configVersion: overview.catalog.configVersion,
             source: overview.catalog.source,
             observedAt: overview.catalog.observedAt,
           ),

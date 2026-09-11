@@ -835,7 +835,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             selected: state.draft.avatarRef,
             alias: state.draft.alias,
             enabled: state.canEdit,
-            uploadReasonCode: avatarUpload.reasonCode,
+            uploadUsable: avatarUpload.isUsable,
             onSelected: controller.editAvatarRef,
           ),
           const LoopLabel('别名'),
@@ -1009,14 +1009,17 @@ class _AvatarPickerCard extends ConsumerWidget {
     required this.selected,
     required this.alias,
     required this.enabled,
-    required this.uploadReasonCode,
+    required this.uploadUsable,
     required this.onSelected,
   });
 
   final String? selected;
   final String? alias;
   final bool enabled;
-  final String? uploadReasonCode;
+
+  /// Whether the backend has opened custom avatar upload. While it is closed
+  /// the card says so once; the capability's own code stays off the screen.
+  final bool uploadUsable;
   final ValueChanged<String?> onSelected;
 
   @override
@@ -1068,17 +1071,17 @@ class _AvatarPickerCard extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: 10),
-          Text(
-            uploadReasonCode == null
-                ? '自定义头像上传暂不可用，只能选择预设头像。'
-                : '自定义头像上传暂不可用（$uploadReasonCode），只能选择预设头像。',
-            textAlign: TextAlign.center,
-            style: LoopTypography.caption(
-              11,
-              color: LoopColors.ink.withValues(alpha: 0.64),
+          if (!uploadUsable) ...<Widget>[
+            const SizedBox(height: 10),
+            Text(
+              '自定义头像上传暂不可用，只能选择预设头像。',
+              textAlign: TextAlign.center,
+              style: LoopTypography.caption(
+                11,
+                color: LoopColors.ink.withValues(alpha: 0.64),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );

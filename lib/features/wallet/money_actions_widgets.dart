@@ -124,8 +124,7 @@ class MoneyFactsFooter extends StatelessWidget {
       key: const ValueKey<String>('money-facts-footer'),
       text:
           '区块 ${balance.blockNumber} · 事实观察于 '
-          '${loopRelativeTime(intent.factsObservedAt, now: now)} · '
-          '策略 ${intent.policy.configVersion}',
+          '${loopRelativeTime(intent.factsObservedAt, now: now)}',
     );
   }
 }

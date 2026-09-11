@@ -163,7 +163,7 @@ void main() {
       expect(find.text(launchMissingFigure), findsWidgets);
     });
 
-    testWidgets('every configuration slot says 待确认 with its version', (
+    testWidgets('every configuration slot says 待确认 without its version', (
       tester,
     ) async {
       await pumpS7Page(
@@ -175,7 +175,9 @@ void main() {
       final slots = find.byKey(const ValueKey<String>('launch-detail-slots'));
       await scrollToS7Section(tester, slots);
       expect(slots, findsOneWidget);
-      expect(find.textContaining('待确认（launchMoonCatV1）'), findsWidgets);
+      expect(find.textContaining('待确认'), findsWidgets);
+      // The version that will confirm the slot is a backend identifier.
+      expect(find.textContaining('launchMoonCatV1'), findsNothing);
       // None of the prototype's contract numbers appear.
       expect(find.textContaining('10 亿'), findsNothing);
       expect(find.textContaining('0.5%'), findsNothing);
@@ -289,7 +291,7 @@ void main() {
         find.byKey(const ValueKey<String>('launch-tier-mode-whitelist')),
         findsOneWidget,
       );
-      expect(find.text('launchMoonCatV1'), findsWidgets);
+      expect(find.text('launchMoonCatV1'), findsNothing);
     });
 
     testWidgets('eligibility never depends on staking', (tester) async {

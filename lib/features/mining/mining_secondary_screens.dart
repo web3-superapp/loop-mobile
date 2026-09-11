@@ -459,19 +459,14 @@ class _WeightBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (weight) {
-      MiningCommunityWeightApproved(
-        :final value,
-        :final configVersion,
-        :final reviewedAt,
-      ) =>
+      MiningCommunityWeightApproved(:final value, :final reviewedAt) =>
         LoopRecordGroup(
           key: const ValueKey<String>('mining-community-weight-approved'),
           rows: <LoopRecordRow>[
             LoopRecordRow(
               key: const ValueKey<String>('mining-community-weight-row'),
               title: '已授予权重',
-              subtitle:
-                  '版本 $configVersion · 审核于 ${launchTimestampLabel(reviewedAt)}',
+              subtitle: '审核于 ${launchTimestampLabel(reviewedAt)}',
               trailing: value,
             ),
           ],
@@ -533,7 +528,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
             ? launchMissingFigure
             : miningRuleKeyText(draft.expressionKey),
         caption: '规则以已批准的公式为准。下面是还没批准的草案。',
-        stamp: draft == null ? null : '待批准（${draft.configVersion}）',
+        stamp: draft == null ? null : '待批准',
       ),
       sections: <Widget>[
         if (blocked)
@@ -591,7 +586,6 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
                   ),
                   title: 'L${rules.referral.levels[index].level}',
                   subtitle:
-                      '版本 ${rules.referral.configVersion} · '
                       '生效于 '
                       '${launchTimestampLabel(rules.referral.effectiveAt)}',
                   trailing: '${rules.referral.levels[index].boostPercent}%',
@@ -697,7 +691,6 @@ class _FormulaVersionBlock extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Text(
-            '版本 ${version.configVersion} · '
             '${miningFormulaStatusLabel(version.status)}'
             '${version.approvedAt == null ? '' : ' · 批准于 ${launchTimestampLabel(version.approvedAt!)}'}',
             style: Theme.of(context).textTheme.labelMedium,

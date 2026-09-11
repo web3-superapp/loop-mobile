@@ -307,7 +307,7 @@ class _SecurityDevicesBlock extends StatelessWidget {
                 title: '最近新增了多个会话',
                 body:
                     '最近 ${policy.windowHours} 小时内新建了 $recent 个会话，达到提示阈值 '
-                    '${policy.newSessionThreshold}（规则 ${policy.configVersion}）。'
+                    '${policy.newSessionThreshold}。'
                     '这只是提示，不会因此要求二次验证或冷却。',
                 margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               ),

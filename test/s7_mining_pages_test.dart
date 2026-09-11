@@ -88,7 +88,7 @@ void main() {
       expect(_figures(tester), isEmpty);
     });
 
-    testWidgets('the pending formula version is named and labelled', (
+    testWidgets('the pending formula is labelled without naming its version', (
       tester,
     ) async {
       await pumpS7Page(
@@ -97,10 +97,60 @@ void main() {
         mining: FakeMiningGateway(),
       );
 
-      expect(find.textContaining('待批准（MININGFORMULAV1-DRAFT）'), findsOneWidget);
+      expect(find.text('待批准'), findsWidgets);
+      // The stamp and the row say the status; the version says nothing a
+      // reader can act on and stays out of both.
+      expect(find.textContaining('MININGFORMULAV1-DRAFT'), findsNothing);
       final formula = find.byKey(const ValueKey<String>('mining-formula-row'));
       await scrollToS7Section(tester, formula);
-      expect(find.text('miningFormulaV1-draft'), findsWidgets);
+      expect(find.text('miningFormulaV1-draft'), findsNothing);
+    });
+
+    testWidgets('the pending formula version stays inside the 详情', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(),
+      );
+
+      final details = find.byKey(
+        const ValueKey<String>('mining-formula-details'),
+      );
+      await scrollToS7Section(tester, details);
+      expect(details, findsOneWidget);
+      expect(find.textContaining('miningFormulaV1-draft'), findsNothing);
+
+      await tester.tap(
+        find.descendant(
+          of: details,
+          matching: find.byKey(
+            const ValueKey<String>('loop-disclosure-summary'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('miningFormulaV1-draft'), findsOneWidget);
+    });
+
+    testWidgets('one missing baseline is explained once, not per metric', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(),
+      );
+
+      // Five of the six figures are empty for the same reason. The block
+      // states it once; the sixth keeps its own, different sentence.
+      expect(find.text('挖矿公式还没有批准，算力、产量、排行与邀请加成都暂时不可用。'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('launch-metric-grid-reason')),
+        findsOneWidget,
+      );
+      expect(find.text('奖励发放还没有开启，暂时不能领取。'), findsOneWidget);
     });
 
     testWidgets('the snapshot is absent, not zero', (tester) async {
@@ -348,7 +398,7 @@ void main() {
       );
 
       expect(find.text('0.35'), findsOneWidget);
-      expect(find.textContaining('communityWeightV1'), findsOneWidget);
+      expect(find.textContaining('communityWeightV1'), findsNothing);
     });
 
     testWidgets('a missing communityId fails closed', (tester) async {
@@ -366,7 +416,7 @@ void main() {
   });
 
   group('mining-rules', () {
-    testWidgets('the pending version is shown and labelled 待批准', (
+    testWidgets('the draft is labelled 待批准 without its version', (
       tester,
     ) async {
       await pumpS7Page(
@@ -375,7 +425,8 @@ void main() {
         mining: FakeMiningGateway(),
       );
 
-      expect(find.textContaining('待批准（MININGFORMULAV1-DRAFT）'), findsOneWidget);
+      expect(find.text('待批准'), findsWidgets);
+      expect(find.textContaining('MININGFORMULAV1-DRAFT'), findsNothing);
       expect(find.text('算力 = 持有量 × 参考价 × 权重'), findsWidgets);
       expect(find.textContaining('每日产出 = 我的算力 ÷ 全网算力'), findsOneWidget);
     });
@@ -457,7 +508,7 @@ void main() {
         await scrollToS7Section(tester, row);
         expect(row, findsOneWidget, reason: 'L$level');
       }
-      expect(find.textContaining('referralRulesV1'), findsWidgets);
+      expect(find.textContaining('referralRulesV1'), findsNothing);
     });
   });
 }

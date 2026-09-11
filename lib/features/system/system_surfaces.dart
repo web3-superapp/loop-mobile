@@ -876,7 +876,7 @@ class _ForceUpdatePage extends StatelessWidget {
           _SourceUnavailableNotice(
             keyName: 'update-policy-unavailable',
             title: '没有已批准的最低版本策略',
-            body: '只有当 client-policy 的 versionGate 为 available 且当前版本低于硬性下限时，LOOP 才会拦截。',
+            body: '只有已批准的版本策略要求更新，并且当前版本低于它的下限时，LOOP 才会拦截。',
           ),
         ],
         primaryAction: _returnAction(onContinue),
@@ -907,10 +907,6 @@ class _ForceUpdatePage extends StatelessWidget {
                   label: '最低支持版本',
                   value: requirement.minimumSupportedVersion!,
                 ),
-              LoopKeyValue(
-                label: '策略版本',
-                value: requirement.configVersion ?? '—',
-              ),
             ],
           ),
         ),
@@ -1049,7 +1045,7 @@ class _RegionPage extends StatelessWidget {
           _SourceUnavailableNotice(
             keyName: 'region-policy-unavailable',
             title: '没有已批准的地区判定',
-            body: 'LOOP 不会从设备语言、SIM 或 IP 推断地区；regionGate 为 unavailable 时视为“未知，未批准”。',
+            body: 'LOOP 不会从设备语言、SIM 或 IP 推断地区；没有已批准的判定时一律视为未知。',
           ),
         ],
         primaryAction: _returnAction(onReturn),
@@ -1064,7 +1060,7 @@ class _RegionPage extends StatelessWidget {
         caption: restriction.readOnlyAssetAccess == true
             ? '资产保持只读可见；受限功能按各自页面的当前状态显示。'
             : '受限功能按各自页面的当前状态显示；此页不列出未确认的可用范围。',
-        stamp: restriction.reasonCode ?? 'RESTRICTED',
+        stamp: 'RESTRICTED',
         archetype: LoopFolioArchetype.state,
       ),
       body: <Widget>[

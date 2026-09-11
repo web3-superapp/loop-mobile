@@ -37,7 +37,9 @@ void main() {
 
     expect(find.text('请更新 LOOP 后继续'), findsOneWidget);
     expect(find.text('9.0.0'), findsOneWidget);
-    expect(find.text('productPolicyV2.2026-09-07'), findsOneWidget);
+    // The floor and the supported version are the facts; the policy version
+    // that carries them is a backend identifier and stays off the page.
+    expect(find.text('productPolicyV2.2026-09-07'), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('system-state-blocking')),
       findsOneWidget,

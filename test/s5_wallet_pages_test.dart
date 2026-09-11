@@ -70,7 +70,9 @@ void main() {
       );
 
       expect(find.textContaining('手续费保留 0.005 BNB'), findsOneWidget);
-      expect(find.textContaining('walletGasReserveV1'), findsOneWidget);
+      // The reserve is the server's figure; the configuration version behind
+      // it is a backend identifier and never reaches the footer.
+      expect(find.textContaining('walletGasReserveV1'), findsNothing);
     });
 
     testWidgets('an unreadable row says so and never renders zero', (

@@ -18,11 +18,7 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 /// The five bundled answers. They are product copy, not an indexed FAQ: there
 /// is no article resource, so nothing here claims a server source.
 const List<(String, String)> _supportAnswers = <(String, String)>[
-  (
-    '算力是怎么算的',
-    '挖矿公式还没有定下来，因此暂时不显示算力。公式确定后，'
-        '挖矿页会连同 configVersion 一起显示。',
-  ),
+  ('算力是怎么算的', '挖矿公式还没有定下来，因此暂时不显示算力。公式批准后，挖矿页会显示算力与产出。'),
   (
     '为什么我的币没有权重',
     '只有已登记的资产才会计入挖矿。是否登记以 LOOP 的登记表为准，'
@@ -117,8 +113,8 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
         caption: policy == null
             ? '官方不会主动私聊你，也不会索要私钥、助记词或验证码。'
             : '${policy.businessDaysOnly ? '工作日' : ''}'
-                  '${policy.responseWindowHours} 小时内回复'
-                  '（规则 ${policy.configVersion}）；官方不会主动私聊你。',
+                  '${policy.responseWindowHours} 小时内回复；'
+                  '官方不会主动私聊你。',
       ),
       sections: <Widget>[
         const LoopNotice(

@@ -87,10 +87,11 @@ final class LaunchUnavailable {
 /// placeholder next to the server's own `reasonCode`.
 const String launchMissingFigure = '—';
 
-/// "待确认（configVersion）" for a configuration slot that has no confirmed
-/// version yet. A `null` version keeps the sentence without inventing a name.
-String launchPendingConfirmationLabel(String? configVersion) =>
-    configVersion == null ? '待确认（版本未指派）' : '待确认（$configVersion）';
+/// What a configuration slot says while no version of it is confirmed.
+///
+/// The version that will confirm it is a backend identifier. It says nothing a
+/// reader can act on, so the slot states the status alone.
+const String launchPendingConfirmationLabel = '待确认';
 
 /// zh-CN copy for a failed S7 operation. It states what did not happen; it
 /// never claims a result the server did not confirm.
