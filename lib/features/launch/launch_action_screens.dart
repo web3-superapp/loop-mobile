@@ -130,7 +130,7 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
         archetype: LoopFolioArchetype.action,
         kicker: 'BUY QUOTE',
         // No quote: price, fee and cap are all contract facts.
-        heading: launchMissingFigure,
+        heading: launchMissingHeading,
         caption: '价格、手续费与剩余额度暂时读不到，现在无法报价。',
         stamp: 'DISABLED',
       ),
@@ -328,7 +328,7 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
         kicker: 'STAKING POSITION',
-        heading: launchMissingFigure,
+        heading: launchMissingHeading,
         caption: '质押数量、可用余额与解除等待期都需要质押合约；本页整页不可执行。',
         stamp: 'NOT EXECUTABLE',
       ),
@@ -426,7 +426,7 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
         kicker: 'PUBLIC ECONOMY',
         // The only provable headline is a count of approved rounds.
         heading: economy == null
-            ? launchMissingFigure
+            ? launchMissingHeading
             : '${economy.confirmedRoundCount} 个已确认轮次',
         caption: '这里只显示 LOOP 能核对的数量；总量、发行与生态税暂时读不到。',
         stamp: economy == null ? null : 'LOOP DB',

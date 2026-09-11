@@ -87,6 +87,17 @@ final class LaunchUnavailable {
 /// placeholder next to the server's own `reasonCode`.
 const String launchMissingFigure = '—';
 
+/// The same absence, said in words, where a folio heading would carry the
+/// figure.
+///
+/// [launchMissingFigure] still owns every metric cell, row end and sentence:
+/// at 11–20px, next to its own label, an em dash reads as "nothing here". A
+/// hero heading prints at 25–30px in Lime, and there the same dash reads as a
+/// stray green rule rather than as a placeholder. The heading therefore says
+/// it: never `0`, never blank, and still the plain statement that this page
+/// has no number to show yet.
+const String launchMissingHeading = '暂无数值';
+
 /// What a configuration slot says while no version of it is confirmed.
 ///
 /// The version that will confirm it is a backend identifier. It says nothing a

@@ -462,4 +462,178 @@ void main() {
       },
     );
   });
+
+  group('topbar with tools', () {
+    Widget toolbar({required bool dense, required int titleMaxLines}) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopTopbar(
+          title: 'Builders Guild',
+          onBack: () {},
+          minHeight: 72,
+          dense: dense,
+          titleMaxLines: titleMaxLines,
+          actions: <Widget>[
+            for (final tool in <String>['search', 'shuffle', 'voice', 'info'])
+              LoopIconButton(icon: tool, label: tool, onPressed: () {}),
+          ],
+        ),
+      ],
+    );
+
+    testWidgets('four tools leave a wrapped title half the bar', (
+      tester,
+    ) async {
+      await _pump(tester, toolbar(dense: false, titleMaxLines: 2));
+      final wrapped = tester.getSize(find.text('Builders Guild'));
+
+      await _pump(tester, toolbar(dense: true, titleMaxLines: 1));
+      final single = tester.getSize(find.text('Builders Guild'));
+
+      // One line instead of two, and a wider column to spend it in.
+      expect(single.height, lessThan(wrapped.height));
+      expect(single.width, greaterThan(wrapped.width));
+      // The bar keeps its own height either way, so nothing below it moves.
+      expect(
+        tester.getSize(find.byType(LoopTopbar)).height,
+        greaterThanOrEqualTo(72),
+      );
+    });
+
+    testWidgets('a page with room keeps the two-line default', (tester) async {
+      await _pump(
+        tester,
+        const Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[LoopTopbar(title: '社区官方群与语音房设置')],
+        ),
+      );
+
+      final title = tester.widget<Text>(find.text('社区官方群与语音房设置'));
+      expect(title.maxLines, 2);
+      expect(title.overflow, TextOverflow.ellipsis);
+    });
+  });
+
+  group('folio primary', () {
+    // The mining hero, verbatim: the caption the stamp was crushing.
+    const String caption = '算力、今日预估、累计与待领取都要等挖矿公式版本被批准后才能计算。';
+
+    /// The card's own content box, which both prototype ceilings measure
+    /// against: the folio's page margin plus its padding taken off the width
+    /// the keyed Container reports (`.folio-primary{margin:0 16px;padding:18px}`).
+    double contentWidth(WidgetTester tester, {double padding = 18}) =>
+        tester
+            .getSize(find.byKey(const ValueKey<String>('loop-folio-primary')))
+            .width -
+        LoopSpacing.page * 2 -
+        padding * 2;
+
+    Future<Rect> pumpFolio(WidgetTester tester, {String? stamp}) async {
+      await _pump(
+        tester,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            LoopFolioPrimary(
+              kicker: 'MINING POWER',
+              heading: '暂无数值',
+              caption: caption,
+              stamp: stamp,
+              archetype: LoopFolioArchetype.record,
+            ),
+          ],
+        ),
+      );
+      return tester.getRect(find.text(caption));
+    }
+
+    testWidgets('a two-character stamp costs the caption only its own width', (
+      tester,
+    ) async {
+      final captionRect = await pumpFolio(tester, stamp: '待批准');
+      final content = contentWidth(tester);
+
+      // The flat 57% budget (`.folio-primary:has(>.folio-stamp)
+      // .folio-caption`) is the room a stamp at its 42% ceiling needs. A
+      // short stamp must not cost that much.
+      expect(captionRect.width, greaterThan(content * 0.57));
+      // And never more than the caption's own ceiling (`max-width:80%`).
+      expect(captionRect.width, lessThanOrEqualTo(content * 0.8 + 0.5));
+      // Two lines of the mining copy, not three at half the card's width.
+      expect(captionRect.height, lessThan(40));
+    });
+
+    testWidgets('the caption gives way to exactly what the stamp uses', (
+      tester,
+    ) async {
+      final narrow = await pumpFolio(tester, stamp: '待批准');
+      final wide = await pumpFolio(tester, stamp: 'PENDING CONFIRMATION');
+      final content = contentWidth(tester);
+
+      // The wider stamp takes more room away, and the two never share a
+      // column: the caption stops before the pill starts.
+      expect(wide.width, lessThan(narrow.width));
+      expect(wide.width, greaterThan(content * 0.5));
+      final stampRect = tester.getRect(find.text('PENDING CONFIRMATION'));
+      expect(wide.right, lessThanOrEqualTo(stampRect.left));
+    });
+
+    testWidgets('an unstamped caption keeps the prototype ceiling', (
+      tester,
+    ) async {
+      final captionRect = await pumpFolio(tester);
+      final content = contentWidth(tester);
+
+      expect(captionRect.width, greaterThan(content * 0.57));
+      expect(captionRect.width, lessThanOrEqualTo(content * 0.8 + 0.5));
+      expect(find.byType(LoopFolioPrimary), findsOneWidget);
+    });
+
+    testWidgets('a long stamp stays inside its own 42% ceiling', (
+      tester,
+    ) async {
+      await pumpFolio(tester, stamp: 'PENDING FORMULA APPROVAL FOR THIS ROUND');
+      final content = contentWidth(tester);
+      final stampRect = tester.getRect(
+        find.text('PENDING FORMULA APPROVAL FOR THIS ROUND'),
+      );
+
+      expect(stampRect.width, lessThanOrEqualTo(content * 0.42 + 0.5));
+      // One line, ellipsised: the pill never becomes a paragraph.
+      expect(stampRect.height, lessThan(20));
+    });
+
+    testWidgets('a compact hero with a trailing figure stays out of the pill', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            LoopFolioPrimary(
+              kicker: 'WALLET',
+              heading: '暂无数值',
+              caption: caption,
+              stamp: 'NET WORTH',
+              compact: true,
+              trailing: Text('+2.4%'),
+            ),
+          ],
+        ),
+      );
+
+      final captionRect = tester.getRect(find.text(caption));
+      final stampRect = tester.getRect(find.text('NET WORTH'));
+      expect(captionRect.right, lessThanOrEqualTo(stampRect.left));
+      expect(find.text('+2.4%'), findsOneWidget);
+      // The compact card pads by 14, so its content box is wider than the
+      // 18px one; the caption still stops at its own ceiling.
+      expect(
+        captionRect.width,
+        lessThanOrEqualTo(contentWidth(tester, padding: 14) * 0.8 + 0.5),
+      );
+    });
+  });
 }

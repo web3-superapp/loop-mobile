@@ -144,6 +144,13 @@ class _CommunityMembersScreenState
     }
 
     final counts = state.counts;
+    // `counts` is the whole directory's, not this search's: the server counts
+    // members by role, never matches for a prefix. While the page is narrowed
+    // by a query the totals therefore describe rows that are not on screen —
+    // "2 名成员" over "没有匹配的成员" — so the search state states its subject
+    // instead of a figure, and the role chips drop the numbers they cannot
+    // stand behind. Clearing the field brings both back unchanged.
+    final searching = state.isSearching;
     return LoopStreamPage(
       key: const ValueKey<String>('community-members-screen'),
       archetype: LoopPageArchetype.listing,
@@ -162,9 +169,11 @@ class _CommunityMembersScreenState
         variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.listing,
         kicker: 'MEMBER DIRECTORY',
-        heading: counts == null ? communityMissingFigure : '${counts.all} 名成员',
-        caption: 'Owner / Admin / 成员 三级权限。',
-        stamp: counts == null ? null : '${counts.all}',
+        heading: searching
+            ? '搜索成员'
+            : (counts == null ? communityMissingFigure : '${counts.all} 名成员'),
+        caption: searching ? '这里只显示匹配到的成员。' : 'Owner / Admin / 成员 三级权限。',
+        stamp: searching || counts == null ? null : '${counts.all}',
       ),
       filters: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -183,7 +192,7 @@ class _CommunityMembersScreenState
                   labelText: '按别名搜索成员',
                   hintText: '输入别名开头即可',
                   counterText: '',
-                  suffixIcon: !state.isSearching
+                  suffixIcon: !searching
                       ? null
                       : IconButton(
                           key: const ValueKey<String>(
@@ -210,19 +219,23 @@ class _CommunityMembersScreenState
                     controller,
                     state,
                     CommunityMemberFilter.all,
-                    counts == null ? '全部' : '全部 ${counts.all}',
+                    counts == null || searching ? '全部' : '全部 ${counts.all}',
                   ),
                   _filterSeg(
                     controller,
                     state,
                     CommunityMemberFilter.owner,
-                    counts == null ? 'Owner' : 'Owner ${counts.owner}',
+                    counts == null || searching
+                        ? 'Owner'
+                        : 'Owner ${counts.owner}',
                   ),
                   _filterSeg(
                     controller,
                     state,
                     CommunityMemberFilter.admin,
-                    counts == null ? 'Admin' : 'Admin ${counts.admin}',
+                    counts == null || searching
+                        ? 'Admin'
+                        : 'Admin ${counts.admin}',
                   ),
                   // The governance view is only opened to a viewer the server
                   // told may ban, and it carries no count: `counts` stays the
@@ -287,10 +300,8 @@ class _CommunityMembersScreenState
             CommunityStateBlock(
               phase: state.phase,
               failureKind: state.failureKind,
-              emptyMessage: state.isSearching ? '没有匹配的成员' : '这个筛选下没有成员',
-              emptyReason: state.isSearching
-                  ? '别名要从开头对上才算匹配，换个开头再试。'
-                  : '这个角色下没有成员。',
+              emptyMessage: searching ? '没有匹配的成员' : '这个筛选下没有成员',
+              emptyReason: searching ? '别名要从开头对上才算匹配，换个开头再试。' : '这个角色下没有成员。',
               permissionTitle: '没有权限查看成员目录',
               onRetry: () => unawaited(controller.reload()),
             )

@@ -88,6 +88,36 @@ void main() {
       expect(_figures(tester), isEmpty);
     });
 
+    testWidgets('the hero says it has no number instead of drawing a dash', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(),
+      );
+
+      final folio = find.byKey(const ValueKey<String>('loop-folio-primary'));
+      expect(folio, findsOneWidget);
+      // At 29px in Lime the metric cells' em dash stops reading as a
+      // placeholder and becomes a stray green rule, so the hero states the
+      // absence. It is still not a 0, not a fixture and not blank.
+      expect(
+        find.descendant(of: folio, matching: find.text(launchMissingHeading)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: folio, matching: find.text(launchMissingFigure)),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: folio, matching: find.text('0')),
+        findsNothing,
+      );
+      // The cells keep the dash: only the heading changed voice.
+      expect(find.text(launchMissingFigure), findsWidgets);
+    });
+
     testWidgets('the pending formula is labelled without naming its version', (
       tester,
     ) async {

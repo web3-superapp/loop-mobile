@@ -86,7 +86,7 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
         kicker: 'LAUNCH RECORD',
-        heading: detail?.launch.name ?? launchMissingFigure,
+        heading: detail?.launch.name ?? launchMissingHeading,
         // No countdown, no round label, no progress: all three are contract
         // facts. The caption states what the record can and cannot prove.
         caption: '项目资料与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。',
@@ -318,7 +318,7 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
         // The number of rounds comes from the configuration, never from a
         // fixed three-round story.
         heading: detail == null
-            ? launchMissingFigure
+            ? launchMissingHeading
             : '${detail.rounds.length} 个轮次',
         caption: '轮数、时间、价格、资格与上限都由这次发射的配置决定；还没确认的显示为待确认。',
         stamp: detail == null ? null : launchPendingConfirmationLabel,
@@ -441,7 +441,7 @@ class _LaunchGraduationScreenState
         archetype: LoopFolioArchetype.record,
         kicker: 'GRADUATION PROGRESS',
         // Never a percentage: progress needs the liquidity axis.
-        heading: launchMissingFigure,
+        heading: launchMissingHeading,
         caption: '毕业进度看的是流动性。合约上线前还没有可核对的进度。',
         stamp: 'PENDING',
       ),
@@ -578,9 +578,9 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
         kicker: 'ELIGIBILITY',
-        // The tier is `null` by contract: the heading is the em dash, never a
-        // guessed "Public".
-        heading: eligibility?.tier ?? launchMissingFigure,
+        // The tier is `null` by contract: the heading says it has no value,
+        // never a guessed "Public".
+        heading: eligibility?.tier ?? launchMissingHeading,
         caption: '这是当前资格结果，不是等级；资格不依赖 LOOP 质押。',
         stamp: eligibility == null
             ? null
@@ -711,7 +711,7 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
         kicker: 'HOLDER DISTRIBUTION',
-        heading: launchMissingFigure,
+        heading: launchMissingHeading,
         caption: '持有人数量、集中度、我的仓位与单地址上限都需要合约读数，当前全部不可得。',
         stamp: 'UNAVAILABLE',
       ),
@@ -792,7 +792,7 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
         kicker: 'PARTICIPATION LOG',
-        heading: launchMissingFigure,
+        heading: launchMissingHeading,
         caption: '购买、权益与退款记录都要看链上数据，目前读不到，因此不显示笔数或盈亏。',
         stamp: 'UNAVAILABLE',
       ),

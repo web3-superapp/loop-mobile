@@ -83,7 +83,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
         // No countdown, no graduation percentage, no "my tier": all three are
         // contract facts and none of them can be proven in this step.
         heading: overview == null
-            ? launchMissingFigure
+            ? launchMissingHeading
             : '${overview.segments.total} 个已登记项目',
         caption: '目录、申请与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。',
         stamp: overview == null ? null : 'OFF-CHAIN',

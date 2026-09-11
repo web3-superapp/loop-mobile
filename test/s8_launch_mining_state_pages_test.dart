@@ -55,7 +55,7 @@ final class _StateCase {
     required this.emptyContract,
     this.alsoUnreadKeys = const <String>[],
     this.unreadText,
-    this.showsMissingFigure = true,
+    this.showsMissingHeading = true,
     this.pinsOffline = false,
   });
 
@@ -79,9 +79,9 @@ final class _StateCase {
   /// A text fragment only a landed read can print.
   final String? unreadText;
 
-  /// Whether the folio prints [launchMissingFigure] instead of a number while
-  /// the read has not landed.
-  final bool showsMissingFigure;
+  /// Whether the folio prints [launchMissingHeading] instead of a number
+  /// while the read has not landed.
+  final bool showsMissingHeading;
 
   /// Why "the read succeeded and there is nothing" is not in this resource's
   /// contract, quoted from the model that defines it.
@@ -208,7 +208,7 @@ final List<_StateCase> _cases = <_StateCase>[
     readyKey: 'launch-apply-name',
     alsoUnreadKeys: <String>['launch-apply-projects', 'launch-apply-save'],
     // The folio prints 新建申请, not a figure, so there is no em dash to pin.
-    showsMissingFigure: false,
+    showsMissingHeading: false,
     emptyContract:
         'LaunchProjectPage 可以带 items: []（launch_models.dart:313-318），'
         '但那是 ready：控制器把空列表当成读成功，页面渲染空白表单让人建第一份草稿'
@@ -377,10 +377,11 @@ void main() {
             findsOneWidget,
           );
           _expectNothingRead(testCase);
-          if (testCase.showsMissingFigure) {
-            // The folio keeps the em dash: a page that has not read a number
-            // prints the missing-figure mark, never a 0 and never a fixture.
-            expect(find.text(launchMissingFigure), findsWidgets);
+          if (testCase.showsMissingHeading) {
+            // The folio still refuses to invent one: a page that has not read
+            // a number says so in the heading, never a 0 and never a fixture.
+            expect(find.text(launchMissingHeading), findsWidgets);
+            expect(find.text('0'), findsNothing);
           }
         },
       );

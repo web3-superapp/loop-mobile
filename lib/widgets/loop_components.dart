@@ -25,6 +25,8 @@ class LoopTopbar extends StatelessWidget {
     this.actions = const <Widget>[],
     this.minHeight = LoopLayout.topbarContentHeight,
     this.updating = false,
+    this.titleMaxLines = 2,
+    this.dense = false,
   });
 
   final String title;
@@ -36,6 +38,18 @@ class LoopTopbar extends StatelessWidget {
   final List<Widget> actions;
   final double minHeight;
 
+  /// How many lines the title may wrap to before it truncates.
+  ///
+  /// Two is the default: a Chinese page title is usually shorter than the bar
+  /// and a long one reads better wrapped. A bar carrying several tools has no
+  /// such room — the title column narrows until the second line runs under
+  /// them — so those pages ask for one line and an ellipsis instead.
+  final int titleMaxLines;
+
+  /// `#scr-community-chat .topbar{gap:5px;padding-left:12px;padding-right:12px}`
+  /// — the prototype's own tightening for a bar that carries four tools.
+  final bool dense;
+
   /// The page is re-reading data it already shows. The topbar wears the
   /// 更新中 mark; the page keeps its content and its actions.
   final bool updating;
@@ -43,13 +57,10 @@ class LoopTopbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final horizontal = dense ? 12.0 : LoopSpacing.page;
+    final gap = dense ? 5.0 : 6.0;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        LoopSpacing.page,
-        6,
-        LoopSpacing.page,
-        0,
-      ),
+      padding: EdgeInsets.fromLTRB(horizontal, 6, horizontal, 0),
       child: ConstrainedBox(
         constraints: BoxConstraints(minHeight: minHeight),
         child: Row(
@@ -61,7 +72,7 @@ class LoopTopbar extends StatelessWidget {
                 label: backLabel,
                 onPressed: onBack,
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: dense ? gap : 10),
             ],
             Expanded(
               child: Column(
@@ -79,7 +90,7 @@ class LoopTopbar extends StatelessWidget {
                     header: true,
                     child: Text(
                       title,
-                      maxLines: 2,
+                      maxLines: titleMaxLines,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.headlineLarge,
                     ),
@@ -92,7 +103,7 @@ class LoopTopbar extends StatelessWidget {
               const LoopUpdatingBadge(),
             ],
             for (final action in actions) ...<Widget>[
-              const SizedBox(width: 6),
+              SizedBox(width: gap),
               action,
             ],
           ],
@@ -260,6 +271,55 @@ class LoopFolioPrimary extends StatelessWidget {
   /// Optional widget (identity, figure) on the right of the heading.
   final Widget? trailing;
 
+  /// `.folio-caption{max-width:80%}`.
+  static const double captionMaxWidthFactor = 0.8;
+
+  /// `.folio-stamp{max-width:42%}`.
+  static const double stampMaxWidthFactor = 0.42;
+
+  /// `.folio-stamp{padding:7px 9px;border:1px solid}` and the 11px screen
+  /// floor the prototype's `.scr :is(…,.folio-stamp,small)` rule sets.
+  static const EdgeInsets _stampPadding = EdgeInsets.fromLTRB(9, 7, 9, 7);
+  static const double _stampBorder = 1;
+  static const double _stampTextSize = 11;
+
+  /// The gap the caption keeps between its longest line and the stamp.
+  static const double _stampGap = 12;
+
+  /// How wide the stamp will actually be inside a card of [contentWidth].
+  ///
+  /// The stamp is an overlay at the card's bottom-right corner, so it takes no
+  /// room in the column; the caption used to reserve a flat 57% for it
+  /// (`.folio-primary:has(>.folio-stamp) .folio-caption`), which is the budget
+  /// for a stamp at its 42% ceiling. A two-character stamp then cost the
+  /// caption a third of the card for nothing. Measuring the stamp gives the
+  /// caption every pixel the stamp does not use, and never less room than the
+  /// prototype's fixed budget, because the stamp itself is capped at 42%.
+  double _stampWidth(BuildContext context, String label, double contentWidth) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: label.toUpperCase(),
+        style: LoopTypography.eyebrow(_stampTextSize),
+      ),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final width = painter.width + _stampPadding.horizontal + _stampBorder * 2;
+    painter.dispose();
+    return math.min(width, contentWidth * stampMaxWidthFactor);
+  }
+
+  /// The caption's own ceiling, with the stamp's measured width taken out.
+  double _captionMaxWidth(BuildContext context, double contentWidth) {
+    if (!contentWidth.isFinite) return double.infinity;
+    final ceiling = contentWidth * captionMaxWidthFactor;
+    final label = stamp;
+    if (label == null) return ceiling;
+    final reserved = _stampWidth(context, label, contentWidth) + _stampGap;
+    return math.min(ceiling, contentWidth - reserved);
+  }
+
   @override
   Widget build(BuildContext context) {
     final foreground = switch (variant) {
@@ -314,118 +374,163 @@ class LoopFolioPrimary extends StatelessWidget {
         ),
         decoration: decoration,
         clipBehavior: Clip.antiAlias,
-        child: Stack(
-          children: <Widget>[
-            // `.folio-state::after` ring.
-            Positioned(
-              right: -30,
-              top: -36,
-              child: IgnorePointer(
-                child: Container(
-                  width: 128,
-                  height: 128,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: ringColor),
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                        color: ringColor.withValues(alpha: 0.035),
-                        spreadRadius: 18,
-                      ),
-                    ],
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            // Both prototype ceilings are measured against the card's own
+            // content box, so they are read here once and handed to the two
+            // children that own them.
+            final contentWidth = constraints.hasBoundedWidth
+                ? math.max(constraints.maxWidth - padding * 2, 0.0)
+                : double.infinity;
+            return _content(
+              context,
+              contentWidth: contentWidth,
+              padding: padding,
+              foreground: foreground,
+              headingColor: headingColor,
+              ringColor: ringColor,
+              kickerOpacity: kickerOpacity,
+              captionOpacity: captionOpacity,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _content(
+    BuildContext context, {
+    required double contentWidth,
+    required double padding,
+    required Color foreground,
+    required Color headingColor,
+    required Color ringColor,
+    required double kickerOpacity,
+    required double captionOpacity,
+  }) {
+    final captionMaxWidth = _captionMaxWidth(context, contentWidth);
+    final stampMaxWidth = contentWidth.isFinite
+        ? contentWidth * stampMaxWidthFactor
+        : double.infinity;
+    return Stack(
+      children: <Widget>[
+        // `.folio-state::after` ring.
+        Positioned(
+          right: -30,
+          top: -36,
+          child: IgnorePointer(
+            child: Container(
+              width: 128,
+              height: 128,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: ringColor),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: ringColor.withValues(alpha: 0.035),
+                    spreadRadius: 18,
                   ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(padding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  if (kicker != null)
-                    FractionallySizedBox(
-                      widthFactor: 0.72,
-                      alignment: Alignment.centerLeft,
-                      child: Opacity(
-                        opacity: kickerOpacity,
-                        child: Text(
-                          kicker!.toUpperCase(),
-                          style: LoopTypography.eyebrow(11, color: foreground),
-                        ),
-                      ),
-                    ),
-                  SizedBox(height: compact ? 10 : archetype.headingTop),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Expanded(
-                        child: FractionallySizedBox(
-                          widthFactor: trailing == null ? 0.88 : 1,
-                          alignment: Alignment.centerLeft,
-                          child: Semantics(
-                            header: true,
-                            child: Text(
-                              heading,
-                              style: LoopTypography.display(
-                                compact ? 24 : archetype.headingSize,
-                                color: headingColor,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      ?trailing,
-                    ],
-                  ),
-                  if (caption != null) ...<Widget>[
-                    SizedBox(height: compact ? 8 : 15),
-                    FractionallySizedBox(
-                      widthFactor: stamp == null ? 0.8 : 0.57,
-                      alignment: Alignment.centerLeft,
-                      child: Opacity(
-                        opacity: captionOpacity,
-                        child: Text(
-                          caption!,
-                          style: LoopTypography.caption(12, color: foreground),
-                        ),
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
-            if (stamp != null)
-              Positioned(
-                right: 14,
-                bottom: 14,
-                child: Opacity(
-                  opacity: variant == LoopFolioVariant.quiet ? 0.8 : 0.68,
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(9, 7, 9, 7),
-                    decoration: BoxDecoration(
-                      borderRadius: LoopRadius.pill,
-                      border: Border.all(
-                        color: variant == LoopFolioVariant.quiet
-                            ? LoopColors.lime
-                            : foreground,
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.all(padding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              if (kicker != null)
+                FractionallySizedBox(
+                  widthFactor: 0.72,
+                  alignment: Alignment.centerLeft,
+                  child: Opacity(
+                    opacity: kickerOpacity,
+                    child: Text(
+                      kicker!.toUpperCase(),
+                      style: LoopTypography.eyebrow(11, color: foreground),
+                    ),
+                  ),
+                ),
+              SizedBox(height: compact ? 10 : archetype.headingTop),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Expanded(
+                    child: FractionallySizedBox(
+                      widthFactor: trailing == null ? 0.88 : 1,
+                      alignment: Alignment.centerLeft,
+                      child: Semantics(
+                        header: true,
+                        child: Text(
+                          heading,
+                          style: LoopTypography.display(
+                            compact ? 24 : archetype.headingSize,
+                            color: headingColor,
+                          ),
+                        ),
                       ),
                     ),
+                  ),
+                  ?trailing,
+                ],
+              ),
+              if (caption != null) ...<Widget>[
+                SizedBox(height: compact ? 8 : 15),
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: captionMaxWidth),
+                  child: Opacity(
+                    opacity: captionOpacity,
                     child: Text(
-                      stamp!.toUpperCase(),
-                      style: LoopTypography.eyebrow(
-                        11,
-                        color: variant == LoopFolioVariant.quiet
-                            ? LoopColors.lime
-                            : foreground,
-                      ),
+                      caption!,
+                      style: LoopTypography.caption(12, color: foreground),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (stamp != null)
+          Positioned(
+            right: 14,
+            bottom: 14,
+            child: Opacity(
+              opacity: variant == LoopFolioVariant.quiet ? 0.8 : 0.68,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: stampMaxWidth),
+                child: Container(
+                  padding: _stampPadding,
+                  decoration: BoxDecoration(
+                    borderRadius: LoopRadius.pill,
+                    border: Border.all(
+                      color: variant == LoopFolioVariant.quiet
+                          ? LoopColors.lime
+                          : foreground,
+                      width: _stampBorder,
+                    ),
+                  ),
+                  child: Text(
+                    stamp!.toUpperCase(),
+                    // `white-space:nowrap`: the pill is one line, and a
+                    // stamp too long for its 42% ceiling ends in an
+                    // ellipsis instead of running under the caption.
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopTypography.eyebrow(
+                      _stampTextSize,
+                      color: variant == LoopFolioVariant.quiet
+                          ? LoopColors.lime
+                          : foreground,
                     ),
                   ),
                 ),
               ),
-          ],
-        ),
-      ),
+            ),
+          ),
+      ],
     );
   }
 }

@@ -1012,10 +1012,41 @@ void main() {
       await settleSearch(tester);
 
       expect(find.text('没有匹配的成员'), findsOneWidget);
-      // The counts describe the whole directory, so the segments do not move.
-      expect(find.text('全部 128'), findsOneWidget);
+      // The counts describe the whole directory, never this query, so the
+      // page stops printing them while it is narrowed: "128 名成员" and
+      // "全部 128" over "没有匹配的成员" contradicted each other on one screen.
+      expect(find.text('全部 128'), findsNothing);
+      expect(find.text('Owner 1'), findsNothing);
+      expect(find.text('128 名成员'), findsNothing);
+      // The segments stay selectable, they just carry no figure.
+      expect(find.text('全部'), findsOneWidget);
+      // And the hero states what the page is now showing instead.
+      expect(find.text('搜索成员'), findsOneWidget);
       // The field survives its own empty result, so the query can be edited.
       expect(searchField(), findsOneWidget);
+    });
+
+    testWidgets('a matching query counts nothing it cannot count', (
+      tester,
+    ) async {
+      final gateway = await openSearch(tester);
+      gateway.membersByQuery = <String?, CommunityMemberDirectory>{
+        'fro': testDirectory(
+          items: <CommunityMemberEntry>[testMember(role: CommunityRole.member)],
+        ),
+      };
+
+      await tester.enterText(searchField(), 'fro');
+      await settleSearch(tester);
+
+      // One row is on screen and the directory holds 128. Neither number is
+      // the other, and the server counts only the directory, so the narrowed
+      // page states no figure at all rather than the wrong one.
+      expect(find.text('frog_member'), findsOneWidget);
+      expect(find.text('128 名成员'), findsNothing);
+      expect(find.text('全部 128'), findsNothing);
+      expect(find.text('1 名成员'), findsNothing);
+      expect(find.text('搜索成员'), findsOneWidget);
     });
 
     testWidgets('the clear control drops q and reads the directory again', (
@@ -1040,6 +1071,10 @@ void main() {
       expect(gateway.commands.last, 'members:all:null:null');
       expect(find.text('没有匹配的成员'), findsNothing);
       expect(find.text('frog_member'), findsOneWidget);
+      // The directory is whole again, so its counts come back unchanged.
+      expect(find.text('全部 128'), findsOneWidget);
+      expect(find.text('128 名成员'), findsOneWidget);
+      expect(find.text('搜索成员'), findsNothing);
     });
 
     testWidgets('closing the control clears the query as well', (tester) async {

@@ -42,6 +42,49 @@ void main() {
       expect(gateway.commands, isEmpty);
     });
 
+    testWidgets('the channel name keeps one line beside its four tools', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityChatScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          detail: testDetail(chat: testChatAvailable),
+        ),
+      );
+
+      for (final tool in <String>[
+        'community-chat-open-search',
+        'community-chat-open-forward',
+        'community-chat-open-voice',
+        'community-chat-open-profile',
+      ]) {
+        expect(
+          find.byKey(ValueKey<String>(tool)),
+          findsOneWidget,
+          reason: tool,
+        );
+      }
+
+      final title = find.text('Frog Holders');
+      expect(title, findsOneWidget);
+      // Wrapped, the name ran a second line under the tools and left itself
+      // half the bar. It truncates instead.
+      expect(tester.widget<Text>(title).maxLines, 1);
+      expect(tester.widget<Text>(title).overflow, TextOverflow.ellipsis);
+      expect(tester.getSize(title).height, lessThan(40));
+      // `#scr-community-chat .topbar{padding-right:12px}`: the prototype's
+      // own tightening gives the name back what it can of that column.
+      expect(
+        tester
+            .getRect(
+              find.byKey(const ValueKey<String>('community-chat-open-profile')),
+            )
+            .right,
+        390 - 12,
+      );
+    });
+
     testWidgets('a missing community identifier is never guessed', (
       tester,
     ) async {

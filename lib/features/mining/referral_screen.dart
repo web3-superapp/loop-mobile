@@ -72,7 +72,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
         archetype: LoopFolioArchetype.record,
         kicker: 'FINAL BOOST',
         // The boost has no value: it depends on the unapproved formula.
-        heading: launchMissingFigure,
+        heading: launchMissingHeading,
         caption: overview == null
             ? '加成只计入 Mining Power，不是收入、佣金或返佣。'
             : '${overview.validRelationships} 个有效关系 · '

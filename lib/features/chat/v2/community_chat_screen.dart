@@ -76,6 +76,14 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
               kicker: communityPreviewKicker(mode),
               onBack: widget.onBack,
               minHeight: 72,
+              // Four tools plus the back control leave the channel name a
+              // narrow column. Wrapped, it ran a second line under the icons
+              // and squeezed the name to half the bar; one line with an
+              // ellipsis keeps the header a header. The prototype's own
+              // `#scr-community-chat .topbar` tightening gives the name back
+              // as much of that column as it can.
+              titleMaxLines: 1,
+              dense: true,
               actions: <Widget>[
                 if (detail?.chat.channelCid case final String cid) ...<Widget>[
                   LoopIconButton(

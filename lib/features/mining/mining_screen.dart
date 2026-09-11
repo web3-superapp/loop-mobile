@@ -16,7 +16,8 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 /// `mining` · the Mining destination.
 ///
 /// The mining formula is backend delivery D19 and no version is approved yet,
-/// so every figure on this page is the em dash plus the server's own reason.
+/// so every figure on this page is the em dash plus the server's own reason,
+/// and the hero says the absence in words rather than printing a 29px dash.
 /// The client never estimates power, output, accumulation or a claim.
 class MiningScreen extends ConsumerStatefulWidget {
   const MiningScreen({
@@ -74,7 +75,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
         kicker: 'MINING POWER',
-        heading: launchMissingFigure,
+        heading: launchMissingHeading,
         caption: '算力、今日预估、累计与待领取都要等挖矿公式版本被批准后才能计算。',
         stamp: summary?.formula.pendingVersion == null ? null : '待批准',
       ),
