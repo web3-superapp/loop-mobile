@@ -20,6 +20,16 @@
 | reasonCode | `SEARCH_RUNTIME_UNAVAILABLE`、`…_PENDING`、`…_UNAVAILABLE` | ~~服务端原因：SEARCH_RUNTIME_UNAVAILABLE。~~ |
 | capability id / 环境变量 | `voiceRooms`、`LOOP_SWAP_FEE_BPS`、`MAX_UINT256` | ~~未配置（LOOP_SWAP_FEE_BPS 待决策）~~ |
 | 内部词 | 口径、观测、投影、聚合 | ~~社区聚合尚未读取成功~~ |
+| 插值上屏的 ID | 句子里插入 `configVersion` / `formulaVersion` / `pendingVersion` / `ruleVersion` / `policyVersion` / `*ReasonCode` / `ruleId` / `policyId` / `configId` / `formulaId` / `capabilityId` | ~~待批准（MININGFORMULAV1-DRAFT）~~、~~规则 marketTrendingV1~~、~~配置 walletGasReserveV1~~ |
+
+插值规则的两个例外，守卫不拦：
+
+- `${launchReasonCodeText(fact.reasonCode)}` —— 括号里的调用是「码 → 句子」的
+  映射函数，码本身不上屏。守卫只看不带调用的取值表达式；映射函数内部由评审看。
+- `${resource.version}`、`${project.materialVersion}` —— 这是用户自己那份资源的
+  数字版本号，属 §3 的小字出处，不是后端标识符。
+
+技术版本要留就进 `LoopDisclosure` 的「详情」，不要新造折叠组件。
 
 ### 1.2 不要写（守卫不拦，评审拦）
 
@@ -86,6 +96,7 @@ GoPlus、Privy、Stream、ERC-20、USD1、Passkey、KYB、Tier、Mining Power。
 ## 5. 审查清单
 
 - [ ] 有没有 D 编号、`rule:`、大写下划线码、capability id？
+- [ ] 有没有把规则／公式／配置／策略 ID 或 reasonCode **插值**进句子？
 - [ ] 有没有「服务端 / 来源 / 接入 / 证据 / 契约 / 槽位 / 口径」？
 - [ ] 超过两句了吗？
 - [ ] `message` 和 `reason` 说的是不是同一件事？

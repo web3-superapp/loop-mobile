@@ -7588,6 +7588,50 @@ COPY_INTERNAL_VOCABULARY = (
 # Diagnostics are written for engineers, never rendered on a surface.
 COPY_LOGGING_CALLS = ("debugPrint(", "developer.log(", "assert(", "LoopLog.")
 
+# Every Dart interpolation inside a literal: `${expression}` or `$path`.
+COPY_INTERPOLATION = re.compile(
+    r"\$\{(?P<braced>[^{}]*)\}|\$(?P<plain>[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)"
+)
+
+# Identifiers inside one interpolated expression.
+COPY_EXPRESSION_SEGMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+
+# Field and getter names that carry a backend identifier rather than a fact a
+# reader can act on: `marketTrendingV1`, `MININGFORMULAV1-DRAFT`,
+# `walletGasReserveV1`, `MINING_FORMULA_BASELINE_PENDING`. A name ending in one
+# of these is the identifier itself; a plain `version` is the numeric CAS
+# version of the reader's own resource and stays available as small print.
+COPY_IDENTIFIER_SUFFIXES = (
+    "reasoncode",
+    "configversion",
+    "formulaversion",
+    "ruleversion",
+    "policyversion",
+    "pendingversion",
+    "ruleid",
+    "policyid",
+    "configid",
+    "formulaid",
+    "capabilityid",
+)
+
+# `about` is the one surface whose subject is the published configuration
+# versions themselves, so it renders them as its own content.
+COPY_IDENTIFIER_ALLOWLIST = ("lib/features/profile/about/about_screen.dart",)
+
+# The named arguments that put a bare value on the screen without a literal
+# around it: `stamp: overview.rules.configVersion` renders the identifier just
+# as plainly as `'规则 $configVersion'` does.
+COPY_TEXT_SLOT = re.compile(
+    r"(?<![A-Za-z0-9_])(?:title|subtitle|label|message|reason|stamp|caption"
+    r"|heading|kicker|trailing|trailingCaption|semanticLabel|text|summary"
+    r"|body|value|note)\s*:\s*(?P<expression>[^,\n]*)"
+)
+
+# `x == null` / `x != null` decides which branch renders; it is not the value
+# that renders, so the name inside a null test never counts.
+COPY_NULL_TEST = re.compile(r"[A-Za-z_][A-Za-z0-9_.?]*\s*[!=]=\s*null")
+
 
 def _dart_string_literals(source: str) -> list[tuple[int, str]]:
     """Every Dart string literal in `source`, as `(line, body)` pairs.
@@ -7653,12 +7697,87 @@ def _dart_string_literals(source: str) -> list[tuple[int, str]]:
     return literals
 
 
+def _copy_interpolated_identifier(literal: str) -> str | None:
+    """The first backend identifier this literal interpolates, if any.
+
+    A literal fails when it interpolates a *value* whose name carries a rule,
+    formula, configuration, policy or capability identifier
+    (`COPY_IDENTIFIER_SUFFIXES`) — that is how `待批准（MININGFORMULAV1-DRAFT）`,
+    `规则 marketTrendingV1` and `配置 walletGasReserveV1` reached a screen while
+    every literal on those lines stayed clean.
+
+    Two forms are deliberately not values and stay legal:
+
+    * an interpolation containing `(` is a call. `${launchReasonCodeText(code)}`
+      and `${blockReasonText(entry.reasonCode)}` are the approved mapping
+      functions — they turn a code into a sentence, so the code never lands on
+      the screen. Reaching inside a call is the guard's blind spot, and the
+      review checklist in `docs/copy-glossary.md` owns it.
+    * a name ending in a bare `version` (`resource.version`,
+      `project.materialVersion`) is the numeric version of the reader's own
+      resource, which §3 of the glossary keeps as small print.
+    """
+
+    for match in COPY_INTERPOLATION.finditer(literal):
+        expression = match.group("braced") or match.group("plain") or ""
+        identifier = _copy_expression_identifier(expression)
+        if identifier is not None:
+            return identifier
+    return None
+
+
+def _copy_expression_identifier(expression: str) -> str | None:
+    """The backend identifier this expression renders, if any.
+
+    An expression containing `(` is a call and is left alone: a mapping
+    function is how a code becomes a sentence. A name inside `== null` is a
+    branch test rather than the value that reaches the screen.
+    """
+
+    if "(" in expression:
+        return None
+    for segment in COPY_EXPRESSION_SEGMENT.findall(
+        COPY_NULL_TEST.sub(" ", expression)
+    ):
+        if segment.lower().endswith(COPY_IDENTIFIER_SUFFIXES):
+            return segment
+    return None
+
+
+def _copy_slot_identifiers(source: str) -> list[tuple[int, str, str]]:
+    """`(line, slot, identifier)` for every text slot handed a raw identifier.
+
+    A widget argument needs no literal to put a value on a screen:
+    `stamp: overview.rules.configVersion` and
+    `trailing: eligibility.configVersion` render the identifier directly. Only
+    the first line of a slot's expression is read, so a name that a multi-line
+    ternary reaches is the review checklist's problem, not the guard's.
+    """
+
+    found: list[tuple[int, str, str]] = []
+    for number, line in enumerate(
+        strip_dart_comments_and_strings(source).splitlines(), start=1
+    ):
+        for match in COPY_TEXT_SLOT.finditer(line):
+            identifier = _copy_expression_identifier(match.group("expression"))
+            if identifier is not None:
+                found.append((number, match.group(0).split(":")[0].strip(), identifier))
+    return found
+
+
 def check_user_visible_copy(root: Path) -> list[str]:
     """Keep internal identifiers and internal vocabulary out of the UI.
 
     Step ids (`D19`), rule ids (`rule:…`), reason codes and the words 口径 /
     观测 / 投影 / 聚合 are how the product talks to itself. `docs/copy-glossary.md`
     holds the replacement table; a screen says what cannot be done now instead.
+
+    Literal text is only half of it. A sentence assembled at runtime —
+    `'待批准（${summary.formula.pendingVersion}）'` — reads as clean source and
+    still puts a backend identifier on the screen, so
+    `_copy_interpolated_identifier` checks what each zh-CN literal interpolates
+    as well as what it spells out, and `_copy_slot_identifiers` checks the text
+    slots that render a value with no literal around it at all.
     """
 
     errors: list[str] = []
@@ -7666,6 +7785,13 @@ def check_user_visible_copy(root: Path) -> list[str]:
         source = read_text(path)
         lines = source.splitlines()
         relative = path.relative_to(root)
+        if relative.as_posix() not in COPY_IDENTIFIER_ALLOWLIST:
+            for line, slot, identifier in _copy_slot_identifiers(source):
+                errors.append(
+                    f"{relative}:{line} hands `{identifier}` straight to `{slot}`: "
+                    "a rule, formula, configuration or policy identifier belongs "
+                    "in a LoopDisclosure, not on a screen"
+                )
         for line, literal in _dart_string_literals(source):
             physical = lines[line - 1] if 0 < line <= len(lines) else ""
             if any(call in physical for call in COPY_LOGGING_CALLS):
@@ -7680,6 +7806,14 @@ def check_user_visible_copy(root: Path) -> list[str]:
                     break
             if not CJK_CHARACTER.search(literal):
                 continue
+            if relative.as_posix() not in COPY_IDENTIFIER_ALLOWLIST:
+                interpolated = _copy_interpolated_identifier(literal)
+                if interpolated is not None:
+                    errors.append(
+                        f"{relative}:{line} interpolates `{interpolated}` into "
+                        f"`{excerpt}`: a rule, formula, configuration or policy "
+                        "identifier belongs in a LoopDisclosure, not in a sentence"
+                    )
             for pattern, label in COPY_INTERNAL_VOCABULARY:
                 if pattern.search(literal):
                     errors.append(

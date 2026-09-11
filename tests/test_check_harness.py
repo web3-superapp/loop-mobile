@@ -3755,6 +3755,105 @@ class HarnessTests(unittest.TestCase):
         # one line is reported twice; every other line is reported once.
         self.assertEqual(6, len(result))
 
+    def test_user_visible_copy_rejects_interpolated_identifiers(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "demo" / "demo_screen.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "final stamp = '待批准（${summary.formula.pendingVersion}）';\n"
+                "final rules = '${rules.orderingLabel} · 规则 ${rules.configVersion}';\n"
+                "final gas = '手续费保留 0.005 BNB · 配置 $configVersion';\n"
+                "final upload = '上传暂不可用（$uploadReasonCode）。';\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_user_visible_copy(root)
+
+        joined = "\n".join(result)
+        self.assertIn("interpolates `pendingVersion`", joined)
+        self.assertIn("interpolates `configVersion`", joined)
+        self.assertIn("interpolates `uploadReasonCode`", joined)
+        self.assertEqual(4, len(result))
+
+    def test_user_visible_copy_rejects_identifiers_in_text_slots(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "demo" / "demo_screen.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "final folio = LoopFolioPrimary(\n"
+                "  stamp: overview.rules.configVersion,\n"
+                "  heading: '邀请加成',\n"
+                ");\n"
+                "final row = LoopRecordRow(\n"
+                "  title: '资格规则',\n"
+                "  trailing: eligibility.configVersion ?? launchMissingFigure,\n"
+                ");\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_user_visible_copy(root)
+
+        joined = "\n".join(result)
+        self.assertIn("hands `configVersion` straight to `stamp`", joined)
+        self.assertIn("hands `configVersion` straight to `trailing`", joined)
+        self.assertEqual(2, len(result))
+
+    def test_user_visible_copy_allows_null_tested_slots(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "demo" / "demo_screen.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                # The code decides the branch; the branch renders a sentence.
+                "final a = LoopEmpty(\n"
+                "  reason: capability.reasonCode == null\n"
+                "      ? '暂时不可用。'\n"
+                "      : reasonText(capability.reasonCode),\n"
+                ");\n"
+                "final b = LoopFolioPrimary(\n"
+                "  stamp: summary?.formula.pendingVersion == null ? null : '待批准',\n"
+                ");\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_user_visible_copy(root)
+
+        self.assertEqual([], result)
+
+    def test_user_visible_copy_allows_mapped_codes_and_resource_versions(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "demo" / "demo_screen.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                # A code turned into a sentence never reaches the screen.
+                "final why = '${launchReasonCodeText(fact.reasonCode)}';\n"
+                "final block = '$title，${blockReasonText(entry.reasonCode)}';\n"
+                # A resource's own numeric version stays as small print.
+                "final saved = '版本 ${resource.version} · 更新于 $when';\n"
+                "final material = '资料版本 ${project.materialVersion}';\n"
+                # The wire constant itself is not copy.
+                "const wire = 'walletGasReserveV1';\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_user_visible_copy(root)
+
+        self.assertEqual([], result)
+
+    def test_user_visible_copy_allows_the_about_version_list(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "profile" / "about"
+            source.mkdir(parents=True)
+            (source / "about_screen.dart").write_text(
+                "final row = '${entry.configVersion} · 生效于 $when';\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_user_visible_copy(root)
+
+        self.assertEqual([], result)
+
     def test_user_visible_copy_allows_wire_constants_and_logs(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
