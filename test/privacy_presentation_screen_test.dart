@@ -12,6 +12,8 @@ import 'package:loop_mobile/integrations/personalization/memory_privacy_gateway.
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
+import 'support/loop_ground_probe.dart';
+
 const _stateKeys = <String>[
   'privacy-loading',
   'privacy-offline',
@@ -31,6 +33,10 @@ const _controlKeys = <String>[
 ];
 
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   testWidgets(
     'production Privacy fails closed without controls or preview claims',
     (tester) async {

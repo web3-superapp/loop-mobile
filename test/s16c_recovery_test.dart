@@ -22,6 +22,8 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_page_recovery.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
+import 'support/loop_ground_probe.dart';
+
 /// S16-C · a read that failed must leave the owner a way out.
 ///
 /// Four complaints from the same simulator session are pinned here:
@@ -70,6 +72,10 @@ final _retryFailed = find.byKey(
 );
 
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   group('S16-C · the unreachable page can ask again', () {
     testWidgets('a page that never reached LOOP offers the read again', (
       tester,
@@ -136,7 +142,10 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        const MaterialApp(home: Scaffold(body: LoopPageBlock.unreachable())),
+        MaterialApp(
+          theme: LoopTheme.dark,
+          home: Scaffold(body: LoopPageBlock.unreachable()),
+        ),
       );
       await tester.pump();
 
@@ -315,7 +324,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [privyAuthGatewayProvider.overrideWithValue(gateway)],
-          child: const MaterialApp(home: PrivyLoginScreen()),
+          child: MaterialApp(theme: LoopTheme.dark, home: PrivyLoginScreen()),
         ),
       );
       await tester.pump();
@@ -347,7 +356,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [privyAuthGatewayProvider.overrideWithValue(gateway)],
-          child: const MaterialApp(home: PrivyLoginScreen()),
+          child: MaterialApp(theme: LoopTheme.dark, home: PrivyLoginScreen()),
         ),
       );
       await tester.pump();
@@ -385,7 +394,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [privyAuthGatewayProvider.overrideWithValue(gateway)],
-          child: const MaterialApp(home: PrivyLoginScreen()),
+          child: MaterialApp(theme: LoopTheme.dark, home: PrivyLoginScreen()),
         ),
       );
       await tester.pump();
@@ -779,8 +788,9 @@ Future<void> _pumpBanner(
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
-      child: const MaterialApp(
-        home: Scaffold(body: ProfileAvailabilityBanner()),
+      child: MaterialApp(
+        theme: LoopTheme.dark,
+        home: const Scaffold(body: ProfileAvailabilityBanner()),
       ),
     ),
   );

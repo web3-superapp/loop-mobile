@@ -3819,6 +3819,75 @@ class HarnessTests(unittest.TestCase):
         self.assertIn("LoopGround", joined)
         self.assertEqual(2, len(result))
 
+    def test_a_harness_that_mounts_a_page_must_arm_the_ground_probe(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            support = root / "test" / "support"
+            support.mkdir(parents=True)
+            (support / "loop_ground_probe.dart").write_text(
+                "void loopArmGroundProbe(WidgetTester tester) {}\n",
+                encoding="utf-8",
+            )
+            (support / "s9_page_harness.dart").write_text(
+                "Future<void> pumpS9Page(\n"
+                "  WidgetTester tester,\n"
+                "  Widget page, {\n"
+                "  Size size = const Size(390, 844),\n"
+                "}) async {\n"
+                "  await tester.pumpWidget(page);\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_ground_probe_armed(root)
+
+        self.assertTrue(
+            any(
+                "pumpS9Page" in error and "loopArmGroundProbe" in error
+                for error in result
+            ),
+            msg=f"expected the unarmed harness to be reported: {result}",
+        )
+
+    def test_an_armed_harness_passes_even_with_named_parameters(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            support = root / "test" / "support"
+            support.mkdir(parents=True)
+            (support / "loop_ground_probe.dart").write_text(
+                "void loopArmGroundProbe(WidgetTester tester) {}\n",
+                encoding="utf-8",
+            )
+            (support / "s9_page_harness.dart").write_text(
+                "Future<void> pumpS9Page(\n"
+                "  WidgetTester tester,\n"
+                "  Widget page, {\n"
+                "  Size size = const Size(390, 844),\n"
+                "}) async {\n"
+                "  loopArmGroundProbe(tester);\n"
+                "  await tester.pumpWidget(page);\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_ground_probe_armed(root)
+
+        self.assertEqual([], result)
+
+    def test_the_ground_probe_helper_cannot_be_renamed_away(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            support = root / "test" / "support"
+            support.mkdir(parents=True)
+            (support / "loop_ground_probe.dart").write_text(
+                "void loopWatchTheGround(WidgetTester tester) {}\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_ground_probe_armed(root)
+
+        self.assertTrue(
+            any("loopArmGroundProbe" in error for error in result),
+            msg=f"expected the renamed helper to be reported: {result}",
+        )
+
     def test_user_visible_copy_rejects_internal_identifiers(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -18,6 +18,8 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
+import 'loop_ground_probe.dart';
+
 const s8CurrentSessionId = '0b2c1d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e';
 const s8OtherSessionId = '1c3d2e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f';
 const s8CurrentDeviceId = '2d4e3f50-6b7c-4d8e-8f90-1b2c3d4e5f60';
@@ -478,6 +480,9 @@ Future<void> pumpS8Page(
   tester.view.physicalSize = size;
   addTearDown(tester.view.resetDevicePixelRatio);
   addTearDown(tester.view.resetPhysicalSize);
+  // Every page this harness mounts is watched for paint that did not
+  // survive its ground; no test opts in and no new page has to remember to.
+  loopArmGroundProbe(tester);
 
   await tester.pumpWidget(
     ProviderScope(

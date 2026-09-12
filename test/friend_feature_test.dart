@@ -18,12 +18,17 @@ import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/integrations/social/memory_friend_gateway.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
+import 'support/loop_ground_probe.dart';
 
 const _requestId = '11111111-1111-4111-8111-111111111111';
 
 FriendProfileRef _profileRef(String value) => FriendProfileRef.fromWire(value);
 
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   test('friend inputs allow shared aliases but reject duplicate identities and non-v4 IDs', () {
     expect(normalizeFriendAliasQuery('  NightOwl  '), 'NightOwl');
     final foldedSpaceQuery = 'A${List<String>.filled(40, ' ').join()}B';
@@ -606,7 +611,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: AddFriendPage()),
+        child: MaterialApp(theme: LoopTheme.dark, home: AddFriendPage()),
       ),
     );
     await tester.pump();
@@ -633,7 +638,10 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: CreateFriendGroupPage()),
+        child: MaterialApp(
+          theme: LoopTheme.dark,
+          home: CreateFriendGroupPage(),
+        ),
       ),
     );
     await tester.pump();
@@ -693,7 +701,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: AddFriendPage()),
+        child: MaterialApp(theme: LoopTheme.dark, home: AddFriendPage()),
       ),
     );
     await tester.pump();
@@ -741,7 +749,10 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: CreateFriendGroupPage()),
+        child: MaterialApp(
+          theme: LoopTheme.dark,
+          home: CreateFriendGroupPage(),
+        ),
       ),
     );
     await tester.pump();

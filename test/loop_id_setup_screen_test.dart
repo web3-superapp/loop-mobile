@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/loop_id_setup_controller.dart';
 import 'package:loop_mobile/features/account/loop_id_setup_screen.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_catalog.dart';
@@ -8,7 +9,13 @@ import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_models.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
+import 'support/loop_ground_probe.dart';
+
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   const loopId = 'LOOP-7HJKMNPQ';
 
   ProfileResource activated(
@@ -302,7 +309,7 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
-      child: const MaterialApp(home: LoopIdSetupScreen()),
+      child: MaterialApp(theme: LoopTheme.dark, home: LoopIdSetupScreen()),
     ),
   );
   if (settle) {

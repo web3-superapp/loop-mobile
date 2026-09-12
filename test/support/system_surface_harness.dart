@@ -12,6 +12,7 @@ import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 import 'authenticated_test_privy_gateway.dart';
+import 'loop_ground_probe.dart';
 
 /// Pumps one system surface at the 390×844 baseline (optionally at 2× text).
 Future<void> pumpSystemSurface(
@@ -23,6 +24,9 @@ Future<void> pumpSystemSurface(
   tester.view.physicalSize = const Size(390, 844);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
+  // Every page this harness mounts is watched for paint that did not
+  // survive its ground; no test opts in and no new page has to remember to.
+  loopArmGroundProbe(tester);
   addTearDown(tester.view.resetDevicePixelRatio);
   await tester.pumpWidget(
     ProviderScope(
@@ -49,6 +53,9 @@ Future<GoRouter> pumpProductionApp(
   // results of `overrideWithValue` and they are cast back here.
   List<Object> overrides = const <Object>[],
 }) async {
+  // The production app is watched too, so a page a test only reaches by
+  // `router.go` is covered by the frame the test ends on.
+  loopArmGroundProbe(tester);
   await tester.pumpWidget(
     ProviderScope(
       overrides: [

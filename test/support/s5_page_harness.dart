@@ -23,6 +23,7 @@ import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 import 's5_fixtures.dart';
+import 'loop_ground_probe.dart';
 
 /// A port double that answers with a fixed value, a fixed failure, or never.
 ///
@@ -581,6 +582,9 @@ Future<void> pumpS5Page(
   tester.view.physicalSize = size;
   addTearDown(tester.view.resetDevicePixelRatio);
   addTearDown(tester.view.resetPhysicalSize);
+  // Every page this harness mounts is watched for paint that did not
+  // survive its ground; no test opts in and no new page has to remember to.
+  loopArmGroundProbe(tester);
 
   await tester.pumpWidget(
     ProviderScope(

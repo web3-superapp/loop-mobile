@@ -6,7 +6,13 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/features/community/community_screen.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
 
+import 'support/loop_ground_probe.dart';
+
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   test('Lime Ledger foundation keeps the four canonical V2 colors', () {
     expect(LoopColors.ink, const Color(0xFF050604));
     expect(LoopColors.lime, const Color(0xFFB8FF20));

@@ -10,11 +10,17 @@ import 'package:loop_mobile/features/account/privy_otp_screen.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
+import 'support/loop_ground_probe.dart';
+
 // One injected instant, advanced explicitly to cross the resend cooldown.
 final _base = DateTime.utc(2026, 9, 7, 1);
 DateTime _now = _base;
 
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   setUp(() => _now = _base);
 
   testWidgets('shows the empty step when no code was requested', (

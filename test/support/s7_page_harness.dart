@@ -18,6 +18,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
+import 'loop_ground_probe.dart';
 import 's7_fixtures.dart';
 
 /// A port double that answers with a fixed value, a fixed failure, or never.
@@ -437,6 +438,9 @@ Future<void> pumpS7Page(
   tester.view.physicalSize = size;
   addTearDown(tester.view.resetDevicePixelRatio);
   addTearDown(tester.view.resetPhysicalSize);
+  // Every page this harness mounts is watched for paint that did not
+  // survive its ground; no test opts in and no new page has to remember to.
+  loopArmGroundProbe(tester);
 
   await tester.pumpWidget(
     ProviderScope(

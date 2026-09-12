@@ -11,12 +11,18 @@ import 'package:loop_mobile/integrations/personalization/memory_profile_gateway.
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
+import 'support/loop_ground_probe.dart';
+
 const _aliasField = ValueKey<String>('profile-edit-alias-field');
 const _saveKey = ValueKey<String>('profile-edit-save');
 const _conflictKey = ValueKey<String>('profile-edit-conflict');
 const _validationKey = ValueKey<String>('profile-edit-validation');
 
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   testWidgets('production is honestly unavailable and shows no fixture edit', (
     tester,
   ) async {

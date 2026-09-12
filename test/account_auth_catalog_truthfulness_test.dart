@@ -3,7 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
 
+import 'support/loop_ground_probe.dart';
+
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   test('the legacy auth catalog surfaces are retired, not re-implemented', () {
     // S2 moved every credential step onto the real Privy screens. The catalog
     // must not keep a parallel copy of them, so these ids are gone entirely.

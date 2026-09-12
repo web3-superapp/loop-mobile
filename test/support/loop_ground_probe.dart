@@ -19,6 +19,9 @@ final class LoopPaintedColour {
     required this.ground,
     required this.kind,
     required this.where,
+    this.widgetName = '',
+    this.site = '',
+    this.inactive = false,
   });
 
   /// The colour as it was handed to the painter, before compositing.
@@ -30,8 +33,21 @@ final class LoopPaintedColour {
   /// `text`, `glyph`, `fill` or `edge`.
   final String kind;
 
-  /// Enough of the widget to find it again.
+  /// Enough of the widget to find it again: the nearest named ancestor, the
+  /// widget itself and, for copy, the words on screen.
   final String where;
+
+  /// The widget's own type name, with no ancestry and no content.
+  final String widgetName;
+
+  /// `owner · widget`: the painting site, stable across the words on screen.
+  /// Exemptions are written against this, so an exempt entry names one place
+  /// and not every widget of that type in the application.
+  final String site;
+
+  /// The application itself says this control is off, through the
+  /// `Semantics(enabled: false)` it publishes to the accessibility tree.
+  final bool inactive;
 
   /// [colour] composited over [ground].
   Color get composited => loopCompositeOver(colour, ground);
@@ -42,6 +58,10 @@ final class LoopPaintedColour {
 
   /// WCAG relative-luminance contrast of the composite against the ground.
   double get contrast => loopContrastRatio(colour, ground);
+
+  /// One defect, named once: the same colour on the same ground under the
+  /// same widget is one finding however many rows of a list repeat it.
+  String get signature => '$kind|${_hex(colour)}|${_hex(ground)}|$where';
 
   @override
   String toString() =>
@@ -109,35 +129,68 @@ Color? _decorationFill(Decoration decoration) {
 List<LoopPaintedColour> loopProbeGround(Element root, Color ground) {
   final found = <LoopPaintedColour>[];
 
-  void visit(Element element, Color currentGround, double opacity) {
+  void visit(
+    Element element,
+    Color currentGround,
+    double opacity,
+    String owner,
+    bool inactive,
+  ) {
     var childGround = currentGround;
     var childOpacity = opacity;
+    var childInactive = inactive;
     final widget = element.widget;
+    final name = widget.runtimeType.toString();
+    final childOwner = _isNamedOwner(name) ? name : owner;
 
     Color scaled(Color colour) => childOpacity >= 0.999
         ? colour
         : colour.withValues(alpha: colour.a * childOpacity);
 
-    void record(Color colour, String kind) {
+    void record(Color colour, String kind, [String? detail]) {
       if (colour.a <= 0) return;
+      final short = widget.toStringShort();
       found.add(
         LoopPaintedColour(
           colour: scaled(colour),
           ground: childGround,
           kind: kind,
-          where: widget.toStringShort(),
+          widgetName: name,
+          site: owner.isEmpty ? short : '$owner · $short',
+          inactive: childInactive,
+          where: <String>[
+            if (owner.isNotEmpty) owner,
+            short,
+            ?detail,
+          ].join(' · '),
         ),
       );
     }
 
     if (widget is Opacity) {
       childOpacity *= widget.opacity;
+    } else if (widget is Semantics) {
+      // The application publishes "this control is off" to the accessibility
+      // tree already; the probe reads the same statement rather than guessing
+      // from a colour how faded is faded on purpose.
+      childInactive = childInactive || widget.properties.enabled == false;
     } else if (widget is ColoredBox) {
       record(widget.color, 'fill');
       childGround = loopCompositeOver(scaled(widget.color), childGround);
     } else if (widget is Material && widget.color != null) {
       record(widget.color!, 'fill');
       childGround = loopCompositeOver(scaled(widget.color!), childGround);
+    } else if (widget is Badge) {
+      // `Badge` paints its own pill inside its render object rather than
+      // through a box the walk can see, so without this its label reads as
+      // painted on whatever is behind the badge. Take the colour the widget
+      // declares, and fall back to the theme the way the widget itself does.
+      final fill =
+          widget.backgroundColor ??
+          Theme.of(element).badgeTheme.backgroundColor ??
+          Theme.of(element).colorScheme.error;
+      record(fill, 'fill');
+      childGround = loopCompositeOver(scaled(fill), childGround);
     } else if (widget is DecoratedBox) {
       final fill = _decorationFill(widget.decoration);
       if (fill != null) {
@@ -154,6 +207,11 @@ List<LoopPaintedColour> loopProbeGround(Element root, Color ground) {
             if (border is Border) ...<BorderSide>{border.left, border.right},
           }) {
             if (side.style == BorderStyle.none) continue;
+            // A border in the box's own fill colour is the box having no
+            // border. It is not an edge that vanished; there is no edge.
+            if (fill != null && side.color.toARGB32() == fill.toARGB32()) {
+              continue;
+            }
             record(side.color, 'edge');
           }
         }
@@ -162,18 +220,38 @@ List<LoopPaintedColour> loopProbeGround(Element root, Color ground) {
       final resolved = DefaultTextStyle.of(element).style
           .merge(widget.style)
           .color;
-      if (resolved != null) record(resolved, 'text');
+      if (resolved != null) record(resolved, 'text', _quote(widget.data));
     } else if (widget is LoopIcon) {
       final resolved =
           widget.color ?? IconTheme.of(element).color ?? LoopColors.chalk;
-      record(resolved, 'glyph');
+      record(resolved, 'glyph', widget.name);
     }
 
-    element.visitChildren((child) => visit(child, childGround, childOpacity));
+    element.visitChildren(
+      (child) =>
+          visit(child, childGround, childOpacity, childOwner, childInactive),
+    );
   }
 
-  visit(root, ground, 1);
+  visit(root, ground, 1, '', false);
   return found;
+}
+
+/// Widgets whose name is worth carrying down as "where this happened".
+///
+/// A page, a LOOP primitive and the route veil are names a reader can act on;
+/// the framework's own boxes are not, and a breadcrumb made of `Padding`
+/// locates nothing.
+bool _isNamedOwner(String name) =>
+    name.endsWith('Screen') ||
+    name.endsWith('Sheet') ||
+    name == 'ModalBarrier' ||
+    (name.startsWith('Loop') && !name.startsWith('LoopColors'));
+
+String? _quote(String? data) {
+  if (data == null || data.isEmpty) return null;
+  final trimmed = data.length > 24 ? '${data.substring(0, 24)}…' : data;
+  return '「$trimmed」';
 }
 
 /// Assert that nothing the subtree paints vanished into [ground].
@@ -193,14 +271,12 @@ void loopExpectVisibleOnGround(
 }) {
   final probes = loopProbeGround(tester.element(subtree), ground);
   expect(probes, isNotEmpty, reason: 'the probe found nothing to check');
-  final vanished = <LoopPaintedColour>[];
-  for (final probe in probes) {
-    if (exempt.contains(probe.where)) continue;
-    final ok = probe.kind == 'text' || probe.kind == 'glyph'
-        ? probe.contrast >= textContrast
-        : probe.groundDelta >= markDelta;
-    if (!ok) vanished.add(probe);
-  }
+  final vanished = loopVanishedPaint(
+    probes,
+    textContrast: textContrast,
+    markDelta: markDelta,
+    exempt: exempt,
+  );
   expect(
     vanished,
     isEmpty,
@@ -208,4 +284,142 @@ void loopExpectVisibleOnGround(
         'painted on ${_hex(ground)} but not there:\n'
         '${vanished.map((probe) => '  $probe').join('\n')}',
   );
+}
+
+/// The paints that did not survive their ground.
+///
+/// One place decides what "not there" means, so the catalogue test, the
+/// page-wide probe and any future caller all ask the same question. Two
+/// floors, because two different things are being asked: copy and glyphs have
+/// to be *read*, so they take a contrast ratio; a fill or a hairline only has
+/// to be *seen*.
+List<LoopPaintedColour> loopVanishedPaint(
+  Iterable<LoopPaintedColour> probes, {
+  double textContrast = 2.5,
+  double markDelta = 3,
+  Iterable<String> exempt = const <String>[],
+}) {
+  final vanished = <LoopPaintedColour>[];
+  for (final probe in probes) {
+    if (exempt.contains(probe.widgetName) ||
+        exempt.contains(probe.site) ||
+        exempt.contains(probe.where)) {
+      continue;
+    }
+    if (loopGroundProbeExemptions.containsKey(probe.site)) continue;
+    // An opaque fill repainted in the ground's own colour is the ground being
+    // restated — the Scaffold under the page's own background, a section that
+    // continues the surface it sits on. It hides nothing, because there is
+    // nothing behind it but itself, and everything above it is then judged
+    // against it. Only a *translucent* mark that moves the ground by nothing
+    // is the bug this probe exists for.
+    if (probe.kind == 'fill' && probe.colour.a >= 1 && probe.groundDelta == 0) {
+      continue;
+    }
+    final copy = probe.kind == 'text' || probe.kind == 'glyph';
+    // An inactive control is meant to recede: the application says so itself,
+    // and WCAG 1.4.3 exempts an inactive component from the reading floor for
+    // the same reason. It is still held to the mark floor, which is the floor
+    // that catches Chalk painted on Chalk — so a control that is off may be
+    // quiet, and still may not be absent.
+    final ok = copy && !probe.inactive
+        ? probe.contrast >= textContrast
+        : probe.groundDelta >= markDelta;
+    if (!ok) vanished.add(probe);
+  }
+  return vanished;
+}
+
+/// Paint the probe deliberately does not judge, keyed by `owner · widget`,
+/// with the reason for each.
+///
+/// An entry here is a claim that the paint is *meant* to be at or below the
+/// floor, not that the floor is too strict. Lowering a floor would silence the
+/// next real bug with it; naming one site silences exactly that site.
+///
+/// All three entries are the same shape: a surface painted in the page's own
+/// Ink, which cannot move a page that is already Ink. None of them is a mark
+/// that was supposed to be seen.
+const loopGroundProbeExemptions = <String, String>{
+  'ModalBarrier · ColoredBox':
+      'the route veil is `LoopColors.veil`, Ink at 76%, and it fades in from '
+      'nothing. Over the Ink page it darkens close to nothing, which is '
+      'the point: what separates a sheet from the page is the sheet\'s '
+      'own surface, not the veil. The veil is there to catch the tap.',
+  'CommunityScreen · ColoredBox':
+      'the Community panel scrim, the same `LoopColors.veil` painted by the '
+      'screen itself instead of by a route, for the same reason. '
+      'Community paints no other bare `ColoredBox`.',
+  'LoopActionDock · DecoratedBox':
+      'the sticky dock restates the page behind it — Abyss at 96%, the page\'s '
+      'own colour — so that content scrolls under it. The line that '
+      'separates it is its top hairline, which the probe checks and which '
+      'holds.',
+};
+
+/// The findings of the test that is running now, keyed so that the same paint
+/// in twenty rows of one list is reported once.
+Map<String, LoopPaintedColour>? _collecting;
+Color _collectingGround = LoopColors.ink;
+bool _watching = false;
+
+/// Watch every frame this test paints, and fail if something it painted is
+/// not there.
+///
+/// Called from the page harnesses rather than from the tests, so it covers the
+/// pages that exist today and the pages added next year without anybody
+/// remembering to opt in. A test file that mounts a page without a harness
+/// calls [loopWatchGround] once instead.
+///
+/// It reads the tree on every frame, not once after the mount, because the
+/// state a page is wrong in is often the one a tap reaches: a sheet, an error
+/// strip, a Chalk card that only a loaded read builds. `flutter_test` resets
+/// the tree before tear-downs run, so the findings are accumulated while the
+/// test is still running and reported from the tear-down.
+void loopArmGroundProbe(WidgetTester tester, {Color ground = LoopColors.ink}) {
+  _arm(tester.binding, ground);
+}
+
+/// Arms the probe for every `testWidgets` in one file, from its `main`.
+///
+/// The harnesses are the automatic path; this is the same watch for the files
+/// that mount a page through their own `pumpWidget`, so that "this file
+/// renders a page" and "this file is watched" stay the same statement.
+void loopWatchGround({Color ground = LoopColors.ink}) {
+  setUp(() => _arm(TestWidgetsFlutterBinding.instance, ground));
+}
+
+void _arm(TestWidgetsFlutterBinding binding, Color ground) {
+  // Already armed for this test: a test may mount more than once, and the
+  // watch is one per test, not one per mount.
+  if (_collecting != null) return;
+  _collecting = <String, LoopPaintedColour>{};
+  _collectingGround = ground;
+  if (!_watching) {
+    _watching = true;
+    // A persistent frame callback cannot be removed, so it is registered once
+    // for the whole process and does nothing while no test has armed it.
+    binding.addPersistentFrameCallback((_) {
+      final collecting = _collecting;
+      final root = binding.rootElement;
+      if (collecting == null || root == null) return;
+      final probes = loopProbeGround(root, _collectingGround);
+      for (final probe in loopVanishedPaint(probes)) {
+        collecting.putIfAbsent(probe.signature, () => probe);
+      }
+    });
+  }
+  addTearDown(() {
+    final found = _collecting;
+    _collecting = null;
+    if (found == null || found.isEmpty) return;
+    fail(
+      'painted but not there (${found.length} distinct):\n'
+      '${found.values.map((probe) => '  $probe').join('\n')}\n'
+      'Each line is a colour this test painted on that ground, at or below '
+      'the floor. Derive it with `LoopGround` from the ground it lands on, '
+      'or name it in `loopGroundProbeExemptions` with the reason it is '
+      'meant to be invisible.',
+    );
+  });
 }

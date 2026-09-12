@@ -13,6 +13,7 @@ import 'package:loop_mobile/integrations/privy/privy_provider.dart';
 import 'package:loop_mobile/integrations/privy/wallet_signing_gateway.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
+import 'loop_ground_probe.dart';
 import 's5_page_harness.dart';
 
 /// A wallet double that records every handoff, so a test can assert that a
@@ -81,6 +82,9 @@ Future<void> pumpS6Page(
   tester.view.physicalSize = size;
   addTearDown(tester.view.resetDevicePixelRatio);
   addTearDown(tester.view.resetPhysicalSize);
+  // Every page this harness mounts is watched for paint that did not
+  // survive its ground; no test opts in and no new page has to remember to.
+  loopArmGroundProbe(tester);
 
   await tester.pumpWidget(
     ProviderScope(

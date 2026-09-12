@@ -2,14 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/profile/social_privacy/social_privacy_gateway.dart';
+
+import 'support/loop_ground_probe.dart';
+
 import 'package:loop_mobile/main.dart' as entrypoint;
 
 /// The V1 Social Privacy surface retired with the V2 privacy resource
 /// (decision 0053). Its models, controller and gateway stay in the tree as
 /// frozen history; nothing may mount them again.
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   testWidgets('social-privacy is no longer a Profile surface', (tester) async {
     expect(
       ProfileSurfaceScreen.supportedIds,
@@ -17,8 +25,11 @@ void main() {
     );
 
     await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(home: ProfileSurfaceScreen.fromId('social-privacy')),
+      ProviderScope(
+        child: MaterialApp(
+          theme: LoopTheme.dark,
+          home: ProfileSurfaceScreen.fromId('social-privacy'),
+        ),
       ),
     );
     await tester.pumpAndSettle();

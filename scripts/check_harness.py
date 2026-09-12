@@ -7755,6 +7755,76 @@ def check_light_ground_contract(root: Path) -> list[str]:
     return errors
 
 
+# A page harness is the one place every page test goes through, so it is also
+# the one place the render probe can be armed for pages nobody has written yet.
+# A harness that mounts a page without arming it is a hole that reopens
+# silently, which is exactly how the light-ground bug shipped the first time.
+_PUMP_FUNCTION = re.compile(r"\bFuture<[^>{}]*>\s+(pump\w*)\s*\(")
+
+
+def check_ground_probe_armed(root: Path) -> list[str]:
+    """Every page harness arms the render probe (S16f).
+
+    `loopArmGroundProbe` watches every frame a test paints and fails when
+    something it painted is not there on the ground it landed on. Calling it
+    from the harnesses rather than from the tests is what makes it apply to
+    pages that do not exist yet: a new page test reuses a harness, and is
+    covered without opting in.
+    """
+
+    errors: list[str] = []
+    support = root / "test" / "support"
+    if not support.is_dir():
+        return errors
+
+    probe = support / "loop_ground_probe.dart"
+    if not probe.is_file():
+        errors.append(
+            "test/support/loop_ground_probe.dart is missing; the render probe "
+            "is the only guard that sees an indirectly passed widget on a "
+            "light ground"
+        )
+        return errors
+    if "void loopArmGroundProbe(" not in read_text(probe):
+        errors.append(
+            "test/support/loop_ground_probe.dart no longer defines "
+            "loopArmGroundProbe; the page harnesses arm it by that name"
+        )
+
+    armed = 0
+    for path in sorted(support.glob("*.dart")):
+        if path.name == "loop_ground_probe.dart":
+            continue
+        source = strip_dart_comments_and_strings(read_text(path))
+        relative = path.relative_to(root)
+        for match in _PUMP_FUNCTION.finditer(source):
+            # The parameter list opens its own brace for named arguments, so
+            # the body starts after the closing parenthesis, not before it.
+            parameters = _dart_match_bracket(source, match.end() - 1)
+            brace = source.find("{", parameters)
+            if brace < 0:
+                continue
+            body = source[brace : _dart_match_bracket(source, brace)]
+            if "tester.pumpWidget(" not in body:
+                continue
+            if "loopArmGroundProbe(" in body:
+                armed += 1
+                continue
+            line = source.count("\n", 0, match.start()) + 1
+            errors.append(
+                f"{relative}:{line} {match.group(1)} mounts a page but does "
+                "not call loopArmGroundProbe(tester); every page test goes "
+                "through a harness, so an unarmed harness is a whole slice of "
+                "the application the ground probe stops watching"
+            )
+    if not errors and armed == 0:
+        errors.append(
+            "test/support: no harness arms the ground probe; the probe only "
+            "covers the pages a harness mounts"
+        )
+    return errors
+
+
 def check_source_guards(root: Path) -> list[str]:
     forbidden = {
         "PrivyLogLevel.debug": "Privy debug logging can expose OTPs and access tokens",
@@ -10854,6 +10924,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_user_visible_copy(root))
     errors.extend(check_typography_band_contract(root))
     errors.extend(check_light_ground_contract(root))
+    errors.extend(check_ground_probe_armed(root))
     errors.extend(check_records(root))
     visible, visible_error = git_visible_paths(root)
     if visible_error:
@@ -10879,7 +10950,7 @@ def main() -> int:
         "S5 chain/market/wallet-read truth, S6 money-action truth, "
         "S7 launch/mining/referral truth, S9 dual chain slots, "
         "seven-band typography with bundled Noto Sans SC, "
-        "declared light grounds, "
+        "declared light grounds, armed page ground probe, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, user-visible copy, "
         "and secret rules are consistent."

@@ -12,7 +12,13 @@ import 'package:loop_mobile/features/perp/private/perp_private_gateway.dart';
 import 'package:loop_mobile/features/perp/private/perp_private_models.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
+import 'support/loop_ground_probe.dart';
+
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   testWidgets('explicit Preview is labelled and performs no private read', (
     tester,
   ) async {

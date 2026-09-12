@@ -9,13 +9,20 @@ import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/network/loop_connectivity_signal.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/privy_login_screen.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_repository.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
+import 'support/loop_ground_probe.dart';
+
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   group('S11 · session restore is a three-state answer', () {
     test(
       'a network failure leaves the session undecided, not signed out',
@@ -196,7 +203,7 @@ void main() {
         await tester.pumpWidget(
           ProviderScope(
             overrides: [privyAuthGatewayProvider.overrideWithValue(gateway)],
-            child: const MaterialApp(home: PrivyLoginScreen()),
+            child: MaterialApp(theme: LoopTheme.dark, home: PrivyLoginScreen()),
           ),
         );
         await tester.pump();
@@ -418,7 +425,7 @@ void main() {
         await tester.pumpWidget(
           UncontrolledProviderScope(
             container: container,
-            child: const MaterialApp(home: PrivyLoginScreen()),
+            child: MaterialApp(theme: LoopTheme.dark, home: PrivyLoginScreen()),
           ),
         );
         await tester.pump();
@@ -460,7 +467,7 @@ void main() {
         await tester.pumpWidget(
           UncontrolledProviderScope(
             container: container,
-            child: const MaterialApp(home: PrivyLoginScreen()),
+            child: MaterialApp(theme: LoopTheme.dark, home: PrivyLoginScreen()),
           ),
         );
         await tester.pump();
@@ -691,7 +698,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(home: PrivyLoginScreen()),
+          child: MaterialApp(theme: LoopTheme.dark, home: PrivyLoginScreen()),
         ),
       );
       await tester.pump();
@@ -797,7 +804,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [privyAuthGatewayProvider.overrideWithValue(gateway)],
-          child: const MaterialApp(home: PrivyLoginScreen()),
+          child: MaterialApp(theme: LoopTheme.dark, home: PrivyLoginScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -844,7 +851,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [privyAuthGatewayProvider.overrideWithValue(gateway)],
-          child: const MaterialApp(home: PrivyLoginScreen()),
+          child: MaterialApp(theme: LoopTheme.dark, home: PrivyLoginScreen()),
         ),
       );
       await tester.pumpAndSettle();

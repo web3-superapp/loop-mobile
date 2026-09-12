@@ -23,6 +23,7 @@ import 'package:loop_mobile/integrations/communication/stream_communication_gate
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 import 'communication_test_harness.dart';
+import 'loop_ground_probe.dart';
 
 const testCommunityId = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
 const testOwnerId = '9c1f0f2e-5a7b-4c3d-8e9f-0a1b2c3d4e5f';
@@ -687,6 +688,9 @@ Future<void> pumpCommunityPage(
   tester.view.physicalSize = size;
   addTearDown(tester.view.resetDevicePixelRatio);
   addTearDown(tester.view.resetPhysicalSize);
+  // Every page this harness mounts is watched for paint that did not
+  // survive its ground; no test opts in and no new page has to remember to.
+  loopArmGroundProbe(tester);
 
   await tester.pumpWidget(
     ProviderScope(

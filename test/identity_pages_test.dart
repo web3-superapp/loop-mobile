@@ -5,7 +5,13 @@ import 'package:loop_mobile/features/account/account_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
+import 'support/loop_ground_probe.dart';
+
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   group('splash', () {
     testWidgets('offers the single entry action and the build version', (
       tester,

@@ -5,12 +5,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/email_auth_controller.dart';
 import 'package:loop_mobile/features/account/privy_login_screen.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
+import 'support/loop_ground_probe.dart';
+
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   testWidgets('keeps Email and exposes Google plus external EVM wallet login', (
     tester,
   ) async {
@@ -121,7 +128,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(home: PrivyLoginScreen()),
+          child: MaterialApp(theme: LoopTheme.dark, home: PrivyLoginScreen()),
         ),
       );
       await tester.pumpAndSettle();
@@ -202,7 +209,10 @@ Future<void> _pump(
         ),
         isIosIdentityPlatformProvider.overrideWithValue(showApple),
       ],
-      child: MaterialApp(home: PrivyLoginScreen(onCodeSent: onCodeSent)),
+      child: MaterialApp(
+        theme: LoopTheme.dark,
+        home: PrivyLoginScreen(onCodeSent: onCodeSent),
+      ),
     ),
   );
   await tester.pumpAndSettle();
