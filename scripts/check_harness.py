@@ -7545,6 +7545,216 @@ def check_typography_band_contract(root: Path) -> list[str]:
     return errors
 
 
+# ---------------------------------------------------------------------------
+# Light grounds (S16e) — a colour is only wrong relative to what is under it
+# ---------------------------------------------------------------------------
+
+# Every soft token in `LoopColors` is the Chalk hue with its alpha turned down,
+# because the palette is authored for the Ink page. Painted on a Chalk card or
+# a Lime folio they are Chalk on Chalk: the widget still lays out, still takes
+# its 200px, and is simply not there. Nothing in the code reads wrong and no
+# test that only renders the Ink page can see it, so the rule is held here.
+DARK_GROUND_ONLY_TOKENS: dict[str, str] = {
+    "LoopColors.bg2": "Chalk at 2.5%",
+    "LoopColors.panel": "Chalk at 5.5%",
+    "LoopColors.card2": "Chalk at 10%",
+    "LoopColors.card": "Chalk at 6%",
+    "LoopColors.line2": "Chalk at 22%",
+    "LoopColors.line": "Chalk at 13%",
+    "LoopColors.text2": "Chalk at 68%",
+    "LoopColors.text3": "Chalk at 58%",
+    "LoopColors.textSecondary": "Chalk at 68%",
+    "LoopColors.textTertiary": "Chalk at 58%",
+    "LoopDepth.liftPrimaryEdge": "Chalk at 10%",
+    "LoopDepth.liftCardEdge": "Chalk at 5.5%",
+    "LoopDepth.innerEdge": "Chalk at 4%",
+}
+
+# The containers that paint an opaque light fill and then hand a slot to
+# somebody else's widget. Each one has to declare the ground it paints, or the
+# guest reads the page's Chalk and `LoopGround` derives the wrong ink.
+LIGHT_GROUND_CONTAINERS: dict[str, tuple[str, ...]] = {
+    "LoopChalkCard": ("child",),
+    "LoopLedgerCard": ("child",),
+    "LoopFolioPrimary": ("trailing",),
+    "LoopTokenCard": (),
+}
+
+# A widget slot is a `Widget` the caller supplies; a class that paints a light
+# fill and owns one of these is a light ground whether or not it was thought of
+# as one.
+_WIDGET_SLOT_FIELD = re.compile(r"\bfinal\s+(?:List<Widget>|Widget)\??\s+\w+\s*;")
+_OPAQUE_LIGHT_FILL = re.compile(
+    r"(?:color|backgroundColor|fillColor)\s*:\s*(?:const\s+)?"
+    r"LoopColors\.(?:chalk|lime|limeHighlight)\b(?!\s*\.withValues)"
+)
+_LIGHT_GROUND_EXEMPT_CLASSES = frozenset(
+    {
+        # The tab bar paints Chalk but builds every cell itself, naming both
+        # Ink weights; it takes no widget from a caller.
+        "LoopTabBar",
+        # The toast is its own content: one glyph and one line, both Ink.
+        "LoopToastView",
+    }
+)
+
+
+def _dart_match_bracket(source: str, start: int) -> int:
+    """Index just past the bracket opened at [start]."""
+
+    depth = 0
+    index = start
+    while index < len(source):
+        if source[index] in "([{":
+            depth += 1
+        elif source[index] in ")]}":
+            depth -= 1
+            if depth == 0:
+                return index + 1
+        index += 1
+    return len(source)
+
+
+def _dart_named_argument_spans(
+    source: str, open_paren: int, close: int, name: str
+) -> list[tuple[int, int]]:
+    """Spans of every `name:` value at the top level of one call."""
+
+    spans: list[tuple[int, int]] = []
+    depth = 0
+    index = open_paren
+    prefix = f"{name}:"
+    while index < close:
+        character = source[index]
+        if character in "([{":
+            depth += 1
+        elif character in ")]}":
+            depth -= 1
+        elif (
+            depth == 1
+            and source.startswith(prefix, index)
+            and not (source[index - 1].isalnum() or source[index - 1] == "_")
+        ):
+            value = index + len(prefix)
+            end = value
+            inner = 0
+            while end < close:
+                if source[end] in "([{":
+                    inner += 1
+                elif source[end] in ")]}":
+                    if inner == 0:
+                        break
+                    inner -= 1
+                elif source[end] == "," and inner == 0:
+                    break
+                end += 1
+            spans.append((value, end))
+        index += 1
+    return spans
+
+
+def _dart_class_spans(source: str) -> list[tuple[str, int, int]]:
+    """`(name, start, end)` for every class body in one file."""
+
+    spans: list[tuple[str, int, int]] = []
+    for match in re.finditer(r"\bclass\s+(_?\w+)", source):
+        brace = source.find("{", match.end())
+        if brace < 0:
+            continue
+        spans.append((match.group(1), match.start(), _dart_match_bracket(source, brace)))
+    return spans
+
+
+def check_light_ground_contract(root: Path) -> list[str]:
+    """Keep a dark-ground colour off a light ground (S16d/S16e).
+
+    Three rules, because the failure has three doors:
+
+    1. every registered light container declares its ground with a
+       `DefaultTextStyle` and an `IconTheme`, which is what makes `LoopGround`
+       derive the right ink for whatever it was handed;
+    2. no class paints an opaque Chalk/Lime fill, own a widget slot and stay
+       off the register, so a new light card cannot arrive unnoticed;
+    3. no dark-ground-only token is named inside a light container's slot.
+    """
+
+    errors: list[str] = []
+    lib = root / "lib"
+    if not lib.is_dir():
+        return errors
+
+    sources: dict[Path, str] = {}
+    for path in sorted(lib.rglob("*.dart")):
+        if path.relative_to(root).as_posix().startswith("lib/integrations/hyperliquid/"):
+            continue
+        sources[path] = strip_dart_comments_and_strings(read_text(path))
+
+    declared: set[str] = set()
+    registered = set(LIGHT_GROUND_CONTAINERS)
+    for path, source in sources.items():
+        relative = path.relative_to(root)
+        for name, start, end in _dart_class_spans(source):
+            body = source[start:end]
+            if name in registered:
+                missing = [
+                    fragment
+                    for fragment in ("DefaultTextStyle", "IconTheme")
+                    if fragment not in body
+                ]
+                if missing:
+                    errors.append(
+                        f"{relative}: {name} paints a light ground but does not "
+                        f"declare it ({', '.join(missing)} missing); every "
+                        "descendant then reads the page's Chalk and a derived "
+                        "colour is silently wrong"
+                    )
+                else:
+                    declared.add(name)
+                continue
+            if _OPAQUE_LIGHT_FILL.search(body) and _WIDGET_SLOT_FIELD.search(body):
+                if name in _LIGHT_GROUND_EXEMPT_CLASSES:
+                    continue
+                errors.append(
+                    f"{relative}: {name} paints an opaque Chalk/Lime fill and "
+                    "takes a widget from its caller, so it is a light ground; "
+                    "register it in LIGHT_GROUND_CONTAINERS and declare its "
+                    "DefaultTextStyle and IconTheme"
+                )
+
+    for name in registered:
+        if name not in declared and not any(
+            name in error for error in errors
+        ):
+            errors.append(
+                f"lib: LIGHT_GROUND_CONTAINERS names {name}, which no longer "
+                "exists; the register and the widgets have to agree"
+            )
+
+    for path, source in sources.items():
+        relative = path.relative_to(root)
+        for container, slots in LIGHT_GROUND_CONTAINERS.items():
+            if not slots:
+                continue
+            for match in re.finditer(rf"\b{re.escape(container)}\s*\(", source):
+                open_paren = match.end() - 1
+                close = _dart_match_bracket(source, open_paren)
+                for slot in slots:
+                    for value_start, value_end in _dart_named_argument_spans(
+                        source, open_paren, close, slot
+                    ):
+                        segment = source[value_start:value_end]
+                        for token, weight in DARK_GROUND_ONLY_TOKENS.items():
+                            if re.search(rf"{re.escape(token)}\b", segment):
+                                line = source.count("\n", 0, value_start) + 1
+                                errors.append(
+                                    f"{relative}:{line} names `{token}` "
+                                    f"({weight}) inside {container}'s `{slot}`; "
+                                    "on that ground it paints nothing — derive "
+                                    "it with LoopGround instead"
+                                )
+    return errors
+
+
 def check_source_guards(root: Path) -> list[str]:
     forbidden = {
         "PrivyLogLevel.debug": "Privy debug logging can expose OTPs and access tokens",
@@ -10643,6 +10853,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_source_guards(root))
     errors.extend(check_user_visible_copy(root))
     errors.extend(check_typography_band_contract(root))
+    errors.extend(check_light_ground_contract(root))
     errors.extend(check_records(root))
     visible, visible_error = git_visible_paths(root)
     if visible_error:
@@ -10668,6 +10879,7 @@ def main() -> int:
         "S5 chain/market/wallet-read truth, S6 money-action truth, "
         "S7 launch/mining/referral truth, S9 dual chain slots, "
         "seven-band typography with bundled Noto Sans SC, "
+        "declared light grounds, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, user-visible copy, "
         "and secret rules are consistent."

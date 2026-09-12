@@ -50,6 +50,13 @@ class LoopTopbar extends StatelessWidget {
 
   /// `#scr-community-chat .topbar{gap:5px;padding-left:12px;padding-right:12px}`
   /// — the prototype's own tightening for a bar that carries four tools.
+  ///
+  /// It also drops the title one step, to `headingSm`. Four tools plus the
+  /// back control take 220 of a 390pt bar, so the title column is about 120pt
+  /// wide: at the 24pt heading step that is four characters and an ellipsis,
+  /// which is not a channel name. At 18pt the same column holds roughly twice
+  /// as much, and two of those lines still fit the bar it already had — so the
+  /// name gets read without a single action leaving the header.
   final bool dense;
 
   /// The page is re-reading data it already shows. The topbar wears the
@@ -94,7 +101,9 @@ class LoopTopbar extends StatelessWidget {
                       title,
                       maxLines: titleMaxLines,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.headlineLarge,
+                      style: dense
+                          ? theme.textTheme.headlineSmall
+                          : theme.textTheme.headlineLarge,
                     ),
                   ),
                 ],
@@ -376,25 +385,37 @@ class LoopFolioPrimary extends StatelessWidget {
         ),
         decoration: decoration,
         clipBehavior: Clip.antiAlias,
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            // Both prototype ceilings are measured against the card's own
-            // content box, so they are read here once and handed to the two
-            // children that own them.
-            final contentWidth = constraints.hasBoundedWidth
-                ? math.max(constraints.maxWidth - padding * 2, 0.0)
-                : double.infinity;
-            return _content(
-              context,
-              contentWidth: contentWidth,
-              padding: padding,
-              foreground: foreground,
-              headingColor: headingColor,
-              ringColor: ringColor,
-              kickerOpacity: kickerOpacity,
-              captionOpacity: captionOpacity,
-            );
-          },
+        // The folio declares the ground it paints. Its own kicker, heading and
+        // caption already name `foreground`, but `trailing` is somebody else's
+        // widget: on the Lime and Chalk variants it used to inherit the page's
+        // Chalk, so a monogram fallback derived from `LoopGround` came out
+        // Chalk on Lime and was simply not there. Declaring it once here is
+        // what makes the derivation true for every guest the slot ever takes.
+        child: DefaultTextStyle.merge(
+          style: TextStyle(color: foreground),
+          child: IconTheme.merge(
+            data: IconThemeData(color: foreground),
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                // Both prototype ceilings are measured against the card's own
+                // content box, so they are read here once and handed to the
+                // two children that own them.
+                final contentWidth = constraints.hasBoundedWidth
+                    ? math.max(constraints.maxWidth - padding * 2, 0.0)
+                    : double.infinity;
+                return _content(
+                  context,
+                  contentWidth: contentWidth,
+                  padding: padding,
+                  foreground: foreground,
+                  headingColor: headingColor,
+                  ringColor: ringColor,
+                  kickerOpacity: kickerOpacity,
+                  captionOpacity: captionOpacity,
+                );
+              },
+            ),
+          ),
         ),
       ),
     );
@@ -1343,14 +1364,25 @@ class LoopBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The neutral pair is the ground plus a little, so it is derived: named as
+    // `card2`/`text2` it was Chalk on Chalk inside a Chalk card and the badge
+    // disappeared with its word in it. On the Ink page both are the tokens
+    // themselves. The Lime pair stays named, because Lime is the accent and
+    // deriving it would erase it. It is the one pair that still has to be
+    // placed by hand: on a Lime or a Chalk ground it is the ground again,
+    // which is what [onLedger] is for. `docs/ground-inventory.md` keeps that
+    // as a review item, because no floor an automated check could set
+    // separates it from the Ink page's legitimate Lime.
     final (background, foreground) = onLedger
         ? (LoopColors.ink.withValues(alpha: 0.12), LoopColors.ink)
         : switch (kind) {
             LoopBadgeKind.mining ||
             LoopBadgeKind.launch ||
             LoopBadgeKind.up => (LoopColors.limeSoft, LoopColors.lime),
-            LoopBadgeKind.down ||
-            LoopBadgeKind.mute => (LoopColors.card2, LoopColors.text2),
+            LoopBadgeKind.down || LoopBadgeKind.mute => (
+              LoopGround.fillOf(context),
+              LoopGround.secondaryOf(context),
+            ),
           };
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
@@ -1490,7 +1522,12 @@ class LoopButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null;
-    final foreground = primary ? LoopColors.ink : LoopColors.chalk;
+    // A secondary button is the ground plus a little: its fill, its edge and
+    // its label all come from whatever it was put on. Named as
+    // `card2`/`line2`/`chalk` it was an invisible rectangle with an invisible
+    // word in it on a Chalk card — and a state strip's one next step is
+    // exactly the control that gets carried there.
+    final foreground = primary ? LoopColors.ink : LoopGround.inkOf(context);
     final decoration = primary
         ? const BoxDecoration(
             gradient: LinearGradient(
@@ -1514,10 +1551,12 @@ class LoopButton extends StatelessWidget {
               ),
             ],
           )
-        : const BoxDecoration(
-            color: LoopColors.card2,
-            borderRadius: BorderRadius.all(Radius.circular(14)),
-            border: Border.fromBorderSide(BorderSide(color: LoopColors.line2)),
+        : BoxDecoration(
+            color: LoopGround.fillOf(context),
+            borderRadius: const BorderRadius.all(Radius.circular(14)),
+            border: Border.fromBorderSide(
+              BorderSide(color: LoopGround.edgeOf(context)),
+            ),
           );
     final child = Container(
       constraints: BoxConstraints(
@@ -2111,9 +2150,11 @@ class LoopSkeleton extends StatelessWidget {
             key: const ValueKey<String>('loop-skeleton-card'),
             padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
             decoration: BoxDecoration(
-              color: LoopColors.card,
+              // Same rule as the block it contains: a skeleton is the ground
+              // plus a little, on either ground.
+              color: LoopGround.tintOf(context),
               borderRadius: LoopRadius.control,
-              border: Border.all(color: LoopColors.line),
+              border: Border.all(color: LoopGround.hairlineOf(context)),
             ),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -220,9 +220,6 @@ const String communityMissingHeading = '暂无数值';
 /// would describe the wrong kind of gap.
 const String communityMissingName = '暂无名称';
 
-String communityMemberCountLabel(int? memberCount) =>
-    memberCount == null ? communityMissingFigure : '$memberCount 名成员';
-
 /// The one label for a server-confirmed membership, shared by the community
 /// home rows and the profile page's 我的社区 entry.
 ///

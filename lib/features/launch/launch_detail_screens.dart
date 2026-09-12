@@ -524,12 +524,13 @@ class _StepIndexTile extends StatelessWidget {
       height: 40,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: LoopColors.card2,
+        // Same rule as the other numbered tiles.
+        color: LoopGround.fillOf(context),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         index.toString().padLeft(2, '0'),
-        style: LoopTypography.figure(13, color: LoopColors.chalk),
+        style: LoopTypography.figure(13, color: LoopGround.inkOf(context)),
       ),
     );
   }

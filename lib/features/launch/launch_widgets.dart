@@ -329,12 +329,14 @@ class _RoundIndexTile extends StatelessWidget {
       height: 40,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: LoopColors.card2,
+        // A numbered tile is the ground plus a little, like every other
+        // monogram tile: derived, so it survives a move onto a light card.
+        color: LoopGround.fillOf(context),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         '$index',
-        style: LoopTypography.figure(13, color: LoopColors.chalk),
+        style: LoopTypography.figure(13, color: LoopGround.inkOf(context)),
       ),
     );
   }
@@ -446,7 +448,8 @@ class LaunchTickerTile extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: LoopColors.card2,
+        // Same rule as the other monogram tiles.
+        color: LoopGround.fillOf(context),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -454,7 +457,7 @@ class LaunchTickerTile extends StatelessWidget {
         style: LoopTypography.figure(
           size / 4.4,
           weight: FontWeight.w700,
-          color: LoopColors.chalk,
+          color: LoopGround.inkOf(context),
         ),
       ),
     );

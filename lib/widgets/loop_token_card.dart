@@ -159,7 +159,7 @@ class LoopTokenCard extends StatelessWidget {
             border: Border.all(
               color: state == LoopTokenCardState.graduated
                   ? LoopColors.lime.withValues(alpha: 0.32)
-                  : LoopColors.chalk.withValues(alpha: 0.16),
+                  : foreground.withValues(alpha: 0.16),
             ),
             boxShadow: const <BoxShadow>[
               BoxShadow(
@@ -175,70 +175,83 @@ class LoopTokenCard extends StatelessWidget {
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: Stack(
-            children: <Widget>[
-              // `.tcard-signature::before`: the Lime signal rail.
-              Positioned(
-                left: 0,
-                top: 14,
-                bottom: 14,
-                child: Container(
-                  width: 4,
-                  decoration: const BoxDecoration(
-                    color: LoopColors.lime,
-                    borderRadius: BorderRadius.horizontal(
-                      right: Radius.circular(4),
-                    ),
-                  ),
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
+          // The Chalk variant is a light ground, so it declares itself: the
+          // hairlines, insets and glyphs below derive their colour from here
+          // instead of naming a Chalk token that a Chalk card would swallow.
+          child: DefaultTextStyle.merge(
+            style: TextStyle(color: foreground),
+            child: IconTheme.merge(
+              data: IconThemeData(color: foreground),
+              child: Stack(
                 children: <Widget>[
-                  _Head(
-                    model: model,
-                    state: state,
-                    foreground: foreground,
-                    secondary: secondary,
-                    muted: muted,
+                  // `.tcard-signature::before`: the Lime signal rail.
+                  Positioned(
+                    left: 0,
+                    top: 14,
+                    bottom: 14,
+                    child: Container(
+                      width: 4,
+                      decoration: const BoxDecoration(
+                        color: LoopColors.lime,
+                        borderRadius: BorderRadius.horizontal(
+                          right: Radius.circular(4),
+                        ),
+                      ),
+                    ),
                   ),
-                  if (state == LoopTokenCardState.risk &&
-                      model.riskFacts.isNotEmpty)
-                    _RiskBar(facts: model.riskFacts, foreground: foreground),
-                  // The prototype draws a `tcard-chart` only in the two states
-                  // that have a series: 正常 and 已毕业. 识别中 / 数据缺失 /
-                  // 风险事实 carry no chart slot at all.
-                  if ((state == LoopTokenCardState.normal ||
-                          state == LoopTokenCardState.graduated) &&
-                      model.chart != null)
-                    _Chart(model: model, chalk: chalk),
-                  if (model.metrics.isNotEmpty)
-                    _Metrics(
-                      metrics: model.metrics,
-                      cellGround: cellGround,
-                      valueColor: state == LoopTokenCardState.partial || muted
-                          ? secondary
-                          : foreground,
-                      labelColor: secondary,
-                    ),
-                  if (model.communityLine != null)
-                    _CommunityLine(
-                      icon: model.communityIcon,
-                      text: model.communityLine!,
-                      color: chalk ? LoopColors.inkText2 : LoopColors.text2,
-                      accent: state == LoopTokenCardState.graduated,
-                    ),
-                  if (actions.isNotEmpty)
-                    _Actions(
-                      actions: actions,
-                      disabled: muted,
-                      cellGround: cellGround,
-                      foreground: chalk ? LoopColors.ink : LoopColors.text2,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      _Head(
+                        model: model,
+                        state: state,
+                        foreground: foreground,
+                        secondary: secondary,
+                        muted: muted,
+                      ),
+                      if (state == LoopTokenCardState.risk &&
+                          model.riskFacts.isNotEmpty)
+                        _RiskBar(
+                          facts: model.riskFacts,
+                          foreground: foreground,
+                        ),
+                      // The prototype draws a `tcard-chart` only in the two states
+                      // that have a series: 正常 and 已毕业. 识别中 / 数据缺失 /
+                      // 风险事实 carry no chart slot at all.
+                      if ((state == LoopTokenCardState.normal ||
+                              state == LoopTokenCardState.graduated) &&
+                          model.chart != null)
+                        _Chart(model: model, chalk: chalk),
+                      if (model.metrics.isNotEmpty)
+                        _Metrics(
+                          metrics: model.metrics,
+                          cellGround: cellGround,
+                          valueColor:
+                              state == LoopTokenCardState.partial || muted
+                              ? secondary
+                              : foreground,
+                          labelColor: secondary,
+                        ),
+                      if (model.communityLine != null)
+                        _CommunityLine(
+                          icon: model.communityIcon,
+                          text: model.communityLine!,
+                          color: chalk ? LoopColors.inkText2 : LoopColors.text2,
+                          accent: state == LoopTokenCardState.graduated,
+                        ),
+                      if (actions.isNotEmpty)
+                        _Actions(
+                          actions: actions,
+                          disabled: muted,
+                          cellGround: cellGround,
+                          foreground: chalk ? LoopColors.ink : LoopColors.text2,
+                        ),
+                    ],
+                  ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -268,8 +281,8 @@ class _Head extends StatelessWidget {
         width: 52,
         height: 52,
         alignment: Alignment.center,
-        decoration: const BoxDecoration(
-          color: LoopColors.card2,
+        decoration: BoxDecoration(
+          color: LoopGround.fillOf(context),
           borderRadius: LoopRadius.control,
         ),
         child: Text(
@@ -407,10 +420,12 @@ class _GlyphLogo extends StatelessWidget {
       width: 52,
       height: 52,
       alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        color: LoopColors.card2,
+      decoration: BoxDecoration(
+        color: LoopGround.fillOf(context),
         borderRadius: LoopRadius.control,
       ),
+      // No colour: the glyph takes the card's own [IconTheme], which is the
+      // ground's ink on both variants.
       child: LoopIcon(icon, size: 19),
     );
   }
@@ -466,7 +481,9 @@ class _Metrics extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: LoopColors.line,
+      // The 1px gaps are the grid: named as `line` they were Chalk on Chalk
+      // inside the Chalk variant and the cells ran together into one block.
+      color: LoopGround.hairlineOf(context),
       padding: const EdgeInsets.only(top: 1),
       child: Row(
         children: <Widget>[
@@ -522,8 +539,8 @@ class _CommunityLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(15, 11, 15, 11),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: LoopColors.line)),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: LoopGround.hairlineOf(context))),
       ),
       child: Row(
         children: <Widget>[
@@ -549,9 +566,9 @@ class _RiskBar extends StatelessWidget {
     return Container(
       key: const ValueKey<String>('loop-token-card-risk-facts'),
       padding: const EdgeInsets.fromLTRB(15, 10, 15, 10),
-      decoration: const BoxDecoration(
-        color: LoopColors.card2,
-        border: Border(top: BorderSide(color: LoopColors.line)),
+      decoration: BoxDecoration(
+        color: LoopGround.fillOf(context),
+        border: Border(top: BorderSide(color: LoopGround.hairlineOf(context))),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -561,8 +578,8 @@ class _RiskBar extends StatelessWidget {
             child: Container(
               width: 8,
               height: 8,
-              decoration: const BoxDecoration(
-                color: LoopColors.chalk,
+              decoration: BoxDecoration(
+                color: LoopGround.inkOf(context),
                 shape: BoxShape.circle,
               ),
             ),
@@ -602,7 +619,8 @@ class _Actions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: LoopColors.line,
+      // Same grid as the metric row, and the same reason it is derived.
+      color: LoopGround.hairlineOf(context),
       padding: const EdgeInsets.only(top: 1),
       child: Row(
         children: <Widget>[

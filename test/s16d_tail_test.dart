@@ -218,8 +218,7 @@ void main() {
     testWidgets('LoopRecordGroup carries subtitleMaxLines through', (
       tester,
     ) async {
-      const long =
-          '延迟 302ms · 落后 4 块 · 校验通过 · 2 秒前 · 这一段足够长，单行放不下';
+      const long = '延迟 302ms · 落后 4 块 · 校验通过 · 2 秒前 · 这一段足够长，单行放不下';
       await tester.pumpWidget(
         MaterialApp(
           theme: LoopTheme.dark,

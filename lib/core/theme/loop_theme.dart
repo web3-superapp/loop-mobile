@@ -84,6 +84,13 @@ abstract final class LoopColors {
 /// Each weight is read off the token it stands for, so on the Ink page every
 /// derived colour is the token itself and nothing about the dark rendering
 /// moves.
+///
+/// This only works because a light ground *declares itself*: the container
+/// that paints Chalk or Lime wraps its children in a [DefaultTextStyle] and an
+/// [IconTheme] carrying that ground's ink. A container that paints a light
+/// fill and declares nothing leaves every descendant reading the page's Chalk,
+/// and the derivation is silently wrong — which is why
+/// `scripts/check_harness.py` holds the declaration itself.
 abstract final class LoopGround {
   /// The ground's own ink at full strength: Chalk on Ink, Ink on Chalk/Lime.
   static Color inkOf(BuildContext context) =>
@@ -97,9 +104,23 @@ abstract final class LoopGround {
   static Color fillOf(BuildContext context) =>
       inkOf(context).withValues(alpha: LoopColors.card2.a);
 
+  /// [LoopColors.card]'s weight in the ground's ink — the softer panel tint a
+  /// placeholder or an inset panel sits on.
+  static Color tintOf(BuildContext context) =>
+      inkOf(context).withValues(alpha: LoopColors.card.a);
+
   /// [LoopColors.line]'s weight in the ground's ink — a hairline edge.
   static Color hairlineOf(BuildContext context) =>
       inkOf(context).withValues(alpha: LoopColors.line.a);
+
+  /// [LoopColors.line2]'s weight in the ground's ink — a strong edge, the one
+  /// a control draws around itself.
+  static Color edgeOf(BuildContext context) =>
+      inkOf(context).withValues(alpha: LoopColors.line2.a);
+
+  /// [LoopColors.text2]'s weight in the ground's ink — secondary copy.
+  static Color secondaryOf(BuildContext context) =>
+      inkOf(context).withValues(alpha: LoopColors.text2.a);
 
   /// [LoopColors.text3]'s weight in the ground's ink — auxiliary copy and
   /// glyphs.

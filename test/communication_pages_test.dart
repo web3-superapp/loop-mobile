@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
@@ -14,6 +15,7 @@ import 'package:loop_mobile/features/community/community_ai_screen.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/community_test_harness.dart';
 import 'support/communication_test_harness.dart';
@@ -68,11 +70,19 @@ void main() {
 
       final title = find.text('Frog Holders');
       expect(title, findsOneWidget);
-      // Wrapped, the name ran a second line under the tools and left itself
-      // half the bar. It truncates instead.
-      expect(tester.widget<Text>(title).maxLines, 1);
+      // The column beside four tools is about 120pt wide. At the bar's 24pt
+      // heading step that was four characters and an ellipsis; `dense` prints
+      // it at 18pt over at most two lines, which holds the whole name — and
+      // the ellipsis is still there for one that does not fit.
+      expect(tester.widget<Text>(title).maxLines, 2);
       expect(tester.widget<Text>(title).overflow, TextOverflow.ellipsis);
-      expect(tester.getSize(title).height, lessThan(40));
+      expect(
+        tester.renderObject<RenderParagraph>(title).didExceedMaxLines,
+        isFalse,
+      );
+      expect(tester.getSize(title).height, lessThan(48));
+      // The bar is no taller than the one that truncated.
+      expect(tester.getSize(find.byType(LoopTopbar)).height, lessThan(90));
       // `#scr-community-chat .topbar{padding-right:12px}`: the prototype's
       // own tightening gives the name back what it can of that column.
       expect(

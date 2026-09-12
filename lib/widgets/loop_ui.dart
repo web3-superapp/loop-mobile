@@ -441,7 +441,23 @@ class _LinePainter extends CustomPainter {
   }
 }
 
-enum LoopStage { discover, discuss, execute }
+/// The three stages of the rail (`.ctx-rail`).
+///
+/// [chip] is the prototype's own visible token and stays Latin; [label] is
+/// what a screen reader says. They are separate because a visible word and a
+/// spoken word are two different things: the chips are a three-token rail read
+/// at a glance, while `Current loop stage: discuss` was an English sentence
+/// with a Dart identifier in it, read out to an owner using a zh-CN reader.
+enum LoopStage {
+  discover('DISCOVER', '发现'),
+  discuss('DISCUSS', '讨论'),
+  execute('EXECUTE', '执行');
+
+  const LoopStage(this.chip, this.label);
+
+  final String chip;
+  final String label;
+}
 
 class LoopContextRail extends StatelessWidget {
   const LoopContextRail({required this.stage, super.key, this.compact = false});
@@ -451,13 +467,18 @@ class LoopContextRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const stages = <(LoopStage, String, Color)>[
-      (LoopStage.discover, 'DISCOVER', LoopColors.market),
-      (LoopStage.discuss, 'DISCUSS', LoopColors.chat),
-      (LoopStage.execute, 'EXECUTE', LoopColors.mint),
+    const stages = <(LoopStage, Color)>[
+      (LoopStage.discover, LoopColors.market),
+      (LoopStage.discuss, LoopColors.chat),
+      (LoopStage.execute, LoopColors.mint),
     ];
+    // The rail says one thing: which stage this page is in. The three chips
+    // are how it looks, not three separate announcements, so they are excluded
+    // and the container carries the whole sentence.
     return Semantics(
-      label: 'Current loop stage: ${stage.name}',
+      container: true,
+      label: '当前阶段：${stage.label}',
+      excludeSemantics: true,
       child: Container(
         padding: EdgeInsets.all(compact ? 5 : 7),
         decoration: BoxDecoration(
@@ -480,14 +501,16 @@ class LoopContextRail extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: selected
-                        ? item.$3.withValues(alpha: 0.13)
+                        ? item.$2.withValues(alpha: 0.13)
                         : Colors.transparent,
                     borderRadius: LoopRadius.pill,
                   ),
                   child: Text(
-                    compact ? item.$2.characters.take(1).toString() : item.$2,
+                    compact
+                        ? item.$1.chip.characters.take(1).toString()
+                        : item.$1.chip,
                     style: LoopType.captionSm.copyWith(
-                      color: selected ? item.$3 : LoopColors.vapor,
+                      color: selected ? item.$2 : LoopColors.vapor,
                       letterSpacing: selected ? 0.7 : 0.4,
                     ),
                   ),

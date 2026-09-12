@@ -3730,6 +3730,95 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_source_guards(root)
         self.assertEqual(3, len(result))
 
+    def test_light_ground_container_must_declare_its_ground(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "widgets" / "loop_components.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "class LoopChalkCard extends StatelessWidget {\n"
+                "  final Widget child;\n"
+                "  Widget build(BuildContext context) {\n"
+                "    return DecoratedBox(\n"
+                "      decoration: const BoxDecoration(color: LoopColors.chalk),\n"
+                "      child: child,\n"
+                "    );\n"
+                "  }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_light_ground_contract(root)
+
+        joined = "\n".join(result)
+        self.assertIn("does not declare it", joined)
+        self.assertIn("DefaultTextStyle", joined)
+
+    def test_new_light_ground_cannot_arrive_unregistered(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "widgets" / "loop_panels.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "class LoopPaperPanel extends StatelessWidget {\n"
+                "  final Widget child;\n"
+                "  Widget build(BuildContext context) {\n"
+                "    return DecoratedBox(\n"
+                "      decoration: const BoxDecoration(color: LoopColors.lime),\n"
+                "      child: child,\n"
+                "    );\n"
+                "  }\n"
+                "}\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_light_ground_contract(root)
+
+        self.assertTrue(
+            any("LoopPaperPanel" in error and "light ground" in error for error in result),
+            msg=f"expected the unregistered light ground to be reported: {result}",
+        )
+
+    def test_dark_only_token_inside_a_light_slot_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            widgets = root / "lib" / "widgets" / "loop_components.dart"
+            widgets.parent.mkdir(parents=True)
+            # The registered containers have to exist and declare, or the
+            # register's own consistency rule fires instead of the one under
+            # test.
+            widgets.write_text(
+                "".join(
+                    "class %s extends StatelessWidget {\n"
+                    "  Widget build(BuildContext context) =>\n"
+                    "      DefaultTextStyle.merge(child: IconTheme.merge(child: x));\n"
+                    "}\n" % name
+                    for name in (
+                        "LoopChalkCard",
+                        "LoopLedgerCard",
+                        "LoopFolioPrimary",
+                        "LoopTokenCard",
+                    )
+                ),
+                encoding="utf-8",
+            )
+            page = root / "lib" / "features" / "demo" / "demo_screen.dart"
+            page.parent.mkdir(parents=True)
+            page.write_text(
+                "Widget build(BuildContext context) => LoopChalkCard(\n"
+                "  child: Container(\n"
+                "    decoration: BoxDecoration(color: LoopColors.card2),\n"
+                "    child: Text('x', style: LoopTypography.caption(11, color: LoopColors.text3)),\n"
+                "  ),\n"
+                ");\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_light_ground_contract(root)
+
+        joined = "\n".join(result)
+        self.assertIn("LoopColors.card2", joined)
+        self.assertIn("LoopColors.text3", joined)
+        self.assertIn("LoopGround", joined)
+        self.assertEqual(2, len(result))
+
     def test_user_visible_copy_rejects_internal_identifiers(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
