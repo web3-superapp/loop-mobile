@@ -214,6 +214,40 @@ void main() {
     });
   });
 
+  group('a grouped row keeps every field it was given', () {
+    testWidgets('LoopRecordGroup carries subtitleMaxLines through', (
+      tester,
+    ) async {
+      const long =
+          '延迟 302ms · 落后 4 块 · 校验通过 · 2 秒前 · 这一段足够长，单行放不下';
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: LoopTheme.dark,
+          home: const Scaffold(
+            body: SizedBox(
+              width: 320,
+              child: LoopRecordGroup(
+                rows: <LoopRecordRow>[
+                  LoopRecordRow(
+                    key: ValueKey<String>('grouped-row'),
+                    title: 'rpc-956a0d5f88ea',
+                    subtitle: long,
+                    subtitleMaxLines: 2,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // The group rebuilds each row instead of mounting the one it was
+      // handed, so a field it forgets to copy is dropped silently and only
+      // shows up on a device. Assert on the mounted Text, not on the row.
+      expect(tester.widget<Text>(find.text(long)).maxLines, 2);
+    });
+  });
+
   group('the sprite sheet carries a re-read glyph', () {
     test('refresh is registered', () {
       expect(LoopIconNames.contains('refresh'), isTrue);

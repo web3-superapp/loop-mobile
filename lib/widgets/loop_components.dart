@@ -1129,6 +1129,10 @@ class LoopRecordGroup extends StatelessWidget {
             leading: rows[index].leading,
             title: rows[index].title,
             subtitle: rows[index].subtitle,
+            // Every field a row carries must be copied here: the group
+            // rebuilds each row rather than mounting the one it was given,
+            // so anything omitted is silently dropped on every grouped row.
+            subtitleMaxLines: rows[index].subtitleMaxLines,
             trailing: rows[index].trailing,
             trailingCaption: rows[index].trailingCaption,
             trailingCaptionUp: rows[index].trailingCaptionUp,
