@@ -23,6 +23,57 @@ const _avatarColors = <Color>[
   Color(0xFFB993FF),
 ];
 
+/// The floor the initials on a generated disc have to clear.
+///
+/// 3:1 is WCAG 1.4.3's own figure for large text, which is what a two-letter
+/// monogram at 700 weight is. It is not a number invented here, and it leaves
+/// headroom over the render probe's 2.5 reading floor so that the slightly
+/// lighter card the avatar actually lands on cannot eat the margin.
+const double _avatarInkContrast = 3;
+
+/// WCAG relative-luminance contrast between two opaque colours.
+double _contrastRatio(Color a, Color b) {
+  final first = a.computeLuminance() + 0.05;
+  final second = b.computeLuminance() + 0.05;
+  return first > second ? first / second : second / first;
+}
+
+/// The ground the disc lands on, as far as the disc needs to know it.
+///
+/// Derived the way `LoopGround` derives everything else: a ground that hands
+/// its subtree light ink is a dark ground, and one that hands down dark ink is
+/// a light one. The disc needs the two extremes, not the exact surface,
+/// because it only has to be dark enough on whichever of them it got.
+Color _avatarGround(BuildContext context) =>
+    LoopGround.inkOf(context).computeLuminance() > 0.5
+    ? LoopColors.ink
+    : LoopColors.chalk;
+
+/// A seed carried toward Ink until Chalk can be read on the disc it builds.
+///
+/// The palette is eight fixed hues, three of which — Lime, the pale green and
+/// the amber — are lighter than the Chalk monogram painted on them, so the
+/// initials came out at 1.6:1 to 2.3:1 and the name on the avatar was not
+/// there. The disc's lightest paint is its first gradient stop, the seed at
+/// 82% over whatever it landed on, so that is where the floor is measured.
+///
+/// A seed that already clears the floor is returned unchanged, byte for byte,
+/// which is why the five dark hues on the Ink page keep exactly the disc they
+/// have today. This is a property of the seed, not a list of three fixes, so a
+/// ninth hue added later is held to the same floor without anyone noticing it
+/// had to be.
+Color _avatarSeed(Color seed, Color ground) {
+  const steps = 32;
+  for (var step = 0; step <= steps; step++) {
+    final carried = Color.lerp(seed, LoopColors.ink, step / steps)!;
+    final stop = Color.alphaBlend(carried.withValues(alpha: 0.82), ground);
+    if (_contrastRatio(LoopColors.chalk, stop) >= _avatarInkContrast) {
+      return carried;
+    }
+  }
+  return LoopColors.ink;
+}
+
 class ChatAvatar extends StatelessWidget {
   const ChatAvatar({
     required this.label,
@@ -39,7 +90,10 @@ class ChatAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _avatarColors[colorSeed.abs() % _avatarColors.length];
+    final color = _avatarSeed(
+      _avatarColors[colorSeed.abs() % _avatarColors.length],
+      _avatarGround(context),
+    );
     final initials = _initials(label);
     return Semantics(
       image: true,

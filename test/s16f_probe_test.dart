@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/widgets/chat_components.dart';
 import 'package:loop_mobile/features/market/market_screen.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -172,6 +173,213 @@ void main() {
     });
   });
 
+  group('paint the walk cannot see is still paint', () {
+    testWidgets('a Badge label is judged on the pill the Badge draws', (
+      tester,
+    ) async {
+      // `Badge` draws its pill inside its own render object, so the walk sees
+      // no box for it. Before the probe read the declared colour, the label
+      // was judged against whatever happened to be behind the badge — here
+      // the Ink page, on which Ink text is invisible and the finding was
+      // pure invention.
+      await tester.pumpWidget(
+        _wrap(
+          const Center(
+            child: Badge(
+              backgroundColor: LoopColors.lime,
+              textColor: LoopColors.ink,
+              label: Text('9'),
+              child: SizedBox.square(dimension: 24),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final probes = _probe(tester);
+      final label = probes.firstWhere(
+        (probe) => probe.kind == 'text' && probe.where.contains('9'),
+      );
+      expect(label.ground, LoopColors.lime);
+      expect(label.contrast, greaterThan(2.5));
+      expect(loopVanishedPaint(probes), isEmpty);
+    });
+
+    testWidgets('a Badge that really is invisible is still a finding', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          const Center(
+            child: Badge(
+              backgroundColor: LoopColors.lime,
+              textColor: LoopColors.lime,
+              label: Text('9'),
+              child: SizedBox.square(dimension: 24),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final vanished = loopVanishedPaint(_probe(tester));
+      expect(vanished, hasLength(1));
+      expect(vanished.single.where, contains('9'));
+      expect(vanished.single.ground, LoopColors.lime);
+    });
+  });
+
+  group('a frame between two states is not a state', () {
+    // `Material` hands its subtree's copy down through an
+    // `AnimatedDefaultTextStyle` and its own colour down as a plain field, so
+    // for the 200ms a button takes to change state the walk used to read the
+    // colour the copy is leaving on the ground it is arriving at. Both ends
+    // of that transition are fine; the middle is an artefact of reading one
+    // end of it and not the other.
+    Future<void> pumpButton(WidgetTester tester, {required bool enabled}) =>
+        tester.pumpWidget(
+          _wrap(
+            Center(
+              child: FilledButton(
+                onPressed: enabled ? () {} : null,
+                child: const Text('搜索'),
+              ),
+            ),
+          ),
+        );
+
+    LoopPaintedColour labelOf(WidgetTester tester) => _probe(
+      tester,
+    ).firstWhere((probe) => probe.kind == 'text' && probe.where.contains('搜索'));
+
+    testWidgets('both settled ends of an enable are read', (tester) async {
+      await pumpButton(tester, enabled: false);
+      await tester.pumpAndSettle();
+      final off = labelOf(tester);
+      expect(off.colour.a, closeTo(0.38, 0.01), reason: 'the disabled label');
+      expect(off.contrast, greaterThan(2.5));
+
+      await pumpButton(tester, enabled: true);
+      await tester.pumpAndSettle();
+      final on = labelOf(tester);
+      expect(on.ground, LoopColors.lime);
+      expect(on.colour, LoopColors.ink);
+      expect(loopVanishedPaint(_probe(tester)), isEmpty);
+    });
+
+    testWidgets('the frames in between report nothing', (tester) async {
+      await pumpButton(tester, enabled: false);
+      await tester.pumpAndSettle();
+      await pumpButton(tester, enabled: true);
+
+      // One frame in, the ground is already the Lime the button is arriving
+      // at. The label has to be read from the same end of the transition.
+      await tester.pump();
+      expect(labelOf(tester).ground, LoopColors.lime);
+      expect(labelOf(tester).colour, LoopColors.ink);
+      expect(loopVanishedPaint(_probe(tester)), isEmpty);
+
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(loopVanishedPaint(_probe(tester)), isEmpty);
+
+      await tester.pumpAndSettle();
+      expect(loopVanishedPaint(_probe(tester)), isEmpty);
+    });
+
+    testWidgets('a label that states its own vanishing colour still fails', (
+      tester,
+    ) async {
+      // The suppression is "read the declared state", never "skip text under
+      // a Material": a colour the widget asks for itself is still judged.
+      await tester.pumpWidget(
+        _wrap(
+          Center(
+            child: FilledButton(
+              onPressed: () {},
+              child: const Text('搜索', style: TextStyle(color: LoopColors.lime)),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final vanished = loopVanishedPaint(_probe(tester));
+      expect(vanished, hasLength(1));
+      expect(vanished.single.where, contains('搜索'));
+      expect(vanished.single.ground, LoopColors.lime);
+    });
+  });
+
+  group('every generated avatar disc can carry its own monogram', () {
+    // The fan-out's other finding: `ChatAvatar` builds its disc from one of
+    // eight fixed hues and paints Chalk initials on it, and three of the eight
+    // are lighter than Chalk. On a real inbox that is a name nobody can read,
+    // not a fixture artefact — the seed is the conversation's, and every
+    // account whose seed lands on Lime, the pale green or the amber got it.
+    for (final ground in <Color>[LoopColors.ink, LoopColors.chalk]) {
+      testWidgets('on ${ground == LoopColors.ink ? 'Ink' : 'Chalk'}', (
+        tester,
+      ) async {
+        for (var seed = 0; seed < 8; seed++) {
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: LoopTheme.dark,
+              home: Scaffold(
+                backgroundColor: ground,
+                body: DefaultTextStyle(
+                  style: TextStyle(
+                    color: ground == LoopColors.ink
+                        ? LoopColors.chalk
+                        : LoopColors.ink,
+                  ),
+                  child: Center(
+                    child: ChatAvatar(label: 'Nova Onchain', colorSeed: seed),
+                  ),
+                ),
+              ),
+            ),
+          );
+          await tester.pump();
+
+          final probes = loopProbeGround(
+            tester.element(find.byType(ChatAvatar)),
+            ground,
+          );
+          final monogram = probes.firstWhere(
+            (probe) => probe.kind == 'text' && probe.where.contains('NO'),
+          );
+          expect(
+            monogram.contrast,
+            greaterThanOrEqualTo(2.5),
+            reason: 'seed $seed on ${_hexOf(ground)}: $monogram',
+          );
+          expect(loopVanishedPaint(probes), isEmpty, reason: 'seed $seed');
+
+          // A seed that already cleared the floor comes back untouched, so
+          // the discs that were never the bug keep exactly the colour they
+          // had. On Ink that is the violet, the pink and the lilac.
+          if (ground == LoopColors.ink && const <int>[3, 4, 7].contains(seed)) {
+            final disc = probes.firstWhere((probe) => probe.kind == 'fill');
+            expect(
+              disc.colour.withValues(alpha: 1).toARGB32(),
+              const <int>[
+                0xFF68B9FF,
+                0xFFF2B562,
+                0xFFB8FF20,
+                0xFF8D82FF,
+                0xFFFF7E9B,
+                0xFF57C8D5,
+                0xFFB3D66E,
+                0xFFB993FF,
+              ][seed],
+              reason: 'seed $seed was already dark enough',
+            );
+          }
+        }
+      });
+    }
+  });
+
   group('the armed probe watches a real page, not a fixture', () {
     // The harness arms the probe for these pages the way it does for every
     // other one; what is asserted here is the premise that makes that worth
@@ -211,3 +419,6 @@ void main() {
     });
   });
 }
+
+String _hexOf(Color colour) =>
+    '#${colour.toARGB32().toRadixString(16).padLeft(8, '0')}';

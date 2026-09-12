@@ -121,11 +121,13 @@ Color? _decorationFill(Decoration decoration) {
 
 /// Every colour the subtree under [root] paints, paired with its ground.
 ///
-/// The walk carries two things down: the nearest opaque ground, recomputed
-/// whenever a box paints a fill, and the accumulated [Opacity] factor, because
+/// The walk carries three things down: the nearest opaque ground, recomputed
+/// whenever a box paints a fill, the accumulated [Opacity] factor, because
 /// a layer at 66% is exactly as capable of erasing a hairline as a low alpha
-/// is. Gradients contribute their first stop; a fully transparent colour is
-/// deliberate absence and is not reported.
+/// is, and the settled colour of any implicit text animation overhead, so
+/// that copy and the ground under it are read from the same end of a
+/// transition. Gradients contribute their first stop; a fully transparent
+/// colour is deliberate absence and is not reported.
 List<LoopPaintedColour> loopProbeGround(Element root, Color ground) {
   final found = <LoopPaintedColour>[];
 
@@ -135,10 +137,16 @@ List<LoopPaintedColour> loopProbeGround(Element root, Color ground) {
     double opacity,
     String owner,
     bool inactive,
+    Color? settledInk,
+    Color? animatedInk,
   ) {
     var childGround = currentGround;
     var childOpacity = opacity;
     var childInactive = inactive;
+    var childSettledInk = settledInk;
+    // Set for the immediate children of an `AnimatedDefaultTextStyle` only,
+    // because the one widget it builds is the one carrying the frame's value.
+    Color? childAnimatedInk;
     final widget = element.widget;
     final name = widget.runtimeType.toString();
     final childOwner = _isNamedOwner(name) ? name : owner;
@@ -169,6 +177,21 @@ List<LoopPaintedColour> loopProbeGround(Element root, Color ground) {
 
     if (widget is Opacity) {
       childOpacity *= widget.opacity;
+    } else if (widget is AnimatedDefaultTextStyle) {
+      // The state the application declared, as opposed to the frame the
+      // transition is currently on. `Material` drives its subtree's copy
+      // through one of these while the probe reads its own `color` straight
+      // off the widget, so without this a button caught mid-state-change
+      // reads as the colour it is leaving on the ground it is arriving at —
+      // two halves of two different states, and neither of them a state the
+      // page is ever in.
+      childAnimatedInk = widget.style.color;
+    } else if (widget is DefaultTextStyle) {
+      // The `DefaultTextStyle` an `AnimatedDefaultTextStyle` builds is that
+      // animation's current frame, and it is the only one that inherits the
+      // declared colour above it. Any other one states its colour outright,
+      // so the settled colour stops here.
+      childSettledInk = animatedInk;
     } else if (widget is Semantics) {
       // The application publishes "this control is off" to the accessibility
       // tree already; the probe reads the same statement rather than guessing
@@ -220,7 +243,11 @@ List<LoopPaintedColour> loopProbeGround(Element root, Color ground) {
       final resolved = DefaultTextStyle.of(element).style
           .merge(widget.style)
           .color;
-      if (resolved != null) record(resolved, 'text', _quote(widget.data));
+      // A colour of its own is the widget's own statement and always wins;
+      // otherwise a settled colour from overhead beats the frame's value, so
+      // that the copy and the ground beside it are read from the same state.
+      final colour = widget.style?.color ?? childSettledInk ?? resolved;
+      if (colour != null) record(colour, 'text', _quote(widget.data));
     } else if (widget is LoopIcon) {
       final resolved =
           widget.color ?? IconTheme.of(element).color ?? LoopColors.chalk;
@@ -228,12 +255,19 @@ List<LoopPaintedColour> loopProbeGround(Element root, Color ground) {
     }
 
     element.visitChildren(
-      (child) =>
-          visit(child, childGround, childOpacity, childOwner, childInactive),
+      (child) => visit(
+        child,
+        childGround,
+        childOpacity,
+        childOwner,
+        childInactive,
+        childSettledInk,
+        childAnimatedInk,
+      ),
     );
   }
 
-  visit(root, ground, 1, '', false);
+  visit(root, ground, 1, '', false, null, null);
   return found;
 }
 
