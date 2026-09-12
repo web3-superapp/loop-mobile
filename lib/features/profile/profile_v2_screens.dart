@@ -84,18 +84,23 @@ class LoopProfileAvatar extends StatelessWidget {
         );
       }
     }
+    // The identity card is a Chalk card and the setup page is the Ink page,
+    // so this fallback has to hold on both. Naming `card2` and `chalk` here
+    // painted Chalk on Chalk on the card: a 200px disc that was simply not
+    // there, with the monogram invisible inside it.
+    final ink = LoopGround.inkOf(context);
     return Container(
       key: const ValueKey<String>('loop-profile-avatar-monogram'),
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        color: LoopColors.card2,
+      decoration: BoxDecoration(
+        color: LoopGround.fillOf(context),
         shape: BoxShape.circle,
       ),
       child: Text(
         monogram,
-        style: LoopTypography.figure(size / 4.5, color: LoopColors.chalk),
+        style: LoopTypography.figure(size / 4.5, color: ink),
       ),
     );
   }
@@ -1477,6 +1482,12 @@ class _PrivacyStateBlock extends StatelessWidget {
 /// * 关闭 puts the warning away for this run. It is not an answer either —
 ///   nothing about the profile changes, and the next published answer brings
 ///   the warning back if it is still unread.
+///
+/// Both are icon controls on the same 44 grid as every other bar action. As a
+/// labelled button 重试 was a word wide enough to push the notice into another
+/// line of height on a banner that already sits above the page; the sprite
+/// says the same thing in the space the 关闭 control already occupies, and the
+/// spoken label still carries the whole sentence.
 class ProfileAvailabilityBanner extends ConsumerWidget {
   const ProfileAvailabilityBanner({super.key});
 
@@ -1502,16 +1513,15 @@ class ProfileAvailabilityBanner extends ConsumerWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          if (retryable) ...<Widget>[
-            LoopButton(
+          if (retryable)
+            LoopIconButton(
               key: const ValueKey<String>('profile-availability-retry'),
-              label: rechecking ? '正在重试…' : '重试',
+              icon: 'refresh',
+              label: rechecking ? '正在重试…' : '重新读取资料状态',
               onPressed: rechecking
                   ? null
                   : () => unawaited(controller.recheck()),
             ),
-            const SizedBox(width: 4),
-          ],
           LoopIconButton(
             key: const ValueKey<String>('profile-availability-dismiss'),
             icon: 'close',

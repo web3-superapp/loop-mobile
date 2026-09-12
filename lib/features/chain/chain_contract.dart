@@ -273,16 +273,19 @@ bool loopChainOutcomeIsUnresolved(LoopChainFailureKind kind) =>
 ///
 /// An unknown code keeps a neutral sentence rather than inventing a cause.
 String loopReasonCodeText(String? reasonCode) => switch (reasonCode) {
-  // chain / RPC
+  // chain / RPC. A node or a provider LOOP could not reach is LOOP's own
+  // read, not this device's connection: swapping WiFi cannot move it, so
+  // these sentences say whose side the gap is on instead of sending the
+  // owner to debug a network that is already working.
   'BSC_RPC_NOT_CONFIGURED' => '链上数据暂时读不到。',
   'BSC_CHAIN_RUNTIME_UNAVAILABLE' => '链上数据暂时不可用，稍后再试。',
   'BSC_CHAIN_VERIFICATION_PENDING' => '正在校验链上连接，暂时不显示链上数字。',
-  'BSC_RPC_UNREACHABLE' => '链上节点当前连不上。',
+  'BSC_RPC_UNREACHABLE' => '链上节点暂时连不上，与你的网络无关，稍后再看。',
   'BSC_CHAIN_ID_MISMATCH' => '连接到的不是 BNB Smart Chain，这一页不可用。',
   // launch chain slot (decision 0038) — only ever about the testnet slot
   'LAUNCH_CHAIN_RPC_NOT_CONFIGURED' => 'Launch 运行在 BSC 测试网，测试网数据暂时读不到。',
   'LAUNCH_CHAIN_VERIFICATION_PENDING' => '正在校验测试网连接，暂时不显示测试网数字。',
-  'LAUNCH_CHAIN_RPC_UNREACHABLE' => '测试网节点当前连不上。',
+  'LAUNCH_CHAIN_RPC_UNREACHABLE' => '测试网节点暂时连不上，与你的网络无关，稍后再看。',
   'LAUNCH_CHAIN_ID_MISMATCH' => '连接到的不是 BSC 测试网，Launch 相关内容不可用。',
   'BSC_BALANCE_CALL_FAILED' => '这次余额没有读到，因此不显示数字。',
   'BSC_INDEXER_NOT_STARTED' => '转账记录暂时读不到。',
@@ -303,7 +306,7 @@ String loopReasonCodeText(String? reasonCode) => switch (reasonCode) {
   'MARKET_PROVIDER_GOPLUS_NOT_CONFIGURED' => '安全信息与持有人数暂时读不到。',
   'MARKET_PROVIDER_GECKOTERMINAL_DISABLED' => '新币发现与相关行情暂时读不到。',
   'MARKET_PROVIDER_RATE_LIMITED' => '数据服务限流中，暂时没有新数值。',
-  'MARKET_PROVIDER_UNREACHABLE' => '网络失败或超时。',
+  'MARKET_PROVIDER_UNREACHABLE' => '行情暂时取不到，与你的网络无关，稍后再看。',
   'MARKET_PROVIDER_RESPONSE_MALFORMED' => '返回的数据不完整，已整体丢弃。',
   'MARKET_PAIR_NOT_FOUND' => '没有找到这个资产的交易对。',
   'MARKET_FACT_NOT_REPORTED' => '这一项没有数值。',

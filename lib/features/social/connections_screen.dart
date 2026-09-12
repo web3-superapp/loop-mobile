@@ -60,7 +60,7 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
         archetype: LoopFolioArchetype.record,
         kicker: 'SOCIAL CONNECTIONS',
         heading: counts == null
-            ? communityMissingFigure
+            ? communityMissingHeading
             : '${counts.following} 关注 · ${counts.followers} 粉丝',
         caption: '公开关系可见，钱包地址始终隐藏。关注是单向的，不需要对方同意。',
         stamp: counts == null ? null : 'SOCIAL',

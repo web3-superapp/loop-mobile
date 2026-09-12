@@ -108,7 +108,7 @@ void main() {
       );
 
       expect(find.text('读不到'), findsOneWidget);
-      expect(find.textContaining('链上节点当前连不上'), findsWidgets);
+      expect(find.textContaining('链上节点暂时连不上，与你的网络无关'), findsWidgets);
       expect(find.text('0'), findsNothing);
     });
 
@@ -953,6 +953,18 @@ void main() {
         expect(find.textContaining('延迟 515ms'), findsOneWidget);
         expect(find.textContaining('落后 0 块'), findsOneWidget);
         expect(find.text('1 / 1 正常'), findsOneWidget);
+        // The check result is a display name, never the wire value.
+        expect(
+          find.textContaining('校验${LoopChainVerification.verified.label}'),
+          findsOneWidget,
+        );
+        for (final verification in LoopChainVerification.values) {
+          expect(
+            find.textContaining(verification.wireName),
+            findsNothing,
+            reason: verification.wireName,
+          );
+        }
         // A URL is never rendered or guessed.
         expect(find.textContaining('https://'), findsNothing);
       },

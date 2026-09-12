@@ -57,7 +57,7 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
         kicker: 'MESSAGE REQUESTS',
         heading: state.phase == CommunityViewPhase.ready
             ? '${state.items.length} 个请求待决定'
-            : communityMissingFigure,
+            : communityMissingHeading,
         caption: '接受、忽略或举报。举报会同时屏蔽发起人并写入审计。',
         stamp: state.phase == CommunityViewPhase.ready
             ? '${state.items.length}'

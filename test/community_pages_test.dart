@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/community/community_members_screen.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_profile_screen.dart';
 import 'package:loop_mobile/features/community/community_screen.dart';
+import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
@@ -61,7 +62,10 @@ void main() {
       );
 
       expect(find.byType(LoopSkeleton), findsOneWidget);
-      expect(find.text('—'), findsWidgets);
+      // The hero says the gap in words. An em dash at 25–30px in Lime reads
+      // as a rule floating over the card, not as a missing number.
+      expect(find.text(communityMissingHeading), findsOneWidget);
+      expect(find.text(communityMissingFigure), findsNothing);
       expect(find.textContaining('个已加入的社区'), findsNothing);
     });
 

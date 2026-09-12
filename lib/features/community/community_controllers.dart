@@ -581,7 +581,7 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
   /// Pull-to-refresh over the member list: the rows already read stay on
   /// screen and are marked 更新中, exactly as a search re-read does.
   Future<void> refresh() =>
-      _fetch(filter: state.filter, append: false, searchRefresh: true);
+      _fetch(filter: state.filter, append: false, keepLoadedRows: true);
 
   Future<void> selectFilter(CommunityMemberFilter filter) {
     if (filter == state.filter && state.phase == CommunityViewPhase.ready) {
@@ -649,7 +649,7 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
       for (var attempt = 0; attempt < 8; attempt += 1) {
         final target = state.query;
         if (target == _appliedQuery) return;
-        await _fetch(filter: state.filter, append: false, searchRefresh: true);
+        await _fetch(filter: state.filter, append: false, keepLoadedRows: true);
         if (_requestedQuery == target) _appliedQuery = target;
       }
     } finally {
@@ -687,7 +687,7 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
   Future<void> _fetch({
     required CommunityMemberFilter filter,
     required bool append,
-    bool searchRefresh = false,
+    bool keepLoadedRows = false,
   }) => single(() async {
     final id = _communityId;
     final previous = state;
@@ -705,11 +705,12 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
     final gateway = ref.read(communityGatewayProvider);
     final generation = nextGeneration();
     _requestedQuery = query;
-    // A narrowing of the same directory keeps the rows it already read and
-    // marks them 更新中; a first open or a role switch has nothing comparable
+    // A re-read of the same directory keeps the rows it already read and
+    // marks them 更新中 — a search narrowing, a pull, or the read that follows
+    // a governance write. A first open or a role switch has nothing comparable
     // to keep and still loads as a skeleton. The cursor is dropped either way,
     // because it is bound to the query that issued it.
-    final keepRows = !append && searchRefresh && previous.items.isNotEmpty;
+    final keepRows = !append && keepLoadedRows && previous.items.isNotEmpty;
     state = CommunityMembersState(
       mode: previous.mode,
       phase: append || keepRows ? previous.phase : CommunityViewPhase.loading,
@@ -800,7 +801,13 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
       } else {
         // A filtered view (owner, admin, banned) is not what the command
         // answered with, so it is read again instead of being mislabelled.
-        await _fetch(filter: previous.filter, append: false);
+        // The rows it already read stay on screen while it runs: the write
+        // the server accepted made one row stale, not the whole directory.
+        await _fetch(
+          filter: previous.filter,
+          append: false,
+          keepLoadedRows: true,
+        );
       }
       return null;
     } on CommunityGatewayException catch (error) {

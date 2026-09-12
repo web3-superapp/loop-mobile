@@ -377,9 +377,12 @@ class _MonogramFallback extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: LoopColors.card2,
+        // Derived from the ground, not named: this tile stands in for an
+        // identity image and appears inside Chalk cards as well as on the Ink
+        // page, where a fixed Chalk-on-Chalk fill would vanish.
+        color: LoopGround.fillOf(context),
         shape: shape,
-        border: Border.all(color: LoopColors.line),
+        border: Border.all(color: LoopGround.hairlineOf(context)),
         borderRadius: shape == BoxShape.rectangle
             ? BorderRadius.circular(radius ?? LoopRadius.innerValue)
             : null,
@@ -391,7 +394,7 @@ class _MonogramFallback extends StatelessWidget {
           overflow: TextOverflow.clip,
           style: LoopTypography.figure(
             size * 0.34,
-            color: foreground ?? LoopColors.chalk,
+            color: foreground ?? LoopGround.inkOf(context),
           ),
         ),
       ),

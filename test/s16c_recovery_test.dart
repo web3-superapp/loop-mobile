@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
@@ -583,6 +584,13 @@ void main() {
       await _pumpBanner(tester, container);
 
       expect(_banner, findsOneWidget);
+      // The action is a sprite on the same 44 grid as 关闭, not a word wide
+      // enough to add a line to the banner; the label stays for the reader
+      // that hears it rather than sees it.
+      final retry = tester.widget<LoopIconButton>(_bannerRetry);
+      expect(retry.icon, 'refresh');
+      expect(LoopIconNames.contains(retry.icon), isTrue);
+      expect(retry.label, '重新读取资料状态');
       await tester.tap(_bannerRetry);
       await tester.pumpAndSettle();
 
@@ -645,7 +653,7 @@ void main() {
       await tester.tap(_bannerRetry);
       await tester.pump();
       expect(find.text('正在重新读取资料状态。'), findsOneWidget);
-      expect(tester.widget<LoopButton>(_bannerRetry).onPressed, isNull);
+      expect(tester.widget<LoopIconButton>(_bannerRetry).onPressed, isNull);
 
       unawaited(container.read(loopProfileLandingProvider.notifier).recheck());
       await tester.pump();
@@ -655,7 +663,7 @@ void main() {
       await tester.pumpAndSettle();
       // No answer was published, so the warning stands and the action returns.
       expect(_banner, findsOneWidget);
-      expect(tester.widget<LoopButton>(_bannerRetry).onPressed, isNotNull);
+      expect(tester.widget<LoopIconButton>(_bannerRetry).onPressed, isNotNull);
     });
 
     testWidgets('closing the warning hides it without reading anything', (

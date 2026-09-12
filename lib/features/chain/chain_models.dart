@@ -31,14 +31,26 @@ String loopTruncatedAssetId(String assetId) {
   return tail == 'native' ? 'native' : loopTruncatedAddress(tail);
 }
 
+/// Where an asset stands in the LOOP registry.
+///
+/// [wireName] parses and compares; [label] is the only value that may be
+/// printed. They are separate because the wire vocabulary is English and
+/// internal — an owner reading 「登记状态 verified」 learns nothing about their
+/// own asset.
 enum LoopAssetStatus {
-  pending('pending'),
-  verified('verified'),
-  blocked('blocked');
+  pending('pending', '待核验'),
+  verified('verified', '已核验'),
+  blocked('blocked', '已屏蔽');
 
-  const LoopAssetStatus(this.wireName);
+  const LoopAssetStatus(this.wireName, this.label);
 
   final String wireName;
+
+  /// zh-CN display name. Registry verification is about the asset's name,
+  /// symbol and decimals having been read from the chain — it is not the
+  /// endpoint check [LoopChainVerification] reports, and it never means the
+  /// asset is safe.
+  final String label;
 
   static LoopAssetStatus? tryParse(String value) {
     for (final status in values) {
@@ -209,15 +221,22 @@ final class LoopChainInfo {
   final int reorgDepthBlocks;
 }
 
+/// Whether an RPC endpoint proved it is speaking for the expected chain.
 enum LoopChainVerification {
-  verified('verified'),
-  mismatched('mismatched'),
-  unreachable('unreachable'),
-  unknown('unknown');
+  verified('verified', '通过'),
+  mismatched('mismatched', '不一致'),
+  unreachable('unreachable', '连不上'),
+  unknown('unknown', '未知');
 
-  const LoopChainVerification(this.wireName);
+  const LoopChainVerification(this.wireName, this.label);
 
   final String wireName;
+
+  /// zh-CN display name, read as 「校验…」 on the endpoint row. It reports the
+  /// chain check on one endpoint and nothing else: it is not an asset's
+  /// registry state, and 通过 says the endpoint answered for the right chain,
+  /// never that anything on it was audited.
+  final String label;
 
   static LoopChainVerification? tryParse(String value) {
     for (final verification in values) {

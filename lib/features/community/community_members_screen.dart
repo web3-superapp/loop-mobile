@@ -171,7 +171,7 @@ class _CommunityMembersScreenState
         kicker: 'MEMBER DIRECTORY',
         heading: searching
             ? '搜索成员'
-            : (counts == null ? communityMissingFigure : '${counts.all} 名成员'),
+            : (counts == null ? communityMissingHeading : '${counts.all} 名成员'),
         caption: searching ? '这里只显示匹配到的成员。' : 'Owner / Admin / 成员 三级权限。',
         stamp: searching || counts == null ? null : '${counts.all}',
       ),

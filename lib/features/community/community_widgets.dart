@@ -199,7 +199,26 @@ class CommunityUnavailableCard extends StatelessWidget {
 }
 
 /// The em dash used wherever a real figure has no source. Never `0`.
+///
+/// It owns the small slots: a metric cell, a row's trailing value, the end of
+/// a sentence. At 11–20px, next to its own label, an em dash reads as
+/// "nothing here", which is exactly what it means.
 const String communityMissingFigure = '—';
+
+/// The same absence, said in words, where a page heading would carry the
+/// figure.
+///
+/// A hero heading prints at 25–30px, and in the Lime folio it prints in Lime;
+/// there the same dash stops reading as a placeholder and reads as a stray
+/// green rule floating over the card. The heading therefore says it: never
+/// `0`, never blank, and still the plain statement that this page has no
+/// number to show yet.
+const String communityMissingHeading = '暂无数值';
+
+/// The same placeholder for a heading that was never a number. A community
+/// whose record did not load has no name to print, and saying 暂无数值 there
+/// would describe the wrong kind of gap.
+const String communityMissingName = '暂无名称';
 
 String communityMemberCountLabel(int? memberCount) =>
     memberCount == null ? communityMissingFigure : '$memberCount 名成员';
@@ -242,12 +261,17 @@ class CommunityLogoTile extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: LoopColors.card2,
+        // Same rule as the other monogram tiles: the fill and the letters come
+        // from the ground, so the tile survives a move onto a Chalk card.
+        color: LoopGround.fillOf(context),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         monogramFor(name),
-        style: LoopTypography.figure(size / 3.4, color: LoopColors.chalk),
+        style: LoopTypography.figure(
+          size / 3.4,
+          color: LoopGround.inkOf(context),
+        ),
       ),
     );
   }

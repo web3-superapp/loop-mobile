@@ -20,14 +20,16 @@ void main() {
         reason: name,
       );
     }
-    expect(LoopIconNames.all, hasLength(61));
+    // 61 sprites imported from the prototype plus the LOOP-drawn `refresh`.
+    expect(LoopIconNames.all, hasLength(62));
+    expect(LoopIconNames.contains('refresh'), isTrue);
     expect(
       Directory(LoopAssetPaths.icons)
           .listSync()
           .whereType<File>()
           .where((file) => file.path.endsWith('.svg'))
           .length,
-      61,
+      62,
     );
     for (final file in LoopTokenAssets.bySymbol.values) {
       expect(
@@ -62,6 +64,26 @@ void main() {
       expect(File(path).existsSync(), isTrue, reason: path);
     }
     expect(File('assets/fonts/NotoSansSC[wght].ttf').existsSync(), isFalse);
+  });
+
+  test('every sprite is drawn to the one sheet specification', () {
+    // The sheet is a single pen: one 24 box, no fill, and a stroke the caller
+    // colours and sizes. A glyph that misses any of it would not inherit the
+    // tone of the control it sits in, so a hand-drawn addition has to match
+    // the imported ones exactly rather than approximately.
+    for (final name in LoopIconNames.all) {
+      final source = File(LoopAssetPaths.icon(name)).readAsStringSync();
+      for (final attribute in <String>[
+        'viewBox="0 0 24 24"',
+        'fill="none"',
+        'stroke="currentColor"',
+        'stroke-width="1.7"',
+        'stroke-linecap="round"',
+        'stroke-linejoin="round"',
+      ]) {
+        expect(source, contains(attribute), reason: '$name · $attribute');
+      }
+    }
   });
 
   test('identity atlas slots mirror the prototype FX.media grid', () {

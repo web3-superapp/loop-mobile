@@ -364,9 +364,10 @@ final class BlocklistController extends Notifier<BlocklistState>
     final gateway = ref.read(socialGatewayProvider);
     final previous = state;
     final generation = nextGeneration();
-    // A pull over rows that are already there keeps them and marks them
-    // 更新中; a first open or a segment switch is a different list and
-    // still loads as a skeleton.
+    // A re-read over rows that are already there keeps them and marks them
+    // 更新中 — that covers both the pull and the read that follows a write.
+    // A first open or a segment switch is a different list and still loads as
+    // a skeleton.
     final keepRows = !append && refresh && previous.items.isNotEmpty;
     state = BlocklistState(
       mode: previous.mode,
@@ -433,6 +434,11 @@ final class BlocklistController extends Notifier<BlocklistState>
 
   /// Lifting a block never restores a follow edge; the copy says so and the
   /// list is reloaded from the server rather than patched locally.
+  ///
+  /// The re-read keeps the rows that are already on screen. Dropping the list
+  /// into a skeleton after a write the server accepted made the page look as
+  /// if it had lost everything, and none of it is any less true than it was a
+  /// frame earlier — only the lifted row is stale, and the answer replaces it.
   Future<CommunityFailureKind?> unblock(BlockEntry entry) async {
     if (state.busy) return CommunityFailureKind.stale;
     final gateway = ref.read(socialGatewayProvider);
@@ -454,7 +460,7 @@ final class BlocklistController extends Notifier<BlocklistState>
         blocked: false,
       );
       if (!isCurrent(generation)) return null;
-      await _fetch(kind: previous.kind, append: false);
+      await _fetch(kind: previous.kind, append: false, refresh: true);
       return null;
     } on CommunityGatewayException catch (error) {
       if (isCurrent(generation)) {

@@ -79,7 +79,7 @@ class _CommunityProfileScreenState
     return LoopDashboardPage(
       key: const ValueKey<String>('community-profile-screen'),
       archetype: LoopPageArchetype.record,
-      title: community?.name ?? communityMissingFigure,
+      title: community?.name ?? communityMissingName,
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
       actions: <Widget>[
@@ -95,7 +95,7 @@ class _CommunityProfileScreenState
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
         kicker: 'COMMUNITY RECORD',
-        heading: community?.name ?? communityMissingFigure,
+        heading: community?.name ?? communityMissingName,
         caption: community == null
             ? '社区资料暂时读不到，这里不显示数字。'
             : '${community.memberCount} 名成员 · 创建于 '

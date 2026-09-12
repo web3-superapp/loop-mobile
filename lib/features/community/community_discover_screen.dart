@@ -122,7 +122,7 @@ class _CommunityDiscoverScreenState
         kicker: 'DISCOVERY DESK',
         heading: state.phase == CommunityViewPhase.ready
             ? '${state.items.length} 个社区'
-            : communityMissingFigure,
+            : communityMissingHeading,
         caption: '排序只用成员数和创建时间这两项可核对的信息。热门不等于推荐。',
         stamp: state.recommendation == null ? null : 'RULE',
       ),

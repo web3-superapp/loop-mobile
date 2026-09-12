@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/community/search_controller.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/features/community/search_screen.dart';
@@ -122,7 +123,8 @@ void main() {
       );
 
       expect(find.byType(LoopSkeleton), findsOneWidget);
-      expect(find.text('—'), findsWidgets);
+      expect(find.text(communityMissingHeading), findsOneWidget);
+      expect(find.text(communityMissingFigure), findsNothing);
       expect(find.textContaining('关注 ·'), findsNothing);
     });
 

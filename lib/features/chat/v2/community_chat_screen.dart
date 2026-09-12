@@ -72,7 +72,7 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             LoopTopbar(
-              title: detail?.community.name ?? communityMissingFigure,
+              title: detail?.community.name ?? communityMissingName,
               kicker: communityPreviewKicker(mode),
               onBack: widget.onBack,
               minHeight: 72,

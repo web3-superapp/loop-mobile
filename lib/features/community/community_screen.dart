@@ -158,7 +158,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     archetype: LoopFolioArchetype.listing,
                     kicker: 'COMMUNITY INDEX',
                     heading: joinedCount == null
-                        ? communityMissingFigure
+                        ? communityMissingHeading
                         : '$joinedCount 个已加入的社区',
                     caption: home == null
                         ? '社区数据暂时读不到，这一页不显示任何数字。'

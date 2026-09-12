@@ -953,11 +953,20 @@ class LoopRecordRow extends StatelessWidget {
     this.onTap,
     this.position = LoopRowPosition.single,
     this.semanticLabel,
+    this.subtitleMaxLines = 1,
   });
 
   final Widget? leading;
   final String title;
   final String? subtitle;
+
+  /// How many lines the secondary copy may take before it ellipses.
+  ///
+  /// One, as in the prototype, for the rows that carry a short phrase. A row
+  /// whose subtitle is a chain of facts joined by `·` runs past the value
+  /// column on a phone and loses the last fact entirely, so those rows opt
+  /// into a second line. The default keeps every other row byte-identical.
+  final int subtitleMaxLines;
 
   /// Mono value on the right (`.row-end .v`).
   final String? trailing;
@@ -1011,7 +1020,7 @@ class LoopRecordRow extends StatelessWidget {
                 if (subtitle != null)
                   Text(
                     subtitle!,
-                    maxLines: 1,
+                    maxLines: subtitleMaxLines,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall,
                   ),
@@ -1929,7 +1938,10 @@ class _LoopSkeletonBlockState extends State<LoopSkeletonBlock>
         width: widget.width,
         height: widget.height,
         decoration: BoxDecoration(
-          color: LoopColors.card2,
+          // A skeleton is only ever the ground plus a little: on the Ink page
+          // that is Chalk at 10%, and inside a Chalk card it has to be Ink at
+          // 10% or the placeholder is a blank card.
+          color: LoopGround.fillOf(context),
           borderRadius: BorderRadius.circular(widget.radius),
         ),
       ),
@@ -2204,7 +2216,11 @@ class LoopEmpty extends StatelessWidget {
       iconSize >= 15 && iconSize <= 20,
       'LoopEmpty keeps the inline glyph between 15 and 20 px.',
     );
-    final copy = LoopTypography.caption(11);
+    // The strip is used inside Chalk cards as well as on the Ink page, and
+    // the caption default is Chalk at 58% — unreadable on Chalk. Both the
+    // glyph and the copy take the ground's own ink at that same weight.
+    final auxiliary = LoopGround.auxiliaryOf(context);
+    final copy = LoopTypography.caption(11, color: auxiliary);
     return Padding(
       padding: margin,
       child: Semantics(
@@ -2221,7 +2237,7 @@ class LoopEmpty extends StatelessWidget {
                 child: LoopIcon(
                   icon,
                   size: iconSize,
-                  color: LoopColors.text3,
+                  color: auxiliary,
                   semanticLabel: message,
                 ),
               ),

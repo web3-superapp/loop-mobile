@@ -1,7 +1,9 @@
 /// Frozen prototype asset registry.
 ///
 /// Every file under `assets/` is copied from `LOOP/docs/prototype/assets` and
-/// `LOOP/docs/prototype/sprite` (cliview.org loop-v2 build). The identity atlas
+/// `LOOP/docs/prototype/sprite` (cliview.org loop-v2 build), except
+/// `assets/icons/i-refresh.svg`, which is drawn here to the same sprite
+/// specification because the prototype has no re-read glyph. The identity atlas
 /// slot table mirrors `FX.media` in `docs/prototype/app-v2.js`; the atlas is
 /// never cut into loose images, so the mapping stays here.
 library;
@@ -22,7 +24,15 @@ abstract final class LoopAssetPaths {
   static String network(String file) => '$networks/$file.svg';
 }
 
-/// Linear SVG sprite names (61) from `shell-open.html`, without the `i-` prefix.
+/// Linear SVG sprite names, without the `i-` prefix.
+///
+/// Sixty-one of them are the prototype's own set from `shell-open.html`.
+/// `refresh` is the one addition: the prototype never drew a re-read control,
+/// and a banner that offers one had to spell it out in text, which is a wide
+/// word in a bar that is already two lines tall. It is drawn to the same
+/// specification as the imported sheet — a 24 box, `fill="none"`,
+/// `currentColor` at 1.7 with round caps and joins — so it inherits colour and
+/// size from its caller exactly as the rest do.
 abstract final class LoopIconNames {
   static const Set<String> all = <String>{
     'ai',
@@ -70,6 +80,7 @@ abstract final class LoopIconNames {
     'phone',
     'pin',
     'question',
+    'refresh',
     'search',
     'settings',
     'shield',

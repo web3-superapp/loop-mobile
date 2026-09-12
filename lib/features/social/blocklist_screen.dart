@@ -64,7 +64,7 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
         archetype: LoopFolioArchetype.record,
         kicker: 'BLOCKED ENTITIES',
         heading: state.userCount == null
-            ? communityMissingFigure
+            ? communityMissingHeading
             : '${state.userCount} 个已屏蔽账号',
         caption: '屏蔽优先于关注与私聊。解除屏蔽不会恢复关注关系。',
         stamp: 'PRIVATE',

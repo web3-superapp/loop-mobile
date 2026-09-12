@@ -71,6 +71,42 @@ abstract final class LoopColors {
   static const Color warning = Color(0xFFFFC75F);
 }
 
+/// The ink of the ground a widget was actually placed on.
+///
+/// Every soft token in [LoopColors] — `card`, `card2`, `line`, `text2`,
+/// `text3` — is Chalk at a low alpha, because the palette is authored for the
+/// Ink page. Painted on a Chalk card or a Lime folio they are Chalk on Chalk:
+/// the widget still lays out, still takes its 200px, and is simply not there.
+/// A shared widget that can land on either ground therefore derives its
+/// colours from the ambient [DefaultTextStyle] — which the light grounds
+/// already set to Ink — instead of naming a fixed token.
+///
+/// Each weight is read off the token it stands for, so on the Ink page every
+/// derived colour is the token itself and nothing about the dark rendering
+/// moves.
+abstract final class LoopGround {
+  /// The ground's own ink at full strength: Chalk on Ink, Ink on Chalk/Lime.
+  static Color inkOf(BuildContext context) =>
+      (DefaultTextStyle.of(context).style.color ?? LoopColors.chalk).withValues(
+        alpha: 1,
+      );
+
+  /// [LoopColors.card2]'s weight in the ground's ink — a filled inset or a
+  /// placeholder. The alpha is taken from the token itself, so on the Ink page
+  /// the result is the token, exactly.
+  static Color fillOf(BuildContext context) =>
+      inkOf(context).withValues(alpha: LoopColors.card2.a);
+
+  /// [LoopColors.line]'s weight in the ground's ink — a hairline edge.
+  static Color hairlineOf(BuildContext context) =>
+      inkOf(context).withValues(alpha: LoopColors.line.a);
+
+  /// [LoopColors.text3]'s weight in the ground's ink — auxiliary copy and
+  /// glyphs.
+  static Color auxiliaryOf(BuildContext context) =>
+      inkOf(context).withValues(alpha: LoopColors.text3.a);
+}
+
 /// Spacing semantics (chapter 4.3).
 abstract final class LoopSpacing {
   /// 紧凑 · 8

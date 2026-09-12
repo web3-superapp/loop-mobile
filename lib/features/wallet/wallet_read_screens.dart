@@ -921,7 +921,7 @@ class _RegistryFactsCard extends StatelessWidget {
         children: <Widget>[
           LoopKeyValue(label: '资产标识', value: loopTruncatedAssetId(assetId)),
           LoopKeyValue(label: '精度', value: '${asset.decimals}'),
-          LoopKeyValue(label: '登记状态', value: asset.status.wireName),
+          LoopKeyValue(label: '登记状态', value: asset.status.label),
           if (asset.address != null)
             LoopKeyValue(
               label: '合约地址',
@@ -1745,6 +1745,10 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
                     '${status.chain.chainId} · '
                     '${status.chain.confirmations} 确认 · '
                     '重组跟踪 ${status.chain.reorgDepthBlocks} 块',
+                // Three facts joined by · do not fit beside the block number
+                // on a phone, and the one that fell off the end was the reorg
+                // depth — the fact this row exists to state.
+                subtitleMaxLines: 2,
                 trailing: status.rpc.head == null
                     ? null
                     : '${status.rpc.head!.blockNumber}',
@@ -1784,9 +1788,10 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
                         '延迟未知',
                       if (endpoint.blockLagBlocks != null)
                         '落后 ${endpoint.blockLagBlocks} 块',
-                      '校验 ${endpoint.chainVerification.wireName}',
+                      '校验${endpoint.chainVerification.label}',
                       loopRelativeTime(endpoint.observedAt),
                     ].join(' · '),
+                    subtitleMaxLines: 2,
                     trailing: endpoint.blockNumber == null
                         ? null
                         : '${endpoint.blockNumber}',
