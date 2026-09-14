@@ -237,6 +237,14 @@ void main() {
               canMute: false,
               canBan: false,
             ),
+            items: <CommunityMemberEntry>[
+              // A plain member holds no governance right, so the server
+              // publishes an empty command list for every row it sends them.
+              testMember(
+                role: CommunityRole.member,
+                actions: const <CommunityGovernanceAction>[],
+              ),
+            ],
           ),
         ),
         social: FakeSocialGateway(),
@@ -249,11 +257,11 @@ void main() {
         find.byKey(const ValueKey<String>('public-profile-sheet')),
         findsOneWidget,
       );
-      for (final action in <String>['mute', 'ban', 'promote', 'demote']) {
+      for (final action in CommunityGovernanceAction.values) {
         expect(
-          find.byKey(ValueKey<String>('public-profile-action-$action')),
+          find.byKey(ValueKey<String>('public-profile-action-${action.name}')),
           findsNothing,
-          reason: action,
+          reason: action.name,
         );
       }
     });

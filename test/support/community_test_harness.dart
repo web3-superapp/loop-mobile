@@ -126,6 +126,16 @@ CommunityDetail testDetail({
   voice: voice,
 );
 
+/// The commands the server publishes for an owner viewer looking at an active
+/// member row. It is the default so a row that is not the subject of a test
+/// still carries a realistic server list.
+const testOwnerOverMemberActions = <CommunityGovernanceAction>[
+  CommunityGovernanceAction.promote,
+  CommunityGovernanceAction.transfer,
+  CommunityGovernanceAction.mute,
+  CommunityGovernanceAction.ban,
+];
+
 CommunityMemberEntry testMember({
   required CommunityRole role,
   String? publicProfileId = testMemberId,
@@ -133,6 +143,7 @@ CommunityMemberEntry testMember({
   String? alias = 'frog_member',
   CommunityMemberStatus status = CommunityMemberStatus.active,
   bool isSelf = false,
+  List<CommunityGovernanceAction> actions = testOwnerOverMemberActions,
 }) => CommunityMemberEntry(
   profile: testProfile(
     publicProfileId: publicProfileId,
@@ -143,6 +154,7 @@ CommunityMemberEntry testMember({
   status: status,
   joinedAt: DateTime.utc(2026, 7),
   isSelf: isSelf,
+  actions: actions,
   miningPower: testMiningPower,
 );
 

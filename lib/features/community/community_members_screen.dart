@@ -15,19 +15,21 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
-/// One governance command offered on a member row.
-enum CommunityGovernanceAction {
-  promote('任命为 Admin'),
-  demote('撤销 Admin'),
-  transfer('转让所有者'),
-  mute('禁言'),
-  unmute('解除禁言'),
-  ban('封禁'),
-  unban('解除封禁');
-
-  const CommunityGovernanceAction(this.label);
-
-  final String label;
+/// The UI copy for one server-published governance command.
+///
+/// Only the copy lives here. Whether a row offers the command is
+/// `CommunityMemberEntry.actions`, which the server computes from its
+/// permission matrix; this file states no rule about who may do what.
+extension CommunityGovernanceActionCopy on CommunityGovernanceAction {
+  String get label => switch (this) {
+    CommunityGovernanceAction.promote => '任命为 Admin',
+    CommunityGovernanceAction.demote => '撤销 Admin',
+    CommunityGovernanceAction.transfer => '转让所有者',
+    CommunityGovernanceAction.mute => '禁言',
+    CommunityGovernanceAction.unmute => '解除禁言',
+    CommunityGovernanceAction.ban => '封禁',
+    CommunityGovernanceAction.unban => '解除封禁',
+  };
 
   /// Extra copy the second confirmation shows before the command runs.
   String get confirmationDetail => switch (this) {
@@ -41,49 +43,13 @@ enum CommunityGovernanceAction {
   };
 }
 
-/// The commands the server has told this viewer it may run against this row.
-///
-/// This is visibility only: the permission matrix itself lives on the server
-/// and decides the outcome. The client adds no rule of its own beyond the
-/// facts the response already states.
-List<CommunityGovernanceAction> communityGovernanceActions(
-  CommunityViewer? viewer,
-  CommunityMemberEntry entry,
-) {
-  if (viewer == null || !entry.isActionable) {
-    return const <CommunityGovernanceAction>[];
-  }
-  // The owner can never be the target of a governance action.
-  if (entry.role == CommunityRole.owner) {
-    return const <CommunityGovernanceAction>[];
-  }
-  // A banned row has exactly one meaningful command: restore it.
-  if (entry.status == CommunityMemberStatus.banned) {
-    return <CommunityGovernanceAction>[
-      if (viewer.canBan) CommunityGovernanceAction.unban,
-    ];
-  }
-  return <CommunityGovernanceAction>[
-    if (viewer.canInviteAdmin && entry.role == CommunityRole.member)
-      CommunityGovernanceAction.promote,
-    if (viewer.canInviteAdmin && entry.role == CommunityRole.admin)
-      CommunityGovernanceAction.demote,
-    // Only an owner is told it may appoint an admin, so only an owner is
-    // offered the transfer.
-    if (viewer.canInviteAdmin) CommunityGovernanceAction.transfer,
-    if (viewer.canMute && entry.status != CommunityMemberStatus.muted)
-      CommunityGovernanceAction.mute,
-    if (viewer.canMute && entry.status == CommunityMemberStatus.muted)
-      CommunityGovernanceAction.unmute,
-    if (viewer.canBan) CommunityGovernanceAction.ban,
-  ];
-}
-
 /// `community-members` · grouped directory and governance.
 ///
-/// Action visibility comes only from the server's `viewer` flags plus the
-/// row's own facts (`isSelf`, a present `publicProfileId`, current role and
-/// status). The permission matrix itself is never re-implemented here.
+/// Every row renders exactly the commands the server published in
+/// `items[].actions`. The permission matrix is not re-implemented here, and
+/// no row action is derived from the viewer-level flags: those carry no
+/// target, so deriving from them offered an admin a mute and a ban against
+/// another admin that the server had always refused.
 class CommunityMembersScreen extends ConsumerStatefulWidget {
   const CommunityMembersScreen({
     required this.communityId,
@@ -404,7 +370,6 @@ class _CommunityMembersScreenState
     required CommunityMembersState state,
     required CommunityMembersController controller,
   }) {
-    final actions = communityGovernanceActions(state.viewer, entry);
     final status = switch (entry.status) {
       CommunityMemberStatus.active => entry.role.label,
       CommunityMemberStatus.muted => '已禁言',
@@ -437,21 +402,21 @@ class _CommunityMembersScreenState
       // the server has allowed for this viewer.
       onTap: entry.isSelf || state.busy
           ? null
-          : () => unawaited(_openMemberSheet(entry, actions, controller)),
+          : () => unawaited(_openMemberSheet(entry, controller)),
       semanticLabel: '${entry.profile.displayName}，${entry.role.label}，$status',
     );
   }
 
   Future<void> _openMemberSheet(
     CommunityMemberEntry entry,
-    List<CommunityGovernanceAction> actions,
     CommunityMembersController controller,
   ) async {
     final chosen = await showPublicProfileSheet<CommunityGovernanceAction>(
       context,
       identity: PublicProfileIdentity.fromProfile(entry.profile),
+      // Exactly the server's list for this row, in the server's order.
       actions: <PublicProfileSheetAction<CommunityGovernanceAction>>[
-        for (final action in actions)
+        for (final action in entry.actions)
           PublicProfileSheetAction<CommunityGovernanceAction>(
             id: action.name,
             label: action.label,

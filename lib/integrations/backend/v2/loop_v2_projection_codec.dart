@@ -358,6 +358,27 @@ abstract final class LoopV2ProjectionCodec {
     'contractVersion',
   };
 
+  /// A member row's published governance commands.
+  ///
+  /// The list is taken verbatim, in the server's order. It is strict on every
+  /// axis: a missing field, a non-list, a non-string element, a name this
+  /// build does not know, a repeat, or more entries than commands exist is a
+  /// contract break, not a value to be salvaged. Rendering a half-understood
+  /// governance list is exactly the drift this field exists to stop.
+  static List<CommunityGovernanceAction> governanceActions(Object? raw) {
+    if (raw is! List || raw.length > CommunityGovernanceAction.values.length) {
+      invalid();
+    }
+    final actions = <CommunityGovernanceAction>[];
+    for (final Object? entry in raw) {
+      if (entry is! String) invalid();
+      final action = CommunityGovernanceAction.tryParse(entry);
+      if (action == null || actions.contains(action)) invalid();
+      actions.add(action);
+    }
+    return List<CommunityGovernanceAction>.unmodifiable(actions);
+  }
+
   static CommunityMemberDirectory memberDirectory(Map<String, Object?> root) {
     final counts = LoopV2Contract.strictMap(root['counts'], const <String>{
       'all',
@@ -374,6 +395,7 @@ abstract final class LoopV2ProjectionCodec {
         'status',
         'joinedAt',
         'isSelf',
+        'actions',
         'miningPower',
       });
       final rawRole = item['role'];
@@ -392,6 +414,7 @@ abstract final class LoopV2ProjectionCodec {
           status: status,
           joinedAt: requireTimestamp(item, 'joinedAt'),
           isSelf: requireBool(item, 'isSelf'),
+          actions: governanceActions(item['actions']),
           miningPower: unavailable(item['miningPower']),
         ),
       );

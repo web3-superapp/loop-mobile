@@ -6877,7 +6877,9 @@ S3_COMMUNITY_TEST_MARKERS = {
         "the three deferred domains show their server reason",
     ),
     Path("test/community_pages_test.dart"): (
-        "the viewer flags alone decide which commands a row offers",
+        "a row renders exactly the commands the server published",
+        "an owner row renders whatever the server published for it",
+        "a muted row renders the restore the server published",
         "a member with no viewer permission has no row action",
     ),
 }
@@ -6897,12 +6899,31 @@ def check_v2_community_truth_contract(root: Path) -> list[str]:
                 "SearchDestinationKind.publicProfile",
                 "PublicProfileIdentity.fromSearchSnapshot(",
             ),
-            # Governance visibility reads the server's viewer flags only; the
-            # permission matrix itself is never re-implemented on the client.
+            # Governance visibility is decided per row by the server and
+            # rendered verbatim; the permission matrix is never re-implemented
+            # on the client, and a viewer-level flag never becomes a row's
+            # command.
             "lib/features/community/community_members_screen.dart": (
-                "communityGovernanceActions(state.viewer, entry)",
+                "for (final action in entry.actions)",
                 "showPublicProfileSheet<CommunityGovernanceAction>(",
                 "confirmCommunityAction(",
+            ),
+            # The wire enum carries the server's own action names, so a row's
+            # list cannot be reinterpreted on the way in.
+            "lib/features/community/community_models.dart": (
+                "enum CommunityGovernanceAction {",
+                "promote('assignAdmin')",
+                "demote('revokeAdmin')",
+                "transfer('transferOwnership')",
+                "final List<CommunityGovernanceAction> actions;",
+            ),
+            # Strict on the way in: an absent, unknown, repeated, or
+            # malformed governance list is a contract break, never a
+            # partially rendered one.
+            "lib/integrations/backend/v2/loop_v2_projection_codec.dart": (
+                "'actions',",
+                "actions: governanceActions(item['actions']),",
+                "CommunityGovernanceAction.tryParse(entry)",
             ),
             "lib/features/community/community_widgets.dart": (
                 "Future<bool> confirmCommunityAction(",
@@ -6913,33 +6934,52 @@ def check_v2_community_truth_contract(root: Path) -> list[str]:
     members = root / "lib/features/community/community_members_screen.dart"
     if members.is_file():
         source = strip_dart_comments(read_text(members))
-        start = source.find("List<CommunityGovernanceAction> communityGovernanceActions")
-        end = source.find("\n}", start)
+        # A viewer-level flag carries no target. Mapping one onto a row is how
+        # an admin came to be offered a mute and a ban against another admin
+        # that the server's matrix had always refused, so no such flag and no
+        # locally built command list may exist in this screen at all.
+        for forbidden in (
+            "canMute",
+            "canInviteAdmin",
+            "canGovern",
+            "isActionable",
+            "List<CommunityGovernanceAction> ",
+        ):
+            if forbidden in source:
+                errors.append(
+                    "community-members must not derive a row's governance "
+                    f"commands on the client; found `{forbidden}`"
+                )
+        # `canBan` is viewer-level standing: it opens the banned segment and
+        # decides nothing about a row.
+        if source.count("canBan") > 1:
+            errors.append(
+                "community-members may read `canBan` only to open the banned "
+                "segment, never to decide a row's commands"
+            )
+        start = source.find(
+            "actions: <PublicProfileSheetAction<CommunityGovernanceAction>>["
+        )
+        end = source.find("\n      ],", start)
         if start < 0 or end < 0:
             errors.append(
-                "community-members must retain one inspectable action-visibility "
-                "function"
+                "community-members must build its sheet actions from one "
+                "inspectable server-published list"
             )
         else:
             block = source[start:end]
-            for required in (
-                "viewer.canInviteAdmin",
-                "viewer.canMute",
-                "viewer.canBan",
-                "entry.isActionable",
-                "CommunityRole.owner",
-            ):
-                if required not in block:
-                    errors.append(
-                        "community-members action visibility must read "
-                        f"`{required}` from the server projection"
-                    )
-            # A client-side role table would be a second source of truth.
-            for forbidden in ("isSelf ==", "role ==  ", "PERMISSION"):
+            if "for (final action in entry.actions)" not in block:
+                errors.append(
+                    "community-members must render the server's per-row "
+                    "`entry.actions` verbatim"
+                )
+            # Narrowing the published list would put a second, weaker copy of
+            # the permission matrix back on the client.
+            for forbidden in ("viewer", "if (", "role", "status"):
                 if forbidden in block:
                     errors.append(
-                        "community-members must not re-implement the permission "
-                        f"matrix; found `{forbidden}`"
+                        "community-members must not filter the server's "
+                        f"per-row action list; found `{forbidden}`"
                     )
 
     search = root / "lib/features/community/search_screen.dart"

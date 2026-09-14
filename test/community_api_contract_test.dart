@@ -99,7 +99,11 @@ Map<String, Object?> detailBody({
   'contractVersion': '2.0',
 };
 
-Map<String, Object?> memberBody({Object? nextCursor}) => <String, Object?>{
+Map<String, Object?> memberBody({
+  Object? nextCursor,
+  Object? ownerActions = const <Object?>[],
+  Object? memberActions = const <Object?>[],
+}) => <String, Object?>{
   'community': community(),
   'viewer': viewer(),
   'counts': <String, Object?>{
@@ -115,6 +119,7 @@ Map<String, Object?> memberBody({Object? nextCursor}) => <String, Object?>{
       'status': 'active',
       'joinedAt': '2026-09-07T01:00:00.000Z',
       'isSelf': false,
+      'actions': ownerActions,
       'miningPower': unavailable('MINING_FORMULA_BASELINE_PENDING'),
     },
     <String, Object?>{
@@ -123,6 +128,7 @@ Map<String, Object?> memberBody({Object? nextCursor}) => <String, Object?>{
       'status': 'active',
       'joinedAt': '2026-09-07T02:00:00.000Z',
       'isSelf': false,
+      'actions': memberActions,
       'miningPower': unavailable('MINING_FORMULA_BASELINE_PENDING'),
     },
   ],
@@ -387,15 +393,110 @@ void main() {
         );
 
         expect(directory.items, hasLength(2));
-        expect(directory.items.first.isActionable, isTrue);
         expect(directory.items.last.profile.publicProfileId, isNull);
-        expect(directory.items.last.isActionable, isFalse);
+        // The server is the one that decides a row carries no command; the
+        // client neither adds nor removes an entry.
+        expect(directory.items.last.actions, isEmpty);
         expect(
           directory.counts.online.reasonCode,
           'STREAM_PRESENCE_NOT_CONNECTED',
         );
       },
     );
+
+    test(
+      "a member row's commands are taken verbatim from the server",
+      () async {
+        final api = DioLoopV2CommunityApi(
+          _dio(
+            (options, handler) => handler.resolve(
+              _response(
+                options,
+                memberBody(
+                  ownerActions: const <Object?>[],
+                  memberActions: const <Object?>[
+                    'assignAdmin',
+                    'transferOwnership',
+                    'mute',
+                    'ban',
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+
+        final directory = await api.listMembers(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          communityId: communityId,
+          role: CommunityMemberFilter.all,
+        );
+
+        expect(directory.items.first.actions, isEmpty);
+        expect(directory.items.last.actions, <CommunityGovernanceAction>[
+          CommunityGovernanceAction.promote,
+          CommunityGovernanceAction.transfer,
+          CommunityGovernanceAction.mute,
+          CommunityGovernanceAction.ban,
+        ]);
+      },
+    );
+
+    test(
+      'a member row without an actions list is an invalid payload',
+      () async {
+        final body = memberBody();
+        for (final item in body['items']! as List<Object?>) {
+          (item! as Map<String, Object?>).remove('actions');
+        }
+        final api = DioLoopV2CommunityApi(
+          _dio((options, handler) => handler.resolve(_response(options, body))),
+        );
+
+        await expectLater(
+          api.listMembers(
+            accessToken: 'token',
+            clientVersion: clientVersion,
+            communityId: communityId,
+            role: CommunityMemberFilter.all,
+          ),
+          throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+        );
+      },
+    );
+
+    test('an unrenderable governance command is an invalid payload', () async {
+      // A name this build cannot render, a repeat, a non-string, and a
+      // non-list are all contract breaks: a half-understood governance list
+      // is never partially rendered.
+      for (final actions in <Object?>[
+        <Object?>['mute', 'purge'],
+        <Object?>['mute', 'mute'],
+        <Object?>['mute', 7],
+        'mute',
+        null,
+      ]) {
+        final api = DioLoopV2CommunityApi(
+          _dio(
+            (options, handler) => handler.resolve(
+              _response(options, memberBody(memberActions: actions)),
+            ),
+          ),
+        );
+
+        await expectLater(
+          api.listMembers(
+            accessToken: 'token',
+            clientVersion: clientVersion,
+            communityId: communityId,
+            role: CommunityMemberFilter.all,
+          ),
+          throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+          reason: '$actions',
+        );
+      }
+    });
 
     test('referral rules keep the decimal boost as a string', () async {
       final api = DioLoopV2CommunityApi(

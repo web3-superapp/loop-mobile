@@ -260,6 +260,10 @@ final class MemoryCommunityGateway implements CommunityGateway {
     String? cursor,
   }) async {
     final community = _byId(communityId);
+    // The Preview stands in for the server, so it publishes the row actions
+    // the same way the server would: the owner row (which is also the
+    // viewer's own row here) offers nothing, and the sample viewer is the
+    // owner, so the admin and member rows carry the owner's commands.
     final all = <CommunityMemberEntry>[
       CommunityMemberEntry(
         profile: _previewProfiles[0],
@@ -267,6 +271,7 @@ final class MemoryCommunityGateway implements CommunityGateway {
         status: CommunityMemberStatus.active,
         joinedAt: DateTime.utc(2026, 7, 1),
         isSelf: true,
+        actions: const <CommunityGovernanceAction>[],
         miningPower: _previewMining,
       ),
       CommunityMemberEntry(
@@ -275,6 +280,12 @@ final class MemoryCommunityGateway implements CommunityGateway {
         status: CommunityMemberStatus.active,
         joinedAt: DateTime.utc(2026, 7, 2),
         isSelf: false,
+        actions: const <CommunityGovernanceAction>[
+          CommunityGovernanceAction.demote,
+          CommunityGovernanceAction.transfer,
+          CommunityGovernanceAction.mute,
+          CommunityGovernanceAction.ban,
+        ],
         miningPower: _previewMining,
       ),
       CommunityMemberEntry(
@@ -283,6 +294,12 @@ final class MemoryCommunityGateway implements CommunityGateway {
         status: CommunityMemberStatus.active,
         joinedAt: DateTime.utc(2026, 7, 3),
         isSelf: false,
+        actions: const <CommunityGovernanceAction>[
+          CommunityGovernanceAction.promote,
+          CommunityGovernanceAction.transfer,
+          CommunityGovernanceAction.mute,
+          CommunityGovernanceAction.ban,
+        ],
         miningPower: _previewMining,
       ),
     ];

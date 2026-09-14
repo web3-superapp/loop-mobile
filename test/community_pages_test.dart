@@ -600,71 +600,162 @@ void main() {
       );
     });
 
-    test('the viewer flags alone decide which commands a row offers', () {
-      final member = testMember(role: CommunityRole.member);
-      final admin = testMember(
-        role: CommunityRole.admin,
-        publicProfileId: testAdminId,
-      );
-      final owner = testMember(
-        role: CommunityRole.owner,
-        publicProfileId: testOwnerId,
-      );
-      final self = testMember(role: CommunityRole.member, isSelf: true);
-      final anonymous = testMember(
-        role: CommunityRole.member,
-        publicProfileId: null,
-      );
-
-      List<String> actions(
-        CommunityViewer viewer,
-        CommunityMemberEntry entry,
-      ) => communityGovernanceActions(
-        viewer,
-        entry,
-      ).map((action) => action.name).toList(growable: false);
-
-      final ownerViewer = testViewer();
-      expect(actions(ownerViewer, member), <String>[
-        'promote',
-        'transfer',
-        'mute',
-        'ban',
-      ]);
-      expect(actions(ownerViewer, admin), <String>[
-        'demote',
-        'transfer',
-        'mute',
-        'ban',
-      ]);
-      // A banned row offers exactly one command: restore it.
-      expect(
-        actions(
-          ownerViewer,
-          testMember(
-            role: CommunityRole.member,
-            status: CommunityMemberStatus.banned,
-          ),
+    testWidgets('a row renders exactly the commands the server published', (
+      tester,
+    ) async {
+      // The viewer is an admin. The server's viewer-level flags still say
+      // this admin may mute and ban somewhere in this community, but the
+      // permission matrix confines an admin to `member` targets, so the row
+      // for another admin arrives with no command at all. Deriving the row
+      // from the flags is what used to offer a mute and a ban here, and the
+      // server answered every one of them with 403.
+      final gateway = FakeCommunityGateway(
+        members: testDirectory(
+          viewer: testViewer(role: CommunityRole.admin, canInviteAdmin: false),
+          items: <CommunityMemberEntry>[
+            testMember(
+              role: CommunityRole.admin,
+              publicProfileId: testAdminId,
+              loopId: 'LOOP-9HJKMNPQ',
+              alias: 'frog_admin',
+              actions: const <CommunityGovernanceAction>[],
+            ),
+            testMember(
+              role: CommunityRole.member,
+              alias: 'frog_member',
+              actions: const <CommunityGovernanceAction>[
+                CommunityGovernanceAction.mute,
+                CommunityGovernanceAction.ban,
+              ],
+            ),
+          ],
         ),
-        <String>['unban'],
       );
-      // The owner is never a target, and neither is the viewer's own row.
-      expect(actions(ownerViewer, owner), isEmpty);
-      expect(actions(ownerViewer, self), isEmpty);
-      // A member without a profile row can never be a command target.
-      expect(actions(ownerViewer, anonymous), isEmpty);
-
-      final adminViewer = testViewer(canInviteAdmin: false);
-      expect(actions(adminViewer, member), <String>['mute', 'ban']);
-
-      final memberViewer = testViewer(
-        role: CommunityRole.member,
-        canInviteAdmin: false,
-        canMute: false,
-        canBan: false,
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: gateway,
+        social: FakeSocialGateway(),
       );
-      expect(actions(memberViewer, member), isEmpty);
-      expect(actions(memberViewer, admin), isEmpty);
+
+      await tester.tap(find.text('frog_admin'));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-sheet')),
+        findsOneWidget,
+      );
+      for (final action in CommunityGovernanceAction.values) {
+        expect(
+          find.byKey(ValueKey<String>('public-profile-action-${action.name}')),
+          findsNothing,
+          reason: 'admin row offered ${action.name}',
+        );
+      }
+      await tester.tap(
+        find.byKey(const ValueKey<String>('public-profile-close')),
+      );
+      await tester.pumpAndSettle();
+
+      // The same page, the same viewer: the member row carries the two
+      // commands the server did publish, and nothing else.
+      await tester.tap(find.text('frog_member'));
+      await tester.pumpAndSettle();
+      for (final action in CommunityGovernanceAction.values) {
+        final offered =
+            action == CommunityGovernanceAction.mute ||
+            action == CommunityGovernanceAction.ban;
+        expect(
+          find.byKey(ValueKey<String>('public-profile-action-${action.name}')),
+          offered ? findsOneWidget : findsNothing,
+          reason: 'member row: ${action.name}',
+        );
+      }
+    });
+
+    testWidgets('an owner row renders whatever the server published for it', (
+      tester,
+    ) async {
+      // The owner row is empty because the server said so, not because the
+      // client knows the owner is never a target.
+      final gateway = FakeCommunityGateway(
+        members: testDirectory(
+          items: <CommunityMemberEntry>[
+            testMember(
+              role: CommunityRole.owner,
+              publicProfileId: testOwnerId,
+              loopId: 'LOOP-1HJKMNPQ',
+              alias: 'frog_owner',
+              actions: const <CommunityGovernanceAction>[],
+            ),
+          ],
+        ),
+      );
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: gateway,
+        social: FakeSocialGateway(),
+      );
+
+      await tester.tap(find.text('frog_owner'));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-sheet')),
+        findsOneWidget,
+      );
+      for (final action in CommunityGovernanceAction.values) {
+        expect(
+          find.byKey(ValueKey<String>('public-profile-action-${action.name}')),
+          findsNothing,
+          reason: 'owner row offered ${action.name}',
+        );
+      }
+    });
+
+    testWidgets('a muted row renders the restore the server published', (
+      tester,
+    ) async {
+      // The server drops `mute` once the row is already muted and publishes
+      // `unmute` instead; the client does not compute that transition.
+      final gateway = FakeCommunityGateway(
+        members: testDirectory(
+          items: <CommunityMemberEntry>[
+            testMember(
+              role: CommunityRole.member,
+              alias: 'frog_member',
+              status: CommunityMemberStatus.muted,
+              actions: const <CommunityGovernanceAction>[
+                CommunityGovernanceAction.promote,
+                CommunityGovernanceAction.unmute,
+                CommunityGovernanceAction.ban,
+              ],
+            ),
+          ],
+        ),
+      );
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: gateway,
+        social: FakeSocialGateway(),
+      );
+
+      await tester.tap(find.text('frog_member'));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-action-unmute')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-action-mute')),
+        findsNothing,
+      );
+      // No ownership transfer against a non-active member: the server's
+      // state precondition removed it, so the row never offers it.
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-action-transfer')),
+        findsNothing,
+      );
     });
 
     testWidgets('a member with no viewer permission has no row action', (
@@ -678,6 +769,12 @@ void main() {
             canMute: false,
             canBan: false,
           ),
+          items: <CommunityMemberEntry>[
+            testMember(
+              role: CommunityRole.member,
+              actions: const <CommunityGovernanceAction>[],
+            ),
+          ],
         ),
       );
       await pumpCommunityPage(
@@ -779,6 +876,10 @@ void main() {
             role: CommunityRole.member,
             alias: 'frog_member',
             status: CommunityMemberStatus.banned,
+            // The server publishes exactly the restore for a banned row.
+            actions: const <CommunityGovernanceAction>[
+              CommunityGovernanceAction.unban,
+            ],
           ),
         ],
       );

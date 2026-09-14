@@ -3623,25 +3623,39 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected destination-kind navigation guard: {result}",
         )
 
-    def test_member_action_visibility_cannot_leave_the_viewer(self) -> None:
+    _COMMUNITY_TRUTH_SOURCES = (
+        "lib/features/community/search_screen.dart",
+        "lib/features/community/community_members_screen.dart",
+        "lib/features/community/community_models.dart",
+        "lib/features/community/community_widgets.dart",
+        "lib/integrations/backend/v2/loop_v2_projection_codec.dart",
+    )
+
+    def _community_truth_root(self, temporary: str) -> Path:
+        root = Path(temporary)
+        for relative in self._COMMUNITY_TRUTH_SOURCES:
+            path = root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                (REPOSITORY_ROOT / relative).read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+        return root
+
+    def test_member_row_commands_cannot_be_derived_from_a_viewer_flag(self) -> None:
+        """A viewer-level flag carries no target and may never reach a row."""
+
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            for relative in (
-                "lib/features/community/search_screen.dart",
-                "lib/features/community/community_members_screen.dart",
-                "lib/features/community/community_widgets.dart",
-            ):
-                path = root / relative
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(
-                    (REPOSITORY_ROOT / relative).read_text(encoding="utf-8"),
-                    encoding="utf-8",
-                )
+            root = self._community_truth_root(temporary)
             path = root / "lib/features/community/community_members_screen.dart"
             path.write_text(
                 path.read_text(encoding="utf-8").replace(
-                    "viewer.canBan",
-                    "true",
+                    "for (final action in entry.actions)",
+                    "for (final action in <CommunityGovernanceAction>[\n"
+                    "            if (state.viewer?.canMute ?? false)\n"
+                    "              CommunityGovernanceAction.mute,\n"
+                    "          ])",
+                    1,
                 ),
                 encoding="utf-8",
             )
@@ -3649,8 +3663,53 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_v2_community_truth_contract(root)
 
         self.assertTrue(
-            any("viewer.canBan" in error for error in result),
+            any("canMute" in error for error in result),
             msg=f"expected server-decided action visibility guard: {result}",
+        )
+
+    def test_member_row_commands_cannot_be_filtered_on_the_client(self) -> None:
+        """Narrowing the published list is a second copy of the matrix."""
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._community_truth_root(temporary)
+            path = root / "lib/features/community/community_members_screen.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "for (final action in entry.actions)",
+                    "for (final action in entry.actions)\n"
+                    "          if (entry.role != CommunityRole.owner)",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_community_truth_contract(root)
+
+        self.assertTrue(
+            any("must not filter" in error for error in result),
+            msg=f"expected published-list verbatim guard: {result}",
+        )
+
+    def test_member_row_commands_must_be_parsed_strictly(self) -> None:
+        """A governance list that is not understood is never half-rendered."""
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._community_truth_root(temporary)
+            path = root / "lib/integrations/backend/v2/loop_v2_projection_codec.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "CommunityGovernanceAction.tryParse(entry)",
+                    "CommunityGovernanceAction.mute",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_v2_community_truth_contract(root)
+
+        self.assertTrue(
+            any("tryParse" in error for error in result),
+            msg=f"expected strict governance-action parsing guard: {result}",
         )
 
     def test_new_pairs_must_stay_a_whole_page_unavailable(self) -> None:

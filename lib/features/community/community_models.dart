@@ -154,7 +154,39 @@ final class CommunityMembership {
   final DateTime joinedAt;
 }
 
-/// Server-decided action visibility. The client never recomputes the matrix.
+/// One governance command the server published for a member row.
+///
+/// `wireName` is the server's `items[].actions` value, which is the name of
+/// the cell in its actor x action x target permission matrix. The client
+/// parses the published list and renders it; it never decides that a command
+/// is available, and it never maps a viewer-level flag onto a row.
+enum CommunityGovernanceAction {
+  promote('assignAdmin'),
+  demote('revokeAdmin'),
+  transfer('transferOwnership'),
+  mute('mute'),
+  unmute('unmute'),
+  ban('ban'),
+  unban('unban');
+
+  const CommunityGovernanceAction(this.wireName);
+
+  final String wireName;
+
+  static CommunityGovernanceAction? tryParse(String value) {
+    for (final item in values) {
+      if (item.wireName == value) return item;
+    }
+    return null;
+  }
+}
+
+/// Viewer-level governance standing, mirroring the server's `viewer` block.
+///
+/// These flags carry no target: they say whether the viewer holds a right
+/// somewhere in this community, and they gate page-level affordances only
+/// (the banned segment). A member row's commands are
+/// `CommunityMemberEntry.actions` and nothing else.
 @immutable
 final class CommunityViewer {
   const CommunityViewer({
@@ -370,6 +402,7 @@ final class CommunityMemberEntry {
     required this.status,
     required this.joinedAt,
     required this.isSelf,
+    required this.actions,
     required this.miningPower,
   });
 
@@ -378,11 +411,17 @@ final class CommunityMemberEntry {
   final CommunityMemberStatus status;
   final DateTime joinedAt;
   final bool isSelf;
-  final LoopUnavailableFact miningPower;
 
-  /// A row can only be a governance target when it is another account with a
-  /// profile row.
-  bool get isActionable => !isSelf && profile.isCommandTarget;
+  /// The governance commands the server says this viewer may run against this
+  /// row, in the server's order.
+  ///
+  /// It is the complete and only source of row-action visibility. An empty
+  /// list means the row offers nothing, and the client adds no rule of its
+  /// own: the owner row, the viewer's own row, a row with no public profile
+  /// ID, a state a command cannot be applied to, and every cell the
+  /// permission matrix denies all arrive here as an empty list.
+  final List<CommunityGovernanceAction> actions;
+  final LoopUnavailableFact miningPower;
 }
 
 @immutable
