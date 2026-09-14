@@ -32,9 +32,16 @@ extension CommunityGovernanceActionCopy on CommunityGovernanceAction {
   };
 
   /// Extra copy the second confirmation shows before the command runs.
+  ///
+  /// The transfer sentence states the role the server actually leaves the
+  /// previous owner in: the write path demotes them to `admin` in the same
+  /// transaction, not to a plain member. An Admin keeps mute and ban over
+  /// members and loses the owner-only rights — editing the community
+  /// profile, assigning or revoking Admin, and transferring again.
   String get confirmationDetail => switch (this) {
     CommunityGovernanceAction.transfer =>
-      '转让后你会变成普通成员，不能再编辑资料或执行治理动作。这一步不可撤销，只有新的所有者能把权限交还给你。',
+      '转让后你会降为 Admin：编辑社区资料、任免 Admin 和再次转让都归新的所有者，你仍可禁言、封禁普通成员。'
+          '这一步不可撤销，只有新的所有者能把权限交还给你。',
     CommunityGovernanceAction.ban =>
       '被封禁的成员会离开官方频道，并从默认成员目录中移除；你之后可以在「已封禁」分段里解除封禁。封禁不改动个人关注关系。',
     CommunityGovernanceAction.unban =>

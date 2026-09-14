@@ -797,6 +797,44 @@ void main() {
       );
     });
 
+    testWidgets('the transfer confirmation names the Admin role it leaves', (
+      tester,
+    ) async {
+      // The server's write path demotes the previous owner to `admin` in the
+      // same transaction as the promotion, so the only irreversible action in
+      // the app must not describe the outcome as a plain member: an Admin
+      // keeps mute and ban over members, and loses the owner-only rights.
+      final gateway = FakeCommunityGateway(members: testDirectory());
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: gateway,
+        social: FakeSocialGateway(),
+      );
+
+      await tester.tap(find.text('frog_member'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('public-profile-action-transfer')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('member-confirm-sheet')),
+        findsOneWidget,
+      );
+
+      // What the previous owner becomes, what they lose, and what they keep.
+      expect(find.textContaining('降为 Admin'), findsOneWidget);
+      expect(find.textContaining('编辑社区资料'), findsOneWidget);
+      expect(find.textContaining('禁言、封禁普通成员'), findsOneWidget);
+      expect(find.textContaining('不可撤销'), findsOneWidget);
+      // The demotion the server never performs must not be promised back.
+      expect(find.textContaining('变成普通成员'), findsNothing);
+      expect(find.textContaining('不能再编辑资料或执行治理动作'), findsNothing);
+      // Reading the confirmation submits nothing.
+      expect(gateway.commands.where((c) => c.startsWith('role:')), isEmpty);
+    });
+
     testWidgets(
       'a governance command runs only after the second confirmation',
       (tester) async {
