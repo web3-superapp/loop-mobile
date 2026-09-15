@@ -321,7 +321,7 @@ void main() {
       );
       expect(
         loopReasonCodeText('MARKET_FACT_CACHE_UNAVAILABLE'),
-        '行情数据的暂存暂时读不到，这一项没有取到数值，稍后再看。',
+        '行情数据暂时读不到，这一项没有数值，稍后再看。',
       );
     });
   });
