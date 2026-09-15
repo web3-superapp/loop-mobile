@@ -306,6 +306,8 @@ String loopReasonCodeText(String? reasonCode) => switch (reasonCode) {
   'MARKET_PROVIDER_GOPLUS_NOT_CONFIGURED' => '安全信息与持有人数暂时读不到。',
   'MARKET_PROVIDER_GECKOTERMINAL_DISABLED' => '新币发现与相关行情暂时读不到。',
   'MARKET_PROVIDER_RATE_LIMITED' => '数据服务限流中，暂时没有新数值。',
+  'MARKET_PROVIDER_REQUEST_REJECTED' => '数据服务拒绝了这次请求，与你的网络无关，稍后再看。',
+  'MARKET_FACT_CACHE_UNAVAILABLE' => '行情数据的暂存暂时读不到，这一项没有取到数值，稍后再看。',
   'MARKET_PROVIDER_UNREACHABLE' => '行情暂时取不到，与你的网络无关，稍后再看。',
   'MARKET_PROVIDER_RESPONSE_MALFORMED' => '返回的数据不完整，已整体丢弃。',
   'MARKET_PAIR_NOT_FOUND' => '没有找到这个资产的交易对。',
@@ -399,6 +401,13 @@ String loopReasonCodeText(String? reasonCode) => switch (reasonCode) {
 /// else — including a code this build does not know — says `数据不可得`,
 /// which is honest about the gap without promising an arrival that may never
 /// come.
+///
+/// None of the market fact codes reach that first branch today: the codes a
+/// market cap, a liquidity or a holder count can carry are all provider,
+/// cache or "not reported" answers, none of which is a wait. The branch is
+/// kept for the summary slots that will read chain and index facts; it is
+/// not covering anything on the Token Card, and no market code should be
+/// moved into it without the server actually reporting one.
 String loopReasonCodeSummaryText(String? reasonCode) => switch (reasonCode) {
   'BSC_CHAIN_VERIFICATION_PENDING' ||
   'LAUNCH_CHAIN_VERIFICATION_PENDING' ||

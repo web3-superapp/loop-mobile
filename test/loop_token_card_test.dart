@@ -23,6 +23,28 @@ const _pepe = LoopTokenCardModel(
   chart: SizedBox.expand(),
 );
 
+/// The card the metric-cell width probes use: three cells, so the first one is
+/// exactly the third of a 390pt card the product ships.
+LoopTokenCard _metricCard(String figure) => LoopTokenCard(
+  state: LoopTokenCardState.normal,
+  model: LoopTokenCardModel(
+    symbol: 'PEPE',
+    identifier: '0x6982…1933',
+    price: r'$0.000013',
+    metrics: <LoopTokenMetric>[
+      LoopTokenMetric('市值', figure),
+      LoopTokenMetric(
+        '流动性',
+        loopFormatCompactFigure(Decimal.parse('42800000')),
+      ),
+      LoopTokenMetric(
+        '持有人',
+        loopFormatCompactFigure(Decimal.parse('418000'), usd: false),
+      ),
+    ],
+  ),
+);
+
 Future<void> _pump(WidgetTester tester, Widget child) async {
   tester.view.physicalSize = const Size(390, 1200);
   tester.view.devicePixelRatio = 1;
@@ -291,35 +313,13 @@ void main() {
     expect(compact, r'$5.4B');
     expect(full, r'$5,412,003,118.24');
 
-    LoopTokenCard card(String figure) => LoopTokenCard(
-      state: LoopTokenCardState.normal,
-      model: LoopTokenCardModel(
-        symbol: 'PEPE',
-        identifier: '0x6982…1933',
-        price: r'$0.000013',
-        metrics: <LoopTokenMetric>[
-          // Only the first cell varies; the other two keep the card's real
-          // proportions so the first is exactly a third of it.
-          LoopTokenMetric('市值', figure),
-          LoopTokenMetric(
-            '流动性',
-            loopFormatCompactFigure(Decimal.parse('42800000')),
-          ),
-          LoopTokenMetric(
-            '持有人',
-            loopFormatCompactFigure(Decimal.parse('418000'), usd: false),
-          ),
-        ],
-      ),
-    );
-
-    await _pump(tester, card(full));
+    await _pump(tester, _metricCard(full));
     final clipped = tester.renderObject<RenderParagraph>(find.text(full));
     // The cell is a third of a 390pt card: the full figure cannot fit, so the
     // reader saw an ellipsis where a number should be.
     expect(clipped.didExceedMaxLines, isTrue);
 
-    await _pump(tester, card(compact));
+    await _pump(tester, _metricCard(compact));
     final fitted = tester.renderObject<RenderParagraph>(find.text(compact));
     expect(fitted.didExceedMaxLines, isFalse);
     expect(fitted.size.width, greaterThan(0));
@@ -354,7 +354,49 @@ void main() {
     expect(cell.didExceedMaxLines, isFalse);
   });
 
-  testWidgets('every state stays legible at 390pt and 2x text', (tester) async {
+  testWidgets('every summary form the card can receive fits its cell', (
+    tester,
+  ) async {
+    // The cell is 94.0pt wide at 390pt and the 13pt mono figure fits seven
+    // characters in it. These are the widest forms the summary rules can
+    // produce, plus the two phrases an empty cell can carry.
+    const widest = <String>[
+      r'$999.9K',
+      r'$99,999',
+      r'$1,000T',
+      r'$-2.4M',
+      '数据不可得',
+      '等待数据',
+    ];
+    for (final figure in widest) {
+      await _pump(tester, _metricCard(figure));
+      expect(
+        tester
+            .renderObject<RenderParagraph>(find.text(figure))
+            .didExceedMaxLines,
+        isFalse,
+        reason: figure,
+      );
+    }
+    // Eight characters is over budget — which is why the threshold is applied
+    // to the rounded figure, so this string is never produced.
+    await _pump(tester, _metricCard(r'$100,000'));
+    expect(
+      tester
+          .renderObject<RenderParagraph>(find.text(r'$100,000'))
+          .didExceedMaxLines,
+      isTrue,
+    );
+  });
+
+  // Scope: the card lays out at double text size without throwing and without
+  // an overflow. Not legibility — at 2x every metric value is wider than the
+  // 94.0pt cell (`418K` needs 103.6pt, `$99,999` needs 181.3pt) and still
+  // ellipsises. That is a question for the cell's layout, not for the figure
+  // format, and nothing here claims it is answered.
+  testWidgets('every state builds without an overflow at 390pt and 2x text', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);

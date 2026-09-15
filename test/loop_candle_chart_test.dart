@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -182,10 +184,12 @@ void main() {
     });
 
     test('a summary figure switches to K/M/B/T at 100,000', () {
-      // Below the threshold the grouped figure already fits, so it is kept.
+      // Below the threshold the whole figure fits in the cell's seven
+      // characters, so it is kept — without the cents, which do not.
       expect(loopFormatCompactFigure(Decimal.parse('99999')), r'$99,999');
       expect(loopFormatCompactFigure(Decimal.parse('8200')), r'$8,200');
-      expect(loopFormatCompactFigure(Decimal.parse('99999.99')), r'$99,999.99');
+      expect(loopFormatCompactFigure(Decimal.parse('42750.31')), r'$42,750');
+      expect(loopFormatCompactFigure(Decimal.parse('99999.4')), r'$99,999');
       expect(
         loopFormatCompactFigure(Decimal.parse('99999'), usd: false),
         '99,999',
@@ -196,12 +200,35 @@ void main() {
         loopFormatCompactFigure(Decimal.parse('100000'), usd: false),
         '100K',
       );
+      // The branch is decided after rounding: these two print as `100,000`,
+      // which is one character too wide for the cell.
+      expect(loopFormatCompactFigure(Decimal.parse('99999.5')), r'$100K');
+      expect(loopFormatCompactFigure(Decimal.parse('99999.995')), r'$100K');
+    });
+
+    test('a value under one dollar is bounded, never rounded to zero', () {
+      // `$0` liquidity reads as a pulled pool. This value is not zero.
+      expect(loopFormatCompactFigure(Decimal.parse('0.004')), r'<$1');
+      expect(loopFormatCompactFigure(Decimal.parse('0.49')), r'<$1');
+      expect(loopFormatCompactFigure(Decimal.parse('0.004'), usd: false), '<1');
+      expect(loopFormatCompactFigure(Decimal.parse('-0.004')), r'>-$1');
+      expect(
+        loopFormatCompactFigure(Decimal.parse('-0.004'), usd: false),
+        '>-1',
+      );
+      // Half away from zero, so this one is a dollar and says so.
+      expect(loopFormatCompactFigure(Decimal.parse('0.5')), r'$1');
+      // An exact zero is a fact and prints as one.
+      expect(loopFormatCompactFigure(Decimal.zero), r'$0');
+      expect(loopFormatCompactFigure(Decimal.zero, usd: false), '0');
     });
 
     test('a summary figure keeps one decimal and drops a trailing zero', () {
       expect(loopFormatCompactFigure(Decimal.parse('142000')), r'$142K');
       expect(loopFormatCompactFigure(Decimal.parse('2400000')), r'$2.4M');
       expect(loopFormatCompactFigure(Decimal.parse('42750000')), r'$42.8M');
+      // Half away from zero, not half to even: this one is `.7`, not `.6`.
+      expect(loopFormatCompactFigure(Decimal.parse('42650000')), r'$42.7M');
       expect(loopFormatCompactFigure(Decimal.parse('5400000000')), r'$5.4B');
       expect(loopFormatCompactFigure(Decimal.parse('5412003118.24')), r'$5.4B');
       expect(loopFormatCompactFigure(Decimal.parse('1500000000000')), r'$1.5T');
@@ -222,8 +249,6 @@ void main() {
     });
 
     test('a summary figure keeps the sign where a USD figure keeps it', () {
-      expect(loopFormatCompactFigure(Decimal.zero), r'$0');
-      expect(loopFormatCompactFigure(Decimal.zero, usd: false), '0');
       expect(loopFormatCompactFigure(Decimal.parse('-2400000')), r'$-2.4M');
       expect(
         loopFormatCompactFigure(Decimal.parse('-2400000'), usd: false),
@@ -246,8 +271,39 @@ void main() {
       );
       expect(loopReasonCodeSummaryText('SOMETHING_NEW'), '数据不可得');
       expect(loopReasonCodeSummaryText(null), '数据不可得');
+      // Every code a market fact can carry lands on the second phrase; the
+      // first one is not reached from a Token Card at all.
+      expect(
+        loopReasonCodeSummaryText('MARKET_PROVIDER_REQUEST_REJECTED'),
+        '数据不可得',
+      );
+      expect(
+        loopReasonCodeSummaryText('MARKET_FACT_CACHE_UNAVAILABLE'),
+        '数据不可得',
+      );
       // The full sentence is unchanged; only the summary slot is short.
       expect(loopReasonCodeText('MARKET_FACT_NOT_REPORTED'), '这一项没有数值。');
+    });
+
+    test('the summary formatter is confined to the Token Card', () {
+      // `loopFormatCompactFigure` rounds a figure away. That is right for a
+      // 94pt cell and wrong everywhere a number is the commitment — an amount
+      // being signed, a balance, a fee. `chain_widgets.dart` is imported all
+      // over the money surfaces, so the function is pinned to the one screen
+      // that is allowed to summarise.
+      const allowed = <String>{
+        'lib/features/chain/chain_widgets.dart',
+        'lib/features/market/token_screen.dart',
+      };
+      final callers = <String>{};
+      for (final file in Directory('lib').listSync(recursive: true)) {
+        if (file is! File || !file.path.endsWith('.dart')) continue;
+        if (!file.readAsStringSync().contains('loopFormatCompactFigure')) {
+          continue;
+        }
+        callers.add(file.path);
+      }
+      expect(callers, allowed);
     });
 
     test('an unknown reason code keeps a neutral sentence', () {
@@ -256,6 +312,16 @@ void main() {
       expect(
         loopReasonCodeText('BSC_CHAIN_ID_MISMATCH'),
         contains('不是 BNB Smart Chain'),
+      );
+      // Two codes the market service emits that the table used to miss, so
+      // the fact list fell back to the neutral sentence for both.
+      expect(
+        loopReasonCodeText('MARKET_PROVIDER_REQUEST_REJECTED'),
+        '数据服务拒绝了这次请求，与你的网络无关，稍后再看。',
+      );
+      expect(
+        loopReasonCodeText('MARKET_FACT_CACHE_UNAVAILABLE'),
+        '行情数据的暂存暂时读不到，这一项没有取到数值，稍后再看。',
       );
     });
   });

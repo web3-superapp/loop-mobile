@@ -50,7 +50,7 @@ String loopFormatUsd(Decimal value) =>
     '\$${loopFormatDecimal(value, maxFractionDigits: 2)}';
 
 /// Figures at or above this read as `K` / `M` / `B` / `T` in a summary slot.
-/// Below it the grouped form is short enough to fit as it is (`$8,200`, `84`).
+/// Below it the whole-dollar form is short enough to fit (`$8,200`, `84`).
 final Decimal _loopCompactFrom = Decimal.fromInt(100000);
 
 /// The first figure that reads in `M` rather than `K`; each further suffix is
@@ -61,26 +61,44 @@ const List<String> _loopCompactSuffixes = <String>['K', 'M', 'B', 'T'];
 
 /// A compact figure for a **summary slot** — today the Token Card metric cells.
 ///
-/// A metric cell is about 95pt wide on a 390pt screen, so a market cap printed
-/// in full (`$5,412,003,118.24`) can only ellipsise there: the reader ends up
-/// with neither the magnitude nor the exact number. This renders the magnitude
-/// instead, to one decimal with a trailing `.0` dropped.
+/// The budget is measured, not guessed: a metric cell is 94.0pt wide on a
+/// 390pt screen, and the 13pt mono figure fits exactly seven characters
+/// (≈90.3pt) there. The eighth ellipsises, which leaves the reader with
+/// neither the magnitude nor the number — that is what a full market cap
+/// (`$5,412,003,118.24`) and a full liquidity figure (`$42,750.31`) both did.
+/// Every form produced here stays inside seven: `$999.9K`, `$99,999`,
+/// `$1,000T`, `$-2.4M`.
+///
+/// So: no fractional cents at any magnitude, and at or above 100,000 the
+/// magnitude itself, to one decimal with a trailing `.0` dropped. The
+/// threshold is applied to the **rounded** figure, because 99,999.995 prints
+/// as `100,000` — eight characters — and belongs in the compact branch.
 ///
 /// It is for summaries only. Anywhere the exact figure is the point — the fact
 /// list under the card, any amount a user is about to sign — keeps
 /// [loopFormatUsd] / [loopFormatDecimal], and the card's own precise values
 /// stay one screenful below it.
 ///
-/// Rounding runs on [Decimal] throughout; no `double` is involved. A negative
-/// value places its sign exactly where [loopFormatUsd] places it (`$-2.4M`),
-/// since below the threshold this function *is* [loopFormatUsd].
+/// Rounding runs on [Decimal] throughout, half away from zero; no `double` is
+/// involved. A negative value places its sign where [loopFormatUsd] places it
+/// (`$-2.4M`).
 String loopFormatCompactFigure(Decimal value, {bool usd = true}) {
   final negative = value < Decimal.zero;
   final absolute = negative ? -value : value;
-  if (absolute < _loopCompactFrom) {
-    return usd
-        ? loopFormatUsd(value)
-        : loopFormatDecimal(value, maxFractionDigits: 0);
+  final whole = absolute.round();
+  if (whole < _loopCompactFrom) {
+    if (absolute > Decimal.zero && whole == Decimal.zero) {
+      // A real value rounded to `0` would read as "none at all" — for a
+      // liquidity cell, as a pulled pool. It is bounded instead. An exact
+      // zero still prints as zero: that one is a fact.
+      final marker = negative ? '>-' : '<';
+      return usd ? '$marker\$1' : '${marker}1';
+    }
+    final body = loopFormatDecimal(
+      negative ? -whole : whole,
+      maxFractionDigits: 0,
+    );
+    return usd ? '\$$body' : body;
   }
   var step = 1;
   while (step < _loopCompactSuffixes.length &&
@@ -89,7 +107,8 @@ String loopFormatCompactFigure(Decimal value, {bool usd = true}) {
   }
   var scaled = absolute.shift(-3 * step).round(scale: 1);
   // Rounding can carry across the unit: 999,950 reads `1000.0K`, which is one
-  // step up. Take the step rather than print a four-digit mantissa.
+  // step up. Take the step while there is one; the top unit saturates and
+  // prints four digits (`$5,000T`), which is still inside the budget.
   if (scaled >= _loopCompactCarry && step < _loopCompactSuffixes.length) {
     step += 1;
     scaled = absolute.shift(-3 * step).round(scale: 1);
