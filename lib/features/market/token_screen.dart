@@ -378,16 +378,20 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
   }
 }
 
-/// One Token Card metric cell from a fact. An unavailable fact renders the
-/// server's own reason, never `0` and never an em dash.
+/// One Token Card metric cell from a fact. An unavailable fact renders why
+/// there is no figure, never `0` and never an em dash.
+///
+/// Both halves are summaries, because the cell is a third of a card wide: the
+/// figure is compact (`$5.4B`) and the missing-value copy is a phrase rather
+/// than the full sentence. The exact number, the source, the observation time
+/// and the server's own reason all render in full in the fact list further
+/// down the same page, which is unchanged.
 LoopTokenMetric _cardMetric(String label, LoopFact fact, {bool usd = true}) =>
     LoopTokenMetric(
       label,
       fact.isAvailable
-          ? (usd
-                ? loopFormatUsd(fact.value!)
-                : loopFormatDecimal(fact.value!, maxFractionDigits: 0))
-          : loopReasonCodeText(fact.reasonCode),
+          ? loopFormatCompactFigure(fact.value!, usd: usd)
+          : loopReasonCodeSummaryText(fact.reasonCode),
     );
 
 class _TokenHero extends StatelessWidget {

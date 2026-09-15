@@ -1,6 +1,10 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/widgets/loop_token_card.dart';
 
 const _pepe = LoopTokenCardModel(
@@ -274,6 +278,80 @@ void main() {
     expect(find.textContaining('来源 链上比对'), findsOneWidget);
     expect(find.textContaining('危险'), findsNothing);
     expect(find.textContaining('不安全'), findsNothing);
+  });
+
+  testWidgets('a metric cell fits the summary figure, not the full one', (
+    tester,
+  ) async {
+    // The figure the Token Card actually receives for a market cap of this
+    // size, and the figure it used to receive.
+    final marketCap = Decimal.parse('5412003118.24');
+    final compact = loopFormatCompactFigure(marketCap);
+    final full = loopFormatUsd(marketCap);
+    expect(compact, r'$5.4B');
+    expect(full, r'$5,412,003,118.24');
+
+    LoopTokenCard card(String figure) => LoopTokenCard(
+      state: LoopTokenCardState.normal,
+      model: LoopTokenCardModel(
+        symbol: 'PEPE',
+        identifier: '0x6982…1933',
+        price: r'$0.000013',
+        metrics: <LoopTokenMetric>[
+          // Only the first cell varies; the other two keep the card's real
+          // proportions so the first is exactly a third of it.
+          LoopTokenMetric('市值', figure),
+          LoopTokenMetric(
+            '流动性',
+            loopFormatCompactFigure(Decimal.parse('42800000')),
+          ),
+          LoopTokenMetric(
+            '持有人',
+            loopFormatCompactFigure(Decimal.parse('418000'), usd: false),
+          ),
+        ],
+      ),
+    );
+
+    await _pump(tester, card(full));
+    final clipped = tester.renderObject<RenderParagraph>(find.text(full));
+    // The cell is a third of a 390pt card: the full figure cannot fit, so the
+    // reader saw an ellipsis where a number should be.
+    expect(clipped.didExceedMaxLines, isTrue);
+
+    await _pump(tester, card(compact));
+    final fitted = tester.renderObject<RenderParagraph>(find.text(compact));
+    expect(fitted.didExceedMaxLines, isFalse);
+    expect(fitted.size.width, greaterThan(0));
+  });
+
+  testWidgets('a cell with no figure names the gap in one phrase', (
+    tester,
+  ) async {
+    const reasonCode = 'MARKET_FACT_NOT_REPORTED';
+    final phrase = loopReasonCodeSummaryText(reasonCode);
+    await _pump(
+      tester,
+      LoopTokenCard(
+        state: LoopTokenCardState.partial,
+        model: LoopTokenCardModel(
+          symbol: 'UNKNOWN',
+          identifier: '0x9c4b…7f82',
+          metrics: <LoopTokenMetric>[
+            LoopTokenMetric('市值', phrase),
+            LoopTokenMetric('流动性', phrase),
+            LoopTokenMetric('持有人', phrase),
+          ],
+        ),
+      ),
+    );
+
+    expect(find.text('数据不可得'), findsNWidgets(3));
+    // The full sentence belongs to the fact list, not to a third of a card.
+    expect(find.text(loopReasonCodeText(reasonCode)), findsNothing);
+    expect(find.textContaining('这一项没有数值'), findsNothing);
+    final cell = tester.renderObject<RenderParagraph>(find.text(phrase).first);
+    expect(cell.didExceedMaxLines, isFalse);
   });
 
   testWidgets('every state stays legible at 390pt and 2x text', (tester) async {

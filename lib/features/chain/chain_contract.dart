@@ -384,6 +384,29 @@ String loopReasonCodeText(String? reasonCode) => switch (reasonCode) {
   _ => '这一项暂时读不到。',
 };
 
+/// The phrase a **summary slot** renders in place of a figure it has no value
+/// for — today the Token Card metric cells.
+///
+/// [loopReasonCodeText] writes a whole sentence, which is right where there is
+/// a line to write it on. A metric cell is one short line inside a third of a
+/// card: the sentence can only ellipsise there, leaving the reader with
+/// neither the figure nor the reason. So the cell states the shape of the gap
+/// and the full sentence stays in the fact list below the card, which is
+/// where the reader goes for the why.
+///
+/// `等待数据` is reserved for a value that is genuinely on its way: a
+/// connection still being verified, an index still catching up. Everything
+/// else — including a code this build does not know — says `数据不可得`,
+/// which is honest about the gap without promising an arrival that may never
+/// come.
+String loopReasonCodeSummaryText(String? reasonCode) => switch (reasonCode) {
+  'BSC_CHAIN_VERIFICATION_PENDING' ||
+  'LAUNCH_CHAIN_VERIFICATION_PENDING' ||
+  'INDEXING_DELAYED' ||
+  'TX_PENDING_VERIFICATION' => '等待数据',
+  _ => '数据不可得',
+};
+
 /// The badge every Launch surface and every sign sheet shows while the Launch
 /// chain slot is the BSC testnet. It is a statement of fact, never a blocker.
 const String loopTestnetBadgeLabel = 'BSC 测试网';

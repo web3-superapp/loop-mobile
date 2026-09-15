@@ -181,6 +181,75 @@ void main() {
       expect(loopFactQualityMarker(LoopFactQuality.proxied), '以 WBNB 计价');
     });
 
+    test('a summary figure switches to K/M/B/T at 100,000', () {
+      // Below the threshold the grouped figure already fits, so it is kept.
+      expect(loopFormatCompactFigure(Decimal.parse('99999')), r'$99,999');
+      expect(loopFormatCompactFigure(Decimal.parse('8200')), r'$8,200');
+      expect(loopFormatCompactFigure(Decimal.parse('99999.99')), r'$99,999.99');
+      expect(
+        loopFormatCompactFigure(Decimal.parse('99999'), usd: false),
+        '99,999',
+      );
+      // At it, and above, the magnitude replaces the digits.
+      expect(loopFormatCompactFigure(Decimal.parse('100000')), r'$100K');
+      expect(
+        loopFormatCompactFigure(Decimal.parse('100000'), usd: false),
+        '100K',
+      );
+    });
+
+    test('a summary figure keeps one decimal and drops a trailing zero', () {
+      expect(loopFormatCompactFigure(Decimal.parse('142000')), r'$142K');
+      expect(loopFormatCompactFigure(Decimal.parse('2400000')), r'$2.4M');
+      expect(loopFormatCompactFigure(Decimal.parse('42750000')), r'$42.8M');
+      expect(loopFormatCompactFigure(Decimal.parse('5400000000')), r'$5.4B');
+      expect(loopFormatCompactFigure(Decimal.parse('5412003118.24')), r'$5.4B');
+      expect(loopFormatCompactFigure(Decimal.parse('1500000000000')), r'$1.5T');
+      expect(
+        loopFormatCompactFigure(Decimal.parse('418000'), usd: false),
+        '418K',
+      );
+      expect(
+        loopFormatCompactFigure(Decimal.parse('8019338'), usd: false),
+        '8M',
+      );
+    });
+
+    test('a summary figure carries into the next unit instead of 1000K', () {
+      expect(loopFormatCompactFigure(Decimal.parse('999950')), r'$1M');
+      expect(loopFormatCompactFigure(Decimal.parse('999999999')), r'$1B');
+      expect(loopFormatCompactFigure(Decimal.parse('999949')), r'$999.9K');
+    });
+
+    test('a summary figure keeps the sign where a USD figure keeps it', () {
+      expect(loopFormatCompactFigure(Decimal.zero), r'$0');
+      expect(loopFormatCompactFigure(Decimal.zero, usd: false), '0');
+      expect(loopFormatCompactFigure(Decimal.parse('-2400000')), r'$-2.4M');
+      expect(
+        loopFormatCompactFigure(Decimal.parse('-2400000'), usd: false),
+        '-2.4M',
+      );
+      expect(loopFormatCompactFigure(Decimal.parse('-8200')), r'$-8,200');
+    });
+
+    test('a summary slot names the gap instead of explaining it', () {
+      // Two phrases only: one for a value still on its way, one for the rest.
+      expect(
+        loopReasonCodeSummaryText('BSC_CHAIN_VERIFICATION_PENDING'),
+        '等待数据',
+      );
+      expect(loopReasonCodeSummaryText('INDEXING_DELAYED'), '等待数据');
+      expect(loopReasonCodeSummaryText('MARKET_FACT_NOT_REPORTED'), '数据不可得');
+      expect(
+        loopReasonCodeSummaryText('MARKET_PROVIDER_RATE_LIMITED'),
+        '数据不可得',
+      );
+      expect(loopReasonCodeSummaryText('SOMETHING_NEW'), '数据不可得');
+      expect(loopReasonCodeSummaryText(null), '数据不可得');
+      // The full sentence is unchanged; only the summary slot is short.
+      expect(loopReasonCodeText('MARKET_FACT_NOT_REPORTED'), '这一项没有数值。');
+    });
+
     test('an unknown reason code keeps a neutral sentence', () {
       expect(loopReasonCodeText('SOMETHING_NEW'), '这一项暂时读不到。');
       expect(loopReasonCodeText(null), '这一项暂时读不到。');

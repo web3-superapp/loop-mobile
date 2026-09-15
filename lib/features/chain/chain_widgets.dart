@@ -49,6 +49,58 @@ String loopFormatDecimal(
 String loopFormatUsd(Decimal value) =>
     '\$${loopFormatDecimal(value, maxFractionDigits: 2)}';
 
+/// Figures at or above this read as `K` / `M` / `B` / `T` in a summary slot.
+/// Below it the grouped form is short enough to fit as it is (`$8,200`, `84`).
+final Decimal _loopCompactFrom = Decimal.fromInt(100000);
+
+/// The first figure that reads in `M` rather than `K`; each further suffix is
+/// a thousand times this one.
+final Decimal _loopCompactSecondStep = Decimal.fromInt(1000000);
+final Decimal _loopCompactCarry = Decimal.fromInt(1000);
+const List<String> _loopCompactSuffixes = <String>['K', 'M', 'B', 'T'];
+
+/// A compact figure for a **summary slot** — today the Token Card metric cells.
+///
+/// A metric cell is about 95pt wide on a 390pt screen, so a market cap printed
+/// in full (`$5,412,003,118.24`) can only ellipsise there: the reader ends up
+/// with neither the magnitude nor the exact number. This renders the magnitude
+/// instead, to one decimal with a trailing `.0` dropped.
+///
+/// It is for summaries only. Anywhere the exact figure is the point — the fact
+/// list under the card, any amount a user is about to sign — keeps
+/// [loopFormatUsd] / [loopFormatDecimal], and the card's own precise values
+/// stay one screenful below it.
+///
+/// Rounding runs on [Decimal] throughout; no `double` is involved. A negative
+/// value places its sign exactly where [loopFormatUsd] places it (`$-2.4M`),
+/// since below the threshold this function *is* [loopFormatUsd].
+String loopFormatCompactFigure(Decimal value, {bool usd = true}) {
+  final negative = value < Decimal.zero;
+  final absolute = negative ? -value : value;
+  if (absolute < _loopCompactFrom) {
+    return usd
+        ? loopFormatUsd(value)
+        : loopFormatDecimal(value, maxFractionDigits: 0);
+  }
+  var step = 1;
+  while (step < _loopCompactSuffixes.length &&
+      absolute >= _loopCompactSecondStep.shift(3 * (step - 1))) {
+    step += 1;
+  }
+  var scaled = absolute.shift(-3 * step).round(scale: 1);
+  // Rounding can carry across the unit: 999,950 reads `1000.0K`, which is one
+  // step up. Take the step rather than print a four-digit mantissa.
+  if (scaled >= _loopCompactCarry && step < _loopCompactSuffixes.length) {
+    step += 1;
+    scaled = absolute.shift(-3 * step).round(scale: 1);
+  }
+  final body =
+      '${negative ? '-' : ''}'
+      '${loopFormatDecimal(scaled, maxFractionDigits: 1)}'
+      '${_loopCompactSuffixes[step - 1]}';
+  return usd ? '\$$body' : body;
+}
+
 String loopFormatPercent(Decimal value) =>
     '${loopFormatDecimal(value, maxFractionDigits: 2, signed: true)}%';
 

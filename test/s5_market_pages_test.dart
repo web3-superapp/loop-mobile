@@ -272,6 +272,50 @@ void main() {
       expect(find.text('1H 走势不可用，原因见下方 K 线。'), findsOneWidget);
     });
 
+    testWidgets('the card summarises; the fact list keeps the exact figure', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const TokenDetailScreen(assetId: s5WbnbAssetId),
+        market: FakeMarketReadGateway(),
+      );
+
+      final card = find.byKey(const ValueKey<String>('token-card'));
+      // A metric cell is a third of a card wide, so it carries the magnitude
+      // and a phrase, never a full figure and never a whole sentence.
+      expect(
+        find.descendant(of: card, matching: find.text(r'$9.9M')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: card, matching: find.text('8M')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: card, matching: find.text('数据不可得')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: card, matching: find.textContaining('9,876,543')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: card, matching: find.textContaining('这一项没有数值')),
+        findsNothing,
+      );
+
+      // The precise figure, and the server's whole sentence, are one screen
+      // below — unchanged by the summary above them.
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('fact-流动性')),
+      );
+      expect(find.text('9,876,543.21'), findsOneWidget);
+      expect(find.text('8,019,338'), findsOneWidget);
+      expect(find.text('这一项没有数值。'), findsOneWidget);
+    });
+
     testWidgets('security facts render with their own source and time', (
       tester,
     ) async {
