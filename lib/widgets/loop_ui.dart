@@ -200,6 +200,59 @@ class LoopCard extends StatelessWidget {
   }
 }
 
+/// A mark whose whole job is to be indistinguishable from what it lands on.
+///
+/// Every other paint LOOP makes is there to be seen. A seam is the opposite:
+/// it separates two things that *overlap* by continuing the surface between
+/// them, and a reader sees the gap, not the mark. The stacked avatars in a
+/// voice room are the case this was written for — each disc rings itself in
+/// the card's own colour, and the half of the ring a reader actually sees is
+/// the half lying on the disc behind it.
+///
+/// This widget is where that claim is made, at the call site, next to the
+/// colour it is about. It is **not** a licence for a subtree: the render probe
+/// skips exactly one border — the one this widget draws, on a box that paints
+/// no fill — and is done. A hairline that was meant to be read, painted
+/// anywhere else on the same card, fails the way it always did.
+///
+/// [colour] is a statement about the surface underneath, so it belongs to the
+/// caller, who knows what it put the seam on. Passing a colour that is *not*
+/// that surface does not make the mark legal; it makes a visible ring that
+/// nobody asked for, which review sees because the claim is right here.
+class LoopSeam extends StatelessWidget {
+  const LoopSeam({
+    required this.colour,
+    required this.child,
+    super.key,
+    this.width = 2,
+    this.shape = BoxShape.circle,
+  });
+
+  /// The surface this seam continues.
+  final Color colour;
+
+  /// How wide the gap reads.
+  final double width;
+
+  /// The shape of the thing being separated.
+  final BoxShape shape;
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    // `Container`, not `DecoratedBox`: the border has to inset the child, so
+    // that the seam lies outside the shape it separates instead of over it.
+    return Container(
+      decoration: BoxDecoration(
+        shape: shape,
+        border: Border.all(color: colour, width: width),
+      ),
+      child: child,
+    );
+  }
+}
+
 class LoopSectionLabel extends StatelessWidget {
   const LoopSectionLabel(this.label, {super.key, this.trailing});
 

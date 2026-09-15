@@ -229,6 +229,81 @@ void main() {
     });
   });
 
+  group('a seam is declared where it is drawn', () {
+    // The probe carries the tree, not the geometry, so it cannot see that a
+    // ring around one of three stacked avatars lies half on the avatar behind
+    // it. `LoopSeam` is the call site saying so. What is pinned here is how
+    // far that claim reaches: one border, on the box the seam draws, once.
+    const seamOnItsCard = LoopSeam(
+      colour: LoopColors.basalt,
+      child: SizedBox.square(dimension: 32),
+    );
+    final undeclaredRing = Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: LoopColors.basalt, width: 2),
+      ),
+      child: const SizedBox.square(dimension: 32),
+    );
+
+    testWidgets('the ring that continues the card reports nothing', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const LoopCard(child: seamOnItsCard)));
+      await tester.pump();
+
+      expect(loopVanishedPaint(_probe(tester)), isEmpty);
+    });
+
+    testWidgets('the same ring undeclared is a finding', (tester) async {
+      // The control: nothing about the colour or the geometry changed, only
+      // whether the call site claimed it. Without the claim the probe reads
+      // basalt on the card's own basalt-at-94% and says the mark is not there.
+      await tester.pumpWidget(_wrap(LoopCard(child: undeclaredRing)));
+      await tester.pump();
+
+      final vanished = loopVanishedPaint(_probe(tester));
+      expect(vanished, hasLength(1));
+      expect(vanished.single.kind, 'edge');
+      expect(vanished.single.groundDelta, lessThan(3));
+    });
+
+    testWidgets('a divider beside the seam, on the same card, still fails', (
+      tester,
+    ) async {
+      // The question a claim has to answer: can the next person draw a line
+      // nobody can see on this card and have it pass because a seam is
+      // declared somewhere above? No.
+      await tester.pumpWidget(
+        _wrap(
+          LoopCard(
+            child: Column(children: <Widget>[seamOnItsCard, undeclaredRing]),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(loopVanishedPaint(_probe(tester)), hasLength(1));
+    });
+
+    testWidgets('a second border under the same seam is judged as usual', (
+      tester,
+    ) async {
+      // The claim is spent by the border it was made about, so it does not
+      // become a licence for the subtree hanging off it.
+      await tester.pumpWidget(
+        _wrap(
+          LoopCard(
+            child: LoopSeam(colour: LoopColors.basalt, child: undeclaredRing),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(loopVanishedPaint(_probe(tester)), hasLength(1));
+    });
+  });
+
   group('a frame between two states is not a state', () {
     // `Material` hands its subtree's copy down through an
     // `AnimatedDefaultTextStyle` and its own colour down as a plain field, so

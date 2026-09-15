@@ -427,16 +427,18 @@ class InlineVoiceRoomCard extends ConsumerWidget {
                         .asMap()
                         .entries
                         .map((entry) {
+                          // The discs overlap by 12, and the ring is what
+                          // reads as the gap between them: the half a reader
+                          // sees lies on the avatar behind this one, and the
+                          // half lying on the card is *meant* to be the card.
+                          // `LoopSeam` is that claim, made here rather than in
+                          // a list somewhere, because here is where the colour
+                          // is chosen — and `LoopColors.basalt` is only right
+                          // as long as this card is the one underneath.
                           return Positioned(
                             left: entry.key * 24,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: LoopColors.basalt,
-                                  width: 2,
-                                ),
-                              ),
+                            child: LoopSeam(
+                              colour: LoopColors.basalt,
                               child: ChatAvatar(
                                 label: entry.value.alias,
                                 size: 32,

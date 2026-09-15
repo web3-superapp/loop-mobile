@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_ui.dart';
 
 /// What a subtree actually paints, and what it painted it on.
 ///
@@ -121,13 +122,14 @@ Color? _decorationFill(Decoration decoration) {
 
 /// Every colour the subtree under [root] paints, paired with its ground.
 ///
-/// The walk carries three things down: the nearest opaque ground, recomputed
+/// The walk carries four things down: the nearest opaque ground, recomputed
 /// whenever a box paints a fill, the accumulated [Opacity] factor, because
 /// a layer at 66% is exactly as capable of erasing a hairline as a low alpha
-/// is, and the settled colour of any implicit text animation overhead, so
+/// is, the settled colour of any implicit text animation overhead, so
 /// that copy and the ground under it are read from the same end of a
-/// transition. Gradients contribute their first stop; a fully transparent
-/// colour is deliberate absence and is not reported.
+/// transition, and an unspent [LoopSeam] claim. Gradients contribute their
+/// first stop; a fully transparent colour is deliberate absence and is not
+/// reported.
 List<LoopPaintedColour> loopProbeGround(Element root, Color ground) {
   final found = <LoopPaintedColour>[];
 
@@ -139,11 +141,13 @@ List<LoopPaintedColour> loopProbeGround(Element root, Color ground) {
     bool inactive,
     Color? settledInk,
     Color? animatedInk,
+    bool seam,
   ) {
     var childGround = currentGround;
     var childOpacity = opacity;
     var childInactive = inactive;
     var childSettledInk = settledInk;
+    var childSeam = seam;
     // Set for the immediate children of an `AnimatedDefaultTextStyle` only,
     // because the one widget it builds is the one carrying the frame's value.
     Color? childAnimatedInk;
@@ -175,7 +179,13 @@ List<LoopPaintedColour> loopProbeGround(Element root, Color ground) {
       );
     }
 
-    if (widget is Opacity) {
+    if (widget is LoopSeam) {
+      // The one claim a call site may make: "this mark is meant to match what
+      // it lands on". It is carried down until the first bare border spends
+      // it, and it is spent once — so it reaches the seam this widget draws
+      // and nothing else in the subtree, however deep.
+      childSeam = true;
+    } else if (widget is Opacity) {
       childOpacity *= widget.opacity;
     } else if (widget is AnimatedDefaultTextStyle) {
       // The state the application declared, as opposed to the frame the
@@ -235,6 +245,15 @@ List<LoopPaintedColour> loopProbeGround(Element root, Color ground) {
             if (fill != null && side.color.toARGB32() == fill.toARGB32()) {
               continue;
             }
+            // A seam, declared by the [LoopSeam] overhead: a border and
+            // nothing but a border, whose job is to continue the surface
+            // under it so that the shape above reads as separated. The claim
+            // is spent here, so a second border deeper in the same subtree —
+            // a divider that really did vanish — is judged as usual.
+            if (seam && fill == null) {
+              childSeam = false;
+              continue;
+            }
             record(side.color, 'edge');
           }
         }
@@ -263,11 +282,12 @@ List<LoopPaintedColour> loopProbeGround(Element root, Color ground) {
         childInactive,
         childSettledInk,
         childAnimatedInk,
+        childSeam,
       ),
     );
   }
 
-  visit(root, ground, 1, '', false, null, null);
+  visit(root, ground, 1, '', false, null, null, false);
   return found;
 }
 
