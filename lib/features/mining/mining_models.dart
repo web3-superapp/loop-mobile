@@ -41,17 +41,120 @@ final class MiningSnapshotComputed extends MiningSnapshotRef {
   final DateTime computedAt;
 }
 
-/// The formula gate on the summary. `pendingVersion` names the draft that is
-/// waiting for approval so the page can label it "待批准（…）".
+/// One mining figure. The server either settled it under an effective formula
+/// version, or it did not, and then only its own `reasonCode` exists. The
+/// client never fills the gap with a zero.
 @immutable
-final class MiningFormulaGate {
-  const MiningFormulaGate({
+sealed class MiningFigure {
+  const MiningFigure();
+}
+
+@immutable
+final class MiningFigureUnavailable extends MiningFigure {
+  const MiningFigureUnavailable(this.reasonCode);
+
+  final String reasonCode;
+}
+
+@immutable
+final class MiningFigureValue extends MiningFigure {
+  const MiningFigureValue(this.value);
+
+  /// The server's own unsigned decimal string, displayed verbatim in the
+  /// monospace face. It is never parsed into a double.
+  final String value;
+}
+
+/// The scope a formula version declares about itself. `developmentBaseline`
+/// is the Decision 0043 placeholder: it produces numbers, and those numbers
+/// are not a product measure.
+enum MiningFormulaScope {
+  developmentBaseline('development_baseline'),
+  product(null);
+
+  const MiningFormulaScope(this.wireName);
+
+  final String? wireName;
+
+  static MiningFormulaScope? tryParse(String? value) {
+    for (final scope in values) {
+      if (scope.wireName == value) return scope;
+    }
+    return null;
+  }
+
+  bool get isBaseline => this == MiningFormulaScope.developmentBaseline;
+}
+
+/// The estimated daily output. The available branch carries the budget it was
+/// divided out of, the budget's own status and the version that declared it,
+/// because a placeholder budget must never reach the screen as a plain number.
+@immutable
+sealed class MiningDailyOutput {
+  const MiningDailyOutput();
+}
+
+@immutable
+final class MiningDailyOutputUnavailable extends MiningDailyOutput {
+  const MiningDailyOutputUnavailable(this.reasonCode);
+
+  final String reasonCode;
+}
+
+@immutable
+final class MiningDailyOutputEstimate extends MiningDailyOutput {
+  const MiningDailyOutputEstimate({
+    required this.value,
+    required this.budget,
+    required this.unitKey,
+    required this.budgetStatus,
+    required this.formulaVersion,
+    required this.scope,
+  });
+
+  final String value;
+  final String budget;
+  final String unitKey;
+
+  /// `development_placeholder` while no product budget exists. The page says
+  /// so in words; it never prints the budget on its own.
+  final String budgetStatus;
+  final String formulaVersion;
+  final MiningFormulaScope scope;
+
+  bool get isPlaceholderBudget => budgetStatus == 'development_placeholder';
+}
+
+/// The formula gate on the summary. Either a version is approved and in
+/// effect — and then every number on the page belongs to it — or a draft is
+/// waiting for approval and nothing can be computed.
+@immutable
+sealed class MiningFormulaGate {
+  const MiningFormulaGate();
+}
+
+@immutable
+final class MiningFormulaPending extends MiningFormulaGate {
+  const MiningFormulaPending({
     required this.reasonCode,
     required this.pendingVersion,
   });
 
   final String reasonCode;
   final String? pendingVersion;
+}
+
+@immutable
+final class MiningFormulaEffective extends MiningFormulaGate {
+  const MiningFormulaEffective({
+    required this.configVersion,
+    required this.effectiveAt,
+    required this.scope,
+  });
+
+  final String configVersion;
+  final DateTime effectiveAt;
+  final MiningFormulaScope scope;
 }
 
 @immutable
@@ -67,9 +170,11 @@ final class MiningSummary {
     required this.snapshot,
   });
 
-  final LaunchUnavailable power;
-  final LaunchUnavailable networkPower;
-  final LaunchUnavailable estimatedToday;
+  final MiningFigure power;
+  final MiningFigure networkPower;
+  final MiningDailyOutput estimatedToday;
+
+  /// Pinned unavailable: there is no reward ledger to accumulate against.
   final LaunchUnavailable accumulated;
   final LaunchUnavailable claimable;
   final LaunchUnavailable referralBoost;

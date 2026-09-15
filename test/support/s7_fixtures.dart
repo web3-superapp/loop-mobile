@@ -333,18 +333,52 @@ LaunchMilestone s7ImplicitMilestone({
 // mining
 // ---------------------------------------------------------------------------
 
-MiningSummary s7MiningSummary({String? pendingVersion}) => MiningSummary(
-  power: const LaunchUnavailable(s7FormulaPending),
-  networkPower: const LaunchUnavailable(s7FormulaPending),
-  estimatedToday: const LaunchUnavailable(s7FormulaPending),
+const s7BaselineVersion = 'miningFormula-devBaseline-2026-09-15-r2';
+
+MiningSummary s7MiningSummary({
+  String? pendingVersion,
+  MiningFigure? power,
+  MiningFigure? networkPower,
+  MiningDailyOutput? estimatedToday,
+  MiningFormulaGate? formula,
+  MiningSnapshotRef? snapshot,
+}) => MiningSummary(
+  power: power ?? const MiningFigureUnavailable(s7FormulaPending),
+  networkPower: networkPower ?? const MiningFigureUnavailable(s7FormulaPending),
+  estimatedToday:
+      estimatedToday ?? const MiningDailyOutputUnavailable(s7FormulaPending),
   accumulated: const LaunchUnavailable(s7FormulaPending),
   claimable: const LaunchUnavailable(s7RewardPending),
   referralBoost: const LaunchUnavailable(s7FormulaPending),
-  formula: MiningFormulaGate(
-    reasonCode: s7FormulaPending,
-    pendingVersion: pendingVersion ?? 'miningFormulaV1-draft',
+  formula:
+      formula ??
+      MiningFormulaPending(
+        reasonCode: s7FormulaPending,
+        pendingVersion: pendingVersion ?? 'miningFormulaV1-draft',
+      ),
+  snapshot:
+      snapshot ??
+      const MiningSnapshotUnavailable('MINING_SNAPSHOT_NOT_AVAILABLE'),
+);
+
+/// The Development baseline as it actually answers: a version in effect, and
+/// every number under it still zero.
+MiningSummary s7MiningBaselineSummary() => s7MiningSummary(
+  power: const MiningFigureValue('1000'),
+  networkPower: const MiningFigureValue('4000'),
+  estimatedToday: const MiningDailyOutputEstimate(
+    value: '250000',
+    budget: '1000000',
+    unitKey: 'mining.rules.dailyOutput.unit.loopTokenPending',
+    budgetStatus: 'development_placeholder',
+    formulaVersion: s7BaselineVersion,
+    scope: MiningFormulaScope.developmentBaseline,
   ),
-  snapshot: const MiningSnapshotUnavailable('MINING_SNAPSHOT_NOT_AVAILABLE'),
+  formula: MiningFormulaEffective(
+    configVersion: s7BaselineVersion,
+    effectiveAt: DateTime.utc(2026, 9, 15, 14, 57, 37),
+    scope: MiningFormulaScope.developmentBaseline,
+  ),
 );
 
 MiningAssets s7MiningAssets() => const MiningAssets(

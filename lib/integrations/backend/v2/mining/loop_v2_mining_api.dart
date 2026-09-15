@@ -112,6 +112,103 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
     );
   }
 
+  static MiningFigure _figure(Object? raw) {
+    final value = LoopV2S7Codec.availableDecimal(raw);
+    if (value != null) return MiningFigureValue(value);
+    return MiningFigureUnavailable(LoopV2S7Codec.unavailable(raw).reasonCode);
+  }
+
+  static MiningFormulaScope _scope(Map<String, Object?> source, String key) {
+    final raw = source[key];
+    if (raw != null && raw is! String) LoopV2S7Codec.invalid();
+    final scope = MiningFormulaScope.tryParse(raw as String?);
+    if (scope == null) LoopV2S7Codec.invalid();
+    return scope;
+  }
+
+  static MiningDailyOutput _dailyOutput(Object? raw) {
+    if (raw is! Map) LoopV2S7Codec.invalid();
+    if (raw['status'] != 'available') {
+      return MiningDailyOutputUnavailable(
+        LoopV2S7Codec.unavailable(raw).reasonCode,
+      );
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'value',
+      'budget',
+      'unitKey',
+      'budgetStatus',
+      'formulaVersion',
+      'scope',
+    });
+    return MiningDailyOutputEstimate(
+      value: LoopV2S7Codec.requirePattern(
+        map,
+        'value',
+        LoopV2S7Codec.decimalPattern,
+        maxLength: 140,
+      ),
+      budget: LoopV2S7Codec.requirePattern(
+        map,
+        'budget',
+        LoopV2S7Codec.decimalPattern,
+        maxLength: 140,
+      ),
+      unitKey: LoopV2S7Codec.requireEnum(map, 'unitKey', const <String>{
+        'mining.rules.dailyOutput.unit.loopTokenPending',
+      }),
+      budgetStatus: LoopV2S7Codec.requireEnum(
+        map,
+        'budgetStatus',
+        const <String>{'development_placeholder'},
+      ),
+      formulaVersion: LoopV2S7Codec.requirePattern(
+        map,
+        'formulaVersion',
+        LoopV2S7Codec.configVersionPattern,
+      ),
+      scope: _scope(map, 'scope'),
+    );
+  }
+
+  static MiningFormulaGate _formulaGate(Object? raw) {
+    if (raw is! Map) LoopV2S7Codec.invalid();
+    if (raw['status'] == 'approved') {
+      final map = LoopV2Contract.strictMap(raw, const <String>{
+        'status',
+        'configVersion',
+        'effectiveAt',
+        'scope',
+      });
+      return MiningFormulaEffective(
+        configVersion: LoopV2S7Codec.requirePattern(
+          map,
+          'configVersion',
+          LoopV2S7Codec.configVersionPattern,
+        ),
+        effectiveAt: LoopV2S7Codec.requireTimestamp(map, 'effectiveAt'),
+        scope: _scope(map, 'scope'),
+      );
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'reasonCode',
+      'pendingVersion',
+    });
+    if (map['status'] != 'unavailable') LoopV2S7Codec.invalid();
+    return MiningFormulaPending(
+      reasonCode: LoopV2S7Codec.requireEnum(map, 'reasonCode', const <String>{
+        'MINING_FORMULA_BASELINE_PENDING',
+      }),
+      pendingVersion: LoopV2S7Codec.optionalPattern(
+        map,
+        'pendingVersion',
+        LoopV2S7Codec.configVersionPattern,
+      ),
+    );
+  }
+
   static MiningFormulaStatus _formulaStatus(
     Map<String, Object?> source,
     String key, {
@@ -251,31 +348,16 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         'contractVersion',
       });
       LoopV2S7Codec.requireContractVersion(root);
-      final formula = LoopV2Contract.strictMap(root['formula'], const <String>{
-        'status',
-        'reasonCode',
-        'pendingVersion',
-      });
-      if (formula['status'] != 'unavailable') LoopV2S7Codec.invalid();
       return MiningSummary(
-        power: LoopV2S7Codec.unavailable(root['power']),
-        networkPower: LoopV2S7Codec.unavailable(root['networkPower']),
-        estimatedToday: LoopV2S7Codec.unavailable(root['estimatedToday']),
+        power: _figure(root['power']),
+        networkPower: _figure(root['networkPower']),
+        estimatedToday: _dailyOutput(root['estimatedToday']),
+        // No reward ledger exists, so these three stay unavailable by
+        // contract rather than by absence of data.
         accumulated: LoopV2S7Codec.unavailable(root['accumulated']),
         claimable: LoopV2S7Codec.unavailable(root['claimable']),
         referralBoost: LoopV2S7Codec.unavailable(root['referralBoost']),
-        formula: MiningFormulaGate(
-          reasonCode: LoopV2S7Codec.requireEnum(
-            formula,
-            'reasonCode',
-            const <String>{'MINING_FORMULA_BASELINE_PENDING'},
-          ),
-          pendingVersion: LoopV2S7Codec.optionalPattern(
-            formula,
-            'pendingVersion',
-            LoopV2S7Codec.configVersionPattern,
-          ),
-        ),
+        formula: _formulaGate(root['formula']),
         snapshot: _snapshot(root['snapshot']),
       );
     } on DioException catch (error) {

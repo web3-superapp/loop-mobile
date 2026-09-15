@@ -67,6 +67,19 @@ Map<String, Object?> _unavailable(String reasonCode) => <String, Object?>{
   'reasonCode': reasonCode,
 };
 
+const _baselineVersion = 'miningFormula-devBaseline-2026-09-15-r2';
+
+/// The Development snapshot of 2026-09-15, field for field.
+Map<String, Object?> _miningSnapshot() => <String, Object?>{
+  'snapshotId': '0e358b31-e49f-48b9-89b2-c5c908c3ad5e',
+  'blockNumber': '122037728',
+  'blockHash':
+      '0x3decab82b150493d90cb8fe47b3873c6e3b8c72aecf08ce91b4aceb266bda28a',
+  'formulaVersion': _baselineVersion,
+  'priceVersion': 'dexscreener:2026-09-15T14:58:51.862Z',
+  'computedAt': '2026-09-15T14:58:54.366Z',
+};
+
 Map<String, Object?> _onChainState() => <String, Object?>{
   'saleState': 'unavailable',
   'entitlementState': 'unavailable',
@@ -880,11 +893,217 @@ void main() {
           ),
         ).getSummary(accessToken: _token, clientVersion: _clientVersion);
 
-        expect(summary.formula.pendingVersion, 'miningFormulaV1-draft');
+        expect(
+          (summary.formula as MiningFormulaPending).pendingVersion,
+          'miningFormulaV1-draft',
+        );
         expect(summary.snapshot, isA<MiningSnapshotUnavailable>());
         expect(summary.claimable.reasonCode, 'REWARD_AUTHORITY_PENDING');
       },
     );
+
+    test(
+      'the summary carries the baseline figures, budget and version',
+      () async {
+        final summary = await DioLoopV2MiningApi(
+          _dio(
+            _RecordingAdapter(
+              statusCode: 200,
+              body: <String, Object?>{
+                'power': <String, Object?>{
+                  'status': 'available',
+                  'value': '1000',
+                },
+                'networkPower': <String, Object?>{
+                  'status': 'available',
+                  'value': '4000',
+                },
+                'estimatedToday': <String, Object?>{
+                  'status': 'available',
+                  'value': '250000',
+                  'budget': '1000000',
+                  'unitKey': 'mining.rules.dailyOutput.unit.loopTokenPending',
+                  'budgetStatus': 'development_placeholder',
+                  'formulaVersion': _baselineVersion,
+                  'scope': 'development_baseline',
+                },
+                'accumulated': _unavailable('REWARD_AUTHORITY_PENDING'),
+                'claimable': _unavailable('REWARD_AUTHORITY_PENDING'),
+                'referralBoost': _unavailable(
+                  'MINING_FORMULA_BASELINE_PENDING',
+                ),
+                'formula': <String, Object?>{
+                  'status': 'approved',
+                  'configVersion': _baselineVersion,
+                  'effectiveAt': '2026-09-15T14:57:37.026Z',
+                  'scope': 'development_baseline',
+                },
+                'snapshot': _miningSnapshot(),
+                'contractVersion': '2.0',
+              },
+            ),
+          ),
+        ).getSummary(accessToken: _token, clientVersion: _clientVersion);
+
+        expect((summary.power as MiningFigureValue).value, '1000');
+        expect((summary.networkPower as MiningFigureValue).value, '4000');
+        final output = summary.estimatedToday as MiningDailyOutputEstimate;
+        expect(output.value, '250000');
+        expect(output.budget, '1000000');
+        expect(output.budgetStatus, 'development_placeholder');
+        expect(output.isPlaceholderBudget, isTrue);
+        expect(output.formulaVersion, _baselineVersion);
+        expect(output.scope, MiningFormulaScope.developmentBaseline);
+        final formula = summary.formula as MiningFormulaEffective;
+        expect(formula.configVersion, _baselineVersion);
+        expect(formula.effectiveAt, DateTime.utc(2026, 9, 15, 14, 57, 37, 26));
+        expect(formula.scope.isBaseline, isTrue);
+        final snapshot = summary.snapshot as MiningSnapshotComputed;
+        expect(snapshot.blockNumber, '122037728');
+        expect(snapshot.formulaVersion, _baselineVersion);
+      },
+    );
+
+    test('a zero power under an effective version stays a figure', () async {
+      final summary = await DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: <String, Object?>{
+              'power': <String, Object?>{'status': 'available', 'value': '0'},
+              'networkPower': <String, Object?>{
+                'status': 'available',
+                'value': '0',
+              },
+              'estimatedToday': _unavailable('MINING_NETWORK_POWER_ZERO'),
+              'accumulated': _unavailable('REWARD_AUTHORITY_PENDING'),
+              'claimable': _unavailable('REWARD_AUTHORITY_PENDING'),
+              'referralBoost': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+              'formula': <String, Object?>{
+                'status': 'approved',
+                'configVersion': _baselineVersion,
+                'effectiveAt': '2026-09-15T14:57:37.026Z',
+                'scope': 'development_baseline',
+              },
+              'snapshot': _miningSnapshot(),
+              'contractVersion': '2.0',
+            },
+          ),
+        ),
+      ).getSummary(accessToken: _token, clientVersion: _clientVersion);
+
+      expect((summary.power as MiningFigureValue).value, '0');
+      expect(
+        (summary.estimatedToday as MiningDailyOutputUnavailable).reasonCode,
+        'MINING_NETWORK_POWER_ZERO',
+      );
+    });
+
+    test('a daily output without its budget is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: <String, Object?>{
+              'power': <String, Object?>{'status': 'available', 'value': '10'},
+              'networkPower': <String, Object?>{
+                'status': 'available',
+                'value': '10',
+              },
+              // No budget, unitKey, budgetStatus, formulaVersion or scope: the
+              // number would reach the screen with nothing qualifying it.
+              'estimatedToday': <String, Object?>{
+                'status': 'available',
+                'value': '1000',
+              },
+              'accumulated': _unavailable('REWARD_AUTHORITY_PENDING'),
+              'claimable': _unavailable('REWARD_AUTHORITY_PENDING'),
+              'referralBoost': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+              'formula': <String, Object?>{
+                'status': 'approved',
+                'configVersion': _baselineVersion,
+                'effectiveAt': '2026-09-15T14:57:37.026Z',
+                'scope': 'development_baseline',
+              },
+              'snapshot': _miningSnapshot(),
+              'contractVersion': '2.0',
+            },
+          ),
+        ),
+      );
+
+      expect(
+        () =>
+            api.getSummary(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('an unknown formula scope is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: <String, Object?>{
+              'power': <String, Object?>{'status': 'available', 'value': '0'},
+              'networkPower': <String, Object?>{
+                'status': 'available',
+                'value': '0',
+              },
+              'estimatedToday': _unavailable('MINING_NETWORK_POWER_ZERO'),
+              'accumulated': _unavailable('REWARD_AUTHORITY_PENDING'),
+              'claimable': _unavailable('REWARD_AUTHORITY_PENDING'),
+              'referralBoost': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+              'formula': <String, Object?>{
+                'status': 'approved',
+                'configVersion': _baselineVersion,
+                'effectiveAt': '2026-09-15T14:57:37.026Z',
+                'scope': 'staging_baseline',
+              },
+              'snapshot': _miningSnapshot(),
+              'contractVersion': '2.0',
+            },
+          ),
+        ),
+      );
+
+      expect(
+        () =>
+            api.getSummary(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a power figure carrying a negative value is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: <String, Object?>{
+              'power': <String, Object?>{'status': 'available', 'value': '-1'},
+              'networkPower': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+              'estimatedToday': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+              'accumulated': _unavailable('REWARD_AUTHORITY_PENDING'),
+              'claimable': _unavailable('REWARD_AUTHORITY_PENDING'),
+              'referralBoost': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+              'formula': <String, Object?>{
+                'status': 'unavailable',
+                'reasonCode': 'MINING_FORMULA_BASELINE_PENDING',
+                'pendingVersion': null,
+              },
+              'snapshot': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+              'contractVersion': '2.0',
+            },
+          ),
+        ),
+      );
+
+      expect(
+        () =>
+            api.getSummary(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
 
     test('a claimable rewards response is refused', () {
       final api = DioLoopV2MiningApi(

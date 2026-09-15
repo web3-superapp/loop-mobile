@@ -36,6 +36,12 @@ abstract final class LoopV2S7Codec {
   static final RegExp assetIdPattern = RegExp(
     r'^eip155:[1-9][0-9]{0,9}:0x[0-9a-f]{40}$',
   );
+
+  /// A mining row can weigh the chain's own coin, which has no contract
+  /// address of its own; a community binding still cannot.
+  static final RegExp holdingAssetIdPattern = RegExp(
+    r'^eip155:[1-9][0-9]{0,9}:(0x[0-9a-f]{40}|native)$',
+  );
   static final RegExp textPattern = RegExp(
     r'^[^\p{Cc}\p{Cf}\p{Cs}\p{Zl}\p{Zp}]+$',
     unicode: true,
@@ -192,6 +198,18 @@ abstract final class LoopV2S7Codec {
     });
     if (map['status'] != 'unavailable') invalid();
     return LaunchUnavailable(requireReasonCode(map, 'reasonCode'));
+  }
+
+  /// A decimal figure block: `{status: "available", value}` when the server
+  /// settled it, `null` when it sent the unavailable projection instead. Any
+  /// third shape is an invalid payload.
+  static String? availableDecimal(Object? raw) {
+    if (raw is! Map || raw['status'] != 'available') return null;
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'value',
+    });
+    return requirePattern(map, 'value', decimalPattern, maxLength: 140);
   }
 
   static List<Object?> requireList(Object? raw, {int maximum = 200}) {

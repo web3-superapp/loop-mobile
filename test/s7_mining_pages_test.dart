@@ -183,6 +183,97 @@ void main() {
       expect(find.text('奖励发放还没有开启，暂时不能领取。'), findsOneWidget);
     });
 
+    testWidgets('a settled figure prints with its baseline label', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(
+          summary: S7Answer<MiningSummary>(value: s7MiningBaselineSummary()),
+        ),
+      );
+
+      // The number is the server's, verbatim, and it never appears without
+      // the label that says which kind of number it is.
+      expect(find.text('1000'), findsWidgets);
+      expect(find.text('4000'), findsOneWidget);
+      expect(find.text('开发基线'), findsWidgets);
+      // A placeholder budget is never a bare 1000000 on the screen.
+      expect(find.text('1000000'), findsNothing);
+      expect(find.textContaining('占位产量'), findsOneWidget);
+      // The version is an identifier: it stays out of every sentence.
+      expect(find.textContaining('miningFormula-devBaseline'), findsNothing);
+    });
+
+    testWidgets('the effective version stays inside the 详情', (tester) async {
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(
+          summary: S7Answer<MiningSummary>(value: s7MiningBaselineSummary()),
+        ),
+      );
+
+      final details = find.byKey(
+        const ValueKey<String>('mining-formula-details'),
+      );
+      await scrollToS7Section(tester, details);
+      await tester.tap(
+        find.descendant(
+          of: details,
+          matching: find.byKey(
+            const ValueKey<String>('loop-disclosure-summary'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining(s7BaselineVersion), findsOneWidget);
+    });
+
+    testWidgets('a baseline zero says why it is zero, not that it is missing', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(
+          summary: S7Answer<MiningSummary>(
+            value: s7MiningSummary(
+              power: const MiningFigureValue('0'),
+              networkPower: const MiningFigureValue('0'),
+              estimatedToday: const MiningDailyOutputUnavailable(
+                'MINING_NETWORK_POWER_ZERO',
+              ),
+              formula: MiningFormulaEffective(
+                configVersion: s7BaselineVersion,
+                effectiveAt: DateTime.utc(2026, 9, 15, 14, 57, 37),
+                scope: MiningFormulaScope.developmentBaseline,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // A settled zero is a reading, not an absence: it keeps the figure and
+      // says which rule produced it.
+      expect(find.text('0'), findsWidgets);
+      expect(find.text('开发基线'), findsWidgets);
+      expect(find.textContaining('全网算力为 0'), findsOneWidget);
+      // 我的算力 is a settled row now, not one of the em-dash cells.
+      expect(
+        find.byKey(const ValueKey<String>('mining-metric-power')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('mining-metric-power')),
+          matching: find.text(launchMissingFigure),
+        ),
+        findsNothing,
+      );
+    });
+
     testWidgets('the snapshot is absent, not zero', (tester) async {
       await pumpS7Page(
         tester,
