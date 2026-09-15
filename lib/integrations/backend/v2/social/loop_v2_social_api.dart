@@ -181,7 +181,9 @@ final class DioLoopV2SocialApi implements LoopV2SocialApi {
               item,
               'viewerFollows',
             ),
-            miningPower: LoopV2ProjectionCodec.unavailable(item['miningPower']),
+            miningPower: LoopV2ProjectionCodec.miningPowerFact(
+              item['miningPower'],
+            ),
           ),
         );
       }

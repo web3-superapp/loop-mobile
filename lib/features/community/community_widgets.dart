@@ -198,6 +198,82 @@ class CommunityUnavailableCard extends StatelessWidget {
   }
 }
 
+/// Server settlement time in UTC. The client never restates it as a local
+/// wall clock or as a relative "just now".
+String communitySettlementLabel(DateTime computedAt) {
+  final value = computedAt.toUtc();
+  String two(int part) => part.toString().padLeft(2, '0');
+  return '${value.year}-${two(value.month)}-${two(value.day)} '
+      '${two(value.hour)}:${two(value.minute)} UTC';
+}
+
+/// Renders one `miningPower` field. A settled reading prints the server's own
+/// number and when it was settled; the version that produced it is a backend
+/// identifier and stays inside the 详情. Anything else keeps the unavailable
+/// card: this card never turns an absent reading into a zero.
+class CommunityMiningPowerCard extends StatelessWidget {
+  const CommunityMiningPowerCard({
+    required this.label,
+    required this.fact,
+    super.key,
+    this.margin = const EdgeInsets.symmetric(horizontal: 16),
+  });
+
+  final String label;
+  final LoopMiningPowerFact fact;
+  final EdgeInsets margin;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (fact) {
+      case LoopMiningPowerUnavailable(:final reasonCode):
+        return CommunityUnavailableCard(
+          label: label,
+          fact: LoopUnavailableFact(reasonCode),
+          margin: margin,
+        );
+      case LoopMiningPowerSettled(
+        :final power,
+        :final formulaVersion,
+        :final computedAt,
+      ):
+        final identifier = formulaVersion;
+        return Padding(
+          padding: margin,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              LoopRecordGroup(
+                key: const ValueKey<String>('community-mining-power'),
+                rows: <LoopRecordRow>[
+                  LoopRecordRow(
+                    key: const ValueKey<String>('community-mining-power-row'),
+                    title: label,
+                    subtitle:
+                        '最近一次结算 · ${communitySettlementLabel(computedAt)}',
+                    trailing: power,
+                    semanticLabel: '$label，$power',
+                  ),
+                ],
+              ),
+              LoopDisclosure(
+                key: const ValueKey<String>('community-mining-power-details'),
+                summary: '详情',
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                  child: Text(
+                    '结算所用的公式版本 $identifier',
+                    style: LoopTypography.caption(11, color: LoopColors.text3),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+    }
+  }
+}
+
 /// The em dash used wherever a real figure has no source. Never `0`.
 ///
 /// It owns the small slots: a metric cell, a row's trailing value, the end of

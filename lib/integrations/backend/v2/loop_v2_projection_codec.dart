@@ -28,6 +28,12 @@ abstract final class LoopV2ProjectionCodec {
     r'^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$',
   );
   static final RegExp boostPercentPattern = RegExp(r'^[0-9]+(\.[0-9]+)?$');
+  static final RegExp miningDecimalPattern = RegExp(
+    r'^(0|[1-9][0-9]{0,77})(\.[0-9]{1,60})?$',
+  );
+  static final RegExp miningFormulaVersionPattern = RegExp(
+    r'^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$',
+  );
 
   static const contractVersion = '2.0';
   static const maximumCursorLength = 1536;
@@ -114,6 +120,44 @@ abstract final class LoopV2ProjectionCodec {
       invalid();
     }
     return LoopUnavailableFact(reasonCode);
+  }
+
+  /// The `miningPower` projection shared by the community record, the member
+  /// directory and the connection list. The settled branch must carry the
+  /// snapshot and the version that produced the number; a bare power would be
+  /// a figure with no source.
+  static LoopMiningPowerFact miningPowerFact(Object? raw) {
+    if (raw is! Map) invalid();
+    if (raw['status'] != 'available') {
+      return LoopMiningPowerUnavailable(unavailable(raw).reasonCode);
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'power',
+      'snapshotId',
+      'formulaVersion',
+      'computedAt',
+    });
+    return LoopMiningPowerSettled(
+      power: LoopV2Contract.requiredString(
+        map,
+        'power',
+        pattern: miningDecimalPattern,
+        maxLength: 140,
+      ),
+      snapshotId: LoopV2Contract.requiredString(
+        map,
+        'snapshotId',
+        pattern: LoopV2Contract.uuidPattern,
+      ),
+      formulaVersion: LoopV2Contract.requiredString(
+        map,
+        'formulaVersion',
+        pattern: miningFormulaVersionPattern,
+        maxLength: 128,
+      ),
+      computedAt: requireTimestamp(map, 'computedAt'),
+    );
   }
 
   /// [allowMissingId] is true only for the member directory, where a member
@@ -328,7 +372,7 @@ abstract final class LoopV2ProjectionCodec {
     return CommunityDetail(
       community: community(root['community']),
       viewer: viewer(root['viewer']),
-      miningPower: unavailable(root['miningPower']),
+      miningPower: miningPowerFact(root['miningPower']),
       onlineCount: unavailable(root['onlineCount']),
       announcements: unavailable(root['announcements']),
       officialLinks: unavailable(root['officialLinks']),
@@ -415,7 +459,7 @@ abstract final class LoopV2ProjectionCodec {
           joinedAt: requireTimestamp(item, 'joinedAt'),
           isSelf: requireBool(item, 'isSelf'),
           actions: governanceActions(item['actions']),
-          miningPower: unavailable(item['miningPower']),
+          miningPower: miningPowerFact(item['miningPower']),
         ),
       );
     }

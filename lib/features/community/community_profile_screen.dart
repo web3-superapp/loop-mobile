@@ -191,7 +191,7 @@ class _CommunityProfileScreenState
               onOpenToken: widget.onOpenToken,
             ),
           const LoopLabel('挖矿'),
-          CommunityUnavailableCard(
+          CommunityMiningPowerCard(
             label: 'Mining Power',
             fact: detail.miningPower,
           ),

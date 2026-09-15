@@ -257,7 +257,7 @@ class _CommunityMembersScreenState
             CommunityUnavailableCard(label: '在线人数', fact: counts.online),
           if (state.items.isNotEmpty) ...<Widget>[
             const SizedBox(height: 10),
-            CommunityUnavailableCard(
+            CommunityMiningPowerCard(
               label: '成员算力',
               fact: state.items.first.miningPower,
             ),

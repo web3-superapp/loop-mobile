@@ -31,7 +31,18 @@ const testAdminId = '8b2e1f3d-4a5b-4c6d-8e7f-9a0b1c2d3e4f';
 const testMemberId = '7a3d2e4c-5b6c-4d7e-8f90-1a2b3c4d5e60';
 const testRequestId = '1d2c3b4a-5e6f-4a7b-8c9d-0e1f2a3b4c5d';
 
-const testMiningPower = LoopUnavailableFact('MINING_FORMULA_BASELINE_PENDING');
+const testMiningPower = LoopMiningPowerUnavailable(
+  'MINING_FORMULA_BASELINE_PENDING',
+);
+
+/// The Development baseline as the community record answers it: a settled
+/// number, the snapshot that produced it and the version it ran under.
+final testSettledMiningPower = LoopMiningPowerSettled(
+  power: '230.5',
+  snapshotId: '0e358b31-e49f-48b9-89b2-c5c908c3ad5e',
+  formulaVersion: 'miningFormula-devBaseline-2026-09-15-r2',
+  computedAt: DateTime.utc(2026, 9, 15, 14, 58, 54),
+);
 const testPresence = LoopUnavailableFact('STREAM_PRESENCE_NOT_CONNECTED');
 
 CommunitySummary testCommunity({

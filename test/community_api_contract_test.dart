@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
@@ -191,6 +192,83 @@ void main() {
       expect(home.joinedTruncated, isTrue);
       expect(home.unread.reasonCode, 'STREAM_UNREAD_NOT_CONNECTED');
       expect(home.recommendation.ruleVersion, 'rule:verified-members-v1');
+    });
+
+    test('a settled mining power keeps its snapshot and version', () async {
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          final body = detailBody()
+            ..['miningPower'] = <String, Object?>{
+              'status': 'available',
+              'power': '230.5',
+              'snapshotId': '0e358b31-e49f-48b9-89b2-c5c908c3ad5e',
+              'formulaVersion': 'miningFormula-devBaseline-2026-09-15-r2',
+              'computedAt': '2026-09-15T14:58:54.366Z',
+            };
+          handler.resolve(_response(options, body));
+        }),
+      );
+
+      final detail = await api.getCommunity(
+        accessToken: 'token',
+        clientVersion: clientVersion,
+        communityId: communityId,
+      );
+
+      final power = detail.miningPower as LoopMiningPowerSettled;
+      expect(power.power, '230.5');
+      expect(power.snapshotId, '0e358b31-e49f-48b9-89b2-c5c908c3ad5e');
+      expect(power.formulaVersion, 'miningFormula-devBaseline-2026-09-15-r2');
+      expect(power.computedAt, DateTime.utc(2026, 9, 15, 14, 58, 54, 366));
+    });
+
+    test('a mining power without its snapshot is refused', () async {
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          // A bare number is a figure with no source: the row would print it
+          // without being able to say what produced it.
+          final body = detailBody()
+            ..['miningPower'] = <String, Object?>{
+              'status': 'available',
+              'power': '230.5',
+            };
+          handler.resolve(_response(options, body));
+        }),
+      );
+
+      await expectLater(
+        api.getCommunity(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          communityId: communityId,
+        ),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+      );
+    });
+
+    test('a negative mining power is refused', () async {
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          final body = detailBody()
+            ..['miningPower'] = <String, Object?>{
+              'status': 'available',
+              'power': '-1',
+              'snapshotId': '0e358b31-e49f-48b9-89b2-c5c908c3ad5e',
+              'formulaVersion': 'miningFormula-devBaseline-2026-09-15-r2',
+              'computedAt': '2026-09-15T14:58:54.366Z',
+            };
+          handler.resolve(_response(options, body));
+        }),
+      );
+
+      await expectLater(
+        api.getCommunity(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          communityId: communityId,
+        ),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+      );
     });
 
     test('an unknown response field is an invalid payload', () async {

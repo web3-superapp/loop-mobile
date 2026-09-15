@@ -22,7 +22,7 @@ final class ConnectionEntry {
   final LoopPublicProfile profile;
   final DateTime createdAt;
   final bool viewerFollows;
-  final LoopUnavailableFact miningPower;
+  final LoopMiningPowerFact miningPower;
 }
 
 @immutable

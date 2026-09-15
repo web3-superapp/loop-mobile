@@ -12,7 +12,9 @@ import 'package:loop_mobile/features/social/social_models.dart';
 /// Nothing here is persisted, reaches an account, or calls a provider; the
 /// unavailable projections match the production contract exactly so the
 /// Preview can never show a figure the real backend would withhold.
-const _previewMining = LoopUnavailableFact('MINING_FORMULA_BASELINE_PENDING');
+const _previewMining = LoopMiningPowerUnavailable(
+  'MINING_FORMULA_BASELINE_PENDING',
+);
 const _previewPresence = LoopUnavailableFact('STREAM_PRESENCE_NOT_CONNECTED');
 
 CommunitySummary _community({

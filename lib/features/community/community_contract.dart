@@ -73,6 +73,64 @@ final class LoopUnavailableFact {
   int get hashCode => reasonCode.hashCode;
 }
 
+/// A mining power reading on a community, a member row or a connection row.
+///
+/// Either a settled snapshot computed it under a named formula version, or it
+/// did not and only the server's own `reasonCode` exists. A row never falls
+/// back to `0`: an account with no balance in the snapshot and an account the
+/// snapshot never reached are different facts.
+@immutable
+sealed class LoopMiningPowerFact {
+  const LoopMiningPowerFact();
+}
+
+@immutable
+final class LoopMiningPowerUnavailable extends LoopMiningPowerFact {
+  const LoopMiningPowerUnavailable(this.reasonCode);
+
+  final String reasonCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LoopMiningPowerUnavailable && other.reasonCode == reasonCode;
+
+  @override
+  int get hashCode => reasonCode.hashCode;
+}
+
+@immutable
+final class LoopMiningPowerSettled extends LoopMiningPowerFact {
+  const LoopMiningPowerSettled({
+    required this.power,
+    required this.snapshotId,
+    required this.formulaVersion,
+    required this.computedAt,
+  });
+
+  /// The server's own unsigned decimal string, rendered verbatim.
+  final String power;
+  final String snapshotId;
+
+  /// A backend identifier. It belongs in a LoopDisclosure, never in a
+  /// sentence.
+  final String formulaVersion;
+  final DateTime computedAt;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LoopMiningPowerSettled &&
+          other.power == power &&
+          other.snapshotId == snapshotId &&
+          other.formulaVersion == formulaVersion &&
+          other.computedAt == computedAt;
+
+  @override
+  int get hashCode =>
+      Object.hash(power, snapshotId, formulaVersion, computedAt);
+}
+
 /// The fixed four-field identity projection. No `profile_code`, wallet
 /// address, Privy ID or Stream ID is ever part of it.
 @immutable

@@ -323,7 +323,7 @@ final class CommunityDetail {
 
   final CommunitySummary community;
   final CommunityViewer viewer;
-  final LoopUnavailableFact miningPower;
+  final LoopMiningPowerFact miningPower;
   final LoopUnavailableFact onlineCount;
   final LoopUnavailableFact announcements;
   final LoopUnavailableFact officialLinks;
@@ -421,7 +421,7 @@ final class CommunityMemberEntry {
   /// ID, a state a command cannot be applied to, and every cell the
   /// permission matrix denies all arrive here as an empty list.
   final List<CommunityGovernanceAction> actions;
-  final LoopUnavailableFact miningPower;
+  final LoopMiningPowerFact miningPower;
 }
 
 @immutable

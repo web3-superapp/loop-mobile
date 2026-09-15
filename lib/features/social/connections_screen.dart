@@ -156,7 +156,7 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
             if (state.items.isNotEmpty) ...<Widget>[
               const SizedBox(height: 14),
               // The reason comes from the server's own per-row projection.
-              CommunityUnavailableCard(
+              CommunityMiningPowerCard(
                 label: '行内算力',
                 fact: state.items.first.miningPower,
               ),

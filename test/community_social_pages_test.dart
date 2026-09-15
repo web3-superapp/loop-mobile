@@ -18,6 +18,7 @@ ConnectionPage _connections({
   ConnectionDirection direction = ConnectionDirection.following,
   bool viewerFollows = true,
   int items = 1,
+  LoopMiningPowerFact? miningPower,
 }) => ConnectionPage(
   direction: direction,
   items: <ConnectionEntry>[
@@ -30,7 +31,7 @@ ConnectionPage _connections({
         ),
         createdAt: DateTime.utc(2026, 8),
         viewerFollows: viewerFollows,
-        miningPower: testMiningPower,
+        miningPower: miningPower ?? testMiningPower,
       ),
   ],
   counts: const ConnectionCounts(following: 24, followers: 108),
@@ -100,6 +101,81 @@ SearchPage _searchPage(
 );
 
 void main() {
+  group('mining power on a row', () {
+    testWidgets('a settled reading prints the number, not an em dash', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const ConnectionsScreen(),
+        social: FakeSocialGateway(
+          connections: _connections(miningPower: testSettledMiningPower),
+        ),
+      );
+
+      final card = find.byKey(
+        const ValueKey<String>('community-mining-power-row'),
+      );
+      await tester.scrollUntilVisible(
+        card,
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(card, findsOneWidget);
+      expect(find.text('230.5'), findsOneWidget);
+      expect(find.textContaining('2026-09-15 14:58 UTC'), findsOneWidget);
+      // The version that settled it is a backend identifier: it is not in the
+      // row's own sentence.
+      expect(find.textContaining('miningFormula-devBaseline'), findsNothing);
+    });
+
+    testWidgets('the settling version stays inside the 详情', (tester) async {
+      await pumpCommunityPage(
+        tester,
+        const ConnectionsScreen(),
+        social: FakeSocialGateway(
+          connections: _connections(miningPower: testSettledMiningPower),
+        ),
+      );
+
+      final details = find.byKey(
+        const ValueKey<String>('community-mining-power-details'),
+      );
+      await tester.scrollUntilVisible(
+        details,
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(
+        find.descendant(
+          of: details,
+          matching: find.byKey(
+            const ValueKey<String>('loop-disclosure-summary'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('miningFormula-devBaseline-2026-09-15-r2'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('an unavailable reading is still never a zero', (tester) async {
+      await pumpCommunityPage(
+        tester,
+        const ConnectionsScreen(),
+        social: FakeSocialGateway(connections: _connections()),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('community-mining-power-row')),
+        findsNothing,
+      );
+      expect(find.text('0'), findsNothing);
+    });
+  });
+
   group('connections', () {
     testWidgets('the segment counts come from the server', (tester) async {
       await pumpCommunityPage(
