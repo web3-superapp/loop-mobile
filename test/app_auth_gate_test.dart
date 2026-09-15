@@ -9,8 +9,13 @@ import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
+import 'support/loop_ground_probe.dart';
 
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   test('production session controller rejects direct preview entry', () {
     final container = ProviderContainer(
       overrides: [

@@ -11,7 +11,13 @@ import 'package:loop_mobile/features/chat/chat_secondary_pages.dart';
 import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 
+import 'support/loop_ground_probe.dart';
+
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   test('Preview requests transition once without changing conversations or messages', () async {
     final gateway = MemoryCommunicationGateway();
     final conversationsBefore = (await gateway.loadConversations()).value!;

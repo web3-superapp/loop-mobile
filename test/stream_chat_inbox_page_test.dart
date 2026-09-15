@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_screen.dart';
@@ -17,8 +18,13 @@ import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
+import 'support/loop_ground_probe.dart';
 
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   test('channel route accepts only a well-formed messaging CID', () {
     final address = parseLoopStreamChannelCid('messaging:loop-room-42');
     expect(address?.type, 'messaging');
@@ -206,7 +212,10 @@ void main() {
             (ref) => authorization.future,
           ),
         ],
-        child: const MaterialApp(home: StreamChatInboxPage()),
+        child: MaterialApp(
+          theme: LoopTheme.dark,
+          home: const StreamChatInboxPage(),
+        ),
       ),
     );
     await tester.pump();
@@ -237,7 +246,10 @@ void main() {
             ),
           ),
         ],
-        child: const MaterialApp(home: StreamChatInboxPage()),
+        child: MaterialApp(
+          theme: LoopTheme.dark,
+          home: const StreamChatInboxPage(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -267,8 +279,9 @@ void main() {
             const AuthenticatedTestPrivyGateway(),
           ),
         ],
-        child: const MaterialApp(
-          home: StreamChatChannelRoutePage(cid: 'messaging:loop-room-42'),
+        child: MaterialApp(
+          theme: LoopTheme.dark,
+          home: const StreamChatChannelRoutePage(cid: 'messaging:loop-room-42'),
         ),
       ),
     );

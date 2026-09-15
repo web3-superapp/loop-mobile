@@ -9,7 +9,13 @@ import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:loop_mobile/integrations/reown/external_wallet_credential_gateway.dart';
 
+import 'support/loop_ground_probe.dart';
+
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   for (final method in _LoginMethod.values) {
     testWidgets(
       '${method.name} login triggers one non-blocking LOOP bootstrap',

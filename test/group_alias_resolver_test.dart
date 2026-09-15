@@ -9,10 +9,16 @@ import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_screen.dart';
 
+import 'support/loop_ground_probe.dart';
+
 const _groupIdValue = 'e464386d-cd85-472d-9b22-2d94412ad413';
 const _groupCid = 'messaging:legacy_group-01';
 
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   group('GroupAliasStreamChannelId', () {
     test('keeps only the validated messaging channel ID', () {
       final channelId = GroupAliasStreamChannelId.fromCid(_groupCid);

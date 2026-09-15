@@ -16,8 +16,13 @@ import 'package:loop_mobile/integrations/notifications/loop_notification_router.
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
+import 'support/loop_ground_probe.dart';
 
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   const identity = LoopBootstrapIdentity(
     loopUserId: '7a7448be-64e2-4f9f-a9f1-891f1beec7fd',
     streamUserId: 'loop_7a7448be64e24f9fa9f1891f1beec7fd',

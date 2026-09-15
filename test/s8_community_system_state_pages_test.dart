@@ -18,7 +18,9 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/communication_test_harness.dart';
 import 'support/community_test_harness.dart';
+import 'support/loop_ground_probe.dart';
 import 'support/s8_harness.dart';
+import 'support/system_surface_harness.dart';
 
 /// Loading / Empty / Error for the COMMUNITY, PROFILE-settings and module-0
 /// gate pages the 93-page matrix still listed as thin.
@@ -48,6 +50,10 @@ SearchPage _searchPage({
 );
 
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   group('search', () {
     testWidgets('a query in flight shows the skeleton and no result count', (
       tester,
@@ -422,8 +428,9 @@ void main() {
       // reaches them, so they have no loading, empty, error or offline state
       // to render. Without a decision the page says the source is not wired
       // and explicitly denies that the version is unsupported.
-      await tester.pumpWidget(
-        const MaterialApp(home: SystemSurfaceScreen.fromId('force-update')),
+      await pumpSystemSurface(
+        tester,
+        const SystemSurfaceScreen.fromId('force-update'),
       );
       await tester.pumpAndSettle();
 
@@ -438,10 +445,9 @@ void main() {
     });
 
     testWidgets('region-blocked has no read state either', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: SystemSurfaceScreen.fromId('region-restricted'),
-        ),
+      await pumpSystemSurface(
+        tester,
+        const SystemSurfaceScreen.fromId('region-restricted'),
       );
       await tester.pumpAndSettle();
 

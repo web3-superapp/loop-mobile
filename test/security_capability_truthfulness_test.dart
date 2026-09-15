@@ -12,9 +12,14 @@ import 'package:loop_mobile/features/profile/security/security_screens.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
+import 'support/loop_ground_probe.dart';
 import 'support/s8_harness.dart';
 
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   testWidgets(
     'A11 exposes no providerless protection switch or secure-storage claim',
     (tester) async {

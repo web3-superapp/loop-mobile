@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
@@ -10,14 +11,20 @@ import 'package:loop_mobile/features/chat/voice_room_page.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
 
+import 'support/loop_ground_probe.dart';
+
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   testWidgets('signed-out production page never displays preview room data', (
     tester,
   ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [streamVideoPrincipalKeyProvider.overrideWithValue(null)],
-        child: const MaterialApp(home: VoiceRoomPage()),
+        child: MaterialApp(theme: LoopTheme.dark, home: const VoiceRoomPage()),
       ),
     );
 
@@ -37,7 +44,10 @@ void main() {
             (ref) async => StreamVideoSessionAuthorization.unavailable,
           ),
         ],
-        child: const MaterialApp(home: StreamVoiceRoomPage()),
+        child: MaterialApp(
+          theme: LoopTheme.dark,
+          home: const StreamVoiceRoomPage(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -61,7 +71,10 @@ void main() {
             (ref) async => StreamVideoSessionAuthorization.authorized,
           ),
         ],
-        child: const MaterialApp(home: StreamVoiceRoomPage()),
+        child: MaterialApp(
+          theme: LoopTheme.dark,
+          home: const StreamVoiceRoomPage(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -502,7 +515,10 @@ Widget _readyPage({
       audioRoomTargetProvider.overrideWith((ref) async => target),
       audioRoomCallFactoryProvider.overrideWithValue(factory),
     ],
-    child: const MaterialApp(home: StreamVoiceRoomPage()),
+    child: MaterialApp(
+      theme: LoopTheme.dark,
+      home: const StreamVoiceRoomPage(),
+    ),
   );
 }
 

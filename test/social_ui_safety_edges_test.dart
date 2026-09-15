@@ -10,12 +10,18 @@ import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_screen.dart';
 
+import 'support/loop_ground_probe.dart';
+
 const _firstProfileId = '11111111-1111-4111-8111-111111111111';
 const _secondProfileId = '22222222-2222-4222-8222-222222222222';
 const _groupIdValue = '33333333-3333-4333-8333-333333333333';
 const _groupAliasIdValue = '44444444-4444-4444-8444-444444444444';
 
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   group('server-created Chat intent safety', () {
     testWidgets(
       'group operator-required survives route disposal and blocks reset or a second UUID',

@@ -22,6 +22,7 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 
 import 'support/communication_test_harness.dart';
 import 'support/community_test_harness.dart';
+import 'support/loop_ground_probe.dart';
 import 'support/s5_page_harness.dart';
 
 /// Loading / Empty / Error / Offline for the chat and profile pages the
@@ -232,6 +233,10 @@ Future<void> _pumpProfile(
 }
 
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   group('group', () {
     testWidgets('a chat session still being restored shows its own state', (
       tester,

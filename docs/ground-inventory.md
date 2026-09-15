@@ -71,7 +71,7 @@
 `auxiliaryOf`(text3)。每个权重都从它替代的 token 上读 alpha，所以 **Ink 页上逐字
 节不变**。
 
-## 3. 探针现在覆盖到哪里（S16f 扩面结论）
+## 3. 探针现在覆盖到哪里（S16f 扩面、S19 收口）
 
 摸底数字，`test/` 顶层 175 个测试文件里：
 
@@ -79,22 +79,28 @@
 | --- | --- | --- |
 | 挂载了页面级 widget 的文件 | 76 | 其余只挂卡片/按钮/图表等组件 |
 | 经共用 harness 挂载（自动武装） | 42 | 六个 harness 的 7 个 `pump*` 函数全部调 `loopArmGroundProbe` |
-| 自己 `pumpWidget` 挂载页面 | 37 | 其中 15 个已加 `loopWatchGround()` |
-| **仍未被看着的自挂载页面文件** | **22** | 见下方盲区 |
+| 自己 `pumpWidget` 挂载页面 | 37 | **37 个全部调 `loopWatchGround()`**（S16f 15 个 + S19 22 个） |
+| **仍未被看着的自挂载页面文件** | **0** | S19 把最后 22 个接上 |
 
 93 条路由的落地 widget 类，**93 个都至少被一个测试渲染过**（按类计，不按路由计：
 `voiceroom` / `voiceroom-full` 共用 `VoiceRoomScreen`，Preview/线上分支的
-`GroupChatPage` vs `GroupChatScreen` 只覆盖了一侧）。武装探针跑在其中经 harness
-挂载的那 42 个文件上，加上 15 个自挂载文件，所以「渲染过的页面」与「被探针看着的
-页面」之间的差就是下面这 22 个文件。
+`GroupChatPage` vs `GroupChatScreen` 只覆盖了一侧）。S19 之后，「渲染过页面的文件」
+与「被探针看着的文件」是同一个集合：42 个走 harness 自动武装，37 个在自己的 `main`
+里调 `loopWatchGround()`。剩下的差已经不在测试挂载方式上，而在第 4 节那三条结构性
+盲区上（`CustomPainter`、Stream 主题对象、没被渲染过的动态底色分支）。
 
-已加 `loopWatchGround()` 的 15 个文件：`account_auth_catalog_truthfulness_test`、
-`friend_feature_test`、`identity_pages_test`、`loop_id_setup_screen_test`、
-`perp_account_screen_test`、`perp_positions_screen_test`、
-`privacy_presentation_screen_test`、`privy_login_screen_test`、
-`privy_otp_screen_test`、`profile_presentation_screen_test`、
-`profile_v2_pages_test`、`s11_cold_start_resilience_test`、`s16c_recovery_test`、
-`social_privacy_presentation_screen_test`、`v2_ui_foundation_test`。
+S19 扩面报出来的是两类东西，一类修了，一类待判定：
+
+- **测试挂的不是产品那一版**（三个文件，19 个用例）。`stream_voice_room_page_test`、
+  `stream_chat_inbox_page_test` 用不带 `theme:` 的 `MaterialApp` 挂页面，
+  `s8_community_system_state_pages_test` 的两个 module-0 gate 也是。报出来的颜色是
+  Material 3 的默认值——`onSurface #1D1B20`、`primary #6750A4`、`surface #FEF7FF`
+  ——这些配色在产品里一次都不出现，因为 `LoopApp` 永远给 `LoopTheme.dark`。修法不是
+  写豁免，是让这三个文件按同仓库其余文件的写法挂：两个 stream 文件补
+  `theme: LoopTheme.dark`，两个 system surface 改用现成的 `pumpSystemSurface`。
+  **探针在这里抓到的不是页面的错，是测试渲染的从来不是产品渲染的那一版**，而这种
+  测试对配色的任何断言本来也都不作数。
+- **一处待判定**，见第 7 节：`InlineVoiceRoomCard` 的三连头像分隔环。
 
 ## 4. 三条守卫覆盖不到的部分（人工检查项）
 
@@ -118,20 +124,11 @@
 - [ ] **动态底色**。任何由运行时值决定 `variant` / `chalk` 的调用点，守卫按「可能
       是浅色」处理；探针只覆盖它实际渲染过的分支。**仍然是盲区，但比原来小**：
       扩面后被渲染过的分支多了一个数量级。
-- [ ] **22 个自己挂载页面、尚未调 `loopWatchGround()` 的测试文件**。守卫只强制
-      `test/support/` 下的 harness，管不到自挂载的文件。其中 13 个直接挂
-      `const LoopApp()`（`app_navigation_test`、`app_auth_gate_test`、
-      `route_manifest_test`、`v2_primary_navigation_test`、
-      `post_auth_login_bootstrap_test`、`development_preview_experience_test`、
-      `local_settings_and_help_test`、`loop_v2_meta_providers_test`、
-      `app_notification_coordinator_test`、`chat_preview_conversation_identity_test`、
-      `chat_preview_route_guard_test`、`stream_chat_providers_test`、
-      `security_capability_truthfulness_test`），9 个直接挂页面
-      （`chat_preview_message_requests_test`、`chat_spot_snapshot_test`、
-      `friend_request_feature_test`、`group_alias_resolver_test`、
-      `s8_chat_profile_state_pages_test`、`s8_community_system_state_pages_test`、
-      `social_ui_safety_edges_test`、`stream_chat_inbox_page_test`、
-      `stream_voice_room_page_test`）。
+- [x] ~~**22 个自己挂载页面、尚未调 `loopWatchGround()` 的测试文件**~~。S19 全部
+      接上，自挂载文件与 harness 文件现在被同一个探针看着。**守卫仍然只强制
+      `test/support/` 下的 harness**：一个新写的自挂载页面文件照样可以忘记调
+      `loopWatchGround()`，而没有任何东西会提醒它。这一条从「有 22 个文件没接」
+      变成「接上了，但没有东西拦住下一次漏接」。
 
 ## 5. 生成出来的底也要为它自己的字负责
 
@@ -172,11 +169,33 @@ ink 交给子树的底是深底，反之是浅底。
 
 ## 7. 豁免清单
 
-`loopGroundProbeExemptions` 目前 3 条，扩面**没有新增**：
+`loopGroundProbeExemptions` 目前 3 条，S16f 扩面与 S19 收口都**没有新增**：
 `ModalBarrier · ColoredBox`、`CommunityScreen · ColoredBox`、
 `LoopActionDock · DecoratedBox`，三条都是「用页面自己的 Ink 重画了一遍页面」。
 一条豁免是在主张「这笔颜色本来就该看不见」，不是在主张「下限太严」——
 调下限会把下一个真问题一起放过，写一条豁免只放过那一个位置。
+
+**待判定（S19，尚未处理，两个 Preview 聊天用例因此是红的）**：
+`edge #171A16 on #161915 · LoopCard · DecoratedBox`。
+`InlineVoiceRoomCard`（`lib/features/chat/widgets/chat_components.dart`）的三连
+头像各裹一圈 2px `LoopColors.basalt` 描边，用来在互相叠压的圆盘之间切出一道缝。
+它落在 `LoopCard` 的底上，而那个底是 `basalt` 94% 叠在 Ink 上（`#161915`），于是
+描边和它要模仿的底差 1.2/255——**它本来就该看不见**，看不见才读成一道缝。
+
+这里还暴露了探针的一条结构性限制：**探针没有几何，只有树**。它把每一笔颜色配给
+树上最近的那个不透明底，而这三个圆盘是 `Stack` 里互相叠压的兄弟——环真正起作用的
+那一段压在**前一个头像**上，探针看不到这件事，只会拿卡片的底去判它。凡是靠叠压
+兄弟而不是靠父子嵌套取得对比的写法，探针都会这样判。
+
+不直接写豁免，有三个理由：
+1. 这个位置的 `site` 是 `LoopCard · DecoratedBox`（`InlineVoiceRoomCard` 不是探针
+   认的「有名字的祖先」），照这个键写豁免会把**任何 LoopCard 里的任何描边**一起
+   放过，比要放过的那一处大得多。
+2. 环的颜色是对「我身后是什么」的一次硬编码猜测。把同一张卡片放到 Ink 页上直接
+   用，这圈 basalt 环就会变成一道看得见的深色描边——这正是整份清单要消灭的那一类
+   耦合。
+3. 从根上解决要么给 `LoopGround` 加一个「把底本身复述一遍」的取值口，要么让
+   facepile 改用间距而不是叠压，两者都是要先定下来的设计决定。
 
 ## 8. 新增一个浅色底时
 

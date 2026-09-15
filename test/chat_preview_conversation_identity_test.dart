@@ -11,7 +11,13 @@ import 'package:loop_mobile/features/shell/loop_shell.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
+import 'support/loop_ground_probe.dart';
+
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   test('Preview identity resolves only exact registered message targets', () {
     expect(
       PreviewConversationIdentity.group.location,
