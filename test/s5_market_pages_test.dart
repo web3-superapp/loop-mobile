@@ -13,10 +13,15 @@ import 'package:loop_mobile/features/market/token_screen.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
+import 'support/loop_ground_probe.dart';
 import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
 
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   group('market · the行情 tab', () {
     testWidgets('loading shows a skeleton and no figure', (tester) async {
       await pumpS5Page(

@@ -4037,6 +4037,100 @@ class HarnessTests(unittest.TestCase):
 
         self.assertEqual([], result)
 
+    @staticmethod
+    def _self_mounted_page_root(root: Path, body: str) -> None:
+        page = root / "lib" / "features" / "demo" / "demo_pages.dart"
+        page.parent.mkdir(parents=True)
+        page.write_text(
+            "class DemoPage extends StatelessWidget {}\n", encoding="utf-8"
+        )
+        mount = root / "test" / "demo_test.dart"
+        mount.parent.mkdir(parents=True)
+        mount.write_text(body, encoding="utf-8")
+        # The excused file has to exist, because the rule also holds the
+        # excuses: one naming a file that is gone is itself a finding.
+        for excused in check_harness.GROUND_PROBE_UNWATCHED_TESTS:
+            (root / excused).write_text("void main() {}\n", encoding="utf-8")
+
+    def test_a_self_mounted_page_must_watch_its_own_frames(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._self_mounted_page_root(
+                root,
+                "void main() {\n"
+                "  testWidgets('demo', (tester) async {\n"
+                "    await tester.pumpWidget(_app(const DemoPage()));\n"
+                "  });\n"
+                "}\n",
+            )
+            result = check_harness.check_self_mounted_pages_watched(root)
+
+        self.assertEqual(1, len(result), msg=f"unexpected findings: {result}")
+        self.assertIn("loopWatchGround", result[0])
+        self.assertIn("main agent", result[0])
+
+    def test_a_watched_self_mounted_page_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._self_mounted_page_root(
+                root,
+                "void main() {\n"
+                "  loopWatchGround();\n"
+                "  testWidgets('demo', (tester) async {\n"
+                "    await tester.pumpWidget(_app(const DemoPage()));\n"
+                "  });\n"
+                "}\n",
+            )
+            result = check_harness.check_self_mounted_pages_watched(root)
+
+        self.assertEqual([], result)
+
+    def test_a_component_test_is_not_asked_to_watch_a_page(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._self_mounted_page_root(
+                root,
+                "void main() {\n"
+                "  testWidgets('demo', (tester) async {\n"
+                "    await tester.pumpWidget(_app(const LoopButton()));\n"
+                "  });\n"
+                "}\n",
+            )
+            result = check_harness.check_self_mounted_pages_watched(root)
+
+        self.assertEqual([], result)
+
+    def test_an_excuse_for_a_file_that_is_gone_is_reported(self) -> None:
+        # An excuse outlives its file and then excuses whatever takes the name.
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._self_mounted_page_root(
+                root,
+                "void main() {\n"
+                "  loopWatchGround();\n"
+                "}\n",
+            )
+            original = check_harness.GROUND_PROBE_UNWATCHED_TESTS
+            check_harness.GROUND_PROBE_UNWATCHED_TESTS = {
+                "test/gone_test.dart": "a" * 60
+            }
+            try:
+                result = check_harness.check_self_mounted_pages_watched(root)
+            finally:
+                check_harness.GROUND_PROBE_UNWATCHED_TESTS = original
+
+        self.assertEqual(1, len(result), msg=f"unexpected findings: {result}")
+        self.assertIn("no longer exists", result[0])
+
+    def test_the_probes_own_test_is_the_only_standing_excuse(self) -> None:
+        # The list is short on purpose, and every entry states its reason.
+        self.assertEqual(
+            {"test/s16f_probe_test.dart"},
+            set(check_harness.GROUND_PROBE_UNWATCHED_TESTS),
+        )
+        for reason in check_harness.GROUND_PROBE_UNWATCHED_TESTS.values():
+            self.assertGreater(len(reason), 40)
+
     def test_the_ground_probe_helper_cannot_be_renamed_away(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

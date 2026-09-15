@@ -11,6 +11,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart'
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
+import 'support/loop_ground_probe.dart';
 import 'support/s5_page_harness.dart';
 
 /// S16-B · pull-to-refresh, the whole-page block, and the two sentences a
@@ -72,6 +73,10 @@ Future<void> _pullDown(WidgetTester tester, {double distance = 320}) async {
 }
 
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   group('pull to refresh', () {
     testWidgets('a pull re-reads the page without clearing it', (tester) async {
       var reads = 0;

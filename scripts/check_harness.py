@@ -7953,6 +7953,89 @@ def check_ground_probe_armed(root: Path) -> list[str]:
     return errors
 
 
+# The one file that may mount a page and not be watched, with the reason.
+#
+# This is not a list of files that are allowed to skip the probe; it is a list
+# of files whose subject *is* the probe, and which therefore paint, on purpose,
+# the frames the probe exists to reject. `test/s16e_ground_test.dart` is
+# deliberately absent: it mounts shared components on three grounds, never a
+# page, so the rule does not reach it — and if it ever mounts one, the guard
+# should say so rather than have been quietly excused in advance.
+GROUND_PROBE_UNWATCHED_TESTS = {
+    "test/s16f_probe_test.dart": (
+        "the probe's own test. It paints Chalk on Chalk, an invisible Badge "
+        "and an undeclared seam because those are the findings it pins, and "
+        "reads them back through `loopProbeGround` directly. Watching its "
+        "frames would fail it for painting its own counter-examples."
+    ),
+}
+
+
+def check_self_mounted_pages_watched(root: Path) -> list[str]:
+    """A file that mounts a page itself watches its own frames (S19).
+
+    `check_ground_probe_armed` holds the harnesses, which is what makes a page
+    written next year covered without opting in. It cannot reach a file that
+    calls `tester.pumpWidget` itself — and 22 of those rendered pages nobody
+    looked at until S19. The rule is the same statement as the harness one,
+    written for the other half: if a file mounts a page, the file is watched.
+    """
+
+    errors: list[str] = []
+    tests = root / "test"
+    if not tests.is_dir():
+        return errors
+    names = loop_page_class_names(root)
+    if len(names) <= 1:
+        return errors
+    constructors = [
+        re.compile(rf"\b{name}\s*(?:\.\s*\w+\s*)?\(") for name in names
+    ]
+
+    for path in sorted(tests.rglob("*.dart")):
+        relative = path.relative_to(root)
+        posix = relative.as_posix()
+        # The harnesses are held by `check_ground_probe_armed`, and they arm
+        # the probe per mount rather than per file.
+        if posix.startswith("test/support/"):
+            continue
+        source = strip_dart_comments_and_strings(read_text(path))
+        if "tester.pumpWidget(" not in source:
+            continue
+        if not any(pattern.search(source) for pattern in constructors):
+            continue
+        if "loopWatchGround(" in source:
+            continue
+        if posix in GROUND_PROBE_UNWATCHED_TESTS:
+            continue
+        errors.append(
+            f"{relative} mounts a page through its own `tester.pumpWidget` "
+            "but never calls loopWatchGround(); the page harnesses arm the "
+            "probe for everybody else, so a self-mounted page is a rendered "
+            "page nothing is looking at. Add `loopWatchGround();` at the top "
+            "of `main`. If this file paints a frame the probe is meant to "
+            "reject — which today is true of the probe's own test and "
+            "nothing else — it belongs in GROUND_PROBE_UNWATCHED_TESTS with "
+            "its reason, and adding an entry there needs the main agent's "
+            "confirmation."
+        )
+
+    for posix, reason in GROUND_PROBE_UNWATCHED_TESTS.items():
+        if not (root / posix).is_file():
+            errors.append(
+                f"{posix} is excused from the ground probe but no longer "
+                "exists; an excuse outlives the file it was written for and "
+                "then excuses the next file to take the name"
+            )
+        elif len(reason) < 40:
+            errors.append(
+                f"{posix} is excused from the ground probe without stating "
+                "why; an unwatched page test is a claim, and a claim needs a "
+                "reason a reviewer can disagree with"
+            )
+    return errors
+
+
 def check_source_guards(root: Path) -> list[str]:
     forbidden = {
         "PrivyLogLevel.debug": "Privy debug logging can expose OTPs and access tokens",
@@ -11054,6 +11137,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_light_ground_contract(root))
     errors.extend(check_page_mount_theme_contract(root))
     errors.extend(check_ground_probe_armed(root))
+    errors.extend(check_self_mounted_pages_watched(root))
     errors.extend(check_records(root))
     visible, visible_error = git_visible_paths(root)
     if visible_error:
@@ -11080,7 +11164,7 @@ def main() -> int:
         "S7 launch/mining/referral truth, S9 dual chain slots, "
         "seven-band typography with bundled Noto Sans SC, "
         "declared light grounds, pages mounted under the product theme, "
-        "armed page ground probe, "
+        "armed page ground probe, watched self-mounted pages, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, user-visible copy, "
         "and secret rules are consistent."

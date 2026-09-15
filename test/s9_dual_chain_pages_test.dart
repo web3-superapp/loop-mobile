@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 
+import 'support/loop_ground_probe.dart';
 import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
 import 'support/s7_fixtures.dart';
@@ -25,6 +26,10 @@ import 'support/s7_page_harness.dart';
 /// A build whose Launch slot equals the primary chain must look exactly as it
 /// did before S9: no badge, no notice, no extra row.
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   final testnetBadge = find.byKey(const ValueKey<String>('loop-testnet-badge'));
   final testnetNotice = find.byKey(
     const ValueKey<String>('loop-testnet-notice'),

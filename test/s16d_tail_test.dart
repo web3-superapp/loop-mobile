@@ -20,6 +20,7 @@ import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/community_test_harness.dart';
+import 'support/loop_ground_probe.dart';
 
 /// Whether [color] is one of the palette's soft tokens — the Chalk hue at a
 /// low alpha.
@@ -49,6 +50,10 @@ Widget _onChalk(Widget child) => MaterialApp(
 );
 
 void main() {
+  // This file mounts pages through its own `pumpWidget`, so it arms the
+  // ground probe itself; the page harnesses arm it for everybody else.
+  loopWatchGround();
+
   group('a shared surface takes its colours from the ground it is on', () {
     testWidgets('the avatar fallback is visible inside a Chalk card', (
       tester,
