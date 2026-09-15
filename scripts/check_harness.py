@@ -7795,6 +7795,94 @@ def check_light_ground_contract(root: Path) -> list[str]:
     return errors
 
 
+# `MaterialApp` with no `theme:` is Material 3's own palette: `#6750A4`
+# actions and `#1D1B20` copy on a `#FEF7FF` page. LOOP never paints that
+# frame, because `LoopApp` always hands `LoopTheme.dark` down, so a test that
+# mounts a page that way is not looking at the product.
+_MATERIAL_APP = re.compile(r"\bMaterialApp(?:\.\w+)?\s*\(")
+_PAGE_CLASS = re.compile(r"\bclass\s+(\w+(?:Screen|Page))\b")
+_THEME_ARGUMENT = re.compile(r"\btheme\s*:\s*([\w.]+)")
+_PRODUCT_THEME = "LoopTheme.dark"
+
+
+def loop_page_class_names(root: Path) -> set[str]:
+    """The page-level widget classes, named the way a mount site names them.
+
+    Read out of `lib/features/` rather than listed here, so a page added next
+    year is covered by the same rule without anybody maintaining a register.
+    The layout primitives in `lib/widgets/` are deliberately out: `LoopFocusPage`
+    is a shape a page is built from, not a page.
+    """
+
+    names = {"LoopApp"}
+    features = root / "lib" / "features"
+    if not features.is_dir():
+        return names
+    for path in sorted(features.rglob("*.dart")):
+        source = strip_dart_comments_and_strings(read_text(path))
+        names.update(match.group(1) for match in _PAGE_CLASS.finditer(source))
+    return names
+
+
+def check_page_mount_theme_contract(root: Path) -> list[str]:
+    """A page is mounted under the theme the product mounts it under (S19).
+
+    The render probe can only judge the frame a test actually paints. A test
+    that mounts a page in a bare `MaterialApp` paints Material's defaults, and
+    then every statement the test appears to make about colour — including
+    the probe's — is about a frame the application cannot produce. This is
+    static: it reads the mount site, not the render.
+    """
+
+    errors: list[str] = []
+    names = loop_page_class_names(root)
+    # Only `LoopApp` resolved: no `lib/features/` to read, so there is no page
+    # set to check against and the rule has nothing to say.
+    if len(names) <= 1:
+        return errors
+    # A page can be mounted through a named constructor
+    # (`SystemSurfaceScreen.fromId('force-update')`), which is how the two
+    # module-0 gates escaped review.
+    constructors = {
+        name: re.compile(rf"\b{name}\s*(?:\.\s*\w+\s*)?\(") for name in names
+    }
+
+    for area in ("lib", "test"):
+        directory = root / area
+        if not directory.is_dir():
+            continue
+        for path in sorted(directory.rglob("*.dart")):
+            source = strip_dart_comments_and_strings(read_text(path))
+            if "MaterialApp" not in source:
+                continue
+            relative = path.relative_to(root)
+            for match in _MATERIAL_APP.finditer(source):
+                arguments = source[
+                    match.end() : _dart_match_bracket(source, match.end() - 1)
+                ]
+                mounted = sorted(
+                    name
+                    for name, pattern in constructors.items()
+                    if pattern.search(arguments)
+                )
+                if not mounted:
+                    continue
+                theme = _THEME_ARGUMENT.search(arguments)
+                if theme is not None and theme.group(1) == _PRODUCT_THEME:
+                    continue
+                line = source.count("\n", 0, match.start()) + 1
+                stated = "no theme" if theme is None else f"`{theme.group(1)}`"
+                errors.append(
+                    f"{relative}:{line} mounts {', '.join(mounted)} with "
+                    f"{stated}; a page is only ever rendered under "
+                    f"`theme: {_PRODUCT_THEME}`, so any other mount paints a "
+                    "frame the application cannot produce — Material's own "
+                    "palette on Material's own surface — and neither the test "
+                    "nor the ground probe is then looking at LOOP"
+                )
+    return errors
+
+
 # A page harness is the one place every page test goes through, so it is also
 # the one place the render probe can be armed for pages nobody has written yet.
 # A harness that mounts a page without arming it is a hole that reopens
@@ -10964,6 +11052,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_user_visible_copy(root))
     errors.extend(check_typography_band_contract(root))
     errors.extend(check_light_ground_contract(root))
+    errors.extend(check_page_mount_theme_contract(root))
     errors.extend(check_ground_probe_armed(root))
     errors.extend(check_records(root))
     visible, visible_error = git_visible_paths(root)
@@ -10990,7 +11079,8 @@ def main() -> int:
         "S5 chain/market/wallet-read truth, S6 money-action truth, "
         "S7 launch/mining/referral truth, S9 dual chain slots, "
         "seven-band typography with bundled Noto Sans SC, "
-        "declared light grounds, armed page ground probe, "
+        "declared light grounds, pages mounted under the product theme, "
+        "armed page ground probe, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, user-visible copy, "
         "and secret rules are consistent."

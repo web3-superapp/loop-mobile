@@ -3878,6 +3878,112 @@ class HarnessTests(unittest.TestCase):
         self.assertIn("LoopGround", joined)
         self.assertEqual(2, len(result))
 
+    @staticmethod
+    def _page_mount_root(root: Path, mount: str) -> None:
+        page = root / "lib" / "features" / "demo" / "demo_pages.dart"
+        page.parent.mkdir(parents=True)
+        page.write_text(
+            "class DemoPage extends StatelessWidget {}\n"
+            "class DemoScreen extends StatelessWidget {\n"
+            "  const DemoScreen.fromId(this.id);\n"
+            "}\n",
+            encoding="utf-8",
+        )
+        mount_path = root / "test" / "demo_test.dart"
+        mount_path.parent.mkdir(parents=True)
+        mount_path.write_text(mount, encoding="utf-8")
+
+    def test_a_page_mounted_without_the_product_theme_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._page_mount_root(
+                root,
+                "void main() {\n"
+                "  testWidgets('demo', (tester) async {\n"
+                "    await tester.pumpWidget(const MaterialApp(home: DemoPage()));\n"
+                "  });\n"
+                "}\n",
+            )
+            result = check_harness.check_page_mount_theme_contract(root)
+
+        self.assertEqual(1, len(result), msg=f"unexpected findings: {result}")
+        self.assertIn("DemoPage", result[0])
+        self.assertIn("LoopTheme.dark", result[0])
+
+    def test_a_page_mounted_through_a_named_constructor_is_reported(self) -> None:
+        # `SystemSurfaceScreen.fromId('force-update')` is how the two module-0
+        # gates mounted themselves, so the rule has to see past the dot.
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._page_mount_root(
+                root,
+                "void main() {\n"
+                "  testWidgets('demo', (tester) async {\n"
+                "    await tester.pumpWidget(\n"
+                "      const MaterialApp(home: DemoScreen.fromId('demo')),\n"
+                "    );\n"
+                "  });\n"
+                "}\n",
+            )
+            result = check_harness.check_page_mount_theme_contract(root)
+
+        self.assertEqual(1, len(result), msg=f"unexpected findings: {result}")
+        self.assertIn("DemoScreen", result[0])
+
+    def test_a_page_mounted_under_another_theme_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._page_mount_root(
+                root,
+                "void main() {\n"
+                "  testWidgets('demo', (tester) async {\n"
+                "    await tester.pumpWidget(\n"
+                "      MaterialApp(theme: ThemeData.light(), home: const DemoPage()),\n"
+                "    );\n"
+                "  });\n"
+                "}\n",
+            )
+            result = check_harness.check_page_mount_theme_contract(root)
+
+        self.assertEqual(1, len(result), msg=f"unexpected findings: {result}")
+        self.assertIn("ThemeData.light", result[0])
+
+    def test_a_page_mounted_under_the_product_theme_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._page_mount_root(
+                root,
+                "void main() {\n"
+                "  testWidgets('demo', (tester) async {\n"
+                "    await tester.pumpWidget(\n"
+                "      MaterialApp(theme: LoopTheme.dark, home: const DemoPage()),\n"
+                "    );\n"
+                "  });\n"
+                "}\n",
+            )
+            result = check_harness.check_page_mount_theme_contract(root)
+
+        self.assertEqual([], result)
+
+    def test_a_themeless_mount_that_is_not_a_page_is_left_alone(self) -> None:
+        # A component test states its own ground; the rule is about pages,
+        # whose ground is the theme.
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._page_mount_root(
+                root,
+                "void main() {\n"
+                "  testWidgets('demo', (tester) async {\n"
+                "    await tester.pumpWidget(\n"
+                "      const MaterialApp(home: SizedBox.shrink()),\n"
+                "    );\n"
+                "  });\n"
+                "}\n",
+            )
+            result = check_harness.check_page_mount_theme_contract(root)
+
+        self.assertEqual([], result)
+
     def test_a_harness_that_mounts_a_page_must_arm_the_ground_probe(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
