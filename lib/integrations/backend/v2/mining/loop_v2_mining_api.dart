@@ -821,7 +821,10 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
           'claimExecutable',
           false,
         ),
-        estimatedToday: LoopV2S7Codec.unavailable(root['estimatedToday']),
+        // The same block the summary publishes, from the same source: under
+        // an effective version it is a figure, and it carries the budget it
+        // was divided out of.
+        estimatedToday: _dailyOutput(root['estimatedToday']),
         accumulated: LoopV2S7Codec.unavailable(root['accumulated']),
         source: LoopV2S7Codec.unavailable(root['source']),
       );

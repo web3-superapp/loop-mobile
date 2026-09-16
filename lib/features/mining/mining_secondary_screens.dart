@@ -454,17 +454,43 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
           )
         else ...<Widget>[
           const LoopLabel('奖励规则'),
-          LaunchEmptyMetricGrid(
-            key: const ValueKey<String>('mining-rewards-metrics'),
-            metrics: <(String, String)>[
-              ('待领取', rewards.claimable.reasonCode),
-              ('今日预估', rewards.estimatedToday.reasonCode),
-              ('累计已挖', rewards.accumulated.reasonCode),
-            ],
-            // 待领取 and 累计已挖 are usually closed by the same thing, and the
-            // folio above already said what it is. The cells keep the em dash.
-            spokenReason: launchReasonCodeText(rewards.claimable.reasonCode),
-          ),
+          // 今日预估 is the one slot an effective version can settle. When it
+          // is settled it is a figure, said exactly as 算力与产出 says it; the
+          // two that the reward authority closes stay in the grid, and the
+          // folio above still speaks their reason once.
+          if (rewards.estimatedToday
+              case final MiningDailyOutputEstimate estimate) ...<Widget>[
+            MiningMetricRow(
+              slug: 'estimated-today',
+              label: '今日预估',
+              figure: MiningFigureValue(estimate.value),
+              baseline: estimate.scope.isBaseline,
+              note: estimate.isPlaceholderBudget ? '按占位产量估算，奖励代币还没有确定。' : null,
+            ),
+            LaunchEmptyMetricGrid(
+              key: const ValueKey<String>('mining-rewards-metrics'),
+              metrics: <(String, String)>[
+                ('待领取', rewards.claimable.reasonCode),
+                ('累计已挖', rewards.accumulated.reasonCode),
+              ],
+              spokenReason: launchReasonCodeText(rewards.claimable.reasonCode),
+            ),
+          ] else
+            LaunchEmptyMetricGrid(
+              key: const ValueKey<String>('mining-rewards-metrics'),
+              metrics: <(String, String)>[
+                ('待领取', rewards.claimable.reasonCode),
+                (
+                  '今日预估',
+                  (rewards.estimatedToday as MiningDailyOutputUnavailable)
+                      .reasonCode,
+                ),
+                ('累计已挖', rewards.accumulated.reasonCode),
+              ],
+              // 待领取 and 累计已挖 are usually closed by the same thing, and the
+              // folio above already said what it is. The cells keep the em dash.
+              spokenReason: launchReasonCodeText(rewards.claimable.reasonCode),
+            ),
           const LoopLabel('领取'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),

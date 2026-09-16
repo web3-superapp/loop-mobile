@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
@@ -240,19 +239,19 @@ class _MetricsBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _MetricRow(
+        MiningMetricRow(
           slug: 'power',
           label: '我的算力',
           figure: summary.power,
           baseline: baseline,
         ),
-        _MetricRow(
+        MiningMetricRow(
           slug: 'network-power',
           label: '全网算力',
           figure: summary.networkPower,
           baseline: baseline,
         ),
-        _MetricRow(
+        MiningMetricRow(
           slug: 'estimated-today',
           label: '今日预估',
           figure: switch (output) {
@@ -275,73 +274,6 @@ class _MetricsBlock extends StatelessWidget {
           ],
         ),
       ],
-    );
-  }
-}
-
-class _MetricRow extends StatelessWidget {
-  const _MetricRow({
-    required this.slug,
-    required this.label,
-    required this.figure,
-    required this.baseline,
-    this.note,
-  });
-
-  final String slug;
-  final String label;
-  final MiningFigure figure;
-  final bool baseline;
-  final String? note;
-
-  @override
-  Widget build(BuildContext context) {
-    if (figure is MiningFigureUnavailable) {
-      return LaunchEmptyMetric(
-        key: ValueKey<String>('mining-metric-$slug'),
-        label: label,
-        reasonCode: (figure as MiningFigureUnavailable).reasonCode,
-      );
-    }
-    final value = (figure as MiningFigureValue).value;
-    final caption = <String>[
-      if (baseline) miningBaselineLabel,
-      ?note,
-    ].join(' · ');
-    return Padding(
-      key: ValueKey<String>('mining-metric-$slug'),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Semantics(
-        container: true,
-        label: caption.isEmpty ? '$label，$value' : '$label，$value。$caption',
-        child: ExcludeSemantics(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                label,
-                style: LoopTypography.figure(11, color: LoopColors.text3),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: LoopTypography.figure(
-                  20,
-                  height: 1.15,
-                  color: LoopColors.chalk,
-                ),
-              ),
-              if (caption.isNotEmpty) ...<Widget>[
-                const SizedBox(height: 4),
-                Text(
-                  caption,
-                  style: LoopTypography.caption(11, color: LoopColors.text2),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

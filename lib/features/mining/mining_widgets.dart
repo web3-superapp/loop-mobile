@@ -77,3 +77,77 @@ class MiningFormulaBlock extends StatelessWidget {
     );
   }
 }
+
+/// One mining figure as a line of its own.
+///
+/// A figure prints only when the server settled it; without one the row keeps
+/// the em dash and the server's own reason. The development-baseline label,
+/// and any note the figure carries with it, are the caption beneath it — the
+/// summary and the rewards page say the same figure the same way.
+class MiningMetricRow extends StatelessWidget {
+  const MiningMetricRow({
+    required this.slug,
+    required this.label,
+    required this.figure,
+    required this.baseline,
+    this.note,
+    super.key,
+  });
+
+  final String slug;
+  final String label;
+  final MiningFigure figure;
+  final bool baseline;
+  final String? note;
+
+  @override
+  Widget build(BuildContext context) {
+    if (figure is MiningFigureUnavailable) {
+      return LaunchEmptyMetric(
+        key: ValueKey<String>('mining-metric-$slug'),
+        label: label,
+        reasonCode: (figure as MiningFigureUnavailable).reasonCode,
+      );
+    }
+    final value = (figure as MiningFigureValue).value;
+    final caption = <String>[
+      if (baseline) miningBaselineLabel,
+      ?note,
+    ].join(' · ');
+    return Padding(
+      key: ValueKey<String>('mining-metric-$slug'),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Semantics(
+        container: true,
+        label: caption.isEmpty ? '$label，$value' : '$label，$value。$caption',
+        child: ExcludeSemantics(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                label,
+                style: LoopTypography.figure(11, color: LoopColors.text3),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: LoopTypography.figure(
+                  20,
+                  height: 1.15,
+                  color: LoopColors.chalk,
+                ),
+              ),
+              if (caption.isNotEmpty) ...<Widget>[
+                const SizedBox(height: 4),
+                Text(
+                  caption,
+                  style: LoopTypography.caption(11, color: LoopColors.text2),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

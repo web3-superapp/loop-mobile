@@ -943,6 +943,43 @@ void main() {
       );
     });
 
+    testWidgets('a settled share prints as a figure, with its budget said', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningRewardsScreen(),
+        mining: FakeMiningGateway(
+          rewards: S7Answer<MiningRewards>(value: s7BaselineMiningRewards()),
+        ),
+      );
+
+      final row = find.byKey(
+        const ValueKey<String>('mining-metric-estimated-today'),
+      );
+      await scrollToS7Section(tester, row);
+      expect(row, findsOneWidget);
+      expect(find.text('1000000'), findsOneWidget);
+      // The baseline label and the placeholder sentence travel with it, so the
+      // number never stands on the page by itself.
+      expect(find.textContaining(miningBaselineLabel), findsWidgets);
+      expect(find.textContaining('按占位产量估算'), findsOneWidget);
+      // 今日预估 has left the grid; the two the authority closes stay in it.
+      expect(
+        find.byKey(const ValueKey<String>('launch-metric-今日预估')),
+        findsNothing,
+      );
+      for (final label in <String>['待领取', '累计已挖']) {
+        expect(
+          find.byKey(ValueKey<String>('launch-metric-$label')),
+          findsOneWidget,
+          reason: label,
+        );
+      }
+      // S22e: the authority's reason is still the folio's, once.
+      expect(find.text(launchReasonCodeText(s7RewardPending)), findsOneWidget);
+    });
+
     testWidgets('an empty ledger is not "no output"', (tester) async {
       await pumpS7Page(
         tester,

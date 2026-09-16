@@ -365,7 +365,10 @@ final class MiningRewards {
   /// Always `false`. The claim control renders disabled with the server's own
   /// reason; the page never opens a signing sheet.
   final bool claimExecutable;
-  final LaunchUnavailable estimatedToday;
+
+  /// The same block the summary reads: a figure under an effective version,
+  /// the server's own reason without one.
+  final MiningDailyOutput estimatedToday;
   final LaunchUnavailable accumulated;
   final LaunchUnavailable source;
 }

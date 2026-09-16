@@ -1611,6 +1611,93 @@ void main() {
       );
     });
 
+    Map<String, Object?> rewardsBody({Object? estimatedToday}) =>
+        <String, Object?>{
+          'claimable': _unavailable('REWARD_AUTHORITY_PENDING'),
+          'claimExecutable': false,
+          'estimatedToday':
+              estimatedToday ??
+              <String, Object?>{
+                'status': 'available',
+                'value': '1000000',
+                'budget': '1000000',
+                'unitKey': 'mining.rules.dailyOutput.unit.loopTokenPending',
+                'budgetStatus': 'development_placeholder',
+                'formulaVersion': _baselineVersion,
+                'scope': 'development_baseline',
+              },
+          'accumulated': _unavailable('REWARD_AUTHORITY_PENDING'),
+          'ledger': <Object?>[],
+          'source': _unavailable('REWARD_AUTHORITY_PENDING'),
+          'contractVersion': '2.0',
+        };
+
+    test('the rewards share is read as the summary reads it', () async {
+      final api = DioLoopV2MiningApi(
+        _dio(_RecordingAdapter(statusCode: 200, body: rewardsBody())),
+      );
+
+      final rewards = await api.getRewards(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+      );
+
+      final output = rewards.estimatedToday as MiningDailyOutputEstimate;
+      expect(output.value, '1000000');
+      expect(output.budget, '1000000');
+      expect(output.isPlaceholderBudget, isTrue);
+      expect(output.formulaVersion, _baselineVersion);
+      expect(output.scope, MiningFormulaScope.developmentBaseline);
+      // The three the reward authority closes are unchanged.
+      expect(rewards.claimable.reasonCode, 'REWARD_AUTHORITY_PENDING');
+      expect(rewards.claimExecutable, isFalse);
+    });
+
+    test('a rewards share without a settlement keeps its reason', () async {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: rewardsBody(
+              estimatedToday: _unavailable('MINING_NETWORK_POWER_ZERO'),
+            ),
+          ),
+        ),
+      );
+
+      final rewards = await api.getRewards(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+      );
+
+      expect(
+        (rewards.estimatedToday as MiningDailyOutputUnavailable).reasonCode,
+        'MINING_NETWORK_POWER_ZERO',
+      );
+    });
+
+    test('a rewards share without its budget is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: rewardsBody(
+              estimatedToday: <String, Object?>{
+                'status': 'available',
+                'value': '1000000',
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () =>
+            api.getRewards(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
     test('a claimable rewards response is refused', () {
       final api = DioLoopV2MiningApi(
         _dio(
