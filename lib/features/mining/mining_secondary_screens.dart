@@ -1331,13 +1331,18 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
               ),
             ],
           ),
-          const LoopNotice(
-            key: ValueKey<String>('mining-rules-notice'),
-            icon: 'shield',
-            title: '草案不是生效规则',
-            body: '待批准的版本不会参与任何计算。权重区间与价格保护阈值只有规则条目，没有数值；批准之后才会公布。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
-          ),
+          // Only while nothing is in force. Once a version is approved the
+          // page above it prints a pinned range and a budget, and this
+          // sentence would be the same screen calling those numbers absent.
+          // What the approved version is, the baseline notice already says.
+          if (rules.approved == null)
+            const LoopNotice(
+              key: ValueKey<String>('mining-rules-notice'),
+              icon: 'shield',
+              title: '草案不是生效规则',
+              body: '待批准的版本不会参与任何计算。权重区间与价格保护阈值只有规则条目，没有数值；批准之后才会公布。',
+              margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            ),
           const SizedBox(height: 20),
         ],
       ],

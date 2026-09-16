@@ -1661,6 +1661,40 @@ void main() {
       expect(find.text(miningBaselineLabel), findsNothing);
     });
 
+    testWidgets('an approved version silences the "no numbers" sentence', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningRulesScreen(),
+        mining: FakeMiningGateway(
+          rules: S7Answer<MiningRules>(value: s7BaselineMiningRules()),
+        ),
+      );
+
+      // The page above it prints 0.5–2 and a placeholder budget.
+      expect(
+        find.byKey(const ValueKey<String>('mining-rules-notice')),
+        findsNothing,
+      );
+      expect(find.textContaining('只有规则条目，没有数值'), findsNothing);
+    });
+
+    testWidgets('with nothing in force the sentence still stands', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningRulesScreen(),
+        mining: FakeMiningGateway(),
+      );
+
+      final notice = find.byKey(const ValueKey<String>('mining-rules-notice'));
+      await scrollToS7Section(tester, notice);
+      expect(notice, findsOneWidget);
+      expect(find.textContaining('只有规则条目，没有数值'), findsOneWidget);
+    });
+
     testWidgets('the referral ladder comes from the server, verbatim', (
       tester,
     ) async {
