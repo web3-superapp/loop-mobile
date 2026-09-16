@@ -99,6 +99,9 @@ void main() {
         isNull,
       );
       expect(find.textContaining('私聊还不能从这里发起'), findsOneWidget);
+      // Group chat is live, so a reason that tells the owner to wait for
+      // 聊天开放 states something that already happened.
+      expect(find.textContaining('聊天开放后'), findsNothing);
     });
 
     testWidgets('the follow badge repeats the server answer', (tester) async {

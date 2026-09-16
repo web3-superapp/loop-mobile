@@ -243,8 +243,10 @@ class _PublicProfileSheetState<T extends Object>
             ),
             const SizedBox(height: 8),
           ],
-          // `dm` has no V2 send path before D7; the control states that
-          // instead of opening a conversation that cannot exist.
+          // `dm` has no V2 send path; the control states that instead of
+          // opening a conversation that cannot exist. The reason under it
+          // names the gap and promises no date: group chat is live, so
+          // "聊天开放后可用" read as false to anybody who had just used it.
           LoopButton(
             key: const ValueKey<String>('public-profile-open-dm'),
             label: '打开私聊',
@@ -253,7 +255,7 @@ class _PublicProfileSheetState<T extends Object>
           ),
           const SizedBox(height: 6),
           Text(
-            '私聊还不能从这里发起，聊天开放后可用。',
+            '私聊还不能从这里发起：这个入口没有可用的私聊通道。',
             key: const ValueKey<String>('public-profile-dm-reason'),
             style: LoopTypography.caption(11, color: LoopColors.muted),
           ),

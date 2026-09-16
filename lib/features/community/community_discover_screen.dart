@@ -30,10 +30,15 @@ enum CommunityDiscoverSegment {
 
   bool get isAvailable => sort != null;
 
-  /// The step that will give the segment a source.
+  /// Why the segment has nothing to sort by.
+  ///
+  /// It names the missing source and nothing else. "挖矿开放后再试" and
+  /// "聊天开放后再试" were written when neither module was live; both are, and
+  /// the sentence went on telling the owner to wait for something that had
+  /// already happened. A copy string states no schedule.
   String get deferredReason => switch (this) {
-    CommunityDiscoverSegment.power => '算力排序暂时不能用，挖矿开放后再试。',
-    CommunityDiscoverSegment.discussion => '讨论量排序暂时不能用，聊天开放后再试。',
+    CommunityDiscoverSegment.power => '算力排序暂时不可用：目录接口不返回社区算力，没有可以排序的数据。',
+    CommunityDiscoverSegment.discussion => '讨论量排序暂时不可用：目录接口不返回讨论量，没有可以排序的数据。',
     _ => '',
   };
 }

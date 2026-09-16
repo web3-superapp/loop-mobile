@@ -281,8 +281,11 @@ void main() {
       expect(seg('newest').onSelected, isNotNull);
       expect(seg('power').onSelected, isNull);
       expect(seg('discussion').onSelected, isNull);
-      expect(find.textContaining('算力排序暂时不能用'), findsOneWidget);
-      expect(find.textContaining('讨论量排序暂时不能用'), findsOneWidget);
+      expect(find.textContaining('算力排序暂时不可用'), findsOneWidget);
+      expect(find.textContaining('讨论量排序暂时不可用'), findsOneWidget);
+      // Neither reason may promise a date, and neither may point at a module
+      // that is already live: both Mining and group chat are.
+      expect(find.textContaining('开放后'), findsNothing);
     });
 
     testWidgets('the heading counts what is loaded, never a total it lacks', (
