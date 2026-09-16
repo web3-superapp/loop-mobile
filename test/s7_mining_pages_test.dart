@@ -262,16 +262,42 @@ void main() {
       );
 
       // Four of the six figures are empty for the same reason. The block
-      // states it once; the other two keep their own, different sentences —
-      // the reward ledger's, and the boost's own code (Decision 0046), which
-      // speaks for the boost slot alone.
-      expect(find.text('挖矿公式还没有批准，算力、产量、排行与邀请加成都暂时不可用。'), findsOneWidget);
+      // states it once, naming the four it speaks for, so the dashes it does
+      // not cover are not left reading as if it did; the other two keep their
+      // own, different sentences — the reward ledger's, and the boost's own
+      // code (Decision 0046), which speaks for the boost slot alone.
+      expect(
+        find.textContaining('挖矿公式还没有批准，算力、产量、排行与邀请加成都暂时不可用。'),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const ValueKey<String>('launch-metric-grid-reason')),
         findsOneWidget,
       );
+      expect(find.textContaining('我的算力、全网算力、今日预估'), findsOneWidget);
       expect(find.text('奖励发放还没有开启，暂时不能领取。'), findsOneWidget);
       expect(find.text('生效的公式版本还没有批准邀请加成，这一项暂时没有数值。'), findsOneWidget);
+    });
+
+    testWidgets('a shared reason names the dashes it speaks for', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(
+          summary: S7Answer<MiningSummary>(value: s7MiningBaselineSummary()),
+        ),
+      );
+
+      final reason = find.byKey(
+        const ValueKey<String>('launch-metric-grid-reason'),
+      );
+      await scrollToS7Section(tester, reason);
+      // 今日预估 carries a figure and a note of its own directly above this
+      // line, which left 累计已挖 and 待领取 as two em dashes with nothing
+      // under them and one sentence that read as the note's continuation.
+      expect(find.textContaining('累计已挖、待领取：'), findsOneWidget);
     });
 
     testWidgets('a settled page states the boost alone, not a whole outage', (

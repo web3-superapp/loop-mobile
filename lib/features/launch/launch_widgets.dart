@@ -241,9 +241,19 @@ class LaunchEmptyMetricGrid extends StatelessWidget {
     return line == shared || line == spokenReason;
   }
 
+  /// The labels whose reason line is [shared], in render order.
+  List<String> _sharedSubjects(String shared) => <String>[
+    for (final metric in metrics)
+      if (launchMetricReasonLine(reasonCode: metric.$2, note: note) == shared)
+        metric.$1,
+  ];
+
   @override
   Widget build(BuildContext context) {
     final shared = _sharedReason;
+    final subjects = shared == null
+        ? const <String>[]
+        : _sharedSubjects(shared);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -252,7 +262,14 @@ class LaunchEmptyMetricGrid extends StatelessWidget {
             key: const ValueKey<String>('launch-metric-grid-reason'),
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 2),
             child: Text(
-              shared,
+              // The line sits above the dashes it explains, and the block it
+              // heads is not always the whole screen: under 今日预估's own note
+              // it read as that figure's sentence, leaving 累计已挖 and 待领取
+              // as two bare em dashes. It names the figures it speaks for
+              // unless it speaks for every one of them.
+              subjects.length == metrics.length
+                  ? shared
+                  : '${subjects.join('、')}：$shared',
               style: LoopTypography.caption(11, color: LoopColors.text2),
             ),
           ),
