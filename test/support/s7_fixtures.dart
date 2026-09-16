@@ -354,6 +354,13 @@ MiningFormulaPending s7PendingFormula() => const MiningFormulaPending(
   pendingVersion: 'miningFormulaV1-draft',
 );
 
+/// The rules page's own block: it never names the pending draft, because the
+/// draft is listed on that page in full.
+MiningFormulaPending s7PendingBaseline() => const MiningFormulaPending(
+  reasonCode: s7FormulaPending,
+  pendingVersion: null,
+);
+
 MiningSummary s7MiningSummary({
   String? pendingVersion,
   MiningFigure? power,
@@ -695,10 +702,14 @@ MiningFormulaVersion s7DraftFormula({
 }) => MiningFormulaVersion(
   configVersion: configVersion,
   status: MiningFormulaStatus.pendingApproval,
+  // A product draft publishes rule keys and no numbers.
+  scope: MiningFormulaScope.product,
   effectiveAt: null,
   approvedAt: null,
   expressionKey: 'mining.rules.formula.holdingTimesReferencePriceTimesWeight',
   dailyOutputKey: 'mining.rules.dailyOutput.shareOfNetworkPower',
+  assetWeights: const <String, String>{},
+  dailyOutput: null,
   weightRange: const MiningWeightRange(
     loop: MiningWeightBand(
       status: MiningFormulaStatus.pendingApproval,
@@ -730,13 +741,67 @@ MiningFormulaVersion s7DraftFormula({
   referralBoostStatus: MiningFormulaStatus.pendingApproval,
 );
 
+/// The development baseline exactly as the Development lane answers it: an
+/// approved version that publishes weights, a placeholder budget and the
+/// reviewed band's pinned range.
+MiningFormulaVersion s7BaselineFormulaVersion() => MiningFormulaVersion(
+  configVersion: s7BaselineVersion,
+  status: MiningFormulaStatus.approved,
+  scope: MiningFormulaScope.developmentBaseline,
+  effectiveAt: DateTime.utc(2026, 9, 15, 14, 57, 37),
+  approvedAt: DateTime.utc(2026, 9, 15, 14, 57, 37),
+  expressionKey: 'mining.rules.formula.holdingTimesReferencePriceTimesWeight',
+  dailyOutputKey: 'mining.rules.dailyOutput.shareOfNetworkPower',
+  assetWeights: const <String, String>{
+    s7NativeAssetId: '1',
+    s7CakeAssetId: '1',
+    s7UsdtAssetId: '1',
+    s7WbnbAssetId: '1',
+  },
+  dailyOutput: const MiningFormulaDailyOutput(
+    status: 'development_placeholder',
+    budget: '1000000',
+    unitKey: 'mining.rules.dailyOutput.unit.loopTokenPending',
+  ),
+  weightRange: const MiningWeightRange(
+    loop: MiningWeightBand(
+      status: MiningFormulaStatus.pendingApproval,
+      descriptionKey: 'mining.rules.weight.loopFixedMaximum',
+    ),
+    community: MiningWeightBand(
+      status: MiningFormulaStatus.approved,
+      descriptionKey: 'mining.rules.weight.communityReviewed',
+      range: MiningWeightBounds(min: '0.5', max: '2'),
+    ),
+    reviewFactorKeys: <String>[
+      'mining.rules.reviewFactor.communityQuality',
+      'mining.rules.reviewFactor.tokenLiquidity',
+    ],
+  ),
+  priceGuardRules: const <MiningPriceGuardRule>[
+    MiningPriceGuardRule(
+      ruleKey: 'mining.rules.priceGuard.twap',
+      status: MiningFormulaStatus.pendingApproval,
+    ),
+  ],
+  referralBoostStatus: MiningFormulaStatus.pendingApproval,
+);
+
+/// The rules read under that baseline: a version in force, and the product
+/// draft still waiting beside it.
+MiningRules s7BaselineMiningRules() => s7MiningRules(
+  approved: s7BaselineFormulaVersion(),
+  baseline: s7EffectiveFormula(),
+);
+
 MiningRules s7MiningRules({
   MiningFormulaVersion? approved,
   List<MiningFormulaVersion>? pendingApproval,
+  MiningFormulaGate? baseline,
 }) => MiningRules(
   approved: approved,
   pendingApproval: pendingApproval ?? <MiningFormulaVersion>[s7DraftFormula()],
-  baseline: const LaunchUnavailable(s7FormulaPending),
+  baseline: baseline ?? s7PendingBaseline(),
   referral: MiningReferralRules(
     configVersion: 'referralRulesV1',
     effectiveAt: DateTime.utc(2026, 9),

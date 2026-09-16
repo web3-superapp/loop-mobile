@@ -64,6 +64,9 @@ Dio _dio(_RecordingAdapter adapter) {
   return dio;
 }
 
+/// A default that is not `null`, so a test may pass `null` on purpose.
+const Object _absent = Object();
+
 Map<String, Object?> _unavailable(String reasonCode) => <String, Object?>{
   'status': 'unavailable',
   'reasonCode': reasonCode,
@@ -2237,6 +2240,272 @@ void main() {
           clientVersion: _clientVersion,
           communityId: _communityId,
         ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    /// The `approved` / `pendingApproval[]` document, field for field as
+    /// `/v2/mining/rules` answers it on the Development lane.
+    Map<String, Object?> formulaVersion({
+      String configVersion = _baselineVersion,
+      String status = 'approved',
+      Object? scope = 'development_baseline',
+      Object? assetWeights,
+      Object? dailyOutput = _absent,
+      Object? communityBand,
+    }) => <String, Object?>{
+      'configVersion': configVersion,
+      'status': status,
+      'scope': scope,
+      'effectiveAt': '2026-09-15T14:57:37.026Z',
+      'approvedAt': '2026-09-15T14:57:37.026Z',
+      'expressionKey':
+          'mining.rules.formula.holdingTimesReferencePriceTimesWeight',
+      'dailyOutputKey': 'mining.rules.dailyOutput.shareOfNetworkPower',
+      'assetWeights':
+          assetWeights ??
+          <String, Object?>{
+            _nativeAssetId: '1',
+            _cakeAssetId: '1',
+            _usdtAssetId: '1',
+            _wbnbAssetId: '1',
+          },
+      'dailyOutput': identical(dailyOutput, _absent)
+          ? <String, Object?>{
+              'status': 'development_placeholder',
+              'budget': '1000000',
+              'unitKey': 'mining.rules.dailyOutput.unit.loopTokenPending',
+            }
+          : dailyOutput,
+      'weightRange': <String, Object?>{
+        'loop': <String, Object?>{
+          'status': 'pending_approval',
+          'descriptionKey': 'mining.rules.weight.loopFixedMaximum',
+        },
+        'community':
+            communityBand ??
+            <String, Object?>{
+              'status': 'approved',
+              'descriptionKey': 'mining.rules.weight.communityReviewed',
+              'range': <String, Object?>{'min': '0.5', 'max': '2'},
+            },
+        'reviewFactorKeys': <Object?>[
+          'mining.rules.reviewFactor.communityQuality',
+        ],
+      },
+      'priceGuardRules': <Object?>[
+        <String, Object?>{
+          'ruleKey': 'mining.rules.priceGuard.twap',
+          'status': 'pending_approval',
+        },
+      ],
+      'referralBoost': <String, Object?>{'status': 'pending_approval'},
+    };
+
+    Map<String, Object?> rulesBody({
+      Object? approved,
+      List<Object?>? pendingApproval,
+      Object? baseline,
+    }) => <String, Object?>{
+      'approved': approved ?? formulaVersion(),
+      'pendingApproval': pendingApproval ?? <Object?>[],
+      'baseline':
+          baseline ??
+          <String, Object?>{
+            'status': 'approved',
+            'configVersion': _baselineVersion,
+            'effectiveAt': '2026-09-15T14:57:37.026Z',
+            'scope': 'development_baseline',
+          },
+      'referral': <String, Object?>{
+        'configVersion': 'referralRulesV1',
+        'effectiveAt': '2026-09-01T00:00:00.000Z',
+        'levels': <Object?>[
+          for (var level = 1; level <= 5; level += 1)
+            <String, Object?>{
+              'level': level,
+              'boostPercent': <String>['10', '5', '3', '2', '1'][level - 1],
+              'descriptionKey': 'mining.referral.level$level',
+            },
+        ],
+      },
+      'contractVersion': '2.0',
+    };
+
+    test(
+      'the approved baseline carries its scope, weights, budget and range',
+      () async {
+        final api = DioLoopV2MiningApi(
+          _dio(_RecordingAdapter(statusCode: 200, body: rulesBody())),
+        );
+
+        final rules = await api.getRules(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+        );
+
+        final approved = rules.approved!;
+        expect(approved.configVersion, _baselineVersion);
+        expect(approved.scope, MiningFormulaScope.developmentBaseline);
+        expect(approved.assetWeights, <String, String>{
+          _nativeAssetId: '1',
+          _cakeAssetId: '1',
+          _usdtAssetId: '1',
+          _wbnbAssetId: '1',
+        });
+        expect(approved.dailyOutput!.budget, '1000000');
+        expect(approved.dailyOutput!.isPlaceholder, isTrue);
+        expect(
+          approved.dailyOutput!.unitKey,
+          'mining.rules.dailyOutput.unit.loopTokenPending',
+        );
+        expect(approved.weightRange.community.range!.min, '0.5');
+        expect(approved.weightRange.community.range!.max, '2');
+        // The band that was not pinned keeps no range at all.
+        expect(approved.weightRange.loop.range, isNull);
+        final baseline = rules.baseline as MiningFormulaEffective;
+        expect(baseline.configVersion, _baselineVersion);
+        expect(baseline.scope, MiningFormulaScope.developmentBaseline);
+      },
+    );
+
+    test('a product draft publishes no weights and no budget', () async {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: rulesBody(
+              approved: null,
+              pendingApproval: <Object?>[
+                formulaVersion(
+                  configVersion: 'miningFormulaV1-draft',
+                  status: 'pending_approval',
+                  scope: null,
+                  assetWeights: <String, Object?>{},
+                  dailyOutput: null,
+                  communityBand: <String, Object?>{
+                    'status': 'pending_approval',
+                    'descriptionKey': 'mining.rules.weight.communityReviewed',
+                  },
+                ),
+              ],
+              baseline: _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+            ),
+          ),
+        ),
+      );
+
+      final rules = await api.getRules(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+      );
+
+      final draft = rules.pendingApproval.single;
+      expect(draft.scope, MiningFormulaScope.product);
+      expect(draft.assetWeights, isEmpty);
+      expect(draft.dailyOutput, isNull);
+      expect(draft.weightRange.community.range, isNull);
+      final baseline = rules.baseline as MiningFormulaPending;
+      expect(baseline.reasonCode, 'MINING_FORMULA_BASELINE_PENDING');
+      // The rules page's own block never names the draft: the page lists it.
+      expect(baseline.pendingVersion, isNull);
+    });
+
+    test('an unknown key on a formula version is refused', () {
+      final body = rulesBody();
+      (body['approved']! as Map<String, Object?>)['emissionRate'] = '1';
+      final api = DioLoopV2MiningApi(
+        _dio(_RecordingAdapter(statusCode: 200, body: body)),
+      );
+
+      expect(
+        () => api.getRules(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a weight that is not a decimal is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: rulesBody(
+              approved: formulaVersion(
+                assetWeights: <String, Object?>{_nativeAssetId: 'one'},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getRules(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('an asset id the client cannot name is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: rulesBody(
+              approved: formulaVersion(
+                assetWeights: <String, Object?>{'bip122:0:native': '1'},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getRules(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('the baseline block may not carry the pending version key', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: rulesBody(
+              approved: null,
+              baseline: <String, Object?>{
+                'status': 'unavailable',
+                'reasonCode': 'MINING_FORMULA_BASELINE_PENDING',
+                'pendingVersion': 'miningFormulaV1-draft',
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getRules(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a daily output budget without its status is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: rulesBody(
+              approved: formulaVersion(
+                dailyOutput: <String, Object?>{
+                  'budget': '1000000',
+                  'unitKey': 'mining.rules.dailyOutput.unit.loopTokenPending',
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getRules(accessToken: _token, clientVersion: _clientVersion),
         throwsA(isA<LoopBackendFailure>()),
       );
     });

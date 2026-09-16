@@ -449,7 +449,17 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
     );
   }
 
-  static MiningFormulaGate _formulaGate(Object? raw) {
+  /// The version in force, as the summary, the composition page, the ranking
+  /// and the rules page's `baseline` all publish it.
+  ///
+  /// One decoder, two exact shapes: the module blocks name the draft that is
+  /// waiting (`pendingVersion`), and the rules page's own block does not carry
+  /// that key at all. Which shape is expected is told to the decoder rather
+  /// than accepted from the payload, so neither side is loosened.
+  static MiningFormulaGate _formulaGate(
+    Object? raw, {
+    bool namesPendingVersion = true,
+  }) {
     if (raw is! Map) LoopV2S7Codec.invalid();
     if (raw['status'] == 'approved') {
       final map = LoopV2Contract.strictMap(raw, const <String>{
@@ -468,21 +478,24 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         scope: LoopV2S7Codec.formulaScope(map),
       );
     }
-    final map = LoopV2Contract.strictMap(raw, const <String>{
-      'status',
-      'reasonCode',
-      'pendingVersion',
-    });
+    final map = LoopV2Contract.strictMap(
+      raw,
+      namesPendingVersion
+          ? const <String>{'status', 'reasonCode', 'pendingVersion'}
+          : const <String>{'status', 'reasonCode'},
+    );
     if (map['status'] != 'unavailable') LoopV2S7Codec.invalid();
     return MiningFormulaPending(
       reasonCode: LoopV2S7Codec.requireEnum(map, 'reasonCode', const <String>{
         'MINING_FORMULA_BASELINE_PENDING',
       }),
-      pendingVersion: LoopV2S7Codec.optionalPattern(
-        map,
-        'pendingVersion',
-        LoopV2S7Codec.configVersionPattern,
-      ),
+      pendingVersion: namesPendingVersion
+          ? LoopV2S7Codec.optionalPattern(
+              map,
+              'pendingVersion',
+              LoopV2S7Codec.configVersionPattern,
+            )
+          : null,
     );
   }
 
@@ -498,14 +511,81 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
     return status;
   }
 
-  static MiningWeightBand _band(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, const <String>{
-      'status',
-      'descriptionKey',
-    });
+  /// One weight band. The reviewed band may carry the bounds the version
+  /// pinned; the fixed band never does, and the key's absence is the band
+  /// saying the range is still pending.
+  static MiningWeightBand _band(Object? raw, {bool mayCarryRange = false}) {
+    final map = mayCarryRange
+        ? LoopV2Contract.strictMapWithOptional(
+            raw,
+            const <String>{'status', 'descriptionKey'},
+            const <String>{'range'},
+          )
+        : LoopV2Contract.strictMap(raw, const <String>{
+            'status',
+            'descriptionKey',
+          });
+    MiningWeightBounds? bounds;
+    if (map.containsKey('range')) {
+      final range = LoopV2Contract.strictMap(map['range'], const <String>{
+        'min',
+        'max',
+      });
+      bounds = MiningWeightBounds(
+        min: _decimal(range, 'min'),
+        max: _decimal(range, 'max'),
+      );
+    }
     return MiningWeightBand(
       status: _formulaStatus(map, 'status'),
       descriptionKey: LoopV2S7Codec.requireRuleKey(map, 'descriptionKey'),
+      range: bounds,
+    );
+  }
+
+  /// The weights one version gives the assets it prices. Both the ids and the
+  /// figures are the server's own: an id the client cannot name, or a weight
+  /// that is not a decimal, is an invalid payload rather than a dropped row.
+  static Map<String, String> _assetWeights(Object? raw) {
+    if (raw is! Map || raw.length > 200) LoopV2S7Codec.invalid();
+    final weights = <String, String>{};
+    for (final entry in raw.entries) {
+      final key = entry.key;
+      if (key is! String ||
+          key.length > 80 ||
+          !LoopV2S7Codec.holdingAssetIdPattern.hasMatch(key) ||
+          weights.containsKey(key)) {
+        LoopV2S7Codec.invalid();
+      }
+      final value = entry.value;
+      if (value is! String ||
+          value.length > 140 ||
+          !LoopV2S7Codec.decimalPattern.hasMatch(value)) {
+        LoopV2S7Codec.invalid();
+      }
+      weights[key] = value;
+    }
+    return Map<String, String>.unmodifiable(weights);
+  }
+
+  /// The daily output document a version declares, or `null` when it declares
+  /// none. Its budget is a placeholder until a reward token exists, and the
+  /// status travels with it so the page can never print the number alone.
+  static MiningFormulaDailyOutput? _formulaDailyOutput(Object? raw) {
+    if (raw == null) return null;
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'budget',
+      'unitKey',
+    });
+    return MiningFormulaDailyOutput(
+      status: LoopV2S7Codec.requireEnum(map, 'status', const <String>{
+        'development_placeholder',
+      }),
+      budget: _decimal(map, 'budget'),
+      unitKey: LoopV2S7Codec.requireEnum(map, 'unitKey', const <String>{
+        'mining.rules.dailyOutput.unit.loopTokenPending',
+      }),
     );
   }
 
@@ -513,10 +593,13 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
     final map = LoopV2Contract.strictMap(raw, const <String>{
       'configVersion',
       'status',
+      'scope',
       'effectiveAt',
       'approvedAt',
       'expressionKey',
       'dailyOutputKey',
+      'assetWeights',
+      'dailyOutput',
       'weightRange',
       'priceGuardRules',
       'referralBoost',
@@ -568,13 +651,16 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         'status',
         allowed: const <String>{'pending_approval', 'approved', 'retired'},
       ),
+      scope: LoopV2S7Codec.formulaScope(map),
       effectiveAt: LoopV2S7Codec.optionalTimestamp(map, 'effectiveAt'),
       approvedAt: LoopV2S7Codec.optionalTimestamp(map, 'approvedAt'),
       expressionKey: LoopV2S7Codec.requireRuleKey(map, 'expressionKey'),
       dailyOutputKey: LoopV2S7Codec.requireRuleKey(map, 'dailyOutputKey'),
+      assetWeights: _assetWeights(map['assetWeights']),
+      dailyOutput: _formulaDailyOutput(map['dailyOutput']),
       weightRange: MiningWeightRange(
         loop: _band(weightRange['loop']),
-        community: _band(weightRange['community']),
+        community: _band(weightRange['community'], mayCarryRange: true),
         reviewFactorKeys: List<String>.unmodifiable(factors),
       ),
       priceGuardRules: List<MiningPriceGuardRule>.unmodifiable(guards),
@@ -896,7 +982,8 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
             ? null
             : _formulaVersion(root['approved']),
         pendingApproval: List<MiningFormulaVersion>.unmodifiable(pending),
-        baseline: LoopV2S7Codec.unavailable(root['baseline']),
+        // The same block the summary reads, minus the key it does not carry.
+        baseline: _formulaGate(root['baseline'], namesPendingVersion: false),
         referral: MiningReferralRules(
           configVersion: LoopV2S7Codec.requireEnum(
             referral,

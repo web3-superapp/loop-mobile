@@ -1537,6 +1537,93 @@ void main() {
       expect(find.textContaining('挖矿公式还没有批准'), findsWidgets);
     });
 
+    testWidgets('the development baseline prints its weights and its budget', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningRulesScreen(),
+        mining: FakeMiningGateway(
+          rules: S7Answer<MiningRules>(value: s7BaselineMiningRules()),
+        ),
+      );
+
+      // The version in force is said the way every other mining page says it.
+      final formula = find.byKey(const ValueKey<String>('mining-formula'));
+      await scrollToS7Section(tester, formula);
+      expect(formula, findsOneWidget);
+      expect(find.text(miningBaselineLabel), findsWidgets);
+
+      // Every weighed asset, with the version's own figure.
+      for (final assetId in <String>[
+        s7NativeAssetId,
+        s7CakeAssetId,
+        s7UsdtAssetId,
+        s7WbnbAssetId,
+      ]) {
+        final row = find.byKey(
+          ValueKey<String>('mining-rules-approved-asset-weight-$assetId'),
+        );
+        await scrollToS7Section(tester, row);
+        expect(row, findsOneWidget, reason: assetId);
+      }
+
+      // The pinned band prints its bounds; the placeholder budget prints with
+      // the word that says it is a placeholder.
+      final community = find.byKey(
+        const ValueKey<String>('mining-rules-approved-weight-community'),
+      );
+      await scrollToS7Section(tester, community);
+      expect(find.text('0.5–2'), findsOneWidget);
+      final output = find.byKey(
+        const ValueKey<String>('mining-rules-approved-daily-output'),
+      );
+      await scrollToS7Section(tester, output);
+      expect(find.text('1000000'), findsOneWidget);
+      expect(find.text('占位产量'), findsOneWidget);
+
+      final notice = find.byKey(
+        const ValueKey<String>('mining-rules-baseline-notice'),
+      );
+      await scrollToS7Section(tester, notice);
+      expect(notice, findsOneWidget);
+
+      // The draft is still listed, and still 待批准.
+      final draft = find.byKey(
+        const ValueKey<String>(
+          'mining-rules-pending-miningFormulaV1-draft-rows',
+        ),
+      );
+      await scrollToS7Section(tester, draft);
+      expect(draft, findsOneWidget);
+    });
+
+    testWidgets('a draft version prints no weight, budget or range', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningRulesScreen(),
+        mining: FakeMiningGateway(),
+      );
+
+      final draftPrefix = 'mining-rules-pending-miningFormulaV1-draft';
+      expect(
+        find.byKey(ValueKey<String>('$draftPrefix-asset-weights')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('mining-rules-baseline-notice')),
+        findsNothing,
+      );
+      final community = find.byKey(
+        ValueKey<String>('$draftPrefix-weight-community'),
+      );
+      await scrollToS7Section(tester, community);
+      expect(find.text('1000000'), findsNothing);
+      expect(find.text(miningBaselineLabel), findsNothing);
+    });
+
     testWidgets('the referral ladder comes from the server, verbatim', (
       tester,
     ) async {

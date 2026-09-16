@@ -1232,12 +1232,29 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
           )
         else ...<Widget>[
           const LoopLabel('已批准的版本'),
-          if (rules.approved == null)
-            LaunchUnavailableCard(label: '已批准的公式版本', fact: rules.baseline)
-          else
+          // The version in force, said the way every other mining page says
+          // it. Without one, the block keeps the server's own reason.
+          switch (rules.baseline) {
+            MiningFormulaEffective() => MiningFormulaBlock(
+              formula: rules.baseline,
+            ),
+            MiningFormulaPending(:final reasonCode) => LaunchUnavailableCard(
+              label: '已批准的公式版本',
+              fact: LaunchUnavailable(reasonCode),
+            ),
+          },
+          if (rules.approved != null)
             _FormulaVersionBlock(
               version: rules.approved!,
               keyPrefix: 'mining-rules-approved',
+            ),
+          if (rules.approved?.scope.isBaseline ?? false)
+            const LoopNotice(
+              key: ValueKey<String>('mining-rules-baseline-notice'),
+              icon: 'info',
+              title: '开发基线的数值只用于开发验证',
+              body: '这一版把每个资产的权重都定为 1，当日产量是占位预算，奖励代币还没有确定。它不是产品规则。',
+              margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
             ),
           const LoopLabel('待批准的版本'),
           if (rules.pendingApproval.isEmpty)
@@ -1327,6 +1344,12 @@ class _FormulaVersionBlock extends StatelessWidget {
         key: ValueKey<String>('$keyPrefix-daily-output'),
         title: '每日产出',
         subtitle: miningRuleKeyText(version.dailyOutputKey),
+        // The budget is published with its own status, so it is printed with
+        // it: a placeholder number never stands on the page by itself.
+        trailing: version.dailyOutput?.budget,
+        trailingCaption: version.dailyOutput == null
+            ? null
+            : (version.dailyOutput!.isPlaceholder ? '占位产量' : '当日产量'),
         position: LoopRowPosition.middle,
       ),
       LoopRecordRow(
@@ -1345,7 +1368,12 @@ class _FormulaVersionBlock extends StatelessWidget {
         subtitle: miningRuleKeyText(
           version.weightRange.community.descriptionKey,
         ),
-        trailing: launchMissingFigure,
+        // The bounds print only once the version pinned them; until then the
+        // band is a rule with no numbers and keeps the em dash.
+        trailing: switch (version.weightRange.community.range) {
+          null => launchMissingFigure,
+          MiningWeightBounds(:final min, :final max) => '$min–$max',
+        },
         trailingCaption: miningFormulaStatusLabel(
           version.weightRange.community.status,
         ),
@@ -1374,11 +1402,46 @@ class _FormulaVersionBlock extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Text(
-            '${miningFormulaStatusLabel(version.status)}'
-            '${version.approvedAt == null ? '' : ' · 批准于 ${launchTimestampLabel(version.approvedAt!)}'}',
+            <String>[
+              miningFormulaStatusLabel(version.status),
+              // The scope the version declares about itself, wherever the
+              // version is printed.
+              if (version.scope.isBaseline) miningBaselineLabel,
+              if (version.approvedAt != null)
+                '批准于 ${launchTimestampLabel(version.approvedAt!)}',
+            ].join(' · '),
+            key: ValueKey<String>('$keyPrefix-status'),
             style: Theme.of(context).textTheme.labelMedium,
           ),
         ),
+        if (version.assetWeights.isNotEmpty) ...<Widget>[
+          const LoopLabel('资产权重'),
+          LoopRecordGroup(
+            key: ValueKey<String>('$keyPrefix-asset-weights'),
+            rows: <LoopRecordRow>[
+              for (
+                var index = 0;
+                index < version.assetWeights.length;
+                index += 1
+              )
+                LoopRecordRow(
+                  key: ValueKey<String>(
+                    '$keyPrefix-asset-weight-'
+                    '${version.assetWeights.keys.elementAt(index)}',
+                  ),
+                  title: miningAssetLabel(
+                    version.assetWeights.keys.elementAt(index),
+                  ),
+                  subtitle: version.assetWeights.keys.elementAt(index),
+                  trailing: version.assetWeights.values.elementAt(index),
+                  position: launchRowPosition(
+                    index,
+                    version.assetWeights.length,
+                  ),
+                ),
+            ],
+          ),
+        ],
         const LoopLabel('评审因子'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),

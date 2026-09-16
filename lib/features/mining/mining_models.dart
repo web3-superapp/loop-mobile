@@ -715,14 +715,30 @@ String miningFormulaStatusLabel(MiningFormulaStatus status) => switch (status) {
   MiningFormulaStatus.retired => '已退役',
 };
 
-/// A weight band. Only its key and approval state exist; the numeric range is
-/// deliberately absent until the formula is approved.
+/// The inclusive bounds a reviewed weight must satisfy under one version.
+/// Both ends are the server's own decimal strings, printed verbatim.
+@immutable
+final class MiningWeightBounds {
+  const MiningWeightBounds({required this.min, required this.max});
+
+  final String min;
+  final String max;
+}
+
+/// A weight band: its key, its approval state, and — only once the version
+/// pinned it — the numeric range itself. `range` stays null while the band is
+/// still a rule with no numbers, and the page keeps the em dash for it.
 @immutable
 final class MiningWeightBand {
-  const MiningWeightBand({required this.status, required this.descriptionKey});
+  const MiningWeightBand({
+    required this.status,
+    required this.descriptionKey,
+    this.range,
+  });
 
   final MiningFormulaStatus status;
   final String descriptionKey;
+  final MiningWeightBounds? range;
 }
 
 @immutable
@@ -746,15 +762,36 @@ final class MiningPriceGuardRule {
   final MiningFormulaStatus status;
 }
 
+/// The daily output one formula version declares. While the reward token is
+/// undecided the budget is a `development_placeholder`, and the page must say
+/// so beside it rather than print the number on its own.
+@immutable
+final class MiningFormulaDailyOutput {
+  const MiningFormulaDailyOutput({
+    required this.status,
+    required this.budget,
+    required this.unitKey,
+  });
+
+  final String status;
+  final String budget;
+  final String unitKey;
+
+  bool get isPlaceholder => status == 'development_placeholder';
+}
+
 @immutable
 final class MiningFormulaVersion {
   const MiningFormulaVersion({
     required this.configVersion,
     required this.status,
+    required this.scope,
     required this.effectiveAt,
     required this.approvedAt,
     required this.expressionKey,
     required this.dailyOutputKey,
+    required this.assetWeights,
+    required this.dailyOutput,
     required this.weightRange,
     required this.priceGuardRules,
     required this.referralBoostStatus,
@@ -762,10 +799,22 @@ final class MiningFormulaVersion {
 
   final String configVersion;
   final MiningFormulaStatus status;
+
+  /// What the version says it is. `developmentBaseline` publishes numbers
+  /// that are not a product measure, and every figure it produced carries
+  /// the baseline label.
+  final MiningFormulaScope scope;
   final DateTime? effectiveAt;
   final DateTime? approvedAt;
   final String expressionKey;
   final String dailyOutputKey;
+
+  /// Canonical asset id → the version's own decimal weight. Empty on a
+  /// product draft, which publishes rule keys and no numbers.
+  final Map<String, String> assetWeights;
+
+  /// Null while the version declares no budget at all.
+  final MiningFormulaDailyOutput? dailyOutput;
   final MiningWeightRange weightRange;
   final List<MiningPriceGuardRule> priceGuardRules;
   final MiningFormulaStatus referralBoostStatus;
@@ -809,10 +858,14 @@ final class MiningRules {
     required this.referral,
   });
 
-  /// `null` for the whole of step 7.
+  /// Null while no version has been approved.
   final MiningFormulaVersion? approved;
   final List<MiningFormulaVersion> pendingApproval;
-  final LaunchUnavailable baseline;
+
+  /// The version in force, as the same block the summary, the composition
+  /// page and the ranking read. Approved on the development baseline;
+  /// pending while nothing is in effect.
+  final MiningFormulaGate baseline;
   final MiningReferralRules referral;
 
   bool get hasApprovedFormula => approved != null;
@@ -827,12 +880,14 @@ String miningRuleKeyText(String key) => switch (key) {
   'mining.rules.weight.loopFixedMaximum' => 'LOOP 采用固定的最高权重档位（数值待批准）。',
   'mining.rules.weight.communityReviewed' => '社区币权重按审核结果授予，区间待批准。',
   'mining.rules.reviewFactor.communityQuality' => '社区质量',
-  'mining.rules.reviewFactor.communityScale' => '社区规模',
+  'mining.rules.reviewFactor.communityScale' ||
+  'mining.rules.reviewFactor.communitySize' => '社区规模',
   'mining.rules.reviewFactor.tokenLiquidity' => 'Token 流动性',
   'mining.rules.reviewFactor.projectQuality' => '项目质量',
   'mining.rules.reviewFactor.marketStability' => '市场稳定性',
   'mining.rules.reviewFactor.userQuality' => '用户质量',
-  'mining.rules.reviewFactor.partnershipDepth' => '与 LOOP 的合作深度',
+  'mining.rules.reviewFactor.partnershipDepth' ||
+  'mining.rules.reviewFactor.loopPartnership' => '与 LOOP 的合作深度',
   'mining.rules.priceGuard.twap' => 'TWAP 时间加权均价：避免单笔成交扭曲参考价。',
   'mining.rules.priceGuard.multiPeriodMultiSource' => '多周期、多渠道比对，交叉验证异常波动。',
   'mining.rules.priceGuard.liquidityCap' => 'Liquidity Cap：低流动性资产限制可计入价值。',
