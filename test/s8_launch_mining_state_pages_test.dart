@@ -270,6 +270,10 @@ final List<_StateCase> _cases = <_StateCase>[
     ),
     readyKey: 'mining-rewards-metrics',
     alsoUnreadKeys: <String>['mining-rewards-claim'],
+    // While the read is in flight the folio says it is reading. 「暂无数值」 is
+    // a conclusion about an answer, and no answer has arrived; the skeleton
+    // frame is pinned in s7_mining_pages_test.dart instead.
+    showsMissingHeading: false,
     emptyContract:
         'MiningRewards 是四个必填的 LaunchUnavailable 加一个 claimExecutable'
         '（mining_models.dart:96-113）：读成功时四条口径都在，'

@@ -744,6 +744,48 @@ void main() {
       expect(find.textContaining('奖励发放还没有开启'), findsWidgets);
     });
 
+    testWidgets('the hero reads the claim\'s own reason, not a constant', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningRewardsScreen(),
+        mining: FakeMiningGateway(
+          rewards: S7Answer<MiningRewards>(value: s7SettledMiningRewards()),
+        ),
+      );
+
+      // A settlement has happened; what is closed is the reward authority.
+      expect(find.textContaining('还没有发生过结算'), findsNothing);
+      expect(find.textContaining('没有可领取的数量'), findsNothing);
+      expect(find.text(launchReasonCodeText(s7RewardPending)), findsWidgets);
+    });
+
+    testWidgets('the loading frame states no cause it has not been told', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningRewardsScreen(),
+        mining: FakeMiningGateway(
+          rewards: S7Answer<MiningRewards>(pending: true),
+        ),
+        settle: false,
+      );
+
+      for (final code in _reasonCodesOnTheWire) {
+        expect(
+          find.textContaining(launchReasonCodeText(code)),
+          findsNothing,
+          reason: code,
+        );
+      }
+      expect(find.textContaining('还没有发生过结算'), findsNothing);
+      expect(find.text('正在读取'), findsOneWidget);
+      expect(find.text(launchMissingHeading), findsNothing);
+      expect(find.text('0'), findsNothing);
+    });
+
     testWidgets('an empty ledger is not "no output"', (tester) async {
       await pumpS7Page(
         tester,

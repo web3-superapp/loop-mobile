@@ -502,12 +502,26 @@ MiningAssets s7MiningSettledAssets({
   referencePrice: const MiningReferencePriceSettled(s7PriceVersion),
 );
 
-MiningRewards s7MiningRewards() => const MiningRewards(
-  claimable: LaunchUnavailable(s7RewardPending),
+MiningRewards s7MiningRewards({
+  LaunchUnavailable? claimable,
+  LaunchUnavailable? estimatedToday,
+  LaunchUnavailable? accumulated,
+  LaunchUnavailable? source,
+}) => MiningRewards(
+  claimable: claimable ?? const LaunchUnavailable(s7RewardPending),
   claimExecutable: false,
-  estimatedToday: LaunchUnavailable(s7FormulaPending),
-  accumulated: LaunchUnavailable(s7FormulaPending),
-  source: LaunchUnavailable(s7FormulaPending),
+  estimatedToday: estimatedToday ?? const LaunchUnavailable(s7FormulaPending),
+  accumulated: accumulated ?? const LaunchUnavailable(s7FormulaPending),
+  source: source ?? const LaunchUnavailable(s7FormulaPending),
+);
+
+/// Rewards as the Development deployment answers them once a settlement has
+/// happened: the share is defined (the network power is what is zero), and the
+/// claim is closed by the reward authority, not by a missing settlement.
+MiningRewards s7SettledMiningRewards() => s7MiningRewards(
+  estimatedToday: const LaunchUnavailable('MINING_NETWORK_POWER_ZERO'),
+  accumulated: const LaunchUnavailable(s7RewardPending),
+  source: const LaunchUnavailable(s7RewardPending),
 );
 
 MiningRank s7MiningRank({

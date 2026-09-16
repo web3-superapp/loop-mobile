@@ -416,14 +416,7 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
       title: '奖励与领取',
       kicker: 'CLAIMABLE REWARD',
       onBack: widget.onBack,
-      primary: const LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'CLAIMABLE REWARD',
-        heading: launchMissingHeading,
-        caption: '还没有发生过结算，因此没有可领取的数量。',
-        stamp: 'NOT CLAIMABLE',
-      ),
+      primary: _rewardsHero(rewards, state.phase),
       block: blocked
           ? _miningCapabilityBlock(
               'mining-rewards-capability-unavailable',
@@ -477,8 +470,8 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
           const LoopNotice(
             key: ValueKey<String>('mining-rewards-ledger-notice'),
             icon: 'info',
-            title: '没有记录不等于没有产出',
-            body: '还没有发生过结算，所以账本是空的。公式批准并完成第一次结算后，这里才会有可核对的条目。',
+            title: '没有条目不等于没有产出',
+            body: '这里只列奖励账本的条目。算力，以及每一次结算的区块与时间，在算力明细里。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),
@@ -486,6 +479,32 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
       ],
     );
   }
+}
+
+/// The hero. What this page may say about a claim comes from `claimable`'s own
+/// reason, never from a constant: 「还没有发生过结算」 was written before the
+/// first settlement existed and stayed on the screen after it happened, while
+/// the reward authority — a different fact entirely — was what actually kept
+/// the claim closed.
+///
+/// A read that has not landed says only that it is reading. The absence of a
+/// figure is stated once the answer is here, and its cause is the server's.
+LoopFolioPrimary _rewardsHero(MiningRewards? rewards, LaunchViewPhase phase) {
+  final (String heading, String caption) = switch (rewards) {
+    null when phase == LaunchViewPhase.loading => ('正在读取', '待领取的数量读到之后显示在这里。'),
+    null => (launchMissingHeading, '这一页还没有读到奖励数据。'),
+    MiningRewards(:final claimable) => (
+      launchMissingHeading,
+      launchReasonCodeText(claimable.reasonCode),
+    ),
+  };
+  return LoopFolioPrimary(
+    variant: LoopFolioVariant.quiet,
+    archetype: LoopFolioArchetype.record,
+    kicker: 'CLAIMABLE REWARD',
+    heading: heading,
+    caption: caption,
+  );
 }
 
 /// `mining-rank` · the power leaderboard.
