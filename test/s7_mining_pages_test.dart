@@ -529,10 +529,15 @@ void main() {
         ),
       );
 
-      // The hero speaks for the total it heads, not for the page.
+      // The hero speaks for the total it heads, not for the page — and it
+      // speaks once: the cell under it keeps the em dash.
       expect(
         _heroCaption(tester),
         launchReasonCodeText('MINING_ACCOUNT_NOT_IN_SNAPSHOT'),
+      );
+      expect(
+        find.text(launchReasonCodeText('MINING_ACCOUNT_NOT_IN_SNAPSHOT')),
+        findsOneWidget,
       );
     });
 
@@ -1406,6 +1411,10 @@ void main() {
       expect(
         _heroCaption(tester),
         launchReasonCodeText('COMMUNITY_ASSET_NOT_BOUND'),
+      );
+      expect(
+        find.text(launchReasonCodeText('COMMUNITY_ASSET_NOT_BOUND')),
+        findsOneWidget,
       );
     });
 

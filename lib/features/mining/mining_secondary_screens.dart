@@ -284,6 +284,10 @@ LoopRecordRow _excludedRow(MiningExcludedAsset row, LoopRowPosition position) =>
 /// 我的总算力. A settled figure prints; an unsettled one keeps the em dash and
 /// the server's own reason, and never becomes a zero. A figure the development
 /// baseline produced says so beside itself, exactly as the summary's does.
+///
+/// The reason is the folio's to say: it heads this same figure, three
+/// centimetres up the page, with the same sentence. It stays in this cell's
+/// semantic label, where a screen reader reads it on the figure it belongs to.
 class _AssetsTotal extends StatelessWidget {
   const _AssetsTotal({required this.totalPower, required this.baseline});
 
@@ -297,6 +301,7 @@ class _AssetsTotal extends StatelessWidget {
         key: const ValueKey<String>('mining-assets-total'),
         label: '我的总算力',
         reasonCode: reasonCode,
+        showReason: false,
       ),
       MiningFigureValue(:final value) => LoopRecordGroup(
         key: const ValueKey<String>('mining-assets-total'),
@@ -1044,6 +1049,8 @@ class _CommunityMetrics extends StatelessWidget {
           ('社区排名', rank.reasonCode),
           ('参与人数', participants.reasonCode),
         ],
+        // The folio heads 社区总算力 and already carries its reason.
+        spokenReason: launchReasonCodeText(power.reasonCode),
       );
     }
     return LoopRecordGroup(
@@ -1054,6 +1061,9 @@ class _CommunityMetrics extends StatelessWidget {
           label: '社区总算力',
           figure: power,
           position: LoopRowPosition.first,
+          // Same figure as the folio heading, so the same sentence is not
+          // written twice on one screen.
+          reasonSaidAbove: true,
         ),
         _figureRow(
           slug: 'contribution',
@@ -1100,10 +1110,12 @@ class _CommunityMetrics extends StatelessWidget {
     required String label,
     required MiningFigure figure,
     required LoopRowPosition position,
+    bool reasonSaidAbove = false,
   }) => LoopRecordRow(
     key: ValueKey<String>('mining-community-metric-$slug'),
     title: label,
     subtitle: switch (figure) {
+      MiningFigureUnavailable() when reasonSaidAbove => null,
       MiningFigureUnavailable(:final reasonCode) => launchReasonCodeText(
         reasonCode,
       ),
