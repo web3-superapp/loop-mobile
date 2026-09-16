@@ -111,11 +111,18 @@ double loopContrastRatio(Color source, Color ground) {
   return a > b ? a / b : b / a;
 }
 
+/// What a box actually grounds its subtree in.
+///
+/// Flutter paints a [BoxDecoration]'s gradient *instead of* the colour
+/// declared beside it, so a box that declares both grounds nothing but its
+/// gradient. The probe has to read it the way the painter does, or a
+/// near-transparent glow over an opaque colour reads here as the opaque
+/// colour while on the device the page behind shows through.
 Color? _decorationFill(Decoration decoration) {
   if (decoration is! BoxDecoration) return null;
   final gradient = decoration.gradient;
-  if (gradient is LinearGradient && gradient.colors.isNotEmpty) {
-    return gradient.colors.first;
+  if (gradient != null) {
+    return gradient.colors.isEmpty ? decoration.color : gradient.colors.first;
   }
   return decoration.color;
 }

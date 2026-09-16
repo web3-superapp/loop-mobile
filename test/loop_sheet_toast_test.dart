@@ -4,6 +4,8 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
+import 'support/loop_ground_probe.dart';
+
 void main() {
   testWidgets(
     'LoopSheet uses the veil barrier, top radius and restores focus',
@@ -63,6 +65,45 @@ void main() {
       expect(opener.hasFocus, isTrue);
     },
   );
+
+  testWidgets('a sheet grounds its own words, whatever is behind it', (
+    tester,
+  ) async {
+    // The ground is declared as Chalk: whatever the page behind the sheet
+    // happens to be, the words inside the sheet must land on the sheet's own
+    // surface. A sheet that paints only its glow grounds nothing, and Chalk
+    // copy on a Chalk page is the transparent panel the walkthrough shot.
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: LoopTheme.dark,
+        home: Scaffold(
+          backgroundColor: LoopColors.chalk,
+          body: Builder(
+            builder: (context) => Center(
+              child: TextButton(
+                onPressed: () => showLoopSheet<void>(
+                  context,
+                  builder: (context) => const SizedBox(
+                    height: 120,
+                    child: Center(child: Text('弹层内容')),
+                  ),
+                ),
+                child: const Text('打开'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('打开'));
+    await tester.pumpAndSettle();
+
+    loopExpectVisibleOnGround(
+      tester,
+      subtree: find.byKey(const ValueKey<String>('loop-sheet')),
+      ground: LoopColors.chalk,
+    );
+  });
 
   testWidgets('LoopToast shows above the bar for 2.6s with a live region', (
     tester,

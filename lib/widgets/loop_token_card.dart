@@ -145,16 +145,12 @@ class LoopTokenCard extends StatelessWidget {
         explicitChildNodes: true,
         child: Container(
           key: ValueKey<String>('loop-token-card-${state.name}'),
+          // The card's ground carries no gradient: Flutter paints a gradient
+          // instead of the colour beside it, so declaring both left the card
+          // with a 7% glow for a surface and the page showing through it. The
+          // glow is a layer over the ground, below.
           decoration: BoxDecoration(
             color: chalk ? LoopColors.chalk : LoopColors.graphite,
-            gradient: chalk
-                ? null
-                : const RadialGradient(
-                    center: Alignment(-0.88, -1.16),
-                    radius: 1.4,
-                    colors: <Color>[Color(0x13B8FF20), Color(0x00B8FF20)],
-                    stops: <double>[0, 0.58],
-                  ),
             borderRadius: LoopRadius.card,
             border: Border.all(
               color: state == LoopTokenCardState.graduated
@@ -178,78 +174,94 @@ class LoopTokenCard extends StatelessWidget {
           // The Chalk variant is a light ground, so it declares itself: the
           // hairlines, insets and glyphs below derive their colour from here
           // instead of naming a Chalk token that a Chalk card would swallow.
-          child: DefaultTextStyle.merge(
-            style: TextStyle(color: foreground),
-            child: IconTheme.merge(
-              data: IconThemeData(color: foreground),
-              child: Stack(
-                children: <Widget>[
-                  // `.tcard-signature::before`: the Lime signal rail.
-                  Positioned(
-                    left: 0,
-                    top: 14,
-                    bottom: 14,
-                    child: Container(
-                      width: 4,
-                      decoration: const BoxDecoration(
-                        color: LoopColors.lime,
-                        borderRadius: BorderRadius.horizontal(
-                          right: Radius.circular(4),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: chalk
+                  ? null
+                  : const RadialGradient(
+                      center: Alignment(-0.88, -1.16),
+                      radius: 1.4,
+                      colors: <Color>[Color(0x13B8FF20), Color(0x00B8FF20)],
+                      stops: <double>[0, 0.58],
+                    ),
+            ),
+            child: DefaultTextStyle.merge(
+              style: TextStyle(color: foreground),
+              child: IconTheme.merge(
+                data: IconThemeData(color: foreground),
+                child: Stack(
+                  children: <Widget>[
+                    // `.tcard-signature::before`: the Lime signal rail.
+                    Positioned(
+                      left: 0,
+                      top: 14,
+                      bottom: 14,
+                      child: Container(
+                        width: 4,
+                        decoration: const BoxDecoration(
+                          color: LoopColors.lime,
+                          borderRadius: BorderRadius.horizontal(
+                            right: Radius.circular(4),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      _Head(
-                        model: model,
-                        state: state,
-                        foreground: foreground,
-                        secondary: secondary,
-                        muted: muted,
-                      ),
-                      if (state == LoopTokenCardState.risk &&
-                          model.riskFacts.isNotEmpty)
-                        _RiskBar(
-                          facts: model.riskFacts,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        _Head(
+                          model: model,
+                          state: state,
                           foreground: foreground,
+                          secondary: secondary,
+                          muted: muted,
                         ),
-                      // The prototype draws a `tcard-chart` only in the two states
-                      // that have a series: 正常 and 已毕业. 识别中 / 数据缺失 /
-                      // 风险事实 carry no chart slot at all.
-                      if ((state == LoopTokenCardState.normal ||
-                              state == LoopTokenCardState.graduated) &&
-                          model.chart != null)
-                        _Chart(model: model, chalk: chalk),
-                      if (model.metrics.isNotEmpty)
-                        _Metrics(
-                          metrics: model.metrics,
-                          cellGround: cellGround,
-                          valueColor:
-                              state == LoopTokenCardState.partial || muted
-                              ? secondary
-                              : foreground,
-                          labelColor: secondary,
-                        ),
-                      if (model.communityLine != null)
-                        _CommunityLine(
-                          icon: model.communityIcon,
-                          text: model.communityLine!,
-                          color: chalk ? LoopColors.inkText2 : LoopColors.text2,
-                          accent: state == LoopTokenCardState.graduated,
-                        ),
-                      if (actions.isNotEmpty)
-                        _Actions(
-                          actions: actions,
-                          disabled: muted,
-                          cellGround: cellGround,
-                          foreground: chalk ? LoopColors.ink : LoopColors.text2,
-                        ),
-                    ],
-                  ),
-                ],
+                        if (state == LoopTokenCardState.risk &&
+                            model.riskFacts.isNotEmpty)
+                          _RiskBar(
+                            facts: model.riskFacts,
+                            foreground: foreground,
+                          ),
+                        // The prototype draws a `tcard-chart` only in the two states
+                        // that have a series: 正常 and 已毕业. 识别中 / 数据缺失 /
+                        // 风险事实 carry no chart slot at all.
+                        if ((state == LoopTokenCardState.normal ||
+                                state == LoopTokenCardState.graduated) &&
+                            model.chart != null)
+                          _Chart(model: model, chalk: chalk),
+                        if (model.metrics.isNotEmpty)
+                          _Metrics(
+                            metrics: model.metrics,
+                            cellGround: cellGround,
+                            valueColor:
+                                state == LoopTokenCardState.partial || muted
+                                ? secondary
+                                : foreground,
+                            labelColor: secondary,
+                          ),
+                        if (model.communityLine != null)
+                          _CommunityLine(
+                            icon: model.communityIcon,
+                            text: model.communityLine!,
+                            color: chalk
+                                ? LoopColors.inkText2
+                                : LoopColors.text2,
+                            accent: state == LoopTokenCardState.graduated,
+                          ),
+                        if (actions.isNotEmpty)
+                          _Actions(
+                            actions: actions,
+                            disabled: muted,
+                            cellGround: cellGround,
+                            foreground: chalk
+                                ? LoopColors.ink
+                                : LoopColors.text2,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

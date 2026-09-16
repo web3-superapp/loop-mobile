@@ -351,12 +351,16 @@ class LoopFolioPrimary extends StatelessWidget {
         borderRadius: LoopRadius.shell,
         boxShadow: LoopDepth.liftPrimaryLight,
       ),
+      // The tint and the glow ride in the same gradient, because a
+      // [BoxDecoration] paints its gradient *instead of* the colour declared
+      // beside it: with both declared the flat 7.5% tint was never painted.
+      // The stops are the two composited: glow over tint at the centre, tint
+      // alone at the edge.
       LoopFolioVariant.quiet => BoxDecoration(
-        color: LoopColors.lime.withValues(alpha: 0.075),
         gradient: const RadialGradient(
           center: Alignment(0.76, -1.24),
           radius: 1.2,
-          colors: <Color>[Color(0x2BB8FF20), Color(0x00B8FF20)],
+          colors: <Color>[Color(0x3BB8FF20), Color(0x13B8FF20)],
           stops: <double>[0, 0.62],
         ),
         borderRadius: LoopRadius.shell,
@@ -901,12 +905,13 @@ class LoopRecordCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, LoopSpacing.card),
       child: _Pressable(
         onTap: onTap,
+        // Tint and glow in one gradient, for the reason `LoopFolioPrimary`
+        // states: a decoration paints its gradient instead of its colour.
         decoration: BoxDecoration(
-          color: LoopColors.chalk.withValues(alpha: 0.045),
           gradient: const RadialGradient(
             center: Alignment(0.84, -1.28),
             radius: 1.3,
-            colors: <Color>[Color(0x0DF3F5EF), Color(0x00F3F5EF)],
+            colors: <Color>[Color(0x18F3F5EF), Color(0x0BF3F5EF)],
             stops: <double>[0, 0.6],
           ),
           borderRadius: LoopRadius.card,
