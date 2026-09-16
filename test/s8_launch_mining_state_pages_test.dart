@@ -291,9 +291,9 @@ final List<_StateCase> _cases = <_StateCase>[
     readyKey: 'mining-rank-anonymity',
     alsoUnreadKeys: <String>['mining-rank-notice'],
     emptyContract:
-        'MiningRank 的 ranking / myPosition 都是必填的 LaunchUnavailable，'
-        'display 是必填的匿名规则（mining_models.dart:151-165）：'
-        '读成功时一定有一条榜单口径和一条显示规则，没有「空榜单」这个响应。',
+        'MiningRank 的 ranking / myPosition 都是必填的 sealed 结果，'
+        'display 是必填的匿名规则：读成功时一定有一条榜单结果和一条显示规则，'
+        '「榜单没有条目」是 ranking 自己的一档，不是页面读不到。',
     pinsOffline: true,
   ),
   // mining-community

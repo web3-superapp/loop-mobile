@@ -242,7 +242,12 @@ final class FakeMiningGateway implements MiningGateway {
   Future<MiningRank> loadRank(MiningRankScope scope) {
     scopes.add(scope);
     final answer = rank;
-    if (answer.value == null) return answer.resolve();
+    final value = answer.value;
+    if (value == null) return answer.resolve();
+    // A configured board answers only the scope it was built for; any other
+    // scope reads the default, so a page that relabelled the previous answer
+    // instead of re-reading shows the wrong board here.
+    if (value.scope == scope) return answer.resolve();
     return Future<MiningRank>.value(s7MiningRank(scope: scope));
   }
 

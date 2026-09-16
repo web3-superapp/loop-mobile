@@ -481,14 +481,7 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
       title: '算力排行榜',
       kicker: 'NETWORK POSITION',
       onBack: widget.onBack,
-      primary: const LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'NETWORK POSITION',
-        heading: launchMissingHeading,
-        caption: '排名要等算力结算之后才有，目前还没有结算过。',
-        stamp: 'UNAVAILABLE',
-      ),
+      primary: _rankHero(rank),
       block: blocked
           ? _miningCapabilityBlock(
               'mining-rank-capability-unavailable',
@@ -524,9 +517,9 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
             )
           else ...<Widget>[
             const LoopLabel('榜单'),
-            LaunchUnavailableCard(label: '排行榜条目', fact: rank.ranking),
+            _RankingBlock(ranking: rank.ranking),
             const LoopLabel('我的名次'),
-            LaunchUnavailableCard(label: '我的名次', fact: rank.myPosition),
+            _MyPositionBlock(myPosition: rank.myPosition),
             const LoopLabel('匿名显示规则'),
             LoopNotice(
               key: const ValueKey<String>('mining-rank-anonymity'),
@@ -550,6 +543,161 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
         ],
       ],
     );
+  }
+}
+
+/// The hero. A settled place prints as a position, never as a number the page
+/// could be read as power; without one the absence is said in words.
+LoopFolioPrimary _rankHero(MiningRank? rank) {
+  final settled = switch (rank?.myPosition) {
+    MiningRankPositionSettled(:final position) => position,
+    _ => null,
+  };
+  return LoopFolioPrimary(
+    variant: LoopFolioVariant.quiet,
+    archetype: LoopFolioArchetype.record,
+    kicker: 'NETWORK POSITION',
+    heading: settled == null ? launchMissingHeading : '第 $settled 名',
+    caption: settled == null ? '排名要等算力结算之后才有。' : '名次来自最近一次结算，其他账号的算力变化会改变它。',
+    stamp: settled == null ? 'UNAVAILABLE' : null,
+  );
+}
+
+/// The board. A row whose power is zero has no place on it, and says so
+/// instead of printing a position the settlement never gave.
+class _RankingBlock extends StatelessWidget {
+  const _RankingBlock({required this.ranking});
+
+  final MiningRanking ranking;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (ranking) {
+      MiningRankingUnavailable(:final reasonCode) => LaunchUnavailableCard(
+        label: '排行榜条目',
+        fact: LaunchUnavailable(reasonCode),
+      ),
+      MiningRankingUsers(:final items, :final participants)
+          when items.isEmpty =>
+        _emptyBoard(participants),
+      MiningRankingCommunities(:final items, :final participants)
+          when items.isEmpty =>
+        _emptyBoard(participants),
+      MiningRankingUsers(:final items, :final participants) => _board(
+        participants: participants,
+        rows: <LoopRecordRow>[
+          for (var index = 0; index < items.length; index += 1)
+            _userRow(items[index], launchRowPosition(index, items.length)),
+        ],
+      ),
+      MiningRankingCommunities(:final items, :final participants) => _board(
+        participants: participants,
+        rows: <LoopRecordRow>[
+          for (var index = 0; index < items.length; index += 1)
+            _communityRow(items[index], launchRowPosition(index, items.length)),
+        ],
+      ),
+    };
+  }
+
+  static Widget _emptyBoard(int participants) => LoopEmpty(
+    key: const ValueKey<String>('mining-rank-empty'),
+    icon: 'info',
+    message: '最近一次结算里没有可以上榜的条目',
+    reason: _participantsLine(participants),
+  );
+
+  static Widget _board({
+    required int participants,
+    required List<LoopRecordRow> rows,
+  }) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: <Widget>[
+      LoopRecordGroup(
+        key: const ValueKey<String>('mining-rank-items'),
+        rows: rows,
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        child: Text(
+          _participantsLine(participants),
+          key: const ValueKey<String>('mining-rank-participants'),
+          style: LoopTypography.caption(11, color: LoopColors.text3),
+        ),
+      ),
+    ],
+  );
+
+  static String _participantsLine(int participants) =>
+      '最近一次结算里有 $participants 个条目算出了算力。';
+}
+
+/// 未上榜, not the position 0: a zero power is a settled reading, and the
+/// board simply has no place for it.
+const String _miningUnrankedLabel = '未上榜';
+
+LoopRecordRow _userRow(MiningRankUserRow row, LoopRowPosition position) {
+  final name = switch (row.display) {
+    MiningRankAlias(:final alias) => alias,
+    MiningRankAnonymous(:final labelKey) => miningRuleKeyText(labelKey),
+  };
+  return LoopRecordRow(
+    key: ValueKey<String>('mining-rank-user-${row.power}-$name'),
+    title: name,
+    subtitle: row.isRanked
+        ? '第 ${row.position} 名'
+        : '$_miningUnrankedLabel · 算力为 0',
+    trailing: row.power,
+    trailingBadge: row.isSelf ? const LoopBadge('我') : null,
+    semanticLabel: row.isRanked
+        ? '$name，第 ${row.position} 名，算力 ${row.power}'
+        : '$name，$_miningUnrankedLabel',
+    position: position,
+  );
+}
+
+LoopRecordRow _communityRow(
+  MiningRankCommunityRow row,
+  LoopRowPosition position,
+) => LoopRecordRow(
+  key: ValueKey<String>('mining-rank-community-${row.community.communityId}'),
+  title: row.community.name,
+  subtitle: row.isRanked
+      ? '第 ${row.position} 名 · ${row.participants} 人有算力'
+      : '$_miningUnrankedLabel · ${row.participants} 人有算力',
+  subtitleMaxLines: 2,
+  trailing: row.power,
+  trailingCaption: '权重 ${row.weight}',
+  position: position,
+);
+
+/// 我的名次. A missing place keeps the server's own reason — a zero power and
+/// an account outside the settlement are different facts.
+class _MyPositionBlock extends StatelessWidget {
+  const _MyPositionBlock({required this.myPosition});
+
+  final MiningRankPosition myPosition;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (myPosition) {
+      MiningRankPositionUnavailable(:final reasonCode) => LaunchUnavailableCard(
+        label: '我的名次',
+        fact: LaunchUnavailable(reasonCode),
+      ),
+      MiningRankPositionSettled(:final position, :final power) =>
+        LoopRecordGroup(
+          key: const ValueKey<String>('mining-rank-my-position'),
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('mining-rank-my-position-row'),
+              title: '我的名次',
+              subtitle: '算力 $power',
+              trailing: '第 $position 名',
+            ),
+          ],
+        ),
+    };
   }
 }
 

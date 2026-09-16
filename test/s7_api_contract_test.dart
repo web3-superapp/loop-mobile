@@ -22,6 +22,8 @@ const _projectId = '17f6a9b2-2f22-4c11-9f3a-1a2b3c4d5e6f';
 const _roundId = '9c1d6e2a-7c3b-4a55-8d21-0f1e2d3c4b5a';
 const _walletId = '4d5e6f70-8a9b-4c1d-8e2f-3a4b5c6d7e8f';
 const _communityId = '5b0c9d18-6a44-4f39-b0d2-9e8f7a6b5c4d';
+const _otherCommunityId = '439cabe6-4c98-4f99-860f-192ad52403a1';
+const _publicProfileId = '8c2b7a15-4d3e-4f60-9a11-2b3c4d5e6f70';
 
 /// A Dio double that replays one canned response and records the request.
 final class _RecordingAdapter implements HttpClientAdapter {
@@ -144,6 +146,84 @@ Map<String, Object?> _miningAssets({
       referencePrice ??
       <String, Object?>{'status': 'available', 'priceVersion': _priceVersion},
   'contractVersion': '2.0',
+};
+
+Map<String, Object?> _rankDisplay() => <String, Object?>{
+  'anonymousMemberKey': 'mining.rank.anonymousMember',
+  'ruleKey': 'mining.rank.display.aliasOrAnonymous',
+};
+
+Map<String, Object?> _aliasRow({
+  Object? position = 1,
+  String power = '3000',
+  bool isSelf = false,
+  String profileId = _publicProfileId,
+}) => <String, Object?>{
+  'position': position,
+  'power': power,
+  'display': <String, Object?>{
+    'kind': 'alias',
+    'alias': 'whale',
+    'publicProfileId': profileId,
+  },
+  'isSelf': isSelf,
+};
+
+Map<String, Object?> _anonymousRow({
+  Object? position = 2,
+  String power = '1000',
+  bool isSelf = true,
+}) => <String, Object?>{
+  'position': position,
+  'power': power,
+  'display': <String, Object?>{
+    'kind': 'anonymous',
+    'labelKey': 'mining.rank.anonymousMember',
+  },
+  'isSelf': isSelf,
+};
+
+Map<String, Object?> _communityRankRow({
+  Object? position,
+  String power = '0',
+  String communityId = _otherCommunityId,
+  String weight = '1.5',
+  int participants = 0,
+}) => <String, Object?>{
+  'position': position,
+  'power': power,
+  'community': <String, Object?>{
+    'communityId': communityId,
+    'name': 'Builders Guild',
+    'boundAssetId': _usdtAssetId,
+  },
+  'weight': weight,
+  'participants': participants,
+};
+
+Map<String, Object?> _miningRank({
+  String scope = 'users',
+  Object? ranking,
+  Object? myPosition,
+  Object? snapshot,
+}) => <String, Object?>{
+  'scope': scope,
+  'ranking': ranking,
+  'myPosition': myPosition ?? _unavailable('MINING_RANK_NOT_RANKED'),
+  'snapshot': snapshot ?? _miningSnapshot(),
+  'display': _rankDisplay(),
+  'contractVersion': '2.0',
+};
+
+Map<String, Object?> _board({
+  String scope = 'users',
+  List<Object?>? items,
+  int participants = 2,
+}) => <String, Object?>{
+  'status': 'available',
+  'scope': scope,
+  'items': items ?? <Object?>[_aliasRow(), _anonymousRow()],
+  'participants': participants,
 };
 
 Map<String, Object?> _onChainState() => <String, Object?>{
@@ -1400,6 +1480,284 @@ void main() {
               },
               'contractVersion': '2.0',
             },
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getRank(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          scope: MiningRankScope.users,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('the user board carries both display kinds and my place', () async {
+      final rank =
+          await DioLoopV2MiningApi(
+            _dio(
+              _RecordingAdapter(
+                statusCode: 200,
+                body: _miningRank(
+                  ranking: _board(),
+                  myPosition: <String, Object?>{
+                    'status': 'available',
+                    'position': 2,
+                    'power': '1000',
+                  },
+                ),
+              ),
+            ),
+          ).getRank(
+            accessToken: _token,
+            clientVersion: _clientVersion,
+            scope: MiningRankScope.users,
+          );
+
+      final board = rank.ranking as MiningRankingUsers;
+      expect(board.participants, 2);
+      expect(board.items, hasLength(2));
+      final first = board.items.first;
+      expect(first.position, 1);
+      expect((first.display as MiningRankAlias).alias, 'whale');
+      expect(first.isSelf, isFalse);
+      final mine = board.items.last;
+      expect(mine.isSelf, isTrue);
+      // An account that is not discoverable is a label, never an id.
+      expect(
+        (mine.display as MiningRankAnonymous).labelKey,
+        'mining.rank.anonymousMember',
+      );
+      final place = rank.myPosition as MiningRankPositionSettled;
+      expect(place.position, 2);
+      expect(place.power, '1000');
+    });
+
+    test('a zero power is in the settlement with no position', () async {
+      final rank =
+          await DioLoopV2MiningApi(
+            _dio(
+              _RecordingAdapter(
+                statusCode: 200,
+                body: _miningRank(
+                  ranking: _board(
+                    items: <Object?>[
+                      _aliasRow(position: null, power: '0'),
+                      _anonymousRow(position: null, power: '0'),
+                    ],
+                    participants: 0,
+                  ),
+                ),
+              ),
+            ),
+          ).getRank(
+            accessToken: _token,
+            clientVersion: _clientVersion,
+            scope: MiningRankScope.users,
+          );
+
+      final board = rank.ranking as MiningRankingUsers;
+      expect(board.participants, 0);
+      expect(board.items.every((row) => !row.isRanked), isTrue);
+      expect(board.items.first.power, '0');
+      expect(
+        (rank.myPosition as MiningRankPositionUnavailable).reasonCode,
+        'MINING_RANK_NOT_RANKED',
+      );
+    });
+
+    test('the community board carries the weight and the head count', () async {
+      final rank =
+          await DioLoopV2MiningApi(
+            _dio(
+              _RecordingAdapter(
+                statusCode: 200,
+                body: _miningRank(
+                  scope: 'communities',
+                  ranking: _board(
+                    scope: 'communities',
+                    items: <Object?>[
+                      _communityRankRow(),
+                      _communityRankRow(
+                        communityId: _communityId,
+                        weight: '0.8',
+                      ),
+                    ],
+                    participants: 0,
+                  ),
+                  myPosition: _unavailable('MINING_RANK_NOT_APPLICABLE'),
+                ),
+              ),
+            ),
+          ).getRank(
+            accessToken: _token,
+            clientVersion: _clientVersion,
+            scope: MiningRankScope.communities,
+          );
+
+      final board = rank.ranking as MiningRankingCommunities;
+      expect(board.items.first.community.boundAssetId, _usdtAssetId);
+      expect(board.items.first.weight, '1.5');
+      expect(board.items.first.participants, 0);
+      expect(board.items.first.isRanked, isFalse);
+      expect(
+        (rank.myPosition as MiningRankPositionUnavailable).reasonCode,
+        'MINING_RANK_NOT_APPLICABLE',
+      );
+    });
+
+    test('the board rows must match the scope that was asked for', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            // A communities board answered under the users scope: the rows
+            // would be read as accounts.
+            body: _miningRank(ranking: _board(scope: 'communities')),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getRank(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          scope: MiningRankScope.users,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a position on a zero power is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningRank(
+              ranking: _board(
+                items: <Object?>[_aliasRow(position: 1, power: '0')],
+                participants: 0,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getRank(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          scope: MiningRankScope.users,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a ranked row after an unranked one is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningRank(
+              ranking: _board(
+                items: <Object?>[
+                  _aliasRow(position: null, power: '0'),
+                  _anonymousRow(position: 1, power: '500'),
+                ],
+                participants: 1,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getRank(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          scope: MiningRankScope.users,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('two rows claiming to be the reader are refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningRank(
+              ranking: _board(
+                items: <Object?>[
+                  _aliasRow(isSelf: true),
+                  _anonymousRow(isSelf: true),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getRank(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          scope: MiningRankScope.users,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('my own place is never a settled zero', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningRank(
+              ranking: _board(),
+              myPosition: <String, Object?>{
+                'status': 'available',
+                'position': 3,
+                'power': '0',
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getRank(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          scope: MiningRankScope.users,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('an alias row without its profile id is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningRank(
+              ranking: _board(
+                items: <Object?>[
+                  <String, Object?>{
+                    'position': 1,
+                    'power': '3000',
+                    'display': <String, Object?>{
+                      'kind': 'alias',
+                      'alias': 'whale',
+                    },
+                    'isSelf': false,
+                  },
+                ],
+                participants: 1,
+              ),
+            ),
           ),
         ),
       );

@@ -364,6 +364,144 @@ final class MiningRankDisplayRule {
   final String ruleKey;
 }
 
+/// True when a settled power is zero. A zero power is a reading — the account
+/// was in the settlement and held nothing that counted — and it is why a row
+/// carries no position at all rather than the position 0.
+bool miningPowerIsZero(String value) {
+  if (value.isEmpty) return false;
+  for (final unit in value.codeUnits) {
+    // '0' and '.'
+    if (unit != 0x30 && unit != 0x2E) return false;
+  }
+  return true;
+}
+
+/// How one ranked account may be named. An alias reaches the board only while
+/// the account is discoverable and not in anonymous mode; otherwise the row
+/// carries the server's anonymous label and no identifier at all.
+@immutable
+sealed class MiningRankIdentity {
+  const MiningRankIdentity();
+}
+
+@immutable
+final class MiningRankAlias extends MiningRankIdentity {
+  const MiningRankAlias({required this.alias, required this.publicProfileId});
+
+  final String alias;
+  final String publicProfileId;
+}
+
+@immutable
+final class MiningRankAnonymous extends MiningRankIdentity {
+  const MiningRankAnonymous(this.labelKey);
+
+  final String labelKey;
+}
+
+/// One account on the user board.
+@immutable
+final class MiningRankUserRow {
+  const MiningRankUserRow({
+    required this.position,
+    required this.power,
+    required this.display,
+    required this.isSelf,
+  });
+
+  /// `null` while the power is zero: the account is in the settlement and has
+  /// no place on the board. It is never rendered as a position 0.
+  final int? position;
+  final String power;
+  final MiningRankIdentity display;
+  final bool isSelf;
+
+  bool get isRanked => position != null;
+}
+
+/// One community on the community board. The reference is the same record the
+/// community mining panel reads, and here the bound asset always exists: an
+/// unbound community cannot be ranked.
+@immutable
+final class MiningRankCommunityRow {
+  const MiningRankCommunityRow({
+    required this.position,
+    required this.power,
+    required this.community,
+    required this.weight,
+    required this.participants,
+  });
+
+  final int? position;
+  final String power;
+  final MiningCommunityRef community;
+  final String weight;
+  final int participants;
+
+  bool get isRanked => position != null;
+}
+
+/// The board itself. The two scopes are different rows, not one row with two
+/// optional halves, so a page cannot read a community's weight off an account.
+@immutable
+sealed class MiningRanking {
+  const MiningRanking();
+}
+
+@immutable
+final class MiningRankingUnavailable extends MiningRanking {
+  const MiningRankingUnavailable(this.reasonCode);
+
+  final String reasonCode;
+}
+
+@immutable
+final class MiningRankingUsers extends MiningRanking {
+  const MiningRankingUsers({required this.items, required this.participants});
+
+  final List<MiningRankUserRow> items;
+
+  /// Accounts with a power above zero. The board may hold more rows than this
+  /// — the zero-power ones — and fewer than the whole network: it stops at
+  /// one hundred.
+  final int participants;
+}
+
+@immutable
+final class MiningRankingCommunities extends MiningRanking {
+  const MiningRankingCommunities({
+    required this.items,
+    required this.participants,
+  });
+
+  final List<MiningRankCommunityRow> items;
+  final int participants;
+}
+
+/// The reader's own place on the board.
+@immutable
+sealed class MiningRankPosition {
+  const MiningRankPosition();
+}
+
+@immutable
+final class MiningRankPositionUnavailable extends MiningRankPosition {
+  const MiningRankPositionUnavailable(this.reasonCode);
+
+  final String reasonCode;
+}
+
+@immutable
+final class MiningRankPositionSettled extends MiningRankPosition {
+  const MiningRankPositionSettled({
+    required this.position,
+    required this.power,
+  });
+
+  final int position;
+  final String power;
+}
+
 @immutable
 final class MiningRank {
   const MiningRank({
@@ -375,8 +513,8 @@ final class MiningRank {
   });
 
   final MiningRankScope scope;
-  final LaunchUnavailable ranking;
-  final LaunchUnavailable myPosition;
+  final MiningRanking ranking;
+  final MiningRankPosition myPosition;
   final MiningSnapshotRef snapshot;
   final MiningRankDisplayRule display;
 }

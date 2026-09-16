@@ -211,6 +211,192 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         maxLength: 140,
       );
 
+  /// The board. Both scopes are refused unless the rows agree with the two
+  /// facts the board is built on: a row without a position is a zero power,
+  /// and the rows that have no position come last.
+  static MiningRanking _ranking(Object? raw, MiningRankScope scope) {
+    if (raw is! Map) LoopV2S7Codec.invalid();
+    if (raw['status'] != 'available') {
+      return MiningRankingUnavailable(
+        LoopV2S7Codec.unavailable(raw).reasonCode,
+      );
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'scope',
+      'items',
+      'participants',
+    });
+    if (LoopV2S7Codec.requireEnum(map, 'scope', const <String>{
+          'users',
+          'communities',
+        }) !=
+        scope.wireName) {
+      LoopV2S7Codec.invalid();
+    }
+    final entries = LoopV2S7Codec.requireList(map['items'], maximum: 100);
+    final participants = LoopV2S7Codec.requireCount(map, 'participants');
+    switch (scope) {
+      case MiningRankScope.users:
+        final items = <MiningRankUserRow>[];
+        final profileIds = <String>{};
+        var selfSeen = false;
+        var unrankedSeen = false;
+        for (final entry in entries) {
+          final row = _rankUserRow(entry);
+          unrankedSeen = _requireRankOrder(unrankedSeen, row.position);
+          if (row.isSelf) {
+            // Two rows cannot both be the reader.
+            if (selfSeen) LoopV2S7Codec.invalid();
+            selfSeen = true;
+          }
+          final display = row.display;
+          if (display is MiningRankAlias &&
+              !profileIds.add(display.publicProfileId)) {
+            LoopV2S7Codec.invalid();
+          }
+          items.add(row);
+        }
+        return MiningRankingUsers(
+          items: List<MiningRankUserRow>.unmodifiable(items),
+          participants: participants,
+        );
+      case MiningRankScope.communities:
+        final items = <MiningRankCommunityRow>[];
+        final communityIds = <String>{};
+        var unrankedSeen = false;
+        for (final entry in entries) {
+          final row = _rankCommunityRow(entry);
+          unrankedSeen = _requireRankOrder(unrankedSeen, row.position);
+          if (!communityIds.add(row.community.communityId)) {
+            LoopV2S7Codec.invalid();
+          }
+          items.add(row);
+        }
+        return MiningRankingCommunities(
+          items: List<MiningRankCommunityRow>.unmodifiable(items),
+          participants: participants,
+        );
+    }
+  }
+
+  /// A ranked row may never follow an unranked one: the board puts every
+  /// zero power after the positions, and a page reading it the other way
+  /// would print a rank the settlement never gave. Answers whether an
+  /// unranked row has been seen by now.
+  static bool _requireRankOrder(bool unrankedSeen, int? position) {
+    if (position == null) return true;
+    if (unrankedSeen) LoopV2S7Codec.invalid();
+    return false;
+  }
+
+  /// The position and the power a row carries must agree: a position with a
+  /// zero power, or a zero power holding a position, is a contradiction.
+  static int? _rankItemPosition(Map<String, Object?> map, String power) {
+    final position = LoopV2S7Codec.optionalPositiveInt(map, 'position');
+    if ((position == null) != miningPowerIsZero(power)) {
+      LoopV2S7Codec.invalid();
+    }
+    return position;
+  }
+
+  static MiningRankUserRow _rankUserRow(Object? raw) {
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'position',
+      'power',
+      'display',
+      'isSelf',
+    });
+    final power = _decimal(map, 'power');
+    return MiningRankUserRow(
+      position: _rankItemPosition(map, power),
+      power: power,
+      display: _rankIdentity(map['display']),
+      isSelf: LoopV2S7Codec.requireBool(map, 'isSelf'),
+    );
+  }
+
+  static MiningRankIdentity _rankIdentity(Object? raw) {
+    if (raw is! Map) LoopV2S7Codec.invalid();
+    if (raw['kind'] == 'alias') {
+      final map = LoopV2Contract.strictMap(raw, const <String>{
+        'kind',
+        'alias',
+        'publicProfileId',
+      });
+      return MiningRankAlias(
+        alias: LoopV2S7Codec.requireText(map, 'alias', maxLength: 64),
+        publicProfileId: LoopV2S7Codec.requireId(map, 'publicProfileId'),
+      );
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'kind',
+      'labelKey',
+    });
+    if (map['kind'] != 'anonymous') LoopV2S7Codec.invalid();
+    return MiningRankAnonymous(
+      LoopV2S7Codec.requireEnum(map, 'labelKey', const <String>{
+        'mining.rank.anonymousMember',
+      }),
+    );
+  }
+
+  static MiningRankCommunityRow _rankCommunityRow(Object? raw) {
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'position',
+      'power',
+      'community',
+      'weight',
+      'participants',
+    });
+    final community = LoopV2Contract.strictMap(map['community'], const <String>{
+      'communityId',
+      'name',
+      'boundAssetId',
+    });
+    final power = _decimal(map, 'power');
+    return MiningRankCommunityRow(
+      position: _rankItemPosition(map, power),
+      power: power,
+      community: MiningCommunityRef(
+        communityId: LoopV2S7Codec.requireId(community, 'communityId'),
+        name: LoopV2S7Codec.requireText(community, 'name', maxLength: 1024),
+        // A ranked community is a bound one: the binding is what gave it a
+        // power at all.
+        boundAssetId: LoopV2S7Codec.requirePattern(
+          community,
+          'boundAssetId',
+          LoopV2S7Codec.assetIdPattern,
+          maxLength: 80,
+        ),
+      ),
+      weight: _decimal(map, 'weight'),
+      participants: LoopV2S7Codec.requireCount(map, 'participants'),
+    );
+  }
+
+  /// The reader's own place. A settled position never carries a zero power:
+  /// that account is not ranked, and the server says so with its own reason.
+  static MiningRankPosition _rankPosition(Object? raw) {
+    if (raw is! Map) LoopV2S7Codec.invalid();
+    if (raw['status'] != 'available') {
+      return MiningRankPositionUnavailable(
+        LoopV2S7Codec.unavailable(raw).reasonCode,
+      );
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'position',
+      'power',
+    });
+    final power = _decimal(map, 'power');
+    if (miningPowerIsZero(power)) LoopV2S7Codec.invalid();
+    return MiningRankPositionSettled(
+      position: LoopV2S7Codec.requirePositiveInt(map, 'position'),
+      power: power,
+    );
+  }
+
   static MiningFormulaScope _scope(Map<String, Object?> source, String key) {
     final raw = source[key];
     if (raw != null && raw is! String) LoopV2S7Codec.invalid();
@@ -593,8 +779,8 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       });
       return MiningRank(
         scope: answered!,
-        ranking: LoopV2S7Codec.unavailable(root['ranking']),
-        myPosition: LoopV2S7Codec.unavailable(root['myPosition']),
+        ranking: _ranking(root['ranking'], answered),
+        myPosition: _rankPosition(root['myPosition']),
         snapshot: _snapshot(root['snapshot']),
         display: MiningRankDisplayRule(
           anonymousMemberKey: LoopV2S7Codec.requireEnum(

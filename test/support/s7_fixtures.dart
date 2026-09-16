@@ -482,15 +482,87 @@ MiningRewards s7MiningRewards() => const MiningRewards(
 
 MiningRank s7MiningRank({
   MiningRankScope scope = MiningRankScope.communities,
+  MiningRanking? ranking,
+  MiningRankPosition? myPosition,
+  MiningSnapshotRef? snapshot,
 }) => MiningRank(
   scope: scope,
-  ranking: const LaunchUnavailable(s7FormulaPending),
-  myPosition: const LaunchUnavailable(s7FormulaPending),
-  snapshot: const MiningSnapshotUnavailable('MINING_SNAPSHOT_NOT_AVAILABLE'),
+  ranking: ranking ?? const MiningRankingUnavailable(s7FormulaPending),
+  myPosition:
+      myPosition ?? const MiningRankPositionUnavailable(s7FormulaPending),
+  snapshot:
+      snapshot ??
+      const MiningSnapshotUnavailable('MINING_SNAPSHOT_NOT_AVAILABLE'),
   display: const MiningRankDisplayRule(
     anonymousMemberKey: 'mining.rank.anonymousMember',
     ruleKey: 'mining.rank.display.aliasOrAnonymous',
   ),
+);
+
+const s7PublicProfileId = '8c2b7a15-4d3e-4f60-9a11-2b3c4d5e6f70';
+const s7OtherCommunityId = '439cabe6-4c98-4f99-860f-192ad52403a1';
+
+/// The Development user board of 2026-09-15: two accounts in the settlement,
+/// both with a zero power, so neither has a position at all.
+MiningRankingUsers s7MiningUserBoard({
+  List<MiningRankUserRow>? items,
+  int participants = 0,
+}) => MiningRankingUsers(
+  items:
+      items ??
+      const <MiningRankUserRow>[
+        MiningRankUserRow(
+          position: null,
+          power: '0',
+          display: MiningRankAlias(
+            alias: 'whale',
+            publicProfileId: s7PublicProfileId,
+          ),
+          isSelf: false,
+        ),
+        MiningRankUserRow(
+          position: null,
+          power: '0',
+          display: MiningRankAnonymous('mining.rank.anonymousMember'),
+          isSelf: true,
+        ),
+      ],
+  participants: participants,
+);
+
+/// The Development community board: two bound communities, each with the
+/// weight its review granted and no power yet.
+MiningRankingCommunities s7MiningCommunityBoard({
+  List<MiningRankCommunityRow>? items,
+  int participants = 0,
+}) => MiningRankingCommunities(
+  items:
+      items ??
+      const <MiningRankCommunityRow>[
+        MiningRankCommunityRow(
+          position: null,
+          power: '0',
+          community: MiningCommunityRef(
+            communityId: s7OtherCommunityId,
+            name: 'Builders Guild',
+            boundAssetId: s7UsdtAssetId,
+          ),
+          weight: '1.5',
+          participants: 0,
+        ),
+        MiningRankCommunityRow(
+          position: null,
+          power: '0',
+          community: MiningCommunityRef(
+            communityId: s7CommunityId,
+            name: 'DeFi 早读会',
+            boundAssetId: s7CakeAssetId,
+          ),
+          weight: '0.8',
+          participants: 0,
+        ),
+      ],
+  participants: participants,
 );
 
 MiningCommunity s7MiningCommunity({MiningCommunityWeight? weight}) =>

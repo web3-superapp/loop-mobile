@@ -608,6 +608,117 @@ void main() {
       expect(gateway.scopes, contains(MiningRankScope.users));
     });
 
+    testWidgets('a zero-power row is 未上榜, never the position 0', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningRankScreen(),
+        mining: FakeMiningGateway(
+          rank: S7Answer<MiningRank>(
+            value: s7MiningRank(
+              scope: MiningRankScope.users,
+              ranking: s7MiningUserBoard(),
+              myPosition: const MiningRankPositionUnavailable(
+                'MINING_RANK_NOT_RANKED',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('用户榜'));
+      await tester.pumpAndSettle();
+
+      final board = find.byKey(const ValueKey<String>('mining-rank-items'));
+      await scrollToS7Section(tester, board);
+      expect(board, findsOneWidget);
+      expect(find.textContaining('未上榜'), findsNWidgets(2));
+      // The position 0 is not a rank, and it is never printed as one.
+      expect(find.textContaining('第 0 名'), findsNothing);
+      // An account that is not discoverable is named by the label, not an id.
+      expect(find.text('匿名成员'), findsOneWidget);
+      expect(find.text('whale'), findsOneWidget);
+      expect(find.textContaining(s7PublicProfileId), findsNothing);
+      expect(find.textContaining('算力为 0，暂时没有名次'), findsOneWidget);
+    });
+
+    testWidgets('a ranked user board prints places and marks the reader', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningRankScreen(),
+        mining: FakeMiningGateway(
+          rank: S7Answer<MiningRank>(
+            value: s7MiningRank(
+              scope: MiningRankScope.users,
+              ranking: s7MiningUserBoard(
+                items: const <MiningRankUserRow>[
+                  MiningRankUserRow(
+                    position: 1,
+                    power: '3000',
+                    display: MiningRankAlias(
+                      alias: 'whale',
+                      publicProfileId: s7PublicProfileId,
+                    ),
+                    isSelf: false,
+                  ),
+                  MiningRankUserRow(
+                    position: 2,
+                    power: '1000',
+                    display: MiningRankAnonymous('mining.rank.anonymousMember'),
+                    isSelf: true,
+                  ),
+                ],
+                participants: 2,
+              ),
+              myPosition: const MiningRankPositionSettled(
+                position: 2,
+                power: '1000',
+              ),
+              snapshot: s7MiningSnapshot(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('用户榜'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('第 1 名'), findsOneWidget);
+      // The hero, my row on the board and 我的名次 all say the same place.
+      expect(find.text('第 2 名'), findsNWidgets(3));
+      expect(find.text('3000'), findsOneWidget);
+      expect(find.text('我'), findsOneWidget);
+      final participants = find.byKey(
+        const ValueKey<String>('mining-rank-participants'),
+      );
+      await scrollToS7Section(tester, participants);
+      expect(find.textContaining('有 2 个条目算出了算力'), findsOneWidget);
+    });
+
+    testWidgets('the community board carries weight and head count', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningRankScreen(),
+        mining: FakeMiningGateway(
+          rank: S7Answer<MiningRank>(
+            value: s7MiningRank(ranking: s7MiningCommunityBoard()),
+          ),
+        ),
+      );
+
+      final board = find.byKey(const ValueKey<String>('mining-rank-items'));
+      await scrollToS7Section(tester, board);
+      expect(find.text('Builders Guild'), findsOneWidget);
+      expect(find.text('权重 1.5'), findsOneWidget);
+      expect(find.text('权重 0.8'), findsOneWidget);
+      expect(find.textContaining('0 人有算力'), findsNWidgets(2));
+    });
+
     testWidgets('the capability gate hides the scopes too', (tester) async {
       await pumpS7Page(
         tester,
