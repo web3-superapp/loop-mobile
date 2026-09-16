@@ -107,6 +107,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
               key: const ValueKey<String>('search-field'),
               controller: _query,
               textInputAction: TextInputAction.search,
+              onChanged: controller.type,
               onSubmitted: (value) => unawaited(controller.submit(value)),
               decoration: InputDecoration(
                 labelText: '搜索社区或用户',

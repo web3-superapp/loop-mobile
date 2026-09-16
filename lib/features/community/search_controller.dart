@@ -87,12 +87,68 @@ final class SearchState {
 
 final class SearchController extends Notifier<SearchState>
     with CommunitySingleFlight {
+  /// One keystroke is not one request: the field settles for this long before
+  /// the query is sent. It matches the member directory's own search.
+  static const searchDebounce = Duration(milliseconds: 300);
+
+  Timer? _debounce;
+
   @override
   SearchState build() {
     nextGeneration();
     final mode = ref.watch(searchGatewayProvider).mode;
-    ref.onDispose(nextGeneration);
+    ref.onDispose(() {
+      _debounce?.cancel();
+      _debounce = null;
+      nextGeneration();
+    });
     return SearchState.initial(mode);
+  }
+
+  /// Records a keystroke.
+  ///
+  /// The field used to do nothing at all until the keyboard's search key was
+  /// pressed: five characters typed left the page on 「输入至少 2 个字符开始
+  /// 搜索」, which reads as a broken control. The query now enters its loading
+  /// phase on the keystroke and is sent once the field settles.
+  void type(String raw) {
+    final trimmed = raw.trim();
+    _debounce?.cancel();
+    _debounce = null;
+    if (trimmed == state.query &&
+        state.phase != CommunityViewPhase.empty &&
+        state.phase != CommunityViewPhase.error) {
+      return;
+    }
+    // Too short to send: `submit` states that without spending a request.
+    if (!searchQueryIsSubmittable(trimmed)) {
+      unawaited(submit(trimmed));
+      return;
+    }
+    state = SearchState(
+      mode: state.mode,
+      phase: state.mode == CommunityGatewayMode.unavailable
+          ? CommunityViewPhase.unavailable
+          : CommunityViewPhase.loading,
+      domain: state.domain,
+      query: trimmed,
+      failureKind: state.mode == CommunityGatewayMode.unavailable
+          ? CommunityFailureKind.unavailable
+          : null,
+    );
+    if (state.mode == CommunityGatewayMode.unavailable) return;
+    _debounce = Timer(searchDebounce, () {
+      _debounce = null;
+      unawaited(_drain(trimmed));
+    });
+  }
+
+  /// A keystroke that landed while an earlier read was in flight is answered
+  /// by the single-flight guard with that earlier read. One more pass sends
+  /// the query the field actually holds, so no keystroke is silently dropped.
+  Future<void> _drain(String trimmed) async {
+    await submit(trimmed);
+    if (state.query != trimmed) await submit(trimmed);
   }
 
   void selectDomain(SearchDomain domain) {
