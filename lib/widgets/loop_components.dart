@@ -1414,11 +1414,20 @@ class LoopSeg extends StatelessWidget {
     required this.selected,
     required this.onSelected,
     super.key,
+    this.onBlocked,
   });
 
   final String label;
   final bool selected;
   final VoidCallback? onSelected;
+
+  /// What a tap does while [onSelected] is `null`.
+  ///
+  /// A chip that cannot be chosen still answers the finger that chose it: the
+  /// four disabled segments swallowed every tap in silence, which reads as a
+  /// control that is broken rather than one that has no source. It keeps the
+  /// disabled appearance and the disabled semantics; only the silence goes.
+  final VoidCallback? onBlocked;
 
   @override
   Widget build(BuildContext context) {
@@ -1434,7 +1443,7 @@ class LoopSeg extends StatelessWidget {
           side: BorderSide(color: selected ? LoopColors.lime : LoopColors.line),
         ),
         child: InkWell(
-          onTap: onSelected,
+          onTap: onSelected ?? onBlocked,
           borderRadius: BorderRadius.circular(14),
           child: Container(
             constraints: const BoxConstraints(

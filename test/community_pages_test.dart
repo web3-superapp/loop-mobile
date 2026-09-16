@@ -943,6 +943,26 @@ void main() {
       expect(find.textContaining('在线人数暂时读不到'), findsNothing);
     });
 
+    testWidgets('the disabled 在线 chip answers the tap it cannot honour', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(members: testDirectory()),
+      );
+
+      final online = find.byKey(const ValueKey<String>('members-seg-online'));
+      await tester.ensureVisible(online);
+      await tester.pumpAndSettle();
+      await tester.tap(online);
+      await tester.pump();
+
+      // It stays unselectable; it just stops swallowing the tap in silence.
+      expect(tester.widget<LoopSeg>(online).onSelected, isNull);
+      expect(find.text(memberDirectoryPresenceNote), findsWidgets);
+    });
+
     testWidgets('the banned view heads itself, not the whole directory', (
       tester,
     ) async {

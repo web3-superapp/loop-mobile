@@ -155,6 +155,16 @@ class _CommunityDiscoverScreenState
                             unawaited(controller.selectSort(segment.sort!));
                           }
                         : null,
+                    // A sort with no source still answers the tap: the two
+                    // disabled chips took every tap in silence, which reads
+                    // as a control that is broken.
+                    onBlocked: segment.isAvailable
+                        ? null
+                        : () => LoopToast.show(
+                            context,
+                            message: segment.deferredReason,
+                            kind: LoopToastKind.warn,
+                          ),
                   ),
                 ),
             ],

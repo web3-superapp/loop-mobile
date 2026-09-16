@@ -240,13 +240,19 @@ class _CommunityMembersScreenState
                     ),
                   // Presence has no source; the segment stays disabled with its
                   // server reason rather than showing a fabricated online count.
-                  const Padding(
-                    padding: EdgeInsets.only(right: 8),
+                  // A tap answers with that reason instead of nothing.
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
                     child: LoopSeg(
-                      key: ValueKey<String>('members-seg-online'),
+                      key: const ValueKey<String>('members-seg-online'),
                       label: '在线',
                       selected: false,
                       onSelected: null,
+                      onBlocked: () => LoopToast.show(
+                        context,
+                        message: memberDirectoryPresenceNote,
+                        kind: LoopToastKind.warn,
+                      ),
                     ),
                   ),
                 ],
@@ -281,7 +287,7 @@ class _CommunityMembersScreenState
               const LoopEmpty(
                 key: ValueKey<String>('community-members-online-not-observed'),
                 message: '在线人数',
-                reason: '成员目录不观察在线状态，本页不显示在线人数。社区主页会去问一次。',
+                reason: memberDirectoryPresenceNote,
                 margin: EdgeInsets.symmetric(horizontal: 16),
               ),
             // The card reads the directory's first row. Under a role filter
@@ -567,3 +573,6 @@ String _emptyFilterReason(CommunityMemberFilter filter) => switch (filter) {
   CommunityMemberFilter.owner || CommunityMemberFilter.admin => '这个角色下没有成员。',
   CommunityMemberFilter.banned => '这个社区目前没有被封禁的成员。',
 };
+
+/// What this page carries instead of an online count.
+const String memberDirectoryPresenceNote = '成员目录不观察在线状态，本页不显示在线人数。社区主页会去问一次。';
