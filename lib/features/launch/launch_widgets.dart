@@ -196,11 +196,23 @@ String launchMetricReasonLine({required String reasonCode, String? note}) =>
 /// reason differs — "待领取" under a reward authority that is separately closed
 /// — keeps its own line, because that one is not the block's story.
 class LaunchEmptyMetricGrid extends StatelessWidget {
-  const LaunchEmptyMetricGrid({required this.metrics, super.key, this.note});
+  const LaunchEmptyMetricGrid({
+    required this.metrics,
+    super.key,
+    this.note,
+    this.spokenReason,
+  });
 
   /// `(label, reasonCode)` pairs in render order.
   final List<(String, String)> metrics;
   final String? note;
+
+  /// A sentence the page already states elsewhere on the same screen — a folio
+  /// caption or a notice that owns this reason. A metric whose line would
+  /// repeat it keeps its em dash and says nothing under it, and the block does
+  /// not adopt it either: one reason is stated in one place. The reason stays
+  /// in every metric's semantic label, so a screen reader still hears it.
+  final String? spokenReason;
 
   /// The reason line carried by more metrics than any other, or `null` when no
   /// line repeats and every metric speaks for itself.
@@ -208,6 +220,7 @@ class LaunchEmptyMetricGrid extends StatelessWidget {
     final counts = <String, int>{};
     for (final metric in metrics) {
       final line = launchMetricReasonLine(reasonCode: metric.$2, note: note);
+      if (line == spokenReason) continue;
       counts[line] = (counts[line] ?? 0) + 1;
     }
     String? shared;
@@ -219,6 +232,13 @@ class LaunchEmptyMetricGrid extends StatelessWidget {
       }
     }
     return shared;
+  }
+
+  /// Whether this metric's reason is already on the screen, either as the
+  /// block's shared line or as a sentence the page states somewhere else.
+  bool _saidElsewhere((String, String) metric, String? shared) {
+    final line = launchMetricReasonLine(reasonCode: metric.$2, note: note);
+    return line == shared || line == spokenReason;
   }
 
   @override
@@ -241,9 +261,7 @@ class LaunchEmptyMetricGrid extends StatelessWidget {
             label: metric.$1,
             reasonCode: metric.$2,
             note: note,
-            showReason:
-                shared !=
-                launchMetricReasonLine(reasonCode: metric.$2, note: note),
+            showReason: !_saidElsewhere(metric, shared),
           ),
       ],
     );

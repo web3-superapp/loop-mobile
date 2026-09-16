@@ -456,6 +456,9 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
               ('今日预估', rewards.estimatedToday.reasonCode),
               ('累计已挖', rewards.accumulated.reasonCode),
             ],
+            // 待领取 and 累计已挖 are usually closed by the same thing, and the
+            // folio above already said what it is. The cells keep the em dash.
+            spokenReason: launchReasonCodeText(rewards.claimable.reasonCode),
           ),
           const LoopLabel('领取'),
           Padding(
@@ -470,16 +473,21 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
               semanticLabel: '领取到钱包，当前不可执行',
             ),
           ),
-          LoopNotice(
-            key: const ValueKey<String>('mining-rewards-claim-notice'),
+          const LoopNotice(
+            key: ValueKey<String>('mining-rewards-claim-notice'),
             icon: 'lock',
             tone: LoopNoticeTone.warn,
             title: '领取入口不可执行',
-            body: launchReasonCodeText(rewards.claimable.reasonCode),
-            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            // The reason is the folio's, once. This says what the control does,
+            // which is the thing the folio does not say.
+            body: '可以领取时，这个按钮会变为可用；现在它不会提交任何操作。',
+            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const LoopLabel('结算记录'),
-          LaunchUnavailableCard(label: '结算与领取记录', fact: rewards.source),
+          _RewardsLedgerBlock(
+            source: rewards.source,
+            claimable: rewards.claimable,
+          ),
           const LoopNotice(
             key: ValueKey<String>('mining-rewards-ledger-notice'),
             icon: 'info',
@@ -490,6 +498,31 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
           const SizedBox(height: 20),
         ],
       ],
+    );
+  }
+}
+
+/// The reward ledger's own line.
+///
+/// `source` and `claimable` are two slots that are usually closed by one fact,
+/// and when they are, the page says that fact once — in the folio — and this
+/// block states what the section itself shows: no entry to check yet. When the
+/// two differ, the ledger keeps the server's own reason for its own slot.
+class _RewardsLedgerBlock extends StatelessWidget {
+  const _RewardsLedgerBlock({required this.source, required this.claimable});
+
+  final LaunchUnavailable source;
+  final LaunchUnavailable claimable;
+
+  @override
+  Widget build(BuildContext context) {
+    final reason = launchReasonCodeText(source.reasonCode);
+    final spoken = reason == launchReasonCodeText(claimable.reasonCode);
+    return LoopEmpty(
+      key: const ValueKey<String>('mining-rewards-ledger'),
+      icon: 'clock',
+      message: '结算与领取记录',
+      reason: spoken ? '还没有可以核对的条目。' : reason,
     );
   }
 }

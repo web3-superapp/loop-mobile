@@ -909,6 +909,35 @@ void main() {
       expect(find.text('0'), findsNothing);
     });
 
+    testWidgets('one reason is stated once, not under every figure', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningRewardsScreen(),
+        mining: FakeMiningGateway(
+          rewards: S7Answer<MiningRewards>(value: s7SettledMiningRewards()),
+        ),
+      );
+
+      // 待领取, 累计已挖 and the ledger are all closed by the reward authority,
+      // and the folio says so. The cells keep the em dash and stay quiet.
+      expect(find.text(launchReasonCodeText(s7RewardPending)), findsOneWidget);
+      for (final label in <String>['待领取', '累计已挖']) {
+        final metric = find.byKey(ValueKey<String>('launch-metric-$label'));
+        expect(
+          find.descendant(of: metric, matching: find.text(launchMissingFigure)),
+          findsOneWidget,
+          reason: label,
+        );
+      }
+      // A reason that is not the folio's is still the metric's to say.
+      expect(
+        find.text(launchReasonCodeText('MINING_NETWORK_POWER_ZERO')),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('an empty ledger is not "no output"', (tester) async {
       await pumpS7Page(
         tester,
