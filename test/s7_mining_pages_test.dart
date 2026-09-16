@@ -23,6 +23,39 @@ List<String> _figures(WidgetTester tester) {
   ];
 }
 
+/// Every `reasonCode` the copy table answers. A frame that has read nothing
+/// may print none of their sentences.
+const List<String> _reasonCodesOnTheWire = <String>[
+  'LAUNCH_CONTRACT_BASELINE_PENDING',
+  'LAUNCH_CONFIG_PENDING_CONFIRMATION',
+  'LAUNCH_POOL_EVIDENCE_UNAVAILABLE',
+  'LAUNCH_ECONOMY_CONTRACT_PENDING',
+  'LAUNCH_RUNTIME_UNAVAILABLE',
+  'TIER_MODE_PENDING',
+  'STAKING_CONTRACT_PENDING',
+  'KYB_PROVIDER_NOT_SELECTED',
+  'ATTACHMENT_STORAGE_NOT_SELECTED',
+  'MINING_FORMULA_BASELINE_PENDING',
+  'MINING_SNAPSHOT_NOT_AVAILABLE',
+  'MINING_SNAPSHOT_STALE',
+  'MINING_ACCOUNT_NOT_IN_SNAPSHOT',
+  'MINING_NETWORK_POWER_ZERO',
+  'MINING_DAILY_OUTPUT_NOT_CONFIGURED',
+  'MINING_RANK_NOT_RANKED',
+  'MINING_RANK_NOT_APPLICABLE',
+  'MINING_POWER_PRIVATE',
+  'MINING_PRICE_NOT_FRESH',
+  'MINING_PRICE_PROXY_NOT_DECLARED',
+  'MINING_ASSET_WEIGHT_NOT_CONFIGURED',
+  'COMMUNITY_ASSET_NOT_BOUND',
+  'COMMUNITY_WEIGHT_AMBIGUOUS',
+  'MINING_RUNTIME_UNAVAILABLE',
+  'REWARD_AUTHORITY_PENDING',
+  'COMMUNITY_WEIGHT_PENDING_REVIEW',
+  'REFERRAL_RUNTIME_UNAVAILABLE',
+  'PROFILE_ACTIVATION_REQUIRED',
+];
+
 void main() {
   group('mining-community route identity', () {
     test('the panel is addressed by the opaque communityId alone', () {
@@ -61,6 +94,54 @@ void main() {
 
       expect(find.byType(LoopSkeleton), findsOneWidget);
       expect(find.textContaining('待批准'), findsNothing);
+    });
+
+    testWidgets('the loading frame states no cause it has not been told', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(
+          summary: S7Answer<MiningSummary>(pending: true),
+        ),
+        settle: false,
+      );
+
+      // A skeleton frame knows only that it is reading. Every sentence the
+      // copy table owns belongs to a server answer, and none has arrived.
+      for (final code in _reasonCodesOnTheWire) {
+        expect(
+          find.textContaining(launchReasonCodeText(code)),
+          findsNothing,
+          reason: code,
+        );
+      }
+      expect(find.textContaining(launchReasonCodeText(null)), findsNothing);
+      expect(find.textContaining('挖矿公式'), findsNothing);
+      expect(find.text('正在读取'), findsOneWidget);
+      // Nor is the absence itself settled while the read is in flight.
+      expect(find.text(launchMissingHeading), findsNothing);
+    });
+
+    testWidgets('a failed read keeps its reason in the state block, not the '
+        'hero', (tester) async {
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(
+          summary: S7Answer<MiningSummary>(
+            failure: LaunchFailureKind.unexpected,
+          ),
+        ),
+      );
+
+      expect(find.text('正在读取'), findsNothing);
+      expect(find.textContaining('挖矿公式'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('mining-state-error')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('every metric is an em dash with the server reason', (

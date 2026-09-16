@@ -71,7 +71,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
           onPressed: widget.onOpenRules,
         ),
       ],
-      primary: _hero(summary),
+      primary: _hero(summary, state.phase),
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('mining-capability-unavailable'),
@@ -156,18 +156,33 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
 /// The hero. It says in words what the page can and cannot state: no approved
 /// version means no figure at all; a development baseline means there are
 /// figures and they are not a product measure.
-LoopFolioPrimary _hero(MiningSummary? summary) {
+///
+/// A read that has not landed is none of those. The skeleton frame used to
+/// borrow the pending formula's sentence, so the first frame of every cold
+/// start asserted a cause the page had not been told yet — and then replaced
+/// it with a settled 0 a moment later. While nothing has been read the hero
+/// says only that, and the reason the read failed stays with the state block
+/// that owns it.
+LoopFolioPrimary _hero(MiningSummary? summary, LaunchViewPhase phase) {
   final gate = summary?.formula;
+  if (gate == null) {
+    final loading = phase == LaunchViewPhase.loading;
+    return LoopFolioPrimary(
+      variant: LoopFolioVariant.quiet,
+      archetype: LoopFolioArchetype.record,
+      kicker: 'MINING POWER',
+      heading: loading ? '正在读取' : launchMissingHeading,
+      caption: loading ? '算力与产出读到之后显示在这里。' : '这一页还没有读到算力数据。',
+    );
+  }
   return switch (gate) {
-    null || MiningFormulaPending() => LoopFolioPrimary(
+    MiningFormulaPending(:final pendingVersion) => LoopFolioPrimary(
       variant: LoopFolioVariant.quiet,
       archetype: LoopFolioArchetype.record,
       kicker: 'MINING POWER',
       heading: launchMissingHeading,
       caption: '算力、今日预估、累计与待领取都要等挖矿公式版本被批准后才能计算。',
-      stamp: gate is MiningFormulaPending && gate.pendingVersion != null
-          ? '待批准'
-          : null,
+      stamp: pendingVersion != null ? '待批准' : null,
     ),
     MiningFormulaEffective(:final scope) => LoopFolioPrimary(
       variant: LoopFolioVariant.quiet,
