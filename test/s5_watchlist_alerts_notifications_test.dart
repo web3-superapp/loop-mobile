@@ -438,6 +438,9 @@ void main() {
       );
       expect(find.textContaining('WBNB 触发 700（观察值 747.39）'), findsOneWidget);
       expect(find.textContaining('来源 dexscreener'), findsOneWidget);
+      // The alert id addresses the row this entry highlights; it is not copy.
+      expect(find.textContaining('提醒 $s5AlertId'), findsNothing);
+      expect(find.textContaining(s5AlertId), findsNothing);
       expect(find.text('未读'), findsOneWidget);
 
       await tester.tap(

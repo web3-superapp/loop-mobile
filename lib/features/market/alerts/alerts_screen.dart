@@ -543,9 +543,12 @@ String _feedTitle(LoopNotificationEntry entry) {
 String _feedDetail(LoopNotificationEntry entry) {
   final source = entry.source;
   final observedAt = entry.observedAt;
+  // The alert id is an internal identifier: it addresses the row this entry
+  // highlights and says nothing a reader can act on. Printed, it came out as
+  // "提醒 a2b2c1ce-4ca9…" — half a UUID on a line that already names the
+  // asset and the threshold.
   return <String>[
     if (source != null) '来源 $source',
     if (observedAt != null) '观察于 ${loopRelativeTime(observedAt)}',
-    if (entry.priceAlertId != null) '提醒 ${entry.priceAlertId}',
   ].join(' · ');
 }
