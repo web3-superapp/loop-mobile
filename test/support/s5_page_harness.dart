@@ -30,14 +30,30 @@ import 'loop_ground_probe.dart';
 /// `pending` keeps the loading state visible; `failure` drives the error,
 /// offline, unavailable and permission states from one place.
 final class S5Answer<T> {
-  S5Answer({this.value, this.failure, this.pending = false});
+  S5Answer({
+    this.value,
+    this.failure,
+    this.pending = false,
+    this.transientFailure,
+  });
 
   final T? value;
   final LoopChainFailureKind? failure;
   final bool pending;
 
+  /// Fails only the first resolve, like a pooled socket the peer closed while
+  /// the app was idle. Every later resolve answers normally.
+  final LoopChainFailureKind? transientFailure;
+
+  int resolves = 0;
+
   Future<T> resolve() {
     if (pending) return Completer<T>().future;
+    final attempt = resolves++;
+    final transient = transientFailure;
+    if (attempt == 0 && transient != null) {
+      return Future<T>.error(LoopChainException(transient));
+    }
     final kind = failure;
     if (kind != null) return Future<T>.error(LoopChainException(kind));
     return Future<T>.value(value as T);

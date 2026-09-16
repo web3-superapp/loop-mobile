@@ -50,17 +50,35 @@ final class CommunityChatController
     }
     final gateway = ref.read(communityGatewayProvider);
     final generation = nextGeneration();
+    // Opening a conversation for the first time has nothing cached behind it,
+    // so an `offline` phase here replaces the whole room. A socket the peer
+    // closed while the app sat idle fails exactly like that and carries no
+    // server answer, so the first read gets one silent re-attempt; the page
+    // stays in its loading phase meanwhile rather than claiming an outage.
+    final firstRead = state.value == null;
     state = state.loading();
-    try {
-      final detail = await gateway.loadCommunity(id);
-      if (!isCurrent(generation)) return;
-      state = state.ready(detail);
-    } on CommunityGatewayException catch (error) {
-      if (!isCurrent(generation)) return;
-      state = state.failed(error.kind);
-    } catch (_) {
-      if (!isCurrent(generation)) return;
-      state = state.failed(CommunityFailureKind.unexpected);
+    var reattempted = false;
+    while (true) {
+      try {
+        final detail = await gateway.loadCommunity(id);
+        if (!isCurrent(generation)) return;
+        state = state.ready(detail);
+        return;
+      } on CommunityGatewayException catch (error) {
+        if (!isCurrent(generation)) return;
+        if (firstRead &&
+            !reattempted &&
+            error.kind == CommunityFailureKind.offline) {
+          reattempted = true;
+          continue;
+        }
+        state = state.failed(error.kind);
+        return;
+      } catch (_) {
+        if (!isCurrent(generation)) return;
+        state = state.failed(CommunityFailureKind.unexpected);
+        return;
+      }
     }
   });
 }

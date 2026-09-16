@@ -56,17 +56,36 @@ abstract base class LoopChainReadController<T>
 
   Future<void> reload() => single(() async {
     final generation = nextGeneration();
+    // A first read has nothing to fall back on, so the phase it lands in is
+    // the whole page. `offline` there must mean the device, not a socket the
+    // peer closed while the app sat idle: that failure carries no server
+    // answer and a fresh connection normally succeeds. The first read is
+    // therefore allowed one silent re-attempt, during which the page stays in
+    // its loading phase instead of announcing an outage it has not confirmed.
+    final firstRead = state.value == null;
     state = state.loading();
-    try {
-      final value = await fetch();
-      if (!isCurrent(generation)) return;
-      state = state.ready(value);
-    } on LoopChainException catch (error) {
-      if (!isCurrent(generation)) return;
-      state = state.failed(error.kind);
-    } catch (_) {
-      if (!isCurrent(generation)) return;
-      state = state.failed(LoopChainFailureKind.unexpected);
+    var reattempted = false;
+    while (true) {
+      try {
+        final value = await fetch();
+        if (!isCurrent(generation)) return;
+        state = state.ready(value);
+        return;
+      } on LoopChainException catch (error) {
+        if (!isCurrent(generation)) return;
+        if (firstRead &&
+            !reattempted &&
+            error.kind == LoopChainFailureKind.offline) {
+          reattempted = true;
+          continue;
+        }
+        state = state.failed(error.kind);
+        return;
+      } catch (_) {
+        if (!isCurrent(generation)) return;
+        state = state.failed(LoopChainFailureKind.unexpected);
+        return;
+      }
     }
   });
 }

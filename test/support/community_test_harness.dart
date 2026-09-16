@@ -301,10 +301,21 @@ final class FakeCommunityGateway implements CommunityGateway {
   /// request is still in the air.
   Duration? readDelay;
 
+  /// Fails only the first read, like a pooled socket the peer closed while the
+  /// app was idle. Every later read answers normally.
+  CommunityFailureKind? transientFailure;
+
+  int reads = 0;
+
   Future<T> _read<T>(T? value) {
     if (pending) return Completer<T>().future;
+    final attempt = reads++;
     final delay = readDelay;
     Future<T> answer() {
+      final transient = transientFailure;
+      if (attempt == 0 && transient != null) {
+        return Future<T>.error(CommunityGatewayException(transient));
+      }
       final kind = failure;
       if (kind != null) {
         return Future<T>.error(CommunityGatewayException(kind));
