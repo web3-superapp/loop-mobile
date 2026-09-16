@@ -358,6 +358,26 @@ void main() {
       );
     });
 
+    testWidgets(
+      'the group page info control opens group-info, not a community',
+      (tester) async {
+        final opened = <String>[];
+        await pumpCommunityPage(
+          tester,
+          GroupChatScreen(channelCid: testGroupCid, onOpenInfo: opened.add),
+          chat: FakeChatV2Gateway(),
+        );
+
+        await tester.tap(find.byKey(const ValueKey<String>('group-open-info')));
+        await tester.pump();
+
+        // The walkthrough tapped the community channel's own (i), which is
+        // labelled 社区信息 and opens the community record on purpose. A LOOP
+        // group's (i) carries the channel to `group-info`.
+        expect(opened, <String>[testGroupCid]);
+      },
+    );
+
     testWidgets('group-info renders member management as unavailable', (
       tester,
     ) async {
