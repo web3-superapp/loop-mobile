@@ -427,9 +427,11 @@ MiningAssets s7MiningAssets({
 );
 
 /// One weighted row, defaulting to the Development shape: a real holding, a
-/// fresh price and the effective weight the row was settled with.
+/// fresh price, the registry's own symbol and the effective weight the row
+/// was settled with.
 MiningAssetRow s7MiningAssetRow({
   String assetId = s7CakeAssetId,
+  String? symbol = 'Cake',
   String holding = '0',
   String referencePriceUsd = '2.26',
   String weight = '0.8',
@@ -437,6 +439,7 @@ MiningAssetRow s7MiningAssetRow({
   String? proxyAssetId,
 }) => MiningAssetRow(
   assetId: assetId,
+  symbol: symbol,
   holding: holding,
   referencePriceUsd: referencePriceUsd,
   referencePriceQuality: proxyAssetId == null
@@ -462,16 +465,19 @@ MiningAssets s7MiningSettledAssets({
         s7MiningAssetRow(),
         s7MiningAssetRow(
           assetId: s7UsdtAssetId,
+          symbol: 'USDT',
           referencePriceUsd: '0.9994',
           weight: '1.5',
         ),
         s7MiningAssetRow(
           assetId: s7WbnbAssetId,
+          symbol: 'WBNB',
           referencePriceUsd: '713.42',
           weight: '1',
         ),
         s7MiningAssetRow(
           assetId: s7NativeAssetId,
+          symbol: 'BNB',
           referencePriceUsd: '713.42',
           weight: '1',
           proxyAssetId: s7WbnbAssetId,

@@ -217,6 +217,7 @@ enum MiningReferencePriceQuality {
 final class MiningAssetRow {
   const MiningAssetRow({
     required this.assetId,
+    required this.symbol,
     required this.holding,
     required this.referencePriceUsd,
     required this.referencePriceQuality,
@@ -227,6 +228,12 @@ final class MiningAssetRow {
   });
 
   final String assetId;
+
+  /// The Asset Registry's own `symbol()` for [assetId], `BNB` for the chain's
+  /// coin. It is `null` only when the registry has no row for the asset; the
+  /// client never derives a name from an address or a chain slot.
+  final String? symbol;
+
   final String holding;
   final String referencePriceUsd;
   final MiningReferencePriceQuality referencePriceQuality;
@@ -249,9 +256,17 @@ final class MiningAssetRow {
 /// is the server's own; the client never guesses which rule skipped it.
 @immutable
 final class MiningExcludedAsset {
-  const MiningExcludedAsset({required this.assetId, required this.reasonCode});
+  const MiningExcludedAsset({
+    required this.assetId,
+    required this.symbol,
+    required this.reasonCode,
+  });
 
   final String assetId;
+
+  /// The registry's own symbol, on the same terms as an included row.
+  final String? symbol;
+
   final String reasonCode;
 }
 
@@ -300,9 +315,9 @@ final class MiningAssets {
   bool get isUnsettled => source is MiningSnapshotUnavailable;
 }
 
-/// A display name for one asset id. The payload carries no symbol, so the row
-/// says what the id itself states: a contract address in short form, or the
-/// chain's own coin.
+/// A display name for one asset id when no symbol reached the client: the row
+/// says what the id itself states — a contract address in short form, or the
+/// chain's own coin. It is a fallback, never a guessed name.
 String miningAssetLabel(String assetId) {
   final separator = assetId.lastIndexOf(':');
   if (separator < 0 || separator + 1 >= assetId.length) return assetId;
@@ -313,6 +328,12 @@ String miningAssetLabel(String assetId) {
       ? '${loopChainName(chainId)} 原生代币'
       : '原生代币';
 }
+
+/// The heading for one asset row. A registry symbol is the row's name; without
+/// one the id itself is all the row may say, and it says that instead of
+/// inventing a token name from the address.
+String miningAssetTitle({required String? symbol, required String assetId}) =>
+    symbol ?? miningAssetLabel(assetId);
 
 @immutable
 final class MiningRewards {

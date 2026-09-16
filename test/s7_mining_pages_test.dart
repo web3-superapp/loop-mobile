@@ -539,11 +539,60 @@ void main() {
       await scrollToS7Section(tester, row);
       expect(row, findsOneWidget);
       // The row names the asset the price came from instead of presenting it
-      // as the coin's own.
-      expect(find.textContaining('代理价，来自'), findsOneWidget);
-      // Twice: the proxy's own row above, and the proxied row naming it.
-      expect(find.textContaining('0xbb4c'), findsNWidgets(2));
+      // as the coin's own, and names it the way the registry does.
+      expect(find.textContaining('代理价，来自 WBNB'), findsOneWidget);
+      // The proxy's address stays on the proxy's own row; the note no longer
+      // asks the reader to match two addresses by eye.
+      expect(find.textContaining('0xbb4c'), findsOneWidget);
+      // The id each row stands for is still on the row, under its name.
       expect(find.textContaining('BNB Smart Chain 原生代币'), findsOneWidget);
+    });
+
+    testWidgets('each row is headed by the registry symbol, not an address', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(value: s7MiningSettledAssets()),
+        ),
+      );
+
+      for (final symbol in <String>['Cake', 'USDT', 'WBNB', 'BNB']) {
+        final title = find.text(symbol);
+        await scrollToS7Section(tester, title);
+        expect(title, findsOneWidget, reason: symbol);
+      }
+      // The address is not the heading any more, but it has not left the row:
+      // the id is the asset's identity and the symbol is only its name.
+      expect(find.textContaining('0x0e09'), findsOneWidget);
+    });
+
+    testWidgets('a row the registry does not name falls back to its id', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(
+            value: s7MiningSettledAssets(
+              included: <MiningAssetRow>[s7MiningAssetRow(symbol: null)],
+            ),
+          ),
+        ),
+      );
+
+      final row = find.byKey(
+        ValueKey<String>('mining-assets-row-$s7CakeAssetId'),
+      );
+      await scrollToS7Section(tester, row);
+      expect(row, findsOneWidget);
+      // No symbol reached the client, so the row says what the id says and
+      // invents no token name from the address.
+      expect(find.textContaining('0x0e09'), findsOneWidget);
+      expect(find.text('Cake'), findsNothing);
     });
 
     testWidgets('an excluded asset says why it was not counted', (
@@ -559,6 +608,7 @@ void main() {
               excluded: <MiningExcludedAsset>[
                 const MiningExcludedAsset(
                   assetId: s7UsdtAssetId,
+                  symbol: 'USDT',
                   reasonCode: 'MINING_PRICE_NOT_FRESH',
                 ),
               ],

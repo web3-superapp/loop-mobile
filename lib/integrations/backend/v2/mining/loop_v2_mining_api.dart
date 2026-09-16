@@ -121,6 +121,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
   static MiningAssetRow _assetRow(Object? raw) {
     final map = LoopV2Contract.strictMap(raw, const <String>{
       'assetId',
+      'symbol',
       'holding',
       'referencePriceUsd',
       'referencePriceQuality',
@@ -152,6 +153,9 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         LoopV2S7Codec.holdingAssetIdPattern,
         maxLength: 80,
       ),
+      // Required, and null only when the registry has no row: the key's
+      // absence would leave the page naming assets by address again.
+      symbol: LoopV2S7Codec.optionalText(map, 'symbol', maxLength: 32),
       holding: _decimal(map, 'holding'),
       referencePriceUsd: _decimal(map, 'referencePriceUsd'),
       referencePriceQuality: quality,
@@ -170,6 +174,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
   static MiningExcludedAsset _excludedAsset(Object? raw) {
     final map = LoopV2Contract.strictMap(raw, const <String>{
       'assetId',
+      'symbol',
       'reasonCode',
     });
     return MiningExcludedAsset(
@@ -179,6 +184,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         LoopV2S7Codec.holdingAssetIdPattern,
         maxLength: 80,
       ),
+      symbol: LoopV2S7Codec.optionalText(map, 'symbol', maxLength: 32),
       reasonCode: LoopV2S7Codec.requireReasonCode(map, 'reasonCode'),
     );
   }

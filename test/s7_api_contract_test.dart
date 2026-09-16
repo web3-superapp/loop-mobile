@@ -96,6 +96,7 @@ const _priceVersion = 'dexscreener:2026-09-15T14:58:51.862Z';
 /// One `included[]` row, field for field as the Development lane answers.
 Map<String, Object?> _assetRow({
   String assetId = _cakeAssetId,
+  Object? symbol = 'Cake',
   String holding = '0',
   String referencePriceUsd = '2.26',
   String quality = 'fresh',
@@ -104,6 +105,7 @@ Map<String, Object?> _assetRow({
   String power = '0',
 }) => <String, Object?>{
   'assetId': assetId,
+  'symbol': symbol,
   'holding': holding,
   'referencePriceUsd': referencePriceUsd,
   'referencePriceQuality': quality,
@@ -129,16 +131,19 @@ Map<String, Object?> _miningAssets({
         _assetRow(),
         _assetRow(
           assetId: _usdtAssetId,
+          symbol: 'USDT',
           referencePriceUsd: '0.9994',
           weight: '1.5',
         ),
         _assetRow(
           assetId: _wbnbAssetId,
+          symbol: 'WBNB',
           referencePriceUsd: '713.42',
           weight: '1',
         ),
         _assetRow(
           assetId: _nativeAssetId,
+          symbol: 'BNB',
           referencePriceUsd: '713.42',
           quality: 'proxied',
           proxyAssetId: _wbnbAssetId,
@@ -1296,6 +1301,7 @@ void main() {
       expect(assets.included, hasLength(4));
       final cake = assets.included.first;
       expect(cake.assetId, _cakeAssetId);
+      expect(cake.symbol, 'Cake');
       expect(cake.referencePriceUsd, '2.26');
       expect(cake.weight, '0.8');
       expect(cake.isProxiedPrice, isFalse);
@@ -1305,6 +1311,9 @@ void main() {
       // declared proxy's and the row says which asset that is.
       final native = assets.included.last;
       expect(native.assetId, _nativeAssetId);
+      // The chain's own coin is named BNB by the registry, not derived from
+      // the `native` slot in its id.
+      expect(native.symbol, 'BNB');
       expect(native.isProxiedPrice, isTrue);
       expect(native.referencePriceProxyAssetId, _wbnbAssetId);
       expect(native.referencePriceUsd, '713.42');
@@ -1330,6 +1339,7 @@ void main() {
               excluded: <Object?>[
                 <String, Object?>{
                   'assetId': _usdtAssetId,
+                  'symbol': 'USDT',
                   'reasonCode': 'COMMUNITY_WEIGHT_AMBIGUOUS',
                 },
               ],
@@ -1339,7 +1349,69 @@ void main() {
       ).getAssets(accessToken: _token, clientVersion: _clientVersion);
 
       expect(assets.excluded.single.assetId, _usdtAssetId);
+      expect(assets.excluded.single.symbol, 'USDT');
       expect(assets.excluded.single.reasonCode, 'COMMUNITY_WEIGHT_AMBIGUOUS');
+    });
+
+    test(
+      'a registry with no row for the asset answers a null symbol',
+      () async {
+        final assets = await DioLoopV2MiningApi(
+          _dio(
+            _RecordingAdapter(
+              statusCode: 200,
+              body: _miningAssets(
+                included: <Object?>[_assetRow(symbol: null)],
+                excluded: <Object?>[
+                  <String, Object?>{
+                    'assetId': _usdtAssetId,
+                    'symbol': null,
+                    'reasonCode': 'MINING_PRICE_NOT_FRESH',
+                  },
+                ],
+              ),
+            ),
+          ),
+        ).getAssets(accessToken: _token, clientVersion: _clientVersion);
+
+        expect(assets.included.single.symbol, isNull);
+        expect(assets.excluded.single.symbol, isNull);
+      },
+    );
+
+    test('a row with no symbol key at all is refused', () {
+      final row = _assetRow()..remove('symbol');
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningAssets(included: <Object?>[row]),
+          ),
+        ),
+      );
+
+      // The key is required. Its absence would leave the page naming assets
+      // by address and calling that the registry's answer.
+      expect(
+        () => api.getAssets(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('an empty symbol is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningAssets(included: <Object?>[_assetRow(symbol: '')]),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getAssets(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
     });
 
     test('a proxied price with no proxy asset is refused', () {

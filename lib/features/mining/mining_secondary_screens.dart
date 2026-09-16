@@ -125,6 +125,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
                   _includedRow(
                     assets.included[index],
                     launchRowPosition(index, assets.included.length),
+                    _assetSymbols(assets),
                   ),
               ],
             ),
@@ -201,16 +202,42 @@ LoopFolioPrimary _assetsHero(MiningAssets? assets) => LoopFolioPrimary(
       : '持有量、参考价与权重都来自最近一次结算，不是收益。',
 );
 
-/// One weighted asset. The three inputs stay beside the figure they produced,
-/// and a price taken from another token says so on the row itself.
-LoopRecordRow _includedRow(MiningAssetRow row, LoopRowPosition position) {
-  final label = miningAssetLabel(row.assetId);
+/// Every symbol this page was given, by asset id. A proxied row names the
+/// token its price came from, and that token is usually a row of its own: the
+/// index lets the note use the registry's name instead of an address the
+/// reader would have to match by eye.
+Map<String, String> _assetSymbols(MiningAssets assets) => <String, String>{
+  for (final row in assets.included)
+    if (row.symbol != null) row.assetId: row.symbol!,
+  for (final row in assets.excluded)
+    if (row.symbol != null) row.assetId: row.symbol!,
+};
+
+/// One weighted asset. The row is headed by the registry's own symbol, with
+/// the id it stands for kept beside the inputs; the three inputs stay beside
+/// the figure they produced, and a price taken from another token says so on
+/// the row itself.
+LoopRecordRow _includedRow(
+  MiningAssetRow row,
+  LoopRowPosition position,
+  Map<String, String> symbols,
+) {
+  final label = miningAssetTitle(symbol: row.symbol, assetId: row.assetId);
   final proxy = row.referencePriceProxyAssetId;
-  final priceNote = proxy == null ? '' : '（代理价，来自 ${miningAssetLabel(proxy)}）';
+  final proxyLabel = proxy == null
+      ? ''
+      : miningAssetTitle(symbol: symbols[proxy], assetId: proxy);
+  final priceNote = proxy == null ? '' : '（代理价，来自 $proxyLabel）';
+  // A named row still says which asset it is: the id is the identity, the
+  // symbol is only how the registry writes it.
+  final identity = row.symbol == null
+      ? ''
+      : '${miningAssetLabel(row.assetId)} · ';
   return LoopRecordRow(
     key: ValueKey<String>('mining-assets-row-${row.assetId}'),
     title: label,
-    subtitle: '持有 ${row.holding} · 参考价 ${row.referencePriceUsd} 美元$priceNote',
+    subtitle:
+        '$identity持有 ${row.holding} · 参考价 ${row.referencePriceUsd} 美元$priceNote',
     subtitleMaxLines: 2,
     trailing: row.power,
     trailingCaption: '权重 ${row.weight}',
@@ -225,8 +252,11 @@ LoopRecordRow _includedRow(MiningAssetRow row, LoopRowPosition position) {
 LoopRecordRow _excludedRow(MiningExcludedAsset row, LoopRowPosition position) =>
     LoopRecordRow(
       key: ValueKey<String>('mining-assets-excluded-${row.assetId}'),
-      title: miningAssetLabel(row.assetId),
-      subtitle: launchReasonCodeText(row.reasonCode),
+      title: miningAssetTitle(symbol: row.symbol, assetId: row.assetId),
+      subtitle: row.symbol == null
+          ? launchReasonCodeText(row.reasonCode)
+          : '${miningAssetLabel(row.assetId)} · '
+                '${launchReasonCodeText(row.reasonCode)}',
       subtitleMaxLines: 2,
       trailingBadge: const LoopBadge('未计入'),
       position: position,
