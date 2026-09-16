@@ -496,6 +496,45 @@ void main() {
       );
     });
 
+    testWidgets('at the ceiling the control says why it is off', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const WatchlistEditorScreen(),
+        watchlist: FakeWatchlistGateway(
+          snapshot: S5Answer<WatchlistSnapshot>(
+            value: WatchlistSnapshot(
+              version: 4,
+              updatedAt: null,
+              groups: <WatchlistGroup>[
+                for (var index = 0; index < watchlistMaxGroups; index += 1)
+                  WatchlistGroup(
+                    key: 'g$index',
+                    name: '分组 $index',
+                    items: const <WatchlistItem>[],
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final action = find.byKey(const ValueKey<String>('watchlist-new-group'));
+      await scrollToS5Section(tester, action);
+      expect(tester.widget<LoopButton>(action).onPressed, isNull);
+      // Greyed out and silent reads as broken. The ceiling is stated with the
+      // one step that clears it.
+      expect(
+        find.byKey(const ValueKey<String>('watchlist-group-limit')),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('分组已达上限 $watchlistMaxGroups 个'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('a new group travels in the next compare-and-set', (
       tester,
     ) async {

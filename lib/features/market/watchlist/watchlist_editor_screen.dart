@@ -189,7 +189,7 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
                 ),
               ),
             ),
-          if (state.groups.isNotEmpty)
+          if (state.groups.isNotEmpty) ...<Widget>[
             LoopButtonPair(
               children: <Widget>[
                 LoopButton(
@@ -202,6 +202,18 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
                 ),
               ],
             ),
+            // A control that greys out without a word looks broken. At the
+            // ceiling it says which ceiling and what clears it.
+            if (state.groups.length >= watchlistMaxGroups)
+              LoopNotice(
+                key: const ValueKey<String>('watchlist-group-limit'),
+                icon: 'info',
+                body:
+                    '分组已达上限 $watchlistMaxGroups 个。'
+                    '要新建一个，先删掉一个现有分组。',
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              ),
+          ],
           if (group != null) ...<Widget>[
             const LoopLabel('拖动排序 · 左滑删除'),
             if (group.items.isEmpty)
