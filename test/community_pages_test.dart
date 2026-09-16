@@ -491,6 +491,30 @@ void main() {
       }
     });
 
+    testWidgets('a verified community is not told its channel waits on '
+        'verification', (tester) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityProfileScreen(communityId: testCommunityId),
+        // The default community is verified and has no official channel: the
+        // exact pair the old sentence contradicted.
+        community: FakeCommunityGateway(detail: testDetail()),
+      );
+
+      final chat = find.byKey(
+        const ValueKey<String>('community-profile-open-chat'),
+      );
+      await scrollToCommunitySection(tester, chat);
+      expect(
+        find.descendant(of: chat, matching: find.text('该社区还没有官方群频道。')),
+        findsOneWidget,
+      );
+      // The one code covers both a missing row and an unfinished one, so the
+      // page states the fact and claims no cause for it.
+      expect(find.textContaining('通过验证后'), findsNothing);
+      expect(find.textContaining('验证后才会创建'), findsNothing);
+    });
+
     testWidgets('a non-member sees join, and the sheet must be confirmed', (
       tester,
     ) async {

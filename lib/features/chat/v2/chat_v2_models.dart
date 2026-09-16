@@ -364,7 +364,11 @@ final class VoiceRoomCurrent {
 /// neutral sentence rather than inventing a cause.
 String communicationUnavailableReason(String? reasonCode) =>
     switch (reasonCode) {
-      'COMMUNITY_CHANNEL_NOT_PROVISIONED' => '该社区还没有官方群频道，社区通过验证后才会创建。',
+      // One code covers two states — a community with no channel row at all,
+      // and one whose row was allocated but whose channel is not created yet
+      // — so the sentence states the fact both share and claims no cause. It
+      // used to blame a verification the reader could see was already done.
+      'COMMUNITY_CHANNEL_NOT_PROVISIONED' => '该社区还没有官方群频道。',
       'COMMUNITY_CHANNEL_MEMBER_SYNCING' => '你的频道成员身份正在同步，稍后即可进入。',
       'COMMUNITY_CHANNEL_CAPACITY_PENDING' =>
         '官方群已达到服务商的成员上限，暂时无法进入。你的 LOOP 社区成员资格不受影响。',
