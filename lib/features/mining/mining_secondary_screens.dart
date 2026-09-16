@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
@@ -79,14 +80,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
           onPressed: widget.onOpenRules,
         ),
       ],
-      primary: const LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'POWER FORMULA',
-        heading: launchMissingHeading,
-        caption: '每个资产的贡献需要公式、权重与参考价三项齐备，目前都还读不到。',
-        stamp: 'UNAVAILABLE',
-      ),
+      primary: _assetsHero(assets),
       block: blocked
           ? _miningCapabilityBlock(
               'mining-assets-capability-unavailable',
@@ -106,20 +100,61 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
           )
         else ...<Widget>[
           const LoopLabel('我的总算力'),
-          LaunchEmptyMetric(
-            key: const ValueKey<String>('mining-assets-total'),
-            label: '我的总算力',
-            reasonCode: assets.totalPower.reasonCode,
-          ),
-          const LoopLabel('计入与排除的资产'),
-          LaunchUnavailableCard(label: '资产明细出处', fact: assets.source),
-          const LoopNotice(
-            key: ValueKey<String>('mining-assets-empty-notice'),
-            icon: 'info',
-            title: '空列表是正常结果',
-            body: '计入与排除列表都是空的。这不代表你的钱包没有持仓，也不代表某个资产被排除。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
-          ),
+          _AssetsTotal(totalPower: assets.totalPower),
+          const LoopLabel('计入的资产'),
+          if (assets.isUnsettled)
+            const LoopNotice(
+              key: ValueKey<String>('mining-assets-empty-notice'),
+              icon: 'info',
+              title: '空列表是正常结果',
+              body: '计入与排除列表都是空的。这不代表你的钱包没有持仓，也不代表某个资产被排除。',
+              margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            )
+          else if (assets.included.isEmpty)
+            const LoopEmpty(
+              key: ValueKey<String>('mining-assets-included-empty'),
+              icon: 'info',
+              message: '这次结算没有计入任何资产',
+              reason: '你的持仓里没有可以计入的资产。',
+            )
+          else
+            LoopRecordGroup(
+              key: const ValueKey<String>('mining-assets-included'),
+              rows: <LoopRecordRow>[
+                for (var index = 0; index < assets.included.length; index += 1)
+                  _includedRow(
+                    assets.included[index],
+                    launchRowPosition(index, assets.included.length),
+                  ),
+              ],
+            ),
+          if (!assets.isUnsettled) ...<Widget>[
+            const LoopLabel('未计入的资产'),
+            if (assets.excluded.isEmpty)
+              const LoopEmpty(
+                key: ValueKey<String>('mining-assets-excluded-empty'),
+                icon: 'info',
+                message: '没有被排除的资产',
+                reason: '你持有的资产这次都计入了。',
+              )
+            else
+              LoopRecordGroup(
+                key: const ValueKey<String>('mining-assets-excluded'),
+                rows: <LoopRecordRow>[
+                  for (
+                    var index = 0;
+                    index < assets.excluded.length;
+                    index += 1
+                  )
+                    _excludedRow(
+                      assets.excluded[index],
+                      launchRowPosition(index, assets.excluded.length),
+                    ),
+                ],
+              ),
+          ],
+          const LoopLabel('结算记录'),
+          _AssetsSourceBlock(source: assets.source),
           const LoopLabel('社区权重'),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
@@ -132,18 +167,175 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
             ],
           ),
           const LoopLabel('参考价'),
-          LaunchUnavailableCard(label: '挖矿参考价', fact: assets.referencePrice),
-          const LoopNotice(
-            key: ValueKey<String>('mining-assets-price-notice'),
+          _ReferencePriceBlock(referencePrice: assets.referencePrice),
+          LoopNotice(
+            key: const ValueKey<String>('mining-assets-price-notice'),
             icon: 'shield',
             title: '参考价不是瞬时成交价',
-            body: '参考价由多个渠道的价格计算得出，具体规则等公式批准后才公开。这里不显示任何倍率或价格。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            body: assets.included.any((row) => row.isProxiedPrice)
+                ? '参考价由多个渠道的价格计算得出。有的资产没有自己的交易对，'
+                      '用的是另一个已登记代币的价格，这里已经逐行标出。'
+                : '参考价由多个渠道的价格计算得出，不是某一笔成交的价格。',
+            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),
         ],
       ],
     );
+  }
+}
+
+/// The hero. A settled total prints the server's own decimal; without a
+/// settlement the page says the absence in words rather than a 29px dash.
+LoopFolioPrimary _assetsHero(MiningAssets? assets) => LoopFolioPrimary(
+  variant: LoopFolioVariant.quiet,
+  archetype: LoopFolioArchetype.record,
+  kicker: 'POWER FORMULA',
+  heading: switch (assets?.totalPower) {
+    MiningFigureValue(:final value) => value,
+    _ => launchMissingHeading,
+  },
+  caption: assets == null || assets.isUnsettled
+      ? '每个资产的贡献需要公式、权重与参考价三项齐备，目前都还读不到。'
+      : '持有量、参考价与权重都来自最近一次结算，不是收益。',
+  stamp: assets == null || assets.isUnsettled ? 'UNAVAILABLE' : null,
+);
+
+/// One weighted asset. The three inputs stay beside the figure they produced,
+/// and a price taken from another token says so on the row itself.
+LoopRecordRow _includedRow(MiningAssetRow row, LoopRowPosition position) {
+  final label = miningAssetLabel(row.assetId);
+  final proxy = row.referencePriceProxyAssetId;
+  final priceNote = proxy == null ? '' : '（代理价，来自 ${miningAssetLabel(proxy)}）';
+  return LoopRecordRow(
+    key: ValueKey<String>('mining-assets-row-${row.assetId}'),
+    title: label,
+    subtitle: '持有 ${row.holding} · 参考价 ${row.referencePriceUsd} 美元$priceNote',
+    subtitleMaxLines: 2,
+    trailing: row.power,
+    trailingCaption: '权重 ${row.weight}',
+    semanticLabel: proxy == null
+        ? '$label，算力 ${row.power}'
+        : '$label，算力 ${row.power}，参考价来自另一个代币的代理价',
+    position: position,
+  );
+}
+
+/// One asset the settlement skipped, with the server's own reason in words.
+LoopRecordRow _excludedRow(MiningExcludedAsset row, LoopRowPosition position) =>
+    LoopRecordRow(
+      key: ValueKey<String>('mining-assets-excluded-${row.assetId}'),
+      title: miningAssetLabel(row.assetId),
+      subtitle: launchReasonCodeText(row.reasonCode),
+      subtitleMaxLines: 2,
+      trailingBadge: const LoopBadge('未计入'),
+      position: position,
+    );
+
+/// 我的总算力. A settled figure prints; an unsettled one keeps the em dash and
+/// the server's own reason, and never becomes a zero.
+class _AssetsTotal extends StatelessWidget {
+  const _AssetsTotal({required this.totalPower});
+
+  final MiningFigure totalPower;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (totalPower) {
+      MiningFigureUnavailable(:final reasonCode) => LaunchEmptyMetric(
+        key: const ValueKey<String>('mining-assets-total'),
+        label: '我的总算力',
+        reasonCode: reasonCode,
+      ),
+      MiningFigureValue(:final value) => LoopRecordGroup(
+        key: const ValueKey<String>('mining-assets-total'),
+        rows: <LoopRecordRow>[
+          LoopRecordRow(
+            key: const ValueKey<String>('mining-assets-total-row'),
+            title: '我的总算力',
+            subtitle: '计入的资产加总',
+            trailing: value,
+          ),
+        ],
+      ),
+    };
+  }
+}
+
+/// Which settlement these rows came from. The identifiers it carries are
+/// backend strings, so only the block height and the time reach the row.
+class _AssetsSourceBlock extends StatelessWidget {
+  const _AssetsSourceBlock({required this.source});
+
+  final MiningSnapshotRef source;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (source) {
+      MiningSnapshotUnavailable(:final reasonCode) => LoopEmpty(
+        key: const ValueKey<String>('mining-assets-source-unavailable'),
+        icon: 'clock',
+        message: '还没有结算记录',
+        reason: launchReasonCodeText(reasonCode),
+      ),
+      MiningSnapshotComputed(:final blockNumber, :final computedAt) =>
+        LoopRecordGroup(
+          key: const ValueKey<String>('mining-assets-source'),
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('mining-assets-source-row'),
+              title: '最近一次结算',
+              subtitle: '区块 $blockNumber · ${launchTimestampLabel(computedAt)}',
+            ),
+          ],
+        ),
+    };
+  }
+}
+
+/// The price version every row was priced against. The version string is a
+/// backend identifier and stays inside the collapsed 详情.
+class _ReferencePriceBlock extends StatelessWidget {
+  const _ReferencePriceBlock({required this.referencePrice});
+
+  final MiningReferencePrice referencePrice;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (referencePrice) {
+      MiningReferencePriceUnavailable(:final reasonCode) =>
+        LaunchUnavailableCard(
+          label: '挖矿参考价',
+          fact: LaunchUnavailable(reasonCode),
+        ),
+      MiningReferencePriceSettled(:final priceVersion) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const LoopRecordGroup(
+            key: ValueKey<String>('mining-assets-price'),
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: ValueKey<String>('mining-assets-price-row'),
+                title: '挖矿参考价',
+                subtitle: '这一批价格用于上面每一行',
+              ),
+            ],
+          ),
+          LoopDisclosure(
+            key: const ValueKey<String>('mining-assets-price-details'),
+            summary: '详情',
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              child: Text(
+                '参考价版本 $priceVersion',
+                key: const ValueKey<String>('mining-assets-price-version'),
+                style: LoopTypography.caption(11, color: LoopColors.text3),
+              ),
+            ),
+          ),
+        ],
+      ),
+    };
   }
 }
 

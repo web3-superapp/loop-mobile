@@ -381,10 +381,95 @@ MiningSummary s7MiningBaselineSummary() => s7MiningSummary(
   ),
 );
 
-MiningAssets s7MiningAssets() => const MiningAssets(
-  totalPower: LaunchUnavailable(s7FormulaPending),
-  source: LaunchUnavailable(s7FormulaPending),
-  referencePrice: LaunchUnavailable(s7FormulaPending),
+/// The four asset ids the Development baseline weighs, and the price version
+/// it weighed them under.
+const s7CakeAssetId = 'eip155:56:0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82';
+const s7UsdtAssetId = 'eip155:56:0x55d398326f99059ff775485246999027b3197955';
+const s7WbnbAssetId = 'eip155:56:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c';
+const s7NativeAssetId = 'eip155:56:native';
+const s7PriceVersion = 'dexscreener:2026-09-15T14:58:51.862Z';
+
+MiningSnapshotComputed s7MiningSnapshot() => MiningSnapshotComputed(
+  snapshotId: '0e358b31-e49f-48b9-89b2-c5c908c3ad5e',
+  blockNumber: '122037728',
+  blockHash:
+      '0x3decab82b150493d90cb8fe47b3873c6e3b8c72aecf08ce91b4aceb266bda28a',
+  formulaVersion: s7BaselineVersion,
+  priceVersion: s7PriceVersion,
+  computedAt: DateTime.utc(2026, 9, 15, 14, 58, 54, 366),
+);
+
+MiningAssets s7MiningAssets({
+  MiningFigure? totalPower,
+  List<MiningAssetRow>? included,
+  List<MiningExcludedAsset>? excluded,
+  MiningSnapshotRef? source,
+  MiningReferencePrice? referencePrice,
+}) => MiningAssets(
+  totalPower: totalPower ?? const MiningFigureUnavailable(s7FormulaPending),
+  included: included ?? const <MiningAssetRow>[],
+  excluded: excluded ?? const <MiningExcludedAsset>[],
+  source:
+      source ??
+      const MiningSnapshotUnavailable('MINING_SNAPSHOT_NOT_AVAILABLE'),
+  referencePrice:
+      referencePrice ?? const MiningReferencePriceUnavailable(s7FormulaPending),
+);
+
+/// One weighted row, defaulting to the Development shape: a real holding, a
+/// fresh price and the effective weight the row was settled with.
+MiningAssetRow s7MiningAssetRow({
+  String assetId = s7CakeAssetId,
+  String holding = '0',
+  String referencePriceUsd = '2.26',
+  String weight = '0.8',
+  String power = '0',
+  String? proxyAssetId,
+}) => MiningAssetRow(
+  assetId: assetId,
+  holding: holding,
+  referencePriceUsd: referencePriceUsd,
+  referencePriceQuality: proxyAssetId == null
+      ? MiningReferencePriceQuality.fresh
+      : MiningReferencePriceQuality.proxied,
+  referencePriceProxyAssetId: proxyAssetId,
+  weight: weight,
+  power: power,
+  blockNumber: '122037728',
+);
+
+/// The Development settlement of 2026-09-15: four weighted rows, every figure
+/// a real zero reading, and the chain's own coin priced through its declared
+/// proxy.
+MiningAssets s7MiningSettledAssets({
+  List<MiningAssetRow>? included,
+  List<MiningExcludedAsset>? excluded,
+}) => s7MiningAssets(
+  totalPower: const MiningFigureValue('0'),
+  included:
+      included ??
+      <MiningAssetRow>[
+        s7MiningAssetRow(),
+        s7MiningAssetRow(
+          assetId: s7UsdtAssetId,
+          referencePriceUsd: '0.9994',
+          weight: '1.5',
+        ),
+        s7MiningAssetRow(
+          assetId: s7WbnbAssetId,
+          referencePriceUsd: '713.42',
+          weight: '1',
+        ),
+        s7MiningAssetRow(
+          assetId: s7NativeAssetId,
+          referencePriceUsd: '713.42',
+          weight: '1',
+          proxyAssetId: s7WbnbAssetId,
+        ),
+      ],
+  excluded: excluded ?? const <MiningExcludedAsset>[],
+  source: s7MiningSnapshot(),
+  referencePrice: const MiningReferencePriceSettled(s7PriceVersion),
 );
 
 MiningRewards s7MiningRewards() => const MiningRewards(

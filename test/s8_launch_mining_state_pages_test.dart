@@ -251,9 +251,9 @@ final List<_StateCase> _cases = <_StateCase>[
     readyKey: 'mining-assets-total',
     alsoUnreadKeys: <String>['mining-assets-empty-notice'],
     emptyContract:
-        'MiningAssets 是三个必填的 LaunchUnavailable'
-        '（mining_models.dart:83-93），根本没有列表字段：'
-        '「计入/排除为空」按契约成立且由 source 解释，不是页面的空态。',
+        'MiningAssets 是一条必填的总算力 + 两个列表 + 必填的 source 与参考价：'
+        '读成功时一定有一条总算力口径和一条出处，'
+        '「计入/排除为空」由 source 说明是没有结算还是这次没有计入，不是页面的空态。',
   ),
   // mining-rewards
   _StateCase(

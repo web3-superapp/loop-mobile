@@ -118,6 +118,99 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
     return MiningFigureUnavailable(LoopV2S7Codec.unavailable(raw).reasonCode);
   }
 
+  static MiningAssetRow _assetRow(Object? raw) {
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'assetId',
+      'holding',
+      'referencePriceUsd',
+      'referencePriceQuality',
+      'referencePriceProxyAssetId',
+      'weight',
+      'power',
+      'blockNumber',
+    });
+    final quality = MiningReferencePriceQuality.tryParse(
+      LoopV2S7Codec.requireEnum(map, 'referencePriceQuality', const <String>{
+        'fresh',
+        'proxied',
+      }),
+    );
+    if (quality == null) LoopV2S7Codec.invalid();
+    final proxy = LoopV2S7Codec.optionalPattern(
+      map,
+      'referencePriceProxyAssetId',
+      LoopV2S7Codec.holdingAssetIdPattern,
+      maxLength: 80,
+    );
+    // A proxied price with no proxy, and a fresh price carrying one, both
+    // leave the row unable to say where its price came from.
+    if (quality.isProxied != (proxy != null)) LoopV2S7Codec.invalid();
+    return MiningAssetRow(
+      assetId: LoopV2S7Codec.requirePattern(
+        map,
+        'assetId',
+        LoopV2S7Codec.holdingAssetIdPattern,
+        maxLength: 80,
+      ),
+      holding: _decimal(map, 'holding'),
+      referencePriceUsd: _decimal(map, 'referencePriceUsd'),
+      referencePriceQuality: quality,
+      referencePriceProxyAssetId: proxy,
+      weight: _decimal(map, 'weight'),
+      power: _decimal(map, 'power'),
+      blockNumber: LoopV2S7Codec.requirePattern(
+        map,
+        'blockNumber',
+        LoopV2S7Codec.blockNumberPattern,
+        maxLength: 20,
+      ),
+    );
+  }
+
+  static MiningExcludedAsset _excludedAsset(Object? raw) {
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'assetId',
+      'reasonCode',
+    });
+    return MiningExcludedAsset(
+      assetId: LoopV2S7Codec.requirePattern(
+        map,
+        'assetId',
+        LoopV2S7Codec.holdingAssetIdPattern,
+        maxLength: 80,
+      ),
+      reasonCode: LoopV2S7Codec.requireReasonCode(map, 'reasonCode'),
+    );
+  }
+
+  static MiningReferencePrice _referencePrice(Object? raw) {
+    if (raw is! Map) LoopV2S7Codec.invalid();
+    if (raw['status'] != 'available') {
+      return MiningReferencePriceUnavailable(
+        LoopV2S7Codec.unavailable(raw).reasonCode,
+      );
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'priceVersion',
+    });
+    return MiningReferencePriceSettled(
+      LoopV2S7Codec.requirePattern(
+        map,
+        'priceVersion',
+        LoopV2S7Codec.priceVersionPattern,
+      ),
+    );
+  }
+
+  static String _decimal(Map<String, Object?> source, String key) =>
+      LoopV2S7Codec.requirePattern(
+        source,
+        key,
+        LoopV2S7Codec.decimalPattern,
+        maxLength: 140,
+      );
+
   static MiningFormulaScope _scope(Map<String, Object?> source, String key) {
     final raw = source[key];
     if (raw != null && raw is! String) LoopV2S7Codec.invalid();
@@ -385,13 +478,41 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         'contractVersion',
       });
       LoopV2S7Codec.requireContractVersion(root);
-      // Empty by contract, not "this wallet holds nothing".
-      LoopV2S7Codec.requireEmptyList(root['included']);
-      LoopV2S7Codec.requireEmptyList(root['excluded']);
+      final source = _snapshot(root['source']);
+      final included = <MiningAssetRow>[];
+      final includedIds = <String>{};
+      for (final entry in LoopV2S7Codec.requireList(
+        root['included'],
+        maximum: 500,
+      )) {
+        final row = _assetRow(entry);
+        // The same asset twice would be counted twice by any reader adding
+        // the column up.
+        if (!includedIds.add(row.assetId)) LoopV2S7Codec.invalid();
+        included.add(row);
+      }
+      final excluded = <MiningExcludedAsset>[];
+      final excludedIds = <String>{};
+      for (final entry in LoopV2S7Codec.requireList(
+        root['excluded'],
+        maximum: 500,
+      )) {
+        final row = _excludedAsset(entry);
+        if (!excludedIds.add(row.assetId)) LoopV2S7Codec.invalid();
+        excluded.add(row);
+      }
+      // Without a settlement both lists are empty by contract, so a row here
+      // would be a classification nothing produced.
+      if (source is MiningSnapshotUnavailable &&
+          (included.isNotEmpty || excluded.isNotEmpty)) {
+        LoopV2S7Codec.invalid();
+      }
       return MiningAssets(
-        totalPower: LoopV2S7Codec.unavailable(root['totalPower']),
-        source: LoopV2S7Codec.unavailable(root['source']),
-        referencePrice: LoopV2S7Codec.unavailable(root['referencePrice']),
+        totalPower: _figure(root['totalPower']),
+        included: List<MiningAssetRow>.unmodifiable(included),
+        excluded: List<MiningExcludedAsset>.unmodifiable(excluded),
+        source: source,
+        referencePrice: _referencePrice(root['referencePrice']),
       );
     } on DioException catch (error) {
       _rethrowRead(error);

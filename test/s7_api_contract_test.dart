@@ -80,6 +80,72 @@ Map<String, Object?> _miningSnapshot() => <String, Object?>{
   'computedAt': '2026-09-15T14:58:54.366Z',
 };
 
+const _cakeAssetId = 'eip155:56:0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82';
+const _usdtAssetId = 'eip155:56:0x55d398326f99059ff775485246999027b3197955';
+const _wbnbAssetId = 'eip155:56:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c';
+const _nativeAssetId = 'eip155:56:native';
+const _priceVersion = 'dexscreener:2026-09-15T14:58:51.862Z';
+
+/// One `included[]` row, field for field as the Development lane answers.
+Map<String, Object?> _assetRow({
+  String assetId = _cakeAssetId,
+  String holding = '0',
+  String referencePriceUsd = '2.26',
+  String quality = 'fresh',
+  Object? proxyAssetId,
+  String weight = '0.8',
+  String power = '0',
+}) => <String, Object?>{
+  'assetId': assetId,
+  'holding': holding,
+  'referencePriceUsd': referencePriceUsd,
+  'referencePriceQuality': quality,
+  'referencePriceProxyAssetId': proxyAssetId,
+  'weight': weight,
+  'power': power,
+  'blockNumber': '122037728',
+};
+
+/// The 2026-09-15 Development response for `GET /v2/mining/assets`.
+Map<String, Object?> _miningAssets({
+  List<Object?>? included,
+  List<Object?>? excluded,
+  Object? source,
+  Object? totalPower,
+  Object? referencePrice,
+}) => <String, Object?>{
+  'totalPower':
+      totalPower ?? <String, Object?>{'status': 'available', 'value': '0'},
+  'included':
+      included ??
+      <Object?>[
+        _assetRow(),
+        _assetRow(
+          assetId: _usdtAssetId,
+          referencePriceUsd: '0.9994',
+          weight: '1.5',
+        ),
+        _assetRow(
+          assetId: _wbnbAssetId,
+          referencePriceUsd: '713.42',
+          weight: '1',
+        ),
+        _assetRow(
+          assetId: _nativeAssetId,
+          referencePriceUsd: '713.42',
+          quality: 'proxied',
+          proxyAssetId: _wbnbAssetId,
+          weight: '1',
+        ),
+      ],
+  'excluded': excluded ?? <Object?>[],
+  'source': source ?? _miningSnapshot(),
+  'referencePrice':
+      referencePrice ??
+      <String, Object?>{'status': 'available', 'priceVersion': _priceVersion},
+  'contractVersion': '2.0',
+};
+
 Map<String, Object?> _onChainState() => <String, Object?>{
   'saleState': 'unavailable',
   'entitlementState': 'unavailable',
@@ -1101,6 +1167,194 @@ void main() {
       expect(
         () =>
             api.getSummary(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('the weighted rows carry their inputs and their proxy', () async {
+      final assets = await DioLoopV2MiningApi(
+        _dio(_RecordingAdapter(statusCode: 200, body: _miningAssets())),
+      ).getAssets(accessToken: _token, clientVersion: _clientVersion);
+
+      expect((assets.totalPower as MiningFigureValue).value, '0');
+      expect(assets.included, hasLength(4));
+      final cake = assets.included.first;
+      expect(cake.assetId, _cakeAssetId);
+      expect(cake.referencePriceUsd, '2.26');
+      expect(cake.weight, '0.8');
+      expect(cake.isProxiedPrice, isFalse);
+      expect(cake.referencePriceProxyAssetId, isNull);
+      expect(cake.blockNumber, '122037728');
+      // The chain's own coin has no pair of its own, so its price is the
+      // declared proxy's and the row says which asset that is.
+      final native = assets.included.last;
+      expect(native.assetId, _nativeAssetId);
+      expect(native.isProxiedPrice, isTrue);
+      expect(native.referencePriceProxyAssetId, _wbnbAssetId);
+      expect(native.referencePriceUsd, '713.42');
+      expect(assets.excluded, isEmpty);
+      expect(assets.isUnsettled, isFalse);
+      expect(
+        (assets.source as MiningSnapshotComputed).blockNumber,
+        '122037728',
+      );
+      expect(
+        (assets.referencePrice as MiningReferencePriceSettled).priceVersion,
+        _priceVersion,
+      );
+    });
+
+    test('an excluded asset keeps the server reason', () async {
+      final assets = await DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningAssets(
+              included: <Object?>[],
+              excluded: <Object?>[
+                <String, Object?>{
+                  'assetId': _usdtAssetId,
+                  'reasonCode': 'COMMUNITY_WEIGHT_AMBIGUOUS',
+                },
+              ],
+            ),
+          ),
+        ),
+      ).getAssets(accessToken: _token, clientVersion: _clientVersion);
+
+      expect(assets.excluded.single.assetId, _usdtAssetId);
+      expect(assets.excluded.single.reasonCode, 'COMMUNITY_WEIGHT_AMBIGUOUS');
+    });
+
+    test('a proxied price with no proxy asset is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningAssets(
+              included: <Object?>[_assetRow(quality: 'proxied')],
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getAssets(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a fresh price carrying a proxy asset is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningAssets(
+              included: <Object?>[_assetRow(proxyAssetId: _wbnbAssetId)],
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getAssets(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('the same asset weighted twice is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningAssets(included: <Object?>[_assetRow(), _assetRow()]),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getAssets(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a weighted row without a settlement is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningAssets(
+              source: _unavailable('MINING_SNAPSHOT_NOT_AVAILABLE'),
+              totalPower: _unavailable('MINING_SNAPSHOT_NOT_AVAILABLE'),
+              referencePrice: _unavailable('MINING_SNAPSHOT_NOT_AVAILABLE'),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getAssets(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('an empty composition without a settlement stays readable', () async {
+      final assets = await DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningAssets(
+              included: <Object?>[],
+              source: _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+              totalPower: _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+              referencePrice: _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+            ),
+          ),
+        ),
+      ).getAssets(accessToken: _token, clientVersion: _clientVersion);
+
+      expect(assets.isUnsettled, isTrue);
+      expect(assets.included, isEmpty);
+      expect(
+        (assets.totalPower as MiningFigureUnavailable).reasonCode,
+        'MINING_FORMULA_BASELINE_PENDING',
+      );
+      expect(
+        (assets.referencePrice as MiningReferencePriceUnavailable).reasonCode,
+        'MINING_FORMULA_BASELINE_PENDING',
+      );
+    });
+
+    test('a negative holding is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningAssets(included: <Object?>[_assetRow(holding: '-1')]),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getAssets(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('an unknown reference price quality is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningAssets(
+              included: <Object?>[_assetRow(quality: 'stale')],
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getAssets(accessToken: _token, clientVersion: _clientVersion),
         throwsA(isA<LoopBackendFailure>()),
       );
     });

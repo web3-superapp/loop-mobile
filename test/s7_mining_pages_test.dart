@@ -382,6 +382,151 @@ void main() {
       await scrollToS7Section(tester, price);
       expect(price, findsOneWidget);
     });
+
+    testWidgets('a settled row prints its holding, price and weight', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(
+            value: s7MiningSettledAssets(
+              included: <MiningAssetRow>[
+                s7MiningAssetRow(holding: '12.5', power: '22.6'),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final row = find.byKey(
+        ValueKey<String>('mining-assets-row-$s7CakeAssetId'),
+      );
+      await scrollToS7Section(tester, row);
+      expect(row, findsOneWidget);
+      // Every figure is the server's own decimal, printed verbatim.
+      expect(find.textContaining('持有 12.5'), findsOneWidget);
+      expect(find.textContaining('参考价 2.26'), findsOneWidget);
+      expect(find.text('权重 0.8'), findsOneWidget);
+      expect(find.text('22.6'), findsOneWidget);
+      // The list is no longer empty, so the contract notice is gone.
+      expect(
+        find.byKey(const ValueKey<String>('mining-assets-empty-notice')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('the native coin row says its price is a proxy', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(value: s7MiningSettledAssets()),
+        ),
+      );
+
+      final row = find.byKey(
+        ValueKey<String>('mining-assets-row-$s7NativeAssetId'),
+      );
+      await scrollToS7Section(tester, row);
+      expect(row, findsOneWidget);
+      // The row names the asset the price came from instead of presenting it
+      // as the coin's own.
+      expect(find.textContaining('代理价，来自'), findsOneWidget);
+      // Twice: the proxy's own row above, and the proxied row naming it.
+      expect(find.textContaining('0xbb4c'), findsNWidgets(2));
+      expect(find.textContaining('BNB Smart Chain 原生代币'), findsOneWidget);
+    });
+
+    testWidgets('an excluded asset says why it was not counted', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(
+            value: s7MiningSettledAssets(
+              included: <MiningAssetRow>[s7MiningAssetRow()],
+              excluded: <MiningExcludedAsset>[
+                const MiningExcludedAsset(
+                  assetId: s7UsdtAssetId,
+                  reasonCode: 'MINING_PRICE_NOT_FRESH',
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final row = find.byKey(
+        ValueKey<String>('mining-assets-excluded-$s7UsdtAssetId'),
+      );
+      await scrollToS7Section(tester, row);
+      expect(row, findsOneWidget);
+      expect(find.textContaining('参考价不够新'), findsOneWidget);
+      // The reason is a sentence; the code behind it never reaches the screen.
+      expect(find.textContaining('MINING_PRICE'), findsNothing);
+    });
+
+    testWidgets('the price version stays inside the 详情', (tester) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(value: s7MiningSettledAssets()),
+        ),
+      );
+
+      expect(find.textContaining(s7PriceVersion), findsNothing);
+      final details = find.byKey(
+        const ValueKey<String>('mining-assets-price-details'),
+      );
+      await scrollToS7Section(tester, details);
+      await tester.tap(
+        find.descendant(
+          of: details,
+          matching: find.byKey(
+            const ValueKey<String>('loop-disclosure-summary'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining(s7PriceVersion), findsOneWidget);
+    });
+
+    testWidgets('a settlement with no rows is not the contract empty', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(
+            value: s7MiningSettledAssets(included: <MiningAssetRow>[]),
+          ),
+        ),
+      );
+
+      final empty = find.byKey(
+        const ValueKey<String>('mining-assets-included-empty'),
+      );
+      await scrollToS7Section(tester, empty);
+      expect(empty, findsOneWidget);
+      // "The settlement weighted nothing of yours" and "there was no
+      // settlement" are different sentences.
+      expect(
+        find.byKey(const ValueKey<String>('mining-assets-empty-notice')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('mining-assets-source')),
+        findsOneWidget,
+      );
+    });
   });
 
   group('mining-rewards', () {

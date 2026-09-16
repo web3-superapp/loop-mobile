@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 
 /// Presentation models for the `mining` module (loop-api decision 0036).
@@ -182,19 +183,130 @@ final class MiningSummary {
   final MiningSnapshotRef snapshot;
 }
 
-/// `included` and `excluded` are empty **by contract**, not because the wallet
-/// holds nothing: without a formula there is no way to classify an asset.
+/// Where one row's reference price came from. `proxied` means the formula
+/// version priced this asset through a declared proxy asset — the chain's own
+/// coin has no pair of its own — so the page must say the price is not the
+/// asset's own.
+enum MiningReferencePriceQuality {
+  fresh('fresh'),
+  proxied('proxied');
+
+  const MiningReferencePriceQuality(this.wireName);
+
+  final String wireName;
+
+  static MiningReferencePriceQuality? tryParse(String value) {
+    for (final quality in values) {
+      if (quality.wireName == value) return quality;
+    }
+    return null;
+  }
+
+  bool get isProxied => this == MiningReferencePriceQuality.proxied;
+}
+
+/// One asset the settlement weighted. Every figure is the server's own decimal
+/// string; the client multiplies nothing, because the row that reached it was
+/// already settled at one block.
+@immutable
+final class MiningAssetRow {
+  const MiningAssetRow({
+    required this.assetId,
+    required this.holding,
+    required this.referencePriceUsd,
+    required this.referencePriceQuality,
+    required this.referencePriceProxyAssetId,
+    required this.weight,
+    required this.power,
+    required this.blockNumber,
+  });
+
+  final String assetId;
+  final String holding;
+  final String referencePriceUsd;
+  final MiningReferencePriceQuality referencePriceQuality;
+
+  /// The asset whose price was used. Non-null exactly when the quality is
+  /// `proxied`: a proxied price with no proxy, or a fresh price carrying one,
+  /// would leave the row unable to say where its price came from.
+  final String? referencePriceProxyAssetId;
+
+  /// The effective weight already in the power: the formula's asset weight
+  /// times the approved community weight, when one community binds the asset.
+  final String weight;
+  final String power;
+  final String blockNumber;
+
+  bool get isProxiedPrice => referencePriceQuality.isProxied;
+}
+
+/// One asset the account holds that the settlement did not weight. The reason
+/// is the server's own; the client never guesses which rule skipped it.
+@immutable
+final class MiningExcludedAsset {
+  const MiningExcludedAsset({required this.assetId, required this.reasonCode});
+
+  final String assetId;
+  final String reasonCode;
+}
+
+/// The price version the settlement priced every row against.
+@immutable
+sealed class MiningReferencePrice {
+  const MiningReferencePrice();
+}
+
+@immutable
+final class MiningReferencePriceUnavailable extends MiningReferencePrice {
+  const MiningReferencePriceUnavailable(this.reasonCode);
+
+  final String reasonCode;
+}
+
+@immutable
+final class MiningReferencePriceSettled extends MiningReferencePrice {
+  const MiningReferencePriceSettled(this.priceVersion);
+
+  /// A backend identifier. It stays inside 详情.
+  final String priceVersion;
+}
+
+/// The per-asset composition. Both lists are empty while no settlement exists
+/// under the version in force — that is a contract fact, not "this wallet
+/// holds nothing" — and [source] is what says which of the two it is.
 @immutable
 final class MiningAssets {
   const MiningAssets({
     required this.totalPower,
+    required this.included,
+    required this.excluded,
     required this.source,
     required this.referencePrice,
   });
 
-  final LaunchUnavailable totalPower;
-  final LaunchUnavailable source;
-  final LaunchUnavailable referencePrice;
+  final MiningFigure totalPower;
+  final List<MiningAssetRow> included;
+  final List<MiningExcludedAsset> excluded;
+  final MiningSnapshotRef source;
+  final MiningReferencePrice referencePrice;
+
+  /// True while no settlement produced these lists. An empty list under a
+  /// settlement is a different sentence from an empty list without one.
+  bool get isUnsettled => source is MiningSnapshotUnavailable;
+}
+
+/// A display name for one asset id. The payload carries no symbol, so the row
+/// says what the id itself states: a contract address in short form, or the
+/// chain's own coin.
+String miningAssetLabel(String assetId) {
+  final separator = assetId.lastIndexOf(':');
+  if (separator < 0 || separator + 1 >= assetId.length) return assetId;
+  final tail = assetId.substring(separator + 1);
+  if (tail != 'native') return loopTruncatedAddress(tail);
+  final chainId = assetId.substring(0, separator);
+  return loopKnownChainIds.contains(chainId)
+      ? '${loopChainName(chainId)} 原生代币'
+      : '原生代币';
 }
 
 @immutable
