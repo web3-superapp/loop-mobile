@@ -633,7 +633,8 @@ void main() {
       final board = find.byKey(const ValueKey<String>('mining-rank-items'));
       await scrollToS7Section(tester, board);
       expect(board, findsOneWidget);
-      expect(find.textContaining('未上榜'), findsNWidgets(2));
+      // Two rows plus the hero, which says the same settled fact.
+      expect(find.textContaining('未上榜'), findsNWidgets(3));
       // The position 0 is not a rank, and it is never printed as one.
       expect(find.textContaining('第 0 名'), findsNothing);
       // An account that is not discoverable is named by the label, not an id.
@@ -641,6 +642,63 @@ void main() {
       expect(find.text('whale'), findsOneWidget);
       expect(find.textContaining(s7PublicProfileId), findsNothing);
       expect(find.textContaining('算力为 0，暂时没有名次'), findsOneWidget);
+    });
+
+    testWidgets('an unranked hero says the settlement happened, not that it '
+        'is pending', (tester) async {
+      await pumpS7Page(
+        tester,
+        const MiningRankScreen(),
+        mining: FakeMiningGateway(
+          rank: S7Answer<MiningRank>(
+            value: s7MiningRank(
+              scope: MiningRankScope.users,
+              ranking: s7MiningUserBoard(),
+              myPosition: const MiningRankPositionUnavailable(
+                'MINING_RANK_NOT_RANKED',
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('用户榜'));
+      await tester.pumpAndSettle();
+
+      // The hero states the fact — settled, read, off the board — and its
+      // cause; it never claims a settlement is still owed.
+      expect(find.text('未上榜'), findsOneWidget);
+      expect(find.text('最近一次结算里你的算力为 0。'), findsOneWidget);
+      expect(find.textContaining('等算力结算'), findsNothing);
+      expect(find.textContaining('结算之后才有'), findsNothing);
+      // The state name itself never reaches the screen.
+      expect(find.text('UNAVAILABLE'), findsNothing);
+    });
+
+    testWidgets('the community board does not turn its own rule into a '
+        'pending settlement', (tester) async {
+      await pumpS7Page(
+        tester,
+        const MiningRankScreen(),
+        mining: FakeMiningGateway(
+          rank: S7Answer<MiningRank>(
+            value: s7MiningRank(
+              ranking: s7MiningCommunityBoard(),
+              myPosition: const MiningRankPositionUnavailable(
+                'MINING_RANK_NOT_APPLICABLE',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // The hero carries the board's own rule, from the copy table — once for
+      // the hero and once for 我的名次.
+      expect(
+        find.text(launchReasonCodeText('MINING_RANK_NOT_APPLICABLE')),
+        findsNWidgets(2),
+      );
+      expect(find.textContaining('等算力结算'), findsNothing);
+      expect(find.text('UNAVAILABLE'), findsNothing);
     });
 
     testWidgets('a ranked user board prints places and marks the reader', (

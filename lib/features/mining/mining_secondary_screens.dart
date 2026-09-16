@@ -186,7 +186,8 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
 }
 
 /// The hero. A settled total prints the server's own decimal; without a
-/// settlement the page says the absence in words rather than a 29px dash.
+/// settlement the page says the absence in words rather than a 29px dash — and
+/// in words, not in a state name: the stamp is a settled reading or nothing.
 LoopFolioPrimary _assetsHero(MiningAssets? assets) => LoopFolioPrimary(
   variant: LoopFolioVariant.quiet,
   archetype: LoopFolioArchetype.record,
@@ -198,7 +199,6 @@ LoopFolioPrimary _assetsHero(MiningAssets? assets) => LoopFolioPrimary(
   caption: assets == null || assets.isUnsettled
       ? '每个资产的贡献需要公式、权重与参考价三项齐备，目前都还读不到。'
       : '持有量、参考价与权重都来自最近一次结算，不是收益。',
-  stamp: assets == null || assets.isUnsettled ? 'UNAVAILABLE' : null,
 );
 
 /// One weighted asset. The three inputs stay beside the figure they produced,
@@ -547,19 +547,38 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
 }
 
 /// The hero. A settled place prints as a position, never as a number the page
-/// could be read as power; without one the absence is said in words.
+/// could be read as power; without one the hero says *which* absence this is.
+///
+/// A settlement that left this reader off the board is not a settlement that
+/// has not happened, and neither is a board that does not carry personal
+/// places at all — so each reason keeps its own sentence instead of one
+/// 「等结算」 that the page's own block height contradicts. There is no
+/// stamp: the prototype's `.folio-stamp` carries a settled reading (`50,000 H`,
+/// `0.35×`), never a state name, and the heading already states the absence.
 LoopFolioPrimary _rankHero(MiningRank? rank) {
-  final settled = switch (rank?.myPosition) {
-    MiningRankPositionSettled(:final position) => position,
-    _ => null,
+  final (String heading, String caption) = switch (rank?.myPosition) {
+    MiningRankPositionSettled(:final position) => (
+      '第 $position 名',
+      '名次来自最近一次结算，其他账号的算力变化会改变它。',
+    ),
+    // Settled, read, and off the board: the fact first, the cause after it.
+    MiningRankPositionUnavailable(reasonCode: 'MINING_RANK_NOT_RANKED') => (
+      _miningUnrankedLabel,
+      '最近一次结算里你的算力为 0。',
+    ),
+    MiningRankPositionUnavailable(:final reasonCode) => (
+      launchMissingHeading,
+      launchReasonCodeText(reasonCode),
+    ),
+    // Nothing was read yet: the page states no cause it does not have.
+    null => (launchMissingHeading, '排行榜读到之后在这里显示名次。'),
   };
   return LoopFolioPrimary(
     variant: LoopFolioVariant.quiet,
     archetype: LoopFolioArchetype.record,
     kicker: 'NETWORK POSITION',
-    heading: settled == null ? launchMissingHeading : '第 $settled 名',
-    caption: settled == null ? '排名要等算力结算之后才有。' : '名次来自最近一次结算，其他账号的算力变化会改变它。',
-    stamp: settled == null ? 'UNAVAILABLE' : null,
+    heading: heading,
+    caption: caption,
   );
 }
 
@@ -863,7 +882,6 @@ LoopFolioPrimary _communityHero(MiningCommunity? community) {
     caption: settled == null
         ? '社区总算力、我的贡献与参与人数都要等挖矿公式确定，目前还读不到。'
         : '成员在绑定资产上的算力之和，权重已经算在里面。',
-    stamp: settled == null ? 'UNAVAILABLE' : null,
   );
 }
 
