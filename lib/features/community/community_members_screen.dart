@@ -153,11 +153,18 @@ class _CommunityMembersScreenState
               kicker: 'MEMBER DIRECTORY',
               heading: searching
                   ? '搜索成员'
-                  : (counts == null
-                        ? communityMissingHeading
-                        : '${counts.all} 名成员'),
-              caption: searching ? '这里只显示匹配到的成员。' : 'Owner / Admin / 成员 三级权限。',
-              stamp: searching || counts == null ? null : '${counts.all}',
+                  : _directoryHeading(state.filter, counts),
+              caption: searching
+                  ? '这里只显示匹配到的成员。'
+                  : _directoryCaption(state.filter, state.items.length),
+              // The figure repeats the heading's own count, so it is only
+              // stamped over the directory that heading counts.
+              stamp:
+                  searching ||
+                      counts == null ||
+                      state.filter != CommunityMemberFilter.all
+                  ? null
+                  : '${counts.all}',
             ),
       filters: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -267,7 +274,14 @@ class _CommunityMembersScreenState
           if (!typing) ...<Widget>[
             if (counts != null)
               CommunityUnavailableCard(label: '在线人数', fact: counts.online),
-            if (state.items.isNotEmpty) ...<Widget>[
+            // The card reads the directory's first row. Under a role filter
+            // or a query that row is a different member on every keystroke,
+            // and the governance view carries no settled power at all — the
+            // card then printed 「这一项暂时读不到」 over a figure the page had
+            // simply stopped being about. A narrowed page does not carry it.
+            if (state.items.isNotEmpty &&
+                !searching &&
+                state.filter == CommunityMemberFilter.all) ...<Widget>[
               const SizedBox(height: 10),
               CommunityMiningPowerCard(
                 label: '成员算力',
@@ -501,3 +515,34 @@ class _CommunityMembersScreenState
     );
   }
 }
+
+/// The hero over the member directory.
+///
+/// `counts` is the whole directory's: the server counts members by role and
+/// never counts the rows this page loaded, nor the governance view at all. So
+/// a role filter heads itself with the figure the server counted for that
+/// role, and 已封禁 heads itself with no figure — 「311 名成员」 over seven
+/// banned rows was the directory's number on a page that was not showing the
+/// directory.
+String _directoryHeading(
+  CommunityMemberFilter filter,
+  CommunityMemberCounts? counts,
+) => switch (filter) {
+  CommunityMemberFilter.all =>
+    counts == null ? communityMissingHeading : '${counts.all} 名成员',
+  CommunityMemberFilter.owner =>
+    counts == null ? 'Owner 权限' : '${counts.owner} 名 Owner',
+  CommunityMemberFilter.admin =>
+    counts == null ? 'Admin 权限' : '${counts.admin} 名 Admin',
+  CommunityMemberFilter.banned => '已封禁的成员',
+};
+
+String _directoryCaption(CommunityMemberFilter filter, int loaded) =>
+    switch (filter) {
+      CommunityMemberFilter.all => 'Owner / Admin / 成员 三级权限。',
+      CommunityMemberFilter.owner ||
+      CommunityMemberFilter.admin => '这里只显示这个角色下的成员。',
+      // The banned view is the one the server does not count.
+      CommunityMemberFilter.banned =>
+        '封禁是状态不是角色，这个筛选没有单独的人数读数，当前已载入 $loaded 人。',
+    };

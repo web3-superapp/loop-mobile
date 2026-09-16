@@ -893,6 +893,46 @@ void main() {
       );
     });
 
+    testWidgets('the banned view heads itself, not the whole directory', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          members: testDirectory(),
+          membersByFilter: <CommunityMemberFilter, CommunityMemberDirectory>{
+            CommunityMemberFilter.banned: testDirectory(
+              items: <CommunityMemberEntry>[
+                testMember(
+                  role: CommunityRole.member,
+                  status: CommunityMemberStatus.banned,
+                ),
+              ],
+            ),
+          },
+        ),
+      );
+
+      expect(find.text('128 名成员'), findsOneWidget);
+
+      final bannedSeg = find.byKey(
+        const ValueKey<String>('members-seg-banned'),
+      );
+      await tester.ensureVisible(bannedSeg);
+      await tester.pumpAndSettle();
+      await tester.tap(bannedSeg);
+      await tester.pumpAndSettle();
+
+      // The server counts roles, never this filter: the directory's 128 is
+      // not the number of banned members and is not printed over them.
+      expect(find.text('128 名成员'), findsNothing);
+      expect(find.text('已封禁的成员'), findsOneWidget);
+      // And the directory-wide power card is about a row this page no longer
+      // shows, so it says nothing instead of 「这一项暂时读不到」.
+      expect(find.text('成员算力'), findsNothing);
+    });
+
     testWidgets('a row renders exactly the commands the server published', (
       tester,
     ) async {
