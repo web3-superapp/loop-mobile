@@ -315,7 +315,9 @@ void main() {
     router.go('/chat');
     await tester.pumpAndSettle();
 
-    expect(find.text('Stream not connected'), findsOneWidget);
+    expect(find.text('会话还没有连接'), findsOneWidget);
+    // The provider's name is not shown to the owner.
+    expect(find.textContaining('Stream'), findsNothing);
     expect(find.textContaining('Offline preview'), findsNothing);
     expect(find.text('Glyph Hunters'), findsNothing);
   });

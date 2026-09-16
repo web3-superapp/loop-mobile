@@ -120,7 +120,7 @@ void main() {
         find.byKey(const ValueKey<String>('stream-chat-unavailable')),
         findsOneWidget,
       );
-      expect(find.text('Stream not connected'), findsOneWidget);
+      expect(find.text('会话还没有连接'), findsOneWidget);
       expect(find.byType(StreamChannelListView), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('stream-audio-room-entry')),

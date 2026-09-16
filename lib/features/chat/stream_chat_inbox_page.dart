@@ -95,12 +95,12 @@ class StreamChatInboxPage extends ConsumerWidget {
       skipLoadingOnRefresh: false,
       loading: () => const _StreamStatusCard(
         key: ValueKey<String>('stream-chat-connecting'),
-        title: 'Connecting to Stream',
-        message: 'LOOP is restoring the server-authorized chat session.',
+        title: '正在连接会话',
+        message: 'LOOP 正在恢复这个账号的会话授权。',
         icon: Icons.sync_rounded,
       ),
       error: (error, stackTrace) => _StreamUnavailableCard(
-        message: 'Stream authorization could not be restored. No message operation was attempted.',
+        message: '会话授权没有恢复成功，这一页没有执行任何消息操作。',
         onRetry: () => ref.invalidate(streamChatAuthorizationProvider),
       ),
       data: (authorization) {
@@ -110,7 +110,7 @@ class StreamChatInboxPage extends ConsumerWidget {
             session == null ||
             currentUser == null) {
           return _StreamUnavailableCard(
-            message: 'The LOOP backend must return a server-derived Stream user ID and short-lived token before chat can connect.',
+            message: '聊天要先拿到服务端签发的会话身份和短期令牌才能连接，现在还没有拿到。',
             onRetry: () => ref.invalidate(streamChatAuthorizationProvider),
           );
         }
@@ -127,7 +127,7 @@ class StreamChatInboxPage extends ConsumerWidget {
         automaticallyImplyLeading: false,
         leading: IconButton(
           key: const ValueKey<String>('stream-chat-back-to-community'),
-          tooltip: 'Back to Community',
+          tooltip: '返回社区',
           onPressed: () {
             if (Navigator.of(context).canPop()) {
               context.pop();
@@ -166,12 +166,14 @@ class StreamChatInboxPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 9),
                       Text(
-                        'Chats',
+                        '会话',
                         style: Theme.of(context).textTheme.headlineLarge,
                       ),
                       const SizedBox(height: 8),
+                      // The provider's name is not a fact the owner can use;
+                      // this page states what is in the list instead.
                       Text(
-                        'Official Stream conversations, delivery state, and history.',
+                        '这个账号的官方会话，含送达状态与历史记录。',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 20),
@@ -488,45 +490,45 @@ class _StreamChannelListBodyState extends State<_StreamChannelListBody> {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
+    // No filled panel around the list: it is laid out in the page's whole
+    // remaining height, so one conversation came out as a single row at the
+    // top of an 1100px empty box. The rows sit on the page itself.
+    return KeyedSubtree(
       key: const ValueKey<String>('stream-chat-channel-list'),
-      borderRadius: LoopRadius.medium,
-      child: ColoredBox(
-        color: LoopColors.basalt,
-        child: StreamChannelListView(
-          controller: _controller,
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          itemBuilder: (context, channels, index, defaultItem) =>
-              loopStreamChannelListIdentityItem(defaultItem),
-          emptyBuilder: (context) => const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: LoopStateCard(
-                title: 'No conversations yet',
-                message:
-                    'Channels created for this LOOP account will appear here.',
-                icon: Icons.chat_bubble_outline_rounded,
-              ),
+      child: StreamChannelListView(
+        controller: _controller,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemBuilder: (context, channels, index, defaultItem) =>
+            loopStreamChannelListIdentityItem(defaultItem),
+        emptyBuilder: (context) => const Align(
+          alignment: Alignment.topCenter,
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: LoopStateCard(
+              title: '还没有会话',
+              message: '为这个账号建立的会话会出现在这里。',
+              icon: Icons.chat_bubble_outline_rounded,
             ),
           ),
-          errorBuilder: (context, error) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: LoopStateCard(
-                title: 'Chats are unavailable',
-                message: 'Stream could not load the channel page. Existing local history was not deleted.',
-                icon: Icons.cloud_off_outlined,
-                tone: LoopTone.warning,
-                action: OutlinedButton.icon(
-                  onPressed: () => _controller.refresh(),
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Try again'),
-                ),
-              ),
-            ),
-          ),
-          onChannelTap: (channel) => _openChannel(context, channel),
         ),
+        errorBuilder: (context, error) => Align(
+          alignment: Alignment.topCenter,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: LoopStateCard(
+              title: '会话列表读不到',
+              message: '这一页没有读到会话列表，本地已有的历史没有被删除。',
+              icon: Icons.cloud_off_outlined,
+              tone: LoopTone.warning,
+              action: OutlinedButton.icon(
+                onPressed: () => _controller.refresh(),
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('重试'),
+              ),
+            ),
+          ),
+        ),
+        onChannelTap: (channel) => _openChannel(context, channel),
       ),
     );
   }
@@ -579,14 +581,14 @@ class _StreamUnavailableCard extends StatelessWidget {
       alignment: Alignment.topCenter,
       child: LoopStateCard(
         key: const ValueKey<String>('stream-chat-unavailable'),
-        title: 'Stream not connected',
+        title: '会话还没有连接',
         message: message,
         icon: Icons.cloud_off_outlined,
         tone: LoopTone.neutral,
         action: OutlinedButton.icon(
           onPressed: onRetry,
           icon: const Icon(Icons.refresh_rounded),
-          label: const Text('Try again'),
+          label: const Text('重试'),
         ),
       ),
     );
