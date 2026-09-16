@@ -399,7 +399,7 @@ void main() {
             miningPower: testSettledCommunityMiningPower(
               weight: const MiningCommunityWeightPending(
                 reasonCode: 'COMMUNITY_WEIGHT_PENDING_REVIEW',
-                reviewStatus: 'pending_review',
+                reviewStatus: MiningWeightReviewStatus.pendingReview,
               ),
             ),
           ),
@@ -424,6 +424,38 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+
+    testWidgets('a community with nothing bound has no weight to review', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityProfileScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          detail: testDetail(
+            miningPower: testSettledCommunityMiningPower(
+              weight: const MiningCommunityWeightPending(
+                reasonCode: 'COMMUNITY_ASSET_NOT_BOUND',
+                reviewStatus: MiningWeightReviewStatus.notApplicable,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final row = find.byKey(
+        const ValueKey<String>('community-mining-power-weight'),
+      );
+      await tester.scrollUntilVisible(
+        row,
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      // The row states the fact it was given. A review nobody is performing
+      // is not a state this card may announce (Decision 0046).
+      expect(find.textContaining('没有绑定代币，没有权重可审'), findsOneWidget);
+      expect(find.textContaining('权重还在审核中'), findsNothing);
     });
 
     testWidgets('an unbound asset renders no token card', (tester) async {

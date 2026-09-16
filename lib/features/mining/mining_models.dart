@@ -597,6 +597,30 @@ final class MiningCommunityWeightApproved extends MiningCommunityWeight {
   final DateTime reviewedAt;
 }
 
+/// Why a community has no approved weight.
+///
+/// The two values are not the same sentence: a bound community is waiting for
+/// a review, and an unbound one has nothing to review at all (Decision 0046).
+/// A page that says 「权重审核中」 to a community that never bound an asset is
+/// promising a review nobody is performing.
+enum MiningWeightReviewStatus {
+  pendingReview('pending_review'),
+  notApplicable('not_applicable');
+
+  const MiningWeightReviewStatus(this.wireName);
+
+  final String wireName;
+
+  static MiningWeightReviewStatus? tryParse(String value) {
+    for (final status in values) {
+      if (status.wireName == value) return status;
+    }
+    return null;
+  }
+
+  bool get isPendingReview => this == MiningWeightReviewStatus.pendingReview;
+}
+
 @immutable
 final class MiningCommunityWeightPending extends MiningCommunityWeight {
   const MiningCommunityWeightPending({
@@ -605,7 +629,17 @@ final class MiningCommunityWeightPending extends MiningCommunityWeight {
   });
 
   final String reasonCode;
-  final String reviewStatus;
+  final MiningWeightReviewStatus reviewStatus;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MiningCommunityWeightPending &&
+          other.reasonCode == reasonCode &&
+          other.reviewStatus == reviewStatus;
+
+  @override
+  int get hashCode => Object.hash(reasonCode, reviewStatus);
 }
 
 /// How many members the settlement counted. A count of zero is a reading —

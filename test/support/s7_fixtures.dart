@@ -611,13 +611,15 @@ MiningCommunity s7MiningCommunity({
       const MiningCommunityRef(
         communityId: s7CommunityId,
         name: 'Frog Holders',
-        boundAssetId: null,
+        // Bound, and waiting for a review: the two go together, because a
+        // community with nothing bound has no weight to review (0046).
+        boundAssetId: s7CakeAssetId,
       ),
   weight:
       weight ??
       const MiningCommunityWeightPending(
         reasonCode: 'COMMUNITY_WEIGHT_PENDING_REVIEW',
-        reviewStatus: 'pending_review',
+        reviewStatus: MiningWeightReviewStatus.pendingReview,
       ),
   communityPower:
       communityPower ?? const MiningFigureUnavailable(s7FormulaPending),
@@ -629,6 +631,26 @@ MiningCommunity s7MiningCommunity({
   snapshot:
       snapshot ??
       const MiningSnapshotUnavailable('MINING_SNAPSHOT_NOT_AVAILABLE'),
+);
+
+/// A community that never bound an asset. Its weight is not under review: no
+/// weight exists to review, and the panel says that instead (0046).
+MiningCommunity s7MiningUnboundCommunity() => s7MiningCommunity(
+  community: const MiningCommunityRef(
+    communityId: s7CommunityId,
+    name: 'Frog Holders',
+    boundAssetId: null,
+  ),
+  weight: const MiningCommunityWeightPending(
+    reasonCode: 'COMMUNITY_ASSET_NOT_BOUND',
+    reviewStatus: MiningWeightReviewStatus.notApplicable,
+  ),
+  communityPower: const MiningFigureUnavailable('COMMUNITY_ASSET_NOT_BOUND'),
+  myContribution: const MiningFigureUnavailable('COMMUNITY_ASSET_NOT_BOUND'),
+  rank: const MiningRankPositionUnavailable('COMMUNITY_ASSET_NOT_BOUND'),
+  participants: const MiningParticipantsUnavailable(
+    'COMMUNITY_ASSET_NOT_BOUND',
+  ),
 );
 
 /// The Development panel of 2026-09-15 for `mock-defi-morning`: a reviewed

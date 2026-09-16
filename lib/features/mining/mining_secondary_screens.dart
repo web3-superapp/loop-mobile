@@ -901,10 +901,22 @@ class _WeightBlock extends StatelessWidget {
             ),
           ],
         ),
+      // A review that is happening and a review that will never happen are
+      // different facts, and the block says which one this is.
+      MiningCommunityWeightPending(
+        :final reasonCode,
+        reviewStatus: MiningWeightReviewStatus.pendingReview,
+      ) =>
+        LoopEmpty(
+          key: const ValueKey<String>('mining-community-weight-pending'),
+          icon: 'clock',
+          message: '权重审核中',
+          reason: launchReasonCodeText(reasonCode),
+        ),
       MiningCommunityWeightPending(:final reasonCode) => LoopEmpty(
-        key: const ValueKey<String>('mining-community-weight-pending'),
-        icon: 'clock',
-        message: '权重审核中',
+        key: const ValueKey<String>('mining-community-weight-not-applicable'),
+        icon: 'info',
+        message: '没有可审的权重',
         reason: launchReasonCodeText(reasonCode),
       ),
     };

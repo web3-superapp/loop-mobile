@@ -318,10 +318,9 @@ void main() {
       final power = detail.miningPower as LoopCommunityMiningPower;
       expect(power.scope, MiningFormulaScope.product);
       expect(power.isBaseline, isFalse);
-      expect(
-        (power.weight as MiningCommunityWeightPending).reasonCode,
-        'COMMUNITY_WEIGHT_PENDING_REVIEW',
-      );
+      final weight = power.weight as MiningCommunityWeightPending;
+      expect(weight.reasonCode, 'COMMUNITY_WEIGHT_PENDING_REVIEW');
+      expect(weight.reviewStatus, MiningWeightReviewStatus.pendingReview);
       expect(power.participants, isA<MiningParticipantsUnavailable>());
     });
 

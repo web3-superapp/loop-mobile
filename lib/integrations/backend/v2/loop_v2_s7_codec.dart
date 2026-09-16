@@ -241,11 +241,18 @@ abstract final class LoopV2S7Codec {
       'reviewStatus',
     });
     if (map['status'] != 'unavailable') invalid();
+    // Two states, not one: a bound community waiting for a review, and an
+    // unbound one with nothing to review (Decision 0046).
+    final reviewStatus = MiningWeightReviewStatus.tryParse(
+      requireEnum(map, 'reviewStatus', const <String>{
+        'pending_review',
+        'not_applicable',
+      }),
+    );
+    if (reviewStatus == null) invalid();
     return MiningCommunityWeightPending(
       reasonCode: requireReasonCode(map, 'reasonCode'),
-      reviewStatus: requireEnum(map, 'reviewStatus', const <String>{
-        'pending_review',
-      }),
+      reviewStatus: reviewStatus,
     );
   }
 

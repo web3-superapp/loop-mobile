@@ -299,7 +299,13 @@ LoopRecordRow _weightRow(LoopCommunityMiningPower fact) => LoopRecordRow(
   title: '社区权重',
   subtitle: switch (fact.weight) {
     MiningCommunityWeightApproved() => '已按审核结果授予，算在上面的数里',
-    MiningCommunityWeightPending() => '权重还在审核中，这里不显示数值',
+    // An unbound community is not waiting for anything: saying 审核中 would
+    // promise a review nobody is performing (Decision 0046).
+    MiningCommunityWeightPending(
+      reviewStatus: MiningWeightReviewStatus.pendingReview,
+    ) =>
+      '权重还在审核中，这里不显示数值',
+    MiningCommunityWeightPending() => '没有绑定代币，没有权重可审',
   },
   subtitleMaxLines: 2,
   trailing: switch (fact.weight) {

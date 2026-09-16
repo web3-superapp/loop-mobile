@@ -2091,7 +2091,7 @@ void main() {
                   weight: <String, Object?>{
                     'status': 'unavailable',
                     'reasonCode': 'COMMUNITY_ASSET_NOT_BOUND',
-                    'reviewStatus': 'pending_review',
+                    'reviewStatus': 'not_applicable',
                   },
                   communityPower: _unavailable('COMMUNITY_ASSET_NOT_BOUND'),
                   myContribution: _unavailable('COMMUNITY_ASSET_NOT_BOUND'),
@@ -2107,16 +2107,71 @@ void main() {
           );
 
       expect(community.community.boundAssetId, isNull);
-      expect(
-        (community.weight as MiningCommunityWeightPending).reasonCode,
-        'COMMUNITY_ASSET_NOT_BOUND',
-      );
+      final weight = community.weight as MiningCommunityWeightPending;
+      expect(weight.reasonCode, 'COMMUNITY_ASSET_NOT_BOUND');
+      // Nothing is under review here: there is no weight to review (0046).
+      expect(weight.reviewStatus, MiningWeightReviewStatus.notApplicable);
       expect(
         (community.participants as MiningParticipantsUnavailable).reasonCode,
         'COMMUNITY_ASSET_NOT_BOUND',
       );
       // The settlement exists; it simply weighed nothing for this community.
       expect(community.snapshot, isA<MiningSnapshotComputed>());
+    });
+
+    test(
+      'a bound community without an approved weight is under review',
+      () async {
+        final community =
+            await DioLoopV2MiningApi(
+              _dio(
+                _RecordingAdapter(
+                  statusCode: 200,
+                  body: _miningCommunity(
+                    weight: <String, Object?>{
+                      'status': 'unavailable',
+                      'reasonCode': 'COMMUNITY_WEIGHT_PENDING_REVIEW',
+                      'reviewStatus': 'pending_review',
+                    },
+                  ),
+                ),
+              ),
+            ).getCommunity(
+              accessToken: _token,
+              clientVersion: _clientVersion,
+              communityId: _communityId,
+            );
+
+        final weight = community.weight as MiningCommunityWeightPending;
+        expect(weight.reasonCode, 'COMMUNITY_WEIGHT_PENDING_REVIEW');
+        expect(weight.reviewStatus, MiningWeightReviewStatus.pendingReview);
+      },
+    );
+
+    test('an unknown review status is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningCommunity(
+              weight: <String, Object?>{
+                'status': 'unavailable',
+                'reasonCode': 'COMMUNITY_WEIGHT_PENDING_REVIEW',
+                'reviewStatus': 'approved',
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getCommunity(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          communityId: _communityId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
     });
 
     test('a community panel without its settlement is refused', () {

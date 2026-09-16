@@ -1030,6 +1030,36 @@ void main() {
       expect(_figures(tester), isEmpty);
     });
 
+    testWidgets('a community with nothing bound has no review to wait for', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningCommunityScreen(communityId: s7CommunityId),
+        mining: FakeMiningGateway(
+          community: S7Answer<MiningCommunity>(
+            value: s7MiningUnboundCommunity(),
+          ),
+        ),
+      );
+
+      // Nobody is reviewing this community's weight, because it has none to
+      // review. Saying 审核中 would promise a review that is not happening.
+      expect(
+        find.byKey(
+          const ValueKey<String>('mining-community-weight-not-applicable'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('mining-community-weight-pending')),
+        findsNothing,
+      );
+      expect(find.text('没有可审的权重'), findsOneWidget);
+      expect(find.textContaining('权重还在审核中'), findsNothing);
+      expect(find.textContaining('还没有绑定代币'), findsWidgets);
+    });
+
     testWidgets('an approved weight renders the server value verbatim', (
       tester,
     ) async {
