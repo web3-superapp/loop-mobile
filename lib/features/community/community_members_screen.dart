@@ -272,8 +272,18 @@ class _CommunityMembersScreenState
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '成员目录'),
           if (!typing) ...<Widget>[
+            // `counts.online` is an unavailable fact by type: the directory
+            // read never observes presence, on any community, on every read.
+            // 「在线人数暂时读不到」 read as a read that had failed and could
+            // be retried here, while the community page next door states a
+            // real presence read. This page states what it is instead.
             if (counts != null)
-              CommunityUnavailableCard(label: '在线人数', fact: counts.online),
+              const LoopEmpty(
+                key: ValueKey<String>('community-members-online-not-observed'),
+                message: '在线人数',
+                reason: '成员目录不观察在线状态，本页不显示在线人数。社区主页会去问一次。',
+                margin: EdgeInsets.symmetric(horizontal: 16),
+              ),
             // The card reads the directory's first row. Under a role filter
             // or a query that row is a different member on every keystroke,
             // and the governance view carries no settled power at all — the

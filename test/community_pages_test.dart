@@ -883,14 +883,15 @@ void main() {
             .onSelected,
         isNull,
       );
+      // The directory never observes presence, so this page states that it
+      // does not carry the figure rather than that a read failed.
       expect(
         find.byKey(
-          const ValueKey<String>(
-            'community-unavailable-STREAM_PRESENCE_NOT_CONNECTED',
-          ),
+          const ValueKey<String>('community-members-online-not-observed'),
         ),
         findsOneWidget,
       );
+      expect(find.textContaining('在线人数暂时读不到'), findsNothing);
     });
 
     testWidgets('the banned view heads itself, not the whole directory', (
