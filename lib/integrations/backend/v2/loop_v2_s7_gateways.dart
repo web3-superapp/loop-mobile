@@ -20,14 +20,19 @@ import 'package:loop_mobile/integrations/backend/v2/referral/loop_v2_referral_ap
 
 /// Runs one authenticated S7 request and maps every transport failure onto the
 /// narrow feature-facing kind. No provider detail ever escapes.
+///
+/// [write] states what the request was, so that an unparseable answer to a
+/// read is reported as a page that did not load rather than as a submission
+/// whose outcome is unknown.
 Future<T> executeLaunchRequest<T>(
   LoopAuthenticatedSession session,
-  Future<T> Function(String accessToken) request,
-) async {
+  Future<T> Function(String accessToken) request, {
+  required bool write,
+}) async {
   try {
     return await session.execute(request);
   } on LoopBackendFailure catch (failure) {
-    throw LaunchException(launchFailureKindForV2(failure));
+    throw LaunchException(launchFailureKindForV2(failure, write: write));
   } on LaunchException {
     rethrow;
   } catch (_) {
@@ -53,7 +58,7 @@ base mixin _LoopV2S7Adapter {
   String get clientVersion => clientMetadata.clientVersion;
 
   Future<T> read<T>(Future<T> Function(String accessToken) request) =>
-      executeLaunchRequest(session, request);
+      executeLaunchRequest(session, request, write: false);
 
   Future<LoopV2WriteOrigin?> origin() async =>
       originSource == null ? null : await originSource!.resolve();
@@ -61,7 +66,7 @@ base mixin _LoopV2S7Adapter {
   /// A compare-and-set write. There is no idempotency key: the version is what
   /// makes the write safe to repeat.
   Future<T> cas<T>(Future<T> Function(String accessToken) request) =>
-      executeLaunchRequest(session, request);
+      executeLaunchRequest(session, request, write: true);
 
   /// An idempotent write. One logical operation reserves exactly one key; the
   /// key is replayed only while the outcome stays unresolved.
@@ -74,6 +79,7 @@ base mixin _LoopV2S7Adapter {
       final result = await executeLaunchRequest(
         session,
         (accessToken) => request(accessToken, key),
+        write: true,
       );
       keyring.release(signature);
       return result;

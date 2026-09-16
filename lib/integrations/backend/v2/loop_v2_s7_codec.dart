@@ -331,7 +331,17 @@ abstract final class LoopV2S7Codec {
 
 /// Maps the V2 error catalogue onto the narrow feature-facing kinds used by
 /// the three S7 ports. No provider detail ever escapes.
-LaunchFailureKind launchFailureKindForV2(LoopBackendFailure failure) {
+///
+/// [write] is what the request was, and it decides one case: a payload the
+/// client cannot parse. After a write the outcome is genuinely unknown — the
+/// server may have applied it — and the page must say so and warn against
+/// submitting again. After a read nothing was submitted at all, so the same
+/// transport failure is a page that did not load. Telling somebody who opened
+/// 奖励与领取 not to submit twice names a submission they never made.
+LaunchFailureKind launchFailureKindForV2(
+  LoopBackendFailure failure, {
+  required bool write,
+}) {
   return switch (failure.code) {
     'PERMISSION_DENIED' => LaunchFailureKind.permissionDenied,
     'POLICY_BLOCKED' => LaunchFailureKind.policyBlocked,
@@ -348,8 +358,11 @@ LaunchFailureKind launchFailureKindForV2(LoopBackendFailure failure) {
       LoopBackendFailureKind.timeout => LaunchFailureKind.offline,
       LoopBackendFailureKind.cancelled => LaunchFailureKind.cancelled,
       // A payload the client could not parse leaves a write unresolved: the
-      // server may already have applied it.
-      LoopBackendFailureKind.invalidPayload => LaunchFailureKind.outcomeUnknown,
+      // server may already have applied it. A read has applied nothing.
+      LoopBackendFailureKind.invalidPayload =>
+        write
+            ? LaunchFailureKind.outcomeUnknown
+            : LaunchFailureKind.invalidData,
       LoopBackendFailureKind.unavailable ||
       LoopBackendFailureKind.authentication ||
       LoopBackendFailureKind.invalidConfiguration =>

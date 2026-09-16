@@ -1723,6 +1723,49 @@ void main() {
       );
     });
 
+    test(
+      'an unreadable answer to a read is not an unresolved submission',
+      () async {
+        // 奖励与领取 is a GET. When its payload failed to decode the page showed
+        // "结果未确认…不要重复提交" over a submission the owner never made.
+        final api = DioLoopV2MiningApi(
+          _dio(
+            _RecordingAdapter(
+              statusCode: 200,
+              body: <String, Object?>{'contractVersion': '2.0'},
+            ),
+          ),
+        );
+
+        LoopBackendFailure? failure;
+        try {
+          await api.getRewards(
+            accessToken: _token,
+            clientVersion: _clientVersion,
+          );
+          fail('an incomplete rewards payload must be refused');
+        } on LoopBackendFailure catch (error) {
+          failure = error;
+        }
+        expect(failure.kind, LoopBackendFailureKind.invalidPayload);
+
+        final read = launchFailureKindForV2(failure, write: false);
+        expect(read, LaunchFailureKind.invalidData);
+        expect(launchFailureReason(read), isNot(contains('重复提交')));
+        expect(launchFailureReason(read), isNot(contains('结果未确认')));
+        // The same transport failure after a write is still unresolved: the
+        // server may have applied it.
+        expect(
+          launchFailureKindForV2(failure, write: true),
+          LaunchFailureKind.outcomeUnknown,
+        );
+        expect(
+          launchOutcomeIsUnresolved(LaunchFailureKind.invalidData),
+          isFalse,
+        );
+      },
+    );
+
     test('the rank scope must match what was asked for', () {
       final api = DioLoopV2MiningApi(
         _dio(
@@ -2828,7 +2871,7 @@ void main() {
           ),
           throwsA(
             isA<LoopBackendFailure>().having(
-              (failure) => launchFailureKindForV2(failure),
+              (failure) => launchFailureKindForV2(failure, write: true),
               'mapped kind for $code',
               expected,
             ),
