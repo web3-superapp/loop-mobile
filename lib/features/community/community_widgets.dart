@@ -4,6 +4,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
+import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 
@@ -236,6 +237,7 @@ class CommunityMiningPowerCard extends StatelessWidget {
         :final power,
         :final formulaVersion,
         :final computedAt,
+        :final isBaseline,
       ):
         final identifier = formulaVersion;
         return Padding(
@@ -252,8 +254,23 @@ class CommunityMiningPowerCard extends StatelessWidget {
                     subtitle:
                         '最近一次结算 · ${communitySettlementLabel(computedAt)}',
                     trailing: power,
-                    semanticLabel: '$label，$power',
+                    // The version's own declaration is what may label the
+                    // number; the version string is never read for meaning.
+                    trailingCaption: isBaseline ? miningBaselineLabel : null,
+                    semanticLabel: isBaseline
+                        ? '$label，$power，$miningBaselineLabel'
+                        : '$label，$power',
+                    position: fact is LoopCommunityMiningPower
+                        ? LoopRowPosition.first
+                        : LoopRowPosition.single,
                   ),
+                  // A community's number is a sum over one bound asset, so the
+                  // two facts that explain it belong beside it. An account's
+                  // number is one person across every asset and has neither.
+                  if (fact is LoopCommunityMiningPower) ...<LoopRecordRow>[
+                    _weightRow(fact as LoopCommunityMiningPower),
+                    _participantsRow(fact as LoopCommunityMiningPower),
+                  ],
                 ],
               ),
               LoopDisclosure(
@@ -273,6 +290,41 @@ class CommunityMiningPowerCard extends StatelessWidget {
     }
   }
 }
+
+/// The reviewed weight behind a community's number. A weight still under
+/// review is why the number can be zero, so the row says that instead of the
+/// value it does not have.
+LoopRecordRow _weightRow(LoopCommunityMiningPower fact) => LoopRecordRow(
+  key: const ValueKey<String>('community-mining-power-weight'),
+  title: '社区权重',
+  subtitle: switch (fact.weight) {
+    MiningCommunityWeightApproved() => '已按审核结果授予，算在上面的数里',
+    MiningCommunityWeightPending() => '权重还在审核中，这里不显示数值',
+  },
+  subtitleMaxLines: 2,
+  trailing: switch (fact.weight) {
+    MiningCommunityWeightApproved(:final value) => value,
+    MiningCommunityWeightPending() => communityMissingFigure,
+  },
+  position: LoopRowPosition.middle,
+);
+
+/// How many members had a power above zero. A count of zero is a reading: the
+/// community is settled and nobody held anything that counted.
+LoopRecordRow _participantsRow(LoopCommunityMiningPower fact) => LoopRecordRow(
+  key: const ValueKey<String>('community-mining-power-participants'),
+  title: '有算力的成员',
+  subtitle: switch (fact.participants) {
+    MiningParticipantsCount() => '最近一次结算里算出了算力的人',
+    MiningParticipantsUnavailable() => '这一项暂时读不到',
+  },
+  subtitleMaxLines: 2,
+  trailing: switch (fact.participants) {
+    MiningParticipantsCount(:final count) => '$count',
+    MiningParticipantsUnavailable() => communityMissingFigure,
+  },
+  position: LoopRowPosition.last,
+);
 
 /// The em dash used wherever a real figure has no source. Never `0`.
 ///

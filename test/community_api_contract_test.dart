@@ -7,6 +7,7 @@ import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/search/loop_v2_search_api.dart';
+import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/social/loop_v2_social_api.dart';
 
 const requestId = '11111111-1111-4111-8111-111111111111';
@@ -15,6 +16,8 @@ const communityId = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
 const profileId = '9c1f0f2e-5a7b-4c3d-8e9f-0a1b2c3d4e5f';
 const idempotencyKey = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const clientVersion = '0.1.0+1';
+const _snapshotId = '0e358b31-e49f-48b9-89b2-c5c908c3ad5e';
+const _formulaVersion = 'miningFormula-devBaseline-2026-09-15-r2';
 
 Map<String, Object?> community({
   String verificationStatus = 'verified',
@@ -194,16 +197,113 @@ void main() {
       expect(home.recommendation.ruleVersion, 'rule:verified-members-v1');
     });
 
-    test('a settled mining power keeps its snapshot and version', () async {
+    test(
+      "a community's settled power carries the weight that made it",
+      () async {
+        final api = DioLoopV2CommunityApi(
+          _dio((options, handler) {
+            // The 2026-09-16 Development projection for mock-defi-morning.
+            final body = detailBody()
+              ..['miningPower'] = <String, Object?>{
+                'status': 'available',
+                'subject': 'community',
+                'power': '0',
+                'snapshotId': _snapshotId,
+                'formulaVersion': _formulaVersion,
+                'computedAt': '2026-09-15T14:58:54.366Z',
+                'scope': 'development_baseline',
+                'weight': <String, Object?>{
+                  'status': 'approved',
+                  'value': '0.8',
+                  'configVersion': _formulaVersion,
+                  'reviewedAt': '2026-09-15T14:58:52.089Z',
+                },
+                'participants': <String, Object?>{
+                  'status': 'available',
+                  'count': 0,
+                },
+              };
+            handler.resolve(_response(options, body));
+          }),
+        );
+
+        final detail = await api.getCommunity(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          communityId: communityId,
+        );
+
+        final power = detail.miningPower as LoopCommunityMiningPower;
+        expect(power.power, '0');
+        expect(power.snapshotId, _snapshotId);
+        expect(power.formulaVersion, _formulaVersion);
+        expect(power.computedAt, DateTime.utc(2026, 9, 15, 14, 58, 54, 366));
+        // The label comes from the version's own declaration, never from the
+        // version string.
+        expect(power.scope, MiningFormulaScope.developmentBaseline);
+        expect(power.isBaseline, isTrue);
+        final weight = power.weight as MiningCommunityWeightApproved;
+        expect(weight.value, '0.8');
+        expect(weight.configVersion, _formulaVersion);
+        expect((power.participants as MiningParticipantsCount).count, 0);
+      },
+    );
+
+    test("an account's settled power carries no community weight", () async {
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          final body = memberBody();
+          final first =
+              (body['items']! as List<Object?>).first as Map<String, Object?>;
+          first['miningPower'] = <String, Object?>{
+            'status': 'available',
+            'subject': 'account',
+            'power': '230.5',
+            'snapshotId': _snapshotId,
+            'formulaVersion': _formulaVersion,
+            'computedAt': '2026-09-15T14:58:54.366Z',
+            'scope': 'development_baseline',
+          };
+          handler.resolve(_response(options, body));
+        }),
+      );
+
+      final directory = await api.listMembers(
+        accessToken: 'token',
+        clientVersion: clientVersion,
+        communityId: communityId,
+        role: CommunityMemberFilter.all,
+      );
+
+      final power = directory.items.first.miningPower as LoopAccountMiningPower;
+      expect(power.power, '230.5');
+      expect(power.isBaseline, isTrue);
+      // One person's total across every asset: no single community weight
+      // explains it, so the shape carries none.
+      expect(power, isNot(isA<LoopCommunityMiningPower>()));
+    });
+
+    test('a product version puts no development label on a row', () async {
       final api = DioLoopV2CommunityApi(
         _dio((options, handler) {
           final body = detailBody()
             ..['miningPower'] = <String, Object?>{
               'status': 'available',
-              'power': '230.5',
-              'snapshotId': '0e358b31-e49f-48b9-89b2-c5c908c3ad5e',
-              'formulaVersion': 'miningFormula-devBaseline-2026-09-15-r2',
+              'subject': 'community',
+              'power': '38200',
+              'snapshotId': _snapshotId,
+              'formulaVersion': 'miningFormulaV1',
               'computedAt': '2026-09-15T14:58:54.366Z',
+              'scope': null,
+              'weight': <String, Object?>{
+                'status': 'unavailable',
+                'reasonCode': 'COMMUNITY_WEIGHT_PENDING_REVIEW',
+                'reviewStatus': 'pending_review',
+              },
+              'participants': <String, Object?>{
+                'status': 'unavailable',
+                'reasonCode': 'COMMUNITY_WEIGHT_PENDING_REVIEW',
+              },
             };
           handler.resolve(_response(options, body));
         }),
@@ -215,11 +315,132 @@ void main() {
         communityId: communityId,
       );
 
-      final power = detail.miningPower as LoopMiningPowerSettled;
-      expect(power.power, '230.5');
-      expect(power.snapshotId, '0e358b31-e49f-48b9-89b2-c5c908c3ad5e');
-      expect(power.formulaVersion, 'miningFormula-devBaseline-2026-09-15-r2');
-      expect(power.computedAt, DateTime.utc(2026, 9, 15, 14, 58, 54, 366));
+      final power = detail.miningPower as LoopCommunityMiningPower;
+      expect(power.scope, MiningFormulaScope.product);
+      expect(power.isBaseline, isFalse);
+      expect(
+        (power.weight as MiningCommunityWeightPending).reasonCode,
+        'COMMUNITY_WEIGHT_PENDING_REVIEW',
+      );
+      expect(power.participants, isA<MiningParticipantsUnavailable>());
+    });
+
+    test('a mining power without a subject is refused', () async {
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          // The shape before the subject existed: it can no longer be read,
+          // because nothing says what the number is a number of.
+          final body = detailBody()
+            ..['miningPower'] = <String, Object?>{
+              'status': 'available',
+              'power': '230.5',
+              'snapshotId': _snapshotId,
+              'formulaVersion': _formulaVersion,
+              'computedAt': '2026-09-15T14:58:54.366Z',
+            };
+          handler.resolve(_response(options, body));
+        }),
+      );
+
+      await expectLater(
+        api.getCommunity(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          communityId: communityId,
+        ),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+      );
+    });
+
+    test('a community power without its weight is refused', () async {
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          final body = detailBody()
+            ..['miningPower'] = <String, Object?>{
+              'status': 'available',
+              'subject': 'community',
+              'power': '0',
+              'snapshotId': _snapshotId,
+              'formulaVersion': _formulaVersion,
+              'computedAt': '2026-09-15T14:58:54.366Z',
+              'scope': 'development_baseline',
+              'participants': <String, Object?>{
+                'status': 'available',
+                'count': 0,
+              },
+            };
+          handler.resolve(_response(options, body));
+        }),
+      );
+
+      await expectLater(
+        api.getCommunity(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          communityId: communityId,
+        ),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+      );
+    });
+
+    test('an account power carrying a community weight is refused', () async {
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          final body = detailBody()
+            ..['miningPower'] = <String, Object?>{
+              'status': 'available',
+              'subject': 'account',
+              'power': '230.5',
+              'snapshotId': _snapshotId,
+              'formulaVersion': _formulaVersion,
+              'computedAt': '2026-09-15T14:58:54.366Z',
+              'scope': 'development_baseline',
+              'weight': <String, Object?>{
+                'status': 'approved',
+                'value': '0.8',
+                'configVersion': _formulaVersion,
+                'reviewedAt': '2026-09-15T14:58:52.089Z',
+              },
+            };
+          handler.resolve(_response(options, body));
+        }),
+      );
+
+      await expectLater(
+        api.getCommunity(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          communityId: communityId,
+        ),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+      );
+    });
+
+    test('an unknown scope is refused', () async {
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          final body = detailBody()
+            ..['miningPower'] = <String, Object?>{
+              'status': 'available',
+              'subject': 'account',
+              'power': '230.5',
+              'snapshotId': _snapshotId,
+              'formulaVersion': _formulaVersion,
+              'computedAt': '2026-09-15T14:58:54.366Z',
+              'scope': 'staging_baseline',
+            };
+          handler.resolve(_response(options, body));
+        }),
+      );
+
+      await expectLater(
+        api.getCommunity(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          communityId: communityId,
+        ),
+        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+      );
     });
 
     test('a mining power without its snapshot is refused', () async {
@@ -230,6 +451,7 @@ void main() {
           final body = detailBody()
             ..['miningPower'] = <String, Object?>{
               'status': 'available',
+              'subject': 'account',
               'power': '230.5',
             };
           handler.resolve(_response(options, body));
@@ -252,10 +474,12 @@ void main() {
           final body = detailBody()
             ..['miningPower'] = <String, Object?>{
               'status': 'available',
+              'subject': 'account',
               'power': '-1',
-              'snapshotId': '0e358b31-e49f-48b9-89b2-c5c908c3ad5e',
-              'formulaVersion': 'miningFormula-devBaseline-2026-09-15-r2',
+              'snapshotId': _snapshotId,
+              'formulaVersion': _formulaVersion,
               'computedAt': '2026-09-15T14:58:54.366Z',
+              'scope': 'development_baseline',
             };
           handler.resolve(_response(options, body));
         }),

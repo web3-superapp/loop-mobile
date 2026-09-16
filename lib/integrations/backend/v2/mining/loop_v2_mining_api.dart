@@ -397,28 +397,6 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
     );
   }
 
-  static MiningParticipants _participants(Object? raw) {
-    if (raw is! Map) LoopV2S7Codec.invalid();
-    if (raw['status'] != 'available') {
-      return MiningParticipantsUnavailable(
-        LoopV2S7Codec.unavailable(raw).reasonCode,
-      );
-    }
-    final map = LoopV2Contract.strictMap(raw, const <String>{
-      'status',
-      'count',
-    });
-    return MiningParticipantsCount(LoopV2S7Codec.requireCount(map, 'count'));
-  }
-
-  static MiningFormulaScope _scope(Map<String, Object?> source, String key) {
-    final raw = source[key];
-    if (raw != null && raw is! String) LoopV2S7Codec.invalid();
-    final scope = MiningFormulaScope.tryParse(raw as String?);
-    if (scope == null) LoopV2S7Codec.invalid();
-    return scope;
-  }
-
   static MiningDailyOutput _dailyOutput(Object? raw) {
     if (raw is! Map) LoopV2S7Codec.invalid();
     if (raw['status'] != 'available') {
@@ -461,7 +439,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         'formulaVersion',
         LoopV2S7Codec.configVersionPattern,
       ),
-      scope: _scope(map, 'scope'),
+      scope: LoopV2S7Codec.formulaScope(map),
     );
   }
 
@@ -481,7 +459,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
           LoopV2S7Codec.configVersionPattern,
         ),
         effectiveAt: LoopV2S7Codec.requireTimestamp(map, 'effectiveAt'),
-        scope: _scope(map, 'scope'),
+        scope: LoopV2S7Codec.formulaScope(map),
       );
     }
     final map = LoopV2Contract.strictMap(raw, const <String>{
@@ -839,46 +817,6 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         root['community'],
         const <String>{'communityId', 'name', 'boundAssetId'},
       );
-      final rawWeight = root['weight'];
-      if (rawWeight is! Map) LoopV2S7Codec.invalid();
-      final MiningCommunityWeight weight;
-      if (rawWeight['status'] == 'approved') {
-        final map = LoopV2Contract.strictMap(rawWeight, const <String>{
-          'status',
-          'value',
-          'configVersion',
-          'reviewedAt',
-        });
-        weight = MiningCommunityWeightApproved(
-          value: LoopV2S7Codec.requirePattern(
-            map,
-            'value',
-            LoopV2S7Codec.decimalPattern,
-            maxLength: 140,
-          ),
-          configVersion: LoopV2S7Codec.requirePattern(
-            map,
-            'configVersion',
-            LoopV2S7Codec.configVersionPattern,
-          ),
-          reviewedAt: LoopV2S7Codec.requireTimestamp(map, 'reviewedAt'),
-        );
-      } else {
-        final map = LoopV2Contract.strictMap(rawWeight, const <String>{
-          'status',
-          'reasonCode',
-          'reviewStatus',
-        });
-        if (map['status'] != 'unavailable') LoopV2S7Codec.invalid();
-        weight = MiningCommunityWeightPending(
-          reasonCode: LoopV2S7Codec.requireReasonCode(map, 'reasonCode'),
-          reviewStatus: LoopV2S7Codec.requireEnum(
-            map,
-            'reviewStatus',
-            const <String>{'pending_review'},
-          ),
-        );
-      }
       return MiningCommunity(
         community: MiningCommunityRef(
           communityId: LoopV2S7Codec.requireId(community, 'communityId'),
@@ -890,11 +828,11 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
             maxLength: 80,
           ),
         ),
-        weight: weight,
+        weight: LoopV2S7Codec.communityWeight(root['weight']),
         communityPower: _figure(root['communityPower']),
         myContribution: _figure(root['myContribution']),
         rank: _rankPosition(root['rank']),
-        participants: _participants(root['participants']),
+        participants: LoopV2S7Codec.participants(root['participants']),
         snapshot: _snapshot(root['snapshot']),
       );
     } on DioException catch (error) {

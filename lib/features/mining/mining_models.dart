@@ -87,6 +87,11 @@ enum MiningFormulaScope {
   bool get isBaseline => this == MiningFormulaScope.developmentBaseline;
 }
 
+/// The label a development-baseline figure always carries, wherever it is
+/// printed. The version string itself is a backend identifier and stays
+/// inside 详情.
+const String miningBaselineLabel = '开发基线';
+
 /// The estimated daily output. The available branch carries the budget it was
 /// divided out of, the budget's own status and the version that declared it,
 /// because a placeholder budget must never reach the screen as a plain number.

@@ -1,4 +1,5 @@
 import 'package:loop_mobile/features/launch/launch_contract.dart';
+import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 
@@ -210,6 +211,67 @@ abstract final class LoopV2S7Codec {
       'value',
     });
     return requirePattern(map, 'value', decimalPattern, maxLength: 140);
+  }
+
+  /// A reviewed community weight. The mining panel and the `miningPower`
+  /// projection on a community record are the same shape from the same
+  /// server function, so they are the same decoder here.
+  static MiningCommunityWeight communityWeight(Object? raw) {
+    if (raw is! Map) invalid();
+    if (raw['status'] == 'approved') {
+      final map = LoopV2Contract.strictMap(raw, const <String>{
+        'status',
+        'value',
+        'configVersion',
+        'reviewedAt',
+      });
+      return MiningCommunityWeightApproved(
+        value: requirePattern(map, 'value', decimalPattern, maxLength: 140),
+        configVersion: requirePattern(
+          map,
+          'configVersion',
+          configVersionPattern,
+        ),
+        reviewedAt: requireTimestamp(map, 'reviewedAt'),
+      );
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'reasonCode',
+      'reviewStatus',
+    });
+    if (map['status'] != 'unavailable') invalid();
+    return MiningCommunityWeightPending(
+      reasonCode: requireReasonCode(map, 'reasonCode'),
+      reviewStatus: requireEnum(map, 'reviewStatus', const <String>{
+        'pending_review',
+      }),
+    );
+  }
+
+  /// How many members a settlement counted. A zero count is a reading; an
+  /// absent one is not.
+  static MiningParticipants participants(Object? raw) {
+    if (raw is! Map) invalid();
+    if (raw['status'] != 'available') {
+      return MiningParticipantsUnavailable(unavailable(raw).reasonCode);
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'count',
+    });
+    return MiningParticipantsCount(requireCount(map, 'count'));
+  }
+
+  /// The scope a formula version declares about itself: the development
+  /// baseline, or a product version (`null` on the wire). The key is
+  /// required; only the client's reading of it is nullable.
+  static MiningFormulaScope formulaScope(Map<String, Object?> source) {
+    final raw = source['scope'];
+    if (raw != null && raw is! String) invalid();
+    final scope = MiningFormulaScope.tryParse(raw as String?);
+    if (scope == null) invalid();
+    return scope;
   }
 
   static List<Object?> requireList(Object? raw, {int maximum = 200}) {

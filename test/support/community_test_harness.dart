@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
+import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
@@ -35,13 +36,39 @@ const testMiningPower = LoopMiningPowerUnavailable(
   'MINING_FORMULA_BASELINE_PENDING',
 );
 
-/// The Development baseline as the community record answers it: a settled
-/// number, the snapshot that produced it and the version it ran under.
-final testSettledMiningPower = LoopMiningPowerSettled(
+const testSnapshotId = '0e358b31-e49f-48b9-89b2-c5c908c3ad5e';
+const testFormulaVersion = 'miningFormula-devBaseline-2026-09-15-r2';
+
+/// The Development baseline as a member or connection row answers it: one
+/// account's total across every asset, so no community weight is attached.
+final testSettledMiningPower = LoopAccountMiningPower(
   power: '230.5',
-  snapshotId: '0e358b31-e49f-48b9-89b2-c5c908c3ad5e',
-  formulaVersion: 'miningFormula-devBaseline-2026-09-15-r2',
+  snapshotId: testSnapshotId,
+  formulaVersion: testFormulaVersion,
   computedAt: DateTime.utc(2026, 9, 15, 14, 58, 54),
+  scope: MiningFormulaScope.developmentBaseline,
+);
+
+/// The Development baseline as the community record answers it: the sum over
+/// the bound asset, with the weight and the head count that explain it.
+LoopCommunityMiningPower testSettledCommunityMiningPower({
+  MiningCommunityWeight? weight,
+  MiningParticipants? participants,
+  MiningFormulaScope scope = MiningFormulaScope.developmentBaseline,
+}) => LoopCommunityMiningPower(
+  power: '0',
+  snapshotId: testSnapshotId,
+  formulaVersion: testFormulaVersion,
+  computedAt: DateTime.utc(2026, 9, 15, 14, 58, 54),
+  scope: scope,
+  weight:
+      weight ??
+      MiningCommunityWeightApproved(
+        value: '0.8',
+        configVersion: testFormulaVersion,
+        reviewedAt: DateTime.utc(2026, 9, 15, 14, 58, 52, 89),
+      ),
+  participants: participants ?? const MiningParticipantsCount(0),
 );
 const testPresence = LoopUnavailableFact('STREAM_PRESENCE_NOT_CONNECTED');
 
@@ -126,10 +153,11 @@ CommunityDetail testDetail({
   CommunityViewer? viewer,
   CommunityChatSection chat = testChatUnavailable,
   CommunityVoiceSection voice = testVoiceUnavailable,
+  LoopMiningPowerFact? miningPower,
 }) => CommunityDetail(
   community: community ?? testCommunity(),
   viewer: viewer ?? testViewer(),
-  miningPower: testMiningPower,
+  miningPower: miningPower ?? testMiningPower,
   onlineCount: testPresence,
   announcements: const LoopUnavailableFact('COMMUNITY_ANNOUNCEMENTS_DEFERRED'),
   officialLinks: const LoopUnavailableFact('COMMUNITY_LINKS_DEFERRED'),

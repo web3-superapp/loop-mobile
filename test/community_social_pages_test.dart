@@ -5,6 +5,7 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/community/search_controller.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
 import 'package:loop_mobile/features/community/search_screen.dart';
+import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/social/blocklist_screen.dart';
 import 'package:loop_mobile/features/social/connections_screen.dart';
 import 'package:loop_mobile/features/social/dm_requests_screen.dart';
@@ -159,6 +160,71 @@ void main() {
         find.textContaining('miningFormula-devBaseline-2026-09-15-r2'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('a development-baseline row carries the baseline label', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const ConnectionsScreen(),
+        social: FakeSocialGateway(
+          connections: _connections(miningPower: testSettledMiningPower),
+        ),
+      );
+
+      final card = find.byKey(
+        const ValueKey<String>('community-mining-power-row'),
+      );
+      await tester.scrollUntilVisible(
+        card,
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('开发基线'), findsOneWidget);
+      // A member row is one person across every asset: no community weight
+      // and no head count could explain it, so neither is on the row.
+      expect(
+        find.byKey(const ValueKey<String>('community-mining-power-weight')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('community-mining-power-participants'),
+        ),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a product version puts no baseline label on a row', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const ConnectionsScreen(),
+        social: FakeSocialGateway(
+          connections: _connections(
+            miningPower: LoopAccountMiningPower(
+              power: '230.5',
+              snapshotId: testSnapshotId,
+              formulaVersion: 'miningFormulaV1',
+              computedAt: DateTime.utc(2026, 9, 15, 14, 58, 54),
+              scope: MiningFormulaScope.product,
+            ),
+          ),
+        ),
+      );
+
+      final card = find.byKey(
+        const ValueKey<String>('community-mining-power-row'),
+      );
+      await tester.scrollUntilVisible(
+        card,
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('230.5'), findsOneWidget);
+      expect(find.text('开发基线'), findsNothing);
     });
 
     testWidgets('an unavailable reading is still never a zero', (tester) async {

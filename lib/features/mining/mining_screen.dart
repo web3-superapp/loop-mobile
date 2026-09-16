@@ -185,10 +185,6 @@ LoopFolioPrimary _hero(MiningSummary? summary) {
   };
 }
 
-/// The label a development-baseline figure always carries. The version string
-/// itself is a backend identifier and stays inside 详情.
-const String miningBaselineLabel = '开发基线';
-
 /// 算力与产出. A figure prints only when the server settled it; everything
 /// else keeps the em dash plus the server's own reason. A placeholder budget
 /// never prints as a bare number.

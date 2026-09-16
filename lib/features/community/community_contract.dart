@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:loop_mobile/features/mining/mining_models.dart';
 
 /// Narrow, feature-facing failure taxonomy shared by the S3 ports
 /// (`community`, social graph and `search`).
@@ -99,13 +100,18 @@ final class LoopMiningPowerUnavailable extends LoopMiningPowerFact {
   int get hashCode => reasonCode.hashCode;
 }
 
+/// A reading the settlement produced. What it is a reading *of* decides what
+/// it can explain: a community's number is the sum over one bound asset, so
+/// the weight and the head count behind it exist; a member's number is one
+/// person across every asset, and no single community weight explains it.
 @immutable
-final class LoopMiningPowerSettled extends LoopMiningPowerFact {
+sealed class LoopMiningPowerSettled extends LoopMiningPowerFact {
   const LoopMiningPowerSettled({
     required this.power,
     required this.snapshotId,
     required this.formulaVersion,
     required this.computedAt,
+    required this.scope,
   });
 
   /// The server's own unsigned decimal string, rendered verbatim.
@@ -117,18 +123,84 @@ final class LoopMiningPowerSettled extends LoopMiningPowerFact {
   final String formulaVersion;
   final DateTime computedAt;
 
+  /// The version's own declaration about itself. It is the only thing that
+  /// may put the development-baseline label on a row — the version string is
+  /// never read for meaning.
+  final MiningFormulaScope scope;
+
+  bool get isBaseline => scope.isBaseline;
+}
+
+/// A community's power: every unbanned member's power on the bound asset.
+@immutable
+final class LoopCommunityMiningPower extends LoopMiningPowerSettled {
+  const LoopCommunityMiningPower({
+    required super.power,
+    required super.snapshotId,
+    required super.formulaVersion,
+    required super.computedAt,
+    required super.scope,
+    required this.weight,
+    required this.participants,
+  });
+
+  /// The reviewed weight already inside [power], in the same shape the mining
+  /// panel reads.
+  final MiningCommunityWeight weight;
+
+  /// Members whose power was above zero.
+  final MiningParticipants participants;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is LoopMiningPowerSettled &&
+      other is LoopCommunityMiningPower &&
           other.power == power &&
           other.snapshotId == snapshotId &&
           other.formulaVersion == formulaVersion &&
-          other.computedAt == computedAt;
+          other.computedAt == computedAt &&
+          other.scope == scope &&
+          other.weight == weight &&
+          other.participants == participants;
+
+  @override
+  int get hashCode => Object.hash(
+    power,
+    snapshotId,
+    formulaVersion,
+    computedAt,
+    scope,
+    weight,
+    participants,
+  );
+}
+
+/// One account's total power across every asset it holds. It carries no
+/// weight and no head count: there is no single community weight that could
+/// explain a number summed across assets.
+@immutable
+final class LoopAccountMiningPower extends LoopMiningPowerSettled {
+  const LoopAccountMiningPower({
+    required super.power,
+    required super.snapshotId,
+    required super.formulaVersion,
+    required super.computedAt,
+    required super.scope,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LoopAccountMiningPower &&
+          other.power == power &&
+          other.snapshotId == snapshotId &&
+          other.formulaVersion == formulaVersion &&
+          other.computedAt == computedAt &&
+          other.scope == scope;
 
   @override
   int get hashCode =>
-      Object.hash(power, snapshotId, formulaVersion, computedAt);
+      Object.hash(power, snapshotId, formulaVersion, computedAt, scope);
 }
 
 /// The fixed four-field identity projection. No `profile_code`, wallet

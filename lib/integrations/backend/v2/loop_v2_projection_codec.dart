@@ -2,6 +2,7 @@ import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_s7_codec.dart';
 
 /// Strict decoders for the projections shared by the S3 modules.
 ///
@@ -126,39 +127,80 @@ abstract final class LoopV2ProjectionCodec {
   /// directory and the connection list. The settled branch must carry the
   /// snapshot and the version that produced the number; a bare power would be
   /// a figure with no source.
+  ///
+  /// `subject` decides the rest: a community's number carries the weight and
+  /// the head count that explain it, an account's number carries neither,
+  /// because no single community weight explains a total summed across
+  /// assets. Either shape holding the other's fields is refused.
   static LoopMiningPowerFact miningPowerFact(Object? raw) {
     if (raw is! Map) invalid();
     if (raw['status'] != 'available') {
       return LoopMiningPowerUnavailable(unavailable(raw).reasonCode);
     }
+    final subject = raw['subject'];
+    if (subject == 'community') {
+      final map = LoopV2Contract.strictMap(raw, const <String>{
+        'status',
+        'subject',
+        'power',
+        'snapshotId',
+        'formulaVersion',
+        'computedAt',
+        'scope',
+        'weight',
+        'participants',
+      });
+      return LoopCommunityMiningPower(
+        power: _miningPower(map),
+        snapshotId: _miningSnapshotId(map),
+        formulaVersion: _miningFormulaVersion(map),
+        computedAt: requireTimestamp(map, 'computedAt'),
+        scope: LoopV2S7Codec.formulaScope(map),
+        weight: LoopV2S7Codec.communityWeight(map['weight']),
+        participants: LoopV2S7Codec.participants(map['participants']),
+      );
+    }
+    if (subject != 'account') invalid();
     final map = LoopV2Contract.strictMap(raw, const <String>{
       'status',
+      'subject',
       'power',
       'snapshotId',
       'formulaVersion',
       'computedAt',
+      'scope',
     });
-    return LoopMiningPowerSettled(
-      power: LoopV2Contract.requiredString(
+    return LoopAccountMiningPower(
+      power: _miningPower(map),
+      snapshotId: _miningSnapshotId(map),
+      formulaVersion: _miningFormulaVersion(map),
+      computedAt: requireTimestamp(map, 'computedAt'),
+      scope: LoopV2S7Codec.formulaScope(map),
+    );
+  }
+
+  static String _miningPower(Map<String, Object?> map) =>
+      LoopV2Contract.requiredString(
         map,
         'power',
         pattern: miningDecimalPattern,
         maxLength: 140,
-      ),
-      snapshotId: LoopV2Contract.requiredString(
+      );
+
+  static String _miningSnapshotId(Map<String, Object?> map) =>
+      LoopV2Contract.requiredString(
         map,
         'snapshotId',
         pattern: LoopV2Contract.uuidPattern,
-      ),
-      formulaVersion: LoopV2Contract.requiredString(
+      );
+
+  static String _miningFormulaVersion(Map<String, Object?> map) =>
+      LoopV2Contract.requiredString(
         map,
         'formulaVersion',
         pattern: miningFormulaVersionPattern,
         maxLength: 128,
-      ),
-      computedAt: requireTimestamp(map, 'computedAt'),
-    );
-  }
+      );
 
   /// [allowMissingId] is true only for the member directory, where a member
   /// without a profile row is listed but can never be a command target.

@@ -6,6 +6,7 @@ import 'package:loop_mobile/features/community/community_discover_screen.dart';
 import 'package:loop_mobile/features/community/community_members_screen.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_profile_screen.dart';
+import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/community/community_screen.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -354,6 +355,77 @@ void main() {
   });
 
   group('community-profile', () {
+    testWidgets("a settled community power explains why it is that number", (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityProfileScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          detail: testDetail(miningPower: testSettledCommunityMiningPower()),
+        ),
+      );
+
+      final row = find.byKey(
+        const ValueKey<String>('community-mining-power-weight'),
+      );
+      await tester.scrollUntilVisible(
+        row,
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      // A community's number is a sum over one bound asset, so the weight and
+      // the head count that produced it are on the card with it.
+      expect(find.text('0.8'), findsOneWidget);
+      expect(
+        find.byKey(
+          const ValueKey<String>('community-mining-power-participants'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('开发基线'), findsOneWidget);
+      // The version that settled it stays a backend identifier.
+      expect(find.textContaining('miningFormula-devBaseline'), findsNothing);
+    });
+
+    testWidgets('a weight still under review says so instead of a value', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityProfileScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          detail: testDetail(
+            miningPower: testSettledCommunityMiningPower(
+              weight: const MiningCommunityWeightPending(
+                reasonCode: 'COMMUNITY_WEIGHT_PENDING_REVIEW',
+                reviewStatus: 'pending_review',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final row = find.byKey(
+        const ValueKey<String>('community-mining-power-weight'),
+      );
+      await tester.scrollUntilVisible(
+        row,
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.textContaining('权重还在审核中'), findsOneWidget);
+      // The settled power stays the server's own 0: a pending weight is why
+      // it is zero, not a reason to hide it.
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('community-mining-power-row')),
+          matching: find.text('0'),
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('an unbound asset renders no token card', (tester) async {
       await pumpCommunityPage(
         tester,
