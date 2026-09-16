@@ -71,6 +71,9 @@ LoopCommunityMiningPower testSettledCommunityMiningPower({
   participants: participants ?? const MiningParticipantsCount(0),
 );
 const testPresence = LoopUnavailableFact('STREAM_PRESENCE_NOT_CONNECTED');
+const testOnlineCount = CommunityOnlineCountUnavailable(
+  'STREAM_PRESENCE_NOT_CONNECTED',
+);
 
 CommunitySummary testCommunity({
   String communityId = testCommunityId,
@@ -154,11 +157,12 @@ CommunityDetail testDetail({
   CommunityChatSection chat = testChatUnavailable,
   CommunityVoiceSection voice = testVoiceUnavailable,
   LoopMiningPowerFact? miningPower,
+  CommunityOnlineCount? onlineCount,
 }) => CommunityDetail(
   community: community ?? testCommunity(),
   viewer: viewer ?? testViewer(),
   miningPower: miningPower ?? testMiningPower,
-  onlineCount: testPresence,
+  onlineCount: onlineCount ?? testOnlineCount,
   announcements: const LoopUnavailableFact('COMMUNITY_ANNOUNCEMENTS_DEFERRED'),
   officialLinks: const LoopUnavailableFact('COMMUNITY_LINKS_DEFERRED'),
   chat: chat,

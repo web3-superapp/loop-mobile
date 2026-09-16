@@ -74,6 +74,83 @@ final class LoopUnavailableFact {
   int get hashCode => reasonCode.hashCode;
 }
 
+/// How many of a community's members are connected to Stream right now.
+///
+/// It is an observation, not a stored fact (Decision 0047): the count is the
+/// members of the community's official Stream channel that hold a live
+/// connection at the moment the detail page was read. It is not "watching this
+/// channel", not "active recently", and not the community's membership. A
+/// failed, timed-out or unprovisioned read is unavailable — never a zero, and
+/// a real zero is a reading of its own.
+@immutable
+sealed class CommunityOnlineCount {
+  const CommunityOnlineCount();
+}
+
+@immutable
+final class CommunityOnlineCountUnavailable extends CommunityOnlineCount {
+  const CommunityOnlineCountUnavailable(this.reasonCode);
+
+  final String reasonCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CommunityOnlineCountUnavailable &&
+          other.reasonCode == reasonCode;
+
+  @override
+  int get hashCode => reasonCode.hashCode;
+}
+
+@immutable
+final class CommunityOnlineCountObserved extends CommunityOnlineCount {
+  const CommunityOnlineCountObserved({
+    required this.count,
+    required this.observedAt,
+    required this.source,
+  });
+
+  final int count;
+
+  /// When the observation was taken. The page prints it in UTC, because a
+  /// reading of "now" that is a minute old is still a reading of that minute.
+  final DateTime observedAt;
+
+  /// What was counted. The client reads the meaning off this and never off
+  /// the number alone.
+  final CommunityPresenceSource source;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CommunityOnlineCountObserved &&
+          other.count == count &&
+          other.observedAt == observedAt &&
+          other.source == source;
+
+  @override
+  int get hashCode => Object.hash(count, observedAt, source);
+}
+
+/// The only observation the contract publishes: Stream channel members holding
+/// a connection. A second source would mean a second sentence, so the client
+/// refuses one it does not know.
+enum CommunityPresenceSource {
+  streamMemberPresence('stream_member_presence');
+
+  const CommunityPresenceSource(this.wireName);
+
+  final String wireName;
+
+  static CommunityPresenceSource? tryParse(String value) {
+    for (final source in values) {
+      if (source.wireName == value) return source;
+    }
+    return null;
+  }
+}
+
 /// A mining power reading on a community, a member row or a connection row.
 ///
 /// Either a settled snapshot computed it under a named formula version, or it
@@ -296,6 +373,15 @@ String communityUnavailableReason(String reasonCode) => switch (reasonCode) {
   'STREAM_UNREAD_NOT_CONNECTED' => '未读数暂时读不到。',
   'STREAM_VOICE_NOT_CONNECTED' => '语音房状态暂时读不到。',
   'STREAM_PRESENCE_NOT_CONNECTED' => '在线人数暂时读不到。',
+  // The presence read has its own failure modes (Decision 0047). Each says
+  // what was not done, and none of them is a zero.
+  'COMMUNITY_CHANNEL_NOT_PROVISIONED' => '这个社区还没有官方频道，没有可以询问的在线人数。',
+  'COMMUNITY_CHANNEL_PROVISION_FAILED' => '这个社区的官方频道没有建成，暂时问不到在线人数。',
+  'STREAM_PRESENCE_READ_FAILED' => '这次没能问到在线人数，稍后重试。',
+  'STREAM_PRESENCE_READ_TIMEOUT' => '这次查询在线人数超时了，没有结果。',
+  'STREAM_PRESENCE_MEMBER_BOUND_EXCEEDED' => '这个社区的成员超过 500 人，这一版还数不了在线人数。',
+  'STREAM_PRESENCE_NOT_OBSERVED' => '这一步没有观察在线人数，回到社区详情可以重新读。',
+  'COMMUNICATION_RUNTIME_UNAVAILABLE' => '通信服务暂时不可用，问不到在线人数。',
   'MINING_FORMULA_BASELINE_PENDING' => '挖矿规则还没有确定，暂时不显示算力。',
   'COMMUNITY_ANNOUNCEMENTS_DEFERRED' => '社区公告还没有开放。',
   'COMMUNITY_LINKS_DEFERRED' => '官方链接还没有开放。',

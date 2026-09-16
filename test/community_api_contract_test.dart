@@ -198,6 +198,146 @@ void main() {
     });
 
     test(
+      'an observed online count carries what it observed and when',
+      () async {
+        final api = DioLoopV2CommunityApi(
+          _dio((options, handler) {
+            // The 2026-09-16 Development response for builders-guild, with one
+            // member holding a Stream connection.
+            final body = detailBody()
+              ..['onlineCount'] = <String, Object?>{
+                'status': 'available',
+                'count': 1,
+                'observedAt': '2026-09-16T06:44:39.224Z',
+                'source': 'stream_member_presence',
+              };
+            handler.resolve(_response(options, body));
+          }),
+        );
+
+        final detail = await api.getCommunity(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          communityId: communityId,
+        );
+
+        final online = detail.onlineCount as CommunityOnlineCountObserved;
+        expect(online.count, 1);
+        expect(online.observedAt, DateTime.utc(2026, 9, 16, 6, 44, 39, 224));
+        // What was counted decides what the number means, so the source is read
+        // and not assumed.
+        expect(online.source, CommunityPresenceSource.streamMemberPresence);
+      },
+    );
+
+    test('a channel with nobody connected is a reading of zero', () async {
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          final body = detailBody()
+            ..['onlineCount'] = <String, Object?>{
+              'status': 'available',
+              'count': 0,
+              'observedAt': '2026-09-16T06:44:39.224Z',
+              'source': 'stream_member_presence',
+            };
+          handler.resolve(_response(options, body));
+        }),
+      );
+
+      final detail = await api.getCommunity(
+        accessToken: 'token',
+        clientVersion: clientVersion,
+        communityId: communityId,
+      );
+
+      // Stream answered zero. That is not the same fact as not having asked.
+      expect((detail.onlineCount as CommunityOnlineCountObserved).count, 0);
+    });
+
+    test('a presence read that failed stays unavailable', () async {
+      for (final reasonCode in <String>[
+        'COMMUNITY_CHANNEL_NOT_PROVISIONED',
+        'COMMUNITY_CHANNEL_PROVISION_FAILED',
+        'STREAM_PRESENCE_READ_FAILED',
+        'STREAM_PRESENCE_READ_TIMEOUT',
+        'STREAM_PRESENCE_MEMBER_BOUND_EXCEEDED',
+        'STREAM_PRESENCE_NOT_OBSERVED',
+        'STREAM_PRESENCE_NOT_CONNECTED',
+        'COMMUNICATION_RUNTIME_UNAVAILABLE',
+      ]) {
+        final api = DioLoopV2CommunityApi(
+          _dio((options, handler) {
+            final body = detailBody()
+              ..['onlineCount'] = unavailable(reasonCode);
+            handler.resolve(_response(options, body));
+          }),
+        );
+
+        final detail = await api.getCommunity(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          communityId: communityId,
+        );
+
+        expect(
+          (detail.onlineCount as CommunityOnlineCountUnavailable).reasonCode,
+          reasonCode,
+          reason: reasonCode,
+        );
+        // The unavailable branch never resolves to a number.
+        expect(detail.onlineCount, isNot(isA<CommunityOnlineCountObserved>()));
+      }
+    });
+
+    test('an online count from an unknown source is refused', () async {
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          final body = detailBody()
+            ..['onlineCount'] = <String, Object?>{
+              'status': 'available',
+              'count': 3,
+              'observedAt': '2026-09-16T06:44:39.224Z',
+              'source': 'channel_watchers',
+            };
+          handler.resolve(_response(options, body));
+        }),
+      );
+
+      // A different source is a different fact under the same name.
+      await expectLater(
+        api.getCommunity(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          communityId: communityId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('an observation with no time is refused', () async {
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          final body = detailBody()
+            ..['onlineCount'] = <String, Object?>{
+              'status': 'available',
+              'count': 3,
+              'source': 'stream_member_presence',
+            };
+          handler.resolve(_response(options, body));
+        }),
+      );
+
+      await expectLater(
+        api.getCommunity(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          communityId: communityId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test(
       "a community's settled power carries the weight that made it",
       () async {
         final api = DioLoopV2CommunityApi(

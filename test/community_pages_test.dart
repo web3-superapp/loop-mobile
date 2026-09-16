@@ -355,6 +355,113 @@ void main() {
   });
 
   group('community-profile', () {
+    testWidgets('an observed online count prints the number and the time', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityProfileScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          detail: testDetail(
+            onlineCount: CommunityOnlineCountObserved(
+              count: 1,
+              observedAt: DateTime.utc(2026, 9, 16, 6, 44, 39, 224),
+              source: CommunityPresenceSource.streamMemberPresence,
+            ),
+          ),
+        ),
+      );
+
+      final row = find.byKey(
+        const ValueKey<String>('community-online-count-row'),
+      );
+      await tester.scrollUntilVisible(
+        row,
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('1 人'), findsOneWidget);
+      // The observation carries its own time, in UTC, as the server gave it.
+      expect(find.text('观察于 2026-09-16 06:44 UTC'), findsOneWidget);
+      // 「在线 1 人」 alone would be read as "active recently" or as the
+      // membership, so the page says what was counted.
+      expect(find.textContaining('与 Stream 保持连接'), findsOneWidget);
+      expect(find.textContaining('最近活跃'), findsOneWidget);
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'community-unavailable-STREAM_PRESENCE_NOT_CONNECTED',
+          ),
+        ),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a zero observation is a reading, not an absence', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityProfileScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          detail: testDetail(
+            onlineCount: CommunityOnlineCountObserved(
+              count: 0,
+              observedAt: DateTime.utc(2026, 9, 16, 6, 44, 39, 224),
+              source: CommunityPresenceSource.streamMemberPresence,
+            ),
+          ),
+        ),
+      );
+
+      final row = find.byKey(
+        const ValueKey<String>('community-online-count-row'),
+      );
+      await tester.scrollUntilVisible(
+        row,
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      // Stream answered zero: the page prints it instead of hiding behind the
+      // unavailable card it uses when nobody asked.
+      expect(find.text('0 人'), findsOneWidget);
+      expect(find.text('观察于 2026-09-16 06:44 UTC'), findsOneWidget);
+    });
+
+    testWidgets('a presence read that failed never becomes a number', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityProfileScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          detail: testDetail(
+            onlineCount: const CommunityOnlineCountUnavailable(
+              'STREAM_PRESENCE_READ_TIMEOUT',
+            ),
+          ),
+        ),
+      );
+
+      final card = find.byKey(
+        const ValueKey<String>(
+          'community-unavailable-STREAM_PRESENCE_READ_TIMEOUT',
+        ),
+      );
+      await tester.scrollUntilVisible(
+        card,
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(card, findsOneWidget);
+      expect(find.textContaining('超时'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('community-online-count-row')),
+        findsNothing,
+      );
+      expect(find.textContaining('0 人'), findsNothing);
+    });
+
     testWidgets("a settled community power explains why it is that number", (
       tester,
     ) async {

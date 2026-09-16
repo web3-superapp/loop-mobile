@@ -17,6 +17,12 @@ const _previewMining = LoopMiningPowerUnavailable(
 );
 const _previewPresence = LoopUnavailableFact('STREAM_PRESENCE_NOT_CONNECTED');
 
+/// The preview never observes a Stream connection, so it publishes the same
+/// absence the detail read does rather than a number nobody counted.
+const _previewOnlineCount = CommunityOnlineCountUnavailable(
+  'STREAM_PRESENCE_NOT_CONNECTED',
+);
+
 CommunitySummary _community({
   required String id,
   required String name,
@@ -113,7 +119,7 @@ final class MemoryCommunityGateway implements CommunityGateway {
         canBan: joined,
       ),
       miningPower: _previewMining,
-      onlineCount: _previewPresence,
+      onlineCount: _previewOnlineCount,
       announcements: const LoopUnavailableFact(
         'COMMUNITY_ANNOUNCEMENTS_DEFERRED',
       ),

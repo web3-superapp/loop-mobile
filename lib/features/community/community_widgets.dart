@@ -199,13 +199,78 @@ class CommunityUnavailableCard extends StatelessWidget {
   }
 }
 
-/// Server settlement time in UTC. The client never restates it as a local
-/// wall clock or as a relative "just now".
+/// A server-side time in UTC — a settlement's, an observation's. The client
+/// never restates it as a local wall clock or as a relative "just now".
 String communitySettlementLabel(DateTime computedAt) {
   final value = computedAt.toUtc();
   String two(int part) => part.toString().padLeft(2, '0');
   return '${value.year}-${two(value.month)}-${two(value.day)} '
       '${two(value.hour)}:${two(value.minute)} UTC';
+}
+
+/// Renders `onlineCount`.
+///
+/// An observation prints the number the server counted and when it counted
+/// it, and says in the same breath what was counted: members of the
+/// community's official Stream channel holding a live connection right now.
+/// It is not "watching this channel", not "active recently", and not the
+/// membership — so the card states that rather than letting 「在线 N 人」 be
+/// read as any of them. Anything else keeps the unavailable card: a read that
+/// failed never becomes a 0.
+class CommunityOnlineCountCard extends StatelessWidget {
+  const CommunityOnlineCountCard({
+    required this.fact,
+    super.key,
+    this.margin = const EdgeInsets.symmetric(horizontal: 16),
+  });
+
+  final CommunityOnlineCount fact;
+  final EdgeInsets margin;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (fact) {
+      case CommunityOnlineCountUnavailable(:final reasonCode):
+        return CommunityUnavailableCard(
+          label: '在线人数',
+          fact: LoopUnavailableFact(reasonCode),
+          margin: margin,
+        );
+      case CommunityOnlineCountObserved(:final count, :final observedAt):
+        return Padding(
+          padding: margin,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              LoopRecordGroup(
+                key: const ValueKey<String>('community-online-count'),
+                rows: <LoopRecordRow>[
+                  LoopRecordRow(
+                    key: const ValueKey<String>('community-online-count-row'),
+                    title: '在线',
+                    subtitle: '观察于 ${communitySettlementLabel(observedAt)}',
+                    trailing: '$count 人',
+                    semanticLabel:
+                        '在线 $count 人，观察于 '
+                        '${communitySettlementLabel(observedAt)}',
+                  ),
+                ],
+              ),
+              LoopNotice(
+                key: const ValueKey<String>('community-online-count-meaning'),
+                icon: 'info',
+                title: '这里数的是连接，不是活跃',
+                body:
+                    '这是社区官方频道的成员里，此刻仍与 Stream 保持连接的人数（$count 人），'
+                    '不是「正在看这个频道」，不是「最近活跃」，也不是社区成员总数。'
+                    '它是一次观察，不是持续统计。',
+                margin: const EdgeInsets.only(top: 10),
+              ),
+            ],
+          ),
+        );
+    }
+  }
 }
 
 /// Renders one `miningPower` field. A settled reading prints the server's own

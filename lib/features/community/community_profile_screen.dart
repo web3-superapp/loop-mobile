@@ -177,7 +177,7 @@ class _CommunityProfileScreenState
                 widget.onOpenVoiceRoom?.call(detail.community.communityId),
           ),
           const LoopLabel('在线'),
-          CommunityUnavailableCard(label: '在线人数', fact: detail.onlineCount),
+          CommunityOnlineCountCard(fact: detail.onlineCount),
           const LoopLabel('社区币'),
           if (!detail.community.hasBoundAsset)
             const LoopEmpty(

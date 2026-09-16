@@ -410,12 +410,43 @@ abstract final class LoopV2ProjectionCodec {
     return value;
   }
 
+  /// `onlineCount`: an observation, or the server's reason for not having one.
+  ///
+  /// The available branch is only produced by the detail read; every write
+  /// answers the unavailable branch with `STREAM_PRESENCE_NOT_OBSERVED`, and
+  /// a failed or timed-out read answers its own code. A zero here is a real
+  /// reading — nobody was connected — and is never used to stand in for an
+  /// absent one.
+  static CommunityOnlineCount onlineCount(Object? raw) {
+    if (raw is! Map) invalid();
+    if (raw['status'] != 'available') {
+      return CommunityOnlineCountUnavailable(unavailable(raw).reasonCode);
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'count',
+      'observedAt',
+      'source',
+    });
+    final rawSource = map['source'];
+    if (rawSource is! String) invalid();
+    final source = CommunityPresenceSource.tryParse(rawSource);
+    // A source the client does not know is a different fact under the same
+    // name, so the page states none at all.
+    if (source == null) invalid();
+    return CommunityOnlineCountObserved(
+      count: requireCount(map, 'count'),
+      observedAt: requireTimestamp(map, 'observedAt'),
+      source: source,
+    );
+  }
+
   static CommunityDetail detail(Map<String, Object?> root) {
     return CommunityDetail(
       community: community(root['community']),
       viewer: viewer(root['viewer']),
       miningPower: miningPowerFact(root['miningPower']),
-      onlineCount: unavailable(root['onlineCount']),
+      onlineCount: onlineCount(root['onlineCount']),
       announcements: unavailable(root['announcements']),
       officialLinks: unavailable(root['officialLinks']),
       chat: chatSection(root['chat']),

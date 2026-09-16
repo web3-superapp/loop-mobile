@@ -324,7 +324,11 @@ final class CommunityDetail {
   final CommunitySummary community;
   final CommunityViewer viewer;
   final LoopMiningPowerFact miningPower;
-  final LoopUnavailableFact onlineCount;
+
+  /// Members connected to Stream at the moment this page was read, or the
+  /// server's own reason for not having counted them.
+  final CommunityOnlineCount onlineCount;
+
   final LoopUnavailableFact announcements;
   final LoopUnavailableFact officialLinks;
   final CommunityChatSection chat;
