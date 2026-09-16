@@ -104,12 +104,15 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
         variant: LoopFolioVariant.lime,
         archetype: LoopFolioArchetype.listing,
         kicker: 'MARKET SIGNALS',
-        heading: watchlistCount == null ? '行情信号' : '$watchlistCount 个自选资产',
+        // The overview carries the rows it decided to send, not the whole
+        // Watchlist: 自选管理 counts 47 while this block holds 4. A figure
+        // that cannot say what it counts is not printed here at all.
+        heading: '行情信号',
         caption: overview == null
             ? '行情暂时读不到，这里不显示数字。'
             : '每个数字都标注出处和时间 · '
                   '本次读取于 ${loopRelativeTime(overview.observedAt)}',
-        stamp: watchlistCount == null ? null : '$watchlistCount WATCHED',
+        stamp: overview == null ? null : 'MARKET',
       ),
       sections: <Widget>[
         if (!state.isReady || overview == null)
@@ -124,7 +127,9 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
             ),
           )
         else ...<Widget>[
-          const LoopLabel('自选'),
+          LoopLabel(
+            watchlistCount == null ? '自选' : '自选 · 这一页 $watchlistCount 条',
+          ),
           _WatchlistBlock(
             block: overview.watchlist,
             onOpenAsset: (assetId) => _open(MarketAssetRoute.token(assetId)),

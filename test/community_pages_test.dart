@@ -79,7 +79,11 @@ void main() {
       );
 
       expect(find.text('2 个已加入的社区'), findsOneWidget);
-      expect(find.textContaining('发现 3 个已验证社区'), findsOneWidget);
+      // `discover` is a preview the server cut to a handful. Its length was
+      // printed as the number of verified communities, which read 5 while the
+      // directory held 36, so the page now states only what it is showing.
+      expect(find.textContaining('个已验证社区'), findsNothing);
+      expect(find.textContaining('这里先给 3 个'), findsOneWidget);
       expect(find.text('Joined 0'), findsOneWidget);
       // The discover list moved to its own page; the hero states the count.
       expect(find.text('Discover 0'), findsNothing);
@@ -279,6 +283,47 @@ void main() {
       expect(seg('discussion').onSelected, isNull);
       expect(find.textContaining('算力排序暂时不能用'), findsOneWidget);
       expect(find.textContaining('讨论量排序暂时不能用'), findsOneWidget);
+    });
+
+    testWidgets('the heading counts what is loaded, never a total it lacks', (
+      tester,
+    ) async {
+      // The directory answers one cursor page and carries no total. The
+      // heading read "20 个社区" over a directory of 36.
+      final gateway = FakeCommunityGateway(
+        directoryPage: CommunityDirectoryPage(
+          items: <CommunitySummary>[testCommunity()],
+          nextCursor: 'cursor-2',
+          recommendation: const CommunityRecommendation(
+            recommendationId: '22222222-2222-4222-8222-222222222222',
+            ruleVersion: 'rule:verified-members-v1',
+          ),
+        ),
+      );
+      await pumpCommunityPage(
+        tester,
+        const CommunityDiscoverScreen(),
+        community: gateway,
+      );
+
+      expect(find.text('已载入 1 个社区'), findsOneWidget);
+      expect(find.text('1 个社区'), findsNothing);
+
+      // With the last page in, the loaded rows are the whole answer and the
+      // heading may say so.
+      gateway.directoryPage = CommunityDirectoryPage(
+        items: <CommunitySummary>[testCommunity()],
+        nextCursor: null,
+        recommendation: const CommunityRecommendation(
+          recommendationId: '22222222-2222-4222-8222-222222222222',
+          ruleVersion: 'rule:verified-members-v1',
+        ),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('discover-seg-newest')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('1 个社区'), findsOneWidget);
     });
 
     testWidgets('choosing 新社区 refetches with the newest sort', (tester) async {

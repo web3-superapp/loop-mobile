@@ -46,7 +46,11 @@ void main() {
         market: FakeMarketReadGateway(),
       );
 
-      expect(find.text('1 个自选资产'), findsOneWidget);
+      // The overview carries the rows it decided to send, not the whole
+      // Watchlist — 自选管理 counted 47 while this block held 4 — so the tab
+      // states what is on this page and calls nothing a total.
+      expect(find.textContaining('个自选资产'), findsNothing);
+      expect(find.text('自选 · 这一页 1 条'), findsOneWidget);
       expect(find.text('\$747.39'), findsWidgets);
       expect(find.textContaining('来源 DexScreener'), findsWidgets);
       expect(find.textContaining('观察于'), findsWidgets);

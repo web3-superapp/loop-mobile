@@ -120,9 +120,14 @@ class _CommunityDiscoverScreenState
         variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.listing,
         kicker: 'DISCOVERY DESK',
-        heading: state.phase == CommunityViewPhase.ready
+        // The directory answers one cursor page at a time and carries no
+        // total, so a heading may only count what is loaded — and it says
+        // that it is what it is counting until the last page is in.
+        heading: state.phase != CommunityViewPhase.ready
+            ? communityMissingHeading
+            : state.nextCursor == null
             ? '${state.items.length} 个社区'
-            : communityMissingHeading,
+            : '已载入 ${state.items.length} 个社区',
         caption: '排序只用成员数和创建时间这两项可核对的信息。热门不等于推荐。',
         stamp: state.recommendation == null ? null : 'RULE',
       ),

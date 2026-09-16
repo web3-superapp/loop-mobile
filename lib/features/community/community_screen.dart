@@ -145,11 +145,13 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
               primary: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  // The discover hero sits above the index card, as in the frozen
-                  // prototype, and only ever states a server-counted figure.
+                  // The discover hero sits above the index card, as in the
+                  // frozen prototype. The aggregate carries a handful of
+                  // communities and no total, so the hero says how many it is
+                  // showing and never how many exist.
                   if (home != null)
                     _DiscoverHero(
-                      discoverCount: home.discover.length,
+                      previewCount: home.discover.length,
                       onTap: () => _open('/community/discover'),
                     ),
                   LoopFolioPrimary(
@@ -160,9 +162,12 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     heading: joinedCount == null
                         ? communityMissingHeading
                         : '$joinedCount 个已加入的社区',
+                    // `discover` is a preview the server cut to a handful, so
+                    // its length is not a count of verified communities and is
+                    // not printed as one.
                     caption: home == null
                         ? '社区数据暂时读不到，这一页不显示任何数字。'
-                        : '发现 ${home.discover.length} 个已验证社区 · '
+                        : '已验证社区在发现页浏览 · '
                               '数据观察于 ${communityObservedAtLabel(home.observedAt)}',
                     stamp: home == null ? null : 'DATABASE',
                   ),
@@ -318,9 +323,11 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
 }
 
 class _DiscoverHero extends StatelessWidget {
-  const _DiscoverHero({required this.discoverCount, required this.onTap});
+  const _DiscoverHero({required this.previewCount, required this.onTap});
 
-  final int discoverCount;
+  /// How many rows this hero is previewing. Never a total: the aggregate
+  /// does not carry one.
+  final int previewCount;
   final VoidCallback onTap;
 
   @override
@@ -331,7 +338,7 @@ class _DiscoverHero extends StatelessWidget {
       background: LoopColors.lime,
       borderColor: LoopColors.lime,
       onTap: onTap,
-      semanticLabel: '发现新社区，当前有 $discoverCount 个推荐',
+      semanticLabel: '发现新社区，这里预览 $previewCount 个',
       child: Row(
         children: <Widget>[
           Expanded(
@@ -352,7 +359,8 @@ class _DiscoverHero extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '按成员数或创建时间浏览已验证社区，本次共 $discoverCount 个。',
+                  '按成员数或创建时间浏览已验证社区。这里先给 $previewCount 个，'
+                  '全部在发现页。',
                   style: LoopTypography.caption(
                     12,
                     color: LoopColors.ink.withValues(alpha: 0.72),
