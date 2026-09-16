@@ -269,6 +269,30 @@ void main() {
       expect(find.textContaining('评估于'), findsOneWidget);
     });
 
+    testWidgets('a hero over a partial list counts what it loaded', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const PriceAlertsScreen(),
+        alerts: FakeAlertsGateway(
+          page: S5Answer<LoopAlertPage>(
+            value: LoopAlertPage(
+              items: <LoopPriceAlert>[s5Alert()],
+              nextCursor: 'next',
+            ),
+          ),
+        ),
+        notifications: FakeNotificationsGateway(),
+      );
+
+      // One page of an unknown number: the hero may not call its armed rows
+      // the alerts that are listening, and it never prints 「N ACTIVE」.
+      expect(find.text('已载入 1 条提醒'), findsOneWidget);
+      expect(find.textContaining('个提醒正在监听'), findsNothing);
+      expect(find.textContaining('ACTIVE'), findsNothing);
+    });
+
     testWidgets('an alert never evaluated says so instead of guessing', (
       tester,
     ) async {

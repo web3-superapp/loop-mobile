@@ -96,9 +96,21 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         key: const ValueKey<String>('alerts-folio'),
         archetype: LoopFolioArchetype.listing,
         kicker: 'PRICE ALERTS',
-        heading: state.isReady ? '${armed.length} 个提醒正在监听' : '价格提醒',
-        caption: '触发一次后提醒会停下来，重新编辑才会再次生效。',
-        stamp: state.isReady ? '${armed.length} ACTIVE' : null,
+        // The list answers one cursor page at a time and the response carries
+        // no total, so the armed count describes this page only. It is stated
+        // as a count of what is listening exactly when the last page is in;
+        // before that the hero says how many rows it has loaded.
+        heading: !state.isReady
+            ? '价格提醒'
+            : state.page!.nextCursor != null
+            ? '已载入 ${state.items.length} 条提醒'
+            : '${armed.length} 个提醒正在监听',
+        caption: state.isReady && state.page!.nextCursor != null
+            ? '这一页之后还有提醒没有载入。触发一次后提醒会停下来，重新编辑才会再次生效。'
+            : '触发一次后提醒会停下来，重新编辑才会再次生效。',
+        // No stamp: the prototype's `.folio-stamp` carries a settled reading,
+        // never a state name, and 「9 ACTIVE」 restated the heading in English
+        // over a figure that only counted one page.
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
