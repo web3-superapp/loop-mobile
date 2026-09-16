@@ -391,7 +391,36 @@ void main() {
       );
       await scrollToS7Section(tester, snapshot);
       expect(snapshot, findsOneWidget);
-      expect(find.textContaining('还没有任何一次算力结算'), findsOneWidget);
+      // The one code that means "there is none" says so.
+      expect(find.text('还没有结算记录'), findsOneWidget);
+    });
+
+    testWidgets('a repository that did not answer is not an absence of '
+        'settlements', (tester) async {
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(
+          summary: S7Answer<MiningSummary>(
+            value: s7MiningSummary(
+              snapshot: const MiningSnapshotUnavailable(
+                'MINING_RUNTIME_UNAVAILABLE',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final snapshot = find.byKey(
+        const ValueKey<String>('mining-snapshot-unavailable'),
+      );
+      await scrollToS7Section(tester, snapshot);
+      expect(find.text('暂时读不到结算记录'), findsOneWidget);
+      expect(find.text('还没有结算记录'), findsNothing);
+      expect(
+        find.text(launchReasonCodeText('MINING_RUNTIME_UNAVAILABLE')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('the capability gate stops the read', (tester) async {
@@ -450,6 +479,45 @@ void main() {
       expect(find.textContaining('空列表是正常结果'), findsOneWidget);
       expect(find.textContaining('不代表你的钱包没有持仓'), findsOneWidget);
       expect(_figures(tester), isEmpty);
+    });
+
+    testWidgets('an unread settlement is not a missing one', (tester) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(
+            value: s7MiningAssets(
+              source: const MiningSnapshotUnavailable(
+                'MINING_RUNTIME_UNAVAILABLE',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final source = find.byKey(
+        const ValueKey<String>('mining-assets-source-unavailable'),
+      );
+      await scrollToS7Section(tester, source);
+      expect(find.text('暂时读不到结算记录'), findsOneWidget);
+      expect(find.text('还没有结算记录'), findsNothing);
+    });
+
+    testWidgets('a settlement the lane has not produced says so', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(),
+      );
+
+      final source = find.byKey(
+        const ValueKey<String>('mining-assets-source-unavailable'),
+      );
+      await scrollToS7Section(tester, source);
+      expect(find.text('还没有结算记录'), findsOneWidget);
     });
 
     testWidgets('the community mining panel is reachable from here', (
@@ -1208,6 +1276,34 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.textContaining(s7BaselineVersion), findsOneWidget);
+    });
+
+    testWidgets('a repository that did not answer is not an absence of '
+        'settlements', (tester) async {
+      await pumpS7Page(
+        tester,
+        const MiningCommunityScreen(communityId: s7CommunityId),
+        mining: FakeMiningGateway(
+          community: S7Answer<MiningCommunity>(
+            value: s7MiningCommunity(
+              snapshot: const MiningSnapshotUnavailable(
+                'MINING_RUNTIME_UNAVAILABLE',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final snapshot = find.byKey(
+        const ValueKey<String>('mining-community-snapshot-unavailable'),
+      );
+      await scrollToS7Section(tester, snapshot);
+      expect(find.text('暂时读不到结算记录'), findsOneWidget);
+      expect(find.text('还没有结算记录'), findsNothing);
+      expect(
+        find.text(launchReasonCodeText('MINING_RUNTIME_UNAVAILABLE')),
+        findsWidgets,
+      );
     });
 
     testWidgets('a missing communityId fails closed', (tester) async {

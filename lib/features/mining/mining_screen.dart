@@ -8,6 +8,7 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
+import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -356,8 +357,8 @@ class _SnapshotBlock extends StatelessWidget {
       MiningSnapshotUnavailable(:final reasonCode) => LoopEmpty(
         key: const ValueKey<String>('mining-snapshot-unavailable'),
         icon: 'clock',
-        message: '还没有结算记录',
-        reason: launchReasonCodeText(reasonCode),
+        message: miningSnapshotAbsenceMessage(reasonCode),
+        reason: miningSnapshotAbsenceReason(reasonCode),
       ),
       MiningSnapshotComputed(:final blockNumber, :final computedAt) =>
         LoopRecordGroup(
