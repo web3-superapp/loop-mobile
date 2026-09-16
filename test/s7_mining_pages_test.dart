@@ -682,6 +682,45 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets('the page stamps its own figures with the version in force', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(value: s7MiningSettledAssets()),
+        ),
+      );
+
+      final formula = find.byKey(const ValueKey<String>('mining-formula'));
+      await scrollToS7Section(tester, formula);
+      expect(formula, findsOneWidget);
+      // The same label the summary prints, from the same block: the page no
+      // longer shows settled figures without saying which version made them.
+      expect(find.text(miningBaselineLabel), findsWidgets);
+      // The version string is an identifier and stays out of the sentences.
+      expect(find.textContaining(s7BaselineVersion), findsNothing);
+    });
+
+    testWidgets('no version in force leaves no baseline label on the page', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(value: s7MiningAssets()),
+        ),
+      );
+
+      final formula = find.byKey(const ValueKey<String>('mining-formula'));
+      await scrollToS7Section(tester, formula);
+      expect(formula, findsOneWidget);
+      expect(find.text('待批准'), findsOneWidget);
+      expect(find.text(miningBaselineLabel), findsNothing);
+    });
   });
 
   group('mining-rewards', () {
@@ -930,6 +969,29 @@ void main() {
       expect(find.text('权重 1.5'), findsOneWidget);
       expect(find.text('权重 0.8'), findsOneWidget);
       expect(find.textContaining('0 人有算力'), findsNWidgets(2));
+    });
+
+    testWidgets('the board says which version produced its places', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningRankScreen(),
+        mining: FakeMiningGateway(
+          rank: S7Answer<MiningRank>(
+            value: s7MiningRank(
+              ranking: s7MiningCommunityBoard(),
+              formula: s7EffectiveFormula(),
+            ),
+          ),
+        ),
+      );
+
+      final formula = find.byKey(const ValueKey<String>('mining-formula'));
+      await scrollToS7Section(tester, formula);
+      expect(formula, findsOneWidget);
+      expect(find.text(miningBaselineLabel), findsWidgets);
+      expect(find.textContaining(s7BaselineVersion), findsNothing);
     });
 
     testWidgets('the capability gate hides the scopes too', (tester) async {

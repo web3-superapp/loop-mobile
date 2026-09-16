@@ -76,6 +76,21 @@ const _baselineVersion = 'miningFormula-devBaseline-2026-09-15-r2';
 /// version is in effect.
 const _referralBoostPending = 'MINING_REFERRAL_BOOST_PENDING';
 
+/// The `formula` block the summary, the composition page and the ranking all
+/// publish, from the same source.
+Map<String, Object?> _effectiveFormula() => <String, Object?>{
+  'status': 'approved',
+  'configVersion': _baselineVersion,
+  'effectiveAt': '2026-09-15T14:57:37.026Z',
+  'scope': 'development_baseline',
+};
+
+Map<String, Object?> _pendingFormula() => <String, Object?>{
+  'status': 'unavailable',
+  'reasonCode': 'MINING_FORMULA_BASELINE_PENDING',
+  'pendingVersion': 'miningFormulaV1-draft',
+};
+
 /// The Development snapshot of 2026-09-15, field for field.
 Map<String, Object?> _miningSnapshot() => <String, Object?>{
   'snapshotId': '0e358b31-e49f-48b9-89b2-c5c908c3ad5e',
@@ -122,6 +137,7 @@ Map<String, Object?> _miningAssets({
   Object? source,
   Object? totalPower,
   Object? referencePrice,
+  Object? formula,
 }) => <String, Object?>{
   'totalPower':
       totalPower ?? <String, Object?>{'status': 'available', 'value': '0'},
@@ -155,6 +171,7 @@ Map<String, Object?> _miningAssets({
   'referencePrice':
       referencePrice ??
       <String, Object?>{'status': 'available', 'priceVersion': _priceVersion},
+  'formula': formula ?? _effectiveFormula(),
   'contractVersion': '2.0',
 };
 
@@ -216,12 +233,14 @@ Map<String, Object?> _miningRank({
   Object? ranking,
   Object? myPosition,
   Object? snapshot,
+  Object? formula,
 }) => <String, Object?>{
   'scope': scope,
   'ranking': ranking,
   'myPosition': myPosition ?? _unavailable('MINING_RANK_NOT_RANKED'),
   'snapshot': snapshot ?? _miningSnapshot(),
   'display': _rankDisplay(),
+  'formula': formula ?? _effectiveFormula(),
   'contractVersion': '2.0',
 };
 
@@ -1327,7 +1346,49 @@ void main() {
         (assets.referencePrice as MiningReferencePriceSettled).priceVersion,
         _priceVersion,
       );
+      // The same block the summary publishes, from the same source: the page
+      // stamps its own figures without reading the version string.
+      final formula = assets.formula as MiningFormulaEffective;
+      expect(formula.configVersion, _baselineVersion);
+      expect(formula.scope, MiningFormulaScope.developmentBaseline);
     });
+
+    test('a composition page without a formula block is refused', () {
+      final body = _miningAssets()..remove('formula');
+      final api = DioLoopV2MiningApi(
+        _dio(_RecordingAdapter(statusCode: 200, body: body)),
+      );
+
+      expect(
+        () => api.getAssets(accessToken: _token, clientVersion: _clientVersion),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test(
+      'no version in force reaches the composition page as pending',
+      () async {
+        final assets = await DioLoopV2MiningApi(
+          _dio(
+            _RecordingAdapter(
+              statusCode: 200,
+              body: _miningAssets(
+                included: <Object?>[],
+                totalPower: _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+                source: _unavailable('MINING_SNAPSHOT_NOT_AVAILABLE'),
+                referencePrice: _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+                formula: _pendingFormula(),
+              ),
+            ),
+          ),
+        ).getAssets(accessToken: _token, clientVersion: _clientVersion);
+
+        expect(
+          (assets.formula as MiningFormulaPending).pendingVersion,
+          'miningFormulaV1-draft',
+        );
+      },
+    );
 
     test('an excluded asset keeps the server reason', () async {
       final assets = await DioLoopV2MiningApi(
@@ -1641,6 +1702,27 @@ void main() {
       final place = rank.myPosition as MiningRankPositionSettled;
       expect(place.position, 2);
       expect(place.power, '1000');
+      // The board's own places were produced under this version, and the page
+      // reads it from the same block the other two pages read.
+      final formula = rank.formula as MiningFormulaEffective;
+      expect(formula.configVersion, _baselineVersion);
+      expect(formula.scope, MiningFormulaScope.developmentBaseline);
+    });
+
+    test('a ranking without a formula block is refused', () {
+      final body = _miningRank(ranking: _board())..remove('formula');
+      final api = DioLoopV2MiningApi(
+        _dio(_RecordingAdapter(statusCode: 200, body: body)),
+      );
+
+      expect(
+        () => api.getRank(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          scope: MiningRankScope.users,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
     });
 
     test('a zero power is in the settlement with no position', () async {

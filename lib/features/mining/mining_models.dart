@@ -163,6 +163,15 @@ final class MiningFormulaEffective extends MiningFormulaGate {
   final MiningFormulaScope scope;
 }
 
+/// Whether the version in force declares itself the development baseline.
+///
+/// It is the only thing that may put the baseline label on a figure: the
+/// version string is an identifier and is never read for meaning.
+bool miningGateIsBaseline(MiningFormulaGate gate) => switch (gate) {
+  MiningFormulaEffective(:final scope) => scope.isBaseline,
+  MiningFormulaPending() => false,
+};
+
 @immutable
 final class MiningSummary {
   const MiningSummary({
@@ -302,6 +311,7 @@ final class MiningAssets {
     required this.excluded,
     required this.source,
     required this.referencePrice,
+    required this.formula,
   });
 
   final MiningFigure totalPower;
@@ -309,6 +319,11 @@ final class MiningAssets {
   final List<MiningExcludedAsset> excluded;
   final MiningSnapshotRef source;
   final MiningReferencePrice referencePrice;
+
+  /// The version in force, in the same block the summary reads. The page
+  /// stamps its own figures from this and never reads the version string for
+  /// meaning.
+  final MiningFormulaGate formula;
 
   /// True while no settlement produced these lists. An empty list under a
   /// settlement is a different sentence from an empty list without one.
@@ -536,6 +551,7 @@ final class MiningRank {
     required this.myPosition,
     required this.snapshot,
     required this.display,
+    required this.formula,
   });
 
   final MiningRankScope scope;
@@ -543,6 +559,10 @@ final class MiningRank {
   final MiningRankPosition myPosition;
   final MiningSnapshotRef snapshot;
   final MiningRankDisplayRule display;
+
+  /// The version in force, in the same block the summary reads. The board's
+  /// places were produced under it, so the page says which version it is.
+  final MiningFormulaGate formula;
 }
 
 @immutable

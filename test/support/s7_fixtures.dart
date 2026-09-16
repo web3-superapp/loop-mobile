@@ -340,6 +340,20 @@ LaunchMilestone s7ImplicitMilestone({
 
 const s7BaselineVersion = 'miningFormula-devBaseline-2026-09-15-r2';
 
+/// The version in force on the Development lane, in the block the summary,
+/// the composition page and the ranking all publish.
+MiningFormulaEffective s7EffectiveFormula() => MiningFormulaEffective(
+  configVersion: s7BaselineVersion,
+  effectiveAt: DateTime.utc(2026, 9, 15, 14, 57, 37),
+  scope: MiningFormulaScope.developmentBaseline,
+);
+
+/// No version in force: the same block, naming the draft that is waiting.
+MiningFormulaPending s7PendingFormula() => const MiningFormulaPending(
+  reasonCode: s7FormulaPending,
+  pendingVersion: 'miningFormulaV1-draft',
+);
+
 MiningSummary s7MiningSummary({
   String? pendingVersion,
   MiningFigure? power,
@@ -384,11 +398,7 @@ MiningSummary s7MiningBaselineSummary() => s7MiningSummary(
   // ledger is missing for its own reason, and the server guarantees the two
   // never appear together.
   accumulated: const LaunchUnavailable(s7RewardPending),
-  formula: MiningFormulaEffective(
-    configVersion: s7BaselineVersion,
-    effectiveAt: DateTime.utc(2026, 9, 15, 14, 57, 37),
-    scope: MiningFormulaScope.developmentBaseline,
-  ),
+  formula: s7EffectiveFormula(),
 );
 
 /// The four asset ids the Development baseline weighs, and the price version
@@ -415,6 +425,7 @@ MiningAssets s7MiningAssets({
   List<MiningExcludedAsset>? excluded,
   MiningSnapshotRef? source,
   MiningReferencePrice? referencePrice,
+  MiningFormulaGate? formula,
 }) => MiningAssets(
   totalPower: totalPower ?? const MiningFigureUnavailable(s7FormulaPending),
   included: included ?? const <MiningAssetRow>[],
@@ -424,6 +435,7 @@ MiningAssets s7MiningAssets({
       const MiningSnapshotUnavailable('MINING_SNAPSHOT_NOT_AVAILABLE'),
   referencePrice:
       referencePrice ?? const MiningReferencePriceUnavailable(s7FormulaPending),
+  formula: formula ?? s7PendingFormula(),
 );
 
 /// One weighted row, defaulting to the Development shape: a real holding, a
@@ -457,7 +469,9 @@ MiningAssetRow s7MiningAssetRow({
 MiningAssets s7MiningSettledAssets({
   List<MiningAssetRow>? included,
   List<MiningExcludedAsset>? excluded,
+  MiningFormulaGate? formula,
 }) => s7MiningAssets(
+  formula: formula ?? s7EffectiveFormula(),
   totalPower: const MiningFigureValue('0'),
   included:
       included ??
@@ -501,6 +515,7 @@ MiningRank s7MiningRank({
   MiningRanking? ranking,
   MiningRankPosition? myPosition,
   MiningSnapshotRef? snapshot,
+  MiningFormulaGate? formula,
 }) => MiningRank(
   scope: scope,
   ranking: ranking ?? const MiningRankingUnavailable(s7FormulaPending),
@@ -513,6 +528,7 @@ MiningRank s7MiningRank({
     anonymousMemberKey: 'mining.rank.anonymousMember',
     ruleKey: 'mining.rank.display.aliasOrAnonymous',
   ),
+  formula: formula ?? s7PendingFormula(),
 );
 
 const s7PublicProfileId = '8c2b7a15-4d3e-4f60-9a11-2b3c4d5e6f70';

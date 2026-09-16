@@ -659,6 +659,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         'excluded',
         'source',
         'referencePrice',
+        'formula',
         'contractVersion',
       });
       LoopV2S7Codec.requireContractVersion(root);
@@ -697,6 +698,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         excluded: List<MiningExcludedAsset>.unmodifiable(excluded),
         source: source,
         referencePrice: _referencePrice(root['referencePrice']),
+        formula: _formulaGate(root['formula']),
       );
     } on DioException catch (error) {
       _rethrowRead(error);
@@ -761,6 +763,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         'myPosition',
         'snapshot',
         'display',
+        'formula',
         'contractVersion',
       });
       LoopV2S7Codec.requireContractVersion(root);
@@ -790,6 +793,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
             'mining.rank.display.aliasOrAnonymous',
           }),
         ),
+        formula: _formulaGate(root['formula']),
       );
     } on DioException catch (error) {
       _rethrowRead(error);

@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
+import 'package:loop_mobile/features/mining/mining_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -100,7 +101,10 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
           )
         else ...<Widget>[
           const LoopLabel('我的总算力'),
-          _AssetsTotal(totalPower: assets.totalPower),
+          _AssetsTotal(
+            totalPower: assets.totalPower,
+            baseline: miningGateIsBaseline(assets.formula),
+          ),
           const LoopLabel('计入的资产'),
           if (assets.isUnsettled)
             const LoopNotice(
@@ -154,6 +158,8 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
                 ],
               ),
           ],
+          const LoopLabel('公式版本'),
+          MiningFormulaBlock(formula: assets.formula),
           const LoopLabel('结算记录'),
           _AssetsSourceBlock(source: assets.source),
           const LoopLabel('社区权重'),
@@ -263,11 +269,13 @@ LoopRecordRow _excludedRow(MiningExcludedAsset row, LoopRowPosition position) =>
     );
 
 /// 我的总算力. A settled figure prints; an unsettled one keeps the em dash and
-/// the server's own reason, and never becomes a zero.
+/// the server's own reason, and never becomes a zero. A figure the development
+/// baseline produced says so beside itself, exactly as the summary's does.
 class _AssetsTotal extends StatelessWidget {
-  const _AssetsTotal({required this.totalPower});
+  const _AssetsTotal({required this.totalPower, required this.baseline});
 
   final MiningFigure totalPower;
+  final bool baseline;
 
   @override
   Widget build(BuildContext context) {
@@ -285,6 +293,10 @@ class _AssetsTotal extends StatelessWidget {
             title: '我的总算力',
             subtitle: '计入的资产加总',
             trailing: value,
+            trailingCaption: baseline ? miningBaselineLabel : null,
+            semanticLabel: baseline
+                ? '我的总算力，$value，$miningBaselineLabel'
+                : '我的总算力，$value',
           ),
         ],
       ),
@@ -550,6 +562,8 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
             _RankingBlock(ranking: rank.ranking),
             const LoopLabel('我的名次'),
             _MyPositionBlock(myPosition: rank.myPosition),
+            const LoopLabel('公式版本'),
+            MiningFormulaBlock(formula: rank.formula),
             const LoopLabel('匿名显示规则'),
             LoopNotice(
               key: const ValueKey<String>('mining-rank-anonymity'),

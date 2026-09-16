@@ -352,6 +352,7 @@ REQUIRED_FILES = (
     "lib/features/mining/mining_models.dart",
     "lib/features/mining/mining_gateway.dart",
     "lib/features/mining/mining_controllers.dart",
+    "lib/features/mining/mining_widgets.dart",
     "lib/features/mining/mining_secondary_screens.dart",
     "lib/features/mining/referral_models.dart",
     "lib/features/mining/referral_gateway.dart",
