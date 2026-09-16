@@ -402,12 +402,16 @@ class _MembershipActions extends StatelessWidget {
             ],
           )
         else
+          // The role the transfer actually leaves behind is Admin, which is
+          // what the members page's own confirmation states; this notice used
+          // to promise 普通成员 and disagree with the sheet the reader is
+          // about to open.
           const LoopNotice(
             key: ValueKey<String>('community-owner-cannot-leave'),
             icon: 'info',
             title: '所有者不能直接退出',
             body:
-                '先在「成员」页对某位成员执行「转让所有者」，你会变成普通成员，'
+                '先在「成员」页对某位成员执行「转让所有者」，你会降为 Admin，'
                 '之后才能退出。转让之前，所有者不能退出社区。',
             margin: EdgeInsets.fromLTRB(16, 0, 16, 14),
           ),

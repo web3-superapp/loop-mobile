@@ -583,9 +583,19 @@ void main() {
         find.byKey(const ValueKey<String>('community-leave-action')),
         findsNothing,
       );
+      final notice = find.byKey(
+        const ValueKey<String>('community-owner-cannot-leave'),
+      );
+      expect(notice, findsOneWidget);
+      // The transfer demotes the previous owner to Admin, which is what the
+      // members page's confirmation says. This notice says the same thing.
       expect(
-        find.byKey(const ValueKey<String>('community-owner-cannot-leave')),
+        find.descendant(of: notice, matching: find.textContaining('降为 Admin')),
         findsOneWidget,
+      );
+      expect(
+        find.descendant(of: notice, matching: find.textContaining('普通成员')),
+        findsNothing,
       );
     });
 
