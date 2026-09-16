@@ -1512,7 +1512,10 @@ class _TransactionHistoryScreenState
         key: const ValueKey<String>('tx-history-folio'),
         archetype: LoopFolioArchetype.record,
         kicker: 'WALLET ACTIVITY',
-        heading: page == null ? '交易历史' : '${page.items.length} 笔',
+        // The figure counts what the segment below actually lists. A tape
+        // filtered to 发出 and showing nothing used to keep 「1 笔」 in the
+        // hero, which reads as a row the list lost.
+        heading: page == null ? '交易历史' : '${_segmentCount(page)} 笔',
         caption: '只包含已登记资产的 ERC-20 转账，每条带交易哈希、区块与确认数。',
       ),
       block: blocked
@@ -1595,6 +1598,21 @@ class _TransactionHistoryScreenState
       ],
     );
   }
+
+  /// How many rows the selected segment lists. The two segments that carry an
+  /// unavailable fact rather than a list count the whole tape: their own card
+  /// says why they have no rows, and a zero there would read as an answer.
+  int _segmentCount(LoopWalletActivityPage page) => switch (_segment) {
+    1 =>
+      page.items
+          .where((entry) => entry.direction == LoopTransferDirection.incoming)
+          .length,
+    2 =>
+      page.items
+          .where((entry) => entry.direction == LoopTransferDirection.outgoing)
+          .length,
+    _ => page.items.length,
+  };
 
   List<Widget> _segmentBody(LoopWalletActivityPage page, String walletId) {
     switch (_segment) {
