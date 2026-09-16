@@ -311,7 +311,9 @@ class _CommunityMembersScreenState
               phase: state.phase,
               failureKind: state.failureKind,
               emptyMessage: searching ? '没有匹配的成员' : '这个筛选下没有成员',
-              emptyReason: searching ? '别名要从开头对上才算匹配，换个开头再试。' : '这个角色下没有成员。',
+              emptyReason: searching
+                  ? '别名要从开头对上才算匹配，换个开头再试。'
+                  : _emptyFilterReason(state.filter),
               permissionTitle: '没有权限查看成员目录',
               onRetry: () => unawaited(controller.reload()),
             )
@@ -556,3 +558,12 @@ String _directoryCaption(CommunityMemberFilter filter, int loaded) =>
       CommunityMemberFilter.banned =>
         '封禁是状态不是角色，这个筛选没有单独的人数读数，当前已载入 $loaded 人。',
     };
+
+/// Why a filter came back with no rows. 已封禁 is a status the server keeps on
+/// a membership, not one of the three roles, and the empty state said 「这个角色
+/// 下没有成员」 over it.
+String _emptyFilterReason(CommunityMemberFilter filter) => switch (filter) {
+  CommunityMemberFilter.all => '这个社区目前没有可显示的成员。',
+  CommunityMemberFilter.owner || CommunityMemberFilter.admin => '这个角色下没有成员。',
+  CommunityMemberFilter.banned => '这个社区目前没有被封禁的成员。',
+};

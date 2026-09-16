@@ -983,6 +983,33 @@ void main() {
       expect(find.text('成员算力'), findsNothing);
     });
 
+    testWidgets('an empty banned view does not call 封禁 a role', (tester) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          members: testDirectory(),
+          membersByFilter: <CommunityMemberFilter, CommunityMemberDirectory>{
+            CommunityMemberFilter.banned: testDirectory(
+              items: const <CommunityMemberEntry>[],
+            ),
+          },
+        ),
+      );
+
+      final bannedSeg = find.byKey(
+        const ValueKey<String>('members-seg-banned'),
+      );
+      await tester.ensureVisible(bannedSeg);
+      await tester.pumpAndSettle();
+      await tester.tap(bannedSeg);
+      await tester.pumpAndSettle();
+
+      expect(find.text('这个筛选下没有成员'), findsOneWidget);
+      expect(find.text('这个社区目前没有被封禁的成员。'), findsOneWidget);
+      expect(find.textContaining('这个角色下没有成员'), findsNothing);
+    });
+
     testWidgets('a row renders exactly the commands the server published', (
       tester,
     ) async {
