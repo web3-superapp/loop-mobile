@@ -562,6 +562,28 @@ final class MiningCommunityWeightPending extends MiningCommunityWeight {
   final String reviewStatus;
 }
 
+/// How many members the settlement counted. A count of zero is a reading —
+/// every member held nothing that counted — and it is not the same fact as
+/// having no count at all.
+@immutable
+sealed class MiningParticipants {
+  const MiningParticipants();
+}
+
+@immutable
+final class MiningParticipantsUnavailable extends MiningParticipants {
+  const MiningParticipantsUnavailable(this.reasonCode);
+
+  final String reasonCode;
+}
+
+@immutable
+final class MiningParticipantsCount extends MiningParticipants {
+  const MiningParticipantsCount(this.count);
+
+  final int count;
+}
+
 @immutable
 final class MiningCommunity {
   const MiningCommunity({
@@ -571,14 +593,19 @@ final class MiningCommunity {
     required this.myContribution,
     required this.rank,
     required this.participants,
+    required this.snapshot,
   });
 
   final MiningCommunityRef community;
   final MiningCommunityWeight weight;
-  final LaunchUnavailable communityPower;
-  final LaunchUnavailable myContribution;
-  final LaunchUnavailable rank;
-  final LaunchUnavailable participants;
+  final MiningFigure communityPower;
+  final MiningFigure myContribution;
+
+  /// The community's own place on the community board, in the same shape the
+  /// board gives the reader.
+  final MiningRankPosition rank;
+  final MiningParticipants participants;
+  final MiningSnapshotRef snapshot;
 }
 
 // ---------------------------------------------------------------------------

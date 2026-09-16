@@ -737,14 +737,7 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
       title: community?.community.name ?? '社区挖矿面板',
       kicker: 'COMMUNITY POWER',
       onBack: widget.onBack,
-      primary: const LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'COMMUNITY POWER',
-        heading: launchMissingHeading,
-        caption: '社区总算力、我的贡献与参与人数都要等挖矿公式确定，目前还读不到。',
-        stamp: 'UNAVAILABLE',
-      ),
+      primary: _communityHero(community),
       block: blocked
           ? _miningCapabilityBlock(
               'mining-community-capability-unavailable',
@@ -767,15 +760,9 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
           const LoopLabel('社区权重'),
           _WeightBlock(weight: community.weight),
           const LoopLabel('算力规则'),
-          LaunchEmptyMetricGrid(
-            key: const ValueKey<String>('mining-community-metrics'),
-            metrics: <(String, String)>[
-              ('社区总算力', community.communityPower.reasonCode),
-              ('我的贡献', community.myContribution.reasonCode),
-              ('社区排名', community.rank.reasonCode),
-              ('参与人数', community.participants.reasonCode),
-            ],
-          ),
+          _CommunityMetrics(community: community),
+          const LoopLabel('结算记录'),
+          _CommunitySnapshotBlock(snapshot: community.snapshot),
           const LoopLabel('绑定资产'),
           LoopRecordGroup(
             key: const ValueKey<String>('mining-community-asset'),
@@ -814,15 +801,40 @@ class _WeightBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (weight) {
-      MiningCommunityWeightApproved(:final value, :final reviewedAt) =>
-        LoopRecordGroup(
-          key: const ValueKey<String>('mining-community-weight-approved'),
-          rows: <LoopRecordRow>[
-            LoopRecordRow(
-              key: const ValueKey<String>('mining-community-weight-row'),
-              title: '已授予权重',
-              subtitle: '审核于 ${launchTimestampLabel(reviewedAt)}',
-              trailing: value,
+      // The version is bound under a neutral name: it is an identifier the
+      // 详情 may hold, never a value a sentence names.
+      MiningCommunityWeightApproved(
+        :final value,
+        :final reviewedAt,
+        configVersion: final identifier,
+      ) =>
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            LoopRecordGroup(
+              key: const ValueKey<String>('mining-community-weight-approved'),
+              rows: <LoopRecordRow>[
+                LoopRecordRow(
+                  key: const ValueKey<String>('mining-community-weight-row'),
+                  title: '已授予权重',
+                  subtitle: '审核于 ${launchTimestampLabel(reviewedAt)}',
+                  trailing: value,
+                ),
+              ],
+            ),
+            LoopDisclosure(
+              key: const ValueKey<String>('mining-community-weight-details'),
+              summary: '详情',
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                child: Text(
+                  '已生效的公式版本 $identifier',
+                  key: const ValueKey<String>(
+                    'mining-community-weight-version',
+                  ),
+                  style: LoopTypography.caption(11, color: LoopColors.text3),
+                ),
+              ),
             ),
           ],
         ),
@@ -832,6 +844,156 @@ class _WeightBlock extends StatelessWidget {
         message: '权重审核中',
         reason: launchReasonCodeText(reasonCode),
       ),
+    };
+  }
+}
+
+/// The hero. A settled community power prints the server's own decimal; the
+/// weight that produced it is already in the number.
+LoopFolioPrimary _communityHero(MiningCommunity? community) {
+  final settled = switch (community?.communityPower) {
+    MiningFigureValue(:final value) => value,
+    _ => null,
+  };
+  return LoopFolioPrimary(
+    variant: LoopFolioVariant.quiet,
+    archetype: LoopFolioArchetype.record,
+    kicker: 'COMMUNITY POWER',
+    heading: settled ?? launchMissingHeading,
+    caption: settled == null
+        ? '社区总算力、我的贡献与参与人数都要等挖矿公式确定，目前还读不到。'
+        : '成员在绑定资产上的算力之和，权重已经算在里面。',
+    stamp: settled == null ? 'UNAVAILABLE' : null,
+  );
+}
+
+/// 算力规则. While nothing was settled the four figures share one sentence;
+/// once they are settled each one prints, and a zero says which reading it is
+/// rather than becoming an em dash.
+class _CommunityMetrics extends StatelessWidget {
+  const _CommunityMetrics({required this.community});
+
+  final MiningCommunity community;
+
+  @override
+  Widget build(BuildContext context) {
+    final power = community.communityPower;
+    final contribution = community.myContribution;
+    final rank = community.rank;
+    final participants = community.participants;
+    if (power is MiningFigureUnavailable &&
+        contribution is MiningFigureUnavailable &&
+        rank is MiningRankPositionUnavailable &&
+        participants is MiningParticipantsUnavailable) {
+      return LaunchEmptyMetricGrid(
+        key: const ValueKey<String>('mining-community-metrics'),
+        metrics: <(String, String)>[
+          ('社区总算力', power.reasonCode),
+          ('我的贡献', contribution.reasonCode),
+          ('社区排名', rank.reasonCode),
+          ('参与人数', participants.reasonCode),
+        ],
+      );
+    }
+    return LoopRecordGroup(
+      key: const ValueKey<String>('mining-community-metrics'),
+      rows: <LoopRecordRow>[
+        _figureRow(
+          slug: 'power',
+          label: '社区总算力',
+          figure: power,
+          position: LoopRowPosition.first,
+        ),
+        _figureRow(
+          slug: 'contribution',
+          label: '我的贡献',
+          figure: contribution,
+          position: LoopRowPosition.middle,
+        ),
+        LoopRecordRow(
+          key: const ValueKey<String>('mining-community-metric-rank'),
+          title: '社区排名',
+          subtitle: switch (rank) {
+            MiningRankPositionUnavailable(:final reasonCode) =>
+              launchReasonCodeText(reasonCode),
+            MiningRankPositionSettled(:final power) => '算力 $power',
+          },
+          subtitleMaxLines: 2,
+          trailing: switch (rank) {
+            MiningRankPositionUnavailable() => launchMissingFigure,
+            MiningRankPositionSettled(:final position) => '第 $position 名',
+          },
+          position: LoopRowPosition.middle,
+        ),
+        LoopRecordRow(
+          key: const ValueKey<String>('mining-community-metric-participants'),
+          title: '参与人数',
+          subtitle: switch (participants) {
+            MiningParticipantsUnavailable(:final reasonCode) =>
+              launchReasonCodeText(reasonCode),
+            MiningParticipantsCount() => '算出了算力的成员',
+          },
+          subtitleMaxLines: 2,
+          trailing: switch (participants) {
+            MiningParticipantsUnavailable() => launchMissingFigure,
+            MiningParticipantsCount(:final count) => '$count',
+          },
+          position: LoopRowPosition.last,
+        ),
+      ],
+    );
+  }
+
+  static LoopRecordRow _figureRow({
+    required String slug,
+    required String label,
+    required MiningFigure figure,
+    required LoopRowPosition position,
+  }) => LoopRecordRow(
+    key: ValueKey<String>('mining-community-metric-$slug'),
+    title: label,
+    subtitle: switch (figure) {
+      MiningFigureUnavailable(:final reasonCode) => launchReasonCodeText(
+        reasonCode,
+      ),
+      MiningFigureValue() => '来自最近一次结算',
+    },
+    subtitleMaxLines: 2,
+    trailing: switch (figure) {
+      MiningFigureUnavailable() => launchMissingFigure,
+      MiningFigureValue(:final value) => value,
+    },
+    position: position,
+  );
+}
+
+/// Which settlement this panel read. The identifiers it carries are backend
+/// strings, so only the block height and the time reach the row.
+class _CommunitySnapshotBlock extends StatelessWidget {
+  const _CommunitySnapshotBlock({required this.snapshot});
+
+  final MiningSnapshotRef snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (snapshot) {
+      MiningSnapshotUnavailable(:final reasonCode) => LoopEmpty(
+        key: const ValueKey<String>('mining-community-snapshot-unavailable'),
+        icon: 'clock',
+        message: '还没有结算记录',
+        reason: launchReasonCodeText(reasonCode),
+      ),
+      MiningSnapshotComputed(:final blockNumber, :final computedAt) =>
+        LoopRecordGroup(
+          key: const ValueKey<String>('mining-community-snapshot'),
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('mining-community-snapshot-row'),
+              title: '最近一次结算',
+              subtitle: '区块 $blockNumber · ${launchTimestampLabel(computedAt)}',
+            ),
+          ],
+        ),
     };
   }
 }

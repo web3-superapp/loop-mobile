@@ -778,6 +778,91 @@ void main() {
       expect(find.textContaining('communityWeightV1'), findsNothing);
     });
 
+    testWidgets('a settled panel prints its four figures and its settlement', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningCommunityScreen(communityId: s7CommunityId),
+        mining: FakeMiningGateway(
+          community: S7Answer<MiningCommunity>(
+            value: s7MiningSettledCommunity(),
+          ),
+        ),
+      );
+
+      final metrics = find.byKey(
+        const ValueKey<String>('mining-community-metrics'),
+      );
+      await scrollToS7Section(tester, metrics);
+      expect(metrics, findsOneWidget);
+      // A settled zero keeps its figure: it is a reading, not an absence.
+      expect(find.text('0'), findsWidgets);
+      // The weight is why this community has a power at all.
+      expect(find.text('0.8'), findsOneWidget);
+      expect(find.textContaining('算力为 0，暂时没有名次'), findsOneWidget);
+      final snapshot = find.byKey(
+        const ValueKey<String>('mining-community-snapshot'),
+      );
+      await scrollToS7Section(tester, snapshot);
+      expect(find.textContaining('区块 122037728'), findsOneWidget);
+    });
+
+    testWidgets('a ranked community says its place, not a bare number', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningCommunityScreen(communityId: s7CommunityId),
+        mining: FakeMiningGateway(
+          community: S7Answer<MiningCommunity>(
+            value: s7MiningSettledCommunity(
+              rank: const MiningRankPositionSettled(
+                position: 7,
+                power: '38200',
+              ),
+              participants: const MiningParticipantsCount(42),
+            ),
+          ),
+        ),
+      );
+
+      final metrics = find.byKey(
+        const ValueKey<String>('mining-community-metrics'),
+      );
+      await scrollToS7Section(tester, metrics);
+      expect(find.text('第 7 名'), findsOneWidget);
+      expect(find.text('42'), findsOneWidget);
+    });
+
+    testWidgets('the formula version stays inside the 详情', (tester) async {
+      await pumpS7Page(
+        tester,
+        const MiningCommunityScreen(communityId: s7CommunityId),
+        mining: FakeMiningGateway(
+          community: S7Answer<MiningCommunity>(
+            value: s7MiningSettledCommunity(),
+          ),
+        ),
+      );
+
+      expect(find.textContaining(s7BaselineVersion), findsNothing);
+      final details = find.byKey(
+        const ValueKey<String>('mining-community-weight-details'),
+      );
+      await scrollToS7Section(tester, details);
+      await tester.tap(
+        find.descendant(
+          of: details,
+          matching: find.byKey(
+            const ValueKey<String>('loop-disclosure-summary'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining(s7BaselineVersion), findsOneWidget);
+    });
+
     testWidgets('a missing communityId fails closed', (tester) async {
       await pumpS7Page(
         tester,

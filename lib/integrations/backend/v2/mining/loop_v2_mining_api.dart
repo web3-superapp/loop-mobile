@@ -397,6 +397,20 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
     );
   }
 
+  static MiningParticipants _participants(Object? raw) {
+    if (raw is! Map) LoopV2S7Codec.invalid();
+    if (raw['status'] != 'available') {
+      return MiningParticipantsUnavailable(
+        LoopV2S7Codec.unavailable(raw).reasonCode,
+      );
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'count',
+    });
+    return MiningParticipantsCount(LoopV2S7Codec.requireCount(map, 'count'));
+  }
+
   static MiningFormulaScope _scope(Map<String, Object?> source, String key) {
     final raw = source[key];
     if (raw != null && raw is! String) LoopV2S7Codec.invalid();
@@ -817,6 +831,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         'myContribution',
         'rank',
         'participants',
+        'snapshot',
         'contractVersion',
       });
       LoopV2S7Codec.requireContractVersion(root);
@@ -876,10 +891,11 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
           ),
         ),
         weight: weight,
-        communityPower: LoopV2S7Codec.unavailable(root['communityPower']),
-        myContribution: LoopV2S7Codec.unavailable(root['myContribution']),
-        rank: LoopV2S7Codec.unavailable(root['rank']),
-        participants: LoopV2S7Codec.unavailable(root['participants']),
+        communityPower: _figure(root['communityPower']),
+        myContribution: _figure(root['myContribution']),
+        rank: _rankPosition(root['rank']),
+        participants: _participants(root['participants']),
+        snapshot: _snapshot(root['snapshot']),
       );
     } on DioException catch (error) {
       _rethrowRead(error);

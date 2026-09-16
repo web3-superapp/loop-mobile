@@ -226,6 +226,40 @@ Map<String, Object?> _board({
   'participants': participants,
 };
 
+/// The 2026-09-15 Development response for one community's mining panel.
+Map<String, Object?> _miningCommunity({
+  Object? weight,
+  Object? communityPower,
+  Object? myContribution,
+  Object? rank,
+  Object? participants,
+  Object? snapshot,
+  Object? boundAssetId = _cakeAssetId,
+}) => <String, Object?>{
+  'community': <String, Object?>{
+    'communityId': _communityId,
+    'name': 'DeFi 早读会',
+    'boundAssetId': boundAssetId,
+  },
+  'weight':
+      weight ??
+      <String, Object?>{
+        'status': 'approved',
+        'value': '0.8',
+        'configVersion': _baselineVersion,
+        'reviewedAt': '2026-09-15T14:58:52.089Z',
+      },
+  'communityPower':
+      communityPower ?? <String, Object?>{'status': 'available', 'value': '0'},
+  'myContribution':
+      myContribution ?? <String, Object?>{'status': 'available', 'value': '0'},
+  'rank': rank ?? _unavailable('MINING_RANK_NOT_RANKED'),
+  'participants':
+      participants ?? <String, Object?>{'status': 'available', 'count': 0},
+  'snapshot': snapshot ?? _miningSnapshot(),
+  'contractVersion': '2.0',
+};
+
 Map<String, Object?> _onChainState() => <String, Object?>{
   'saleState': 'unavailable',
   'entitlementState': 'unavailable',
@@ -1802,6 +1836,7 @@ void main() {
                     'participants': _unavailable(
                       'MINING_FORMULA_BASELINE_PENDING',
                     ),
+                    'snapshot': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
                     'contractVersion': '2.0',
                   },
                 ),
@@ -1818,6 +1853,182 @@ void main() {
         );
       },
     );
+
+    test(
+      'the community panel carries its settlement and its four figures',
+      () async {
+        final community =
+            await DioLoopV2MiningApi(
+              _dio(
+                _RecordingAdapter(statusCode: 200, body: _miningCommunity()),
+              ),
+            ).getCommunity(
+              accessToken: _token,
+              clientVersion: _clientVersion,
+              communityId: _communityId,
+            );
+
+        final weight = community.weight as MiningCommunityWeightApproved;
+        expect(weight.value, '0.8');
+        expect(weight.configVersion, _baselineVersion);
+        expect(weight.reviewedAt, DateTime.utc(2026, 9, 15, 14, 58, 52, 89));
+        expect(community.community.boundAssetId, _cakeAssetId);
+        expect((community.communityPower as MiningFigureValue).value, '0');
+        expect((community.myContribution as MiningFigureValue).value, '0');
+        // A zero power has no place on the board, and the server says which
+        // rule that is rather than the client inferring it.
+        expect(
+          (community.rank as MiningRankPositionUnavailable).reasonCode,
+          'MINING_RANK_NOT_RANKED',
+        );
+        expect((community.participants as MiningParticipantsCount).count, 0);
+        expect(
+          (community.snapshot as MiningSnapshotComputed).formulaVersion,
+          _baselineVersion,
+        );
+      },
+    );
+
+    test('a ranked community carries the place and the power', () async {
+      final community =
+          await DioLoopV2MiningApi(
+            _dio(
+              _RecordingAdapter(
+                statusCode: 200,
+                body: _miningCommunity(
+                  communityPower: <String, Object?>{
+                    'status': 'available',
+                    'value': '38200',
+                  },
+                  rank: <String, Object?>{
+                    'status': 'available',
+                    'position': 7,
+                    'power': '38200',
+                  },
+                  participants: <String, Object?>{
+                    'status': 'available',
+                    'count': 42,
+                  },
+                ),
+              ),
+            ),
+          ).getCommunity(
+            accessToken: _token,
+            clientVersion: _clientVersion,
+            communityId: _communityId,
+          );
+
+      final place = community.rank as MiningRankPositionSettled;
+      expect(place.position, 7);
+      expect(place.power, '38200');
+      expect((community.participants as MiningParticipantsCount).count, 42);
+    });
+
+    test('an unbound community keeps every figure unavailable', () async {
+      final community =
+          await DioLoopV2MiningApi(
+            _dio(
+              _RecordingAdapter(
+                statusCode: 200,
+                body: _miningCommunity(
+                  boundAssetId: null,
+                  weight: <String, Object?>{
+                    'status': 'unavailable',
+                    'reasonCode': 'COMMUNITY_ASSET_NOT_BOUND',
+                    'reviewStatus': 'pending_review',
+                  },
+                  communityPower: _unavailable('COMMUNITY_ASSET_NOT_BOUND'),
+                  myContribution: _unavailable('COMMUNITY_ASSET_NOT_BOUND'),
+                  rank: _unavailable('COMMUNITY_ASSET_NOT_BOUND'),
+                  participants: _unavailable('COMMUNITY_ASSET_NOT_BOUND'),
+                ),
+              ),
+            ),
+          ).getCommunity(
+            accessToken: _token,
+            clientVersion: _clientVersion,
+            communityId: _communityId,
+          );
+
+      expect(community.community.boundAssetId, isNull);
+      expect(
+        (community.weight as MiningCommunityWeightPending).reasonCode,
+        'COMMUNITY_ASSET_NOT_BOUND',
+      );
+      expect(
+        (community.participants as MiningParticipantsUnavailable).reasonCode,
+        'COMMUNITY_ASSET_NOT_BOUND',
+      );
+      // The settlement exists; it simply weighed nothing for this community.
+      expect(community.snapshot, isA<MiningSnapshotComputed>());
+    });
+
+    test('a community panel without its settlement is refused', () {
+      final body = _miningCommunity()..remove('snapshot');
+      final api = DioLoopV2MiningApi(
+        _dio(_RecordingAdapter(statusCode: 200, body: body)),
+      );
+
+      expect(
+        () => api.getCommunity(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          communityId: _communityId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a negative participant count is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningCommunity(
+              participants: <String, Object?>{
+                'status': 'available',
+                'count': -1,
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getCommunity(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          communityId: _communityId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a community place on a zero power is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningCommunity(
+              rank: <String, Object?>{
+                'status': 'available',
+                'position': 3,
+                'power': '0',
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getCommunity(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          communityId: _communityId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
 
     test('the rules read requires exactly five referral levels', () {
       final api = DioLoopV2MiningApi(

@@ -313,8 +313,8 @@ final List<_StateCase> _cases = <_StateCase>[
     alsoUnreadKeys: <String>['mining-community-asset'],
     unreadText: 'Frog Holders',
     emptyContract:
-        'MiningCommunity 是一个必填的社区引用 + 一个 sealed 权重 + 四条必填口径'
-        '（mining_models.dart:211-227）：读成功时社区一定存在，'
+        'MiningCommunity 是一个必填的社区引用 + 一个 sealed 权重 + 四条必填结果 + '
+        '一条必填的结算出处：读成功时社区一定存在，'
         '未授予权重是 MiningCommunityWeightPending，不是空态。',
   ),
 ];

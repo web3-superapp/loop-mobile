@@ -565,24 +565,62 @@ MiningRankingCommunities s7MiningCommunityBoard({
   participants: participants,
 );
 
-MiningCommunity s7MiningCommunity({MiningCommunityWeight? weight}) =>
-    MiningCommunity(
-      community: const MiningCommunityRef(
+MiningCommunity s7MiningCommunity({
+  MiningCommunityWeight? weight,
+  MiningCommunityRef? community,
+  MiningFigure? communityPower,
+  MiningFigure? myContribution,
+  MiningRankPosition? rank,
+  MiningParticipants? participants,
+  MiningSnapshotRef? snapshot,
+}) => MiningCommunity(
+  community:
+      community ??
+      const MiningCommunityRef(
         communityId: s7CommunityId,
         name: 'Frog Holders',
         boundAssetId: null,
       ),
-      weight:
-          weight ??
-          const MiningCommunityWeightPending(
-            reasonCode: 'COMMUNITY_WEIGHT_PENDING_REVIEW',
-            reviewStatus: 'pending_review',
-          ),
-      communityPower: const LaunchUnavailable(s7FormulaPending),
-      myContribution: const LaunchUnavailable(s7FormulaPending),
-      rank: const LaunchUnavailable(s7FormulaPending),
-      participants: const LaunchUnavailable(s7FormulaPending),
-    );
+  weight:
+      weight ??
+      const MiningCommunityWeightPending(
+        reasonCode: 'COMMUNITY_WEIGHT_PENDING_REVIEW',
+        reviewStatus: 'pending_review',
+      ),
+  communityPower:
+      communityPower ?? const MiningFigureUnavailable(s7FormulaPending),
+  myContribution:
+      myContribution ?? const MiningFigureUnavailable(s7FormulaPending),
+  rank: rank ?? const MiningRankPositionUnavailable(s7FormulaPending),
+  participants:
+      participants ?? const MiningParticipantsUnavailable(s7FormulaPending),
+  snapshot:
+      snapshot ??
+      const MiningSnapshotUnavailable('MINING_SNAPSHOT_NOT_AVAILABLE'),
+);
+
+/// The Development panel of 2026-09-15 for `mock-defi-morning`: a reviewed
+/// weight, a settlement, and every figure a real zero reading.
+MiningCommunity s7MiningSettledCommunity({
+  MiningRankPosition? rank,
+  MiningParticipants? participants,
+}) => s7MiningCommunity(
+  community: const MiningCommunityRef(
+    communityId: s7CommunityId,
+    name: 'DeFi 早读会',
+    boundAssetId: s7CakeAssetId,
+  ),
+  weight: MiningCommunityWeightApproved(
+    value: '0.8',
+    configVersion: s7BaselineVersion,
+    reviewedAt: DateTime.utc(2026, 9, 15, 14, 58, 52, 89),
+  ),
+  communityPower: const MiningFigureValue('0'),
+  myContribution: const MiningFigureValue('0'),
+  rank: rank ?? const MiningRankPositionUnavailable('MINING_RANK_NOT_RANKED'),
+  participants: participants ?? const MiningParticipantsCount(0),
+  snapshot: s7MiningSnapshot(),
+);
 
 MiningFormulaVersion s7DraftFormula({
   String configVersion = 'miningFormulaV1-draft',
