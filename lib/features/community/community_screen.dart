@@ -310,14 +310,30 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
     final entry = items[index];
     final community = entry.community;
     final status = communityMembershipLabel(entry.membership);
+    // A community the operator has not verified yet is a fact about the
+    // community, not about this membership — the row printed 「8 名成员 ·
+    // 成员」 for a 审核中 community and it read exactly like the twenty
+    // verified ones next to it. The discovery desk states it, so does this.
+    final unverified =
+        community.verificationStatus != CommunityVerification.verified
+        ? communityVerificationLabel(community.verificationStatus)
+        : null;
+    final subtitle = <String>[
+      '${community.memberCount} 名成员',
+      ?unverified,
+      status,
+    ].join(' · ');
     return LoopRecordRow(
       key: ValueKey<String>('community-joined-${community.communityId}'),
       leading: CommunityLogoTile(name: community.name),
       title: community.name,
-      subtitle: '${community.memberCount} 名成员 · $status',
+      subtitle: subtitle,
       onTap: () => _open('/community/profile?id=${community.communityId}'),
       position: communityRowPosition(index, items.length),
-      semanticLabel: '${community.name}，$status，${community.memberCount} 名成员',
+      semanticLabel:
+          '${community.name}，'
+          '${unverified == null ? '' : '$unverified，'}'
+          '$status，${community.memberCount} 名成员',
     );
   }
 }

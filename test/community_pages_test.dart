@@ -97,6 +97,49 @@ void main() {
       expect(find.textContaining('推荐只按成员数与创建时间排列'), findsOneWidget);
     });
 
+    testWidgets(
+      'a joined row states a community the operator has not verified',
+      (tester) async {
+        final gateway = FakeCommunityGateway(
+          home: CommunityHome(
+            joined: <JoinedCommunity>[
+              JoinedCommunity(
+                community: testCommunity(
+                  name: 'Alpha Signals 7',
+                  verification: CommunityVerification.pending,
+                ),
+                membership: CommunityMembership(
+                  role: CommunityRole.member,
+                  status: CommunityMemberStatus.active,
+                  joinedAt: DateTime.utc(2026, 7),
+                ),
+              ),
+            ],
+            joinedTruncated: false,
+            discover: const <CommunitySummary>[],
+            unread: const LoopUnavailableFact('STREAM_UNREAD_NOT_CONNECTED'),
+            liveVoice: const LoopUnavailableFact('STREAM_VOICE_NOT_CONNECTED'),
+            observedAt: DateTime.utc(2026, 9, 8, 1),
+            source: 'database',
+            recommendation: const CommunityRecommendation(
+              recommendationId: '22222222-2222-4222-8222-222222222222',
+              ruleVersion: 'rule:verified-members-v1',
+            ),
+          ),
+        );
+        await pumpCommunityPage(
+          tester,
+          const CommunityScreen(),
+          community: gateway,
+        );
+
+        // The membership is a full one — 审核中 is the community's own state,
+        // and the row used to read exactly like a verified community's.
+        expect(find.textContaining('审核中'), findsOneWidget);
+        expect(find.text('1 个已加入的社区'), findsOneWidget);
+      },
+    );
+
     testWidgets('an empty aggregate never renders a zero', (tester) async {
       final gateway = FakeCommunityGateway(home: _home(joined: 0, discover: 0));
       await pumpCommunityPage(

@@ -473,6 +473,17 @@ class CommunityLogoTile extends StatelessWidget {
   }
 }
 
+/// The server's own verification state for a community, in words.
+///
+/// It is the community's state, not the reader's membership: a community may
+/// be 审核中 while the reader is a full member of it.
+String communityVerificationLabel(CommunityVerification status) =>
+    switch (status) {
+      CommunityVerification.verified => '已验证',
+      CommunityVerification.pending => '审核中',
+      CommunityVerification.rejected => '未通过',
+    };
+
 /// One community row. The subtitle only ever carries server-maintained facts.
 ///
 /// It is a function, not a widget, because [LoopRecordGroup] needs the row
@@ -482,11 +493,7 @@ LoopRecordRow communityDirectoryRow({
   required VoidCallback? onTap,
   LoopRowPosition position = LoopRowPosition.single,
 }) {
-  final verification = switch (community.verificationStatus) {
-    CommunityVerification.verified => '已验证',
-    CommunityVerification.pending => '审核中',
-    CommunityVerification.rejected => '未通过',
-  };
+  final verification = communityVerificationLabel(community.verificationStatus);
   return LoopRecordRow(
     key: ValueKey<String>('community-row-${community.communityId}'),
     leading: CommunityLogoTile(name: community.name),
