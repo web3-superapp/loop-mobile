@@ -30,12 +30,29 @@ void main() {
     testWidgets('a disabled label below the reading floor is not a finding', (
       tester,
     ) async {
-      // `LoopButton` fades the whole control to 40% when `onPressed` is null,
-      // so its Ink label lands on its own faded Lime at a contrast of 1.78.
-      // That is the disabled look, and the application says so itself with
-      // the `Semantics(enabled: false)` it publishes.
+      // Ink at 40% on Lime is a contrast of 1.78, under the reading floor.
+      // The judgement being pinned is the probe's, so the case is built here:
+      // `LoopButton` used to paint a disabled primary exactly like this, and
+      // 自选管理's 保存 was read off the device as a button in a strange
+      // colour rather than one that is off.
       await tester.pumpWidget(
-        _wrap(const LoopButton(label: '保存', primary: true)),
+        _wrap(
+          Semantics(
+            button: true,
+            enabled: false,
+            child: Opacity(
+              opacity: 0.4,
+              child: Container(
+                color: LoopColors.lime,
+                padding: const EdgeInsets.all(12),
+                child: const Text(
+                  '保存',
+                  style: TextStyle(color: LoopColors.ink),
+                ),
+              ),
+            ),
+          ),
+        ),
       );
       await tester.pump();
 
@@ -46,6 +63,26 @@ void main() {
       expect(label.inactive, isTrue);
       expect(label.contrast, lessThan(2.5));
       expect(label.groundDelta, greaterThan(3));
+      expect(loopVanishedPaint(probes), isEmpty);
+    });
+
+    testWidgets('a disabled primary keeps its own label readable', (
+      tester,
+    ) async {
+      // Being exempt from the floor is not a reason to sit under it: the
+      // disabled primary keeps the button's shape, drops the Lime fill and
+      // says 「off」 through the semantics it publishes.
+      await tester.pumpWidget(
+        _wrap(const LoopButton(label: '保存', primary: true)),
+      );
+      await tester.pump();
+
+      final probes = _probe(tester);
+      final label = probes.firstWhere(
+        (probe) => probe.kind == 'text' && probe.where.contains('保存'),
+      );
+      expect(label.inactive, isTrue);
+      expect(label.contrast, greaterThan(2.5));
       expect(loopVanishedPaint(probes), isEmpty);
     });
 

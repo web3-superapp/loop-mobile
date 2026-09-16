@@ -1536,13 +1536,20 @@ class LoopButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null;
+    // A disabled primary keeps the shape but not the fill. Lime at 40% over
+    // Ink is a dull olive carrying Ink-coloured text, which reads as an
+    // enabled button in an odd colour rather than as a control that is off —
+    // 自选管理's 保存 was read as "disabled-looking" while it was disabled.
+    final paintPrimary = primary && enabled;
     // A secondary button is the ground plus a little: its fill, its edge and
     // its label all come from whatever it was put on. Named as
     // `card2`/`line2`/`chalk` it was an invisible rectangle with an invisible
     // word in it on a Chalk card — and a state strip's one next step is
     // exactly the control that gets carried there.
-    final foreground = primary ? LoopColors.ink : LoopGround.inkOf(context);
-    final decoration = primary
+    final foreground = paintPrimary
+        ? LoopColors.ink
+        : LoopGround.inkOf(context);
+    final decoration = paintPrimary
         ? const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,

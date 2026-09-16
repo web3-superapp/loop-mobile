@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
@@ -109,7 +110,9 @@ class MiningMetricRow extends StatelessWidget {
         reasonCode: (figure as MiningFigureUnavailable).reasonCode,
       );
     }
-    final value = (figure as MiningFigureValue).value;
+    // The server owns the figure; the separators are display only and are
+    // dropped when they cannot be added without changing what it says.
+    final value = loopGroupedFigure((figure as MiningFigureValue).value);
     final caption = <String>[
       if (baseline) miningBaselineLabel,
       ?note,

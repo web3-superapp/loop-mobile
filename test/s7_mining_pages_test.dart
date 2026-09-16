@@ -332,10 +332,12 @@ void main() {
         ),
       );
 
-      // The number is the server's, verbatim, and it never appears without
-      // the label that says which kind of number it is.
+      // The number is the server's: the only display transform is a grouping
+      // that can be removed to give the string back character for character.
+      // It never appears without the label that says which kind of number it
+      // is.
       expect(find.text('1000'), findsWidgets);
-      expect(find.text('4000'), findsOneWidget);
+      expect(find.text('4,000'), findsOneWidget);
       expect(find.text('开发基线'), findsWidgets);
       // A placeholder budget is never a bare 1000000 on the screen.
       expect(find.text('1000000'), findsNothing);
@@ -1010,7 +1012,10 @@ void main() {
       );
       await scrollToS7Section(tester, row);
       expect(row, findsOneWidget);
-      expect(find.text('1000000'), findsOneWidget);
+      // Grouped for reading; removing the separators gives the server's own
+      // string back unchanged.
+      expect(find.text('1,000,000'), findsOneWidget);
+      expect(find.text('1000000'), findsNothing);
       // The baseline label and the placeholder sentence travel with it, so the
       // number never stands on the page by itself.
       expect(find.textContaining(miningBaselineLabel), findsWidgets);

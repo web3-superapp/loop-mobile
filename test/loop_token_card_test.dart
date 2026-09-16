@@ -428,4 +428,21 @@ void main() {
       expect(find.byType(LoopTokenCard), findsOneWidget, reason: state.name);
     }
   });
+
+  group('loopGroupedFigure', () {
+    test('groups a server string only when it can give it back', () {
+      // Display only, and provably reversible: remove the separators and the
+      // server's own characters are back.
+      expect(loopGroupedFigure('1000000'), '1,000,000');
+      expect(loopGroupedFigure('900000'), '900,000');
+      expect(loopGroupedFigure('4.4818605'), '4.4818605');
+      expect(loopGroupedFigure('712.42'), '712.42');
+      // Trailing zeros would be dropped by the formatter, so the string is
+      // left exactly as it arrived.
+      expect(loopGroupedFigure('0.9400'), '0.9400');
+      expect(loopGroupedFigure('1000.50'), '1000.50');
+      // Not a decimal at all.
+      expect(loopGroupedFigure('eip155:56:native'), 'eip155:56:native');
+    });
+  });
 }

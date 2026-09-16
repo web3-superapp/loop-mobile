@@ -219,7 +219,12 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       // would remount the row on every refresh; the highlight is carried by
       // the badge and the subtitle instead.
       key: ValueKey<String>('alert-${alert.alertId}'),
-      title: alert.headline,
+      // The threshold keeps its exact characters; only the separators that
+      // cannot change it are added, so 900000 stops being seven digits to
+      // count.
+      title:
+          '${alert.displayName} ${alert.condition.label} '
+          '${loopGroupedFigure(alert.thresholdText)}',
       subtitle: <String>[
         if (highlighted) '通知已记录这次触发',
         alert.state.label,
@@ -229,6 +234,9 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         else
           '评估于 ${loopRelativeTime(alert.lastEvaluatedAt!)}',
       ].join(' · '),
+      // Four facts do not fit one line: 「距目标 -5....」 cut a number in the
+      // middle of its decimals.
+      subtitleMaxLines: 2,
       trailingBadge: LoopBadge(
         highlighted ? '本次触发' : alert.state.label,
         kind: switch (alert.state) {
@@ -531,11 +539,11 @@ class _AlertNotificationFeedState
             key: ValueKey<String>('alerts-feed-end'),
             text: '没有更多触发记录',
           ),
+        // The push reason is the notice below this block, printed once: the
+        // footer used to carry the same sentence two lines above it.
         LoopProvenanceFooter(
           key: const ValueKey<String>('alerts-feed-unread'),
-          text:
-              '未读 ${feed.unreadCount} 条 · '
-              '${loopReasonCodeText(feed.push.reasonCode)}',
+          text: '未读 ${feed.unreadCount} 条',
         ),
       ],
     );

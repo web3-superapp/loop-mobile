@@ -318,6 +318,9 @@ class CommunityMiningPowerCard extends StatelessWidget {
                     title: label,
                     subtitle:
                         '最近一次算力快照 · ${communitySettlementLabel(computedAt)}',
+                    // The stamp ended at 「10:23 U…」, which drops the zone
+                    // the time is stated in.
+                    subtitleMaxLines: 2,
                     trailing: power,
                     // The version's own declaration is what may label the
                     // number; the version string is never read for meaning.

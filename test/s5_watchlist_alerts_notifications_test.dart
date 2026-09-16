@@ -619,6 +619,9 @@ void main() {
 
       expect(find.text('推送尚不可用'), findsOneWidget);
       expect(find.textContaining('需要系统通知权限'), findsNothing);
+      // Once per screen: the feed footer printed the same sentence two lines
+      // above the notice that owns it.
+      expect(find.textContaining('推送还没有开放'), findsOneWidget);
     });
   });
 

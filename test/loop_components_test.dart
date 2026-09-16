@@ -310,6 +310,34 @@ void main() {
     expect(selected, 2);
   });
 
+  testWidgets('a disabled primary button is not painted as a Lime one', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      const Column(
+        children: <Widget>[
+          LoopButton(label: '保存', primary: true),
+          LoopButton(label: '保存', primary: true, onPressed: _noop),
+        ],
+      ),
+      size: const Size(390, 844),
+    );
+
+    BoxDecoration decorationAt(int index) =>
+        tester
+                .widgetList<Container>(find.byType(Container))
+                .where((container) => container.decoration is BoxDecoration)
+                .elementAt(index)
+                .decoration!
+            as BoxDecoration;
+
+    // Lime at 40% over Ink is a dull olive carrying Ink-coloured text: it
+    // reads as an enabled button in an odd colour, not as a disabled one.
+    expect(decorationAt(0).gradient, isNull);
+    expect(decorationAt(1).gradient, isNotNull);
+  });
+
   testWidgets('LoopButton primary/secondary sizes, disabled semantics', (
     tester,
   ) async {
@@ -611,3 +639,5 @@ void main() {
     },
   );
 }
+
+void _noop() {}

@@ -38,6 +38,10 @@ LoopRecordRow marketAssetRow(
     ),
     title: row.displayName,
     subtitle: subtitle,
+    // Name plus source plus observation time does not fit the column a
+    // quality badge leaves: the line ended at 「来源 D…」, which names no
+    // source at all.
+    subtitleMaxLines: 2,
     trailing: priceValue == null ? null : loopFormatUsd(priceValue),
     trailingCaption: changeValue == null
         ? null

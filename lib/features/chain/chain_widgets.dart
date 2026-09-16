@@ -46,6 +46,29 @@ String loopFormatDecimal(
   return '$sign$body';
 }
 
+/// A server decimal string with thousands separators, when grouping cannot
+/// change what the string says.
+///
+/// Figures the server owns print verbatim: an alert threshold, a mining power,
+/// a daily output. Verbatim also meant 「900000」 and 「1000000」 — seven digits
+/// a reader has to count. Grouping is display-only, so it is applied only when
+/// it is provably reversible: the string is parsed exactly, re-printed with
+/// every fraction digit it carried, and used only when removing the separators
+/// gives back the original character for character. Anything else — a value
+/// that does not parse, one with trailing zeros that would be dropped — prints
+/// as it arrived.
+String loopGroupedFigure(String raw) {
+  if (!raw.contains(RegExp(r'[0-9]{4}'))) return raw;
+  final value = Decimal.tryParse(raw);
+  if (value == null) return raw;
+  final dot = raw.indexOf('.');
+  final grouped = loopFormatDecimal(
+    value,
+    maxFractionDigits: dot < 0 ? 0 : raw.length - dot - 1,
+  );
+  return grouped.replaceAll(',', '') == raw ? grouped : raw;
+}
+
 String loopFormatUsd(Decimal value) =>
     '\$${loopFormatDecimal(value, maxFractionDigits: 2)}';
 
