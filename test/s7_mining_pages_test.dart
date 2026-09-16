@@ -254,14 +254,38 @@ void main() {
         mining: FakeMiningGateway(),
       );
 
-      // Five of the six figures are empty for the same reason. The block
-      // states it once; the sixth keeps its own, different sentence.
+      // Four of the six figures are empty for the same reason. The block
+      // states it once; the other two keep their own, different sentences —
+      // the reward ledger's, and the boost's own code (Decision 0046), which
+      // speaks for the boost slot alone.
       expect(find.text('挖矿公式还没有批准，算力、产量、排行与邀请加成都暂时不可用。'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('launch-metric-grid-reason')),
         findsOneWidget,
       );
       expect(find.text('奖励发放还没有开启，暂时不能领取。'), findsOneWidget);
+      expect(find.text('生效的公式版本还没有批准邀请加成，这一项暂时没有数值。'), findsOneWidget);
+    });
+
+    testWidgets('a settled page states the boost alone, not a whole outage', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(
+          summary: S7Answer<MiningSummary>(value: s7MiningBaselineSummary()),
+        ),
+      );
+
+      final boost = find.byKey(const ValueKey<String>('launch-metric-邀请加成'));
+      await scrollToS7Section(tester, boost);
+      expect(boost, findsOneWidget);
+      // A version is in effect and 我的算力 prints 1000 on this same page, so
+      // the boost slot may not claim that power, output and rank are all
+      // unavailable.
+      expect(find.textContaining('还没有批准邀请加成'), findsWidgets);
+      expect(find.textContaining('算力、产量、排行与邀请加成都暂时不可用'), findsNothing);
     });
 
     testWidgets('a settled figure prints with its baseline label', (

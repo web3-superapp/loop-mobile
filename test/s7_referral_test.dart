@@ -105,7 +105,11 @@ void main() {
       );
       await scrollToS7Section(tester, boost);
       expect(boost, findsOneWidget);
-      expect(find.textContaining('挖矿公式还没有批准'), findsWidgets);
+      // The boost's own code (Decision 0046) says only that the boost is not
+      // approved. The blanket formula sentence would contradict a page that
+      // is printing settled power at the same time, so it is not here.
+      expect(find.textContaining('还没有批准邀请加成'), findsWidgets);
+      expect(find.textContaining('挖矿公式还没有批准'), findsNothing);
       // The prototype's final boost figure never returns.
       expect(find.textContaining('2,840'), findsNothing);
       expect(find.textContaining('182 位'), findsNothing);

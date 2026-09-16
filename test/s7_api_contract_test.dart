@@ -71,6 +71,11 @@ Map<String, Object?> _unavailable(String reasonCode) => <String, Object?>{
 
 const _baselineVersion = 'miningFormula-devBaseline-2026-09-15-r2';
 
+/// The boost's own reason code (Decision 0046). The server answers it on
+/// `summary.referralBoost` and on `referral.boost` whether or not a formula
+/// version is in effect.
+const _referralBoostPending = 'MINING_REFERRAL_BOOST_PENDING';
+
 /// The Development snapshot of 2026-09-15, field for field.
 Map<String, Object?> _miningSnapshot() => <String, Object?>{
   'snapshotId': '0e358b31-e49f-48b9-89b2-c5c908c3ad5e',
@@ -1058,9 +1063,7 @@ void main() {
                 ),
                 'accumulated': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
                 'claimable': _unavailable('REWARD_AUTHORITY_PENDING'),
-                'referralBoost': _unavailable(
-                  'MINING_FORMULA_BASELINE_PENDING',
-                ),
+                'referralBoost': _unavailable(_referralBoostPending),
                 'formula': <String, Object?>{
                   'status': 'unavailable',
                   'reasonCode': 'MINING_FORMULA_BASELINE_PENDING',
@@ -1079,6 +1082,7 @@ void main() {
         );
         expect(summary.snapshot, isA<MiningSnapshotUnavailable>());
         expect(summary.claimable.reasonCode, 'REWARD_AUTHORITY_PENDING');
+        expect(summary.referralBoost.reasonCode, _referralBoostPending);
       },
     );
 
@@ -1109,9 +1113,7 @@ void main() {
                 },
                 'accumulated': _unavailable('REWARD_AUTHORITY_PENDING'),
                 'claimable': _unavailable('REWARD_AUTHORITY_PENDING'),
-                'referralBoost': _unavailable(
-                  'MINING_FORMULA_BASELINE_PENDING',
-                ),
+                'referralBoost': _unavailable(_referralBoostPending),
                 'formula': <String, Object?>{
                   'status': 'approved',
                   'configVersion': _baselineVersion,
@@ -1158,7 +1160,7 @@ void main() {
               'estimatedToday': _unavailable('MINING_NETWORK_POWER_ZERO'),
               'accumulated': _unavailable('REWARD_AUTHORITY_PENDING'),
               'claimable': _unavailable('REWARD_AUTHORITY_PENDING'),
-              'referralBoost': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+              'referralBoost': _unavailable(_referralBoostPending),
               'formula': <String, Object?>{
                 'status': 'approved',
                 'configVersion': _baselineVersion,
@@ -1198,7 +1200,7 @@ void main() {
               },
               'accumulated': _unavailable('REWARD_AUTHORITY_PENDING'),
               'claimable': _unavailable('REWARD_AUTHORITY_PENDING'),
-              'referralBoost': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+              'referralBoost': _unavailable(_referralBoostPending),
               'formula': <String, Object?>{
                 'status': 'approved',
                 'configVersion': _baselineVersion,
@@ -1233,7 +1235,7 @@ void main() {
               'estimatedToday': _unavailable('MINING_NETWORK_POWER_ZERO'),
               'accumulated': _unavailable('REWARD_AUTHORITY_PENDING'),
               'claimable': _unavailable('REWARD_AUTHORITY_PENDING'),
-              'referralBoost': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+              'referralBoost': _unavailable(_referralBoostPending),
               'formula': <String, Object?>{
                 'status': 'approved',
                 'configVersion': _baselineVersion,
@@ -1265,7 +1267,7 @@ void main() {
               'estimatedToday': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
               'accumulated': _unavailable('REWARD_AUTHORITY_PENDING'),
               'claimable': _unavailable('REWARD_AUTHORITY_PENDING'),
-              'referralBoost': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+              'referralBoost': _unavailable(_referralBoostPending),
               'formula': <String, Object?>{
                 'status': 'unavailable',
                 'reasonCode': 'MINING_FORMULA_BASELINE_PENDING',
@@ -2099,7 +2101,7 @@ void main() {
             'total': level == 1 ? 2 : 0,
           },
       ],
-      'boost': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
+      'boost': _unavailable(_referralBoostPending),
       'rules': <String, Object?>{
         'configVersion': 'referralRulesV1',
         'effectiveAt': '2026-09-01T00:00:00.000Z',
@@ -2120,6 +2122,9 @@ void main() {
       expect(overview.levels.first.counts.pendingWallet, 2);
       expect(overview.validRelationships, 0);
       expect(overview.binding.canClaim, isTrue);
+      // The boost's own code, not the formula baseline's: it is answered the
+      // same way under an effective version.
+      expect(overview.boost.reasonCode, _referralBoostPending);
     });
 
     test('a count total that does not add up is refused', () {

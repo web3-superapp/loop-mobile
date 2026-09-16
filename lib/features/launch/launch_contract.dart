@@ -156,6 +156,11 @@ String launchReasonCodeText(String? reasonCode) => switch (reasonCode) {
   'ATTACHMENT_STORAGE_NOT_SELECTED' => '暂时不能上传附件。',
   // mining · formula baseline
   'MINING_FORMULA_BASELINE_PENDING' => '挖矿公式还没有批准，算力、产量、排行与邀请加成都暂时不可用。',
+  // The boost has a code of its own (Decision 0046): it says that the
+  // effective version has not approved the boost, and nothing about the
+  // figures beside it. Restating the whole formula here would contradict a
+  // page that is printing settled power at the same time.
+  'MINING_REFERRAL_BOOST_PENDING' => '生效的公式版本还没有批准邀请加成，这一项暂时没有数值。',
   'MINING_SNAPSHOT_NOT_AVAILABLE' => '还没有任何一次算力结算。',
   'MINING_SNAPSHOT_STALE' => '最近一次结算用的是旧的公式版本，等下一次结算后再看。',
   'MINING_ACCOUNT_NOT_IN_SNAPSHOT' => '最近一次结算里没有这个账号的钱包余额。',

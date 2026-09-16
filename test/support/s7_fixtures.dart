@@ -24,6 +24,11 @@ const s7StakingPending = 'STAKING_CONTRACT_PENDING';
 const s7FormulaPending = 'MINING_FORMULA_BASELINE_PENDING';
 const s7RewardPending = 'REWARD_AUTHORITY_PENDING';
 
+/// The boost's own code. The server answers it whether or not a formula
+/// version is in effect, so a fixture that reused the baseline code made the
+/// page state a blanket outage beside settled figures.
+const s7ReferralBoostPending = 'MINING_REFERRAL_BOOST_PENDING';
+
 LaunchOnChainState s7OnChainState() => const LaunchOnChainState(
   saleState: 'unavailable',
   entitlementState: 'unavailable',
@@ -340,6 +345,7 @@ MiningSummary s7MiningSummary({
   MiningFigure? power,
   MiningFigure? networkPower,
   MiningDailyOutput? estimatedToday,
+  LaunchUnavailable? accumulated,
   MiningFormulaGate? formula,
   MiningSnapshotRef? snapshot,
 }) => MiningSummary(
@@ -347,9 +353,9 @@ MiningSummary s7MiningSummary({
   networkPower: networkPower ?? const MiningFigureUnavailable(s7FormulaPending),
   estimatedToday:
       estimatedToday ?? const MiningDailyOutputUnavailable(s7FormulaPending),
-  accumulated: const LaunchUnavailable(s7FormulaPending),
+  accumulated: accumulated ?? const LaunchUnavailable(s7FormulaPending),
   claimable: const LaunchUnavailable(s7RewardPending),
-  referralBoost: const LaunchUnavailable(s7FormulaPending),
+  referralBoost: const LaunchUnavailable(s7ReferralBoostPending),
   formula:
       formula ??
       MiningFormulaPending(
@@ -374,6 +380,10 @@ MiningSummary s7MiningBaselineSummary() => s7MiningSummary(
     formulaVersion: s7BaselineVersion,
     scope: MiningFormulaScope.developmentBaseline,
   ),
+  // Under an effective version the page never carries the baseline code: the
+  // ledger is missing for its own reason, and the server guarantees the two
+  // never appear together.
+  accumulated: const LaunchUnavailable(s7RewardPending),
   formula: MiningFormulaEffective(
     configVersion: s7BaselineVersion,
     effectiveAt: DateTime.utc(2026, 9, 15, 14, 57, 37),
@@ -733,7 +743,7 @@ ReferralOverview s7Referral({
             total: level == 1 ? 3 : 0,
           ),
       ],
-  boost: const LaunchUnavailable(s7FormulaPending),
+  boost: const LaunchUnavailable(s7ReferralBoostPending),
   rules: ReferralRulesInfo(
     configVersion: 'referralRulesV1',
     effectiveAt: DateTime.utc(2026, 9),
