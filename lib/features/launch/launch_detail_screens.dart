@@ -295,17 +295,21 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
     final blocked = launchCapabilityBlocks(capability);
     final state = ref.watch(launchDetailControllerProvider);
     final controller = ref.read(launchDetailControllerProvider.notifier);
-    if (!blocked && state.phase == LaunchViewPhase.loading) {
+    // No subject is not a missing launch. Reading the page without a launch id
+    // used to report 「目标不存在、已被移除，或对当前账号不可见」 with a retry
+    // that could never change the answer; the page says what it needs instead.
+    final subject = widget.launchId;
+    if (!blocked && subject != null && state.phase == LaunchViewPhase.loading) {
       scheduleMicrotask(() {
-        if (mounted) unawaited(controller.open(widget.launchId));
+        if (mounted) unawaited(controller.open(subject));
       });
     }
-    final detail = state.value;
+    final detail = subject == null ? null : state.value;
     final config = detail?.config;
 
     return LoopDashboardPage(
       key: const ValueKey<String>('launch-rounds-screen'),
-      onRefresh: controller.reload,
+      onRefresh: subject == null ? null : controller.reload,
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '销售轮次规则',
@@ -333,7 +337,15 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
             )
           : null,
       sections: <Widget>[
-        if (detail == null)
+        if (subject == null)
+          const LoopEmpty(
+            key: ValueKey<String>('launch-rounds-no-subject'),
+            message: '还没有选定要看哪次发射',
+            reason:
+                '轮次配置属于某一次具体发射，不是全站统一的规则。'
+                '回到 Launch 目录打开一个项目，再看它的轮次配置。',
+          )
+        else if (detail == null)
           LaunchStateBlock(
             prefix: 'launch-rounds',
             phase: state.phase,

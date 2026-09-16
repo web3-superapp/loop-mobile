@@ -69,12 +69,17 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
           label: '管理质押',
           onPressed: widget.onOpenStake,
         ),
-        LoopIconButton(
-          key: const ValueKey<String>('launch-rules-action'),
-          icon: 'info',
-          label: 'Launch 规则',
-          onPressed: widget.onOpenRules,
-        ),
+        // Round rules belong to one launch, so the control only appears once
+        // the directory holds a launch to open. An empty directory used to
+        // send this button to a subject-less page that reported the launch as
+        // missing, which read as a 404 for a project the user never picked.
+        if (overview != null && overview.segments.total > 0)
+          LoopIconButton(
+            key: const ValueKey<String>('launch-rules-action'),
+            icon: 'info',
+            label: 'Launch 规则',
+            onPressed: widget.onOpenRules,
+          ),
       ],
       primary: LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
