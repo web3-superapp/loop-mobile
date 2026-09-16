@@ -119,7 +119,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
             const LoopEmpty(
               key: ValueKey<String>('mining-assets-included-empty'),
               icon: 'info',
-              message: '这次结算没有计入任何资产',
+              message: '这次快照没有计入任何资产',
               reason: '你的持仓里没有可以计入的资产。',
             )
           else
@@ -161,7 +161,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
           ],
           const LoopLabel('公式版本'),
           MiningFormulaBlock(formula: assets.formula),
-          const LoopLabel('结算记录'),
+          const LoopLabel(miningSnapshotSectionLabel),
           _AssetsSourceBlock(source: assets.source),
           const LoopLabel('社区权重'),
           LoopRecordGroup(
@@ -204,7 +204,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
 /// total with no figure carries the reason the total itself came with.
 LoopFolioPrimary _assetsHero(MiningAssets? assets, LaunchViewPhase phase) {
   final (String heading, String caption) = switch (assets?.totalPower) {
-    MiningFigureValue(:final value) => (value, '持有量、参考价与权重都来自最近一次结算，不是收益。'),
+    MiningFigureValue(:final value) => (value, '持有量、参考价与权重都来自最近一次算力快照，不是收益。'),
     MiningFigureUnavailable(:final reasonCode) => (
       launchMissingHeading,
       launchReasonCodeText(reasonCode),
@@ -344,8 +344,11 @@ class _AssetsSourceBlock extends StatelessWidget {
           rows: <LoopRecordRow>[
             LoopRecordRow(
               key: const ValueKey<String>('mining-assets-source-row'),
-              title: '最近一次结算',
-              subtitle: '区块 $blockNumber · ${launchTimestampLabel(computedAt)}',
+              title: miningSnapshotRowTitle,
+              subtitle:
+                  '区块 $blockNumber · ${launchTimestampLabel(computedAt)} · '
+                  '这是算出算力的时间',
+              subtitleMaxLines: 2,
             ),
           ],
         ),
@@ -523,7 +526,7 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
             key: ValueKey<String>('mining-rewards-ledger-notice'),
             icon: 'info',
             title: '没有条目不等于没有产出',
-            body: '这里只列奖励账本的条目。算力，以及每一次结算的区块与时间，在算力明细里。',
+            body: '这里只列奖励账本的条目。算力，以及每一次算力快照的区块与时间，在算力明细里。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),
@@ -675,7 +678,7 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
               key: ValueKey<String>('mining-rank-notice'),
               icon: 'info',
               title: '排名不是静态权益',
-              body: '其他账号或社区的算力变化会改变名次。榜单只来自最近一次结算，不会在这台设备上计算。',
+              body: '其他账号或社区的算力变化会改变名次。榜单只来自最近一次算力快照，不会在这台设备上计算。',
               margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
             ),
           ],
@@ -699,12 +702,12 @@ LoopFolioPrimary _rankHero(MiningRank? rank) {
   final (String heading, String caption) = switch (rank?.myPosition) {
     MiningRankPositionSettled(:final position) => (
       '第 $position 名',
-      '名次来自最近一次结算，其他账号的算力变化会改变它。',
+      '名次来自最近一次算力快照，其他账号的算力变化会改变它。',
     ),
     // Settled, read, and off the board: the fact first, the cause after it.
     MiningRankPositionUnavailable(reasonCode: 'MINING_RANK_NOT_RANKED') => (
       _miningUnrankedLabel,
-      '最近一次结算里你的算力为 0。',
+      '最近一次算力快照里你的算力为 0。',
     ),
     MiningRankPositionUnavailable(:final reasonCode) => (
       launchMissingHeading,
@@ -762,7 +765,7 @@ class _RankingBlock extends StatelessWidget {
   static Widget _emptyBoard(int participants) => LoopEmpty(
     key: const ValueKey<String>('mining-rank-empty'),
     icon: 'info',
-    message: '最近一次结算里没有可以上榜的条目',
+    message: '最近一次算力快照里没有可以上榜的条目',
     reason: _participantsLine(participants),
   );
 
@@ -788,7 +791,7 @@ class _RankingBlock extends StatelessWidget {
   );
 
   static String _participantsLine(int participants) =>
-      '最近一次结算里有 $participants 个条目算出了算力。';
+      '最近一次算力快照里有 $participants 个条目算出了算力。';
 }
 
 /// 未上榜, not the position 0: a zero power is a settled reading, and the
@@ -920,7 +923,7 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
           _WeightBlock(weight: community.weight),
           const LoopLabel('算力规则'),
           _CommunityMetrics(community: community),
-          const LoopLabel('结算记录'),
+          const LoopLabel(miningSnapshotSectionLabel),
           _CommunitySnapshotBlock(snapshot: community.snapshot),
           const LoopLabel('绑定资产'),
           LoopRecordGroup(
@@ -1145,7 +1148,7 @@ class _CommunityMetrics extends StatelessWidget {
       MiningFigureUnavailable(:final reasonCode) => launchReasonCodeText(
         reasonCode,
       ),
-      MiningFigureValue() => '来自最近一次结算',
+      MiningFigureValue() => '来自最近一次算力快照',
     },
     subtitleMaxLines: 2,
     trailing: switch (figure) {
@@ -1178,8 +1181,11 @@ class _CommunitySnapshotBlock extends StatelessWidget {
           rows: <LoopRecordRow>[
             LoopRecordRow(
               key: const ValueKey<String>('mining-community-snapshot-row'),
-              title: '最近一次结算',
-              subtitle: '区块 $blockNumber · ${launchTimestampLabel(computedAt)}',
+              title: miningSnapshotRowTitle,
+              subtitle:
+                  '区块 $blockNumber · ${launchTimestampLabel(computedAt)} · '
+                  '这是算出算力的时间',
+              subtitleMaxLines: 2,
             ),
           ],
         ),

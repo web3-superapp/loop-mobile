@@ -96,7 +96,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
           _MetricsBlock(summary: summary),
           const LoopLabel('公式版本'),
           MiningFormulaBlock(formula: summary.formula),
-          const LoopLabel('结算记录'),
+          const LoopLabel(miningSnapshotSectionLabel),
           _SnapshotBlock(snapshot: summary.snapshot),
           const LoopLabel('相关页面'),
           LoopRecordGroup(
@@ -143,7 +143,7 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
                 '当前生效的是开发基线，算出来的数字只用于开发验证，'
                     '不是收益，也不构成承诺。LOOP 不会在这台设备上累计积分。',
               MiningFormulaEffective() =>
-                'LOOP 不会在这台设备上累计积分或估算收益，页面上的数字都来自最近一次结算。',
+                'LOOP 不会在这台设备上累计积分或估算收益，页面上的数字都来自最近一次算力快照。',
             },
             margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
@@ -195,7 +195,7 @@ LoopFolioPrimary _hero(MiningSummary? summary, LaunchViewPhase phase) {
       },
       caption: scope.isBaseline
           ? '这些数字来自开发基线，只用于开发验证，不是收益。'
-          : '数字来自最近一次结算，不是收益承诺。',
+          : '数字来自最近一次算力快照，不是收益承诺。',
       stamp: scope.isBaseline ? miningBaselineLabel : null,
     ),
   };
@@ -298,8 +298,11 @@ class _SnapshotBlock extends StatelessWidget {
           rows: <LoopRecordRow>[
             LoopRecordRow(
               key: const ValueKey<String>('mining-snapshot-row'),
-              title: '最近一次结算',
-              subtitle: '区块 $blockNumber · ${launchTimestampLabel(computedAt)}',
+              title: miningSnapshotRowTitle,
+              subtitle:
+                  '区块 $blockNumber · ${launchTimestampLabel(computedAt)} · '
+                  '这是算出算力的时间',
+              subtitleMaxLines: 2,
             ),
           ],
         ),

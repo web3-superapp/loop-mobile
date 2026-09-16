@@ -161,9 +161,9 @@ String launchReasonCodeText(String? reasonCode) => switch (reasonCode) {
   // figures beside it. Restating the whole formula here would contradict a
   // page that is printing settled power at the same time.
   'MINING_REFERRAL_BOOST_PENDING' => '生效的公式版本还没有批准邀请加成，这一项暂时没有数值。',
-  'MINING_SNAPSHOT_NOT_AVAILABLE' => '还没有任何一次算力结算。',
-  'MINING_SNAPSHOT_STALE' => '最近一次结算用的是旧的公式版本，等下一次结算后再看。',
-  'MINING_ACCOUNT_NOT_IN_SNAPSHOT' => '最近一次结算里没有这个账号的钱包余额。',
+  'MINING_SNAPSHOT_NOT_AVAILABLE' => '还没有任何一次算力快照。',
+  'MINING_SNAPSHOT_STALE' => '最近一次算力快照用的是旧的公式版本，等下一次快照后再看。',
+  'MINING_ACCOUNT_NOT_IN_SNAPSHOT' => '最近一次算力快照里没有这个账号的钱包余额。',
   'MINING_NETWORK_POWER_ZERO' => '全网算力为 0，还算不出份额。',
   'MINING_DAILY_OUTPUT_NOT_CONFIGURED' => '当前公式版本还没有配置每日产量。',
   'MINING_RANK_NOT_RANKED' => '算力为 0，暂时没有名次。',

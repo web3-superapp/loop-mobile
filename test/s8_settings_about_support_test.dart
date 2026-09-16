@@ -264,7 +264,7 @@ void main() {
       expect(find.textContaining('挖矿公式还没有'), findsNothing);
       expect(find.textContaining('暂时不显示算力'), findsNothing);
       expect(find.textContaining('公式批准后'), findsNothing);
-      expect(find.textContaining('算力来自最近一次结算'), findsOneWidget);
+      expect(find.textContaining('算力来自最近一次算力快照'), findsOneWidget);
     });
 
     testWidgets('an empty body cannot be submitted', (tester) async {

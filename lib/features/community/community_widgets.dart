@@ -199,7 +199,7 @@ class CommunityUnavailableCard extends StatelessWidget {
   }
 }
 
-/// A server-side time in UTC — a settlement's, an observation's. The client
+/// A server-side time in UTC — a snapshot's, an observation's. The client
 /// never restates it as a local wall clock or as a relative "just now".
 String communitySettlementLabel(DateTime computedAt) {
   final value = computedAt.toUtc();
@@ -317,7 +317,7 @@ class CommunityMiningPowerCard extends StatelessWidget {
                     key: const ValueKey<String>('community-mining-power-row'),
                     title: label,
                     subtitle:
-                        '最近一次结算 · ${communitySettlementLabel(computedAt)}',
+                        '最近一次算力快照 · ${communitySettlementLabel(computedAt)}',
                     trailing: power,
                     // The version's own declaration is what may label the
                     // number; the version string is never read for meaning.
@@ -344,7 +344,7 @@ class CommunityMiningPowerCard extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
                   child: Text(
-                    '结算所用的公式版本 $identifier',
+                    '这次算力快照所用的公式版本 $identifier',
                     style: LoopTypography.caption(11, color: LoopColors.text3),
                   ),
                 ),
@@ -386,7 +386,7 @@ LoopRecordRow _participantsRow(LoopCommunityMiningPower fact) => LoopRecordRow(
   key: const ValueKey<String>('community-mining-power-participants'),
   title: '有算力的成员',
   subtitle: switch (fact.participants) {
-    MiningParticipantsCount() => '最近一次结算里算出了算力的人',
+    MiningParticipantsCount() => '最近一次算力快照里算出了算力的人',
     MiningParticipantsUnavailable() => '这一项暂时读不到',
   },
   subtitleMaxLines: 2,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
+import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_screen.dart';
 import 'package:loop_mobile/features/mining/mining_secondary_screens.dart';
@@ -398,7 +399,31 @@ void main() {
       await scrollToS7Section(tester, snapshot);
       expect(snapshot, findsOneWidget);
       // The one code that means "there is none" says so.
-      expect(find.text('还没有结算记录'), findsOneWidget);
+      expect(find.text('还没有算力快照'), findsOneWidget);
+    });
+
+    testWidgets('the snapshot row dates a computation, not a settlement', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(
+            value: s7MiningAssets(source: s7MiningSnapshot()),
+          ),
+        ),
+      );
+
+      final row = find.byKey(
+        const ValueKey<String>('mining-assets-source-row'),
+      );
+      await scrollToS7Section(tester, row);
+      // `computedAt` is when the lane computed the power, minutes apart, and
+      // nothing on this page is owed or paid: 「最近一次结算」 read as a payout.
+      expect(find.text(miningSnapshotRowTitle), findsOneWidget);
+      expect(find.textContaining('这是算出算力的时间'), findsOneWidget);
+      expect(find.textContaining('最近一次结算'), findsNothing);
     });
 
     testWidgets('a repository that did not answer is not an absence of '
@@ -421,8 +446,8 @@ void main() {
         const ValueKey<String>('mining-snapshot-unavailable'),
       );
       await scrollToS7Section(tester, snapshot);
-      expect(find.text('暂时读不到结算记录'), findsOneWidget);
-      expect(find.text('还没有结算记录'), findsNothing);
+      expect(find.text('暂时读不到算力快照'), findsOneWidget);
+      expect(find.text('还没有算力快照'), findsNothing);
       expect(
         find.text(launchReasonCodeText('MINING_RUNTIME_UNAVAILABLE')),
         findsOneWidget,
@@ -560,8 +585,8 @@ void main() {
         const ValueKey<String>('mining-assets-source-unavailable'),
       );
       await scrollToS7Section(tester, source);
-      expect(find.text('暂时读不到结算记录'), findsOneWidget);
-      expect(find.text('还没有结算记录'), findsNothing);
+      expect(find.text('暂时读不到算力快照'), findsOneWidget);
+      expect(find.text('还没有算力快照'), findsNothing);
     });
 
     testWidgets('a settlement the lane has not produced says so', (
@@ -577,7 +602,7 @@ void main() {
         const ValueKey<String>('mining-assets-source-unavailable'),
       );
       await scrollToS7Section(tester, source);
-      expect(find.text('还没有结算记录'), findsOneWidget);
+      expect(find.text('还没有算力快照'), findsOneWidget);
     });
 
     testWidgets('the community mining panel is reachable from here', (
@@ -1097,7 +1122,7 @@ void main() {
       // The hero states the fact — settled, read, off the board — and its
       // cause; it never claims a settlement is still owed.
       expect(find.text('未上榜'), findsOneWidget);
-      expect(find.text('最近一次结算里你的算力为 0。'), findsOneWidget);
+      expect(find.text('最近一次算力快照里你的算力为 0。'), findsOneWidget);
       expect(find.textContaining('等算力结算'), findsNothing);
       expect(find.textContaining('结算之后才有'), findsNothing);
       // The state name itself never reaches the screen.
@@ -1475,8 +1500,8 @@ void main() {
         const ValueKey<String>('mining-community-snapshot-unavailable'),
       );
       await scrollToS7Section(tester, snapshot);
-      expect(find.text('暂时读不到结算记录'), findsOneWidget);
-      expect(find.text('还没有结算记录'), findsNothing);
+      expect(find.text('暂时读不到算力快照'), findsOneWidget);
+      expect(find.text('还没有算力快照'), findsNothing);
       expect(
         find.text(launchReasonCodeText('MINING_RUNTIME_UNAVAILABLE')),
         findsWidgets,
