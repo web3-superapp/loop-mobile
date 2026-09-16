@@ -18,7 +18,17 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 /// The five bundled answers. They are product copy, not an indexed FAQ: there
 /// is no article resource, so nothing here claims a server source.
 const List<(String, String)> _supportAnswers = <(String, String)>[
-  ('算力是怎么算的', '挖矿公式还没有定下来，因此暂时不显示算力。公式批准后，挖矿页会显示算力与产出。'),
+  // Bundled copy outlives the state it was written in: this answer used to say
+  // the formula was undecided and that no power was shown, and it kept saying
+  // it after the mining pages started showing settled figures. It now describes
+  // where a figure comes from, which does not change with the version in
+  // effect; the version itself is on the mining page, which is the one place
+  // that reads it.
+  (
+    '算力是怎么算的',
+    '算力来自最近一次结算：每个已登记资产的持仓、参考价与权重，在算力明细里'
+        '逐行列出。挖矿页会显示那次结算的区块与时间。',
+  ),
   (
     '为什么我的币没有权重',
     '只有已登记的资产才会计入挖矿。是否登记以 LOOP 的登记表为准，'

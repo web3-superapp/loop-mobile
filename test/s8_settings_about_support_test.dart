@@ -244,6 +244,29 @@ void main() {
       expect(empty, findsOneWidget);
     });
 
+    testWidgets('the bundled answer describes where a figure comes from, not '
+        'the state of a version', (tester) async {
+      await pumpS8Page(
+        tester,
+        SupportScreen(onNavigate: (_) {}),
+        support: FakeSupportGateway(),
+      );
+
+      final answer = find.byKey(
+        const ValueKey<String>('support-answer-算力是怎么算的'),
+      );
+      await scrollToS8Section(tester, answer);
+      await tester.tap(answer);
+      await tester.pumpAndSettle();
+
+      // Bundled copy is read long after it was written, so it may not assert
+      // what the mining pages are showing today.
+      expect(find.textContaining('挖矿公式还没有'), findsNothing);
+      expect(find.textContaining('暂时不显示算力'), findsNothing);
+      expect(find.textContaining('公式批准后'), findsNothing);
+      expect(find.textContaining('算力来自最近一次结算'), findsOneWidget);
+    });
+
     testWidgets('an empty body cannot be submitted', (tester) async {
       final gateway = FakeSupportGateway();
       await pumpS8Page(
