@@ -331,6 +331,30 @@ void main() {
       expect(find.textContaining('开放后'), findsNothing);
     });
 
+    testWidgets('the last page of the desk says it is the last', (
+      tester,
+    ) async {
+      final gateway = FakeCommunityGateway(
+        directoryPage: CommunityDirectoryPage(
+          items: <CommunitySummary>[testCommunity()],
+          nextCursor: null,
+          recommendation: const CommunityRecommendation(
+            recommendationId: '22222222-2222-4222-8222-222222222222',
+            ruleVersion: 'rule:verified-members-v1',
+          ),
+        ),
+      );
+      await pumpCommunityPage(
+        tester,
+        const CommunityDiscoverScreen(),
+        community: gateway,
+      );
+
+      final end = find.byKey(const ValueKey<String>('community-discover-end'));
+      await scrollToCommunitySection(tester, end);
+      expect(end, findsOneWidget);
+    });
+
     testWidgets('the heading counts what is loaded, never a total it lacks', (
       tester,
     ) async {
@@ -941,6 +965,24 @@ void main() {
         findsOneWidget,
       );
       expect(find.textContaining('在线人数暂时读不到'), findsNothing);
+    });
+
+    testWidgets('the last page of members says it is the last', (tester) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(members: testDirectory()),
+      );
+
+      final end = find.byKey(const ValueKey<String>('community-members-end'));
+      await scrollToCommunitySection(tester, end);
+      // The 载入更多 control simply vanished on the last page, and a list that
+      // ends in silence reads as one that stopped loading.
+      expect(end, findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('community-members-load-more')),
+        findsNothing,
+      );
     });
 
     testWidgets('the disabled 在线 chip answers the tap it cannot honour', (

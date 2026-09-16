@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
@@ -369,6 +370,13 @@ class _CommunityMembersScreenState
                       ? null
                       : () => unawaited(controller.loadMore()),
                 ),
+              )
+            // The last page's control simply disappeared, and a list that
+            // ends in silence reads as one that stopped loading.
+            else if (state.items.isNotEmpty)
+              const LoopProvenanceFooter(
+                key: ValueKey<String>('community-members-end'),
+                text: '没有更多成员',
               ),
           ],
           if (!typing)
