@@ -118,6 +118,31 @@ class WalletScreen extends ConsumerStatefulWidget {
 }
 
 class _WalletScreenState extends ConsumerState<WalletScreen> {
+  /// One money-action row.
+  ///
+  /// A closed gate replaces the promise with the server's own sentence and
+  /// marks the row 不可用. The tap still opens the destination: that page owns
+  /// the full explanation, and hiding the entry would make the capability
+  /// impossible to look up.
+  LoopRecordRow _moneyActionRow({
+    required Key rowKey,
+    required String title,
+    required String subtitle,
+    required bool available,
+    required String unavailableSubtitle,
+    required VoidCallback onTap,
+  }) => LoopRecordRow(
+    key: rowKey,
+    title: title,
+    subtitle: available ? subtitle : unavailableSubtitle,
+    subtitleMaxLines: 2,
+    trailingBadge: available
+        ? null
+        : const LoopBadge('不可用', key: ValueKey<String>('unavailable-badge')),
+    semanticLabel: available ? null : '$title，当前不可用',
+    onTap: onTap,
+  );
+
   void _open(String location) {
     final navigate = widget.onNavigate;
     if (navigate != null) {
@@ -149,6 +174,23 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       });
     }
     final balances = balancesState?.value;
+
+    // A money-action row promises what the destination can do. Both gates are
+    // read here so the promise matches the page one tap away.
+    final swapGate = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.privySwap),
+    );
+    final sendGate = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.sendApprovals),
+    );
+    final swapAvailable = swapGate.isAvailable;
+    final sendAvailable = sendGate.isAvailable;
+    final swapReason = loopReasonCodeText(
+      swapGate.reasonCode ?? 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
+    );
+    final sendReason = loopReasonCodeText(
+      sendGate.reasonCode ?? 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
+    );
 
     return LoopDashboardPage(
       key: const ValueKey<String>('wallet-screen'),
@@ -278,33 +320,45 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           ],
           const LoopLabel('资金动作'),
           // The prototype's Pay / 兑换 / 发送 / 跨链 entries stay in place and
-          // each opens its own manifest slug. None of them can sign yet: every
-          // destination owns its unavailable state, so the entry point is
-          // honest without this page having to speak for four other pages.
+          // each opens its own manifest slug. What a row promises, though, is
+          // read here and acted on one screen later: 「在本机签名并广播」 over
+          // a destination whose write gate the server has closed is a promise
+          // this page cannot keep. Each row states its own gate instead, and
+          // says so before the tap rather than after it.
           LoopRecordGroup(
             rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('wallet-pay-entry'),
+              _moneyActionRow(
+                rowKey: const ValueKey<String>('wallet-pay-entry'),
                 title: 'Pay',
                 subtitle: '扫码支付尚未开放',
+                // Pay has no reviewed runtime at all: the row already says so
+                // and there is no gate to read.
+                available: false,
+                unavailableSubtitle: '扫码支付尚未开放',
                 onTap: () => _open('/pay'),
               ),
-              LoopRecordRow(
-                key: const ValueKey<String>('wallet-swap-entry'),
+              _moneyActionRow(
+                rowKey: const ValueKey<String>('wallet-swap-entry'),
                 title: '兑换',
                 subtitle: '通过 Privy 报价并在统一签名出口确认',
+                available: swapAvailable,
+                unavailableSubtitle: swapReason,
                 onTap: () => _open('/wallet/swap'),
               ),
-              LoopRecordRow(
-                key: const ValueKey<String>('wallet-send-entry'),
+              _moneyActionRow(
+                rowKey: const ValueKey<String>('wallet-send-entry'),
                 title: '发送',
                 subtitle: '交易由 LOOP 构造，在本机签名并广播',
+                available: sendAvailable,
+                unavailableSubtitle: sendReason,
                 onTap: () => _open('/wallet/send'),
               ),
-              LoopRecordRow(
-                key: const ValueKey<String>('wallet-bridge-entry'),
+              _moneyActionRow(
+                rowKey: const ValueKey<String>('wallet-bridge-entry'),
                 title: '跨链',
                 subtitle: '跨链尚未开放',
+                available: false,
+                unavailableSubtitle: '跨链尚未开放',
                 onTap: () => _open('/wallet/bridge'),
               ),
             ],
