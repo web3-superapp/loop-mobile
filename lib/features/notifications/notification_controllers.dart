@@ -19,6 +19,47 @@ final class NotificationFeedController
   Future<LoopNotificationFeed> fetch() =>
       ref.read(notificationsGatewayProvider).loadFeed();
 
+  /// Reads the page after the one on screen and appends it.
+  ///
+  /// `limit` and `cursor` are mutually exclusive on the server, so a paging
+  /// read carries the cursor alone — which is all the port accepts. A page
+  /// that repeats an id already held replaces nothing and adds nothing: the
+  /// feed is append-only in the order the server returned it.
+  Future<bool> loadMore() async {
+    final current = state.value;
+    final cursor = current?.nextCursor;
+    if (current == null || cursor == null || state.busy) return false;
+    state = state.working(true);
+    try {
+      final page = await ref
+          .read(notificationsGatewayProvider)
+          .loadFeed(cursor: cursor);
+      final held = <String>{
+        for (final entry in current.items) entry.notificationId,
+      };
+      state = state.ready(
+        LoopNotificationFeed(
+          items: <LoopNotificationEntry>[
+            ...current.items,
+            for (final entry in page.items)
+              if (held.add(entry.notificationId)) entry,
+          ],
+          nextCursor: page.nextCursor,
+          // The unread total is the server's, always for the whole feed.
+          unreadCount: page.unreadCount,
+          push: page.push,
+        ),
+      );
+      return true;
+    } on LoopChainException catch (error) {
+      state = state.working(false).failed(error.kind);
+      return false;
+    } catch (_) {
+      state = state.working(false).failed(LoopChainFailureKind.unexpected);
+      return false;
+    }
+  }
+
   /// Marks one notification read. The operation is naturally idempotent and a
   /// repeat returns the same `readAt`.
   Future<bool> markRead(String notificationId) async {

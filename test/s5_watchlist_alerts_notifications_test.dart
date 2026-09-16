@@ -448,6 +448,60 @@ void main() {
       expect(find.text('未读'), findsNothing);
     });
 
+    testWidgets('the trigger history pages to the end and says so', (
+      tester,
+    ) async {
+      const secondId = '5f1c3c7e-6c9a-4b9e-9a4f-2c5d8e7b1a33';
+      final notifications =
+          FakeNotificationsGateway(
+              feed: S5Answer<LoopNotificationFeed>(
+                value: s5Feed(nextCursor: 'cursor-2'),
+              ),
+            )
+            ..feedPages = <String, LoopNotificationFeed>{
+              'cursor-2': s5Feed(
+                items: <LoopNotificationEntry>[
+                  s5Notification(notificationId: secondId, symbol: 'USDT'),
+                ],
+                unreadCount: 2,
+              ),
+            };
+      await pumpS5Page(
+        tester,
+        const PriceAlertsScreen(),
+        alerts: FakeAlertsGateway(),
+        notifications: notifications,
+      );
+
+      final loadMore = find.byKey(
+        const ValueKey<String>('alerts-feed-load-more'),
+      );
+      await scrollToS5Section(tester, loadMore);
+      expect(
+        find.byKey(const ValueKey<String>('alerts-feed-end')),
+        findsNothing,
+      );
+
+      await tester.tap(loadMore);
+      await tester.pumpAndSettle();
+
+      // The first read carries no cursor, the second carries the server's and
+      // never a limit beside it.
+      expect(notifications.feedCursors, <String?>[null, 'cursor-2']);
+      // Both pages are on the page, in the order the server gave them.
+      expect(
+        find.byKey(ValueKey<String>('alerts-feed-$s5NotificationId')),
+        findsOneWidget,
+      );
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('alerts-feed-$secondId')),
+      );
+      // The end of the list states that it is the end instead of just stopping.
+      expect(loadMore, findsNothing);
+      expect(find.text('没有更多触发记录'), findsOneWidget);
+    });
+
     testWidgets('a feed entry highlights exactly the alert it references', (
       tester,
     ) async {

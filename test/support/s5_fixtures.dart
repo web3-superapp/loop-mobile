@@ -1153,31 +1153,38 @@ LoopPriceAlert s5Alert({
   updatedAt: DateTime.utc(2026, 9, 8, 7, 31),
 );
 
-LoopNotificationEntry s5Notification({DateTime? readAt}) =>
-    LoopNotificationEntry(
-      notificationId: s5NotificationId,
-      type: LoopNotificationCategory.tradePriceAlert,
-      entityRef: 'priceAlert:$s5AlertId',
-      contextRoute: 'token',
-      contextParams: const <String, String>{'assetId': s5WbnbAssetId},
-      payload: const <String, String?>{
-        'symbol': 'WBNB',
-        'threshold': '700',
-        'observedValue': '747.39',
-      },
-      source: 'dexscreener',
-      observedAt: DateTime.utc(2026, 9, 8, 7, 31),
-      readAt: readAt,
-      createdAt: DateTime.utc(2026, 9, 8, 7, 31),
-    );
+LoopNotificationEntry s5Notification({
+  DateTime? readAt,
+  String notificationId = s5NotificationId,
+  String symbol = 'WBNB',
+}) => LoopNotificationEntry(
+  notificationId: notificationId,
+  type: LoopNotificationCategory.tradePriceAlert,
+  entityRef: 'priceAlert:$s5AlertId',
+  contextRoute: 'token',
+  contextParams: const <String, String>{'assetId': s5WbnbAssetId},
+  payload: <String, String?>{
+    'symbol': symbol,
+    'threshold': '700',
+    'observedValue': '747.39',
+  },
+  source: 'dexscreener',
+  observedAt: DateTime.utc(2026, 9, 8, 7, 31),
+  readAt: readAt,
+  createdAt: DateTime.utc(2026, 9, 8, 7, 31),
+);
 
-LoopNotificationFeed s5Feed({DateTime? readAt, int unreadCount = 1}) =>
-    LoopNotificationFeed(
-      items: <LoopNotificationEntry>[s5Notification(readAt: readAt)],
-      nextCursor: null,
-      unreadCount: unreadCount,
-      push: const LoopUnavailable('PUSH_RUNTIME_DEFERRED'),
-    );
+LoopNotificationFeed s5Feed({
+  DateTime? readAt,
+  int unreadCount = 1,
+  String? nextCursor,
+  List<LoopNotificationEntry>? items,
+}) => LoopNotificationFeed(
+  items: items ?? <LoopNotificationEntry>[s5Notification(readAt: readAt)],
+  nextCursor: nextCursor,
+  unreadCount: unreadCount,
+  push: const LoopUnavailable('PUSH_RUNTIME_DEFERRED'),
+);
 
 LoopNotificationPreferences s5Preferences({
   int version = 0,

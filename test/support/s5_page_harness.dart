@@ -402,8 +402,21 @@ final class FakeNotificationsGateway implements NotificationsGateway {
   @override
   final LoopChainGatewayMode mode;
 
+  /// Pages keyed by the cursor that asks for them. The port takes a cursor
+  /// and nothing else, so `limit` can never ride along with it.
+  Map<String, LoopNotificationFeed> feedPages =
+      <String, LoopNotificationFeed>{};
+
+  /// Every cursor this fake was asked for, in order; the first read is `null`.
+  final List<String?> feedCursors = <String?>[];
+
   @override
-  Future<LoopNotificationFeed> loadFeed({String? cursor}) => feed.resolve();
+  Future<LoopNotificationFeed> loadFeed({String? cursor}) {
+    feedCursors.add(cursor);
+    final page = cursor == null ? null : feedPages[cursor];
+    if (page != null) return Future<LoopNotificationFeed>.value(page);
+    return feed.resolve();
+  }
 
   @override
   Future<LoopNotificationEntry> markRead(String notificationId) {

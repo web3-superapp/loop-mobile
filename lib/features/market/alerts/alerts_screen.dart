@@ -459,7 +459,8 @@ class _AlertNotificationFeedState
       );
     }
     final entries = feed.priceAlerts;
-    if (entries.isEmpty) {
+    final more = feed.nextCursor != null;
+    if (entries.isEmpty && !more) {
       return const LoopEmpty(
         key: ValueKey<String>('alerts-feed-empty'),
         message: '还没有触发记录',
@@ -469,24 +470,55 @@ class _AlertNotificationFeedState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            for (final entry in entries)
-              LoopRecordRow(
-                key: ValueKey<String>('alerts-feed-${entry.notificationId}'),
-                title: _feedTitle(entry),
-                subtitle: _feedDetail(entry),
-                trailingBadge: entry.isUnread ? const LoopBadge('未读') : null,
-                onTap: entry.isUnread
-                    ? () => unawaited(
-                        ref
-                            .read(notificationFeedControllerProvider.notifier)
-                            .markRead(entry.notificationId),
-                      )
-                    : null,
-              ),
-          ],
-        ),
+        if (entries.isEmpty)
+          const LoopEmpty(
+            key: ValueKey<String>('alerts-feed-empty-page'),
+            message: '这一页没有价格提醒的记录',
+            reason: '后面还有记录，载入下一页再看。',
+          )
+        else
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              for (final entry in entries)
+                LoopRecordRow(
+                  key: ValueKey<String>('alerts-feed-${entry.notificationId}'),
+                  title: _feedTitle(entry),
+                  subtitle: _feedDetail(entry),
+                  trailingBadge: entry.isUnread ? const LoopBadge('未读') : null,
+                  onTap: entry.isUnread
+                      ? () => unawaited(
+                          ref
+                              .read(notificationFeedControllerProvider.notifier)
+                              .markRead(entry.notificationId),
+                        )
+                      : null,
+                ),
+            ],
+          ),
+        // The feed is a cursor page, not the whole history: without this the
+        // page after the first one was unreachable and the list ended in
+        // silence, which reads as "that is everything".
+        if (more)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: LoopButton(
+              key: const ValueKey<String>('alerts-feed-load-more'),
+              label: state.busy ? '正在载入…' : '载入更多',
+              block: true,
+              onPressed: state.busy
+                  ? null
+                  : () => unawaited(
+                      ref
+                          .read(notificationFeedControllerProvider.notifier)
+                          .loadMore(),
+                    ),
+            ),
+          )
+        else
+          const LoopProvenanceFooter(
+            key: ValueKey<String>('alerts-feed-end'),
+            text: '没有更多触发记录',
+          ),
         LoopProvenanceFooter(
           key: const ValueKey<String>('alerts-feed-unread'),
           text:
