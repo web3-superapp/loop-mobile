@@ -55,32 +55,18 @@ class _TokenCardSparklineState extends ConsumerState<TokenCardSparkline> {
       });
     }
 
-    final block = state.value?.candles;
-    if (!state.isReady || block == null) {
+    final absence = tokenCardSparklineAbsence(
+      state,
+      unavailableText: widget.unavailableText,
+    );
+    if (absence != null) {
       return _TokenCardChartNotice(
-        blockKey: '${widget.keyPrefix}-unreadable',
-        // A read that did not answer states what happened, not a reason code
-        // the server never sent.
-        text: state.phase == LoopChainViewPhase.loading
-            ? '1H K 线读取中，读到之前不画任何走势。'
-            : widget.unavailableText ??
-                  loopChainFailureReason(state.failureKind),
+        blockKey: '${widget.keyPrefix}-${absence.keySuffix}',
+        text: absence.text,
       );
     }
-    if (block is MarketCandlesUnavailable) {
-      return _TokenCardChartNotice(
-        blockKey: '${widget.keyPrefix}-unavailable',
-        text: widget.unavailableText ?? loopReasonCodeText(block.reasonCode),
-      );
-    }
-    final available = block as MarketCandlesAvailable;
+    final available = state.value!.candles as MarketCandlesAvailable;
     final closes = loopSparklineCloses(available.items);
-    if (closes.isEmpty) {
-      return _TokenCardChartNotice(
-        blockKey: '${widget.keyPrefix}-empty',
-        text: widget.unavailableText ?? '这个区间没有成交，只画有成交的桶，空桶不会补 0。',
-      );
-    }
     return LoopSparkline(
       key: ValueKey<String>('${widget.keyPrefix}-line'),
       closes: closes,
@@ -89,6 +75,53 @@ class _TokenCardSparklineState extends ConsumerState<TokenCardSparkline> {
           '来源 ${loopFactSourceLabel(available.source)}',
     );
   }
+}
+
+/// Why a Token Card's line cannot be drawn, and under which key the slot
+/// states it.
+@immutable
+final class TokenCardSparklineAbsence {
+  const TokenCardSparklineAbsence(this.keySuffix, this.text);
+
+  final String keySuffix;
+  final String text;
+}
+
+/// `null` when [state] can be drawn as a line, otherwise the reason.
+///
+/// A page that would rather carry no chart slot at all than an empty one asks
+/// this before it hands a [TokenCardSparkline] to a card. It reads the state
+/// the caller is already watching; it never starts a read of its own, so
+/// asking is not a way around the read.
+TokenCardSparklineAbsence? tokenCardSparklineAbsence(
+  LoopChainResourceState<MarketCandleSeries> state, {
+  String? unavailableText,
+}) {
+  final block = state.value?.candles;
+  if (!state.isReady || block == null) {
+    return TokenCardSparklineAbsence(
+      'unreadable',
+      // A read that did not answer states what happened, not a reason code
+      // the server never sent.
+      state.phase == LoopChainViewPhase.loading
+          ? '1H K 线读取中，读到之前不画任何走势。'
+          : unavailableText ?? loopChainFailureReason(state.failureKind),
+    );
+  }
+  if (block is MarketCandlesUnavailable) {
+    return TokenCardSparklineAbsence(
+      'unavailable',
+      unavailableText ?? loopReasonCodeText(block.reasonCode),
+    );
+  }
+  final available = block as MarketCandlesAvailable;
+  if (loopSparklineCloses(available.items).isEmpty) {
+    return TokenCardSparklineAbsence(
+      'empty',
+      unavailableText ?? '这个区间没有成交，只画有成交的桶，空桶不会补 0。',
+    );
+  }
+  return null;
 }
 
 /// The slot a Token Card renders instead of a line. It never draws a shape.

@@ -695,6 +695,12 @@ void main() {
       expect(card, findsOneWidget);
       expect(find.textContaining('还没有解析'), findsOneWidget);
       expect(find.textContaining(r'$'), findsNothing);
+      // No series is readable in this harness, so the card carries no chart
+      // slot: an empty 106px box under 「下面的走势线来自行情页」 pointed at a
+      // line that was not there.
+      expect(find.textContaining('暂无走势'), findsOneWidget);
+      expect(find.textContaining('下面的走势线来自行情页'), findsNothing);
+      expect(find.textContaining('根收盘价'), findsNothing);
     });
 
     testWidgets('mining, presence, announcements and links stay unavailable', (

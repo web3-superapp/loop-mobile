@@ -13,7 +13,10 @@ import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
+import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/market/loop_sparkline.dart';
+import 'package:loop_mobile/features/market/market_controllers.dart';
+import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/token_card_chart.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -427,14 +430,38 @@ class _MembershipActions extends StatelessWidget {
 /// of rendering a figure. The one thing that *is* addressable by the canonical
 /// key is the market module's own `1h` candle series, so the card's line is a
 /// real read with its own unavailable state — never a decorative shape.
-class _BoundAssetCard extends StatelessWidget {
+class _BoundAssetCard extends ConsumerStatefulWidget {
   const _BoundAssetCard({required this.assetKey, this.onOpenToken});
 
   final String assetKey;
   final ValueChanged<String>? onOpenToken;
 
   @override
+  ConsumerState<_BoundAssetCard> createState() => _BoundAssetCardState();
+}
+
+class _BoundAssetCardState extends ConsumerState<_BoundAssetCard> {
+  @override
   Widget build(BuildContext context) {
+    final request = MarketCandleRequest(
+      assetId: widget.assetKey,
+      interval: LoopCandleInterval.oneHour,
+    );
+    final state = ref.watch(marketCandlesControllerProvider(request));
+    if (state.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref.read(marketCandlesControllerProvider(request).notifier).load(),
+          );
+        }
+      });
+    }
+    // The chart slot is a fixed 106px box. With no line in it, that box was
+    // 200px of black under a sentence that pointed at a line which was not
+    // there. A card that cannot draw one carries no slot and says so on the
+    // line it already has.
+    final absence = tokenCardSparklineAbsence(state);
     return KeyedSubtree(
       key: const ValueKey<String>('community-bound-asset'),
       child: LoopTokenCard(
@@ -444,23 +471,31 @@ class _BoundAssetCard extends StatelessWidget {
         state: LoopTokenCardState.normal,
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         model: LoopTokenCardModel(
-          symbol: loopTruncatedAssetId(assetKey),
-          identifier: assetKey,
+          symbol: loopTruncatedAssetId(widget.assetKey),
+          identifier: widget.assetKey,
           priceReason: '暂无价格',
           communityIcon: 'info',
-          communityLine:
-              '这个地址由社区所有者登记，还没有解析。价格、市值、流动性与持有人暂时都读不到，'
-              '这张卡片不显示行情数字，下面的走势线来自行情页。',
-          chartRangeLabel: '1H · 最近 $loopSparklineWindow 根收盘价',
-          chart: TokenCardSparkline(
-            assetId: assetKey,
-            keyPrefix: 'community-bound-asset-chart',
-          ),
+          communityLine: absence == null
+              ? '这个地址由社区所有者登记，还没有解析。价格、市值、流动性与持有人暂时都读不到，'
+                    '这张卡片不显示行情数字，下面的走势线来自行情页。'
+              : '这个地址由社区所有者登记，还没有解析。价格、市值、流动性与持有人暂时都读不到，'
+                    '这张卡片不显示行情数字。暂无走势：${absence.text}',
+          chartRangeLabel: absence == null
+              ? '1H · 最近 $loopSparklineWindow 根收盘价'
+              : null,
+          chart: absence == null
+              ? TokenCardSparkline(
+                  assetId: widget.assetKey,
+                  keyPrefix: 'community-bound-asset-chart',
+                )
+              : null,
         ),
         actions: <LoopTokenCardAction>[
           LoopTokenCardAction(
             '资产事实',
-            onTap: onOpenToken == null ? null : () => onOpenToken!(assetKey),
+            onTap: widget.onOpenToken == null
+                ? null
+                : () => widget.onOpenToken!(widget.assetKey),
           ),
         ],
       ),
