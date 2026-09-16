@@ -1465,6 +1465,64 @@ void main() {
       expect(find.text('搜索成员'), findsNothing);
     });
 
+    testWidgets('the keyboard never buries the matches: they stay scrollable', (
+      tester,
+    ) async {
+      // The walkthrough device: 1080×2280 at 2.77 is 390×823 logical, and the
+      // soft keyboard takes 800 device pixels (289 logical) off the bottom.
+      // On that page the pinned hero plus the field plus the chips left the
+      // matches under the keyboard with nothing left to scroll.
+      const keyboard = 289.0;
+      const viewport = Size(390, 823);
+      tester.view.viewInsets = const FakeViewPadding(bottom: keyboard);
+      addTearDown(tester.view.resetViewInsets);
+
+      final gateway = FakeCommunityGateway(members: testDirectory());
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: gateway,
+        size: viewport,
+      );
+      await tester.tap(searchToggle());
+      await tester.pumpAndSettle();
+
+      gateway.membersByQuery = <String?, CommunityMemberDirectory>{
+        'voy': testDirectory(
+          items: <CommunityMemberEntry>[
+            for (var index = 0; index < 8; index += 1)
+              testMember(
+                role: CommunityRole.member,
+                publicProfileId: '7a3d2e4c-5b6c-4d7e-8f90-1a2b3c4d5e6$index',
+                loopId: 'LOOP-VOY0000$index',
+                alias: 'Voyanne_$index',
+              ),
+          ],
+        ),
+      };
+      await tester.enterText(searchField(), 'voy');
+      await settleSearch(tester);
+
+      final visibleBottom = viewport.height - keyboard;
+      final firstRow = find.byKey(
+        const ValueKey<String>(
+          'member-row-7a3d2e4c-5b6c-4d7e-8f90-1a2b3c4d5e60',
+        ),
+      );
+      expect(firstRow, findsOneWidget);
+      final firstTop = tester.getRect(firstRow).top;
+      expect(firstTop, lessThan(visibleBottom));
+
+      // And the list still scrolls under the keyboard, so the rest of the
+      // matches can be reached without dismissing it.
+      await tester.drag(
+        find.byKey(const ValueKey<String>('community-members-list')),
+        const Offset(0, -120),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.getRect(firstRow).top, lessThan(firstTop));
+    });
+
     testWidgets('closing the control clears the query as well', (tester) async {
       final gateway = await openSearch(tester);
 

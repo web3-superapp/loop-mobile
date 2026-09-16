@@ -124,6 +124,13 @@ class _CommunityMembersScreenState
     // instead of a figure, and the role chips drop the numbers they cannot
     // stand behind. Clearing the field brings both back unchanged.
     final searching = state.isSearching;
+    // While the soft keyboard is up the page has roughly a third of its
+    // height left, and the pinned folio plus the two standing notices took
+    // all of it: the matches were laid out under the keyboard with no room
+    // left to scroll them back into view. Typing therefore folds away
+    // everything that is not the field, the chips and the matches; dismissing
+    // the keyboard brings all of it back unchanged.
+    final typing = _searchOpen && MediaQuery.viewInsetsOf(context).bottom > 0;
     return LoopStreamPage(
       key: const ValueKey<String>('community-members-screen'),
       archetype: LoopPageArchetype.listing,
@@ -138,16 +145,20 @@ class _CommunityMembersScreenState
           onPressed: () => _toggleSearch(controller),
         ),
       ],
-      folio: LoopFolioPrimary(
-        variant: LoopFolioVariant.chalk,
-        archetype: LoopFolioArchetype.listing,
-        kicker: 'MEMBER DIRECTORY',
-        heading: searching
-            ? '搜索成员'
-            : (counts == null ? communityMissingHeading : '${counts.all} 名成员'),
-        caption: searching ? '这里只显示匹配到的成员。' : 'Owner / Admin / 成员 三级权限。',
-        stamp: searching || counts == null ? null : '${counts.all}',
-      ),
+      folio: typing
+          ? null
+          : LoopFolioPrimary(
+              variant: LoopFolioVariant.chalk,
+              archetype: LoopFolioArchetype.listing,
+              kicker: 'MEMBER DIRECTORY',
+              heading: searching
+                  ? '搜索成员'
+                  : (counts == null
+                        ? communityMissingHeading
+                        : '${counts.all} 名成员'),
+              caption: searching ? '这里只显示匹配到的成员。' : 'Owner / Admin / 成员 三级权限。',
+              stamp: searching || counts == null ? null : '${counts.all}',
+            ),
       filters: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -253,14 +264,16 @@ class _CommunityMembersScreenState
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '成员目录'),
-          if (counts != null)
-            CommunityUnavailableCard(label: '在线人数', fact: counts.online),
-          if (state.items.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 10),
-            CommunityMiningPowerCard(
-              label: '成员算力',
-              fact: state.items.first.miningPower,
-            ),
+          if (!typing) ...<Widget>[
+            if (counts != null)
+              CommunityUnavailableCard(label: '在线人数', fact: counts.online),
+            if (state.items.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 10),
+              CommunityMiningPowerCard(
+                label: '成员算力',
+                fact: state.items.first.miningPower,
+              ),
+            ],
           ],
           if (id == null)
             const LoopEmpty(
@@ -326,15 +339,16 @@ class _CommunityMembersScreenState
                 ),
               ),
           ],
-          const LoopNotice(
-            key: ValueKey<String>('community-members-rules'),
-            icon: 'info',
-            title: '三级权限',
-            body:
-                'Owner / Admin / 成员。这里只显示你有权限做的操作；'
-                '禁言只影响聊天，不影响治理权限。',
-            margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
-          ),
+          if (!typing)
+            const LoopNotice(
+              key: ValueKey<String>('community-members-rules'),
+              icon: 'info',
+              title: '三级权限',
+              body:
+                  'Owner / Admin / 成员。这里只显示你有权限做的操作；'
+                  '禁言只影响聊天，不影响治理权限。',
+              margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
+            ),
         ],
       ),
     );
