@@ -82,7 +82,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
           onPressed: widget.onOpenRules,
         ),
       ],
-      primary: _assetsHero(assets),
+      primary: _assetsHero(assets, state.phase),
       block: blocked
           ? _miningCapabilityBlock(
               'mining-assets-capability-unavailable',
@@ -196,18 +196,30 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
 /// The hero. A settled total prints the server's own decimal; without a
 /// settlement the page says the absence in words rather than a 29px dash — and
 /// in words, not in a state name: the stamp is a settled reading or nothing.
-LoopFolioPrimary _assetsHero(MiningAssets? assets) => LoopFolioPrimary(
-  variant: LoopFolioVariant.quiet,
-  archetype: LoopFolioArchetype.record,
-  kicker: 'POWER FORMULA',
-  heading: switch (assets?.totalPower) {
-    MiningFigureValue(:final value) => value,
-    _ => launchMissingHeading,
-  },
-  caption: assets == null || assets.isUnsettled
-      ? '每个资产的贡献需要公式、权重与参考价三项齐备，目前都还读不到。'
-      : '持有量、参考价与权重都来自最近一次结算，不是收益。',
-);
+///
+/// Which words is the server's to decide. The caption used to name the formula
+/// as the thing being waited on, in the same frame as a read that had not
+/// landed and in the frame after one that landed under a formula already in
+/// effect. A frame that has read nothing says only that it is reading, and a
+/// total with no figure carries the reason the total itself came with.
+LoopFolioPrimary _assetsHero(MiningAssets? assets, LaunchViewPhase phase) {
+  final (String heading, String caption) = switch (assets?.totalPower) {
+    MiningFigureValue(:final value) => (value, '持有量、参考价与权重都来自最近一次结算，不是收益。'),
+    MiningFigureUnavailable(:final reasonCode) => (
+      launchMissingHeading,
+      launchReasonCodeText(reasonCode),
+    ),
+    null when phase == LaunchViewPhase.loading => ('正在读取', '总算力读到之后显示在这里。'),
+    null => (launchMissingHeading, '这一页还没有读到算力明细。'),
+  };
+  return LoopFolioPrimary(
+    variant: LoopFolioVariant.quiet,
+    archetype: LoopFolioArchetype.record,
+    kicker: 'POWER FORMULA',
+    heading: heading,
+    caption: caption,
+  );
+}
 
 /// Every symbol this page was given, by asset id. A proxied row names the
 /// token its price came from, and that token is usually a row of its own: the
@@ -820,7 +832,7 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
       title: community?.community.name ?? '社区挖矿面板',
       kicker: 'COMMUNITY POWER',
       onBack: widget.onBack,
-      primary: _communityHero(community),
+      primary: _communityHero(community, state.phase),
       block: blocked
           ? _miningCapabilityBlock(
               'mining-community-capability-unavailable',
@@ -945,19 +957,31 @@ class _WeightBlock extends StatelessWidget {
 
 /// The hero. A settled community power prints the server's own decimal; the
 /// weight that produced it is already in the number.
-LoopFolioPrimary _communityHero(MiningCommunity? community) {
-  final settled = switch (community?.communityPower) {
-    MiningFigureValue(:final value) => value,
-    _ => null,
+///
+/// When there is no decimal, the reason is the server's: the caption used to
+/// name the formula as the thing being waited on, which was printed on the
+/// skeleton frame of every cold start and stayed wrong after a formula version
+/// took effect — a community with no bound asset has no power for a reason of
+/// its own.
+LoopFolioPrimary _communityHero(
+  MiningCommunity? community,
+  LaunchViewPhase phase,
+) {
+  final (String heading, String caption) = switch (community?.communityPower) {
+    MiningFigureValue(:final value) => (value, '成员在绑定资产上的算力之和，权重已经算在里面。'),
+    MiningFigureUnavailable(:final reasonCode) => (
+      launchMissingHeading,
+      launchReasonCodeText(reasonCode),
+    ),
+    null when phase == LaunchViewPhase.loading => ('正在读取', '社区总算力读到之后显示在这里。'),
+    null => (launchMissingHeading, '这一页还没有读到这个社区的算力。'),
   };
   return LoopFolioPrimary(
     variant: LoopFolioVariant.quiet,
     archetype: LoopFolioArchetype.record,
     kicker: 'COMMUNITY POWER',
-    heading: settled ?? launchMissingHeading,
-    caption: settled == null
-        ? '社区总算力、我的贡献与参与人数都要等挖矿公式确定，目前还读不到。'
-        : '成员在绑定资产上的算力之和，权重已经算在里面。',
+    heading: heading,
+    caption: caption,
   );
 }
 

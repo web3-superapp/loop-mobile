@@ -250,6 +250,10 @@ final List<_StateCase> _cases = <_StateCase>[
     ),
     readyKey: 'mining-assets-total',
     alsoUnreadKeys: <String>['mining-assets-empty-notice'],
+    // While the read is in flight the folio says it is reading. 「暂无数值」 is
+    // a conclusion about an answer, and no answer has arrived; the skeleton
+    // frame is pinned in s7_mining_pages_test.dart instead.
+    showsMissingHeading: false,
     emptyContract:
         'MiningAssets 是一条必填的总算力 + 两个列表 + 必填的 source 与参考价：'
         '读成功时一定有一条总算力口径和一条出处，'
@@ -316,6 +320,10 @@ final List<_StateCase> _cases = <_StateCase>[
     readyKey: 'mining-community-metrics',
     alsoUnreadKeys: <String>['mining-community-asset'],
     unreadText: 'Frog Holders',
+    // While the read is in flight the folio says it is reading. 「暂无数值」 is
+    // a conclusion about an answer, and no answer has arrived; the skeleton
+    // frame is pinned in s7_mining_pages_test.dart instead.
+    showsMissingHeading: false,
     emptyContract:
         'MiningCommunity 是一个必填的社区引用 + 一个 sealed 权重 + 四条必填结果 + '
         '一条必填的结算出处：读成功时社区一定存在，'

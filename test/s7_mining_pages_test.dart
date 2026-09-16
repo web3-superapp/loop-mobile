@@ -56,6 +56,12 @@ const List<String> _reasonCodesOnTheWire = <String>[
   'PROFILE_ACTIVATION_REQUIRED',
 ];
 
+/// The caption under the folio heading, which is the sentence the page states
+/// about the one figure the hero carries.
+String? _heroCaption(WidgetTester tester) => tester
+    .widget<LoopFolioPrimary>(find.byType(LoopFolioPrimary).first)
+    .caption;
+
 void main() {
   group('mining-community route identity', () {
     test('the panel is addressed by the opaque communityId alone', () {
@@ -479,6 +485,55 @@ void main() {
       expect(find.textContaining('空列表是正常结果'), findsOneWidget);
       expect(find.textContaining('不代表你的钱包没有持仓'), findsOneWidget);
       expect(_figures(tester), isEmpty);
+    });
+
+    testWidgets('the loading frame states no cause it has not been told', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(pending: true),
+        ),
+        settle: false,
+      );
+
+      for (final code in _reasonCodesOnTheWire) {
+        expect(
+          find.textContaining(launchReasonCodeText(code)),
+          findsNothing,
+          reason: code,
+        );
+      }
+      expect(find.textContaining('挖矿公式'), findsNothing);
+      expect(find.text('正在读取'), findsOneWidget);
+      expect(find.text(launchMissingHeading), findsNothing);
+      expect(find.text('0'), findsNothing);
+    });
+
+    testWidgets('a total with no figure carries its own reason, not the '
+        'formula', (tester) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(
+            value: s7MiningAssets(
+              totalPower: const MiningFigureUnavailable(
+                'MINING_ACCOUNT_NOT_IN_SNAPSHOT',
+              ),
+              source: s7MiningSnapshot(),
+            ),
+          ),
+        ),
+      );
+
+      // The hero speaks for the total it heads, not for the page.
+      expect(
+        _heroCaption(tester),
+        launchReasonCodeText('MINING_ACCOUNT_NOT_IN_SNAPSHOT'),
+      );
     });
 
     testWidgets('an unread settlement is not a missing one', (tester) async {
@@ -1276,6 +1331,53 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.textContaining(s7BaselineVersion), findsOneWidget);
+    });
+
+    testWidgets('the loading frame states no cause it has not been told', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningCommunityScreen(communityId: s7CommunityId),
+        mining: FakeMiningGateway(
+          community: S7Answer<MiningCommunity>(pending: true),
+        ),
+        settle: false,
+      );
+
+      for (final code in _reasonCodesOnTheWire) {
+        expect(
+          find.textContaining(launchReasonCodeText(code)),
+          findsNothing,
+          reason: code,
+        );
+      }
+      expect(find.textContaining('挖矿公式'), findsNothing);
+      expect(find.text('正在读取'), findsOneWidget);
+      expect(find.text(launchMissingHeading), findsNothing);
+      expect(find.text('0'), findsNothing);
+    });
+
+    testWidgets('a community with no power carries its own reason, not the '
+        'formula', (tester) async {
+      await pumpS7Page(
+        tester,
+        const MiningCommunityScreen(communityId: s7CommunityId),
+        mining: FakeMiningGateway(
+          community: S7Answer<MiningCommunity>(
+            value: s7MiningCommunity(
+              communityPower: const MiningFigureUnavailable(
+                'COMMUNITY_ASSET_NOT_BOUND',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        _heroCaption(tester),
+        launchReasonCodeText('COMMUNITY_ASSET_NOT_BOUND'),
+      );
     });
 
     testWidgets('a repository that did not answer is not an absence of '
