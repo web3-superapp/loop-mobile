@@ -514,7 +514,7 @@ class _DeviceManagementScreenState
         heading: directory == null
             ? '设备管理'
             : '${directory.deviceCount} 台设备 · ${directory.activeCount} 个会话',
-        caption: '这里不显示设备名称和位置，只显示平台、版本与最后活跃时间。',
+        caption: '这里不显示设备名称和位置，只显示平台、版本、会话标识与登录时间。',
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -569,8 +569,8 @@ class _DeviceManagementScreenState
             const LoopNotice(
               key: ValueKey<String>('devices-current-unknown'),
               icon: 'info',
-              title: '无法标记当前设备',
-              body: '本机没有可用的会话标识，因此列表里没有任何一行被标为"当前"。',
+              title: '无法标记本次会话',
+              body: '本机没有可用的会话标识，因此列表里没有任何一行被标为本次会话或本设备。',
             ),
           const LoopLabel('会话'),
           if (directory.devices.isEmpty)
@@ -629,13 +629,33 @@ class _DeviceManagementScreenState
     );
   }
 
+  /// One session row.
+  ///
+  /// Two sessions of the same device carry the same platform and the same
+  /// client version, so 「iOS · 1.0.0 · 最后活跃 6 天前」 was the same string
+  /// twice and the reader could not tell which one they were revoking. The row
+  /// now carries the server's session short form and the session's own first
+  /// login, and it distinguishes 本次会话 from an older session of the same
+  /// device (decision 0049).
   LoopRecordRow _deviceRow(LoopDeviceSession device, {required bool busy}) {
     final revoked = !device.isActive;
     final badge = device.isCurrent
-        ? const LoopBadge('当前设备', kind: LoopBadgeKind.up)
+        ? const LoopBadge('本次会话', kind: LoopBadgeKind.up)
         : (revoked
               ? const LoopBadge('已撤销')
-              : const LoopBadge('其他设备', kind: LoopBadgeKind.mute));
+              : (device.isCurrentDevice
+                    ? const LoopBadge('本设备 · 旧会话')
+                    : const LoopBadge('其他设备', kind: LoopBadgeKind.mute)));
+    // The session in hand is being used right now, so its bootstrap
+    // observation time is not a fact worth printing beside it.
+    final state = revoked
+        ? '已于 ${loopRelativeTime(device.revokedAt!)}撤销'
+        : device.isCurrent
+        ? '正在使用'
+        : '最后活跃 ${loopRelativeTime(device.lastSeenAt)}';
+    final identity =
+        '会话 ${device.sessionShortId} · '
+        '首次登录 ${loopSessionCreatedAtLabel(device.createdAt)}';
     return LoopRecordRow(
       key: ValueKey<String>('device-${device.sessionId}'),
       leading: LoopIcon(
@@ -643,16 +663,22 @@ class _DeviceManagementScreenState
         semanticLabel: device.platform.label,
       ),
       title: device.displayName,
-      subtitle: revoked
-          ? '已于 ${loopRelativeTime(device.revokedAt!)}撤销'
-          : '最后活跃 ${loopRelativeTime(device.lastSeenAt)} · '
-                '${device.authStrength.label}',
+      subtitle: '$identity\n$state · ${device.authStrength.label}',
+      subtitleMaxLines: 2,
       trailingBadge: badge,
       position: LoopRowPosition.middle,
       onTap: device.isCurrent || revoked || busy
           ? null
           : () => unawaited(_confirmRevoke(device)),
-      semanticLabel: '${device.displayName}，${revoked ? '已撤销' : '活跃'}',
+      semanticLabel: <String>[
+        device.displayName,
+        '会话 ${device.sessionShortId}',
+        if (device.isCurrent)
+          '本次会话'
+        else if (device.isOlderSessionOfThisDevice)
+          '本设备的旧会话',
+        revoked ? '已撤销' : '活跃',
+      ].join('，'),
     );
   }
 }
@@ -678,6 +704,15 @@ class _RevokeConfirmSheet extends StatelessWidget {
         ),
         LoopKeyValue(label: '平台', value: device.platform.label),
         LoopKeyValue(label: '客户端版本', value: device.clientVersion),
+        // Which session this is: the sheet is the last screen before the
+        // command, and two sessions of one device differ only here.
+        LoopKeyValue(label: '会话', value: device.sessionShortId),
+        LoopKeyValue(
+          label: '首次登录',
+          value: loopSessionCreatedAtLabel(device.createdAt),
+        ),
+        if (device.isOlderSessionOfThisDevice)
+          const LoopKeyValue(label: '归属', value: '本设备的旧会话'),
         LoopKeyValue(label: '最后活跃', value: loopRelativeTime(device.lastSeenAt)),
         const LoopNotice(
           key: ValueKey<String>('device-revoke-sheet-effect'),

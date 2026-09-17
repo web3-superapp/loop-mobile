@@ -286,10 +286,86 @@ void main() {
 
       expect(find.text('iOS · 1.0.0'), findsOneWidget);
       expect(find.text('Android · 1.0.0'), findsOneWidget);
-      expect(find.text('当前设备'), findsOneWidget);
+      expect(find.text('本次会话'), findsOneWidget);
       expect(find.textContaining('iPhone 15 Pro'), findsNothing);
       expect(find.textContaining('MacBook'), findsNothing);
       expect(find.textContaining('上海'), findsNothing);
+    });
+
+    testWidgets('two sessions of one device stay distinguishable', (
+      tester,
+    ) async {
+      await pumpS8Page(
+        tester,
+        const DeviceManagementScreen(),
+        security: FakeSecurityGateway(
+          devices: S8Answer<LoopDeviceDirectory>(
+            value: s8Directory(
+              devices: <LoopDeviceSession>[
+                s8Device(),
+                // The same device, same platform, same client version: only
+                // the session short form and the first login separate them.
+                s8Device(
+                  sessionId: s8OtherSessionId,
+                  isCurrent: false,
+                  createdAt: DateTime.utc(2026, 9, 3, 1),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('iOS · 1.0.0'), findsNWidgets(2));
+      expect(find.textContaining('会话 3d4e'), findsOneWidget);
+      expect(find.textContaining('会话 4e5f'), findsOneWidget);
+      expect(find.textContaining('首次登录 2026-09-08 20:00 UTC'), findsOneWidget);
+      expect(find.textContaining('首次登录 2026-09-03 01:00 UTC'), findsOneWidget);
+      // The session in hand is being used, so no observation time is printed
+      // beside it; the older session of the same device says whose it is.
+      expect(find.text('本次会话'), findsOneWidget);
+      expect(find.textContaining('正在使用'), findsOneWidget);
+      expect(find.text('本设备 · 旧会话'), findsOneWidget);
+      expect(find.textContaining('最后活跃 '), findsOneWidget);
+    });
+
+    testWidgets('the revoke sheet names the session it is about', (
+      tester,
+    ) async {
+      await pumpS8Page(
+        tester,
+        const DeviceManagementScreen(),
+        security: FakeSecurityGateway(
+          devices: S8Answer<LoopDeviceDirectory>(
+            value: s8Directory(
+              devices: <LoopDeviceSession>[
+                s8Device(),
+                s8Device(
+                  sessionId: s8OtherSessionId,
+                  isCurrent: false,
+                  createdAt: DateTime.utc(2026, 9, 3, 1),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(ValueKey<String>('device-$s8OtherSessionId')),
+      );
+      await tester.pumpAndSettle();
+
+      final sheet = find.byKey(const ValueKey<String>('device-revoke-sheet'));
+      expect(sheet, findsOneWidget);
+      expect(
+        find.descendant(of: sheet, matching: find.text('4e5f')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: sheet, matching: find.text('本设备的旧会话')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('signing every other device out stays step-up refused', (

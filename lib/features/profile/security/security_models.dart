@@ -71,9 +71,11 @@ final class LoopDeviceSession {
     required this.deviceId,
     required this.platform,
     required this.clientVersion,
+    required this.sessionShortId,
     required this.status,
     required this.authStrength,
     required this.isCurrent,
+    required this.isCurrentDevice,
     required this.createdAt,
     required this.lastSeenAt,
     required this.revokedAt,
@@ -83,18 +85,44 @@ final class LoopDeviceSession {
   final String deviceId;
   final LoopDevicePlatform platform;
   final String clientVersion;
+
+  /// The server's own four-hex short form of [sessionId] (decision 0049). Two
+  /// sessions of one device carry the same platform and the same client
+  /// version, so without it two rows read as one row printed twice. The client
+  /// never derives it itself.
+  final String sessionShortId;
   final LoopDeviceSessionStatus status;
   final LoopDeviceAuthStrength authStrength;
+
+  /// This row is the session the request itself carried.
   final bool isCurrent;
+
+  /// This row belongs to the device the reader is holding — including that
+  /// device's older sessions, which are not the current one.
+  final bool isCurrentDevice;
   final DateTime createdAt;
   final DateTime lastSeenAt;
   final DateTime? revokedAt;
 
   bool get isActive => status == LoopDeviceSessionStatus.active;
 
+  /// An older session of the device in the reader's hand. Revoking it signs
+  /// nothing else out, and the row must not read as somebody else's device.
+  bool get isOlderSessionOfThisDevice => isCurrentDevice && !isCurrent;
+
   /// The prototype's device name has no backend field; platform plus client
   /// version is the whole truth the server reports.
   String get displayName => '${platform.label} · $clientVersion';
+}
+
+/// The first login of one session, to the minute (decision 0049). It is the
+/// only field that separates two sessions of the same device in time, so it is
+/// printed absolutely rather than as 「N 天前」.
+String loopSessionCreatedAtLabel(DateTime createdAt) {
+  final utc = createdAt.toUtc();
+  String two(int part) => part.toString().padLeft(2, '0');
+  return '${utc.year}-${two(utc.month)}-${two(utc.day)} '
+      '${two(utc.hour)}:${two(utc.minute)} UTC';
 }
 
 /// Server-published high-risk window. The threshold is never hard-coded.

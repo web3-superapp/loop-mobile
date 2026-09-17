@@ -87,6 +87,106 @@ void main() {
       );
     });
 
+    test(
+      'the short form and the second session of this device decode',
+      () async {
+        final api = DioLoopV2SecurityApi(
+          s8Dio((options, handler) {
+            final body = s8DevicesBody();
+            // The same device's older session, which the walkthrough saw
+            // rendered as a second 「当前设备」.
+            body['devices'] = <Object?>[
+              s8DeviceRow(),
+              s8DeviceRow(
+                sessionId: s8OtherSessionId,
+                isCurrent: false,
+                createdAt: '2026-09-03T01:00:00.000Z',
+              ),
+            ];
+            handler.resolve(s8Response(options, body));
+          }),
+        );
+
+        final directory = await api.getDevices(
+          accessToken: s8AccessToken,
+          clientVersion: s8ClientVersion,
+          sessionId: s8CurrentSessionId,
+        );
+
+        expect(directory.devices.first.sessionShortId, '3d4e');
+        expect(directory.devices.first.isCurrentDevice, isTrue);
+        final older = directory.devices.last;
+        expect(older.sessionShortId, '4e5f');
+        expect(older.isCurrent, isFalse);
+        expect(older.isCurrentDevice, isTrue);
+        expect(older.isOlderSessionOfThisDevice, isTrue);
+        expect(older.createdAt, DateTime.utc(2026, 9, 3, 1));
+      },
+    );
+
+    test('a short form that is not this session is refused', () async {
+      final api = DioLoopV2SecurityApi(
+        s8Dio((options, handler) {
+          final body = s8DevicesBody();
+          final devices = body['devices']! as List<Object?>;
+          (devices[1]! as Map<String, Object?>)['sessionShortId'] = 'abcd';
+          handler.resolve(s8Response(options, body));
+        }),
+      );
+
+      await expectLater(
+        api.getDevices(
+          accessToken: s8AccessToken,
+          clientVersion: s8ClientVersion,
+          sessionId: s8CurrentSessionId,
+        ),
+        throwsA(s8InvalidPayload),
+      );
+    });
+
+    test('another device may not be marked as this device', () async {
+      final api = DioLoopV2SecurityApi(
+        s8Dio((options, handler) {
+          final body = s8DevicesBody();
+          final devices = body['devices']! as List<Object?>;
+          // A different deviceId claiming to be the one in hand: the page
+          // would print two rows as 本设备.
+          (devices[1]! as Map<String, Object?>)['isCurrentDevice'] = true;
+          handler.resolve(s8Response(options, body));
+        }),
+      );
+
+      await expectLater(
+        api.getDevices(
+          accessToken: s8AccessToken,
+          clientVersion: s8ClientVersion,
+          sessionId: s8CurrentSessionId,
+        ),
+        throwsA(s8InvalidPayload),
+      );
+    });
+
+    test('with no current session no row is this device', () async {
+      final api = DioLoopV2SecurityApi(
+        s8Dio((options, handler) {
+          final body = s8DevicesBody();
+          body['currentSessionId'] = null;
+          final devices = body['devices']! as List<Object?>;
+          (devices[0]! as Map<String, Object?>)['isCurrent'] = false;
+          handler.resolve(s8Response(options, body));
+        }),
+      );
+
+      // The header was not offered, so 本设备 cannot be decided at all.
+      await expectLater(
+        api.getDevices(
+          accessToken: s8AccessToken,
+          clientVersion: s8ClientVersion,
+        ),
+        throwsA(s8InvalidPayload),
+      );
+    });
+
     test('a revoked row without a revocation time is refused', () async {
       final api = DioLoopV2SecurityApi(
         s8Dio((options, handler) {

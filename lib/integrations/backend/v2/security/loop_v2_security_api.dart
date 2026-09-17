@@ -104,6 +104,9 @@ final class DioLoopV2SecurityApi implements LoopV2SecurityApi {
 
   static final RegExp _clientVersionPattern =
       LoopV2ModuleRequest.clientVersionPattern;
+
+  /// The server's short form of a session id: its last four hex digits.
+  static final RegExp _sessionShortIdPattern = RegExp(r'^[0-9a-f]{4}$');
   static final RegExp _guideKeyPattern = RegExp(
     r'^security\.capability\.[a-zA-Z]+\.howToEnable$',
   );
@@ -500,11 +503,29 @@ final class DioLoopV2SecurityApi implements LoopV2SecurityApi {
           (device.sessionId != currentSessionId || !device.isActive)) {
         LoopV2ChainCodec.invalid();
       }
+      // The session in hand is on the device in hand; and with no current
+      // session reported, no row may claim to be this device either.
+      if (device.isCurrent && !device.isCurrentDevice) {
+        LoopV2ChainCodec.invalid();
+      }
+      if (currentSessionId == null && device.isCurrentDevice) {
+        LoopV2ChainCodec.invalid();
+      }
       devices.add(device);
     }
-    if (currentSessionId != null &&
-        !devices.any((device) => device.isCurrent)) {
+    final current = devices.where((device) => device.isCurrent).toList();
+    if (currentSessionId != null && current.isEmpty) {
       LoopV2ChainCodec.invalid();
+    }
+    // 本设备 means one device: every row marked as this device must carry the
+    // deviceId the current session carries.
+    if (current.isNotEmpty) {
+      final deviceId = current.single.deviceId;
+      for (final device in devices) {
+        if (device.isCurrentDevice != (device.deviceId == deviceId)) {
+          LoopV2ChainCodec.invalid();
+        }
+      }
     }
     final riskSignals = LoopV2Contract.strictMap(
       root['riskSignals'],
@@ -536,9 +557,11 @@ final class DioLoopV2SecurityApi implements LoopV2SecurityApi {
       'deviceId',
       'platform',
       'clientVersion',
+      'sessionShortId',
       'status',
       'authStrength',
       'isCurrent',
+      'isCurrentDevice',
       'createdAt',
       'lastSeenAt',
       'revokedAt',
@@ -560,13 +583,25 @@ final class DioLoopV2SecurityApi implements LoopV2SecurityApi {
     if ((status == LoopDeviceSessionStatus.revoked) != (revokedAt != null)) {
       LoopV2ChainCodec.invalid();
     }
+    final sessionId = LoopV2ChainCodec.requireString(
+      map,
+      'sessionId',
+      pattern: LoopV2Contract.uuidPattern,
+      maxLength: 36,
+    );
+    final sessionShortId = LoopV2ChainCodec.requireString(
+      map,
+      'sessionShortId',
+      pattern: _sessionShortIdPattern,
+      minLength: 4,
+      maxLength: 4,
+    );
+    // The short form is the server's abbreviation of this session, not of
+    // another one: a row labelled with somebody else's digits is a row the
+    // reader cannot match to what they are revoking.
+    if (!sessionId.endsWith(sessionShortId)) LoopV2ChainCodec.invalid();
     return LoopDeviceSession(
-      sessionId: LoopV2ChainCodec.requireString(
-        map,
-        'sessionId',
-        pattern: LoopV2Contract.uuidPattern,
-        maxLength: 36,
-      ),
+      sessionId: sessionId,
       deviceId: LoopV2ChainCodec.requireString(
         map,
         'deviceId',
@@ -583,7 +618,9 @@ final class DioLoopV2SecurityApi implements LoopV2SecurityApi {
       ),
       status: status,
       authStrength: strength,
+      sessionShortId: sessionShortId,
       isCurrent: LoopV2ChainCodec.requireBool(map, 'isCurrent'),
+      isCurrentDevice: LoopV2ChainCodec.requireBool(map, 'isCurrentDevice'),
       createdAt: LoopV2ChainCodec.requireTimestamp(map, 'createdAt'),
       lastSeenAt: LoopV2ChainCodec.requireTimestamp(map, 'lastSeenAt'),
       revokedAt: revokedAt,

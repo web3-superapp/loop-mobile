@@ -63,18 +63,23 @@ LoopDeviceSession s8Device({
   String deviceId = s8CurrentDeviceId,
   LoopDevicePlatform platform = LoopDevicePlatform.ios,
   bool isCurrent = true,
+  bool? isCurrentDevice,
   bool revoked = false,
+  DateTime? createdAt,
 }) => LoopDeviceSession(
   sessionId: sessionId,
   deviceId: deviceId,
   platform: platform,
   clientVersion: '1.0.0',
+  // The server's own short form: the last four hex digits of the session id.
+  sessionShortId: sessionId.substring(sessionId.length - 4),
   status: revoked
       ? LoopDeviceSessionStatus.revoked
       : LoopDeviceSessionStatus.active,
   authStrength: LoopDeviceAuthStrength.providerAuthenticated,
   isCurrent: isCurrent,
-  createdAt: DateTime.utc(2026, 9, 8, 20),
+  isCurrentDevice: isCurrentDevice ?? deviceId == s8CurrentDeviceId,
+  createdAt: createdAt ?? DateTime.utc(2026, 9, 8, 20),
   lastSeenAt: DateTime.utc(2026, 9, 9),
   revokedAt: revoked ? DateTime.utc(2026, 9, 9, 1) : null,
 );
