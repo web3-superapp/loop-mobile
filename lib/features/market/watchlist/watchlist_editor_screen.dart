@@ -192,6 +192,16 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
           if (state.groups.isNotEmpty) ...<Widget>[
             LoopButtonPair(
               children: <Widget>[
+                // C-30 (8): the page could only reorder and remove, so an
+                // owner looking for 「在哪儿增加自选」 found nothing here. It
+                // still cannot add — the write lives on the token page — so
+                // the button is a route to a page with token pages on it, and
+                // the notice below says where the asset lands.
+                LoopButton(
+                  key: const ValueKey<String>('watchlist-add-asset'),
+                  label: '添加资产',
+                  onPressed: () => _open('/market/new'),
+                ),
                 LoopButton(
                   key: const ValueKey<String>('watchlist-new-group'),
                   label: '新建分组',
@@ -201,6 +211,17 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
                       : () => unawaited(_createGroup(controller, state)),
                 ),
               ],
+            ),
+            LoopNotice(
+              key: const ValueKey<String>('watchlist-add-asset-note'),
+              icon: 'info',
+              title: '怎么添加资产',
+              body:
+                  '加入自选只有一条路：打开代币页，点右上角星标。'
+                  '这样加入的资产进入默认分组「$watchlistDefaultGroupName」，'
+                  '本页不能把它移到别的分组。'
+                  '行情的「趋势」和「新币发现」都能打开代币页。',
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             ),
             // A control that greys out without a word looks broken. At the
             // ceiling it says which ceiling and what clears it.
@@ -217,10 +238,15 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
           if (group != null) ...<Widget>[
             const LoopLabel('拖动排序 · 左滑删除'),
             if (group.items.isEmpty)
-              const LoopEmpty(
-                key: ValueKey<String>('watchlist-group-empty'),
+              LoopEmpty(
+                key: const ValueKey<String>('watchlist-group-empty'),
                 message: '这个分组还没有资产',
                 reason: '打开代币页，点右上角星标即可加入自选。',
+                action: LoopButton(
+                  key: const ValueKey<String>('watchlist-group-empty-add'),
+                  label: '添加资产',
+                  onPressed: () => _open('/market/new'),
+                ),
               )
             else
               _ReorderableWatchlist(

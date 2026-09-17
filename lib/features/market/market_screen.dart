@@ -134,6 +134,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
             block: overview.watchlist,
             onOpenAsset: (assetId) => _open(MarketAssetRoute.token(assetId)),
             onManage: () => _open('/market/watchlist'),
+            onAdd: () => _open('/market/new'),
           ),
           const LoopLabel('趋势'),
           _TrendingBlock(
@@ -183,16 +184,35 @@ class _WatchlistBlock extends StatelessWidget {
     required this.block,
     required this.onOpenAsset,
     required this.onManage,
+    required this.onAdd,
   });
 
   final MarketWatchlistBlock block;
   final void Function(String assetId) onOpenAsset;
   final VoidCallback onManage;
 
+  /// Opens a page that lists assets, so the star is one tap away.
+  final VoidCallback onAdd;
+
+  /// The row that answers 「在哪儿增加自选」.
+  ///
+  /// C-30 (8): the empty state named the star and nothing on screen led to a
+  /// page that has one. Adding is a write on the token page — the list has no
+  /// add of its own — so this row is a route to an asset list, and it says so
+  /// instead of pretending the tap adds anything.
+  static LoopRecordRow addRow(VoidCallback onTap) => LoopRecordRow(
+    key: const ValueKey<String>('market-watchlist-add'),
+    title: '添加自选资产',
+    subtitle: '打开代币页，点右上角星标 · 「趋势」和「新币发现」都能打开代币页',
+    onTap: onTap,
+  );
+
   @override
   Widget build(BuildContext context) {
     switch (block) {
       case MarketWatchlistUnavailable(reasonCode: final reasonCode):
+        // Nothing may be added to a list that could not be read: the write
+        // would have no list to land in, and the row would promise one.
         return LoopUnavailableCard(
           key: const ValueKey<String>('market-watchlist-unavailable'),
           label: '自选行情不可用',
@@ -200,17 +220,27 @@ class _WatchlistBlock extends StatelessWidget {
         );
       case MarketWatchlistAvailable(items: final items):
         if (items.isEmpty) {
-          return LoopEmpty(
-            key: const ValueKey<String>('market-watchlist-empty'),
-            message: '还没有自选资产',
-            reason: '在代币页点星标加入自选，这里会显示它们的价格事实。',
-            action: LoopButton(label: '管理自选', onPressed: onManage),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              LoopEmpty(
+                key: const ValueKey<String>('market-watchlist-empty'),
+                message: '还没有自选资产',
+                reason: '在代币页点右上角星标加入自选，这里会显示它们的价格事实。',
+                action: LoopButton(label: '管理自选', onPressed: onManage),
+              ),
+              LoopRecordGroup(rows: <LoopRecordRow>[addRow(onAdd)]),
+            ],
           );
         }
         return LoopRecordGroup(
           rows: <LoopRecordRow>[
-            for (final row in items)
-              marketAssetRow(row, onTap: () => onOpenAsset(row.assetId)),
+            for (var index = 0; index < items.length; index += 1)
+              marketAssetRow(
+                items[index],
+                onTap: () => onOpenAsset(items[index].assetId),
+              ),
+            addRow(onAdd),
           ],
         );
     }
