@@ -315,15 +315,9 @@ class _CommunityIdentityCard extends StatelessWidget {
                     ],
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  community.slug,
-                  style: LoopTypography.figure(
-                    11,
-                    weight: FontWeight.w500,
-                    color: LoopColors.muted,
-                  ),
-                ),
+                // The slug was printed under the name as a bare
+                // `builders-guild`. It is the server's addressing handle, not
+                // a name, and there is nothing a reader does with it here.
                 const SizedBox(height: 8),
                 Text(
                   community.description ?? '这个社区还没有填写简介。',

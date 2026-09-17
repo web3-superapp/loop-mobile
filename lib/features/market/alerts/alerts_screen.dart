@@ -504,6 +504,7 @@ class _AlertNotificationFeedState
                   key: ValueKey<String>('alerts-feed-${entry.notificationId}'),
                   title: _feedTitle(entry),
                   subtitle: _feedDetail(entry),
+                  subtitleMaxLines: 2,
                   trailingBadge: entry.isUnread ? const LoopBadge('未读') : null,
                   onTap: entry.isUnread
                       ? () => unawaited(

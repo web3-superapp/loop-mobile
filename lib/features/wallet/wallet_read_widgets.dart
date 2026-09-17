@@ -214,6 +214,9 @@ class WalletLaunchChainCard extends StatelessWidget {
                     '${launchChain.name} · '
                     '可动用 ${loopFormatDecimal(native.spendableBalance)} · '
                     '手续费保留 ${loopFormatDecimal(native.gasReserve)}',
+                // Chain, spendable and reserve beside a figure column: on a
+                // phone the line ended at 「手续费保留 0…」.
+                subtitleMaxLines: 2,
                 trailing: loopFormatDecimal(native.displayBalance),
                 trailingBadge: launchChain.isTestnet
                     ? const LoopTestnetBadge()

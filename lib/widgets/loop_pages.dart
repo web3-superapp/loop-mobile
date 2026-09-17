@@ -190,8 +190,16 @@ class LoopFocusPage extends StatelessWidget {
                 // every control exists for ensureVisible / assistive tech.
                 Expanded(
                   child: SingleChildScrollView(
+                    // A pinned action is a sibling of the body, so it cannot
+                    // overlay it — but with 12 of room the last row ended
+                    // flush against the bar and read as covered by it:
+                    // 隐私's last visibility row and 编辑资料's fourth 关注赛道
+                    // chip were both reported that way. A group's worth of
+                    // room makes the boundary unambiguous.
                     padding: EdgeInsets.only(
-                      bottom: primaryAction == null ? bottom : 12,
+                      bottom: primaryAction == null
+                          ? bottom
+                          : LoopSpacing.group,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,

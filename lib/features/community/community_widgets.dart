@@ -501,7 +501,9 @@ LoopRecordRow communityDirectoryRow({
     key: ValueKey<String>('community-row-${community.communityId}'),
     leading: CommunityLogoTile(name: community.name),
     title: community.name,
-    subtitle: '${community.slug} · $verification',
+    // The slug is the server's addressing handle; it told a reader browsing
+    // the directory nothing 「mock-vol-01」 did not already hide.
+    subtitle: verification,
     trailing: '${community.memberCount}',
     trailingCaption: '成员',
     onTap: onTap,

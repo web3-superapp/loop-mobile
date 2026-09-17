@@ -954,7 +954,11 @@ void main() {
           chain: FakeChainGateway(),
         );
 
-        expect(find.text('rpc-2bd52ca6d267'), findsOneWidget);
+        // The reference is opaque by design; it is also unmatchable by a
+        // reader, so the rows are numbered and the reference stays off screen.
+        expect(find.text('rpc-2bd52ca6d267'), findsNothing);
+        expect(find.textContaining('rpc-'), findsNothing);
+        expect(find.text('端点 1'), findsOneWidget);
         expect(find.textContaining('延迟 515ms'), findsOneWidget);
         expect(find.textContaining('落后 0 块'), findsOneWidget);
         expect(find.text('1 / 1 正常'), findsOneWidget);

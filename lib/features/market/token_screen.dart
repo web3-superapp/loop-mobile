@@ -878,6 +878,8 @@ class _TokenNotificationFeedState
             key: ValueKey<String>('token-feed-${entry.notificationId}'),
             title: _notificationTitle(entry),
             subtitle: _notificationDetail(entry),
+            // Source and observation time on one line came out as 「来源 D…」.
+            subtitleMaxLines: 2,
             trailingBadge: entry.isUnread ? const LoopBadge('未读') : null,
             onTap: entry.isUnread
                 ? () => unawaited(

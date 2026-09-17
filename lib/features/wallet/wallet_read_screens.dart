@@ -375,6 +375,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 key: const ValueKey<String>('wallet-approvals-entry'),
                 title: '授权盘点',
                 subtitle: '当场重读的 allowance()，回收会发送 approve(spender, 0)',
+                // 「回收会发送 approve(spe…」 cut the sentence exactly where it
+                // said what the action does.
+                subtitleMaxLines: 2,
                 onTap: () => _open('/wallet/approvals'),
               ),
               LoopRecordRow(
@@ -1372,7 +1375,7 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
           const LoopNotice(
             key: ValueKey<String>('wallets-notice'),
             title: '地址不是账号标识',
-            body: '所有请求都用不透明的 walletId 指向钱包。已归档的钱包会保留，但不能成为活跃钱包。',
+            body: '每个请求指向的是一个不透明的钱包编号，不是地址。已归档的钱包会保留，但不能成为活跃钱包。',
           ),
         ],
       ],
@@ -1708,6 +1711,10 @@ class _TransactionHistoryScreenState
               '对方 ${loopTruncatedAddress(entry.counterpartyAddress)}',
               loopRelativeTime(entry.observedAt),
             ].join(' · '),
+            // Five facts beside a figure column: the line ended at
+            // 「已确认 · 17 确认 · 区块 122235831 · 9 …」, losing the
+            // counterparty and the stamp.
+            subtitleMaxLines: 3,
             trailing: loopFormatDecimal(entry.displayValue),
             trailingCaptionUp:
                 entry.direction == LoopTransferDirection.incoming,
@@ -1884,35 +1891,12 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
           else
             LoopRecordGroup(
               rows: <LoopRecordRow>[
-                for (final endpoint in status.rpc.endpoints)
-                  LoopRecordRow(
-                    key: ValueKey<String>('rpc-${endpoint.endpointRef}'),
-                    title: endpoint.endpointRef,
-                    subtitle: <String>[
-                      if (endpoint.latencyMs != null)
-                        '延迟 ${endpoint.latencyMs}ms'
-                      else
-                        '延迟未知',
-                      if (endpoint.blockLagBlocks != null)
-                        '落后 ${endpoint.blockLagBlocks} 块',
-                      '校验${endpoint.chainVerification.label}',
-                      loopRelativeTime(endpoint.observedAt),
-                    ].join(' · '),
-                    subtitleMaxLines: 2,
-                    trailing: endpoint.blockNumber == null
-                        ? null
-                        : loopGroupedFigure(endpoint.blockNumber.toString()),
-                    trailingBadge: LoopBadge(
-                      switch (endpoint.status) {
-                        LoopEndpointStatus.healthy => '正常',
-                        LoopEndpointStatus.degraded => '异常',
-                        LoopEndpointStatus.unreachable => '不可达',
-                      },
-                      kind: endpoint.isAbnormal
-                          ? LoopBadgeKind.down
-                          : LoopBadgeKind.up,
-                    ),
-                  ),
+                for (
+                  var index = 0;
+                  index < status.rpc.endpoints.length;
+                  index += 1
+                )
+                  _endpointRow(status.rpc.endpoints[index], index),
               ],
             ),
           const LoopLabel('索引器'),
@@ -1965,6 +1949,38 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
 /// It publishes no endpoint reference and no URL: testnet endpoint health is
 /// not part of the contract, so the row states the slot's own verification,
 /// its confirmation depth and the server's reason code instead.
+/// One RPC endpoint row.
+///
+/// The endpoint is published only as an opaque reference, deliberately: the
+/// host is not the client's to show. That reference was also the row's title,
+/// so the page headed its endpoints 「rpc-956a0d5f88ea」. There is nothing on
+/// this device or anywhere else for a reader to match that against, so the
+/// rows are numbered in the order the server published them; the reference
+/// stays as the widget key, where only a test reads it.
+LoopRecordRow _endpointRow(LoopRpcEndpointHealth endpoint, int index) =>
+    LoopRecordRow(
+      key: ValueKey<String>('rpc-${endpoint.endpointRef}'),
+      title: '端点 ${index + 1}',
+      subtitle: <String>[
+        if (endpoint.latencyMs != null)
+          '延迟 ${endpoint.latencyMs}ms'
+        else
+          '延迟未知',
+        if (endpoint.blockLagBlocks != null) '落后 ${endpoint.blockLagBlocks} 块',
+        '校验${endpoint.chainVerification.label}',
+        loopRelativeTime(endpoint.observedAt),
+      ].join(' · '),
+      subtitleMaxLines: 2,
+      trailing: endpoint.blockNumber == null
+          ? null
+          : loopGroupedFigure(endpoint.blockNumber.toString()),
+      trailingBadge: LoopBadge(switch (endpoint.status) {
+        LoopEndpointStatus.healthy => '正常',
+        LoopEndpointStatus.degraded => '异常',
+        LoopEndpointStatus.unreachable => '不可达',
+      }, kind: endpoint.isAbnormal ? LoopBadgeKind.down : LoopBadgeKind.up),
+    );
+
 class _LaunchChainRow extends StatelessWidget {
   const _LaunchChainRow({required this.launchChain});
 

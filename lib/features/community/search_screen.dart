@@ -214,16 +214,22 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   }
 
   LoopRecordRow _resultRow(SearchResult result, int index, int length) {
+    // A user's subtitle is the alias or LOOP ID the reader searched for. A
+    // community's is its slug, which reached the screen bare — 「mock-vol-01」
+    // under 「Alpha Signals 1」 — and names nothing a reader can use. The row
+    // keeps the community's name and member count instead.
+    final subtitle = result.resultType == SearchResultType.community
+        ? null
+        : result.subtitle;
     return LoopRecordRow(
       key: ValueKey<String>('search-result-${result.stableId}'),
       title: result.title,
-      subtitle: result.subtitle,
+      subtitle: subtitle,
       trailing: result.memberCount == null ? null : '${result.memberCount}',
       trailingCaption: result.memberCount == null ? null : '成员',
       position: communityRowPosition(index, length),
       onTap: () => _openResult(result),
-      semanticLabel:
-          '${result.title}${result.subtitle == null ? '' : '，${result.subtitle}'}',
+      semanticLabel: '${result.title}${subtitle == null ? '' : '，$subtitle'}',
     );
   }
 }

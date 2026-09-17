@@ -95,6 +95,11 @@ void main() {
 
       expect(gateway.queries, <String>['communities:alpha']);
       expect(find.text('Alpha Holders'), findsOneWidget);
+      // A community's subtitle on the wire is its slug. It reached the screen
+      // bare — 「mock-vol-01」 under 「Alpha Signals 1」 — and names nothing a
+      // reader can use.
+      expect(find.text('alpha-holders'), findsNothing);
+      expect(find.text('128'), findsOneWidget);
     });
 
     testWidgets('one word is one request, not one per keystroke', (

@@ -205,6 +205,9 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
                 key: const ValueKey<String>('security-notification-lock'),
                 title: '安全事件通知',
                 subtitle: '始终开启，无法关闭；保存的是意图，不代表已经能送达。',
+                // 「保存的是意图，不代…」 stopped before the qualification that
+                // is the whole point of the sentence.
+                subtitleMaxLines: 2,
                 trailingBadge: const LoopBadge('已开启', kind: LoopBadgeKind.up),
                 onTap: () => widget.onNavigate('notif-settings'),
               ),

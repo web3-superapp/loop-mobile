@@ -397,6 +397,17 @@ String launchTimestampLabel(DateTime observedAt) {
 /// The provenance footer every S7 catalogue block carries: the source and the
 /// observation time. The configuration version behind the block is a backend
 /// identifier and stays off the footer.
+/// The user-facing name of one catalogue source.
+///
+/// The wire value is the server's own storage identifier, and 「来源 loop_db」
+/// put a database name on the first screen of Launch. A source the client can
+/// name is named; anything else prints as it arrived, because a source the
+/// client renamed by guessing would be worse than the raw word.
+String launchSourceLabel(String source) => switch (source) {
+  'loop_db' || 'database' => 'LOOP 数据库',
+  _ => source,
+};
+
 class LaunchSourceFooter extends StatelessWidget {
   const LaunchSourceFooter({
     required this.source,
@@ -413,7 +424,8 @@ class LaunchSourceFooter extends StatelessWidget {
       key: const ValueKey<String>('launch-source-footer'),
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
       child: Text(
-        '来源 $source · 观察于 ${launchTimestampLabel(observedAt)}',
+        '来源 ${launchSourceLabel(source)} · '
+        '观察于 ${launchTimestampLabel(observedAt)}',
         style: LoopTypography.caption(11, color: LoopColors.text3),
       ),
     );

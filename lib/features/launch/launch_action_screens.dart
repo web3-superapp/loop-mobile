@@ -367,6 +367,7 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
                 key: const ValueKey<String>('loop-stake-executable-row'),
                 title: '质押与解除质押',
                 subtitle: '合约缺席时，本页不提供任何金额输入或签名入口',
+                subtitleMaxLines: 2,
                 trailingBadge: LoopBadge(
                   stake.executable ? '可执行' : '不可执行',
                   kind: LoopBadgeKind.mute,
