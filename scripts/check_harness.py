@@ -10,6 +10,7 @@ import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ElementTree
+import zlib
 from pathlib import Path
 from typing import Any
 
@@ -11049,6 +11050,146 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
     return errors
 
 
+LAUNCH_ICON_FOREGROUNDS = {
+    "mdpi": 108,
+    "hdpi": 162,
+    "xhdpi": 216,
+    "xxhdpi": 324,
+    "xxxhdpi": 432,
+}
+
+
+def _png_header(data: bytes) -> tuple[int, int, int, int, int]:
+    """Returns (width, height, bit_depth, colour_type, interlace)."""
+    if data[:8] != b"\x89PNG\r\n\x1a\n" or data[12:16] != b"IHDR":
+        raise ValueError("not a PNG")
+    width, height = int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
+    return width, height, data[24], data[25], data[28]
+
+
+def _png_rgba_rows(data: bytes) -> list[bytes]:
+    """Decodes a non-interlaced 8-bit RGBA PNG into unfiltered rows."""
+    width, height, bit_depth, colour_type, interlace = _png_header(data)
+    if (bit_depth, colour_type, interlace) != (8, 6, 0):
+        raise ValueError(
+            f"expected 8-bit RGBA non-interlaced, got depth={bit_depth} "
+            f"colour_type={colour_type} interlace={interlace}"
+        )
+    payload = bytearray()
+    offset = 8
+    while offset < len(data):
+        length = int.from_bytes(data[offset : offset + 4], "big")
+        kind = data[offset + 4 : offset + 8]
+        if kind == b"IDAT":
+            payload += data[offset + 8 : offset + 8 + length]
+        offset += 12 + length
+    raw = zlib.decompress(bytes(payload))
+    stride = width * 4
+    rows: list[bytes] = []
+    previous = bytearray(stride)
+    for index in range(height):
+        start = index * (stride + 1)
+        filter_type = raw[start]
+        line = bytearray(raw[start + 1 : start + 1 + stride])
+        for position in range(stride):
+            left = line[position - 4] if position >= 4 else 0
+            up = previous[position]
+            upper_left = previous[position - 4] if position >= 4 else 0
+            if filter_type == 1:
+                line[position] = (line[position] + left) & 0xFF
+            elif filter_type == 2:
+                line[position] = (line[position] + up) & 0xFF
+            elif filter_type == 3:
+                line[position] = (line[position] + ((left + up) >> 1)) & 0xFF
+            elif filter_type == 4:
+                estimate = left + up - upper_left
+                distance_left = abs(estimate - left)
+                distance_up = abs(estimate - up)
+                distance_upper_left = abs(estimate - upper_left)
+                if distance_left <= distance_up and distance_left <= distance_upper_left:
+                    predictor = left
+                elif distance_up <= distance_upper_left:
+                    predictor = up
+                else:
+                    predictor = upper_left
+                line[position] = (line[position] + predictor) & 0xFF
+        rows.append(bytes(line))
+        previous = line
+    return rows
+
+
+def check_launch_icon_contract(root: Path) -> list[str]:
+    """The adaptive foreground carries the mark only; any baked plate is cropped
+    into an octagon by the launcher and Android 12+ splash circular masks."""
+    errors: list[str] = []
+    res = root / "android/app/src/main/res"
+    for bucket, expected in LAUNCH_ICON_FOREGROUNDS.items():
+        path = res / f"mipmap-{bucket}/ic_launcher_foreground.png"
+        if not path.is_file():
+            errors.append(f"{path} is missing")
+            continue
+        data = path.read_bytes()
+        try:
+            width, height, bit_depth, colour_type, _ = _png_header(data)
+        except ValueError as error:
+            errors.append(f"{path} is not a readable PNG: {error}")
+            continue
+        if (width, height) != (expected, expected):
+            errors.append(
+                f"{path} must be {expected}x{expected} (108dp adaptive canvas), got {width}x{height}"
+            )
+        if (bit_depth, colour_type) != (8, 6):
+            errors.append(
+                f"{path} must stay 8-bit RGBA so the mark can sit on transparency"
+            )
+    smallest = res / "mipmap-mdpi/ic_launcher_foreground.png"
+    if smallest.is_file():
+        try:
+            rows = _png_rgba_rows(smallest.read_bytes())
+        except (ValueError, zlib.error) as error:
+            errors.append(f"{smallest} could not be decoded: {error}")
+            rows = []
+        if rows:
+            corners = {
+                "top-left": rows[0][0:4],
+                "top-right": rows[0][-4:],
+                "bottom-left": rows[-1][0:4],
+                "bottom-right": rows[-1][-4:],
+            }
+            for name, pixel in corners.items():
+                if pixel[3] != 0:
+                    errors.append(
+                        f"{smallest} {name} corner must be fully transparent, got rgba{tuple(pixel)}"
+                    )
+            for row in rows:
+                for position in range(0, len(row), 4):
+                    red, green, blue, alpha = row[position : position + 4]
+                    if alpha == 255 and red > 250 and green > 250 and blue > 250:
+                        errors.append(
+                            f"{smallest} contains opaque white pixels: the adaptive "
+                            "foreground must not bake a plate behind the mark"
+                        )
+                        break
+                else:
+                    continue
+                break
+    splash = res / "values-v31/styles.xml"
+    if splash.is_file():
+        text = splash.read_text(encoding="utf-8")
+        if "@mipmap/ic_launcher_foreground" not in text:
+            errors.append(
+                f"{splash} must point windowSplashScreenAnimatedIcon at the plate-free foreground"
+            )
+        if "windowSplashScreenBackground\">@color/loop_ink" not in text.replace("'", '"'):
+            errors.append(
+                f"{splash} must keep windowSplashScreenBackground on @color/loop_ink"
+            )
+    for launch in (res / "drawable/launch_background.xml", res / "drawable-v21/launch_background.xml"):
+        if launch.is_file() and "@color/loop_ink" not in launch.read_text(encoding="utf-8"):
+            errors.append(f"{launch} must keep the pre-Android-12 launch frame on LOOP Ink")
+    return errors
+
+
 def check_secret_paths(paths: list[Path]) -> list[str]:
     errors: list[str] = []
     for path in paths:
@@ -11152,6 +11293,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_ground_probe_armed(root))
     errors.extend(check_self_mounted_pages_watched(root))
     errors.extend(check_records(root))
+    errors.extend(check_launch_icon_contract(root))
     visible, visible_error = git_visible_paths(root)
     if visible_error:
         errors.append(f"unable to inspect Git-visible paths: {visible_error}")
@@ -11178,6 +11320,7 @@ def main() -> int:
         "seven-band typography with bundled Noto Sans SC, "
         "declared light grounds, pages mounted under the product theme, "
         "armed page ground probe, watched self-mounted pages, "
+        "plate-free launch icon, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, user-visible copy, "
         "and secret rules are consistent."
