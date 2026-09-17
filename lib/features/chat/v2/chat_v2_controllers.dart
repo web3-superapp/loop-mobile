@@ -491,7 +491,9 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
     final generation = nextGeneration();
     state = state.copyWith(busy: true, clearFailure: true);
     try {
-      final next = await body(gateway, snapshot.room.voiceRoomId);
+      final committed = await body(gateway, snapshot.room.voiceRoomId);
+      if (!isCurrent(generation)) return null;
+      final next = await _reread(gateway, committed);
       if (!isCurrent(generation)) return null;
       final queue = await _loadQueue(gateway, next);
       if (!isCurrent(generation)) return null;
@@ -515,6 +517,24 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
         );
       }
       return CommunityFailureKind.unexpected;
+    }
+  }
+
+  /// Re-reads the room after a command.
+  ///
+  /// A command answers with the transition it committed, and the server fills
+  /// `participants.observed` only on a read — every command returns it as
+  /// unavailable. Showing that answer directly made a successful join look
+  /// like a room with no one in it. The committed answer is kept when the
+  /// follow-up read fails: the command still happened.
+  Future<VoiceRoomSnapshot> _reread(
+    VoiceRoomGateway gateway,
+    VoiceRoomSnapshot committed,
+  ) async {
+    try {
+      return await gateway.load(committed.room.voiceRoomId);
+    } catch (_) {
+      return committed;
     }
   }
 

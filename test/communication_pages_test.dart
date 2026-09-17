@@ -839,6 +839,35 @@ void main() {
       expect(find.text('0'), findsNothing);
     });
 
+    testWidgets('a join reads the room again so the count is not lost', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: null, observedAvailable: false),
+      )..loadSnapshot = testVoiceRoomSnapshot(role: VoiceRoomRole.listener);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+      );
+
+      final join = find.byKey(const ValueKey<String>('voiceroom-join'));
+      await scrollToCommunitySection(tester, join);
+      await tester.tap(join);
+      await tester.pumpAndSettle();
+
+      // The join answer carries no observed count — only a read does — so the
+      // page must read again instead of reporting an empty room.
+      expect(voice.commands, contains('join'));
+      expect(
+        voice.commands.indexOf('load'),
+        greaterThan(voice.commands.indexOf('join')),
+      );
+      final observed = find.byKey(const ValueKey<String>('voiceroom-observed'));
+      await scrollToCommunitySection(tester, observed);
+      expect(find.text('45'), findsOneWidget);
+    });
+
     testWidgets('a joined room hands the exact room to the reviewed lobby', (
       tester,
     ) async {

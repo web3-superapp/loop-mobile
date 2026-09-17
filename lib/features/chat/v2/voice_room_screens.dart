@@ -220,34 +220,34 @@ class _RoomFacts extends StatelessWidget {
         LoopRecordGroup(
           rows: <LoopRecordRow>[
             LoopRecordRow(
-              key: const ValueKey<String>('voiceroom-role'),
-              title: '我的角色',
-              subtitle: snapshot.viewer.hasJoined
-                  ? '由 LOOP 授予，不是通话里的角色'
-                  : '尚未加入这个房间',
-              trailing: snapshot.viewer.role?.label ?? communityMissingFigure,
-              position: LoopRowPosition.first,
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('voiceroom-role-intent'),
-              title: '发言人 / 听众（LOOP 角色意图）',
-              subtitle: '这是 LOOP 的角色记录，不是 Stream 的在线人数。',
-              trailing:
-                  '${snapshot.participants.speakerCount} / '
-                  '${snapshot.participants.listenerCount}',
-              position: LoopRowPosition.middle,
-            ),
-            LoopRecordRow(
               key: const ValueKey<String>('voiceroom-observed'),
-              title: '当前在线人数',
+              title: '房间人数',
               subtitle: observed.isAvailable
-                  ? '观察于 ${communityObservedAtLabel(observed.observedAt!)}'
+                  ? '由服务商观察于 ${communityObservedAtLabel(observed.observedAt!)}'
                   : communicationUnavailableReason(
                       observed.unavailable!.reasonCode,
                     ),
               trailing: observed.isAvailable
                   ? '${observed.memberCount}'
                   : communityMissingFigure,
+              position: LoopRowPosition.first,
+            ),
+            LoopRecordRow(
+              key: const ValueKey<String>('voiceroom-role-intent'),
+              title: '发言人 / 听众',
+              subtitle: '按 LOOP 记录的角色统计，不是服务商的在线人数。',
+              trailing:
+                  '${snapshot.participants.speakerCount} / '
+                  '${snapshot.participants.listenerCount}',
+              position: LoopRowPosition.middle,
+            ),
+            LoopRecordRow(
+              key: const ValueKey<String>('voiceroom-role'),
+              title: '我的角色',
+              subtitle: snapshot.viewer.hasJoined
+                  ? '由 LOOP 授予，不是通话里的发言权限'
+                  : '尚未加入这个房间',
+              trailing: snapshot.viewer.role?.label ?? '未加入',
               position: LoopRowPosition.last,
             ),
           ],

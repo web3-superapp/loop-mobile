@@ -174,6 +174,11 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
   /// Never completes, so the page keeps its loading state.
   bool pending = false;
 
+  /// How `load` answers, when it must differ from the command answer. The
+  /// server fills `participants.observed` only on a read, so every command
+  /// answers with an unavailable count and the page has to read again.
+  VoiceRoomSnapshot? loadSnapshot;
+
   /// How `createRoom` answers, when it must differ from the read answer: a
   /// community with no live room can still refuse to open one.
   CommunityFailureKind? createFailure;
@@ -232,7 +237,15 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
   }
 
   @override
-  Future<VoiceRoomSnapshot> load(String voiceRoomId) => _answer('load');
+  Future<VoiceRoomSnapshot> load(String voiceRoomId) {
+    final value = loadSnapshot;
+    if (value != null) {
+      commands.add('load');
+      snapshot = value;
+      return Future<VoiceRoomSnapshot>.value(value);
+    }
+    return _answer('load');
+  }
 
   @override
   Future<List<VoiceRoomHandRaiseEntry>> listHandRaises(String voiceRoomId) {
