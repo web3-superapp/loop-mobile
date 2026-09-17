@@ -398,7 +398,7 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
         if (trade.isOwn) '我',
         loopConfirmationLabel(trade.status),
         if (trade.confirmations != null) '${trade.confirmations} 确认',
-        '区块 ${trade.blockNumber}',
+        '区块 ${loopGroupedFigure(trade.blockNumber.toString())}',
         loopRelativeTime(trade.blockTimestamp),
       ].join(' · '),
       trailing: loopFormatDecimal(trade.amountAsset),

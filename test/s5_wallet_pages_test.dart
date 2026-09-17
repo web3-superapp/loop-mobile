@@ -39,7 +39,7 @@ void main() {
         wallet: FakeWalletReadGateway(),
       );
 
-      expect(find.textContaining('区块 120628164'), findsOneWidget);
+      expect(find.textContaining('区块 120,628,164'), findsOneWidget);
       expect(find.textContaining('15 确认'), findsOneWidget);
       expect(find.text('7'), findsOneWidget);
       expect(find.textContaining('可动用 6.995'), findsOneWidget);
@@ -491,8 +491,12 @@ void main() {
       expect(find.text('可用'), findsOneWidget);
       expect(find.text('可动用（扣除手续费保留）'), findsOneWidget);
       expect(find.text('手续费保留'), findsOneWidget);
-      expect(find.text('最小单位'), findsOneWidget);
-      expect(find.text('7000000000000000000'), findsOneWidget);
+      // The minor-unit integer is a contract fact, not one of the balance
+      // meanings, and it never prints as an unreadable digit run.
+      expect(find.text('最小单位'), findsNothing);
+      expect(find.text('7000000000000000000'), findsNothing);
+      expect(find.text('最小单位余额（18 位精度的整数）'), findsOneWidget);
+      expect(find.text('7,000,000,000,000,000,000'), findsOneWidget);
     });
 
     testWidgets('a proxied valuation names the asset it borrowed', (
@@ -815,7 +819,7 @@ void main() {
 
       expect(find.text('收到 WBNB'), findsOneWidget);
       expect(
-        find.textContaining('已确认 · 101 确认 · 区块 120628064'),
+        find.textContaining('已确认 · 101 确认 · 区块 120,628,064'),
         findsOneWidget,
       );
       expect(find.text('1.5'), findsOneWidget);

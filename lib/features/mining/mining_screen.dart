@@ -300,7 +300,8 @@ class _SnapshotBlock extends StatelessWidget {
               key: const ValueKey<String>('mining-snapshot-row'),
               title: miningSnapshotRowTitle,
               subtitle:
-                  '区块 $blockNumber · ${launchTimestampLabel(computedAt)} · '
+                  '区块 ${loopGroupedFigure(blockNumber)} · '
+                  '${launchTimestampLabel(computedAt)} · '
                   '这是算出算力的时间',
               subtitleMaxLines: 2,
             ),

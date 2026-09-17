@@ -346,7 +346,8 @@ class _AssetsSourceBlock extends StatelessWidget {
               key: const ValueKey<String>('mining-assets-source-row'),
               title: miningSnapshotRowTitle,
               subtitle:
-                  '区块 $blockNumber · ${launchTimestampLabel(computedAt)} · '
+                  '区块 ${loopGroupedFigure(blockNumber)} · '
+                  '${launchTimestampLabel(computedAt)} · '
                   '这是算出算力的时间',
               subtitleMaxLines: 2,
             ),
@@ -1225,7 +1226,8 @@ class _CommunitySnapshotBlock extends StatelessWidget {
               key: const ValueKey<String>('mining-community-snapshot-row'),
               title: miningSnapshotRowTitle,
               subtitle:
-                  '区块 $blockNumber · ${launchTimestampLabel(computedAt)} · '
+                  '区块 ${loopGroupedFigure(blockNumber)} · '
+                  '${launchTimestampLabel(computedAt)} · '
                   '这是算出算力的时间',
               subtitleMaxLines: 2,
             ),

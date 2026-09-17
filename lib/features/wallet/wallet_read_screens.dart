@@ -766,7 +766,14 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
           const LoopLabel('余额说明'),
           _BalanceBreakdown(row: row, snapshot: balancesState.value!.snapshot),
           const LoopLabel('资产事实'),
-          _RegistryFactsCard(state: registry, assetId: assetId),
+          _RegistryFactsCard(
+            state: registry,
+            assetId: assetId,
+            rawValue: switch (row.balance) {
+              LoopBalanceAvailable(rawValue: final rawValue) => rawValue,
+              LoopBalanceUnavailable() => null,
+            },
+          ),
           const LoopLabel('挖矿贡献'),
           const LoopUnavailableCard(
             key: ValueKey<String>('wallet-asset-mining-unavailable'),
@@ -836,7 +843,6 @@ class _BalanceBreakdown extends StatelessWidget {
                       label: '手续费保留',
                       value: loopFormatDecimal(balance.gasReserve),
                     ),
-                    LoopKeyValue(label: '最小单位', value: balance.rawValue),
                   ],
                 ),
               },
@@ -950,10 +956,24 @@ class _CrossCheckCard extends StatelessWidget {
 }
 
 class _RegistryFactsCard extends StatelessWidget {
-  const _RegistryFactsCard({required this.state, required this.assetId});
+  const _RegistryFactsCard({
+    required this.state,
+    required this.assetId,
+    this.rawValue,
+  });
 
   final LoopChainResourceState<LoopChainAssetView> state;
   final String assetId;
+
+  /// The exact integer minor-unit balance, kept for auditing.
+  ///
+  /// It used to sit in 「余额说明」 next to the four figures a reader compares,
+  /// where `2990000000000000000` was nineteen digits nobody could read and
+  /// nothing above it explained. The balance card now states the balance only
+  /// in the asset's own unit; the integer the contract stores belongs with the
+  /// other contract facts, grouped, and labelled with the precision that makes
+  /// it mean something.
+  final String? rawValue;
 
   @override
   Widget build(BuildContext context) {
@@ -975,6 +995,11 @@ class _RegistryFactsCard extends StatelessWidget {
         children: <Widget>[
           LoopKeyValue(label: '资产标识', value: loopTruncatedAssetId(assetId)),
           LoopKeyValue(label: '精度', value: '${asset.decimals}'),
+          if (rawValue != null)
+            LoopKeyValue(
+              label: '最小单位余额（${asset.decimals} 位精度的整数）',
+              value: loopGroupedFigure(rawValue!),
+            ),
           LoopKeyValue(label: '登记状态', value: asset.status.label),
           if (asset.address != null)
             LoopKeyValue(
@@ -986,7 +1011,7 @@ class _RegistryFactsCard extends StatelessWidget {
             <String>[
               '名称与精度只来自链上调用',
               if (asset.source.blockNumber != null)
-                '区块高度 ${asset.source.blockNumber}',
+                '区块高度 ${loopGroupedFigure(asset.source.blockNumber.toString())}',
               if (asset.source.verifiedAt != null)
                 '校验于 ${loopRelativeTime(asset.source.verifiedAt!)}',
             ].join(' · '),
@@ -1679,7 +1704,7 @@ class _TransactionHistoryScreenState
             subtitle: <String>[
               loopConfirmationLabel(entry.status),
               if (entry.confirmations != null) '${entry.confirmations} 确认',
-              '区块 ${entry.blockNumber}',
+              '区块 ${loopGroupedFigure(entry.blockNumber.toString())}',
               '对方 ${loopTruncatedAddress(entry.counterpartyAddress)}',
               loopRelativeTime(entry.observedAt),
             ].join(' · '),
@@ -1831,7 +1856,9 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
                 subtitleMaxLines: 2,
                 trailing: status.rpc.head == null
                     ? null
-                    : '${status.rpc.head!.blockNumber}',
+                    : loopGroupedFigure(
+                        status.rpc.head!.blockNumber.toString(),
+                      ),
                 trailingBadge: LoopBadge(
                   status.rpc.available ? '正常' : '异常',
                   kind: status.rpc.available
@@ -1874,7 +1901,7 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
                     subtitleMaxLines: 2,
                     trailing: endpoint.blockNumber == null
                         ? null
-                        : '${endpoint.blockNumber}',
+                        : loopGroupedFigure(endpoint.blockNumber.toString()),
                     trailingBadge: LoopBadge(
                       switch (endpoint.status) {
                         LoopEndpointStatus.healthy => '正常',
@@ -1977,7 +2004,9 @@ class _LaunchChainRow extends StatelessWidget {
                     '${launchChain.confirmations} 确认 · '
                     '重组跟踪 ${launchChain.reorgDepthBlocks} 块'
               : loopReasonCodeText(reasonCode),
-          trailing: head == null ? null : '${head.blockNumber}',
+          trailing: head == null
+              ? null
+              : loopGroupedFigure(head.blockNumber.toString()),
           trailingBadge: LoopBadge(badge, kind: kind),
         ),
       ],

@@ -635,7 +635,7 @@ void main() {
 
       expect(find.text('USDT'), findsOneWidget);
       expect(find.textContaining(s6SpenderChecksum), findsOneWidget);
-      expect(find.textContaining('区块 120695250'), findsOneWidget);
+      expect(find.textContaining('区块 120,695,250'), findsOneWidget);
     });
 
     testWidgets('a missing indexer checkpoint is unknown, not zero', (
@@ -965,7 +965,7 @@ void main() {
         approvals: FakeApprovalsGateway(),
       );
 
-      expect(find.textContaining('授权记录自区块 120600000 起'), findsOneWidget);
+      expect(find.textContaining('授权记录自区块 120,600,000 起'), findsOneWidget);
       expect(find.textContaining('更早授予的授权不会出现在这里'), findsOneWidget);
     });
 

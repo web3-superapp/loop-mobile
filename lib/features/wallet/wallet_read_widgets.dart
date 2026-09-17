@@ -107,7 +107,7 @@ class WalletSnapshotFooter extends StatelessWidget {
     return LoopProvenanceFooter(
       key: const ValueKey<String>('wallet-snapshot-footer'),
       text:
-          '区块 ${snapshot.blockNumber} · '
+          '区块 ${loopGroupedFigure(snapshot.blockNumber.toString())} · '
           '${snapshot.confirmations} 确认 · '
           '观察于 ${loopRelativeTime(snapshot.observedAt, now: now)}',
     );

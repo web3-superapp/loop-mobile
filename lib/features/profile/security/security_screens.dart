@@ -400,8 +400,9 @@ class _SecurityApprovalsBlock extends StatelessWidget {
             LoopProvenanceFooter(
               key: const ValueKey<String>('security-approvals-freshness'),
               text:
-                  '授权记录自区块 $coverageFrom 起 · '
-                  '索引高度 $indexed / 链头 $head · '
+                  '授权记录自区块 ${loopGroupedFigure(coverageFrom.toString())} 起 · '
+                  '索引高度 ${loopGroupedFigure(indexed.toString())} / '
+                  '链头 ${loopGroupedFigure(head.toString())} · '
                   '观察于 ${loopRelativeTime(observedAt)}',
             ),
           ],

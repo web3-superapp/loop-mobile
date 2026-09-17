@@ -146,8 +146,8 @@ void main() {
         const ValueKey<String>('security-approvals-freshness'),
       );
       await scrollToS8Section(tester, freshness);
-      expect(find.textContaining('授权记录自区块 120600000 起'), findsOneWidget);
-      expect(find.textContaining('索引高度 120659683'), findsOneWidget);
+      expect(find.textContaining('授权记录自区块 120,600,000 起'), findsOneWidget);
+      expect(find.textContaining('索引高度 120,659,683'), findsOneWidget);
     });
 
     testWidgets('the high-risk signal quotes the server policy', (

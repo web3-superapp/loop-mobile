@@ -123,7 +123,7 @@ class MoneyFactsFooter extends StatelessWidget {
     return LoopProvenanceFooter(
       key: const ValueKey<String>('money-facts-footer'),
       text:
-          '区块 ${balance.blockNumber} · 事实观察于 '
+          '区块 ${loopGroupedFigure(balance.blockNumber.toString())} · 事实观察于 '
           '${loopRelativeTime(intent.factsObservedAt, now: now)}',
     );
   }

@@ -1531,7 +1531,7 @@ void main() {
         const ValueKey<String>('mining-community-snapshot'),
       );
       await scrollToS7Section(tester, snapshot);
-      expect(find.textContaining('区块 122037728'), findsOneWidget);
+      expect(find.textContaining('区块 122,037,728'), findsOneWidget);
     });
 
     testWidgets('a ranked community says its place, not a bare number', (

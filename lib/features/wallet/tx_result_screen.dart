@@ -313,7 +313,7 @@ class _TransactionResultScreenState
     if (receipt == null) {
       return '结果、交易哈希和下一步动作集中在这里，不会混入新的报价。';
     }
-    return '区块 ${receipt.blockNumber} · '
+    return '区块 ${loopGroupedFigure(receipt.blockNumber.toString())} · '
         '${receipt.confirmations == null ? '确认数读不到' : '${receipt.confirmations} 确认'}';
   }
 }

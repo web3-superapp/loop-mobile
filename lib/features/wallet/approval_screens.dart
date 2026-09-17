@@ -561,9 +561,9 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
             key: const ValueKey<String>('approvals-freshness'),
             text:
                 '授权记录自区块 '
-                '${inventory.freshness.approvalCoverageFromBlockNumber} 起 · '
-                '索引高度 ${inventory.freshness.indexerBlockNumber} / 链头 '
-                '${inventory.freshness.headBlockNumber} · 观察于 '
+                '${loopGroupedFigure(inventory.freshness.approvalCoverageFromBlockNumber.toString())} 起 · '
+                '索引高度 ${loopGroupedFigure(inventory.freshness.indexerBlockNumber.toString())} / '
+                '链头 ${loopGroupedFigure(inventory.freshness.headBlockNumber.toString())} · 观察于 '
                 '${loopRelativeTime(inventory.freshness.observedAt, now: widget.clock?.call())}',
           ),
           const LoopNotice(
@@ -594,7 +594,8 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
       ):
         subtitle =
             '${row.spender.checksumAddress} · '
-            '${unlimited ? '无限额度' : '额度 $display'} · 区块 $blockNumber';
+            '${unlimited ? '无限额度' : '额度 $display'} · '
+            '区块 ${loopGroupedFigure(blockNumber.toString())}';
         badge = unlimited
             ? const LoopBadge('无限', kind: LoopBadgeKind.down)
             : const LoopBadge('限额');
