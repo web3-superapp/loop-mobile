@@ -373,3 +373,82 @@ StreamMessageListViewBuilders loopStreamMessageListViewBuilders() =>
       dateDivider: loopStreamDateDivider,
       floatingDateDivider: loopStreamDateDivider,
     );
+
+/// The prototype's `.msg-txt`, read back out of Stream's markdown pipeline.
+///
+/// `StreamMessageText` hands `core.StreamMessageText` a markdown document:
+/// every newline is doubled into a paragraph break
+/// (`stream_chat_flutter-10.3.0/lib/src/message_widget/components/
+/// stream_message_text.dart:75`) and every mention is wrapped as
+/// `[@name](mention:id)`. LOOP's chat has no formatting affordance — the
+/// composer sends what the member typed — so this reverses both transforms
+/// and returns the literal text the member sent. `|`, `*`, `_` and `#` then
+/// reach the screen instead of being eaten by the markdown parser.
+@visibleForTesting
+String loopStreamPlainMessageText(String markdown) {
+  // Undo `[@name](mention[-type]:id)` — the shape `Message.replaceMentions`
+  // writes — back to the `@name` that `linkify: false` would have produced.
+  final unlinked = markdown.replaceAllMapped(
+    RegExp(
+      r'\[(@[^\]\n]+)\]\(mention(?:-(?:user|channel|here|role|group))?:'
+      r'[^)\s]+\)',
+    ),
+    (match) => match.group(1)!,
+  );
+  // Undo the paragraph inflation: every original newline arrived doubled, so
+  // an even run of n newlines is n ÷ 2 newlines of the member's own text.
+  return unlinked.replaceAllMapped(
+    RegExp(r'\n+'),
+    (match) => '\n' * (match.group(0)!.length ~/ 2).clamp(1, 1 << 20),
+  );
+}
+
+/// Renders one message as plain text on the band-4 ladder.
+///
+/// Registered on [StreamComponentBuilders.messageText] so every official
+/// surface that prints message text — the bubble, a quoted reply — takes it.
+/// An emoji-only message keeps Stream's own renderer: the jumbomoji sizes
+/// live in that widget and an emoji run carries no markdown to eat.
+Widget loopStreamMessageTextBuilder(
+  BuildContext context,
+  StreamMessageTextProps props,
+) => _LoopStreamMessageText(props: props);
+
+class _LoopStreamMessageText extends StatelessWidget {
+  const _LoopStreamMessageText({required this.props});
+
+  final StreamMessageTextProps props;
+
+  @override
+  Widget build(BuildContext context) {
+    final layout = StreamMessageLayout.of(context);
+    if (layout.contentKind == StreamMessageContentKind.jumbomoji) {
+      return DefaultStreamMessageText(props: props);
+    }
+
+    final themeStyle = StreamMessageItemTheme.of(context).text;
+    final fallback = _bubbleTextStyle(
+      _isOutgoing(layout) ? LoopColors.ink : LoopColors.chalk,
+    );
+    final style =
+        props.style?.textStyle?.resolve(layout) ??
+        themeStyle?.textStyle?.resolve(layout) ??
+        fallback;
+    final color =
+        props.style?.textColor?.resolve(layout) ??
+        themeStyle?.textColor?.resolve(layout);
+    final padding =
+        props.padding ??
+        props.style?.padding?.resolve(layout) ??
+        themeStyle?.padding?.resolve(layout) ??
+        EdgeInsets.zero;
+
+    return Padding(
+      padding: padding,
+      child: Text(
+        loopStreamPlainMessageText(props.text),
+        style: color == null ? style : style.copyWith(color: color),
+      ),
+    );
+  }
+}

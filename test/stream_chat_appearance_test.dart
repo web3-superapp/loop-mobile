@@ -298,6 +298,8 @@ void main() {
           source,
           contains('messageFooter: loopStreamMessageFooterBuilder'),
         );
+        // C-15 (1): message text is plain, not markdown.
+        expect(source, contains('messageText: loopStreamMessageTextBuilder'));
       },
     );
 

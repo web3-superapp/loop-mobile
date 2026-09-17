@@ -82,6 +82,10 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart'
         streamChatComponentBuilders;
 
 final _loopStreamComponentBuilders = StreamComponentBuilders(
+  // C-15 (1): a LOOP message is plain text, not a markdown document. Stream's
+  // own renderer doubles every newline into a paragraph break and eats `|`,
+  // `*` and `_`; this one prints what the member typed, on band 4.
+  messageText: loopStreamMessageTextBuilder,
   extensions: streamChatComponentBuilders(
     messageComposer: (context, props) => DefaultStreamMessageComposer(
       props: props.copyWith(
