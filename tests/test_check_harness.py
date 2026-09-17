@@ -4685,7 +4685,10 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected Bridge deferred-route guard: {result}",
         )
 
-    def test_bridge_progress_steps_cannot_become_observed(self) -> None:
+    # S27d (walkthrough C-19) retired the three step rows: nobody observes
+    # them, so a step drawn in *any* state — 等待 included — is a run the page
+    # invented, and the guard now fires on its return.
+    def test_bridge_progress_cannot_draw_a_step_again(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             relative = "lib/features/wallet/deferred_screens.dart"
@@ -4693,14 +4696,18 @@ class HarnessTests(unittest.TestCase):
             target.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             target.write_text(
-                source.replace("LoopBadge('\u7b49\u5f85')", "LoopBadge('\u5b8c\u6210')"),
+                source.replace(
+                    "      sections: const <Widget>[],",
+                    "      sections: const <Widget>["
+                    "LoopBadge('\u7b49\u5f85')],",
+                ),
                 encoding="utf-8",
             )
             result = check_harness.check_wallet_providerless_controls_contract(root)
 
         self.assertTrue(
-            any("all three steps pending" in error for error in result),
-            msg=f"expected pending Bridge progress guard: {result}",
+            any("may not draw a step in any state" in error for error in result),
+            msg=f"expected Bridge progress step guard: {result}",
         )
 
     def test_bridge_progress_cannot_add_an_enabled_action(self) -> None:

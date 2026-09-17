@@ -145,11 +145,11 @@ String? loopAboutModuleDescription(String module) => switch (module) {
   'clientPolicy' => '运营对这个客户端的版本、地区与条款要求的覆盖版本',
   'sessionPolicy' => '设备会话如何创建、限额与撤销',
   'community' => '社区创建、成员、角色与治理的规则',
-  'marketTrending' => '行情页热门排序的口径',
+  'marketTrending' => '行情页热门排序怎么算',
   'deviceRisk' => '新设备提示的阈值',
   'accountSettings' => '账号设置里可以改哪些项',
   'support' => '工单分类、字数与答复时限',
-  'swapPolicy' => '兑换报价、滑点与手续费口径',
+  'swapPolicy' => '兑换的报价、滑点与手续费规则',
   'bscWriteCanary' => '链上写入放量的资产范围与单笔上限',
   _ => null,
 };

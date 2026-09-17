@@ -1043,7 +1043,7 @@ WALLET_PROVIDERLESS_CONTROL_BEHAVIOR_TEST_MARKERS = {
     ),
     Path("test/s8_deferred_pages_test.dart"): (
         "bridge offers no amount, no route and no fee",
-        "bridge-status keeps all three steps pending with no source",
+        "bridge-status is one whole-page state, with no steps at all",
     ),
 }
 WALLET_PROVIDERLESS_CONTROL_EXECUTABLE_TEST_EVIDENCE = {
@@ -1057,7 +1057,9 @@ WALLET_PROVIDERLESS_CONTROL_EXECUTABLE_TEST_EVIDENCE = {
     Path("test/app_navigation_test.dart"): {
         "Bridge status is reachable on its own and stays pending": (
             r"\brouter\.go\s*\(",
-            r"\bfindsNWidgets\s*\(\s*3\s*\)",
+            # C-19: no step is drawn in any state, so the evidence is the
+            # absence of all three, not three pending badges.
+            r"for\s*\(\s*final\s+step\s+in\s*<String>\[[\s\S]*?\]\s*\)",
             r"\bfindsNothing\b",
             r"\bfindsOneWidget\b",
         ),
@@ -1068,10 +1070,10 @@ WALLET_PROVIDERLESS_CONTROL_EXECUTABLE_TEST_EVIDENCE = {
             r"\bfind\.byType\s*\(\s*TextField\s*\)\s*,\s*findsNothing",
             r"\bfind\.textContaining\s*\([\s\S]*?\)\s*,\s*findsNothing",
         ),
-        "bridge-status keeps all three steps pending with no source": (
+        "bridge-status is one whole-page state, with no steps at all": (
             r"\bawait\s+pumpS8Page\s*\(",
             r"\bfor\s*\(\s*var\s+index\s*=\s*1\s*;",
-            r"\bfindsNWidgets\s*\(\s*3\s*\)",
+            r"\bfind\.byKey\s*\([\s\S]*?\)\s*,\s*findsOneWidget",
             r"\bfindsNothing\b",
         ),
     },
@@ -5895,13 +5897,15 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
                 "## Evidence",
             ),
             # S8 (decision 0060) retired the Bridge Preview snapshot: there is
-            # no bridge runtime, so the status page shows three pending steps
-            # with no source instead of a simulated route.
+            # no bridge runtime, so the status page renders no route. S27d
+            # (walkthrough C-19) retired the three pending step rows with it:
+            # nobody observes those steps, so the whole page is the server's
+            # one reason in the page's own block.
             "lib/features/wallet/deferred_screens.dart": (
                 "class BridgeScreen",
                 "class BridgeStatusScreen",
-                "static const steps = <(String, String)>[",
-                "bridge-status-no-source",
+                "bridge-status-page-block",
+                "LoopPageBlock(",
                 "BRIDGE_RUNTIME_DEFERRED",
             ),
             "lib/features/wallet/wallet_preview_activity.dart": (
@@ -5928,7 +5932,7 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
             ),
             "test/s8_deferred_pages_test.dart": (
                 "bridge offers no amount, no route and no fee",
-                "bridge-status keeps all three steps pending with no source",
+                "bridge-status is one whole-page state, with no steps at all",
             ),
         },
     )
@@ -5956,9 +5960,14 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
                     "Bridge has no runtime: it must not render a route, an "
                     f"amount or an observed step: {marker}"
                 )
-        if "LoopBadge('等待')" not in bridge_source:
+        status_probe_start = bridge_source.find("class BridgeStatusScreen")
+        if (
+            status_probe_start >= 0
+            and "LoopBadge('等待')" in bridge_source[status_probe_start:]
+        ):
             errors.append(
-                "Bridge progress must keep all three steps pending with no source"
+                "Bridge progress has no observer, so it may not draw a step in "
+                "any state, pending included"
             )
         status_start = bridge_source.find("class BridgeStatusScreen")
         status_source = bridge_source[status_start:] if status_start >= 0 else ""
