@@ -130,6 +130,7 @@ Map<String, Object?> s5ChainStatusBody({
     'endpoints': <Object?>[
       <String, Object?>{
         'endpointRef': 'rpc-2bd52ca6d267',
+        'label': 'bsc-rpc.publicnode.com',
         'status': endpointStatus,
         'latencyMs': 515,
         'blockNumber': '120628163',
@@ -1080,6 +1081,7 @@ LoopChainStatus s5Status({
     endpoints: <LoopRpcEndpointHealth>[
       LoopRpcEndpointHealth(
         endpointRef: 'rpc-2bd52ca6d267',
+        label: 'bsc-rpc.publicnode.com',
         status: endpointStatus,
         latencyMs: 515,
         blockNumber: BigInt.from(120628163),

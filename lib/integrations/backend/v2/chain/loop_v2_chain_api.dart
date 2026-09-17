@@ -123,6 +123,7 @@ final class DioLoopV2ChainApi implements LoopV2ChainApi {
       )) {
         final map = LoopV2Contract.strictMap(raw, const <String>{
           'endpointRef',
+          'label',
           'status',
           'latencyMs',
           'blockNumber',
@@ -144,6 +145,16 @@ final class DioLoopV2ChainApi implements LoopV2ChainApi {
         endpoints.add(
           LoopRpcEndpointHealth(
             endpointRef: endpointRef,
+            // A host name only: anything carrying a scheme, a port, a path or
+            // credentials is not what the contract publishes, and the page
+            // would put a provider URL on screen.
+            label: LoopV2ChainCodec.requireString(
+              map,
+              'label',
+              pattern: LoopV2ChainCodec.endpointLabelPattern,
+              minLength: 1,
+              maxLength: 253,
+            ),
             status: endpointStatus,
             latencyMs: LoopV2ChainCodec.optionalInt(
               map,

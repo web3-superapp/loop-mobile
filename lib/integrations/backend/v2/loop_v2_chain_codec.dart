@@ -21,6 +21,9 @@ abstract final class LoopV2ChainCodec {
   static final RegExp addressPattern = RegExp(r'^0x[0-9a-f]{40}$');
   static final RegExp hashPattern = RegExp(r'^0x[0-9a-f]{64}$');
   static final RegExp endpointRefPattern = RegExp(r'^rpc-[0-9a-f]{12}$');
+
+  /// A displayable endpoint name: the RPC URL's host name and nothing else.
+  static final RegExp endpointLabelPattern = RegExp(r'^[A-Za-z0-9._-]+$');
   static final RegExp blockNumberPattern = RegExp(r'^(0|[1-9][0-9]{0,19})$');
   static final RegExp reasonCodePattern = RegExp(r'^[A-Z][A-Z0-9_]{0,63}$');
   static final RegExp cursorPattern = RegExp(

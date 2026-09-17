@@ -163,6 +163,8 @@ void main() {
 
         expect(status.chain.confirmations, 15);
         expect(status.rpc.endpoints.single.endpointRef, 'rpc-2bd52ca6d267');
+        // The displayable name is the host only.
+        expect(status.rpc.endpoints.single.label, 'bsc-rpc.publicnode.com');
         expect(status.rpc.head!.blockNumber, BigInt.from(120628164));
         expect(status.indexer.map((lane) => lane.lane), <LoopIndexerLane>[
           LoopIndexerLane.erc20Transfer,
@@ -173,6 +175,29 @@ void main() {
         expect(status.chainIdMismatched, isFalse);
       },
     );
+
+    test('an endpoint label carrying a URL is refused', () async {
+      final api = DioLoopV2ChainApi(
+        s5Dio((options, handler) {
+          final body = s5ChainStatusBody();
+          final rpc = body['rpc']! as Map<String, Object?>;
+          final endpoints = rpc['endpoints']! as List<Object?>;
+          // A scheme and a path are not a host name, and the page would put a
+          // provider URL on screen.
+          (endpoints.single as Map<String, Object?>)['label'] =
+              'https://bsc-rpc.publicnode.com/v1/key';
+          handler.resolve(s5Response(options, body));
+        }),
+      );
+
+      await expectLater(
+        api.getStatus(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
 
     test('a mismatched chain verification makes the page unusable', () async {
       final api = DioLoopV2ChainApi(

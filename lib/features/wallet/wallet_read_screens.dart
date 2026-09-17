@@ -1817,9 +1817,9 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
             ? '网络与 RPC'
             : '${status.rpc.healthyCount} / ${status.rpc.endpoints.length} 正常',
         caption: status?.launchChain == null
-            ? '只有 BNB Smart Chain 一条网络；端点以不可逆引用显示，永远不下发 RPC 地址。'
+            ? '只有 BNB Smart Chain 一条网络；端点只显示主机名，永远不下发完整 RPC 地址。'
             : '主网 BNB Smart Chain 加上 LOOP 发布的 Launch 链；'
-                  '端点以不可逆引用显示，永远不下发 RPC 地址。',
+                  '端点只显示主机名，永远不下发完整 RPC 地址。',
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -1951,17 +1951,18 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
 /// its confirmation depth and the server's reason code instead.
 /// One RPC endpoint row.
 ///
-/// The endpoint is published only as an opaque reference, deliberately: the
-/// host is not the client's to show. That reference was also the row's title,
-/// so the page headed its endpoints 「rpc-956a0d5f88ea」. There is nothing on
-/// this device or anywhere else for a reader to match that against, so the
-/// rows are numbered in the order the server published them; the reference
-/// stays as the widget key, where only a test reads it.
+/// The opaque reference was the row's title, so the page headed its endpoints
+/// 「rpc-956a0d5f88ea」, which no reader can match against anything; numbering
+/// them said no more. The server now publishes the endpoint's host name for
+/// display (decision 0049) and that is the title, with the position it was
+/// published in kept as a caption so two hosts that read alike stay apart. The
+/// reference stays as the widget key, where only a test reads it.
 LoopRecordRow _endpointRow(LoopRpcEndpointHealth endpoint, int index) =>
     LoopRecordRow(
       key: ValueKey<String>('rpc-${endpoint.endpointRef}'),
-      title: '端点 ${index + 1}',
+      title: endpoint.label,
       subtitle: <String>[
+        '端点 ${index + 1}',
         if (endpoint.latencyMs != null)
           '延迟 ${endpoint.latencyMs}ms'
         else

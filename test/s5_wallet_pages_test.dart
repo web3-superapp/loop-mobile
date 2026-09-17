@@ -946,7 +946,7 @@ void main() {
 
   group('networks', () {
     testWidgets(
-      'endpoints are shown by opaque reference with latency and lag',
+      'endpoints are headed by their host name with latency and lag',
       (tester) async {
         await pumpS5Page(
           tester,
@@ -954,11 +954,15 @@ void main() {
           chain: FakeChainGateway(),
         );
 
-        // The reference is opaque by design; it is also unmatchable by a
-        // reader, so the rows are numbered and the reference stays off screen.
+        // The opaque reference is unmatchable by a reader and stays off
+        // screen; the server's own host name heads the row, and the position
+        // it was published in follows it.
         expect(find.text('rpc-2bd52ca6d267'), findsNothing);
         expect(find.textContaining('rpc-'), findsNothing);
-        expect(find.text('端点 1'), findsOneWidget);
+        expect(find.text('bsc-rpc.publicnode.com'), findsOneWidget);
+        expect(find.textContaining('端点 1'), findsOneWidget);
+        // Still no URL: no scheme, no path, no key.
+        expect(find.textContaining('https://'), findsNothing);
         expect(find.textContaining('延迟 515ms'), findsOneWidget);
         expect(find.textContaining('落后 0 块'), findsOneWidget);
         expect(find.text('1 / 1 正常'), findsOneWidget);

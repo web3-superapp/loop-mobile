@@ -276,12 +276,17 @@ final class LoopChainHead {
   final DateTime observedAt;
 }
 
-/// One RPC endpoint's health. [endpointRef] is an irreversible reference; the
-/// backend never sends the URL and the client must never display or guess it.
+/// One RPC endpoint's health.
+///
+/// [endpointRef] is an irreversible reference and stays off the screen: it is
+/// the row's key and nothing a reader can match against. [label] is the host
+/// name the server publishes for display (decision 0049) — never the scheme,
+/// the port, the path or any key, and the client must not guess the rest.
 @immutable
 final class LoopRpcEndpointHealth {
   const LoopRpcEndpointHealth({
     required this.endpointRef,
+    required this.label,
     required this.status,
     required this.latencyMs,
     required this.blockNumber,
@@ -291,6 +296,7 @@ final class LoopRpcEndpointHealth {
   });
 
   final String endpointRef;
+  final String label;
   final LoopEndpointStatus status;
   final int? latencyMs;
   final BigInt? blockNumber;
