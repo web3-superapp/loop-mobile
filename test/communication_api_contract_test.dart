@@ -429,6 +429,106 @@ void main() {
       expect(current.reasonCode, 'COMMUNITY_VOICE_ROOM_NOT_LIVE');
     });
 
+    test('opening a room posts one key and reads the created room', () async {
+      final (api, captured) = _api(
+        _roomBody(role: 'host', host: true),
+        statusCode: 201,
+      );
+
+      final snapshot = await api.createVoiceRoom(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+        idempotencyKey: _key,
+        communityId: _communityId,
+      );
+
+      expect(snapshot.room.voiceRoomId, _roomId);
+      expect(snapshot.viewer.isHost, isTrue);
+      expect(
+        captured.single.uri.path,
+        '/v2/communities/$_communityId/voice-rooms',
+      );
+      expect(captured.single.method, 'POST');
+      expect(captured.single.headers['idempotency-key'], _key);
+      expect(captured.single.headers['x-loop-contract-version'], '2.0');
+      // The command has no body of its own: the community is in the path.
+      expect(captured.single.data, isNull);
+    });
+
+    test('a created room answered with 200 is an invalid payload', () async {
+      final (api, _) = _api(_roomBody(role: 'host', host: true));
+
+      await expectLater(
+        api.createVoiceRoom(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          idempotencyKey: _key,
+          communityId: _communityId,
+        ),
+        throwsA(
+          isA<LoopBackendFailure>().having(
+            (failure) => failure.kind,
+            'kind',
+            LoopBackendFailureKind.invalidPayload,
+          ),
+        ),
+      );
+    });
+
+    test('a created room for another community is rejected', () async {
+      final body = _roomBody(role: 'host', host: true);
+      (body['room']! as Map<String, Object?>)['communityId'] = _profileId;
+      final (api, _) = _api(body, statusCode: 201);
+
+      await expectLater(
+        api.createVoiceRoom(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          idempotencyKey: _key,
+          communityId: _communityId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a live room answers the open command with a conflict', () async {
+      final api = DioLoopV2CommunicationApi(
+        _dio((options, handler) {
+          handler.reject(
+            DioException(
+              requestOptions: options,
+              response: _response(options, <String, Object?>{
+                'code': 'RESOURCE_CONFLICT',
+                'category': 'conflict',
+                'retryable': false,
+                'userMessageKey': 'errors.community.voiceRoomLive',
+                'correlationId': _requestId,
+                'detailsSafe': null,
+                'providerReferenceSafe': null,
+              }, statusCode: 409),
+              type: DioExceptionType.badResponse,
+            ),
+          );
+        }),
+      );
+
+      await expectLater(
+        api.createVoiceRoom(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          idempotencyKey: _key,
+          communityId: _communityId,
+        ),
+        throwsA(
+          isA<LoopBackendFailure>().having(
+            (failure) => failure.code,
+            'code',
+            'RESOURCE_CONFLICT',
+          ),
+        ),
+      );
+    });
+
     test('the hand-raise queue rejects a duplicated entry', () async {
       final entry = <String, Object?>{
         'handRaiseId': _profileId,

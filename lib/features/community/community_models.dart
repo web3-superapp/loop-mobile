@@ -205,6 +205,13 @@ final class CommunityViewer {
 
   bool get isOwner => membership?.role == CommunityRole.owner;
 
+  /// Owner and admin are the two roles the server admits to opening a voice
+  /// room. The role is the server's own viewer projection, not a client-side
+  /// reading of the permission matrix, and the server still decides the write.
+  bool get mayOpenVoiceRoom =>
+      membership?.role == CommunityRole.owner ||
+      membership?.role == CommunityRole.admin;
+
   bool get canGovern => canInviteAdmin || canMute || canBan;
 }
 

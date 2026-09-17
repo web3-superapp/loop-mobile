@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_discover_screen.dart';
@@ -12,6 +13,7 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
+import 'support/communication_test_harness.dart';
 import 'support/community_test_harness.dart';
 import 'support/loop_stream_scroll.dart';
 
@@ -933,6 +935,152 @@ void main() {
         findsOneWidget,
       );
       expect(gateway.commands, isEmpty);
+    });
+  });
+
+  group('community-profile · 开启语音房', () {
+    Future<void> pumpProfile(
+      WidgetTester tester, {
+      required CommunityRole role,
+      CommunityVoiceSection voice = testVoiceUnavailable,
+      FakeVoiceRoomGateway? voiceRoom,
+      ValueChanged<String>? onOpenVoiceRoom,
+    }) => pumpCommunityPage(
+      tester,
+      CommunityProfileScreen(
+        communityId: testCommunityId,
+        onOpenVoiceRoom: onOpenVoiceRoom,
+      ),
+      community: FakeCommunityGateway(
+        detail: testDetail(
+          viewer: testViewer(role: role),
+          voice: voice,
+        ),
+      ),
+      voiceRoom: voiceRoom ?? FakeVoiceRoomGateway(),
+    );
+
+    Future<void> scrollToVoice(WidgetTester tester, Finder target) =>
+        tester.scrollUntilVisible(
+          target,
+          120,
+          scrollable: find.byType(Scrollable).first,
+        );
+
+    final createButton = find.byKey(
+      const ValueKey<String>('community-profile-create-voice-room'),
+    );
+
+    testWidgets('an owner is offered the room when none is live', (
+      tester,
+    ) async {
+      await pumpProfile(tester, role: CommunityRole.owner);
+
+      await scrollToVoice(tester, createButton);
+      expect(createButton, findsOneWidget);
+    });
+
+    testWidgets('an admin is offered the room as well', (tester) async {
+      await pumpProfile(tester, role: CommunityRole.admin);
+
+      await scrollToVoice(tester, createButton);
+      expect(createButton, findsOneWidget);
+    });
+
+    testWidgets('a member is not offered the room at all', (tester) async {
+      await pumpProfile(tester, role: CommunityRole.member);
+
+      await scrollToVoice(
+        tester,
+        find.byKey(const ValueKey<String>('community-profile-open-voice')),
+      );
+      expect(createButton, findsNothing);
+    });
+
+    testWidgets('a live room is entered, not opened again', (tester) async {
+      await pumpProfile(
+        tester,
+        role: CommunityRole.owner,
+        voice: testVoiceLive,
+      );
+
+      await scrollToVoice(
+        tester,
+        find.byKey(const ValueKey<String>('community-profile-open-voice')),
+      );
+      expect(createButton, findsNothing);
+      expect(find.text('进入'), findsOneWidget);
+    });
+
+    testWidgets('opening a room is confirmed first, then entered', (
+      tester,
+    ) async {
+      final voiceRoom = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
+      );
+      final entered = <String>[];
+      await pumpProfile(
+        tester,
+        role: CommunityRole.owner,
+        voiceRoom: voiceRoom,
+        onOpenVoiceRoom: entered.add,
+      );
+
+      await scrollToVoice(tester, createButton);
+      await tester.tap(createButton);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('community-open-voice-room-sheet')),
+        findsOneWidget,
+      );
+      // The sheet states the consequence before anything is created.
+      expect(find.textContaining('任何成员都能进来收听'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-confirm-cancel')),
+      );
+      await tester.pumpAndSettle();
+      expect(voiceRoom.commands, isEmpty);
+
+      await tester.tap(createButton);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-confirm-accept')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(voiceRoom.commands, contains('create:$testCommunityId'));
+      expect(find.text('语音房已开启'), findsOneWidget);
+      expect(entered, <String>[testCommunityId]);
+    });
+
+    testWidgets('a room that is already live is stated, not claimed', (
+      tester,
+    ) async {
+      final voiceRoom = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(),
+        createFailure: CommunityFailureKind.resourceConflict,
+      );
+      final entered = <String>[];
+      await pumpProfile(
+        tester,
+        role: CommunityRole.admin,
+        voiceRoom: voiceRoom,
+        onOpenVoiceRoom: entered.add,
+      );
+
+      await scrollToVoice(tester, createButton);
+      await tester.tap(createButton);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-confirm-accept')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(voiceRoom.commands, contains('create:$testCommunityId'));
+      expect(find.textContaining('已经有进行中的语音房'), findsOneWidget);
+      expect(find.text('语音房已开启'), findsNothing);
+      expect(entered, isEmpty);
     });
   });
 

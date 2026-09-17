@@ -557,3 +557,35 @@ final voiceRoomControllerProvider =
     NotifierProvider.autoDispose<VoiceRoomController, VoiceRoomPageState>(
       VoiceRoomController.new,
     );
+
+/// Opens a community voice room.
+///
+/// The entry is shown from the server's own viewer projection, but the
+/// admission is still the server's: a member gets `PERMISSION_DENIED`, and a
+/// community that already has a live room gets `RESOURCE_CONFLICT`. The state
+/// is the in-flight flag, so one confirmed tap cannot become two rooms.
+final class VoiceRoomOpenController extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  Future<CommunityFailureKind?> openRoom(String communityId) async {
+    if (state) return CommunityFailureKind.stale;
+    state = true;
+    try {
+      await ref.read(voiceRoomGatewayProvider).createRoom(communityId);
+      state = false;
+      return null;
+    } on CommunityGatewayException catch (error) {
+      state = false;
+      return error.kind;
+    } catch (_) {
+      state = false;
+      return CommunityFailureKind.unexpected;
+    }
+  }
+}
+
+final voiceRoomOpenControllerProvider =
+    NotifierProvider.autoDispose<VoiceRoomOpenController, bool>(
+      VoiceRoomOpenController.new,
+    );

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
@@ -174,10 +175,12 @@ class _CommunityProfileScreenState
           const LoopLabel('聊天与语音'),
           _ChannelActions(
             detail: detail,
+            opening: ref.watch(voiceRoomOpenControllerProvider),
             onOpenChat: () =>
                 widget.onOpenChat?.call(detail.community.communityId),
             onOpenVoiceRoom: () =>
                 widget.onOpenVoiceRoom?.call(detail.community.communityId),
+            onCreateVoiceRoom: () => unawaited(_createVoiceRoom(detail)),
           ),
           const LoopLabel('在线'),
           CommunityOnlineCountCard(fact: detail.onlineCount),
@@ -250,6 +253,45 @@ class _CommunityProfileScreenState
       message: communityFailureReason(failure),
       kind: LoopToastKind.err,
     );
+  }
+
+  /// Opens a room for this community. The button exists only for a viewer the
+  /// server reports as owner or admin, but the admission is still the
+  /// server's: this states what came back and never claims a room that was
+  /// not confirmed.
+  Future<void> _createVoiceRoom(CommunityDetail detail) async {
+    final confirmed = await confirmCommunityAction(
+      context,
+      title: '开启语音房？',
+      body:
+          '房间会立刻对社区成员可见，任何成员都能进来收听。你是主持人，'
+          '邀请发言、全体静音和结束房间都由你或其他管理员操作；麦克风默认关闭。',
+      confirmLabel: '开启',
+      sheetKey: 'community-open-voice-room-sheet',
+    );
+    if (!confirmed || !mounted) return;
+    final failure = await ref
+        .read(voiceRoomOpenControllerProvider.notifier)
+        .openRoom(detail.community.communityId);
+    if (!mounted) return;
+    if (failure == null) {
+      LoopToast.show(context, message: '语音房已开启');
+      unawaited(ref.read(communityProfileControllerProvider.notifier).reload());
+      widget.onOpenVoiceRoom?.call(detail.community.communityId);
+      return;
+    }
+    LoopToast.show(
+      context,
+      message: failure == CommunityFailureKind.resourceConflict
+          // The shared copy for this code is about a taken slug; here the
+          // conflict is a room that is already live.
+          ? '这个社区已经有进行中的语音房，没有重复创建。请刷新后进入。'
+          : communityFailureReason(failure),
+      kind: LoopToastKind.err,
+    );
+    if (failure == CommunityFailureKind.resourceConflict) {
+      unawaited(ref.read(communityProfileControllerProvider.notifier).reload());
+    }
   }
 
   Future<void> _changeMembership(
@@ -505,13 +547,19 @@ class _BoundAssetCardState extends ConsumerState<_BoundAssetCard> {
 class _ChannelActions extends StatelessWidget {
   const _ChannelActions({
     required this.detail,
+    required this.opening,
     required this.onOpenChat,
     required this.onOpenVoiceRoom,
+    required this.onCreateVoiceRoom,
   });
 
   final CommunityDetail detail;
+
+  /// An open command is in flight, so the button must not start a second one.
+  final bool opening;
   final VoidCallback onOpenChat;
   final VoidCallback onOpenVoiceRoom;
+  final VoidCallback onCreateVoiceRoom;
 
   @override
   Widget build(BuildContext context) {
@@ -541,11 +589,26 @@ class _ChannelActions extends StatelessWidget {
               subtitle: voice.isLive
                   ? '当前有进行中的语音房'
                   : communicationUnavailableReason(voice.reasonCode),
+              trailing: voice.isLive ? '进入' : null,
               position: LoopRowPosition.last,
               onTap: voice.isLive ? onOpenVoiceRoom : null,
             ),
           ],
         ),
+        // Only an owner or an admin may open a room, and only when none is
+        // live. A member never sees the button; the server refuses it anyway.
+        if (detail.viewer.mayOpenVoiceRoom && !voice.isLive)
+          LoopButtonPair(
+            children: <Widget>[
+              LoopButton(
+                key: const ValueKey<String>(
+                  'community-profile-create-voice-room',
+                ),
+                label: '开启语音房',
+                onPressed: opening ? null : onCreateVoiceRoom,
+              ),
+            ],
+          ),
       ],
     );
   }

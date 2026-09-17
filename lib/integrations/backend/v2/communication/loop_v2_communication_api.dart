@@ -39,6 +39,15 @@ abstract interface class LoopV2CommunicationApi {
     required String communityId,
   });
 
+  /// Opens a community voice room. Owner or admin only; the Stream call is
+  /// created by the server, never by the client.
+  Future<VoiceRoomSnapshot> createVoiceRoom({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required String communityId,
+  });
+
   Future<VoiceRoomSnapshot> getVoiceRoom({
     required String accessToken,
     required String clientVersion,
@@ -261,6 +270,39 @@ final class DioLoopV2CommunicationApi implements LoopV2CommunicationApi {
       return current;
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(error, allowedCodes: readErrors);
+    }
+  }
+
+  @override
+  Future<VoiceRoomSnapshot> createVoiceRoom({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required String communityId,
+  }) async {
+    final id = _requireId(communityId);
+    try {
+      final response = await _dio.post<Object?>(
+        '$communitiesPath/$id/voice-rooms',
+        options: LoopV2ModuleRequest.writeOptions(
+          accessToken,
+          clientVersion,
+          idempotencyKey,
+        ),
+      );
+      // The room resource is created, so the only success is `201`.
+      LoopV2Contract.validateSuccess(response, statusCode: 201);
+      final root = LoopV2Contract.strictMap(
+        response.data,
+        LoopV2CommunicationCodec.snapshotKeys,
+      );
+      final snapshot = LoopV2CommunicationCodec.snapshot(root);
+      // A room for another community would put the viewer in a room the page
+      // never asked for.
+      if (snapshot.room.communityId != id) LoopV2ProjectionCodec.invalid();
+      return snapshot;
+    } on DioException catch (error) {
+      throw LoopV2Contract.mapDioFailure(error, allowedCodes: writeErrors);
     }
   }
 

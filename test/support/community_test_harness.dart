@@ -145,6 +145,12 @@ const testChatSyncing = CommunityChatSection(
   reasonCode: 'COMMUNITY_CHANNEL_MEMBER_SYNCING',
 );
 
+const testVoiceLive = CommunityVoiceSection(
+  status: CommunityVoiceStatus.available,
+  currentRoomId: '5cc85f64-5717-4562-b3fc-2c963f66afc8',
+  reasonCode: null,
+);
+
 const testVoiceUnavailable = CommunityVoiceSection(
   status: CommunityVoiceStatus.unavailable,
   currentRoomId: null,

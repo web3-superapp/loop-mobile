@@ -102,6 +102,17 @@ final class DioLoopV2CommunicationGateway
   );
 
   @override
+  Future<VoiceRoomSnapshot> createRoom(String communityId) => _write(
+    'voice-room-open:$communityId',
+    (accessToken, key) => _api.createVoiceRoom(
+      accessToken: accessToken,
+      clientVersion: _clientVersion,
+      idempotencyKey: key,
+      communityId: communityId,
+    ),
+  );
+
+  @override
   Future<VoiceRoomSnapshot> load(String voiceRoomId) => _read(
     (accessToken) => _api.getVoiceRoom(
       accessToken: accessToken,

@@ -151,6 +151,14 @@ final class MemoryVoiceRoomGateway implements VoiceRoomGateway {
       VoiceRoomCurrent(snapshot: _snapshot, reasonCode: null);
 
   @override
+  Future<VoiceRoomSnapshot> createRoom(String communityId) async {
+    // The Preview keeps one labelled room. Opening it only clears the ended
+    // marker; no provider call is created.
+    _ended = false;
+    return _snapshot;
+  }
+
+  @override
   Future<VoiceRoomSnapshot> load(String voiceRoomId) async => _snapshot;
 
   @override

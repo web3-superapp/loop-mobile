@@ -159,6 +159,8 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
     this.handRaises = const <VoiceRoomHandRaiseEntry>[],
     this.failure,
     this.notLiveReasonCode,
+    this.createFailure,
+    this.createdSnapshot,
   });
 
   @override
@@ -171,6 +173,11 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
 
   /// Never completes, so the page keeps its loading state.
   bool pending = false;
+
+  /// How `createRoom` answers, when it must differ from the read answer: a
+  /// community with no live room can still refuse to open one.
+  CommunityFailureKind? createFailure;
+  VoiceRoomSnapshot? createdSnapshot;
 
   final List<String> commands = <String>[];
 
@@ -204,6 +211,24 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
         reasonCode: snapshot == null ? notLiveReasonCode : null,
       ),
     );
+  }
+
+  @override
+  Future<VoiceRoomSnapshot> createRoom(String communityId) {
+    commands.add('create:$communityId');
+    if (pending) return Completer<VoiceRoomSnapshot>().future;
+    final kind = createFailure ?? failure;
+    if (kind != null) {
+      return Future<VoiceRoomSnapshot>.error(CommunityGatewayException(kind));
+    }
+    final value = createdSnapshot ?? snapshot;
+    if (value == null) {
+      return Future<VoiceRoomSnapshot>.error(
+        const CommunityGatewayException(CommunityFailureKind.notFound),
+      );
+    }
+    snapshot = value;
+    return Future<VoiceRoomSnapshot>.value(value);
   }
 
   @override
