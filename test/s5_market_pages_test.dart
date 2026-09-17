@@ -226,7 +226,14 @@ void main() {
         tester,
         find.byKey(const ValueKey<String>('token-swap-unavailable')),
       );
-      expect(find.textContaining('兑换还没有开放'), findsOneWidget);
+      // One closed gate, one sentence: the wallet's funds row, the swap page
+      // and this card all print what the capability document published,
+      // instead of three names for the same switch.
+      expect(
+        find.textContaining(loopReasonCodeText('BSC_WRITES_DISABLED')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('兑换还没有开放'), findsNothing);
     });
 
     testWidgets(

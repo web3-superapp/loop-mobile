@@ -168,6 +168,13 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
       });
     }
 
+    // Why 兑换 cannot be used has one answer, and it is the gate the wallet's
+    // funds row and the swap page both read. Without it this page fell back to
+    // a sentence of its own and the same closed switch got a third name.
+    final swapGate = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.privySwap),
+    );
+
     return LoopDashboardPage(
       key: ValueKey<String>('token-screen-$assetId'),
       onRefresh: ref
@@ -368,9 +375,16 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           else
             LoopUnavailableCard(
               key: const ValueKey<String>('token-swap-unavailable'),
-              label: '买入 / 卖出入口未开放',
-              reasonCode:
-                  detail.capability.reasonCode ?? 'SWAP_MODULE_NOT_DELIVERED',
+              label: '兑换入口当前不可用',
+              // A closed gate is the whole app's answer and outranks this
+              // asset's own: while it is shut, every surface says the one
+              // sentence it publishes. Only once it opens can this asset have
+              // a reason of its own.
+              reasonCode: swapGate.isAvailable
+                  ? (detail.capability.reasonCode ??
+                        'SWAP_MODULE_NOT_DELIVERED')
+                  : (swapGate.reasonCode ??
+                        'WALLET_INTENT_RUNTIME_UNAVAILABLE'),
             ),
         ],
       ],
