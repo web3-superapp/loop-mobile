@@ -24,6 +24,16 @@ const List<SearchDomain> searchDomainOrder = <SearchDomain>[
   SearchDomain.dapps,
 ];
 
+/// What the one global search field says it searches.
+///
+/// It used to say 「搜索社区或用户」 over five chips — assets, communities,
+/// users, Launch and DApps — so three of the five categories were invisible
+/// until you scrolled the chip row. The label is built from the same order the
+/// chips are, so the two cannot drift apart.
+final String searchFieldLabel =
+    '搜索'
+    '${searchDomainOrder.map((domain) => domain.label).join('、')}';
+
 /// Prefix bounds enforced by the server. A shorter query is not sent, so the
 /// public search quota is never spent on a request that would be rejected.
 const int searchMinimumRunes = 2;

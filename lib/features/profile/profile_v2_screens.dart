@@ -1331,7 +1331,11 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
           LoopTogglePreferenceRow(
             key: const ValueKey<String>('privacy-discoverable'),
             title: '显示 LOOP ID',
-            subtitle: '别人可以通过 ID 找到你',
+            // The subtitle described the switch turned on while the row read
+            // 已关闭 beside it, so the state and the sentence disagreed.
+            subtitle: draft.discoverable
+                ? '别人可以通过 LOOP ID 搜到你'
+                : '别人无法通过 LOOP ID 搜到你，打开后才可以',
             value: draft.discoverable,
             position: LoopRowPosition.last,
             onChanged: state.canEdit

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/community/search_controller.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
@@ -428,9 +429,9 @@ class _CommunitySearchPanelState extends State<_CommunitySearchPanel> {
             autofocus: true,
             textInputAction: TextInputAction.search,
             onSubmitted: widget.onSubmit,
-            decoration: const InputDecoration(
-              labelText: '搜索社区或用户',
-              hintText: '输入至少 2 个字符',
+            decoration: InputDecoration(
+              labelText: searchFieldLabel,
+              hintText: '输入至少 $searchMinimumRunes 个字符',
             ),
           ),
           const SizedBox(height: 12),

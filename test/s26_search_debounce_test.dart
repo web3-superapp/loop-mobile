@@ -35,6 +35,32 @@ SearchPage _page(SearchDomain domain) => SearchPage(
 /// way the member directory's search is.
 void main() {
   group('search · the query field', () {
+    testWidgets('the field names every category it searches', (tester) async {
+      await pumpCommunityPage(
+        tester,
+        const GlobalSearchScreen(),
+        search: FakeSearchGateway(),
+      );
+
+      // Five chips, and the label used to name two of them.
+      final field = tester.widget<TextField>(
+        find.byKey(const ValueKey<String>('search-field')),
+      );
+      for (final domain in loop_search.searchDomainOrder) {
+        expect(
+          field.decoration?.labelText,
+          contains(domain.label),
+          reason: domain.wireName,
+        );
+      }
+      expect(field.decoration?.labelText, isNot(contains('搜索社区或用户')));
+
+      // And it sends people to the switch by the name the privacy centre
+      // gives it.
+      expect(find.textContaining('显示 LOOP ID'), findsOneWidget);
+      expect(find.textContaining('可被发现'), findsNothing);
+    });
+
     testWidgets('a keystroke shows the read it started', (tester) async {
       final gateway = FakeSearchGateway(
         pages: <SearchDomain, SearchPage>{

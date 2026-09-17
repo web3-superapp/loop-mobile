@@ -171,6 +171,30 @@ void main() {
     expect(_saveButton(tester).onPressed, isNull);
   });
 
+  testWidgets('the LOOP ID row describes the state it is actually in', (
+    tester,
+  ) async {
+    await _pumpPrivacy(tester, gateway: _previewGateway());
+
+    // Off: the subtitle used to describe the switch turned on while the row
+    // read 已关闭 right beside it.
+    expect(_toggle(tester, 'privacy-discoverable').value, isFalse);
+    expect(
+      _toggle(tester, 'privacy-discoverable').subtitle,
+      '别人无法通过 LOOP ID 搜到你，打开后才可以',
+    );
+
+    await _tap(
+      tester,
+      find.byKey(const ValueKey<String>('privacy-discoverable')),
+    );
+
+    expect(
+      _toggle(tester, 'privacy-discoverable').subtitle,
+      '别人可以通过 LOOP ID 搜到你',
+    );
+  });
+
   testWidgets('version conflict preserves every draft field until reload', (
     tester,
   ) async {

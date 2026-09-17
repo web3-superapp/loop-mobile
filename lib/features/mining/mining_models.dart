@@ -896,6 +896,6 @@ String miningRuleKeyText(String key) => switch (key) {
   'mining.rules.priceGuard.liquidityCap' => 'Liquidity Cap：低流动性资产限制可计入价值。',
   'mining.rank.anonymousMember' => '匿名成员',
   'mining.rank.display.aliasOrAnonymous' =>
-    '排行条目只在该账号可被发现且未开启匿名模式时显示别名，否则显示「匿名成员」。',
+    '排行条目只在该账号开启「显示 LOOP ID」且未开启匿名模式时显示别名，否则显示「匿名成员」。',
   _ => 'LOOP 定义的规则项。',
 };

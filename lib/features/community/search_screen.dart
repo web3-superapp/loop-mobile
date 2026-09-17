@@ -110,7 +110,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
               onChanged: controller.type,
               onSubmitted: (value) => unawaited(controller.submit(value)),
               decoration: InputDecoration(
-                labelText: '搜索社区或用户',
+                labelText: searchFieldLabel,
                 hintText: '至少 $searchMinimumRunes 个字符',
                 suffixIcon: IconButton(
                   key: const ValueKey<String>('search-submit'),
@@ -200,9 +200,12 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
             key: ValueKey<String>('search-scope-notice'),
             icon: 'info',
             title: '搜索范围',
+            // The switch is called 「显示 LOOP ID」 in the privacy centre, and
+            // this sentence used to send people looking for 「可被发现」,
+            // which is not a name anything on screen carries.
             body:
-                '聊天内容不进入本搜索。用户结果只包含已开启"可被发现"的账号；'
-                '如果别人搜不到你，请在隐私设置里打开该开关。',
+                '聊天内容不进入本搜索。用户结果只包含已开启"显示 LOOP ID"的账号；'
+                '如果别人搜不到你，请在隐私中心打开这一项。',
             margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
           ),
         ],
