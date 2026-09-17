@@ -1197,6 +1197,56 @@ void main() {
       expect(find.text('UNAVAILABLE'), findsNothing);
     });
 
+    testWidgets('two anonymous entries with the same power both render', (
+      tester,
+    ) async {
+      // Both rows are anonymous and both have zero power, so 「power + name」
+      // was one key for two siblings.
+      await pumpS7Page(
+        tester,
+        const MiningRankScreen(),
+        mining: FakeMiningGateway(
+          rank: S7Answer<MiningRank>(
+            value: s7MiningRank(
+              scope: MiningRankScope.users,
+              ranking: s7MiningUserBoard(
+                items: const <MiningRankUserRow>[
+                  MiningRankUserRow(
+                    position: null,
+                    power: '0',
+                    display: MiningRankAnonymous('mining.rank.anonymousMember'),
+                    isSelf: false,
+                  ),
+                  MiningRankUserRow(
+                    position: null,
+                    power: '0',
+                    display: MiningRankAnonymous('mining.rank.anonymousMember'),
+                    isSelf: true,
+                  ),
+                ],
+                participants: 2,
+              ),
+              myPosition: const MiningRankPositionUnavailable(
+                'MINING_RANK_NOT_RANKED',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('用户榜'));
+      await tester.pumpAndSettle();
+
+      final unranked = find.byKey(
+        const ValueKey<String>('mining-rank-unranked-items'),
+      );
+      await scrollToS7Section(tester, unranked);
+      expect(
+        find.descendant(of: unranked, matching: find.text('匿名成员')),
+        findsNWidgets(2),
+      );
+    });
+
     testWidgets('a mixed board keeps places and non-places apart', (
       tester,
     ) async {

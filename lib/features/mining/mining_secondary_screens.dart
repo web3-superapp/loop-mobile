@@ -768,7 +768,7 @@ class _RankingBlock extends StatelessWidget {
     required int participants,
     required List<T> ranked,
     required List<T> unranked,
-    required LoopRecordRow Function(T, LoopRowPosition) row,
+    required LoopRecordRow Function(T, int, LoopRowPosition) row,
   }) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: <Widget>[
@@ -784,7 +784,11 @@ class _RankingBlock extends StatelessWidget {
           key: const ValueKey<String>('mining-rank-items'),
           rows: <LoopRecordRow>[
             for (var index = 0; index < ranked.length; index += 1)
-              row(ranked[index], launchRowPosition(index, ranked.length)),
+              row(
+                ranked[index],
+                index,
+                launchRowPosition(index, ranked.length),
+              ),
           ],
         ),
       if (unranked.isNotEmpty) ...<Widget>[
@@ -793,7 +797,11 @@ class _RankingBlock extends StatelessWidget {
           key: const ValueKey<String>('mining-rank-unranked-items'),
           rows: <LoopRecordRow>[
             for (var index = 0; index < unranked.length; index += 1)
-              row(unranked[index], launchRowPosition(index, unranked.length)),
+              row(
+                unranked[index],
+                ranked.length + index,
+                launchRowPosition(index, unranked.length),
+              ),
           ],
         ),
       ],
@@ -823,13 +831,21 @@ class _RankingBlock extends StatelessWidget {
 /// board simply has no place for it.
 const String _miningUnrankedLabel = '未上榜';
 
-LoopRecordRow _userRow(MiningRankUserRow row, LoopRowPosition position) {
+LoopRecordRow _userRow(
+  MiningRankUserRow row,
+  int index,
+  LoopRowPosition position,
+) {
   final name = switch (row.display) {
     MiningRankAlias(:final alias) => alias,
     MiningRankAnonymous(:final labelKey) => miningRuleKeyText(labelKey),
   };
   return LoopRecordRow(
-    key: ValueKey<String>('mining-rank-user-${row.power}-$name'),
+    // The board may carry several anonymous entries with the same power, and
+    // 「power + name」 was the same string for each of them: two siblings with
+    // one key is an assertion, not a board. The row's place in the answer is
+    // what distinguishes them.
+    key: ValueKey<String>('mining-rank-user-$index-${row.power}-$name'),
     title: name,
     subtitle: row.isRanked
         ? '第 ${row.position} 名'
@@ -845,6 +861,7 @@ LoopRecordRow _userRow(MiningRankUserRow row, LoopRowPosition position) {
 
 LoopRecordRow _communityRow(
   MiningRankCommunityRow row,
+  int index,
   LoopRowPosition position,
 ) => LoopRecordRow(
   key: ValueKey<String>('mining-rank-community-${row.community.communityId}'),
