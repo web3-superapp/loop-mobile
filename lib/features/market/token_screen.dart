@@ -645,7 +645,12 @@ class _CandleBody extends StatelessWidget {
             if (marker != null) ...<Widget>[
               LoopBadge(
                 marker,
-                kind: block.isDerived ? LoopBadgeKind.mute : LoopBadgeKind.down,
+                key: const ValueKey<String>('candles-quality-marker'),
+                // Only a stale series is a warning; `derived` and `proxied`
+                // are honest descriptions of what is being charted.
+                kind: block.quality == LoopFactQuality.stale
+                    ? LoopBadgeKind.down
+                    : LoopBadgeKind.mute,
               ),
               const SizedBox(width: 8),
             ],
@@ -659,7 +664,10 @@ class _CandleBody extends StatelessWidget {
             Expanded(
               child: Text(
                 <String>[
-                  if (block.isDerived) marketCandleLabelText(block.labelKey),
+                  // A proxied series may also be an on-chain aggregate, so
+                  // the label is shown whenever the server sends one.
+                  if (block.hasSourceLabel)
+                    marketCandleLabelText(block.labelKey),
                   '来源 ${loopFactSourceLabel(block.source)}',
                   '观察于 ${loopRelativeTime(block.fetchedAt)}',
                   '池 ${loopTruncatedAddress(block.pool.address)}',

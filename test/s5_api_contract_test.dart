@@ -740,6 +740,130 @@ void main() {
       expect(candles.items.first.open, Decimal.parse('747.12'));
     });
 
+    test('proxied candles carry the asset whose pool was charted', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio(
+          (options, handler) => handler.resolve(
+            s5Response(
+              options,
+              // Native BNB has no pool of its own: the server charts WBNB and
+              // says so (decision 0050).
+              s5CandlesBody(
+                assetId: s5NativeAssetId,
+                quality: 'proxied',
+                source: 'geckoterminal',
+                labelKey: null,
+                proxyAsset: s5WbnbAssetId,
+                priceUnit: 'USD per WBNB',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final series = await api.getCandles(
+        accessToken: _accessToken,
+        clientVersion: s5ClientVersion,
+        assetId: s5NativeAssetId,
+        interval: LoopCandleInterval.oneHour,
+      );
+
+      final candles = series.candles as MarketCandlesAvailable;
+      expect(candles.isProxied, isTrue);
+      expect(candles.proxyAsset, s5WbnbAssetId);
+      expect(candles.hasSourceLabel, isFalse);
+      expect(candles.priceUnit, 'USD per WBNB');
+    });
+
+    test('a proxied series may also be an on-chain aggregate', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio(
+          (options, handler) => handler.resolve(
+            s5Response(
+              options,
+              s5CandlesBody(
+                assetId: s5NativeAssetId,
+                quality: 'proxied',
+                proxyAsset: s5WbnbAssetId,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final series = await api.getCandles(
+        accessToken: _accessToken,
+        clientVersion: s5ClientVersion,
+        assetId: s5NativeAssetId,
+        interval: LoopCandleInterval.oneHour,
+      );
+
+      final candles = series.candles as MarketCandlesAvailable;
+      expect(candles.isProxied, isTrue);
+      expect(candles.hasSourceLabel, isTrue);
+      expect(candles.labelKey, 'market.candles.onChainSwapAggregate');
+    });
+
+    test('proxied candles without a proxy asset are rejected', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio(
+          (options, handler) => handler.resolve(
+            s5Response(options, s5CandlesBody(quality: 'proxied')),
+          ),
+        ),
+      );
+
+      await expectLater(
+        api.getCandles(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+          assetId: s5WbnbAssetId,
+          interval: LoopCandleInterval.oneHour,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a non-proxied series naming a proxy asset is rejected', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio(
+          (options, handler) => handler.resolve(
+            s5Response(options, s5CandlesBody(proxyAsset: s5WbnbAssetId)),
+          ),
+        ),
+      );
+
+      await expectLater(
+        api.getCandles(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+          assetId: s5WbnbAssetId,
+          interval: LoopCandleInterval.oneHour,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a candle block without the proxyAsset key is rejected', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio((options, handler) {
+          final body = s5CandlesBody();
+          (body['candles']! as Map<String, Object?>).remove('proxyAsset');
+          handler.resolve(s5Response(options, body));
+        }),
+      );
+
+      await expectLater(
+        api.getCandles(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+          assetId: s5WbnbAssetId,
+          interval: LoopCandleInterval.oneHour,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
     test('an open bucket before the last one is rejected', () async {
       final api = DioLoopV2MarketApi(
         s5Dio(

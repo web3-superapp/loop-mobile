@@ -256,6 +256,34 @@ void main() {
       },
     );
 
+    testWidgets(
+      'a proxied series names the asset it is priced in, and still labels an '
+      'aggregate',
+      (tester) async {
+        await pumpS5Page(
+          tester,
+          const TokenDetailScreen(assetId: s5NativeAssetId),
+          market: FakeMarketReadGateway(
+            candles: S5Answer<MarketCandleSeries>(
+              value: s5Series(
+                assetId: s5NativeAssetId,
+                quality: LoopFactQuality.proxied,
+                proxyAsset: s5WbnbAssetId,
+                priceUnit: 'USD per WBNB',
+              ),
+            ),
+          ),
+        );
+
+        // Same chip as the wallet page's proxied valuation.
+        expect(find.text('以 WBNB 计价'), findsOneWidget);
+        // The aggregate note is not swallowed by the proxy note; it sits in
+        // the provenance line under the chart.
+        expect(find.textContaining('按成交价折算'), findsOneWidget);
+        expect(find.text('USD per WBNB'), findsOneWidget);
+      },
+    );
+
     testWidgets('an unavailable candle block states its reason', (
       tester,
     ) async {

@@ -485,25 +485,31 @@ Map<String, Object?> s5Candle({
 };
 
 Map<String, Object?> s5CandlesBody({
+  String assetId = s5WbnbAssetId,
   String interval = '1h',
   String quality = 'derived',
+  String source = 'loop_indexer',
+  Object? labelKey = 'market.candles.onChainSwapAggregate',
+  Object? proxyAsset,
+  String priceUnit = 'USDT per WBNB',
   List<Object?>? items,
 }) => <String, Object?>{
-  'assetId': s5WbnbAssetId,
+  'assetId': assetId,
   'interval': interval,
   'candles': <String, Object?>{
     'status': 'available',
     'quality': quality,
-    'source': 'loop_indexer',
+    'source': source,
     'fetchedAt': '2026-09-08T07:30:41.000Z',
-    'labelKey': 'market.candles.onChainSwapAggregate',
+    'labelKey': labelKey,
+    'proxyAsset': proxyAsset,
     'pool': <String, Object?>{
       'address': s5PoolAddress,
       'protocol': 'pancakeswap_v3',
       'quoteAssetId': s5UsdtAssetId,
       'quoteSymbol': 'USDT',
     },
-    'priceUnit': 'USDT per WBNB',
+    'priceUnit': priceUnit,
     'items':
         items ??
         <Object?>[
@@ -879,23 +885,28 @@ LoopCandle s5ModelCandle({
 );
 
 MarketCandleSeries s5Series({
+  String assetId = s5WbnbAssetId,
   LoopFactQuality quality = LoopFactQuality.derived,
+  String? labelKey = 'market.candles.onChainSwapAggregate',
+  String? proxyAsset,
+  String priceUnit = 'USDT per WBNB',
   List<LoopCandle>? items,
 }) => MarketCandleSeries(
-  assetId: s5WbnbAssetId,
+  assetId: assetId,
   interval: LoopCandleInterval.oneHour,
   candles: MarketCandlesAvailable(
     quality: quality,
     source: LoopFactSource.loopIndexer,
     fetchedAt: DateTime.utc(2026, 9, 8, 7, 30),
-    labelKey: 'market.candles.onChainSwapAggregate',
+    labelKey: labelKey,
+    proxyAsset: proxyAsset,
     pool: const LoopCandlePool(
       address: s5PoolAddress,
       protocol: 'pancakeswap_v3',
       quoteAssetId: s5UsdtAssetId,
       quoteSymbol: 'USDT',
     ),
-    priceUnit: 'USDT per WBNB',
+    priceUnit: priceUnit,
     items:
         items ??
         <LoopCandle>[s5ModelCandle(), s5ModelCandle(hour: 7, isOpen: true)],

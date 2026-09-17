@@ -359,6 +359,7 @@ final class MarketCandlesAvailable extends MarketCandleBlock {
     required this.source,
     required this.fetchedAt,
     required this.labelKey,
+    required this.proxyAsset,
     required this.pool,
     required this.priceUnit,
     required List<LoopCandle> items,
@@ -366,15 +367,29 @@ final class MarketCandlesAvailable extends MarketCandleBlock {
 
   /// `derived` means LOOP aggregated on-chain swaps; the [labelKey] copy must
   /// then be rendered and the price unit is the pool's other token, not USD.
+  /// `proxied` means the native asset was charted through the wrapped token
+  /// named in [proxyAsset]; [labelKey] still says whether those same candles
+  /// are provider OHLCV or an on-chain aggregate, so both notes can apply.
   final LoopFactQuality quality;
   final LoopFactSource source;
   final DateTime fetchedAt;
   final String? labelKey;
+
+  /// The asset whose pool produced these candles. Non-null exactly when
+  /// [quality] is `proxied`.
+  final String? proxyAsset;
   final LoopCandlePool pool;
   final String priceUnit;
   final List<LoopCandle> items;
 
   bool get isDerived => quality == LoopFactQuality.derived;
+
+  /// The candles belong to a different asset than the one on screen, so the
+  /// page must say what it is pricing.
+  bool get isProxied => quality == LoopFactQuality.proxied;
+
+  /// The on-chain aggregate note, which a proxied series may also carry.
+  bool get hasSourceLabel => labelKey != null;
 }
 
 final class MarketCandlesUnavailable extends MarketCandleBlock {

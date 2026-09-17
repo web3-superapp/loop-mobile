@@ -604,6 +604,7 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       'source',
       'fetchedAt',
       'labelKey',
+      'proxyAsset',
       'pool',
       'priceUnit',
       'items',
@@ -614,7 +615,20 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
     final quality = LoopFactQuality.tryParse(rawQuality);
     if (quality != LoopFactQuality.fresh &&
         quality != LoopFactQuality.stale &&
-        quality != LoopFactQuality.derived) {
+        quality != LoopFactQuality.derived &&
+        quality != LoopFactQuality.proxied) {
+      LoopV2ChainCodec.invalid();
+    }
+    final proxyAsset = LoopV2ChainCodec.optionalString(
+      map,
+      'proxyAsset',
+      pattern: LoopV2ChainCodec.assetIdPattern,
+      maxLength: 64,
+    );
+    // Proxied candles must name the asset whose pool produced them, and only
+    // proxied candles may name one: otherwise the page could not say which
+    // asset the chart actually prices.
+    if ((quality == LoopFactQuality.proxied) != (proxyAsset != null)) {
       LoopV2ChainCodec.invalid();
     }
     final pool = LoopV2Contract.strictMap(map['pool'], const <String>{
@@ -698,6 +712,7 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
         pattern: LoopV2ChainCodec.displayTextPattern,
         maxLength: 64,
       ),
+      proxyAsset: proxyAsset,
       pool: LoopCandlePool(
         address: LoopV2ChainCodec.requireString(
           pool,
