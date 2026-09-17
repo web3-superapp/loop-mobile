@@ -751,7 +751,7 @@ Map<String, Object?> _overviewBody({String chainId = loopPrimaryChainId}) =>
       },
       'catalog': <String, Object?>{
         'configVersion': 'launchCatalogV1',
-        'source': 'loop_db',
+        'source': 'loop',
         'observedAt': '2026-09-09T06:30:00.000Z',
       },
       'contractVersion': '2.0',

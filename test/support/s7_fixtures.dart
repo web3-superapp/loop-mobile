@@ -79,7 +79,7 @@ LaunchOverview s7Overview({
   staking: const LaunchUnavailable(s7StakingPending),
   catalog: LaunchCatalogStamp(
     configVersion: 'launchCatalogV1',
-    source: 'loop_db',
+    source: 'loop',
     observedAt: DateTime.utc(2026, 9, 9, 6, 30),
   ),
 );
@@ -212,7 +212,7 @@ LaunchEconomy s7Economy() => LaunchEconomy(
   totalSupply: const LaunchUnavailable('LAUNCH_ECONOMY_CONTRACT_PENDING'),
   distributed: const LaunchUnavailable('LAUNCH_ECONOMY_CONTRACT_PENDING'),
   ecosystemTax: const LaunchUnavailable('LAUNCH_ECONOMY_CONTRACT_PENDING'),
-  source: 'loop_db',
+  source: 'loop',
   observedAt: DateTime.utc(2026, 9, 9, 6, 30),
 );
 

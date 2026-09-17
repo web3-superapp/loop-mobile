@@ -152,6 +152,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
           LaunchUnavailableCard(label: 'LOOP 质押', fact: overview.staking),
           LaunchSourceFooter(
             source: overview.catalog.source,
+            kind: LaunchSourceKind.catalog,
             observedAt: overview.catalog.observedAt,
           ),
           LoopRecordGroup(
@@ -159,7 +160,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('launch-open-economy'),
                 title: '生态经济面板',
-                subtitle: '只显示可从 LOOP 数据库证明的计数',
+                subtitle: '只显示 LOOP 账本可以证明的计数',
                 onTap: widget.onOpenEconomy,
               ),
             ],

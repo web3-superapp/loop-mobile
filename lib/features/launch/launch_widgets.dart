@@ -397,25 +397,45 @@ String launchTimestampLabel(DateTime observedAt) {
 /// The provenance footer every S7 catalogue block carries: the source and the
 /// observation time. The configuration version behind the block is a backend
 /// identifier and stays off the footer.
-/// The user-facing name of one catalogue source.
+/// Which of LOOP's own records a block was read from. The wire value is the
+/// same stable enum for both, so the reading the footer stands under is what
+/// names it.
+enum LaunchSourceKind {
+  /// The list of projects and launches LOOP keeps.
+  catalog('LOOP 目录'),
+
+  /// The counts LOOP's own ledger can prove.
+  ledger('LOOP 账本');
+
+  const LaunchSourceKind(this.label);
+
+  final String label;
+}
+
+/// The user-facing name of one source.
 ///
-/// The wire value is the server's own storage identifier, and 「来源 loop_db」
-/// put a database name on the first screen of Launch. A source the client can
-/// name is named; anything else prints as it arrived, because a source the
-/// client renamed by guessing would be worse than the raw word.
-String launchSourceLabel(String source) => switch (source) {
-  'loop_db' || 'database' => 'LOOP 数据库',
-  _ => source,
-};
+/// The wire value used to be the server's own storage identifier, and
+/// 「来源 loop_db」 put a database name on the first screen of Launch (D-17).
+/// It is now the stable enum `loop` (decision 0049), which this client maps to
+/// the record the block was read from. An unknown value is never printed: the
+/// codec refuses it long before here, and a raw identifier on screen is the
+/// defect this mapping closes.
+String launchSourceLabel(String source, LaunchSourceKind kind) =>
+    switch (source) {
+      'loop' => kind.label,
+      _ => 'LOOP',
+    };
 
 class LaunchSourceFooter extends StatelessWidget {
   const LaunchSourceFooter({
     required this.source,
+    required this.kind,
     required this.observedAt,
     super.key,
   });
 
   final String source;
+  final LaunchSourceKind kind;
   final DateTime observedAt;
 
   @override
@@ -424,7 +444,7 @@ class LaunchSourceFooter extends StatelessWidget {
       key: const ValueKey<String>('launch-source-footer'),
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
       child: Text(
-        '来源 ${launchSourceLabel(source)} · '
+        '来源 ${launchSourceLabel(source, kind)} · '
         '观察于 ${launchTimestampLabel(observedAt)}',
         style: LoopTypography.caption(11, color: LoopColors.text3),
       ),

@@ -40,6 +40,21 @@ void main() {
       expect(find.textContaining('个已登记项目'), findsNothing);
     });
 
+    testWidgets('the catalogue names the record it was read from', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const LaunchScreen(),
+        launch: FakeLaunchGateway(),
+      );
+
+      final footer = find.byKey(const ValueKey<String>('launch-source-footer'));
+      await scrollToS7Section(tester, footer);
+      expect(find.textContaining('来源 LOOP 目录'), findsOneWidget);
+      expect(find.textContaining('loop_db'), findsNothing);
+    });
+
     testWidgets('awaiting-schedule is its own segment, never "即将开始"', (
       tester,
     ) async {
@@ -535,6 +550,22 @@ void main() {
         expect(block, findsOneWidget, reason: label);
       }
       expect(find.textContaining('980,000'), findsNothing);
+    });
+
+    testWidgets('the ledger is named as a ledger, never as a database', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const LoopEconomyScreen(),
+        launch: FakeLaunchGateway(),
+      );
+
+      final footer = find.byKey(const ValueKey<String>('launch-source-footer'));
+      await scrollToS7Section(tester, footer);
+      expect(find.textContaining('来源 LOOP 账本'), findsOneWidget);
+      expect(find.textContaining('loop_db'), findsNothing);
+      expect(find.textContaining('数据库'), findsNothing);
     });
   });
 

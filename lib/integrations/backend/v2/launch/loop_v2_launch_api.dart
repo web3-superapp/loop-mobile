@@ -586,7 +586,7 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
             const <String>{'launchCatalogV1'},
           ),
           source: LoopV2S7Codec.requireEnum(catalog, 'source', const <String>{
-            'loop_db',
+            'loop',
           }),
           observedAt: LoopV2S7Codec.requireTimestamp(catalog, 'observedAt'),
         ),
@@ -873,7 +873,7 @@ final class DioLoopV2LaunchApi implements LoopV2LaunchApi {
         distributed: LoopV2S7Codec.unavailable(root['distributed']),
         ecosystemTax: LoopV2S7Codec.unavailable(root['ecosystemTax']),
         source: LoopV2S7Codec.requireEnum(root, 'source', const <String>{
-          'loop_db',
+          'loop',
         }),
         observedAt: LoopV2S7Codec.requireTimestamp(root, 'observedAt'),
       );

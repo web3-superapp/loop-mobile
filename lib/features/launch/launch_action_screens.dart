@@ -508,6 +508,7 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
           // footer omits the segment rather than restating an assumed one.
           LaunchSourceFooter(
             source: economy.source,
+            kind: LaunchSourceKind.ledger,
             observedAt: economy.observedAt,
           ),
           const SizedBox(height: 20),
