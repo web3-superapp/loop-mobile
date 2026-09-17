@@ -1116,11 +1116,20 @@ void main() {
       await tester.tap(find.text('用户榜'));
       await tester.pumpAndSettle();
 
-      final board = find.byKey(const ValueKey<String>('mining-rank-items'));
+      // Nothing was ranked, so the 榜单 group is not rendered at all: the two
+      // zero-power rows belong to their own 未上榜 group, never inside a list
+      // of places.
+      expect(
+        find.byKey(const ValueKey<String>('mining-rank-items')),
+        findsNothing,
+      );
+      final board = find.byKey(
+        const ValueKey<String>('mining-rank-unranked-items'),
+      );
       await scrollToS7Section(tester, board);
       expect(board, findsOneWidget);
-      // Two rows plus the hero, which says the same settled fact.
-      expect(find.textContaining('未上榜'), findsNWidgets(3));
+      // Two rows, the group label and the hero, which says the same fact.
+      expect(find.textContaining('未上榜'), findsNWidgets(4));
       // The position 0 is not a rank, and it is never printed as one.
       expect(find.textContaining('第 0 名'), findsNothing);
       // An account that is not discoverable is named by the label, not an id.
@@ -1151,8 +1160,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // The hero states the fact — settled, read, off the board — and its
-      // cause; it never claims a settlement is still owed.
-      expect(find.text('未上榜'), findsOneWidget);
+      // cause; it never claims a settlement is still owed. The second and
+      // third are the group label and its rows' own subtitle.
+      expect(find.text('未上榜'), findsNWidgets(2));
       expect(find.text('最近一次算力快照里你的算力为 0。'), findsOneWidget);
       expect(find.textContaining('等算力结算'), findsNothing);
       expect(find.textContaining('结算之后才有'), findsNothing);
@@ -1185,6 +1195,73 @@ void main() {
       );
       expect(find.textContaining('等算力结算'), findsNothing);
       expect(find.text('UNAVAILABLE'), findsNothing);
+    });
+
+    testWidgets('a mixed board keeps places and non-places apart', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningRankScreen(),
+        mining: FakeMiningGateway(
+          rank: S7Answer<MiningRank>(
+            value: s7MiningRank(
+              scope: MiningRankScope.users,
+              ranking: s7MiningUserBoard(
+                items: const <MiningRankUserRow>[
+                  MiningRankUserRow(
+                    position: 1,
+                    power: '3000',
+                    display: MiningRankAlias(
+                      alias: 'whale',
+                      publicProfileId: s7PublicProfileId,
+                    ),
+                    isSelf: false,
+                  ),
+                  MiningRankUserRow(
+                    position: null,
+                    power: '0',
+                    display: MiningRankAlias(
+                      alias: 'Voyager_09',
+                      publicProfileId: s7PublicProfileId,
+                    ),
+                    isSelf: false,
+                  ),
+                ],
+                participants: 2,
+              ),
+              myPosition: const MiningRankPositionSettled(
+                position: 1,
+                power: '3000',
+              ),
+              snapshot: s7MiningSnapshot(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('用户榜'));
+      await tester.pumpAndSettle();
+
+      // The place is in 榜单; the zero-power entry is under its own label and
+      // not between two numbered places.
+      final ranked = find.byKey(const ValueKey<String>('mining-rank-items'));
+      expect(
+        find.descendant(of: ranked, matching: find.text('whale')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: ranked, matching: find.text('Voyager_09')),
+        findsNothing,
+      );
+      final unranked = find.byKey(
+        const ValueKey<String>('mining-rank-unranked-items'),
+      );
+      await scrollToS7Section(tester, unranked);
+      expect(
+        find.descendant(of: unranked, matching: find.text('Voyager_09')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a ranked user board prints places and marks the reader', (
@@ -1255,7 +1332,9 @@ void main() {
         ),
       );
 
-      final board = find.byKey(const ValueKey<String>('mining-rank-items'));
+      final board = find.byKey(
+        const ValueKey<String>('mining-rank-unranked-items'),
+      );
       await scrollToS7Section(tester, board);
       expect(find.text('Builders Guild'), findsOneWidget);
       expect(find.text('权重 1.5'), findsOneWidget);

@@ -745,40 +745,58 @@ class _RankingBlock extends StatelessWidget {
       MiningRankingCommunities(:final items, :final participants)
           when items.isEmpty =>
         _emptyBoard(participants),
-      MiningRankingUsers(:final items, :final participants) => _board(
+      MiningRankingUsers(:final items, :final participants) => _split(
         participants: participants,
-        rows: <LoopRecordRow>[
-          for (var index = 0; index < items.length; index += 1)
-            _userRow(items[index], launchRowPosition(index, items.length)),
-        ],
+        ranked: items.where((item) => item.isRanked).toList(growable: false),
+        unranked: items.where((item) => !item.isRanked).toList(growable: false),
+        row: _userRow,
       ),
-      MiningRankingCommunities(:final items, :final participants) => _board(
+      MiningRankingCommunities(:final items, :final participants) => _split(
         participants: participants,
-        rows: <LoopRecordRow>[
-          for (var index = 0; index < items.length; index += 1)
-            _communityRow(items[index], launchRowPosition(index, items.length)),
-        ],
+        ranked: items.where((item) => item.isRanked).toList(growable: false),
+        unranked: items.where((item) => !item.isRanked).toList(growable: false),
+        row: _communityRow,
       ),
     };
   }
 
-  static Widget _emptyBoard(int participants) => LoopEmpty(
-    key: const ValueKey<String>('mining-rank-empty'),
-    icon: 'info',
-    message: '最近一次算力快照里没有可以上榜的条目',
-    reason: _participantsLine(participants),
-  );
-
-  static Widget _board({
+  /// An entry the settlement left off the board is not a place on it. The
+  /// 榜单 group used to carry both, so a row reading 未上榜 sat between two
+  /// numbered places; the two groups are now separated by a label that says
+  /// which is which.
+  static Widget _split<T>({
     required int participants,
-    required List<LoopRecordRow> rows,
+    required List<T> ranked,
+    required List<T> unranked,
+    required LoopRecordRow Function(T, LoopRowPosition) row,
   }) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: <Widget>[
-      LoopRecordGroup(
-        key: const ValueKey<String>('mining-rank-items'),
-        rows: rows,
-      ),
+      if (ranked.isEmpty)
+        const LoopEmpty(
+          key: ValueKey<String>('mining-rank-none-ranked'),
+          icon: 'info',
+          message: '这一次没有条目上榜',
+          reason: '下面的条目算力为 0，快照没有给它们名次。',
+        )
+      else
+        LoopRecordGroup(
+          key: const ValueKey<String>('mining-rank-items'),
+          rows: <LoopRecordRow>[
+            for (var index = 0; index < ranked.length; index += 1)
+              row(ranked[index], launchRowPosition(index, ranked.length)),
+          ],
+        ),
+      if (unranked.isNotEmpty) ...<Widget>[
+        const LoopLabel(_miningUnrankedLabel),
+        LoopRecordGroup(
+          key: const ValueKey<String>('mining-rank-unranked-items'),
+          rows: <LoopRecordRow>[
+            for (var index = 0; index < unranked.length; index += 1)
+              row(unranked[index], launchRowPosition(index, unranked.length)),
+          ],
+        ),
+      ],
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
         child: Text(
@@ -788,6 +806,13 @@ class _RankingBlock extends StatelessWidget {
         ),
       ),
     ],
+  );
+
+  static Widget _emptyBoard(int participants) => LoopEmpty(
+    key: const ValueKey<String>('mining-rank-empty'),
+    icon: 'info',
+    message: '最近一次算力快照里没有可以上榜的条目',
+    reason: _participantsLine(participants),
   );
 
   static String _participantsLine(int participants) =>
