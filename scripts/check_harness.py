@@ -6753,11 +6753,14 @@ def check_product_contract(root: Path) -> list[str]:
                 "AppLifecycleState.detached",
                 "_retireForBackground()",
                 "_resumeAfterBackgroundRetirement",
-                "Retry cleanup",
+                # The retry the reader is offered after a failed retirement.
+                # It is written in the product's own language like every other
+                # sentence on the surface.
+                "重试收尾",
             ),
             "lib/features/chat/calls/stream_foreground_call_view.dart": (
                 "required this.retirementStarted",
-                "Leave retry required",
+                "需要先重试退出",
             ),
         },
     )
@@ -7491,7 +7494,7 @@ def check_production_chat_audio_room_entry(root: Path) -> list[str]:
                 "AUDIO_ROOM_USER_ROLE_EVIDENCE_PENDING",
                 # The authorized room is handed straight to the reviewed lobby,
                 # so no scoped provider can resolve to the fail-closed default.
-                "StreamVoiceRoomPage(target: target)",
+                "StreamVoiceRoomPage(target: target, inline: true)",
                 "voiceroom-remove-speaker-unavailable",
             ),
             "test/stream_chat_inbox_page_test.dart": (

@@ -722,10 +722,10 @@ class VoiceRoomMinimizedBanner extends ConsumerWidget {
                           : '正在语音房 · ${session.role.label} · $count 人在线',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopTypography.body(
-                        13,
-                        color: LoopColors.ink,
-                      ).copyWith(fontWeight: FontWeight.w600),
+                      style: LoopTypography.withWeight(
+                        LoopTypography.body(13, color: LoopColors.ink),
+                        FontWeight.w600,
+                      ),
                     ),
                   ),
                   const SizedBox(width: LoopSpacing.tight),
