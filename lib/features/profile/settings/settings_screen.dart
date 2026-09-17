@@ -207,10 +207,13 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
         if (settings != null)
           LoopProvenanceFooter(
             key: const ValueKey<String>('settings-version'),
+            // The CAS version is how the client keeps two devices from
+            // overwriting each other; it is not a fact about the account, and
+            // 「尚未写入过」 named a row in a table rather than anything the
+            // reader did or did not do.
             text: settings.updatedAt == null
-                ? '账号设置尚未写入过（版本 ${settings.version}）'
-                : '版本 ${settings.version} · 更新于 '
-                      '${loopRelativeTime(settings.updatedAt!)}',
+                ? '当前使用默认设置'
+                : '更新于 ${loopRelativeTime(settings.updatedAt!)}',
           ),
         const LoopNotice(
           key: ValueKey<String>('settings-data-usage-absent'),

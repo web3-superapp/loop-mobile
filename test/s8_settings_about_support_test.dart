@@ -80,7 +80,11 @@ void main() {
       expect(tester.widget<LoopRecordRow>(currency).onTap, isNull);
       expect(find.text('简体中文'), findsOneWidget);
       expect(find.text('USD'), findsOneWidget);
-      expect(find.textContaining('账号设置尚未写入过（版本 0'), findsOneWidget);
+      // The CAS version and whether a row exists are write-path mechanics,
+      // not facts about the account.
+      expect(find.text('当前使用默认设置'), findsOneWidget);
+      expect(find.textContaining('版本 0'), findsNothing);
+      expect(find.textContaining('尚未写入过'), findsNothing);
     });
 
     testWidgets('sign out is offered only when the composition provides it', (

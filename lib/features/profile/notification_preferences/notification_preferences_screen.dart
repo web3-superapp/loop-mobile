@@ -148,10 +148,10 @@ class _NotificationPreferencesScreenState
             ..._sectionWidgets(section, resource, state, controller),
           LoopProvenanceFooter(
             key: const ValueKey<String>('notification-preferences-version'),
+            // The CAS version belongs to the write path, not to the page.
             text: resource.updatedAt == null
-                ? '尚未写入过设置（版本 ${resource.version}）'
-                : '版本 ${resource.version} · '
-                      '更新于 ${loopRelativeTime(resource.updatedAt!)}',
+                ? '当前使用默认设置'
+                : '更新于 ${loopRelativeTime(resource.updatedAt!)}',
           ),
           const LoopNotice(
             key: ValueKey<String>('notification-preferences-notice'),
