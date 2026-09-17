@@ -104,16 +104,19 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       archetype: LoopPageArchetype.action,
       title: '兑换',
       onBack: widget.onBack,
-      actions: <Widget>[
-        LoopIconButton(
-          key: const ValueKey<String>('swap-route-action'),
-          icon: 'chevron',
-          label: '报价与费用明细',
-          onPressed: quote == null
-              ? null
-              : () => _open('/wallet/swap/route', extra: quote),
-        ),
-      ],
+      // 报价与费用明细 is a page about one quote. Without a quote it has
+      // nothing to open, and the chevron that used to sit there took the tap,
+      // changed nothing, and pushed no route at all.
+      actions: quote == null
+          ? const <Widget>[]
+          : <Widget>[
+              LoopIconButton(
+                key: const ValueKey<String>('swap-route-action'),
+                icon: 'chevron',
+                label: '报价与费用明细',
+                onPressed: () => _open('/wallet/swap/route', extra: quote),
+              ),
+            ],
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('swap-folio'),
         kicker: 'SWAP QUOTE',

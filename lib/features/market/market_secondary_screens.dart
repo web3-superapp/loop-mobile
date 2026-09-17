@@ -356,6 +356,11 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
         selectedIndex: _segment,
         enabled: const <bool>[true, true, false],
         onSelected: (index) => setState(() => _segment = index),
+        blockedMessages: <String?>[
+          null,
+          null,
+          loopReasonCodeText('SMART_MONEY_RUNTIME_DEFERRED'),
+        ],
       ),
       if (_segment == 2)
         const LoopUnavailableCard(

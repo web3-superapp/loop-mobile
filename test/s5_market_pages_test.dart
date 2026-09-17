@@ -549,12 +549,16 @@ void main() {
         findsOneWidget,
       );
       await tester.tap(find.byKey(const ValueKey<String>('market-seg-聪明钱')));
-      await tester.pumpAndSettle();
-      // The disabled segment cannot become the selection.
+      await tester.pump();
+      // The disabled segment cannot become the selection, and it no longer
+      // takes the tap in silence: a chip that answers nothing at all reads as
+      // a control that is broken.
       expect(
         find.byKey(const ValueKey<String>('token-trades-smart-money')),
         findsNothing,
       );
+      expect(find.text('聪明钱追踪还没有开放。'), findsOneWidget);
+      await tester.pumpAndSettle();
     });
   });
 

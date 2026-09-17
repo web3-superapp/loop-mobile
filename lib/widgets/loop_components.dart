@@ -146,11 +146,12 @@ class LoopIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final enabled = onPressed != null;
     return Semantics(
       button: true,
       label: label,
       toggled: toggled,
-      enabled: onPressed != null,
+      enabled: enabled,
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
@@ -160,7 +161,15 @@ class LoopIconButton extends StatelessWidget {
             width: LoopTouch.minimum,
             height: LoopTouch.minimum,
             child: Center(
-              child: LoopIcon(icon, size: 19, color: color ?? LoopColors.chalk),
+              child: LoopIcon(
+                icon,
+                size: 19,
+                // A button with nothing behind it was drawn in full Chalk,
+                // exactly like one that works: the 兑换 chevron looked live,
+                // took the tap and changed nothing. A disabled control reads
+                // as disabled.
+                color: color ?? (enabled ? LoopColors.chalk : LoopColors.text3),
+              ),
             ),
           ),
         ),
@@ -2467,9 +2476,24 @@ class _LoopPageBlockState extends State<LoopPageBlock> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                const LoopBrandMark(
-                  kind: LoopBrandMarkKind.appIcon,
-                  height: 40,
+                // Not the launcher icon. A closed page that opened with the
+                // app's own icon in the middle of a black screen read as the
+                // splash screen still loading, which is the opposite of what
+                // this block says. A quiet badge carrying the state's own
+                // glyph says "this page is shut", and says it once.
+                Container(
+                  height: 56,
+                  width: 56,
+                  decoration: BoxDecoration(
+                    color: LoopColors.chalk.withValues(alpha: 0.05),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: LoopIcon(
+                    widget.recoverable ? 'offline' : 'lock',
+                    size: 22,
+                    color: LoopColors.text3,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(

@@ -5,6 +5,7 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// Builds one asset row for `market`.
 ///
@@ -98,12 +99,21 @@ class MarketSegmentBar extends StatelessWidget {
     required this.onSelected,
     required this.enabled,
     super.key,
+    this.blockedMessages = const <String?>[],
   });
 
   final List<String> labels;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
   final List<bool> enabled;
+
+  /// What a tap on a disabled chip says, per index.
+  ///
+  /// 聪明钱 sat greyed and took every tap in silence, which reads as a control
+  /// that is broken rather than one with no source behind it. A chip with a
+  /// message here keeps its disabled look and its disabled semantics, and
+  /// answers the finger with the reason the page already holds.
+  final List<String?> blockedMessages;
 
   @override
   Widget build(BuildContext context) {
@@ -121,6 +131,16 @@ class MarketSegmentBar extends StatelessWidget {
                   label: labels[index],
                   selected: index == selectedIndex && enabled[index],
                   onSelected: enabled[index] ? () => onSelected(index) : null,
+                  onBlocked:
+                      enabled[index] ||
+                          index >= blockedMessages.length ||
+                          blockedMessages[index] == null
+                      ? null
+                      : () => LoopToast.show(
+                          context,
+                          message: blockedMessages[index]!,
+                          kind: LoopToastKind.warn,
+                        ),
                 ),
               ),
               if (index != labels.length - 1) const SizedBox(width: 8),

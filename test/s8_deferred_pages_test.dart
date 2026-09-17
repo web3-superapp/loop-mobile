@@ -77,20 +77,11 @@ void main() {
         find.byKey(const ValueKey<String>('dapp-review-empty')),
         findsOneWidget,
       );
-      expect(
-        tester
-            .widget<LoopButton>(
-              find.byKey(const ValueKey<String>('dapp-connect')),
-            )
-            .onPressed,
-        isNull,
-      );
-      expect(
-        tester
-            .widget<LoopButton>(find.byKey(const ValueKey<String>('dapp-sign')))
-            .onPressed,
-        isNull,
-      );
+      // Neither action exists as a control: a dead 签名请求 painted as the
+      // page's primary action answered the tap with nothing at all.
+      expect(find.byKey(const ValueKey<String>('dapp-connect')), findsNothing);
+      expect(find.byKey(const ValueKey<String>('dapp-sign')), findsNothing);
+      expect(find.text('签名请求'), findsNothing);
       // Nothing was typed, so nothing was looked up: this is a vacancy, not a
       // read that failed.
       expect(
@@ -128,13 +119,10 @@ void main() {
       );
       expect(find.text('app.example.org'), findsWidgets);
       // Nothing here can be executed, even for a perfectly normal address.
+      expect(find.byKey(const ValueKey<String>('dapp-connect')), findsNothing);
       expect(
-        tester
-            .widget<LoopButton>(
-              find.byKey(const ValueKey<String>('dapp-connect')),
-            )
-            .onPressed,
-        isNull,
+        find.byKey(const ValueKey<String>('dapp-execution-unavailable')),
+        findsOneWidget,
       );
     });
 

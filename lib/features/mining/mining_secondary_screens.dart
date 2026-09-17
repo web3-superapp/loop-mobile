@@ -1270,6 +1270,24 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
         ? null
         : rules.pendingApproval.first;
     final approved = rules?.approved;
+    // 算力明细 is the read that carries a symbol for each asset id, and the
+    // rule keys are asset ids. Without it 「资产权重」 can only head its rows
+    // with a contract address, so this page asks for it too; the read is
+    // shared with 算力明细 and is skipped when it already has a value. A read
+    // that does not answer leaves the rows saying the id, never a made-up
+    // name.
+    final assetsState = ref.watch(miningAssetsControllerProvider);
+    if (!blocked && assetsState.phase == LaunchViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(ref.read(miningAssetsControllerProvider.notifier).load());
+        }
+      });
+    }
+    final assets = assetsState.value;
+    final symbols = assets == null
+        ? const <String, String>{}
+        : _assetSymbols(assets);
 
     return LoopDashboardPage(
       key: const ValueKey<String>('mining-rules-screen'),
@@ -1344,6 +1362,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
             _FormulaVersionBlock(
               version: rules.approved!,
               keyPrefix: 'mining-rules-approved',
+              symbols: symbols,
             ),
           if (rules.approved?.scope.isBaseline ?? false)
             const LoopNotice(
@@ -1366,6 +1385,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
               _FormulaVersionBlock(
                 version: version,
                 keyPrefix: 'mining-rules-pending-${version.configVersion}',
+                symbols: symbols,
               ),
           const LoopLabel('邀请关系规则'),
           LoopRecordGroup(
@@ -1422,10 +1442,23 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
 }
 
 class _FormulaVersionBlock extends StatelessWidget {
-  const _FormulaVersionBlock({required this.version, required this.keyPrefix});
+  const _FormulaVersionBlock({
+    required this.version,
+    required this.keyPrefix,
+    this.symbols = const <String, String>{},
+  });
 
   final MiningFormulaVersion version;
   final String keyPrefix;
+
+  /// Registry symbols by asset id, when 算力明细 has already been read.
+  ///
+  /// 「资产权重」 headed three of its four rows with a contract address
+  /// (`0x0e09…ce82`) and repeated the whole CAIP id underneath. The rule keys
+  /// are asset ids, and the same ids carry a symbol on the 算力明细 read, so
+  /// the row is headed by the symbol whenever that read has happened. Without
+  /// it the row still says the id rather than inventing a name.
+  final Map<String, String> symbols;
 
   @override
   Widget build(BuildContext context) {
@@ -1447,8 +1480,12 @@ class _FormulaVersionBlock extends StatelessWidget {
         title: '每日产出',
         subtitle: miningRuleKeyText(version.dailyOutputKey),
         // The budget is published with its own status, so it is printed with
-        // it: a placeholder number never stands on the page by itself.
-        trailing: version.dailyOutput?.budget,
+        // it: a placeholder number never stands on the page by itself. The
+        // separators are display only and are dropped whenever they cannot be
+        // added without changing what the server said.
+        trailing: version.dailyOutput == null
+            ? null
+            : loopGroupedFigure(version.dailyOutput!.budget),
         trailingCaption: version.dailyOutput == null
             ? null
             : (version.dailyOutput!.isPlaceholder ? '占位产量' : '当日产量'),
@@ -1531,8 +1568,9 @@ class _FormulaVersionBlock extends StatelessWidget {
                     '$keyPrefix-asset-weight-'
                     '${version.assetWeights.keys.elementAt(index)}',
                   ),
-                  title: miningAssetLabel(
-                    version.assetWeights.keys.elementAt(index),
+                  title: miningAssetTitle(
+                    symbol: symbols[version.assetWeights.keys.elementAt(index)],
+                    assetId: version.assetWeights.keys.elementAt(index),
                   ),
                   subtitle: version.assetWeights.keys.elementAt(index),
                   trailing: version.assetWeights.values.elementAt(index),

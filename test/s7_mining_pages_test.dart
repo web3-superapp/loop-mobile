@@ -1759,6 +1759,30 @@ void main() {
       expect(find.textContaining('挖矿公式还没有批准'), findsWidgets);
     });
 
+    testWidgets('a weighted asset is headed by its symbol when one is read', (
+      tester,
+    ) async {
+      // 「资产权重」 headed three of four rows with a contract address and
+      // repeated the whole CAIP id underneath. The rule keys are asset ids,
+      // and 算力明细 carries a symbol for the same ids.
+      await pumpS7Page(
+        tester,
+        const MiningRulesScreen(),
+        mining: FakeMiningGateway(
+          rules: S7Answer<MiningRules>(value: s7BaselineMiningRules()),
+          assets: S7Answer<MiningAssets>(value: s7MiningSettledAssets()),
+        ),
+      );
+
+      final row = find.byKey(
+        ValueKey<String>('mining-rules-approved-asset-weight-$s7UsdtAssetId'),
+      );
+      await scrollToS7Section(tester, row);
+      expect(tester.widget<LoopRecordRow>(row).title, 'USDT');
+      // The id it stands for stays on the row; it is no longer the heading.
+      expect(tester.widget<LoopRecordRow>(row).subtitle, s7UsdtAssetId);
+    });
+
     testWidgets('the development baseline prints its weights and its budget', (
       tester,
     ) async {
@@ -1801,7 +1825,7 @@ void main() {
         const ValueKey<String>('mining-rules-approved-daily-output'),
       );
       await scrollToS7Section(tester, output);
-      expect(find.text('1000000'), findsOneWidget);
+      expect(find.text('1,000,000'), findsOneWidget);
       expect(find.text('占位产量'), findsOneWidget);
 
       final notice = find.byKey(

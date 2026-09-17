@@ -372,25 +372,11 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
             DappReviewScreen.deferredReasonCode,
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-          child: LoopButtonPair(
-            padded: false,
-            children: <Widget>[
-              const LoopButton(
-                key: ValueKey<String>('dapp-connect'),
-                label: '连接钱包',
-                onPressed: null,
-              ),
-              const LoopButton(
-                key: ValueKey<String>('dapp-sign'),
-                label: '签名请求',
-                primary: true,
-                onPressed: null,
-              ),
-            ],
-          ),
-        ),
+        // 连接钱包 and 签名请求 used to stand here as two dead buttons, and
+        // the signing one was painted as the page's primary action. A tap got
+        // nothing back, because there is nothing behind either of them: the
+        // card above already states that connecting and signing are not open.
+        // An action that cannot run is not offered as a button.
         const LoopNotice(
           key: ValueKey<String>('dapp-no-fetch-notice'),
           icon: 'shield',

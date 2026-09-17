@@ -1105,7 +1105,9 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
       final reads = intents.intentReads;
-      expect(reads, lessThanOrEqualTo(2));
+      // Two published failures, and the first-read re-attempt may double the
+      // reads behind each of them. What the page must not do is keep polling.
+      expect(reads, lessThanOrEqualTo(4));
 
       await tester.pump(const Duration(seconds: 5));
       expect(intents.intentReads, reads);

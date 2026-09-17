@@ -161,7 +161,10 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('这个页面当前不可用'), findsOneWidget);
-      expect(find.byType(LoopBrandMark), findsOneWidget);
+      // Never the launcher icon: a closed page that opened with the app's own
+      // icon centred on black read as the splash screen still loading.
+      expect(find.byType(LoopBrandMark), findsNothing);
+      expect(find.byType(LoopIcon), findsOneWidget);
     });
   });
 
