@@ -419,5 +419,87 @@ void main() {
       expect(find.textContaining('48,120'), findsNothing);
       expect(find.textContaining('有人在线'), findsNothing);
     });
+
+    testWidgets('a ticket opens the whole exchange in time order', (
+      tester,
+    ) async {
+      await pumpS8Page(
+        tester,
+        SupportScreen(onNavigate: (_) {}),
+        support: FakeSupportGateway(
+          page: S8Answer<LoopSupportTicketPage>(
+            value: s8TicketPage(
+              items: <LoopSupportTicket>[
+                s8Ticket(status: LoopSupportTicketStatus.answered),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final ticket = find.byKey(
+        ValueKey<String>('support-ticket-$s8NotificationId'),
+      );
+      await scrollToS8Section(tester, ticket);
+      // The summary row never truncates the reply into one line any more.
+      expect(tester.widget<LoopRecordRow>(ticket).subtitleMaxLines, 2);
+
+      await tester.tap(ticket);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('support-ticket-detail')),
+        findsOneWidget,
+      );
+      // The question as it was typed, and the operator's reply in full.
+      expect(
+        find.byKey(const ValueKey<String>('support-ticket-detail-body')),
+        findsOneWidget,
+      );
+      expect(find.text('已核对，权重需要资产先完成登记。'), findsOneWidget);
+      // Both rounds are listed, oldest first.
+      final created = tester.getTopLeft(
+        find.byKey(const ValueKey<String>('support-ticket-event-0')),
+      );
+      final answered = tester.getTopLeft(
+        find.byKey(const ValueKey<String>('support-ticket-event-1')),
+      );
+      expect(created.dy, lessThan(answered.dy));
+      expect(find.text('LOOP 客服 · 客服回复 · 刚刚'), findsNothing);
+    });
+
+    testWidgets('an unanswered ticket says so instead of showing nothing', (
+      tester,
+    ) async {
+      await pumpS8Page(
+        tester,
+        SupportScreen(onNavigate: (_) {}),
+        support: FakeSupportGateway(
+          page: S8Answer<LoopSupportTicketPage>(
+            value: s8TicketPage(
+              items: <LoopSupportTicket>[
+                s8Ticket(status: LoopSupportTicketStatus.open),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final ticket = find.byKey(
+        ValueKey<String>('support-ticket-$s8NotificationId'),
+      );
+      await scrollToS8Section(tester, ticket);
+      await tester.tap(ticket);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('support-ticket-detail-open')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('support-ticket-event-1')),
+        findsNothing,
+      );
+    });
   });
 }

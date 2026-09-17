@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/profile/support/support_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// The five bundled answers. They are product copy, not an indexed FAQ: there
@@ -288,6 +289,10 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
       subtitle: note == null
           ? '提交于 ${loopRelativeTime(ticket.createdAt)} · 还没有回复'
           : '客服回复：$note',
+      // A ticket row carries two full sentences — the question you typed and
+      // the operator's answer — and on a phone both used to end in an
+      // ellipsis with nowhere to go. The row now opens the whole exchange.
+      subtitleMaxLines: 2,
       trailingBadge: LoopBadge(
         ticket.status.label,
         kind: switch (ticket.status) {
@@ -297,7 +302,105 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
         },
       ),
       position: LoopRowPosition.middle,
-      semanticLabel: '${ticket.category.label} 工单，${ticket.status.label}',
+      semanticLabel:
+          '${ticket.category.label} 工单，${ticket.status.label}，打开完整往来',
+      onTap: () => unawaited(_openTicket(ticket)),
+    );
+  }
+
+  Future<void> _openTicket(LoopSupportTicket ticket) => showLoopSheet<void>(
+    context,
+    barrierLabel: '关闭工单详情',
+    builder: (context) => _SupportTicketDetail(ticket: ticket),
+  );
+}
+
+/// The whole of one ticket: the question as it was typed, the status, and
+/// every event in the order it happened. The list row is a summary and
+/// ellipses; this is where the operator's reply is read in full.
+class _SupportTicketDetail extends StatelessWidget {
+  const _SupportTicketDetail({required this.ticket});
+
+  final LoopSupportTicket ticket;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final events = ticket.events.toList()
+      ..sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
+    return Column(
+      key: const ValueKey<String>('support-ticket-detail'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(
+                child: Text(ticket.category.label, style: LoopMono.label),
+              ),
+              LoopBadge(
+                ticket.status.label,
+                kind: switch (ticket.status) {
+                  LoopSupportTicketStatus.answered => LoopBadgeKind.up,
+                  LoopSupportTicketStatus.open => LoopBadgeKind.mining,
+                  LoopSupportTicketStatus.closed => LoopBadgeKind.mute,
+                },
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+          child: Text(
+            key: const ValueKey<String>('support-ticket-detail-body'),
+            ticket.body,
+            style: theme.textTheme.titleMedium,
+          ),
+        ),
+        const LoopLabel('往来记录'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              for (final event in events)
+                LoopSurfaceCard(
+                  key: ValueKey<String>(
+                    'support-ticket-event-${event.eventVersion}',
+                  ),
+                  margin: const EdgeInsets.only(bottom: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Text(
+                        '${event.actor.label} · ${event.eventType.label} · '
+                        '${loopRelativeTime(event.occurredAt)}',
+                        style: LoopMono.label,
+                      ),
+                      if (event.note case final String note) ...<Widget>[
+                        const SizedBox(height: 8),
+                        Text(note, style: theme.textTheme.bodyMedium),
+                      ] else if (event.eventType ==
+                          LoopSupportEventType.created) ...<Widget>[
+                        const SizedBox(height: 8),
+                        Text(ticket.body, style: theme.textTheme.bodyMedium),
+                      ],
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (ticket.status == LoopSupportTicketStatus.open)
+          const LoopProvenanceFooter(
+            key: ValueKey<String>('support-ticket-detail-open'),
+            text: '客服还没有回复这张工单；有回复时会出现在上面。',
+          ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 }
