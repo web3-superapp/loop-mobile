@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chat/v2/community_chat_screen.dart';
+import 'package:loop_mobile/features/community/community_discover_screen.dart';
+import 'package:loop_mobile/features/community/community_members_screen.dart';
+import 'package:loop_mobile/features/community/community_profile_screen.dart';
+import 'package:loop_mobile/features/community/community_screen.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -19,6 +24,22 @@ import 'support/s5_page_harness.dart';
 /// the app sat idle, which carries no server answer at all. The shared read
 /// controllers now keep the loading phase through one silent re-attempt, and
 /// only a read that fails again may claim the device is offline.
+const _recommendation = CommunityRecommendation(
+  recommendationId: '22222222-2222-4222-8222-222222222222',
+  ruleVersion: 'rule:verified-members-v1',
+);
+
+CommunityHome _home() => CommunityHome(
+  joined: const <JoinedCommunity>[],
+  joinedTruncated: false,
+  discover: <CommunitySummary>[testCommunity()],
+  unread: const LoopUnavailableFact('STREAM_UNREAD_NOT_CONNECTED'),
+  liveVoice: const LoopUnavailableFact('STREAM_VOICE_NOT_CONNECTED'),
+  observedAt: DateTime.utc(2026, 9, 8, 1),
+  source: 'database',
+  recommendation: _recommendation,
+);
+
 void main() {
   group('tx-history · first read', () {
     testWidgets('a request still in the air stays a skeleton', (tester) async {
@@ -152,4 +173,91 @@ void main() {
       );
     });
   });
+
+  // The same dropped socket reaches the four community reads a demo opens
+  // first. `unexpected` is included because Dio reports a connection the peer
+  // closed mid-response as `unknown`, which never maps to `offline`.
+  for (final kind in <CommunityFailureKind>[
+    CommunityFailureKind.offline,
+    CommunityFailureKind.unexpected,
+  ]) {
+    group('community reads · first read · ${kind.name}', () {
+      testWidgets('the desk re-attempts once instead of pausing', (
+        tester,
+      ) async {
+        final gateway = FakeCommunityGateway(home: _home())
+          ..transientFailure = kind;
+        await pumpCommunityPage(
+          tester,
+          const CommunityScreen(),
+          community: gateway,
+        );
+
+        expect(gateway.reads, 2);
+        expect(find.byType(LoopOfflineState), findsNothing);
+        expect(
+          find.byKey(const ValueKey<String>('community-state-error')),
+          findsNothing,
+        );
+      });
+
+      testWidgets('the community record re-attempts once', (tester) async {
+        final gateway = FakeCommunityGateway(detail: testDetail())
+          ..transientFailure = kind;
+        await pumpCommunityPage(
+          tester,
+          const CommunityProfileScreen(communityId: testCommunityId),
+          community: gateway,
+        );
+
+        expect(gateway.reads, 2);
+        expect(find.byType(LoopOfflineState), findsNothing);
+        expect(
+          find.byKey(const ValueKey<String>('community-state-error')),
+          findsNothing,
+        );
+      });
+
+      testWidgets('the directory re-attempts once', (tester) async {
+        final gateway = FakeCommunityGateway(
+          directoryPage: CommunityDirectoryPage(
+            items: <CommunitySummary>[testCommunity()],
+            nextCursor: null,
+            recommendation: _recommendation,
+          ),
+        )..transientFailure = kind;
+        await pumpCommunityPage(
+          tester,
+          const CommunityDiscoverScreen(),
+          community: gateway,
+        );
+
+        expect(gateway.reads, 2);
+        expect(find.byType(LoopOfflineState), findsNothing);
+        expect(
+          find.byKey(const ValueKey<String>('community-state-error')),
+          findsNothing,
+        );
+      });
+
+      testWidgets('the member directory re-attempts once', (tester) async {
+        final gateway = FakeCommunityGateway(
+          detail: testDetail(),
+          members: testDirectory(),
+        )..transientFailure = kind;
+        await pumpCommunityPage(
+          tester,
+          const CommunityMembersScreen(communityId: testCommunityId),
+          community: gateway,
+        );
+
+        expect(gateway.reads, greaterThanOrEqualTo(2));
+        expect(find.byType(LoopOfflineState), findsNothing);
+        expect(
+          find.byKey(const ValueKey<String>('community-state-error')),
+          findsNothing,
+        );
+      });
+    });
+  }
 }

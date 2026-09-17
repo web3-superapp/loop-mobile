@@ -30,6 +30,39 @@ mixin CommunitySingleFlight {
   }
 }
 
+/// One read, carrying the first-read re-attempt S26 introduced.
+///
+/// A first read has nothing behind it, so the phase it lands in is the whole
+/// page, and 「离线 · 显示缓存」 there must mean the device — not a pooled socket
+/// the peer closed while the app sat idle. That failure carries no server
+/// answer at all: it arrives as `offline`, or as `unexpected` when Dio reports
+/// the dropped connection as `unknown`. A first read therefore gets exactly one
+/// silent re-attempt. A read that fails twice reports what it failed with, and
+/// a read with rows already behind it is untouched.
+Future<T> communityFirstRead<T>(
+  Future<T> Function() read, {
+  required bool firstRead,
+}) async {
+  var reattempted = false;
+  while (true) {
+    try {
+      return await read();
+    } on CommunityGatewayException catch (error) {
+      if (!firstRead || reattempted || !_mayBeATransientFirstRead(error.kind)) {
+        rethrow;
+      }
+      reattempted = true;
+    } catch (_) {
+      if (!firstRead || reattempted) rethrow;
+      reattempted = true;
+    }
+  }
+}
+
+bool _mayBeATransientFirstRead(CommunityFailureKind kind) =>
+    kind == CommunityFailureKind.offline ||
+    kind == CommunityFailureKind.unexpected;
+
 // ---------------------------------------------------------------------------
 // community · home aggregate
 // ---------------------------------------------------------------------------
@@ -53,9 +86,13 @@ final class CommunityHomeController
   Future<void> reload() => single(() async {
     final gateway = ref.read(communityGatewayProvider);
     final generation = nextGeneration();
+    final firstRead = state.value == null;
     state = state.loading();
     try {
-      final home = await gateway.loadHome();
+      final home = await communityFirstRead(
+        gateway.loadHome,
+        firstRead: firstRead,
+      );
       if (!isCurrent(generation)) return;
       state = state.ready(home);
     } on CommunityGatewayException catch (error) {
@@ -217,14 +254,17 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
       );
     }
     try {
-      final page = await gateway.listCommunities(
-        sort: previous.sort,
-        // The joined view must include a caller's own unverified communities.
-        verification: _membership == CommunityMembershipFilter.joined
-            ? CommunityVerificationFilter.all
-            : CommunityVerificationFilter.verified,
-        membership: _membership,
-        cursor: append ? previous.nextCursor : null,
+      final page = await communityFirstRead(
+        () => gateway.listCommunities(
+          sort: previous.sort,
+          // The joined view must include a caller's own unverified communities.
+          verification: _membership == CommunityMembershipFilter.joined
+              ? CommunityVerificationFilter.all
+              : CommunityVerificationFilter.verified,
+          membership: _membership,
+          cursor: append ? previous.nextCursor : null,
+        ),
+        firstRead: !append && previous.items.isEmpty,
       );
       if (!isCurrent(generation)) return;
       final merged = append
@@ -390,9 +430,13 @@ final class CommunityProfileController
     }
     final gateway = ref.read(communityGatewayProvider);
     final generation = nextGeneration();
+    final firstRead = state.value == null;
     state = state.loading();
     try {
-      final detail = await gateway.loadCommunity(id);
+      final detail = await communityFirstRead(
+        () => gateway.loadCommunity(id),
+        firstRead: firstRead,
+      );
       if (!isCurrent(generation)) return;
       state = state.ready(detail);
     } on CommunityGatewayException catch (error) {
@@ -727,13 +771,16 @@ final class CommunityMembersController extends Notifier<CommunityMembersState>
       refreshing: keepRows,
     );
     try {
-      final directory = await gateway.listMembers(
-        id,
-        role: filter,
-        q: query.isEmpty ? null : query,
-        // A cursor is bound to the query it was issued for, so a page is only
-        // continued while the query is unchanged.
-        cursor: append ? previous.nextCursor : null,
+      final directory = await communityFirstRead(
+        () => gateway.listMembers(
+          id,
+          role: filter,
+          q: query.isEmpty ? null : query,
+          // A cursor is bound to the query it was issued for, so a page is
+          // only continued while the query is unchanged.
+          cursor: append ? previous.nextCursor : null,
+        ),
+        firstRead: !append && previous.items.isEmpty,
       );
       if (!isCurrent(generation)) return;
       state = _apply(previous, directory, append: append, filter: filter);
