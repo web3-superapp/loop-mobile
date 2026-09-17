@@ -228,6 +228,15 @@ enum LoopFolioVariant {
   chalk,
 }
 
+/// How a folio heading is coloured on the quiet variant.
+enum LoopFolioHeadingTone {
+  /// `.folio-heading`: Lime, the app's accent and its success colour.
+  accent,
+
+  /// Chalk: the heading states a condition that is not good news.
+  neutral,
+}
+
 /// Per-archetype folio metrics (`[data-page-archetype] .folio-*`).
 enum LoopFolioArchetype {
   intro('intro', minHeight: 216, headingSize: 30, headingTop: 28),
@@ -265,6 +274,7 @@ class LoopFolioPrimary extends StatelessWidget {
     this.archetype = LoopFolioArchetype.action,
     this.compact = false,
     this.trailing,
+    this.headingTone = LoopFolioHeadingTone.accent,
   });
 
   final String heading;
@@ -281,6 +291,15 @@ class LoopFolioPrimary extends StatelessWidget {
 
   /// Optional widget (identity, figure) on the right of the heading.
   final Widget? trailing;
+
+  /// Whether the heading carries the page's accent or stays neutral.
+  ///
+  /// A folio heading is Lime on the quiet variant, and Lime is this app's
+  /// success colour: 「1 / 4 正常」 painted in it read as good news over four
+  /// endpoints of which two were unreachable. A heading that states a mixed
+  /// or failing condition asks for [LoopFolioHeadingTone.neutral] so the
+  /// figure is read as a figure.
+  final LoopFolioHeadingTone headingTone;
 
   /// `.folio-caption{max-width:80%}`.
   static const double captionMaxWidthFactor = 0.8;
@@ -338,7 +357,10 @@ class LoopFolioPrimary extends StatelessWidget {
       LoopFolioVariant.quiet => LoopColors.chalk,
     };
     final headingColor = variant == LoopFolioVariant.quiet
-        ? LoopColors.lime
+        ? switch (headingTone) {
+            LoopFolioHeadingTone.accent => LoopColors.lime,
+            LoopFolioHeadingTone.neutral => LoopColors.chalk,
+          }
         : LoopColors.ink;
     final decoration = switch (variant) {
       LoopFolioVariant.lime => const BoxDecoration(

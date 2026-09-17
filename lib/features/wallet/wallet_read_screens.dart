@@ -1773,6 +1773,14 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
         key: const ValueKey<String>('networks-folio'),
         archetype: LoopFolioArchetype.record,
         kicker: 'NETWORK HEALTH',
+        // Lime is the success colour, and 「1 / 4 正常」 in Lime read as good
+        // news over four endpoints of which two were unreachable. The figure
+        // stays; the colour follows the majority of what was measured.
+        headingTone: status == null || status.rpc.endpoints.isEmpty
+            ? LoopFolioHeadingTone.neutral
+            : status.rpc.healthyCount * 2 >= status.rpc.endpoints.length
+            ? LoopFolioHeadingTone.accent
+            : LoopFolioHeadingTone.neutral,
         heading: status == null
             ? '网络与 RPC'
             : '${status.rpc.healthyCount} / ${status.rpc.endpoints.length} 正常',

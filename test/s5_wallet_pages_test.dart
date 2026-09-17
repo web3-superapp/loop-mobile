@@ -4,6 +4,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
@@ -982,6 +983,38 @@ void main() {
       );
 
       expect(find.text('异常'), findsWidgets);
+    });
+
+    testWidgets('a mixed endpoint reading is not painted as success', (
+      tester,
+    ) async {
+      // Lime is the success colour. 「0 / 1 正常」 in Lime told the eye the
+      // opposite of what the figure said.
+      await pumpS5Page(
+        tester,
+        const NetworksScreen(),
+        chain: FakeChainGateway(
+          status: S5Answer<LoopChainStatus>(
+            value: s5Status(endpointStatus: LoopEndpointStatus.unreachable),
+          ),
+        ),
+      );
+      expect(
+        tester.widget<Text>(find.text('0 / 1 正常')).style?.color,
+        LoopColors.chalk,
+      );
+    });
+
+    testWidgets('a healthy reading keeps the accent', (tester) async {
+      await pumpS5Page(
+        tester,
+        const NetworksScreen(),
+        chain: FakeChainGateway(),
+      );
+      expect(
+        tester.widget<Text>(find.text('1 / 1 正常')).style?.color,
+        LoopColors.lime,
+      );
     });
 
     testWidgets('a chain-id mismatch makes the whole page unusable', (
