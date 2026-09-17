@@ -346,10 +346,12 @@ void main() {
       ),
     );
 
-    expect(find.text('数据不可得'), findsNWidgets(3));
+    // 未报告 is the same event the fact list one screen below names; the two
+    // used to disagree about what happened.
+    expect(find.text('未报告'), findsNWidgets(3));
     // The full sentence belongs to the fact list, not to a third of a card.
     expect(find.text(loopReasonCodeText(reasonCode)), findsNothing);
-    expect(find.textContaining('这一项没有数值'), findsNothing);
+    expect(find.textContaining('数据源没有报告'), findsNothing);
     final cell = tester.renderObject<RenderParagraph>(find.text(phrase).first);
     expect(cell.didExceedMaxLines, isFalse);
   });

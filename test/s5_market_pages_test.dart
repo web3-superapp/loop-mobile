@@ -309,7 +309,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.descendant(of: card, matching: find.text('数据不可得')),
+        find.descendant(of: card, matching: find.text('未报告')),
         findsOneWidget,
       );
       expect(
@@ -317,7 +317,7 @@ void main() {
         findsNothing,
       );
       expect(
-        find.descendant(of: card, matching: find.textContaining('这一项没有数值')),
+        find.descendant(of: card, matching: find.textContaining('数据源没有报告')),
         findsNothing,
       );
 
@@ -329,7 +329,7 @@ void main() {
       );
       expect(find.text('9,876,543.21'), findsOneWidget);
       expect(find.text('8,019,338'), findsOneWidget);
-      expect(find.text('这一项没有数值。'), findsOneWidget);
+      expect(find.text('数据源没有报告这一项。'), findsOneWidget);
     });
 
     testWidgets('security facts render with their own source and time', (

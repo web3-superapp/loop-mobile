@@ -264,7 +264,7 @@ void main() {
         '等待数据',
       );
       expect(loopReasonCodeSummaryText('INDEXING_DELAYED'), '等待数据');
-      expect(loopReasonCodeSummaryText('MARKET_FACT_NOT_REPORTED'), '数据不可得');
+      expect(loopReasonCodeSummaryText('MARKET_FACT_NOT_REPORTED'), '未报告');
       expect(
         loopReasonCodeSummaryText('MARKET_PROVIDER_RATE_LIMITED'),
         '数据不可得',
@@ -282,7 +282,7 @@ void main() {
         '数据不可得',
       );
       // The full sentence is unchanged; only the summary slot is short.
-      expect(loopReasonCodeText('MARKET_FACT_NOT_REPORTED'), '这一项没有数值。');
+      expect(loopReasonCodeText('MARKET_FACT_NOT_REPORTED'), '数据源没有报告这一项。');
     });
 
     test('the summary formatter is confined to the Token Card', () {

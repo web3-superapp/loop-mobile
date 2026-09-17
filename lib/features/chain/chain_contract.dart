@@ -311,7 +311,7 @@ String loopReasonCodeText(String? reasonCode) => switch (reasonCode) {
   'MARKET_PROVIDER_UNREACHABLE' => '行情暂时取不到，与你的网络无关，稍后再看。',
   'MARKET_PROVIDER_RESPONSE_MALFORMED' => '返回的数据不完整，已整体丢弃。',
   'MARKET_PAIR_NOT_FOUND' => '没有找到这个资产的交易对。',
-  'MARKET_FACT_NOT_REPORTED' => '这一项没有数值。',
+  'MARKET_FACT_NOT_REPORTED' => '数据源没有报告这一项。',
   'MARKET_NATIVE_ASSET_NOT_SUPPORTED' => '原生 BNB 没有合约地址，这一项不适用。',
   'MARKET_POOL_NOT_REGISTERED' => '这个资产还没有 PancakeSwap V3 交易池。',
   'MARKET_NO_SWAPS_IN_RANGE' => '所选区间内没有成交。',
@@ -413,6 +413,10 @@ String loopReasonCodeSummaryText(String? reasonCode) => switch (reasonCode) {
   'LAUNCH_CHAIN_VERIFICATION_PENDING' ||
   'INDEXING_DELAYED' ||
   'TX_PENDING_VERIFICATION' => '等待数据',
+  // A figure the provider answered but did not report is not a figure LOOP
+  // failed to read. The card cell and the fact list one screen below now name
+  // the same event, instead of one saying 数据不可得 and the other 没有数值.
+  'MARKET_FACT_NOT_REPORTED' => '未报告',
   _ => '数据不可得',
 };
 
