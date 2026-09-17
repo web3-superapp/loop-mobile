@@ -7,6 +7,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
+import 'package:loop_mobile/features/chat/calls/voice_media_link.dart';
 import 'package:loop_mobile/features/chat/voice_room_page.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
@@ -471,6 +472,88 @@ void main() {
     expect(handle.backgroundMicrophoneDisableCalls, 2);
   });
 
+  testWidgets('an authorized room connects without a second tap', (
+    tester,
+  ) async {
+    final handle = _RecordingAudioRoomCall(roomId: 'loop-daily');
+    final factory = _RecordingAudioRoomCallFactory(handle);
+
+    await tester.pumpWidget(
+      _readyPage(
+        factory: factory,
+        target: _target('loop-daily'),
+        autoConnect: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The member was already let in: hearing the room is not a second
+    // decision, so there is no button asking for one.
+    expect(find.text('连接语音'), findsNothing);
+    expect(factory.createCalls, 1);
+    expect(handle.joinCalls, 1);
+    expect(find.text('Official CallState view'), findsOneWidget);
+  });
+
+  testWidgets('a failed automatic connection waits to be asked again', (
+    tester,
+  ) async {
+    final handle = _RecordingAudioRoomCall(
+      roomId: 'loop-daily',
+      joinError: StateError('provider-secret-detail'),
+    );
+    final factory = _RecordingAudioRoomCallFactory(handle);
+
+    await tester.pumpWidget(
+      _readyPage(
+        factory: factory,
+        target: _target('loop-daily'),
+        autoConnect: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(find.text('已加入，语音连接失败'), findsOneWidget);
+    expect(find.textContaining('provider-secret-detail'), findsNothing);
+    // A room that is ready again must not retry on its own: that would be an
+    // unbounded reconnect loop behind a reader who is told it failed.
+    expect(handle.joinCalls, 1);
+    expect(handle.leaveCalls, 1);
+    expect(find.text('重新连接语音'), findsOneWidget);
+    expect(find.text('Official CallState view'), findsNothing);
+  });
+
+  testWidgets('the page exit takes the call down and keeps it down', (
+    tester,
+  ) async {
+    final handle = _RecordingAudioRoomCall(roomId: 'loop-daily');
+    final factory = _RecordingAudioRoomCallFactory(handle);
+    final link = VoiceMediaLink();
+
+    await tester.pumpWidget(
+      _readyPage(
+        factory: factory,
+        target: _target('loop-daily'),
+        autoConnect: true,
+        link: link,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(link.isAttached, isTrue);
+    expect(handle.joinCalls, 1);
+
+    expect(await link.disconnect(), isTrue);
+    await tester.pumpAndSettle();
+
+    // The LOOP leave runs next: a surface that reconnected in that window
+    // would put a call back into a room this account is leaving.
+    expect(handle.leaveCalls, 1);
+    expect(handle.joinCalls, 1);
+    expect(find.text('语音已断开'), findsOneWidget);
+    expect(find.text('重新连接语音'), findsOneWidget);
+  });
+
   test('one Call accepts only one Speak request', () async {
     final handle = _RecordingAudioRoomCall(roomId: 'loop-daily');
 
@@ -500,6 +583,8 @@ void main() {
 Widget _readyPage({
   required AudioRoomCallFactory factory,
   required AudioRoomTarget target,
+  bool autoConnect = false,
+  VoiceMediaLink? link,
 }) {
   return ProviderScope(
     overrides: [
@@ -512,7 +597,18 @@ Widget _readyPage({
     ],
     child: MaterialApp(
       theme: LoopTheme.dark,
-      home: const StreamVoiceRoomPage(),
+      // The product only connects on its own inside the LOOP voice room
+      // page, so the automatic surface is mounted the way that page mounts
+      // it: one section, no page of its own.
+      home: autoConnect
+          ? Scaffold(
+              body: StreamVoiceRoomPage(
+                autoConnect: true,
+                inline: true,
+                link: link,
+              ),
+            )
+          : const StreamVoiceRoomPage(),
     ),
   );
 }

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
+import 'package:loop_mobile/features/chat/calls/voice_media_link.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
@@ -15,7 +16,14 @@ import 'package:loop_mobile/widgets/loop_ui.dart';
 /// mounted foreground view reads connection, participants, capabilities and
 /// microphone state directly from Stream's official CallState.
 class StreamVoiceRoomPage extends ConsumerWidget {
-  const StreamVoiceRoomPage({super.key, this.target, this.inline = false});
+  const StreamVoiceRoomPage({
+    super.key,
+    this.target,
+    this.inline = false,
+    this.autoConnect = false,
+    this.link,
+    this.onExitRequested,
+  });
 
   /// A locator the caller already holds.
   ///
@@ -29,6 +37,24 @@ class StreamVoiceRoomPage extends ConsumerWidget {
   /// its own. A page inside a page is what produced the second scrolling
   /// region a reader could not explain; an inline surface has none.
   final bool inline;
+
+  /// Connects as soon as the room is ready, without a second tap.
+  ///
+  /// Joining a voice room is one decision: a member who was let in expects to
+  /// hear the room. The caller sets this only once LOOP has granted the
+  /// membership, so the connection carries an authorization that already
+  /// exists. Nothing about the microphone changes — the account still enters
+  /// muted and the system permission is still asked for only at 发言.
+  final bool autoConnect;
+
+  /// Publishes this surface's disconnect to the page that owns the exit.
+  final VoiceMediaLink? link;
+
+  /// Replaces the in-call hang-up with the page's single 离开 command.
+  ///
+  /// Dropping the media alone would leave the account a member of a room it
+  /// can no longer hear, and [autoConnect] would immediately reconnect it.
+  final Future<void> Function()? onExitRequested;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -51,6 +77,9 @@ class StreamVoiceRoomPage extends ConsumerWidget {
     return _StreamVoiceRoomSurface(
       key: ValueKey<String?>(principalKey),
       inline: inline,
+      autoConnect: autoConnect,
+      link: link,
+      onExitRequested: onExitRequested,
       principalKey: principalKey,
       authorization: authorization,
       target: resolvedTarget,
@@ -67,6 +96,9 @@ class StreamVoiceRoomPage extends ConsumerWidget {
 class _StreamVoiceRoomSurface extends StatefulWidget {
   const _StreamVoiceRoomSurface({
     required this.inline,
+    required this.autoConnect,
+    required this.link,
+    required this.onExitRequested,
     required this.principalKey,
     required this.authorization,
     required this.target,
@@ -77,6 +109,9 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
   });
 
   final bool inline;
+  final bool autoConnect;
+  final VoiceMediaLink? link;
+  final Future<void> Function()? onExitRequested;
   final String? principalKey;
   final AsyncValue<StreamVideoSessionAuthorization>? authorization;
   final AsyncValue<AudioRoomTarget?>? target;
@@ -103,6 +138,11 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   var _cleanupFailed = false;
   var _joining = false;
   var _leaving = false;
+
+  /// Set once this account starts leaving, or once a connection failed, so a
+  /// ready room does not silently reconnect behind the reader's decision.
+  var _autoConnectSuspended = false;
+  var _autoConnectScheduled = false;
   var _generation = 0;
   var _cleanupGeneration = 0;
   var _lifecycleGeneration = 0;
@@ -117,6 +157,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    widget.link?.attach(_disconnectForExit);
     final lifecycle = WidgetsBinding.instance.lifecycleState;
     _appIsForeground =
         lifecycle == null ||
@@ -127,6 +168,10 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   @override
   void didUpdateWidget(covariant _StreamVoiceRoomSurface oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.link, widget.link)) {
+      oldWidget.link?.detach(_disconnectForExit);
+      widget.link?.attach(_disconnectForExit);
+    }
     final oldTarget = oldWidget.target;
     final oldRoomId = oldTarget != null && oldTarget.hasValue
         ? oldTarget.value?.roomId
@@ -148,6 +193,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    widget.link?.detach(_disconnectForExit);
     _generation += 1;
     _cleanupGeneration += 1;
     _lifecycleGeneration += 1;
@@ -201,7 +247,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       return foregroundCall == null
           ? _buildLobby(context)
           : foregroundCall.buildForeground(
-              onLeaveRequested: _leaveForegroundCall,
+              onLeaveRequested: _requestExit,
               inline: true,
             );
     }
@@ -231,9 +277,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
         child: SafeArea(
           child: foregroundCall == null
               ? _buildLobby(context)
-              : foregroundCall.buildForeground(
-                  onLeaveRequested: _leaveForegroundCall,
-                ),
+              : foregroundCall.buildForeground(onLeaveRequested: _requestExit),
         ),
       ),
     );
@@ -249,9 +293,14 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       appIsForeground: _appIsForeground,
       cleanupPending: _cleanupPending,
       cleanupFailed: _cleanupFailed,
+      autoConnect: widget.autoConnect,
+      autoConnectSuspended: _autoConnectSuspended,
     );
     final joinEnabled =
         content.ready && !_joining && !_cleanupPending && !_cleanupFailed;
+    if (widget.autoConnect && joinEnabled && !content.reconnect) {
+      _scheduleAutoConnect();
+    }
     final stateCard = Semantics(
       liveRegion: content.tone == LoopTone.danger,
       child: LoopStateCard(
@@ -298,6 +347,40 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
         label: Text(_joining ? '正在静音连接' : '连接语音'),
       ),
     );
+    if (widget.autoConnect) {
+      // The connection is not a second decision, so the surface offers no
+      // button for it. One appears only when the connection stopped: the
+      // membership is still there, and this is how the reader gets the audio
+      // back without leaving and joining again.
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            stateCard,
+            if (content.reconnect) ...<Widget>[
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  key: const ValueKey<String>('voiceroom-media-reconnect'),
+                  onPressed: joinEnabled ? _reconnect : null,
+                  icon: const Icon(Icons.headset_mic_rounded),
+                  label: const Text('重新连接语音'),
+                ),
+              ),
+            ],
+            const SizedBox(height: 10),
+            Text(
+              '你以听众身份静音进入，不会申请麦克风权限；'
+              '语音没连上也不会把你移出房间，要真正退出请用下面的「离开」。',
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+          ],
+        ),
+      );
+    }
     if (widget.inline) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
@@ -378,6 +461,68 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     );
   }
 
+  /// Starts the connection the membership already paid for.
+  ///
+  /// A write is not allowed from inside `build`, so the attempt runs on the
+  /// microtask after the frame that found the room ready. Every refusal
+  /// [_joinMuted] already makes — not foreground, cleanup outstanding, a call
+  /// in flight — still applies, and a failure sets [_joinError], which stops
+  /// this from firing again until the reader asks for it.
+  void _scheduleAutoConnect() {
+    if (_autoConnectScheduled ||
+        _autoConnectSuspended ||
+        _joining ||
+        _joinError != null ||
+        _foregroundCall != null) {
+      return;
+    }
+    _autoConnectScheduled = true;
+    scheduleMicrotask(() {
+      _autoConnectScheduled = false;
+      if (!mounted ||
+          !widget.autoConnect ||
+          _autoConnectSuspended ||
+          _joinError != null) {
+        return;
+      }
+      unawaited(_joinMuted());
+    });
+  }
+
+  /// The reader's own request for the audio back after a failed connection.
+  Future<void> _reconnect() {
+    setState(() {
+      _autoConnectSuspended = false;
+      _joinError = null;
+    });
+    return _joinMuted();
+  }
+
+  /// The single exit, asked for from inside the call view.
+  ///
+  /// When the page supplied one, leaving is its decision: it confirms, takes
+  /// this call down through [VoiceMediaLink] and then releases the LOOP
+  /// membership. Without a page there is only the call to retire.
+  Future<void> _requestExit() {
+    final exit = widget.onExitRequested;
+    return exit == null ? _leaveForegroundCall() : exit();
+  }
+
+  /// Published to the page through [VoiceMediaLink].
+  Future<void> _disconnectForExit() async {
+    if (!_autoConnectSuspended) {
+      // The membership is about to end; a ready room must not reconnect in
+      // the window between this disconnect and the LOOP leave.
+      if (mounted) {
+        setState(() => _autoConnectSuspended = true);
+      } else {
+        _autoConnectSuspended = true;
+      }
+    }
+    if (_foregroundCall == null) return;
+    await _leaveForegroundCall();
+  }
+
   Future<void> _joinMuted() async {
     if (!_appIsForeground ||
         _cleanupPending ||
@@ -451,6 +596,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     final handle = _foregroundCall;
     if (handle == null) return;
     _leaving = true;
+    _autoConnectSuspended = true;
     _generation += 1;
     try {
       await handle.leave();
@@ -487,6 +633,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       _cleanupPending = true;
       _cleanupFailed = false;
       _joinError = null;
+      _autoConnectSuspended = false;
     });
     unawaited(_completeCleanup(handles, cleanupGeneration));
   }
@@ -593,7 +740,73 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     return result;
   }
 
+  /// The lobby sentence for a surface that connects on its own.
+  ///
+  /// The diagnosis below is unchanged — the reader is told which step did not
+  /// finish and is offered the same retry. What changes is the heading: this
+  /// account is already a member of the room, so a media failure must never
+  /// read as "you are not in the room".
   static _StreamVoiceContent _contentFor({
+    required String? principalKey,
+    required AsyncValue<StreamVideoSessionAuthorization>? authorization,
+    required AsyncValue<AudioRoomTarget?>? target,
+    required AudioRoomCallFactory? callFactory,
+    required String? joinError,
+    required bool appIsForeground,
+    required bool cleanupPending,
+    required bool cleanupFailed,
+    required bool autoConnect,
+    required bool autoConnectSuspended,
+  }) {
+    final content = _baseContentFor(
+      principalKey: principalKey,
+      authorization: authorization,
+      target: target,
+      callFactory: callFactory,
+      joinError: joinError,
+      appIsForeground: appIsForeground,
+      cleanupPending: cleanupPending,
+      cleanupFailed: cleanupFailed,
+    );
+    if (!autoConnect) return content;
+    if (content.ready) {
+      if (joinError != null) {
+        return _StreamVoiceContent(
+          title: '已加入，语音连接失败',
+          message: '$joinError你仍然在这个房间里，没有被移出。',
+          tone: LoopTone.danger,
+          icon: Icons.wifi_off_rounded,
+          ready: true,
+          reconnect: true,
+        );
+      }
+      if (autoConnectSuspended) {
+        return const _StreamVoiceContent(
+          title: '语音已断开',
+          message: '这次通话已经断开，你在 LOOP 记录里仍然是这个房间的成员。',
+          tone: LoopTone.warning,
+          icon: Icons.headset_off_rounded,
+          ready: true,
+          reconnect: true,
+        );
+      }
+      return const _StreamVoiceContent(
+        title: '正在连接语音…',
+        message: '已经加入房间，正在建立语音连接。你以听众身份静音进入。',
+        icon: Icons.graphic_eq_rounded,
+        loading: true,
+        ready: true,
+      );
+    }
+    if (content.retryAuthorization ||
+        content.retryTarget ||
+        content.retryCleanup) {
+      return content.retitled('已加入，语音连接失败');
+    }
+    return content;
+  }
+
+  static _StreamVoiceContent _baseContentFor({
     required String? principalKey,
     required AsyncValue<StreamVideoSessionAuthorization>? authorization,
     required AsyncValue<AudioRoomTarget?>? target,
@@ -783,6 +996,7 @@ class _StreamVoiceContent {
     this.retryTarget = false,
     this.retryCleanup = false,
     this.ready = false,
+    this.reconnect = false,
   });
 
   final String title;
@@ -794,4 +1008,23 @@ class _StreamVoiceContent {
   final bool retryTarget;
   final bool retryCleanup;
   final bool ready;
+
+  /// The surface connects on its own, so a connect button appears only to put
+  /// a stopped connection back.
+  final bool reconnect;
+
+  _StreamVoiceContent retitled(String title) {
+    return _StreamVoiceContent(
+      title: title,
+      message: message,
+      icon: icon,
+      tone: tone,
+      loading: loading,
+      retryAuthorization: retryAuthorization,
+      retryTarget: retryTarget,
+      retryCleanup: retryCleanup,
+      ready: ready,
+      reconnect: reconnect,
+    );
+  }
 }

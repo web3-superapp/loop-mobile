@@ -385,7 +385,12 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
         _leaveBusy = false;
         _commandError = '这次通话没能干净地退出，请重试。';
       });
+      return;
     }
+    // A leave that took the call down unmounts this view. One that asked the
+    // page first can come back with the question declined, and the control
+    // has to be usable again.
+    if (mounted) setState(() => _leaveBusy = false);
   }
 }
 

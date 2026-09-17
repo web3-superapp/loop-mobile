@@ -6,6 +6,7 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
+import 'package:loop_mobile/features/chat/calls/voice_media_link.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
@@ -41,6 +42,11 @@ class VoiceRoomScreen extends ConsumerStatefulWidget {
 }
 
 class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
+  /// The thread to the mounted media surface.
+  ///
+  /// 加入 is one command and so is 离开: this page takes the provider call
+  /// down through the link before it releases the LOOP membership.
+  final VoiceMediaLink _mediaLink = VoiceMediaLink();
   VoiceRoomPagePresence? _presence;
   var _entered = false;
 
@@ -179,7 +185,14 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         else ...<Widget>[
           _RoomFacts(snapshot: snapshot),
           if (snapshot.viewer.hasJoined && snapshot.room.isJoinable)
-            _MediaSection(roomId: snapshot.room.roomId),
+            _MediaSection(
+              roomId: snapshot.room.roomId,
+              link: _mediaLink,
+              // The hang-up inside the call view is the same single exit as
+              // the page's 离开: dropping the audio alone would leave this
+              // account a member of a room it can no longer hear.
+              onExitRequested: () => _leave(controller, snapshot.viewer),
+            ),
           if (widget.expanded) ...<Widget>[
             const LoopLabel('举手队列'),
             _HandRaiseQueue(state: state),
@@ -196,7 +209,10 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
           ],
           _ViewerActions(
             state: state,
-            onJoin: () => _run(controller.join, '已加入语音房'),
+            // One command: the LOOP grant, and then the connection it
+            // authorizes. The media section below mounts itself the moment
+            // the membership exists and connects without a second tap.
+            onJoin: () => _run(controller.join, '已加入，正在连接语音'),
             onLeave: () => _leave(controller, snapshot.viewer),
             onRaise: () => _run(controller.raiseHand, '已举手，等待主持人邀请'),
             onCancel: () => _run(controller.cancelHandRaise, '已取消举手'),
@@ -257,7 +273,14 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       sheetKey: 'voiceroom-leave-sheet',
     );
     if (!confirmed || !mounted) return;
-    await _run(controller.leave, '已离开语音房');
+    // The provider call goes down first: leaving LOOP while the call is still
+    // up would leave a connected room this account is no longer in.
+    final disconnected = await _mediaLink.disconnect();
+    if (!mounted) return;
+    await _run(
+      controller.leave,
+      disconnected ? '已离开语音房' : '已离开语音房，语音连接的收尾没有确认',
+    );
   }
 
   Future<void> _endRoom(VoiceRoomController controller) async {
@@ -389,9 +412,15 @@ class _RoomFacts extends StatelessWidget {
 /// room ID: the call type stays fixed in Flutter and connection, participants,
 /// capabilities and microphone state come from Stream's own `CallState`.
 class _MediaSection extends StatelessWidget {
-  const _MediaSection({required this.roomId});
+  const _MediaSection({
+    required this.roomId,
+    required this.link,
+    required this.onExitRequested,
+  });
 
   final String? roomId;
+  final VoiceMediaLink link;
+  final Future<void> Function() onExitRequested;
 
   @override
   Widget build(BuildContext context) {
@@ -420,7 +449,16 @@ class _MediaSection extends StatelessWidget {
     // would move — and an app bar with a second back affordance inside a card.
     return KeyedSubtree(
       key: const ValueKey<String>('voiceroom-media'),
-      child: StreamVoiceRoomPage(target: target, inline: true),
+      child: StreamVoiceRoomPage(
+        target: target,
+        inline: true,
+        // A member who was let in expects to hear the room. The connection is
+        // part of 加入, not a second decision, so it starts on its own — still
+        // muted, still without asking for the microphone permission.
+        autoConnect: true,
+        link: link,
+        onExitRequested: onExitRequested,
+      ),
     );
   }
 }

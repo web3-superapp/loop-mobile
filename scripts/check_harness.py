@@ -6748,6 +6748,11 @@ def check_product_contract(root: Path) -> list[str]:
                 "return _commands.retire()",
             ),
             "lib/features/chat/calls/stream_voice_room_page.dart": (
+                # A media failure is not a membership failure: the account is
+                # still in the room, and the surface says so before it offers
+                # the connection back.
+                "已加入，语音连接失败",
+                "重新连接语音",
                 "AppLifecycleState.paused",
                 "AppLifecycleState.hidden",
                 "AppLifecycleState.detached",
@@ -7494,7 +7499,15 @@ def check_production_chat_audio_room_entry(root: Path) -> list[str]:
                 "AUDIO_ROOM_USER_ROLE_EVIDENCE_PENDING",
                 # The authorized room is handed straight to the reviewed lobby,
                 # so no scoped provider can resolve to the fail-closed default.
-                "StreamVoiceRoomPage(target: target, inline: true)",
+                "child: StreamVoiceRoomPage(",
+                "target: target,",
+                "inline: true,",
+                # Joining a voice room is one decision: the LOOP grant and the
+                # connection it authorizes belong to the same command, and so
+                # do the disconnect and the leave that end them.
+                "autoConnect: true,",
+                "onExitRequested: onExitRequested,",
+                "await _mediaLink.disconnect()",
                 "voiceroom-remove-speaker-unavailable",
             ),
             "test/stream_chat_inbox_page_test.dart": (
@@ -7507,6 +7520,9 @@ def check_production_chat_audio_room_entry(root: Path) -> list[str]:
                 "a listener sees no host control",
                 "a host sees the host controls and the queue",
                 "an unobserved participant count renders the em dash",
+                "joining the room is the same step as hearing it",
+                "a failed connection keeps the membership and offers it back",
+                "leaving drops the audio before it releases the membership",
             ),
             "docs/decisions/0024-expose-production-audio-room-from-chat.md": (
                 "The entry performs no provider operation",

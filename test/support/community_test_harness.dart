@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
 import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
@@ -21,6 +22,8 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
+import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
+import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 import 'communication_test_harness.dart';
@@ -752,6 +755,12 @@ Future<void> pumpCommunityPage(
   ChatForwardState? forwardState,
   ChatSearchGateway? chatSearch,
   Future<StreamSessionAuthorization> Function()? streamAuthorization,
+
+  /// Arms the media surface the voice room page mounts: supplying either of
+  /// these puts a verified video principal in the scope, so the surface runs
+  /// its own states instead of the signed-out one.
+  AudioRoomCallFactory? audioRoomCallFactory,
+  StreamVideoSessionAuthorization? videoAuthorization,
   LoopV2MetaSnapshot? meta,
   Size size = const Size(390, 1400),
   bool settle = true,
@@ -794,6 +803,18 @@ Future<void> pumpCommunityPage(
           streamChatAuthorizationProvider.overrideWith(
             (ref) => streamAuthorization(),
           ),
+        if (audioRoomCallFactory != null || videoAuthorization != null) ...[
+          streamVideoPrincipalKeyProvider.overrideWithValue(
+            'video-principal-test',
+          ),
+          streamVideoAuthorizationProvider.overrideWith(
+            (ref) async =>
+                videoAuthorization ??
+                StreamVideoSessionAuthorization.authorized,
+          ),
+        ],
+        if (audioRoomCallFactory != null)
+          audioRoomCallFactoryProvider.overrideWithValue(audioRoomCallFactory),
         loopV2MetaSnapshotProvider.overrideWith(
           (ref) async => meta ?? testMetaSnapshot(),
         ),

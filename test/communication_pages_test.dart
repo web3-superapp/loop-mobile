@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
+import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/features/chat/v2/chat_search_screen.dart';
@@ -16,6 +20,7 @@ import 'package:loop_mobile/features/community/community_ai_screen.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/community_test_harness.dart';
@@ -1073,6 +1078,205 @@ void main() {
     });
   });
 
+  group('voiceroom media', () {
+    testWidgets('joining the room is the same step as hearing it', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: null, observedAvailable: false),
+      )..loadSnapshot = testVoiceRoomSnapshot(role: VoiceRoomRole.listener);
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+
+      final join = find.byKey(const ValueKey<String>('voiceroom-join'));
+      await scrollToCommunitySection(tester, join);
+      await tester.tap(join);
+      await tester.pumpAndSettle();
+
+      // One tap, two steps, in this order: LOOP grants the membership and the
+      // connection it authorizes follows on its own.
+      expect(
+        voice.commands.where((command) => command == 'join'),
+        hasLength(1),
+      );
+      expect(media.joinCalls, 1);
+      expect(
+        voice.commands.indexOf('media:connect'),
+        greaterThan(voice.commands.indexOf('join')),
+      );
+      expect(find.text('语音已连接（测试）'), findsOneWidget);
+      // A listener hears the room; it does not ask for a microphone.
+      expect(media.microphoneCalls, 0);
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-join')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a member who is already in the room only connects', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+
+      expect(find.text('语音已连接（测试）'), findsOneWidget);
+      expect(media.joinCalls, 1);
+      // The membership is already there: joining again would be a second
+      // command for a grant this account holds.
+      expect(voice.commands, isNot(contains('join')));
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-join')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a failed connection keeps the membership and offers it back', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      final media = _FakeVoiceMediaFactory(
+        log: voice.commands,
+        joinFailures: 1,
+      );
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+
+      final failure = find.text('已加入，语音连接失败');
+      await scrollToCommunitySection(tester, failure);
+      expect(failure, findsOneWidget);
+      expect(find.text('语音已连接（测试）'), findsNothing);
+      // The media failure is not a membership failure: LOOP is not told to
+      // leave, and the page never reads as "not joined".
+      expect(voice.commands, isNot(contains('leave')));
+      final role = find.byKey(const ValueKey<String>('voiceroom-role'));
+      await scrollToCommunitySection(tester, role);
+      expect(find.text('听众'), findsOneWidget);
+      expect(find.text('未加入'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-join')),
+        findsNothing,
+      );
+
+      final retry = find.byKey(
+        const ValueKey<String>('voiceroom-media-reconnect'),
+      );
+      await scrollToCommunitySection(tester, retry);
+      await tester.tap(retry);
+      await tester.pumpAndSettle();
+
+      expect(media.joinCalls, 2);
+      expect(find.text('语音已连接（测试）'), findsOneWidget);
+      expect(voice.commands, isNot(contains('join')));
+    });
+
+    testWidgets('an unavailable voice token still reads as joined', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+        videoAuthorization: StreamVideoSessionAuthorization.unavailable,
+      );
+
+      final failure = find.text('已加入，语音连接失败');
+      await scrollToCommunitySection(tester, failure);
+      expect(failure, findsOneWidget);
+      expect(find.text('重试会话'), findsOneWidget);
+      expect(voice.commands, isNot(contains('leave')));
+    });
+
+    testWidgets('leaving drops the audio before it releases the membership', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      )..loadSnapshot = testVoiceRoomSnapshot(role: null);
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+      expect(find.text('语音已连接（测试）'), findsOneWidget);
+
+      final leave = find.byKey(const ValueKey<String>('voiceroom-leave'));
+      await scrollToCommunitySection(tester, leave);
+      await tester.tap(leave);
+      await tester.pumpAndSettle();
+      // The question is still asked, and nothing moves while it is open.
+      expect(media.leaveCalls, 0);
+      expect(voice.commands, isNot(contains('leave')));
+
+      await tester.tap(find.text('离开').last);
+      await tester.pumpAndSettle();
+
+      expect(media.leaveCalls, 1);
+      expect(
+        voice.commands.where((command) => command == 'leave'),
+        hasLength(1),
+      );
+      expect(
+        voice.commands.indexOf('leave'),
+        greaterThan(voice.commands.indexOf('media:leave')),
+      );
+      expect(find.text('已离开语音房'), findsOneWidget);
+    });
+
+    testWidgets('hanging up inside the call is the same single exit', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+
+      final hangUp = find.byKey(const ValueKey<String>('fake-hangup'));
+      await scrollToCommunitySection(tester, hangUp);
+      await tester.tap(hangUp);
+      await tester.pumpAndSettle();
+
+      // Dropping the audio alone would leave this account a member of a room
+      // it can no longer hear, so the in-call control asks the page's one
+      // 离开 question.
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-leave-sheet')),
+        findsOneWidget,
+      );
+      expect(media.leaveCalls, 0);
+      expect(voice.commands, isNot(contains('leave')));
+    });
+  });
+
   group('voiceroom banner', () {
     testWidgets('the banner stands while the member is still in the room', (
       tester,
@@ -1154,6 +1358,98 @@ void main() {
       expect(find.byType(TextField), findsNothing);
     });
   });
+}
+
+/// One Stream Audio Room call, recorded into the same log as the LOOP
+/// commands so a test can pin the order of the two.
+final class _FakeVoiceMediaFactory implements AudioRoomCallFactory {
+  _FakeVoiceMediaFactory({required this.log, this.joinFailures = 0});
+
+  final List<String> log;
+  int joinFailures;
+  final List<_FakeVoiceMediaCall> handles = <_FakeVoiceMediaCall>[];
+
+  int get joinCalls =>
+      handles.fold(0, (total, handle) => total + handle.joinCalls);
+  int get leaveCalls =>
+      handles.fold(0, (total, handle) => total + handle.leaveCalls);
+  int get microphoneCalls =>
+      handles.fold(0, (total, handle) => total + handle.microphoneCalls);
+
+  @override
+  AudioRoomCallHandle create(AudioRoomTarget target) {
+    final fails = joinFailures > 0;
+    if (fails) joinFailures -= 1;
+    final handle = _FakeVoiceMediaCall(
+      roomId: target.roomId,
+      log: log,
+      failsJoin: fails,
+    );
+    handles.add(handle);
+    return handle;
+  }
+}
+
+final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
+  _FakeVoiceMediaCall({
+    required this.roomId,
+    required this.log,
+    required this.failsJoin,
+  });
+
+  @override
+  final String roomId;
+  final List<String> log;
+  final bool failsJoin;
+  int joinCalls = 0;
+  int leaveCalls = 0;
+  int microphoneCalls = 0;
+  var _retired = false;
+
+  @override
+  bool get retirementStarted => _retired;
+
+  @override
+  Future<void> joinMuted() async {
+    joinCalls += 1;
+    log.add('media:connect');
+    if (failsJoin) {
+      throw const AudioRoomCallFailure(AudioRoomCallFailureKind.join);
+    }
+  }
+
+  @override
+  Future<bool> setMicrophoneEnabled({required bool enabled}) async {
+    microphoneCalls += 1;
+    return true;
+  }
+
+  @override
+  Future<void> retireForBackground() => leave();
+
+  @override
+  Future<void> leave() async {
+    leaveCalls += 1;
+    _retired = true;
+    log.add('media:leave');
+  }
+
+  @override
+  Widget buildForeground({
+    required Future<void> Function() onLeaveRequested,
+    bool inline = false,
+  }) {
+    return Column(
+      children: <Widget>[
+        const Text('语音已连接（测试）'),
+        TextButton(
+          key: const ValueKey<String>('fake-hangup'),
+          onPressed: () => unawaited(onLeaveRequested()),
+          child: const Text('挂断'),
+        ),
+      ],
+    );
+  }
 }
 
 /// Mounts the shell banner beside the room page so one test can close the page
