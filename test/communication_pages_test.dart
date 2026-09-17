@@ -785,6 +785,30 @@ void main() {
       expect(lobby.target!.roomId, 'loop_voice_$testChannelHex');
     });
 
+    testWidgets('the joined room keeps one scrolling layer', (tester) async {
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: FakeVoiceRoomGateway(
+          snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.speaker),
+        ),
+      );
+
+      // The media surface used to be a whole page inside a 420px box: the
+      // reader could scroll the middle of the screen and the screen itself,
+      // and the embedded app bar offered a second way back.
+      final vertical = tester
+          .widgetList<Scrollable>(find.byType(Scrollable))
+          .where(
+            (view) =>
+                view.axisDirection == AxisDirection.down ||
+                view.axisDirection == AxisDirection.up,
+          );
+      expect(vertical, hasLength(1));
+      expect(find.byType(AppBar), findsNothing);
+      expect(find.byType(Scaffold), findsOneWidget);
+    });
+
     testWidgets('a host is offered no speaker to remove', (tester) async {
       await pumpCommunityPage(
         tester,

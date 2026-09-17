@@ -46,7 +46,12 @@ abstract interface class AudioRoomCallHandle {
 
   Future<void> leave();
 
-  Widget buildForeground({required Future<void> Function() onLeaveRequested});
+  /// [inline] asks for the section layout used inside the LOOP voice room
+  /// page, which owns the only scrolling region on that screen.
+  Widget buildForeground({
+    required Future<void> Function() onLeaveRequested,
+    bool inline,
+  });
 }
 
 /// Serializes foreground microphone commands with one terminal retirement.
@@ -267,12 +272,16 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
   }
 
   @override
-  Widget buildForeground({required Future<void> Function() onLeaveRequested}) {
+  Widget buildForeground({
+    required Future<void> Function() onLeaveRequested,
+    bool inline = false,
+  }) {
     return StreamForegroundCallView(
       call: _call,
       retirementStarted: () => retirementStarted,
       onMicrophoneRequested: setMicrophoneEnabled,
       onLeaveRequested: onLeaveRequested,
+      inline: inline,
     );
   }
 }

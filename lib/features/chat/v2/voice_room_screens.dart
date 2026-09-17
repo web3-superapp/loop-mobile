@@ -299,10 +299,14 @@ class _MediaSection extends StatelessWidget {
     // The authorized room is handed straight to the reviewed lobby: no scoped
     // provider is involved, so the locator can never resolve to the
     // fail-closed production default by accident.
-    return SizedBox(
+    //
+    // It is mounted inline. Mounting the lobby as a page inside a fixed box
+    // gave the screen a second scrolling region — the reader could scroll the
+    // middle of the page and the page itself, with no way to tell which one
+    // would move — and an app bar with a second back affordance inside a card.
+    return KeyedSubtree(
       key: const ValueKey<String>('voiceroom-media'),
-      height: 420,
-      child: StreamVoiceRoomPage(target: target),
+      child: StreamVoiceRoomPage(target: target, inline: true),
     );
   }
 }

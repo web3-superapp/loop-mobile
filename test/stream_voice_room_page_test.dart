@@ -28,7 +28,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Verified login required'), findsOneWidget);
+    expect(find.text('需要完成登录验证'), findsOneWidget);
     expect(find.text('ETH Macro Room'), findsNothing);
     expect(find.textContaining('participant'), findsNothing);
     expect(find.text('Ringing'), findsNothing);
@@ -52,10 +52,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Stream session unavailable'), findsOneWidget);
-    expect(find.text('Join audio room'), findsOneWidget);
+    expect(find.text('语音会话暂时不可用'), findsOneWidget);
+    expect(find.text('连接语音'), findsOneWidget);
     final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Join audio room'),
+      find.widgetWithText(FilledButton, '连接语音'),
     );
     expect(button.onPressed, isNull);
   });
@@ -79,11 +79,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('No authorized room assigned'), findsOneWidget);
+    expect(find.text('还没有拿到语音房'), findsOneWidget);
     expect(find.text('ETH Macro Room'), findsNothing);
     expect(find.text('Connected'), findsNothing);
     final button = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Join audio room'),
+      find.widgetWithText(FilledButton, '连接语音'),
     );
     expect(button.onPressed, isNull);
   });
@@ -103,30 +103,30 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Audio room ready'), findsOneWidget);
-    expect(find.text('Muted on entry'), findsOneWidget);
-    expect(find.text('Permission when needed'), findsOneWidget);
+    expect(find.text('语音可以连接'), findsOneWidget);
+    expect(find.text('进入即静音'), findsOneWidget);
+    expect(find.text('按需申请权限'), findsOneWidget);
 
-    await tester.tap(find.text('Join audio room'));
-    await tester.tap(find.text('Join audio room'));
+    await tester.tap(find.text('连接语音'));
+    await tester.tap(find.text('连接语音'));
     await tester.pump();
 
     expect(find.text('Official CallState view'), findsOneWidget);
     expect(factory.createCalls, 1);
     expect(handle.joinCalls, 1);
-    expect(find.text('Join audio room'), findsNothing);
+    expect(find.text('连接语音'), findsNothing);
 
     joinGate.complete();
     await tester.pumpAndSettle();
 
     expect(find.text('Official CallState view'), findsOneWidget);
-    expect(find.text('Audio room ready'), findsNothing);
+    expect(find.text('语音可以连接'), findsNothing);
 
     await tester.tap(find.byKey(const Key('fake-leave-room')));
     await tester.pumpAndSettle();
 
     expect(handle.leaveCalls, 1);
-    expect(find.text('Audio room ready'), findsOneWidget);
+    expect(find.text('语音可以连接'), findsOneWidget);
   });
 
   testWidgets('join failure is sanitized and retires the failed Call', (
@@ -142,16 +142,11 @@ void main() {
       _readyPage(factory: factory, target: _target('loop-daily')),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Join audio room'));
+    await tester.tap(find.text('连接语音'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Join failed'), findsOneWidget);
-    expect(
-      find.text(
-        'Could not join this audio room. Check room access and connection, then retry.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('连接失败'), findsOneWidget);
+    expect(find.text('没能连上这个语音房，请检查房间权限与网络后重试。'), findsOneWidget);
     expect(find.textContaining('provider-secret-detail'), findsNothing);
     expect(handle.leaveCalls, 1);
     expect(find.text('Official CallState view'), findsNothing);
@@ -171,7 +166,7 @@ void main() {
       _readyPage(factory: factory, target: _target('loop-daily')),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Join audio room'));
+    await tester.tap(find.text('连接语音'));
     await tester.pump();
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -205,7 +200,7 @@ void main() {
         _readyPage(factory: factory, target: _target('loop-daily')),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Join audio room'));
+      await tester.tap(find.text('连接语音'));
       await tester.pumpAndSettle();
       expect(find.text('Official CallState view'), findsOneWidget);
 
@@ -220,8 +215,8 @@ void main() {
       await tester.pump();
 
       expect(find.text('Official CallState view'), findsNothing);
-      expect(find.text('Audio room paused'), findsOneWidget);
-      expect(find.text('Audio room ready'), findsNothing);
+      expect(find.text('语音已暂停'), findsOneWidget);
+      expect(find.text('语音可以连接'), findsNothing);
       expect(factory.createCalls, 1);
       expect(handle.joinCalls, 1);
 
@@ -229,7 +224,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(handle.backgroundMicrophoneDisableCalls, 2);
-      expect(find.text('Audio room ready'), findsOneWidget);
+      expect(find.text('语音可以连接'), findsOneWidget);
       expect(factory.createCalls, 1);
       expect(handle.joinCalls, 1);
     },
@@ -252,7 +247,7 @@ void main() {
       _readyPage(factory: factory, target: _target('loop-daily')),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Join audio room'));
+    await tester.tap(find.text('连接语音'));
     await tester.pumpAndSettle();
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
@@ -261,22 +256,22 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(handle.backgroundRetirementCalls, 1);
-    expect(find.text('Room cleanup incomplete'), findsOneWidget);
-    expect(find.text('Join audio room'), findsOneWidget);
+    expect(find.text('上一次通话没有收尾'), findsOneWidget);
+    expect(find.text('连接语音'), findsOneWidget);
     final joinButton = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Join audio room'),
+      find.widgetWithText(FilledButton, '连接语音'),
     );
     expect(joinButton.onPressed, isNull);
     expect(find.textContaining('provider-retirement-detail'), findsNothing);
     expect(factory.createCalls, 1);
     expect(handle.joinCalls, 1);
 
-    await tester.tap(find.text('Retry cleanup'));
+    await tester.tap(find.text('重试收尾'));
     await tester.pumpAndSettle();
 
     expect(handle.leaveCalls, 2);
-    expect(find.text('Audio room ready'), findsOneWidget);
-    expect(find.text('Room cleanup incomplete'), findsNothing);
+    expect(find.text('语音可以连接'), findsOneWidget);
+    expect(find.text('上一次通话没有收尾'), findsNothing);
   });
 
   testWidgets('background cleanup preempts stuck Speak and native suspension', (
@@ -300,7 +295,7 @@ void main() {
       _readyPage(factory: factory, target: _target('loop-daily')),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Join audio room'));
+    await tester.tap(find.text('连接语音'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('fake-speak')));
     await tester.pump();
@@ -315,13 +310,13 @@ void main() {
     expect(handle.suspendAudioCalls, 1);
     expect(handle.backgroundMicrophoneDisableCalls, 1);
     expect(handle.leaveCalls, 1);
-    expect(find.text('Audio room paused'), findsOneWidget);
+    expect(find.text('语音已暂停'), findsOneWidget);
 
     activeRemovalGate.complete();
     await tester.pumpAndSettle();
 
-    expect(find.text('Audio room paused'), findsOneWidget);
-    expect(find.text('Audio room ready'), findsNothing);
+    expect(find.text('语音已暂停'), findsOneWidget);
+    expect(find.text('语音可以连接'), findsNothing);
     expect(handle.backgroundMicrophoneDisableCalls, 1);
 
     microphoneGate.complete();
@@ -335,7 +330,7 @@ void main() {
       'disable',
     ]);
     expect(handle.leaveCalls, 1);
-    expect(find.text('Audio room ready'), findsOneWidget);
+    expect(find.text('语音可以连接'), findsOneWidget);
   });
 
   testWidgets(
@@ -352,7 +347,7 @@ void main() {
         _readyPage(factory: factory, target: _target('loop-daily')),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Join audio room'));
+      await tester.tap(find.text('连接语音'));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('fake-leave-room')));
       await tester.tap(find.byKey(const Key('fake-leave-room')));
@@ -362,14 +357,14 @@ void main() {
       expect(handle.suspendAudioCalls, 1);
       expect(handle.backgroundMicrophoneDisableCalls, 1);
       expect(find.text('Official CallState view'), findsOneWidget);
-      expect(find.text('Audio room ready'), findsNothing);
+      expect(find.text('语音可以连接'), findsNothing);
 
       leaveGate.complete();
       await tester.pumpAndSettle();
 
       expect(handle.leaveCalls, 1);
       expect(handle.backgroundMicrophoneDisableCalls, 2);
-      expect(find.text('Audio room ready'), findsOneWidget);
+      expect(find.text('语音可以连接'), findsOneWidget);
     },
   );
 
@@ -391,7 +386,7 @@ void main() {
         _readyPage(factory: factory, target: _target('loop-daily')),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Join audio room'));
+      await tester.tap(find.text('连接语音'));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('fake-speak')));
       await tester.pump();
@@ -433,7 +428,7 @@ void main() {
       _readyPage(factory: factory, target: _target('loop-daily')),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Join audio room'));
+    await tester.tap(find.text('连接语音'));
     await tester.pumpAndSettle();
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
@@ -458,7 +453,7 @@ void main() {
       _readyPage(factory: factory, target: _target('loop-daily')),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Join audio room'));
+    await tester.tap(find.text('连接语音'));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('fake-speak')), findsOneWidget);
@@ -632,7 +627,10 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
   }
 
   @override
-  Widget buildForeground({required Future<void> Function() onLeaveRequested}) {
+  Widget buildForeground({
+    required Future<void> Function() onLeaveRequested,
+    bool inline = false,
+  }) {
     return Column(
       children: <Widget>[
         const Text('Official CallState view'),

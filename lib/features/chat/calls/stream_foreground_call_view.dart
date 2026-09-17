@@ -18,16 +18,16 @@ typedef _ForegroundCallViewData = ({
 /// reads the current [CallStatus] from the SDK's [CallState].
 abstract final class StreamCallStatusPresentation {
   static String label(CallStatus status) {
-    if (status is CallStatusReconnectionFailed) return 'Reconnect failed';
-    if (status.isIdle) return 'Waiting';
-    if (status.isJoining) return 'Joining';
-    if (status.isJoined) return 'Connecting media';
-    if (status.isConnected) return 'Live';
-    if (status.isReconnecting) return 'Reconnecting';
-    if (status.isMigrating) return 'Moving connection';
-    if (status.isConnecting) return 'Connecting';
-    if (status.isDisconnected) return 'Disconnected';
-    return 'Call unavailable';
+    if (status is CallStatusReconnectionFailed) return '重连失败';
+    if (status.isIdle) return '等待中';
+    if (status.isJoining) return '加入中';
+    if (status.isJoined) return '媒体连接中';
+    if (status.isConnected) return '已连接';
+    if (status.isReconnecting) return '重连中';
+    if (status.isMigrating) return '切换连接';
+    if (status.isConnecting) return '连接中';
+    if (status.isDisconnected) return '已断开';
+    return '通话不可用';
   }
 
   static LoopTone tone(CallStatus status) {
@@ -96,9 +96,17 @@ class StreamForegroundCallView extends StatefulWidget {
     required this.onMicrophoneRequested,
     required this.onLeaveRequested,
     super.key,
+    this.inline = false,
   });
 
   final Call call;
+
+  /// True when the view is one section of the LOOP voice room page.
+  ///
+  /// The page owns the only scrolling region, so an inline view adds neither a
+  /// scroll view of its own nor a pinned dock: it lays out at its content
+  /// height and its controls travel with the section above them.
+  final bool inline;
   final bool Function() retirementStarted;
   final Future<bool> Function({required bool enabled}) onMicrophoneRequested;
   final Future<void> Function() onLeaveRequested;
@@ -143,6 +151,29 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
           microphoneEnableRequested: _microphoneEnableRequested,
           retirementStarted: retirementStarted,
         );
+        final facts = _facts(
+          context,
+          data: data,
+          retirementStarted: retirementStarted,
+        );
+        final controls = _controls(
+          context,
+          data: data,
+          retirementStarted: retirementStarted,
+          canRequestMicrophone: canRequestMicrophone,
+        );
+        if (widget.inline) {
+          // 内联面板不带自己的滚动层：语音房整页只有一层滚动，这里只按内容
+          // 高度展开。
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[facts, const SizedBox(height: 16), controls],
+            ),
+          );
+        }
         return Column(
           children: <Widget>[
             Expanded(
@@ -151,148 +182,167 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 620),
-                    child: Column(
-                      children: <Widget>[
-                        LoopStatusPill(
-                          label: StreamCallStatusPresentation.label(
-                            data.status,
-                          ),
-                          tone: StreamCallStatusPresentation.tone(data.status),
-                          icon: StreamCallStatusPresentation.icon(data.status),
-                        ),
-                        const SizedBox(height: 18),
-                        Text(
-                          'Loop Audio Room',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineLarge,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${data.participantCount} '
-                          '${data.participantCount == 1 ? 'participant' : 'participants'}',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                        if (data.audioSuspended) ...<Widget>[
-                          const SizedBox(height: 14),
-                          const LoopStatusPill(
-                            label: 'Audio paused by system',
-                            tone: LoopTone.warning,
-                            icon: Icons.pause_circle_outline_rounded,
-                          ),
-                        ],
-                        const SizedBox(height: 30),
-                        _ParticipantGrid(participants: data.participants),
-                        const SizedBox(height: 22),
-                        Text(
-                          retirementStarted && !data.microphoneEnabled
-                              ? 'Room departure has started. Capture cannot restart; mute if needed, then retry Leave.'
-                              : data.canSendAudio &&
-                                    _microphoneEnableRequested &&
-                                    !data.microphoneEnabled
-                              ? 'Microphone capture is off. For foreground Audio Room v1 safety, leave and rejoin before speaking again.'
-                              : data.canSendAudio
-                              ? 'You joined muted. Tap Speak when you are ready; system microphone permission is requested only when capture starts.'
-                              : 'Your Stream role is listen-only in this room.',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
+                    child: facts,
                   ),
                 ),
               ),
             ),
-            LoopActionDock(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  if (_commandError != null) ...<Widget>[
-                    Semantics(
-                      liveRegion: true,
-                      child: Text(
-                        _commandError!,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyMedium
-                            ?.copyWith(color: LoopColors.danger),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                  ],
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed:
-                              !_microphoneBusy &&
-                                  !_leaveBusy &&
-                                  canRequestMicrophone
-                              ? () => _setMicrophone(
-                                  enabled: !data.microphoneEnabled,
-                                )
-                              : null,
-                          icon: _microphoneBusy
-                              ? const SizedBox.square(
-                                  dimension: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Icon(
-                                  data.microphoneEnabled
-                                      ? Icons.mic_off_rounded
-                                      : data.canSendAudio &&
-                                            !_microphoneEnableRequested &&
-                                            !retirementStarted
-                                      ? Icons.mic_rounded
-                                      : Icons.headphones_rounded,
-                                ),
-                          label: Text(
-                            _microphoneBusy
-                                ? 'Updating microphone'
-                                : data.microphoneEnabled
-                                ? 'Mute'
-                                : data.canSendAudio &&
-                                      !_microphoneEnableRequested &&
-                                      !retirementStarted
-                                ? 'Speak'
-                                : retirementStarted
-                                ? 'Leave retry required'
-                                : data.canSendAudio
-                                ? 'Rejoin to speak'
-                                : 'Listen only',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      IconButton.filled(
-                        onPressed: _leaveBusy ? null : _leave,
-                        tooltip: 'Leave audio room',
-                        style: IconButton.styleFrom(
-                          minimumSize: const Size.square(48),
-                          backgroundColor: LoopColors.danger,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: LoopColors.danger.withValues(
-                            alpha: 0.35,
-                          ),
-                        ),
-                        icon: _leaveBusy
-                            ? const SizedBox.square(
-                                dimension: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.call_end_rounded),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            LoopActionDock(child: controls),
           ],
         );
       },
+    );
+  }
+
+  Widget _facts(
+    BuildContext context, {
+    required _ForegroundCallViewData data,
+    required bool retirementStarted,
+  }) {
+    return Column(
+      crossAxisAlignment: widget.inline
+          ? CrossAxisAlignment.stretch
+          : CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Align(
+          alignment: widget.inline ? Alignment.centerLeft : Alignment.center,
+          child: LoopStatusPill(
+            label: StreamCallStatusPresentation.label(data.status),
+            tone: StreamCallStatusPresentation.tone(data.status),
+            icon: StreamCallStatusPresentation.icon(data.status),
+          ),
+        ),
+        if (!widget.inline) ...<Widget>[
+          const SizedBox(height: 18),
+          Text(
+            '语音房',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineLarge,
+          ),
+        ],
+        const SizedBox(height: 8),
+        Text(
+          '${data.participantCount} 人在通话',
+          textAlign: widget.inline ? TextAlign.start : TextAlign.center,
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        if (data.audioSuspended) ...<Widget>[
+          const SizedBox(height: 14),
+          Align(
+            alignment: widget.inline ? Alignment.centerLeft : Alignment.center,
+            child: const LoopStatusPill(
+              label: '系统已暂停音频',
+              tone: LoopTone.warning,
+              icon: Icons.pause_circle_outline_rounded,
+            ),
+          ),
+        ],
+        SizedBox(height: widget.inline ? 16 : 30),
+        _ParticipantGrid(participants: data.participants),
+        SizedBox(height: widget.inline ? 14 : 22),
+        Text(
+          retirementStarted && !data.microphoneEnabled
+              ? '正在退出这次通话。麦克风不会再启动；如有需要先静音，再重试退出。'
+              : data.canSendAudio &&
+                    _microphoneEnableRequested &&
+                    !data.microphoneEnabled
+              ? '麦克风已关闭。本版本要求先退出再重新进入，才能再次发言。'
+              : data.canSendAudio
+              ? '你以静音状态进入。准备好后点「发言」，系统麦克风权限只在开始采集时申请。'
+              : '你在这个房间是只收听的角色。',
+          textAlign: widget.inline ? TextAlign.start : TextAlign.center,
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      ],
+    );
+  }
+
+  Widget _controls(
+    BuildContext context, {
+    required _ForegroundCallViewData data,
+    required bool retirementStarted,
+    required bool canRequestMicrophone,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        if (_commandError != null) ...<Widget>[
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              _commandError!,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: LoopColors.danger),
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed:
+                    !_microphoneBusy && !_leaveBusy && canRequestMicrophone
+                    ? () => _setMicrophone(enabled: !data.microphoneEnabled)
+                    : null,
+                icon: _microphoneBusy
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(
+                        data.microphoneEnabled
+                            ? Icons.mic_off_rounded
+                            : data.canSendAudio &&
+                                  !_microphoneEnableRequested &&
+                                  !retirementStarted
+                            ? Icons.mic_rounded
+                            : Icons.headphones_rounded,
+                      ),
+                label: Text(
+                  _microphoneBusy
+                      ? '正在切换麦克风'
+                      : data.microphoneEnabled
+                      ? '静音'
+                      : data.canSendAudio &&
+                            !_microphoneEnableRequested &&
+                            !retirementStarted
+                      ? '发言'
+                      : retirementStarted
+                      ? '需要先重试退出'
+                      : data.canSendAudio
+                      ? '重新进入后再发言'
+                      : '仅收听',
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            IconButton.filled(
+              onPressed: _leaveBusy ? null : _leave,
+              tooltip: '断开语音连接',
+              style: IconButton.styleFrom(
+                minimumSize: const Size.square(48),
+                backgroundColor: LoopColors.danger,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: LoopColors.danger.withValues(
+                  alpha: 0.35,
+                ),
+              ),
+              icon: _leaveBusy
+                  ? const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(Icons.call_end_rounded),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -315,8 +365,8 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
       _microphoneBusy = false;
       if (!succeeded) {
         _commandError = enabled
-            ? 'Microphone could not start. Check room access and system permission, then leave and rejoin before trying again.'
-            : 'Microphone could not be muted. Try again or leave the room.';
+            ? '麦克风没能启动。请检查房间权限与系统麦克风权限，退出后重新进入再试。'
+            : '麦克风没能静音。请重试，或退出这个房间。';
       }
     });
   }
@@ -333,7 +383,7 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
       if (!mounted) return;
       setState(() {
         _leaveBusy = false;
-        _commandError = 'The room could not be closed cleanly. Try again.';
+        _commandError = '这次通话没能干净地退出，请重试。';
       });
     }
   }
@@ -348,8 +398,8 @@ class _ParticipantGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     if (participants.isEmpty) {
       return const LoopStateCard(
-        title: 'Participant details unavailable',
-        message: 'Stream has not published participant details for the current call state yet.',
+        title: '读不到通话成员',
+        message: '服务商还没有给出这次通话的成员明细。',
         icon: Icons.people_outline_rounded,
       );
     }
@@ -387,15 +437,15 @@ class _ParticipantCard extends StatelessWidget {
     final name = suppliedName.isNotEmpty
         ? suppliedName
         : participant.isLocal
-        ? 'You'
-        : 'Participant';
+        ? '我'
+        : '成员';
     final role = participant.isLocal
-        ? 'You'
+        ? '我'
         : participant.isSpeaking
-        ? 'Speaking'
+        ? '正在发言'
         : participant.isAudioEnabled
-        ? 'Microphone on'
-        : 'Muted';
+        ? '麦克风已开'
+        : '已静音';
     final accent = participant.isSpeaking ? LoopColors.chat : LoopColors.line;
     return DecoratedBox(
       decoration: BoxDecoration(

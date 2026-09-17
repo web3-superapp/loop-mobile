@@ -15,7 +15,7 @@ import 'package:loop_mobile/widgets/loop_ui.dart';
 /// mounted foreground view reads connection, participants, capabilities and
 /// microphone state directly from Stream's official CallState.
 class StreamVoiceRoomPage extends ConsumerWidget {
-  const StreamVoiceRoomPage({super.key, this.target});
+  const StreamVoiceRoomPage({super.key, this.target, this.inline = false});
 
   /// A locator the caller already holds.
   ///
@@ -24,6 +24,11 @@ class StreamVoiceRoomPage extends ConsumerWidget {
   /// scoped provider. When it is null the page falls back to
   /// [audioRoomTargetProvider], whose production default performs no request.
   final AudioRoomTarget? target;
+
+  /// Renders as one section of the LOOP voice room page instead of a page of
+  /// its own. A page inside a page is what produced the second scrolling
+  /// region a reader could not explain; an inline surface has none.
+  final bool inline;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,6 +50,7 @@ class StreamVoiceRoomPage extends ConsumerWidget {
 
     return _StreamVoiceRoomSurface(
       key: ValueKey<String?>(principalKey),
+      inline: inline,
       principalKey: principalKey,
       authorization: authorization,
       target: resolvedTarget,
@@ -60,6 +66,7 @@ class StreamVoiceRoomPage extends ConsumerWidget {
 
 class _StreamVoiceRoomSurface extends StatefulWidget {
   const _StreamVoiceRoomSurface({
+    required this.inline,
     required this.principalKey,
     required this.authorization,
     required this.target,
@@ -69,6 +76,7 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
     super.key,
   });
 
+  final bool inline;
   final String? principalKey;
   final AsyncValue<StreamVideoSessionAuthorization>? authorization;
   final AsyncValue<AudioRoomTarget?>? target;
@@ -186,13 +194,24 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   @override
   Widget build(BuildContext context) {
     final foregroundCall = _foregroundCall;
+    if (widget.inline) {
+      // The voice room page owns the only scrolling region on the screen, so
+      // the inline surface is a plain section: no Scaffold, no app bar of its
+      // own, and no second scroll view.
+      return foregroundCall == null
+          ? _buildLobby(context)
+          : foregroundCall.buildForeground(
+              onLeaveRequested: _leaveForegroundCall,
+              inline: true,
+            );
+    }
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         leading: IconButton(
           onPressed: () => Navigator.of(context).maybePop(),
-          tooltip: 'Back',
+          tooltip: '返回',
           icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 30),
         ),
       ),
@@ -231,6 +250,73 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       cleanupPending: _cleanupPending,
       cleanupFailed: _cleanupFailed,
     );
+    final joinEnabled =
+        content.ready && !_joining && !_cleanupPending && !_cleanupFailed;
+    final stateCard = Semantics(
+      liveRegion: content.tone == LoopTone.danger,
+      child: LoopStateCard(
+        title: content.title,
+        message: content.message,
+        tone: content.tone,
+        icon: content.icon,
+        action: content.loading
+            ? const SizedBox.square(
+                dimension: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : content.retryAuthorization
+            ? OutlinedButton.icon(
+                onPressed: widget.onRetryAuthorization,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('重试会话'),
+              )
+            : content.retryTarget && widget.onRetryTarget != null
+            ? OutlinedButton.icon(
+                onPressed: widget.onRetryTarget,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('重试读取语音房'),
+              )
+            : content.retryCleanup
+            ? OutlinedButton.icon(
+                onPressed: _retryCleanup,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('重试收尾'),
+              )
+            : null,
+      ),
+    );
+    final joinButton = SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: joinEnabled ? _joinMuted : null,
+        icon: _joining
+            ? const SizedBox.square(
+                dimension: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.headset_mic_rounded),
+        label: Text(_joining ? '正在静音连接' : '连接语音'),
+      ),
+    );
+    if (widget.inline) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            stateCard,
+            const SizedBox(height: 14),
+            joinButton,
+            const SizedBox(height: 10),
+            Text(
+              '连接只在前台进行，且始终静音进入；系统麦克风权限只在你点「发言」时申请。',
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+          ],
+        ),
+      );
+    }
     return Column(
       children: <Widget>[
         Expanded(
@@ -259,60 +345,25 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
                     ),
                     const SizedBox(height: 22),
                     Text(
-                      'Loop Audio',
+                      '语音房',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.headlineLarge,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Foreground audio room',
+                      '仅前台连接',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 26),
-                    Semantics(
-                      liveRegion: content.tone == LoopTone.danger,
-                      child: LoopStateCard(
-                        title: content.title,
-                        message: content.message,
-                        tone: content.tone,
-                        icon: content.icon,
-                        action: content.loading
-                            ? const SizedBox.square(
-                                dimension: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : content.retryAuthorization
-                            ? OutlinedButton.icon(
-                                onPressed: widget.onRetryAuthorization,
-                                icon: const Icon(Icons.refresh_rounded),
-                                label: const Text('Retry session'),
-                              )
-                            : content.retryTarget &&
-                                  widget.onRetryTarget != null
-                            ? OutlinedButton.icon(
-                                onPressed: widget.onRetryTarget,
-                                icon: const Icon(Icons.refresh_rounded),
-                                label: const Text('Retry room'),
-                              )
-                            : content.retryCleanup
-                            ? OutlinedButton.icon(
-                                onPressed: _retryCleanup,
-                                icon: const Icon(Icons.refresh_rounded),
-                                label: const Text('Retry cleanup'),
-                              )
-                            : null,
-                      ),
-                    ),
+                    stateCard,
                     if (content.ready) ...<Widget>[
                       const SizedBox(height: 16),
                       const _AudioRoomLobbyFacts(),
                     ],
                     const SizedBox(height: 20),
                     Text(
-                      'No preview members, presence, ringing, or room activity is shown on this production surface.',
+                      '这里不展示演示成员、在线状态或房间动态。',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.labelMedium,
                     ),
@@ -322,27 +373,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
             ),
           ),
         ),
-        LoopActionDock(
-          child: SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed:
-                  content.ready &&
-                      !_joining &&
-                      !_cleanupPending &&
-                      !_cleanupFailed
-                  ? _joinMuted
-                  : null,
-              icon: _joining
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.headset_mic_rounded),
-              label: Text(_joining ? 'Joining muted' : 'Join audio room'),
-            ),
-          ),
-        ),
+        LoopActionDock(child: joinButton),
       ],
     );
   }
@@ -369,7 +400,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     } catch (_) {
       if (!mounted || generation != _generation) return;
       setState(() {
-        _joinError = 'The authorized room could not be prepared. Retry after checking your session.';
+        _joinError = '这个语音房没能准备好，请检查会话后重试。';
       });
       return;
     }
@@ -397,7 +428,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
         _cleanupHandles = <AudioRoomCallHandle>[callHandle];
         _cleanupPending = true;
         _cleanupFailed = false;
-        _joinError = 'Could not join this audio room. Check room access and connection, then retry.';
+        _joinError = '没能连上这个语音房，请检查房间权限与网络后重试。';
       });
       await _completeCleanup(<AudioRoomCallHandle>[
         callHandle,
@@ -574,23 +605,23 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   }) {
     if (principalKey == null) {
       return const _StreamVoiceContent(
-        title: 'Verified login required',
-        message: 'Stream Video starts only for a fully verified Privy session. Offline and unverified sessions stay restricted.',
+        title: '需要完成登录验证',
+        message: '语音只在完成验证的登录会话里启动；离线或未验证的会话不会连接。',
         icon: Icons.lock_outline_rounded,
       );
     }
     if (!appIsForeground) {
       return const _StreamVoiceContent(
-        title: 'Audio room paused',
-        message: 'LOOP left the foreground. Microphone shutdown and room departure must be confirmed before this screen can be used again.',
+        title: '语音已暂停',
+        message: 'LOOP 离开了前台。需要先确认麦克风已关闭、已退出通话，这里才能继续使用。',
         tone: LoopTone.warning,
         icon: Icons.pause_circle_outline_rounded,
       );
     }
     if (cleanupPending) {
       return const _StreamVoiceContent(
-        title: 'Confirming room cleanup',
-        message: 'Join stays disabled until microphone shutdown and departure from the previous Call are confirmed.',
+        title: '正在确认上一次通话的收尾',
+        message: '在确认上一次通话已关闭麦克风并退出之前，不能再次连接。',
         tone: LoopTone.warning,
         icon: Icons.sync_rounded,
         loading: true,
@@ -598,8 +629,8 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     }
     if (cleanupFailed) {
       return const _StreamVoiceContent(
-        title: 'Room cleanup incomplete',
-        message: 'The previous Call did not confirm departure. Retry cleanup before joining any room.',
+        title: '上一次通话没有收尾',
+        message: '上一次通话没有确认退出。请先重试收尾，再连接语音。',
         tone: LoopTone.danger,
         icon: Icons.sync_problem_rounded,
         retryCleanup: true,
@@ -607,8 +638,8 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     }
     if (authorization == null || authorization.isLoading) {
       return const _StreamVoiceContent(
-        title: 'Preparing Stream Video',
-        message: 'Requesting the backend-derived Stream identity and short-lived user token. No room is joined while this is pending.',
+        title: '正在准备语音连接',
+        message: '正在向后端申请语音身份与短时令牌。期间不会加入任何通话。',
         icon: Icons.sync_rounded,
         loading: true,
       );
@@ -616,8 +647,8 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     if (authorization.hasError ||
         authorization.value != StreamVideoSessionAuthorization.authorized) {
       return const _StreamVoiceContent(
-        title: 'Stream session unavailable',
-        message: 'The backend Video token source is not available. This screen stays offline and no Call is created.',
+        title: '语音会话暂时不可用',
+        message: '暂时拿不到语音令牌，这里保持断开，不会创建任何通话。',
         tone: LoopTone.warning,
         icon: Icons.cloud_off_rounded,
         retryAuthorization: true,
@@ -625,16 +656,16 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     }
     if (target == null || target.isLoading) {
       return const _StreamVoiceContent(
-        title: 'Finding your audio room',
-        message: 'Loading a backend-authorized Audio Room ID. Microphone capture remains off.',
+        title: '正在读取语音房',
+        message: '正在读取后端已授权的语音房。麦克风保持关闭。',
         icon: Icons.meeting_room_outlined,
         loading: true,
       );
     }
     if (target.hasError) {
       return const _StreamVoiceContent(
-        title: 'Audio room unavailable',
-        message: 'The authorized room could not be loaded. No client-selected room or preview fallback is used.',
+        title: '语音房读不到',
+        message: '已授权的语音房读取失败，不会改连其他房间，也不会用演示数据顶替。',
         tone: LoopTone.warning,
         icon: Icons.meeting_room_outlined,
         retryTarget: true,
@@ -642,8 +673,8 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     }
     if (target.value == null) {
       return const _StreamVoiceContent(
-        title: 'No authorized room assigned',
-        message: 'The mobile room locator is not connected yet. Ask the backend for a pre-created room and member role before joining.',
+        title: '还没有拿到语音房',
+        message: '这次会话还没有拿到已授权的语音房，请从社区的语音房入口进入。',
         tone: LoopTone.warning,
         icon: Icons.meeting_room_outlined,
         retryTarget: true,
@@ -651,8 +682,8 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     }
     if (callFactory == null) {
       return const _StreamVoiceContent(
-        title: 'Media client unavailable',
-        message: 'The room is authorized, but the principal-bound Stream Video client is no longer available. Re-authorize the session.',
+        title: '语音客户端不可用',
+        message: '语音房已授权，但绑定当前账号的语音客户端已经失效，请重新授权会话。',
         tone: LoopTone.warning,
         icon: Icons.sync_problem_rounded,
         retryAuthorization: true,
@@ -660,7 +691,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     }
     if (joinError != null) {
       return _StreamVoiceContent(
-        title: 'Join failed',
+        title: '连接失败',
         message: joinError,
         tone: LoopTone.danger,
         icon: Icons.wifi_off_rounded,
@@ -668,8 +699,8 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       );
     }
     return const _StreamVoiceContent(
-      title: 'Audio room ready',
-      message: 'A backend-authorized room is assigned. Entry is foreground-only and always starts muted.',
+      title: '语音可以连接',
+      message: '已拿到后端授权的语音房。只在前台连接，且始终静音进入。',
       tone: LoopTone.positive,
       icon: Icons.verified_user_outlined,
       ready: true,
@@ -687,20 +718,20 @@ class _AudioRoomLobbyFacts extends StatelessWidget {
         children: <Widget>[
           _LobbyFact(
             icon: Icons.mic_off_rounded,
-            title: 'Muted on entry',
-            message: 'No local audio track is published while joining.',
+            title: '进入即静音',
+            message: '连接过程中不会发布任何本地音频。',
           ),
           Divider(height: 25),
           _LobbyFact(
             icon: Icons.security_rounded,
-            title: 'Permission when needed',
-            message: 'System microphone permission is requested only after you tap Speak.',
+            title: '按需申请权限',
+            message: '系统麦克风权限只在你点「发言」之后才申请。',
           ),
           Divider(height: 25),
           _LobbyFact(
             icon: Icons.phone_android_rounded,
-            title: 'Foreground only',
-            message: 'Leaving this screen retires the active room call.',
+            title: '仅前台',
+            message: '离开这个界面会结束当前的语音连接。',
           ),
         ],
       ),
