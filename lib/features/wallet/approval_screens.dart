@@ -480,6 +480,12 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
       });
     }
     final inventory = state?.value;
+    // An inventory the server refused leaves the page with one sentence and
+    // nothing else: the heading above it could only repeat 授权盘点 over an
+    // empty screen (C-19). The refusal is the page, so it takes the page's own
+    // block, where it is centred and the pull-to-refresh gesture is withheld
+    // along with the data it would re-read.
+    final unavailable = state?.phase == LoopChainViewPhase.unavailable;
 
     return LoopDashboardPage(
       key: const ValueKey<String>('approvals-screen'),
@@ -506,6 +512,12 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
               ref,
               key: const ValueKey<String>('approvals-capability-block'),
               title: '授权盘点当前不可用',
+            )
+          : unavailable
+          ? LoopPageBlock(
+              key: const ValueKey<String>('approvals-page-block'),
+              title: '授权盘点当前不可用',
+              message: loopChainFailureReason(state!.failureKind),
             )
           : null,
       sections: <Widget>[

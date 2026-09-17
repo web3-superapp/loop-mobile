@@ -651,10 +651,22 @@ void main() {
         ),
       );
 
+      // The refusal is the whole page (C-19): it takes the page's own block,
+      // and the folio that could only repeat the title is not drawn above a
+      // screen of black.
       expect(
-        find.byKey(const ValueKey<String>('approvals-state-unavailable')),
+        find.byKey(const ValueKey<String>('approvals-page-block')),
         findsOneWidget,
       );
+      expect(
+        find.byKey(const ValueKey<String>('approvals-folio')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('approvals-state-unavailable')),
+        findsNothing,
+      );
+      // A count that was never read is not a zero.
       expect(find.textContaining('0 个有效授权'), findsNothing);
     });
 

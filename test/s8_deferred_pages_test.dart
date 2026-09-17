@@ -39,32 +39,54 @@ void main() {
     expect(find.textContaining('约 2 分钟'), findsNothing);
   });
 
-  testWidgets('bridge-status keeps all three steps pending with no source', (
+  testWidgets('bridge-status is one whole-page state, with no steps at all', (
     tester,
   ) async {
     await pumpS8Page(tester, const BridgeStatusScreen());
 
+    // The page is the state (C-19): no folio heading above it, no card with a
+    // screen of black under it.
+    expect(
+      find.byKey(const ValueKey<String>('bridge-status-page-block')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('bridge-status-folio')),
+      findsNothing,
+    );
+    // No step is presented in any state: nothing is transferring, so 等待 was
+    // a run this page invented, and 完成 / 进行中 never existed.
     for (var index = 1; index <= 3; index += 1) {
       expect(
         find.byKey(ValueKey<String>('bridge-status-step-$index')),
-        findsOneWidget,
+        findsNothing,
         reason: 'step $index',
       );
     }
-    expect(find.text('等待'), findsNWidgets(3));
-    expect(find.text('完成'), findsNothing);
-    expect(find.text('进行中'), findsNothing);
-    expect(
-      find.byKey(const ValueKey<String>('bridge-status-unavailable')),
-      findsOneWidget,
-    );
-    // One account of why there is no progress, not 读不到 in the heading and
-    // 还没有开放 in the card under it.
+    for (final state in <String>['等待', '完成', '进行中']) {
+      expect(find.text(state), findsNothing, reason: state);
+    }
+    // 读不到 would say LOOP tried; nothing was tried.
     expect(find.textContaining('读不到跨链进度'), findsNothing);
-    expect(
-      find.byKey(const ValueKey<String>('bridge-status-no-source')),
-      findsOneWidget,
+    expect(find.text('跨链进度尚未开放'), findsOneWidget);
+  });
+
+  testWidgets('bridge-status keeps the one step that leads anywhere', (
+    tester,
+  ) async {
+    var opened = 0;
+    await pumpS8Page(
+      tester,
+      BridgeStatusScreen(onOpenWallet: () => opened += 1),
     );
+
+    final back = find.byKey(
+      const ValueKey<String>('bridge-status-back-to-wallet'),
+    );
+    expect(back, findsOneWidget);
+    await tester.tap(back);
+    await tester.pumpAndSettle();
+    expect(opened, 1);
   });
 
   group('dapp', () {

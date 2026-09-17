@@ -170,6 +170,12 @@ class _HolderDistributionScreenState
     }
     final holders = state.value;
     final count = holders?.holderCount;
+    // Distribution is unavailable for the whole of this step, so a holder
+    // count the server could not give leaves the page with nothing but two
+    // refusals under a heading that repeats one of them (C-19). That is a
+    // whole-page state, and it belongs in the page's own block rather than in
+    // a card with a screen of black under it.
+    final nothingToShow = holders != null && !holders.holderCount.isAvailable;
 
     return LoopDashboardPage(
       key: ValueKey<String>('token-holders-$assetId'),
@@ -198,6 +204,12 @@ class _HolderDistributionScreenState
               ref,
               key: const ValueKey<String>('token-holders-capability-block'),
               title: '行情模块当前不可用',
+            )
+          : nothingToShow
+          ? LoopPageBlock(
+              key: const ValueKey<String>('token-holders-page-block'),
+              title: '持有人分布当前不可用',
+              message: loopReasonCodeText(holders.holderCount.reasonCode),
             )
           : null,
       sections: <Widget>[

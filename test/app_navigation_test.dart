@@ -248,18 +248,19 @@ void main() {
 
     final router = GoRouter.of(tester.element(find.byType(LoopTabBar)));
     // D21: there is no bridge intent to carry into the status page, so the
-    // route no longer demands one; all three steps are pending with no source.
+    // route no longer demands one; the page is one whole-page state (C-19)
+    // with no step presented in any state at all.
     router.go('/wallet/bridge/status');
     await tester.pumpAndSettle();
     expect(
       router.routeInformationProvider.value.uri.path,
       '/wallet/bridge/status',
     );
-    expect(find.text('跨链尚未开放'), findsWidgets);
+    expect(find.text('跨链进度尚未开放'), findsOneWidget);
     for (final step in <String>['源链确认', '中继处理', '目标链到账']) {
-      expect(find.text(step), findsOneWidget, reason: step);
+      expect(find.text(step), findsNothing, reason: step);
     }
-    expect(find.text('等待'), findsNWidgets(3));
+    expect(find.text('等待'), findsNothing);
     expect(find.text('进行中'), findsNothing);
     expect(find.text('完成'), findsNothing);
   });

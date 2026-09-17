@@ -466,7 +466,18 @@ void main() {
         find.byKey(const ValueKey<String>('token-holders-state-empty')),
         findsNothing,
       );
-      expect(find.text('持有人总数不可用'), findsOneWidget);
+      // Distribution is unavailable for the whole step, so a count the server
+      // refused leaves nothing else on the page: it is the page (C-19), and no
+      // folio repeats it over a screen of black.
+      expect(
+        find.byKey(const ValueKey<String>('token-holders-page-block')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('token-holders-folio')),
+        findsNothing,
+      );
+      expect(find.text('持有人分布当前不可用'), findsOneWidget);
       expect(find.text('0 持有人'), findsNothing);
     });
 

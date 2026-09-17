@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/security/loop_url_review.dart';
-import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -125,19 +125,19 @@ class BridgeScreen extends ConsumerWidget {
   }
 }
 
-/// `bridge-status` · the three steps, all pending, with no source.
+/// `bridge-status` · one whole-page state, because there is no progress.
+///
+/// The page used to carry a folio heading, an unavailable card, three step
+/// rows badged 等待 and a footnote — and then most of a screen of black under
+/// them (C-19). None of the three steps is observed by anybody: nothing is
+/// transferring, so 等待 was a state the page invented for a run that does not
+/// exist, and the heading above it could only repeat the card below it. The
+/// whole page is the server's one reason, centred in the space the page owns,
+/// with the only next step that leads anywhere.
 class BridgeStatusScreen extends ConsumerWidget {
   const BridgeStatusScreen({super.key, this.onBack, this.onOpenWallet});
 
   static const deferredReasonCode = 'BRIDGE_RUNTIME_DEFERRED';
-
-  /// The three reviewed steps. Each one is a separate state, and none of them
-  /// can be observed while there is no bridge runtime.
-  static const steps = <(String, String)>[
-    ('源链确认', '转出链上的交易被确认'),
-    ('中继处理', '跨链中继完成消息传递'),
-    ('目标链到账', '目标链上收到资产'),
-  ];
 
   final VoidCallback? onBack;
   final VoidCallback? onOpenWallet;
@@ -152,57 +152,24 @@ class BridgeStatusScreen extends ConsumerWidget {
       archetype: LoopPageArchetype.state,
       title: '跨链进度',
       onBack: onBack,
-      primary: const LoopFolioPrimary(
-        key: ValueKey<String>('bridge-status-folio'),
-        archetype: LoopFolioArchetype.state,
-        kicker: 'BRIDGE PROGRESS',
-        // 读不到 says LOOP tried and failed; nothing was tried, because
-        // bridging has not been built. The card below always said so, and the
-        // heading above it used to disagree with it.
-        heading: '跨链尚未开放',
-        caption: '转出确认、中转处理与到账是三个独立状态，跨链开放后才会有进度可跟踪。',
-      ),
-      sections: <Widget>[
-        LoopUnavailableCard(
-          key: const ValueKey<String>('bridge-status-unavailable'),
-          label: '跨链进度尚未开放',
-          reasonCode: _reasonFor(capability, deferredReasonCode),
-        ),
-        const LoopLabel('步骤'),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            for (var index = 0; index < steps.length; index += 1)
-              LoopRecordRow(
-                key: ValueKey<String>('bridge-status-step-${index + 1}'),
-                leading: Text('${index + 1}', style: LoopMono.label),
-                title: steps[index].$1,
-                subtitle: steps[index].$2,
-                trailingBadge: const LoopBadge('等待'),
-                position: index == 0
-                    ? LoopRowPosition.first
-                    : (index == steps.length - 1
-                          ? LoopRowPosition.last
-                          : LoopRowPosition.middle),
-                semanticLabel: '${steps[index].$1}，等待',
+      // Replaced by the block below; the page has no primary region of its
+      // own because it has no reading to head.
+      primary: const SizedBox.shrink(),
+      block: LoopPageBlock(
+        key: const ValueKey<String>('bridge-status-page-block'),
+        // 读不到 would say LOOP tried and failed. Nothing was tried, because
+        // bridging has not been built.
+        title: '跨链进度尚未开放',
+        message: loopReasonCodeText(_reasonFor(capability, deferredReasonCode)),
+        action: onOpenWallet == null
+            ? null
+            : LoopButton(
+                key: const ValueKey<String>('bridge-status-back-to-wallet'),
+                label: '返回钱包',
+                onPressed: onOpenWallet,
               ),
-          ],
-        ),
-        const LoopProvenanceFooter(
-          key: ValueKey<String>('bridge-status-no-source'),
-          text: '三个步骤都停在"等待"，因为没有任何一方在报告它们。这不是进行中。',
-        ),
-        if (onOpenWallet != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-            child: LoopButton(
-              key: const ValueKey<String>('bridge-status-back-to-wallet'),
-              label: '返回钱包',
-              block: true,
-              onPressed: onOpenWallet,
-            ),
-          ),
-        const SizedBox(height: 20),
-      ],
+      ),
+      sections: const <Widget>[],
     );
   }
 }
