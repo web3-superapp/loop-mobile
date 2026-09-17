@@ -84,6 +84,38 @@ void main() {
       expect(find.textContaining('24,820'), findsNothing);
     });
 
+    testWidgets('nothing on this page calls a working destination closed', (
+      tester,
+    ) async {
+      final routes = <String>[];
+      await _pump(
+        tester,
+        'profile',
+        gateway: _Gateway(resource: active()),
+        onNavigate: routes.add,
+      );
+
+      // The mining tab settles power every five minutes; this page only lacks
+      // a reader of its own and says which page has one.
+      expect(find.textContaining('挖矿数据还没有开放'), findsNothing);
+      expect(find.textContaining('资产与挖矿数据还没有开放'), findsNothing);
+      final toMining = find.byKey(
+        const ValueKey<String>('profile-open-mining'),
+      );
+      await tester.scrollUntilVisible(toMining, 120);
+      await tester.tap(toMining);
+      await tester.pumpAndSettle();
+      expect(routes, contains('mining'));
+
+      // The connections page works and counts what it finds.
+      expect(find.textContaining('关注数据还没有开放'), findsNothing);
+      final connections = find.byKey(
+        const ValueKey<String>('profile-open-connections'),
+      );
+      await tester.scrollUntilVisible(connections, 120);
+      expect(tester.widget<LoopRecordRow>(connections).subtitle, '你关注的人与你的粉丝');
+    });
+
     testWidgets('unavailable, offline and error each get their own block', (
       tester,
     ) async {

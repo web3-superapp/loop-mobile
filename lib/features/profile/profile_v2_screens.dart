@@ -349,10 +349,19 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
             onEdit: () => widget.onNavigate('profile-edit'),
           ),
         const LoopLabel('LOOP'),
-        const LoopEmpty(
-          key: ValueKey<String>('profile-metrics-unavailable'),
-          message: 'LOOP 余额、质押与算力暂不可读',
-          reason: '资产与挖矿数据还没有开放，这里不显示任何数字。',
+        // 「挖矿数据还没有开放」 was written before the mining tab shipped and
+        // kept being read as "mining is closed" long after the tab started
+        // settling power every five minutes. What this page lacks is a reader
+        // of its own, so it says that and points at the page that has one.
+        LoopEmpty(
+          key: const ValueKey<String>('profile-metrics-unavailable'),
+          message: 'LOOP 余额与质押暂不可读',
+          reason: '这一页不读这两项数字。算力与算力明细在挖矿页，那里是唯一的出处。',
+          action: LoopButton(
+            key: const ValueKey<String>('profile-open-mining'),
+            label: '去挖矿页看算力',
+            onPressed: () => widget.onNavigate('mining'),
+          ),
         ),
         const LoopLabel('我的社区'),
         ProfileCommunitiesRow(onNavigate: widget.onNavigate),
@@ -407,7 +416,9 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-connections'),
               title: '关注与粉丝',
-              subtitle: '关注数据还没有开放',
+              // The destination works and counts what it finds; this row used
+              // to call it closed.
+              subtitle: '你关注的人与你的粉丝',
               onTap: () => widget.onNavigate('connections'),
             ),
             LoopRecordRow(
