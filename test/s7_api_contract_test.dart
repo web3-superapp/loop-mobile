@@ -24,6 +24,7 @@ const _walletId = '4d5e6f70-8a9b-4c1d-8e2f-3a4b5c6d7e8f';
 const _communityId = '5b0c9d18-6a44-4f39-b0d2-9e8f7a6b5c4d';
 const _otherCommunityId = '439cabe6-4c98-4f99-860f-192ad52403a1';
 const _publicProfileId = '8c2b7a15-4d3e-4f60-9a11-2b3c4d5e6f70';
+const _otherPublicProfileId = '5f1c2d3e-9a8b-4c7d-8e6f-0a1b2c3d4e5f';
 
 /// A Dio double that replays one canned response and records the request.
 final class _RecordingAdapter implements HttpClientAdapter {
@@ -180,32 +181,39 @@ Map<String, Object?> _miningAssets({
 
 Map<String, Object?> _rankDisplay() => <String, Object?>{
   'anonymousMemberKey': 'mining.rank.anonymousMember',
-  'ruleKey': 'mining.rank.display.aliasOrAnonymous',
+  'ruleKey': 'mining.rank.display.anonymousModeOnly',
+  'powerRuleKey': 'mining.rank.power.ownerVisibility',
 };
 
 Map<String, Object?> _aliasRow({
   Object? position = 1,
-  String power = '3000',
+  Object? power = '3000',
   bool isSelf = false,
   String profileId = _publicProfileId,
+  String audience = 'everyone',
+  String powerVisibility = 'everyone',
 }) => <String, Object?>{
   'position': position,
   'power': power,
+  'powerVisibility': powerVisibility,
   'display': <String, Object?>{
     'kind': 'alias',
     'alias': 'whale',
     'publicProfileId': profileId,
+    'audience': audience,
   },
   'isSelf': isSelf,
 };
 
 Map<String, Object?> _anonymousRow({
   Object? position = 2,
-  String power = '1000',
-  bool isSelf = true,
+  Object? power = '1000',
+  bool isSelf = false,
+  String powerVisibility = 'everyone',
 }) => <String, Object?>{
   'position': position,
   'power': power,
+  'powerVisibility': powerVisibility,
   'display': <String, Object?>{
     'kind': 'anonymous',
     'labelKey': 'mining.rank.anonymousMember',
@@ -1776,10 +1784,7 @@ void main() {
               'ranking': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
               'myPosition': _unavailable('MINING_FORMULA_BASELINE_PENDING'),
               'snapshot': _unavailable('MINING_SNAPSHOT_NOT_AVAILABLE'),
-              'display': <String, Object?>{
-                'anonymousMemberKey': 'mining.rank.anonymousMember',
-                'ruleKey': 'mining.rank.display.aliasOrAnonymous',
-              },
+              'display': _rankDisplay(),
               'contractVersion': '2.0',
             },
           ),
@@ -1825,11 +1830,12 @@ void main() {
       expect(first.position, 1);
       expect((first.display as MiningRankAlias).alias, 'whale');
       expect(first.isSelf, isFalse);
-      final mine = board.items.last;
-      expect(mine.isSelf, isTrue);
-      // An account that is not discoverable is a label, never an id.
+      // An account in anonymous mode is a label to everybody else, never an
+      // id.
+      final other = board.items.last;
+      expect(other.isSelf, isFalse);
       expect(
-        (mine.display as MiningRankAnonymous).labelKey,
+        (other.display as MiningRankAnonymous).labelKey,
         'mining.rank.anonymousMember',
       );
       final place = rank.myPosition as MiningRankPositionSettled;
@@ -1888,6 +1894,196 @@ void main() {
       expect(
         (rank.myPosition as MiningRankPositionUnavailable).reasonCode,
         'MINING_RANK_NOT_RANKED',
+      );
+    });
+
+    test('a withheld power is a null, and the position stays', () async {
+      final rank =
+          await DioLoopV2MiningApi(
+            _dio(
+              _RecordingAdapter(
+                statusCode: 200,
+                body: _miningRank(
+                  ranking: _board(
+                    items: <Object?>[
+                      // Somebody else's row: the owner publishes the number to
+                      // themselves alone, and the place is public regardless.
+                      _aliasRow(power: null, powerVisibility: 'self'),
+                      // The reader's own row while anonymous mode is on.
+                      _aliasRow(
+                        position: 2,
+                        power: '1000',
+                        isSelf: true,
+                        profileId: _otherPublicProfileId,
+                        audience: 'self',
+                        powerVisibility: 'self',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ).getRank(
+            accessToken: _token,
+            clientVersion: _clientVersion,
+            scope: MiningRankScope.users,
+          );
+
+      final board = rank.ranking as MiningRankingUsers;
+      final withheld = board.items.first;
+      expect(withheld.power, isNull);
+      expect(withheld.isPowerWithheld, isTrue);
+      expect(withheld.powerVisibility, MiningRankAudience.self);
+      expect(withheld.position, 1);
+      final mine = board.items.last;
+      expect(mine.power, '1000');
+      expect(
+        (mine.display as MiningRankAlias).audience,
+        MiningRankAudience.self,
+      );
+      expect(rank.display.ruleKey, 'mining.rank.display.anonymousModeOnly');
+      expect(rank.display.powerRuleKey, 'mining.rank.power.ownerVisibility');
+    });
+
+    test('a power withheld from nobody is refused', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningRank(
+              ranking: _board(
+                items: <Object?>[_aliasRow(power: null)],
+                participants: 1,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getRank(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          scope: MiningRankScope.users,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('the reader is never withheld their own power', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningRank(
+              ranking: _board(
+                items: <Object?>[
+                  _aliasRow(power: null, isSelf: true, powerVisibility: 'self'),
+                ],
+                participants: 1,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getRank(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          scope: MiningRankScope.users,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('nobody is anonymous to themselves', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningRank(
+              ranking: _board(
+                items: <Object?>[_anonymousRow(position: 1, isSelf: true)],
+                participants: 1,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getRank(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          scope: MiningRankScope.users,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('another account cannot claim a private audience', () {
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningRank(
+              ranking: _board(
+                items: <Object?>[_aliasRow(audience: 'self')],
+                participants: 1,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getRank(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          scope: MiningRankScope.users,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('an unknown power visibility is refused', () {
+      final row = _aliasRow()..['powerVisibility'] = 'friends';
+      final api = DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningRank(
+              ranking: _board(items: <Object?>[row], participants: 1),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        () => api.getRank(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          scope: MiningRankScope.users,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a display block without the power rule is refused', () {
+      final body = _miningRank(ranking: _board());
+      (body['display']! as Map<String, Object?>).remove('powerRuleKey');
+      final api = DioLoopV2MiningApi(
+        _dio(_RecordingAdapter(statusCode: 200, body: body)),
+      );
+
+      expect(
+        () => api.getRank(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          scope: MiningRankScope.users,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
       );
     });
 
@@ -2015,7 +2211,12 @@ void main() {
               ranking: _board(
                 items: <Object?>[
                   _aliasRow(isSelf: true),
-                  _anonymousRow(isSelf: true),
+                  _aliasRow(
+                    position: 2,
+                    power: '1000',
+                    isSelf: true,
+                    profileId: _otherPublicProfileId,
+                  ),
                 ],
               ),
             ),
@@ -2071,9 +2272,11 @@ void main() {
                   <String, Object?>{
                     'position': 1,
                     'power': '3000',
+                    'powerVisibility': 'everyone',
                     'display': <String, Object?>{
                       'kind': 'alias',
                       'alias': 'whale',
+                      'audience': 'everyone',
                     },
                     'isSelf': false,
                   },

@@ -664,15 +664,15 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
             _MyPositionBlock(myPosition: rank.myPosition),
             const LoopLabel('公式版本'),
             MiningFormulaBlock(formula: rank.formula),
-            const LoopLabel('匿名显示规则'),
+            const LoopLabel('显示规则'),
             LoopNotice(
               key: const ValueKey<String>('mining-rank-anonymity'),
               icon: 'shield',
-              title: '排行条目如何显示身份',
+              title: '排行条目如何显示身份与算力',
               body:
                   '${miningRuleKeyText(rank.display.ruleKey)}'
-                  '未满足条件时显示「${miningRuleKeyText(rank.display.anonymousMemberKey)}」。'
-                  '这条规则不会因为榜单何时上线而改变。',
+                  '匿名时显示「${miningRuleKeyText(rank.display.anonymousMemberKey)}」。\n'
+                  '${miningRuleKeyText(rank.display.powerRuleKey)}',
               margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             ),
             const LoopNotice(
@@ -832,6 +832,11 @@ class _RankingBlock extends StatelessWidget {
 /// board simply has no place for it.
 const String _miningUnrankedLabel = '未上榜';
 
+/// 算力仅本人可见, not 读不到: the owner set their mining power visibility to
+/// themselves, so the number was never published to this reader. The position
+/// beside it is public and stays.
+const String _miningPowerWithheldLabel = '算力仅本人可见';
+
 LoopRecordRow _userRow(
   MiningRankUserRow row,
   int index,
@@ -841,21 +846,48 @@ LoopRecordRow _userRow(
     MiningRankAlias(:final alias) => alias,
     MiningRankAnonymous(:final labelKey) => miningRuleKeyText(labelKey),
   };
+  final place = row.isRanked
+      ? '第 ${row.position} 名'
+      : '$_miningUnrankedLabel · 算力为 0';
+  final powerNote = switch (row) {
+    // Somebody else's number, withheld by its owner.
+    MiningRankUserRow(power: null) => _miningPowerWithheldLabel,
+    // The reader's own number, which nobody else is shown.
+    MiningRankUserRow(isSelf: true, powerVisibility: MiningRankAudience.self) =>
+      '算力只有你自己看得到',
+    _ => null,
+  };
+  // The reader's own alias while anonymous mode is on: this row is not what
+  // the board shows anybody else, and it says so instead of letting the
+  // reader assume their alias is public.
+  final anonymousToOthers =
+      row.isSelf &&
+      row.display is MiningRankAlias &&
+      (row.display as MiningRankAlias).audience == MiningRankAudience.self;
+  final subtitle = <String>[
+    <String>[place, ?powerNote].join(' · '),
+    if (anonymousToOthers) '其他人看到的是匿名成员',
+  ].join('\n');
   return LoopRecordRow(
     // The board may carry several anonymous entries with the same power, and
     // 「power + name」 was the same string for each of them: two siblings with
     // one key is an assertion, not a board. The row's place in the answer is
     // what distinguishes them.
-    key: ValueKey<String>('mining-rank-user-$index-${row.power}-$name'),
+    key: ValueKey<String>(
+      'mining-rank-user-$index-${row.power ?? 'withheld'}-$name',
+    ),
     title: name,
-    subtitle: row.isRanked
-        ? '第 ${row.position} 名'
-        : '$_miningUnrankedLabel · 算力为 0',
+    subtitle: subtitle,
+    subtitleMaxLines: 2,
     trailing: row.power,
     trailingBadge: row.isSelf ? const LoopBadge('我') : null,
-    semanticLabel: row.isRanked
-        ? '$name，第 ${row.position} 名，算力 ${row.power}'
-        : '$name，$_miningUnrankedLabel',
+    semanticLabel: <String>[
+      name,
+      row.isRanked ? '第 ${row.position} 名' : _miningUnrankedLabel,
+      if (row.power != null) '算力 ${row.power}',
+      ?powerNote,
+      if (anonymousToOthers) '其他人看到的是匿名成员',
+    ].join('，'),
     position: position,
   );
 }

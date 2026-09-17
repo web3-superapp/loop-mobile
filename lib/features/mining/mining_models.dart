@@ -394,18 +394,40 @@ String miningRankScopeLabel(MiningRankScope scope) => switch (scope) {
   MiningRankScope.communities => '社区榜',
 };
 
-/// The anonymity contract for a future ranking row: an entry shows its alias
-/// only when the account is discoverable and not in anonymous mode; otherwise
-/// it shows the anonymous member label. Both are server-owned keys.
+/// The two independent rules a ranking row is displayed under (decision 0049):
+/// [ruleKey] states that anonymous mode alone decides whether other readers see
+/// an alias or the anonymous member label, and [powerRuleKey] that the owner's
+/// mining power visibility alone decides whether the power number is published.
+/// Being discoverable decides nothing here. All three are server-owned keys.
 @immutable
 final class MiningRankDisplayRule {
   const MiningRankDisplayRule({
     required this.anonymousMemberKey,
     required this.ruleKey,
+    required this.powerRuleKey,
   });
 
   final String anonymousMemberKey;
   final String ruleKey;
+  final String powerRuleKey;
+}
+
+/// Who a fact on a ranking row is published to. It is the row owner's own
+/// setting, reported verbatim, never a decision this client makes.
+enum MiningRankAudience {
+  everyone('everyone'),
+  self('self');
+
+  const MiningRankAudience(this.wireName);
+
+  final String wireName;
+
+  static MiningRankAudience? tryParse(String value) {
+    for (final audience in values) {
+      if (audience.wireName == value) return audience;
+    }
+    return null;
+  }
 }
 
 /// True when a settled power is zero. A zero power is a reading — the account
@@ -420,9 +442,11 @@ bool miningPowerIsZero(String value) {
   return true;
 }
 
-/// How one ranked account may be named. An alias reaches the board only while
-/// the account is discoverable and not in anonymous mode; otherwise the row
-/// carries the server's anonymous label and no identifier at all.
+/// How one ranked account may be named. Another reader's row carries the alias
+/// only while that account has anonymous mode off; otherwise it carries the
+/// server's anonymous label and no identifier at all. The reader's own row is
+/// always the alias — nobody is anonymous to themselves — and its [audience]
+/// says whether everyone else sees that alias too.
 @immutable
 sealed class MiningRankIdentity {
   const MiningRankIdentity();
@@ -430,10 +454,19 @@ sealed class MiningRankIdentity {
 
 @immutable
 final class MiningRankAlias extends MiningRankIdentity {
-  const MiningRankAlias({required this.alias, required this.publicProfileId});
+  const MiningRankAlias({
+    required this.alias,
+    required this.publicProfileId,
+    required this.audience,
+  });
 
   final String alias;
   final String publicProfileId;
+
+  /// [MiningRankAudience.self] only on the reader's own row while anonymous
+  /// mode is on: the reader sees the alias, every other reader sees the
+  /// anonymous label.
+  final MiningRankAudience audience;
 }
 
 @immutable
@@ -449,18 +482,30 @@ final class MiningRankUserRow {
   const MiningRankUserRow({
     required this.position,
     required this.power,
+    required this.powerVisibility,
     required this.display,
     required this.isSelf,
   });
 
   /// `null` while the power is zero: the account is in the settlement and has
-  /// no place on the board. It is never rendered as a position 0.
+  /// no place on the board. It is never rendered as a position 0. The position
+  /// is public whatever the owner's visibility setting says.
   final int? position;
-  final String power;
+
+  /// `null` when the row belongs to somebody who publishes their power to
+  /// themselves only. It is a withheld number, not a number this client failed
+  /// to read, and the row says so.
+  final String? power;
+
+  /// The row owner's mining power visibility, published verbatim.
+  final MiningRankAudience powerVisibility;
   final MiningRankIdentity display;
   final bool isSelf;
 
   bool get isRanked => position != null;
+
+  /// The owner keeps the number to themselves and this reader is not them.
+  bool get isPowerWithheld => power == null;
 }
 
 /// One community on the community board. The reference is the same record the
@@ -895,7 +940,9 @@ String miningRuleKeyText(String key) => switch (key) {
   'mining.rules.priceGuard.multiPeriodMultiSource' => '多周期、多渠道比对，交叉验证异常波动。',
   'mining.rules.priceGuard.liquidityCap' => 'Liquidity Cap：低流动性资产限制可计入价值。',
   'mining.rank.anonymousMember' => '匿名成员',
-  'mining.rank.display.aliasOrAnonymous' =>
-    '排行条目只在该账号开启「显示 LOOP ID」且未开启匿名模式时显示别名，否则显示「匿名成员」。',
+  'mining.rank.display.anonymousModeOnly' =>
+    '别人看到的是别名还是「匿名成员」，只由该账号的匿名模式决定；「显示 LOOP ID」不参与，自己永远看得到自己的别名。',
+  'mining.rank.power.ownerVisibility' =>
+    '算力数值按该账号自己的「挖矿算力」可见范围显示；设为仅自己时别人看不到数值，名次与参与条目数仍然公开。',
   _ => 'LOOP 定义的规则项。',
 };

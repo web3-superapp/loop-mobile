@@ -297,10 +297,12 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
   }
 
   /// The position and the power a row carries must agree: a position with a
-  /// zero power, or a zero power holding a position, is a contradiction.
-  static int? _rankItemPosition(Map<String, Object?> map, String power) {
+  /// zero power, or a zero power holding a position, is a contradiction. A
+  /// withheld power says nothing about the position, which is public either
+  /// way, so there is nothing to cross-check on those rows.
+  static int? _rankItemPosition(Map<String, Object?> map, String? power) {
     final position = LoopV2S7Codec.optionalPositiveInt(map, 'position');
-    if ((position == null) != miningPowerIsZero(power)) {
+    if (power != null && (position == null) != miningPowerIsZero(power)) {
       LoopV2S7Codec.invalid();
     }
     return position;
@@ -310,31 +312,63 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
     final map = LoopV2Contract.strictMap(raw, const <String>{
       'position',
       'power',
+      'powerVisibility',
       'display',
       'isSelf',
     });
-    final power = _decimal(map, 'power');
+    // Null only while the owner publishes the number to themselves alone.
+    final power = map['power'] == null ? null : _decimal(map, 'power');
+    final visibility = _rankAudience(map, 'powerVisibility');
+    final isSelf = LoopV2S7Codec.requireBool(map, 'isSelf');
+    // The reader always sees their own number, and a number is never withheld
+    // from a reader the owner publishes it to.
+    if (power == null &&
+        (isSelf || visibility == MiningRankAudience.everyone)) {
+      LoopV2S7Codec.invalid();
+    }
     return MiningRankUserRow(
       position: _rankItemPosition(map, power),
       power: power,
-      display: _rankIdentity(map['display']),
-      isSelf: LoopV2S7Codec.requireBool(map, 'isSelf'),
+      powerVisibility: visibility,
+      display: _rankIdentity(map['display'], isSelf: isSelf),
+      isSelf: isSelf,
     );
   }
 
-  static MiningRankIdentity _rankIdentity(Object? raw) {
+  static MiningRankAudience _rankAudience(
+    Map<String, Object?> map,
+    String key,
+  ) {
+    final audience = MiningRankAudience.tryParse(
+      LoopV2S7Codec.requireEnum(map, key, const <String>{'everyone', 'self'}),
+    );
+    if (audience == null) LoopV2S7Codec.invalid();
+    return audience;
+  }
+
+  static MiningRankIdentity _rankIdentity(Object? raw, {required bool isSelf}) {
     if (raw is! Map) LoopV2S7Codec.invalid();
     if (raw['kind'] == 'alias') {
       final map = LoopV2Contract.strictMap(raw, const <String>{
         'kind',
         'alias',
         'publicProfileId',
+        'audience',
       });
+      final audience = _rankAudience(map, 'audience');
+      // 「别人看到的是匿名成员」 is a statement about the reader's own row;
+      // another account's alias row is one everybody sees.
+      if (!isSelf && audience == MiningRankAudience.self) {
+        LoopV2S7Codec.invalid();
+      }
       return MiningRankAlias(
         alias: LoopV2S7Codec.requireText(map, 'alias', maxLength: 64),
         publicProfileId: LoopV2S7Codec.requireId(map, 'publicProfileId'),
+        audience: audience,
       );
     }
+    // Nobody is anonymous to themselves.
+    if (isSelf) LoopV2S7Codec.invalid();
     final map = LoopV2Contract.strictMap(raw, const <String>{
       'kind',
       'labelKey',
@@ -866,6 +900,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       final display = LoopV2Contract.strictMap(root['display'], const <String>{
         'anonymousMemberKey',
         'ruleKey',
+        'powerRuleKey',
       });
       return MiningRank(
         scope: answered!,
@@ -879,8 +914,13 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
             const <String>{'mining.rank.anonymousMember'},
           ),
           ruleKey: LoopV2S7Codec.requireEnum(display, 'ruleKey', const <String>{
-            'mining.rank.display.aliasOrAnonymous',
+            'mining.rank.display.anonymousModeOnly',
           }),
+          powerRuleKey: LoopV2S7Codec.requireEnum(
+            display,
+            'powerRuleKey',
+            const <String>{'mining.rank.power.ownerVisibility'},
+          ),
         ),
         formula: _formulaGate(root['formula']),
       );

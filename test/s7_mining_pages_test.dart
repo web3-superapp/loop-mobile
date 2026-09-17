@@ -1214,14 +1214,16 @@ void main() {
                   MiningRankUserRow(
                     position: null,
                     power: '0',
+                    powerVisibility: MiningRankAudience.everyone,
                     display: MiningRankAnonymous('mining.rank.anonymousMember'),
                     isSelf: false,
                   ),
                   MiningRankUserRow(
                     position: null,
                     power: '0',
+                    powerVisibility: MiningRankAudience.everyone,
                     display: MiningRankAnonymous('mining.rank.anonymousMember'),
-                    isSelf: true,
+                    isSelf: false,
                   ),
                 ],
                 participants: 2,
@@ -1262,18 +1264,22 @@ void main() {
                   MiningRankUserRow(
                     position: 1,
                     power: '3000',
+                    powerVisibility: MiningRankAudience.everyone,
                     display: MiningRankAlias(
                       alias: 'whale',
                       publicProfileId: s7PublicProfileId,
+                      audience: MiningRankAudience.everyone,
                     ),
                     isSelf: false,
                   ),
                   MiningRankUserRow(
                     position: null,
                     power: '0',
+                    powerVisibility: MiningRankAudience.everyone,
                     display: MiningRankAlias(
                       alias: 'Voyager_09',
                       publicProfileId: s7PublicProfileId,
+                      audience: MiningRankAudience.everyone,
                     ),
                     isSelf: false,
                   ),
@@ -1329,16 +1335,23 @@ void main() {
                   MiningRankUserRow(
                     position: 1,
                     power: '3000',
+                    powerVisibility: MiningRankAudience.everyone,
                     display: MiningRankAlias(
                       alias: 'whale',
                       publicProfileId: s7PublicProfileId,
+                      audience: MiningRankAudience.everyone,
                     ),
                     isSelf: false,
                   ),
                   MiningRankUserRow(
                     position: 2,
                     power: '1000',
-                    display: MiningRankAnonymous('mining.rank.anonymousMember'),
+                    powerVisibility: MiningRankAudience.everyone,
+                    display: MiningRankAlias(
+                      alias: 'me',
+                      publicProfileId: s7OtherPublicProfileId,
+                      audience: MiningRankAudience.everyone,
+                    ),
                     isSelf: true,
                   ),
                 ],
@@ -1367,6 +1380,110 @@ void main() {
       );
       await scrollToS7Section(tester, participants);
       expect(find.textContaining('有 2 个条目算出了算力'), findsOneWidget);
+    });
+
+    testWidgets('a withheld power is 仅本人可见, never a missing read', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningRankScreen(),
+        mining: FakeMiningGateway(
+          rank: S7Answer<MiningRank>(
+            value: s7MiningRank(
+              scope: MiningRankScope.users,
+              ranking: s7MiningUserBoard(
+                items: const <MiningRankUserRow>[
+                  // Somebody else who keeps the number to themselves: the
+                  // place is still public.
+                  MiningRankUserRow(
+                    position: 1,
+                    power: null,
+                    powerVisibility: MiningRankAudience.self,
+                    display: MiningRankAlias(
+                      alias: 'whale',
+                      publicProfileId: s7PublicProfileId,
+                      audience: MiningRankAudience.everyone,
+                    ),
+                    isSelf: false,
+                  ),
+                  // The reader's own row with anonymous mode on: the board
+                  // shows everybody else the anonymous label.
+                  MiningRankUserRow(
+                    position: 2,
+                    power: '1000',
+                    powerVisibility: MiningRankAudience.self,
+                    display: MiningRankAlias(
+                      alias: 'me',
+                      publicProfileId: s7OtherPublicProfileId,
+                      audience: MiningRankAudience.self,
+                    ),
+                    isSelf: true,
+                  ),
+                ],
+                participants: 2,
+              ),
+              myPosition: const MiningRankPositionSettled(
+                position: 2,
+                power: '1000',
+              ),
+              snapshot: s7MiningSnapshot(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('用户榜'));
+      await tester.pumpAndSettle();
+
+      final ranked = find.byKey(const ValueKey<String>('mining-rank-items'));
+      expect(
+        find.descendant(of: ranked, matching: find.textContaining('算力仅本人可见')),
+        findsOneWidget,
+      );
+      // The withheld number is not a failed read: the page never says the
+      // board could not be read, and the position beside it stays.
+      expect(find.textContaining('第 1 名'), findsOneWidget);
+      expect(find.textContaining('读不到'), findsNothing);
+      expect(
+        find.descendant(
+          of: ranked,
+          matching: find.textContaining('其他人看到的是匿名成员'),
+        ),
+        findsOneWidget,
+      );
+      // The reader's own number is printed to the reader, and the row says
+      // who else sees it.
+      expect(find.text('1000'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: ranked,
+          matching: find.textContaining('算力只有你自己看得到'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the two display rules are stated separately', (tester) async {
+      await pumpS7Page(
+        tester,
+        const MiningRankScreen(),
+        mining: FakeMiningGateway(
+          rank: S7Answer<MiningRank>(
+            value: s7MiningRank(ranking: s7MiningUserBoard()),
+          ),
+        ),
+      );
+
+      final anonymity = find.byKey(
+        const ValueKey<String>('mining-rank-anonymity'),
+      );
+      await scrollToS7Section(tester, anonymity);
+      // Anonymous mode decides the name; the power visibility decides the
+      // number; being discoverable decides neither.
+      expect(find.textContaining('只由该账号的匿名模式决定'), findsOneWidget);
+      expect(find.textContaining('挖矿算力'), findsOneWidget);
+      expect(find.textContaining('「显示 LOOP ID」不参与'), findsOneWidget);
     });
 
     testWidgets('the community board carries weight and head count', (

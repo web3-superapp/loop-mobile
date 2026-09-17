@@ -566,12 +566,14 @@ MiningRank s7MiningRank({
       const MiningSnapshotUnavailable('MINING_SNAPSHOT_NOT_AVAILABLE'),
   display: const MiningRankDisplayRule(
     anonymousMemberKey: 'mining.rank.anonymousMember',
-    ruleKey: 'mining.rank.display.aliasOrAnonymous',
+    ruleKey: 'mining.rank.display.anonymousModeOnly',
+    powerRuleKey: 'mining.rank.power.ownerVisibility',
   ),
   formula: formula ?? s7PendingFormula(),
 );
 
 const s7PublicProfileId = '8c2b7a15-4d3e-4f60-9a11-2b3c4d5e6f70';
+const s7OtherPublicProfileId = '5f1c2d3e-9a8b-4c7d-8e6f-0a1b2c3d4e5f';
 const s7OtherCommunityId = '439cabe6-4c98-4f99-860f-192ad52403a1';
 
 /// The Development user board of 2026-09-15: two accounts in the settlement,
@@ -586,17 +588,20 @@ MiningRankingUsers s7MiningUserBoard({
         MiningRankUserRow(
           position: null,
           power: '0',
+          powerVisibility: MiningRankAudience.everyone,
           display: MiningRankAlias(
             alias: 'whale',
             publicProfileId: s7PublicProfileId,
+            audience: MiningRankAudience.everyone,
           ),
           isSelf: false,
         ),
         MiningRankUserRow(
           position: null,
           power: '0',
+          powerVisibility: MiningRankAudience.everyone,
           display: MiningRankAnonymous('mining.rank.anonymousMember'),
-          isSelf: true,
+          isSelf: false,
         ),
       ],
   participants: participants,
