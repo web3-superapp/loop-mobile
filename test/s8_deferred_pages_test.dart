@@ -58,6 +58,9 @@ void main() {
       find.byKey(const ValueKey<String>('bridge-status-unavailable')),
       findsOneWidget,
     );
+    // One account of why there is no progress, not 读不到 in the heading and
+    // 还没有开放 in the card under it.
+    expect(find.textContaining('读不到跨链进度'), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('bridge-status-no-source')),
       findsOneWidget,
@@ -88,9 +91,15 @@ void main() {
             .onPressed,
         isNull,
       );
+      // Nothing was typed, so nothing was looked up: this is a vacancy, not a
+      // read that failed.
+      expect(
+        find.byKey(const ValueKey<String>('dapp-reputation-empty')),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const ValueKey<String>('dapp-reputation-unavailable')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(
         find.byKey(const ValueKey<String>('dapp-execution-unavailable')),

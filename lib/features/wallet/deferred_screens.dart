@@ -156,13 +156,16 @@ class BridgeStatusScreen extends ConsumerWidget {
         key: ValueKey<String>('bridge-status-folio'),
         archetype: LoopFolioArchetype.state,
         kicker: 'BRIDGE PROGRESS',
-        heading: '没有可跟踪的跨链',
-        caption: '转出确认、中转处理与到账是三个独立状态，目前都读不到。',
+        // 读不到 says LOOP tried and failed; nothing was tried, because
+        // bridging has not been built. The card below always said so, and the
+        // heading above it used to disagree with it.
+        heading: '跨链尚未开放',
+        caption: '转出确认、中转处理与到账是三个独立状态，跨链开放后才会有进度可跟踪。',
       ),
       sections: <Widget>[
         LoopUnavailableCard(
           key: const ValueKey<String>('bridge-status-unavailable'),
-          label: '读不到跨链进度',
+          label: '跨链进度尚未开放',
           reasonCode: _reasonFor(capability, deferredReasonCode),
         ),
         const LoopLabel('步骤'),
@@ -345,11 +348,21 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
             ),
         ],
         const LoopLabel('域名信誉'),
-        const LoopUnavailableCard(
-          key: ValueKey<String>('dapp-reputation-unavailable'),
-          label: '读不到域名信誉',
-          reasonCode: DappReviewScreen.reputationReasonCode,
-        ),
+        // With no address typed there is nothing to look up: 「读不到」 named a
+        // failed read that never happened. The unavailable card is for a
+        // domain that exists and has no reputation to show.
+        if (typed.isEmpty)
+          const LoopEmpty(
+            key: ValueKey<String>('dapp-reputation-empty'),
+            message: '还没有可查询的域名',
+            reason: '输入网址后再核对；这一项不会凭空给出结论。',
+          )
+        else
+          const LoopUnavailableCard(
+            key: ValueKey<String>('dapp-reputation-unavailable'),
+            label: '读不到域名信誉',
+            reasonCode: DappReviewScreen.reputationReasonCode,
+          ),
         const LoopLabel('连接与签名'),
         LoopUnavailableCard(
           key: const ValueKey<String>('dapp-execution-unavailable'),
