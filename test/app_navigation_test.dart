@@ -255,7 +255,7 @@ void main() {
       router.routeInformationProvider.value.uri.path,
       '/wallet/bridge/status',
     );
-    expect(find.text('没有可跟踪的跨链'), findsOneWidget);
+    expect(find.text('跨链尚未开放'), findsWidgets);
     for (final step in <String>['源链确认', '中继处理', '目标链到账']) {
       expect(find.text(step), findsOneWidget, reason: step);
     }

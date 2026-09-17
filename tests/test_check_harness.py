@@ -7342,7 +7342,7 @@ class HarnessTests(unittest.TestCase):
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
                 source.replace(
-                    "trailingBadge: const LoopBadge(_securityMethodUnavailableLabel),",
+                    "deferred ? _securityMethodDeferredLabel : _securityMethodOffLabel,",
                     "trailingBadge: const LoopBadge('\u5df2\u5f00\u542f'),",
                     1,
                 ),

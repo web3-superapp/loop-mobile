@@ -3388,10 +3388,13 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
             # S8 (decision 0060) rebuilt H5 on `GET /v2/security/capabilities`
             # and `GET /v2/security/summary`: six methods that are off, each
             # with the server's own reason, and no local guess.
+            # A method LOOP has not shipped and a method the account has not
+            # enabled are different facts, and the page keeps a name for each.
             "lib/features/profile/security/security_screens.dart": (
                 "security-capability-block",
                 "security-method-",
-                "_securityMethodUnavailableLabel",
+                "_securityMethodOffLabel",
+                "_securityMethodDeferredLabel",
             ),
             "lib/features/profile/security/security_models.dart": (
                 "LoopSecurityCapabilityId",
