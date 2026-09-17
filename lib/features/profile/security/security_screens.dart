@@ -22,8 +22,22 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 /// heading, device names, geography, exported-key variant and guardian samples
 /// have no backend source and are deliberately absent.
 
-/// Copy shared by every unavailable security method.
-const _securityMethodUnavailableLabel = '未开启';
+/// What a method that the account could turn on, but has not, is called.
+const _securityMethodOffLabel = '未开启';
+
+/// What a method LOOP has not shipped is called.
+///
+/// 「未开启」 on a row whose own sentence says 「还没有开放」 reads as the
+/// account's own omission, and the two badges sat side by side on one page.
+/// A method nobody can turn on is not switched off; it does not exist yet.
+const _securityMethodDeferredLabel = '还没有开放';
+
+/// Whether this reason means LOOP has not delivered the method, as opposed to
+/// the account not having enabled one that exists.
+bool _securityMethodIsDeferred(String reasonCode) =>
+    reasonCode.endsWith('_EVIDENCE_PENDING') ||
+    reasonCode.endsWith('_NOT_DELIVERED') ||
+    reasonCode.endsWith('_DEFERRED');
 
 bool _securityBlocked(
   LoopChainGatewayMode mode,
@@ -34,16 +48,38 @@ bool _securityBlocked(
 class _SecurityMethodRow extends LoopRecordRow {
   _SecurityMethodRow({
     required LoopSecurityCapability capability,
+    required LoopRowPosition position,
+    VoidCallback? onTap,
+  }) : this._(
+         capability: capability,
+         deferred: _securityMethodIsDeferred(capability.reasonCode),
+         position: position,
+         onTap: onTap,
+       );
+
+  /// A deferred method says what it would do, because its own reason is the
+  /// row's title with 「还没有开放」 after it and the badge already carries
+  /// that. A method that exists keeps the server's sentence.
+  _SecurityMethodRow._({
+    required LoopSecurityCapability capability,
+    required bool deferred,
     required super.position,
     super.onTap,
   }) : super(
          key: ValueKey<String>('security-method-${capability.id.wireName}'),
          title: capability.id.label,
-         subtitle: loopReasonCodeText(capability.reasonCode),
-         trailingBadge: const LoopBadge(_securityMethodUnavailableLabel),
-         semanticLabel:
-             '${capability.id.label}，$_securityMethodUnavailableLabel，'
-             '${loopReasonCodeText(capability.reasonCode)}',
+         subtitle: deferred
+             ? capability.id.description
+             : loopReasonCodeText(capability.reasonCode),
+         subtitleMaxLines: 2,
+         trailingBadge: LoopBadge(
+           deferred ? _securityMethodDeferredLabel : _securityMethodOffLabel,
+         ),
+         semanticLabel: deferred
+             ? '${capability.id.label}，$_securityMethodDeferredLabel，'
+                   '${capability.id.description}'
+             : '${capability.id.label}，$_securityMethodOffLabel，'
+                   '${loopReasonCodeText(capability.reasonCode)}',
        );
 }
 
@@ -113,7 +149,9 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
             '$count 台设备 · $sessions 个会话',
           _ => '安全中心',
         },
-        caption: '这里不打安全评分。每一项只显示它自己的状态与原因；未开启就是未开启。',
+        caption:
+            '这里不打安全评分。LOOP 还没有开放的写「还没有开放」，'
+            '你可以开而没有开的写「未开启」。',
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(

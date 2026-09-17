@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/profile/security/security_models.dart';
 import 'package:loop_mobile/features/profile/security/security_screens.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
 import 'support/loop_ground_probe.dart';
@@ -82,7 +83,24 @@ void main() {
       await scrollToS8Section(tester, row);
       expect(row, findsOneWidget, reason: id.wireName);
     }
-    expect(find.text('未开启'), findsNWidgets(6));
+    // None of the six exists yet, so none of them is "off": a badge reading
+    // 未开启 over a sentence reading 还没有开放 made LOOP's omission look like
+    // the account's.
+    expect(find.text('还没有开放'), findsNWidgets(6));
+    expect(find.text('未开启'), findsNothing);
+    // And the row says what the method would do, instead of repeating its own
+    // title with 还没有开放 after it.
+    for (final id in LoopSecurityCapabilityId.values) {
+      final row = find.byKey(
+        ValueKey<String>('security-method-${id.wireName}'),
+      );
+      await scrollToS8Section(tester, row);
+      expect(
+        tester.widget<LoopRecordRow>(row).subtitle,
+        id.description,
+        reason: id.wireName,
+      );
+    }
     expect(find.text('已开启'), findsOneWidget); // security.event only
 
     // The two rows that lead somewhere lead to their own explanation page.
