@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/core/time/loop_server_clock.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
+import 'package:loop_mobile/integrations/communication/stream_outgoing_message_order.dart';
+import 'package:loop_mobile/integrations/communication/stream_server_clock_source.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
@@ -148,10 +153,13 @@ class _MemberChannelBody extends StatefulWidget {
 
 class _MemberChannelBodyState extends State<_MemberChannelBody> {
   late Future<Channel?> _channel;
+  LoopOutgoingMessageOrder? _outgoingOrder;
+  StreamSubscription<Event>? _clockSource;
 
   @override
   void initState() {
     super.initState();
+    _clockSource = loopWatchStreamServerClock(widget.client);
     _channel = _load();
   }
 
@@ -161,8 +169,25 @@ class _MemberChannelBodyState extends State<_MemberChannelBody> {
     if (!identical(oldWidget.client, widget.client) ||
         oldWidget.cid != widget.cid ||
         oldWidget.userId != widget.userId) {
-      _channel = _load();
+      unawaited(_clockSource?.cancel());
+      _clockSource = loopWatchStreamServerClock(widget.client);
+      _reload();
     }
+  }
+
+  @override
+  void dispose() {
+    _outgoingOrder?.dispose();
+    _outgoingOrder = null;
+    unawaited(_clockSource?.cancel());
+    _clockSource = null;
+    super.dispose();
+  }
+
+  void _reload() {
+    _outgoingOrder?.dispose();
+    _outgoingOrder = null;
+    _channel = _load();
   }
 
   Future<Channel?> _load() async {
@@ -186,6 +211,10 @@ class _MemberChannelBodyState extends State<_MemberChannelBody> {
         channel.membership?.userId != widget.userId) {
       return null;
     }
+    // Attached here, before the Stream widgets below subscribe to the same
+    // channel state, so an out-of-order stamp is corrected in the same
+    // microtask drain and no frame is painted with the message misplaced.
+    _outgoingOrder = LoopOutgoingMessageOrder(channel: channel)..attach();
     return channel;
   }
 
@@ -209,7 +238,7 @@ class _MemberChannelBodyState extends State<_MemberChannelBody> {
             key: ValueKey<String>('${widget.keyPrefix}-offline'),
             offlinePausedActions: const <String>['打开会话', '发消息', '搜索', '转发'],
             message: '设备当前离线，没有确认这个频道的成员身份，也没有发送任何消息。',
-            onRetry: () => setState(() => _channel = _load()),
+            onRetry: () => setState(_reload),
           );
         }
         if (snapshot.hasError || snapshot.data == null) {
@@ -217,10 +246,10 @@ class _MemberChannelBodyState extends State<_MemberChannelBody> {
             key: ValueKey<String>('${widget.keyPrefix}-unavailable'),
             message: '你还不是这个群的成员，LOOP 没有打开任何会话。',
             icon: 'warn',
-            onRetry: () => setState(() => _channel = _load()),
+            onRetry: () => setState(_reload),
           );
         }
-        return StreamChannel(
+        return loopStreamChannelScope(
           key: ValueKey<String>(widget.cid),
           channel: snapshot.data!,
           child: _LoopChannelBody(
@@ -233,6 +262,37 @@ class _MemberChannelBodyState extends State<_MemberChannelBody> {
     );
   }
 }
+
+/// Exposes an already-loaded channel to the official Stream widgets without
+/// letting them reposition its loaded window.
+///
+/// `StreamChannel` (the default constructor) repositions on mount: when the
+/// channel has unread messages it re-queries around the last-read message,
+/// and that query calls `state.truncate()` and holds `isUpToDate = false`
+/// until the server answers
+/// (`stream_chat-10.3.0/lib/src/client/channel.dart:2175` and
+/// `stream_chat_flutter_core-10.3.0/lib/src/stream_channel.dart:518`). For the
+/// first seconds inside a room that means the message list is emptied and
+/// every `message.new` event is dropped — including the echo of what the
+/// member just typed (`channel.dart:3335`). If the last-read anchor lands in
+/// the middle of the returned window, `_bottomPaginationEnded` stays false and
+/// `isUpToDate` never comes back, so live messages stop arriving for the whole
+/// visit.
+///
+/// LOOP's rooms always open at the newest messages, and the membership query
+/// that mounts this surface has already loaded them, so there is nothing to
+/// reposition. `StreamChannel.value` keeps that window and leaves
+/// `isUpToDate` true.
+///
+/// The cost: no automatic jump to the first unread message. Unread messages
+/// older than the loaded window are reached by scrolling up, the same gesture
+/// as reading any older message; the list's own unread separator and
+/// scroll-to-bottom button are unaffected.
+Widget loopStreamChannelScope({
+  required Channel channel,
+  required Widget child,
+  Key? key,
+}) => StreamChannel.value(key: key, channel: channel, child: child);
 
 class _LoopChannelBody extends StatefulWidget {
   const _LoopChannelBody({
@@ -254,6 +314,10 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
   late final StreamMessageComposerController _composerController =
       StreamMessageComposerController();
 
+  /// The device instant the send left at, so the server's own
+  /// `created_at` on the answer can be paired with the right local window.
+  DateTime? _sendStartedAt;
+
   @override
   void dispose() {
     _focusNode.dispose();
@@ -266,6 +330,31 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focusNode.requestFocus();
     });
+  }
+
+  /// Stream's answer to a send names the instant the servers filed it at.
+  /// That is a free, accurate reading of the server clock on exactly the
+  /// action whose timestamp the member is about to look at, so it refines the
+  /// offset the next message will be stamped with.
+  ///
+  /// Only a first send counts. An edit answers with the message's *original*
+  /// `created_at`, which would read as a device clock hours or days ahead.
+  /// `remoteCreatedAt == null` is the same test the composer itself routes on
+  /// (`stream_message_composer.dart:1556`).
+  FutureOr<Message> _beforeSend(Message message) {
+    _sendStartedAt = message.remoteCreatedAt == null
+        ? LoopServerClock.instance.deviceNow()
+        : null;
+    return message;
+  }
+
+  void _afterSend(Message message) {
+    final serverTime = message.remoteCreatedAt;
+
+    final sentAt = _sendStartedAt;
+    _sendStartedAt = null;
+    if (serverTime == null || sentAt == null) return;
+    LoopServerClock.instance.observe(serverTime: serverTime, sentAt: sentAt);
   }
 
   void _edit(Message message) {
@@ -296,6 +385,8 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
           focusNode: _focusNode,
           messageComposerController: _composerController,
           onQuotedMessageCleared: _composerController.clearQuotedMessage,
+          preMessageSending: _beforeSend,
+          onMessageSent: _afterSend,
           // Attachments and voice recording stay off: LOOP claims no upload,
           // permission or recording capability in this step.
           disableAttachments: true,

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/time/loop_server_clock.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
@@ -123,6 +124,29 @@ void main() {
       expect(
         loopStreamDayLabel(DateTime(2025, 12, 24, 8, 0), now: now),
         '2025年12月24日',
+      );
+    });
+
+    test('「今天」 follows the servers\' day, not the device clock', () {
+      // C-31: the member set the phone back a day. The messages the separator
+      // is labelling are server timestamps, so anchoring on the device clock
+      // would file today's conversation under 「明天」 and print a separator
+      // above the message they just sent.
+      final serverNow = DateTime(2026, 9, 17, 12);
+      final deviceNow = serverNow.subtract(const Duration(days: 1));
+      final previous = LoopServerClock.instance;
+      addTearDown(() => LoopServerClock.instance = previous);
+      LoopServerClock.instance = LoopServerClock(deviceNow: () => deviceNow)
+        ..observe(
+          serverTime: serverNow.toUtc(),
+          sentAt: deviceNow,
+          receivedAt: deviceNow,
+        );
+
+      expect(loopStreamDayLabel(serverNow), '今天');
+      expect(
+        loopStreamDayLabel(serverNow.subtract(const Duration(days: 1))),
+        '昨天',
       );
     });
   });

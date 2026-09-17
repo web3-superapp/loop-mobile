@@ -9,6 +9,7 @@
 // values Stream passes in.
 import 'package:flutter/foundation.dart' show SynchronousFuture;
 import 'package:flutter/widgets.dart';
+import 'package:loop_mobile/core/time/loop_server_clock.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// The 24-hour clock LOOP uses everywhere a Stream widget prints a time.
@@ -29,7 +30,13 @@ enum _LoopDayBucket { today, yesterday, thisWeek, thisYear, older }
 
 _LoopDayBucket _loopDayBucket(DateTime dateTime, DateTime? now) {
   final local = dateTime.toLocal();
-  final today = now?.toLocal() ?? DateTime.now();
+  // 「今天」 is a claim about the servers' day, not the device's: every
+  // timestamp bucketed here is a server timestamp, and a phone whose clock
+  // the member moved would otherwise label today's messages 「昨天」 and a
+  // message they just sent 「明天」. The wall-clock *offset* still comes from
+  // the device — which day a UTC instant falls in is a timezone question,
+  // and the timezone is the member's to choose.
+  final today = now?.toLocal() ?? LoopServerClock.instance.nowUtc().toLocal();
   final day = DateTime(local.year, local.month, local.day);
   final anchor = DateTime(today.year, today.month, today.day);
   final difference = anchor.difference(day).inDays;
