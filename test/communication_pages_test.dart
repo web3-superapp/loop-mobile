@@ -937,6 +937,83 @@ void main() {
       );
     });
 
+    testWidgets('leaving asks first and says what leaving does', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+      );
+
+      final leave = find.byKey(const ValueKey<String>('voiceroom-leave'));
+      await scrollToCommunitySection(tester, leave);
+      await tester.tap(leave);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-leave-sheet')),
+        findsOneWidget,
+      );
+      // Nothing is committed while the question is open.
+      expect(voice.commands, isNot(contains('leave')));
+
+      await tester.tap(find.text('离开').last);
+      await tester.pumpAndSettle();
+      expect(voice.commands, contains('leave'));
+      expect(find.text('已离开语音房'), findsOneWidget);
+    });
+
+    testWidgets('a host is told that leaving does not end the room', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
+      );
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+      );
+
+      final leave = find.byKey(const ValueKey<String>('voiceroom-leave'));
+      await scrollToCommunitySection(tester, leave);
+      await tester.tap(leave);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('离开不会结束房间'), findsOneWidget);
+
+      await tester.tap(find.text('取消').last);
+      await tester.pumpAndSettle();
+      expect(voice.commands, isNot(contains('leave')));
+    });
+
+    testWidgets('ending the room asks first', (tester) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
+      );
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
+        voiceRoom: voice,
+      );
+
+      final end = find.byKey(const ValueKey<String>('voiceroom-end'));
+      await scrollToCommunitySection(tester, end);
+      await tester.tap(end);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-end-sheet')),
+        findsOneWidget,
+      );
+      expect(voice.commands, isNot(contains('end')));
+
+      await tester.tap(find.text('结束房间').last);
+      await tester.pumpAndSettle();
+      expect(voice.commands, contains('end'));
+    });
+
     testWidgets('raising a hand goes through the LOOP command port', (
       tester,
     ) async {

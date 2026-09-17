@@ -151,7 +151,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             _HostControls(
               state: state,
               onMuteAll: () => _run(controller.muteAll, '已请求全体静音'),
-              onEnd: () => _run(controller.endRoom, '房间已结束'),
+              onEnd: () => _endRoom(controller),
               onInvite: (profileId) =>
                   _run(() => controller.inviteSpeaker(profileId), '已邀请发言'),
             ),
@@ -159,7 +159,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
           _ViewerActions(
             state: state,
             onJoin: () => _run(controller.join, '已加入语音房'),
-            onLeave: () => _run(controller.leave, '已离开语音房'),
+            onLeave: () => _leave(controller, snapshot.viewer),
             onRaise: () => _run(controller.raiseHand, '已举手，等待主持人邀请'),
             onCancel: () => _run(controller.cancelHandRaise, '已取消举手'),
           ),
@@ -185,6 +185,43 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         ],
       ],
     );
+  }
+
+  /// Leaving is a decision, not a gesture.
+  ///
+  /// The room page's back affordance only puts the room in the background —
+  /// the account stays in it — so the one control that ends the membership
+  /// asks first, and says what leaving does for this reader's role. A host
+  /// leaving does not end the room; that is a separate, also confirmed,
+  /// command.
+  Future<void> _leave(
+    VoiceRoomController controller,
+    VoiceRoomViewer viewer,
+  ) async {
+    final confirmed = await confirmCommunityAction(
+      context,
+      title: '离开语音房？',
+      body: viewer.isHost
+          ? '离开不会结束房间：其他成员还在里面，主持人身份也保留。'
+                '要让房间结束，请用「结束房间」。'
+          : '离开后你会退出这次通话，举手也会一并取消；想继续收听需要重新加入。',
+      confirmLabel: '离开',
+      sheetKey: 'voiceroom-leave-sheet',
+    );
+    if (!confirmed || !mounted) return;
+    await _run(controller.leave, '已离开语音房');
+  }
+
+  Future<void> _endRoom(VoiceRoomController controller) async {
+    final confirmed = await confirmCommunityAction(
+      context,
+      title: '结束语音房？',
+      body: '结束后房间里的所有人都会断开，这个房间不能再进入。社区可以再开一个新的。',
+      confirmLabel: '结束房间',
+      sheetKey: 'voiceroom-end-sheet',
+    );
+    if (!confirmed || !mounted) return;
+    await _run(controller.endRoom, '房间已结束');
   }
 
   Future<void> _run(
