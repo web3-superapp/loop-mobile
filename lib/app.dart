@@ -68,6 +68,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.da
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
+import 'package:loop_mobile/integrations/communication/stream_chat_presence.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/notifications/loop_notification_event_source.dart';
 import 'package:loop_mobile/widgets/loop_page_recovery.dart';
@@ -151,11 +152,23 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     _connectivitySubscription = ref
         .read(loopConnectivitySignalProvider)
         .onRestored
-        .listen(
-          (_) => metaObserver.observe(
+        .listen((_) {
+          metaObserver.observe(
             LoopV2MetaObservationTrigger.connectivityRestored,
-          ),
-        );
+          );
+          // C-30 (3): the SDK reconnects a connection it once had. One that
+          // never opened — the device was offline when the session was
+          // accepted — has nothing to resume, and the owner would stay
+          // invisible to 在线人数 for the rest of the run. Re-attempting on a
+          // restored link costs no token when the user is already connected:
+          // `authorize` answers from `connectedUserId` before asking for one.
+          unawaited(
+            connectStreamChatForPresence(
+              authorizer: ref.read(streamChatSdkSessionProvider)?.authorizer,
+              principalKey: ref.read(streamChatPrincipalKeyProvider),
+            ),
+          );
+        });
     router = _buildRouter(
       () => ref.read(loopSessionProvider),
       ref.read(loopRoutingErrorLogProvider),
@@ -184,6 +197,17 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       if (!mounted || authorization != LoopBootstrapAuthorization.authorized) {
         return;
       }
+      // C-30 (3): 在线人数 counts the members connected to Stream right now
+      // (decision 0047). Connecting here — not on the first chat page — is
+      // what makes an open App count as online. It reports nothing and is
+      // never awaited by the wallet step below, so a refused or offline
+      // connection cannot delay or fail anything the owner asked for.
+      unawaited(
+        connectStreamChatForPresence(
+          authorizer: ref.read(streamChatSdkSessionProvider)?.authorizer,
+          principalKey: ref.read(streamChatPrincipalKeyProvider),
+        ),
+      );
       await ref.read(loopWalletProvisioningProvider.notifier).ensureWallet();
     });
     postAuthProfileCoordinator = PostAuthProfileRedirectCoordinator(
