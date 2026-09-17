@@ -236,6 +236,10 @@ final class FakeMarketReadGateway implements MarketReadGateway {
 
   final List<LoopCandleInterval> intervals = <LoopCandleInterval>[];
 
+  /// Every asset the page asked for by identity. A Uniswap V4 pool id is not
+  /// an address and must never appear as one of these reads.
+  final List<String> assetReads = <String>[];
+
   @override
   final LoopChainGatewayMode mode;
 
@@ -243,7 +247,10 @@ final class FakeMarketReadGateway implements MarketReadGateway {
   Future<MarketOverview> loadOverview() => overview.resolve();
 
   @override
-  Future<MarketAssetDetail> loadAsset(String assetId) => asset.resolve();
+  Future<MarketAssetDetail> loadAsset(String assetId) {
+    assetReads.add(assetId);
+    return asset.resolve();
+  }
 
   @override
   Future<MarketCandleSeries> loadCandles(

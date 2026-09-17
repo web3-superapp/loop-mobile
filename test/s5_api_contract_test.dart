@@ -982,7 +982,112 @@ void main() {
       expect(detail.marketCap.isAvailable, isFalse);
     });
 
-    test('new pairs count the pools a pool id kept off the list', () async {
+    test(
+      'a pool id row is decoded as a pool id, never as an address',
+      () async {
+        final api = DioLoopV2MarketApi(
+          s5Dio(
+            (options, handler) => handler.resolve(
+              s5Response(
+                options,
+                s5NewPairsBody(
+                  available: true,
+                  items: <Object?>[
+                    s5NewPair(
+                      poolRef: <String, Object?>{
+                        'kind': 'poolId',
+                        'poolId': s5PoolId,
+                      },
+                      dexId: 'uniswap-v4-bsc',
+                      name: 'priceless / U 0.163%',
+                    ),
+                    s5NewPair(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+
+        final page = await api.getNewPairs(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+        );
+
+        final block = page.newPairs as MarketNewPairsAvailable;
+        expect(block.items.first.poolRef, isA<MarketPoolIdRef>());
+        expect((block.items.first.poolRef as MarketPoolIdRef).poolId, s5PoolId);
+        // A V4 pool has no page of its own, whatever its base token reads as.
+        expect(block.items.first.opensDetail, isFalse);
+        expect(block.items.last.poolRef, isA<MarketPoolAddressRef>());
+        expect(block.items.last.opensDetail, isTrue);
+      },
+    );
+
+    test('a pool ref of an unknown kind is rejected', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio(
+          (options, handler) => handler.resolve(
+            s5Response(
+              options,
+              s5NewPairsBody(
+                available: true,
+                items: <Object?>[
+                  s5NewPair(
+                    poolRef: <String, Object?>{
+                      'kind': 'bucket',
+                      'bucketId': '7',
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Two forms are read two ways; a third cannot be guessed into either.
+      await expectLater(
+        api.getNewPairs(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a pool id in the address slot is rejected', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio(
+          (options, handler) => handler.resolve(
+            s5Response(
+              options,
+              s5NewPairsBody(
+                available: true,
+                items: <Object?>[
+                  s5NewPair(
+                    poolRef: <String, Object?>{
+                      'kind': 'address',
+                      'address': s5PoolId,
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await expectLater(
+        api.getNewPairs(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('new pairs count the rows that were neither form', () async {
       final api = DioLoopV2MarketApi(
         s5Dio(
           (options, handler) => handler.resolve(
@@ -1013,6 +1118,7 @@ void main() {
       );
 
       final block = page.newPairs as MarketNewPairsAvailable;
+      // Both known forms are listed now, so this counts malformed rows only.
       expect(block.omittedCount, 6);
       expect(block.items.single.dexId, 'four-meme');
       expect(block.items.single.quotesNativeCoin, isTrue);

@@ -538,10 +538,48 @@ final class MarketHolders {
 /// The EVM zero address, which a provider uses to mean the chain's own coin.
 const marketZeroAddress = '0x0000000000000000000000000000000000000000';
 
+/// How the provider identifies one pool (decision 0052).
+///
+/// The two forms are not interchangeable and the difference is not cosmetic: a
+/// contract pool has a page of its own, a Uniswap V4 pool lives inside the
+/// singleton and has none. Keeping them apart in the type is what stops a
+/// 32-byte pool id from reaching an endpoint that takes an address.
+@immutable
+sealed class MarketPoolRef {
+  const MarketPoolRef();
+
+  /// A stable key for the row. It is display plumbing, never a request value.
+  String get rowKey;
+}
+
+/// A pool contract (PancakeSwap and other V2/V3-style DEXes).
+@immutable
+final class MarketPoolAddressRef extends MarketPoolRef {
+  const MarketPoolAddressRef(this.address);
+
+  final String address;
+
+  @override
+  String get rowKey => 'address:$address';
+}
+
+/// A Uniswap V4 pool, identified by its 32-byte pool id inside the singleton.
+/// There is no pool contract, so there is no pair page, no chart and no
+/// address-keyed read: the row is shown and never opened.
+@immutable
+final class MarketPoolIdRef extends MarketPoolRef {
+  const MarketPoolIdRef(this.poolId);
+
+  final String poolId;
+
+  @override
+  String get rowKey => 'poolId:$poolId';
+}
+
 @immutable
 final class MarketNewPair {
   const MarketNewPair({
-    required this.poolAddress,
+    required this.poolRef,
     required this.dexId,
     required this.name,
     required this.baseTokenAddress,
@@ -552,7 +590,7 @@ final class MarketNewPair {
     required this.volumeH24Usd,
   });
 
-  final String poolAddress;
+  final MarketPoolRef poolRef;
   final String dexId;
   final String name;
   final String? baseTokenAddress;
@@ -563,9 +601,14 @@ final class MarketNewPair {
   /// not a missing token and must not be printed as one.
   bool get quotesNativeCoin => quoteTokenAddress == marketZeroAddress;
 
-  /// Non-null only when the pool's base token is already in the registry, so
-  /// the row may open the token page.
+  /// Non-null only when the pool's base token is already in the registry.
   final String? registryAssetId;
+
+  /// Whether this row may be opened. A V4 pool resolves its base token like
+  /// any other, but it has no pair page and no address-keyed facts behind it,
+  /// so the row stays where it is however the token reads.
+  bool get opensDetail =>
+      poolRef is MarketPoolAddressRef && registryAssetId != null;
   final DateTime? createdAt;
   final Decimal? reserveUsd;
   final Decimal? volumeH24Usd;
@@ -592,9 +635,10 @@ final class MarketNewPairsAvailable extends MarketNewPairsBlock {
   final LoopFactQuality quality;
   final String? reasonCode;
 
-  /// Pools the provider keyed by a 32-byte pool id instead of a contract
-  /// address (Uniswap V4 on BSC). They are not in [items] because a pool id is
-  /// not an address; the page states the count so the omission is visible.
+  /// Provider rows whose pool identifier is neither a contract address nor a
+  /// 32-byte pool id (decision 0052). Both known forms are listed under
+  /// `poolRef`, so this counts genuinely malformed rows and is normally 0. The
+  /// page states it so a list never passes itself off as the whole answer.
   final int omittedCount;
   final List<MarketNewPair> items;
 }

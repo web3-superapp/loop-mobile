@@ -836,6 +836,45 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
     );
   }
 
+  /// The pool identifier, as a discriminated union (decision 0052).
+  ///
+  /// A `kind` this client has no branch for is an invalid payload: the two
+  /// forms are read differently — one opens a page, one never does — so an
+  /// unknown third form cannot be guessed into either.
+  static MarketPoolRef _poolRef(Object? raw) {
+    if (raw is! Map) LoopV2ChainCodec.invalid();
+    switch (raw['kind']) {
+      case 'address':
+        final map = LoopV2Contract.strictMap(raw, const <String>{
+          'kind',
+          'address',
+        });
+        return MarketPoolAddressRef(
+          LoopV2ChainCodec.requireString(
+            map,
+            'address',
+            pattern: LoopV2ChainCodec.addressPattern,
+            maxLength: 42,
+          ),
+        );
+      case 'poolId':
+        final map = LoopV2Contract.strictMap(raw, const <String>{
+          'kind',
+          'poolId',
+        });
+        return MarketPoolIdRef(
+          LoopV2ChainCodec.requireString(
+            map,
+            'poolId',
+            pattern: LoopV2ChainCodec.hashPattern,
+            maxLength: 66,
+          ),
+        );
+      default:
+        LoopV2ChainCodec.invalid();
+    }
+  }
+
   static MarketNewPairsBlock _newPairs(Object? raw) {
     if (_isUnavailable(raw)) {
       return MarketNewPairsUnavailable(
@@ -866,7 +905,7 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       maximum: 100,
     )) {
       final pairMap = LoopV2Contract.strictMap(entry, const <String>{
-        'poolAddress',
+        'poolRef',
         'dexId',
         'name',
         'baseTokenAddress',
@@ -876,16 +915,11 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
         'reserveUsd',
         'volumeH24Usd',
       });
-      final poolAddress = LoopV2ChainCodec.requireString(
-        pairMap,
-        'poolAddress',
-        pattern: LoopV2ChainCodec.addressPattern,
-        maxLength: 42,
-      );
-      if (!seen.add(poolAddress)) LoopV2ChainCodec.invalid();
+      final poolRef = _poolRef(pairMap['poolRef']);
+      if (!seen.add(poolRef.rowKey)) LoopV2ChainCodec.invalid();
       items.add(
         MarketNewPair(
-          poolAddress: poolAddress,
+          poolRef: poolRef,
           dexId: LoopV2ChainCodec.requireText(pairMap, 'dexId', maxLength: 64),
           name: LoopV2ChainCodec.requireText(pairMap, 'name'),
           baseTokenAddress: LoopV2ChainCodec.optionalString(

@@ -545,12 +545,20 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
                   rows: <LoopRecordRow>[
                     for (final pair in block.items)
                       LoopRecordRow(
-                        key: ValueKey<String>('new-pair-${pair.poolAddress}'),
+                        key: ValueKey<String>(
+                          'new-pair-${pair.poolRef.rowKey}',
+                        ),
                         title: pair.name,
                         subtitle: <String>[
                           // The provider's own DEX string, printed verbatim:
                           // it is not a closed set.
                           pair.dexId,
+                          // A Uniswap V4 pool lives inside the singleton: it
+                          // has no pair page, no chart and no address-keyed
+                          // facts, so the row says so instead of offering a
+                          // tap that would open nothing.
+                          if (pair.poolRef is MarketPoolIdRef)
+                            'Uniswap V4 池 · 暂不支持详情',
                           // A zero quote address is the coin itself, not a
                           // missing token.
                           if (pair.quotesNativeCoin) '计价 BNB',
@@ -559,10 +567,11 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
                           if (pair.reserveUsd != null)
                             '储备 ${loopFormatUsd(pair.reserveUsd!)}',
                         ].join(' · '),
+                        subtitleMaxLines: 2,
                         trailing: pair.volumeH24Usd == null
                             ? null
                             : loopFormatUsd(pair.volumeH24Usd!),
-                        onTap: pair.registryAssetId == null
+                        onTap: !pair.opensDetail
                             ? null
                             : () => _open(
                                 MarketAssetRoute.token(pair.registryAssetId!),
@@ -570,15 +579,15 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
                       ),
                   ],
                 ),
-              // Pools the provider keyed by a 32-byte pool id carry no
-              // address, so they cannot be listed. Saying how many were left
-              // out keeps the page from passing a partial list off as all of
-              // it.
+              // Both identifier forms are listed now, so what is left out is
+              // a row the provider sent in neither shape. It is normally zero;
+              // when it is not, saying so keeps the page from passing a
+              // partial list off as all of it.
               if (block.omittedCount > 0)
                 LoopNotice(
                   key: const ValueKey<String>('new-pairs-omitted'),
-                  title: '另有 ${block.omittedCount} 个 Uniswap V4 池未列出',
-                  body: '这些池用 32 字节 pool id 标识，没有合约地址，本页只列出有地址的池。',
+                  title: '另有 ${block.omittedCount} 条数据无法解析',
+                  body: '这些行的池标识既不是合约地址也不是 pool id，本页不展示无法核对的行。',
                 ),
               LoopProvenanceFooter(
                 text:

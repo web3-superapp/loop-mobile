@@ -630,7 +630,7 @@ void main() {
                 omittedCount: 6,
                 items: <MarketNewPair>[
                   MarketNewPair(
-                    poolAddress: s5PoolAddress,
+                    poolRef: const MarketPoolAddressRef(s5PoolAddress),
                     dexId: 'four-meme',
                     name: 'MEME / BNB',
                     baseTokenAddress: s5Address,
@@ -654,11 +654,84 @@ void main() {
         find.byKey(const ValueKey<String>('new-pairs-omitted')),
         findsOneWidget,
       );
-      expect(find.text('另有 6 个 Uniswap V4 池未列出'), findsOneWidget);
+      expect(find.text('另有 6 条数据无法解析'), findsOneWidget);
       // The provider's DEX string is printed as given, and a zero quote
       // address reads as the coin.
       expect(find.textContaining('four-meme'), findsOneWidget);
       expect(find.textContaining('计价 BNB'), findsOneWidget);
+    });
+
+    testWidgets('a Uniswap V4 pool is shown and never opened', (tester) async {
+      final navigated = <String>[];
+      final market = FakeMarketReadGateway(
+        newPairs: S5Answer<MarketNewPairsPage>(
+          value: MarketNewPairsPage(
+            newPairs: MarketNewPairsAvailable(
+              source: LoopFactSource.geckoterminal,
+              fetchedAt: DateTime.utc(2026, 9, 8, 7, 31),
+              ttlSeconds: 60,
+              quality: LoopFactQuality.fresh,
+              reasonCode: null,
+              omittedCount: 0,
+              items: <MarketNewPair>[
+                MarketNewPair(
+                  poolRef: const MarketPoolIdRef(s5PoolId),
+                  dexId: 'uniswap-v4-bsc',
+                  name: 'priceless / U 0.163%',
+                  baseTokenAddress: s5Address,
+                  quoteTokenAddress: s5Address,
+                  // Even a registered base token does not open this row: the
+                  // pool itself has no page and no address-keyed facts.
+                  registryAssetId: s5WbnbAssetId,
+                  createdAt: DateTime.utc(2026, 9, 8, 5),
+                  reserveUsd: s5Decimal('4.42'),
+                  volumeH24Usd: s5Decimal('3428.84'),
+                ),
+                MarketNewPair(
+                  poolRef: const MarketPoolAddressRef(s5PoolAddress),
+                  dexId: 'pancakeswap_v3',
+                  name: 'X / WBNB',
+                  baseTokenAddress: s5Address,
+                  quoteTokenAddress: s5Address,
+                  registryAssetId: s5WbnbAssetId,
+                  createdAt: DateTime.utc(2026, 9, 8, 5),
+                  reserveUsd: s5Decimal('12345.6'),
+                  volumeH24Usd: s5Decimal('2345.6'),
+                ),
+              ],
+            ),
+            riskScreening: const LoopUnavailable(
+              'MARKET_PROVIDER_GOPLUS_NOT_CONFIGURED',
+            ),
+          ),
+        ),
+      );
+      await pumpS5Page(
+        tester,
+        NewPairsScreen(onNavigate: navigated.add),
+        market: market,
+      );
+
+      final v4Row = find.byKey(
+        const ValueKey<String>('new-pair-poolId:$s5PoolId'),
+      );
+      await scrollToS5Section(tester, v4Row);
+      expect(v4Row, findsOneWidget);
+      expect(find.textContaining('Uniswap V4 池 · 暂不支持详情'), findsOneWidget);
+
+      await tester.tap(v4Row);
+      await tester.pumpAndSettle();
+      // A pool id is not an address: no route, and no request keyed by it.
+      expect(navigated, isEmpty);
+      expect(market.assetReads, isEmpty);
+
+      final contractRow = find.byKey(
+        ValueKey<String>('new-pair-address:$s5PoolAddress'),
+      );
+      await scrollToS5Section(tester, contractRow);
+      await tester.tap(contractRow);
+      await tester.pumpAndSettle();
+      expect(navigated.single, contains(Uri.encodeComponent(s5WbnbAssetId)));
     });
 
     testWidgets('new-pairs says nothing when no pool was left out', (
@@ -679,7 +752,7 @@ void main() {
                 omittedCount: 0,
                 items: <MarketNewPair>[
                   MarketNewPair(
-                    poolAddress: s5PoolAddress,
+                    poolRef: const MarketPoolAddressRef(s5PoolAddress),
                     dexId: 'pancakeswap_v3',
                     name: 'X / WBNB',
                     baseTokenAddress: s5Address,

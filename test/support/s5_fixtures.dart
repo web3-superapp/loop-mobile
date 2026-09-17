@@ -26,6 +26,10 @@ const s5WbnbAssetId = 'eip155:56:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c';
 const s5UsdtAssetId = 'eip155:56:0x55d398326f99059ff775485246999027b3197955';
 const s5Address = '0x00000000000000000000000000000000000000a1';
 const s5PoolAddress = '0x3669000000000000000000000000000000000001';
+
+/// A Uniswap V4 pool id: 32 bytes, not an address (decision 0052).
+const s5PoolId =
+    '0xffac50ac4e2b84e81d3edbf15aa9855b35fac78fb11c4e3b8223930587146621';
 const s5TxHash =
     '0x1111111111111111111111111111111111111111111111111111111111111111';
 const s5BlockHash =
@@ -584,7 +588,10 @@ Map<String, Object?> s5NewPairsBody({
               items ??
               <Object?>[
                 <String, Object?>{
-                  'poolAddress': s5PoolAddress,
+                  'poolRef': <String, Object?>{
+                    'kind': 'address',
+                    'address': s5PoolAddress,
+                  },
                   'dexId': 'pancakeswap_v3',
                   'name': 'X / WBNB',
                   'baseTokenAddress': s5Address,
@@ -602,15 +609,17 @@ Map<String, Object?> s5NewPairsBody({
 };
 
 /// One provider row for `new-pairs`. `four-meme` pools quote in native BNB and
-/// the provider reports the zero address for it.
+/// the provider reports the zero address for it; a Uniswap V4 row carries a
+/// pool id instead of an address (decision 0052).
 Map<String, Object?> s5NewPair({
-  String poolAddress = s5PoolAddress,
+  Object? poolRef,
   String dexId = 'pancakeswap_v3',
   String name = 'X / WBNB',
   Object? quoteTokenAddress = s5Address,
   Object? registryAssetId = s5WbnbAssetId,
 }) => <String, Object?>{
-  'poolAddress': poolAddress,
+  'poolRef':
+      poolRef ?? <String, Object?>{'kind': 'address', 'address': s5PoolAddress},
   'dexId': dexId,
   'name': name,
   'baseTokenAddress': s5Address,
