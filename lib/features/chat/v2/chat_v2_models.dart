@@ -263,6 +263,176 @@ final class VoiceRoomHandRaiseEntry {
   final LoopPublicProfile profile;
 }
 
+/// Which roster view `GET /v2/voice-rooms/{id}/members` answers for.
+///
+/// The host is in neither view: both list the LOOP `joined` members by role
+/// intent, so a room with only a host has two empty rosters and that is the
+/// truth, not a missing read.
+enum VoiceRoomRosterView {
+  speaker('speaker'),
+  listener('listener');
+
+  const VoiceRoomRosterView(this.wireName);
+
+  final String wireName;
+
+  String get label => switch (this) {
+    VoiceRoomRosterView.speaker => '发言人',
+    VoiceRoomRosterView.listener => '听众',
+  };
+
+  static VoiceRoomRosterView? tryParse(String value) {
+    for (final item in values) {
+      if (item.wireName == value) return item;
+    }
+    return null;
+  }
+}
+
+/// Who a roster row's alias is published to (decision 0049, the mining board's
+/// rule). It is the row owner's own setting, reported verbatim.
+enum VoiceRoomMemberAudience {
+  everyone('everyone'),
+  self('self');
+
+  const VoiceRoomMemberAudience(this.wireName);
+
+  final String wireName;
+
+  static VoiceRoomMemberAudience? tryParse(String value) {
+    for (final item in values) {
+      if (item.wireName == value) return item;
+    }
+    return null;
+  }
+}
+
+/// How one roster row may be named.
+///
+/// Anonymous mode alone decides what other readers see: a member with it on is
+/// [VoiceRoomMemberAnonymousName] to everyone else and always its own alias to
+/// itself, with [VoiceRoomMemberAlias.audience] saying which of the two this
+/// row is.
+@immutable
+sealed class VoiceRoomMemberName {
+  const VoiceRoomMemberName();
+}
+
+@immutable
+final class VoiceRoomMemberAlias extends VoiceRoomMemberName {
+  const VoiceRoomMemberAlias({
+    required this.alias,
+    required this.publicProfileId,
+    required this.audience,
+  });
+
+  final String alias;
+  final String publicProfileId;
+  final VoiceRoomMemberAudience audience;
+}
+
+@immutable
+final class VoiceRoomMemberAnonymousName extends VoiceRoomMemberName {
+  const VoiceRoomMemberAnonymousName(this.labelKey);
+
+  /// The server's own i18n key. The client prints the sentence it is given a
+  /// key for and invents no name of its own.
+  final String labelKey;
+}
+
+/// The two server-owned keys a roster page is displayed under (decision 0052):
+/// the anonymous label and the rule that only anonymous mode decides it.
+@immutable
+final class VoiceRoomMemberDisplayRule {
+  const VoiceRoomMemberDisplayRule({
+    required this.anonymousMemberKey,
+    required this.ruleKey,
+  });
+
+  final String anonymousMemberKey;
+  final String ruleKey;
+}
+
+/// One command the server says this viewer may run against one roster row.
+///
+/// The list on the row is exhaustive and authoritative (the S17 member
+/// directory pattern): the client renders exactly these and derives none of
+/// its own from the viewer's role.
+enum VoiceRoomMemberCommand {
+  inviteSpeaker('invite_speaker'),
+  removeSpeaker('remove_speaker'),
+  mute('mute');
+
+  const VoiceRoomMemberCommand(this.wireName);
+
+  final String wireName;
+
+  String get label => switch (this) {
+    VoiceRoomMemberCommand.inviteSpeaker => '邀请上麦',
+    VoiceRoomMemberCommand.removeSpeaker => '移出发言',
+    VoiceRoomMemberCommand.mute => '静音',
+  };
+
+  static VoiceRoomMemberCommand? tryParse(String value) {
+    for (final item in values) {
+      if (item.wireName == value) return item;
+    }
+    return null;
+  }
+}
+
+/// One row of the speaker or listener roster.
+@immutable
+final class VoiceRoomMember {
+  const VoiceRoomMember({
+    required this.publicProfileId,
+    required this.name,
+    required this.view,
+    required this.joinedAt,
+    required this.handRaised,
+    required this.muted,
+    required this.isSelf,
+    required this.commands,
+  });
+
+  /// The command target. Null when the row is anonymous to a viewer that is
+  /// not the host: there is nothing to address and nothing to open.
+  final String? publicProfileId;
+  final VoiceRoomMemberName name;
+  final VoiceRoomRosterView view;
+  final DateTime joinedAt;
+
+  /// The member has a pending LOOP hand raise. Meaningful on the listener
+  /// view; a speaker is always false.
+  final bool handRaised;
+
+  /// The host's LOOP-side mute intent, not Stream media state: it does not say
+  /// whether the microphone is open now, and every role change clears it.
+  final bool muted;
+  final bool isSelf;
+  final List<VoiceRoomMemberCommand> commands;
+}
+
+/// One page of `GET /v2/voice-rooms/{id}/members`.
+@immutable
+final class VoiceRoomMemberPage {
+  VoiceRoomMemberPage({
+    required this.view,
+    required List<VoiceRoomMember> items,
+    required this.nextCursor,
+    required this.display,
+  }) : items = List<VoiceRoomMember>.unmodifiable(items);
+
+  final VoiceRoomRosterView view;
+  final List<VoiceRoomMember> items;
+
+  /// Non-null only when another page exists. The cursor carries the page size
+  /// and is bound to this view, so it is never sent with a limit or under the
+  /// other role.
+  final String? nextCursor;
+  final VoiceRoomMemberDisplayRule display;
+}
+
 @immutable
 final class VoiceRoomViewer {
   const VoiceRoomViewer({
@@ -382,6 +552,15 @@ final class VoiceRoomCurrent {
 
   bool get isLive => snapshot != null;
 }
+
+/// zh-CN copy for one server-owned voice-room display key. An unknown key
+/// keeps a neutral word rather than inventing a name.
+String voiceRoomDisplayKeyText(String key) => switch (key) {
+  'voiceRoom.member.anonymousMember' => '匿名成员',
+  'voiceRoom.member.display.anonymousModeOnly' =>
+    '只有开启匿名模式的成员显示为匿名；是否可被发现不影响这一行。',
+  _ => '这一项暂时读不到。',
+};
 
 /// zh-CN copy for one communication `reasonCode`. An unknown code keeps a
 /// neutral sentence rather than inventing a cause.

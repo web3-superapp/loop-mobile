@@ -87,6 +87,49 @@ VoiceRoomHandRaiseEntry testHandRaiseEntry({String sequence = '1'}) =>
       profile: testProfile(publicProfileId: testMemberId),
     );
 
+/// One roster row. The three roles the page must tell apart are exactly the
+/// three shapes the server sends: a named row, an anonymous row a host can
+/// still address, and an anonymous row a plain member cannot.
+VoiceRoomMember testVoiceRoomMember({
+  required VoiceRoomRosterView view,
+  String? publicProfileId = testMemberId,
+  String? alias = 'Voyager_344',
+  VoiceRoomMemberAudience audience = VoiceRoomMemberAudience.everyone,
+  bool handRaised = false,
+  bool muted = false,
+  bool isSelf = false,
+  List<VoiceRoomMemberCommand> commands = const <VoiceRoomMemberCommand>[],
+}) => VoiceRoomMember(
+  publicProfileId: publicProfileId,
+  name: alias == null
+      ? const VoiceRoomMemberAnonymousName('voiceRoom.member.anonymousMember')
+      : VoiceRoomMemberAlias(
+          alias: alias,
+          publicProfileId: publicProfileId!,
+          audience: audience,
+        ),
+  view: view,
+  joinedAt: DateTime.utc(2026, 9, 8, 12, 15),
+  handRaised: handRaised,
+  muted: muted,
+  isSelf: isSelf,
+  commands: commands,
+);
+
+VoiceRoomMemberPage testVoiceRoomMemberPage({
+  required VoiceRoomRosterView view,
+  List<VoiceRoomMember> items = const <VoiceRoomMember>[],
+  String? nextCursor,
+}) => VoiceRoomMemberPage(
+  view: view,
+  items: items,
+  nextCursor: nextCursor,
+  display: const VoiceRoomMemberDisplayRule(
+    anonymousMemberKey: 'voiceRoom.member.anonymousMember',
+    ruleKey: 'voiceRoom.member.display.anonymousModeOnly',
+  ),
+);
+
 /// A chat port that records every command and answers with the state the test
 /// asked for. It never touches Stream.
 final class FakeChatV2Gateway implements ChatV2Gateway {
@@ -190,6 +233,17 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
   /// answers with an unavailable count and the page has to read again.
   VoiceRoomSnapshot? loadSnapshot;
 
+  /// The first page of each roster view, and the pages a cursor continues to.
+  Map<VoiceRoomRosterView, VoiceRoomMemberPage> rosters =
+      <VoiceRoomRosterView, VoiceRoomMemberPage>{};
+  Map<String, VoiceRoomMemberPage> rosterPages =
+      <String, VoiceRoomMemberPage>{};
+
+  /// The roster is a second read: it fails and hangs on its own, without
+  /// taking the room with it.
+  CommunityFailureKind? rosterFailure;
+  bool rosterPending = false;
+
   /// How `createRoom` answers, when it must differ from the read answer: a
   /// community with no live room can still refuse to open one.
   CommunityFailureKind? createFailure;
@@ -265,6 +319,24 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
   }
 
   @override
+  Future<VoiceRoomMemberPage> listMembers({
+    required String voiceRoomId,
+    required VoiceRoomRosterView view,
+    String? cursor,
+  }) {
+    commands.add('members:${view.wireName}:${cursor ?? ''}');
+    if (rosterPending) return Completer<VoiceRoomMemberPage>().future;
+    final kind = rosterFailure;
+    if (kind != null) {
+      return Future<VoiceRoomMemberPage>.error(CommunityGatewayException(kind));
+    }
+    final page = cursor == null ? rosters[view] : rosterPages[cursor];
+    return Future<VoiceRoomMemberPage>.value(
+      page ?? testVoiceRoomMemberPage(view: view),
+    );
+  }
+
+  @override
   Future<VoiceRoomSnapshot> join(String voiceRoomId) => _answer('join');
 
   @override
@@ -289,6 +361,12 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
     required String voiceRoomId,
     required String publicProfileId,
   }) => _answer('remove:$publicProfileId');
+
+  @override
+  Future<VoiceRoomSnapshot> muteSpeaker({
+    required String voiceRoomId,
+    required String publicProfileId,
+  }) => _answer('mute:$publicProfileId');
 
   @override
   Future<VoiceRoomSnapshot> muteAll(String voiceRoomId) => _answer('mute-all');

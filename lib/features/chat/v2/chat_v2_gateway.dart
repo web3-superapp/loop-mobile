@@ -67,6 +67,15 @@ abstract interface class VoiceRoomGateway {
 
   Future<List<VoiceRoomHandRaiseEntry>> listHandRaises(String voiceRoomId);
 
+  /// One page of the speaker or the listener roster. [cursor] continues the
+  /// same view; the page size rides inside it, so nothing else is passed with
+  /// it.
+  Future<VoiceRoomMemberPage> listMembers({
+    required String voiceRoomId,
+    required VoiceRoomRosterView view,
+    String? cursor,
+  });
+
   Future<VoiceRoomSnapshot> join(String voiceRoomId);
 
   Future<VoiceRoomSnapshot> leave(String voiceRoomId);
@@ -81,6 +90,13 @@ abstract interface class VoiceRoomGateway {
   });
 
   Future<VoiceRoomSnapshot> removeSpeaker({
+    required String voiceRoomId,
+    required String publicProfileId,
+  });
+
+  /// The host's LOOP-side mute of one speaker. It answers with the room, and
+  /// its `providerSync` says whether the one Stream write was confirmed.
+  Future<VoiceRoomSnapshot> muteSpeaker({
     required String voiceRoomId,
     required String publicProfileId,
   });
@@ -114,6 +130,13 @@ final class UnavailableVoiceRoomGateway implements VoiceRoomGateway {
       _unavailable();
 
   @override
+  Future<VoiceRoomMemberPage> listMembers({
+    required String voiceRoomId,
+    required VoiceRoomRosterView view,
+    String? cursor,
+  }) => _unavailable();
+
+  @override
   Future<VoiceRoomSnapshot> join(String voiceRoomId) => _unavailable();
 
   @override
@@ -134,6 +157,12 @@ final class UnavailableVoiceRoomGateway implements VoiceRoomGateway {
 
   @override
   Future<VoiceRoomSnapshot> removeSpeaker({
+    required String voiceRoomId,
+    required String publicProfileId,
+  }) => _unavailable();
+
+  @override
+  Future<VoiceRoomSnapshot> muteSpeaker({
     required String voiceRoomId,
     required String publicProfileId,
   }) => _unavailable();

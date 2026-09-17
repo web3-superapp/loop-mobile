@@ -60,6 +60,18 @@ abstract interface class LoopV2CommunicationApi {
     required String voiceRoomId,
   });
 
+  /// One page of the speaker or the listener roster. `limit` and `cursor` are
+  /// mutually exclusive: the cursor already carries the page size, and it is
+  /// bound to the view it was issued for.
+  Future<VoiceRoomMemberPage> listMembers({
+    required String accessToken,
+    required String clientVersion,
+    required String voiceRoomId,
+    required VoiceRoomRosterView role,
+    int? limit,
+    String? cursor,
+  });
+
   /// One of the room commands that answer with the full room resource.
   Future<VoiceRoomSnapshot> command({
     required String accessToken,
@@ -78,19 +90,25 @@ enum VoiceRoomCommand {
   leave('leave', 'POST'),
   raiseHand('hand-raise', 'POST'),
   cancelHandRaise('hand-raise', 'DELETE'),
-  inviteSpeaker('speakers', 'POST'),
-  removeSpeaker('speakers', 'DELETE'),
+  inviteSpeaker('speakers', 'POST', targetsProfile: true),
+  removeSpeaker('speakers', 'DELETE', targetsProfile: true),
+  // Per-member mute (decision 0052) hangs off the same speaker resource, so
+  // it is the one targeted command with a trailing segment of its own.
+  muteSpeaker('speakers', 'POST', targetsProfile: true, suffix: '/mute'),
   muteAll('mute-all', 'POST'),
   endRoom('end', 'POST');
 
-  const VoiceRoomCommand(this.segment, this.method);
+  const VoiceRoomCommand(
+    this.segment,
+    this.method, {
+    this.targetsProfile = false,
+    this.suffix = '',
+  });
 
   final String segment;
   final String method;
-
-  bool get targetsProfile =>
-      this == VoiceRoomCommand.inviteSpeaker ||
-      this == VoiceRoomCommand.removeSpeaker;
+  final bool targetsProfile;
+  final String suffix;
 }
 
 final class DioLoopV2CommunicationApi implements LoopV2CommunicationApi {
@@ -348,6 +366,54 @@ final class DioLoopV2CommunicationApi implements LoopV2CommunicationApi {
   }
 
   @override
+  Future<VoiceRoomMemberPage> listMembers({
+    required String accessToken,
+    required String clientVersion,
+    required String voiceRoomId,
+    required VoiceRoomRosterView role,
+    int? limit,
+    String? cursor,
+  }) async {
+    final id = _requireId(voiceRoomId);
+    // The cursor carries the page size, so asking for both is a request the
+    // server would reject; it is refused here rather than sent.
+    if (cursor != null && limit != null) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+    }
+    if (limit != null && (limit < 1 || limit > 100)) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+    }
+    if (cursor != null &&
+        (cursor.length < 3 ||
+            cursor.length > LoopV2ProjectionCodec.maximumCursorLength ||
+            !LoopV2ProjectionCodec.cursorPattern.hasMatch(cursor))) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+    }
+    try {
+      final response = await _dio.get<Object?>(
+        '$voiceRoomsPath/$id/members',
+        queryParameters: <String, Object?>{
+          'role': role.wireName,
+          'limit': ?limit,
+          'cursor': ?cursor,
+        },
+        options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
+      );
+      LoopV2Contract.validateSuccess(response, statusCode: 200);
+      final root = LoopV2Contract.strictMap(
+        response.data,
+        LoopV2CommunicationCodec.memberPageKeys,
+      );
+      final page = LoopV2CommunicationCodec.members(root);
+      // A page of the other view would be rendered under this one's heading.
+      if (page.view != role) LoopV2ProjectionCodec.invalid();
+      return page;
+    } on DioException catch (error) {
+      throw LoopV2Contract.mapDioFailure(error, allowedCodes: readErrors);
+    }
+  }
+
+  @override
   Future<VoiceRoomSnapshot> command({
     required String accessToken,
     required String clientVersion,
@@ -362,7 +428,7 @@ final class DioLoopV2CommunicationApi implements LoopV2CommunicationApi {
     }
     final path = command.targetsProfile
         ? '$voiceRoomsPath/$id/${command.segment}/'
-              '${_requireId(publicProfileId!)}'
+              '${_requireId(publicProfileId!)}${command.suffix}'
         : '$voiceRoomsPath/$id/${command.segment}';
     final options = LoopV2ModuleRequest.writeOptions(
       accessToken,

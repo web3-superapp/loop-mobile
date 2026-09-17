@@ -362,6 +362,134 @@ abstract final class LoopV2CommunicationCodec {
     );
   }
 
+  static const anonymousMemberKey = 'voiceRoom.member.anonymousMember';
+  static const memberDisplayRuleKey =
+      'voiceRoom.member.display.anonymousModeOnly';
+
+  static const memberPageKeys = <String>{
+    'role',
+    'items',
+    'nextCursor',
+    'display',
+    'contractVersion',
+  };
+
+  /// One roster row's name, under the mining board's display rule (decision
+  /// 0049): an alias with its audience, or the server's anonymous label.
+  static VoiceRoomMemberName memberName(Object? raw) {
+    if (raw is! Map) _invalid();
+    if (raw['kind'] == 'anonymous') {
+      final map = LoopV2Contract.strictMap(raw, const <String>{
+        'kind',
+        'labelKey',
+      });
+      final labelKey = map['labelKey'];
+      if (labelKey != anonymousMemberKey) _invalid();
+      return const VoiceRoomMemberAnonymousName(anonymousMemberKey);
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'kind',
+      'alias',
+      'publicProfileId',
+      'audience',
+    });
+    if (map['kind'] != 'alias') _invalid();
+    final rawAudience = map['audience'];
+    if (rawAudience is! String) _invalid();
+    final audience = VoiceRoomMemberAudience.tryParse(rawAudience);
+    if (audience == null) _invalid();
+    return VoiceRoomMemberAlias(
+      alias: LoopV2ProjectionCodec.requireText(map, 'alias'),
+      publicProfileId: LoopV2Contract.requiredString(
+        map,
+        'publicProfileId',
+        pattern: LoopV2Contract.uuidPattern,
+      ),
+      audience: audience,
+    );
+  }
+
+  static VoiceRoomMemberPage members(Map<String, Object?> root) {
+    LoopV2ProjectionCodec.requireContractVersion(root);
+    final rawRole = root['role'];
+    if (rawRole is! String) _invalid();
+    final view = VoiceRoomRosterView.tryParse(rawRole);
+    if (view == null) _invalid();
+
+    final display = LoopV2Contract.strictMap(root['display'], const <String>{
+      'anonymousMemberKey',
+      'ruleKey',
+    });
+    if (display['anonymousMemberKey'] != anonymousMemberKey ||
+        display['ruleKey'] != memberDisplayRuleKey) {
+      _invalid();
+    }
+
+    final items = <VoiceRoomMember>[];
+    final seen = <String>{};
+    for (final raw in LoopV2ProjectionCodec.requireList(
+      root['items'],
+      maximum: 100,
+    )) {
+      final item = LoopV2Contract.strictMap(raw, const <String>{
+        'publicProfileId',
+        'display',
+        'role',
+        'joinedAt',
+        'handRaised',
+        'muted',
+        'isSelf',
+        'commands',
+      });
+      final rawRowRole = item['role'];
+      if (rawRowRole is! String) _invalid();
+      // The cursor is bound to one view, so a row of the other role in this
+      // page is not the list that was asked for.
+      if (VoiceRoomRosterView.tryParse(rawRowRole) != view) _invalid();
+      final commands = <VoiceRoomMemberCommand>[];
+      for (final rawCommand in LoopV2ProjectionCodec.requireList(
+        item['commands'],
+        maximum: 3,
+      )) {
+        if (rawCommand is! String) _invalid();
+        final command = VoiceRoomMemberCommand.tryParse(rawCommand);
+        // An unknown command is not ignored: a row whose command list this
+        // client cannot render exactly is not a row it may act on.
+        if (command == null || commands.contains(command)) _invalid();
+        commands.add(command);
+      }
+      final publicProfileId = LoopV2ProjectionCodec.optionalPattern(
+        item,
+        'publicProfileId',
+        LoopV2Contract.uuidPattern,
+      );
+      // A command with no target could only be run against a guess.
+      if (publicProfileId == null && commands.isNotEmpty) _invalid();
+      if (publicProfileId != null && !seen.add(publicProfileId)) _invalid();
+      items.add(
+        VoiceRoomMember(
+          publicProfileId: publicProfileId,
+          name: memberName(item['display']),
+          view: view,
+          joinedAt: LoopV2ProjectionCodec.requireTimestamp(item, 'joinedAt'),
+          handRaised: LoopV2ProjectionCodec.requireBool(item, 'handRaised'),
+          muted: LoopV2ProjectionCodec.requireBool(item, 'muted'),
+          isSelf: LoopV2ProjectionCodec.requireBool(item, 'isSelf'),
+          commands: List<VoiceRoomMemberCommand>.unmodifiable(commands),
+        ),
+      );
+    }
+    return VoiceRoomMemberPage(
+      view: view,
+      items: items,
+      nextCursor: LoopV2ProjectionCodec.cursor(root, 'nextCursor'),
+      display: const VoiceRoomMemberDisplayRule(
+        anonymousMemberKey: anonymousMemberKey,
+        ruleKey: memberDisplayRuleKey,
+      ),
+    );
+  }
+
   static List<VoiceRoomHandRaiseEntry> handRaises(Map<String, Object?> root) {
     LoopV2ProjectionCodec.requireContractVersion(root);
     final entries = <VoiceRoomHandRaiseEntry>[];

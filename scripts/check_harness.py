@@ -7508,7 +7508,12 @@ def check_production_chat_audio_room_entry(root: Path) -> list[str]:
                 "autoConnect: true,",
                 "onExitRequested: onExitRequested,",
                 "await _mediaLink.disconnect()",
-                "voiceroom-remove-speaker-unavailable",
+                # Decision 0052 gives the page the roster the room resource
+                # never carried, so the row commands are the server's own list
+                # and a row it published none for opens nothing. 移出发言 lives
+                # on a speaker row now; it is no longer declared unavailable.
+                "voiceroom-member-command-",
+                "member.commands.isEmpty",
             ),
             "test/stream_chat_inbox_page_test.dart": (
                 "the generic Chat inbox no longer offers an Audio Room without a community",
@@ -7519,6 +7524,9 @@ def check_production_chat_audio_room_entry(root: Path) -> list[str]:
                 "a pending role evidence closes the whole page",
                 "a listener sees no host control",
                 "a host sees the host controls and the queue",
+                "a host sees exactly the commands the server sent per row",
+                "a plain member gets no row command at all",
+                "an empty roster is not the same state as an unreadable one",
                 "an unobserved participant count renders the em dash",
                 "joining the room is the same step as hearing it",
                 "a failed connection keeps the membership and offers it back",

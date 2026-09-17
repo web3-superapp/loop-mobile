@@ -974,24 +974,33 @@ void main() {
       expect(find.byType(Scaffold), findsOneWidget);
     });
 
-    testWidgets('a host is offered no speaker to remove', (tester) async {
+    testWidgets('the hand-raise queue is never a speaker to remove', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
+        handRaises: <VoiceRoomHandRaiseEntry>[testHandRaiseEntry()],
+      );
       await pumpCommunityPage(
         tester,
         const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
-        voiceRoom: FakeVoiceRoomGateway(
-          snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
-          handRaises: <VoiceRoomHandRaiseEntry>[testHandRaiseEntry()],
-        ),
+        voiceRoom: voice,
       );
 
-      final unavailable = find.byKey(
-        const ValueKey<String>('voiceroom-remove-speaker-unavailable'),
+      final invite = find.byKey(
+        ValueKey<String>('voiceroom-invite-$testMemberId'),
       );
-      await scrollToCommunitySection(tester, unavailable);
-      expect(unavailable, findsOneWidget);
-      // A hand raise is a request to speak, never a speaker.
+      await scrollToCommunitySection(tester, invite);
+      expect(invite, findsOneWidget);
+      // 移出发言 is a speaker-row command now; the queue offers only 邀请.
       expect(
         find.byKey(const ValueKey<String>('voiceroom-remove-speaker')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('voiceroom-remove-speaker-unavailable'),
+        ),
         findsNothing,
       );
     });
@@ -1290,6 +1299,292 @@ void main() {
       );
       expect(media.leaveCalls, 0);
       expect(voice.commands, isNot(contains('leave')));
+    });
+  });
+
+  group('voiceroom roster', () {
+    FakeVoiceRoomGateway hostGateway({
+      List<VoiceRoomMember> speakers = const <VoiceRoomMember>[],
+      List<VoiceRoomMember> listeners = const <VoiceRoomMember>[],
+      String? listenerCursor,
+    }) =>
+        FakeVoiceRoomGateway(
+            snapshot: testVoiceRoomSnapshot(
+              role: VoiceRoomRole.host,
+              host: true,
+            ),
+          )
+          ..rosters = <VoiceRoomRosterView, VoiceRoomMemberPage>{
+            VoiceRoomRosterView.speaker: testVoiceRoomMemberPage(
+              view: VoiceRoomRosterView.speaker,
+              items: speakers,
+            ),
+            VoiceRoomRosterView.listener: testVoiceRoomMemberPage(
+              view: VoiceRoomRosterView.listener,
+              items: listeners,
+              nextCursor: listenerCursor,
+            ),
+          };
+
+    testWidgets('a host sees exactly the commands the server sent per row', (
+      tester,
+    ) async {
+      final voice = hostGateway(
+        speakers: <VoiceRoomMember>[
+          testVoiceRoomMember(
+            view: VoiceRoomRosterView.speaker,
+            muted: true,
+            commands: const <VoiceRoomMemberCommand>[
+              VoiceRoomMemberCommand.removeSpeaker,
+              VoiceRoomMemberCommand.mute,
+            ],
+          ),
+        ],
+        listeners: <VoiceRoomMember>[
+          testVoiceRoomMember(
+            view: VoiceRoomRosterView.listener,
+            publicProfileId: testAdminId,
+            alias: null,
+            handRaised: true,
+            commands: const <VoiceRoomMemberCommand>[
+              VoiceRoomMemberCommand.inviteSpeaker,
+            ],
+          ),
+        ],
+      );
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
+        voiceRoom: voice,
+      );
+
+      final speakerRow = find.byKey(
+        const ValueKey<String>('voiceroom-member-speaker-$testMemberId'),
+      );
+      await scrollToCommunitySection(tester, speakerRow);
+      expect(speakerRow, findsOneWidget);
+      expect(find.text('已静音'), findsOneWidget);
+
+      await tester.tap(speakerRow);
+      await tester.pumpAndSettle();
+      // The row publishes two commands, so the sheet offers those two and no
+      // invite — the viewer's role decides nothing here.
+      expect(
+        find.byKey(
+          const ValueKey<String>('voiceroom-member-command-remove_speaker'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-member-command-mute')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('voiceroom-member-command-invite_speaker'),
+        ),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('voiceroom-member-command-mute')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-confirm-accept')),
+      );
+      await tester.pumpAndSettle();
+      expect(voice.commands, contains('mute:$testMemberId'));
+    });
+
+    testWidgets('a host invites one listener through the row command', (
+      tester,
+    ) async {
+      final voice = hostGateway(
+        listeners: <VoiceRoomMember>[
+          testVoiceRoomMember(
+            view: VoiceRoomRosterView.listener,
+            handRaised: true,
+            commands: const <VoiceRoomMemberCommand>[
+              VoiceRoomMemberCommand.inviteSpeaker,
+            ],
+          ),
+        ],
+      );
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
+        voiceRoom: voice,
+      );
+
+      final row = find.byKey(
+        const ValueKey<String>('voiceroom-member-listener-$testMemberId'),
+      );
+      await scrollToCommunitySection(tester, row);
+      expect(find.text('已举手'), findsOneWidget);
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>('voiceroom-member-command-invite_speaker'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-confirm-accept')),
+      );
+      await tester.pumpAndSettle();
+      expect(voice.commands, contains('invite:$testMemberId'));
+    });
+
+    testWidgets('a plain member gets no row command at all', (tester) async {
+      final voice =
+          FakeVoiceRoomGateway(
+              snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+            )
+            ..rosters = <VoiceRoomRosterView, VoiceRoomMemberPage>{
+              VoiceRoomRosterView.speaker: testVoiceRoomMemberPage(
+                view: VoiceRoomRosterView.speaker,
+                items: <VoiceRoomMember>[
+                  testVoiceRoomMember(view: VoiceRoomRosterView.speaker),
+                ],
+              ),
+              VoiceRoomRosterView.listener: testVoiceRoomMemberPage(
+                view: VoiceRoomRosterView.listener,
+                items: <VoiceRoomMember>[
+                  // Anonymous to this viewer: no identifier, nothing to open.
+                  testVoiceRoomMember(
+                    view: VoiceRoomRosterView.listener,
+                    publicProfileId: null,
+                    alias: null,
+                  ),
+                ],
+              ),
+            };
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
+        voiceRoom: voice,
+      );
+
+      final row = find.byKey(
+        const ValueKey<String>('voiceroom-member-listener-0'),
+      );
+      await scrollToCommunitySection(tester, row);
+      expect(find.text('匿名成员'), findsOneWidget);
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-member-sheet')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('an empty roster is not the same state as an unreadable one', (
+      tester,
+    ) async {
+      final voice = hostGateway();
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
+        voiceRoom: voice,
+      );
+
+      final empty = find.byKey(
+        const ValueKey<String>('voiceroom-roster-listener-empty'),
+      );
+      await scrollToCommunitySection(tester, empty);
+      expect(empty, findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-roster-speaker-empty')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-roster-listener-error')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a roster that cannot be read says so and keeps the room', (
+      tester,
+    ) async {
+      final voice = hostGateway()
+        ..rosterFailure = CommunityFailureKind.unexpected;
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
+        voiceRoom: voice,
+      );
+
+      final error = find.byKey(
+        const ValueKey<String>('voiceroom-roster-listener-error'),
+      );
+      await scrollToCommunitySection(tester, error);
+      expect(error, findsOneWidget);
+      // The room above it was read and stays readable.
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-live')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('another page is read with the cursor and nothing else', (
+      tester,
+    ) async {
+      final voice =
+          hostGateway(
+              listeners: <VoiceRoomMember>[
+                testVoiceRoomMember(view: VoiceRoomRosterView.listener),
+              ],
+              listenerCursor: 'page2.cursor',
+            )
+            ..rosterPages = <String, VoiceRoomMemberPage>{
+              'page2.cursor': testVoiceRoomMemberPage(
+                view: VoiceRoomRosterView.listener,
+                items: <VoiceRoomMember>[
+                  testVoiceRoomMember(
+                    view: VoiceRoomRosterView.listener,
+                    publicProfileId: testAdminId,
+                    alias: 'DeFiMaxi_349',
+                  ),
+                ],
+              ),
+            };
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
+        voiceRoom: voice,
+      );
+
+      final more = find.byKey(
+        const ValueKey<String>('voiceroom-roster-listener-load-more'),
+      );
+      await scrollToCommunitySection(tester, more);
+      await tester.tap(more);
+      await tester.pumpAndSettle();
+
+      expect(voice.commands, contains('members:listener:page2.cursor'));
+      expect(find.text('DeFiMaxi_349'), findsOneWidget);
+      // The last page ends in a sentence, not in silence.
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-roster-listener-end')),
+        findsOneWidget,
+      );
+      expect(more, findsNothing);
+    });
+
+    testWidgets('the lobby asks for no roster at all', (tester) async {
+      final voice = hostGateway();
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+      );
+
+      expect(
+        voice.commands.where((command) => command.startsWith('members:')),
+        isEmpty,
+      );
     });
   });
 

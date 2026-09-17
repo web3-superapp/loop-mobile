@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_link.dart';
@@ -16,6 +17,7 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// `voiceroom` (lobby) and `voiceroom-full` (session) share one controller and
@@ -111,6 +113,18 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     }
 
     final snapshot = state.snapshot;
+    // The roster is the session page's read alone: the lobby never asks for
+    // it, and each view is asked for once — the controller holds the in-flight
+    // guard, so a rebuild does not re-ask.
+    if (widget.expanded && snapshot != null) {
+      for (final view in VoiceRoomRosterView.values) {
+        if (state.roster(view).phase == CommunityViewPhase.loading) {
+          scheduleMicrotask(() {
+            if (mounted) unawaited(controller.loadRoster(view));
+          });
+        }
+      }
+    }
     return LoopDashboardPage(
       key: ValueKey<String>(
         widget.expanded ? 'voiceroom-full-screen' : 'voiceroom-screen',
@@ -196,6 +210,15 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
               onExitRequested: () => _leave(controller, snapshot.viewer),
             ),
           if (widget.expanded) ...<Widget>[
+            for (final view in VoiceRoomRosterView.values)
+              _RosterSection(
+                view: view,
+                state: state,
+                onRetry: () => unawaited(controller.loadRoster(view)),
+                onLoadMore: () => unawaited(controller.loadMoreRoster(view)),
+                onCommand: (member, command) =>
+                    _runMemberCommand(controller, member, command),
+              ),
             const LoopLabel('举手队列'),
             _HandRaiseQueue(state: state),
           ],
@@ -282,6 +305,47 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     await _run(
       controller.leave,
       disconnected ? '已离开语音房' : '已离开语音房，语音连接的收尾没有确认',
+    );
+  }
+
+  /// Runs one row command the server published, after naming the target.
+  ///
+  /// The sheet offers exactly the row's `commands`; nothing here derives a
+  /// command from the viewer's role, and a row the server sent no command for
+  /// never opens it.
+  Future<void> _runMemberCommand(
+    VoiceRoomController controller,
+    VoiceRoomMember member,
+    VoiceRoomMemberCommand command,
+  ) async {
+    final target = member.publicProfileId;
+    if (target == null) return;
+    final name = voiceRoomMemberName(member);
+    final confirmed = await confirmCommunityAction(
+      context,
+      title: '${command.label}？',
+      body: switch (command) {
+        VoiceRoomMemberCommand.inviteSpeaker =>
+          '目标：$name。邀请后对方成为发言人，可以在这次通话里说话。',
+        VoiceRoomMemberCommand.removeSpeaker => '目标：$name。移出后对方回到听众，仍然留在房间里。',
+        VoiceRoomMemberCommand.mute =>
+          '目标：$name。静音是 LOOP 侧的意图，'
+              '对方的设备仍可能自行开麦；没有取消静音的命令。',
+      },
+      confirmLabel: command.label,
+      sheetKey: 'voiceroom-member-confirm-sheet',
+    );
+    if (!confirmed || !mounted) return;
+    await _run(
+      () => controller.runMemberCommand(
+        command: command,
+        publicProfileId: target,
+      ),
+      switch (command) {
+        VoiceRoomMemberCommand.inviteSpeaker => '已邀请发言',
+        VoiceRoomMemberCommand.removeSpeaker => '已移出发言',
+        VoiceRoomMemberCommand.mute => '已请求静音',
+      },
     );
   }
 
@@ -465,6 +529,222 @@ class _MediaSection extends StatelessWidget {
   }
 }
 
+/// What one roster row is called, under the server's display rule.
+///
+/// A member with anonymous mode on is the server's anonymous label to every
+/// other reader, and its own alias to itself; this client never assembles a
+/// name from an identifier.
+String voiceRoomMemberName(VoiceRoomMember member) => switch (member.name) {
+  VoiceRoomMemberAlias(alias: final alias) =>
+    member.isSelf ? '我 · $alias' : alias,
+  VoiceRoomMemberAnonymousName(labelKey: final key) => voiceRoomDisplayKeyText(
+    key,
+  ),
+};
+
+/// One roster view: 发言人 or 听众.
+///
+/// The count in the heading is the room's own role figure; the rows are the
+/// roster page. The two are read separately, so a heading with a figure above
+/// a list that could not be read is the honest picture, not a contradiction.
+class _RosterSection extends StatelessWidget {
+  const _RosterSection({
+    required this.view,
+    required this.state,
+    required this.onRetry,
+    required this.onLoadMore,
+    required this.onCommand,
+  });
+
+  final VoiceRoomRosterView view;
+  final VoiceRoomPageState state;
+  final VoidCallback onRetry;
+  final VoidCallback onLoadMore;
+  final Future<void> Function(
+    VoiceRoomMember member,
+    VoiceRoomMemberCommand command,
+  )
+  onCommand;
+
+  @override
+  Widget build(BuildContext context) {
+    final roster = state.roster(view);
+    final participants = state.snapshot!.participants;
+    final count = view == VoiceRoomRosterView.speaker
+        ? participants.speakerCount
+        : participants.listenerCount;
+    final slug = view.wireName;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopLabel('${view.label} $count'),
+        switch (roster.phase) {
+          CommunityViewPhase.loading => LoopSkeleton(
+            key: ValueKey<String>('voiceroom-roster-$slug-loading'),
+            type: LoopSkeletonType.list,
+            rows: 2,
+          ),
+          // An empty roster that was read is a fact about the room; it is not
+          // the same sentence as a roster that could not be read.
+          CommunityViewPhase.empty => LoopEmpty(
+            key: ValueKey<String>('voiceroom-roster-$slug-empty'),
+            message: '当前没有${view.label}',
+            reason: view == VoiceRoomRosterView.speaker
+                ? 'LOOP 记录里这个房间还没有发言人。主持人不在这份名单里。'
+                : 'LOOP 记录里这个房间还没有听众。主持人不在这份名单里。',
+          ),
+          CommunityViewPhase.offline => LoopOfflineState(
+            key: ValueKey<String>('voiceroom-roster-$slug-offline'),
+            pausedActions: const <String>['邀请上麦', '移出发言', '静音'],
+            onRetry: onRetry,
+          ),
+          CommunityViewPhase.permission => LoopPermissionState(
+            key: ValueKey<String>('voiceroom-roster-$slug-permission'),
+            icon: 'shield',
+            title: '没有权限查看${view.label}名单',
+            purpose: communityFailureReason(roster.failureKind),
+          ),
+          CommunityViewPhase.unavailable => LoopEmpty(
+            key: ValueKey<String>('voiceroom-roster-$slug-unavailable'),
+            icon: 'warn',
+            message: '${view.label}名单当前不可用',
+            reason: communityFailureReason(roster.failureKind),
+          ),
+          CommunityViewPhase.error => LoopErrorState(
+            key: ValueKey<String>('voiceroom-roster-$slug-error'),
+            title: '${view.label}名单读不到',
+            reason: communityFailureReason(roster.failureKind),
+            onRetry: onRetry,
+          ),
+          CommunityViewPhase.ready => _rows(context, roster),
+        },
+        if (roster.isReady && roster.nextCursor != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: LoopButton(
+              key: ValueKey<String>('voiceroom-roster-$slug-load-more'),
+              label: roster.loadingMore ? '正在载入…' : '载入更多',
+              block: true,
+              onPressed: roster.loadingMore ? null : onLoadMore,
+            ),
+          )
+        else if (roster.isReady)
+          LoopProvenanceFooter(
+            key: ValueKey<String>('voiceroom-roster-$slug-end'),
+            text: '没有更多${view.label}',
+          ),
+      ],
+    );
+  }
+
+  Widget _rows(BuildContext context, VoiceRoomRosterState roster) {
+    final slug = view.wireName;
+    return LoopRecordGroup(
+      rows: <LoopRecordRow>[
+        for (var index = 0; index < roster.items.length; index += 1)
+          _row(
+            context,
+            roster.items[index],
+            key: ValueKey<String>(
+              'voiceroom-member-$slug-'
+              '${roster.items[index].publicProfileId ?? index}',
+            ),
+            position: index == 0
+                ? (roster.items.length == 1
+                      ? LoopRowPosition.single
+                      : LoopRowPosition.first)
+                : index == roster.items.length - 1
+                ? LoopRowPosition.last
+                : LoopRowPosition.middle,
+          ),
+      ],
+    );
+  }
+
+  LoopRecordRow _row(
+    BuildContext context,
+    VoiceRoomMember member, {
+    required Key key,
+    required LoopRowPosition position,
+  }) {
+    final speaking = view == VoiceRoomRosterView.speaker;
+    // 发言人 carries the mute mark, 听众 the raised hand: each view shows the
+    // state that means something in it.
+    final badge = speaking
+        ? (member.muted
+              ? const LoopBadge('已静音', kind: LoopBadgeKind.mute)
+              : null)
+        : (member.handRaised
+              ? const LoopBadge('已举手', kind: LoopBadgeKind.mining)
+              : null);
+    return LoopRecordRow(
+      key: key,
+      title: voiceRoomMemberName(member),
+      subtitle: speaking
+          ? (member.muted ? '主持人已在 LOOP 侧静音，麦克风状态以 Stream 为准' : '可以在这次通话里发言')
+          : (member.handRaised ? '等待主持人邀请发言' : '只收听，未申请发言'),
+      subtitleMaxLines: 2,
+      trailingBadge: badge,
+      position: position,
+      // Exactly the server's commands for this row: a row with none is not
+      // tappable, which is what a non-host viewer sees on every row.
+      onTap: member.commands.isEmpty || state.busy
+          ? null
+          : () => unawaited(_openCommands(context, member)),
+    );
+  }
+
+  Future<void> _openCommands(
+    BuildContext context,
+    VoiceRoomMember member,
+  ) async {
+    final chosen = await showLoopSheet<VoiceRoomMemberCommand>(
+      context,
+      barrierLabel: '关闭成员操作弹层',
+      builder: (sheetContext) => Padding(
+        key: const ValueKey<String>('voiceroom-member-sheet'),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Text(
+              voiceRoomMemberName(member),
+              style: LoopTypography.heading(18, weight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '主持人可以执行的操作由服务端逐行下发，这里只列出这一行真正可用的。',
+              style: LoopTypography.body(13, color: LoopColors.muted),
+            ),
+            const SizedBox(height: 18),
+            for (final command in member.commands)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: LoopButton(
+                  key: ValueKey<String>(
+                    'voiceroom-member-command-${command.wireName}',
+                  ),
+                  label: command.label,
+                  block: true,
+                  onPressed: () => Navigator.of(sheetContext).pop(command),
+                ),
+              ),
+            LoopButton(
+              key: const ValueKey<String>('voiceroom-member-command-cancel'),
+              label: '取消',
+              block: true,
+              onPressed: () => Navigator.of(sheetContext).pop(),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (chosen == null) return;
+    await onCommand(member, chosen);
+  }
+}
+
 class _HandRaiseQueue extends StatelessWidget {
   const _HandRaiseQueue({required this.state});
 
@@ -587,19 +867,10 @@ class _HostControls extends StatelessWidget {
                 ),
             ],
           ),
-        // The room resource carries no speaker directory: it returns only the
-        // viewer's own role and two aggregate counts. A hand raise is a
-        // *request* to speak, never proof that the account is speaking, so it
-        // must not become the target of a removal.
-        if (snapshot.viewer.canInviteSpeakers)
-          const LoopEmpty(
-            key: ValueKey<String>('voiceroom-remove-speaker-unavailable'),
-            icon: 'warn',
-            message: '移出发言当前不可用',
-            reason:
-                '暂时读不到发言人名单，没有可以移出的人。'
-                '举手队列只是发言申请，不能当作发言人使用。',
-          ),
+        // 移出发言 and 静音 live on the speaker rows above, where the server
+        // publishes them per member. A hand raise is a *request* to speak,
+        // never proof that the account is speaking, so this block never
+        // offered a removal against the queue and no longer has to say so.
         LoopButtonPair(
           children: <Widget>[
             if (snapshot.viewer.canMuteAll)

@@ -131,6 +131,21 @@ final class DioLoopV2CommunicationGateway
         ),
       );
 
+  @override
+  Future<VoiceRoomMemberPage> listMembers({
+    required String voiceRoomId,
+    required VoiceRoomRosterView view,
+    String? cursor,
+  }) => _read(
+    (accessToken) => _api.listMembers(
+      accessToken: accessToken,
+      clientVersion: _clientVersion,
+      voiceRoomId: voiceRoomId,
+      role: view,
+      cursor: cursor,
+    ),
+  );
+
   Future<VoiceRoomSnapshot> _command(
     VoiceRoomCommand command,
     String voiceRoomId, {
@@ -179,6 +194,16 @@ final class DioLoopV2CommunicationGateway
     required String publicProfileId,
   }) => _command(
     VoiceRoomCommand.removeSpeaker,
+    voiceRoomId,
+    publicProfileId: publicProfileId,
+  );
+
+  @override
+  Future<VoiceRoomSnapshot> muteSpeaker({
+    required String voiceRoomId,
+    required String publicProfileId,
+  }) => _command(
+    VoiceRoomCommand.muteSpeaker,
     voiceRoomId,
     publicProfileId: publicProfileId,
   );

@@ -187,6 +187,69 @@ final class MemoryVoiceRoomGateway implements VoiceRoomGateway {
       ),
   ];
 
+  /// The Preview roster: one named row and one anonymous row per view, so the
+  /// 开发预览 surface shows both display rules. A Preview host still issues no
+  /// provider command, so every row carries the commands the server would
+  /// publish and nothing more.
+  @override
+  Future<VoiceRoomMemberPage> listMembers({
+    required String voiceRoomId,
+    required VoiceRoomRosterView view,
+    String? cursor,
+  }) async => VoiceRoomMemberPage(
+    view: view,
+    items: <VoiceRoomMember>[
+      VoiceRoomMember(
+        publicProfileId: asHost ? _previewListener.publicProfileId : null,
+        name: const VoiceRoomMemberAnonymousName(
+          'voiceRoom.member.anonymousMember',
+        ),
+        view: view,
+        joinedAt: DateTime.utc(2026, 9, 8, 12, 5),
+        handRaised: view == VoiceRoomRosterView.listener,
+        muted: false,
+        isSelf: false,
+        commands: !asHost
+            ? const <VoiceRoomMemberCommand>[]
+            : view == VoiceRoomRosterView.listener
+            ? const <VoiceRoomMemberCommand>[
+                VoiceRoomMemberCommand.inviteSpeaker,
+              ]
+            : const <VoiceRoomMemberCommand>[
+                VoiceRoomMemberCommand.removeSpeaker,
+                VoiceRoomMemberCommand.mute,
+              ],
+      ),
+      VoiceRoomMember(
+        publicProfileId: _previewHost.publicProfileId,
+        name: VoiceRoomMemberAlias(
+          alias: _previewHost.alias!,
+          publicProfileId: _previewHost.publicProfileId!,
+          audience: VoiceRoomMemberAudience.everyone,
+        ),
+        view: view,
+        joinedAt: DateTime.utc(2026, 9, 8, 12, 10),
+        handRaised: false,
+        muted: view == VoiceRoomRosterView.speaker,
+        isSelf: false,
+        commands: !asHost
+            ? const <VoiceRoomMemberCommand>[]
+            : view == VoiceRoomRosterView.listener
+            ? const <VoiceRoomMemberCommand>[
+                VoiceRoomMemberCommand.inviteSpeaker,
+              ]
+            : const <VoiceRoomMemberCommand>[
+                VoiceRoomMemberCommand.removeSpeaker,
+              ],
+      ),
+    ],
+    nextCursor: null,
+    display: const VoiceRoomMemberDisplayRule(
+      anonymousMemberKey: 'voiceRoom.member.anonymousMember',
+      ruleKey: 'voiceRoom.member.display.anonymousModeOnly',
+    ),
+  );
+
   @override
   Future<VoiceRoomSnapshot> join(String voiceRoomId) async {
     _joined = true;
@@ -220,6 +283,12 @@ final class MemoryVoiceRoomGateway implements VoiceRoomGateway {
 
   @override
   Future<VoiceRoomSnapshot> removeSpeaker({
+    required String voiceRoomId,
+    required String publicProfileId,
+  }) async => _snapshot;
+
+  @override
+  Future<VoiceRoomSnapshot> muteSpeaker({
     required String voiceRoomId,
     required String publicProfileId,
   }) async => _snapshot;

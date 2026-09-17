@@ -331,6 +331,44 @@ final groupMembershipControllerProvider =
 // voiceroom / voiceroom-full
 // ---------------------------------------------------------------------------
 
+/// One roster view's own five states.
+///
+/// The roster is a second read beside the room: it fails, empties and pages on
+/// its own, and a room that is readable never disappears because its member
+/// list is not. An empty list that was read is not the same fact as a list that
+/// could not be read, so the two keep different phases.
+@immutable
+final class VoiceRoomRosterState {
+  const VoiceRoomRosterState({
+    required this.view,
+    required this.phase,
+    this.items = const <VoiceRoomMember>[],
+    this.nextCursor,
+    this.failureKind,
+    this.loadingMore = false,
+  });
+
+  const VoiceRoomRosterState.initial(this.view)
+    : phase = CommunityViewPhase.loading,
+      items = const <VoiceRoomMember>[],
+      nextCursor = null,
+      failureKind = null,
+      loadingMore = false;
+
+  final VoiceRoomRosterView view;
+  final CommunityViewPhase phase;
+  final List<VoiceRoomMember> items;
+
+  /// Non-null only while the server says another page exists.
+  final String? nextCursor;
+  final CommunityFailureKind? failureKind;
+  final bool loadingMore;
+
+  bool get isReady => phase == CommunityViewPhase.ready;
+
+  bool get canLoadMore => nextCursor != null && !loadingMore;
+}
+
 @immutable
 final class VoiceRoomPageState {
   const VoiceRoomPageState({
@@ -338,6 +376,12 @@ final class VoiceRoomPageState {
     required this.phase,
     this.snapshot,
     this.handRaises = const <VoiceRoomHandRaiseEntry>[],
+    this.speakers = const VoiceRoomRosterState.initial(
+      VoiceRoomRosterView.speaker,
+    ),
+    this.listeners = const VoiceRoomRosterState.initial(
+      VoiceRoomRosterView.listener,
+    ),
     this.notLiveReasonCode,
     this.failureKind,
     this.busy = false,
@@ -358,6 +402,8 @@ final class VoiceRoomPageState {
   final CommunityViewPhase phase;
   final VoiceRoomSnapshot? snapshot;
   final List<VoiceRoomHandRaiseEntry> handRaises;
+  final VoiceRoomRosterState speakers;
+  final VoiceRoomRosterState listeners;
 
   /// The server's own explanation when no room is live.
   final String? notLiveReasonCode;
@@ -368,10 +414,20 @@ final class VoiceRoomPageState {
 
   bool get isReady => phase == CommunityViewPhase.ready && snapshot != null;
 
+  VoiceRoomRosterState roster(VoiceRoomRosterView view) =>
+      view == VoiceRoomRosterView.speaker ? speakers : listeners;
+
+  VoiceRoomPageState withRoster(VoiceRoomRosterState roster) => copyWith(
+    speakers: roster.view == VoiceRoomRosterView.speaker ? roster : null,
+    listeners: roster.view == VoiceRoomRosterView.listener ? roster : null,
+  );
+
   VoiceRoomPageState copyWith({
     CommunityViewPhase? phase,
     VoiceRoomSnapshot? snapshot,
     List<VoiceRoomHandRaiseEntry>? handRaises,
+    VoiceRoomRosterState? speakers,
+    VoiceRoomRosterState? listeners,
     String? notLiveReasonCode,
     CommunityFailureKind? failureKind,
     bool? busy,
@@ -381,6 +437,8 @@ final class VoiceRoomPageState {
     phase: phase ?? this.phase,
     snapshot: snapshot ?? this.snapshot,
     handRaises: handRaises ?? this.handRaises,
+    speakers: speakers ?? this.speakers,
+    listeners: listeners ?? this.listeners,
     notLiveReasonCode: notLiveReasonCode,
     failureKind: clearFailure ? null : (failureKind ?? this.failureKind),
     busy: busy ?? this.busy,
@@ -486,6 +544,10 @@ final voiceRoomSessionProvider =
 final class VoiceRoomController extends Notifier<VoiceRoomPageState>
     with CommunitySingleFlight {
   String? _communityId;
+
+  /// One roster read per view at a time. The page asks on every build until a
+  /// view leaves its loading phase, so the guard is what makes that one call.
+  final Set<VoiceRoomRosterView> _rosterInFlight = <VoiceRoomRosterView>{};
 
   @override
   VoiceRoomPageState build() {
@@ -656,6 +718,117 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
       return committed;
     }
   }
+
+  /// Reads one roster view's first page.
+  ///
+  /// It is lazy: the lobby never asks for it, and the session page asks once
+  /// per view. A failure here is the roster's own — the room above it stays
+  /// exactly as it was read.
+  Future<void> loadRoster(VoiceRoomRosterView view) =>
+      _fetchRoster(view, append: false);
+
+  Future<void> loadMoreRoster(VoiceRoomRosterView view) {
+    if (!state.roster(view).canLoadMore) return Future<void>.value();
+    return _fetchRoster(view, append: true);
+  }
+
+  Future<void> _fetchRoster(
+    VoiceRoomRosterView view, {
+    required bool append,
+  }) async {
+    final snapshot = state.snapshot;
+    if (snapshot == null) return;
+    if (!_rosterInFlight.add(view)) return;
+    final roomId = snapshot.room.voiceRoomId;
+    final before = state.roster(view);
+    final cursor = append ? before.nextCursor : null;
+    if (append && cursor == null) {
+      _rosterInFlight.remove(view);
+      return;
+    }
+    if (append) {
+      state = state.withRoster(
+        VoiceRoomRosterState(
+          view: view,
+          phase: before.phase,
+          items: before.items,
+          nextCursor: before.nextCursor,
+          loadingMore: true,
+        ),
+      );
+    }
+    final gateway = ref.read(voiceRoomGatewayProvider);
+    try {
+      final page = await gateway.listMembers(
+        voiceRoomId: roomId,
+        view: view,
+        cursor: cursor,
+      );
+      // The room may have been re-read, or left, while this page was in
+      // flight; a roster for a room that is no longer on screen is dropped.
+      if (state.snapshot?.room.voiceRoomId != roomId) return;
+      final items = <VoiceRoomMember>[
+        if (append) ...before.items,
+        ...page.items,
+      ];
+      state = state.withRoster(
+        VoiceRoomRosterState(
+          view: view,
+          phase: items.isEmpty
+              ? CommunityViewPhase.empty
+              : CommunityViewPhase.ready,
+          items: List<VoiceRoomMember>.unmodifiable(items),
+          nextCursor: page.nextCursor,
+        ),
+      );
+    } on CommunityGatewayException catch (error) {
+      if (state.snapshot?.room.voiceRoomId != roomId) return;
+      state = state.withRoster(
+        VoiceRoomRosterState(
+          view: view,
+          // An appended page that failed keeps the rows already read: the
+          // list is short, not unreadable.
+          phase: append ? before.phase : communityPhaseForFailure(error.kind),
+          items: before.items,
+          nextCursor: before.nextCursor,
+          failureKind: error.kind,
+        ),
+      );
+    } catch (_) {
+      if (state.snapshot?.room.voiceRoomId != roomId) return;
+      state = state.withRoster(
+        VoiceRoomRosterState(
+          view: view,
+          phase: append ? before.phase : CommunityViewPhase.error,
+          items: before.items,
+          nextCursor: before.nextCursor,
+          failureKind: CommunityFailureKind.unexpected,
+        ),
+      );
+    } finally {
+      _rosterInFlight.remove(view);
+    }
+  }
+
+  /// Runs exactly one command the server published on one roster row.
+  ///
+  /// The client maps the server's command to the server's own endpoint and
+  /// invents no other: a row without the command never reaches this.
+  Future<CommunityFailureKind?> runMemberCommand({
+    required VoiceRoomMemberCommand command,
+    required String publicProfileId,
+  }) => switch (command) {
+    VoiceRoomMemberCommand.inviteSpeaker => inviteSpeaker(publicProfileId),
+    VoiceRoomMemberCommand.removeSpeaker => removeSpeaker(publicProfileId),
+    VoiceRoomMemberCommand.mute => muteSpeaker(publicProfileId),
+  };
+
+  Future<CommunityFailureKind?> muteSpeaker(String publicProfileId) => _command(
+    (gateway, roomId) => gateway.muteSpeaker(
+      voiceRoomId: roomId,
+      publicProfileId: publicProfileId,
+    ),
+  );
 
   Future<CommunityFailureKind?> join() =>
       _command((gateway, roomId) => gateway.join(roomId));

@@ -99,6 +99,49 @@ Dio _dio(void Function(RequestOptions, RequestInterceptorHandler) onRequest) {
     ..interceptors.add(InterceptorsWrapper(onRequest: onRequest));
 }
 
+Map<String, Object?> _memberRow({
+  String role = 'listener',
+  Object? publicProfileId = _profileId,
+  String? alias = 'Voyager_344',
+  bool handRaised = false,
+  bool muted = false,
+  List<String> commands = const <String>[],
+}) => <String, Object?>{
+  'publicProfileId': publicProfileId,
+  'display': alias == null
+      ? <String, Object?>{
+          'kind': 'anonymous',
+          'labelKey': 'voiceRoom.member.anonymousMember',
+        }
+      : <String, Object?>{
+          'kind': 'alias',
+          'alias': alias,
+          'publicProfileId': publicProfileId,
+          'audience': 'everyone',
+        },
+  'role': role,
+  'joinedAt': '2026-09-17T13:45:10.600Z',
+  'handRaised': handRaised,
+  'muted': muted,
+  'isSelf': false,
+  'commands': commands,
+};
+
+Map<String, Object?> _membersBody({
+  String role = 'listener',
+  List<Object?>? items,
+  Object? nextCursor,
+}) => <String, Object?>{
+  'role': role,
+  'items': items ?? <Object?>[_memberRow(role: role)],
+  'nextCursor': nextCursor,
+  'display': <String, Object?>{
+    'anonymousMemberKey': 'voiceRoom.member.anonymousMember',
+    'ruleKey': 'voiceRoom.member.display.anonymousModeOnly',
+  },
+  'contractVersion': '2.0',
+};
+
 Response<Object?> _response(
   RequestOptions options,
   Object? data, {
@@ -510,6 +553,171 @@ void main() {
         ),
       );
     });
+
+    test(
+      'the roster is read for one view, with no limit beside a cursor',
+      () async {
+        final (api, captured) = _api(
+          _membersBody(
+            items: <Object?>[
+              _memberRow(commands: <String>['invite_speaker']),
+              _memberRow(publicProfileId: null, alias: null),
+            ],
+            nextCursor: 'next.page',
+          ),
+        );
+
+        final page = await api.listMembers(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          voiceRoomId: _roomId,
+          role: VoiceRoomRosterView.listener,
+        );
+
+        expect(captured.single.uri.path, '/v2/voice-rooms/$_roomId/members');
+        expect(captured.single.uri.queryParameters, <String, String>{
+          'role': 'listener',
+        });
+        expect(page.view, VoiceRoomRosterView.listener);
+        expect(page.nextCursor, 'next.page');
+        expect(page.items.first.commands, <VoiceRoomMemberCommand>[
+          VoiceRoomMemberCommand.inviteSpeaker,
+        ]);
+        // An anonymous row a plain member reads carries no identifier at all.
+        expect(page.items.last.publicProfileId, isNull);
+        expect(page.items.last.name, isA<VoiceRoomMemberAnonymousName>());
+        expect(page.items.last.commands, isEmpty);
+      },
+    );
+
+    test(
+      'a cursor continues the same view and carries its own page size',
+      () async {
+        final (api, captured) = _api(_membersBody(role: 'speaker'));
+
+        await api.listMembers(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          voiceRoomId: _roomId,
+          role: VoiceRoomRosterView.speaker,
+          cursor: 'page2.cursor',
+        );
+
+        expect(captured.single.uri.queryParameters, <String, String>{
+          'role': 'speaker',
+          'cursor': 'page2.cursor',
+        });
+      },
+    );
+
+    test('a limit beside a cursor is refused before it is sent', () async {
+      final (api, captured) = _api(_membersBody());
+
+      await expectLater(
+        api.listMembers(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          voiceRoomId: _roomId,
+          role: VoiceRoomRosterView.listener,
+          limit: 50,
+          cursor: 'page2.cursor',
+        ),
+        throwsA(
+          isA<LoopBackendFailure>().having(
+            (failure) => failure.kind,
+            'kind',
+            LoopBackendFailureKind.invalidRequest,
+          ),
+        ),
+      );
+      expect(captured, isEmpty);
+    });
+
+    test('a roster page of the other view is an invalid payload', () async {
+      final (api, _) = _api(_membersBody(role: 'speaker'));
+
+      await expectLater(
+        api.listMembers(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          voiceRoomId: _roomId,
+          role: VoiceRoomRosterView.listener,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test(
+      'a row command this client cannot render is an invalid payload',
+      () async {
+        final (api, _) = _api(
+          _membersBody(
+            items: <Object?>[
+              _memberRow(commands: <String>['invite_speaker', 'transfer_host']),
+            ],
+          ),
+        );
+
+        // Rendering the subset would offer a row whose command list the reader
+        // cannot see in full.
+        await expectLater(
+          api.listMembers(
+            accessToken: _token,
+            clientVersion: _clientVersion,
+            voiceRoomId: _roomId,
+            role: VoiceRoomRosterView.listener,
+          ),
+          throwsA(isA<LoopBackendFailure>()),
+        );
+      },
+    );
+
+    test('a command with no target is an invalid payload', () async {
+      final (api, _) = _api(
+        _membersBody(
+          items: <Object?>[
+            _memberRow(
+              publicProfileId: null,
+              alias: null,
+              commands: <String>['invite_speaker'],
+            ),
+          ],
+        ),
+      );
+
+      await expectLater(
+        api.listMembers(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          voiceRoomId: _roomId,
+          role: VoiceRoomRosterView.listener,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test(
+      'muting one speaker addresses that speaker and answers with the room',
+      () async {
+        final (api, captured) = _api(_roomBody(role: 'host', host: true));
+
+        final snapshot = await api.command(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          idempotencyKey: _key,
+          voiceRoomId: _roomId,
+          command: VoiceRoomCommand.muteSpeaker,
+          publicProfileId: _profileId,
+        );
+
+        expect(
+          captured.single.uri.path,
+          '/v2/voice-rooms/$_roomId/speakers/$_profileId/mute',
+        );
+        expect(captured.single.method, 'POST');
+        expect(snapshot.room.voiceRoomId, _roomId);
+      },
+    );
 
     test('a snapshot for another room is an invalid payload', () async {
       final (api, _) = _api(_roomBody());
