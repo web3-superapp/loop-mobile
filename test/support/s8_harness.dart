@@ -28,14 +28,30 @@ const s8NotificationId = '5a716283-9e0f-4a1b-8c23-4e5f60718293';
 
 /// A port double that answers with a fixed value, a fixed failure, or never.
 final class S8Answer<T> {
-  S8Answer({this.value, this.failure, this.pending = false});
+  S8Answer({
+    this.value,
+    this.failure,
+    this.pending = false,
+    this.transientFailure,
+  });
 
   final T? value;
   final LoopChainFailureKind? failure;
   final bool pending;
 
+  /// Fails only the first resolve, like a pooled socket the peer closed while
+  /// the app was idle. Every later resolve answers normally.
+  final LoopChainFailureKind? transientFailure;
+
+  int resolves = 0;
+
   Future<T> resolve() {
     if (pending) return Completer<T>().future;
+    final attempt = resolves++;
+    final transient = transientFailure;
+    if (attempt == 0 && transient != null) {
+      return Future<T>.error(LoopChainException(transient));
+    }
     final kind = failure;
     if (kind != null) return Future<T>.error(LoopChainException(kind));
     return Future<T>.value(value as T);
@@ -203,6 +219,17 @@ LoopAbout s8About() => LoopAbout(
     const LoopAboutConfigVersion(
       module: 'support',
       configVersion: 'supportPolicyV1',
+      effectiveAt: null,
+    ),
+    // A rule the client may not name on screen, and one it has never heard of.
+    const LoopAboutConfigVersion(
+      module: 'bscWriteCanary',
+      configVersion: 'bscWriteCanaryV1',
+      effectiveAt: null,
+    ),
+    const LoopAboutConfigVersion(
+      module: 'someUnshippedThing',
+      configVersion: 'someUnshippedThingV1',
       effectiveAt: null,
     ),
   ],

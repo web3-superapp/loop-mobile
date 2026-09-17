@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/profile/about/about_client_register.dart';
 import 'package:loop_mobile/features/profile/about/about_controller.dart';
 import 'package:loop_mobile/features/profile/about/about_models.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -92,50 +93,40 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
           const LoopLabel('法务'),
           _AboutTermsBlock(termsGate: about!.termsGate),
           const LoopLabel('当前规则'),
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              for (final entry in about.configVersions)
-                LoopRecordRow(
-                  key: ValueKey<String>('about-config-${entry.module}'),
-                  title: entry.module,
-                  // The version is long, so it goes on its own line rather
-                  // than into the fixed-width value column.
-                  subtitle: entry.effectiveAt == null
-                      ? entry.configVersion
-                      : '${entry.configVersion} · 生效于 '
-                            '${loopRelativeTime(entry.effectiveAt!)}',
-                  position: LoopRowPosition.middle,
-                ),
-            ],
-          ),
+          _AboutRulesBlock(versions: about.configVersions),
           LoopProvenanceFooter(
             key: const ValueKey<String>('about-config-note'),
             text: '这里只用于查看，不会固定任何一个版本。',
           ),
-          const LoopLabel('开源许可'),
-          LoopNotice(
-            key: const ValueKey<String>('about-open-source-summary'),
-            icon: 'book',
-            title: about.openSource.source,
-            body: about.openSource.summary,
-          ),
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              for (final entry in about.openSource.entries)
-                LoopRecordRow(
-                  key: ValueKey<String>('about-open-source-${entry.name}'),
-                  title: entry.name,
-                  subtitle: entry.purpose,
-                  trailing: entry.license,
-                  position: LoopRowPosition.middle,
-                ),
-            ],
-          ),
-          LoopProvenanceFooter(
-            key: const ValueKey<String>('about-open-source-note'),
-            text: '清单不下发版本号，因此这里不显示任何依赖版本。',
-          ),
         ],
+        const LoopLabel('开源许可'),
+        const LoopNotice(
+          key: ValueKey<String>('about-open-source-summary'),
+          icon: 'book',
+          title: '本应用使用的开源组件',
+          body:
+              '下面是 LOOP 手机客户端直接依赖的开源组件与它们各自的许可；'
+              '精确版本由这次构建的锁定文件记录。LOOP 服务端使用的组件不在这一页。',
+        ),
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            for (final entry in loopClientOpenSourceEntries)
+              LoopRecordRow(
+                key: ValueKey<String>('about-open-source-${entry.name}'),
+                title: entry.name,
+                // The licence rides in the subtitle rather than the value
+                // column: a vendor agreement's name is wider than that column
+                // and would be cut, and the licence is the point of the row.
+                subtitle: '${entry.purpose} · ${entry.license}',
+                subtitleMaxLines: 2,
+                position: LoopRowPosition.middle,
+              ),
+          ],
+        ),
+        const LoopProvenanceFooter(
+          key: ValueKey<String>('about-open-source-note'),
+          text: '组件版本以本次构建的锁定文件为准，这一页不显示版本号。',
+        ),
         const LoopLabel('风险提示'),
         const LoopNotice(
           key: ValueKey<String>('about-risk-notice'),
@@ -153,6 +144,56 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
             reasonCode: about.clientBuildReasonCode,
           ),
         const SizedBox(height: 20),
+      ],
+    );
+  }
+}
+
+/// 当前规则 · the published rule snapshots, named in the reader's language.
+///
+/// The server sends its own keys. Only the rules this client can name are
+/// listed: an unknown key is an internal identifier, and `bscWriteCanary` is
+/// the staged-rollout switch of a mechanism that has not been announced.
+class _AboutRulesBlock extends StatelessWidget {
+  const _AboutRulesBlock({required this.versions});
+
+  final List<LoopAboutConfigVersion> versions;
+
+  @override
+  Widget build(BuildContext context) {
+    final named = <(LoopAboutConfigVersion, String)>[
+      for (final entry in versions)
+        if (loopAboutModuleName(entry.module) case final String name)
+          (entry, name),
+    ];
+    if (named.isEmpty) {
+      return const LoopEmpty(
+        key: ValueKey<String>('about-config-empty'),
+        icon: 'info',
+        message: '没有可以展示的规则',
+        reason: '这次下发的规则都还没有对外的名字。',
+      );
+    }
+    return LoopRecordGroup(
+      rows: <LoopRecordRow>[
+        for (final (entry, name) in named)
+          LoopRecordRow(
+            key: ValueKey<String>('about-config-${entry.module}'),
+            title: name,
+            // The description reads on its own line; the snapshot version and
+            // the time it took effect follow on the second, so neither is
+            // ellipsised away.
+            subtitle: <String>[
+              ?loopAboutModuleDescription(entry.module),
+              <String>[
+                '版本 ${entry.configVersion}',
+                if (entry.effectiveAt != null)
+                  '生效于 ${loopRelativeTime(entry.effectiveAt!)}',
+              ].join(' · '),
+            ].join('\n'),
+            subtitleMaxLines: 2,
+            position: LoopRowPosition.middle,
+          ),
       ],
     );
   }

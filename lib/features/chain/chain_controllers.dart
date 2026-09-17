@@ -62,6 +62,13 @@ abstract base class LoopChainReadController<T>
     // answer and a fresh connection normally succeeds. The first read is
     // therefore allowed one silent re-attempt, during which the page stays in
     // its loading phase instead of announcing an outage it has not confirmed.
+    //
+    // The same dropped socket does not always arrive as `offline`. Dio reports
+    // a connection the peer closed mid-response as `unknown`, which maps to
+    // `unexpected`, and that is how 关于 greeted its first open with 「操作没有
+    // 完成，请稍后再试。」 while the manual retry worked every time. Neither kind
+    // carries a server answer, so both get the one silent re-attempt; a read
+    // that fails the same way twice still reports what it failed with.
     final firstRead = state.value == null;
     state = state.loading();
     var reattempted = false;
@@ -75,7 +82,7 @@ abstract base class LoopChainReadController<T>
         if (!isCurrent(generation)) return;
         if (firstRead &&
             !reattempted &&
-            error.kind == LoopChainFailureKind.offline) {
+            _mayBeATransientFirstRead(error.kind)) {
           reattempted = true;
           continue;
         }
@@ -83,11 +90,21 @@ abstract base class LoopChainReadController<T>
         return;
       } catch (_) {
         if (!isCurrent(generation)) return;
+        if (firstRead && !reattempted) {
+          reattempted = true;
+          continue;
+        }
         state = state.failed(LoopChainFailureKind.unexpected);
         return;
       }
     }
   });
+
+  /// Whether a first read that failed this way may have failed on transport
+  /// alone. Both kinds are reported with no server answer behind them.
+  static bool _mayBeATransientFirstRead(LoopChainFailureKind kind) =>
+      kind == LoopChainFailureKind.offline ||
+      kind == LoopChainFailureKind.unexpected;
 }
 
 /// `networks` · `GET /v2/chain/status`.

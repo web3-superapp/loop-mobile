@@ -138,6 +138,28 @@ void main() {
       });
     }
 
+    testWidgets('one dropped first read is not 「操作没有完成」', (tester) async {
+      // 关于 greeted its first open with 暂时无法完成 while the manual retry
+      // always worked. The dropped socket arrives here as `unexpected`, not
+      // `offline`: Dio reports a connection the peer closed mid-response as
+      // `unknown`. A first read gets one silent re-attempt either way.
+      final gateway = FakeAboutGateway(
+        about: S8Answer<LoopAbout>(
+          value: s8About(),
+          transientFailure: LoopChainFailureKind.unexpected,
+        ),
+      );
+      await pumpS8Page(tester, const AboutScreen(), about: gateway);
+
+      expect(gateway.about.resolves, 2);
+      expect(
+        find.byKey(const ValueKey<String>('about-state-error')),
+        findsNothing,
+      );
+      expect(find.text('操作没有完成，请稍后再试。'), findsNothing);
+      expect(find.text('本应用使用的开源组件'), findsOneWidget);
+    });
+
     testWidgets('the legal rows are a version slot, never a document link', (
       tester,
     ) async {
@@ -152,31 +174,54 @@ void main() {
       expect(find.text('风险披露'), findsNothing);
     });
 
-    testWidgets('the register lists licences without a version', (
+    testWidgets('the register is the client\'s own, never the backend\'s', (
       tester,
     ) async {
       await pumpS8Page(tester, const AboutScreen(), about: FakeAboutGateway());
 
-      final entry = find.byKey(
-        const ValueKey<String>('about-open-source-Fastify'),
+      // The server publishes the backend's register. It named a repository
+      // path as a card title and listed Fastify; neither belongs on a phone.
+      expect(
+        find.byKey(const ValueKey<String>('about-open-source-Fastify')),
+        findsNothing,
       );
+      expect(find.text('docs/open-source-attribution.md'), findsNothing);
+      expect(find.text('本应用使用的开源组件'), findsOneWidget);
+
+      final entry = find.byKey(const ValueKey<String>('about-open-source-dio'));
       await scrollToS8Section(tester, entry);
       expect(entry, findsOneWidget);
-      expect(find.text('MIT'), findsOneWidget);
       final row = tester.widget<LoopRecordRow>(entry);
-      expect(row.subtitle, 'HTTP server and route lifecycle');
-      expect(row.trailing, 'MIT');
+      expect(row.subtitle, '网络请求 · MIT');
+      expect(row.trailing, isNull);
     });
 
-    testWidgets('every published rule snapshot is shown', (tester) async {
+    testWidgets('a rule is named in Chinese, or not shown at all', (
+      tester,
+    ) async {
       await pumpS8Page(tester, const AboutScreen(), about: FakeAboutGateway());
 
-      for (final module in <String>['productPolicy', 'support']) {
+      for (final (module, name) in <(String, String)>[
+        ('productPolicy', '产品规则'),
+        ('support', '客服规则'),
+      ]) {
         final row = find.byKey(ValueKey<String>('about-config-$module'));
         await scrollToS8Section(tester, row);
         expect(row, findsOneWidget, reason: module);
+        expect(tester.widget<LoopRecordRow>(row).title, name);
       }
-      expect(find.textContaining('productPolicyV2.2026-09-01'), findsOneWidget);
+      // A staged-rollout switch for an unannounced mechanism, and a key this
+      // client cannot name, are both absent — key and value.
+      expect(
+        find.byKey(const ValueKey<String>('about-config-bscWriteCanary')),
+        findsNothing,
+      );
+      expect(find.textContaining('bscWriteCanary'), findsNothing);
+      expect(find.textContaining('someUnshippedThing'), findsNothing);
+      expect(
+        find.textContaining('版本 productPolicyV2.2026-09-01'),
+        findsOneWidget,
+      );
     });
   });
 
