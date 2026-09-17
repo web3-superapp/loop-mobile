@@ -63,12 +63,14 @@ Widget loopRefreshable({
   required Widget child,
   required Future<void> Function()? onRefresh,
   double edgeOffset = 0,
+  ScrollNotificationPredicate predicate = defaultScrollNotificationPredicate,
 }) {
   if (onRefresh == null) return child;
   return RefreshIndicator(
     key: const ValueKey<String>('loop-page-refresh'),
     onRefresh: onRefresh,
     edgeOffset: edgeOffset,
+    notificationPredicate: predicate,
     displacement: 24,
     strokeWidth: 2.2,
     // The indicator is a Chalk chip with an Ink arc, the same pairing the tab
@@ -98,6 +100,17 @@ Widget loopRefreshable({
     ),
   );
 }
+
+/// Hears one scrolling region that is coordinated by a [NestedScrollView].
+///
+/// Such a region reports the drag from two positions: the header's, which is
+/// the notification a [RefreshIndicator] hears at depth 0, and the body's,
+/// which is the one that actually overscrolls at the top and arrives a level
+/// deeper. Reading only the first, the gesture starts and never accumulates;
+/// the pull existed on the page and did nothing. A horizontal region — the
+/// chip row is one — is refused by the indicator itself on its axis.
+bool loopNestedScrollNotificationPredicate(ScrollNotification notification) =>
+    notification.depth <= 1;
 
 /// The physics a refreshable region needs: a short page must still overscroll,
 /// or the gesture would exist only on pages that happen to be long.
@@ -368,9 +381,14 @@ class _StickyTopbar extends SliverPersistentHeaderDelegate {
       oldDelegate.child != child || oldDelegate.topPadding != topPadding;
 }
 
-/// `stream`: fixed topbar (and optional folio/segs), an independently
-/// scrolling collection region, and an optional composer that never scrolls
+/// `stream`: fixed topbar and chip row, a scrolling collection region that
+/// carries the folio with it, and an optional composer that never scrolls
 /// away or hides under the tab bar.
+///
+/// The topbar says where the reader is, the chips say what is being listed,
+/// and both are worth their space at row 200. The folio is not: it reads the
+/// list once — 「311 名成员」 — and after that it is a heading the reader has
+/// already read, so it scrolls with the rows and comes back whole at the top.
 class LoopStreamPage extends StatelessWidget {
   const LoopStreamPage({
     required this.archetype,
@@ -394,9 +412,13 @@ class LoopStreamPage extends StatelessWidget {
   final String? kicker;
   final VoidCallback? onBack;
   final List<Widget> actions;
+
+  /// The one `[data-page-primary]` region. It scrolls with [collection]:
+  /// see [_StreamBody].
   final LoopFolioPrimary? folio;
 
-  /// A [LoopSegBar] or equivalent, pinned above the collection.
+  /// A [LoopSegBar] or equivalent, pinned above the collection: it stays put
+  /// while the folio and the rows scroll under it.
   final Widget? filters;
 
   /// The scrollable region (`[data-collection-region]`).
@@ -451,18 +473,13 @@ class LoopStreamPage extends StatelessWidget {
               if (block != null)
                 Expanded(child: block!)
               else ...<Widget>[
-                ?folio,
-                ?filters,
                 Expanded(
-                  child: KeyedSubtree(
-                    key: const ValueKey<String>('loop-page-collection'),
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: bottom),
-                      child: loopRefreshable(
-                        onRefresh: onRefresh,
-                        child: collection,
-                      ),
-                    ),
+                  child: _StreamBody(
+                    folio: folio,
+                    filters: filters,
+                    onRefresh: onRefresh,
+                    bottom: bottom,
+                    collection: collection,
                   ),
                 ),
                 ?composer,
@@ -470,6 +487,97 @@ class LoopStreamPage extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The scrolling half of a [LoopStreamPage]: the folio, the filters and the
+/// collection.
+///
+/// The folio used to stand between the topbar and the collection and never
+/// move, which on a 390×2280 device left a directory of hundreds of members
+/// about four rows of room: 41–47% of the screen was a heading that had
+/// already been read. The heading is worth its space at the top of the list
+/// and worth nothing at row 200, so it now scrolls with the rows, while the
+/// filter chips stay — the one control the reader still needs after scrolling
+/// is the one that changes what is being listed.
+///
+/// The frozen prototype lays both out in normal flow (`.folio-primary` and
+/// `.segs` carry no sticky rule, and the only `position:sticky` in
+/// `style-v2.css` is the desktop nav), so it settles nothing here; this is the
+/// mobile reading of the same order.
+class _StreamBody extends StatelessWidget {
+  const _StreamBody({
+    required this.folio,
+    required this.filters,
+    required this.collection,
+    required this.onRefresh,
+    required this.bottom,
+  });
+
+  final LoopFolioPrimary? folio;
+  final Widget? filters;
+  final Widget collection;
+  final Future<void> Function()? onRefresh;
+  final double bottom;
+
+  @override
+  Widget build(BuildContext context) {
+    final scrolls = folio != null;
+    // The folio and the rows are one gesture, and a collection only joins it
+    // through the inherited controller. One that brings its own — or refuses
+    // the primary one — would scroll alone and leave the heading standing,
+    // which is the layout this replaced.
+    assert(
+      !scrolls ||
+          collection is! ScrollView ||
+          ((collection as ScrollView).controller == null &&
+              (collection as ScrollView).primary != false),
+      'A stream page with a folio scrolls both regions together: its '
+      'collection may not own a controller or opt out of the primary one.',
+    );
+    final region = KeyedSubtree(
+      key: const ValueKey<String>('loop-page-collection'),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottom),
+        // A folio page hands the whole coordinated view to the gesture
+        // instead: the drag at the top belongs to the header, and an
+        // indicator installed under the header would never hear it.
+        child: scrolls
+            ? collection
+            : loopRefreshable(onRefresh: onRefresh, child: collection),
+      ),
+    );
+    final under = filters == null
+        ? region
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              filters!,
+              Expanded(child: region),
+            ],
+          );
+    if (!scrolls) return under;
+    // A page with a folio hands the two regions to one gesture: the header
+    // takes the drag until it is gone, then the collection continues from
+    // where the header stopped, so nothing is scrolled twice. A collection
+    // that owns a controller stays outside that coordination, which is why
+    // the folio pages leave their lists on the inherited one.
+    return loopRefreshable(
+      onRefresh: onRefresh,
+      predicate: loopNestedScrollNotificationPredicate,
+      child: NestedScrollView(
+        key: const ValueKey<String>('loop-page-stream-scroll'),
+        headerSliverBuilder: (context, innerScrolled) => <Widget>[
+          SliverToBoxAdapter(
+            child: KeyedSubtree(
+              key: const ValueKey<String>('loop-page-primary'),
+              child: folio!,
+            ),
+          ),
+        ],
+        body: under,
       ),
     );
   }

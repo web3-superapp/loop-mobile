@@ -13,6 +13,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/community_test_harness.dart';
+import 'support/loop_stream_scroll.dart';
 
 CommunityHome _home({
   int joined = 1,
@@ -1035,6 +1036,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(bannedSeg);
       await tester.pumpAndSettle();
+      // The chip row is reached by scrolling the horizontal strip, and on a
+      // short viewport that also carries the hero off the top. The heading is
+      // read where it is read: at the top of the list.
+      await loopStreamScrollToTop(tester);
 
       // The server counts roles, never this filter: the directory's 128 is
       // not the number of banned members and is not printed over them.
