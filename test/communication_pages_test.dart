@@ -744,6 +744,83 @@ void main() {
       );
     });
 
+    testWidgets('a speaker is offered no hand raise and no self demotion', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.speaker),
+      );
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
+        voiceRoom: voice,
+      );
+
+      final leave = find.byKey(const ValueKey<String>('voiceroom-leave'));
+      await scrollToCommunitySection(tester, leave);
+      expect(leave, findsOneWidget);
+      // A speaker already holds the role a hand raise asks for.
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-raise-hand')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-cancel-hand')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-host-controls')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-step-down-unavailable')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a listener sees only its own place in the queue', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(
+          role: VoiceRoomRole.listener,
+          handRaise: VoiceRoomHandRaise(
+            handRaiseId: testRequestId,
+            sequence: '2',
+            state: VoiceRoomHandRaiseState.pending,
+            createdAt: DateTime.utc(2026, 9, 8, 12, 20),
+          ),
+        ),
+        // The host-only queue read must not be issued for a listener.
+        handRaises: <VoiceRoomHandRaiseEntry>[testHandRaiseEntry()],
+      );
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
+        voiceRoom: voice,
+      );
+
+      final own = find.byKey(const ValueKey<String>('voiceroom-queue-self'));
+      await scrollToCommunitySection(tester, own);
+      expect(own, findsOneWidget);
+      expect(find.text('第 2 位'), findsOneWidget);
+      expect(voice.commands, isNot(contains('hand-raises')));
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-invite-empty')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('voiceroom-remove-speaker-unavailable'),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-step-down-unavailable')),
+        findsNothing,
+      );
+    });
+
     testWidgets('an unobserved participant count renders the em dash', (
       tester,
     ) async {

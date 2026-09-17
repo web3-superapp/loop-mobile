@@ -318,12 +318,37 @@ class _HandRaiseQueue extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewer = state.snapshot!.viewer;
+    // The queue resource is a host read. A listener or a speaker is told what
+    // it can actually see — its own position — instead of an empty list that
+    // reads as "nobody has raised a hand".
+    if (!viewer.isHost) {
+      final own = viewer.handRaise;
+      if (own == null || !own.isPending) {
+        return const LoopEmpty(
+          key: ValueKey<String>('voiceroom-queue-self-only'),
+          message: '你还没有举手',
+          reason: '完整的举手队列只有主持人能看到。举手之后，这里会显示你的位置。',
+        );
+      }
+      return LoopRecordGroup(
+        rows: <LoopRecordRow>[
+          LoopRecordRow(
+            key: const ValueKey<String>('voiceroom-queue-self'),
+            title: '我',
+            subtitle: '等待主持人邀请',
+            trailing: '第 ${own.sequence} 位',
+            position: LoopRowPosition.single,
+          ),
+        ],
+      );
+    }
     final entries = state.handRaises;
     if (entries.isEmpty) {
       return const LoopEmpty(
         key: ValueKey<String>('voiceroom-queue-empty'),
         message: '举手队列为空',
-        reason: '完整的队列只对主持人可见；没有排队的成员时这里不显示任何人。',
+        reason: '没有成员在排队。有人举手后会按顺序列在这里。',
       );
     }
     return LoopRecordGroup(
@@ -488,22 +513,42 @@ class _ViewerActions extends StatelessWidget {
       );
     }
     final raised = viewer.handRaise?.isPending ?? false;
-    return LoopButtonPair(
+    // Prototype `voiceroom` / `voiceroom-full`: a listener raises a hand, a
+    // speaker does not. Raising a hand is a request for a role the account
+    // already holds, so it is not offered to a speaker or to the host.
+    final canRaise = viewer.role == VoiceRoomRole.listener;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        LoopButton(
-          key: ValueKey<String>(
-            raised ? 'voiceroom-cancel-hand' : 'voiceroom-raise-hand',
+        if (!canRaise)
+          // `DELETE /v2/voice-rooms/{id}/speakers/{profile}` refuses the
+          // caller's own account, so LOOP has no self-demotion command to
+          // offer. The fact is stated instead of a button that would fail.
+          const LoopEmpty(
+            key: ValueKey<String>('voiceroom-step-down-unavailable'),
+            icon: 'warn',
+            message: '自助下麦当前不可用',
+            reason: '后端只允许主持人调整发言人。要退出发言，请联系主持人，或离开房间。',
           ),
-          label: raised ? '取消举手' : '举手',
-          icon: 'hand',
-          onPressed: busy
-              ? null
-              : () => unawaited(raised ? onCancel() : onRaise()),
-        ),
-        LoopButton(
-          key: const ValueKey<String>('voiceroom-leave'),
-          label: '离开',
-          onPressed: busy ? null : () => unawaited(onLeave()),
+        LoopButtonPair(
+          children: <Widget>[
+            if (canRaise)
+              LoopButton(
+                key: ValueKey<String>(
+                  raised ? 'voiceroom-cancel-hand' : 'voiceroom-raise-hand',
+                ),
+                label: raised ? '取消举手' : '举手',
+                icon: 'hand',
+                onPressed: busy
+                    ? null
+                    : () => unawaited(raised ? onCancel() : onRaise()),
+              ),
+            LoopButton(
+              key: const ValueKey<String>('voiceroom-leave'),
+              label: '离开',
+              onPressed: busy ? null : () => unawaited(onLeave()),
+            ),
+          ],
         ),
       ],
     );
