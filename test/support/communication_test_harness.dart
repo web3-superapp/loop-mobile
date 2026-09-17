@@ -23,6 +23,7 @@ VoiceRoomSnapshot testVoiceRoomSnapshot({
   VoiceRoomRole? role = VoiceRoomRole.listener,
   bool host = false,
   bool observedAvailable = true,
+  bool provisioned = true,
   VoiceRoomState state = VoiceRoomState.live,
   VoiceRoomHandRaise? handRaise,
   bool providerConfirmed = true,
@@ -32,7 +33,9 @@ VoiceRoomSnapshot testVoiceRoomSnapshot({
     communityId: testCommunityId,
     callCid: 'audio_room:loop_voice_$testChannelHex',
     state: state,
-    provisionState: VoiceRoomProvisionState.provisioned,
+    provisionState: provisioned
+        ? VoiceRoomProvisionState.provisioned
+        : VoiceRoomProvisionState.pending,
     backstage: true,
     createdAt: DateTime.utc(2026, 9, 8, 12),
     endedAt: state == VoiceRoomState.ended

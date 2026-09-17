@@ -583,17 +583,26 @@ class _ViewerActions extends StatelessWidget {
       );
     }
     if (!viewer.hasJoined) {
+      // A room whose provider call is not confirmed cannot be joined. The
+      // refusal is stated: a disabled button with no sentence beside it is
+      // read as a tap that did nothing.
+      if (!snapshot.room.isJoinable) {
+        return const LoopEmpty(
+          key: ValueKey<String>('voiceroom-not-joinable'),
+          icon: 'warn',
+          message: '这个房间还不能加入',
+          reason: '服务商还没有确认这个房间已经就绪，加入会被拒绝。请稍后刷新再试。',
+        );
+      }
       return Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
         child: LoopButton(
           key: const ValueKey<String>('voiceroom-join'),
-          label: snapshot.room.isJoinable ? '加入语音房' : '房间尚未就绪',
+          label: state.busy ? '正在加入…' : '加入语音房',
           block: true,
           primary: true,
           icon: 'voice',
-          onPressed: busy || !snapshot.room.isJoinable
-              ? null
-              : () => unawaited(onJoin()),
+          onPressed: busy ? null : () => unawaited(onJoin()),
         ),
       );
     }

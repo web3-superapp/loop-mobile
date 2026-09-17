@@ -857,9 +857,20 @@ void main() {
       await tester.tap(join);
       await tester.pumpAndSettle();
 
-      // The join answer carries no observed count — only a read does — so the
-      // page must read again instead of reporting an empty room.
+      // The whole chain is pinned here: the tap issues exactly one join for
+      // this room, and the answer becomes the page's own state.
       expect(voice.commands, contains('join'));
+      expect(
+        voice.commands.where((command) => command == 'join'),
+        hasLength(1),
+      );
+      final role = find.byKey(const ValueKey<String>('voiceroom-role'));
+      await scrollToCommunitySection(tester, role);
+      expect(find.text('听众'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-join')),
+        findsNothing,
+      );
       expect(
         voice.commands.indexOf('load'),
         greaterThan(voice.commands.indexOf('join')),
@@ -867,6 +878,31 @@ void main() {
       final observed = find.byKey(const ValueKey<String>('voiceroom-observed'));
       await scrollToCommunitySection(tester, observed);
       expect(find.text('45'), findsOneWidget);
+    });
+
+    testWidgets('an unprovisioned room says why it cannot be joined', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: null, provisioned: false),
+      );
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+      );
+
+      final refusal = find.byKey(
+        const ValueKey<String>('voiceroom-not-joinable'),
+      );
+      await scrollToCommunitySection(tester, refusal);
+      expect(refusal, findsOneWidget);
+      // A disabled button with no sentence beside it reads as a dead tap.
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-join')),
+        findsNothing,
+      );
+      expect(voice.commands, isNot(contains('join')));
     });
 
     testWidgets('a joined room hands the exact room to the reviewed lobby', (
