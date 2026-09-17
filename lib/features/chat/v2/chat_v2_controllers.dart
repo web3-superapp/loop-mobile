@@ -387,6 +387,83 @@ final class VoiceRoomPageState {
   );
 }
 
+/// The room the account is still a member of while it looks at something else.
+///
+/// Going back from the room page does not leave the room — only the 离开
+/// command does — so this outlives the page, and the shell keeps one banner
+/// that says so and takes the reader back.
+@immutable
+final class VoiceRoomSession {
+  const VoiceRoomSession({
+    required this.communityId,
+    required this.voiceRoomId,
+    required this.role,
+    required this.memberCount,
+  });
+
+  final String communityId;
+  final String voiceRoomId;
+  final VoiceRoomRole role;
+
+  /// The provider's observed member count, or null when it was not observed.
+  /// The banner states no figure it does not have.
+  final int? memberCount;
+
+  @override
+  bool operator ==(Object other) =>
+      other is VoiceRoomSession &&
+      other.communityId == communityId &&
+      other.voiceRoomId == voiceRoomId &&
+      other.role == role &&
+      other.memberCount == memberCount;
+
+  @override
+  int get hashCode => Object.hash(communityId, voiceRoomId, role, memberCount);
+}
+
+final class VoiceRoomSessionController extends Notifier<VoiceRoomSession?> {
+  @override
+  VoiceRoomSession? build() {
+    // Principal-scoped: a new account, or a sign-out, rotates the gateway and
+    // takes the banner with it.
+    ref.watch(voiceRoomGatewayProvider);
+    return null;
+  }
+
+  void enter(VoiceRoomSession session) {
+    if (state != session) state = session;
+  }
+
+  /// Clears the banner raised for one community. A banner another room raised
+  /// is left alone.
+  void leave(String communityId) {
+    if (state?.communityId == communityId) state = null;
+  }
+}
+
+/// How many voice room pages are mounted.
+///
+/// The shell's banner is a marker for a room the reader cannot see; on the
+/// room page it would repeat what the page already says. Counting the mounted
+/// pages answers that without the shell having to listen to the router, which
+/// would rebuild it in the middle of the router's own build.
+final class VoiceRoomPagePresence extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void enter() => state = state + 1;
+
+  void exit() => state = state > 0 ? state - 1 : 0;
+}
+
+final voiceRoomPagePresenceProvider =
+    NotifierProvider<VoiceRoomPagePresence, int>(VoiceRoomPagePresence.new);
+
+final voiceRoomSessionProvider =
+    NotifierProvider<VoiceRoomSessionController, VoiceRoomSession?>(
+      VoiceRoomSessionController.new,
+    );
+
 /// Owns the LOOP-side room record, the hand-raise queue and the host commands.
 ///
 /// It never claims a media connection: joining here only obtains the LOOP
@@ -436,6 +513,7 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
       if (!isCurrent(generation)) return;
       final snapshot = current.snapshot;
       if (snapshot == null) {
+        _publishSession(null);
         state = VoiceRoomPageState(
           mode: state.mode,
           phase: CommunityViewPhase.empty,
@@ -445,6 +523,7 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
       }
       final queue = await _loadQueue(gateway, snapshot);
       if (!isCurrent(generation)) return;
+      _publishSession(snapshot);
       state = VoiceRoomPageState(
         mode: state.mode,
         phase: CommunityViewPhase.ready,
@@ -497,6 +576,7 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
       if (!isCurrent(generation)) return null;
       final queue = await _loadQueue(gateway, next);
       if (!isCurrent(generation)) return null;
+      _publishSession(next);
       state = VoiceRoomPageState(
         mode: state.mode,
         phase: CommunityViewPhase.ready,
@@ -518,6 +598,30 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
       }
       return CommunityFailureKind.unexpected;
     }
+  }
+
+  /// Publishes, or withdraws, the shell's "still in a voice room" banner.
+  ///
+  /// The banner follows the membership the server reports, never a local
+  /// guess: a room that ended, or one this account has not joined, raises
+  /// nothing.
+  void _publishSession(VoiceRoomSnapshot? snapshot) {
+    final communityId = _communityId;
+    if (communityId == null) return;
+    final session = ref.read(voiceRoomSessionProvider.notifier);
+    final role = snapshot?.viewer.role;
+    if (snapshot == null || !snapshot.room.isLive || role == null) {
+      session.leave(communityId);
+      return;
+    }
+    session.enter(
+      VoiceRoomSession(
+        communityId: communityId,
+        voiceRoomId: snapshot.room.voiceRoomId,
+        role: role,
+        memberCount: snapshot.participants.observed.memberCount,
+      ),
+    );
   }
 
   /// Re-reads the room after a command.

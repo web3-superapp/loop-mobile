@@ -320,6 +320,20 @@ class _LoopAppState extends ConsumerState<LoopApp> {
             ),
           );
         }
+        // The voice room the account is still in outlives the page it was
+        // opened from: going back only puts it behind whatever the reader
+        // does next. One strip above the router says so on every surface
+        // except the room itself, and takes the reader back in one tap.
+        content = Column(
+          children: <Widget>[
+            VoiceRoomMinimizedBanner(
+              onOpen: (communityId) => router.push(
+                '/chat/voice?id=${Uri.encodeComponent(communityId)}',
+              ),
+            ),
+            Expanded(child: content),
+          ],
+        );
         // One toast host above the router: fixed above the tab bar, z 90.
         // The recovery scope sits above it so every page — including one whose
         // whole body is a block — can offer the read again. It re-arms the

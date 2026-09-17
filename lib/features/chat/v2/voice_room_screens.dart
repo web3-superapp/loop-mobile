@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
@@ -40,6 +41,43 @@ class VoiceRoomScreen extends ConsumerStatefulWidget {
 }
 
 class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
+  VoiceRoomPagePresence? _presence;
+  var _entered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // While this page is on screen the shell's banner would only repeat it.
+    // The count is raised after the frame that mounts the page: Riverpod
+    // refuses a write from a life-cycle callback.
+    final presence = ref.read(voiceRoomPagePresenceProvider.notifier);
+    _presence = presence;
+    scheduleMicrotask(() {
+      if (!mounted) return;
+      _entered = true;
+      presence.enter();
+    });
+  }
+
+  @override
+  void dispose() {
+    final presence = _presence;
+    _presence = null;
+    if (_entered && presence != null) {
+      // Riverpod refuses a write from a life-cycle callback, so the count is
+      // lowered after this frame. The notifier outlives the page.
+      scheduleMicrotask(() {
+        try {
+          presence.exit();
+        } catch (_) {
+          // The container can be torn down before the page is; the banner
+          // goes with it either way.
+        }
+      });
+    }
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final capability = ref.watch(
@@ -171,6 +209,16 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
               title: '上一次操作没有完成',
               body: communityFailureReason(state.failureKind),
               margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            ),
+          if (snapshot.viewer.hasJoined && snapshot.room.isLive)
+            const LoopNotice(
+              key: ValueKey<String>('voiceroom-back-note'),
+              icon: 'info',
+              title: '返回不等于离开',
+              body:
+                  '返回只是把语音房收起：你仍然在房间里，顶部会留一条提示，'
+                  '点它随时回来。要真正离开，请点这一页的「离开」。',
+              margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
             ),
           const LoopNotice(
             key: ValueKey<String>('voiceroom-provider-note'),
@@ -588,6 +636,71 @@ class _ViewerActions extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// The shell strip that says the account is still in a voice room.
+///
+/// Going back from the room page only puts the room behind what the reader
+/// does next: the LOOP membership, and the provider call with it, end on the
+/// 离开 command and nowhere else. Without a standing marker the reader has no
+/// way to tell the two apart, and no way back short of walking the community
+/// again. It is hidden on the room page itself, which already shows all of
+/// this.
+class VoiceRoomMinimizedBanner extends ConsumerWidget {
+  const VoiceRoomMinimizedBanner({required this.onOpen, super.key});
+
+  final ValueChanged<String> onOpen;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(voiceRoomSessionProvider);
+    final onRoomPage = ref.watch(voiceRoomPagePresenceProvider) > 0;
+    if (session == null || onRoomPage) {
+      return const SizedBox.shrink();
+    }
+    final count = session.memberCount;
+    return Material(
+      key: const ValueKey<String>('voiceroom-minimized-banner'),
+      color: LoopColors.lime,
+      child: InkWell(
+        onTap: () => onOpen(session.communityId),
+        child: SafeArea(
+          bottom: false,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 44),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: LoopSpacing.page,
+                vertical: 10,
+              ),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      count == null
+                          ? '正在语音房 · ${session.role.label}'
+                          : '正在语音房 · ${session.role.label} · $count 人',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LoopTypography.body(
+                        13,
+                        color: LoopColors.ink,
+                      ).copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  const SizedBox(width: LoopSpacing.tight),
+                  Text(
+                    '返回房间',
+                    style: LoopTypography.body(12, color: LoopColors.ink),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

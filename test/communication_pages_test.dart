@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/features/chat/v2/chat_search_screen.dart';
@@ -1035,6 +1036,63 @@ void main() {
     });
   });
 
+  group('voiceroom banner', () {
+    testWidgets('the banner stands while the member is still in the room', (
+      tester,
+    ) async {
+      final opened = <String>[];
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      await pumpCommunityPage(
+        tester,
+        _VoiceRoomBannerHarness(opened: opened),
+        voiceRoom: voice,
+      );
+
+      final banner = find.byKey(
+        const ValueKey<String>('voiceroom-minimized-banner'),
+      );
+      // On the room page itself the banner would only repeat the page.
+      expect(banner, findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
+      await tester.pumpAndSettle();
+      expect(banner, findsOneWidget);
+      expect(find.textContaining('正在语音房'), findsOneWidget);
+      expect(find.textContaining('45 人'), findsOneWidget);
+
+      await tester.tap(banner);
+      await tester.pumpAndSettle();
+      expect(opened, <String>[testCommunityId]);
+    });
+
+    testWidgets('leaving the room takes the banner with it', (tester) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      )..loadSnapshot = testVoiceRoomSnapshot(role: null);
+      await pumpCommunityPage(
+        tester,
+        _VoiceRoomBannerHarness(opened: <String>[]),
+        voiceRoom: voice,
+      );
+
+      final leave = find.byKey(const ValueKey<String>('voiceroom-leave'));
+      await scrollToCommunitySection(tester, leave);
+      await tester.tap(leave);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('离开').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-minimized-banner')),
+        findsNothing,
+      );
+    });
+  });
+
   group('community-ai', () {
     testWidgets('every functional area stays unavailable', (tester) async {
       await pumpCommunityPage(tester, const CommunityAiScreen());
@@ -1058,4 +1116,39 @@ void main() {
       expect(find.byType(TextField), findsNothing);
     });
   });
+}
+
+/// Mounts the shell banner beside the room page so one test can close the page
+/// without tearing down the provider scope that holds the session.
+class _VoiceRoomBannerHarness extends StatefulWidget {
+  const _VoiceRoomBannerHarness({required this.opened});
+
+  final List<String> opened;
+
+  @override
+  State<_VoiceRoomBannerHarness> createState() =>
+      _VoiceRoomBannerHarnessState();
+}
+
+class _VoiceRoomBannerHarnessState extends State<_VoiceRoomBannerHarness> {
+  var _open = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        VoiceRoomMinimizedBanner(onOpen: widget.opened.add),
+        Expanded(
+          child: _open
+              ? const VoiceRoomScreen(communityId: testCommunityId)
+              : const ColoredBox(color: LoopColors.ink),
+        ),
+        TextButton(
+          key: const ValueKey<String>('harness-close'),
+          onPressed: () => setState(() => _open = false),
+          child: const Text('close'),
+        ),
+      ],
+    );
+  }
 }
