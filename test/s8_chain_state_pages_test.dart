@@ -613,6 +613,7 @@ void main() {
                 ttlSeconds: 60,
                 quality: LoopFactQuality.fresh,
                 reasonCode: null,
+                omittedCount: 0,
                 items: const <MarketNewPair>[],
               ),
               riskScreening: const LoopUnavailable(

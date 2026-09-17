@@ -982,6 +982,82 @@ void main() {
       expect(detail.marketCap.isAvailable, isFalse);
     });
 
+    test('new pairs count the pools a pool id kept off the list', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio(
+          (options, handler) => handler.resolve(
+            s5Response(
+              options,
+              s5NewPairsBody(
+                available: true,
+                omittedCount: 6,
+                items: <Object?>[
+                  // `dexId` is the provider's own string, not an enum, and a
+                  // four.meme pool quotes in native BNB (the zero address).
+                  s5NewPair(
+                    dexId: 'four-meme',
+                    name: 'MEME / BNB',
+                    quoteTokenAddress: marketZeroAddress,
+                    registryAssetId: null,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final page = await api.getNewPairs(
+        accessToken: _accessToken,
+        clientVersion: s5ClientVersion,
+      );
+
+      final block = page.newPairs as MarketNewPairsAvailable;
+      expect(block.omittedCount, 6);
+      expect(block.items.single.dexId, 'four-meme');
+      expect(block.items.single.quotesNativeCoin, isTrue);
+      expect(block.items.single.registryAssetId, isNull);
+    });
+
+    test('new pairs without the omittedCount key are rejected', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio((options, handler) {
+          final body = s5NewPairsBody(available: true);
+          (body['newPairs']! as Map<String, Object?>).remove('omittedCount');
+          handler.resolve(s5Response(options, body));
+        }),
+      );
+
+      await expectLater(
+        api.getNewPairs(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a negative omittedCount is rejected', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio(
+          (options, handler) => handler.resolve(
+            s5Response(
+              options,
+              s5NewPairsBody(available: true, omittedCount: -1),
+            ),
+          ),
+        ),
+      );
+
+      await expectLater(
+        api.getNewPairs(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
     test('new pairs without a provider stay an unavailable block', () async {
       final api = DioLoopV2MarketApi(
         s5Dio(

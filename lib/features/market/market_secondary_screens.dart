@@ -548,7 +548,12 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
                         key: ValueKey<String>('new-pair-${pair.poolAddress}'),
                         title: pair.name,
                         subtitle: <String>[
+                          // The provider's own DEX string, printed verbatim:
+                          // it is not a closed set.
                           pair.dexId,
+                          // A zero quote address is the coin itself, not a
+                          // missing token.
+                          if (pair.quotesNativeCoin) '计价 BNB',
                           if (pair.createdAt != null)
                             '创建于 ${loopRelativeTime(pair.createdAt!)}',
                           if (pair.reserveUsd != null)
@@ -564,6 +569,16 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
                               ),
                       ),
                   ],
+                ),
+              // Pools the provider keyed by a 32-byte pool id carry no
+              // address, so they cannot be listed. Saying how many were left
+              // out keeps the page from passing a partial list off as all of
+              // it.
+              if (block.omittedCount > 0)
+                LoopNotice(
+                  key: const ValueKey<String>('new-pairs-omitted'),
+                  title: '另有 ${block.omittedCount} 个 Uniswap V4 池未列出',
+                  body: '这些池用 32 字节 pool id 标识，没有合约地址，本页只列出有地址的池。',
                 ),
               LoopProvenanceFooter(
                 text:

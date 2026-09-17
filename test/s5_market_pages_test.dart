@@ -612,6 +612,100 @@ void main() {
       expect(find.textContaining('预筛不等于结论'), findsOneWidget);
     });
 
+    testWidgets('new-pairs states how many pools a pool id kept off the list', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const NewPairsScreen(),
+        market: FakeMarketReadGateway(
+          newPairs: S5Answer<MarketNewPairsPage>(
+            value: MarketNewPairsPage(
+              newPairs: MarketNewPairsAvailable(
+                source: LoopFactSource.geckoterminal,
+                fetchedAt: DateTime.utc(2026, 9, 8, 7, 31),
+                ttlSeconds: 60,
+                quality: LoopFactQuality.fresh,
+                reasonCode: null,
+                omittedCount: 6,
+                items: <MarketNewPair>[
+                  MarketNewPair(
+                    poolAddress: s5PoolAddress,
+                    dexId: 'four-meme',
+                    name: 'MEME / BNB',
+                    baseTokenAddress: s5Address,
+                    quoteTokenAddress: marketZeroAddress,
+                    registryAssetId: null,
+                    createdAt: DateTime.utc(2026, 9, 8, 5),
+                    reserveUsd: s5Decimal('12345.6'),
+                    volumeH24Usd: s5Decimal('2345.6'),
+                  ),
+                ],
+              ),
+              riskScreening: const LoopUnavailable(
+                'MARKET_PROVIDER_GOPLUS_NOT_CONFIGURED',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('new-pairs-omitted')),
+        findsOneWidget,
+      );
+      expect(find.text('另有 6 个 Uniswap V4 池未列出'), findsOneWidget);
+      // The provider's DEX string is printed as given, and a zero quote
+      // address reads as the coin.
+      expect(find.textContaining('four-meme'), findsOneWidget);
+      expect(find.textContaining('计价 BNB'), findsOneWidget);
+    });
+
+    testWidgets('new-pairs says nothing when no pool was left out', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const NewPairsScreen(),
+        market: FakeMarketReadGateway(
+          newPairs: S5Answer<MarketNewPairsPage>(
+            value: MarketNewPairsPage(
+              newPairs: MarketNewPairsAvailable(
+                source: LoopFactSource.geckoterminal,
+                fetchedAt: DateTime.utc(2026, 9, 8, 7, 31),
+                ttlSeconds: 60,
+                quality: LoopFactQuality.fresh,
+                reasonCode: null,
+                omittedCount: 0,
+                items: <MarketNewPair>[
+                  MarketNewPair(
+                    poolAddress: s5PoolAddress,
+                    dexId: 'pancakeswap_v3',
+                    name: 'X / WBNB',
+                    baseTokenAddress: s5Address,
+                    quoteTokenAddress: s5Address,
+                    registryAssetId: s5WbnbAssetId,
+                    createdAt: DateTime.utc(2026, 9, 8, 5),
+                    reserveUsd: s5Decimal('12345.6'),
+                    volumeH24Usd: s5Decimal('2345.6'),
+                  ),
+                ],
+              ),
+              riskScreening: const LoopUnavailable(
+                'MARKET_PROVIDER_GOPLUS_NOT_CONFIGURED',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('new-pairs-omitted')),
+        findsNothing,
+      );
+      expect(find.textContaining('计价 BNB'), findsNothing);
+    });
+
     testWidgets('smart-money never lists an address or a win rate', (
       tester,
     ) async {

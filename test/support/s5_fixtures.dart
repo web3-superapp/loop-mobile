@@ -566,17 +566,23 @@ Map<String, Object?> s5HoldersBody() => <String, Object?>{
   'contractVersion': '2.0',
 };
 
-Map<String, Object?> s5NewPairsBody({bool available = false}) =>
-    <String, Object?>{
-      'newPairs': available
-          ? <String, Object?>{
-              'status': 'available',
-              'source': 'geckoterminal',
-              'fetchedAt': '2026-09-08T07:31:00.000Z',
-              'ttlSeconds': 60,
-              'quality': 'fresh',
-              'reasonCode': null,
-              'items': <Object?>[
+Map<String, Object?> s5NewPairsBody({
+  bool available = false,
+  Object? omittedCount = 0,
+  List<Object?>? items,
+}) => <String, Object?>{
+  'newPairs': available
+      ? <String, Object?>{
+          'status': 'available',
+          'source': 'geckoterminal',
+          'fetchedAt': '2026-09-08T07:31:00.000Z',
+          'ttlSeconds': 60,
+          'quality': 'fresh',
+          'reasonCode': null,
+          'omittedCount': omittedCount,
+          'items':
+              items ??
+              <Object?>[
                 <String, Object?>{
                   'poolAddress': s5PoolAddress,
                   'dexId': 'pancakeswap_v3',
@@ -589,11 +595,31 @@ Map<String, Object?> s5NewPairsBody({bool available = false}) =>
                   'volumeH24Usd': '2345.6',
                 },
               ],
-            }
-          : s5Unavailable('MARKET_PROVIDER_GECKOTERMINAL_DISABLED'),
-      'riskScreening': s5Unavailable('MARKET_PROVIDER_GOPLUS_NOT_CONFIGURED'),
-      'contractVersion': '2.0',
-    };
+        }
+      : s5Unavailable('MARKET_PROVIDER_GECKOTERMINAL_DISABLED'),
+  'riskScreening': s5Unavailable('MARKET_PROVIDER_GOPLUS_NOT_CONFIGURED'),
+  'contractVersion': '2.0',
+};
+
+/// One provider row for `new-pairs`. `four-meme` pools quote in native BNB and
+/// the provider reports the zero address for it.
+Map<String, Object?> s5NewPair({
+  String poolAddress = s5PoolAddress,
+  String dexId = 'pancakeswap_v3',
+  String name = 'X / WBNB',
+  Object? quoteTokenAddress = s5Address,
+  Object? registryAssetId = s5WbnbAssetId,
+}) => <String, Object?>{
+  'poolAddress': poolAddress,
+  'dexId': dexId,
+  'name': name,
+  'baseTokenAddress': s5Address,
+  'quoteTokenAddress': quoteTokenAddress,
+  'registryAssetId': registryAssetId,
+  'createdAt': '2026-09-08T05:00:00.000Z',
+  'reserveUsd': '12345.6',
+  'volumeH24Usd': '2345.6',
+};
 
 Map<String, Object?> s5AlertBody({
   String state = 'active',

@@ -535,6 +535,9 @@ final class MarketHolders {
 // new-pairs · GET /v2/market/new-pairs
 // ---------------------------------------------------------------------------
 
+/// The EVM zero address, which a provider uses to mean the chain's own coin.
+const marketZeroAddress = '0x0000000000000000000000000000000000000000';
+
 @immutable
 final class MarketNewPair {
   const MarketNewPair({
@@ -555,6 +558,11 @@ final class MarketNewPair {
   final String? baseTokenAddress;
   final String? quoteTokenAddress;
 
+  /// The pool quotes in native BNB. Some launchpads (four.meme) pair against
+  /// the coin itself, and the provider then reports the zero address; it is
+  /// not a missing token and must not be printed as one.
+  bool get quotesNativeCoin => quoteTokenAddress == marketZeroAddress;
+
   /// Non-null only when the pool's base token is already in the registry, so
   /// the row may open the token page.
   final String? registryAssetId;
@@ -574,6 +582,7 @@ final class MarketNewPairsAvailable extends MarketNewPairsBlock {
     required this.ttlSeconds,
     required this.quality,
     required this.reasonCode,
+    required this.omittedCount,
     required List<MarketNewPair> items,
   }) : items = List<MarketNewPair>.unmodifiable(items);
 
@@ -582,6 +591,11 @@ final class MarketNewPairsAvailable extends MarketNewPairsBlock {
   final int ttlSeconds;
   final LoopFactQuality quality;
   final String? reasonCode;
+
+  /// Pools the provider keyed by a 32-byte pool id instead of a contract
+  /// address (Uniswap V4 on BSC). They are not in [items] because a pool id is
+  /// not an address; the page states the count so the omission is visible.
+  final int omittedCount;
   final List<MarketNewPair> items;
 }
 

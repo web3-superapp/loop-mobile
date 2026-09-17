@@ -849,6 +849,7 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       'ttlSeconds',
       'quality',
       'reasonCode',
+      'omittedCount',
       'items',
     });
     if (map['status'] != 'available') LoopV2ChainCodec.invalid();
@@ -925,6 +926,14 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       ttlSeconds: LoopV2ChainCodec.requireInt(map, 'ttlSeconds', minimum: 1),
       quality: quality!,
       reasonCode: LoopV2ChainCodec.optionalReasonCode(map, 'reasonCode'),
+      // Rows the provider keyed by a pool id rather than an address. The
+      // count is required: the page must not present a shortened list as the
+      // whole page.
+      omittedCount: LoopV2ChainCodec.requireInt(
+        map,
+        'omittedCount',
+        minimum: 0,
+      ),
       items: items,
     );
   }
