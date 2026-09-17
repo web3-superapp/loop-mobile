@@ -229,6 +229,9 @@ final List<_StateCase> _cases = <_StateCase>[
     ),
     readyKey: 'loop-stake-executable',
     alsoUnreadKeys: <String>['loop-stake-notice'],
+    // The folio states that staking has not opened, which is true before and
+    // after any read: there is no figure owed here to withhold.
+    showsMissingHeading: false,
     emptyContract:
         'LaunchStake 是 `{stake, executable}` 两个必填字段'
         '（launch_models.dart:691-698）：读成功时一定有一条质押口径和一个'

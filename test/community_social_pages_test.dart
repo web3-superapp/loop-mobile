@@ -611,6 +611,10 @@ void main() {
         find.byKey(const ValueKey<String>('community-state-empty')),
         findsOneWidget,
       );
+      // Zero requests is a count the read came back with; 暂无数值 said the
+      // page had no figure at all.
+      expect(find.text('0 个待处理'), findsOneWidget);
+      expect(find.text(communityMissingHeading), findsNothing);
 
       final pending = FakeSocialGateway()..pending = true;
       await pumpCommunityPage(

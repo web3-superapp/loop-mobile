@@ -324,13 +324,16 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
       title: 'LOOP 质押',
       kicker: 'STAKING POSITION',
       onBack: widget.onBack,
+      // 暂无数值 described a page with no figures as if figures were owed,
+      // and the English state name beside it was the wire value of the
+      // executability flag. Neither is what a reader needs: staking has not
+      // opened, and the sentence under the heading says what that costs.
       primary: const LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
         kicker: 'STAKING POSITION',
-        heading: launchMissingHeading,
-        caption: '质押数量、可用余额与解除等待期都需要质押合约；本页整页不可执行。',
-        stamp: 'NOT EXECUTABLE',
+        heading: '质押还没有开放',
+        caption: '质押数量、可用余额与解除等待期都需要质押合约；本页不提供任何金额输入或签名入口。',
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(

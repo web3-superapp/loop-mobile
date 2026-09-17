@@ -55,13 +55,19 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
         variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.listing,
         kicker: 'MESSAGE REQUESTS',
-        heading: state.phase == CommunityViewPhase.ready
-            ? '${state.items.length} 个请求待决定'
-            : communityMissingHeading,
+        // A read that came back with nothing counted nothing: zero requests
+        // is a figure, and 暂无数值 claimed the page had no figure at all.
+        heading: switch (state.phase) {
+          CommunityViewPhase.ready => '${state.items.length} 个请求待决定',
+          CommunityViewPhase.empty => '0 个待处理',
+          _ => communityMissingHeading,
+        },
         caption: '接受、忽略或举报。举报会同时屏蔽发起人并写入审计。',
-        stamp: state.phase == CommunityViewPhase.ready
-            ? '${state.items.length}'
-            : null,
+        stamp: switch (state.phase) {
+          CommunityViewPhase.ready => '${state.items.length}',
+          CommunityViewPhase.empty => '0',
+          _ => null,
+        },
       ),
       block: communityCapabilityBlocks(mode, capability)
           ? CommunityCapabilityPageBlock(

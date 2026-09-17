@@ -328,6 +328,10 @@ void main() {
       expect(find.text('不可执行'), findsOneWidget);
       expect(find.byType(TextField), findsNothing);
       expect(find.textContaining('质押还没有开放'), findsWidgets);
+      // The hero states the fact rather than reporting a missing figure, and
+      // the wire value of the executability flag never reaches the screen.
+      expect(find.text('暂无数值'), findsNothing);
+      expect(find.textContaining('NOT EXECUTABLE'), findsNothing);
       // No stake or unstake action exists at all.
       for (final button in tester.widgetList<LoopButton>(
         find.byType(LoopButton),
