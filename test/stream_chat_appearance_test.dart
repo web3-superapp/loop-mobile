@@ -300,6 +300,11 @@ void main() {
         );
         // C-15 (1): message text is plain, not markdown.
         expect(source, contains('messageText: loopStreamMessageTextBuilder'));
+        // C-15 (2): the sender name is a header, above the bubble.
+        expect(
+          source,
+          contains('messageHeader: loopStreamMessageHeaderBuilder'),
+        );
       },
     );
 

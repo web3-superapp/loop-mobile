@@ -249,9 +249,70 @@ StreamChatThemeData loopStreamChatThemeData() => StreamChatThemeData(
   ),
 );
 
+/// The prototype's `.msg-who`: the sender's name, above the bubble.
+///
+/// `.msg-body` stacks `.msg-who` over `.msg-txt`, so the name is the first
+/// line of the message column and the avatar beside it reads as the author of
+/// what follows. Stream's default puts the name in the metadata row *under*
+/// the bubble (C-15), where it lands next to the clock and away from the
+/// avatar. The header slot is the symmetric one above the bubble
+/// (`DefaultStreamMessageContent` stacks header, body, footer), so the name
+/// moves there and Stream's own annotations — pinned, saved, reminder,
+/// show-in-channel — keep their place under it.
+///
+/// The name is still drawn from the metadata username tokens
+/// (`loopStreamMessageItemTheme`), because it is the same name in the same
+/// voice; only its position changes.
+Widget loopStreamMessageHeaderBuilder(
+  BuildContext context,
+  StreamMessageHeaderProps props,
+) => _LoopStreamMessageHeader(props: props);
+
+class _LoopStreamMessageHeader extends StatelessWidget {
+  const _LoopStreamMessageHeader({required this.props});
+
+  final StreamMessageHeaderProps props;
+
+  @override
+  Widget build(BuildContext context) {
+    final layout = StreamMessageLayout.of(context);
+    final user = props.message.user;
+    final currentUser = StreamChat.of(context).currentUser;
+
+    Widget? usernameWidget;
+    // The same test the official footer applies: a group channel names every
+    // author but the reader themself.
+    if (user != null &&
+        layout.channelKind == StreamMessageChannelKind.group &&
+        user.id != currentUser?.id) {
+      final metadata = StreamMessageItemTheme.of(context).metadata;
+      final style =
+          metadata?.usernameTextStyle?.resolve(layout) ??
+          LoopTypography.caption(11);
+      final color = metadata?.usernameColor?.resolve(layout);
+      usernameWidget = Text(
+        user.name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: color == null ? style : style.copyWith(color: color),
+      );
+    }
+
+    return StreamColumn(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: StreamMessageLayout.crossAxisAlignmentOf(context),
+      children: <Widget>[
+        ?usernameWidget,
+        DefaultStreamMessageHeader(props: props),
+      ],
+    );
+  }
+}
+
 /// The Chinese, 24-hour footer under a message bubble.
 ///
-/// It restates Stream's own default footer: author name in a group, sending
+/// It restates Stream's own default footer minus the author name, which the
+/// prototype puts above the bubble (`loopStreamMessageHeaderBuilder`): sending
 /// status on the user's own message, timestamp, edited marker. Only the clock
 /// changes — `HH:mm` instead of Stream's Jiffy-formatted `h:mm a`.
 Widget loopStreamMessageFooterBuilder(
@@ -268,19 +329,7 @@ class _LoopStreamMessageFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final message = props.message;
     final currentUser = StreamChat.of(context).currentUser;
-    final channelKind = StreamMessageLayout.channelKindOf(context);
-
-    Widget? usernameWidget;
     final user = message.user;
-    if (user != null &&
-        channelKind == StreamMessageChannelKind.group &&
-        user.id != currentUser?.id) {
-      usernameWidget = Text(
-        user.name,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      );
-    }
 
     Widget? statusWidget;
     if (user != null && user.id == currentUser?.id) {
@@ -293,7 +342,6 @@ class _LoopStreamMessageFooter extends StatelessWidget {
     }
 
     return StreamMessageMetadata(
-      username: usernameWidget,
       status: statusWidget,
       timestamp: StreamTimestamp(
         date: message.createdAt.toLocal(),

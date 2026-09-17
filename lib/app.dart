@@ -100,6 +100,9 @@ final _loopStreamComponentBuilders = StreamComponentBuilders(
     // Decision 0065: LOOP prints a 24-hour clock, so the footer's timestamp
     // no longer follows Jiffy's locale-driven 12-hour format.
     messageFooter: loopStreamMessageFooterBuilder,
+    // C-15 (2): the prototype's `.msg-who` sits above the bubble, beside the
+    // avatar — not in the metadata row under it.
+    messageHeader: loopStreamMessageHeaderBuilder,
   ),
 );
 

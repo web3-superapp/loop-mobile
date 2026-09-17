@@ -65,6 +65,56 @@ void main() {
       await _disposeHarness(tester, harness);
     });
   });
+
+  group('C-15 (2) the sender name sits above the bubble', () {
+    testWidgets('the name is the first line of the message column', (
+      tester,
+    ) async {
+      final harness = _ChannelHarness.group(messageText: '在跟，单地址上限 0.5%');
+      await _pumpMessage(tester, harness: harness);
+
+      // The group Alias, not the Stream account name.
+      final name = find.text('星航员');
+      expect(name, findsOneWidget);
+
+      final bubble = find.byType(StreamMessageBubble);
+      expect(
+        tester.getBottomLeft(name).dy,
+        lessThanOrEqualTo(tester.getTopLeft(bubble).dy),
+      );
+      // …and the metadata row under the bubble keeps the clock and the read
+      // receipt, and no longer repeats the name.
+      final metadata = find.byType(StreamMessageMetadata);
+      expect(
+        tester.getTopLeft(metadata).dy,
+        greaterThanOrEqualTo(tester.getBottomLeft(bubble).dy),
+      );
+      expect(
+        find.descendant(of: metadata, matching: find.text('星航员')),
+        findsNothing,
+      );
+      // The name shares the bubble's left edge; it is not a centred caption.
+      expect(
+        tester.getTopLeft(name).dx,
+        closeTo(tester.getTopLeft(bubble).dx, 1),
+      );
+
+      await _disposeHarness(tester, harness);
+    });
+
+    testWidgets('the name carries the metadata username tokens', (
+      tester,
+    ) async {
+      final harness = _ChannelHarness.group(messageText: 'gm');
+      await _pumpMessage(tester, harness: harness);
+
+      final style = tester.widget<Text>(find.text('星航员')).style!;
+      expect(style.fontSize, 11);
+      expect(style.color, LoopColors.text3);
+
+      await _disposeHarness(tester, harness);
+    });
+  });
 }
 
 Future<void> _disposeHarness(
@@ -111,6 +161,7 @@ StreamComponentBuilders loopStreamComponentBuildersForTest() =>
         messageItem: loopStreamGroupMessageItemBuilder,
         mentionItem: loopStreamGroupMentionItemBuilder,
         messageFooter: loopStreamMessageFooterBuilder,
+        messageHeader: loopStreamMessageHeaderBuilder,
       ),
     );
 
