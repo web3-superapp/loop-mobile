@@ -875,8 +875,9 @@ void main() {
         voice.commands.indexOf('load'),
         greaterThan(voice.commands.indexOf('join')),
       );
-      final observed = find.byKey(const ValueKey<String>('voiceroom-observed'));
-      await scrollToCommunitySection(tester, observed);
+      final live = find.byKey(const ValueKey<String>('voiceroom-live'));
+      await scrollToCommunitySection(tester, live);
+      expect(find.text('12'), findsOneWidget);
       expect(find.text('45'), findsOneWidget);
     });
 
@@ -1096,7 +1097,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(banner, findsOneWidget);
       expect(find.textContaining('正在语音房'), findsOneWidget);
-      expect(find.textContaining('45 人'), findsOneWidget);
+      // Presence, not authorization: the strip states the live count only.
+      expect(find.textContaining('12 人在线'), findsOneWidget);
 
       await tester.tap(banner);
       await tester.pumpAndSettle();

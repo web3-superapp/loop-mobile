@@ -7,21 +7,21 @@ void main() {
   test('joined waits for official media connection before showing live', () {
     final status = CallStatus.joined();
 
-    expect(StreamCallStatusPresentation.label(status), 'Connecting media');
+    expect(StreamCallStatusPresentation.label(status), '媒体连接中');
     expect(StreamCallStatusPresentation.tone(status), LoopTone.warning);
   });
 
   test('connected status is presented as official live state', () {
     final status = CallStatus.connected();
 
-    expect(StreamCallStatusPresentation.label(status), 'Live');
+    expect(StreamCallStatusPresentation.label(status), '已连接');
     expect(StreamCallStatusPresentation.tone(status), LoopTone.positive);
   });
 
   test('reconnecting status stays a warning', () {
     final status = CallStatus.reconnecting(1);
 
-    expect(StreamCallStatusPresentation.label(status), 'Reconnecting');
+    expect(StreamCallStatusPresentation.label(status), '重连中');
     expect(StreamCallStatusPresentation.tone(status), LoopTone.warning);
   });
 
@@ -29,7 +29,7 @@ void main() {
     final status = CallStatus.reconnectingFailed();
 
     expect(status.toStatusString(), isEmpty);
-    expect(StreamCallStatusPresentation.label(status), 'Reconnect failed');
+    expect(StreamCallStatusPresentation.label(status), '重连失败');
     expect(StreamCallStatusPresentation.tone(status), LoopTone.danger);
   });
 

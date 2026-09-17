@@ -268,26 +268,36 @@ abstract final class LoopV2CommunicationCodec {
   }
 
   static VoiceRoomParticipants participants(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, const <String>{
-      'speakerCount',
-      'listenerCount',
-      'observed',
-    });
+    // Decision 0051 adds `joinedCount` here and `participantCount` inside
+    // `observed`. Both are read as optional for the one release in which a
+    // client can meet either server; a room whose counts are missing states
+    // that rather than failing the whole page.
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      const <String>{'speakerCount', 'listenerCount', 'observed'},
+      const <String>{'joinedCount'},
+    );
     final rawObserved = map['observed'];
     if (rawObserved is! Map) _invalid();
     final status = rawObserved['status'];
     final VoiceRoomObservedParticipants observed;
     if (status == 'available') {
-      final observedMap = LoopV2Contract.strictMap(rawObserved, const <String>{
-        'status',
-        'memberCount',
-        'observedAt',
-      });
+      final observedMap = LoopV2Contract.strictMapWithOptional(
+        rawObserved,
+        const <String>{'status', 'memberCount', 'observedAt'},
+        const <String>{'participantCount'},
+      );
       observed = VoiceRoomObservedParticipants.observed(
         memberCount: LoopV2ProjectionCodec.requireCount(
           observedMap,
           'memberCount',
         ),
+        participantCount: observedMap.containsKey('participantCount')
+            ? LoopV2ProjectionCodec.requireCount(
+                observedMap,
+                'participantCount',
+              )
+            : null,
         observedAt: LoopV2ProjectionCodec.requireTimestamp(
           observedMap,
           'observedAt',
@@ -301,6 +311,9 @@ abstract final class LoopV2CommunicationCodec {
     return VoiceRoomParticipants(
       speakerCount: LoopV2ProjectionCodec.requireCount(map, 'speakerCount'),
       listenerCount: LoopV2ProjectionCodec.requireCount(map, 'listenerCount'),
+      joinedCount: map.containsKey('joinedCount')
+          ? LoopV2ProjectionCodec.requireCount(map, 'joinedCount')
+          : null,
       observed: observed,
     );
   }

@@ -295,13 +295,23 @@ final class VoiceRoomObservedParticipants {
   const VoiceRoomObservedParticipants.observed({
     required int this.memberCount,
     required DateTime this.observedAt,
+    this.participantCount,
   }) : unavailable = null;
 
   const VoiceRoomObservedParticipants.unavailable(
     LoopUnavailableFact this.unavailable,
   ) : memberCount = null,
+      participantCount = null,
       observedAt = null;
 
+  /// Devices connected to the live call right now. This is the only figure
+  /// that means "people in the room"; a LOOP join grant alone does not raise
+  /// it. Null while the server still answers with the shape that had no such
+  /// field.
+  final int? participantCount;
+
+  /// Accounts the provider lets into the call, connected or not. It is
+  /// authorization, not presence.
   final int? memberCount;
   final DateTime? observedAt;
   final LoopUnavailableFact? unavailable;
@@ -315,11 +325,17 @@ final class VoiceRoomParticipants {
     required this.speakerCount,
     required this.listenerCount,
     required this.observed,
+    this.joinedCount,
   });
 
-  /// LOOP-side role intent, not a Stream presence count.
+  /// LOOP-side role intent, not a Stream presence count. The host is neither
+  /// a speaker nor a listener, so it is in neither figure.
   final int speakerCount;
   final int listenerCount;
+
+  /// Every LOOP member currently joined, the host included. Null while the
+  /// server still answers with the shape that had no such field.
+  final int? joinedCount;
   final VoiceRoomObservedParticipants observed;
 }
 

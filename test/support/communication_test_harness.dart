@@ -24,6 +24,8 @@ VoiceRoomSnapshot testVoiceRoomSnapshot({
   bool host = false,
   bool observedAvailable = true,
   bool provisioned = true,
+  int? joinedCount = 46,
+  int? participantCount = 12,
   VoiceRoomState state = VoiceRoomState.live,
   VoiceRoomHandRaise? handRaise,
   bool providerConfirmed = true,
@@ -53,9 +55,11 @@ VoiceRoomSnapshot testVoiceRoomSnapshot({
   participants: VoiceRoomParticipants(
     speakerCount: 3,
     listenerCount: 42,
+    joinedCount: joinedCount,
     observed: observedAvailable
         ? VoiceRoomObservedParticipants.observed(
             memberCount: 45,
+            participantCount: participantCount,
             observedAt: DateTime.utc(2026, 9, 8, 12, 30),
           )
         : const VoiceRoomObservedParticipants.unavailable(

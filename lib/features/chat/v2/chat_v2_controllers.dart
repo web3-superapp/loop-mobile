@@ -398,16 +398,17 @@ final class VoiceRoomSession {
     required this.communityId,
     required this.voiceRoomId,
     required this.role,
-    required this.memberCount,
+    required this.participantCount,
   });
 
   final String communityId;
   final String voiceRoomId;
   final VoiceRoomRole role;
 
-  /// The provider's observed member count, or null when it was not observed.
-  /// The banner states no figure it does not have.
-  final int? memberCount;
+  /// How many devices are connected to the call right now, or null when the
+  /// provider did not report it. The banner states no figure it does not have,
+  /// and never shows an authorization count as if it were presence.
+  final int? participantCount;
 
   @override
   bool operator ==(Object other) =>
@@ -415,10 +416,11 @@ final class VoiceRoomSession {
       other.communityId == communityId &&
       other.voiceRoomId == voiceRoomId &&
       other.role == role &&
-      other.memberCount == memberCount;
+      other.participantCount == participantCount;
 
   @override
-  int get hashCode => Object.hash(communityId, voiceRoomId, role, memberCount);
+  int get hashCode =>
+      Object.hash(communityId, voiceRoomId, role, participantCount);
 }
 
 final class VoiceRoomSessionController extends Notifier<VoiceRoomSession?> {
@@ -619,7 +621,7 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
         communityId: communityId,
         voiceRoomId: snapshot.room.voiceRoomId,
         role: role,
-        memberCount: snapshot.participants.observed.memberCount,
+        participantCount: snapshot.participants.observed.participantCount,
       ),
     );
   }

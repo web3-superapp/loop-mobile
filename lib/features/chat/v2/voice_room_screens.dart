@@ -304,23 +304,52 @@ class _RoomFacts extends StatelessWidget {
         const LoopLabel('房间'),
         LoopRecordGroup(
           rows: <LoopRecordRow>[
+            // Decision 0051 separates the three figures that were read as one
+            // number: who is connected now, who is allowed in, and who LOOP
+            // has joined. Each keeps its own sentence.
+            LoopRecordRow(
+              key: const ValueKey<String>('voiceroom-live'),
+              title: '当前在线',
+              subtitle: !observed.isAvailable
+                  ? communicationUnavailableReason(
+                      observed.unavailable!.reasonCode,
+                    )
+                  : observed.participantCount == null
+                  ? '当前服务端没有给出这一项。'
+                  : '此刻连接在这次通话里的人数，'
+                        '观察于 ${communityObservedAtLabel(observed.observedAt!)}',
+              trailing: observed.participantCount == null
+                  ? communityMissingFigure
+                  : '${observed.participantCount}',
+              position: LoopRowPosition.first,
+            ),
             LoopRecordRow(
               key: const ValueKey<String>('voiceroom-observed'),
-              title: '房间人数',
+              title: '服务商已授权成员',
               subtitle: observed.isAvailable
-                  ? '由服务商观察于 ${communityObservedAtLabel(observed.observedAt!)}'
+                  ? '服务商允许进入的账号，不代表现在连着；'
+                        '观察于 ${communityObservedAtLabel(observed.observedAt!)}'
                   : communicationUnavailableReason(
                       observed.unavailable!.reasonCode,
                     ),
               trailing: observed.isAvailable
                   ? '${observed.memberCount}'
                   : communityMissingFigure,
-              position: LoopRowPosition.first,
+              position: LoopRowPosition.middle,
+            ),
+            LoopRecordRow(
+              key: const ValueKey<String>('voiceroom-joined'),
+              title: 'LOOP 已加入',
+              subtitle: '在 LOOP 记录里已加入这个房间的人，含主持人。',
+              trailing: snapshot.participants.joinedCount == null
+                  ? communityMissingFigure
+                  : '${snapshot.participants.joinedCount}',
+              position: LoopRowPosition.middle,
             ),
             LoopRecordRow(
               key: const ValueKey<String>('voiceroom-role-intent'),
               title: '发言人 / 听众',
-              subtitle: '按 LOOP 记录的角色统计，不是服务商的在线人数。',
+              subtitle: '按 LOOP 记录的角色统计，不含主持人，也不是在线人数。',
               trailing:
                   '${snapshot.participants.speakerCount} / '
                   '${snapshot.participants.listenerCount}',
@@ -669,7 +698,7 @@ class VoiceRoomMinimizedBanner extends ConsumerWidget {
     if (session == null || onRoomPage) {
       return const SizedBox.shrink();
     }
-    final count = session.memberCount;
+    final count = session.participantCount;
     return Material(
       key: const ValueKey<String>('voiceroom-minimized-banner'),
       color: LoopColors.lime,
@@ -690,7 +719,7 @@ class VoiceRoomMinimizedBanner extends ConsumerWidget {
                     child: Text(
                       count == null
                           ? '正在语音房 · ${session.role.label}'
-                          : '正在语音房 · ${session.role.label} · $count 人',
+                          : '正在语音房 · ${session.role.label} · $count 人在线',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: LoopTypography.body(

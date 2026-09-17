@@ -49,6 +49,7 @@ Map<String, Object?> _roomBody({
   String? role = 'listener',
   bool host = false,
   Object? observed,
+  Object? participants,
   String state = 'live',
   Object? handRaise,
   String providerSyncStatus = 'confirmed',
@@ -72,17 +73,19 @@ Map<String, Object?> _roomBody({
     'handRaise': handRaise,
     'expiresAt': '2026-09-08T13:00:00.000Z',
   },
-  'participants': <String, Object?>{
-    'speakerCount': 3,
-    'listenerCount': 42,
-    'observed':
-        observed ??
-        <String, Object?>{
-          'status': 'available',
-          'memberCount': 45,
-          'observedAt': '2026-09-08T12:30:00.000Z',
-        },
-  },
+  'participants':
+      participants ??
+      <String, Object?>{
+        'speakerCount': 3,
+        'listenerCount': 42,
+        'observed':
+            observed ??
+            <String, Object?>{
+              'status': 'available',
+              'memberCount': 45,
+              'observedAt': '2026-09-08T12:30:00.000Z',
+            },
+      },
   'providerSync': <String, Object?>{
     'status': providerSyncStatus,
     'reasonCode': providerSyncReason,
@@ -335,6 +338,79 @@ void main() {
         );
       },
     );
+
+    test('the live participant count is read apart from the members', () async {
+      // Decision 0051: `participantCount` is the only figure that means
+      // "people in the room now"; `memberCount` is who is allowed in.
+      final (api, _) = _api(
+        _roomBody(
+          participants: <String, Object?>{
+            'speakerCount': 3,
+            'listenerCount': 42,
+            'joinedCount': 46,
+            'observed': <String, Object?>{
+              'status': 'available',
+              'participantCount': 12,
+              'memberCount': 45,
+              'observedAt': '2026-09-08T12:30:00.000Z',
+            },
+          },
+        ),
+      );
+
+      final snapshot = await api.getVoiceRoom(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+        voiceRoomId: _roomId,
+      );
+
+      expect(snapshot.participants.joinedCount, 46);
+      expect(snapshot.participants.observed.participantCount, 12);
+      expect(snapshot.participants.observed.memberCount, 45);
+    });
+
+    test('a server without the new counts is still read', () async {
+      // The two fields arrive with a server deploy this client does not
+      // schedule; the room stays readable in the meantime and simply has no
+      // figure for them.
+      final (api, _) = _api(_roomBody());
+
+      final snapshot = await api.getVoiceRoom(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+        voiceRoomId: _roomId,
+      );
+
+      expect(snapshot.participants.joinedCount, isNull);
+      expect(snapshot.participants.observed.participantCount, isNull);
+      expect(snapshot.participants.observed.memberCount, 45);
+    });
+
+    test('a count the contract does not define fails the payload', () async {
+      final (api, _) = _api(
+        _roomBody(
+          participants: <String, Object?>{
+            'speakerCount': 3,
+            'listenerCount': 42,
+            'onlineCount': 9,
+            'observed': <String, Object?>{
+              'status': 'available',
+              'memberCount': 45,
+              'observedAt': '2026-09-08T12:30:00.000Z',
+            },
+          },
+        ),
+      );
+
+      await expectLater(
+        api.getVoiceRoom(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          voiceRoomId: _roomId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
 
     test('a confirmed provider sync may not also carry a reason', () async {
       final (api, _) = _api(
