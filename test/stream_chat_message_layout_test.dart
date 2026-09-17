@@ -13,7 +13,15 @@ import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
+import 'support/loop_ground_probe.dart';
+
 void main() {
+  // `stream_chat_appearance.dart` is a probe blind spot in
+  // `ground-inventory.md`: the Stream widgets it themes are mounted by the
+  // SDK, not by a LOOP page, so no page test ever walked their paint. This
+  // file mounts a real message row, so it can carry the watch.
+  loopWatchGround();
+
   group('C-15 (1) a message is plain text, not markdown', () {
     test('the pipe, the asterisk and the underscore survive', () {
       expect(loopStreamPlainMessageText('| 模拟器 | 两个实例 |'), '| 模拟器 | 两个实例 |');
@@ -115,6 +123,98 @@ void main() {
       await _disposeHarness(tester, harness);
     });
   });
+
+  group('C-15 (3) the avatar stands at the top of the row', () {
+    testWidgets('the avatar is level with the name, above the bubble', (
+      tester,
+    ) async {
+      final harness = _ChannelHarness.group(
+        messageText: '在跟，但单地址上限 0.5%，扫不了货，等下一轮',
+      );
+      await _pumpMessage(tester, harness: harness);
+
+      final avatar = find.byKey(LoopStreamMessageRow.avatarKey);
+      expect(avatar, findsOneWidget);
+
+      final name = find.text('星航员');
+      final bubble = find.byType(StreamMessageBubble);
+      // `.msg-av` has no vertical offset of its own: it starts where the
+      // message column starts, which is the name's line.
+      expect(
+        tester.getTopLeft(avatar).dy,
+        closeTo(tester.getTopLeft(name).dy, 2),
+      );
+      expect(
+        tester.getTopLeft(avatar).dy,
+        lessThan(tester.getTopLeft(bubble).dy),
+      );
+      // …and not on the bubble's floor, which is where Stream's hardcoded
+      // `crossAxisAlignment: .end` put it.
+      expect(
+        tester.getBottomLeft(avatar).dy,
+        lessThan(tester.getBottomLeft(bubble).dy),
+      );
+      // The avatar stands in its own column, clear of the bubble.
+      expect(
+        tester.getTopRight(avatar).dx,
+        lessThanOrEqualTo(tester.getTopLeft(bubble).dx),
+      );
+
+      await _disposeHarness(tester, harness);
+    });
+
+    testWidgets('the row keeps the prototype gutter, once', (tester) async {
+      final harness = _ChannelHarness.group(messageText: 'gm');
+      await _pumpMessage(tester, harness: harness);
+
+      // 16px page inset, then the reserved avatar column.
+      final avatar = find.byKey(LoopStreamMessageRow.avatarKey);
+      expect(tester.getTopLeft(avatar).dx, LoopSpacing.page);
+      expect(tester.getTopLeft(avatar).dy, LoopSpacing.tight);
+
+      // Stream's own leading is reserved, not drawn twice: the gutter it holds
+      // open is exactly as wide as the avatar LOOP paints into it.
+      final gutter = find.byType(StreamMessageLeading);
+      expect(gutter, findsNWidgets(2));
+      expect(
+        tester.getSize(gutter.at(0)).width,
+        tester.getSize(gutter.at(1)).width,
+      );
+
+      await _disposeHarness(tester, harness);
+    });
+
+    testWidgets('an item that overrides the padding keeps its avatar on it', (
+      tester,
+    ) async {
+      // The long-press preview rebuilds the row with `padding: EdgeInsets.zero`
+      // over the scrim.
+      final harness = _ChannelHarness.group(messageText: 'gm');
+      await _pumpMessage(tester, harness: harness, padding: EdgeInsets.zero);
+
+      final avatar = find.byKey(LoopStreamMessageRow.avatarKey);
+      expect(tester.getTopLeft(avatar), Offset.zero);
+
+      await _disposeHarness(tester, harness);
+    });
+
+    testWidgets('the reader\'s own message keeps no avatar column', (
+      tester,
+    ) async {
+      final harness = _ChannelHarness.group(messageText: 'gm');
+      await _pumpMessage(
+        tester,
+        harness: harness,
+        layout: const StreamMessageLayoutData(
+          alignment: StreamMessageAlignment.end,
+        ),
+      );
+
+      expect(find.byKey(LoopStreamMessageRow.avatarKey), findsNothing);
+
+      await _disposeHarness(tester, harness);
+    });
+  });
 }
 
 Future<void> _disposeHarness(
@@ -128,11 +228,18 @@ Future<void> _disposeHarness(
 Future<void> _pumpMessage(
   WidgetTester tester, {
   required _ChannelHarness harness,
+  StreamMessageLayoutData layout = const StreamMessageLayoutData(),
+  EdgeInsetsGeometry? padding,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
-      theme: ThemeData(
-        extensions: <ThemeExtension<dynamic>>[loopStreamTheme()],
+      // The ground the chat page actually stands on: `LoopTheme.dark` with the
+      // Stream extension injected above it, exactly as `lib/app.dart` does.
+      theme: LoopTheme.dark.copyWith(
+        extensions: [
+          ...LoopTheme.dark.extensions.values,
+          loopStreamTheme(platform: LoopTheme.dark.platform),
+        ],
       ),
       home: StreamChat(
         client: harness.client,
@@ -141,9 +248,16 @@ Future<void> _pumpMessage(
         child: StreamChannel.value(
           channel: harness.channel,
           child: Scaffold(
-            body: StreamMessageLayout(
-              data: const StreamMessageLayoutData(),
-              child: StreamMessageItem(message: harness.message),
+            // The official list gives every row its intrinsic height; a
+            // stretched box would let Stream's own `Align` centre the row.
+            body: SingleChildScrollView(
+              child: StreamMessageLayout(
+                data: layout,
+                child: StreamMessageItem(
+                  message: harness.message,
+                  padding: padding,
+                ),
+              ),
             ),
           ),
         ),

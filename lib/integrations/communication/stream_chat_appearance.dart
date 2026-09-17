@@ -128,6 +128,23 @@ TextStyle _bubbleTextStyle(Color color) =>
 /// corner on its own side and 16px elsewhere.
 StreamMessageItemThemeData
 loopStreamMessageItemTheme() => StreamMessageItemThemeData(
+  // `.msg{padding:8px 16px}`.
+  padding: const EdgeInsets.symmetric(
+    horizontal: LoopSpacing.page,
+    vertical: LoopSpacing.tight,
+  ),
+  // `.msg` reserves a 34px avatar column on the author's side and nothing on
+  // the reader's own. `hidden` keeps that column's width while LOOP draws the
+  // avatar into it at the top of the row — see [LoopStreamMessageRow]. Stream
+  // itself would drop the avatar on every message but the last of a run; the
+  // prototype shows one beside every message.
+  avatarVisibility: StreamMessageLayoutVisibility.resolveWith(
+    (layout) => switch ((layout.channelKind, layout.alignment)) {
+      (StreamMessageChannelKind.direct, _) => StreamVisibility.gone,
+      (_, StreamMessageAlignment.end) => StreamVisibility.gone,
+      _ => StreamVisibility.hidden,
+    },
+  ),
   bubble: StreamMessageBubbleStyle(
     backgroundColor: StreamMessageLayoutProperty.resolveWith(
       (layout) => switch (layout.contentKind) {
@@ -248,6 +265,80 @@ StreamChatThemeData loopStreamChatThemeData() => StreamChatThemeData(
     subtitleTextStyle: LoopTypography.caption(11),
   ),
 );
+
+/// The prototype's `.msg` row: the avatar at the top of the message, not on
+/// its floor.
+///
+/// `.msg{display:flex;gap:10px}` with a fixed-height `.msg-av` leaves the
+/// avatar at the top of the row, level with `.msg-who`. Stream's
+/// `DefaultStreamMessageItem` lays its row out with a hardcoded
+/// `crossAxisAlignment: .end` (`stream_chat_flutter-10.3.0/lib/src/
+/// message_widget/stream_message_item.dart:604`) — no theme field and no
+/// builder reaches it — so the avatar lands on the bubble's bottom edge, two
+/// lines away from the name it belongs to (C-15).
+///
+/// The row therefore keeps Stream's own gutter — [loopStreamMessageItemTheme]
+/// marks the avatar `hidden`, which reserves its width and paints nothing —
+/// and this widget draws the official [StreamMessageLeading] into that gutter
+/// at the row's top. The geometry is the theme's own: the item's padding is a
+/// LOOP token, so the avatar's origin is that padding's top-start corner.
+/// Nothing else about the official item changes.
+class LoopStreamMessageRow extends StatelessWidget {
+  const LoopStreamMessageRow({
+    super.key,
+    required this.message,
+    required this.child,
+    this.padding,
+  });
+
+  /// The message the [child] item renders.
+  final Message message;
+
+  /// The official message item.
+  final Widget child;
+
+  /// The padding that item was given, when a caller overrode the theme's.
+  ///
+  /// `StreamMessageItemProps.padding` wins over the theme inside
+  /// `DefaultStreamMessageItem`, and the long-press preview passes
+  /// `EdgeInsets.zero`, so the gutter's origin has to follow it.
+  final EdgeInsetsGeometry? padding;
+
+  /// The avatar LOOP paints into the reserved gutter.
+  static const Key avatarKey = Key('loop-message-avatar');
+
+  @override
+  Widget build(BuildContext context) {
+    if (message.user == null) return child;
+
+    final theme = StreamMessageItemTheme.of(context);
+    final layout = StreamMessageLayout.of(context);
+    // Only the rows whose gutter is reserved carry an avatar. A `visible`
+    // avatar would mean the theme stopped reserving and Stream is drawing its
+    // own; `gone` means there is no gutter at all.
+    if (theme.avatarVisibility?.resolve(layout) != StreamVisibility.hidden) {
+      return child;
+    }
+
+    final resolvedPadding = (padding ?? theme.padding ?? EdgeInsets.zero)
+        .resolve(Directionality.of(context));
+
+    return Stack(
+      children: <Widget>[
+        child,
+        PositionedDirectional(
+          top: resolvedPadding.top,
+          start: resolvedPadding.left,
+          // The gutter belongs to the message row's own tap and long-press;
+          // LOOP passes no avatar tap (`onUserAvatarTap: null`).
+          child: IgnorePointer(
+            child: StreamMessageLeading(key: avatarKey, message: message),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 /// The prototype's `.msg-who`: the sender's name, above the bubble.
 ///

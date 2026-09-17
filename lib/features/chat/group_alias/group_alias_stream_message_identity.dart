@@ -606,7 +606,11 @@ class _LoopStreamGroupMessageItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final channel = StreamChannel.maybeOf(context)?.channel;
     if (!loopStreamChannelUsesGroupMessageAlias(channel?.cid)) {
-      return DefaultStreamMessageItem(props: props);
+      return LoopStreamMessageRow(
+        message: props.message,
+        padding: props.padding,
+        child: DefaultStreamMessageItem(props: props),
+      );
     }
 
     final state = channel?.state;
@@ -638,6 +642,14 @@ class _LoopStreamGroupMessageItem extends StatelessWidget {
   }
 
   Widget _buildDefault(List<Member> members) {
-    return DefaultStreamMessageItem(props: _groupDisplayProps(props, members));
+    // The Alias-projected copy is the one the avatar reads too, so the
+    // initials over the gutter and the name above the bubble stay the same
+    // member.
+    final displayProps = _groupDisplayProps(props, members);
+    return LoopStreamMessageRow(
+      message: displayProps.message,
+      padding: displayProps.padding,
+      child: DefaultStreamMessageItem(props: displayProps),
+    );
   }
 }

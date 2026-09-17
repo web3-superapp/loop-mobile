@@ -137,7 +137,11 @@ S19 扩面报出来的是两类东西：
       正是要拦的。扩面之后整轮跑下来**没有报出一处**，说明现有调用点是干净的。
 - [ ] **`lib/integrations/communication/stream_chat_appearance.dart`**。Stream 的
       主题对象由 SDK 消费，不是 LOOP 的 widget 树，三条守卫都不覆盖。它目前只服务
-      深色聊天页。**仍然是盲区。**
+      深色聊天页。**仍然是盲区，但小了一块**：S28a 的
+      `test/stream_chat_message_layout_test.dart` 在 `LoopTheme.dark` 上挂了一条
+      真实消息行（头像、发送者名、气泡正文、时间戳、已读回执）并调了
+      `loopWatchGround()`，这几笔颜色从此有探针看着；其余 Stream 表面（收件箱、
+      搜索、转发、语音房）仍然没有。
 - [ ] **动态底色**。任何由运行时值决定 `variant` / `chalk` 的调用点，守卫按「可能
       是浅色」处理；探针只覆盖它实际渲染过的分支。**仍然是盲区，但比原来小**：
       扩面后被渲染过的分支多了一个数量级。
