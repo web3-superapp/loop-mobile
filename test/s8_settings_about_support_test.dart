@@ -196,28 +196,39 @@ void main() {
       expect(row.trailing, isNull);
     });
 
-    testWidgets('a rule is named in Chinese, or not shown at all', (
+    testWidgets('every published rule is listed, none under its key', (
       tester,
     ) async {
       await pumpS8Page(tester, const AboutScreen(), about: FakeAboutGateway());
 
+      // The Chinese names are the table in
+      // loop-api/docs/frontend-v2-meta-api.md.
       for (final (module, name) in <(String, String)>[
-        ('productPolicy', '产品规则'),
-        ('support', '客服规则'),
+        ('productPolicy', '产品策略'),
+        ('support', '客服工单规则'),
+        ('bscWriteCanary', '链上写入灰度规则'),
       ]) {
         final row = find.byKey(ValueKey<String>('about-config-$module'));
         await scrollToS8Section(tester, row);
         expect(row, findsOneWidget, reason: module);
         expect(tester.widget<LoopRecordRow>(row).title, name);
       }
-      // A staged-rollout switch for an unannounced mechanism, and a key this
-      // client cannot name, are both absent — key and value.
-      expect(
-        find.byKey(const ValueKey<String>('about-config-bscWriteCanary')),
-        findsNothing,
+      // A rule this client cannot translate is still in force: the row stays
+      // and carries its version, and only the identifier is withheld.
+      final unknown = find.byKey(
+        const ValueKey<String>('about-config-futureRuleKey'),
       );
-      expect(find.textContaining('bscWriteCanary'), findsNothing);
-      expect(find.textContaining('someUnshippedThing'), findsNothing);
+      await scrollToS8Section(tester, unknown);
+      expect(tester.widget<LoopRecordRow>(unknown).title, '其他规则');
+      expect(
+        tester.widget<LoopRecordRow>(unknown).subtitle,
+        contains('版本 rulesV9'),
+      );
+      // The identifier itself is never a title or a line of copy. (The
+      // published版本 strings are the server's own and are shown verbatim.)
+      expect(find.textContaining('futureRuleKey'), findsNothing);
+      expect(find.text('productPolicy'), findsNothing);
+      expect(find.text('bscWriteCanary'), findsNothing);
       expect(
         find.textContaining('版本 productPolicyV2.2026-09-01'),
         findsOneWidget,

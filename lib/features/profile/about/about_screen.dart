@@ -151,9 +151,12 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
 
 /// 当前规则 · the published rule snapshots, named in the reader's language.
 ///
-/// The server sends its own keys. Only the rules this client can name are
-/// listed: an unknown key is an internal identifier, and `bscWriteCanary` is
-/// the staged-rollout switch of a mechanism that has not been announced.
+/// The server sends its own keys and decides how many rows there are: a
+/// deployment without an operator override publishes no `clientPolicy`, and
+/// one with chain writes off publishes no `bscWriteCanary` (decision 0049).
+/// Every row the server sends is listed, but never under its key — a rule this
+/// client cannot translate is listed as 其他规则 with its version, which is the
+/// part a reader can compare, and the identifier stays off the screen.
 class _AboutRulesBlock extends StatelessWidget {
   const _AboutRulesBlock({required this.versions});
 
@@ -161,25 +164,13 @@ class _AboutRulesBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final named = <(LoopAboutConfigVersion, String)>[
-      for (final entry in versions)
-        if (loopAboutModuleName(entry.module) case final String name)
-          (entry, name),
-    ];
-    if (named.isEmpty) {
-      return const LoopEmpty(
-        key: ValueKey<String>('about-config-empty'),
-        icon: 'info',
-        message: '没有可以展示的规则',
-        reason: '这次下发的规则都还没有对外的名字。',
-      );
-    }
     return LoopRecordGroup(
       rows: <LoopRecordRow>[
-        for (final (entry, name) in named)
+        for (final entry in versions)
           LoopRecordRow(
             key: ValueKey<String>('about-config-${entry.module}'),
-            title: name,
+            title:
+                loopAboutModuleName(entry.module) ?? loopAboutUnknownModuleName,
             // The description reads on its own line; the snapshot version and
             // the time it took effect follow on the second, so neither is
             // ellipsised away.

@@ -226,15 +226,16 @@ LoopAbout s8About() => LoopAbout(
       configVersion: 'supportPolicyV1',
       effectiveAt: null,
     ),
-    // A rule the client may not name on screen, and one it has never heard of.
+    // A rule published only where chain writes are configured, and one this
+    // client has never heard of.
     const LoopAboutConfigVersion(
       module: 'bscWriteCanary',
       configVersion: 'bscWriteCanaryV1',
       effectiveAt: null,
     ),
     const LoopAboutConfigVersion(
-      module: 'someUnshippedThing',
-      configVersion: 'someUnshippedThingV1',
+      module: 'futureRuleKey',
+      configVersion: 'rulesV9',
       effectiveAt: null,
     ),
   ],

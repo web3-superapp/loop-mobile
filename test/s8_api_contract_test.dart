@@ -664,6 +664,37 @@ void main() {
       expect(about.clientBuildReasonCode, 'CLIENT_BUILD_IS_DEVICE_LOCAL');
     });
 
+    test('the rule list is whatever the deployment publishes', () async {
+      final api = DioLoopV2AboutApi(
+        s8Dio((options, handler) {
+          final body = s8AboutBody();
+          // A deployment with no operator override and chain writes off
+          // publishes neither clientPolicy nor bscWriteCanary, and the row
+          // count is not fixed (decision 0049).
+          body['configVersions'] = <Object?>[
+            <String, Object?>{
+              'module': 'productPolicy',
+              'configVersion': 'productPolicyV2.2026-09-01',
+              'effectiveAt': '2026-09-01T00:00:00.000Z',
+            },
+            <String, Object?>{
+              'module': 'futureRuleKey',
+              'configVersion': 'rulesV9',
+              'effectiveAt': null,
+            },
+          ];
+          handler.resolve(s8Response(options, body));
+        }),
+      );
+
+      final about = await api.getAbout();
+
+      expect(about.configVersions, hasLength(2));
+      // An unknown module is carried, not refused and not dropped.
+      expect(about.configVersions.last.module, 'futureRuleKey');
+      expect(about.configVersions.last.effectiveAt, isNull);
+    });
+
     test('the register publishes no dependency version', () async {
       final api = DioLoopV2AboutApi(
         s8Dio(

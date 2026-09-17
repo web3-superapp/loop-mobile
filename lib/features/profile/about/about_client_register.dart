@@ -6,14 +6,13 @@
 /// paragraph about `pnpm-lock.yaml`, and the rows were Fastify and
 /// `@privy-io/node` — the backend's dependencies, which no reader of a phone
 /// screen has any relationship with. The same page printed the raw rule keys
-/// `productPolicy` / `clientPolicy` / `bscWriteCanary`, one of which named a
-/// mechanism that has not been released.
+/// `productPolicy` / `clientPolicy` / `bscWriteCanary` as titles.
 ///
 /// So the register rendered here is the client's own, maintained beside
 /// `docs/open-source-attribution.md` in this repository and matching the direct
 /// dependencies pinned in `pubspec.yaml` / `pubspec.lock`; and the rule list is
-/// translated through [loopAboutModuleName], which also decides what may be
-/// named at all.
+/// translated through [loopAboutModuleName], whose table is
+/// `loop-api/docs/frontend-v2-meta-api.md` (decision 0049).
 library;
 
 import 'package:loop_mobile/features/profile/about/about_models.dart';
@@ -112,38 +111,45 @@ const List<LoopOpenSourceEntry> loopClientOpenSourceEntries =
       ),
     ];
 
-/// The user-facing name of one published rule snapshot, or `null` when the rule
-/// may not be named on screen.
+/// The name under which a rule the client has never heard of is listed.
 ///
-/// An unknown key returns `null` rather than falling back to itself: a key the
-/// client has never heard of is an internal identifier, and printing it is the
-/// defect this function exists to close. `bscWriteCanary` is withheld by name —
-/// it is the staged-rollout switch of a mechanism that has not been announced.
+/// The published key is a module identifier, not a name, and the number of
+/// rows is the server's to decide (decision 0049): a key this client cannot
+/// translate is still a rule that is in force, so the row stays and carries
+/// everything except the identifier.
+const String loopAboutUnknownModuleName = '其他规则';
+
+/// The user-facing name of one published rule snapshot, or `null` when this
+/// client has no name for the key.
+///
+/// The table is the one in `loop-api/docs/frontend-v2-meta-api.md`. An unknown
+/// key returns `null` rather than falling back to itself: printing an internal
+/// identifier is the defect this function exists to close.
 String? loopAboutModuleName(String module) => switch (module) {
-  'productPolicy' => '产品规则',
-  'clientPolicy' => '客户端规则',
-  'sessionPolicy' => '登录与会话规则',
-  'accountSettings' || 'accountSettingsPolicy' => '账号设置规则',
-  'support' || 'supportPolicy' => '客服规则',
+  'productPolicy' => '产品策略',
+  'clientPolicy' => '客户端策略',
+  'sessionPolicy' => '登录会话规则',
+  'community' => '社区规则',
+  'marketTrending' => '行情热榜规则',
+  'deviceRisk' => '设备风险提示规则',
+  'accountSettings' => '账号设置规则',
+  'support' => '客服工单规则',
   'swapPolicy' => '兑换规则',
-  'miningPolicy' => '挖矿规则',
-  'launchPolicy' => 'Launch 规则',
-  'communityPolicy' => '社区规则',
-  'marketPolicy' => '行情规则',
+  'bscWriteCanary' => '链上写入灰度规则',
   _ => null,
 };
 
 /// What each named rule decides, in one line.
 String? loopAboutModuleDescription(String module) => switch (module) {
-  'productPolicy' => '决定这个版本里哪些功能已经开放',
-  'clientPolicy' => '决定这台设备上哪些功能可用',
-  'sessionPolicy' => '决定登录状态与设备会话如何维持',
-  'accountSettings' || 'accountSettingsPolicy' => '决定账号设置里可以改哪些项',
-  'support' || 'supportPolicy' => '决定客服工单的提交与回复规则',
-  'swapPolicy' => '决定兑换的可用范围与限制',
-  'miningPolicy' => '决定算力与产出如何计算',
-  'launchPolicy' => '决定 Launch 的参与规则',
-  'communityPolicy' => '决定社区与成员的规则',
-  'marketPolicy' => '决定行情数据的来源与展示',
+  'productPolicy' => '五个 Tab、默认落地页与整体产品规则的版本',
+  'clientPolicy' => '运营对这个客户端的版本、地区与条款要求的覆盖版本',
+  'sessionPolicy' => '设备会话如何创建、限额与撤销',
+  'community' => '社区创建、成员、角色与治理的规则',
+  'marketTrending' => '行情页热门排序的口径',
+  'deviceRisk' => '新设备提示的阈值',
+  'accountSettings' => '账号设置里可以改哪些项',
+  'support' => '工单分类、字数与答复时限',
+  'swapPolicy' => '兑换报价、滑点与手续费口径',
+  'bscWriteCanary' => '链上写入放量的资产范围与单笔上限',
   _ => null,
 };
