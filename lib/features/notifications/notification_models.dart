@@ -29,6 +29,13 @@ enum LoopNotificationCategory {
   final String label;
   final String? detail;
 
+  /// Whether turning this category on produces a notification today.
+  ///
+  /// Only price alerts are emitted; every other category stores an intent the
+  /// backend does not act on yet. The page says so per row rather than
+  /// counting ten switches as ten notifications.
+  bool get deliversToday => this == LoopNotificationCategory.tradePriceAlert;
+
   static LoopNotificationCategory? tryParse(String value) {
     for (final category in values) {
       if (category.wireName == value) return category;
@@ -88,6 +95,17 @@ final class LoopNotificationPreferences {
 
   int get enabledCount =>
       categories.values.where((state) => state.enabled).length;
+
+  /// How many switches that are on actually produce a notification today.
+  ///
+  /// 「9 项开启」 was true of the stored intent and false of the account's
+  /// experience: only `trade.priceAlert` is emitted, so the other switches
+  /// change a value the server keeps and nothing else. The summary counts what
+  /// arrives; the page still shows every switch, each marked with whether it
+  /// is in effect.
+  int get deliveringEnabledCount => categories.entries
+      .where((entry) => entry.value.enabled && entry.key.deliversToday)
+      .length;
 
   /// The exact ten-key map a write must carry, with the requested edit applied
   /// and `security.event` pinned to `true`.

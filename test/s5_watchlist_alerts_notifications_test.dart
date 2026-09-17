@@ -653,6 +653,43 @@ void main() {
       );
     });
 
+    testWidgets('the summary counts what is delivered, not what is stored', (
+      tester,
+    ) async {
+      // Nine of the ten switches are on in this fixture; only price alerts
+      // are emitted, so 「9 项开启」 promised eight kinds of notification that
+      // never arrive.
+      await pumpS5Page(
+        tester,
+        const NotificationPreferencesScreen(),
+        notifications: FakeNotificationsGateway(),
+      );
+
+      expect(find.text('1 项开启并生效'), findsOneWidget);
+      expect(find.text('9 项开启'), findsNothing);
+
+      // Every switch that stores an intent without producing anything says so
+      // on its own row; the one that works carries no such mark.
+      for (final category in LoopNotificationCategory.values) {
+        final row = find.byKey(
+          ValueKey<String>('notification-category-${category.wireName}'),
+        );
+        await scrollToS5Section(tester, row);
+        expect(
+          find.descendant(
+            of: row,
+            matching: find.byKey(
+              ValueKey<String>('notification-inert-${category.wireName}'),
+            ),
+          ),
+          category == LoopNotificationCategory.tradePriceAlert
+              ? findsNothing
+              : findsOneWidget,
+          reason: category.wireName,
+        );
+      }
+    });
+
     testWidgets('a toggle commits under the CAS version with all ten keys', (
       tester,
     ) async {

@@ -70,8 +70,15 @@ class _NotificationPreferencesScreenState
         key: const ValueKey<String>('notification-preferences-folio'),
         archetype: LoopFolioArchetype.action,
         kicker: 'NOTIFICATION SUMMARY',
-        heading: resource == null ? '通知设置' : '${resource.enabledCount} 项开启',
-        caption: '安全事件始终开启且无法关闭；这里保存的是意图，不代表已经能送达。',
+        // 「9 项开启」 counted stored intents and read as nine kinds of
+        // notification; only price alerts are emitted. The summary counts what
+        // actually arrives and the sentence says what the rest are.
+        heading: resource == null
+            ? '通知设置'
+            : '${resource.deliveringEnabledCount} 项开启并生效',
+        caption:
+            '其余开关已保存，但对应的通知还没有开始产生。'
+            '安全事件始终开启且无法关闭；这里保存的是意图，不代表已经能送达。',
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -242,6 +249,13 @@ class _CategorySwitch extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
+          if (!category.deliversToday) ...<Widget>[
+            LoopBadge(
+              key: ValueKey<String>('notification-inert-${category.wireName}'),
+              '暂不生效',
+            ),
+            const SizedBox(width: 10),
+          ],
           if (locked)
             const LoopBadge('无法关闭', kind: LoopBadgeKind.up)
           else
