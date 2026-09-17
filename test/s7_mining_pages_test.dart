@@ -1736,6 +1736,31 @@ void main() {
       expect(find.textContaining('只有规则条目，没有数值'), findsNothing);
     });
 
+    testWidgets('the hero follows whether a version has been approved', (
+      tester,
+    ) async {
+      // Approved and in force: the page's first section is 「已批准的版本」
+      // with an 已批准 badge, and the hero no longer contradicts it.
+      await pumpS7Page(
+        tester,
+        const MiningRulesScreen(),
+        mining: FakeMiningGateway(
+          rules: S7Answer<MiningRules>(value: s7BaselineMiningRules()),
+        ),
+      );
+      expect(find.textContaining('还没批准的草案'), findsNothing);
+      expect(find.text('这一版已批准，当前生效。下面另有等待批准的草案。'), findsOneWidget);
+
+      // Nothing approved yet: the draft is what the hero is showing, and it
+      // says so.
+      await pumpS7Page(
+        tester,
+        const MiningRulesScreen(),
+        mining: FakeMiningGateway(),
+      );
+      expect(find.text('还没有已批准的公式。上面这条是等待批准的草案。'), findsOneWidget);
+    });
+
     testWidgets('with nothing in force the sentence still stands', (
       tester,
     ) async {

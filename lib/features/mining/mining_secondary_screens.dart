@@ -1225,6 +1225,7 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
     final draft = rules == null || rules.pendingApproval.isEmpty
         ? null
         : rules.pendingApproval.first;
+    final approved = rules?.approved;
 
     return LoopDashboardPage(
       key: const ValueKey<String>('mining-rules-screen'),
@@ -1238,11 +1239,31 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.record,
         kicker: 'POWER RULES',
-        heading: draft == null
-            ? launchMissingHeading
-            : miningRuleKeyText(draft.expressionKey),
-        caption: '规则以已批准的公式为准。下面是还没批准的草案。',
-        stamp: draft == null ? null : '待批准',
+        // The hero used to announce a draft over a page whose first section
+        // is 「已批准的版本」 with an 已批准 badge inside it, so one screen
+        // said both that the rule was pending and that it was approved. The
+        // sentence now follows whether a version has been approved, and the
+        // big line shows the rule in force when there is one.
+        heading: switch ((approved, draft)) {
+          (final MiningFormulaVersion version, _) => miningRuleKeyText(
+            version.expressionKey,
+          ),
+          (null, final MiningFormulaVersion version) => miningRuleKeyText(
+            version.expressionKey,
+          ),
+          (null, null) => launchMissingHeading,
+        },
+        caption: switch ((approved, draft)) {
+          (null, null) => '还没有已批准的公式，也没有待批准的草案。',
+          (null, _) => '还没有已批准的公式。上面这条是等待批准的草案。',
+          (_, null) => '这一版已批准，当前生效；没有待批准的草案。',
+          (_, _) => '这一版已批准，当前生效。下面另有等待批准的草案。',
+        },
+        stamp: switch ((approved, draft)) {
+          (_?, _) => '已批准',
+          (null, _?) => '待批准',
+          (null, null) => null,
+        },
       ),
       block: blocked
           ? _miningCapabilityBlock(
