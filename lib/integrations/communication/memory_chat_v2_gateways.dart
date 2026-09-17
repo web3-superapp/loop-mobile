@@ -105,6 +105,7 @@ final class MemoryVoiceRoomGateway implements VoiceRoomGateway {
     room: VoiceRoomRecord(
       voiceRoomId: _roomId,
       communityId: _communityId,
+      communityName: '开发预览社区',
       callCid: 'audio_room:loop_voice_0123456789abcdef0123456789abcdef',
       state: _ended ? VoiceRoomState.ended : VoiceRoomState.live,
       provisionState: VoiceRoomProvisionState.provisioned,

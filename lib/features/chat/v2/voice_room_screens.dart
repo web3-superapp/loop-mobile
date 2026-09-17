@@ -116,7 +116,9 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         widget.expanded ? 'voiceroom-full-screen' : 'voiceroom-screen',
       ),
       archetype: LoopPageArchetype.listing,
-      title: '语音房',
+      // The room resource names its own community (decision 0052), so the
+      // title says which room this is instead of the word for all of them.
+      title: snapshot == null ? '语音房' : '${snapshot.room.communityName} 语音房',
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
       actions: <Widget>[
@@ -756,8 +758,8 @@ class VoiceRoomMinimizedBanner extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       count == null
-                          ? '正在语音房 · ${session.role.label}'
-                          : '正在语音房 · ${session.role.label} · $count 人在线',
+                          ? '正在语音房 · ${session.communityName}'
+                          : '正在语音房 · ${session.communityName} · $count 人在线',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: LoopTypography.withWeight(

@@ -161,9 +161,13 @@ abstract final class LoopV2CommunicationCodec {
   }
 
   static VoiceRoomRecord room(Object? raw) {
+    // Decision 0052 adds `communityName` to the frozen key set: the banner and
+    // the room title name the community from the room resource itself, so a
+    // response without it is not the room this client reads.
     final map = LoopV2Contract.strictMap(raw, const <String>{
       'voiceRoomId',
       'communityId',
+      'communityName',
       'callCid',
       'state',
       'provisionState',
@@ -189,6 +193,7 @@ abstract final class LoopV2CommunicationCodec {
         'communityId',
         pattern: LoopV2Contract.uuidPattern,
       ),
+      communityName: LoopV2ProjectionCodec.requireText(map, 'communityName'),
       callCid: LoopV2Contract.requiredString(
         map,
         'callCid',

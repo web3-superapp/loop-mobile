@@ -19,8 +19,11 @@ const testVoiceRoomId = '5cc85f64-5717-4562-b3fc-2c963f66afc8';
 const testResolvedGroupId = '4bb85f64-5717-4562-b3fc-2c963f66afb7';
 const testOperationId = '6f5e4d3c-2b1a-4098-8765-4321fedcba98';
 
+const testVoiceRoomCommunityName = 'Builders Guild';
+
 VoiceRoomSnapshot testVoiceRoomSnapshot({
   VoiceRoomRole? role = VoiceRoomRole.listener,
+  String communityName = testVoiceRoomCommunityName,
   bool host = false,
   bool observedAvailable = true,
   bool provisioned = true,
@@ -33,6 +36,7 @@ VoiceRoomSnapshot testVoiceRoomSnapshot({
   room: VoiceRoomRecord(
     voiceRoomId: testVoiceRoomId,
     communityId: testCommunityId,
+    communityName: communityName,
     callCid: 'audio_room:loop_voice_$testChannelHex',
     state: state,
     provisionState: provisioned

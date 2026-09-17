@@ -697,6 +697,22 @@ void main() {
       );
     });
 
+    testWidgets('the room names its own community in the title', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
+        voiceRoom: FakeVoiceRoomGateway(
+          snapshot: testVoiceRoomSnapshot(communityName: 'Builders Guild'),
+        ),
+      );
+
+      // Decision 0052: the room resource carries the community name, so the
+      // page says which room this is without a second read.
+      expect(find.text('Builders Guild 语音房'), findsOneWidget);
+    });
+
     testWidgets('a listener sees no host control', (tester) async {
       await pumpCommunityPage(
         tester,
@@ -1300,9 +1316,12 @@ void main() {
       await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
       await tester.pumpAndSettle();
       expect(banner, findsOneWidget);
-      expect(find.textContaining('正在语音房'), findsOneWidget);
-      // Presence, not authorization: the strip states the live count only.
-      expect(find.textContaining('12 人在线'), findsOneWidget);
+      // Decision 0052: the strip names the community it belongs to, from the
+      // room resource, so a reader with one banner knows which room it is.
+      expect(
+        find.text('正在语音房 · $testVoiceRoomCommunityName · 12 人在线'),
+        findsOneWidget,
+      );
 
       await tester.tap(banner);
       await tester.pumpAndSettle();

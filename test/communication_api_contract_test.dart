@@ -58,6 +58,7 @@ Map<String, Object?> _roomBody({
   'room': <String, Object?>{
     'voiceRoomId': _roomId,
     'communityId': _communityId,
+    'communityName': 'Builders Guild',
     'callCid': 'audio_room:loop_voice_$_hex',
     'state': state,
     'provisionState': 'provisioned',
@@ -474,6 +475,41 @@ void main() {
         );
       },
     );
+
+    test('the room carries the community name for the banner', () async {
+      final (api, _) = _api(_roomBody());
+
+      final snapshot = await api.getVoiceRoom(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+        voiceRoomId: _roomId,
+      );
+
+      expect(snapshot.room.communityName, 'Builders Guild');
+    });
+
+    test('a room without a community name is an invalid payload', () async {
+      final body = _roomBody();
+      (body['room']! as Map<String, Object?>).remove('communityName');
+      final (api, _) = _api(body);
+
+      // Decision 0052 froze the key set: a room that does not name its
+      // community is not the resource this client reads.
+      await expectLater(
+        api.getVoiceRoom(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          voiceRoomId: _roomId,
+        ),
+        throwsA(
+          isA<LoopBackendFailure>().having(
+            (failure) => failure.kind,
+            'kind',
+            LoopBackendFailureKind.invalidPayload,
+          ),
+        ),
+      );
+    });
 
     test('a snapshot for another room is an invalid payload', () async {
       final (api, _) = _api(_roomBody());

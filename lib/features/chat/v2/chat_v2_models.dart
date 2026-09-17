@@ -190,6 +190,7 @@ final class VoiceRoomRecord {
   const VoiceRoomRecord({
     required this.voiceRoomId,
     required this.communityId,
+    required this.communityName,
     required this.callCid,
     required this.state,
     required this.provisionState,
@@ -200,6 +201,12 @@ final class VoiceRoomRecord {
 
   final String voiceRoomId;
   final String communityId;
+
+  /// The community's own name, read from the community row on every response
+  /// (decision 0052). It is a display value: the banner and the room title say
+  /// which community this is without a second read, and nothing is ever keyed
+  /// by it — [communityId] stays the relation.
+  final String communityName;
 
   /// `audio_room:loop_voice_<32 hex>`. The call type is fixed by the client
   /// contract; only the room ID part is ever handed to the Stream SDK.

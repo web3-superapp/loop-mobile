@@ -396,12 +396,18 @@ final class VoiceRoomPageState {
 final class VoiceRoomSession {
   const VoiceRoomSession({
     required this.communityId,
+    required this.communityName,
     required this.voiceRoomId,
     required this.role,
     required this.participantCount,
   });
 
   final String communityId;
+
+  /// Which community's room this is, in words. It comes from the room
+  /// resource (decision 0052), so the banner names the room without a second
+  /// read and without the shell holding a community cache.
+  final String communityName;
   final String voiceRoomId;
   final VoiceRoomRole role;
 
@@ -414,13 +420,19 @@ final class VoiceRoomSession {
   bool operator ==(Object other) =>
       other is VoiceRoomSession &&
       other.communityId == communityId &&
+      other.communityName == communityName &&
       other.voiceRoomId == voiceRoomId &&
       other.role == role &&
       other.participantCount == participantCount;
 
   @override
-  int get hashCode =>
-      Object.hash(communityId, voiceRoomId, role, participantCount);
+  int get hashCode => Object.hash(
+    communityId,
+    communityName,
+    voiceRoomId,
+    role,
+    participantCount,
+  );
 }
 
 final class VoiceRoomSessionController extends Notifier<VoiceRoomSession?> {
@@ -619,6 +631,7 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
     session.enter(
       VoiceRoomSession(
         communityId: communityId,
+        communityName: snapshot.room.communityName,
         voiceRoomId: snapshot.room.voiceRoomId,
         role: role,
         participantCount: snapshot.participants.observed.participantCount,
