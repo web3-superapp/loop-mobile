@@ -104,13 +104,11 @@ class _CommunityProfileScreenState
             ? '社区资料暂时读不到，这里不显示数字。'
             : '${community.memberCount} 名成员 · 创建于 '
                   '${communityObservedAtLabel(community.createdAt)}',
-        stamp: community == null
-            ? null
-            : switch (community.verificationStatus) {
-                CommunityVerification.verified => 'VERIFIED',
-                CommunityVerification.pending => 'PENDING',
-                CommunityVerification.rejected => 'REJECTED',
-              },
+        // The folio stamp carries a reading, not a status name (S22b). It
+        // held 「VERIFIED」 while the identity card one screen-inch below held
+        // 「已验证」 — the same fact, twice, in two languages. The card keeps
+        // it, in words, for all three states.
+        stamp: null,
       ),
       block: id != null && communityCapabilityBlocks(mode, capability)
           ? CommunityCapabilityPageBlock(
@@ -347,14 +345,16 @@ class _CommunityIdentityCard extends StatelessWidget {
                         style: LoopTypography.title(17),
                       ),
                     ),
-                    if (community.isVerified) ...<Widget>[
-                      const SizedBox(width: 8),
-                      const LoopBadge(
-                        '已验证',
-                        key: ValueKey<String>('community-verified-stamp'),
-                        kind: LoopBadgeKind.up,
-                      ),
-                    ],
+                    const SizedBox(width: 8),
+                    LoopBadge(
+                      communityVerificationLabel(community.verificationStatus),
+                      key: const ValueKey<String>('community-verified-stamp'),
+                      kind: switch (community.verificationStatus) {
+                        CommunityVerification.verified => LoopBadgeKind.up,
+                        CommunityVerification.pending => LoopBadgeKind.mute,
+                        CommunityVerification.rejected => LoopBadgeKind.down,
+                      },
+                    ),
                   ],
                 ),
                 // The slug was printed under the name as a bare

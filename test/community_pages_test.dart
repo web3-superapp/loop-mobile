@@ -494,6 +494,42 @@ void main() {
   });
 
   group('community-profile', () {
+    testWidgets('the verification state is stated once, in words', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityProfileScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(detail: testDetail()),
+      );
+
+      // The folio stamp carried 「VERIFIED」 while the identity card under it
+      // carried 「已验证」: one fact, twice, in two languages.
+      expect(find.text('VERIFIED'), findsNothing);
+      expect(find.text('已验证'), findsOneWidget);
+    });
+
+    testWidgets('a community under review says so where verified would be', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityProfileScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          detail: testDetail(
+            community: testCommunity(
+              verification: CommunityVerification.pending,
+            ),
+          ),
+        ),
+      );
+
+      // Dropping the stamp must not drop the two states it was the only
+      // carrier of.
+      expect(find.text('PENDING'), findsNothing);
+      expect(find.text('审核中'), findsOneWidget);
+    });
+
     testWidgets('an observed online count prints the number and the time', (
       tester,
     ) async {
