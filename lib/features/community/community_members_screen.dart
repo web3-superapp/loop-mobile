@@ -131,6 +131,14 @@ class _CommunityMembersScreenState
     // left to scroll them back into view. Typing therefore folds away
     // everything that is not the field, the chips and the matches; dismissing
     // the keyboard brings all of it back unchanged.
+    //
+    // The fold is a collapse, never a `folio: null`. Dropping the folio
+    // changes which layout `LoopStreamPage` builds, and the field — which is
+    // below it — is then rebuilt at a new place in the element tree on the
+    // very frame the keyboard opens. It lost focus there, the keyboard closed,
+    // the page unfolded, and the field came back empty and unfocused: on the
+    // device the keyboard never stayed up and not one character could be typed
+    // (R3-3).
     final typing = _searchOpen && MediaQuery.viewInsetsOf(context).bottom > 0;
     return LoopStreamPage(
       key: const ValueKey<String>('community-members-screen'),
@@ -146,27 +154,24 @@ class _CommunityMembersScreenState
           onPressed: () => _toggleSearch(controller),
         ),
       ],
-      folio: typing
-          ? null
-          : LoopFolioPrimary(
-              variant: LoopFolioVariant.chalk,
-              archetype: LoopFolioArchetype.listing,
-              kicker: 'MEMBER DIRECTORY',
-              heading: searching
-                  ? '搜索成员'
-                  : _directoryHeading(state.filter, counts),
-              caption: searching
-                  ? '这里只显示匹配到的成员。'
-                  : _directoryCaption(state.filter, state.items.length),
-              // The figure repeats the heading's own count, so it is only
-              // stamped over the directory that heading counts.
-              stamp:
-                  searching ||
-                      counts == null ||
-                      state.filter != CommunityMemberFilter.all
-                  ? null
-                  : '${counts.all}',
-            ),
+      folioCollapsed: typing,
+      folio: LoopFolioPrimary(
+        variant: LoopFolioVariant.chalk,
+        archetype: LoopFolioArchetype.listing,
+        kicker: 'MEMBER DIRECTORY',
+        heading: searching ? '搜索成员' : _directoryHeading(state.filter, counts),
+        caption: searching
+            ? '这里只显示匹配到的成员。'
+            : _directoryCaption(state.filter, state.items.length),
+        // The figure repeats the heading's own count, so it is only
+        // stamped over the directory that heading counts.
+        stamp:
+            searching ||
+                counts == null ||
+                state.filter != CommunityMemberFilter.all
+            ? null
+            : '${counts.all}',
+      ),
       filters: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[

@@ -1845,6 +1845,55 @@ void main() {
       expect(find.text('搜索成员'), findsNothing);
     });
 
+    // R3-3: on the device the field never took a character. Tapping it opened
+    // the keyboard, the page folded its hero away, and the fold rebuilt the
+    // field somewhere else in the element tree, which dropped its focus and
+    // closed the keyboard again. The fold must not move the field.
+    testWidgets('the field keeps focus and identity when the keyboard opens', (
+      tester,
+    ) async {
+      const viewport = Size(390, 823);
+      final gateway = FakeCommunityGateway(members: testDirectory());
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: gateway,
+        size: viewport,
+      );
+      await tester.tap(searchToggle());
+      await tester.pumpAndSettle();
+
+      final before = tester.element(searchField());
+      final node = tester.widget<TextField>(searchField()).focusNode!;
+      expect(node.hasFocus, isTrue);
+      expect(find.text('MEMBER DIRECTORY'), findsOneWidget);
+
+      // The soft keyboard arrives one frame after the field takes focus.
+      tester.view.viewInsets = const FakeViewPadding(bottom: 289);
+      addTearDown(tester.view.resetViewInsets);
+      await tester.pumpAndSettle();
+
+      // The hero is folded away — and the field is the same element, still
+      // focused, so the keyboard stays up and what is typed arrives.
+      expect(find.text('MEMBER DIRECTORY'), findsNothing);
+      expect(tester.element(searchField()), same(before));
+      expect(node.hasFocus, isTrue);
+
+      await tester.enterText(searchField(), 'voy');
+      await settleSearch(tester);
+      expect(gateway.commands, contains('members:all:voy:null'));
+      expect(tester.element(searchField()), same(before));
+      expect(node.hasFocus, isTrue);
+
+      // Dismissing the keyboard brings the hero back, and still does not move
+      // the field.
+      tester.view.resetViewInsets();
+      await tester.pumpAndSettle();
+      expect(find.text('MEMBER DIRECTORY'), findsOneWidget);
+      expect(tester.element(searchField()), same(before));
+      expect(node.hasFocus, isTrue);
+    });
+
     testWidgets('the keyboard never buries the matches: they stay scrollable', (
       tester,
     ) async {

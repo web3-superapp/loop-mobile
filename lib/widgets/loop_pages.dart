@@ -399,6 +399,7 @@ class LoopStreamPage extends StatelessWidget {
     this.onBack,
     this.actions = const <Widget>[],
     this.folio,
+    this.folioCollapsed = false,
     this.filters,
     this.composer,
     this.tabPage = false,
@@ -416,6 +417,18 @@ class LoopStreamPage extends StatelessWidget {
   /// The one `[data-page-primary]` region. It scrolls with [collection]:
   /// see [_StreamBody].
   final LoopFolioPrimary? folio;
+
+  /// Hides the folio while keeping the page's shape.
+  ///
+  /// A page that folds its heading away — the member directory does it while
+  /// the soft keyboard is up — must not do it by dropping [folio] to `null`:
+  /// that switches [_StreamBody] between its two layouts, and everything
+  /// below, including a focused `TextField`, is rebuilt at a new place in the
+  /// element tree. The field then loses focus on the very frame the keyboard
+  /// opens, which closes the keyboard, which unfolds the page, which gives the
+  /// field back — a loop in which no character can be typed (R3-3). Collapsing
+  /// reclaims the same space and leaves every element below it where it was.
+  final bool folioCollapsed;
 
   /// A [LoopSegBar] or equivalent, pinned above the collection: it stays put
   /// while the folio and the rows scroll under it.
@@ -476,6 +489,7 @@ class LoopStreamPage extends StatelessWidget {
                 Expanded(
                   child: _StreamBody(
                     folio: folio,
+                    folioCollapsed: folioCollapsed,
                     filters: filters,
                     onRefresh: onRefresh,
                     bottom: bottom,
@@ -510,6 +524,7 @@ class LoopStreamPage extends StatelessWidget {
 class _StreamBody extends StatelessWidget {
   const _StreamBody({
     required this.folio,
+    required this.folioCollapsed,
     required this.filters,
     required this.collection,
     required this.onRefresh,
@@ -517,6 +532,10 @@ class _StreamBody extends StatelessWidget {
   });
 
   final LoopFolioPrimary? folio;
+
+  /// The folio is hidden, but the page keeps the shape it has with one: the
+  /// coordinated scroll view stays mounted, so nothing under it is rebuilt.
+  final bool folioCollapsed;
   final Widget? filters;
   final Widget collection;
   final Future<void> Function()? onRefresh;
@@ -573,7 +592,7 @@ class _StreamBody extends StatelessWidget {
           SliverToBoxAdapter(
             child: KeyedSubtree(
               key: const ValueKey<String>('loop-page-primary'),
-              child: folio!,
+              child: folioCollapsed ? const SizedBox.shrink() : folio!,
             ),
           ),
         ],
