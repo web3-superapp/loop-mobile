@@ -84,6 +84,19 @@ abstract final class StreamMicrophoneControlPolicy {
   }
 }
 
+/// Presentation-only mapping for the people inside the call.
+abstract final class StreamCallParticipantPresentation {
+  /// The live count this device reads from Stream, named for that.
+  ///
+  /// The LOOP room facts above this view carry a second count the server
+  /// observed at a past moment. Both were called 「在线」, so 「当前在线 0」
+  /// and 「1 人在通话」 stood on one screen contradicting each other. They are
+  /// not the same reading and neither is wrong: one is what the server saw
+  /// when it last looked, the other is what this device is connected to now.
+  /// Each says which.
+  static String countLabel(int count) => '本机通话中 $count 人';
+}
+
 /// Foreground Audio Room UI driven directly by Stream's official [CallState].
 ///
 /// Only microphone/leave command progress and sanitized command errors are
@@ -223,7 +236,7 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
         ],
         const SizedBox(height: 8),
         Text(
-          '${data.participantCount} 人在通话',
+          StreamCallParticipantPresentation.countLabel(data.participantCount),
           textAlign: widget.inline ? TextAlign.start : TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium,
         ),

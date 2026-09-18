@@ -413,15 +413,23 @@ class _RoomFacts extends StatelessWidget {
             // has joined. Each keeps its own sentence.
             LoopRecordRow(
               key: const ValueKey<String>('voiceroom-live'),
-              title: '当前在线',
+              // Two different numbers were both called 「在线」 on one screen:
+              // this one, which the server observed at a past moment, and the
+              // call view's own live 「N 人在通话」, which this device reads
+              // from Stream right now. They disagree whenever the server's
+              // observation is older than the connection — 「当前在线 0」 sat
+              // directly above 「1 人在通话」. Each keeps the name of where it
+              // came from instead of the word they were sharing.
+              title: '服务端观测在线',
               subtitle: !observed.isAvailable
                   ? communicationUnavailableReason(
                       observed.unavailable!.reasonCode,
                     )
                   : observed.participantCount == null
                   ? '当前服务端没有给出这一项。'
-                  : '此刻连接在这次通话里的人数，'
+                  : '服务端在这个时刻观察到的通话连接人数，'
                         '观察于 ${communityObservedAtLabel(observed.observedAt!)}',
+              subtitleMaxLines: 2,
               trailing: observed.participantCount == null
                   ? communityMissingFigure
                   : '${observed.participantCount}',
@@ -1061,9 +1069,13 @@ class VoiceRoomMinimizedBanner extends ConsumerWidget {
                 children: <Widget>[
                   Expanded(
                     child: Text(
+                      // The same server observation the room page shows, so
+                      // it carries the same name: it is not what this device
+                      // is connected to right now.
                       count == null
                           ? '正在语音房 · ${session.communityName}'
-                          : '正在语音房 · ${session.communityName} · $count 人在线',
+                          : '正在语音房 · ${session.communityName} · '
+                                '服务端观测 $count 人',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: LoopTypography.withWeight(

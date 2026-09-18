@@ -33,6 +33,16 @@ void main() {
     expect(StreamCallStatusPresentation.tone(status), LoopTone.danger);
   });
 
+  test('the device count names the device it was read on', () {
+    // The server-observed room count on the same screen keeps its own name;
+    // neither of them is 「在线」 on its own any more.
+    expect(StreamCallParticipantPresentation.countLabel(1), '本机通话中 1 人');
+    expect(
+      StreamCallParticipantPresentation.countLabel(0),
+      isNot(contains('在线')),
+    );
+  });
+
   test('an enabled microphone can always be muted while reconnecting', () {
     expect(
       StreamMicrophoneControlPolicy.canRequest(
