@@ -409,14 +409,11 @@ abstract final class LoopV2CommunicationCodec {
     );
   }
 
-  static VoiceRoomMemberPage members(Map<String, Object?> root) {
-    LoopV2ProjectionCodec.requireContractVersion(root);
-    final rawRole = root['role'];
-    if (rawRole is! String) _invalid();
-    final view = VoiceRoomRosterView.tryParse(rawRole);
-    if (view == null) _invalid();
-
-    final display = LoopV2Contract.strictMap(root['display'], const <String>{
+  /// The two server-owned display keys a roster page and the hand-raise queue
+  /// are both published under (decision 0053). They are the same rule, so a
+  /// response that states a different one is not this contract.
+  static void requireDisplayRule(Object? raw) {
+    final display = LoopV2Contract.strictMap(raw, const <String>{
       'anonymousMemberKey',
       'ruleKey',
     });
@@ -424,6 +421,34 @@ abstract final class LoopV2CommunicationCodec {
         display['ruleKey'] != memberDisplayRuleKey) {
       _invalid();
     }
+  }
+
+  /// One row's command list, in the server's order.
+  ///
+  /// An unknown command is not ignored: a row whose command list this client
+  /// cannot render exactly is not a row it may act on.
+  static List<VoiceRoomMemberCommand> rowCommands(Object? raw) {
+    final commands = <VoiceRoomMemberCommand>[];
+    for (final rawCommand in LoopV2ProjectionCodec.requireList(
+      raw,
+      maximum: 3,
+    )) {
+      if (rawCommand is! String) _invalid();
+      final command = VoiceRoomMemberCommand.tryParse(rawCommand);
+      if (command == null || commands.contains(command)) _invalid();
+      commands.add(command);
+    }
+    return List<VoiceRoomMemberCommand>.unmodifiable(commands);
+  }
+
+  static VoiceRoomMemberPage members(Map<String, Object?> root) {
+    LoopV2ProjectionCodec.requireContractVersion(root);
+    final rawRole = root['role'];
+    if (rawRole is! String) _invalid();
+    final view = VoiceRoomRosterView.tryParse(rawRole);
+    if (view == null) _invalid();
+
+    requireDisplayRule(root['display']);
 
     final items = <VoiceRoomMember>[];
     final seen = <String>{};
@@ -446,18 +471,7 @@ abstract final class LoopV2CommunicationCodec {
       // The cursor is bound to one view, so a row of the other role in this
       // page is not the list that was asked for.
       if (VoiceRoomRosterView.tryParse(rawRowRole) != view) _invalid();
-      final commands = <VoiceRoomMemberCommand>[];
-      for (final rawCommand in LoopV2ProjectionCodec.requireList(
-        item['commands'],
-        maximum: 3,
-      )) {
-        if (rawCommand is! String) _invalid();
-        final command = VoiceRoomMemberCommand.tryParse(rawCommand);
-        // An unknown command is not ignored: a row whose command list this
-        // client cannot render exactly is not a row it may act on.
-        if (command == null || commands.contains(command)) _invalid();
-        commands.add(command);
-      }
+      final commands = rowCommands(item['commands']);
       final publicProfileId = LoopV2ProjectionCodec.optionalPattern(
         item,
         'publicProfileId',
@@ -475,7 +489,7 @@ abstract final class LoopV2CommunicationCodec {
           handRaised: LoopV2ProjectionCodec.requireBool(item, 'handRaised'),
           muted: LoopV2ProjectionCodec.requireBool(item, 'muted'),
           isSelf: LoopV2ProjectionCodec.requireBool(item, 'isSelf'),
-          commands: List<VoiceRoomMemberCommand>.unmodifiable(commands),
+          commands: commands,
         ),
       );
     }
@@ -490,8 +504,20 @@ abstract final class LoopV2CommunicationCodec {
     );
   }
 
+  static const handRaisePageKeys = <String>{
+    'items',
+    'display',
+    'contractVersion',
+  };
+
+  /// The queue under the roster's identity projection (decision 0053).
+  ///
+  /// `profile` is gone: a queue row is named, addressed and acted on by
+  /// exactly the rules one roster row is, so an anonymous member in the queue
+  /// is as unaddressable to a plain member as it is in the roster.
   static List<VoiceRoomHandRaiseEntry> handRaises(Map<String, Object?> root) {
     LoopV2ProjectionCodec.requireContractVersion(root);
+    requireDisplayRule(root['display']);
     final entries = <VoiceRoomHandRaiseEntry>[];
     final seen = <String>{};
     for (final raw in LoopV2ProjectionCodec.requireList(
@@ -503,11 +529,25 @@ abstract final class LoopV2CommunicationCodec {
         'sequence',
         'state',
         'createdAt',
-        'profile',
+        'publicProfileId',
+        'display',
+        'isSelf',
+        'commands',
       });
+      final commands = rowCommands(item['commands']);
+      final publicProfileId = LoopV2ProjectionCodec.optionalPattern(
+        item,
+        'publicProfileId',
+        LoopV2Contract.uuidPattern,
+      );
+      // A command with no target could only be run against a guess.
+      if (publicProfileId == null && commands.isNotEmpty) _invalid();
       final entry = VoiceRoomHandRaiseEntry(
         handRaise: handRaise(item),
-        profile: LoopV2ProjectionCodec.profile(item['profile']),
+        publicProfileId: publicProfileId,
+        name: memberName(item['display']),
+        isSelf: LoopV2ProjectionCodec.requireBool(item, 'isSelf'),
+        commands: commands,
       );
       if (!seen.add(entry.handRaise.handRaiseId)) _invalid();
       entries.add(entry);

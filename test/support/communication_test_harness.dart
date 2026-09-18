@@ -76,16 +76,34 @@ VoiceRoomSnapshot testVoiceRoomSnapshot({
   ),
 );
 
-VoiceRoomHandRaiseEntry testHandRaiseEntry({String sequence = '1'}) =>
-    VoiceRoomHandRaiseEntry(
-      handRaise: VoiceRoomHandRaise(
-        handRaiseId: testRequestId,
-        sequence: sequence,
-        state: VoiceRoomHandRaiseState.pending,
-        createdAt: DateTime.utc(2026, 9, 8, 12, 20),
-      ),
-      profile: testProfile(publicProfileId: testMemberId),
-    );
+/// One queue row, under the roster's identity projection (decision 0053).
+VoiceRoomHandRaiseEntry testHandRaiseEntry({
+  String sequence = '1',
+  String handRaiseId = testRequestId,
+  String? publicProfileId = testMemberId,
+  String? alias = 'Voyager_344',
+  bool isSelf = false,
+  List<VoiceRoomMemberCommand> commands = const <VoiceRoomMemberCommand>[
+    VoiceRoomMemberCommand.inviteSpeaker,
+  ],
+}) => VoiceRoomHandRaiseEntry(
+  handRaise: VoiceRoomHandRaise(
+    handRaiseId: handRaiseId,
+    sequence: sequence,
+    state: VoiceRoomHandRaiseState.pending,
+    createdAt: DateTime.utc(2026, 9, 8, 12, 20),
+  ),
+  publicProfileId: publicProfileId,
+  name: alias == null
+      ? const VoiceRoomMemberAnonymousName('voiceRoom.member.anonymousMember')
+      : VoiceRoomMemberAlias(
+          alias: alias,
+          publicProfileId: publicProfileId!,
+          audience: VoiceRoomMemberAudience.everyone,
+        ),
+  isSelf: isSelf,
+  commands: commands,
+);
 
 /// One roster row. The three roles the page must tell apart are exactly the
 /// three shapes the server sends: a named row, an anonymous row a host can

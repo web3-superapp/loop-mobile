@@ -16,6 +16,8 @@ const _key = '6f5e4d3c-2b1a-4098-8765-4321fedcba98';
 const _roomId = '5cc85f64-5717-4562-b3fc-2c963f66afc8';
 const _communityId = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
 const _profileId = '9c1f0f2e-5a7b-4c3d-8e9f-0a1b2c3d4e5f';
+const _handRaiseId = '3a4b5c6d-7e8f-4a90-8b1c-2d3e4f5a6b7c';
+const _otherHandRaiseId = '1d2c3b4a-5e6f-4a7b-8c9d-0e1f2a3b4c5d';
 const _hex = '0123456789abcdef0123456789abcdef';
 
 Map<String, Object?> _operationBody({
@@ -127,6 +129,44 @@ Map<String, Object?> _memberRow({
   'isSelf': isSelf,
   'commands': commands,
 };
+
+Map<String, Object?> _handRaiseRow({
+  String handRaiseId = _handRaiseId,
+  String sequence = '1',
+  Object? publicProfileId = _profileId,
+  String? alias = 'DeFiMaxi_349',
+  bool isSelf = false,
+  List<String> commands = const <String>[],
+}) => <String, Object?>{
+  'handRaiseId': handRaiseId,
+  'sequence': sequence,
+  'state': 'pending',
+  'createdAt': '2026-09-08T12:20:00.000Z',
+  'publicProfileId': publicProfileId,
+  'display': alias == null
+      ? <String, Object?>{
+          'kind': 'anonymous',
+          'labelKey': 'voiceRoom.member.anonymousMember',
+        }
+      : <String, Object?>{
+          'kind': 'alias',
+          'alias': alias,
+          'publicProfileId': publicProfileId,
+          'audience': 'everyone',
+        },
+  'isSelf': isSelf,
+  'commands': commands,
+};
+
+Map<String, Object?> _handRaisesBody({List<Object?>? items}) =>
+    <String, Object?>{
+      'items': items ?? <Object?>[_handRaiseRow()],
+      'display': <String, Object?>{
+        'anonymousMemberKey': 'voiceRoom.member.anonymousMember',
+        'ruleKey': 'voiceRoom.member.display.anonymousModeOnly',
+      },
+      'contractVersion': '2.0',
+    };
 
 Map<String, Object?> _membersBody({
   String role = 'listener',
@@ -937,22 +977,96 @@ void main() {
     });
 
     test('the hand-raise queue rejects a duplicated entry', () async {
-      final entry = <String, Object?>{
-        'handRaiseId': _profileId,
-        'sequence': '1',
-        'state': 'pending',
-        'createdAt': '2026-09-08T12:20:00.000Z',
-        'profile': <String, Object?>{
-          'publicProfileId': _profileId,
-          'loopId': 'LOOP-7HJKMNPQ',
-          'alias': 'demo_owner',
-          'avatarRef': null,
-        },
-      };
+      final entry = _handRaiseRow();
+      final (api, _) = _api(_handRaisesBody(items: <Object?>[entry, entry]));
+
+      await expectLater(
+        api.listHandRaises(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          voiceRoomId: _roomId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('the queue is read under the roster identity projection', () async {
+      final (api, captured) = _api(
+        _handRaisesBody(
+          items: <Object?>[
+            _handRaiseRow(commands: <String>['invite_speaker']),
+            _handRaiseRow(
+              handRaiseId: _otherHandRaiseId,
+              sequence: '2',
+              publicProfileId: null,
+              alias: null,
+            ),
+          ],
+        ),
+      );
+
+      final entries = await api.listHandRaises(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+        voiceRoomId: _roomId,
+      );
+
+      expect(captured.single.uri.path, '/v2/voice-rooms/$_roomId/hand-raises');
+      expect(entries.first.publicProfileId, _profileId);
+      expect(entries.first.name, isA<VoiceRoomMemberAlias>());
+      expect(entries.first.commands, <VoiceRoomMemberCommand>[
+        VoiceRoomMemberCommand.inviteSpeaker,
+      ]);
+      // An anonymous member in the queue is as unaddressable as one in the
+      // roster, and it carries no command at all.
+      expect(entries.last.publicProfileId, isNull);
+      expect(entries.last.name, isA<VoiceRoomMemberAnonymousName>());
+      expect(entries.last.commands, isEmpty);
+    });
+
+    test('the queue entry the 0032 contract published is refused', () async {
       final (api, _) = _api(<String, Object?>{
-        'items': <Object?>[entry, entry],
+        'items': <Object?>[
+          <String, Object?>{
+            'handRaiseId': _handRaiseId,
+            'sequence': '1',
+            'state': 'pending',
+            'createdAt': '2026-09-08T12:20:00.000Z',
+            'profile': <String, Object?>{
+              'publicProfileId': _profileId,
+              'loopId': 'LOOP-7HJKMNPQ',
+              'alias': 'demo_owner',
+              'avatarRef': null,
+            },
+          },
+        ],
         'contractVersion': '2.0',
       });
+
+      // Reading the old shape would publish a full identity the display rule
+      // no longer allows, and it carries no display rule to read it under.
+      await expectLater(
+        api.listHandRaises(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          voiceRoomId: _roomId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a queue command with no target is an invalid payload', () async {
+      final (api, _) = _api(
+        _handRaisesBody(
+          items: <Object?>[
+            _handRaiseRow(
+              publicProfileId: null,
+              alias: null,
+              commands: <String>['invite_speaker'],
+            ),
+          ],
+        ),
+      );
 
       await expectLater(
         api.listHandRaises(

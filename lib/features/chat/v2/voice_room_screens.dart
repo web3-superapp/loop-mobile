@@ -599,13 +599,17 @@ class _MediaSection extends StatelessWidget {
 /// A member with anonymous mode on is the server's anonymous label to every
 /// other reader, and its own alias to itself; this client never assembles a
 /// name from an identifier.
-String voiceRoomMemberName(VoiceRoomMember member) => switch (member.name) {
-  VoiceRoomMemberAlias(alias: final alias) =>
-    member.isSelf ? '我 · $alias' : alias,
-  VoiceRoomMemberAnonymousName(labelKey: final key) => voiceRoomDisplayKeyText(
-    key,
-  ),
-};
+String voiceRoomMemberName(VoiceRoomMember member) =>
+    voiceRoomDisplayName(member.name, isSelf: member.isSelf);
+
+/// The same projection for a hand-raise row (decision 0053): the queue names a
+/// member exactly the way the roster does.
+String voiceRoomDisplayName(VoiceRoomMemberName name, {required bool isSelf}) =>
+    switch (name) {
+      VoiceRoomMemberAlias(alias: final alias) => isSelf ? '我 · $alias' : alias,
+      VoiceRoomMemberAnonymousName(labelKey: final key) =>
+        voiceRoomDisplayKeyText(key),
+    };
 
 /// One roster view: 发言人 or 听众.
 ///
@@ -866,7 +870,10 @@ class _HandRaiseQueue extends StatelessWidget {
             key: ValueKey<String>(
               'voiceroom-queue-${entries[index].handRaise.handRaiseId}',
             ),
-            title: entries[index].profile.displayName,
+            title: voiceRoomDisplayName(
+              entries[index].name,
+              isSelf: entries[index].isSelf,
+            ),
             subtitle: '第 ${entries[index].handRaise.sequence} 位',
             trailingBadge: LoopBadge(
               entries[index].handRaise.isPending ? '等待邀请' : '已邀请',
@@ -902,9 +909,13 @@ class _HostControls extends StatelessWidget {
   Widget build(BuildContext context) {
     final snapshot = state.snapshot!;
     final busy = state.busy || !snapshot.room.isLive;
+    // The invite list is the server's own: a queue row is offered here only
+    // when it carries `invite_speaker`, never because the viewer is the host.
     final pending = <VoiceRoomHandRaiseEntry>[
       for (final entry in state.handRaises)
-        if (entry.handRaise.isPending && entry.profile.publicProfileId != null)
+        if (entry.handRaise.isPending &&
+            entry.publicProfileId != null &&
+            entry.commands.contains(VoiceRoomMemberCommand.inviteSpeaker))
           entry,
     ];
     return Column(
@@ -923,10 +934,12 @@ class _HostControls extends StatelessWidget {
               for (var index = 0; index < pending.length; index += 1)
                 LoopRecordRow(
                   key: ValueKey<String>(
-                    'voiceroom-invite-'
-                    '${pending[index].profile.publicProfileId}',
+                    'voiceroom-invite-${pending[index].publicProfileId}',
                   ),
-                  title: pending[index].profile.displayName,
+                  title: voiceRoomDisplayName(
+                    pending[index].name,
+                    isSelf: pending[index].isSelf,
+                  ),
                   subtitle: '邀请其发言',
                   position: index == 0
                       ? LoopRowPosition.first
@@ -936,7 +949,7 @@ class _HostControls extends StatelessWidget {
                   onTap: busy
                       ? null
                       : () => unawaited(
-                          onInvite(pending[index].profile.publicProfileId!),
+                          onInvite(pending[index].publicProfileId!),
                         ),
                 ),
             ],

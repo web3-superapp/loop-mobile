@@ -252,15 +252,34 @@ final class VoiceRoomHandRaise {
   bool get isPending => state == VoiceRoomHandRaiseState.pending;
 }
 
+/// One row of `GET /v2/voice-rooms/{id}/hand-raises`.
+///
+/// Decision 0053 replaced the full profile this endpoint used to publish with
+/// the roster's identity projection: the queue names a member exactly the way
+/// the roster does, an anonymous member is not addressable by a viewer that is
+/// not the host, and the row's actions come from the server's own list. No
+/// loop id and no avatar reference travel here at all — a reader who wants
+/// those opens the profile page.
 @immutable
 final class VoiceRoomHandRaiseEntry {
   const VoiceRoomHandRaiseEntry({
     required this.handRaise,
-    required this.profile,
+    required this.publicProfileId,
+    required this.name,
+    required this.isSelf,
+    required this.commands,
   });
 
   final VoiceRoomHandRaise handRaise;
-  final LoopPublicProfile profile;
+
+  /// The command target, null when the row is anonymous to this viewer.
+  final String? publicProfileId;
+  final VoiceRoomMemberName name;
+  final bool isSelf;
+
+  /// `invite_speaker` for a host while the room is live, and nothing at all
+  /// for anyone else.
+  final List<VoiceRoomMemberCommand> commands;
 }
 
 /// Which roster view `GET /v2/voice-rooms/{id}/members` answers for.

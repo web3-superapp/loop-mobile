@@ -1003,6 +1003,63 @@ void main() {
       expect(find.byType(Scaffold), findsOneWidget);
     });
 
+    testWidgets('the queue names its rows the way the roster does', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
+        handRaises: <VoiceRoomHandRaiseEntry>[
+          testHandRaiseEntry(alias: 'DeFiMaxi_349'),
+          // An anonymous member a host can still address: the name is the
+          // server's label, the target is not published as a name.
+          testHandRaiseEntry(
+            handRaiseId: testAdminId,
+            sequence: '2',
+            publicProfileId: testAdminId,
+            alias: null,
+          ),
+          // A queue row the server sent no command for is read, not invited.
+          testHandRaiseEntry(
+            handRaiseId: testCommunityId,
+            sequence: '3',
+            publicProfileId: null,
+            alias: null,
+            commands: const <VoiceRoomMemberCommand>[],
+          ),
+        ],
+      );
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
+        voiceRoom: voice,
+      );
+
+      final queue = find.byKey(
+        ValueKey<String>('voiceroom-queue-$testRequestId'),
+      );
+      await scrollToCommunitySection(tester, queue);
+      // Three rows in the queue, two of them anonymous, and the two the
+      // server sent `invite_speaker` for are listed again under the host
+      // controls. No loop id and no avatar reference arrive here at all.
+      expect(find.text('DeFiMaxi_349'), findsNWidgets(2));
+      expect(find.text('匿名成员'), findsNWidgets(3));
+      expect(find.text('第 3 位'), findsOneWidget);
+
+      final invite = find.byKey(
+        ValueKey<String>('voiceroom-invite-$testAdminId'),
+      );
+      await scrollToCommunitySection(tester, invite);
+      expect(invite, findsOneWidget);
+      // The row without `invite_speaker` is not offered as an invitation.
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-invite-null')),
+        findsNothing,
+      );
+      await tester.tap(invite);
+      await tester.pumpAndSettle();
+      expect(voice.commands, contains('invite:$testAdminId'));
+    });
+
     testWidgets('the hand-raise queue is never a speaker to remove', (
       tester,
     ) async {

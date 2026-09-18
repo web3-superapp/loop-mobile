@@ -173,7 +173,16 @@ final class MemoryVoiceRoomGateway implements VoiceRoomGateway {
         state: VoiceRoomHandRaiseState.pending,
         createdAt: DateTime.utc(2026, 9, 8, 12, 20),
       ),
-      profile: _previewListener,
+      // An anonymous member is unaddressable to a Preview reader that is not
+      // the host, exactly as it is in the roster.
+      publicProfileId: asHost ? _previewListener.publicProfileId : null,
+      name: const VoiceRoomMemberAnonymousName(
+        'voiceRoom.member.anonymousMember',
+      ),
+      isSelf: false,
+      commands: asHost
+          ? const <VoiceRoomMemberCommand>[VoiceRoomMemberCommand.inviteSpeaker]
+          : const <VoiceRoomMemberCommand>[],
     ),
     if (_handRaised)
       VoiceRoomHandRaiseEntry(
@@ -183,7 +192,18 @@ final class MemoryVoiceRoomGateway implements VoiceRoomGateway {
           state: VoiceRoomHandRaiseState.pending,
           createdAt: DateTime.utc(2026, 9, 8, 12, 30),
         ),
-        profile: _previewHost,
+        publicProfileId: _previewHost.publicProfileId,
+        name: VoiceRoomMemberAlias(
+          alias: _previewHost.alias!,
+          publicProfileId: _previewHost.publicProfileId!,
+          audience: VoiceRoomMemberAudience.everyone,
+        ),
+        isSelf: false,
+        commands: asHost
+            ? const <VoiceRoomMemberCommand>[
+                VoiceRoomMemberCommand.inviteSpeaker,
+              ]
+            : const <VoiceRoomMemberCommand>[],
       ),
   ];
 

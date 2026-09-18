@@ -354,10 +354,10 @@ final class DioLoopV2CommunicationApi implements LoopV2CommunicationApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      final root = LoopV2Contract.strictMap(response.data, const <String>{
-        'items',
-        'contractVersion',
-      });
+      final root = LoopV2Contract.strictMap(
+        response.data,
+        LoopV2CommunicationCodec.handRaisePageKeys,
+      );
       return LoopV2CommunicationCodec.handRaises(root);
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(error, allowedCodes: readErrors);
