@@ -255,6 +255,13 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
   /// Never completes, so the page keeps its loading state.
   bool pending = false;
 
+  /// Holds the LOOP half of 离开 / 结束房间 in flight.
+  ///
+  /// On the device the provider call goes down in a moment and the LOOP write
+  /// takes seconds; the screen the reader looks at in between is the one this
+  /// gate makes testable.
+  Completer<void>? membershipGate;
+
   /// How `load` answers, when it must differ from the command answer. The
   /// server fills `participants.observed` only on a read, so every command
   /// answers with an unavailable count and the page has to read again.
@@ -369,7 +376,11 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
   Future<VoiceRoomSnapshot> join(String voiceRoomId) => _answer('join');
 
   @override
-  Future<VoiceRoomSnapshot> leave(String voiceRoomId) => _answer('leave');
+  Future<VoiceRoomSnapshot> leave(String voiceRoomId) async {
+    final gate = membershipGate;
+    if (gate != null) await gate.future;
+    return _answer('leave');
+  }
 
   @override
   Future<VoiceRoomSnapshot> raiseHand(String voiceRoomId) =>

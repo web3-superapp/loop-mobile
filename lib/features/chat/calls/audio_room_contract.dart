@@ -72,6 +72,45 @@ final class _UnavailableAudioRoomTargetSource implements AudioRoomTargetSource {
 /// host does not have.
 enum AudioRoomViewerRole { listener, speaker, host }
 
+/// What this device's own call is doing, for the surfaces outside the call
+/// view.
+///
+/// It is the same reading the call panel prints, carried one level up so the
+/// room facts and the shell strip never answer a different moment than the
+/// line right below them. A call that is putting itself back is not an
+/// absence: 「重连中」 used to reach those surfaces as plain 「not connected」,
+/// and the room facts fell back to LOOP's earlier observation — a 0 standing
+/// above a panel that had just said the count is coming back.
+enum AudioRoomLivePhase {
+  /// This device holds no call at all: the lobby, before or after one.
+  idle,
+
+  /// A first connection that has not been established yet.
+  connecting,
+
+  /// This device is in the call and hears it.
+  connected,
+
+  /// The connection dropped and it is being put back without anyone asking.
+  reconnecting,
+
+  /// The call stopped for this device and nothing is retrying it.
+  disconnected,
+}
+
+/// The one sentence about the people in a call this device cannot hear.
+///
+/// It is the line the call panel prints for the same phase, so a screen that
+/// carries both never says two things about one room. A phase that can state
+/// a count of its own gets nothing here.
+String? audioRoomLivePhaseNote(AudioRoomLivePhase phase) => switch (phase) {
+  AudioRoomLivePhase.reconnecting => '语音正在重连，人数以重新连接后为准',
+  AudioRoomLivePhase.disconnected => '语音已断开，人数以重新连接后为准',
+  AudioRoomLivePhase.idle ||
+  AudioRoomLivePhase.connecting ||
+  AudioRoomLivePhase.connected => null,
+};
+
 /// What this device's own provider call reports, while it holds one.
 ///
 /// It is the only live count in the client: the room resource carries what
@@ -82,7 +121,7 @@ enum AudioRoomViewerRole { listener, speaker, host }
 final class AudioRoomLivePresence {
   const AudioRoomLivePresence({
     required this.roomId,
-    required this.connected,
+    required this.phase,
     required this.participantCount,
   });
 
@@ -90,8 +129,12 @@ final class AudioRoomLivePresence {
   /// another room.
   final String roomId;
 
+  /// What this device's call is doing, in the shapes the surfaces outside it
+  /// answer for.
+  final AudioRoomLivePhase phase;
+
   /// Whether this device is in the call right now.
-  final bool connected;
+  bool get connected => phase == AudioRoomLivePhase.connected;
 
   /// How many people the call counts, or null while a connected call has not
   /// counted anyone yet. A connected reading is never 0: the SFU publishes its
@@ -104,11 +147,11 @@ final class AudioRoomLivePresence {
       identical(this, other) ||
       other is AudioRoomLivePresence &&
           other.roomId == roomId &&
-          other.connected == connected &&
+          other.phase == phase &&
           other.participantCount == participantCount;
 
   @override
-  int get hashCode => Object.hash(roomId, connected, participantCount);
+  int get hashCode => Object.hash(roomId, phase, participantCount);
 }
 
 /// Publishes the live call reading to the surfaces outside the call view.

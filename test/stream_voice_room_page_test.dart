@@ -938,12 +938,26 @@ void main() {
     expect(handle.joinCalls, 1);
 
     expect(await link.disconnect(), isTrue);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
 
     // The LOOP leave runs next: a surface that reconnected in that window
     // would put a call back into a room this account is leaving.
     expect(handle.leaveCalls, 1);
     expect(handle.joinCalls, 1);
+    // R7-1: and what the window says is the reader's own decision, not a
+    // dropped connection with a button that undoes it.
+    expect(find.text('正在离开语音房…'), findsOneWidget);
+    expect(find.text('语音已断开'), findsNothing);
+    expect(find.text('重新连接语音'), findsNothing);
+
+    // The page reports the LOOP half back. On a leave that went through this
+    // surface is already gone; what this stands for is the one LOOP refused,
+    // which leaves the account a member of a room it cannot hear.
+    link.exitSettled();
+    await tester.pumpAndSettle();
+    expect(handle.joinCalls, 1);
+    expect(find.text('正在离开语音房…'), findsNothing);
     expect(find.text('语音已断开'), findsOneWidget);
     expect(find.text('重新连接语音'), findsOneWidget);
   });
@@ -1150,7 +1164,10 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
     required Future<void> Function() onLeaveRequested,
     bool inline = false,
     Future<void> Function()? onMicrophoneEnabled,
-    void Function({required bool connected, required int? participantCount})?
+    void Function({
+      required AudioRoomLivePhase phase,
+      required int? participantCount,
+    })?
     onPresence,
     VoidCallback? onDisconnected,
   }) {

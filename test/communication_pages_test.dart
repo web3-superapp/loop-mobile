@@ -1032,6 +1032,42 @@ void main() {
       },
     );
 
+    // R7-2: while the SDK put the connection back, the room facts fell back
+    // to 「LOOP 上次观察在线 0」 — a 0 on the same screen as a panel that had
+    // just said the count comes back with the connection.
+    testWidgets('a reconnecting call states the retry, not an older 0', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(
+          role: VoiceRoomRole.listener,
+          participantCount: 0,
+        ),
+      );
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+        audioRoomCallFactory: _FakeVoiceMediaFactory(log: voice.commands),
+      );
+
+      final report = find.byKey(
+        const ValueKey<String>('fake-presence-reconnecting'),
+      );
+      await scrollToCommunitySection(tester, report);
+      await tester.tap(report);
+      await tester.pumpAndSettle();
+
+      final row = find.byKey(const ValueKey<String>('voiceroom-live'));
+      await scrollToCommunitySection(tester, row);
+      expect(find.text('语音连接'), findsOneWidget);
+      expect(tester.widget<LoopRecordRow>(row).trailing, '重连中');
+      // The one sentence the call panel prints for the same phase.
+      expect(tester.widget<LoopRecordRow>(row).subtitle, '语音正在重连，人数以重新连接后为准');
+      expect(find.text('LOOP 上次观察在线'), findsNothing);
+      expect(find.text('0'), findsNothing);
+    });
+
     testWidgets('an unobserved participant count renders the em dash', (
       tester,
     ) async {
@@ -1601,6 +1637,91 @@ void main() {
         greaterThan(voice.commands.indexOf('media:leave')),
       );
       expect(find.text('已离开语音房'), findsOneWidget);
+    });
+
+    // R7-1: on the review device the five seconds after 离开 showed the
+    // disconnection lobby — 「语音已断开」 above a highlighted 「重新连接语音」 —
+    // which answers the opposite of what the reader had just decided.
+    testWidgets('the wait after 离开 is a departure, not a disconnection', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      )..membershipGate = Completer<void>();
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+      expect(find.text('语音已连接（测试）'), findsOneWidget);
+
+      final leave = find.byKey(const ValueKey<String>('voiceroom-leave'));
+      await scrollToCommunitySection(tester, leave);
+      await tester.tap(leave);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('离开').last);
+      // The sheet closes and the call goes down; LOOP has not answered yet,
+      // so the departing card holds a spinner and cannot settle.
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(media.leaveCalls, 1);
+      expect(voice.commands, isNot(contains('leave')));
+      final departing = find.text('正在离开语音房…');
+      await scrollToCommunitySection(tester, departing);
+      expect(departing, findsOneWidget);
+      expect(find.text('语音已断开'), findsNothing);
+      expect(find.text('重新连接语音'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-media-reconnect')),
+        findsNothing,
+      );
+
+      voice.membershipGate!.complete();
+      await tester.pumpAndSettle();
+      expect(voice.commands, contains('leave'));
+      expect(find.text('已离开语音房'), findsOneWidget);
+      expect(find.text('正在离开语音房…'), findsNothing);
+    });
+
+    // A leave LOOP refused leaves this account a member of a room it can no
+    // longer hear: the departure has to stop being the answer on screen.
+    testWidgets('a refused leave puts the way back in on the screen', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      )..membershipGate = Completer<void>();
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+
+      final leave = find.byKey(const ValueKey<String>('voiceroom-leave'));
+      await scrollToCommunitySection(tester, leave);
+      await tester.tap(leave);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('离开').last);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      voice.failure = CommunityFailureKind.unavailable;
+      voice.membershipGate!.complete();
+      await tester.pumpAndSettle();
+
+      final disconnected = find.text('语音已断开');
+      await scrollToCommunitySection(tester, disconnected);
+      expect(disconnected, findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-media-reconnect')),
+        findsOneWidget,
+      );
+      expect(find.text('正在离开语音房…'), findsNothing);
     });
 
     testWidgets('hanging up inside the call is the same single exit', (
@@ -2315,7 +2436,10 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
     required Future<void> Function() onLeaveRequested,
     bool inline = false,
     Future<void> Function()? onMicrophoneEnabled,
-    void Function({required bool connected, required int? participantCount})?
+    void Function({
+      required AudioRoomLivePhase phase,
+      required int? participantCount,
+    })?
     onPresence,
     VoidCallback? onDisconnected,
   }) {
@@ -2327,16 +2451,31 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
         // taken earlier.
         TextButton(
           key: const ValueKey<String>('fake-presence'),
-          onPressed: () =>
-              onPresence?.call(connected: true, participantCount: 3),
+          onPressed: () => onPresence?.call(
+            phase: AudioRoomLivePhase.connected,
+            participantCount: 3,
+          ),
           child: const Text('报告人数'),
+        ),
+        // Stands in for the SDK putting a dropped connection back on its own:
+        // the call view stays, and the surfaces above it are told the phase,
+        // not just that the device is 「not connected」.
+        TextButton(
+          key: const ValueKey<String>('fake-presence-reconnecting'),
+          onPressed: () => onPresence?.call(
+            phase: AudioRoomLivePhase.reconnecting,
+            participantCount: null,
+          ),
+          child: const Text('报告重连中'),
         ),
         // Stands in for the seconds between the connection and the SFU's
         // first head count: connected, and nobody counted yet.
         TextButton(
           key: const ValueKey<String>('fake-presence-counting'),
-          onPressed: () =>
-              onPresence?.call(connected: true, participantCount: null),
+          onPressed: () => onPresence?.call(
+            phase: AudioRoomLivePhase.connected,
+            participantCount: null,
+          ),
           child: const Text('报告连接但未统计'),
         ),
         TextButton(

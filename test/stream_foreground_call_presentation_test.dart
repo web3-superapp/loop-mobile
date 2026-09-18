@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/stream_foreground_call_view.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
@@ -117,6 +118,43 @@ void main() {
     );
     expect(reconnecting, '语音正在重连，人数以重新连接后为准');
     expect(reconnecting, isNot(matches(RegExp(r'\d'))));
+
+    // R7-2: the room facts above this panel print the same two sentences for
+    // the same two phases. They are one string, read from the contract both
+    // surfaces share, so a screen carrying both can never say two things.
+    expect(
+      audioRoomLivePhaseNote(AudioRoomLivePhase.reconnecting),
+      reconnecting,
+    );
+    expect(
+      audioRoomLivePhaseNote(AudioRoomLivePhase.disconnected),
+      disconnected,
+    );
+    // A phase that can state a count of its own borrows no sentence here.
+    expect(audioRoomLivePhaseNote(AudioRoomLivePhase.connected), isNull);
+    expect(audioRoomLivePhaseNote(AudioRoomLivePhase.connecting), isNull);
+    expect(audioRoomLivePhaseNote(AudioRoomLivePhase.idle), isNull);
+  });
+
+  test('R7-2: the call status reaches the surfaces outside as its phase', () {
+    expect(
+      StreamCallStatusPresentation.livePhase(CallStatus.reconnecting(1)),
+      AudioRoomLivePhase.reconnecting,
+    );
+    expect(
+      StreamCallStatusPresentation.livePhase(CallStatus.connected()),
+      AudioRoomLivePhase.connected,
+    );
+    expect(
+      StreamCallStatusPresentation.livePhase(CallStatus.connecting()),
+      AudioRoomLivePhase.connecting,
+    );
+    expect(
+      StreamCallStatusPresentation.livePhase(
+        CallStatus.disconnected(DisconnectReason.reconnectionFailed()),
+      ),
+      AudioRoomLivePhase.disconnected,
+    );
   });
 
   test('R6-3: the window before the connection counts nobody, not zero', () {

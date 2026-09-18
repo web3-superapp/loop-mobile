@@ -149,7 +149,7 @@ abstract interface class AudioRoomCallHandle {
   /// microphone, and only then. It is the LOOP side's cue, not a media
   /// command: it never decides whether the microphone opens.
   ///
-  /// [onPresence] publishes the call's own connection and head count to the
+  /// [onPresence] publishes the call's own phase and head count to the
   /// surfaces outside this view — the room facts above it and the shell strip
   /// — so one screen never carries two different numbers under one word. A
   /// null count is a connection that has not counted anyone yet; it is never
@@ -164,7 +164,10 @@ abstract interface class AudioRoomCallHandle {
     required Future<void> Function() onLeaveRequested,
     bool inline,
     Future<void> Function()? onMicrophoneEnabled,
-    void Function({required bool connected, required int? participantCount})?
+    void Function({
+      required AudioRoomLivePhase phase,
+      required int? participantCount,
+    })?
     onPresence,
     VoidCallback? onDisconnected,
   });
@@ -424,7 +427,10 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
     required Future<void> Function() onLeaveRequested,
     bool inline = false,
     Future<void> Function()? onMicrophoneEnabled,
-    void Function({required bool connected, required int? participantCount})?
+    void Function({
+      required AudioRoomLivePhase phase,
+      required int? participantCount,
+    })?
     onPresence,
     VoidCallback? onDisconnected,
   }) {

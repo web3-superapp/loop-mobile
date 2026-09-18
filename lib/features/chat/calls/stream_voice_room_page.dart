@@ -202,8 +202,19 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   var _joining = false;
   var _leaving = false;
 
-  /// Set once this account starts leaving, or once a connection failed, so a
-  /// ready room does not silently reconnect behind the reader's decision.
+  /// True from the moment this account asked to leave until that exit has
+  /// settled on both sides.
+  ///
+  /// Leaving is the reader's own decision, and for the seconds between the
+  /// call going down and LOOP recording the exit the lobby is on screen. It
+  /// used to be the disconnection lobby — 「语音已断开」 above a highlighted
+  /// 「重新连接语音」 — which answers the opposite of what the reader had just
+  /// asked for. A departure in progress says so, offers nothing to connect,
+  /// and keeps the ready room from connecting on its own.
+  var _exiting = false;
+
+  /// Set once a connection failed or a call stopped on its own, so a ready
+  /// room does not silently reconnect behind the reader's decision.
   var _autoConnectSuspended = false;
   var _autoConnectScheduled = false;
   var _generation = 0;
@@ -215,7 +226,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   /// one that was refused.
   var _refreshingConnection = false;
   String? _joinError;
-  ({bool connected, int? participantCount})? _reportedPresence;
+  ({AudioRoomLivePhase phase, int? participantCount})? _reportedPresence;
 
   AudioRoomTarget? get _target {
     final value = widget.target;
@@ -226,7 +237,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    widget.link?.attach(_disconnectForExit);
+    widget.link?.attach(_disconnectForExit, exitSettled: _exitSettled);
     final lifecycle = WidgetsBinding.instance.lifecycleState;
     _appIsForeground =
         lifecycle == null ||
@@ -239,7 +250,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.link, widget.link)) {
       oldWidget.link?.detach(_disconnectForExit);
-      widget.link?.attach(_disconnectForExit);
+      widget.link?.attach(_disconnectForExit, exitSettled: _exitSettled);
     }
     final oldTarget = oldWidget.target;
     final oldRoomId = oldTarget != null && oldTarget.hasValue
@@ -314,7 +325,10 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       // A lobby is a room this device is not in. Saying so is what keeps the
       // strip outside this page from printing a head count for a call that
       // ended, or one that never connected.
-      _schedulePresenceReport(connected: false, participantCount: 0);
+      _schedulePresenceReport(
+        phase: AudioRoomLivePhase.idle,
+        participantCount: null,
+      );
     }
     if (widget.inline) {
       // The voice room page owns the only scrolling region on the screen, so
@@ -380,6 +394,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       autoConnect: widget.autoConnect,
       autoConnectSuspended: _autoConnectSuspended,
       refreshingConnection: _refreshingConnection,
+      exiting: _exiting,
     );
     final joinEnabled =
         content.ready &&
@@ -562,6 +577,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   void _scheduleAutoConnect() {
     if (_autoConnectScheduled ||
         _autoConnectSuspended ||
+        _exiting ||
         _joining ||
         _refreshingConnection ||
         _joinError != null ||
@@ -574,6 +590,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       if (!mounted ||
           !widget.autoConnect ||
           _autoConnectSuspended ||
+          _exiting ||
           _refreshingConnection ||
           _joinError != null) {
         return;
@@ -622,17 +639,39 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
 
   /// Published to the page through [VoiceMediaLink].
   Future<void> _disconnectForExit() async {
-    if (!_autoConnectSuspended) {
-      // The membership is about to end; a ready room must not reconnect in
-      // the window between this disconnect and the LOOP leave.
-      if (mounted) {
-        setState(() => _autoConnectSuspended = true);
-      } else {
-        _autoConnectSuspended = true;
-      }
-    }
+    // The membership is about to end; a ready room must not reconnect in the
+    // window between this disconnect and the LOOP leave, and the lobby that
+    // shows during it is a departure, not a dropped connection.
+    _markExiting();
     if (_foregroundCall == null) return;
-    await _leaveForegroundCall();
+    await _leaveForegroundCall(pageOwnsExit: true);
+  }
+
+  void _markExiting() {
+    if (_exiting) return;
+    if (mounted) {
+      setState(() => _exiting = true);
+    } else {
+      _exiting = true;
+    }
+  }
+
+  /// The page's own half of the exit has settled.
+  ///
+  /// On a leave that went through, this surface is already unhooked and this
+  /// is never called. What reaches it is an exit LOOP refused: the account is
+  /// still a member of a room it can no longer hear, which is exactly the
+  /// lobby that offers the audio back.
+  void _exitSettled() {
+    if (!_exiting) return;
+    if (!mounted) {
+      _exiting = false;
+      return;
+    }
+    setState(() {
+      _exiting = false;
+      if (_foregroundCall == null) _autoConnectSuspended = true;
+    });
   }
 
   Future<void> _joinMuted() async {
@@ -714,13 +753,22 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     });
   }
 
-  Future<void> _leaveForegroundCall() async {
+  /// Takes this device's call down because the reader asked to go.
+  ///
+  /// [pageOwnsExit] is true when the exit arrived through [VoiceMediaLink]:
+  /// the page still has the LOOP leave to send, so the departure stays on
+  /// screen until it tells this surface the exit settled. Without a page
+  /// there is no second half, and the exit ends here.
+  Future<void> _leaveForegroundCall({bool pageOwnsExit = false}) async {
     if (_leaving) return;
     final handle = _foregroundCall;
     if (handle == null) return;
     _leaving = true;
-    _autoConnectSuspended = true;
     _generation += 1;
+    // Not [_autoConnectSuspended]: that flag is the sentence for a call that
+    // stopped on its own, and the lobby printed it over the reader's own
+    // 离开 for as long as the LOOP leave took.
+    _markExiting();
     try {
       await handle.leave();
     } catch (_) {
@@ -734,6 +782,10 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       _joining = false;
       _leaving = false;
       _joinError = null;
+      if (!pageOwnsExit) {
+        _exiting = false;
+        _autoConnectSuspended = true;
+      }
     });
   }
 
@@ -757,6 +809,9 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       _cleanupFailed = false;
       _joinError = null;
       _autoConnectSuspended = false;
+      // Another room, another decision: a departure from the last one does
+      // not describe this one.
+      _exiting = false;
     });
     unawaited(_completeCleanup(handles, cleanupGeneration));
   }
@@ -776,7 +831,11 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   /// has. That leave is single-flight inside the handle, so a call the SDK
   /// already took down is not left a second time.
   void _retireStoppedCall() {
-    if (!mounted || _leaving || _cleanupPending || _refreshingConnection) {
+    if (!mounted ||
+        _leaving ||
+        _exiting ||
+        _cleanupPending ||
+        _refreshingConnection) {
       return;
     }
     final stopped = _foregroundCall;
@@ -895,10 +954,10 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
 
   /// Publishes one reading from the mounted call view.
   void _reportPresence({
-    required bool connected,
+    required AudioRoomLivePhase phase,
     required int? participantCount,
   }) {
-    _publishPresence(connected: connected, participantCount: participantCount);
+    _publishPresence(phase: phase, participantCount: participantCount);
   }
 
   /// Publishes the lobby's own reading after this frame.
@@ -907,16 +966,16 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   /// every step of the connection, so the reading is sent only when it is not
   /// the one already published.
   void _schedulePresenceReport({
-    required bool connected,
+    required AudioRoomLivePhase phase,
     required int? participantCount,
   }) {
-    final reading = (connected: connected, participantCount: participantCount);
+    final reading = (phase: phase, participantCount: participantCount);
     if (_reportedPresence == reading) return;
     _reportedPresence = reading;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _publishPresence(
-        connected: connected,
+        phase: phase,
         participantCount: participantCount,
         deduplicate: false,
       );
@@ -924,21 +983,21 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   }
 
   void _publishPresence({
-    required bool connected,
+    required AudioRoomLivePhase phase,
     required int? participantCount,
     bool deduplicate = true,
   }) {
     final presence = widget.presence;
     final roomId = _foregroundCall?.roomId ?? _target?.roomId;
     if (presence == null || roomId == null) return;
-    final reading = (connected: connected, participantCount: participantCount);
+    final reading = (phase: phase, participantCount: participantCount);
     if (deduplicate && _reportedPresence == reading) return;
     _reportedPresence = reading;
     try {
       presence.report(
         AudioRoomLivePresence(
           roomId: roomId,
-          connected: connected,
+          phase: phase,
           participantCount: participantCount,
         ),
       );
@@ -994,7 +1053,19 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     required bool autoConnect,
     required bool autoConnectSuspended,
     required bool refreshingConnection,
+    required bool exiting,
   }) {
+    if (exiting) {
+      // The reader asked to go and is waiting for it. Nothing here offers a
+      // connection: 「重新连接语音」 under this is an answer to a question
+      // nobody asked.
+      return const _StreamVoiceContent(
+        title: '正在离开语音房…',
+        message: '这次通话已经断开，正在把离开记到 LOOP 的房间记录里。',
+        icon: Icons.logout_rounded,
+        loading: true,
+      );
+    }
     if (refreshingConnection) {
       return const _StreamVoiceContent(
         title: '正在重新连接语音',

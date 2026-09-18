@@ -388,10 +388,17 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     // up would leave a connected room this account is no longer in.
     final disconnected = await _mediaLink.disconnect();
     if (!mounted) return;
-    await _run(
-      controller.leave,
-      disconnected ? '已离开语音房' : '已离开语音房，语音连接的收尾没有确认',
-    );
+    try {
+      await _run(
+        controller.leave,
+        disconnected ? '已离开语音房' : '已离开语音房，语音连接的收尾没有确认',
+      );
+    } finally {
+      // The media surface is showing this departure. A leave that went
+      // through has already taken it off the screen; a leave the server
+      // refused leaves it mounted, and it must stop saying 「正在离开」.
+      _mediaLink.exitSettled();
+    }
     _refreshCommunityProfile();
   }
 
@@ -498,10 +505,14 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     // room is never ended under a call this device is still connected to.
     final disconnected = await _mediaLink.disconnect();
     if (!mounted) return;
-    await _run(
-      controller.endRoom,
-      disconnected ? '房间已结束' : '房间已结束，语音连接的收尾没有确认',
-    );
+    try {
+      await _run(
+        controller.endRoom,
+        disconnected ? '房间已结束' : '房间已结束，语音连接的收尾没有确认',
+      );
+    } finally {
+      _mediaLink.exitSettled();
+    }
     _refreshCommunityProfile();
   }
 
@@ -537,8 +548,15 @@ class _RoomFacts extends ConsumerWidget {
     // What this device's own call reports, when it holds one. It is the same
     // reading the call panel below prints, so the two never disagree.
     final live = ref.watch(audioRoomLivePresenceProvider);
-    final connected =
-        live != null && live.connected && live.roomId == snapshot.room.roomId;
+    final thisRoom = live != null && live.roomId == snapshot.room.roomId;
+    final connected = thisRoom && live.connected;
+    // A call that is putting itself back, or one that just stopped, is not a
+    // room this device never connected to: falling back to LOOP's earlier
+    // observation printed 「上次观察在线 0」 above a panel that had just said
+    // the count comes back with the connection. While that is true the row
+    // carries the panel's own sentence and no figure at all.
+    final livePhase = thisRoom ? live.phase : AudioRoomLivePhase.idle;
+    final interrupted = audioRoomLivePhaseNote(livePhase);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -568,6 +586,17 @@ class _RoomFacts extends ConsumerWidget {
                 trailing: live.participantCount == null
                     ? '正在统计'
                     : '${live.participantCount}',
+                position: LoopRowPosition.first,
+              )
+            else if (interrupted != null)
+              LoopRecordRow(
+                key: const ValueKey<String>('voiceroom-live'),
+                title: '语音连接',
+                subtitle: interrupted,
+                subtitleMaxLines: 2,
+                trailing: livePhase == AudioRoomLivePhase.reconnecting
+                    ? '重连中'
+                    : '已断开',
                 position: LoopRowPosition.first,
               )
             else

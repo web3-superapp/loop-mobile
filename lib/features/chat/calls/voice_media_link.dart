@@ -10,18 +10,26 @@ import 'dart:async';
 /// disconnect to it, and nothing else passes through.
 final class VoiceMediaLink {
   Future<void> Function()? _disconnect;
+  void Function()? _exitSettled;
 
   /// True while a media surface is mounted and has published its disconnect.
   bool get isAttached => _disconnect != null;
 
-  void attach(Future<void> Function() disconnect) {
+  void attach(
+    Future<void> Function() disconnect, {
+    void Function()? exitSettled,
+  }) {
     _disconnect = disconnect;
+    _exitSettled = exitSettled;
   }
 
   /// Detaches by identity so a surface that was replaced cannot unhook the
   /// one that took its place.
   void detach(Future<void> Function() disconnect) {
-    if (identical(_disconnect, disconnect)) _disconnect = null;
+    if (identical(_disconnect, disconnect)) {
+      _disconnect = null;
+      _exitSettled = null;
+    }
   }
 
   /// Takes the provider call down before the LOOP membership is released.
@@ -39,5 +47,18 @@ final class VoiceMediaLink {
     } catch (_) {
       return false;
     }
+  }
+
+  /// Tells the surface that the LOOP half of the exit has settled.
+  ///
+  /// 离开 is one decision with two halves: the call goes down, and then the
+  /// membership is released. Between them the surface says 「正在离开语音房…」
+  /// instead of reading the reader's own exit back as a dropped connection.
+  /// The second half can fail — the membership survives and the audio does
+  /// not — so the surface is told either way, and the one lobby that offers
+  /// the audio back appears only then. On a leave that went through, the
+  /// surface is already gone and nothing is called.
+  void exitSettled() {
+    _exitSettled?.call();
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
@@ -59,6 +60,15 @@ abstract final class StreamCallStatusPresentation {
     }
     return StreamCallPhase.connecting;
   }
+
+  /// The same reading, in the shape the surfaces outside the call view read.
+  static AudioRoomLivePhase livePhase(CallStatus status) =>
+      switch (phase(status)) {
+        StreamCallPhase.connecting => AudioRoomLivePhase.connecting,
+        StreamCallPhase.connected => AudioRoomLivePhase.connected,
+        StreamCallPhase.reconnecting => AudioRoomLivePhase.reconnecting,
+        StreamCallPhase.disconnected => AudioRoomLivePhase.disconnected,
+      };
 
   static String label(CallStatus status) {
     if (status is CallStatusReconnectionFailed) return '重连失败';
@@ -180,8 +190,15 @@ abstract final class StreamCallParticipantPresentation {
   }) => switch (phase) {
     StreamCallPhase.connected => countLabel(count),
     StreamCallPhase.connecting => '此刻在通话里的人数正在统计',
-    StreamCallPhase.reconnecting => '语音正在重连，人数以重新连接后为准',
-    StreamCallPhase.disconnected => '语音已断开，人数以重新连接后为准',
+    // The two sentences a screen may carry twice — the room facts above this
+    // panel print the same line for the same phase — are written once, in the
+    // contract both surfaces read.
+    StreamCallPhase.reconnecting => audioRoomLivePhaseNote(
+      AudioRoomLivePhase.reconnecting,
+    )!,
+    StreamCallPhase.disconnected => audioRoomLivePhaseNote(
+      AudioRoomLivePhase.disconnected,
+    )!,
   };
 
   /// How many people this device can count in the call, or null while it
@@ -279,7 +296,7 @@ class StreamForegroundCallView extends StatefulWidget {
   /// A null count is a connection that has not counted anyone yet; the
   /// surfaces outside say so instead of printing 0 under 「已连接」.
   final void Function({
-    required bool connected,
+    required AudioRoomLivePhase phase,
     required int? participantCount,
   })?
   onPresence;
@@ -304,7 +321,7 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
   var _leaveBusy = false;
   var _microphoneEnableRequested = false;
   String? _commandError;
-  ({bool connected, int? participantCount})? _published;
+  ({AudioRoomLivePhase phase, int? participantCount})? _published;
 
   /// One report per stopped call: the page takes this call down when it
   /// arrives, and a second frame on the same dead call must not ask twice.
@@ -318,7 +335,7 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
     if (report == null) return;
     final connected = data.status.isConnected;
     final reading = (
-      connected: connected,
+      phase: StreamCallStatusPresentation.livePhase(data.status),
       // The same figure the panel prints, so the room facts and the shell
       // strip never disagree with the line right below them.
       participantCount: StreamCallParticipantPresentation.liveCount(
@@ -331,10 +348,7 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
     _published = reading;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      report(
-        connected: reading.connected,
-        participantCount: reading.participantCount,
-      );
+      report(phase: reading.phase, participantCount: reading.participantCount);
     });
   }
 
