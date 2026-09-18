@@ -66,11 +66,32 @@ void main() {
       );
 
       expect(find.byType(LoopSkeleton), findsOneWidget);
-      // The hero says the gap in words. An em dash at 25–30px in Lime reads
-      // as a rule floating over the card, not as a missing number.
-      expect(find.text(communityMissingHeading), findsOneWidget);
+      // A read that is still running says so. 「暂无数值 / 社区数据暂时读不到」
+      // is the answer to a read that finished with nothing, and it was the
+      // first thing every cold start said for its first seconds.
+      expect(find.text('正在读取'), findsOneWidget);
+      expect(find.textContaining('读到之后显示在这里'), findsOneWidget);
+      expect(find.text(communityMissingHeading), findsNothing);
+      expect(find.textContaining('社区数据暂时读不到'), findsNothing);
       expect(find.text(communityMissingFigure), findsNothing);
       expect(find.textContaining('个已加入的社区'), findsNothing);
+    });
+
+    testWidgets('a finished read with nothing still says it read nothing', (
+      tester,
+    ) async {
+      final gateway = FakeCommunityGateway(
+        failure: CommunityFailureKind.offline,
+      );
+      await pumpCommunityPage(
+        tester,
+        const CommunityScreen(),
+        community: gateway,
+      );
+
+      expect(find.text(communityMissingHeading), findsOneWidget);
+      expect(find.textContaining('社区数据暂时读不到'), findsOneWidget);
+      expect(find.text('正在读取'), findsNothing);
     });
 
     testWidgets('ready renders only server figures', (tester) async {

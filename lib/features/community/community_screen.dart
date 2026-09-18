@@ -96,6 +96,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
 
     final home = state.value;
     final joinedCount = home?.joined.length;
+    final loading = state.phase == CommunityViewPhase.loading;
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
         const SingleActivator(LogicalKeyboardKey.escape): _closePanel,
@@ -160,14 +161,20 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     variant: LoopFolioVariant.lime,
                     archetype: LoopFolioArchetype.listing,
                     kicker: 'COMMUNITY INDEX',
+                    // A read that is still running is not a read that failed.
+                    // The skeleton below was already saying 「正在读取」 while
+                    // this hero said 「暂无数值 / 社区数据暂时读不到」 for the
+                    // first seconds of every cold start.
                     heading: joinedCount == null
-                        ? communityMissingHeading
+                        ? (loading ? '正在读取' : communityMissingHeading)
                         : '$joinedCount 个已加入的社区',
                     // `discover` is a preview the server cut to a handful, so
                     // its length is not a count of verified communities and is
                     // not printed as one.
                     caption: home == null
-                        ? '社区数据暂时读不到，这一页不显示任何数字。'
+                        ? loading
+                              ? '已加入的社区数量读到之后显示在这里。'
+                              : '社区数据暂时读不到，这一页不显示任何数字。'
                         : '已验证社区在发现页浏览 · '
                               '数据观察于 ${communityObservedAtLabel(home.observedAt)}',
                     stamp: home == null ? null : 'DATABASE',
