@@ -8,12 +8,14 @@ import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
+import 'package:loop_mobile/features/chat/calls/stream_foreground_call_view.dart';
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_link.dart';
 import 'package:loop_mobile/features/chat/voice_room_page.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
+import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 import 'support/loop_ground_probe.dart';
 
@@ -383,6 +385,97 @@ void main() {
       expect(find.text('Official CallState view'), findsOneWidget);
     },
   );
+
+  testWidgets('R6-1: a stopped call comes back as a lobby with a way in', (
+    tester,
+  ) async {
+    // Four and a half minutes without a network: the badge went from 「重连中」
+    // to a red 「已断开」 and stayed there, with the whole screen still the
+    // call view — a surface whose only controls are the microphone and the
+    // hang-up. The one way back was to leave the page and come in again from
+    // the banner. A call nobody is putting back is now taken down, and the
+    // lobby that returns asks the backend for a room, a token and a call of
+    // its own.
+    final source = _RecordingVideoSource(
+      identity: const StreamVideoIdentity(userId: 'stream-user-a'),
+    );
+    final clients = _RecordingVideoClientFactory();
+    final factory = _SequencedAudioRoomCallFactory(<_RecordingAudioRoomCall>[
+      _RecordingAudioRoomCall(roomId: 'loop-daily'),
+      _RecordingAudioRoomCall(roomId: 'loop-daily'),
+    ]);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appConfigProvider.overrideWithValue(_videoConfig()),
+          loopSessionProvider.overrideWith(_AuthenticatedSession.new),
+          streamVideoSessionSourceProvider.overrideWithValue(source),
+          streamVideoClientFactoryProvider.overrideWithValue(clients),
+          audioRoomCallFactoryProvider.overrideWith((ref) {
+            final authorized =
+                ref.watch(streamVideoAuthorizationProvider).value ==
+                StreamVideoSessionAuthorization.authorized;
+            if (!authorized) return null;
+            ref.watch(streamVideoSdkSessionProvider);
+            return factory;
+          }),
+        ],
+        child: MaterialApp(
+          theme: LoopTheme.dark,
+          home: Scaffold(
+            body: StreamVoiceRoomPage(
+              autoConnect: true,
+              inline: true,
+              target: _target('loop-daily'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Official CallState view'), findsOneWidget);
+    expect(source.tokenCalls, 1);
+    expect(factory.createCalls, 1);
+
+    // The SDK is putting the connection back on its own. Nothing is collapsed
+    // while it does: a retry in progress is not a failure, and the reader kept
+    // the audio back without touching anything on the review device.
+    await tester.tap(find.byKey(const Key('fake-media-reconnecting')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Official CallState view'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('voiceroom-media-reconnect')),
+      findsNothing,
+    );
+    expect(factory.handles.first.leaveCalls, 0);
+
+    await tester.tap(find.byKey(const Key('fake-media-disconnected')));
+    await tester.pumpAndSettle();
+
+    // The dead call is retired once — the handle's own leave is single-flight,
+    // so a call the SDK already took down is not left a second time — and the
+    // membership is untouched.
+    expect(find.text('Official CallState view'), findsNothing);
+    expect(find.text('语音已断开'), findsOneWidget);
+    expect(factory.handles.first.leaveCalls, 1);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('voiceroom-media-reconnect')),
+    );
+    await tester.pumpAndSettle();
+
+    // A second identity, a second token, a second client, and a call this
+    // device has not been disconnected from.
+    expect(source.identityCalls, 2);
+    expect(source.tokenCalls, 2);
+    expect(clients.createCalls, 2);
+    expect(factory.createCalls, 2);
+    expect(factory.handles.last.joinCalls, 1);
+    expect(find.text('Official CallState view'), findsOneWidget);
+  });
 
   testWidgets('the connection note follows the part LOOP granted', (
     tester,
@@ -1043,6 +1136,15 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
     return _commands.retire();
   }
 
+  void _reportStatus(CallStatus status, VoidCallback? onDisconnected) {
+    if (StreamCallDisconnectPolicy.collapses(
+      status: status,
+      retirementStarted: retirementStarted,
+    )) {
+      onDisconnected?.call();
+    }
+  }
+
   @override
   Widget buildForeground({
     required Future<void> Function() onLeaveRequested,
@@ -1050,10 +1152,29 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
     Future<void> Function()? onMicrophoneEnabled,
     void Function({required bool connected, required int? participantCount})?
     onPresence,
+    VoidCallback? onDisconnected,
   }) {
     return Column(
       children: <Widget>[
         const Text('Official CallState view'),
+        // Stands in for the official call state moving on its own. Both
+        // buttons hand the status to the same policy the real view uses, so
+        // the page is driven by a status stream and not by a callback the
+        // test decided to fire.
+        TextButton(
+          key: const Key('fake-media-reconnecting'),
+          onPressed: () =>
+              _reportStatus(CallStatus.reconnecting(2), onDisconnected),
+          child: const Text('Reconnecting fake'),
+        ),
+        TextButton(
+          key: const Key('fake-media-disconnected'),
+          onPressed: () => _reportStatus(
+            CallStatus.disconnected(DisconnectReason.reconnectionFailed()),
+            onDisconnected,
+          ),
+          child: const Text('Disconnected fake'),
+        ),
         if (retirementStarted)
           const Text('Retirement started')
         else

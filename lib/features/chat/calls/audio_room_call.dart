@@ -154,12 +154,19 @@ abstract interface class AudioRoomCallHandle {
   /// — so one screen never carries two different numbers under one word. A
   /// null count is a connection that has not counted anyone yet; it is never
   /// published as 0.
+  ///
+  /// [onDisconnected] is called once this call stopped for good and nothing is
+  /// putting it back: a call that ended is not a surface the reader can act
+  /// on, so the page takes it down and offers the connection again. It is
+  /// never called while the SDK is reconnecting, and never for a call this
+  /// device is already retiring.
   Widget buildForeground({
     required Future<void> Function() onLeaveRequested,
     bool inline,
     Future<void> Function()? onMicrophoneEnabled,
     void Function({required bool connected, required int? participantCount})?
     onPresence,
+    VoidCallback? onDisconnected,
   });
 }
 
@@ -419,10 +426,12 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
     Future<void> Function()? onMicrophoneEnabled,
     void Function({required bool connected, required int? participantCount})?
     onPresence,
+    VoidCallback? onDisconnected,
   }) {
     return StreamForegroundCallView(
       call: _call,
       onPresence: onPresence,
+      onDisconnected: onDisconnected,
       retirementStarted: () => retirementStarted,
       onMicrophoneRequested: onMicrophoneEnabled == null
           ? setMicrophoneEnabled

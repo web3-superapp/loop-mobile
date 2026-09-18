@@ -80,15 +80,152 @@ void main() {
       ),
       5,
     );
-    // A call this device does not hold is passed through as it is: 0 there is
-    // a fact about a connection that does not exist.
+    // Without a connection there is no count at all: see R6-2.
     expect(
       StreamCallParticipantPresentation.liveCount(
         connected: false,
         participantCount: 0,
         knownParticipants: 0,
       ),
-      0,
+      isNull,
+    );
+  });
+
+  test('R6-2: a dropped call states no head count at all', () {
+    // The review device carried three sentences about one room: a red
+    // 「已断开」 badge, 「此刻在通话里 1 人」 under it, and 「读不到通话成员」
+    // under that. The 1 was the last reading taken while the call was up.
+    expect(
+      StreamCallParticipantPresentation.liveCount(
+        connected: false,
+        participantCount: 1,
+        knownParticipants: 1,
+      ),
+      isNull,
+    );
+    final disconnected = StreamCallParticipantPresentation.countLine(
+      phase: StreamCallPhase.disconnected,
+      count: null,
+    );
+    expect(disconnected, '语音已断开，人数以重新连接后为准');
+    expect(disconnected, isNot(contains('此刻在通话里')));
+    expect(disconnected, isNot(matches(RegExp(r'\d'))));
+
+    final reconnecting = StreamCallParticipantPresentation.countLine(
+      phase: StreamCallPhase.reconnecting,
+      count: null,
+    );
+    expect(reconnecting, '语音正在重连，人数以重新连接后为准');
+    expect(reconnecting, isNot(matches(RegExp(r'\d'))));
+  });
+
+  test('R6-3: the window before the connection counts nobody, not zero', () {
+    // 「连接中」 beside 「此刻在通话里 0 人」 is the same picture the reader
+    // reported, in a yellow badge instead of a green one.
+    expect(
+      StreamCallParticipantPresentation.countLine(
+        phase: StreamCallPhase.connecting,
+        count: null,
+      ),
+      '此刻在通话里的人数正在统计',
+    );
+    expect(
+      StreamCallParticipantPresentation.countLine(
+        phase: StreamCallPhase.connecting,
+        count: null,
+      ),
+      isNot(contains('0')),
+    );
+    // A connection that counted people keeps printing the figure it counted.
+    expect(
+      StreamCallParticipantPresentation.countLine(
+        phase: StreamCallPhase.connected,
+        count: 3,
+      ),
+      '此刻在通话里 3 人',
+    );
+  });
+
+  test('the phase reads the SDK status, reconnecting included', () {
+    expect(
+      StreamCallStatusPresentation.phase(CallStatus.connected()),
+      StreamCallPhase.connected,
+    );
+    // Reconnecting and migrating extend the SDK's connecting status; neither
+    // may be read as a first connection.
+    expect(
+      StreamCallStatusPresentation.phase(CallStatus.reconnecting(1)),
+      StreamCallPhase.reconnecting,
+    );
+    expect(
+      StreamCallStatusPresentation.phase(CallStatus.migrating()),
+      StreamCallPhase.reconnecting,
+    );
+    expect(
+      StreamCallStatusPresentation.phase(CallStatus.joining()),
+      StreamCallPhase.connecting,
+    );
+    expect(
+      StreamCallStatusPresentation.phase(CallStatus.joined()),
+      StreamCallPhase.connecting,
+    );
+    expect(
+      StreamCallStatusPresentation.phase(CallStatus.idle()),
+      StreamCallPhase.connecting,
+    );
+    expect(
+      StreamCallStatusPresentation.phase(CallStatus.reconnectingFailed()),
+      StreamCallPhase.disconnected,
+    );
+    expect(
+      StreamCallStatusPresentation.phase(
+        CallStatus.disconnected(DisconnectReason.timeout()),
+      ),
+      StreamCallPhase.disconnected,
+    );
+  });
+
+  test('R6-1: only a call nobody is putting back is handed to the page', () {
+    // While the SDK reconnects, the call stays where it is: the review device
+    // got its audio back twice without touching anything.
+    expect(
+      StreamCallDisconnectPolicy.collapses(
+        status: CallStatus.reconnecting(4),
+        retirementStarted: false,
+      ),
+      isFalse,
+    );
+    expect(
+      StreamCallDisconnectPolicy.collapses(
+        status: CallStatus.connected(),
+        retirementStarted: false,
+      ),
+      isFalse,
+    );
+    // Reconnection given up, and a plain disconnect: nobody is putting these
+    // back, and the page has to offer the way in again.
+    expect(
+      StreamCallDisconnectPolicy.collapses(
+        status: CallStatus.reconnectingFailed(),
+        retirementStarted: false,
+      ),
+      isTrue,
+    );
+    expect(
+      StreamCallDisconnectPolicy.collapses(
+        status: CallStatus.disconnected(DisconnectReason.reconnectionFailed()),
+        retirementStarted: false,
+      ),
+      isTrue,
+    );
+    // The reader's own 离开 and a background retirement pass through the same
+    // statuses on their way out. Neither is a disconnection to recover from.
+    expect(
+      StreamCallDisconnectPolicy.collapses(
+        status: CallStatus.disconnected(DisconnectReason.ended()),
+        retirementStarted: true,
+      ),
+      isFalse,
     );
   });
 

@@ -2317,6 +2317,7 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
     Future<void> Function()? onMicrophoneEnabled,
     void Function({required bool connected, required int? participantCount})?
     onPresence,
+    VoidCallback? onDisconnected,
   }) {
     return Column(
       children: <Widget>[

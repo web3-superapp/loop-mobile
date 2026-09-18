@@ -14,11 +14,52 @@ typedef _ForegroundCallViewData = ({
   bool audioSuspended,
 });
 
+/// What this device's media connection is doing, in the only four shapes the
+/// surfaces around it have to answer for.
+///
+/// It is a reading of Stream's [CallStatus], never a second state machine: it
+/// is computed from the status on every rebuild and stored nowhere. The badge
+/// still prints the status's own label; this decides what the screen may say
+/// about the people in the call, and whether the page has to offer a way back
+/// in.
+enum StreamCallPhase {
+  /// The connection has not been established yet: idle, joining, joined or
+  /// connecting for the first time.
+  connecting,
+
+  /// This device is in the call and hears it.
+  connected,
+
+  /// The connection dropped and the SDK is putting it back on its own.
+  /// Nothing collapses the call here — a retry in progress is not a failure.
+  reconnecting,
+
+  /// The call ended for this device and the SDK is not retrying: disconnected,
+  /// or reconnection given up.
+  disconnected,
+}
+
 /// Presentation-only mapping for Stream's official call status.
 ///
 /// The mapping never becomes a second call state machine; every rebuild still
 /// reads the current [CallStatus] from the SDK's [CallState].
 abstract final class StreamCallStatusPresentation {
+  /// Reads the status as one of the four phases the screen answers for.
+  ///
+  /// Order matters: the SDK's reconnecting and migrating statuses extend
+  /// `CallStatusConnecting`, and a reconnection that gave up is its own class
+  /// rather than a disconnect.
+  static StreamCallPhase phase(CallStatus status) {
+    if (status.isConnected) return StreamCallPhase.connected;
+    if (status is CallStatusReconnectionFailed || status.isDisconnected) {
+      return StreamCallPhase.disconnected;
+    }
+    if (status.isReconnecting || status.isMigrating) {
+      return StreamCallPhase.reconnecting;
+    }
+    return StreamCallPhase.connecting;
+  }
+
   static String label(CallStatus status) {
     if (status is CallStatusReconnectionFailed) return '重连失败';
     if (status.isIdle) return '等待中';
@@ -65,6 +106,30 @@ abstract final class StreamCallStatusPresentation {
   }
 }
 
+/// When a stopped connection stops being the call's own business.
+///
+/// The SDK retries on its own, and a retry in progress is not a failure: while
+/// it reconnects the call stays exactly where it is. Once the SDK has given up
+/// — disconnected, or reconnection failed — nobody is putting the audio back,
+/// and a red badge on a screen whose only controls are 举手 and 离开 is a dead
+/// end: on the review device it stood for more than ninety seconds with no way
+/// forward except leaving the page and coming back through the banner. That
+/// call is handed to the page, which retires it and offers 「重新连接语音」.
+///
+/// A call this device is already taking down — the reader's 离开, the page's
+/// exit, a background retirement — reaches the same statuses on its way out
+/// and is not a disconnection anybody has to be offered a way back from.
+abstract final class StreamCallDisconnectPolicy {
+  static bool collapses({
+    required CallStatus status,
+    required bool retirementStarted,
+  }) {
+    if (retirementStarted) return false;
+    return StreamCallStatusPresentation.phase(status) ==
+        StreamCallPhase.disconnected;
+  }
+}
+
 /// Command gating derived from the current official [CallState] snapshot.
 abstract final class StreamMicrophoneControlPolicy {
   static bool canRequest({
@@ -101,6 +166,24 @@ abstract final class StreamCallParticipantPresentation {
   static String countLabel(int? count) =>
       count == null ? '此刻在通话里的人数正在统计' : '此刻在通话里 $count 人';
 
+  /// The whole line about the people in the call, for the phase it is in.
+  ///
+  /// Only a connection states a number. Everything else says what it is
+  /// waiting for: a call that is still connecting has counted nobody yet, and
+  /// a call that dropped is holding a reading taken before it dropped. On the
+  /// review device the red 「已断开」 badge stood above 「此刻在通话里 1 人」
+  /// and above 「读不到通话成员」 — three sentences about one room, two of them
+  /// answering a moment that had passed.
+  static String countLine({
+    required StreamCallPhase phase,
+    required int? count,
+  }) => switch (phase) {
+    StreamCallPhase.connected => countLabel(count),
+    StreamCallPhase.connecting => '此刻在通话里的人数正在统计',
+    StreamCallPhase.reconnecting => '语音正在重连，人数以重新连接后为准',
+    StreamCallPhase.disconnected => '语音已断开，人数以重新连接后为准',
+  };
+
   /// How many people this device can count in the call, or null while it
   /// cannot count anyone yet.
   ///
@@ -112,17 +195,20 @@ abstract final class StreamCallParticipantPresentation {
   /// count; before even that participant exists the count is not stated at
   /// all. Either way a connected call never shows 0.
   ///
-  /// Not connected, the SFU figure is passed through as it is — including 0,
-  /// which is then the truth about a call this device does not hold.
+  /// Without a connection there is no count at all. The figures this device
+  /// still holds were true while it was connected, and printing them under
+  /// 「已断开」 or 「重连中」 states a past moment as if it were now; printing
+  /// 0 instead states an empty room. [countLine] says which reading is
+  /// missing and why.
   static int? liveCount({
     required bool connected,
     required int participantCount,
     required int knownParticipants,
   }) {
+    if (!connected) return null;
     final counted = participantCount > knownParticipants
         ? participantCount
         : knownParticipants;
-    if (!connected) return counted;
     return counted > 0 ? counted : null;
   }
 
@@ -170,9 +256,18 @@ class StreamForegroundCallView extends StatefulWidget {
     super.key,
     this.inline = false,
     this.onPresence,
+    this.onDisconnected,
   });
 
   final Call call;
+
+  /// Told once this call stopped for good, so the page can take it down and
+  /// offer the way back in.
+  ///
+  /// It fires on the phase, not on a badge: while the SDK reconnects nothing
+  /// is reported, because the connection is being put back without anybody
+  /// asking. See [StreamCallDisconnectPolicy].
+  final VoidCallback? onDisconnected;
 
   /// Publishes this call's own connection and head count, once per change.
   ///
@@ -211,6 +306,10 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
   String? _commandError;
   ({bool connected, int? participantCount})? _published;
 
+  /// One report per stopped call: the page takes this call down when it
+  /// arrives, and a second frame on the same dead call must not ask twice.
+  var _disconnectReported = false;
+
   /// Hands one reading out, after the frame that read it and only when it
   /// changed. A call that is still joining is not a connection, so it is
   /// published as one this device does not hold yet.
@@ -239,6 +338,23 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
     });
   }
 
+  /// Hands the stopped call to the page, after the frame that read it.
+  void _reportDisconnection(_ForegroundCallViewData data) {
+    final report = widget.onDisconnected;
+    if (report == null || _disconnectReported) return;
+    if (!StreamCallDisconnectPolicy.collapses(
+      status: data.status,
+      retirementStarted: widget.retirementStarted(),
+    )) {
+      return;
+    }
+    _disconnectReported = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      report();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return PartialCallStateBuilder<_ForegroundCallViewData>(
@@ -262,6 +378,7 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
       },
       builder: (context, data) {
         _publishPresence(data);
+        _reportDisconnection(data);
         final retirementStarted = widget.retirementStarted();
         final canRequestMicrophone = StreamMicrophoneControlPolicy.canRequest(
           status: data.status,
@@ -319,6 +436,7 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
     required _ForegroundCallViewData data,
     required bool retirementStarted,
   }) {
+    final phase = StreamCallStatusPresentation.phase(data.status);
     return Column(
       crossAxisAlignment: widget.inline
           ? CrossAxisAlignment.stretch
@@ -343,9 +461,10 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
         ],
         const SizedBox(height: 8),
         Text(
-          StreamCallParticipantPresentation.countLabel(
-            StreamCallParticipantPresentation.liveCount(
-              connected: data.status.isConnected,
+          StreamCallParticipantPresentation.countLine(
+            phase: phase,
+            count: StreamCallParticipantPresentation.liveCount(
+              connected: phase == StreamCallPhase.connected,
               participantCount: data.participantCount,
               knownParticipants: data.knownParticipants,
             ),
@@ -365,10 +484,7 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
           ),
         ],
         SizedBox(height: widget.inline ? 16 : 30),
-        _ParticipantGrid(
-          participants: data.participants,
-          connected: data.status.isConnected,
-        ),
+        _ParticipantGrid(participants: data.participants, phase: phase),
         SizedBox(height: widget.inline ? 14 : 22),
         Text(
           retirementStarted && !data.microphoneEnabled
@@ -524,29 +640,43 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
 }
 
 class _ParticipantGrid extends StatelessWidget {
-  const _ParticipantGrid({required this.participants, required this.connected});
+  const _ParticipantGrid({required this.participants, required this.phase});
 
   final List<CallParticipantState> participants;
 
-  /// Whether this device holds the call right now. A connection whose roster
-  /// has not arrived is still arriving; only a call this device is not in can
-  /// be said to have no readable members.
-  final bool connected;
+  /// What the connection is doing. The roster belongs to a call this device
+  /// holds: without one, the rows it still carries are a list of who was
+  /// there before it dropped, and 「读不到通话成员」 blamed the provider for a
+  /// connection that is simply not up.
+  final StreamCallPhase phase;
 
   @override
   Widget build(BuildContext context) {
+    if (phase != StreamCallPhase.connected) {
+      return switch (phase) {
+        StreamCallPhase.reconnecting => const LoopStateCard(
+          title: '正在重新连接',
+          message: '这次通话掉线了，正在自动接回来。成员明细会在连上后重新读出。',
+          icon: Icons.sync_rounded,
+        ),
+        StreamCallPhase.disconnected => const LoopStateCard(
+          title: '语音已断开',
+          message: '这次通话已经断开，成员明细要重新连接语音之后才能读出。',
+          icon: Icons.headset_off_rounded,
+        ),
+        _ => const LoopStateCard(
+          title: '正在连接语音',
+          message: '还没有连上这次通话，成员明细会在连上后读出。',
+          icon: Icons.sync_rounded,
+        ),
+      };
+    }
     if (participants.isEmpty) {
-      return connected
-          ? const LoopStateCard(
-              title: '正在读取通话成员',
-              message: '这次通话刚连上，服务商还没有给出成员明细。',
-              icon: Icons.sync_rounded,
-            )
-          : const LoopStateCard(
-              title: '读不到通话成员',
-              message: '服务商还没有给出这次通话的成员明细。',
-              icon: Icons.people_outline_rounded,
-            );
+      return const LoopStateCard(
+        title: '正在读取通话成员',
+        message: '这次通话刚连上，服务商还没有给出成员明细。',
+        icon: Icons.sync_rounded,
+      );
     }
     return LayoutBuilder(
       builder: (context, constraints) {

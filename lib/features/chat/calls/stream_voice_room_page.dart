@@ -327,6 +327,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
               inline: true,
               onMicrophoneEnabled: widget.onMicrophoneEnabled,
               onPresence: _reportPresence,
+              onDisconnected: _retireStoppedCall,
             );
     }
     return Scaffold(
@@ -359,6 +360,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
                   onLeaveRequested: _requestExit,
                   onMicrophoneEnabled: widget.onMicrophoneEnabled,
                   onPresence: _reportPresence,
+                  onDisconnected: _retireStoppedCall,
                 ),
         ),
       ),
@@ -755,6 +757,49 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       _cleanupFailed = false;
       _joinError = null;
       _autoConnectSuspended = false;
+    });
+    unawaited(_completeCleanup(handles, cleanupGeneration));
+  }
+
+  /// Takes down a call the provider stopped, and puts the lobby back.
+  ///
+  /// The SDK reconnects on its own, and while it does the call view stays: a
+  /// retry in progress is not a failure. What arrives here is a call nobody is
+  /// putting back — on the review device the badge went red and stood there
+  /// for more than ninety seconds while the whole screen was still the call
+  /// view, whose only controls are the microphone and the hang-up. The
+  /// membership is untouched, so this is the same lobby the reader sees after
+  /// a failed connection: 「语音已断开」 and 「重新连接语音」, which reads the
+  /// room and the provider session again before it connects.
+  ///
+  /// The call itself is retired through the one cleanup path this surface
+  /// has. That leave is single-flight inside the handle, so a call the SDK
+  /// already took down is not left a second time.
+  void _retireStoppedCall() {
+    if (!mounted || _leaving || _cleanupPending || _refreshingConnection) {
+      return;
+    }
+    final stopped = _foregroundCall;
+    if (stopped == null || stopped.retirementStarted) return;
+    _generation += 1;
+    final handles = _uniqueHandles(<AudioRoomCallHandle?>[
+      _joiningCall,
+      stopped,
+      ..._cleanupHandles,
+    ]);
+    final cleanupGeneration = ++_cleanupGeneration;
+    setState(() {
+      _joining = false;
+      _joiningCall = null;
+      _foregroundCall = null;
+      _cleanupHandles = handles;
+      _cleanupPending = true;
+      _cleanupFailed = false;
+      _joinError = null;
+      // This device stopped hearing the room without being asked to. Putting
+      // the audio back is the reader's decision, so the ready lobby does not
+      // connect again on its own.
+      _autoConnectSuspended = true;
     });
     unawaited(_completeCleanup(handles, cleanupGeneration));
   }
