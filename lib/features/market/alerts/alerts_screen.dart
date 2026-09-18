@@ -568,8 +568,17 @@ String _feedDetail(LoopNotificationEntry entry) {
   // highlights and says nothing a reader can act on. Printed, it came out as
   // "提醒 a2b2c1ce-4ca9…" — half a UUID on a line that already names the
   // asset and the threshold.
+  //
+  // `source` is the same kind of thing until it names a provider. The
+  // notification contract leaves it an open `[a-z][a-z0-9_]*` identifier, so
+  // it can and does arrive as a pipeline name — every row on the review
+  // device read 「来源 mock_seed」. A value that maps onto a provider LOOP
+  // already names elsewhere prints as that provider; anything else is an
+  // internal string and the segment is dropped, because a source a reader
+  // cannot check is not provenance.
+  final provider = source == null ? null : LoopFactSource.tryParse(source);
   return <String>[
-    if (source != null) '来源 $source',
+    if (provider != null) '来源 ${loopFactSourceLabel(provider)}',
     if (observedAt != null) '观察于 ${loopRelativeTime(observedAt)}',
   ].join(' · ');
 }

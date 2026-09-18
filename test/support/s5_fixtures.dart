@@ -1205,6 +1205,7 @@ LoopNotificationEntry s5Notification({
   DateTime? readAt,
   String notificationId = s5NotificationId,
   String symbol = 'WBNB',
+  String? source = 'dexscreener',
 }) => LoopNotificationEntry(
   notificationId: notificationId,
   type: LoopNotificationCategory.tradePriceAlert,
@@ -1216,7 +1217,7 @@ LoopNotificationEntry s5Notification({
     'threshold': '700',
     'observedValue': '747.39',
   },
-  source: 'dexscreener',
+  source: source,
   observedAt: DateTime.utc(2026, 9, 8, 7, 31),
   readAt: readAt,
   createdAt: DateTime.utc(2026, 9, 8, 7, 31),

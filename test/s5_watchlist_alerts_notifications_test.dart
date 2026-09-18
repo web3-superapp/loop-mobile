@@ -461,7 +461,9 @@ void main() {
         find.byKey(ValueKey<String>('alerts-feed-$s5NotificationId')),
       );
       expect(find.textContaining('WBNB 触发 700（观察值 747.39）'), findsOneWidget);
-      expect(find.textContaining('来源 dexscreener'), findsOneWidget);
+      // A provider LOOP names elsewhere is named the same way here.
+      expect(find.textContaining('来源 DexScreener'), findsOneWidget);
+      expect(find.textContaining('来源 dexscreener'), findsNothing);
       // The alert id addresses the row this entry highlights; it is not copy.
       expect(find.textContaining('提醒 $s5AlertId'), findsNothing);
       expect(find.textContaining(s5AlertId), findsNothing);
@@ -473,6 +475,36 @@ void main() {
       await tester.pumpAndSettle();
       expect(notifications.read, <String>[s5NotificationId]);
       expect(find.text('未读'), findsNothing);
+    });
+
+    testWidgets('an internal source identifier never reaches the row', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const PriceAlertsScreen(),
+        alerts: FakeAlertsGateway(),
+        notifications: FakeNotificationsGateway(
+          feed: S5Answer<LoopNotificationFeed>(
+            value: s5Feed(
+              items: <LoopNotificationEntry>[
+                s5Notification(source: 'mock_seed'),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      await scrollToS5Section(
+        tester,
+        find.byKey(ValueKey<String>('alerts-feed-$s5NotificationId')),
+      );
+      // The contract leaves `source` an open identifier, so a pipeline name
+      // arrives here as readily as a provider. A source a reader cannot check
+      // is not provenance; the observation time still is.
+      expect(find.textContaining('mock_seed'), findsNothing);
+      expect(find.textContaining('来源'), findsNothing);
+      expect(find.textContaining('观察于'), findsWidgets);
     });
 
     testWidgets('the trigger history pages to the end and says so', (
