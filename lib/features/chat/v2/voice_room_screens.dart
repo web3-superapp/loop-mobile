@@ -205,9 +205,12 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
               roomId: snapshot.room.roomId,
               link: _mediaLink,
               // The hang-up inside the call view is the same single exit as
-              // the page's 离开: dropping the audio alone would leave this
-              // account a member of a room it can no longer hear.
-              onExitRequested: () => _leave(controller, snapshot.viewer),
+              // the page's own: dropping the audio alone would leave this
+              // account a member of a room it can no longer hear. For a host
+              // that exit is 结束房间 — the server has no 离开 for the host.
+              onExitRequested: () => snapshot.viewer.isHost
+                  ? _endRoom(controller)
+                  : _leave(controller),
             ),
           if (widget.expanded) ...<Widget>[
             for (final view in VoiceRoomRosterView.values)
@@ -238,7 +241,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             // authorizes. The media section below mounts itself the moment
             // the membership exists and connects without a second tap.
             onJoin: () => _run(controller.join, '已加入，正在连接语音'),
-            onLeave: () => _leave(controller, snapshot.viewer),
+            onLeave: () => _leave(controller),
             onRaise: () => _run(controller.raiseHand, '已举手，等待主持人邀请'),
             onCancel: () => _run(controller.cancelHandRaise, '已取消举手'),
           ),
@@ -252,14 +255,17 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
               margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             ),
           if (snapshot.viewer.hasJoined && snapshot.room.isLive)
-            const LoopNotice(
-              key: ValueKey<String>('voiceroom-back-note'),
+            LoopNotice(
+              key: const ValueKey<String>('voiceroom-back-note'),
               icon: 'info',
               title: '返回不等于离开',
-              body:
-                  '返回只是把语音房收起：你仍然在房间里，顶部会留一条提示，'
-                  '点它随时回来。要真正离开，请点这一页的「离开」。',
-              margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+              body: snapshot.viewer.isHost
+                  ? '返回只是把语音房收起：房间仍在进行，顶部会留一条提示，'
+                        '点它随时回来。主持人没有「离开」，'
+                        '真要结束请点这一页的「结束房间」。'
+                  : '返回只是把语音房收起：你仍然在房间里，顶部会留一条提示，'
+                        '点它随时回来。要真正离开，请点这一页的「离开」。',
+              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             ),
           const LoopNotice(
             key: ValueKey<String>('voiceroom-provider-note'),
@@ -280,20 +286,14 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
   ///
   /// The room page's back affordance only puts the room in the background —
   /// the account stays in it — so the one control that ends the membership
-  /// asks first, and says what leaving does for this reader's role. A host
-  /// leaving does not end the room; that is a separate, also confirmed,
-  /// command.
-  Future<void> _leave(
-    VoiceRoomController controller,
-    VoiceRoomViewer viewer,
-  ) async {
+  /// asks first. Only a listener or a speaker reaches it: the host owns the
+  /// room's life cycle and `DELETE /v2/voice-rooms/{id}/members/me` refuses
+  /// the host outright, so the host's exit is 结束房间 instead.
+  Future<void> _leave(VoiceRoomController controller) async {
     final confirmed = await confirmCommunityAction(
       context,
       title: '离开语音房？',
-      body: viewer.isHost
-          ? '离开不会结束房间：其他成员还在里面，主持人身份也保留。'
-                '要让房间结束，请用「结束房间」。'
-          : '离开后你会退出这次通话，举手也会一并取消；想继续收听需要重新加入。',
+      body: '离开后你会退出这次通话，举手也会一并取消；想继续收听需要重新加入。',
       confirmLabel: '离开',
       sheetKey: 'voiceroom-leave-sheet',
     );
@@ -349,16 +349,31 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     );
   }
 
+  /// The host's only exit, and it ends the room for everybody.
+  ///
+  /// The confirmation says the whole consequence, because there is no smaller
+  /// one to choose instead: the host cannot leave a room and keep it running.
   Future<void> _endRoom(VoiceRoomController controller) async {
     final confirmed = await confirmCommunityAction(
       context,
       title: '结束语音房？',
-      body: '结束后房间里的所有人都会断开，这个房间不能再进入。社区可以再开一个新的。',
+      body:
+          '结束后房间里的所有人都会立刻断开，这个房间不能再进入，举手队列也会作废。'
+          '主持人没有「离开」：房间的存续由主持人决定。'
+          '只是想暂时离开这一页，请用返回键，房间会收起在顶部，随时可以回来。'
+          '社区可以再开一个新的。',
       confirmLabel: '结束房间',
       sheetKey: 'voiceroom-end-sheet',
     );
     if (!confirmed || !mounted) return;
-    await _run(controller.endRoom, '房间已结束');
+    // Same order as 离开 (S32a): the provider call goes down first, so the
+    // room is never ended under a call this device is still connected to.
+    final disconnected = await _mediaLink.disconnect();
+    if (!mounted) return;
+    await _run(
+      controller.endRoom,
+      disconnected ? '房间已结束' : '房间已结束，语音连接的收尾没有确认',
+    );
   }
 
   Future<void> _run(
@@ -944,6 +959,24 @@ class _ViewerActions extends StatelessWidget {
           icon: 'voice',
           onPressed: busy ? null : () => unawaited(onJoin()),
         ),
+      );
+    }
+    if (viewer.isHost) {
+      // `DELETE /v2/voice-rooms/{id}/members/me` refuses the host: the room's
+      // life cycle belongs to whoever opened it, so the only exit the server
+      // accepts is 结束房间. A 离开 button here was a command that could only
+      // ever come back as "没有权限".
+      return LoopEmpty(
+        key: const ValueKey<String>('voiceroom-host-no-leave'),
+        icon: 'info',
+        message: '主持人不能离开房间',
+        reason: viewer.canEndRoom
+            ? '房间的存续由主持人决定，所以没有「离开」：'
+                  '要退出请用上面的「结束房间」，房间里的所有人都会断开。'
+                  '只是想暂时离开这一页，用返回键即可，房间会收起在顶部。'
+            : '房间的存续由主持人决定，所以没有「离开」；'
+                  '「结束房间」当前也读不到，暂时无法结束这个房间。'
+                  '用返回键可以先把房间收起在顶部。',
       );
     }
     final raised = viewer.handRaise?.isPending ?? false;

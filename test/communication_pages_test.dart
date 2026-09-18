@@ -1034,27 +1034,109 @@ void main() {
       expect(find.text('已离开语音房'), findsOneWidget);
     });
 
-    testWidgets('a host is told that leaving does not end the room', (
+    // `DELETE /v2/voice-rooms/{id}/members/me` refuses the host by design
+    // (loop-api `leaveVoiceRoom`; the contract says "The host cannot leave; it
+    // ends the room instead"). The exit each role is offered follows that
+    // rule, so no role is shown a command the server can only refuse.
+    for (final row in <({VoiceRoomRole role, bool host, bool leaves})>[
+      (role: VoiceRoomRole.listener, host: false, leaves: true),
+      (role: VoiceRoomRole.speaker, host: false, leaves: true),
+      (role: VoiceRoomRole.host, host: true, leaves: false),
+    ]) {
+      testWidgets('the ${row.role.name} is offered the exit the server has', (
+        tester,
+      ) async {
+        final voice = FakeVoiceRoomGateway(
+          snapshot: testVoiceRoomSnapshot(role: row.role, host: row.host),
+        );
+        await pumpCommunityPage(
+          tester,
+          const VoiceRoomScreen(communityId: testCommunityId),
+          voiceRoom: voice,
+        );
+
+        final leave = find.byKey(const ValueKey<String>('voiceroom-leave'));
+        final hostExit = find.byKey(
+          const ValueKey<String>('voiceroom-host-no-leave'),
+        );
+        final end = find.byKey(const ValueKey<String>('voiceroom-end'));
+        await scrollToCommunitySection(tester, row.leaves ? leave : hostExit);
+        expect(leave, row.leaves ? findsOneWidget : findsNothing);
+        expect(hostExit, row.leaves ? findsNothing : findsOneWidget);
+        expect(end, row.host ? findsOneWidget : findsNothing);
+        if (!row.leaves) {
+          // The page says why there is no 离开, and names the two things that
+          // do exist: 结束房间, and the back key that only minimises.
+          expect(find.text('主持人不能离开房间'), findsOneWidget);
+          expect(find.textContaining('结束房间'), findsWidgets);
+          expect(find.textContaining('返回键'), findsWidgets);
+        }
+      });
+    }
+
+    testWidgets('the host confirmation says everyone is disconnected', (
       tester,
     ) async {
       final voice = FakeVoiceRoomGateway(
         snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
       );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
       await pumpCommunityPage(
         tester,
         const VoiceRoomScreen(communityId: testCommunityId),
         voiceRoom: voice,
+        audioRoomCallFactory: media,
       );
 
-      final leave = find.byKey(const ValueKey<String>('voiceroom-leave'));
-      await scrollToCommunitySection(tester, leave);
-      await tester.tap(leave);
+      final end = find.byKey(const ValueKey<String>('voiceroom-end'));
+      await scrollToCommunitySection(tester, end);
+      await tester.tap(end);
       await tester.pumpAndSettle();
-      expect(find.textContaining('离开不会结束房间'), findsOneWidget);
+      expect(find.textContaining('所有人都会立刻断开'), findsOneWidget);
+      expect(find.textContaining('主持人没有「离开」'), findsWidgets);
+      expect(media.leaveCalls, 0);
+      expect(voice.commands, isNot(contains('end')));
 
-      await tester.tap(find.text('取消').last);
+      await tester.tap(find.text('结束房间').last);
       await tester.pumpAndSettle();
-      expect(voice.commands, isNot(contains('leave')));
+      // Same order as 离开: the provider call goes down before the room does.
+      expect(media.leaveCalls, 1);
+      expect(
+        voice.commands.indexOf('end'),
+        greaterThan(voice.commands.indexOf('media:leave')),
+      );
+      expect(find.text('房间已结束'), findsOneWidget);
+    });
+
+    testWidgets('hanging up as the host asks the end-room question', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+
+      final hangUp = find.byKey(const ValueKey<String>('fake-hangup'));
+      await scrollToCommunitySection(tester, hangUp);
+      await tester.tap(hangUp);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-end-sheet')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-leave-sheet')),
+        findsNothing,
+      );
+      expect(media.leaveCalls, 0);
+      expect(voice.commands, isNot(contains('end')));
     });
 
     testWidgets('ending the room asks first', (tester) async {
