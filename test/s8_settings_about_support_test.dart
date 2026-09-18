@@ -438,6 +438,20 @@ void main() {
       expect(gateway.created.single.body, '为什么我的币没有权重');
     });
 
+    testWidgets('the reply window keeps a space between its two words', (
+      tester,
+    ) async {
+      await pumpS8Page(
+        tester,
+        SupportScreen(onNavigate: (_) {}),
+        support: FakeSupportGateway(),
+      );
+
+      // 「工作日24 小时内回复」 ran a Chinese word straight into a Latin digit.
+      expect(find.textContaining('工作日 24 小时内回复'), findsOneWidget);
+      expect(find.textContaining('工作日24'), findsNothing);
+    });
+
     testWidgets('a refused submit is reported and the list is untouched', (
       tester,
     ) async {

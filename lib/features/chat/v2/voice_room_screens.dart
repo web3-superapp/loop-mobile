@@ -444,6 +444,7 @@ class _RoomFacts extends StatelessWidget {
                   : communicationUnavailableReason(
                       observed.unavailable!.reasonCode,
                     ),
+              subtitleMaxLines: 2,
               trailing: observed.isAvailable
                   ? '${observed.memberCount}'
                   : communityMissingFigure,
@@ -461,7 +462,11 @@ class _RoomFacts extends StatelessWidget {
             LoopRecordRow(
               key: const ValueKey<String>('voiceroom-role-intent'),
               title: '发言人 / 听众',
+              // Three facts on one line: a single line cut them at
+              // 「也不是…」, which drops the whole disclaimer this row exists
+              // for.
               subtitle: '按 LOOP 记录的角色统计，不含主持人，也不是在线人数。',
+              subtitleMaxLines: 2,
               trailing:
                   '${snapshot.participants.speakerCount} / '
                   '${snapshot.participants.listenerCount}',

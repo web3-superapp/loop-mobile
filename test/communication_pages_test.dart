@@ -858,6 +858,18 @@ void main() {
       // The call view under this list carries the device's own live count;
       // one screen never states two different numbers under one word.
       expect(find.text('当前在线'), findsNothing);
+
+      // Each of these lines carries an observation time or a disclaimer at
+      // its end; one line cut them at 「观察于 202…」 and 「也不是…」.
+      for (final key in const <String>[
+        'voiceroom-live',
+        'voiceroom-observed',
+        'voiceroom-role-intent',
+      ]) {
+        final row = find.byKey(ValueKey<String>(key));
+        await scrollToCommunitySection(tester, row);
+        expect(tester.widget<LoopRecordRow>(row).subtitleMaxLines, 2);
+      }
     });
 
     testWidgets('an unobserved participant count renders the em dash', (

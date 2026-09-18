@@ -123,7 +123,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
         heading: '先查答案，再提交工单',
         caption: policy == null
             ? '官方不会主动私聊你，也不会索要私钥、助记词或验证码。'
-            : '${policy.businessDaysOnly ? '工作日' : ''}'
+            : '${policy.businessDaysOnly ? '工作日 ' : ''}'
                   '${policy.responseWindowHours} 小时内回复；'
                   '官方不会主动私聊你。',
       ),

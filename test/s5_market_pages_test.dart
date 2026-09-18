@@ -251,8 +251,10 @@ void main() {
           find.byKey(const ValueKey<String>('candles-open-marker')),
           findsOneWidget,
         );
-        // The price unit is the pool's other token, never USD.
-        expect(find.text('USDT per WBNB'), findsOneWidget);
+        // The price unit is the pool's other token, never USD. It is the
+        // provider's own string, so it prints verbatim — inside a label that
+        // says what the card is.
+        expect(find.text('K 线 · 单位 USDT per WBNB'), findsOneWidget);
       },
     );
 
@@ -280,7 +282,7 @@ void main() {
         // The aggregate note is not swallowed by the proxy note; it sits in
         // the provenance line under the chart.
         expect(find.textContaining('按成交价折算'), findsOneWidget);
-        expect(find.text('USD per WBNB'), findsOneWidget);
+        expect(find.text('K 线 · 单位 USD per WBNB'), findsOneWidget);
       },
     );
 

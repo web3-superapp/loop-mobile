@@ -547,7 +547,13 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      block is MarketCandlesAvailable ? block.priceUnit : 'K 线',
+                      // The provider's unit string is printed verbatim — it
+                      // names the two assets and LOOP does not translate a
+                      // fact — but it is not a heading, and standing alone it
+                      // left this card labelled only 「USD per WBNB」.
+                      block is MarketCandlesAvailable
+                          ? 'K 线 · 单位 ${block.priceUnit}'
+                          : 'K 线',
                       style: LoopMono.label,
                     ),
                   ),
