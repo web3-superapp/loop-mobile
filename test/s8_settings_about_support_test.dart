@@ -87,6 +87,27 @@ void main() {
       expect(find.textContaining('尚未写入过'), findsNothing);
     });
 
+    testWidgets('the privacy entry names rows the privacy page has', (
+      tester,
+    ) async {
+      await pumpS8Page(
+        tester,
+        GeneralSettingsScreen(onNavigate: (_) {}),
+        settings: FakeAccountSettingsGateway(),
+      );
+
+      final row = find.byKey(const ValueKey<String>('settings-open-privacy'));
+      await scrollToS8Section(tester, row);
+      // Copytrade is retired and the V2 privacy contract carries no facet for
+      // it; the page also has no row called 可被搜索.
+      expect(find.textContaining('跟单'), findsNothing);
+      expect(find.textContaining('可被搜索'), findsNothing);
+      expect(
+        tester.widget<LoopRecordRow>(row).subtitle,
+        '匿名模式、显示 LOOP ID 与可见性',
+      );
+    });
+
     testWidgets('sign out is offered only when the composition provides it', (
       tester,
     ) async {

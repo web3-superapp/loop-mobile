@@ -160,7 +160,11 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
             LoopRecordRow(
               key: const ValueKey<String>('settings-open-privacy'),
               title: '隐私中心',
-              subtitle: '可被搜索与跟单可见性',
+              // What that page actually holds. 「跟单可见性」 named a facet the
+              // V2 privacy contract does not carry — copytrade is retired —
+              // and 「可被搜索」 named no row on it either; the row it meant is
+              // 「显示 LOOP ID」.
+              subtitle: '匿名模式、显示 LOOP ID 与可见性',
               onTap: () => widget.onNavigate('privacy'),
               position: LoopRowPosition.first,
             ),
