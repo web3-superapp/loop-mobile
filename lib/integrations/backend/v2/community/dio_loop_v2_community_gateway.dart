@@ -253,7 +253,11 @@ Future<T> executeCommunityRequest<T>(
   try {
     return await session.execute(request);
   } on LoopBackendFailure catch (failure) {
-    throw CommunityGatewayException(communityFailureKindForV2(failure));
+    throw CommunityGatewayException(
+      communityFailureKindForV2(failure),
+      // The allowlisted scalar the envelope carried, nothing else from it.
+      reasonCode: failure.detailsSafe?.reasonCode,
+    );
   } on CommunityGatewayException {
     rethrow;
   } catch (_) {

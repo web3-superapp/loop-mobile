@@ -139,9 +139,20 @@ class StreamForegroundCallView extends StatefulWidget {
     required this.onLeaveRequested,
     super.key,
     this.inline = false,
+    this.onPresence,
   });
 
   final Call call;
+
+  /// Publishes this call's own connection and head count, once per change.
+  ///
+  /// The count below already says 「此刻在通话里 N 人」; the room facts above it
+  /// and the shell strip had no way to read the same figure and printed an
+  /// older observation beside it, so one screen carried 「在线 0」 above 「1 人
+  /// 在通话」. The reading leaves here after the frame that produced it: a
+  /// state write during a build is not allowed.
+  final void Function({required bool connected, required int participantCount})?
+  onPresence;
 
   /// True when the view is one section of the LOOP voice room page.
   ///
@@ -163,6 +174,28 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
   var _leaveBusy = false;
   var _microphoneEnableRequested = false;
   String? _commandError;
+  ({bool connected, int participantCount})? _published;
+
+  /// Hands one reading out, after the frame that read it and only when it
+  /// changed. A call that is still joining is not a connection, so it is
+  /// published as one this device does not hold yet.
+  void _publishPresence(_ForegroundCallViewData data) {
+    final report = widget.onPresence;
+    if (report == null) return;
+    final reading = (
+      connected: data.status.isConnected,
+      participantCount: data.participantCount,
+    );
+    if (_published == reading) return;
+    _published = reading;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      report(
+        connected: reading.connected,
+        participantCount: reading.participantCount,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -184,6 +217,7 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
         );
       },
       builder: (context, data) {
+        _publishPresence(data);
         final retirementStarted = widget.retirementStarted();
         final canRequestMicrophone = StreamMicrophoneControlPolicy.canRequest(
           status: data.status,

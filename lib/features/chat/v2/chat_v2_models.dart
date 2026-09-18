@@ -222,6 +222,14 @@ final class VoiceRoomRecord {
   bool get isJoinable =>
       isLive && provisionState == VoiceRoomProvisionState.provisioned;
 
+  /// True while the provider still holds this call backstage.
+  ///
+  /// LOOP's own record can read 「进行中」 at the same time: the room exists,
+  /// members may join it, and the audio is still not open. A device that
+  /// calls the provider in this state is refused — which is exactly what the
+  /// review device met — so the media surface is not mounted for it at all.
+  bool get audioOpen => isJoinable && !backstage;
+
   /// The bare Stream room ID, without the call type. Returns null when the CID
   /// does not have the frozen shape.
   String? get roomId {
@@ -614,6 +622,13 @@ String communicationUnavailableReason(String? reasonCode) =>
         '语音房还在验证中，'
             '验证通过前这一页不会发起任何语音连接。',
       'STREAM_PARTICIPANT_COUNT_NOT_OBSERVED' => '在线人数暂时读不到，因此不显示数字。',
+      // The room exists in LOOP but is not open on the provider's side yet,
+      // so a device that joins is refused the audio. It is not a permission
+      // this account lacks, and it is not a room that ended.
+      'VOICE_ROOM_BACKSTAGE_NOT_LIVE' => '这个房间还没有开放收听。刷新一次，或让主持人重新开启。',
+      'STREAM_CALL_GO_LIVE_UNCONFIRMED' =>
+        '这个房间还没有确认开放收听，现在可能听不到。刷新一次，或让主持人重新开启。',
+      'STREAM_CALL_MUTE_UNCONFIRMED' => '这次静音还没有在服务商那边确认。',
       'COMMUNITY_AI_RUNTIME_DEFERRED' => 'Community AI 还没有开放，这一页暂时不可用。',
       null => '这一项暂时读不到。',
       _ => '这一项暂时读不到。',

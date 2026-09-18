@@ -147,10 +147,178 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('连接失败'), findsOneWidget);
-    expect(find.text('没能连上这个语音房，请检查房间权限与网络后重试。'), findsOneWidget);
+    // An error the provider did not classify keeps the neutral sentence; the
+    // provider's own words never reach the screen.
+    expect(find.text('没能连上这个语音房，请稍后重试。'), findsOneWidget);
     expect(find.textContaining('provider-secret-detail'), findsNothing);
     expect(handle.leaveCalls, 1);
     expect(find.text('Official CallState view'), findsNothing);
+  });
+
+  testWidgets('a refused admission says so without quoting the provider', (
+    tester,
+  ) async {
+    final handle = _RecordingAudioRoomCall(
+      roomId: 'loop-daily',
+      joinError: const AudioRoomCallFailure(
+        AudioRoomCallFailureKind.join,
+        refusal: AudioRoomJoinRefusal.permission,
+        detail: 'missing permission join-backstage',
+      ),
+    );
+    final factory = _RecordingAudioRoomCallFactory(handle);
+
+    await tester.pumpWidget(
+      _readyPage(factory: factory, target: _target('loop-daily')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('连接语音'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('这个房间还没有开放收听，请让主持人重新开启。'), findsOneWidget);
+    expect(find.textContaining('join-backstage'), findsNothing);
+    expect(find.textContaining('permission'), findsNothing);
+    // The neutral sentence is not stacked on top of the one that says what
+    // happened.
+    expect(find.text('没能连上这个语音房，请稍后重试。'), findsNothing);
+  });
+
+  testWidgets('a connection that never arrived is not a refused room', (
+    tester,
+  ) async {
+    final handle = _RecordingAudioRoomCall(
+      roomId: 'loop-daily',
+      joinError: const AudioRoomCallFailure(
+        AudioRoomCallFailureKind.join,
+        refusal: AudioRoomJoinRefusal.network,
+        detail: 'connection timed out',
+      ),
+    );
+    final factory = _RecordingAudioRoomCallFactory(handle);
+
+    await tester.pumpWidget(
+      _readyPage(factory: factory, target: _target('loop-daily')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('连接语音'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('这次连接没有接通，请检查网络后重试。'), findsOneWidget);
+    expect(find.text('这个房间还没有开放收听，请让主持人重新开启。'), findsNothing);
+  });
+
+  testWidgets('the second attempt reads the room again and makes a new call', (
+    tester,
+  ) async {
+    final factory = _SequencedAudioRoomCallFactory(<_RecordingAudioRoomCall>[
+      _RecordingAudioRoomCall(
+        roomId: 'loop-daily',
+        joinError: const AudioRoomCallFailure(
+          AudioRoomCallFailureKind.join,
+          refusal: AudioRoomJoinRefusal.permission,
+          detail: 'missing permission join-backstage',
+        ),
+      ),
+      _RecordingAudioRoomCall(roomId: 'loop-daily'),
+    ]);
+    var refreshes = 0;
+
+    await tester.pumpWidget(
+      _readyPage(
+        factory: factory,
+        target: _target('loop-daily'),
+        autoConnect: true,
+        onReconnectRequested: () async => refreshes += 1,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('已加入，语音连接失败'), findsOneWidget);
+    expect(factory.createCalls, 1);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('voiceroom-media-reconnect')),
+    );
+    await tester.pumpAndSettle();
+
+    // The room and the provider session are read again before anything is
+    // connected, and the attempt runs on a call this device has not been
+    // refused on.
+    expect(refreshes, 1);
+    expect(factory.createCalls, 2);
+    expect(factory.handles.first.joinCalls, 1);
+    expect(factory.handles.last.joinCalls, 1);
+    expect(find.text('Official CallState view'), findsOneWidget);
+  });
+
+  testWidgets('the connection note follows the part LOOP granted', (
+    tester,
+  ) async {
+    final handle = _RecordingAudioRoomCall(roomId: 'loop-daily');
+    final factory = _RecordingAudioRoomCallFactory(handle);
+
+    await tester.pumpWidget(
+      _readyPage(
+        factory: factory,
+        target: _target('loop-daily'),
+        autoConnect: true,
+        viewerRole: AudioRoomViewerRole.host,
+      ),
+    );
+    await tester.pump();
+
+    expect(find.textContaining('你是主持人'), findsOneWidget);
+    expect(find.textContaining('结束房间'), findsOneWidget);
+    expect(find.textContaining('你以听众身份静音进入'), findsNothing);
+  });
+
+  test('a refusal is classified by what the provider answered', () {
+    expect(
+      AudioRoomJoinRefusalMapping.fromDetail(
+        'Missing permission join-backstage',
+      ),
+      AudioRoomJoinRefusal.permission,
+    );
+    expect(
+      AudioRoomJoinRefusalMapping.fromDetail('ApiException 403: forbidden'),
+      AudioRoomJoinRefusal.permission,
+    );
+    expect(
+      AudioRoomJoinRefusalMapping.fromDetail('token is expired'),
+      AudioRoomJoinRefusal.session,
+    );
+    expect(
+      AudioRoomJoinRefusalMapping.fromDetail('call not found'),
+      AudioRoomJoinRefusal.roomUnavailable,
+    );
+    expect(
+      AudioRoomJoinRefusalMapping.fromDetail('connection timed out'),
+      AudioRoomJoinRefusal.network,
+    );
+    expect(
+      AudioRoomJoinRefusalMapping.fromDetail('provider-secret-detail'),
+      AudioRoomJoinRefusal.unknown,
+    );
+    expect(
+      AudioRoomJoinRefusalMapping.fromDetail(null),
+      AudioRoomJoinRefusal.unknown,
+    );
+  });
+
+  test('every refusal has a sentence of its own', () {
+    final sentences = <String>{
+      for (final refusal in AudioRoomJoinRefusal.values)
+        audioRoomJoinRefusalText(refusal),
+    };
+    expect(sentences.length, AudioRoomJoinRefusal.values.length);
+    // Each of the three parts gets its own note, and only the host's names
+    // the control a host actually has.
+    expect(audioRoomConnectionNote(AudioRoomViewerRole.host), contains('结束房间'));
+    expect(
+      audioRoomConnectionNote(AudioRoomViewerRole.speaker),
+      contains('你是发言人'),
+    );
+    expect(audioRoomConnectionNote(null), contains('听众'));
   });
 
   testWidgets('disposing during join retires late Call results', (
@@ -585,6 +753,8 @@ Widget _readyPage({
   required AudioRoomTarget target,
   bool autoConnect = false,
   VoiceMediaLink? link,
+  AudioRoomViewerRole? viewerRole,
+  Future<void> Function()? onReconnectRequested,
 }) {
   return ProviderScope(
     overrides: [
@@ -606,6 +776,8 @@ Widget _readyPage({
                 autoConnect: true,
                 inline: true,
                 link: link,
+                viewerRole: viewerRole,
+                onReconnectRequested: onReconnectRequested,
               ),
             )
           : const StreamVoiceRoomPage(),
@@ -618,6 +790,22 @@ AudioRoomTarget _target(String roomId) {
     callType: AudioRoomTarget.callType,
     roomId: roomId,
   )!;
+}
+
+/// Hands out one call per attempt, so a second attempt is visibly not the
+/// first one repeated.
+final class _SequencedAudioRoomCallFactory implements AudioRoomCallFactory {
+  _SequencedAudioRoomCallFactory(this.handles);
+
+  final List<_RecordingAudioRoomCall> handles;
+  int createCalls = 0;
+
+  @override
+  AudioRoomCallHandle create(AudioRoomTarget target) {
+    final handle = handles[createCalls.clamp(0, handles.length - 1)];
+    createCalls += 1;
+    return handle;
+  }
 }
 
 final class _RecordingAudioRoomCallFactory implements AudioRoomCallFactory {
@@ -727,6 +915,8 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
     required Future<void> Function() onLeaveRequested,
     bool inline = false,
     Future<void> Function()? onMicrophoneEnabled,
+    void Function({required bool connected, required int participantCount})?
+    onPresence,
   }) {
     return Column(
       children: <Widget>[

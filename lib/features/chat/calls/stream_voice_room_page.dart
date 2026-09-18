@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -24,6 +25,8 @@ class StreamVoiceRoomPage extends ConsumerWidget {
     this.link,
     this.onExitRequested,
     this.onMicrophoneEnabled,
+    this.onReconnectRequested,
+    this.viewerRole,
   });
 
   /// A locator the caller already holds.
@@ -62,6 +65,19 @@ class StreamVoiceRoomPage extends ConsumerWidget {
   /// other way round: LOOP has no command that opens a microphone.
   final Future<void> Function()? onMicrophoneEnabled;
 
+  /// Asked before a second connection attempt, so the attempt starts from a
+  /// freshly read room and a freshly issued provider session.
+  ///
+  /// Without it 「重新连接语音」 asked the same call object again: on the review
+  /// device three taps produced no request at all and the same refusal each
+  /// time. The page that owns the room does the reading; this surface only
+  /// waits for it and then connects.
+  final Future<void> Function()? onReconnectRequested;
+
+  /// The part LOOP granted this account. It decides what the surface says
+  /// about the microphone and about the way out; it grants nothing.
+  final AudioRoomViewerRole? viewerRole;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final principalKey = ref.watch(streamVideoPrincipalKeyProvider);
@@ -87,6 +103,9 @@ class StreamVoiceRoomPage extends ConsumerWidget {
       link: link,
       onExitRequested: onExitRequested,
       onMicrophoneEnabled: onMicrophoneEnabled,
+      onReconnectRequested: onReconnectRequested,
+      viewerRole: viewerRole,
+      presence: ref.read(audioRoomLivePresenceProvider.notifier),
       principalKey: principalKey,
       authorization: authorization,
       target: resolvedTarget,
@@ -107,6 +126,9 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
     required this.link,
     required this.onExitRequested,
     required this.onMicrophoneEnabled,
+    required this.onReconnectRequested,
+    required this.viewerRole,
+    required this.presence,
     required this.principalKey,
     required this.authorization,
     required this.target,
@@ -121,6 +143,11 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
   final VoiceMediaLink? link;
   final Future<void> Function()? onExitRequested;
   final Future<void> Function()? onMicrophoneEnabled;
+  final Future<void> Function()? onReconnectRequested;
+  final AudioRoomViewerRole? viewerRole;
+
+  /// Where this surface publishes the call's own head count.
+  final AudioRoomLivePresenceController? presence;
   final String? principalKey;
   final AsyncValue<StreamVideoSessionAuthorization>? authorization;
   final AsyncValue<AudioRoomTarget?>? target;
@@ -155,7 +182,13 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   var _generation = 0;
   var _cleanupGeneration = 0;
   var _lifecycleGeneration = 0;
+
+  /// True while the page re-reads the room and the provider session for a
+  /// second attempt. Nothing connects during it: the old call is exactly the
+  /// one that was refused.
+  var _refreshingConnection = false;
   String? _joinError;
+  ({bool connected, int participantCount})? _reportedPresence;
 
   AudioRoomTarget? get _target {
     final value = widget.target;
@@ -203,6 +236,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     widget.link?.detach(_disconnectForExit);
+    _withdrawPresence();
     _generation += 1;
     _cleanupGeneration += 1;
     _lifecycleGeneration += 1;
@@ -249,6 +283,12 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   @override
   Widget build(BuildContext context) {
     final foregroundCall = _foregroundCall;
+    if (foregroundCall == null) {
+      // A lobby is a room this device is not in. Saying so is what keeps the
+      // strip outside this page from printing a head count for a call that
+      // ended, or one that never connected.
+      _schedulePresenceReport(connected: false, participantCount: 0);
+    }
     if (widget.inline) {
       // The voice room page owns the only scrolling region on the screen, so
       // the inline surface is a plain section: no Scaffold, no app bar of its
@@ -259,6 +299,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
               onLeaveRequested: _requestExit,
               inline: true,
               onMicrophoneEnabled: widget.onMicrophoneEnabled,
+              onPresence: _reportPresence,
             );
     }
     return Scaffold(
@@ -290,6 +331,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
               : foregroundCall.buildForeground(
                   onLeaveRequested: _requestExit,
                   onMicrophoneEnabled: widget.onMicrophoneEnabled,
+                  onPresence: _reportPresence,
                 ),
         ),
       ),
@@ -308,9 +350,14 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       cleanupFailed: _cleanupFailed,
       autoConnect: widget.autoConnect,
       autoConnectSuspended: _autoConnectSuspended,
+      refreshingConnection: _refreshingConnection,
     );
     final joinEnabled =
-        content.ready && !_joining && !_cleanupPending && !_cleanupFailed;
+        content.ready &&
+        !_joining &&
+        !_refreshingConnection &&
+        !_cleanupPending &&
+        !_cleanupFailed;
     if (widget.autoConnect && joinEnabled && !content.reconnect) {
       _scheduleAutoConnect();
     }
@@ -386,8 +433,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
             ],
             const SizedBox(height: 10),
             Text(
-              '你以听众身份静音进入，不会申请麦克风权限；'
-              '语音没连上也不会把你移出房间，要真正退出请用下面的「离开」。',
+              audioRoomConnectionNote(widget.viewerRole),
               style: Theme.of(context).textTheme.labelMedium,
             ),
           ],
@@ -485,6 +531,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     if (_autoConnectScheduled ||
         _autoConnectSuspended ||
         _joining ||
+        _refreshingConnection ||
         _joinError != null ||
         _foregroundCall != null) {
       return;
@@ -495,6 +542,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       if (!mounted ||
           !widget.autoConnect ||
           _autoConnectSuspended ||
+          _refreshingConnection ||
           _joinError != null) {
         return;
       }
@@ -503,12 +551,34 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   }
 
   /// The reader's own request for the audio back after a failed connection.
-  Future<void> _reconnect() {
+  ///
+  /// The refusal belongs to the call this device already holds, so asking it
+  /// again is not a second attempt — it is the same one. The page is asked to
+  /// read the room and the provider session again first; only then does a new
+  /// call get made, which is what [_joinMuted] does with the factory it is
+  /// handed.
+  Future<void> _reconnect() async {
+    final refresh = widget.onReconnectRequested;
     setState(() {
       _autoConnectSuspended = false;
       _joinError = null;
+      _refreshingConnection = refresh != null;
     });
-    return _joinMuted();
+    if (refresh == null) {
+      await _joinMuted();
+      return;
+    }
+    try {
+      await refresh();
+    } catch (_) {
+      // The page states a read it could not finish in its own block; this
+      // surface only reports what the connection did.
+    }
+    if (!mounted) return;
+    setState(() => _refreshingConnection = false);
+    // With [autoConnect] the frame after this schedules the attempt on the
+    // room and the client that were just read.
+    if (!widget.autoConnect) await _joinMuted();
   }
 
   /// The single exit, asked for from inside the call view.
@@ -541,6 +611,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
         _cleanupPending ||
         _cleanupFailed ||
         _joining ||
+        _refreshingConnection ||
         _foregroundCall != null) {
       return;
     }
@@ -573,7 +644,17 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
 
     try {
       await callHandle.joinMuted();
-    } catch (_) {
+    } catch (error) {
+      final failure = error is AudioRoomCallFailure ? error : null;
+      final refusal = failure?.refusal ?? AudioRoomJoinRefusal.unknown;
+      if (kDebugMode) {
+        // The provider's own answer stays here: it is the only account of
+        // what was refused, and it is not a sentence for a reader.
+        debugPrint(
+          'LOOP voice join refused: ${refusal.name} · '
+          '${failure?.detail ?? error}',
+        );
+      }
       if (!mounted || generation != _generation) {
         await _retireIgnoringFailure(callHandle);
         return;
@@ -586,7 +667,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
         _cleanupHandles = <AudioRoomCallHandle>[callHandle];
         _cleanupPending = true;
         _cleanupFailed = false;
-        _joinError = '没能连上这个语音房，请检查房间权限与网络后重试。';
+        _joinError = audioRoomJoinRefusalText(refusal);
       });
       await _completeCleanup(<AudioRoomCallHandle>[
         callHandle,
@@ -740,6 +821,76 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     }
   }
 
+  /// Publishes one reading from the mounted call view.
+  void _reportPresence({
+    required bool connected,
+    required int participantCount,
+  }) {
+    _publishPresence(connected: connected, participantCount: participantCount);
+  }
+
+  /// Publishes the lobby's own reading after this frame.
+  ///
+  /// A write during a build is not allowed, and the lobby is rebuilt for
+  /// every step of the connection, so the reading is sent only when it is not
+  /// the one already published.
+  void _schedulePresenceReport({
+    required bool connected,
+    required int participantCount,
+  }) {
+    final reading = (connected: connected, participantCount: participantCount);
+    if (_reportedPresence == reading) return;
+    _reportedPresence = reading;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _publishPresence(
+        connected: connected,
+        participantCount: participantCount,
+        deduplicate: false,
+      );
+    });
+  }
+
+  void _publishPresence({
+    required bool connected,
+    required int participantCount,
+    bool deduplicate = true,
+  }) {
+    final presence = widget.presence;
+    final roomId = _foregroundCall?.roomId ?? _target?.roomId;
+    if (presence == null || roomId == null) return;
+    final reading = (connected: connected, participantCount: participantCount);
+    if (deduplicate && _reportedPresence == reading) return;
+    _reportedPresence = reading;
+    try {
+      presence.report(
+        AudioRoomLivePresence(
+          roomId: roomId,
+          connected: connected,
+          participantCount: participantCount,
+        ),
+      );
+    } catch (_) {
+      // The container can be torn down before this surface is; the reading
+      // goes with it either way.
+    }
+  }
+
+  /// Takes this surface's reading back when it leaves the tree.
+  void _withdrawPresence() {
+    final presence = widget.presence;
+    final roomId = _foregroundCall?.roomId ?? _target?.roomId;
+    _reportedPresence = null;
+    if (presence == null || roomId == null) return;
+    scheduleMicrotask(() {
+      try {
+        presence.clear(roomId);
+      } catch (_) {
+        // See above: a retired container clears itself.
+      }
+    });
+  }
+
   static List<AudioRoomCallHandle> _uniqueHandles(
     Iterable<AudioRoomCallHandle?> candidates,
   ) {
@@ -770,7 +921,17 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     required bool cleanupFailed,
     required bool autoConnect,
     required bool autoConnectSuspended,
+    required bool refreshingConnection,
   }) {
+    if (refreshingConnection) {
+      return const _StreamVoiceContent(
+        title: '正在重新连接语音',
+        message: '正在重新读取这个房间并重新取得语音身份，然后再连接一次。',
+        icon: Icons.sync_rounded,
+        loading: true,
+        ready: true,
+      );
+    }
     final content = _baseContentFor(
       principalKey: principalKey,
       authorization: authorization,
@@ -933,6 +1094,39 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     );
   }
 }
+
+/// One sentence for one refusal.
+///
+/// It says what to do next, and it never repeats the provider's own answer: a
+/// reader cannot act on an SDK string, and the two most common causes here —
+/// a room that is not open to listeners and a network that never arrived —
+/// need opposite next steps. The answer itself is in the debug log.
+String audioRoomJoinRefusalText(AudioRoomJoinRefusal refusal) =>
+    switch (refusal) {
+      AudioRoomJoinRefusal.permission => '这个房间还没有开放收听，请让主持人重新开启。',
+      AudioRoomJoinRefusal.roomUnavailable => '这个房间已经不能加入了，请回到社区看它是否还在进行。',
+      AudioRoomJoinRefusal.network => '这次连接没有接通，请检查网络后重试。',
+      AudioRoomJoinRefusal.session => '这次的语音身份已经失效，请退出这一页再进来。',
+      AudioRoomJoinRefusal.unknown => '没能连上这个语音房，请稍后重试。',
+    };
+
+/// What the connection means for this account, by the part it plays.
+///
+/// A listener never opens a microphone and a host has no 离开 at all, so one
+/// sentence written for a listener told a host to use a control that is not
+/// on the screen. A room whose role is not known yet keeps the listener's
+/// sentence: it is the part every member starts in.
+String audioRoomConnectionNote(AudioRoomViewerRole? role) => switch (role) {
+  AudioRoomViewerRole.host =>
+    '你是主持人，进入时同样静音，点「发言」才会申请麦克风权限；'
+        '语音没连上房间也不会结束，要结束请用下面的「结束房间」。',
+  AudioRoomViewerRole.speaker =>
+    '你是发言人，进入时同样静音，点「发言」才会申请麦克风权限；'
+        '语音没连上也不会把你移出房间，要真正退出请用下面的「离开」。',
+  _ =>
+    '你以听众身份静音进入，不会申请麦克风权限；'
+        '语音没连上也不会把你移出房间，要真正退出请用下面的「离开」。',
+};
 
 class _AudioRoomLobbyFacts extends StatelessWidget {
   const _AudioRoomLobbyFacts();

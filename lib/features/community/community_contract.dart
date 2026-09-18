@@ -34,9 +34,15 @@ enum CommunityFailureKind {
 }
 
 final class CommunityGatewayException implements Exception {
-  const CommunityGatewayException(this.kind);
+  const CommunityGatewayException(this.kind, {this.reasonCode});
 
   final CommunityFailureKind kind;
+
+  /// The rule the server named in `detailsSafe.reasonCode`, when it named
+  /// one. A kind says what class of refusal it was; this says which refusal,
+  /// and it is the only way a page can answer 「为什么」 with the server's own
+  /// answer instead of a sentence for the whole class.
+  final String? reasonCode;
 
   @override
   String toString() => 'CommunityGatewayException(${kind.name})';

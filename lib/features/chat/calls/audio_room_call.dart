@@ -9,13 +9,108 @@ import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 enum AudioRoomCallFailureKind { join, leave }
 
+/// Why the provider did not put this device in the room.
+///
+/// A join that came back refused used to leave the surface one sentence for
+/// every cause there is, and the provider's own answer was dropped on the
+/// floor — a reader looking at 「没能连上这个语音房」 could not tell a room that
+/// is not open to listeners from a network that never reached it, and neither
+/// could anyone reading the device afterwards. Each kind now carries its own
+/// next step, and the provider's wording stays in the log where it belongs:
+/// it is an SDK string, not something a reader can act on.
+enum AudioRoomJoinRefusal {
+  /// The account is not allowed into this call as it stands.
+  permission,
+
+  /// The call itself cannot be joined: it is gone, ended, or not a room.
+  roomUnavailable,
+
+  /// The attempt never reached the provider.
+  network,
+
+  /// The provider did not accept this device's credentials.
+  session,
+
+  /// The answer named no cause this client recognises.
+  unknown,
+}
+
+/// Classifies one provider answer without ever showing it.
+///
+/// The markers are the vocabulary the SDK composes its errors from (an HTTP
+/// status, a Twirp message, a socket fault). Order matters: a credential
+/// refusal names authentication, an admission refusal names permission, and
+/// only an answer that names neither is read as a transport fault.
+abstract final class AudioRoomJoinRefusalMapping {
+  static const List<String> _session = <String>[
+    'unauthenticated',
+    'authentication',
+    'token',
+    'jwt',
+    '401',
+  ];
+  static const List<String> _permission = <String>[
+    'permission',
+    'forbidden',
+    'not allowed',
+    'denied',
+    'backstage',
+    '403',
+  ];
+  static const List<String> _roomUnavailable = <String>[
+    'not found',
+    'does not exist',
+    'has ended',
+    'call ended',
+    'not live',
+    '404',
+    '410',
+  ];
+  static const List<String> _network = <String>[
+    'timeout',
+    'timed out',
+    'network',
+    'socket',
+    'connection',
+    'unreachable',
+    'host lookup',
+    'offline',
+  ];
+
+  static AudioRoomJoinRefusal fromDetail(String? detail) {
+    final answer = detail?.toLowerCase().trim();
+    if (answer == null || answer.isEmpty) return AudioRoomJoinRefusal.unknown;
+    bool names(List<String> markers) =>
+        markers.any((marker) => answer.contains(marker));
+    if (names(_session)) return AudioRoomJoinRefusal.session;
+    if (names(_permission)) return AudioRoomJoinRefusal.permission;
+    if (names(_roomUnavailable)) return AudioRoomJoinRefusal.roomUnavailable;
+    if (names(_network)) return AudioRoomJoinRefusal.network;
+    return AudioRoomJoinRefusal.unknown;
+  }
+}
+
 final class AudioRoomCallFailure implements Exception {
-  const AudioRoomCallFailure(this.kind);
+  const AudioRoomCallFailure(
+    this.kind, {
+    this.refusal = AudioRoomJoinRefusal.unknown,
+    this.detail,
+  });
 
   final AudioRoomCallFailureKind kind;
 
+  /// What the provider refused, as far as its answer says.
+  final AudioRoomJoinRefusal refusal;
+
+  /// The provider's own answer. It goes to the debug log and nowhere else.
+  final String? detail;
+
   @override
-  String toString() => 'Audio Room command failed: ${kind.name}';
+  String toString() {
+    final answer = detail;
+    return 'Audio Room command failed: ${kind.name} · ${refusal.name}'
+        '${answer == null ? '' : ' · $answer'}';
+  }
 }
 
 /// Creates the explicit audio-only options used for every first join.
@@ -52,10 +147,16 @@ abstract interface class AudioRoomCallHandle {
   /// [onMicrophoneEnabled] is called after the device actually opened the
   /// microphone, and only then. It is the LOOP side's cue, not a media
   /// command: it never decides whether the microphone opens.
+  ///
+  /// [onPresence] publishes the call's own connection and head count to the
+  /// surfaces outside this view — the room facts above it and the shell strip
+  /// — so one screen never carries two different numbers under one word.
   Widget buildForeground({
     required Future<void> Function() onLeaveRequested,
     bool inline,
     Future<void> Function()? onMicrophoneEnabled,
+    void Function({required bool connected, required int participantCount})?
+    onPresence,
   });
 }
 
@@ -227,9 +328,21 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
     final result = await _call.join(
       connectOptions: mutedAudioRoomConnectOptions(),
     );
-    if (result.isFailure) {
-      throw const AudioRoomCallFailure(AudioRoomCallFailureKind.join);
-    }
+    if (!result.isFailure) return;
+    // The SDK answers with one `Result`; the refusal inside it is the only
+    // account of why this device is not in the room, and dropping it left
+    // the page with nothing to say and the device with nothing to read.
+    final detail = result is Failure ? _describeFailure(result) : null;
+    throw AudioRoomCallFailure(
+      AudioRoomCallFailureKind.join,
+      refusal: AudioRoomJoinRefusalMapping.fromDetail(detail),
+      detail: detail,
+    );
+  }
+
+  static String? _describeFailure(Failure failure) {
+    final message = failure.error.message.trim();
+    return message.isEmpty ? failure.error.toString() : message;
   }
 
   @override
@@ -259,7 +372,10 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
   Future<void> _leaveCall() async {
     final result = await _call.leave();
     if (result.isFailure) {
-      throw const AudioRoomCallFailure(AudioRoomCallFailureKind.leave);
+      throw AudioRoomCallFailure(
+        AudioRoomCallFailureKind.leave,
+        detail: result is Failure ? _describeFailure(result) : null,
+      );
     }
 
     // Call.leave() can return success when another SDK disconnect is already
@@ -281,9 +397,12 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
     required Future<void> Function() onLeaveRequested,
     bool inline = false,
     Future<void> Function()? onMicrophoneEnabled,
+    void Function({required bool connected, required int participantCount})?
+    onPresence,
   }) {
     return StreamForegroundCallView(
       call: _call,
+      onPresence: onPresence,
       retirementStarted: () => retirementStarted,
       onMicrophoneRequested: onMicrophoneEnabled == null
           ? setMicrophoneEnabled

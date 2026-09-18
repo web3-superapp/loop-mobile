@@ -381,6 +381,20 @@ final class StreamVideoSdkSession {
     return _retireClient();
   }
 
+  /// Retires the authorized client so the next [authorize] goes back for an
+  /// identity, a token and a client of its own.
+  ///
+  /// A connection the provider refused is held by the client that was
+  /// refused: asking it again replays the same state and issues no request at
+  /// all. This is the one way a reader's second attempt becomes a second
+  /// attempt. It changes no principal and grants nothing — it only drops what
+  /// this device holds.
+  Future<void> retireForRetry() {
+    if (_disposed || _principalKey == null) return Future<void>.value();
+    _invalidateGeneration();
+    return _retireClient();
+  }
+
   Future<void> _retireClient() {
     _authorized = false;
     _identity = null;

@@ -109,7 +109,9 @@ final class MemoryVoiceRoomGateway implements VoiceRoomGateway {
       callCid: 'audio_room:loop_voice_0123456789abcdef0123456789abcdef',
       state: _ended ? VoiceRoomState.ended : VoiceRoomState.live,
       provisionState: VoiceRoomProvisionState.provisioned,
-      backstage: true,
+      // The preview room is open: a backstage room is one the device may not
+      // connect to, and the preview surface is there to be connected to.
+      backstage: false,
       createdAt: DateTime.utc(2026, 9, 8, 12),
       endedAt: _ended ? DateTime.utc(2026, 9, 8, 13) : null,
     ),
