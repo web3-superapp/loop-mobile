@@ -239,7 +239,10 @@ final class MemoryVoiceRoomGateway implements VoiceRoomGateway {
                 VoiceRoomMemberCommand.inviteSpeaker,
               ]
             : const <VoiceRoomMemberCommand>[
+                // A muted speaker row carries the host's way back out of the
+                // intent it set (decision 0053).
                 VoiceRoomMemberCommand.removeSpeaker,
+                VoiceRoomMemberCommand.unmute,
               ],
       ),
     ],
@@ -289,6 +292,12 @@ final class MemoryVoiceRoomGateway implements VoiceRoomGateway {
 
   @override
   Future<VoiceRoomSnapshot> muteSpeaker({
+    required String voiceRoomId,
+    required String publicProfileId,
+  }) async => _snapshot;
+
+  @override
+  Future<VoiceRoomSnapshot> unmuteSpeaker({
     required String voiceRoomId,
     required String publicProfileId,
   }) async => _snapshot;

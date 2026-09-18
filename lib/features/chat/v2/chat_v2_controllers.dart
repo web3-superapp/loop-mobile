@@ -821,6 +821,8 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
     VoiceRoomMemberCommand.inviteSpeaker => inviteSpeaker(publicProfileId),
     VoiceRoomMemberCommand.removeSpeaker => removeSpeaker(publicProfileId),
     VoiceRoomMemberCommand.mute => muteSpeaker(publicProfileId),
+    VoiceRoomMemberCommand.unmute ||
+    VoiceRoomMemberCommand.unmuteSelf => unmuteSpeaker(publicProfileId),
   };
 
   Future<CommunityFailureKind?> muteSpeaker(String publicProfileId) => _command(
@@ -829,6 +831,43 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
       publicProfileId: publicProfileId,
     ),
   );
+
+  Future<CommunityFailureKind?> unmuteSpeaker(String publicProfileId) =>
+      _command(
+        (gateway, roomId) => gateway.unmuteSpeaker(
+          voiceRoomId: roomId,
+          publicProfileId: publicProfileId,
+        ),
+      );
+
+  /// Clears this account's own mute intent after the device opened the
+  /// microphone (decision 0053).
+  ///
+  /// The target and the permission both come from the server's own row: only
+  /// a speaker row marked [VoiceRoomMember.isSelf] that carries
+  /// [VoiceRoomMemberCommand.unmuteSelf] is acted on. A room where the server
+  /// published no such command — the row is not muted, or this account is not
+  /// a speaker — has nothing to clear, so this does nothing and reports no
+  /// failure. It never opens or closes a microphone.
+  Future<CommunityFailureKind?> clearOwnMuteIntent() async {
+    if (state.roster(VoiceRoomRosterView.speaker).phase ==
+        CommunityViewPhase.loading) {
+      await loadRoster(VoiceRoomRosterView.speaker);
+    }
+    for (final member in state.roster(VoiceRoomRosterView.speaker).items) {
+      final target = member.publicProfileId;
+      if (member.isSelf &&
+          target != null &&
+          member.commands.contains(VoiceRoomMemberCommand.unmuteSelf)) {
+        final failure = await unmuteSpeaker(target);
+        // The roster row still carries the old intent; the room was re-read,
+        // the list was not.
+        if (failure == null) await loadRoster(VoiceRoomRosterView.speaker);
+        return failure;
+      }
+    }
+    return null;
+  }
 
   Future<CommunityFailureKind?> join() =>
       _command((gateway, roomId) => gateway.join(roomId));

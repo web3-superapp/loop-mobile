@@ -95,6 +95,9 @@ enum VoiceRoomCommand {
   // Per-member mute (decision 0052) hangs off the same speaker resource, so
   // it is the one targeted command with a trailing segment of its own.
   muteSpeaker('speakers', 'POST', targetsProfile: true, suffix: '/mute'),
+  // Decision 0053: the same resource, deleted. It is the only targeted
+  // command a viewer that is not the host may send, and only against itself.
+  unmuteSpeaker('speakers', 'DELETE', targetsProfile: true, suffix: '/mute'),
   muteAll('mute-all', 'POST'),
   endRoom('end', 'POST');
 

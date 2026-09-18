@@ -726,6 +726,7 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
   Widget buildForeground({
     required Future<void> Function() onLeaveRequested,
     bool inline = false,
+    Future<void> Function()? onMicrophoneEnabled,
   }) {
     return Column(
       children: <Widget>[

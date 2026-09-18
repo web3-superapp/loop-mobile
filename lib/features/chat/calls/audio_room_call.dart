@@ -48,9 +48,14 @@ abstract interface class AudioRoomCallHandle {
 
   /// [inline] asks for the section layout used inside the LOOP voice room
   /// page, which owns the only scrolling region on that screen.
+  ///
+  /// [onMicrophoneEnabled] is called after the device actually opened the
+  /// microphone, and only then. It is the LOOP side's cue, not a media
+  /// command: it never decides whether the microphone opens.
   Widget buildForeground({
     required Future<void> Function() onLeaveRequested,
     bool inline,
+    Future<void> Function()? onMicrophoneEnabled,
   });
 }
 
@@ -275,11 +280,20 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
   Widget buildForeground({
     required Future<void> Function() onLeaveRequested,
     bool inline = false,
+    Future<void> Function()? onMicrophoneEnabled,
   }) {
     return StreamForegroundCallView(
       call: _call,
       retirementStarted: () => retirementStarted,
-      onMicrophoneRequested: setMicrophoneEnabled,
+      onMicrophoneRequested: onMicrophoneEnabled == null
+          ? setMicrophoneEnabled
+          : ({required bool enabled}) async {
+              final opened = await setMicrophoneEnabled(enabled: enabled);
+              // The cue follows the device, not the request: a microphone
+              // that did not open reports nothing to LOOP.
+              if (opened && enabled) await onMicrophoneEnabled();
+              return opened;
+            },
       onLeaveRequested: onLeaveRequested,
       inline: inline,
     );

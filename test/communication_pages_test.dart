@@ -1508,6 +1508,183 @@ void main() {
       expect(voice.commands, contains('mute:$testMemberId'));
     });
 
+    testWidgets('a host takes its own mute intent back off a speaker row', (
+      tester,
+    ) async {
+      final voice = hostGateway(
+        speakers: <VoiceRoomMember>[
+          testVoiceRoomMember(
+            view: VoiceRoomRosterView.speaker,
+            muted: true,
+            commands: const <VoiceRoomMemberCommand>[
+              VoiceRoomMemberCommand.removeSpeaker,
+              VoiceRoomMemberCommand.unmute,
+            ],
+          ),
+        ],
+      );
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
+        voiceRoom: voice,
+      );
+
+      final row = find.byKey(
+        const ValueKey<String>('voiceroom-member-speaker-$testMemberId'),
+      );
+      await scrollToCommunitySection(tester, row);
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+      // The muted row now carries the way back out of the intent, and the
+      // mute command is gone from it.
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-member-command-unmute')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-member-command-mute')),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('voiceroom-member-command-unmute')),
+      );
+      await tester.pumpAndSettle();
+      // The question says what the command does not do: it opens no
+      // microphone for anyone.
+      expect(find.textContaining('不会替对方打开麦克风'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-confirm-accept')),
+      );
+      await tester.pumpAndSettle();
+      expect(voice.commands, contains('unmute:$testMemberId'));
+      expect(find.text('已取消静音意图'), findsOneWidget);
+    });
+
+    testWidgets(
+      'a muted speaker clears its own mark and no other row is actionable',
+      (tester) async {
+        final voice =
+            FakeVoiceRoomGateway(
+                snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.speaker),
+              )
+              ..rosters = <VoiceRoomRosterView, VoiceRoomMemberPage>{
+                VoiceRoomRosterView.speaker: testVoiceRoomMemberPage(
+                  view: VoiceRoomRosterView.speaker,
+                  items: <VoiceRoomMember>[
+                    testVoiceRoomMember(
+                      view: VoiceRoomRosterView.speaker,
+                      muted: true,
+                      isSelf: true,
+                      commands: const <VoiceRoomMemberCommand>[
+                        VoiceRoomMemberCommand.unmuteSelf,
+                      ],
+                    ),
+                    testVoiceRoomMember(
+                      view: VoiceRoomRosterView.speaker,
+                      publicProfileId: testAdminId,
+                      alias: 'DeFiMaxi_349',
+                      muted: true,
+                    ),
+                  ],
+                ),
+                VoiceRoomRosterView.listener: testVoiceRoomMemberPage(
+                  view: VoiceRoomRosterView.listener,
+                ),
+              };
+        await pumpCommunityPage(
+          tester,
+          const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
+          voiceRoom: voice,
+        );
+
+        // The other muted row is still a row this viewer may not act on.
+        final other = find.byKey(
+          const ValueKey<String>('voiceroom-member-speaker-$testAdminId'),
+        );
+        await scrollToCommunitySection(tester, other);
+        await tester.tap(other);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey<String>('voiceroom-member-sheet')),
+          findsNothing,
+        );
+
+        final own = find.byKey(
+          const ValueKey<String>('voiceroom-member-speaker-$testMemberId'),
+        );
+        await scrollToCommunitySection(tester, own);
+        await tester.tap(own);
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(
+            const ValueKey<String>('voiceroom-member-command-unmute_self'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.textContaining('不会打开麦克风'), findsOneWidget);
+        await tester.tap(
+          find.byKey(const ValueKey<String>('community-confirm-accept')),
+        );
+        await tester.pumpAndSettle();
+        expect(voice.commands, contains('unmute:$testMemberId'));
+      },
+    );
+
+    testWidgets('the microphone opening clears this account\'s mute mark', (
+      tester,
+    ) async {
+      final voice =
+          FakeVoiceRoomGateway(
+              snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.speaker),
+            )
+            ..rosters = <VoiceRoomRosterView, VoiceRoomMemberPage>{
+              VoiceRoomRosterView.speaker: testVoiceRoomMemberPage(
+                view: VoiceRoomRosterView.speaker,
+                items: <VoiceRoomMember>[
+                  testVoiceRoomMember(
+                    view: VoiceRoomRosterView.speaker,
+                    muted: true,
+                    isSelf: true,
+                    commands: const <VoiceRoomMemberCommand>[
+                      VoiceRoomMemberCommand.unmuteSelf,
+                    ],
+                  ),
+                ],
+              ),
+              VoiceRoomRosterView.listener: testVoiceRoomMemberPage(
+                view: VoiceRoomRosterView.listener,
+              ),
+            };
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+      // Mounting the call sends nothing: the intent is cleared by the
+      // microphone opening, not by being in the room.
+      expect(voice.commands, isNot(contains('unmute:$testMemberId')));
+
+      final microphone = find.byKey(
+        const ValueKey<String>('fake-microphone-opened'),
+      );
+      await scrollToCommunitySection(tester, microphone);
+      await tester.tap(microphone);
+      await tester.pumpAndSettle();
+      // One DELETE, sent against the row the server marked as this account's,
+      // and no question asked: the reader already opened the microphone.
+      expect(
+        voice.commands.where((command) => command == 'unmute:$testMemberId'),
+        hasLength(1),
+      );
+      expect(
+        find.byKey(const ValueKey<String>('community-confirm-accept')),
+        findsNothing,
+      );
+    });
+
     testWidgets('a host invites one listener through the row command', (
       tester,
     ) async {
@@ -1863,6 +2040,7 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
   Widget buildForeground({
     required Future<void> Function() onLeaveRequested,
     bool inline = false,
+    Future<void> Function()? onMicrophoneEnabled,
   }) {
     return Column(
       children: <Widget>[
@@ -1871,6 +2049,16 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
           key: const ValueKey<String>('fake-hangup'),
           onPressed: () => unawaited(onLeaveRequested()),
           child: const Text('挂断'),
+        ),
+        // Stands in for the device having opened the microphone: the surface
+        // reports it only after the media command succeeded.
+        TextButton(
+          key: const ValueKey<String>('fake-microphone-opened'),
+          onPressed: () async {
+            microphoneCalls += 1;
+            await onMicrophoneEnabled?.call();
+          },
+          child: const Text('开麦'),
         ),
       ],
     );

@@ -369,6 +369,12 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
   }) => _answer('mute:$publicProfileId');
 
   @override
+  Future<VoiceRoomSnapshot> unmuteSpeaker({
+    required String voiceRoomId,
+    required String publicProfileId,
+  }) => _answer('unmute:$publicProfileId');
+
+  @override
   Future<VoiceRoomSnapshot> muteAll(String voiceRoomId) => _answer('mute-all');
 
   @override

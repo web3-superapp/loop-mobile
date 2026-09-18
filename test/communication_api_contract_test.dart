@@ -105,6 +105,7 @@ Map<String, Object?> _memberRow({
   String? alias = 'Voyager_344',
   bool handRaised = false,
   bool muted = false,
+  bool isSelf = false,
   List<String> commands = const <String>[],
 }) => <String, Object?>{
   'publicProfileId': publicProfileId,
@@ -123,7 +124,7 @@ Map<String, Object?> _memberRow({
   'joinedAt': '2026-09-17T13:45:10.600Z',
   'handRaised': handRaised,
   'muted': muted,
-  'isSelf': false,
+  'isSelf': isSelf,
   'commands': commands,
 };
 
@@ -695,6 +696,92 @@ void main() {
         throwsA(isA<LoopBackendFailure>()),
       );
     });
+
+    test(
+      'a muted speaker row carries the way back out of the intent',
+      () async {
+        final (api, _) = _api(
+          _membersBody(
+            role: 'speaker',
+            items: <Object?>[
+              _memberRow(
+                role: 'speaker',
+                muted: true,
+                commands: <String>['remove_speaker', 'unmute'],
+              ),
+            ],
+          ),
+        );
+
+        final page = await api.listMembers(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          voiceRoomId: _roomId,
+          role: VoiceRoomRosterView.speaker,
+        );
+
+        expect(page.items.single.muted, isTrue);
+        expect(page.items.single.commands, <VoiceRoomMemberCommand>[
+          VoiceRoomMemberCommand.removeSpeaker,
+          VoiceRoomMemberCommand.unmute,
+        ]);
+      },
+    );
+
+    test(
+      'the one command a viewer that is not the host may be given is its own',
+      () async {
+        final (api, _) = _api(
+          _membersBody(
+            role: 'speaker',
+            items: <Object?>[
+              _memberRow(
+                role: 'speaker',
+                muted: true,
+                isSelf: true,
+                commands: <String>['unmute_self'],
+              ),
+            ],
+          ),
+        );
+
+        final page = await api.listMembers(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          voiceRoomId: _roomId,
+          role: VoiceRoomRosterView.speaker,
+        );
+
+        expect(page.items.single.isSelf, isTrue);
+        expect(page.items.single.commands, <VoiceRoomMemberCommand>[
+          VoiceRoomMemberCommand.unmuteSelf,
+        ]);
+      },
+    );
+
+    test(
+      'clearing the mute intent deletes the same resource with a write key',
+      () async {
+        final (api, captured) = _api(_roomBody(role: 'speaker'));
+
+        final snapshot = await api.command(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          idempotencyKey: _key,
+          voiceRoomId: _roomId,
+          command: VoiceRoomCommand.unmuteSpeaker,
+          publicProfileId: _profileId,
+        );
+
+        expect(
+          captured.single.uri.path,
+          '/v2/voice-rooms/$_roomId/speakers/$_profileId/mute',
+        );
+        expect(captured.single.method, 'DELETE');
+        expect(captured.single.headers['idempotency-key'], _key);
+        expect(snapshot.room.voiceRoomId, _roomId);
+      },
+    );
 
     test(
       'muting one speaker addresses that speaker and answers with the room',

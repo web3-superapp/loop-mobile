@@ -211,6 +211,10 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
               onExitRequested: () => snapshot.viewer.isHost
                   ? _endRoom(controller)
                   : _leave(controller),
+              // 决策 0053: opening the microphone is the device's; taking
+              // LOOP's mute mark back off this account's row is the server's,
+              // and it is only sent when the server published the command.
+              onMicrophoneEnabled: () => _clearOwnMuteIntent(controller),
             ),
           if (widget.expanded) ...<Widget>[
             for (final view in VoiceRoomRosterView.values)
@@ -330,7 +334,13 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         VoiceRoomMemberCommand.removeSpeaker => '目标：$name。移出后对方回到听众，仍然留在房间里。',
         VoiceRoomMemberCommand.mute =>
           '目标：$name。静音是 LOOP 侧的意图，'
-              '对方的设备仍可能自行开麦；没有取消静音的命令。',
+              '对方的设备仍可能自行开麦；之后可以在这一行取消。',
+        VoiceRoomMemberCommand.unmute =>
+          '目标：$name。只撤回 LOOP 侧的静音意图，'
+              '不会替对方打开麦克风——开麦只能由对方的设备完成。',
+        VoiceRoomMemberCommand.unmuteSelf =>
+          '这是你自己的发言人行。只撤回 LOOP 侧的静音标记，'
+              '不会打开麦克风——请在通话里自己开麦。',
       },
       confirmLabel: command.label,
       sheetKey: 'voiceroom-member-confirm-sheet',
@@ -345,7 +355,28 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         VoiceRoomMemberCommand.inviteSpeaker => '已邀请发言',
         VoiceRoomMemberCommand.removeSpeaker => '已移出发言',
         VoiceRoomMemberCommand.mute => '已请求静音',
+        VoiceRoomMemberCommand.unmute => '已取消静音意图',
+        VoiceRoomMemberCommand.unmuteSelf => '已取消我的静音标记',
       },
+    );
+  }
+
+  /// Takes LOOP's mute mark off this account's own speaker row once the
+  /// device opened the microphone (decision 0053).
+  ///
+  /// It is silent on success: the reader already heard the microphone open,
+  /// and nothing else changed on screen. A row the server published no
+  /// `unmute_self` for is not touched at all, so this never reports a failure
+  /// for a room that had nothing to clear.
+  Future<void> _clearOwnMuteIntent(VoiceRoomController controller) async {
+    final failure = await controller.clearOwnMuteIntent();
+    if (!mounted || failure == null) return;
+    LoopToast.show(
+      context,
+      message:
+          '麦克风已打开，但名单上的静音标记没能撤回：'
+          '${communityFailureReason(failure)}',
+      kind: LoopToastKind.warn,
     );
   }
 
@@ -510,11 +541,16 @@ class _MediaSection extends StatelessWidget {
     required this.roomId,
     required this.link,
     required this.onExitRequested,
+    required this.onMicrophoneEnabled,
   });
 
   final String? roomId;
   final VoiceMediaLink link;
   final Future<void> Function() onExitRequested;
+
+  /// Runs after the device opened the microphone. The page uses it to clear
+  /// the LOOP-side mute intent on its own roster row; it opens nothing.
+  final Future<void> Function() onMicrophoneEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -552,6 +588,7 @@ class _MediaSection extends StatelessWidget {
         autoConnect: true,
         link: link,
         onExitRequested: onExitRequested,
+        onMicrophoneEnabled: onMicrophoneEnabled,
       ),
     );
   }
@@ -623,7 +660,7 @@ class _RosterSection extends StatelessWidget {
           ),
           CommunityViewPhase.offline => LoopOfflineState(
             key: ValueKey<String>('voiceroom-roster-$slug-offline'),
-            pausedActions: const <String>['邀请上麦', '移出发言', '静音'],
+            pausedActions: const <String>['邀请上麦', '移出发言', '静音', '取消静音'],
             onRetry: onRetry,
           ),
           CommunityViewPhase.permission => LoopPermissionState(
@@ -696,6 +733,11 @@ class _RosterSection extends StatelessWidget {
     required LoopRowPosition position,
   }) {
     final speaking = view == VoiceRoomRosterView.speaker;
+    // Only the server's own row commands say the intent can be taken back
+    // here; nothing about the mute mark alone promises a way out of it.
+    final canUnmute =
+        member.commands.contains(VoiceRoomMemberCommand.unmute) ||
+        member.commands.contains(VoiceRoomMemberCommand.unmuteSelf);
     // 发言人 carries the mute mark, 听众 the raised hand: each view shows the
     // state that means something in it.
     final badge = speaking
@@ -709,7 +751,11 @@ class _RosterSection extends StatelessWidget {
       key: key,
       title: voiceRoomMemberName(member),
       subtitle: speaking
-          ? (member.muted ? '主持人已在 LOOP 侧静音，麦克风状态以 Stream 为准' : '可以在这次通话里发言')
+          ? (member.muted
+                ? (canUnmute
+                      ? '主持人已在 LOOP 侧静音，麦克风状态以 Stream 为准；这一行可以取消'
+                      : '主持人已在 LOOP 侧静音，麦克风状态以 Stream 为准')
+                : '可以在这次通话里发言')
           : (member.handRaised ? '等待主持人邀请发言' : '只收听，未申请发言'),
       subtitleMaxLines: 2,
       trailingBadge: badge,
@@ -742,7 +788,7 @@ class _RosterSection extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              '主持人可以执行的操作由服务端逐行下发，这里只列出这一行真正可用的。',
+              '这一行可以执行的操作由服务端逐行下发，这里只列出真正可用的。',
               style: LoopTypography.body(13, color: LoopColors.muted),
             ),
             const SizedBox(height: 18),

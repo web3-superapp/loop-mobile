@@ -209,6 +209,16 @@ final class DioLoopV2CommunicationGateway
   );
 
   @override
+  Future<VoiceRoomSnapshot> unmuteSpeaker({
+    required String voiceRoomId,
+    required String publicProfileId,
+  }) => _command(
+    VoiceRoomCommand.unmuteSpeaker,
+    voiceRoomId,
+    publicProfileId: publicProfileId,
+  );
+
+  @override
   Future<VoiceRoomSnapshot> muteAll(String voiceRoomId) =>
       _command(VoiceRoomCommand.muteAll, voiceRoomId);
 

@@ -361,7 +361,16 @@ final class VoiceRoomMemberDisplayRule {
 enum VoiceRoomMemberCommand {
   inviteSpeaker('invite_speaker'),
   removeSpeaker('remove_speaker'),
-  mute('mute');
+  mute('mute'),
+
+  /// The host clearing its own mute intent on someone else's row.
+  unmute('unmute'),
+
+  /// The one command the server publishes to a viewer that is not the host
+  /// (decision 0053): this account clearing the mute intent on its own muted
+  /// speaker row. It opens no microphone — the device does that — it only
+  /// takes LOOP's intent back off the row.
+  unmuteSelf('unmute_self');
 
   const VoiceRoomMemberCommand(this.wireName);
 
@@ -371,6 +380,8 @@ enum VoiceRoomMemberCommand {
     VoiceRoomMemberCommand.inviteSpeaker => '邀请上麦',
     VoiceRoomMemberCommand.removeSpeaker => '移出发言',
     VoiceRoomMemberCommand.mute => '静音',
+    VoiceRoomMemberCommand.unmute => '取消静音',
+    VoiceRoomMemberCommand.unmuteSelf => '取消我的静音',
   };
 
   static VoiceRoomMemberCommand? tryParse(String value) {

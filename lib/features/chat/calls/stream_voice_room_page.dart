@@ -23,6 +23,7 @@ class StreamVoiceRoomPage extends ConsumerWidget {
     this.autoConnect = false,
     this.link,
     this.onExitRequested,
+    this.onMicrophoneEnabled,
   });
 
   /// A locator the caller already holds.
@@ -56,6 +57,11 @@ class StreamVoiceRoomPage extends ConsumerWidget {
   /// can no longer hear, and [autoConnect] would immediately reconnect it.
   final Future<void> Function()? onExitRequested;
 
+  /// Told after the device opened the microphone, so the page can clear the
+  /// LOOP-side mute intent on its own row (decision 0053). It is never the
+  /// other way round: LOOP has no command that opens a microphone.
+  final Future<void> Function()? onMicrophoneEnabled;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final principalKey = ref.watch(streamVideoPrincipalKeyProvider);
@@ -80,6 +86,7 @@ class StreamVoiceRoomPage extends ConsumerWidget {
       autoConnect: autoConnect,
       link: link,
       onExitRequested: onExitRequested,
+      onMicrophoneEnabled: onMicrophoneEnabled,
       principalKey: principalKey,
       authorization: authorization,
       target: resolvedTarget,
@@ -99,6 +106,7 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
     required this.autoConnect,
     required this.link,
     required this.onExitRequested,
+    required this.onMicrophoneEnabled,
     required this.principalKey,
     required this.authorization,
     required this.target,
@@ -112,6 +120,7 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
   final bool autoConnect;
   final VoiceMediaLink? link;
   final Future<void> Function()? onExitRequested;
+  final Future<void> Function()? onMicrophoneEnabled;
   final String? principalKey;
   final AsyncValue<StreamVideoSessionAuthorization>? authorization;
   final AsyncValue<AudioRoomTarget?>? target;
@@ -249,6 +258,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
           : foregroundCall.buildForeground(
               onLeaveRequested: _requestExit,
               inline: true,
+              onMicrophoneEnabled: widget.onMicrophoneEnabled,
             );
     }
     return Scaffold(
@@ -277,7 +287,10 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
         child: SafeArea(
           child: foregroundCall == null
               ? _buildLobby(context)
-              : foregroundCall.buildForeground(onLeaveRequested: _requestExit),
+              : foregroundCall.buildForeground(
+                  onLeaveRequested: _requestExit,
+                  onMicrophoneEnabled: widget.onMicrophoneEnabled,
+                ),
         ),
       ),
     );

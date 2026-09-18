@@ -101,6 +101,16 @@ abstract interface class VoiceRoomGateway {
     required String publicProfileId,
   });
 
+  /// Clears the LOOP-side mute intent on one speaker row (decision 0053).
+  ///
+  /// The host may send it for anyone; this account may send it for itself. It
+  /// makes no provider call at all, so it never opens a microphone: the device
+  /// opens the microphone and this only takes the intent off the roster row.
+  Future<VoiceRoomSnapshot> unmuteSpeaker({
+    required String voiceRoomId,
+    required String publicProfileId,
+  });
+
   Future<VoiceRoomSnapshot> muteAll(String voiceRoomId);
 
   Future<VoiceRoomSnapshot> endRoom(String voiceRoomId);
@@ -163,6 +173,12 @@ final class UnavailableVoiceRoomGateway implements VoiceRoomGateway {
 
   @override
   Future<VoiceRoomSnapshot> muteSpeaker({
+    required String voiceRoomId,
+    required String publicProfileId,
+  }) => _unavailable();
+
+  @override
+  Future<VoiceRoomSnapshot> unmuteSpeaker({
     required String voiceRoomId,
     required String publicProfileId,
   }) => _unavailable();
