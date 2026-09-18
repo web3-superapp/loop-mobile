@@ -98,24 +98,44 @@ final class MarketTrendingUnavailable extends MarketTrendingBlock {
   final String reasonCode;
 }
 
+/// The overview's own word on the new-pairs page (decision 0053).
+///
+/// `available` now means the new-pairs fact is readable *at this moment*, not
+/// that a provider is configured: a provider that is on but unreadable answers
+/// unavailable here with the same reason code the new-pairs page reports.
+sealed class MarketOverviewNewPairs {
+  const MarketOverviewNewPairs();
+}
+
+final class MarketOverviewNewPairsAvailable extends MarketOverviewNewPairs {
+  const MarketOverviewNewPairsAvailable(this.omittedCount);
+
+  /// Provider rows the new-pairs page cannot list, from the same cached fact
+  /// it reads (`newPairs.omittedCount`). Normally 0; when it is not, the card
+  /// says so rather than letting a partial list read as the whole answer.
+  final int omittedCount;
+}
+
+final class MarketOverviewNewPairsUnavailable extends MarketOverviewNewPairs {
+  const MarketOverviewNewPairsUnavailable(this.reasonCode);
+
+  final String reasonCode;
+}
+
 /// `GET /v2/market/overview` — the `market` tab.
 @immutable
 final class MarketOverview {
   const MarketOverview({
     required this.watchlist,
     required this.trending,
-    required this.newPairsAvailable,
-    required this.newPairsReasonCode,
+    required this.newPairs,
     required this.smartMoney,
     required this.observedAt,
   });
 
   final MarketWatchlistBlock watchlist;
   final MarketTrendingBlock trending;
-
-  /// Only says whether `GET /v2/market/new-pairs` has a provider at all.
-  final bool newPairsAvailable;
-  final String? newPairsReasonCode;
+  final MarketOverviewNewPairs newPairs;
   final LoopUnavailable smartMoney;
   final DateTime observedAt;
 }

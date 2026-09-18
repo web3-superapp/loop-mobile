@@ -369,6 +369,7 @@ Map<String, Object?> s5OverviewBody({
   Object? watchlist,
   Object? trending,
   bool newPairsAvailable = false,
+  int newPairsOmittedCount = 0,
 }) => <String, Object?>{
   'watchlist':
       watchlist ??
@@ -409,7 +410,10 @@ Map<String, Object?> s5OverviewBody({
         ],
       },
   'newPairs': newPairsAvailable
-      ? <String, Object?>{'status': 'available'}
+      ? <String, Object?>{
+          'status': 'available',
+          'omittedCount': newPairsOmittedCount,
+        }
       : s5Unavailable('MARKET_PROVIDER_GECKOTERMINAL_DISABLED'),
   'smartMoney': s5Unavailable('SMART_MONEY_RUNTIME_DEFERRED'),
   'observedAt': '2026-09-08T07:31:02.300Z',
@@ -807,6 +811,7 @@ MarketOverview s5Overview({
   MarketWatchlistBlock? watchlist,
   MarketTrendingBlock? trending,
   bool newPairsAvailable = false,
+  int newPairsOmittedCount = 0,
 }) => MarketOverview(
   watchlist:
       watchlist ??
@@ -825,10 +830,11 @@ MarketOverview s5Overview({
         ),
         items: <MarketAssetRow>[s5MarketRow()],
       ),
-  newPairsAvailable: newPairsAvailable,
-  newPairsReasonCode: newPairsAvailable
-      ? null
-      : 'MARKET_PROVIDER_GECKOTERMINAL_DISABLED',
+  newPairs: newPairsAvailable
+      ? MarketOverviewNewPairsAvailable(newPairsOmittedCount)
+      : const MarketOverviewNewPairsUnavailable(
+          'MARKET_PROVIDER_GECKOTERMINAL_DISABLED',
+        ),
   smartMoney: const LoopUnavailable('SMART_MONEY_RUNTIME_DEFERRED'),
   observedAt: DateTime.utc(2026, 9, 8, 7, 31),
 );

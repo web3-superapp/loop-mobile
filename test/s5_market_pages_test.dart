@@ -107,6 +107,66 @@ void main() {
       expect(find.text('0'), findsNothing);
     });
 
+    testWidgets('the new-pairs card prints what the page cannot list', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const MarketScreen(),
+        market: FakeMarketReadGateway(
+          overview: S5Answer<MarketOverview>(
+            value: s5Overview(newPairsAvailable: true, newPairsOmittedCount: 3),
+          ),
+        ),
+      );
+
+      final card = find.byKey(const ValueKey<String>('market-new-pairs-entry'));
+      await scrollToS5Section(tester, card);
+      expect(find.textContaining('另有 3 条数据无法解析'), findsOneWidget);
+      expect(find.text('不可用'), findsOneWidget);
+    });
+
+    testWidgets('a readable new-pairs page leaves the card unqualified', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const MarketScreen(),
+        market: FakeMarketReadGateway(
+          overview: S5Answer<MarketOverview>(
+            value: s5Overview(newPairsAvailable: true),
+          ),
+        ),
+      );
+
+      final card = find.byKey(const ValueKey<String>('market-new-pairs-entry'));
+      await scrollToS5Section(tester, card);
+      expect(find.textContaining('无法解析'), findsNothing);
+      expect(find.text('已登记的池与新交易对，均标注出处'), findsOneWidget);
+    });
+
+    testWidgets(
+      'an unreadable new-pairs page states the reason the page reports',
+      (tester) async {
+        await pumpS5Page(
+          tester,
+          const MarketScreen(),
+          market: FakeMarketReadGateway(
+            overview: S5Answer<MarketOverview>(value: s5Overview()),
+          ),
+        );
+
+        final card = find.byKey(
+          const ValueKey<String>('market-new-pairs-entry'),
+        );
+        await scrollToS5Section(tester, card);
+        // Two unavailable cards in 发现: the new-pairs one now carries the same
+        // reason code the new-pairs page reports.
+        expect(find.text('不可用'), findsNWidgets(2));
+        expect(find.textContaining('无法解析'), findsNothing);
+      },
+    );
+
     testWidgets('the trending block always states its ordering rule', (
       tester,
     ) async {

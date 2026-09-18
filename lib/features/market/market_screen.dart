@@ -147,12 +147,27 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('market-new-pairs-entry'),
                 title: '新币发现',
-                subtitle: overview.newPairsAvailable
-                    ? '已登记的池与新交易对，均标注出处'
-                    : loopReasonCodeText(overview.newPairsReasonCode),
-                trailingBadge: overview.newPairsAvailable
-                    ? null
-                    : const LoopBadge('不可用'),
+                // `available` says the new-pairs fact is readable right now,
+                // and `omittedCount` says how much of it the page cannot
+                // list. A provider that is on but unreadable arrives here as
+                // unavailable, under the same reason code that page reports.
+                subtitle: switch (overview.newPairs) {
+                  MarketOverviewNewPairsAvailable(
+                    omittedCount: final omitted,
+                  ) =>
+                    omitted > 0
+                        ? '已登记的池与新交易对，均标注出处 · 另有 $omitted 条数据无法解析'
+                        : '已登记的池与新交易对，均标注出处',
+                  MarketOverviewNewPairsUnavailable(
+                    reasonCode: final reasonCode,
+                  ) =>
+                    loopReasonCodeText(reasonCode),
+                },
+                subtitleMaxLines: 2,
+                trailingBadge:
+                    overview.newPairs is MarketOverviewNewPairsUnavailable
+                    ? const LoopBadge('不可用')
+                    : null,
                 onTap: () => _open('/market/new'),
               ),
               LoopRecordRow(

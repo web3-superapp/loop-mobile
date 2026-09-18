@@ -101,22 +101,10 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       });
       LoopV2ChainCodec.requireContractVersion(root);
 
-      final newPairs = LoopV2Contract.strictMap(root['newPairs'], <String>{
-        'status',
-        if (_isUnavailable(root['newPairs'])) 'reasonCode',
-      });
-      final newPairsAvailable = newPairs['status'] == 'available';
-      if (!newPairsAvailable && newPairs['status'] != 'unavailable') {
-        LoopV2ChainCodec.invalid();
-      }
-
       return MarketOverview(
         watchlist: _watchlistBlock(root['watchlist']),
         trending: _trendingBlock(root['trending']),
-        newPairsAvailable: newPairsAvailable,
-        newPairsReasonCode: newPairsAvailable
-            ? null
-            : LoopV2ChainCodec.requireReasonCode(newPairs, 'reasonCode'),
+        newPairs: _overviewNewPairs(root['newPairs']),
         smartMoney: LoopV2ChainCodec.unavailable(root['smartMoney']),
         observedAt: LoopV2ChainCodec.requireTimestamp(root, 'observedAt'),
       );
@@ -873,6 +861,27 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       default:
         LoopV2ChainCodec.invalid();
     }
+  }
+
+  /// The overview's new-pairs card (decision 0053).
+  ///
+  /// The available variant must carry `omittedCount`: it is the same figure
+  /// the new-pairs page reads from the same cached fact, and a card that
+  /// dropped it would say "readable" without saying how much was left out.
+  static MarketOverviewNewPairs _overviewNewPairs(Object? raw) {
+    if (_isUnavailable(raw)) {
+      return MarketOverviewNewPairsUnavailable(
+        LoopV2ChainCodec.unavailable(raw).reasonCode,
+      );
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'omittedCount',
+    });
+    if (map['status'] != 'available') LoopV2ChainCodec.invalid();
+    return MarketOverviewNewPairsAvailable(
+      LoopV2ChainCodec.requireInt(map, 'omittedCount', minimum: 0),
+    );
   }
 
   static MarketNewPairsBlock _newPairs(Object? raw) {

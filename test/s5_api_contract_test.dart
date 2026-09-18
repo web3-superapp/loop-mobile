@@ -834,13 +834,95 @@ void main() {
       );
       expect(trending.items.single.priceChange24h.isAvailable, isFalse);
       expect(trending.rules.ordering, 'dexscreener_volume_h24_desc');
-      expect(overview.newPairsAvailable, isFalse);
       expect(
-        overview.newPairsReasonCode,
-        'MARKET_PROVIDER_GECKOTERMINAL_DISABLED',
+        overview.newPairs,
+        isA<MarketOverviewNewPairsUnavailable>().having(
+          (block) => block.reasonCode,
+          'reasonCode',
+          'MARKET_PROVIDER_GECKOTERMINAL_DISABLED',
+        ),
       );
       expect(overview.smartMoney.reasonCode, 'SMART_MONEY_RUNTIME_DEFERRED');
     });
+
+    test('the overview new-pairs card must say what it left out', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio(
+          (options, handler) => handler.resolve(
+            s5Response(
+              options,
+              s5OverviewBody(newPairsAvailable: true, newPairsOmittedCount: 3),
+            ),
+          ),
+        ),
+      );
+
+      final overview = await api.getOverview(
+        accessToken: _accessToken,
+        clientVersion: s5ClientVersion,
+      );
+
+      expect(
+        overview.newPairs,
+        isA<MarketOverviewNewPairsAvailable>().having(
+          (block) => block.omittedCount,
+          'omittedCount',
+          3,
+        ),
+      );
+    });
+
+    test('an available card without its omitted count is rejected', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio((options, handler) {
+          final body = s5OverviewBody()
+            ..['newPairs'] = <String, Object?>{'status': 'available'};
+          handler.resolve(s5Response(options, body));
+        }),
+      );
+
+      // Decision 0053 made the count part of the answer: "readable" without
+      // it would not say how much of the page is missing.
+      await expectLater(
+        api.getOverview(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test(
+      'a provider that is on but unreadable arrives with its own reason',
+      () async {
+        final api = DioLoopV2MarketApi(
+          s5Dio((options, handler) {
+            final body = s5OverviewBody()
+              ..['newPairs'] = <String, Object?>{
+                'status': 'unavailable',
+                'reasonCode': 'MARKET_PROVIDER_GECKOTERMINAL_UNREACHABLE',
+              };
+            handler.resolve(s5Response(options, body));
+          }),
+        );
+
+        final overview = await api.getOverview(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+        );
+
+        // The card reports the same reason the new-pairs page would, instead of
+        // claiming a readable page that is not there.
+        expect(
+          overview.newPairs,
+          isA<MarketOverviewNewPairsUnavailable>().having(
+            (block) => block.reasonCode,
+            'reasonCode',
+            'MARKET_PROVIDER_GECKOTERMINAL_UNREACHABLE',
+          ),
+        );
+      },
+    );
 
     test('a value without an unavailable quality is rejected', () async {
       final api = DioLoopV2MarketApi(
