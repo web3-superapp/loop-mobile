@@ -97,6 +97,71 @@ void main() {
       },
     );
 
+    // R3-2: the same transport failure means two different things on a GET
+    // and on a command, and 网络与 RPC is a GET.
+    test('an unparsable GET is a page that did not load, not a submission', () {
+      final api = DioLoopV2ChainApi(
+        s5Dio((options, handler) {
+          final body = s5ChainStatusBody()..['surprise'] = true;
+          handler.resolve(s5Response(options, body));
+        }),
+      );
+
+      return api
+          .getStatus(accessToken: _accessToken, clientVersion: s5ClientVersion)
+          .then<void>(
+            (_) => fail('the status read must be refused'),
+            onError: (Object error) {
+              final failure = error as LoopBackendFailure;
+              expect(failure.kind, LoopBackendFailureKind.invalidPayload);
+
+              final read = loopChainFailureKindForV2(failure, write: false);
+              expect(read, LoopChainFailureKind.invalidData);
+              expect(loopChainFailureReason(read), isNot(contains('重复提交')));
+              expect(loopChainFailureReason(read), isNot(contains('结果未确认')));
+              expect(loopChainOutcomeIsUnresolved(read), isFalse);
+              // A read that failed is retryable: the page keeps its 重试.
+              expect(loopChainPhaseForFailure(read), LoopChainViewPhase.error);
+
+              // After a command the outcome is genuinely unresolved: the
+              // server may already have applied it.
+              expect(
+                loopChainFailureKindForV2(failure, write: true),
+                LoopChainFailureKind.outcomeUnknown,
+              );
+            },
+          );
+    });
+
+    test('a GET with no server answer at all is a read failure', () {
+      final api = DioLoopV2ChainApi(
+        s5Dio(
+          (options, handler) =>
+              handler.reject(DioException(requestOptions: options)),
+        ),
+      );
+
+      return api
+          .getStatus(accessToken: _accessToken, clientVersion: s5ClientVersion)
+          .then<void>(
+            (_) => fail('the status read must be refused'),
+            onError: (Object error) {
+              final failure = error as LoopBackendFailure;
+              expect(failure.kind, LoopBackendFailureKind.unexpected);
+
+              final read = loopChainFailureKindForV2(failure, write: false);
+              expect(read, LoopChainFailureKind.readFailed);
+              expect(loopChainFailureReason(read), isNot(contains('重复提交')));
+              expect(loopChainFailureReason(read), contains('读不到'));
+              expect(loopChainOutcomeIsUnresolved(read), isFalse);
+              expect(
+                loopChainFailureKindForV2(failure, write: true),
+                LoopChainFailureKind.unexpected,
+              );
+            },
+          );
+    });
+
     test(
       'a correlationId that differs from X-Request-ID is rejected',
       () async {
@@ -249,7 +314,7 @@ void main() {
       } on LoopBackendFailure catch (failure) {
         expect(failure.code, 'CHAIN_MISMATCH');
         expect(
-          loopChainFailureKindForV2(failure),
+          loopChainFailureKindForV2(failure, write: false),
           LoopChainFailureKind.chainMismatch,
         );
       }
@@ -596,7 +661,7 @@ void main() {
           fail('the activity read must not succeed');
         } on LoopBackendFailure catch (failure) {
           expect(
-            loopChainFailureKindForV2(failure),
+            loopChainFailureKindForV2(failure, write: false),
             LoopChainFailureKind.indexingDelayed,
           );
         }
@@ -1297,7 +1362,7 @@ void main() {
         fail('the watchlist write must not succeed');
       } on LoopBackendFailure catch (failure) {
         expect(
-          loopChainFailureKindForV2(failure),
+          loopChainFailureKindForV2(failure, write: true),
           LoopChainFailureKind.versionConflict,
         );
       }

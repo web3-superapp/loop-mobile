@@ -983,6 +983,68 @@ void main() {
       },
     );
 
+    // R3-2: 网络与 RPC is a GET. A payload the client could not parse there is
+    // a page that did not load — nothing was submitted, so the write-side
+    // sentence 「结果未确认…不要重复提交」 named a submission the reader never
+    // made, and 重试 could not clear it because there was nothing to clear.
+    testWidgets('a read that could not be parsed is not a pending submission', (
+      tester,
+    ) async {
+      final chain = FakeChainGateway(
+        status: S5Answer<LoopChainStatus>(
+          value: s5Status(),
+          failure: LoopChainFailureKind.invalidData,
+          failingResolves: 1,
+        ),
+      );
+      await pumpS5Page(tester, const NetworksScreen(), chain: chain);
+
+      final block = find.byKey(const ValueKey<String>('networks-state-error'));
+      expect(block, findsOneWidget);
+      expect(find.textContaining('不要重复提交'), findsNothing);
+      expect(find.textContaining('结果未确认'), findsNothing);
+      expect(find.text('返回的数据不完整，这一页没有采用任何内容。'), findsOneWidget);
+      // One read, one failure: the page did not quietly stop asking.
+      expect(chain.status.resolves, 1);
+
+      // 重试 must issue a new read, and the read that answers must render.
+      await tester.tap(find.text('重试'));
+      await tester.pumpAndSettle();
+      expect(chain.status.resolves, 2);
+      expect(block, findsNothing);
+      expect(find.text('bsc-rpc.publicnode.com'), findsOneWidget);
+      expect(find.text('1 / 1 正常'), findsOneWidget);
+    });
+
+    testWidgets('a read that failed with no server answer says so', (
+      tester,
+    ) async {
+      final chain = FakeChainGateway(
+        status: S5Answer<LoopChainStatus>(
+          value: s5Status(),
+          failure: LoopChainFailureKind.readFailed,
+          // The first read gets one silent re-attempt (S26), so the page only
+          // reports the failure the second time it sees it.
+          failingResolves: 2,
+        ),
+      );
+      await pumpS5Page(tester, const NetworksScreen(), chain: chain);
+
+      expect(
+        find.byKey(const ValueKey<String>('networks-state-error')),
+        findsOneWidget,
+      );
+      expect(chain.status.resolves, 2);
+      expect(find.text('这一页暂时读不到，没有提交任何内容。请稍后重试。'), findsOneWidget);
+      expect(find.textContaining('不要重复提交'), findsNothing);
+      expect(find.textContaining('操作没有完成'), findsNothing);
+
+      await tester.tap(find.text('重试'));
+      await tester.pumpAndSettle();
+      expect(chain.status.resolves, 3);
+      expect(find.text('1 / 1 正常'), findsOneWidget);
+    });
+
     testWidgets('a degraded endpoint carries the 异常 badge', (tester) async {
       await pumpS5Page(
         tester,

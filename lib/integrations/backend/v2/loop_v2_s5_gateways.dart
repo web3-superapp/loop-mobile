@@ -40,7 +40,7 @@ base mixin _LoopV2S5Adapter {
   String get clientVersion => clientMetadata.clientVersion;
 
   Future<T> read<T>(Future<T> Function(String accessToken) request) =>
-      executeChainRequest(session, request);
+      executeChainRequest(session, request, write: false);
 
   Future<LoopV2WriteOrigin?> origin() async =>
       originSource == null ? null : await originSource!.resolve();
@@ -48,7 +48,7 @@ base mixin _LoopV2S5Adapter {
   /// A compare-and-set write. There is no idempotency key: the version is what
   /// makes the write safe to repeat.
   Future<T> cas<T>(Future<T> Function(String accessToken) request) =>
-      executeChainRequest(session, request);
+      executeChainRequest(session, request, write: true);
 
   /// An idempotent write. One logical operation reserves exactly one key; the
   /// key is replayed only while the outcome stays unresolved.
@@ -62,6 +62,7 @@ base mixin _LoopV2S5Adapter {
       final result = await executeChainRequest(
         session,
         (accessToken) => request(accessToken, key),
+        write: true,
       );
       keyring.release(signature);
       return result;

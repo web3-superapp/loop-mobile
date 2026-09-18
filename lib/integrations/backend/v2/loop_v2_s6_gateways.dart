@@ -26,7 +26,7 @@ base mixin _LoopV2S6Adapter {
   String get clientVersion => clientMetadata.clientVersion;
 
   Future<T> read<T>(Future<T> Function(String accessToken) request) =>
-      executeChainRequest(session, request);
+      executeChainRequest(session, request, write: false);
 
   Future<LoopV2WriteOrigin?> origin() async =>
       originSource == null ? null : await originSource!.resolve();
@@ -44,6 +44,7 @@ base mixin _LoopV2S6Adapter {
       final result = await executeChainRequest(
         session,
         (accessToken) => request(accessToken, key),
+        write: true,
       );
       keyring.release(signature);
       return result;

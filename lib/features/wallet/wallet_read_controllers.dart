@@ -156,7 +156,9 @@ final class WalletActivityController
       state = state.failed(error.kind);
     } catch (_) {
       if (!isCurrent(generation)) return;
-      state = state.failed(LoopChainFailureKind.unexpected);
+      // Another page is a read: nothing was submitted, so the copy must not
+      // name an operation this reader never issued.
+      state = state.failed(LoopChainFailureKind.readFailed);
     } finally {
       _loadingMore = false;
     }

@@ -270,6 +270,7 @@ void main() {
           error,
           allowedCodes: LoopV2ModuleRequest.moneyActionWriteErrors,
         ),
+        write: true,
       );
     }
 
@@ -580,13 +581,15 @@ void main() {
         fail('expected a failure');
       } on LoopBackendFailure catch (failure) {
         expect(
-          loopChainFailureKindForV2(failure),
+          loopChainFailureKindForV2(failure, write: true),
           LoopChainFailureKind.submissionUnknown,
         );
         // A locked submission is unresolved: its key must be replayed, never
         // replaced by a second attempt.
         expect(
-          loopChainOutcomeIsUnresolved(loopChainFailureKindForV2(failure)),
+          loopChainOutcomeIsUnresolved(
+            loopChainFailureKindForV2(failure, write: true),
+          ),
           isTrue,
         );
       }
@@ -620,7 +623,7 @@ void main() {
         fail('expected a failure');
       } on LoopBackendFailure catch (failure) {
         expect(
-          loopChainFailureKindForV2(failure),
+          loopChainFailureKindForV2(failure, write: true),
           LoopChainFailureKind.insufficientBalance,
         );
       }
@@ -691,7 +694,7 @@ void main() {
           fail('expected a failure');
         } on LoopBackendFailure catch (failure) {
           expect(
-            loopChainFailureKindForV2(failure),
+            loopChainFailureKindForV2(failure, write: false),
             LoopChainFailureKind.indexingDelayed,
           );
         }

@@ -16,8 +16,16 @@ enum LoopChainFailureKind {
   cancelled,
 
   /// A response the client could not parse. The server may already have
-  /// applied a write, so this is an unresolved outcome too.
+  /// applied a write, so this is an unresolved outcome too. It is a **write**
+  /// kind: a read that could not be parsed applied nothing and is
+  /// [invalidData].
   outcomeUnknown,
+
+  /// A read that did not complete for a reason the client cannot name: no
+  /// server answer arrived, and nothing was submitted. It is the read-side
+  /// counterpart of [unexpected], whose copy names an operation the reader
+  /// never issued.
+  readFailed,
 
   /// The capability, the provider or the runtime is not assembled.
   unavailable,
@@ -257,6 +265,7 @@ String loopChainFailureReason(LoopChainFailureKind? kind) => switch (kind) {
   LoopChainFailureKind.submissionUnknown =>
     '这笔操作已经提交过一次且结果未知，已锁定。请只查看最新状态，不要重复提交。',
   LoopChainFailureKind.invalidData => '返回的数据不完整，这一页没有采用任何内容。',
+  LoopChainFailureKind.readFailed => '这一页暂时读不到，没有提交任何内容。请稍后重试。',
   LoopChainFailureKind.unexpected => '操作没有完成，请稍后再试。',
   null => '操作没有完成。',
 };

@@ -63,6 +63,7 @@ final class DioLoopV2SecurityGateway implements SecurityGateway {
         clientVersion: _clientMetadata.clientVersion,
         sessionId: sessionId,
       ),
+      write: false,
     );
   }
 
@@ -96,6 +97,7 @@ final class DioLoopV2SecurityGateway implements SecurityGateway {
             idempotencyKey: idempotencyKey,
           ),
         ),
+        write: true,
       );
       _keyring.release(signature);
       return result;
@@ -117,6 +119,7 @@ final class DioLoopV2SecurityGateway implements SecurityGateway {
       accessToken: accessToken,
       clientVersion: _clientMetadata.clientVersion,
     ),
+    write: false,
   );
 
   @override
@@ -126,6 +129,7 @@ final class DioLoopV2SecurityGateway implements SecurityGateway {
       accessToken: accessToken,
       clientVersion: _clientMetadata.clientVersion,
     ),
+    write: false,
   );
 }
 
@@ -159,6 +163,7 @@ final class DioLoopV2AccountSettingsGateway implements AccountSettingsGateway {
       accessToken: accessToken,
       clientVersion: _clientMetadata.clientVersion,
     ),
+    write: false,
   );
 
   @override
@@ -176,6 +181,7 @@ final class DioLoopV2AccountSettingsGateway implements AccountSettingsGateway {
         values: values,
         origin: origin,
       ),
+      write: true,
     );
   }
 }
@@ -215,6 +221,7 @@ final class DioLoopV2SupportGateway implements SupportGateway {
           clientVersion: _clientMetadata.clientVersion,
           cursor: cursor,
         ),
+        write: false,
       );
 
   @override
@@ -234,6 +241,7 @@ final class DioLoopV2SupportGateway implements SupportGateway {
           draft: draft,
           origin: origin,
         ),
+        write: true,
       );
       _keyring.release(signature);
       return result;
@@ -263,11 +271,13 @@ final class LoopV2AboutRepository implements AboutGateway {
     try {
       return await _api.getAbout();
     } on LoopBackendFailure catch (failure) {
-      throw LoopChainException(loopChainFailureKindForV2(failure));
+      throw LoopChainException(
+        loopChainFailureKindForV2(failure, write: false),
+      );
     } on LoopChainException {
       rethrow;
     } catch (_) {
-      throw const LoopChainException(LoopChainFailureKind.unexpected);
+      throw const LoopChainException(LoopChainFailureKind.readFailed);
     }
   }
 }

@@ -35,6 +35,7 @@ final class S5Answer<T> {
     this.failure,
     this.pending = false,
     this.transientFailure,
+    this.failingResolves,
   });
 
   final T? value;
@@ -44,6 +45,13 @@ final class S5Answer<T> {
   /// Fails only the first resolve, like a pooled socket the peer closed while
   /// the app was idle. Every later resolve answers normally.
   final LoopChainFailureKind? transientFailure;
+
+  /// How many resolves [failure] applies to. `null` means every one of them.
+  ///
+  /// It is how a retry is tested end to end: the page must issue a *new*
+  /// request when the reader taps 重试, and the request that finally answers
+  /// must be rendered.
+  final int? failingResolves;
 
   int resolves = 0;
 
@@ -55,7 +63,10 @@ final class S5Answer<T> {
       return Future<T>.error(LoopChainException(transient));
     }
     final kind = failure;
-    if (kind != null) return Future<T>.error(LoopChainException(kind));
+    final failing = failingResolves;
+    if (kind != null && (failing == null || attempt < failing)) {
+      return Future<T>.error(LoopChainException(kind));
+    }
     return Future<T>.value(value as T);
   }
 }
