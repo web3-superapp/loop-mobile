@@ -1055,6 +1055,10 @@ void main() {
         find.byKey(const ValueKey<String>('voiceroom-invite-null')),
         findsNothing,
       );
+      // The lazy sliver builds this row before it is on screen, and a queue
+      // this long puts it under the fold; the tap has to reach it.
+      await tester.ensureVisible(invite);
+      await tester.pumpAndSettle();
       await tester.tap(invite);
       await tester.pumpAndSettle();
       expect(voice.commands, contains('invite:$testAdminId'));
