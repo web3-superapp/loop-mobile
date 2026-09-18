@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/stream_foreground_call_view.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
+import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 enum AudioRoomCallFailureKind { join, leave }
@@ -150,12 +151,14 @@ abstract interface class AudioRoomCallHandle {
   ///
   /// [onPresence] publishes the call's own connection and head count to the
   /// surfaces outside this view — the room facts above it and the shell strip
-  /// — so one screen never carries two different numbers under one word.
+  /// — so one screen never carries two different numbers under one word. A
+  /// null count is a connection that has not counted anyone yet; it is never
+  /// published as 0.
   Widget buildForeground({
     required Future<void> Function() onLeaveRequested,
     bool inline,
     Future<void> Function()? onMicrophoneEnabled,
-    void Function({required bool connected, required int participantCount})?
+    void Function({required bool connected, required int? participantCount})?
     onPresence,
   });
 }
@@ -283,9 +286,26 @@ abstract interface class AudioRoomCallFactory {
   AudioRoomCallHandle create(AudioRoomTarget target);
 }
 
+/// The one place a call is made from, and only from a client this device is
+/// currently authorized to hold.
+///
+/// The authorization is watched, not merely assumed by the caller: a retry
+/// retires the session and asks for a token again, and the client that answers
+/// arrives some hundreds of milliseconds after the retry dropped this
+/// provider. Reading the session alone, this rebuilt once — while the retired
+/// client was gone and the new one had not been built — cached null, and never
+/// rebuilt again, so 「重试会话」 left the surface holding no factory and the
+/// reader with no way forward except leaving the page. Watching the
+/// authorization makes the landing of a new session the moment this is
+/// computed again.
 final audioRoomCallFactoryProvider =
     Provider.autoDispose<AudioRoomCallFactory?>((ref) {
-      final client = ref.watch(streamVideoSdkSessionProvider)?.officialClient;
+      final authorized =
+          ref.watch(streamVideoAuthorizationProvider).value ==
+          StreamVideoSessionAuthorization.authorized;
+      final client = authorized
+          ? ref.watch(streamVideoSdkSessionProvider)?.officialClient
+          : null;
       return client == null ? null : StreamAudioRoomCallFactory(client);
     });
 
@@ -397,7 +417,7 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
     required Future<void> Function() onLeaveRequested,
     bool inline = false,
     Future<void> Function()? onMicrophoneEnabled,
-    void Function({required bool connected, required int participantCount})?
+    void Function({required bool connected, required int? participantCount})?
     onPresence,
   }) {
     return StreamForegroundCallView(

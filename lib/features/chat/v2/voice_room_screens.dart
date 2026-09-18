@@ -5,10 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
-import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_link.dart';
+import 'package:loop_mobile/features/chat/calls/voice_media_retry.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
@@ -17,7 +17,6 @@ import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -361,12 +360,12 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
   /// the room is still there and under which provider call, and retiring the
   /// video session makes the next authorization fetch a token and build a
   /// client — and therefore a call — that has not been refused.
-  Future<void> _refreshMediaConnection(VoiceRoomController controller) async {
-    await ref.read(streamVideoSdkSessionProvider)?.retireForRetry();
-    if (!mounted) return;
-    ref.invalidate(streamVideoAuthorizationProvider);
-    ref.invalidate(audioRoomCallFactoryProvider);
-    await controller.refreshRoom();
+  Future<void> _refreshMediaConnection(VoiceRoomController controller) {
+    return refreshVoiceMediaSession(
+      ref,
+      refreshRoom: controller.refreshRoom,
+      stillMounted: () => mounted,
+    );
   }
 
   /// Leaving is a decision, not a gesture.
@@ -558,9 +557,17 @@ class _RoomFacts extends ConsumerWidget {
               LoopRecordRow(
                 key: const ValueKey<String>('voiceroom-live'),
                 title: '当前在线',
-                subtitle: '这台设备连着这次通话时数到的人数，和下面通话面板里的是同一个数。',
+                // A connection whose head count has not arrived says so. It
+                // used to print 0 for the first ten to fifteen seconds under
+                // a green 「已连接」 — the exact shape of 「我已加入语音房，但是
+                // 人数还是 0」.
+                subtitle: live.participantCount == null
+                    ? '这台设备已经连上这次通话，人数还在统计；和下面通话面板里的是同一个数。'
+                    : '这台设备连着这次通话时数到的人数，和下面通话面板里的是同一个数。',
                 subtitleMaxLines: 2,
-                trailing: '${live.participantCount}',
+                trailing: live.participantCount == null
+                    ? '正在统计'
+                    : '${live.participantCount}',
                 position: LoopRowPosition.first,
               )
             else
@@ -1277,18 +1284,30 @@ class _ViewerActions extends StatelessWidget {
 /// The strip's one line: which room, what part this account plays in it, and
 /// how many are in it.
 ///
-/// The count is the live one when this device is in the call and LOOP's own
-/// joined figure otherwise; either way it is a number of people who are in
-/// the room now, so it is named for that. The strip used to print 「上次观察
-/// N 人」 — a reading taken at some earlier moment, which on the review device
-/// was 「上次观察 0 人」 under a banner saying the reader was in the room.
+/// Two different figures can end up here, so each is named for what it counts.
+/// While this device is in the call the strip carries the call's own head
+/// count — the same number the room page prints — and says 「N 人在通话」. Off
+/// the call there is only LOOP's record of who joined the room, which counts
+/// memberships and not connections, and that says 「N 人已加入」. Written as one
+/// word, the strip changed from 「1 人在线」 to 「5 人在线」 the moment the room
+/// page came off the screen, and neither number was wrong.
+///
+/// The strip used to print 「上次观察 N 人」 — a reading taken at some earlier
+/// moment, which on the review device was 「上次观察 0 人」 under a banner
+/// saying the reader was in the room.
 String voiceRoomBannerLabel({
   required String communityName,
   required VoiceRoomRole role,
   required int? count,
+  required bool connected,
 }) {
   final head = '正在语音房 · $communityName · ${role.label}';
-  return count == null ? head : '$head · $count 人在线';
+  if (count == null) {
+    // Connected without a count yet: the strip says the connection stands and
+    // that the number is still coming, never 0.
+    return connected ? '$head · 人数正在统计' : head;
+  }
+  return connected ? '$head · $count 人在通话' : '$head · $count 人已加入';
 }
 
 class VoiceRoomMinimizedBanner extends ConsumerWidget {
@@ -1305,7 +1324,8 @@ class VoiceRoomMinimizedBanner extends ConsumerWidget {
     }
     // A live figure only while this device is in that call; otherwise what
     // LOOP recorded for the room. The strip never prints a count taken at
-    // some earlier moment as if it were now.
+    // some earlier moment as if it were now, and the label below says which
+    // of the two it is holding.
     final live = ref.watch(audioRoomLivePresenceProvider);
     final connected =
         live != null && live.connected && live.roomId == session.callRoomId;
@@ -1332,6 +1352,7 @@ class VoiceRoomMinimizedBanner extends ConsumerWidget {
                         communityName: session.communityName,
                         role: session.role,
                         count: count,
+                        connected: connected,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

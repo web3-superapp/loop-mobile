@@ -7,6 +7,7 @@ import 'package:stream_video_flutter/stream_video_flutter.dart';
 typedef _ForegroundCallViewData = ({
   CallStatus status,
   int participantCount,
+  int knownParticipants,
   List<CallParticipantState> participants,
   bool microphoneEnabled,
   bool canSendAudio,
@@ -94,7 +95,36 @@ abstract final class StreamCallParticipantPresentation {
   /// 「1 人在通话」 stood on one screen contradicting each other. They are not
   /// the same reading and neither is wrong: one is what was seen at a past
   /// moment, the other is what this call holds now. Each says when.
-  static String countLabel(int count) => '此刻在通话里 $count 人';
+  ///
+  /// A null count is a connection whose head count has not arrived yet; it is
+  /// never printed as 0. See [liveCount].
+  static String countLabel(int? count) =>
+      count == null ? '此刻在通话里的人数正在统计' : '此刻在通话里 $count 人';
+
+  /// How many people this device can count in the call, or null while it
+  /// cannot count anyone yet.
+  ///
+  /// `participantCount` is the figure the SFU publishes, and for the first
+  /// ten to fifteen seconds of a connection it has not published one: the
+  /// badge said 「已连接」 while the count beside it said 0, which is the exact
+  /// shape of 「我已加入语音房，但是人数还是 0」. A connected device is in the
+  /// call it is connected to, so its own participant is a floor under the
+  /// count; before even that participant exists the count is not stated at
+  /// all. Either way a connected call never shows 0.
+  ///
+  /// Not connected, the SFU figure is passed through as it is — including 0,
+  /// which is then the truth about a call this device does not hold.
+  static int? liveCount({
+    required bool connected,
+    required int participantCount,
+    required int knownParticipants,
+  }) {
+    final counted = participantCount > knownParticipants
+        ? participantCount
+        : knownParticipants;
+    if (!connected) return counted;
+    return counted > 0 ? counted : null;
+  }
 
   /// The row title: the alias Stream carries, or the one word left when the
   /// provider carries none.
@@ -151,7 +181,12 @@ class StreamForegroundCallView extends StatefulWidget {
   /// older observation beside it, so one screen carried 「在线 0」 above 「1 人
   /// 在通话」. The reading leaves here after the frame that produced it: a
   /// state write during a build is not allowed.
-  final void Function({required bool connected, required int participantCount})?
+  /// A null count is a connection that has not counted anyone yet; the
+  /// surfaces outside say so instead of printing 0 under 「已连接」.
+  final void Function({
+    required bool connected,
+    required int? participantCount,
+  })?
   onPresence;
 
   /// True when the view is one section of the LOOP voice room page.
@@ -174,7 +209,7 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
   var _leaveBusy = false;
   var _microphoneEnableRequested = false;
   String? _commandError;
-  ({bool connected, int participantCount})? _published;
+  ({bool connected, int? participantCount})? _published;
 
   /// Hands one reading out, after the frame that read it and only when it
   /// changed. A call that is still joining is not a connection, so it is
@@ -182,9 +217,16 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
   void _publishPresence(_ForegroundCallViewData data) {
     final report = widget.onPresence;
     if (report == null) return;
+    final connected = data.status.isConnected;
     final reading = (
-      connected: data.status.isConnected,
-      participantCount: data.participantCount,
+      connected: connected,
+      // The same figure the panel prints, so the room facts and the shell
+      // strip never disagree with the line right below them.
+      participantCount: StreamCallParticipantPresentation.liveCount(
+        connected: connected,
+        participantCount: data.participantCount,
+        knownParticipants: data.knownParticipants,
+      ),
     );
     if (_published == reading) return;
     _published = reading;
@@ -208,6 +250,8 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
         return (
           status: state.status,
           participantCount: state.participantCount,
+          // What this device can see for itself, local participant included.
+          knownParticipants: state.callParticipants.length,
           participants: participants.take(8).toList(growable: false),
           microphoneEnabled: state.localParticipant?.isAudioEnabled ?? false,
           canSendAudio: state.ownCapabilities.contains(
@@ -299,7 +343,13 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
         ],
         const SizedBox(height: 8),
         Text(
-          StreamCallParticipantPresentation.countLabel(data.participantCount),
+          StreamCallParticipantPresentation.countLabel(
+            StreamCallParticipantPresentation.liveCount(
+              connected: data.status.isConnected,
+              participantCount: data.participantCount,
+              knownParticipants: data.knownParticipants,
+            ),
+          ),
           textAlign: widget.inline ? TextAlign.start : TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
@@ -315,7 +365,10 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
           ),
         ],
         SizedBox(height: widget.inline ? 16 : 30),
-        _ParticipantGrid(participants: data.participants),
+        _ParticipantGrid(
+          participants: data.participants,
+          connected: data.status.isConnected,
+        ),
         SizedBox(height: widget.inline ? 14 : 22),
         Text(
           retirementStarted && !data.microphoneEnabled
@@ -471,18 +524,29 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
 }
 
 class _ParticipantGrid extends StatelessWidget {
-  const _ParticipantGrid({required this.participants});
+  const _ParticipantGrid({required this.participants, required this.connected});
 
   final List<CallParticipantState> participants;
+
+  /// Whether this device holds the call right now. A connection whose roster
+  /// has not arrived is still arriving; only a call this device is not in can
+  /// be said to have no readable members.
+  final bool connected;
 
   @override
   Widget build(BuildContext context) {
     if (participants.isEmpty) {
-      return const LoopStateCard(
-        title: '读不到通话成员',
-        message: '服务商还没有给出这次通话的成员明细。',
-        icon: Icons.people_outline_rounded,
-      );
+      return connected
+          ? const LoopStateCard(
+              title: '正在读取通话成员',
+              message: '这次通话刚连上，服务商还没有给出成员明细。',
+              icon: Icons.sync_rounded,
+            )
+          : const LoopStateCard(
+              title: '读不到通话成员',
+              message: '服务商还没有给出这次通话的成员明细。',
+              icon: Icons.people_outline_rounded,
+            );
     }
     return LayoutBuilder(
       builder: (context, constraints) {

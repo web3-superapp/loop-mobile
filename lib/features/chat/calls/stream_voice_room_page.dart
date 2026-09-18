@@ -7,6 +7,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_link.dart';
+import 'package:loop_mobile/features/chat/calls/voice_media_retry.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
@@ -103,18 +104,42 @@ class StreamVoiceRoomPage extends ConsumerWidget {
       link: link,
       onExitRequested: onExitRequested,
       onMicrophoneEnabled: onMicrophoneEnabled,
-      onReconnectRequested: onReconnectRequested,
       viewerRole: viewerRole,
       presence: ref.read(audioRoomLivePresenceProvider.notifier),
       principalKey: principalKey,
       authorization: authorization,
       target: resolvedTarget,
       callFactory: callFactory,
-      onRetryAuthorization: () =>
-          ref.invalidate(streamVideoAuthorizationProvider),
+      onRetrySession: () =>
+          _retrySession(ref, hasSuppliedTarget: suppliedTarget != null),
       onRetryTarget: suppliedTarget != null
           ? null
           : () => ref.invalidate(audioRoomTargetProvider),
+    );
+  }
+
+  /// The one way back from every refusal this surface can show.
+  ///
+  /// 「重试会话」 used to invalidate the authorization alone. The provider
+  /// session answers that watch from the client it still holds, so no token
+  /// was ever fetched and the call factory stayed null: on the review device
+  /// three taps produced no request at all and the page had no way forward
+  /// short of leaving it. The retry now takes the same three steps the page's
+  /// 「重新连接语音」 takes — retire the session, drop the authorization and the
+  /// factory built from it, read the room again.
+  ///
+  /// When the page that owns the room supplied [onReconnectRequested], that
+  /// callback is those three steps with the page's own read of the room, so it
+  /// is used as it is rather than run beside a second, partial one.
+  Future<void> _retrySession(WidgetRef ref, {required bool hasSuppliedTarget}) {
+    final pageRefresh = onReconnectRequested;
+    if (pageRefresh != null) return pageRefresh();
+    return refreshVoiceMediaSession(
+      ref,
+      refreshRoom: hasSuppliedTarget
+          ? null
+          : () async => ref.invalidate(audioRoomTargetProvider),
+      stillMounted: () => ref.context.mounted,
     );
   }
 }
@@ -126,14 +151,13 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
     required this.link,
     required this.onExitRequested,
     required this.onMicrophoneEnabled,
-    required this.onReconnectRequested,
     required this.viewerRole,
     required this.presence,
     required this.principalKey,
     required this.authorization,
     required this.target,
     required this.callFactory,
-    required this.onRetryAuthorization,
+    required this.onRetrySession,
     required this.onRetryTarget,
     super.key,
   });
@@ -143,7 +167,6 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
   final VoiceMediaLink? link;
   final Future<void> Function()? onExitRequested;
   final Future<void> Function()? onMicrophoneEnabled;
-  final Future<void> Function()? onReconnectRequested;
   final AudioRoomViewerRole? viewerRole;
 
   /// Where this surface publishes the call's own head count.
@@ -152,7 +175,11 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
   final AsyncValue<StreamVideoSessionAuthorization>? authorization;
   final AsyncValue<AudioRoomTarget?>? target;
   final AudioRoomCallFactory? callFactory;
-  final VoidCallback onRetryAuthorization;
+
+  /// Retires the provider session, drops what was derived from it and reads
+  /// the room again. Never a bare provider invalidation: see
+  /// [StreamVoiceRoomPage._retrySession].
+  final Future<void> Function() onRetrySession;
 
   /// Null when the caller supplied the target: there is no provider to
   /// invalidate, so no retry is offered.
@@ -188,7 +215,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   /// one that was refused.
   var _refreshingConnection = false;
   String? _joinError;
-  ({bool connected, int participantCount})? _reportedPresence;
+  ({bool connected, int? participantCount})? _reportedPresence;
 
   AudioRoomTarget? get _target {
     final value = widget.target;
@@ -375,7 +402,10 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
               )
             : content.retryAuthorization
             ? OutlinedButton.icon(
-                onPressed: widget.onRetryAuthorization,
+                key: const ValueKey<String>('voiceroom-media-retry-session'),
+                onPressed: _refreshingConnection
+                    ? null
+                    : () => unawaited(_reconnect()),
                 icon: const Icon(Icons.refresh_rounded),
                 label: const Text('重试会话'),
               )
@@ -550,26 +580,23 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     });
   }
 
-  /// The reader's own request for the audio back after a failed connection.
+  /// The reader's own request for the audio back after a refusal.
   ///
-  /// The refusal belongs to the call this device already holds, so asking it
-  /// again is not a second attempt — it is the same one. The page is asked to
-  /// read the room and the provider session again first; only then does a new
-  /// call get made, which is what [_joinMuted] does with the factory it is
-  /// handed.
+  /// Both retries on this surface — 「重新连接语音」 after a failed connection
+  /// and 「重试会话」 after the provider session went stale — arrive here,
+  /// because both refusals are held by the same things: the session this
+  /// device authorized, the client built from it and the call that client
+  /// handed out. The session and the room are read again first; only then does
+  /// a new call get made, which is what [_joinMuted] does with the factory it
+  /// is handed.
   Future<void> _reconnect() async {
-    final refresh = widget.onReconnectRequested;
     setState(() {
       _autoConnectSuspended = false;
       _joinError = null;
-      _refreshingConnection = refresh != null;
+      _refreshingConnection = true;
     });
-    if (refresh == null) {
-      await _joinMuted();
-      return;
-    }
     try {
-      await refresh();
+      await widget.onRetrySession();
     } catch (_) {
       // The page states a read it could not finish in its own block; this
       // surface only reports what the connection did.
@@ -824,7 +851,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   /// Publishes one reading from the mounted call view.
   void _reportPresence({
     required bool connected,
-    required int participantCount,
+    required int? participantCount,
   }) {
     _publishPresence(connected: connected, participantCount: participantCount);
   }
@@ -836,7 +863,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   /// the one already published.
   void _schedulePresenceReport({
     required bool connected,
-    required int participantCount,
+    required int? participantCount,
   }) {
     final reading = (connected: connected, participantCount: participantCount);
     if (_reportedPresence == reading) return;
@@ -853,7 +880,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
 
   void _publishPresence({
     required bool connected,
-    required int participantCount,
+    required int? participantCount,
     bool deduplicate = true,
   }) {
     final presence = widget.presence;

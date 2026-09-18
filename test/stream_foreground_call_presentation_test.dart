@@ -43,6 +43,55 @@ void main() {
     );
   });
 
+  test('R5-3: a connected call never says nobody is in it', () {
+    // The first ten to fifteen seconds of a connection: the badge is already
+    // 「已连接」 and the SFU has published no figure. This device is in the
+    // call it is connected to, so its own participant is the floor.
+    expect(
+      StreamCallParticipantPresentation.liveCount(
+        connected: true,
+        participantCount: 0,
+        knownParticipants: 1,
+      ),
+      1,
+    );
+    // Not even the local participant has arrived: the count is not stated,
+    // and the line says it is still being taken rather than printing 0.
+    expect(
+      StreamCallParticipantPresentation.liveCount(
+        connected: true,
+        participantCount: 0,
+        knownParticipants: 0,
+      ),
+      isNull,
+    );
+    expect(StreamCallParticipantPresentation.countLabel(null), '此刻在通话里的人数正在统计');
+    expect(
+      StreamCallParticipantPresentation.countLabel(null),
+      isNot(contains('0')),
+    );
+    // Once the SFU speaks, its figure is the one printed — it counts people
+    // this device carries no participant for.
+    expect(
+      StreamCallParticipantPresentation.liveCount(
+        connected: true,
+        participantCount: 5,
+        knownParticipants: 1,
+      ),
+      5,
+    );
+    // A call this device does not hold is passed through as it is: 0 there is
+    // a fact about a connection that does not exist.
+    expect(
+      StreamCallParticipantPresentation.liveCount(
+        connected: false,
+        participantCount: 0,
+        knownParticipants: 0,
+      ),
+      0,
+    );
+  });
+
   test('the reader own row never says 我 twice', () {
     // Stream carries no alias in this deployment, so the title falls back to
     // 我 — and the caption must then be the microphone state, not 我 again.

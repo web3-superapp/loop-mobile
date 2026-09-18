@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/app/app_config.dart';
+import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
@@ -11,6 +13,7 @@ import 'package:loop_mobile/features/chat/calls/voice_media_link.dart';
 import 'package:loop_mobile/features/chat/voice_room_page.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
+import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 
 import 'support/loop_ground_probe.dart';
 
@@ -250,6 +253,136 @@ void main() {
     expect(factory.handles.last.joinCalls, 1);
     expect(find.text('Official CallState view'), findsOneWidget);
   });
+
+  testWidgets('R5-1: 「重试会话」 goes back for a token and makes a new call', (
+    tester,
+  ) async {
+    // The refusal this card names — an authorized room with no usable
+    // client — is held by the session this device already authorized, and
+    // the session answers a second watch from the client it still holds. On
+    // the review device three taps produced no request at all: no token, no
+    // client, no call, and no way forward except leaving the page.
+    final source = _RecordingVideoSource(
+      identity: const StreamVideoIdentity(userId: 'stream-user-a'),
+    );
+    final clients = _RecordingVideoClientFactory();
+    final handle = _RecordingAudioRoomCall(roomId: 'loop-daily');
+    final calls = _RecordingAudioRoomCallFactory(handle);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appConfigProvider.overrideWithValue(_videoConfig()),
+          loopSessionProvider.overrideWith(_AuthenticatedSession.new),
+          streamVideoSessionSourceProvider.overrideWithValue(source),
+          streamVideoClientFactoryProvider.overrideWithValue(clients),
+          // Shaped like the real factory: it is computed again whenever the
+          // authorization lands, and it hands out a factory only once this
+          // device holds a client that was built after the retirement.
+          audioRoomCallFactoryProvider.overrideWith((ref) {
+            final authorized =
+                ref.watch(streamVideoAuthorizationProvider).value ==
+                StreamVideoSessionAuthorization.authorized;
+            if (!authorized) return null;
+            ref.watch(streamVideoSdkSessionProvider);
+            return clients.createCalls >= 2 ? calls : null;
+          }),
+        ],
+        child: MaterialApp(
+          theme: LoopTheme.dark,
+          home: Scaffold(
+            body: StreamVoiceRoomPage(
+              autoConnect: true,
+              inline: true,
+              target: _target('loop-daily'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('已加入，语音连接失败'), findsOneWidget);
+    expect(find.text('重试会话'), findsOneWidget);
+    expect(source.tokenCalls, 1);
+    expect(clients.createCalls, 1);
+    expect(calls.createCalls, 0);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('voiceroom-media-retry-session')),
+    );
+    await tester.pumpAndSettle();
+
+    // A second attempt asks the backend again: a fresh identity, a fresh
+    // token, a client built from it — and then a call this device has not
+    // been refused on.
+    expect(source.identityCalls, 2);
+    expect(source.tokenCalls, 2);
+    expect(clients.createCalls, 2);
+    expect(calls.createCalls, 1);
+    expect(handle.joinCalls, 1);
+    expect(find.text('Official CallState view'), findsOneWidget);
+    expect(find.text('重试会话'), findsNothing);
+  });
+
+  testWidgets(
+    'R5-1: 「重试会话」 is the page own refresh when the page owns the room',
+    (tester) async {
+      // Inside the LOOP voice room page the room is read by the page, so the
+      // retry is that page's refresh — the same three steps 「重新连接语音」
+      // takes — and not a second, partial one beside it.
+      final handle = _RecordingAudioRoomCall(roomId: 'loop-daily');
+      final calls = _RecordingAudioRoomCallFactory(handle);
+      var refreshes = 0;
+      late final ProviderContainer container;
+      container = ProviderContainer(
+        overrides: [
+          streamVideoPrincipalKeyProvider.overrideWithValue('principal-a'),
+          streamVideoAuthorizationProvider.overrideWith(
+            (ref) async => StreamVideoSessionAuthorization.authorized,
+          ),
+          audioRoomCallFactoryProvider.overrideWith(
+            (ref) => refreshes == 0 ? null : calls,
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: LoopTheme.dark,
+            home: Scaffold(
+              body: StreamVoiceRoomPage(
+                autoConnect: true,
+                inline: true,
+                target: _target('loop-daily'),
+                onReconnectRequested: () async {
+                  refreshes += 1;
+                  container.invalidate(audioRoomCallFactoryProvider);
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('已加入，语音连接失败'), findsOneWidget);
+      expect(calls.createCalls, 0);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('voiceroom-media-retry-session')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(refreshes, 1);
+      expect(calls.createCalls, 1);
+      expect(handle.joinCalls, 1);
+      expect(find.text('Official CallState view'), findsOneWidget);
+    },
+  );
 
   testWidgets('the connection note follows the part LOOP granted', (
     tester,
@@ -915,7 +1048,7 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
     required Future<void> Function() onLeaveRequested,
     bool inline = false,
     Future<void> Function()? onMicrophoneEnabled,
-    void Function({required bool connected, required int participantCount})?
+    void Function({required bool connected, required int? participantCount})?
     onPresence,
   }) {
     return Column(
@@ -944,4 +1077,74 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
       ],
     );
   }
+}
+
+AppConfig _videoConfig() {
+  return AppConfig(
+    privyAppId: 'privy-app',
+    privyAppClientId: 'privy-client',
+    streamApiKey: 'public-stream-api-key',
+    backendBaseUrl: '',
+    firebaseConfigured: false,
+  );
+}
+
+class _AuthenticatedSession extends LoopSessionController {
+  @override
+  LoopSessionState build() => const LoopSessionState(
+    mode: LoopSessionMode.authenticated,
+    account: PrivyAccountSummary(privyUserId: 'did:privy:user-a'),
+  );
+}
+
+/// Counts what a retry actually asked the backend for.
+final class _RecordingVideoSource implements StreamVideoSessionSource {
+  _RecordingVideoSource({this.identity});
+
+  final StreamVideoIdentity? identity;
+  int identityCalls = 0;
+  int tokenCalls = 0;
+
+  @override
+  Future<StreamVideoIdentity?> loadIdentity() async {
+    identityCalls += 1;
+    return identity;
+  }
+
+  @override
+  Future<String> loadToken(String userId) async {
+    tokenCalls += 1;
+    return 'short-token';
+  }
+}
+
+final class _RecordingVideoClientFactory implements StreamVideoClientFactory {
+  int createCalls = 0;
+
+  @override
+  StreamVideoClientPort create({
+    required String apiKey,
+    required StreamVideoIdentity identity,
+    required String initialToken,
+    required Future<String> Function(String userId) tokenProvider,
+  }) {
+    createCalls += 1;
+    return _RecordingVideoClient(userId: identity.userId);
+  }
+}
+
+final class _RecordingVideoClient implements StreamVideoClientPort {
+  _RecordingVideoClient({required this.userId});
+
+  @override
+  final String userId;
+
+  @override
+  Future<bool> connect() async => true;
+
+  @override
+  Future<void> disconnect() async {}
+
+  @override
+  Future<void> dispose() async {}
 }

@@ -92,7 +92,12 @@ final class AudioRoomLivePresence {
 
   /// Whether this device is in the call right now.
   final bool connected;
-  final int participantCount;
+
+  /// How many people the call counts, or null while a connected call has not
+  /// counted anyone yet. A connected reading is never 0: the SFU publishes its
+  /// figure some seconds after the connection, and 「已连接」 beside 「0 人」 was
+  /// read as an empty room.
+  final int? participantCount;
 
   @override
   bool operator ==(Object other) =>

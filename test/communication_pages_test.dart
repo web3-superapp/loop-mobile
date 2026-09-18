@@ -999,6 +999,39 @@ void main() {
       expect(find.text('LOOP 上次观察在线'), findsNothing);
     });
 
+    testWidgets(
+      'R5-3: a connection whose count has not arrived never shows 0',
+      (tester) async {
+        final voice = FakeVoiceRoomGateway(
+          snapshot: testVoiceRoomSnapshot(
+            role: VoiceRoomRole.listener,
+            participantCount: 0,
+          ),
+        );
+        await pumpCommunityPage(
+          tester,
+          const VoiceRoomScreen(communityId: testCommunityId),
+          voiceRoom: voice,
+          audioRoomCallFactory: _FakeVoiceMediaFactory(log: voice.commands),
+        );
+
+        final report = find.byKey(
+          const ValueKey<String>('fake-presence-counting'),
+        );
+        await scrollToCommunitySection(tester, report);
+        await tester.tap(report);
+        await tester.pumpAndSettle();
+
+        final row = find.byKey(const ValueKey<String>('voiceroom-live'));
+        await scrollToCommunitySection(tester, row);
+        // 「已连接」 beside 「0」 was read as an empty room. The row states the
+        // connection and says the number is still being taken.
+        expect(find.text('当前在线'), findsOneWidget);
+        expect(tester.widget<LoopRecordRow>(row).trailing, '正在统计');
+        expect(tester.widget<LoopRecordRow>(row).trailing, isNot('0'));
+      },
+    );
+
     testWidgets('an unobserved participant count renders the em dash', (
       tester,
     ) async {
@@ -2091,12 +2124,14 @@ void main() {
       // room resource, so a reader with one banner knows which room it is.
       // The part this account plays is on the strip, and the count is the
       // room's own joined figure — never an observation from some earlier
-      // moment.
+      // moment. R5-2: off the call that figure counts memberships, so the
+      // strip says 「已加入」 and not 「在线」.
       expect(
-        find.text('正在语音房 · $testVoiceRoomCommunityName · 听众 · 46 人在线'),
+        find.text('正在语音房 · $testVoiceRoomCommunityName · 听众 · 46 人已加入'),
         findsOneWidget,
       );
       expect(find.textContaining('上次观察'), findsNothing);
+      expect(find.textContaining('人在线'), findsNothing);
 
       await tester.tap(banner);
       await tester.pumpAndSettle();
@@ -2131,13 +2166,27 @@ void main() {
 
   group('voiceroom banner label', () {
     test('the strip names the room, the part and the people in it', () {
+      // R5-2: the two figures that can stand here count different things, so
+      // each is named for what it counts. On the review device the same word
+      // covered both and the strip went from 「1 人在线」 to 「5 人在线」 as the
+      // room page came off the screen.
       expect(
         voiceRoomBannerLabel(
           communityName: 'Builders Guild',
           role: VoiceRoomRole.host,
           count: 4,
+          connected: true,
         ),
-        '正在语音房 · Builders Guild · 主持人 · 4 人在线',
+        '正在语音房 · Builders Guild · 主持人 · 4 人在通话',
+      );
+      expect(
+        voiceRoomBannerLabel(
+          communityName: 'Builders Guild',
+          role: VoiceRoomRole.host,
+          count: 4,
+          connected: false,
+        ),
+        '正在语音房 · Builders Guild · 主持人 · 4 人已加入',
       );
       // No figure is invented when there is none to state.
       expect(
@@ -2145,8 +2194,19 @@ void main() {
           communityName: 'Builders Guild',
           role: VoiceRoomRole.speaker,
           count: null,
+          connected: false,
         ),
         '正在语音房 · Builders Guild · 发言人',
+      );
+      // Connected without a count yet: never a 0, and never silence either.
+      expect(
+        voiceRoomBannerLabel(
+          communityName: 'Builders Guild',
+          role: VoiceRoomRole.speaker,
+          count: null,
+          connected: true,
+        ),
+        '正在语音房 · Builders Guild · 发言人 · 人数正在统计',
       );
     });
   });
@@ -2255,7 +2315,7 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
     required Future<void> Function() onLeaveRequested,
     bool inline = false,
     Future<void> Function()? onMicrophoneEnabled,
-    void Function({required bool connected, required int participantCount})?
+    void Function({required bool connected, required int? participantCount})?
     onPresence,
   }) {
     return Column(
@@ -2269,6 +2329,14 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
           onPressed: () =>
               onPresence?.call(connected: true, participantCount: 3),
           child: const Text('报告人数'),
+        ),
+        // Stands in for the seconds between the connection and the SFU's
+        // first head count: connected, and nobody counted yet.
+        TextButton(
+          key: const ValueKey<String>('fake-presence-counting'),
+          onPressed: () =>
+              onPresence?.call(connected: true, participantCount: null),
+          child: const Text('报告连接但未统计'),
         ),
         TextButton(
           key: const ValueKey<String>('fake-hangup'),
