@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -202,6 +204,10 @@ class LoopChainStateBlock extends StatelessWidget {
   /// shows. The block marks it instead of covering the data with a skeleton.
   final bool refreshing;
 
+  /// How long a rate-limited read holds its retry. Short enough to be a pause
+  /// rather than a lock-out, long enough that a second tap is a second ask.
+  static const rateLimitCooldown = Duration(seconds: 5);
+
   @override
   Widget build(BuildContext context) {
     switch (phase) {
@@ -247,6 +253,19 @@ class LoopChainStateBlock extends StatelessWidget {
           onOpenSettings: stepUp ? onOpenSecurity : null,
         );
       case LoopChainViewPhase.error:
+        // `429` is the server saying the asks are coming too fast. A retry
+        // that is tappable the instant the card appears earns another `429`,
+        // which is how three taps in a row on 网络与 RPC produced three
+        // identical screens. The button stays, visibly, and comes back after
+        // the cool-down.
+        if (failureKind == LoopChainFailureKind.rateLimited &&
+            onRetry != null) {
+          return _LoopChainCoolingRetry(
+            key: ValueKey<String>('$keyPrefix-state-error'),
+            reason: loopChainFailureReason(failureKind),
+            onRetry: onRetry!,
+          );
+        }
         return LoopErrorState(
           key: ValueKey<String>('$keyPrefix-state-error'),
           reason: loopChainFailureReason(failureKind),
@@ -258,6 +277,54 @@ class LoopChainStateBlock extends StatelessWidget {
           visible: refreshing,
         );
     }
+  }
+}
+
+/// A rate-limited read's error card: the retry is held for
+/// [LoopChainStateBlock.rateLimitCooldown] before it may be taken.
+///
+/// The card is rebuilt from scratch on every new failure — the block renders a
+/// skeleton in between — so each refusal starts its own cool-down.
+class _LoopChainCoolingRetry extends StatefulWidget {
+  const _LoopChainCoolingRetry({
+    required this.reason,
+    required this.onRetry,
+    super.key,
+  });
+
+  final String reason;
+  final VoidCallback onRetry;
+
+  @override
+  State<_LoopChainCoolingRetry> createState() => _LoopChainCoolingRetryState();
+}
+
+class _LoopChainCoolingRetryState extends State<_LoopChainCoolingRetry> {
+  Timer? _timer;
+  bool _cooling = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer(LoopChainStateBlock.rateLimitCooldown, () {
+      if (mounted) setState(() => _cooling = false);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopErrorState(
+      reason: widget.reason,
+      onRetry: widget.onRetry,
+      retryEnabled: !_cooling,
+      retryLabel: _cooling ? '稍后重试' : '重试',
+    );
   }
 }
 

@@ -12,22 +12,22 @@ abstract final class LoopV2ModuleRequest {
     r'^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$',
   );
 
+  /// Reads, and the refusals **any** authenticated route may answer with.
+  ///
+  /// Decision 0061 §3 kept them out of the read catalogues on the grounds that
+  /// a client allowlist wider than the server's is how a genuinely invalid
+  /// payload becomes a rendered refusal. The device answered that: the
+  /// catalogue in `loop-api` gives `PERMISSION_DENIED`, `POLICY_BLOCKED` and
+  /// `REGION_BLOCKED` the status `403` and `RATE_LIMITED` the status `429`
+  /// without restricting either to a route family, so a read that met one was
+  /// parsed as an unreadable payload and rendered as an unresolved submission
+  /// — 「结果未确认…不要重复提交」 over a page the reader had only opened
+  /// (R3-2). A refusal is now read as the refusal it is: every read catalogue
+  /// below lists the same `403` triple and `429 RATE_LIMITED`.
   static const readErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
-    404: <String>{'NOT_FOUND'},
-    409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED', 'VERSION_CONFLICT'},
-    500: <String>{'INTERNAL_ERROR'},
-    503: <String>{
-      'CAPABILITY_UNAVAILABLE',
-      'PROVIDER_DISCONNECTED',
-      'REQUEST_TIMEOUT',
-    },
-  };
-
-  static const searchErrors = <int, Set<String>>{
-    400: <String>{'INVALID_REQUEST'},
-    401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
+    403: <String>{'PERMISSION_DENIED', 'POLICY_BLOCKED', 'REGION_BLOCKED'},
     404: <String>{'NOT_FOUND'},
     409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED', 'VERSION_CONFLICT'},
     429: <String>{'RATE_LIMITED'},
@@ -39,13 +39,28 @@ abstract final class LoopV2ModuleRequest {
     },
   };
 
-  /// The community member directory. It adds the two codes only this read can
-  /// answer with: `403` for the `banned` governance view and `429` when the
-  /// alias-prefix query exhausts the shared public search quota.
+  static const searchErrors = <int, Set<String>>{
+    400: <String>{'INVALID_REQUEST'},
+    401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
+    403: <String>{'PERMISSION_DENIED', 'POLICY_BLOCKED', 'REGION_BLOCKED'},
+    404: <String>{'NOT_FOUND'},
+    409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED', 'VERSION_CONFLICT'},
+    429: <String>{'RATE_LIMITED'},
+    500: <String>{'INTERNAL_ERROR'},
+    503: <String>{
+      'CAPABILITY_UNAVAILABLE',
+      'PROVIDER_DISCONNECTED',
+      'REQUEST_TIMEOUT',
+    },
+  };
+
+  /// The community member directory. `403` also covers the `banned`
+  /// governance view, and `429` the alias-prefix query that exhausts the
+  /// shared public search quota.
   static const memberListErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
-    403: <String>{'PERMISSION_DENIED'},
+    403: <String>{'PERMISSION_DENIED', 'POLICY_BLOCKED', 'REGION_BLOCKED'},
     404: <String>{'NOT_FOUND'},
     409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED', 'VERSION_CONFLICT'},
     429: <String>{'RATE_LIMITED'},
@@ -84,9 +99,11 @@ abstract final class LoopV2ModuleRequest {
   static const chainReadErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
+    403: <String>{'PERMISSION_DENIED', 'POLICY_BLOCKED', 'REGION_BLOCKED'},
     404: <String>{'NOT_FOUND'},
     409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED', 'VERSION_CONFLICT'},
     422: <String>{'CHAIN_MISMATCH', 'VALIDATION_FAILED'},
+    429: <String>{'RATE_LIMITED'},
     500: <String>{'INTERNAL_ERROR'},
     503: <String>{
       'CAPABILITY_UNAVAILABLE',
@@ -113,14 +130,15 @@ abstract final class LoopV2ModuleRequest {
   };
 
   /// S6 money-action reads (`preflight`, intent reads, approval inventory).
-  /// They add `403 POLICY_BLOCKED`, which the canary ceiling can answer with.
+  /// `403 POLICY_BLOCKED` is the canary ceiling's own answer.
   static const moneyActionReadErrors = <int, Set<String>>{
     400: <String>{'INVALID_REQUEST'},
     401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
-    403: <String>{'POLICY_BLOCKED'},
+    403: <String>{'PERMISSION_DENIED', 'POLICY_BLOCKED', 'REGION_BLOCKED'},
     404: <String>{'NOT_FOUND'},
     409: <String>{'ACCOUNT_BOOTSTRAP_REQUIRED'},
     422: <String>{'CHAIN_MISMATCH', 'VALIDATION_FAILED'},
+    429: <String>{'RATE_LIMITED'},
     500: <String>{'INTERNAL_ERROR'},
     503: <String>{
       'CAPABILITY_UNAVAILABLE',

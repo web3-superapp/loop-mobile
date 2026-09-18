@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -1042,6 +1043,43 @@ void main() {
       await tester.tap(find.text('重试'));
       await tester.pumpAndSettle();
       expect(chain.status.resolves, 3);
+      expect(find.text('1 / 1 正常'), findsOneWidget);
+    });
+
+    testWidgets('a rate-limited read holds its retry for the cool-down', (
+      tester,
+    ) async {
+      final chain = FakeChainGateway(
+        status: S5Answer<LoopChainStatus>(
+          value: s5Status(),
+          failure: LoopChainFailureKind.rateLimited,
+          failingResolves: 1,
+        ),
+      );
+      await pumpS5Page(tester, const NetworksScreen(), chain: chain);
+
+      expect(
+        find.byKey(const ValueKey<String>('networks-state-error')),
+        findsOneWidget,
+      );
+      expect(find.text('请求过于频繁，请稍等片刻再试。'), findsOneWidget);
+      expect(find.textContaining('不要重复提交'), findsNothing);
+      expect(chain.status.resolves, 1);
+
+      // The button is on screen and cannot be taken: another tap inside the
+      // window is another ask, and another 429.
+      final retry = find.text('稍后重试');
+      expect(retry, findsOneWidget);
+      await tester.tap(retry);
+      await tester.pump();
+      expect(chain.status.resolves, 1);
+
+      await tester.pump(LoopChainStateBlock.rateLimitCooldown);
+      await tester.pumpAndSettle();
+      expect(find.text('稍后重试'), findsNothing);
+      await tester.tap(find.text('重试'));
+      await tester.pumpAndSettle();
+      expect(chain.status.resolves, 2);
       expect(find.text('1 / 1 正常'), findsOneWidget);
     });
 

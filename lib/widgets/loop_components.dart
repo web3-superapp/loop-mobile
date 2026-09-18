@@ -2561,6 +2561,7 @@ class LoopErrorState extends StatelessWidget {
     this.source,
     this.onRetry,
     this.retryLabel = '重试',
+    this.retryEnabled = true,
     this.alternative,
     this.alternativeLabel,
     this.margin = const EdgeInsets.symmetric(horizontal: 16),
@@ -2572,6 +2573,12 @@ class LoopErrorState extends StatelessWidget {
   final String? source;
   final VoidCallback? onRetry;
   final String retryLabel;
+
+  /// A retry that exists but may not be taken yet. The button stays on screen
+  /// and stays unpressable, because a card whose button disappears reads as a
+  /// page with no way forward — and one that can be pressed reads as a page
+  /// where pressing helps.
+  final bool retryEnabled;
   final VoidCallback? alternative;
   final String? alternativeLabel;
   final EdgeInsets margin;
@@ -2629,7 +2636,7 @@ class LoopErrorState extends StatelessWidget {
                       LoopButton(
                         label: retryLabel,
                         primary: true,
-                        onPressed: onRetry,
+                        onPressed: retryEnabled ? onRetry : null,
                       ),
                   ],
                 ),

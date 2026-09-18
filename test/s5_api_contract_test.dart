@@ -133,6 +133,99 @@ void main() {
           );
     });
 
+    // The catalogue gives `PERMISSION_DENIED`, `POLICY_BLOCKED` and
+    // `REGION_BLOCKED` the status 403 on every route, and `RATE_LIMITED` the
+    // status 429. The read catalogues left all four out, so a refusal was
+    // parsed as an unreadable payload and rendered as an unresolved
+    // submission. A refusal is a refusal (R3-2).
+    for (final row
+        in <
+          ({String code, LoopChainFailureKind kind, LoopChainViewPhase phase})
+        >[
+          (
+            code: 'PERMISSION_DENIED',
+            kind: LoopChainFailureKind.permissionDenied,
+            phase: LoopChainViewPhase.permission,
+          ),
+          (
+            code: 'POLICY_BLOCKED',
+            kind: LoopChainFailureKind.permissionDenied,
+            phase: LoopChainViewPhase.permission,
+          ),
+          (
+            code: 'REGION_BLOCKED',
+            kind: LoopChainFailureKind.regionBlocked,
+            phase: LoopChainViewPhase.permission,
+          ),
+        ]) {
+      test('a refused GET carrying ${row.code} is read as a refusal', () {
+        final api = DioLoopV2ChainApi(
+          s5Dio(
+            (options, handler) => handler.reject(
+              s5ErrorResponse(
+                options,
+                statusCode: 403,
+                code: row.code,
+                category: 'authorization',
+                retryable: false,
+                userMessageKey: 'errors.permission.denied',
+              ),
+            ),
+          ),
+        );
+
+        return api
+            .getStatus(
+              accessToken: _accessToken,
+              clientVersion: s5ClientVersion,
+            )
+            .then<void>(
+              (_) => fail('the status read must be refused'),
+              onError: (Object error) {
+                final failure = error as LoopBackendFailure;
+                // Not an invalid payload: the server answered, in contract.
+                expect(failure.code, row.code);
+                final kind = loopChainFailureKindForV2(failure, write: false);
+                expect(kind, row.kind);
+                expect(loopChainPhaseForFailure(kind), row.phase);
+                expect(loopChainFailureReason(kind), isNot(contains('重复提交')));
+              },
+            );
+      });
+    }
+
+    test('a rate-limited GET says so instead of blaming the payload', () {
+      final api = DioLoopV2ChainApi(
+        s5Dio(
+          (options, handler) => handler.reject(
+            s5ErrorResponse(
+              options,
+              statusCode: 429,
+              code: 'RATE_LIMITED',
+              category: 'rateLimit',
+              userMessageKey: 'errors.rate.limited',
+            ),
+          ),
+        ),
+      );
+
+      return api
+          .getStatus(accessToken: _accessToken, clientVersion: s5ClientVersion)
+          .then<void>(
+            (_) => fail('the status read must be refused'),
+            onError: (Object error) {
+              final failure = error as LoopBackendFailure;
+              expect(failure.code, 'RATE_LIMITED');
+              final kind = loopChainFailureKindForV2(failure, write: false);
+              expect(kind, LoopChainFailureKind.rateLimited);
+              // It is retryable, just not yet: the phase keeps the button.
+              expect(loopChainPhaseForFailure(kind), LoopChainViewPhase.error);
+              expect(loopChainFailureReason(kind), contains('请求过于频繁'));
+              expect(loopChainFailureReason(kind), isNot(contains('重复提交')));
+            },
+          );
+    });
+
     test('a GET with no server answer at all is a read failure', () {
       final api = DioLoopV2ChainApi(
         s5Dio(

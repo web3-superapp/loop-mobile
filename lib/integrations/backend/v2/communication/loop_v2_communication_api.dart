@@ -120,13 +120,9 @@ final class DioLoopV2CommunicationApi implements LoopV2CommunicationApi {
   static const communitiesPath = '/v2/communities';
   static const voiceRoomsPath = '/v2/voice-rooms';
 
-  /// `429 RATE_LIMITED` is reachable on the Stream-backed paths, so the module
-  /// widens the shared S3 catalogues rather than accepting an unknown code.
-  static const readErrors = <int, Set<String>>{
-    ...LoopV2ModuleRequest.readErrors,
-    403: <String>{'PERMISSION_DENIED'},
-    429: <String>{'RATE_LIMITED'},
-  };
+  /// The shared read catalogue already carries the `403` triple and `429`
+  /// (R3-2), which is exactly what the Stream-backed paths answer with.
+  static const readErrors = LoopV2ModuleRequest.readErrors;
 
   static const writeErrors = <int, Set<String>>{
     ...LoopV2ModuleRequest.writeErrors,
