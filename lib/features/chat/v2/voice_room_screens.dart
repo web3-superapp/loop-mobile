@@ -414,20 +414,20 @@ class _RoomFacts extends StatelessWidget {
             LoopRecordRow(
               key: const ValueKey<String>('voiceroom-live'),
               // Two different numbers were both called 「在线」 on one screen:
-              // this one, which the server observed at a past moment, and the
-              // call view's own live 「N 人在通话」, which this device reads
-              // from Stream right now. They disagree whenever the server's
-              // observation is older than the connection — 「当前在线 0」 sat
-              // directly above 「1 人在通话」. Each keeps the name of where it
-              // came from instead of the word they were sharing.
-              title: '服务端观测在线',
+              // this one, taken when LOOP last looked at the provider, and
+              // the call view's own live count, which this device reads from
+              // Stream right now. They disagree whenever the observation is
+              // older than the connection — 「当前在线 0」 sat directly above
+              // 「1 人在通话」. Each now says when it was taken instead of
+              // sharing one word that implied both were now.
+              title: '上次观察在线',
               subtitle: !observed.isAvailable
                   ? communicationUnavailableReason(
                       observed.unavailable!.reasonCode,
                     )
                   : observed.participantCount == null
                   ? '当前服务端没有给出这一项。'
-                  : '服务端在这个时刻观察到的通话连接人数，'
+                  : 'LOOP 上次观察时，连接在这次通话里的人数；'
                         '观察于 ${communityObservedAtLabel(observed.observedAt!)}',
               subtitleMaxLines: 2,
               trailing: observed.participantCount == null
@@ -1080,7 +1080,7 @@ class VoiceRoomMinimizedBanner extends ConsumerWidget {
                       count == null
                           ? '正在语音房 · ${session.communityName}'
                           : '正在语音房 · ${session.communityName} · '
-                                '服务端观测 $count 人',
+                                '上次观察 $count 人',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: LoopTypography.withWeight(

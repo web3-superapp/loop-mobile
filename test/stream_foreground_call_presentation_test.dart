@@ -33,10 +33,10 @@ void main() {
     expect(StreamCallStatusPresentation.tone(status), LoopTone.danger);
   });
 
-  test('the device count names the device it was read on', () {
-    // The server-observed room count on the same screen keeps its own name;
-    // neither of them is 「在线」 on its own any more.
-    expect(StreamCallParticipantPresentation.countLabel(1), '本机通话中 1 人');
+  test('the live count says it is the one happening now', () {
+    // The room count on the same screen was taken when LOOP last looked and
+    // keeps its own name; neither of them is 「在线」 on its own any more.
+    expect(StreamCallParticipantPresentation.countLabel(1), '此刻在通话里 1 人');
     expect(
       StreamCallParticipantPresentation.countLabel(0),
       isNot(contains('在线')),

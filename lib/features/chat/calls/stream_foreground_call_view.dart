@@ -87,15 +87,14 @@ abstract final class StreamMicrophoneControlPolicy {
 
 /// Presentation-only mapping for the people inside the call.
 abstract final class StreamCallParticipantPresentation {
-  /// The live count this device reads from Stream, named for that.
+  /// The live count this device is connected to, named for that.
   ///
-  /// The LOOP room facts above this view carry a second count the server
-  /// observed at a past moment. Both were called 「在线」, so 「当前在线 0」
-  /// and 「1 人在通话」 stood on one screen contradicting each other. They are
-  /// not the same reading and neither is wrong: one is what the server saw
-  /// when it last looked, the other is what this device is connected to now.
-  /// Each says which.
-  static String countLabel(int count) => '本机通话中 $count 人';
+  /// The LOOP room facts above this view carry a second count, taken when
+  /// LOOP last looked. Both were called 「在线」, so 「当前在线 0」 and
+  /// 「1 人在通话」 stood on one screen contradicting each other. They are not
+  /// the same reading and neither is wrong: one is what was seen at a past
+  /// moment, the other is what this call holds now. Each says when.
+  static String countLabel(int count) => '此刻在通话里 $count 人';
 
   /// The row title: the alias Stream carries, or the one word left when the
   /// provider carries none.

@@ -854,7 +854,7 @@ void main() {
 
       final row = find.byKey(const ValueKey<String>('voiceroom-live'));
       await scrollToCommunitySection(tester, row);
-      expect(find.text('服务端观测在线'), findsOneWidget);
+      expect(find.text('上次观察在线'), findsOneWidget);
       // The call view under this list carries the device's own live count;
       // one screen never states two different numbers under one word.
       expect(find.text('当前在线'), findsNothing);
@@ -1725,7 +1725,7 @@ void main() {
       // Decision 0052: the strip names the community it belongs to, from the
       // room resource, so a reader with one banner knows which room it is.
       expect(
-        find.text('正在语音房 · $testVoiceRoomCommunityName · 服务端观测 12 人'),
+        find.text('正在语音房 · $testVoiceRoomCommunityName · 上次观察 12 人'),
         findsOneWidget,
       );
 
