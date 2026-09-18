@@ -825,6 +825,10 @@ void main() {
       );
       expect(find.text('1.5'), findsOneWidget);
       expect(find.textContaining('数据落后 33 块'), findsOneWidget);
+      // One screen, one way of writing a number: the block number grouped and
+      // the indexer height two lines under it did not.
+      expect(find.textContaining('索引高度 120,628,771'), findsOneWidget);
+      expect(find.textContaining('索引高度 120628771'), findsNothing);
     });
 
     testWidgets('a reorged row is marked as rolled back', (tester) async {

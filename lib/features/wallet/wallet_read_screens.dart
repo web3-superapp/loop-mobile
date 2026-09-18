@@ -1582,9 +1582,11 @@ class _TransactionHistoryScreenState
           LoopProvenanceFooter(
             key: const ValueKey<String>('tx-history-freshness'),
             text: <String>[
-              '索引高度 ${page.freshness.indexerBlockNumber}',
+              '索引高度 '
+                  '${loopGroupedFigure(page.freshness.indexerBlockNumber.toString())}',
               if (page.freshness.lagBlocks != null)
-                '数据落后 ${page.freshness.lagBlocks} 块',
+                '数据落后 '
+                    '${loopGroupedFigure(page.freshness.lagBlocks.toString())} 块',
               '观察于 ${loopRelativeTime(page.freshness.observedAt)}',
             ].join(' · '),
           ),
@@ -1706,7 +1708,8 @@ class _TransactionHistoryScreenState
                 }} ${entry.symbol}',
             subtitle: <String>[
               loopConfirmationLabel(entry.status),
-              if (entry.confirmations != null) '${entry.confirmations} 确认',
+              if (entry.confirmations != null)
+                '${loopGroupedFigure(entry.confirmations.toString())} 确认',
               '区块 ${loopGroupedFigure(entry.blockNumber.toString())}',
               '对方 ${loopTruncatedAddress(entry.counterpartyAddress)}',
               loopRelativeTime(entry.observedAt),
@@ -1855,8 +1858,9 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
                 title: status.chain.name,
                 subtitle:
                     '${status.chain.chainId} · '
-                    '${status.chain.confirmations} 确认 · '
-                    '重组跟踪 ${status.chain.reorgDepthBlocks} 块',
+                    '${loopGroupedFigure(status.chain.confirmations.toString())} 确认 · '
+                    '重组跟踪 '
+                    '${loopGroupedFigure(status.chain.reorgDepthBlocks.toString())} 块',
                 // Three facts joined by · do not fit beside the block number
                 // on a phone, and the one that fell off the end was the reorg
                 // depth — the fact this row exists to state.
@@ -1909,8 +1913,11 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
                   subtitle: lane.available
                       ? <String>[
                           if (lane.lastBlockNumber != null)
-                            '高度 ${lane.lastBlockNumber}',
-                          if (lane.lagBlocks != null) '落后 ${lane.lagBlocks} 块',
+                            '高度 '
+                                '${loopGroupedFigure(lane.lastBlockNumber.toString())}',
+                          if (lane.lagBlocks != null)
+                            '落后 '
+                                '${loopGroupedFigure(lane.lagBlocks.toString())} 块',
                           if (lane.reorgCount != null)
                             '重组 ${lane.reorgCount} 次',
                           if (lane.updatedAt != null)
@@ -1967,7 +1974,8 @@ LoopRecordRow _endpointRow(LoopRpcEndpointHealth endpoint, int index) =>
           '延迟 ${endpoint.latencyMs}ms'
         else
           '延迟未知',
-        if (endpoint.blockLagBlocks != null) '落后 ${endpoint.blockLagBlocks} 块',
+        if (endpoint.blockLagBlocks != null)
+          '落后 ${loopGroupedFigure(endpoint.blockLagBlocks.toString())} 块',
         '校验${endpoint.chainVerification.label}',
         loopRelativeTime(endpoint.observedAt),
       ].join(' · '),
@@ -2018,8 +2026,9 @@ class _LaunchChainRow extends StatelessWidget {
           title: '${launchChain.name}（Launch）',
           subtitle: reasonCode == null
               ? '${launchChain.chainId} · '
-                    '${launchChain.confirmations} 确认 · '
-                    '重组跟踪 ${launchChain.reorgDepthBlocks} 块'
+                    '${loopGroupedFigure(launchChain.confirmations.toString())} 确认 · '
+                    '重组跟踪 '
+                    '${loopGroupedFigure(launchChain.reorgDepthBlocks.toString())} 块'
               : loopReasonCodeText(reasonCode),
           trailing: head == null
               ? null

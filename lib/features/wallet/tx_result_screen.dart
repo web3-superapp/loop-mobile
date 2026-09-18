@@ -314,7 +314,7 @@ class _TransactionResultScreenState
       return '结果、交易哈希和下一步动作集中在这里，不会混入新的报价。';
     }
     return '区块 ${loopGroupedFigure(receipt.blockNumber.toString())} · '
-        '${receipt.confirmations == null ? '确认数读不到' : '${receipt.confirmations} 确认'}';
+        '${receipt.confirmations == null ? '确认数读不到' : '${loopGroupedFigure(receipt.confirmations.toString())} 确认'}';
   }
 }
 
@@ -397,7 +397,7 @@ class _ResultFacts extends StatelessWidget {
                   ? '还没有回执'
                   : receipt.confirmations == null
                   ? '链头读不到'
-                  : '${receipt.confirmations}',
+                  : loopGroupedFigure(receipt.confirmations.toString()),
               padding: const EdgeInsets.symmetric(vertical: 8),
             ),
             LoopKeyValue(

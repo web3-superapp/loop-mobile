@@ -414,7 +414,8 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
       subtitle: <String>[
         if (trade.isOwn) '我',
         loopConfirmationLabel(trade.status),
-        if (trade.confirmations != null) '${trade.confirmations} 确认',
+        if (trade.confirmations != null)
+          '${loopGroupedFigure(trade.confirmations.toString())} 确认',
         '区块 ${loopGroupedFigure(trade.blockNumber.toString())}',
         loopRelativeTime(trade.blockTimestamp),
       ].join(' · '),
@@ -441,8 +442,10 @@ class _FreshnessFooter extends StatelessWidget {
     return LoopProvenanceFooter(
       key: const ValueKey<String>('indexer-freshness'),
       text: <String>[
-        '索引高度 ${freshness.indexerBlockNumber}',
-        if (lag != null) '数据落后 $lag 块',
+        // The block number on the same line already groups; a figure that
+        // does not reads as a different kind of number.
+        '索引高度 ${loopGroupedFigure(freshness.indexerBlockNumber.toString())}',
+        if (lag != null) '数据落后 ${loopGroupedFigure(lag.toString())} 块',
         '观察于 ${loopRelativeTime(freshness.observedAt)}',
       ].join(' · '),
     );
