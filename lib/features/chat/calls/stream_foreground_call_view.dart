@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
 
@@ -95,6 +96,35 @@ abstract final class StreamCallParticipantPresentation {
   /// when it last looked, the other is what this device is connected to now.
   /// Each says which.
   static String countLabel(int count) => '本机通话中 $count 人';
+
+  /// The row title: the alias Stream carries, or the one word left when the
+  /// provider carries none.
+  static String name({required String suppliedName, required bool isLocal}) {
+    final alias = suppliedName.trim();
+    if (alias.isNotEmpty) return alias;
+    return isLocal ? '我' : '成员';
+  }
+
+  /// Whether the row gets the 「我」 badge beside its title.
+  ///
+  /// The row used to read 「我 / 我」: the title fell back to 我 because Stream
+  /// carried no alias, and the caption said 我 again instead of the one thing
+  /// the caption is for — whether this person's microphone is live. The badge
+  /// marks the reader's own row, and it is withheld when the title is already
+  /// the word 我, which would only say it twice again.
+  static bool marksSelf({
+    required String suppliedName,
+    required bool isLocal,
+  }) => isLocal && suppliedName.trim().isNotEmpty;
+
+  /// The caption: microphone state, for every row including the reader's own.
+  static String microphoneState({
+    required bool isSpeaking,
+    required bool isAudioEnabled,
+  }) {
+    if (isSpeaking) return '正在发言';
+    return isAudioEnabled ? '麦克风已开' : '已静音';
+  }
 }
 
 /// Foreground Audio Room UI driven directly by Stream's official [CallState].
@@ -451,19 +481,20 @@ class _ParticipantCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final suppliedName = participant.name.trim();
-    final name = suppliedName.isNotEmpty
-        ? suppliedName
-        : participant.isLocal
-        ? '我'
-        : '成员';
-    final role = participant.isLocal
-        ? '我'
-        : participant.isSpeaking
-        ? '正在发言'
-        : participant.isAudioEnabled
-        ? '麦克风已开'
-        : '已静音';
+    final suppliedName = participant.name;
+    final isLocal = participant.isLocal;
+    final name = StreamCallParticipantPresentation.name(
+      suppliedName: suppliedName,
+      isLocal: isLocal,
+    );
+    final marksSelf = StreamCallParticipantPresentation.marksSelf(
+      suppliedName: suppliedName,
+      isLocal: isLocal,
+    );
+    final role = StreamCallParticipantPresentation.microphoneState(
+      isSpeaking: participant.isSpeaking,
+      isAudioEnabled: participant.isAudioEnabled,
+    );
     final accent = participant.isSpeaking ? LoopColors.chat : LoopColors.line;
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -497,11 +528,21 @@ class _ParticipantCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium,
+                  Row(
+                    children: <Widget>[
+                      Flexible(
+                        child: Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      if (marksSelf) ...<Widget>[
+                        const SizedBox(width: 8),
+                        const LoopBadge('我', kind: LoopBadgeKind.mute),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 3),
                   Text(role, style: Theme.of(context).textTheme.labelMedium),

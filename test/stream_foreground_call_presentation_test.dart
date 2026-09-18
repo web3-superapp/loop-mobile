@@ -43,6 +43,74 @@ void main() {
     );
   });
 
+  test('the reader own row never says 我 twice', () {
+    // Stream carries no alias in this deployment, so the title falls back to
+    // 我 — and the caption must then be the microphone state, not 我 again.
+    expect(
+      StreamCallParticipantPresentation.name(suppliedName: '', isLocal: true),
+      '我',
+    );
+    expect(
+      StreamCallParticipantPresentation.marksSelf(
+        suppliedName: '',
+        isLocal: true,
+      ),
+      isFalse,
+    );
+    expect(
+      StreamCallParticipantPresentation.microphoneState(
+        isSpeaking: false,
+        isAudioEnabled: false,
+      ),
+      '已静音',
+    );
+  });
+
+  test('an alias keeps the alias and takes the 我 badge', () {
+    expect(
+      StreamCallParticipantPresentation.name(
+        suppliedName: ' voyager ',
+        isLocal: true,
+      ),
+      'voyager',
+    );
+    expect(
+      StreamCallParticipantPresentation.marksSelf(
+        suppliedName: 'voyager',
+        isLocal: true,
+      ),
+      isTrue,
+    );
+    expect(
+      StreamCallParticipantPresentation.marksSelf(
+        suppliedName: 'voyager',
+        isLocal: false,
+      ),
+      isFalse,
+    );
+    expect(
+      StreamCallParticipantPresentation.name(suppliedName: '', isLocal: false),
+      '成员',
+    );
+  });
+
+  test('speaking outranks the plain microphone state', () {
+    expect(
+      StreamCallParticipantPresentation.microphoneState(
+        isSpeaking: true,
+        isAudioEnabled: true,
+      ),
+      '正在发言',
+    );
+    expect(
+      StreamCallParticipantPresentation.microphoneState(
+        isSpeaking: false,
+        isAudioEnabled: true,
+      ),
+      '麦克风已开',
+    );
+  });
+
   test('an enabled microphone can always be muted while reconnecting', () {
     expect(
       StreamMicrophoneControlPolicy.canRequest(
