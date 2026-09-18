@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/market/alerts/alert_models.dart';
 import 'package:loop_mobile/features/market/alerts/alerts_screen.dart';
+import 'package:loop_mobile/features/market/token_screen.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_editor_screen.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
@@ -505,6 +506,35 @@ void main() {
       expect(find.textContaining('mock_seed'), findsNothing);
       expect(find.textContaining('来源'), findsNothing);
       expect(find.textContaining('观察于'), findsWidgets);
+    });
+
+    testWidgets('the token page drops the same internal source identifier', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const TokenDetailScreen(assetId: s5WbnbAssetId),
+        market: FakeMarketReadGateway(),
+        notifications: FakeNotificationsGateway(
+          feed: S5Answer<LoopNotificationFeed>(
+            value: s5Feed(
+              items: <LoopNotificationEntry>[
+                s5Notification(source: 'mock_seed'),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final row = find.byKey(ValueKey<String>('token-feed-$s5NotificationId'));
+      await scrollToS5Section(tester, row);
+      // Same rule as the trigger history: a source a reader cannot check is
+      // not provenance, and the two pages state it the same way. The page's
+      // own provider labels, which name providers, are untouched.
+      final subtitle = tester.widget<LoopRecordRow>(row).subtitle;
+      expect(subtitle, isNot(contains('mock_seed')));
+      expect(subtitle, isNot(contains('来源')));
+      expect(subtitle, contains('观察于'));
     });
 
     testWidgets('the trigger history pages to the end and says so', (

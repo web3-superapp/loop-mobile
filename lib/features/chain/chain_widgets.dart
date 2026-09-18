@@ -107,9 +107,16 @@ const List<String> _loopCompactSuffixes = <String>['K', 'M', 'B', 'T'];
 /// Rounding runs on [Decimal] throughout, half away from zero; no `double` is
 /// involved. A negative value places its sign where [loopFormatUsd] places it
 /// (`$-2.4M`).
-String loopFormatCompactFigure(Decimal value, {bool usd = true}) {
+String loopFormatCompactFigure(
+  Decimal value, {
+  bool usd = true,
+  bool preciseBelowOne = false,
+}) {
   final negative = value < Decimal.zero;
   final absolute = negative ? -value : value;
+  if (preciseBelowOne && absolute > Decimal.zero && absolute < Decimal.one) {
+    return _loopSubUnitFigure(absolute, negative: negative, usd: usd);
+  }
   final whole = absolute.round();
   if (whole < _loopCompactFrom) {
     if (absolute > Decimal.zero && whole == Decimal.zero) {
@@ -142,6 +149,46 @@ String loopFormatCompactFigure(Decimal value, {bool usd = true}) {
       '${negative ? '-' : ''}'
       '${loopFormatDecimal(scaled, maxFractionDigits: 1)}'
       '${_loopCompactSuffixes[step - 1]}';
+  return usd ? '\$$body' : body;
+}
+
+/// How far below a dollar [loopFormatCompactFigure] will go before it bounds
+/// the figure instead of printing it. A four.meme pool trades around 1e-6; a
+/// cap this deep covers every price a BSC pool has quoted and still ends.
+const int _loopSubUnitMaxScale = 18;
+const int _loopSubUnitSignificantDigits = 3;
+
+/// Three significant digits for a figure below a dollar.
+///
+/// The summary form rounds to whole dollars, so everything under one read as
+/// 「<$1」 — on the new-pairs page that is neither the price (1e-6 for a
+/// launchpad pool) nor a reason the price is missing, and the page promises
+/// one or the other. Three significant digits is the shortest form that still
+/// says the magnitude: `$0.0000012`, `$0.874`.
+String _loopSubUnitFigure(
+  Decimal absolute, {
+  required bool negative,
+  required bool usd,
+}) {
+  var scale = 0;
+  var scaled = absolute;
+  // The first significant digit has to be found before three of them can be
+  // kept: 0.0000012 carries none until the sixth decimal place.
+  while (scaled < Decimal.one && scale < _loopSubUnitMaxScale) {
+    scaled = scaled.shift(1);
+    scale += 1;
+  }
+  final body = loopFormatDecimal(
+    negative ? -absolute : absolute,
+    maxFractionDigits: scale + _loopSubUnitSignificantDigits - 1,
+  );
+  if (body == '0') {
+    // Smaller than this cap can print. It is still not a zero, and it is
+    // still not 「<$1」: the bound says how small.
+    final bound = '0.${'0' * (_loopSubUnitMaxScale - 1)}1';
+    final marker = negative ? '>-' : '<';
+    return usd ? '$marker\$$bound' : '$marker$bound';
+  }
   return usd ? '\$$body' : body;
 }
 

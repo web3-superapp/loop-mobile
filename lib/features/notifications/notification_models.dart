@@ -190,3 +190,17 @@ final class LoopNotificationFeed {
       .where((entry) => entry.type == LoopNotificationCategory.tradePriceAlert)
       .toList(growable: false);
 }
+
+/// 「来源 …」 for a notification, and only when the name is one LOOP already
+/// shows elsewhere.
+///
+/// The notification contract leaves `source` an open `[a-z][a-z0-9_]*`
+/// identifier, so it arrives as a pipeline name: every row on the review
+/// device read 「来源 mock_seed」. A value that maps onto a provider prints as
+/// that provider; anything else is an internal string, and a source a reader
+/// cannot check is not provenance, so the segment is dropped.
+String? loopNotificationSourceLabel(String? source) {
+  if (source == null) return null;
+  final provider = LoopFactSource.tryParse(source);
+  return provider == null ? null : '来源 ${loopFactSourceLabel(provider)}';
+}

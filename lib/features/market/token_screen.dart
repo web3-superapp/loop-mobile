@@ -919,10 +919,10 @@ String _notificationTitle(LoopNotificationEntry entry) {
 }
 
 String _notificationDetail(LoopNotificationEntry entry) {
-  final source = entry.source;
+  final source = loopNotificationSourceLabel(entry.source);
   final observedAt = entry.observedAt;
   return <String>[
-    if (source != null) '来源 $source',
+    ?source,
     if (observedAt != null) '观察于 ${loopRelativeTime(observedAt)}',
   ].join(' · ');
 }

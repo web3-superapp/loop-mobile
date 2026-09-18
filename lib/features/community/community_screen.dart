@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/community/search_controller.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
@@ -470,7 +471,7 @@ class _CommunitySearchPanelState extends State<_CommunitySearchPanel> {
   }
 }
 
-class _CommunityMessagePanel extends StatelessWidget {
+class _CommunityMessagePanel extends ConsumerWidget {
   const _CommunityMessagePanel({
     required this.home,
     required this.onClose,
@@ -486,9 +487,13 @@ class _CommunityMessagePanel extends StatelessWidget {
   final VoidCallback onOpenMessageSearch;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final unread = home?.unread;
     final liveVoice = home?.liveVoice;
+    // The room this account is in, as this client knows it. The panel does
+    // not read a room of its own: what it has is the same membership the
+    // strip above the router stands on.
+    final session = ref.watch(voiceRoomSessionProvider);
     return LoopSurfaceCard(
       key: const ValueKey<String>('community-message-panel'),
       // Floats over page content, so it needs an opaque surface: the page
@@ -504,21 +509,46 @@ class _CommunityMessagePanel extends StatelessWidget {
             style: LoopTypography.eyebrow(11, color: LoopColors.muted),
           ),
           const SizedBox(height: 10),
+          // Two 「读不到」 cards stood here on one panel for two things that
+          // had not failed: LOOP does not publish a total unread count in
+          // this version, and a reader who is in no room is not a room that
+          // could not be read. Each says what is actually the case; a code
+          // that means something else still renders as the failure it is.
           if (unread != null)
-            CommunityUnavailableCard(
-              key: const ValueKey<String>('community-unread-unavailable'),
-              label: '未读消息',
-              fact: unread,
-              margin: EdgeInsets.zero,
-            ),
+            unread.reasonCode == 'STREAM_UNREAD_NOT_CONNECTED'
+                ? const LoopEmpty(
+                    key: ValueKey<String>('community-unread-deferred'),
+                    message: '未读消息',
+                    reason: '未读总数还没有开放。打开聊天可以看到每个会话的未读。',
+                    margin: EdgeInsets.zero,
+                  )
+                : CommunityUnavailableCard(
+                    key: const ValueKey<String>('community-unread-unavailable'),
+                    label: '未读消息',
+                    fact: unread,
+                    margin: EdgeInsets.zero,
+                  ),
           if (liveVoice != null) ...<Widget>[
             const SizedBox(height: 10),
-            CommunityUnavailableCard(
-              key: const ValueKey<String>('community-live-voice-unavailable'),
-              label: '语音房',
-              fact: liveVoice,
-              margin: EdgeInsets.zero,
-            ),
+            if (liveVoice.reasonCode == 'STREAM_VOICE_NOT_CONNECTED')
+              LoopEmpty(
+                key: const ValueKey<String>('community-live-voice-state'),
+                message: session == null
+                    ? '你现在不在任何语音房里'
+                    : '正在语音房 · ${session.communityName}',
+                reason: session == null
+                    ? '加入之后这里会显示你所在的房间。'
+                          '某个社区有没有进行中的语音房，在它的社区页可以看到。'
+                    : '你仍然在这个房间里。顶部的提示可以直接回到它。',
+                margin: EdgeInsets.zero,
+              )
+            else
+              CommunityUnavailableCard(
+                key: const ValueKey<String>('community-live-voice-unavailable'),
+                label: '语音房',
+                fact: liveVoice,
+                margin: EdgeInsets.zero,
+              ),
           ],
           const SizedBox(height: 12),
           LoopRecordGroup(

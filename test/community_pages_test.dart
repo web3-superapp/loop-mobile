@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
+import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_discover_screen.dart';
@@ -53,6 +54,23 @@ CommunityHome _home({
     ruleVersion: 'rule:verified-members-v1',
   ),
 );
+
+CommunityHome _homeWith({
+  required LoopUnavailableFact unread,
+  required LoopUnavailableFact liveVoice,
+}) {
+  final home = _home();
+  return CommunityHome(
+    joined: home.joined,
+    joinedTruncated: home.joinedTruncated,
+    discover: home.discover,
+    unread: unread,
+    liveVoice: liveVoice,
+    observedAt: home.observedAt,
+    source: home.source,
+    recommendation: home.recommendation,
+  );
+}
 
 void main() {
   group('community · home aggregate', () {
@@ -279,11 +297,52 @@ void main() {
       );
     });
 
-    testWidgets('the message panel states its missing sources', (tester) async {
+    testWidgets('the message panel states what is true, not two failures', (
+      tester,
+    ) async {
       await pumpCommunityPage(
         tester,
         const CommunityScreen(),
         community: FakeCommunityGateway(home: _home()),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-message-toggle')),
+      );
+      await tester.pumpAndSettle();
+
+      // Neither line is a failed read: LOOP publishes no total unread count
+      // in this version, and this account is in no room.
+      expect(
+        find.byKey(const ValueKey<String>('community-unread-deferred')),
+        findsOneWidget,
+      );
+      expect(find.text('你现在不在任何语音房里'), findsOneWidget);
+      expect(find.textContaining('暂时读不到'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('community-unread-unavailable')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('community-live-voice-unavailable')),
+        findsNothing,
+      );
+      expect(find.textContaining('3 NEW'), findsNothing);
+    });
+
+    testWidgets('a reason the panel does not recognise stays a failure', (
+      tester,
+    ) async {
+      final home = _homeWith(
+        unread: const LoopUnavailableFact('COMMUNICATION_RUNTIME_UNAVAILABLE'),
+        liveVoice: const LoopUnavailableFact(
+          'COMMUNICATION_RUNTIME_UNAVAILABLE',
+        ),
+      );
+      await pumpCommunityPage(
+        tester,
+        const CommunityScreen(),
+        community: FakeCommunityGateway(home: home),
       );
 
       await tester.tap(
@@ -299,7 +358,7 @@ void main() {
         find.byKey(const ValueKey<String>('community-live-voice-unavailable')),
         findsOneWidget,
       );
-      expect(find.textContaining('3 NEW'), findsNothing);
+      expect(find.text('你现在不在任何语音房里'), findsNothing);
     });
 
     testWidgets('a truncated joined list routes to the paginated directory', (
@@ -1069,6 +1128,62 @@ void main() {
       expect(find.text('进入'), findsOneWidget);
     });
 
+    testWidgets('ending the room drops the row the community page had read', (
+      tester,
+    ) async {
+      final community = FakeCommunityGateway(
+        detail: testDetail(
+          viewer: testViewer(role: CommunityRole.owner),
+          voice: testVoiceLive,
+        ),
+      );
+      final voiceRoom = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
+      );
+      await pumpCommunityPage(
+        tester,
+        const _VoiceRoomReturnHarness(),
+        community: community,
+        voiceRoom: voiceRoom,
+      );
+
+      // The community page was read while the room was live, and says so.
+      expect(find.text('当前有进行中的语音房'), findsOneWidget);
+
+      // The server's answer changes the moment the room ends; the page under
+      // the room still holds the old one until it reads again.
+      community.detail = testDetail(
+        viewer: testViewer(role: CommunityRole.owner),
+        voice: testVoiceUnavailable,
+      );
+      voiceRoom.loadSnapshot = null;
+
+      await tester.tap(find.byKey(const ValueKey<String>('harness-open-room')));
+      await tester.pumpAndSettle();
+      final end = find.byKey(const ValueKey<String>('voiceroom-end'));
+      await tester.scrollUntilVisible(
+        end,
+        220,
+        scrollable: find
+            .descendant(
+              of: find.byType(VoiceRoomScreen),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.tap(end);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('结束房间').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('harness-open-community')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('当前有进行中的语音房'), findsNothing);
+      expect(find.text('进入'), findsNothing);
+    });
+
     testWidgets('opening a room is confirmed first, then entered', (
       tester,
     ) async {
@@ -1280,6 +1395,35 @@ void main() {
       expect(find.text('这个筛选下没有成员'), findsOneWidget);
       expect(find.text('这个社区目前没有被封禁的成员。'), findsOneWidget);
       expect(find.textContaining('这个角色下没有成员'), findsNothing);
+    });
+
+    testWidgets('a member with no alias does not say its id twice', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityMembersScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          members: testDirectory(
+            items: <CommunityMemberEntry>[
+              testMember(role: CommunityRole.member, alias: null),
+            ],
+          ),
+        ),
+      );
+
+      final row = find.byKey(
+        const ValueKey<String>('member-row-$testMemberId'),
+      );
+      await tester.scrollUntilVisible(
+        row,
+        220,
+        scrollable: find.byType(Scrollable).first,
+      );
+      final rendered = tester.widget<LoopRecordRow>(row);
+      expect(rendered.title, 'LOOP-3HJKMNPQ');
+      expect(rendered.subtitle, isNot('LOOP-3HJKMNPQ'));
+      expect(rendered.subtitle, startsWith('加入于 '));
     });
 
     testWidgets('a row renders exactly the commands the server published', (
@@ -2145,4 +2289,46 @@ void main() {
       expect(searchField(), findsOneWidget);
     });
   });
+}
+
+/// The two pages a reader walks between: the community page stays mounted
+/// under the room, exactly as the router leaves it, so the test can ask what
+/// it says after the room ends.
+class _VoiceRoomReturnHarness extends StatefulWidget {
+  const _VoiceRoomReturnHarness();
+
+  @override
+  State<_VoiceRoomReturnHarness> createState() =>
+      _VoiceRoomReturnHarnessState();
+}
+
+class _VoiceRoomReturnHarnessState extends State<_VoiceRoomReturnHarness> {
+  var _index = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        Expanded(
+          child: IndexedStack(
+            index: _index,
+            children: const <Widget>[
+              CommunityProfileScreen(communityId: testCommunityId),
+              VoiceRoomScreen(communityId: testCommunityId),
+            ],
+          ),
+        ),
+        TextButton(
+          key: const ValueKey<String>('harness-open-room'),
+          onPressed: () => setState(() => _index = 1),
+          child: const Text('room'),
+        ),
+        TextButton(
+          key: const ValueKey<String>('harness-open-community'),
+          onPressed: () => setState(() => _index = 0),
+          child: const Text('community'),
+        ),
+      ],
+    );
+  }
 }

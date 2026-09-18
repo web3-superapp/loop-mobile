@@ -206,6 +206,66 @@ void main() {
       expect(loopFormatCompactFigure(Decimal.parse('99999.995')), r'$100K');
     });
 
+    test('a sub-dollar price keeps three significant digits when asked', () {
+      // 「<$1」 is true of every launchpad pool and tells the reader nothing:
+      // these trade at 1e-6. The slot that has the width prints the figure.
+      expect(
+        loopFormatCompactFigure(
+          Decimal.parse('0.0000012345'),
+          preciseBelowOne: true,
+        ),
+        r'$0.00000123',
+      );
+      expect(
+        loopFormatCompactFigure(Decimal.parse('0.0041'), preciseBelowOne: true),
+        r'$0.0041',
+      );
+      expect(
+        loopFormatCompactFigure(
+          Decimal.parse('0.874321'),
+          preciseBelowOne: true,
+        ),
+        r'$0.874',
+      );
+      expect(
+        loopFormatCompactFigure(
+          Decimal.parse('-0.0000012345'),
+          preciseBelowOne: true,
+        ),
+        r'$-0.00000123',
+      );
+      expect(
+        loopFormatCompactFigure(
+          Decimal.parse('0.0041'),
+          usd: false,
+          preciseBelowOne: true,
+        ),
+        '0.0041',
+      );
+      // A dollar and over is exactly the summary form, and an exact zero is
+      // still the fact it always was.
+      expect(
+        loopFormatCompactFigure(
+          Decimal.parse('42800000'),
+          preciseBelowOne: true,
+        ),
+        r'$42.8M',
+      );
+      expect(
+        loopFormatCompactFigure(Decimal.zero, preciseBelowOne: true),
+        r'$0',
+      );
+      // Smaller than the deepest form this prints is still bounded, and the
+      // bound says how small instead of 「<$1」.
+      expect(
+        loopFormatCompactFigure(
+          Decimal.parse('0.0000000000000000000001'),
+          preciseBelowOne: true,
+        ),
+        r'<$0.000000000000000001',
+      );
+    });
+
     test('a value under one dollar is bounded, never rounded to zero', () {
       // `$0` liquidity reads as a pulled pool. This value is not zero.
       expect(loopFormatCompactFigure(Decimal.parse('0.004')), r'<$1');

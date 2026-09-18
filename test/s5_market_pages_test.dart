@@ -796,7 +796,7 @@ void main() {
       expect(navigated.single, contains(Uri.encodeComponent(s5WbnbAssetId)));
     });
 
-    testWidgets('a sub-cent pool is bounded, never printed as zero', (
+    testWidgets('a sub-cent pool prints its figure, never a zero or a bound', (
       tester,
     ) async {
       await pumpS5Page(
@@ -834,11 +834,58 @@ void main() {
         ),
       );
 
-      // 「$0」 on this page reads as a pulled pool. A figure that exists and
-      // is smaller than a dollar says exactly that.
+      // 「$0」 on this page reads as a pulled pool, and 「<$1」 is true of
+      // every four.meme pool — neither is the figure. The row has the width
+      // for three significant digits.
       expect(find.text(r'$0'), findsNothing);
-      expect(find.text(r'<$1'), findsOneWidget);
-      expect(find.textContaining(r'储备 <$1'), findsOneWidget);
+      expect(find.text(r'<$1'), findsNothing);
+      expect(find.text(r'$0.0009'), findsOneWidget);
+      expect(find.textContaining(r'储备 $0.0041'), findsOneWidget);
+    });
+
+    testWidgets('a pool with no reserve figure says so instead of nothing', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const NewPairsScreen(),
+        market: FakeMarketReadGateway(
+          newPairs: S5Answer<MarketNewPairsPage>(
+            value: MarketNewPairsPage(
+              newPairs: MarketNewPairsAvailable(
+                source: LoopFactSource.geckoterminal,
+                fetchedAt: DateTime.utc(2026, 9, 8, 7, 31),
+                ttlSeconds: 60,
+                quality: LoopFactQuality.fresh,
+                reasonCode: null,
+                omittedCount: 0,
+                items: <MarketNewPair>[
+                  MarketNewPair(
+                    poolRef: const MarketPoolAddressRef(s5PoolAddress),
+                    dexId: 'four-meme',
+                    name: 'MEME / BNB',
+                    baseTokenAddress: s5Address,
+                    quoteTokenAddress: marketZeroAddress,
+                    registryAssetId: null,
+                    createdAt: DateTime.utc(2026, 9, 8, 5),
+                    reserveUsd: null,
+                    volumeH24Usd: null,
+                  ),
+                ],
+              ),
+              riskScreening: const LoopUnavailable(
+                'MARKET_PROVIDER_GOPLUS_NOT_CONFIGURED',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // The page promises a reason rather than a zero; an absent figure is
+      // not an empty corner either.
+      expect(find.textContaining('储备暂时读不到'), findsOneWidget);
+      expect(find.textContaining('24 小时成交额暂时读不到'), findsOneWidget);
+      expect(find.text(r'$0'), findsNothing);
     });
 
     testWidgets('new-pairs says nothing when no pool was left out', (

@@ -447,9 +447,16 @@ class _CommunityMembersScreenState
       title: entry.isSelf
           ? '我 · ${entry.profile.displayName}'
           : entry.profile.displayName,
-      // The role and the status are a state, not a figure, so they ride in the
-      // badge and the subtitle keeps only the identity.
-      subtitle: entry.profile.loopId,
+      // The role and the status are a state, not a figure, so they ride in
+      // the badge and the subtitle keeps only the identity — except for a
+      // member with no alias, whose title already *is* that identity. Those
+      // rows read 「LOOP-HAG2GAFC / LOOP-HAG2GAFC」, the same string twice,
+      // beside rows that carried a name and an id. The row says when the
+      // member joined instead: it is the one other fact the directory holds
+      // about them.
+      subtitle: entry.profile.alias == null
+          ? '加入于 ${communityObservedAtLabel(entry.joinedAt)}'
+          : entry.profile.loopId,
       trailingBadge: LoopBadge(
         status,
         key: ValueKey<String>('member-badge-$identity'),

@@ -571,16 +571,28 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
                           // Rounded to cents that printed 「$0」, which on a
                           // page that promises to say why a figure is missing
                           // rather than show a zero reads as "no liquidity at
-                          // all" — a pulled pool. The summary form bounds it
-                          // at 「<$1」 instead and keeps every larger figure
-                          // inside the width this row leaves it.
+                          // all" — a pulled pool. Bounding it at 「<$1」 was
+                          // no better: a launchpad pool is quoted at 1e-6, so
+                          // the bound is true of every row and tells the
+                          // reader nothing. This row has the width for three
+                          // significant digits, and that is the figure.
                           if (pair.reserveUsd != null)
-                            '储备 ${loopFormatCompactFigure(pair.reserveUsd!)}',
+                            '储备 '
+                                '${loopFormatCompactFigure(pair.reserveUsd!, preciseBelowOne: true)}'
+                          else
+                            '储备暂时读不到',
+                          // The trailing slot holds the 24-hour figure; when
+                          // it is missing the row says so rather than leaving
+                          // an empty corner the reader has to explain.
+                          if (pair.volumeH24Usd == null) '24 小时成交额暂时读不到',
                         ].join(' · '),
                         subtitleMaxLines: 2,
                         trailing: pair.volumeH24Usd == null
                             ? null
-                            : loopFormatCompactFigure(pair.volumeH24Usd!),
+                            : loopFormatCompactFigure(
+                                pair.volumeH24Usd!,
+                                preciseBelowOne: true,
+                              ),
                         onTap: !pair.opensDetail
                             ? null
                             : () => _open(

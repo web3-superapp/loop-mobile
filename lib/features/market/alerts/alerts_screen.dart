@@ -576,9 +576,9 @@ String _feedDetail(LoopNotificationEntry entry) {
   // already names elsewhere prints as that provider; anything else is an
   // internal string and the segment is dropped, because a source a reader
   // cannot check is not provenance.
-  final provider = source == null ? null : LoopFactSource.tryParse(source);
+  final provenance = loopNotificationSourceLabel(source);
   return <String>[
-    if (provider != null) '来源 ${loopFactSourceLabel(provider)}',
+    ?provenance,
     if (observedAt != null) '观察于 ${loopRelativeTime(observedAt)}',
   ].join(' · ');
 }
