@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_link.dart';
@@ -12,9 +13,11 @@ import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -69,21 +72,39 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
 
   @override
   void dispose() {
-    final presence = _presence;
+    // A page that was closed some other way than a pop — the whole shell
+    // going down, an account change — still gives the count back. Riverpod
+    // refuses a write from a life-cycle callback, so this one waits a
+    // microtask; the pop path below does not have to.
+    _releasePresence(immediate: false);
     _presence = null;
-    if (_entered && presence != null) {
-      // Riverpod refuses a write from a life-cycle callback, so the count is
-      // lowered after this frame. The notifier outlives the page.
-      scheduleMicrotask(() {
-        try {
-          presence.exit();
-        } catch (_) {
-          // The container can be torn down before the page is; the banner
-          // goes with it either way.
-        }
-      });
-    }
     super.dispose();
+  }
+
+  /// Gives the banner back the moment the reader asked to leave this page.
+  ///
+  /// Waiting for `dispose` meant waiting for the whole pop transition: the
+  /// community page underneath appeared with no strip on it, and for a second
+  /// or so a reader who was still in a room was shown a screen that said
+  /// nothing about it. The pop is the decision; the animation is not.
+  void _releasePresence({required bool immediate}) {
+    final presence = _presence;
+    if (!_entered || presence == null) return;
+    _entered = false;
+    if (immediate) {
+      _lowerPresence(presence);
+      return;
+    }
+    scheduleMicrotask(() => _lowerPresence(presence));
+  }
+
+  static void _lowerPresence(VoiceRoomPagePresence presence) {
+    try {
+      presence.exit();
+    } catch (_) {
+      // The container can be torn down before the page is; the banner goes
+      // with it either way.
+    }
   }
 
   @override
@@ -125,6 +146,25 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         }
       }
     }
+    return PopScope<Object?>(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) _releasePresence(immediate: true);
+      },
+      child: _buildPage(context, capability, mode, state, controller, id),
+    );
+  }
+
+  Widget _buildPage(
+    BuildContext context,
+    LoopCapabilityProjection capability,
+    CommunityGatewayMode mode,
+    VoiceRoomPageState state,
+    VoiceRoomController controller,
+    String? id,
+  ) {
+    final snapshot = state.snapshot;
+    final evidencePending =
+        mode != CommunityGatewayMode.preview && capability.evidencePending;
     return LoopDashboardPage(
       key: ValueKey<String>(
         widget.expanded ? 'voiceroom-full-screen' : 'voiceroom-screen',
@@ -201,21 +241,45 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         else ...<Widget>[
           _RoomFacts(snapshot: snapshot),
           if (snapshot.viewer.hasJoined && snapshot.room.isJoinable)
-            _MediaSection(
-              roomId: snapshot.room.roomId,
-              link: _mediaLink,
-              // The hang-up inside the call view is the same single exit as
-              // the page's own: dropping the audio alone would leave this
-              // account a member of a room it can no longer hear. For a host
-              // that exit is 结束房间 — the server has no 离开 for the host.
-              onExitRequested: () => snapshot.viewer.isHost
-                  ? _endRoom(controller)
-                  : _leave(controller),
-              // 决策 0053: opening the microphone is the device's; taking
-              // LOOP's mute mark back off this account's row is the server's,
-              // and it is only sent when the server published the command.
-              onMicrophoneEnabled: () => _clearOwnMuteIntent(controller),
-            ),
+            if (!snapshot.room.audioOpen)
+              // The room is live in LOOP and not open on the provider's side.
+              // Connecting anyway is the refusal the review device met three
+              // times; the reader is told what is true and given the one
+              // thing that can change it — a read, which the server takes as
+              // its own cue to open the room again.
+              LoopEmpty(
+                key: const ValueKey<String>('voiceroom-media-backstage'),
+                icon: 'warn',
+                message: '这个房间还没有开放收听',
+                reason: '这里不会发起语音连接。刷新一次，或让主持人重新开启。',
+                action: LoopButton(
+                  key: const ValueKey<String>(
+                    'voiceroom-media-backstage-retry',
+                  ),
+                  label: state.busy ? '正在刷新…' : '刷新',
+                  onPressed: state.busy
+                      ? null
+                      : () => unawaited(controller.refreshRoom()),
+                ),
+              )
+            else
+              _MediaSection(
+                roomId: snapshot.room.roomId,
+                viewerRole: audioRoomViewerRole(snapshot.viewer.role),
+                link: _mediaLink,
+                // The hang-up inside the call view is the same single exit as
+                // the page's own: dropping the audio alone would leave this
+                // account a member of a room it can no longer hear. For a host
+                // that exit is 结束房间 — the server has no 离开 for the host.
+                onExitRequested: () => snapshot.viewer.isHost
+                    ? _endRoom(controller)
+                    : _leave(controller),
+                // 决策 0053: opening the microphone is the device's; taking
+                // LOOP's mute mark back off this account's row is the server's,
+                // and it is only sent when the server published the command.
+                onMicrophoneEnabled: () => _clearOwnMuteIntent(controller),
+                onReconnectRequested: () => _refreshMediaConnection(controller),
+              ),
           if (widget.expanded) ...<Widget>[
             for (final view in VoiceRoomRosterView.values)
               _RosterSection(
@@ -255,7 +319,10 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
               icon: 'warn',
               tone: LoopNoticeTone.warn,
               title: '上一次操作没有完成',
-              body: communityFailureReason(state.failureKind),
+              body: voiceRoomFailureText(
+                state.failureKind,
+                state.failureReasonCode,
+              ),
               margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             ),
           if (snapshot.viewer.hasJoined && snapshot.room.isLive)
@@ -286,6 +353,22 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     );
   }
 
+  /// Reads the room and the provider session again for a second attempt.
+  ///
+  /// A refused connection is held by the call this device already made, and
+  /// asking that one again sends nothing at all. Both halves of the
+  /// authorization are taken again: `GET /v2/voice-rooms/{id}` says whether
+  /// the room is still there and under which provider call, and retiring the
+  /// video session makes the next authorization fetch a token and build a
+  /// client — and therefore a call — that has not been refused.
+  Future<void> _refreshMediaConnection(VoiceRoomController controller) async {
+    await ref.read(streamVideoSdkSessionProvider)?.retireForRetry();
+    if (!mounted) return;
+    ref.invalidate(streamVideoAuthorizationProvider);
+    ref.invalidate(audioRoomCallFactoryProvider);
+    await controller.refreshRoom();
+  }
+
   /// Leaving is a decision, not a gesture.
   ///
   /// The room page's back affordance only puts the room in the background —
@@ -310,6 +393,21 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       controller.leave,
       disconnected ? '已离开语音房' : '已离开语音房，语音连接的收尾没有确认',
     );
+    _refreshCommunityProfile();
+  }
+
+  /// Makes the community page read its voice room row again.
+  ///
+  /// That row is the community page's own read, taken when it was opened. A
+  /// reader who ends a room and goes back arrives at the page that was read
+  /// before the room ended, and it said 「当前有进行中的语音房」 with a way in.
+  /// The row is dropped here so the page reads it again when it is next
+  /// shown; nothing is assumed about what the answer will be.
+  void _refreshCommunityProfile() {
+    if (!mounted) return;
+    final profile = ref.read(communityProfileControllerProvider.notifier);
+    if (profile.communityId != widget.communityId) return;
+    unawaited(profile.reload());
   }
 
   /// Runs one row command the server published, after naming the target.
@@ -405,6 +503,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       controller.endRoom,
       disconnected ? '房间已结束' : '房间已结束，语音连接的收尾没有确认',
     );
+    _refreshCommunityProfile();
   }
 
   Future<void> _run(
@@ -419,20 +518,28 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     }
     LoopToast.show(
       context,
-      message: communityFailureReason(failure),
+      message: voiceRoomFailureText(
+        failure,
+        ref.read(voiceRoomControllerProvider).failureReasonCode,
+      ),
       kind: LoopToastKind.warn,
     );
   }
 }
 
-class _RoomFacts extends StatelessWidget {
+class _RoomFacts extends ConsumerWidget {
   const _RoomFacts({required this.snapshot});
 
   final VoiceRoomSnapshot snapshot;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final observed = snapshot.participants.observed;
+    // What this device's own call reports, when it holds one. It is the same
+    // reading the call panel below prints, so the two never disagree.
+    final live = ref.watch(audioRoomLivePresenceProvider);
+    final connected =
+        live != null && live.connected && live.roomId == snapshot.room.roomId;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -442,30 +549,44 @@ class _RoomFacts extends StatelessWidget {
             // Decision 0051 separates the three figures that were read as one
             // number: who is connected now, who is allowed in, and who LOOP
             // has joined. Each keeps its own sentence.
-            LoopRecordRow(
-              key: const ValueKey<String>('voiceroom-live'),
-              // Two different numbers were both called 「在线」 on one screen:
-              // this one, taken when LOOP last looked at the provider, and
-              // the call view's own live count, which this device reads from
-              // Stream right now. They disagree whenever the observation is
-              // older than the connection — 「当前在线 0」 sat directly above
-              // 「1 人在通话」. Each now says when it was taken instead of
-              // sharing one word that implied both were now.
-              title: '上次观察在线',
-              subtitle: !observed.isAvailable
-                  ? communicationUnavailableReason(
-                      observed.unavailable!.reasonCode,
-                    )
-                  : observed.participantCount == null
-                  ? '当前服务端没有给出这一项。'
-                  : 'LOOP 上次观察时，连接在这次通话里的人数；'
-                        '观察于 ${communityObservedAtLabel(observed.observedAt!)}',
-              subtitleMaxLines: 2,
-              trailing: observed.participantCount == null
-                  ? communityMissingFigure
-                  : '${observed.participantCount}',
-              position: LoopRowPosition.first,
-            ),
+            // While this device is in the call, the live figure is the one
+            // that belongs at the top of the room: it is what the reader can
+            // hear. LOOP's own earlier look at the provider is not shown
+            // beside it — 「上次观察在线 0」 standing above 「此刻在通话里 1
+            // 人」 was one screen saying two things about the same room.
+            if (connected)
+              LoopRecordRow(
+                key: const ValueKey<String>('voiceroom-live'),
+                title: '当前在线',
+                subtitle: '这台设备连着这次通话时数到的人数，和下面通话面板里的是同一个数。',
+                subtitleMaxLines: 2,
+                trailing: '${live.participantCount}',
+                position: LoopRowPosition.first,
+              )
+            else
+              LoopRecordRow(
+                key: const ValueKey<String>('voiceroom-live'),
+                // Not connected: the only figure there is was taken when
+                // LOOP last looked at the provider, so the row says that in
+                // its title as well as its sentence. A 0 here beside a
+                // 「LOOP 已加入 5」 below is not a contradiction — it counts
+                // connections, and an account that joined may not have one
+                // yet — so the row says that too.
+                title: 'LOOP 上次观察在线',
+                subtitle: !observed.isAvailable
+                    ? communicationUnavailableReason(
+                        observed.unavailable!.reasonCode,
+                      )
+                    : observed.participantCount == null
+                    ? '这一项这次没有给出。'
+                    : 'LOOP 上次看到的通话人数，不含还没连上语音的人；'
+                          '观察于 ${communityObservedAtLabel(observed.observedAt!)}',
+                subtitleMaxLines: 2,
+                trailing: observed.participantCount == null
+                    ? communityMissingFigure
+                    : '${observed.participantCount}',
+                position: LoopRowPosition.first,
+              ),
             LoopRecordRow(
               key: const ValueKey<String>('voiceroom-observed'),
               title: '服务商已授权成员',
@@ -520,10 +641,10 @@ class _RoomFacts extends StatelessWidget {
             icon: 'warn',
             tone: LoopNoticeTone.warn,
             title: '服务商侧未确认',
-            body:
-                'LOOP 已经提交这次变更，但服务商还没有确认结果'
-                '（${snapshot.providerSync.reason ?? '原因未提供'}）。'
-                '请稍后刷新查看最新状态。',
+            // The server names which write is unconfirmed; the reader gets
+            // that in words. The name itself never reaches the screen — it
+            // used to be printed in brackets, verbatim.
+            body: voiceRoomProviderSyncText(snapshot.providerSync.reason),
             margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
       ],
@@ -539,14 +660,24 @@ class _RoomFacts extends StatelessWidget {
 class _MediaSection extends StatelessWidget {
   const _MediaSection({
     required this.roomId,
+    required this.viewerRole,
     required this.link,
     required this.onExitRequested,
     required this.onMicrophoneEnabled,
+    required this.onReconnectRequested,
   });
 
   final String? roomId;
+
+  /// The part LOOP granted this account, so the surface's own sentence about
+  /// the microphone and about the way out matches the controls on screen.
+  final AudioRoomViewerRole? viewerRole;
   final VoiceMediaLink link;
   final Future<void> Function() onExitRequested;
+
+  /// Runs before a second connection attempt: the room and the provider
+  /// session are read again, so the attempt is not the refused one repeated.
+  final Future<void> Function() onReconnectRequested;
 
   /// Runs after the device opened the microphone. The page uses it to clear
   /// the LOOP-side mute intent on its own roster row; it opens nothing.
@@ -581,6 +712,7 @@ class _MediaSection extends StatelessWidget {
       key: const ValueKey<String>('voiceroom-media'),
       child: StreamVoiceRoomPage(
         target: target,
+        viewerRole: viewerRole,
         inline: true,
         // A member who was let in expects to hear the room. The connection is
         // part of 加入, not a second decision, so it starts on its own — still
@@ -589,10 +721,50 @@ class _MediaSection extends StatelessWidget {
         link: link,
         onExitRequested: onExitRequested,
         onMicrophoneEnabled: onMicrophoneEnabled,
+        onReconnectRequested: onReconnectRequested,
       ),
     );
   }
 }
+
+/// The refusals the server names for a room that is not open yet.
+///
+/// A join the provider refused because the room has not gone live comes back
+/// as one more 「暂时不可用」 unless the name travels with it: the reader is
+/// told the module is down when the room simply has not been opened. Only
+/// codes this client has a sentence for are recognised; anything else keeps
+/// the sentence for its class.
+const _voiceRoomNamedRefusals = <String>{
+  'VOICE_ROOM_BACKSTAGE_NOT_LIVE',
+  'STREAM_CALL_GO_LIVE_UNCONFIRMED',
+  'COMMUNITY_VOICE_ROOM_NOT_LIVE',
+};
+
+/// What to say about a command the server refused.
+String voiceRoomFailureText(CommunityFailureKind? kind, String? reasonCode) =>
+    reasonCode != null && _voiceRoomNamedRefusals.contains(reasonCode)
+    ? communicationUnavailableReason(reasonCode)
+    : communityFailureReason(kind);
+
+/// What an unconfirmed provider write means for the reader.
+String voiceRoomProviderSyncText(String? reasonCode) =>
+    reasonCode != null &&
+        (_voiceRoomNamedRefusals.contains(reasonCode) ||
+            reasonCode == 'STREAM_CALL_MUTE_UNCONFIRMED')
+    ? communicationUnavailableReason(reasonCode)
+    : 'LOOP 已经提交这次变更，服务商还没有确认结果。请稍后刷新查看最新状态。';
+
+/// The part this account plays, as the media surface needs to hear it.
+///
+/// LOOP's role is the only source: the surface derives nothing from the call
+/// and grants nothing. A viewer with no role is not in the room, and the
+/// surface keeps the listener's sentence for it.
+AudioRoomViewerRole? audioRoomViewerRole(VoiceRoomRole? role) => switch (role) {
+  VoiceRoomRole.host => AudioRoomViewerRole.host,
+  VoiceRoomRole.speaker => AudioRoomViewerRole.speaker,
+  VoiceRoomRole.listener => AudioRoomViewerRole.listener,
+  null => null,
+};
 
 /// What one roster row is called, under the server's display rule.
 ///
@@ -1102,6 +1274,23 @@ class _ViewerActions extends StatelessWidget {
 /// way to tell the two apart, and no way back short of walking the community
 /// again. It is hidden on the room page itself, which already shows all of
 /// this.
+/// The strip's one line: which room, what part this account plays in it, and
+/// how many are in it.
+///
+/// The count is the live one when this device is in the call and LOOP's own
+/// joined figure otherwise; either way it is a number of people who are in
+/// the room now, so it is named for that. The strip used to print 「上次观察
+/// N 人」 — a reading taken at some earlier moment, which on the review device
+/// was 「上次观察 0 人」 under a banner saying the reader was in the room.
+String voiceRoomBannerLabel({
+  required String communityName,
+  required VoiceRoomRole role,
+  required int? count,
+}) {
+  final head = '正在语音房 · $communityName · ${role.label}';
+  return count == null ? head : '$head · $count 人在线';
+}
+
 class VoiceRoomMinimizedBanner extends ConsumerWidget {
   const VoiceRoomMinimizedBanner({required this.onOpen, super.key});
 
@@ -1114,7 +1303,13 @@ class VoiceRoomMinimizedBanner extends ConsumerWidget {
     if (session == null || onRoomPage) {
       return const SizedBox.shrink();
     }
-    final count = session.participantCount;
+    // A live figure only while this device is in that call; otherwise what
+    // LOOP recorded for the room. The strip never prints a count taken at
+    // some earlier moment as if it were now.
+    final live = ref.watch(audioRoomLivePresenceProvider);
+    final connected =
+        live != null && live.connected && live.roomId == session.callRoomId;
+    final count = connected ? live.participantCount : session.joinedCount;
     return Material(
       key: const ValueKey<String>('voiceroom-minimized-banner'),
       color: LoopColors.lime,
@@ -1133,13 +1328,11 @@ class VoiceRoomMinimizedBanner extends ConsumerWidget {
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      // The same server observation the room page shows, so
-                      // it carries the same name: it is not what this device
-                      // is connected to right now.
-                      count == null
-                          ? '正在语音房 · ${session.communityName}'
-                          : '正在语音房 · ${session.communityName} · '
-                                '上次观察 $count 人',
+                      voiceRoomBannerLabel(
+                        communityName: session.communityName,
+                        role: session.role,
+                        count: count,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: LoopTypography.withWeight(

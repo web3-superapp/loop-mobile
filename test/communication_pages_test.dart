@@ -854,10 +854,13 @@ void main() {
 
       final row = find.byKey(const ValueKey<String>('voiceroom-live'));
       await scrollToCommunitySection(tester, row);
-      expect(find.text('上次观察在线'), findsOneWidget);
+      expect(find.text('LOOP 上次观察在线'), findsOneWidget);
       // The call view under this list carries the device's own live count;
       // one screen never states two different numbers under one word.
       expect(find.text('当前在线'), findsNothing);
+      // A 0 here beside 「LOOP 已加入 46」 is not a contradiction, and the row
+      // says which one it is counting.
+      expect(find.textContaining('不含还没连上语音的人'), findsOneWidget);
 
       // Each of these lines carries an observation time or a disclaimer at
       // its end; one line cut them at 「观察于 202…」 and 「也不是…」.
@@ -870,6 +873,130 @@ void main() {
         await scrollToCommunitySection(tester, row);
         expect(tester.widget<LoopRecordRow>(row).subtitleMaxLines, 2);
       }
+    });
+
+    testWidgets('a backstage room is never handed to the provider', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(
+          role: VoiceRoomRole.listener,
+          backstage: true,
+        ),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+
+      final block = find.byKey(
+        const ValueKey<String>('voiceroom-media-backstage'),
+      );
+      await scrollToCommunitySection(tester, block);
+      expect(block, findsOneWidget);
+      expect(find.text('这个房间还没有开放收听'), findsOneWidget);
+      // No call was made at all: the surface that would connect is not even
+      // mounted.
+      expect(media.handles, isEmpty);
+      expect(voice.commands, isNot(contains('media:connect')));
+
+      // The refresh is a read of the room, which is also the server's cue to
+      // open it again.
+      voice.loadSnapshot = testVoiceRoomSnapshot(role: VoiceRoomRole.listener);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('voiceroom-media-backstage-retry')),
+      );
+      await tester.pumpAndSettle();
+      expect(voice.commands, contains('load'));
+      expect(block, findsNothing);
+    });
+
+    testWidgets('a room that is not open yet says so, not 「不可用」', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: null),
+      );
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+      );
+
+      // The page was read; the command is what the server refuses, naming
+      // the rule in `detailsSafe`.
+      final join = find.byKey(const ValueKey<String>('voiceroom-join'));
+      await scrollToCommunitySection(tester, join);
+      voice
+        ..failure = CommunityFailureKind.unavailable
+        ..failureReasonCode = 'VOICE_ROOM_BACKSTAGE_NOT_LIVE';
+      await tester.tap(join);
+      await tester.pumpAndSettle();
+
+      expect(find.text('这个房间还没有开放收听。刷新一次，或让主持人重新开启。'), findsWidgets);
+      // Neither the generic class sentence nor the server's own name for the
+      // rule reaches the reader.
+      expect(find.text('语音房暂时不可用，稍后再试。'), findsNothing);
+      expect(find.textContaining('BACKSTAGE'), findsNothing);
+    });
+
+    testWidgets('an unconfirmed go-live is named in words, not in a code', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: FakeVoiceRoomGateway(
+          snapshot: testVoiceRoomSnapshot(
+            role: VoiceRoomRole.listener,
+            providerConfirmed: false,
+            providerReason: 'STREAM_CALL_GO_LIVE_UNCONFIRMED',
+          ),
+        ),
+      );
+
+      final notice = find.byKey(
+        const ValueKey<String>('voiceroom-provider-unconfirmed'),
+      );
+      await scrollToCommunitySection(tester, notice);
+      expect(
+        find.text('这个房间还没有确认开放收听，现在可能听不到。刷新一次，或让主持人重新开启。'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('GO_LIVE'), findsNothing);
+    });
+
+    testWidgets('a connected device states the live count, and only it', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(
+          role: VoiceRoomRole.listener,
+          participantCount: 0,
+        ),
+      );
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+        audioRoomCallFactory: _FakeVoiceMediaFactory(log: voice.commands),
+      );
+
+      final report = find.byKey(const ValueKey<String>('fake-presence'));
+      await scrollToCommunitySection(tester, report);
+      await tester.tap(report);
+      await tester.pumpAndSettle();
+
+      final row = find.byKey(const ValueKey<String>('voiceroom-live'));
+      await scrollToCommunitySection(tester, row);
+      expect(find.text('当前在线'), findsOneWidget);
+      expect(tester.widget<LoopRecordRow>(row).trailing, '3');
+      // The earlier observation is not printed beside it: 「上次观察在线 0」
+      // above 「此刻在通话里 3 人」 was one screen saying two things.
+      expect(find.text('LOOP 上次观察在线'), findsNothing);
     });
 
     testWidgets('an unobserved participant count renders the em dash', (
@@ -1962,10 +2089,14 @@ void main() {
       expect(banner, findsOneWidget);
       // Decision 0052: the strip names the community it belongs to, from the
       // room resource, so a reader with one banner knows which room it is.
+      // The part this account plays is on the strip, and the count is the
+      // room's own joined figure — never an observation from some earlier
+      // moment.
       expect(
-        find.text('正在语音房 · $testVoiceRoomCommunityName · 上次观察 12 人'),
+        find.text('正在语音房 · $testVoiceRoomCommunityName · 听众 · 46 人在线'),
         findsOneWidget,
       );
+      expect(find.textContaining('上次观察'), findsNothing);
 
       await tester.tap(banner);
       await tester.pumpAndSettle();
@@ -1994,6 +2125,28 @@ void main() {
       expect(
         find.byKey(const ValueKey<String>('voiceroom-minimized-banner')),
         findsNothing,
+      );
+    });
+  });
+
+  group('voiceroom banner label', () {
+    test('the strip names the room, the part and the people in it', () {
+      expect(
+        voiceRoomBannerLabel(
+          communityName: 'Builders Guild',
+          role: VoiceRoomRole.host,
+          count: 4,
+        ),
+        '正在语音房 · Builders Guild · 主持人 · 4 人在线',
+      );
+      // No figure is invented when there is none to state.
+      expect(
+        voiceRoomBannerLabel(
+          communityName: 'Builders Guild',
+          role: VoiceRoomRole.speaker,
+          count: null,
+        ),
+        '正在语音房 · Builders Guild · 发言人',
       );
     });
   });
@@ -2102,10 +2255,21 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
     required Future<void> Function() onLeaveRequested,
     bool inline = false,
     Future<void> Function()? onMicrophoneEnabled,
+    void Function({required bool connected, required int participantCount})?
+    onPresence,
   }) {
     return Column(
       children: <Widget>[
         const Text('语音已连接（测试）'),
+        // Stands in for the official call state reporting its own head
+        // count: the page and the shell strip read that, not an observation
+        // taken earlier.
+        TextButton(
+          key: const ValueKey<String>('fake-presence'),
+          onPressed: () =>
+              onPresence?.call(connected: true, participantCount: 3),
+          child: const Text('报告人数'),
+        ),
         TextButton(
           key: const ValueKey<String>('fake-hangup'),
           onPressed: () => unawaited(onLeaveRequested()),

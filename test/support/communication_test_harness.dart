@@ -27,11 +27,16 @@ VoiceRoomSnapshot testVoiceRoomSnapshot({
   bool host = false,
   bool observedAvailable = true,
   bool provisioned = true,
+
+  /// Whether the provider still holds the call backstage. A live room is
+  /// open by default; the one test that asks about it says so.
+  bool backstage = false,
   int? joinedCount = 46,
   int? participantCount = 12,
   VoiceRoomState state = VoiceRoomState.live,
   VoiceRoomHandRaise? handRaise,
   bool providerConfirmed = true,
+  String providerReason = 'STREAM_CALL_MUTE_UNCONFIRMED',
 }) => VoiceRoomSnapshot(
   room: VoiceRoomRecord(
     voiceRoomId: testVoiceRoomId,
@@ -42,7 +47,7 @@ VoiceRoomSnapshot testVoiceRoomSnapshot({
     provisionState: provisioned
         ? VoiceRoomProvisionState.provisioned
         : VoiceRoomProvisionState.pending,
-    backstage: true,
+    backstage: backstage,
     createdAt: DateTime.utc(2026, 9, 8, 12),
     endedAt: state == VoiceRoomState.ended
         ? DateTime.utc(2026, 9, 8, 13)
@@ -72,7 +77,7 @@ VoiceRoomSnapshot testVoiceRoomSnapshot({
   ),
   providerSync: VoiceRoomProviderSync(
     confirmed: providerConfirmed,
-    reason: providerConfirmed ? null : 'STREAM_CALL_MUTE_UNCONFIRMED',
+    reason: providerConfirmed ? null : providerReason,
   ),
 );
 
@@ -241,6 +246,10 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
   VoiceRoomSnapshot? snapshot;
   List<VoiceRoomHandRaiseEntry> handRaises;
   CommunityFailureKind? failure;
+
+  /// The rule the server named for [failure], as `detailsSafe.reasonCode`
+  /// carries it.
+  String? failureReasonCode;
   String? notLiveReasonCode;
 
   /// Never completes, so the page keeps its loading state.
@@ -274,7 +283,9 @@ final class FakeVoiceRoomGateway implements VoiceRoomGateway {
     if (pending) return Completer<VoiceRoomSnapshot>().future;
     final kind = failure;
     if (kind != null) {
-      return Future<VoiceRoomSnapshot>.error(CommunityGatewayException(kind));
+      return Future<VoiceRoomSnapshot>.error(
+        CommunityGatewayException(kind, reasonCode: failureReasonCode),
+      );
     }
     final value = snapshot;
     if (value == null) {

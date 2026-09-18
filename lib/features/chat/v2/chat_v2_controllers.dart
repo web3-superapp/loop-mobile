@@ -384,6 +384,7 @@ final class VoiceRoomPageState {
     ),
     this.notLiveReasonCode,
     this.failureKind,
+    this.failureReasonCode,
     this.busy = false,
   });
 
@@ -408,6 +409,10 @@ final class VoiceRoomPageState {
   /// The server's own explanation when no room is live.
   final String? notLiveReasonCode;
   final CommunityFailureKind? failureKind;
+
+  /// The refusal the server named for the last command, when it named one.
+  /// A kind alone says 「不可用」 for a room that is simply not open yet.
+  final String? failureReasonCode;
   final bool busy;
 
   bool get isPreview => mode == CommunityGatewayMode.preview;
@@ -430,6 +435,7 @@ final class VoiceRoomPageState {
     VoiceRoomRosterState? listeners,
     String? notLiveReasonCode,
     CommunityFailureKind? failureKind,
+    String? failureReasonCode,
     bool? busy,
     bool clearFailure = false,
   }) => VoiceRoomPageState(
@@ -441,6 +447,10 @@ final class VoiceRoomPageState {
     listeners: listeners ?? this.listeners,
     notLiveReasonCode: notLiveReasonCode,
     failureKind: clearFailure ? null : (failureKind ?? this.failureKind),
+    failureReasonCode: clearFailure
+        ? null
+        : (failureReasonCode ??
+              (failureKind == null ? this.failureReasonCode : null)),
     busy: busy ?? this.busy,
   );
 }
@@ -456,8 +466,9 @@ final class VoiceRoomSession {
     required this.communityId,
     required this.communityName,
     required this.voiceRoomId,
+    required this.callRoomId,
     required this.role,
-    required this.participantCount,
+    required this.joinedCount,
   });
 
   final String communityId;
@@ -467,12 +478,19 @@ final class VoiceRoomSession {
   /// read and without the shell holding a community cache.
   final String communityName;
   final String voiceRoomId;
+
+  /// The provider room this account is in, when the room record carries one.
+  /// It is what a live reading from this device's own call is matched
+  /// against; nothing is keyed by it.
+  final String? callRoomId;
   final VoiceRoomRole role;
 
-  /// How many devices are connected to the call right now, or null when the
-  /// provider did not report it. The banner states no figure it does not have,
-  /// and never shows an authorization count as if it were presence.
-  final int? participantCount;
+  /// How many people LOOP has recorded in this room, host included, or null
+  /// when the server did not give the figure. It is what the strip prints
+  /// while this device holds no call of its own: an account that joined is in
+  /// it, which is the question a reader asks the strip. A live count, when
+  /// this device is connected, replaces it.
+  final int? joinedCount;
 
   @override
   bool operator ==(Object other) =>
@@ -480,16 +498,18 @@ final class VoiceRoomSession {
       other.communityId == communityId &&
       other.communityName == communityName &&
       other.voiceRoomId == voiceRoomId &&
+      other.callRoomId == callRoomId &&
       other.role == role &&
-      other.participantCount == participantCount;
+      other.joinedCount == joinedCount;
 
   @override
   int get hashCode => Object.hash(
     communityId,
     communityName,
     voiceRoomId,
+    callRoomId,
     role,
-    participantCount,
+    joinedCount,
   );
 }
 
@@ -611,6 +631,7 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
       state = state.copyWith(
         phase: communityPhaseForFailure(error.kind),
         failureKind: error.kind,
+        failureReasonCode: error.reasonCode,
       );
     } catch (_) {
       if (!isCurrent(generation)) return;
@@ -620,6 +641,40 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
       );
     }
   });
+
+  /// Reads this room again for a reader who asked for the audio back.
+  ///
+  /// `GET /v2/voice-rooms/{id}`: the room record, and with it the provider
+  /// call id and whether the room is still live, is exactly what a second
+  /// connection attempt needs to start from. A failure leaves the page as it
+  /// was read — the membership did not change because a read did not finish.
+  Future<void> refreshRoom() {
+    final snapshot = state.snapshot;
+    if (snapshot == null) return reload();
+    return single(() async {
+      final gateway = ref.read(voiceRoomGatewayProvider);
+      final generation = nextGeneration();
+      try {
+        final next = await gateway.load(snapshot.room.voiceRoomId);
+        if (!isCurrent(generation)) return;
+        _publishSession(next);
+        state = state.copyWith(
+          phase: CommunityViewPhase.ready,
+          snapshot: next,
+          clearFailure: true,
+        );
+      } on CommunityGatewayException catch (error) {
+        if (!isCurrent(generation)) return;
+        state = state.copyWith(
+          failureKind: error.kind,
+          failureReasonCode: error.reasonCode,
+        );
+      } catch (_) {
+        if (!isCurrent(generation)) return;
+        state = state.copyWith(failureKind: CommunityFailureKind.unexpected);
+      }
+    });
+  }
 
   /// The queue is a host-facing read. A failure there must not take the room
   /// down, so it degrades to an empty queue.
@@ -662,7 +717,11 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
       return null;
     } on CommunityGatewayException catch (error) {
       if (isCurrent(generation)) {
-        state = state.copyWith(busy: false, failureKind: error.kind);
+        state = state.copyWith(
+          busy: false,
+          failureKind: error.kind,
+          failureReasonCode: error.reasonCode,
+        );
       }
       return error.kind;
     } catch (_) {
@@ -695,8 +754,9 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
         communityId: communityId,
         communityName: snapshot.room.communityName,
         voiceRoomId: snapshot.room.voiceRoomId,
+        callRoomId: snapshot.room.roomId,
         role: role,
-        participantCount: snapshot.participants.observed.participantCount,
+        joinedCount: snapshot.participants.joinedCount,
       ),
     );
   }
