@@ -15,7 +15,18 @@ enum LoopToastKind { ok, warn, err }
 /// [LoopToast.show] from anywhere with a `BuildContext`.
 abstract final class LoopToast {
   static const Duration defaultDuration = Duration(milliseconds: 2600);
+
+  /// Clearance over the floating tab bar, on the five routes that have one.
   static const double bottomOffset = 94;
+
+  /// Clearance on a route with no tab bar: the page gutter, nothing more.
+  ///
+  /// The tab-bar reserve is 94px of chrome that a pushed child page does not
+  /// draw. Applied there it did not lift the toast over anything — it parked
+  /// it in the middle of the page's content, and on the voice room that is
+  /// exactly where the 「加入语音房」 button is. A toast is allowed to cover
+  /// the foot of a page; it is not allowed to cover its primary action.
+  static const double pageBottomOffset = LoopSpacing.page;
 
   static void show(
     BuildContext context, {
@@ -25,16 +36,47 @@ abstract final class LoopToast {
   }) {
     final host = LoopToastHost.maybeOf(context);
     assert(host != null, 'LoopToastHost is missing above this context.');
-    host?.show(message: message, kind: kind, duration: duration);
+    host?.show(
+      message: message,
+      kind: kind,
+      duration: duration,
+      // The host sits above the router and cannot tell which page called it;
+      // the caller's own context can.
+      clearsTabBar: LoopTabBarScope.of(context),
+    );
   }
+}
+
+/// Marks the subtree that the floating tab bar sits under.
+///
+/// The five tab routes render inside the shell that draws the bar; every
+/// other route is pushed above the shell and has no bar at all. A route below
+/// a pushed page stays mounted, so the bar's own widget being alive says
+/// nothing — the calling page's position in the tree does.
+class LoopTabBarScope extends InheritedWidget {
+  const LoopTabBarScope({required super.child, super.key});
+
+  /// Whether [context] is inside the shell that draws the tab bar.
+  static bool of(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<LoopTabBarScope>() != null;
+
+  @override
+  bool updateShouldNotify(LoopTabBarScope oldWidget) => false;
 }
 
 @immutable
 final class LoopToastEntry {
-  const LoopToastEntry({required this.message, required this.kind});
+  const LoopToastEntry({
+    required this.message,
+    required this.kind,
+    this.clearsTabBar = false,
+  });
 
   final String message;
   final LoopToastKind kind;
+
+  /// True when the page that raised this toast draws the floating tab bar.
+  final bool clearsTabBar;
 }
 
 /// Owns the single visible toast. Place inside `MaterialApp.builder`.
@@ -63,11 +105,16 @@ class LoopToastHostState extends State<LoopToastHost> {
     required String message,
     required LoopToastKind kind,
     Duration? duration,
+    bool clearsTabBar = false,
   }) {
     _hideTimer?.cancel();
     _clearTimer?.cancel();
     setState(() {
-      _entry = LoopToastEntry(message: message, kind: kind);
+      _entry = LoopToastEntry(
+        message: message,
+        kind: kind,
+        clearsTabBar: clearsTabBar,
+      );
       _visible = true;
     });
     _hideTimer = Timer(duration ?? LoopToast.defaultDuration, dismiss);
@@ -101,7 +148,11 @@ class LoopToastHostState extends State<LoopToastHost> {
           Positioned(
             left: LoopSpacing.page,
             right: LoopSpacing.page,
-            bottom: LoopToast.bottomOffset + safeBottom,
+            bottom:
+                (entry.clearsTabBar
+                    ? LoopToast.bottomOffset
+                    : LoopToast.pageBottomOffset) +
+                safeBottom,
             child: IgnorePointer(
               child: AnimatedSlide(
                 offset: _visible ? Offset.zero : const Offset(0, 0.18),

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// Five-destination shell (chapter 5.4).
 ///
@@ -66,12 +67,14 @@ class LoopShell extends StatelessWidget {
             ),
           );
         }
-        return Scaffold(
-          extendBody: true,
-          body: child,
-          bottomNavigationBar: LoopTabBar(
-            selectedIndex: _selectedIndex,
-            onSelect: (index) => context.go(_destinations[index].path),
+        return LoopTabBarScope(
+          child: Scaffold(
+            extendBody: true,
+            body: child,
+            bottomNavigationBar: LoopTabBar(
+              selectedIndex: _selectedIndex,
+              onSelect: (index) => context.go(_destinations[index].path),
+            ),
           ),
         );
       },

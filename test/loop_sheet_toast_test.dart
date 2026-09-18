@@ -114,12 +114,14 @@ void main() {
       MaterialApp(
         theme: LoopTheme.dark,
         builder: (context, child) => LoopToastHost(child: child!),
-        home: Scaffold(
-          body: Builder(
-            builder: (context) {
-              hostContext = context;
-              return const SizedBox.expand();
-            },
+        home: LoopTabBarScope(
+          child: Scaffold(
+            body: Builder(
+              builder: (context) {
+                hostContext = context;
+                return const SizedBox.expand();
+              },
+            ),
           ),
         ),
       ),
@@ -170,5 +172,42 @@ void main() {
     expect(find.bySemanticsLabel('错误：交易失败：gas 不足'), findsOneWidget);
     await tester.pump(const Duration(seconds: 3));
     semantics.dispose();
+  });
+
+  testWidgets('a page with no tab bar keeps the toast at the page gutter', (
+    tester,
+  ) async {
+    late BuildContext pageContext;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: LoopTheme.dark,
+        builder: (context, child) => LoopToastHost(child: child!),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              pageContext = context;
+              return const SizedBox.expand();
+            },
+          ),
+        ),
+      ),
+    );
+    LoopToast.show(
+      pageContext,
+      message: '设备已离线，这一页没有读到数据，也没有提交任何操作。',
+      kind: LoopToastKind.warn,
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    final toast = find.byKey(const ValueKey<String>('loop-toast-warn'));
+    final rect = tester.getRect(toast);
+    final screen = tester.getSize(find.byType(LoopToastHost));
+    // 94px of clearance is the tab bar's reserve. A pushed page draws no bar,
+    // and the reserve applied there parked the toast on top of that page's
+    // primary action instead of over chrome.
+    expect(screen.height - rect.bottom, LoopToast.pageBottomOffset);
+    expect(LoopToast.pageBottomOffset, lessThan(LoopToast.bottomOffset));
+    await tester.pump(const Duration(seconds: 3));
   });
 }
