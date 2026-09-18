@@ -564,13 +564,20 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
                           if (pair.quotesNativeCoin) '计价 BNB',
                           if (pair.createdAt != null)
                             '创建于 ${loopRelativeTime(pair.createdAt!)}',
+                          // A pool minutes old holds fractions of a dollar.
+                          // Rounded to cents that printed 「$0」, which on a
+                          // page that promises to say why a figure is missing
+                          // rather than show a zero reads as "no liquidity at
+                          // all" — a pulled pool. The summary form bounds it
+                          // at 「<$1」 instead and keeps every larger figure
+                          // inside the width this row leaves it.
                           if (pair.reserveUsd != null)
-                            '储备 ${loopFormatUsd(pair.reserveUsd!)}',
+                            '储备 ${loopFormatCompactFigure(pair.reserveUsd!)}',
                         ].join(' · '),
                         subtitleMaxLines: 2,
                         trailing: pair.volumeH24Usd == null
                             ? null
-                            : loopFormatUsd(pair.volumeH24Usd!),
+                            : loopFormatCompactFigure(pair.volumeH24Usd!),
                         onTap: !pair.opensDetail
                             ? null
                             : () => _open(

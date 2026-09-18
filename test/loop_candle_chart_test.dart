@@ -289,10 +289,13 @@ void main() {
       // `loopFormatCompactFigure` rounds a figure away. That is right for a
       // 94pt cell and wrong everywhere a number is the commitment — an amount
       // being signed, a balance, a fee. `chain_widgets.dart` is imported all
-      // over the money surfaces, so the function is pinned to the one screen
-      // that is allowed to summarise.
+      // over the money surfaces, so the function is pinned to the screens
+      // that are allowed to summarise: the Token Card's metric cells, and the
+      // new-pairs rows, whose trailing column is the same kind of slot and
+      // whose sub-cent pools otherwise printed 「$0」.
       const allowed = <String>{
         'lib/features/chain/chain_widgets.dart',
+        'lib/features/market/market_secondary_screens.dart',
         'lib/features/market/token_screen.dart',
       };
       final callers = <String>{};

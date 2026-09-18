@@ -734,6 +734,51 @@ void main() {
       expect(navigated.single, contains(Uri.encodeComponent(s5WbnbAssetId)));
     });
 
+    testWidgets('a sub-cent pool is bounded, never printed as zero', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const NewPairsScreen(),
+        market: FakeMarketReadGateway(
+          newPairs: S5Answer<MarketNewPairsPage>(
+            value: MarketNewPairsPage(
+              newPairs: MarketNewPairsAvailable(
+                source: LoopFactSource.geckoterminal,
+                fetchedAt: DateTime.utc(2026, 9, 8, 7, 31),
+                ttlSeconds: 60,
+                quality: LoopFactQuality.fresh,
+                reasonCode: null,
+                omittedCount: 0,
+                items: <MarketNewPair>[
+                  MarketNewPair(
+                    poolRef: const MarketPoolAddressRef(s5PoolAddress),
+                    dexId: 'four-meme',
+                    name: 'MEME / BNB',
+                    baseTokenAddress: s5Address,
+                    quoteTokenAddress: marketZeroAddress,
+                    registryAssetId: null,
+                    createdAt: DateTime.utc(2026, 9, 8, 5),
+                    reserveUsd: s5Decimal('0.0041'),
+                    volumeH24Usd: s5Decimal('0.0009'),
+                  ),
+                ],
+              ),
+              riskScreening: const LoopUnavailable(
+                'MARKET_PROVIDER_GOPLUS_NOT_CONFIGURED',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // 「$0」 on this page reads as a pulled pool. A figure that exists and
+      // is smaller than a dollar says exactly that.
+      expect(find.text(r'$0'), findsNothing);
+      expect(find.text(r'<$1'), findsOneWidget);
+      expect(find.textContaining(r'储备 <$1'), findsOneWidget);
+    });
+
     testWidgets('new-pairs says nothing when no pool was left out', (
       tester,
     ) async {
