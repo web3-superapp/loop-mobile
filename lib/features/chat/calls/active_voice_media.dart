@@ -33,6 +33,25 @@ final class ActiveVoiceMediaController extends Notifier<AudioRoomCallHandle?> {
   StreamSubscription<AudioRoomCallReading>? _readings;
   _ActiveVoiceMediaLifecycle? _lifecycle;
 
+  /// What the call is made of, held for exactly as long as the call is.
+  ///
+  /// The handle is only the near end of a chain: the provider session, the
+  /// authorization that built its client and the factory that handed out the
+  /// call all live in `autoDispose` providers, and the room page was the only
+  /// thing in the app watching any of them. Holding the handle here while the
+  /// page went off the screen therefore held a call whose client was being
+  /// torn down in the same frame — on the review device the WebRTC stack was
+  /// closed the moment the page was popped, and the strip said 「语音已断开」
+  /// a second later.
+  ///
+  /// The lifetime is taken here, and only while there is a call or a mounted
+  /// view to justify it. Watching them in [build] instead would make the
+  /// provider session permanent for the rest of the sign-in: voice is a
+  /// foreground-only feature with no session behind it, and a client kept
+  /// open for an account that left the room hours ago is exactly the standing
+  /// connection this feature does not have.
+  List<ProviderSubscription<Object?>>? _mediaLifetime;
+
   @override
   AudioRoomCallHandle? build() {
     // The call belongs to the account that made it. A sign-out or an account
@@ -65,7 +84,21 @@ final class ActiveVoiceMediaController extends Notifier<AudioRoomCallHandle?> {
     if (_views.isNotEmpty) return;
     final held = _held;
     if (held == null) return;
-    _release(clearPresence: true);
+    final roomId = held.roomId;
+    _release(clearPresence: false);
+    // The media stops; the membership does not. Clearing the reading as well
+    // left the strip printing LOOP's joined figure as if this device had
+    // never been in a call — and on the review device it left no strip at
+    // all, with the account still recorded in the room and no way to leave
+    // it. What stopped is the audio, so that is what is said, together with
+    // the way back in.
+    _publish(
+      roomId,
+      const AudioRoomCallReading(
+        phase: AudioRoomLivePhase.disconnected,
+        participantCount: null,
+      ),
+    );
     unawaited(_retireForBackgroundIgnoringFailure(held));
   }
 
@@ -88,6 +121,7 @@ final class ActiveVoiceMediaController extends Notifier<AudioRoomCallHandle?> {
   void hold(AudioRoomCallHandle handle) {
     final previous = _held;
     if (identical(previous, handle)) return;
+    _bindMediaLifetime();
     if (previous != null) {
       _clearPresence(previous.roomId);
       unawaited(_leaveIgnoringFailure(previous));
@@ -132,7 +166,54 @@ final class ActiveVoiceMediaController extends Notifier<AudioRoomCallHandle?> {
   }
 
   /// A call view came on screen; from here it publishes the reading.
-  void attachView(Object token) => _views.add(token);
+  void attachView(Object token) {
+    _views.add(token);
+    // The view is about to make a call out of the session, the authorization
+    // and the factory. From this moment they are held here, so that the view
+    // going away is not the same thing as the call going away.
+    _bindMediaLifetime();
+  }
+
+  /// Holds the provider session, its authorization and the call factory for
+  /// as long as this device has a call or a mounted view.
+  ///
+  /// The subscriptions do no work of their own: what they do is count as a
+  /// consumer, which is the whole of what an `autoDispose` provider needs to
+  /// stay where it is. They are opened only when the page is already watching
+  /// the same providers, so nothing is authorized and no token is asked for
+  /// on their account.
+  void _bindMediaLifetime() {
+    if (_mediaLifetime != null) return;
+    try {
+      _mediaLifetime = <ProviderSubscription<Object?>>[
+        ref.listen(streamVideoSdkSessionProvider, (_, _) {}),
+        ref.listen(streamVideoAuthorizationProvider, (_, _) {}),
+        ref.listen(audioRoomCallFactoryProvider, (_, _) {}),
+      ];
+    } catch (_) {
+      // A container that is being torn down holds nothing worth holding.
+      _mediaLifetime = null;
+    }
+  }
+
+  /// Lets go of the session once there is neither a call nor a view.
+  ///
+  /// Voice is foreground-only and nothing here is kept for later: the client
+  /// this device authorized goes when the last thing that needed it does, and
+  /// the next room page asks for an identity, a token and a client of its own.
+  void _releaseMediaLifetime() {
+    if (_held != null || _views.isNotEmpty) return;
+    final links = _mediaLifetime;
+    _mediaLifetime = null;
+    if (links == null) return;
+    for (final link in links) {
+      try {
+        link.close();
+      } catch (_) {
+        // A subscription the container already closed is already closed.
+      }
+    }
+  }
 
   /// A call view came off screen.
   ///
@@ -142,6 +223,10 @@ final class ActiveVoiceMediaController extends Notifier<AudioRoomCallHandle?> {
   /// not allowed.
   void detachView(Object token) {
     if (!_views.remove(token) || _views.isNotEmpty) return;
+    // A view that leaves with no call behind it takes the session with it.
+    // A view that leaves while this device is in a room does not: that is
+    // the whole point of the call belonging to the app.
+    _releaseMediaLifetime();
     scheduleMicrotask(() {
       final held = _held;
       final reading = _reading;
@@ -220,6 +305,7 @@ final class ActiveVoiceMediaController extends Notifier<AudioRoomCallHandle?> {
     _held = null;
     _reading = null;
     state = null;
+    _releaseMediaLifetime();
     if (held != null && clearPresence) _clearPresence(held.roomId);
   }
 
@@ -229,6 +315,10 @@ final class ActiveVoiceMediaController extends Notifier<AudioRoomCallHandle?> {
     _readings = null;
     _held = null;
     _reading = null;
+    // The subscriptions belong to the ref that is being torn down, and this
+    // notifier is reused when the principal rotates; the next call opens its
+    // own.
+    _mediaLifetime = null;
     if (held == null) return;
     _clearPresence(held.roomId);
     unawaited(_leaveIgnoringFailure(held));

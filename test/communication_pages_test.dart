@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
@@ -19,10 +20,13 @@ import 'package:loop_mobile/features/chat/v2/group_screens.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
 import 'package:loop_mobile/features/community/community_ai_screen.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/integrations/communication/stream_video_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 import 'support/community_test_harness.dart';
@@ -1784,6 +1788,58 @@ void main() {
       expect(back, <String>['back']);
     });
 
+    // R9-4: the community page underneath holds the read it took before the
+    // room was over. A reader who is told the room ended and then sent back
+    // to 「当前有进行中的语音房」 with a way in has been told two things.
+    testWidgets(
+      'R9-4: going back from a room that ended re-reads the community',
+      (tester) async {
+        final community = FakeCommunityGateway(detail: testDetail());
+        final voice = FakeVoiceRoomGateway(
+          snapshot: testVoiceRoomSnapshot(
+            role: VoiceRoomRole.listener,
+            state: VoiceRoomState.ended,
+          ),
+        );
+        final back = <String>[];
+        await pumpCommunityPage(
+          tester,
+          VoiceRoomScreen(
+            communityId: testCommunityId,
+            onBack: () => back.add('back'),
+          ),
+          community: community,
+          voiceRoom: voice,
+        );
+
+        // The community page below this one was read while the room was live.
+        final container = ProviderScope.containerOf(
+          tester.element(find.byType(VoiceRoomScreen)),
+          listen: false,
+        );
+        final subscription = container.listen(
+          communityProfileControllerProvider,
+          (_, _) {},
+        );
+        addTearDown(subscription.close);
+        await container
+            .read(communityProfileControllerProvider.notifier)
+            .open(testCommunityId);
+        await tester.pumpAndSettle();
+        final readsBeforeBack = community.reads;
+
+        final ended = find.byKey(
+          const ValueKey<String>('voiceroom-ended-back'),
+        );
+        await scrollToCommunitySection(tester, ended);
+        await tester.tap(ended);
+        await tester.pumpAndSettle();
+
+        expect(back, <String>['back']);
+        expect(community.reads, readsBeforeBack + 1);
+      },
+    );
+
     testWidgets('a call that stopped on a live room offers the audio back', (
       tester,
     ) async {
@@ -2463,12 +2519,24 @@ void main() {
       // The membership is untouched: backgrounding is not leaving the room.
       expect(voice.commands, isNot(contains('leave')));
 
-      // Back in the foreground, the strip no longer says the room is being
-      // heard — it says what LOOP recorded, and tapping it goes back in.
+      // R9-6: the media went and the membership stayed, so the strip stays
+      // too and says which of the two happened. On the review device it
+      // simply disappeared, leaving the account recorded in a room it could
+      // neither hear nor leave.
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpAndSettle();
       expect(
-        find.text('正在语音房 · $testVoiceRoomCommunityName · 听众 · 46 人已加入'),
+        find.byKey(const ValueKey<String>('voiceroom-minimized-banner')),
+        findsOneWidget,
+      );
+      expect(
+        find.text('正在语音房 · $testVoiceRoomCommunityName · 听众 · 语音已断开'),
+        findsOneWidget,
+      );
+      // Both ways out of it are on the strip: the audio back, or the room.
+      expect(find.text('重新连接'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-banner-leave')),
         findsOneWidget,
       );
     });
@@ -2504,6 +2572,87 @@ void main() {
         // A marker the reader saw a moment ago cannot simply vanish: the strip
         // going is the whole visible consequence, so one line accounts for it.
         expect(find.text('房间已结束 · 主持人已经结束这个语音房'), findsOneWidget);
+      },
+    );
+
+    // R9-5: the announcement is only as alive as the call that raises it. On
+    // the review device the page was popped, the media chain went with it,
+    // and when the host ended the room two minutes later nothing was left
+    // listening: the strip stood there saying 「语音已断开」 and no line was
+    // ever said. This mounts the chain the way production has it — a factory
+    // derived from an autoDispose authorization — so the page going off the
+    // screen is the real event and not one a value override papers over.
+    testWidgets(
+      'R9-5: a room ended off-screen still reaches the reader on another tab',
+      (tester) async {
+        final voice = FakeVoiceRoomGateway(
+          snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+        );
+        final media = _FakeVoiceMediaFactory(log: voice.commands);
+        var authorizations = 0;
+        var chainGeneration = 0;
+
+        await pumpCommunityPage(
+          tester,
+          _VoiceRoomBannerHarness(opened: <String>[]),
+          voiceRoom: voice,
+          videoAuthorizationLoader: () async {
+            authorizations += 1;
+            return StreamVideoSessionAuthorization.authorized;
+          },
+          audioRoomCallFactorySource: (ref) {
+            final authorized =
+                ref.watch(streamVideoAuthorizationProvider).value ==
+                StreamVideoSessionAuthorization.authorized;
+            final mine = ++chainGeneration;
+            ref.onDispose(() {
+              // A rebuild disposes the old element and builds another; a
+              // chain that is really gone never does. What goes with it is
+              // the client, and the call running on it: that is the
+              // connection the review device saw closed on the way out.
+              scheduleMicrotask(() {
+                if (mine != chainGeneration) return;
+                for (final call in media.handles) {
+                  call.collapse();
+                }
+              });
+            });
+            return authorized ? media : null;
+          },
+        );
+
+        final report = find.byKey(const ValueKey<String>('fake-presence'));
+        await scrollToCommunitySection(tester, report);
+        await tester.tap(report);
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
+        await tester.pumpAndSettle();
+
+        // The page left; what the call is made of stayed. A chain that had
+        // been dropped would go back for an authorization of its own.
+        expect(authorizations, 1);
+        expect(media.leaveCalls, 0);
+        expect(
+          find.text('正在语音房 · $testVoiceRoomCommunityName · 听众 · 3 人在通话'),
+          findsOneWidget,
+        );
+
+        // The host ends the room while the reader is somewhere else.
+        voice.loadSnapshot = testVoiceRoomSnapshot(
+          role: VoiceRoomRole.listener,
+          state: VoiceRoomState.ended,
+        );
+        media.handles.first.emit(AudioRoomLivePhase.disconnected);
+        await tester.pumpAndSettle();
+
+        expect(media.leaveCalls, 1);
+        expect(
+          find.byKey(const ValueKey<String>('voiceroom-minimized-banner')),
+          findsNothing,
+        );
+        expect(find.text('房间已结束 · 主持人已经结束这个语音房'), findsOneWidget);
+        expect(authorizations, 1);
       },
     );
 
@@ -2553,6 +2702,47 @@ void main() {
       await tester.tap(find.byKey(const ValueKey<String>('harness-open')));
       await tester.pumpAndSettle();
       expect(media.handles, hasLength(2));
+    });
+
+    // R9-3: the strip is above the router, so its own context is above every
+    // tab scope and would answer 「no bar here」 on every screen. On the review
+    // device the 「已离开语音房」 toast was placed as if nothing were under it
+    // and came out beneath the floating bar, with one corner showing.
+    testWidgets('R9-3: a toast from the strip clears the bar under it', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        _VoiceRoomBannerHarness(opened: <String>[], onTabRoute: () => true),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('voiceroom-banner-leave')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('voiceroom-banner-leave-confirm')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('已离开语音房'), findsOneWidget);
+      final placement = tester.widget<Positioned>(
+        find
+            .ancestor(
+              of: find.byType(LoopToastView),
+              matching: find.byType(Positioned),
+            )
+            .first,
+      );
+      expect(placement.bottom, LoopToast.bottomOffset);
     });
 
     // A banner for a room that no longer exists takes the reader back to a
@@ -2774,6 +2964,12 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
   @override
   Stream<AudioRoomCallReading> get readings => _readings.stream;
 
+  /// Stands in for the WebRTC stack being torn down under a call nobody
+  /// asked to leave — the provider connection is closed and the reading says
+  /// so, with no retirement of this device's own behind it. This is what the
+  /// review device did to a live call the moment the room page was popped.
+  void collapse() => emit(AudioRoomLivePhase.disconnected);
+
   /// Stands in for the provider's call state moving on its own. The reading
   /// leaves the call itself, which is what the strip reads once the room page
   /// is no longer on the screen.
@@ -2910,9 +3106,13 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
 /// Mounts the shell banner beside the room page so one test can close the page
 /// without tearing down the provider scope that holds the session.
 class _VoiceRoomBannerHarness extends StatefulWidget {
-  const _VoiceRoomBannerHarness({required this.opened});
+  const _VoiceRoomBannerHarness({required this.opened, this.onTabRoute});
 
   final List<String> opened;
+
+  /// What the shell answers about the route the router is on. The strip sits
+  /// above the router and cannot read it for itself.
+  final bool Function()? onTabRoute;
 
   @override
   State<_VoiceRoomBannerHarness> createState() =>
@@ -2926,7 +3126,10 @@ class _VoiceRoomBannerHarnessState extends State<_VoiceRoomBannerHarness> {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        VoiceRoomMinimizedBanner(onOpen: widget.opened.add),
+        VoiceRoomMinimizedBanner(
+          onOpen: widget.opened.add,
+          onTabRoute: widget.onTabRoute,
+        ),
         Expanded(
           child: _open
               ? const VoiceRoomScreen(communityId: testCommunityId)

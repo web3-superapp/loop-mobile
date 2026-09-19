@@ -477,6 +477,212 @@ void main() {
     expect(find.text('Official CallState view'), findsOneWidget);
   });
 
+  testWidgets(
+    'R9-1: closing the page does not take the session the call is made of',
+    (tester) async {
+      // The handle moved to the app in S41, but everything it is made of
+      // stayed behind: the provider session, the authorization that built its
+      // client and the factory that handed out the call are all autoDispose,
+      // and the room page was the only thing in the app watching any of them.
+      // On the review device the page was popped and the WebRTC stack closed
+      // in the same frame — two `onConnectionChange CLOSED` and a factory
+      // disposal — with the strip saying 「语音已断开」 a second later.
+      final source = _RecordingVideoSource(
+        identity: const StreamVideoIdentity(userId: 'stream-user-a'),
+      );
+      final clients = _RecordingVideoClientFactory();
+      final handle = _RecordingAudioRoomCall(roomId: 'loop-daily');
+      final calls = _RecordingAudioRoomCallFactory(handle);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            appConfigProvider.overrideWithValue(_videoConfig()),
+            loopSessionProvider.overrideWith(_AuthenticatedSession.new),
+            streamVideoSessionSourceProvider.overrideWithValue(source),
+            streamVideoClientFactoryProvider.overrideWithValue(clients),
+            // Shaped like the real factory: it is derived from the session
+            // this device authorized, so it is exactly as short-lived.
+            audioRoomCallFactoryProvider.overrideWith((ref) {
+              final authorized =
+                  ref.watch(streamVideoAuthorizationProvider).value ==
+                  StreamVideoSessionAuthorization.authorized;
+              if (!authorized) return null;
+              ref.watch(streamVideoSdkSessionProvider);
+              return calls;
+            }),
+          ],
+          child: MaterialApp(
+            theme: LoopTheme.dark,
+            home: const _VoiceMediaPageHarness(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Official CallState view'), findsOneWidget);
+      expect(source.tokenCalls, 1);
+      expect(clients.createCalls, 1);
+      expect(handle.joinCalls, 1);
+
+      await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
+      await tester.pumpAndSettle();
+
+      // Nothing was torn down: not the client, not the call.
+      expect(clients.clients.single.disposeCalls, 0);
+      expect(clients.clients.single.disconnectCalls, 0);
+      expect(handle.leaveCalls, 0);
+      expect(handle.retirementStarted, isFalse);
+
+      await tester.tap(find.byKey(const ValueKey<String>('harness-open')));
+      await tester.pumpAndSettle();
+
+      // Coming back binds to the call that never stopped: no second token,
+      // no second client and no second join.
+      expect(source.tokenCalls, 1);
+      expect(clients.createCalls, 1);
+      expect(calls.createCalls, 1);
+      expect(handle.joinCalls, 1);
+      expect(find.text('Official CallState view'), findsOneWidget);
+    },
+  );
+
+  testWidgets('R9-1: a call that ended lets the session go with it', (
+    tester,
+  ) async {
+    // The session is held for as long as there is a call or a page to hold
+    // it for, and no longer: voice is foreground-only and there is no client
+    // kept open for an account that left the room.
+    final source = _RecordingVideoSource(
+      identity: const StreamVideoIdentity(userId: 'stream-user-a'),
+    );
+    final clients = _RecordingVideoClientFactory();
+    final handle = _RecordingAudioRoomCall(roomId: 'loop-daily');
+    final calls = _RecordingAudioRoomCallFactory(handle);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appConfigProvider.overrideWithValue(_videoConfig()),
+          loopSessionProvider.overrideWith(_AuthenticatedSession.new),
+          streamVideoSessionSourceProvider.overrideWithValue(source),
+          streamVideoClientFactoryProvider.overrideWithValue(clients),
+          audioRoomCallFactoryProvider.overrideWith((ref) {
+            final authorized =
+                ref.watch(streamVideoAuthorizationProvider).value ==
+                StreamVideoSessionAuthorization.authorized;
+            if (!authorized) return null;
+            ref.watch(streamVideoSdkSessionProvider);
+            return calls;
+          }),
+        ],
+        child: MaterialApp(
+          theme: LoopTheme.dark,
+          home: const _VoiceMediaPageHarness(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Official CallState view'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('fake-leave-room')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
+    await tester.pumpAndSettle();
+
+    expect(handle.leaveCalls, 1);
+    expect(clients.clients.single.disposeCalls, 1);
+  });
+
+  testWidgets(
+    'R9-2: a session that did not hold is tried once without being asked',
+    (tester) async {
+      // The backend granted the token and the connection failed anyway, and
+      // the answer was kept: the review device sat on 「语音会话暂时不可用」
+      // for two minutes with a membership it already had. The attempt the
+      // button makes is now made once, and the sentence no longer blames a
+      // token that arrived.
+      final handle = _RecordingAudioRoomCall(roomId: 'loop-daily');
+      final calls = _RecordingAudioRoomCallFactory(handle);
+      var authorizations = 0;
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            streamVideoPrincipalKeyProvider.overrideWithValue('principal-a'),
+            streamVideoAuthorizationProvider.overrideWith((ref) async {
+              authorizations += 1;
+              return authorizations == 1
+                  ? StreamVideoSessionAuthorization.unavailable
+                  : StreamVideoSessionAuthorization.authorized;
+            }),
+            audioRoomCallFactoryProvider.overrideWith(
+              (ref) =>
+                  ref.watch(streamVideoAuthorizationProvider).value ==
+                      StreamVideoSessionAuthorization.authorized
+                  ? calls
+                  : null,
+            ),
+          ],
+          child: MaterialApp(
+            theme: LoopTheme.dark,
+            home: Scaffold(
+              body: StreamVoiceRoomPage(
+                autoConnect: true,
+                inline: true,
+                target: _target('loop-daily'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(authorizations, 2);
+      expect(handle.joinCalls, 1);
+      expect(find.text('Official CallState view'), findsOneWidget);
+      expect(find.text('语音会话暂时不可用'), findsNothing);
+    },
+  );
+
+  testWidgets('R9-2: a session that keeps failing is left to the reader', (
+    tester,
+  ) async {
+    // One attempt, not a loop: a device that cannot authorize is not going to
+    // be talked into it by asking again forever.
+    var authorizations = 0;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          streamVideoPrincipalKeyProvider.overrideWithValue('principal-a'),
+          streamVideoAuthorizationProvider.overrideWith((ref) async {
+            authorizations += 1;
+            return StreamVideoSessionAuthorization.unavailable;
+          }),
+        ],
+        child: MaterialApp(
+          theme: LoopTheme.dark,
+          home: Scaffold(
+            body: StreamVoiceRoomPage(
+              autoConnect: true,
+              inline: true,
+              target: _target('loop-daily'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(authorizations, 2);
+    expect(find.text('已加入，语音连接失败'), findsOneWidget);
+    expect(find.text('重试会话'), findsOneWidget);
+    // The sentence no longer says the token is what was missing: on the
+    // review device it had already been granted.
+    expect(find.textContaining('可能是语音令牌没取到'), findsOneWidget);
+  });
+
   testWidgets('the connection note follows the part LOOP granted', (
     tester,
   ) async {
@@ -1337,6 +1543,7 @@ final class _RecordingVideoSource implements StreamVideoSessionSource {
 
 final class _RecordingVideoClientFactory implements StreamVideoClientFactory {
   int createCalls = 0;
+  final List<_RecordingVideoClient> clients = <_RecordingVideoClient>[];
 
   @override
   StreamVideoClientPort create({
@@ -1346,7 +1553,9 @@ final class _RecordingVideoClientFactory implements StreamVideoClientFactory {
     required Future<String> Function(String userId) tokenProvider,
   }) {
     createCalls += 1;
-    return _RecordingVideoClient(userId: identity.userId);
+    final client = _RecordingVideoClient(userId: identity.userId);
+    clients.add(client);
+    return client;
   }
 }
 
@@ -1356,12 +1565,64 @@ final class _RecordingVideoClient implements StreamVideoClientPort {
   @override
   final String userId;
 
+  /// What a retired session does to the client, and therefore to the WebRTC
+  /// stack the call is running on.
+  int disconnectCalls = 0;
+  int disposeCalls = 0;
+
   @override
   Future<bool> connect() async => true;
 
   @override
-  Future<void> disconnect() async {}
+  Future<void> disconnect() async {
+    disconnectCalls += 1;
+  }
 
   @override
-  Future<void> dispose() async {}
+  Future<void> dispose() async {
+    disposeCalls += 1;
+  }
+}
+
+/// Mounts and unmounts the media surface without tearing down the scope that
+/// holds the call, which is what going to another tab does.
+class _VoiceMediaPageHarness extends StatefulWidget {
+  const _VoiceMediaPageHarness();
+
+  @override
+  State<_VoiceMediaPageHarness> createState() => _VoiceMediaPageHarnessState();
+}
+
+class _VoiceMediaPageHarnessState extends State<_VoiceMediaPageHarness> {
+  var _open = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        children: <Widget>[
+          if (_open)
+            Expanded(
+              child: StreamVoiceRoomPage(
+                autoConnect: true,
+                inline: true,
+                target: _target('loop-daily'),
+              ),
+            )
+          else
+            const Expanded(child: SizedBox.expand()),
+          TextButton(
+            key: const ValueKey<String>('harness-close'),
+            onPressed: () => setState(() => _open = false),
+            child: const Text('close'),
+          ),
+          TextButton(
+            key: const ValueKey<String>('harness-open'),
+            onPressed: () => setState(() => _open = true),
+            child: const Text('open'),
+          ),
+        ],
+      ),
+    );
+  }
 }

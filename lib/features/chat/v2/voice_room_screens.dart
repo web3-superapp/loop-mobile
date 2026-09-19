@@ -165,6 +165,9 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     final snapshot = state.snapshot;
     final evidencePending =
         mode != CommunityGatewayMode.preview && capability.evidencePending;
+    // A room this page read as over leaves the community page underneath
+    // holding the read it took before that happened.
+    final back = _backFrom(state);
     return LoopDashboardPage(
       key: ValueKey<String>(
         widget.expanded ? 'voiceroom-full-screen' : 'voiceroom-screen',
@@ -174,7 +177,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       // title says which room this is instead of the word for all of them.
       title: snapshot == null ? '语音房' : '${snapshot.room.communityName} 语音房',
       kicker: communityPreviewKicker(mode),
-      onBack: widget.onBack,
+      onBack: back,
       actions: <Widget>[
         if (!widget.expanded && snapshot != null && id != null)
           LoopIconButton(
@@ -317,7 +320,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             onLeave: () => _leave(controller),
             onRaise: () => _run(controller.raiseHand, '已举手，等待主持人邀请'),
             onCancel: () => _run(controller.cancelHandRaise, '已取消举手'),
-            onBack: widget.onBack,
+            onBack: back,
           ),
           if (state.failureKind != null)
             LoopNotice(
@@ -357,6 +360,26 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         ],
       ],
     );
+  }
+
+  /// The way back, with the community page told what this page just read.
+  ///
+  /// 「返回社区」 from a room the host ended landed on a community page that
+  /// still said 「当前有进行中的语音房」 with a way in, because that row is the
+  /// read that page took before the room was over. The reader was told the
+  /// room ended and then shown a door into it. The row is dropped on the way
+  /// out, so the page reads it again; nothing is assumed about the answer,
+  /// and a room that is still running needs no second read at all.
+  VoidCallback? _backFrom(VoiceRoomPageState state) {
+    final back = widget.onBack;
+    if (back == null) return null;
+    return () {
+      final snapshot = state.snapshot;
+      if (snapshot == null || !snapshot.room.isLive) {
+        _refreshCommunityProfile();
+      }
+      back();
+    };
   }
 
   /// Reads the room and the provider session again for a second attempt.
@@ -1429,11 +1452,7 @@ class _VoiceRoomMinimizedBannerState
         context,
         message: '房间已结束 · 主持人已经结束这个语音房',
         kind: LoopToastKind.warn,
-        // The five tab routes draw the floating bar, and only on a narrow
-        // layout — the wide one puts a rail beside the page instead.
-        clearsTabBar:
-            (widget.onTabRoute?.call() ?? false) &&
-            MediaQuery.sizeOf(context).width < LoopLayout.railBreakpoint,
+        clearsTabBar: _clearsTabBar(context),
       );
     });
     final session = ref.watch(voiceRoomSessionProvider);
@@ -1552,6 +1571,20 @@ class _VoiceRoomMinimizedBannerState
     );
   }
 
+  /// Whether a toast raised from here has the floating tab bar to clear.
+  ///
+  /// The strip sits above the router, so its own context is above every tab
+  /// scope and would answer `false` on every screen: on the review device the
+  /// 「已离开语音房」 toast was placed as if no bar were under it and came out
+  /// underneath the bar, with a corner of it showing and nothing readable.
+  /// The shell that owns the router says which route it is on, and only the
+  /// narrow layout draws a bar at all — the wide one puts a rail beside the
+  /// page instead.
+  bool _clearsTabBar(BuildContext context) {
+    return (widget.onTabRoute?.call() ?? false) &&
+        MediaQuery.sizeOf(context).width < LoopLayout.railBreakpoint;
+  }
+
   /// Leaves the room from wherever the reader happens to be.
   ///
   /// The same order as the room page's own 离开: the provider call goes down
@@ -1584,6 +1617,7 @@ class _VoiceRoomMinimizedBannerState
         context,
         message: voiceRoomFailureText(failure, reasonCode),
         kind: LoopToastKind.warn,
+        clearsTabBar: _clearsTabBar(context),
       );
       return;
     }
@@ -1591,6 +1625,7 @@ class _VoiceRoomMinimizedBannerState
     LoopToast.show(
       context,
       message: disconnected ? '已离开语音房' : '已离开语音房，语音连接的收尾没有确认',
+      clearsTabBar: _clearsTabBar(context),
     );
   }
 }

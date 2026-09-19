@@ -760,6 +760,17 @@ Future<void> pumpCommunityPage(
   /// these puts a verified video principal in the scope, so the surface runs
   /// its own states instead of the signed-out one.
   AudioRoomCallFactory? audioRoomCallFactory,
+
+  /// Derives the call factory the way production derives it — from the
+  /// authorization this device holds — so a test can ask what becomes of that
+  /// chain when the room page goes off the screen. A value override answers
+  /// that question for it, which is how the chain went unexamined until the
+  /// device was watched doing it.
+  AudioRoomCallFactory? Function(Ref ref)? audioRoomCallFactorySource,
+
+  /// Answers the video authorization on every build, so a test can count how
+  /// many times this device went back for one.
+  Future<StreamVideoSessionAuthorization> Function()? videoAuthorizationLoader,
   StreamVideoSessionAuthorization? videoAuthorization,
   LoopV2MetaSnapshot? meta,
   Size size = const Size(390, 1400),
@@ -803,18 +814,24 @@ Future<void> pumpCommunityPage(
           streamChatAuthorizationProvider.overrideWith(
             (ref) => streamAuthorization(),
           ),
-        if (audioRoomCallFactory != null || videoAuthorization != null) ...[
+        if (audioRoomCallFactory != null ||
+            audioRoomCallFactorySource != null ||
+            videoAuthorization != null ||
+            videoAuthorizationLoader != null) ...[
           streamVideoPrincipalKeyProvider.overrideWithValue(
             'video-principal-test',
           ),
           streamVideoAuthorizationProvider.overrideWith(
             (ref) async =>
+                (await videoAuthorizationLoader?.call()) ??
                 videoAuthorization ??
                 StreamVideoSessionAuthorization.authorized,
           ),
         ],
         if (audioRoomCallFactory != null)
-          audioRoomCallFactoryProvider.overrideWithValue(audioRoomCallFactory),
+          audioRoomCallFactoryProvider.overrideWithValue(audioRoomCallFactory)
+        else if (audioRoomCallFactorySource != null)
+          audioRoomCallFactoryProvider.overrideWith(audioRoomCallFactorySource),
         loopV2MetaSnapshotProvider.overrideWith(
           (ref) async => meta ?? testMetaSnapshot(),
         ),

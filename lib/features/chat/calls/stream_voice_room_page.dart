@@ -260,6 +260,19 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   /// one that was refused.
   var _refreshingConnection = false;
 
+  /// True once this surface has already taken the one automatic second
+  /// attempt at a provider session it could not establish.
+  ///
+  /// The session answers a failed authorization once and the provider that
+  /// asked keeps that answer: a Wi-Fi flap during the connection left the
+  /// review device reading 「语音会话暂时不可用」 for two minutes with the
+  /// token it needed already granted, and the only way out was a button. The
+  /// attempt that button makes is now made once on the reader's behalf. It is
+  /// armed again only by an authorization that succeeded, so a session that
+  /// keeps failing is asked for twice and then left to the reader.
+  var _autoRetriedSession = false;
+  var _autoRetryScheduled = false;
+
   /// True from the moment a call stopped on its own until the room record has
   /// been read again.
   ///
@@ -306,6 +319,13 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   @override
   void didUpdateWidget(covariant _StreamVoiceRoomSurface oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (_isAuthorized(widget.authorization) &&
+        !_isAuthorized(oldWidget.authorization)) {
+      // The session this device holds is the one that was refused, so the
+      // automatic attempt is armed by an authorization that landed, not by
+      // time passing.
+      _autoRetriedSession = false;
+    }
     if (!identical(oldWidget.link, widget.link)) {
       oldWidget.link?.detach(_disconnectForExit);
       widget.link?.attach(_disconnectForExit, exitSettled: _exitSettled);
@@ -486,6 +506,19 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
         !_cleanupFailed;
     if (widget.autoConnect && joinEnabled && !content.reconnect) {
       _scheduleAutoConnect();
+    }
+    // The one failure that answers itself: the session came back unavailable.
+    // A client that is missing for any other reason is the page's own state
+    // and has its own way forward.
+    final authorization = widget.authorization;
+    if (widget.autoConnect &&
+        widget.principalKey != null &&
+        authorization != null &&
+        !authorization.isLoading &&
+        !_isAuthorized(authorization) &&
+        !_cleanupPending &&
+        !_cleanupFailed) {
+      _scheduleSessionRetry();
     }
     final stateCard = Semantics(
       liveRegion: content.tone == LoopTone.danger,
@@ -680,6 +713,44 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       unawaited(_joinMuted());
     });
   }
+
+  /// Takes the one automatic second attempt at a session that did not hold.
+  ///
+  /// A membership this account already has, and a surface that connects on
+  /// its own, make a stalled session a screen with nothing happening on it:
+  /// on the review device the account was in the room, the token had been
+  /// granted, and the page said the session was unavailable until it was
+  /// tapped. The attempt is exactly the one 「重试会话」 makes — this is not a
+  /// different, quieter path — and it is taken once, never in a loop.
+  void _scheduleSessionRetry() {
+    if (_autoRetriedSession ||
+        _autoRetryScheduled ||
+        _refreshingConnection ||
+        _verifyingRoom ||
+        _exiting ||
+        _leaving ||
+        _joining ||
+        !_appIsForeground) {
+      return;
+    }
+    _autoRetriedSession = true;
+    _autoRetryScheduled = true;
+    scheduleMicrotask(() {
+      _autoRetryScheduled = false;
+      if (!mounted ||
+          !widget.autoConnect ||
+          _refreshingConnection ||
+          _exiting ||
+          _leaving) {
+        return;
+      }
+      unawaited(_reconnect());
+    });
+  }
+
+  static bool _isAuthorized(
+    AsyncValue<StreamVideoSessionAuthorization>? authorization,
+  ) => authorization?.value == StreamVideoSessionAuthorization.authorized;
 
   /// The reader's own request for the audio back after a refusal.
   ///
@@ -1329,7 +1400,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
         authorization.value != StreamVideoSessionAuthorization.authorized) {
       return const _StreamVoiceContent(
         title: '语音会话暂时不可用',
-        message: '暂时拿不到语音令牌，这里保持断开，不会创建任何通话。',
+        message: '这台设备没能建立语音会话，可能是语音令牌没取到，也可能是没连上语音服务。这里保持断开，不会创建任何通话。',
         tone: LoopTone.warning,
         icon: Icons.cloud_off_rounded,
         retryAuthorization: true,
