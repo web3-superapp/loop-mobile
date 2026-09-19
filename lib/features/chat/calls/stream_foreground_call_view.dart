@@ -264,6 +264,21 @@ abstract final class StreamCallParticipantPresentation {
 /// Only microphone/leave command progress and sanitized command errors are
 /// local. Connection, participant, capability, and microphone truth is never
 /// copied into LOOP state.
+/// What a Speak that did not open is allowed to say.
+///
+/// One sentence per cause, and each names the next step that belongs to it.
+/// The old single sentence sent every member to the system settings and then
+/// out of the room, which is neither true for a room role nor necessary for a
+/// permission that was just granted.
+String audioRoomMicrophoneRefusalText(AudioRoomMicrophoneRefusal refusal) =>
+    switch (refusal) {
+      AudioRoomMicrophoneRefusal.systemPermission =>
+        '没有麦克风权限，去系统设置里允许 LOOP 使用麦克风后再试。',
+      AudioRoomMicrophoneRefusal.roomPermission => '这个房间还没有让你发言，麦克风没有打开。',
+      AudioRoomMicrophoneRefusal.callClosed => '这次通话已经不能再发言了，请退出后重新进入。',
+      AudioRoomMicrophoneRefusal.unknown => '麦克风没能打开，请再试一次。',
+    };
+
 class StreamForegroundCallView extends StatefulWidget {
   const StreamForegroundCallView({
     required this.call,
@@ -308,7 +323,8 @@ class StreamForegroundCallView extends StatefulWidget {
   /// height and its controls travel with the section above them.
   final bool inline;
   final bool Function() retirementStarted;
-  final Future<bool> Function({required bool enabled}) onMicrophoneRequested;
+  final Future<AudioRoomMicrophoneOutcome> Function({required bool enabled})
+  onMicrophoneRequested;
   final Future<void> Function() onLeaveRequested;
 
   @override
@@ -609,22 +625,30 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
     if (_microphoneBusy || _leaveBusy) return;
     setState(() {
       _microphoneBusy = true;
-      if (enabled) _microphoneEnableRequested = true;
       _commandError = null;
     });
 
-    var succeeded = false;
+    var outcome = const AudioRoomMicrophoneOutcome.refused(
+      AudioRoomMicrophoneRefusal.unknown,
+    );
     try {
-      succeeded = await widget.onMicrophoneRequested(enabled: enabled);
-    } catch (_) {
-      succeeded = false;
+      outcome = await widget.onMicrophoneRequested(enabled: enabled);
+    } catch (error) {
+      outcome = AudioRoomMicrophoneOutcome.refused(
+        AudioRoomMicrophoneRefusalMapping.fromDetail('$error'),
+        detail: '$error',
+      );
     }
     if (!mounted) return;
     setState(() {
       _microphoneBusy = false;
-      if (!succeeded) {
+      // This call's one Speak is spent by a microphone that opened, not by
+      // an attempt. A member who has just allowed the system's microphone
+      // question presses 发言 again where they stand.
+      if (enabled && outcome.opened) _microphoneEnableRequested = true;
+      if (!outcome.opened) {
         _commandError = enabled
-            ? '麦克风没能启动。请检查房间权限与系统麦克风权限，退出后重新进入再试。'
+            ? audioRoomMicrophoneRefusalText(outcome.refusal)
             : '麦克风没能静音。请重试，或退出这个房间。';
       }
     });

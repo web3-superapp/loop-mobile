@@ -1220,8 +1220,8 @@ void main() {
   test('one Call accepts only one Speak request', () async {
     final handle = _RecordingAudioRoomCall(roomId: 'loop-daily');
 
-    expect(await handle.setMicrophoneEnabled(enabled: true), isTrue);
-    expect(await handle.setMicrophoneEnabled(enabled: true), isFalse);
+    expect((await handle.setMicrophoneEnabled(enabled: true)).opened, isTrue);
+    expect((await handle.setMicrophoneEnabled(enabled: true)).opened, isFalse);
     expect(handle.microphoneCommandLog, <String>['enable:start', 'enable:end']);
   });
 
@@ -1236,8 +1236,14 @@ void main() {
 
       await expectLater(handle.leave(), throwsA(isA<StateError>()));
 
-      expect(await handle.setMicrophoneEnabled(enabled: true), isFalse);
-      expect(await handle.setMicrophoneEnabled(enabled: false), isTrue);
+      expect(
+        (await handle.setMicrophoneEnabled(enabled: true)).opened,
+        isFalse,
+      );
+      expect(
+        (await handle.setMicrophoneEnabled(enabled: false)).opened,
+        isTrue,
+      );
       expect(handle.backgroundMicrophoneDisableCalls, 2);
     },
   );
@@ -1384,11 +1390,15 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
   }
 
   @override
-  Future<bool> setMicrophoneEnabled({required bool enabled}) {
+  Future<AudioRoomMicrophoneOutcome> setMicrophoneEnabled({
+    required bool enabled,
+  }) {
     return _commands.setMicrophoneEnabled(enabled: enabled);
   }
 
-  Future<bool> _setProviderMicrophone(bool enabled) async {
+  Future<AudioRoomMicrophoneOutcome> _setProviderMicrophone(
+    bool enabled,
+  ) async {
     if (enabled) {
       microphoneCommandLog.add('enable:start');
       await microphoneEnableFuture;
@@ -1397,7 +1407,7 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
       backgroundMicrophoneDisableCalls += 1;
       microphoneCommandLog.add('disable');
     }
-    return true;
+    return const AudioRoomMicrophoneOutcome.opened();
   }
 
   Future<void> _suspendAudio() async {

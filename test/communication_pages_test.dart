@@ -3087,9 +3087,11 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
   }
 
   @override
-  Future<bool> setMicrophoneEnabled({required bool enabled}) async {
+  Future<AudioRoomMicrophoneOutcome> setMicrophoneEnabled({
+    required bool enabled,
+  }) async {
     microphoneCalls += 1;
-    return true;
+    return const AudioRoomMicrophoneOutcome.opened();
   }
 
   @override

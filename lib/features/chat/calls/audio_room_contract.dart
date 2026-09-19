@@ -70,6 +70,120 @@ final class _UnavailableAudioRoomTargetSource implements AudioRoomTargetSource {
 /// a speaker does, and a host has no 离开 at all. One sentence written for a
 /// listener stood on all three screens, telling a host to use a control the
 /// host does not have.
+/// Why the device did not open the microphone.
+///
+/// A Speak that did not open used to have one sentence for every cause, and
+/// it told the member to leave the room and come back — which is what they
+/// then had to do, because a failed attempt also spent this call's one Speak.
+/// The system's own microphone question is answered outside LOOP and lands
+/// after the command it interrupted, so the most common cause was the one the
+/// copy could not name.
+enum AudioRoomMicrophoneRefusal {
+  /// This device has not granted LOOP the system microphone permission.
+  systemPermission,
+
+  /// The room does not let this account send audio.
+  roomPermission,
+
+  /// This call is retiring, gone, or already holds a local audio track.
+  callClosed,
+
+  /// The answer named no cause this client recognises.
+  unknown,
+}
+
+/// Reads one microphone answer, without ever showing it.
+///
+/// Order matters: the provider's own "missing permission to send audio" is a
+/// room role, not a device setting, and `NotAllowedError` is the WebRTC
+/// spelling of a system permission the member declined
+/// (`stream_webrtc_flutter-3.0.2` `GetUserMediaImpl.java:575`).
+abstract final class AudioRoomMicrophoneRefusalMapping {
+  static const List<String> _roomPermission = <String>[
+    'permission to send audio',
+    'send audio',
+    'video moderation',
+  ];
+  static const List<String> _systemPermission = <String>[
+    'notallowederror',
+    'not allowed',
+    'permissiondeniederror',
+    'permission denied',
+    'denied',
+    'record_audio',
+    'microphone permission',
+  ];
+  static const List<String> _callClosed = <String>[
+    'not connected',
+    'session is null',
+    'disposed',
+    'call ended',
+  ];
+
+  static AudioRoomMicrophoneRefusal fromDetail(String? detail) {
+    final answer = detail?.toLowerCase().trim();
+    if (answer == null || answer.isEmpty) {
+      return AudioRoomMicrophoneRefusal.unknown;
+    }
+    bool names(List<String> markers) =>
+        markers.any((marker) => answer.contains(marker));
+    if (names(_roomPermission)) {
+      return AudioRoomMicrophoneRefusal.roomPermission;
+    }
+    if (names(_systemPermission)) {
+      return AudioRoomMicrophoneRefusal.systemPermission;
+    }
+    if (names(_callClosed)) return AudioRoomMicrophoneRefusal.callClosed;
+    return AudioRoomMicrophoneRefusal.unknown;
+  }
+}
+
+/// One answer to one microphone command.
+@immutable
+final class AudioRoomMicrophoneOutcome {
+  const AudioRoomMicrophoneOutcome.opened()
+    : opened = true,
+      refusal = AudioRoomMicrophoneRefusal.unknown,
+      detail = null;
+
+  const AudioRoomMicrophoneOutcome.refused(this.refusal, {this.detail})
+    : opened = false;
+
+  /// Whether the device carried the command out. For `enabled: false` this is
+  /// a microphone that is now closed.
+  final bool opened;
+
+  /// What stopped it, when it did not.
+  final AudioRoomMicrophoneRefusal refusal;
+
+  /// The provider's own answer. It goes to the debug log and nowhere else.
+  final String? detail;
+}
+
+/// Runs one microphone enable, and runs it a second time when the first
+/// answer named no cause at all.
+///
+/// The system microphone question is asked by the platform the first time a
+/// room member speaks, and it is answered outside this call. An answer that
+/// lands while the command is already running leaves the SDK with a failure
+/// it cannot attribute — the member sees a microphone that did not open even
+/// though they just allowed it, and today the only way out is leaving the
+/// room and coming back. One re-attempt, once, after the question is off the
+/// screen, is the whole fix. A refusal that names its cause is never retried:
+/// a denied permission and a room that does not let this account speak do not
+/// change by asking again.
+Future<AudioRoomMicrophoneOutcome> audioRoomEnableMicrophoneWithRetry(
+  Future<AudioRoomMicrophoneOutcome> Function() attempt, {
+  Duration retryDelay = const Duration(milliseconds: 450),
+}) async {
+  final first = await attempt();
+  if (first.opened || first.refusal != AudioRoomMicrophoneRefusal.unknown) {
+    return first;
+  }
+  await Future<void>.delayed(retryDelay);
+  return attempt();
+}
+
 enum AudioRoomViewerRole { listener, speaker, host }
 
 /// What this device's own call is doing, for the surfaces outside the call

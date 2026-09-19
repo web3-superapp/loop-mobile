@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
@@ -147,7 +148,9 @@ abstract interface class AudioRoomCallHandle {
 
   Future<void> joinMuted();
 
-  Future<bool> setMicrophoneEnabled({required bool enabled});
+  Future<AudioRoomMicrophoneOutcome> setMicrophoneEnabled({
+    required bool enabled,
+  });
 
   /// Retires the foreground-only Call after the app leaves the foreground.
   Future<void> retireForBackground();
@@ -200,7 +203,8 @@ final class AudioRoomCallCommandCoordinator {
     this._suspendAudio,
   );
 
-  final Future<bool> Function(bool enabled) _setMicrophone;
+  final Future<AudioRoomMicrophoneOutcome> Function(bool enabled)
+  _setMicrophone;
   final Future<void> Function() _leave;
   final Future<void> Function() _suspendAudio;
 
@@ -211,22 +215,36 @@ final class AudioRoomCallCommandCoordinator {
 
   bool get retirementStarted => _retiring;
 
-  Future<bool> setMicrophoneEnabled({required bool enabled}) {
+  Future<AudioRoomMicrophoneOutcome> setMicrophoneEnabled({
+    required bool enabled,
+  }) {
     if (_retiring) {
       // A failed leave keeps the official Call view mounted. Capture may
       // still be stopped, but it can never be restarted on a retiring Call.
       return enabled
-          ? Future<bool>.value(false)
+          ? Future<AudioRoomMicrophoneOutcome>.value(
+              const AudioRoomMicrophoneOutcome.refused(
+                AudioRoomMicrophoneRefusal.callClosed,
+              ),
+            )
           : _runDetachedMicrophoneDisable();
     }
     // Stream Video 1.4.3 can recreate a previously stopped track after its
     // Call has already been disposed. Audio Room v1 therefore permits only
     // the initial muted -> speaking transition on each Call. After Mute, the
     // user leaves and rejoins before another Speak attempt.
+    //
+    // The latch is spent by a microphone that opened, not by an attempt. A
+    // Speak the device refused created no track — `_setMicrophone` proves
+    // that for itself before every enable — so the member may answer the
+    // system's microphone question and try again from inside the room.
     if (enabled && _microphoneEnableRequested) {
-      return Future<bool>.value(false);
+      return Future<AudioRoomMicrophoneOutcome>.value(
+        const AudioRoomMicrophoneOutcome.refused(
+          AudioRoomMicrophoneRefusal.callClosed,
+        ),
+      );
     }
-    if (enabled) _microphoneEnableRequested = true;
     final predecessor = _microphoneTail;
     final operation = _runMicrophoneCommand(predecessor, enabled);
     _microphoneTail = operation.then<void>((_) {});
@@ -242,16 +260,27 @@ final class AudioRoomCallCommandCoordinator {
     return operation;
   }
 
-  Future<bool> _runMicrophoneCommand(
+  Future<AudioRoomMicrophoneOutcome> _runMicrophoneCommand(
     Future<void> predecessor,
     bool enabled,
   ) async {
     await predecessor;
-    if (_retiring) return false;
+    // Re-read after the queue: a command that waited its turn may find the
+    // call retiring, or a Speak already carried out by the one ahead of it.
+    if (_retiring || (enabled && _microphoneEnableRequested)) {
+      return const AudioRoomMicrophoneOutcome.refused(
+        AudioRoomMicrophoneRefusal.callClosed,
+      );
+    }
     try {
-      return await _setMicrophone(enabled);
-    } catch (_) {
-      return false;
+      final outcome = await _setMicrophone(enabled);
+      if (enabled && outcome.opened) _microphoneEnableRequested = true;
+      return outcome;
+    } catch (error) {
+      return AudioRoomMicrophoneOutcome.refused(
+        AudioRoomMicrophoneRefusalMapping.fromDetail('$error'),
+        detail: '$error',
+      );
     }
   }
 
@@ -295,11 +324,14 @@ final class AudioRoomCallCommandCoordinator {
     }
   }
 
-  Future<bool> _runDetachedMicrophoneDisable() async {
+  Future<AudioRoomMicrophoneOutcome> _runDetachedMicrophoneDisable() async {
     try {
       return await _setMicrophone(false);
-    } catch (_) {
-      return false;
+    } catch (error) {
+      return AudioRoomMicrophoneOutcome.refused(
+        AudioRoomMicrophoneRefusalMapping.fromDetail('$error'),
+        detail: '$error',
+      );
     }
   }
 }
@@ -407,22 +439,51 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
   }
 
   @override
-  Future<bool> setMicrophoneEnabled({required bool enabled}) {
+  Future<AudioRoomMicrophoneOutcome> setMicrophoneEnabled({
+    required bool enabled,
+  }) {
     return _commands.setMicrophoneEnabled(enabled: enabled);
   }
 
-  Future<bool> _setMicrophone(bool enabled) async {
+  Future<AudioRoomMicrophoneOutcome> _setMicrophone(bool enabled) {
+    if (!enabled) return _runMicrophoneCommand(false);
+    // The system's microphone question is answered outside this command, so
+    // the first answer may be a failure the SDK could not attribute. One
+    // re-attempt keeps the member in the room instead of sending them out and
+    // back in.
+    return audioRoomEnableMicrophoneWithRetry(
+      () => _runMicrophoneCommand(true),
+    );
+  }
+
+  Future<AudioRoomMicrophoneOutcome> _runMicrophoneCommand(bool enabled) async {
     if (enabled) {
       final trackIdPrefix = _call.state.value.localParticipant?.trackIdPrefix;
-      if (trackIdPrefix == null || trackIdPrefix.isEmpty) return false;
+      if (trackIdPrefix == null || trackIdPrefix.isEmpty) {
+        return const AudioRoomMicrophoneOutcome.refused(
+          AudioRoomMicrophoneRefusal.callClosed,
+        );
+      }
       // A local audio track means this would enter the unsafe stopped-track
       // recreate path. A new Call is required before speaking again.
       if (_call.getTrack(trackIdPrefix, SfuTrackType.audio) != null) {
-        return false;
+        return const AudioRoomMicrophoneOutcome.refused(
+          AudioRoomMicrophoneRefusal.callClosed,
+        );
       }
     }
     final result = await _call.setMicrophoneEnabled(enabled: enabled);
-    return result.isSuccess;
+    if (result.isSuccess) return const AudioRoomMicrophoneOutcome.opened();
+    final detail = result is Failure ? _describeFailure(result) : null;
+    if (kDebugMode) {
+      // The provider's own words stay here. They are the only account of
+      // what the device refused, and they are not a sentence for a reader.
+      debugPrint('LOOP microphone refused: $roomId · $detail');
+    }
+    return AudioRoomMicrophoneOutcome.refused(
+      AudioRoomMicrophoneRefusalMapping.fromDetail(detail),
+      detail: detail,
+    );
   }
 
   @override
@@ -473,11 +534,11 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
       onMicrophoneRequested: onMicrophoneEnabled == null
           ? setMicrophoneEnabled
           : ({required bool enabled}) async {
-              final opened = await setMicrophoneEnabled(enabled: enabled);
+              final outcome = await setMicrophoneEnabled(enabled: enabled);
               // The cue follows the device, not the request: a microphone
               // that did not open reports nothing to LOOP.
-              if (opened && enabled) await onMicrophoneEnabled();
-              return opened;
+              if (outcome.opened && enabled) await onMicrophoneEnabled();
+              return outcome;
             },
       onLeaveRequested: onLeaveRequested,
       inline: inline,
