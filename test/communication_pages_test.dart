@@ -2399,10 +2399,8 @@ void main() {
       // room's own joined figure — never an observation from some earlier
       // moment. R5-2: off the call that figure counts memberships, so the
       // strip says 「已加入」 and not 「在线」.
-      expect(
-        find.text('正在语音房 · $testVoiceRoomCommunityName · 听众 · 46 人已加入'),
-        findsOneWidget,
-      );
+      expect(find.text('正在语音房 · $testVoiceRoomCommunityName'), findsOneWidget);
+      expect(find.text('听众 · 46 人已加入'), findsOneWidget);
       expect(find.textContaining('上次观察'), findsNothing);
       expect(find.textContaining('人在线'), findsNothing);
 
@@ -2440,10 +2438,8 @@ void main() {
       expect(voice.commands, isNot(contains('media:leave')));
       // The strip carries the call's own head count, on whatever screen the
       // reader is looking at.
-      expect(
-        find.text('正在语音房 · $testVoiceRoomCommunityName · 听众 · 3 人在通话'),
-        findsOneWidget,
-      );
+      expect(find.text('正在语音房 · $testVoiceRoomCommunityName'), findsOneWidget);
+      expect(find.text('听众 · 3 人在通话'), findsOneWidget);
 
       // Coming back is a view binding to a call that never stopped: no second
       // call, no second token.
@@ -2480,10 +2476,8 @@ void main() {
       media.handles.first.emit(AudioRoomLivePhase.disconnected);
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('正在语音房 · $testVoiceRoomCommunityName · 听众 · 语音已断开'),
-        findsOneWidget,
-      );
+      expect(find.text('正在语音房 · $testVoiceRoomCommunityName'), findsOneWidget);
+      expect(find.text('听众 · 语音已断开'), findsOneWidget);
       expect(find.text('重新连接'), findsOneWidget);
       expect(find.text('返回房间'), findsNothing);
       // The dead call is taken down, and the room says the membership stands.
@@ -2529,10 +2523,8 @@ void main() {
         find.byKey(const ValueKey<String>('voiceroom-minimized-banner')),
         findsOneWidget,
       );
-      expect(
-        find.text('正在语音房 · $testVoiceRoomCommunityName · 听众 · 语音已断开'),
-        findsOneWidget,
-      );
+      expect(find.text('正在语音房 · $testVoiceRoomCommunityName'), findsOneWidget);
+      expect(find.text('听众 · 语音已断开'), findsOneWidget);
       // Both ways out of it are on the strip: the audio back, or the room.
       expect(find.text('重新连接'), findsOneWidget);
       expect(
@@ -2634,9 +2626,10 @@ void main() {
         expect(authorizations, 1);
         expect(media.leaveCalls, 0);
         expect(
-          find.text('正在语音房 · $testVoiceRoomCommunityName · 听众 · 3 人在通话'),
+          find.text('正在语音房 · $testVoiceRoomCommunityName'),
           findsOneWidget,
         );
+        expect(find.text('听众 · 3 人在通话'), findsOneWidget);
 
         // The host ends the room while the reader is somewhere else.
         voice.loadSnapshot = testVoiceRoomSnapshot(
@@ -2802,6 +2795,70 @@ void main() {
         findsNothing,
       );
     });
+
+    // R10-1: one line under an ellipsis drops the tail of the sentence, and
+    // the tail is the only part a reader cannot guess. On the review device a
+    // 14-character room name already left 「正在语音房 · Builders Guild · 听众 ·
+    // 1 …」, so a call that stood read exactly like one that had stopped. The
+    // room name is what gives way now, and the state never does.
+    testWidgets('R10-1: a long room name never eats the state', (tester) async {
+      const longName = '链上治理与合约安全长期研讨会共建者联盟第七期常设分会场';
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(
+          role: VoiceRoomRole.listener,
+          communityName: longName,
+        ),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        _VoiceRoomBannerHarness(opened: <String>[]),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+        // The narrowest screen this ships to.
+        size: const Size(360, 1400),
+      );
+      final report = find.byKey(const ValueKey<String>('fake-presence'));
+      await scrollToCommunitySection(tester, report);
+      await tester.tap(report);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
+      await tester.pumpAndSettle();
+
+      // The state and the count are set whole: the line wraps, it does not
+      // end in an ellipsis, and nothing of it is left unpainted.
+      final status = find.text('听众 · 3 人在通话');
+      expect(status, findsOneWidget);
+      final statusText = tester.widget<Text>(status);
+      expect(statusText.maxLines, isNull);
+      expect(statusText.overflow, isNot(TextOverflow.ellipsis));
+      expect(
+        tester.renderObject<RenderParagraph>(status).didExceedMaxLines,
+        isFalse,
+      );
+
+      // The room name is on a line of its own, and that is the line the
+      // width is taken out of.
+      final title = find.text('正在语音房 · $longName');
+      expect(title, findsOneWidget);
+      expect(tester.widget<Text>(title).maxLines, 1);
+      expect(
+        tester.renderObject<RenderParagraph>(title).didExceedMaxLines,
+        isTrue,
+      );
+
+      // A stopped call says so on the strip itself, under the same long name,
+      // instead of only in the button beside it.
+      media.handles.first.emit(AudioRoomLivePhase.disconnected);
+      await tester.pumpAndSettle();
+      expect(find.text('听众 · 语音已断开'), findsOneWidget);
+      expect(
+        tester
+            .renderObject<RenderParagraph>(find.text('听众 · 语音已断开'))
+            .didExceedMaxLines,
+        isFalse,
+      );
+    });
   });
 
   group('voiceroom banner label', () {
@@ -2878,6 +2935,42 @@ void main() {
         ),
         '正在语音房 · Builders Guild · 听众 · 语音已断开',
       );
+    });
+
+    // R10-1: the strip sets the sentence in two lines, so each half is a
+    // sentence of its own. The whole label is still what the two read
+    // together — that is what assistive tech is handed.
+    test('the two halves are the whole sentence, split where it may give', () {
+      const name = '链上治理与合约安全长期研讨会共建者联盟第七期常设分会场';
+      expect(voiceRoomBannerTitle(name), '正在语音房 · $name');
+      expect(
+        voiceRoomBannerStatus(
+          role: VoiceRoomRole.listener,
+          count: 3,
+          phase: AudioRoomLivePhase.connected,
+        ),
+        '听众 · 3 人在通话',
+      );
+      expect(
+        voiceRoomBannerStatus(
+          role: VoiceRoomRole.host,
+          count: null,
+          phase: AudioRoomLivePhase.idle,
+        ),
+        '主持人',
+      );
+      for (final phase in AudioRoomLivePhase.values) {
+        expect(
+          voiceRoomBannerLabel(
+            communityName: name,
+            role: VoiceRoomRole.listener,
+            count: 3,
+            phase: phase,
+          ),
+          '${voiceRoomBannerTitle(name)} · '
+          '${voiceRoomBannerStatus(role: VoiceRoomRole.listener, count: 3, phase: phase)}',
+        );
+      }
     });
   });
 

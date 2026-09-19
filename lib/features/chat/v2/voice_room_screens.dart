@@ -1363,16 +1363,12 @@ class _ViewerActions extends StatelessWidget {
 /// way to tell the two apart, and no way back short of walking the community
 /// again. It is hidden on the room page itself, which already shows all of
 /// this.
-/// The strip's one line: which room, what part this account plays in it, and
-/// how many are in it.
+/// The whole sentence the strip stands for: which room, what part this
+/// account plays in it, and what the call is doing or how many are in it.
 ///
-/// Two different figures can end up here, so each is named for what it counts.
-/// While this device is in the call the strip carries the call's own head
-/// count — the same number the room page prints — and says 「N 人在通话」. Off
-/// the call there is only LOOP's record of who joined the room, which counts
-/// memberships and not connections, and that says 「N 人已加入」. Written as one
-/// word, the strip changed from 「1 人在线」 to 「5 人在线」 the moment the room
-/// page came off the screen, and neither number was wrong.
+/// The strip itself sets this in two lines, because one line under an
+/// ellipsis loses the end of the sentence (R10-1); this is what those two
+/// lines say read together, and it is what assistive tech is given.
 ///
 /// The strip used to print 「上次观察 N 人」 — a reading taken at some earlier
 /// moment, which on the review device was 「上次观察 0 人」 under a banner
@@ -1388,19 +1384,46 @@ String voiceRoomBannerLabel({
   required VoiceRoomRole role,
   required int? count,
   required AudioRoomLivePhase phase,
+}) =>
+    '${voiceRoomBannerTitle(communityName)} · '
+    '${voiceRoomBannerStatus(role: role, count: count, phase: phase)}';
+
+/// The half of the strip that can be given up: which room this is.
+///
+/// R10-1: the strip printed the whole sentence on one line under an
+/// ellipsis, with the room's name in the middle and the state at the end, so
+/// a name of any length ate exactly the part that could not be guessed —
+/// 「正在语音房 · Builders Guild · 听众 · 1 …」 on the review device, where the
+/// reader could not tell a call that stands from one that stopped. The name
+/// is the part a reader can do without, so it is the part that truncates,
+/// and it sits alone on the first line.
+String voiceRoomBannerTitle(String communityName) => '正在语音房 · $communityName';
+
+/// The half that is never given up: what part this account plays, and what
+/// the call is doing or how many are in it.
+///
+/// Two different figures can end up here, so each is named for what it
+/// counts. While this device is in the call the strip carries the call's own
+/// head count — the same number the room page prints — and says 「N 人在通话」.
+/// Off the call there is only LOOP's record of who joined the room, which
+/// counts memberships and not connections, and that says 「N 人已加入」.
+String voiceRoomBannerStatus({
+  required VoiceRoomRole role,
+  required int? count,
+  required AudioRoomLivePhase phase,
 }) {
-  final head = '正在语音房 · $communityName · ${role.label}';
+  final part = role.label;
   return switch (phase) {
     // Connected without a count yet: the strip says the connection stands and
     // that the number is still coming, never 0.
     AudioRoomLivePhase.connected =>
-      count == null ? '$head · 人数正在统计' : '$head · $count 人在通话',
-    AudioRoomLivePhase.connecting => '$head · 正在连接语音',
-    AudioRoomLivePhase.reconnecting => '$head · 语音正在重连',
-    AudioRoomLivePhase.disconnected => '$head · 语音已断开',
+      count == null ? '$part · 人数正在统计' : '$part · $count 人在通话',
+    AudioRoomLivePhase.connecting => '$part · 正在连接语音',
+    AudioRoomLivePhase.reconnecting => '$part · 语音正在重连',
+    AudioRoomLivePhase.disconnected => '$part · 语音已断开',
     // No call of this device's own: the only figure there is counts
     // memberships, not connections, and it is named for that.
-    AudioRoomLivePhase.idle => count == null ? head : '$head · $count 人已加入',
+    AudioRoomLivePhase.idle => count == null ? part : '$part · $count 人已加入',
   };
 }
 
@@ -1489,18 +1512,58 @@ class _VoiceRoomMinimizedBannerState
                   child: Row(
                     children: <Widget>[
                       Expanded(
-                        child: Text(
-                          voiceRoomBannerLabel(
+                        // R10-1: two lines, and the room's name is the only
+                        // thing on the line that may be cut. On one line the
+                        // ellipsis fell on the tail, which is where the state
+                        // and the head count were, so a long room name left
+                        // the reader unable to tell a call that stands from
+                        // one that stopped. Assistive tech is handed the
+                        // sentence whole.
+                        child: Semantics(
+                          container: true,
+                          excludeSemantics: true,
+                          label: voiceRoomBannerLabel(
                             communityName: session.communityName,
                             role: session.role,
                             count: count,
                             phase: phase,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: LoopTypography.withWeight(
-                            LoopTypography.body(13, color: LoopColors.ink),
-                            FontWeight.w600,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  voiceRoomBannerTitle(session.communityName),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: LoopTypography.withWeight(
+                                    LoopTypography.body(
+                                      13,
+                                      color: LoopColors.ink,
+                                    ),
+                                    FontWeight.w600,
+                                  ),
+                                ),
+                                // No maxLines and no ellipsis: this line
+                                // wraps rather than drop a word of it.
+                                Text(
+                                  voiceRoomBannerStatus(
+                                    role: session.role,
+                                    count: count,
+                                    phase: phase,
+                                  ),
+                                  style: LoopTypography.withWeight(
+                                    LoopTypography.body(
+                                      12,
+                                      color: LoopColors.ink,
+                                    ),
+                                    FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
