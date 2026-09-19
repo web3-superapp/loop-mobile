@@ -330,6 +330,11 @@ class _LoopAppState extends ConsumerState<LoopApp> {
               onOpen: (communityId) => router.push(
                 '/chat/voice?id=${Uri.encodeComponent(communityId)}',
               ),
+              // The strip is above the router, so it cannot read the tab
+              // bar's scope for itself; the route the router is on says
+              // whether a toast it raises has a bar to clear.
+              onTabRoute: () =>
+                  LoopRouteManifest.isTabPath(router.state.matchedLocation),
             ),
             Expanded(child: content),
           ],

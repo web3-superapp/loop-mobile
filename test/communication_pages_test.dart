@@ -2473,35 +2473,39 @@ void main() {
       );
     });
 
-    testWidgets('a room that ended while away takes the strip with it', (
-      tester,
-    ) async {
-      final voice = FakeVoiceRoomGateway(
-        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
-      );
-      final media = _FakeVoiceMediaFactory(log: voice.commands);
-      await pumpCommunityPage(
-        tester,
-        _VoiceRoomBannerHarness(opened: <String>[]),
-        voiceRoom: voice,
-        audioRoomCallFactory: media,
-      );
-      await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'a room that ended while away takes the strip with it, and says so',
+      (tester) async {
+        final voice = FakeVoiceRoomGateway(
+          snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+        );
+        final media = _FakeVoiceMediaFactory(log: voice.commands);
+        await pumpCommunityPage(
+          tester,
+          _VoiceRoomBannerHarness(opened: <String>[]),
+          voiceRoom: voice,
+          audioRoomCallFactory: media,
+        );
+        await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
+        await tester.pumpAndSettle();
 
-      voice.loadSnapshot = testVoiceRoomSnapshot(
-        role: VoiceRoomRole.listener,
-        state: VoiceRoomState.ended,
-      );
-      media.handles.first.emit(AudioRoomLivePhase.disconnected);
-      await tester.pumpAndSettle();
+        voice.loadSnapshot = testVoiceRoomSnapshot(
+          role: VoiceRoomRole.listener,
+          state: VoiceRoomState.ended,
+        );
+        media.handles.first.emit(AudioRoomLivePhase.disconnected);
+        await tester.pumpAndSettle();
 
-      expect(
-        find.byKey(const ValueKey<String>('voiceroom-minimized-banner')),
-        findsNothing,
-      );
-      expect(media.leaveCalls, 1);
-    });
+        expect(
+          find.byKey(const ValueKey<String>('voiceroom-minimized-banner')),
+          findsNothing,
+        );
+        expect(media.leaveCalls, 1);
+        // A marker the reader saw a moment ago cannot simply vanish: the strip
+        // going is the whole visible consequence, so one line accounts for it.
+        expect(find.text('房间已结束 · 主持人已经结束这个语音房'), findsOneWidget);
+      },
+    );
 
     testWidgets('离开 from the strip ends the call and the membership', (
       tester,

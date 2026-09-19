@@ -202,6 +202,11 @@ final class ActiveVoiceMediaController extends Notifier<AudioRoomCallHandle?> {
     }
     try {
       ref.read(voiceRoomSessionProvider.notifier).leave(session.communityId);
+      // The strip disappearing is the whole of what the reader would see, and
+      // a marker that vanishes says nothing about why. One line does.
+      ref
+          .read(voiceRoomEndedNoticeProvider.notifier)
+          .raise(session.communityId);
     } catch (_) {
       // See above.
     }
@@ -277,6 +282,56 @@ final class ActiveVoiceMediaController extends Notifier<AudioRoomCallHandle?> {
 final activeVoiceMediaProvider =
     NotifierProvider<ActiveVoiceMediaController, AudioRoomCallHandle?>(
       ActiveVoiceMediaController.new,
+    );
+
+/// One announcement that a voice room ended while the reader was elsewhere.
+///
+/// The membership goes with the room, and with it the strip that was the only
+/// sign the account was in one. A marker that simply vanishes tells the reader
+/// nothing: the audio stopped, the way back in is gone, and nothing on the
+/// screen accounts for either. This is raised once per room that ended, and
+/// only for a room no page was on screen for — a reader looking at the room
+/// page is already being told by the page.
+@immutable
+final class VoiceRoomEndedNotice {
+  const VoiceRoomEndedNotice({
+    required this.communityId,
+    required this.sequence,
+  });
+
+  final String communityId;
+
+  /// Makes two ends of the same room two announcements. Without it a second
+  /// one would be equal to the first and nothing would be said.
+  final int sequence;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is VoiceRoomEndedNotice &&
+          other.communityId == communityId &&
+          other.sequence == sequence;
+
+  @override
+  int get hashCode => Object.hash(communityId, sequence);
+}
+
+final class VoiceRoomEndedNoticeController
+    extends Notifier<VoiceRoomEndedNotice?> {
+  var _sequence = 0;
+
+  @override
+  VoiceRoomEndedNotice? build() => null;
+
+  void raise(String communityId) {
+    _sequence += 1;
+    state = VoiceRoomEndedNotice(communityId: communityId, sequence: _sequence);
+  }
+}
+
+final voiceRoomEndedNoticeProvider =
+    NotifierProvider<VoiceRoomEndedNoticeController, VoiceRoomEndedNotice?>(
+      VoiceRoomEndedNoticeController.new,
     );
 
 /// One binding observer for the holder, and nothing else.

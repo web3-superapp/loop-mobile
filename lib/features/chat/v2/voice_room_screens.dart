@@ -1382,9 +1382,21 @@ String voiceRoomBannerLabel({
 }
 
 class VoiceRoomMinimizedBanner extends ConsumerStatefulWidget {
-  const VoiceRoomMinimizedBanner({required this.onOpen, super.key});
+  const VoiceRoomMinimizedBanner({
+    required this.onOpen,
+    super.key,
+    this.onTabRoute,
+  });
 
   final ValueChanged<String> onOpen;
+
+  /// Whether the reader is on one of the five tab routes, asked at the moment
+  /// something has to be said.
+  ///
+  /// The strip sits above the router, so its own context is above every tab
+  /// scope and a toast raised from here would always be placed as if there
+  /// were no bar under it. The shell that owns the router answers instead.
+  final bool Function()? onTabRoute;
 
   @override
   ConsumerState<VoiceRoomMinimizedBanner> createState() =>
@@ -1405,6 +1417,25 @@ class _VoiceRoomMinimizedBannerState
 
   @override
   Widget build(BuildContext context) {
+    // A room the host ended takes the membership, and this strip, with it.
+    // Said only by disappearing, that is a marker the reader last saw a
+    // moment ago and cannot account for.
+    ref.listen<VoiceRoomEndedNotice?>(voiceRoomEndedNoticeProvider, (
+      previous,
+      next,
+    ) {
+      if (next == null || next == previous) return;
+      LoopToast.show(
+        context,
+        message: '房间已结束 · 主持人已经结束这个语音房',
+        kind: LoopToastKind.warn,
+        // The five tab routes draw the floating bar, and only on a narrow
+        // layout — the wide one puts a rail beside the page instead.
+        clearsTabBar:
+            (widget.onTabRoute?.call() ?? false) &&
+            MediaQuery.sizeOf(context).width < LoopLayout.railBreakpoint,
+      );
+    });
     final session = ref.watch(voiceRoomSessionProvider);
     final onRoomPage = ref.watch(voiceRoomPagePresenceProvider) > 0;
     if (session == null || onRoomPage) {

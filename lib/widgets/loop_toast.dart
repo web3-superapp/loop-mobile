@@ -28,11 +28,17 @@ abstract final class LoopToast {
   /// the foot of a page; it is not allowed to cover its primary action.
   static const double pageBottomOffset = LoopSpacing.page;
 
+  /// [clearsTabBar] is for the one caller that is not a page: the voice room
+  /// strip sits above the router, so its context is above every tab scope and
+  /// would always read `false`. It tells this directly, from the route the
+  /// router is actually on. Every page leaves it null and is answered by its
+  /// own position in the tree.
   static void show(
     BuildContext context, {
     required String message,
     LoopToastKind kind = LoopToastKind.ok,
     Duration? duration,
+    bool? clearsTabBar,
   }) {
     final host = LoopToastHost.maybeOf(context);
     assert(host != null, 'LoopToastHost is missing above this context.');
@@ -42,7 +48,7 @@ abstract final class LoopToast {
       duration: duration,
       // The host sits above the router and cannot tell which page called it;
       // the caller's own context can.
-      clearsTabBar: LoopTabBarScope.of(context),
+      clearsTabBar: clearsTabBar ?? LoopTabBarScope.of(context),
     );
   }
 }
