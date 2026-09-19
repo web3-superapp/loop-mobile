@@ -278,6 +278,11 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                 // and it is only sent when the server published the command.
                 onMicrophoneEnabled: () => _clearOwnMuteIntent(controller),
                 onReconnectRequested: () => _refreshMediaConnection(controller),
+                // A call the provider stopped is not yet an answer: the
+                // network may have dropped, or the host may have ended the
+                // room. This page owns the room record, so it reads it again
+                // and the surface says nothing about the audio until it does.
+                onCallStopped: controller.refreshRoom,
               ),
           if (widget.expanded) ...<Widget>[
             for (final view in VoiceRoomRosterView.values)
@@ -311,6 +316,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             onLeave: () => _leave(controller),
             onRaise: () => _run(controller.raiseHand, '已举手，等待主持人邀请'),
             onCancel: () => _run(controller.cancelHandRaise, '已取消举手'),
+            onBack: widget.onBack,
           ),
           if (state.failureKind != null)
             LoopNotice(
@@ -701,6 +707,7 @@ class _MediaSection extends StatelessWidget {
     required this.onExitRequested,
     required this.onMicrophoneEnabled,
     required this.onReconnectRequested,
+    required this.onCallStopped,
   });
 
   final String? roomId;
@@ -718,6 +725,11 @@ class _MediaSection extends StatelessWidget {
   /// Runs after the device opened the microphone. The page uses it to clear
   /// the LOOP-side mute intent on its own roster row; it opens nothing.
   final Future<void> Function() onMicrophoneEnabled;
+
+  /// Runs once a call stopped on its own, before the surface says anything
+  /// about it: the page reads the room again, and the room says whether the
+  /// audio can come back at all.
+  final Future<void> Function() onCallStopped;
 
   @override
   Widget build(BuildContext context) {
@@ -758,6 +770,7 @@ class _MediaSection extends StatelessWidget {
         onExitRequested: onExitRequested,
         onMicrophoneEnabled: onMicrophoneEnabled,
         onReconnectRequested: onReconnectRequested,
+        onCallStopped: onCallStopped,
       ),
     );
   }
@@ -1196,6 +1209,7 @@ class _ViewerActions extends StatelessWidget {
     required this.onLeave,
     required this.onRaise,
     required this.onCancel,
+    required this.onBack,
   });
 
   final VoiceRoomPageState state;
@@ -1204,6 +1218,10 @@ class _ViewerActions extends StatelessWidget {
   final Future<void> Function() onRaise;
   final Future<void> Function() onCancel;
 
+  /// The one way out of a room that has ended. Every other control on this
+  /// page belongs to a room that is still running.
+  final VoidCallback? onBack;
+
   @override
   Widget build(BuildContext context) {
     final snapshot = state.snapshot!;
@@ -1211,10 +1229,21 @@ class _ViewerActions extends StatelessWidget {
     final live = snapshot.room.isLive;
     final busy = state.busy || !live;
     if (!live) {
-      return const LoopEmpty(
-        key: ValueKey<String>('voiceroom-ended'),
-        message: '这个语音房已经结束',
-        reason: '房间结束后所有操作都会失效。',
+      // A listener whose audio stopped because the host ended the room must
+      // not be told 「语音已断开」 and offered 「重新连接语音」: there is no
+      // room left to connect to. The room itself says so, and the only thing
+      // left to do here is to go back.
+      return LoopEmpty(
+        key: const ValueKey<String>('voiceroom-ended'),
+        message: '房间已结束',
+        reason: '主持人已经结束这个语音房。',
+        action: onBack == null
+            ? null
+            : LoopButton(
+                key: const ValueKey<String>('voiceroom-ended-back'),
+                label: '返回社区',
+                onPressed: onBack,
+              ),
       );
     }
     if (!viewer.hasJoined) {

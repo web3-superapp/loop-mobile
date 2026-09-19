@@ -8,6 +8,7 @@ import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
+import 'package:loop_mobile/features/chat/calls/stream_foreground_call_view.dart';
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/features/chat/v2/chat_search_screen.dart';
@@ -22,6 +23,7 @@ import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/communication/stream_video_sdk_session.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 import 'support/community_test_harness.dart';
 import 'support/communication_test_harness.dart';
@@ -1724,6 +1726,100 @@ void main() {
       expect(find.text('正在离开语音房…'), findsNothing);
     });
 
+    // The host ends the room and every other device simply stops hearing it.
+    // Told as a dropped connection, the reader is handed 「重新连接语音」 for a
+    // room nobody can enter again.
+    testWidgets('a room the host ended is not a dropped connection', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      final back = <String>[];
+      await pumpCommunityPage(
+        tester,
+        VoiceRoomScreen(
+          communityId: testCommunityId,
+          onBack: () => back.add('back'),
+        ),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+      expect(find.text('语音已连接（测试）'), findsOneWidget);
+
+      // The room record is what tells the two apart, and it now says the host
+      // ended it.
+      voice.loadSnapshot = testVoiceRoomSnapshot(
+        role: VoiceRoomRole.listener,
+        state: VoiceRoomState.ended,
+      );
+      final stop = find.byKey(
+        const ValueKey<String>('fake-media-disconnected'),
+      );
+      await scrollToCommunitySection(tester, stop);
+      await tester.tap(stop);
+      await tester.pumpAndSettle();
+
+      expect(voice.commands, contains('load'));
+      final ended = find.byKey(const ValueKey<String>('voiceroom-ended'));
+      await scrollToCommunitySection(tester, ended);
+      expect(find.text('房间已结束'), findsOneWidget);
+      expect(find.text('主持人已经结束这个语音房。'), findsOneWidget);
+      expect(find.text('语音已断开'), findsNothing);
+      expect(find.text('重新连接语音'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-media-reconnect')),
+        findsNothing,
+      );
+      // The media surface belongs to a room that can be entered; this one
+      // cannot.
+      expect(find.text('语音已连接（测试）'), findsNothing);
+      expect(media.leaveCalls, 1);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('voiceroom-ended-back')),
+      );
+      await tester.pumpAndSettle();
+      expect(back, <String>['back']);
+    });
+
+    testWidgets('a call that stopped on a live room offers the audio back', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+      expect(find.text('语音已连接（测试）'), findsOneWidget);
+
+      final stop = find.byKey(
+        const ValueKey<String>('fake-media-disconnected'),
+      );
+      await scrollToCommunitySection(tester, stop);
+      await tester.tap(stop);
+      await tester.pumpAndSettle();
+
+      // The room is still running, so the membership stands and the audio is
+      // on offer again.
+      expect(voice.commands, contains('load'));
+      expect(voice.commands, isNot(contains('leave')));
+      final disconnected = find.text('语音已断开');
+      await scrollToCommunitySection(tester, disconnected);
+      expect(disconnected, findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-media-reconnect')),
+        findsOneWidget,
+      );
+      expect(find.text('房间已结束'), findsNothing);
+    });
+
     testWidgets('hanging up inside the call is the same single exit', (
       tester,
     ) async {
@@ -2259,6 +2355,39 @@ void main() {
       expect(opened, <String>[testCommunityId]);
     });
 
+    // A banner for a room that no longer exists takes the reader back to a
+    // page with nothing on it.
+    testWidgets('a room that ended takes the banner with it', (tester) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        _VoiceRoomBannerHarness(opened: <String>[]),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+
+      voice.loadSnapshot = testVoiceRoomSnapshot(
+        role: VoiceRoomRole.listener,
+        state: VoiceRoomState.ended,
+      );
+      final stop = find.byKey(
+        const ValueKey<String>('fake-media-disconnected'),
+      );
+      await scrollToCommunitySection(tester, stop);
+      await tester.tap(stop);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-minimized-banner')),
+        findsNothing,
+      );
+    });
+
     testWidgets('leaving the room takes the banner with it', (tester) async {
       final voice = FakeVoiceRoomGateway(
         snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
@@ -2477,6 +2606,24 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
             participantCount: null,
           ),
           child: const Text('报告连接但未统计'),
+        ),
+        // Stands in for the provider stopping this call with nobody putting
+        // it back. The status goes through the same policy the official view
+        // applies, so the page is driven by a call state and not by a
+        // callback a test decided to fire.
+        TextButton(
+          key: const ValueKey<String>('fake-media-disconnected'),
+          onPressed: () {
+            if (StreamCallDisconnectPolicy.collapses(
+              status: CallStatus.disconnected(
+                DisconnectReason.reconnectionFailed(),
+              ),
+              retirementStarted: retirementStarted,
+            )) {
+              onDisconnected?.call();
+            }
+          },
+          child: const Text('断开'),
         ),
         TextButton(
           key: const ValueKey<String>('fake-hangup'),

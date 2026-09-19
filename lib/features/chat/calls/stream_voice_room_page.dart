@@ -27,6 +27,7 @@ class StreamVoiceRoomPage extends ConsumerWidget {
     this.onExitRequested,
     this.onMicrophoneEnabled,
     this.onReconnectRequested,
+    this.onCallStopped,
     this.viewerRole,
   });
 
@@ -75,6 +76,19 @@ class StreamVoiceRoomPage extends ConsumerWidget {
   /// waits for it and then connects.
   final Future<void> Function()? onReconnectRequested;
 
+  /// Asked once a call stopped on its own, before this surface says anything
+  /// about it.
+  ///
+  /// A call can stop because the network went away, and it can stop because
+  /// the host ended the room. Those are opposite answers — one is 「重新连接
+  /// 语音」, the other is a room that no longer exists — and the provider's
+  /// disconnection does not tell them apart. The page that owns the room reads
+  /// the room record again; a room that ended stops being joinable, so this
+  /// surface is taken off the screen by the page instead of offering a
+  /// connection to a room nobody can enter. Until the answer lands, nothing
+  /// here offers the audio back.
+  final Future<void> Function()? onCallStopped;
+
   /// The part LOOP granted this account. It decides what the surface says
   /// about the microphone and about the way out; it grants nothing.
   final AudioRoomViewerRole? viewerRole;
@@ -104,6 +118,7 @@ class StreamVoiceRoomPage extends ConsumerWidget {
       link: link,
       onExitRequested: onExitRequested,
       onMicrophoneEnabled: onMicrophoneEnabled,
+      onCallStopped: onCallStopped,
       viewerRole: viewerRole,
       presence: ref.read(audioRoomLivePresenceProvider.notifier),
       principalKey: principalKey,
@@ -151,6 +166,7 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
     required this.link,
     required this.onExitRequested,
     required this.onMicrophoneEnabled,
+    required this.onCallStopped,
     required this.viewerRole,
     required this.presence,
     required this.principalKey,
@@ -167,6 +183,10 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
   final VoiceMediaLink? link;
   final Future<void> Function()? onExitRequested;
   final Future<void> Function()? onMicrophoneEnabled;
+
+  /// Re-reads the room after a call stopped on its own. See
+  /// [StreamVoiceRoomPage.onCallStopped].
+  final Future<void> Function()? onCallStopped;
   final AudioRoomViewerRole? viewerRole;
 
   /// Where this surface publishes the call's own head count.
@@ -225,6 +245,15 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   /// second attempt. Nothing connects during it: the old call is exactly the
   /// one that was refused.
   var _refreshingConnection = false;
+
+  /// True from the moment a call stopped on its own until the room record has
+  /// been read again.
+  ///
+  /// A dropped network and a room the host ended arrive here as the same
+  /// provider disconnection, and only one of them has 「重新连接语音」 as an
+  /// answer. Offering it before the room was read again put a connect button
+  /// under a room that no longer exists.
+  var _verifyingRoom = false;
   String? _joinError;
   ({AudioRoomLivePhase phase, int? participantCount})? _reportedPresence;
 
@@ -395,11 +424,13 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       autoConnectSuspended: _autoConnectSuspended,
       refreshingConnection: _refreshingConnection,
       exiting: _exiting,
+      verifyingRoom: _verifyingRoom,
     );
     final joinEnabled =
         content.ready &&
         !_joining &&
         !_refreshingConnection &&
+        !_verifyingRoom &&
         !_cleanupPending &&
         !_cleanupFailed;
     if (widget.autoConnect && joinEnabled && !content.reconnect) {
@@ -830,11 +861,18 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   /// The call itself is retired through the one cleanup path this surface
   /// has. That leave is single-flight inside the handle, so a call the SDK
   /// already took down is not left a second time.
+  ///
+  /// Which of the two lobbies the reader gets is not this surface's to decide:
+  /// a call also stops because the host ended the room, and 「重新连接语音」 is
+  /// then an answer to a room that is gone. The page is asked to read the room
+  /// again first ([_StreamVoiceRoomSurface.onCallStopped]); until it answers,
+  /// nothing here offers the audio back.
   void _retireStoppedCall() {
     if (!mounted ||
         _leaving ||
         _exiting ||
         _cleanupPending ||
+        _verifyingRoom ||
         _refreshingConnection) {
       return;
     }
@@ -859,8 +897,34 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       // the audio back is the reader's decision, so the ready lobby does not
       // connect again on its own.
       _autoConnectSuspended = true;
+      // Whether the audio can come back at all is the room's answer, not this
+      // surface's. Until the page has read the room again nothing here offers
+      // a connection.
+      _verifyingRoom = widget.onCallStopped != null;
     });
     unawaited(_completeCleanup(handles, cleanupGeneration));
+    unawaited(_verifyRoom());
+  }
+
+  /// Waits for the page's own read of the room after a call stopped.
+  ///
+  /// The page owns the room record, so it is the one that can tell a dropped
+  /// network from a room the host ended: a room that came back `ended` is no
+  /// longer joinable and the page takes this surface off the screen, and a
+  /// room that is still live keeps the disconnection lobby with the audio on
+  /// offer. A read that could not finish says neither, and the surface falls
+  /// back to the disconnection it can see for itself.
+  Future<void> _verifyRoom() async {
+    final verify = widget.onCallStopped;
+    if (verify == null) return;
+    try {
+      await verify();
+    } catch (_) {
+      // The page states a read it could not finish in its own block; this
+      // surface only reports what the connection did.
+    }
+    if (!mounted || !_verifyingRoom) return;
+    setState(() => _verifyingRoom = false);
   }
 
   void _retireForBackground() {
@@ -1054,6 +1118,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     required bool autoConnectSuspended,
     required bool refreshingConnection,
     required bool exiting,
+    required bool verifyingRoom,
   }) {
     if (exiting) {
       // The reader asked to go and is waiting for it. Nothing here offers a
@@ -1063,6 +1128,17 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
         title: '正在离开语音房…',
         message: '这次通话已经断开，正在把离开记到 LOOP 的房间记录里。',
         icon: Icons.logout_rounded,
+        loading: true,
+      );
+    }
+    if (verifyingRoom) {
+      // A dropped network and a room the host ended arrive here as the same
+      // disconnection. 「重新连接语音」 answers only one of them, so it is not
+      // offered until the room itself has answered.
+      return const _StreamVoiceContent(
+        title: '语音已断开，正在确认房间',
+        message: '正在确认这个语音房是否还在进行，之后再决定能不能把语音接回来。',
+        icon: Icons.sync_rounded,
         loading: true,
       );
     }

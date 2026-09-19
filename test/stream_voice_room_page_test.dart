@@ -918,6 +918,55 @@ void main() {
     expect(find.text('Official CallState view'), findsNothing);
   });
 
+  // A dropped network and a room the host ended arrive as the same provider
+  // disconnection, and only one of them has 「重新连接语音」 as an answer.
+  testWidgets('a stopped call offers nothing until the room was read again', (
+    tester,
+  ) async {
+    final handle = _RecordingAudioRoomCall(roomId: 'loop-daily');
+    final factory = _RecordingAudioRoomCallFactory(handle);
+    final read = Completer<void>();
+    var reads = 0;
+
+    await tester.pumpWidget(
+      _readyPage(
+        factory: factory,
+        target: _target('loop-daily'),
+        autoConnect: true,
+        onCallStopped: () {
+          reads += 1;
+          return read.future;
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Official CallState view'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('fake-media-disconnected')));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    // The call is down and the room is being read. Nothing here says which
+    // lobby this is yet, and nothing offers the audio back.
+    expect(reads, 1);
+    expect(handle.leaveCalls, 1);
+    expect(find.text('语音已断开，正在确认房间'), findsOneWidget);
+    expect(find.text('语音已断开'), findsNothing);
+    expect(find.text('重新连接语音'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('voiceroom-media-reconnect')),
+      findsNothing,
+    );
+
+    // The page answered with a room that is still live, so the audio is on
+    // offer again and the connection is not made behind the reader.
+    read.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('语音已断开'), findsOneWidget);
+    expect(find.text('重新连接语音'), findsOneWidget);
+    expect(handle.joinCalls, 1);
+  });
+
   testWidgets('the page exit takes the call down and keeps it down', (
     tester,
   ) async {
@@ -995,6 +1044,7 @@ Widget _readyPage({
   VoiceMediaLink? link,
   AudioRoomViewerRole? viewerRole,
   Future<void> Function()? onReconnectRequested,
+  Future<void> Function()? onCallStopped,
 }) {
   return ProviderScope(
     overrides: [
@@ -1018,6 +1068,7 @@ Widget _readyPage({
                 link: link,
                 viewerRole: viewerRole,
                 onReconnectRequested: onReconnectRequested,
+                onCallStopped: onCallStopped,
               ),
             )
           : const StreamVoiceRoomPage(),
