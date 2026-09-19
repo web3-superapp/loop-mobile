@@ -66,6 +66,8 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_coordinator.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.dart';
 import 'package:loop_mobile/integrations/communication/communication_gateway.dart';
+import 'package:loop_mobile/integrations/communication/loop_chat_image_attachments.dart';
+import 'package:loop_mobile/integrations/communication/loop_chat_image_composer.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_presence.dart';
@@ -76,7 +78,6 @@ import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart'
     show
-        DefaultStreamMessageComposer,
         StreamChat,
         StreamChatConfigurationData,
         StreamComponentBuilders,
@@ -88,14 +89,11 @@ final _loopStreamComponentBuilders = StreamComponentBuilders(
   // `*` and `_`; this one prints what the member typed, on band 4.
   messageText: loopStreamMessageTextBuilder,
   extensions: streamChatComponentBuilders(
-    messageComposer: (context, props) => DefaultStreamMessageComposer(
-      props: props.copyWith(
-        // Platform permissions and attachment policy are intentionally not
-        // fabricated. Text messaging remains available through official UI.
-        disableAttachments: true,
-        enableVoiceRecording: false,
-      ),
-    ),
+    // S45: a member may send pictures. The composer is the official one,
+    // behind LOOP's own gate — images only, four formats, 10 MB each, nine per
+    // message — and LOOP's refusal copy. Voice recording stays off: LOOP has
+    // proven no recording capability and claims none.
+    messageComposer: (context, props) => LoopChatImageComposer(props: props),
     messageItem: loopStreamGroupMessageItemBuilder,
     mentionItem: loopStreamGroupMentionItemBuilder,
     // Decision 0065: LOOP prints a 24-hour clock, so the footer's timestamp
@@ -104,6 +102,16 @@ final _loopStreamComponentBuilders = StreamComponentBuilders(
     // C-15 (2): the prototype's `.msg-who` sits above the bubble, beside the
     // avatar — not in the metadata row under it.
     messageHeader: loopStreamMessageHeaderBuilder,
+    // S45: a picture that will not load says so in Chinese instead of
+    // printing the CDN address it failed to fetch, and is bounded by LOOP's
+    // own ceiling rather than Stream's.
+    imageAttachment: loopStreamImageAttachmentBuilder,
+    galleryAttachment: loopStreamGalleryAttachmentBuilder,
+    // S45: the full-screen view is LOOP chrome over Stream's zoom and paging.
+    // Stream's own viewer offers share and save, which download through a Dio
+    // client LOOP does not own; neither capability is proven, so neither is
+    // offered.
+    mediaGalleryPreview: loopStreamMediaGalleryPreviewBuilder,
   ),
 );
 

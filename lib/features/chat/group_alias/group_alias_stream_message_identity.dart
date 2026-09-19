@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
+import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
@@ -359,6 +360,9 @@ class _LoopStreamGroupChannelPageState
       messageComposerController: _composerController,
       onQuotedMessageCleared: _composerController.clearQuotedMessage,
       enableVoiceRecording: false,
+      allowedAttachmentPickerTypes: loopChatImagePickerTypes,
+      attachmentLimit: loopChatImageMaxCount,
+      useSystemAttachmentPicker: true,
     );
 
     return StreamScaffold(
@@ -464,6 +468,9 @@ class _LoopStreamGroupThreadPageState
             focusNode: _focusNode,
             messageComposerController: _composerController,
             enableVoiceRecording: false,
+            allowedAttachmentPickerTypes: loopChatImagePickerTypes,
+            attachmentLimit: loopChatImageMaxCount,
+            useSystemAttachmentPicker: true,
           );
     return StreamScaffold(
       appBar: StreamThreadHeader(parent: widget.parent, subtitle: subtitle),

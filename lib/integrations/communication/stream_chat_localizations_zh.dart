@@ -134,25 +134,25 @@ class LoopStreamChatAccessibilityTranslations
       '暂停语音，${formatDuration(duration)}';
 
   @override
-  String get attachmentPickerTooltip => '附件';
+  String get attachmentPickerTooltip => '图片';
 
   @override
-  String get attachmentPickerOpenHint => '打开附件面板';
+  String get attachmentPickerOpenHint => '打开图片面板';
 
   @override
-  String get attachmentPickerCloseHint => '关闭附件面板';
+  String get attachmentPickerCloseHint => '关闭图片面板';
 
   @override
-  String get attachmentPickerOpenTapHint => '点按打开附件面板';
+  String get attachmentPickerOpenTapHint => '点按打开图片面板';
 
   @override
-  String get attachmentPickerCloseTapHint => '点按关闭附件面板';
+  String get attachmentPickerCloseTapHint => '点按关闭图片面板';
 
   @override
-  String get attachmentPickerOpenedAnnouncement => '附件面板已打开';
+  String get attachmentPickerOpenedAnnouncement => '图片面板已打开';
 
   @override
-  String get attachmentPickerClosedAnnouncement => '附件面板已关闭';
+  String get attachmentPickerClosedAnnouncement => '图片面板已关闭';
 
   @override
   String voiceRecordingAttachmentLabel({Duration? duration}) =>
@@ -160,14 +160,14 @@ class LoopStreamChatAccessibilityTranslations
 
   @override
   String videoAttachmentLabel({String? title}) =>
-      title == null ? '视频附件' : '视频附件，$title';
+      title == null ? '视频' : '视频，$title';
 
   @override
-  String get gifAttachmentLabel => '动图附件';
+  String get gifAttachmentLabel => '动图';
 
   @override
   String imageAttachmentLabel({String? title}) =>
-      title == null ? '图片附件' : '图片附件，$title';
+      title == null ? '图片' : '图片，$title';
 
   @override
   String get voiceRecordingPlayTooltip => '播放语音';
@@ -270,47 +270,47 @@ class LoopStreamChatAccessibilityTranslations
   String get recordingCompletedAnnouncement => '录音已完成';
 
   @override
-  String get imageAttachmentAddedAnnouncement => '已添加图片附件';
+  String get imageAttachmentAddedAnnouncement => '已添加图片';
 
   @override
-  String get imageAttachmentRemovedAnnouncement => '已移除图片附件';
+  String get imageAttachmentRemovedAnnouncement => '已移除图片';
 
   @override
-  String get videoAttachmentAddedAnnouncement => '已添加视频附件';
+  String get videoAttachmentAddedAnnouncement => '已添加视频';
 
   @override
-  String get videoAttachmentRemovedAnnouncement => '已移除视频附件';
+  String get videoAttachmentRemovedAnnouncement => '已移除视频';
 
   @override
-  String get gifAttachmentAddedAnnouncement => '已添加动图附件';
+  String get gifAttachmentAddedAnnouncement => '已添加动图';
 
   @override
-  String get gifAttachmentRemovedAnnouncement => '已移除动图附件';
+  String get gifAttachmentRemovedAnnouncement => '已移除动图';
 
   @override
-  String get fileAttachmentAddedAnnouncement => '已添加文件附件';
+  String get fileAttachmentAddedAnnouncement => '已添加文件';
 
   @override
-  String get fileAttachmentRemovedAnnouncement => '已移除文件附件';
+  String get fileAttachmentRemovedAnnouncement => '已移除文件';
 
   @override
-  String get voiceRecordingAttachmentAddedAnnouncement => '已添加语音附件';
+  String get voiceRecordingAttachmentAddedAnnouncement => '已添加语音';
 
   @override
-  String get voiceRecordingAttachmentRemovedAnnouncement => '已移除语音附件';
+  String get voiceRecordingAttachmentRemovedAnnouncement => '已移除语音';
 
   @override
-  String get attachmentAddedAnnouncement => '已添加附件';
+  String get attachmentAddedAnnouncement => '已添加图片';
 
   @override
-  String get attachmentRemovedAnnouncement => '已移除附件';
+  String get attachmentRemovedAnnouncement => '已移除图片';
 
   @override
-  String attachmentsAddedAnnouncement({required int count}) => '已添加 $count 个附件';
+  String attachmentsAddedAnnouncement({required int count}) => '已添加 $count 张图片';
 
   @override
   String attachmentsRemovedAnnouncement({required int count}) =>
-      '已移除 $count 个附件';
+      '已移除 $count 张图片';
 
   @override
   String formatDateTime(DateTime dateTime) =>
@@ -388,7 +388,7 @@ class LoopStreamChatLocalizations implements StreamChatLocalizations {
   String attachmentsUploadProgressText({
     required int completed,
     required int total,
-  }) => '已上传 $completed / $total …';
+  }) => '图片上传中 $completed / $total …';
 
   @override
   String pinnedByUserText({required User pinnedBy, required User currentUser}) {
@@ -467,22 +467,22 @@ class LoopStreamChatLocalizations implements StreamChatLocalizations {
 
   @override
   String fileTooLargeAfterCompressionError(double limitInMB) =>
-      '文件过大，无法上传。上限是 $limitInMB MB，压缩后仍然超出。';
+      '这张图片超过 $limitInMB MB，没有加进来。';
 
   @override
-  String fileTooLargeError(double limitInMB) => '文件过大，无法上传。上限是 $limitInMB MB。';
+  String fileTooLargeError(double limitInMB) => '这张图片超过 $limitInMB MB，没有加进来。';
 
   @override
   String fileTypeNotSupportedError(String? extension) {
-    if (extension != null) return '不支持上传 .$extension 文件。';
-    return '不支持上传这种文件类型。';
+    if (extension != null) return '不支持 .$extension，只能发 JPG、PNG、WebP、GIF 图片。';
+    return '只能发 JPG、PNG、WebP、GIF 图片。';
   }
 
   @override
-  String get couldNotReadBytesFromFileError => '无法读取该文件的内容。';
+  String get couldNotReadBytesFromFileError => '读不到这张图片的内容，没有加进来。';
 
   @override
-  String get addAFileLabel => '添加文件';
+  String get addAFileLabel => '添加图片';
 
   @override
   String get photoFromCameraLabel => '拍照';
@@ -491,7 +491,7 @@ class LoopStreamChatLocalizations implements StreamChatLocalizations {
   String get uploadAFileLabel => '上传文件';
 
   @override
-  String get uploadAPhotoLabel => '上传图片';
+  String get uploadAPhotoLabel => '从相册选择图片';
 
   @override
   String get uploadAVideoLabel => '上传视频';
@@ -524,7 +524,7 @@ class LoopStreamChatLocalizations implements StreamChatLocalizations {
   String get genericErrorDescription => '出了点问题，请稍后再试';
 
   @override
-  String get addMoreFilesLabel => '继续添加';
+  String get addMoreFilesLabel => '继续添加图片';
 
   @override
   String get enablePhotoAndVideoAccessMessage => '请允许访问相册\n才能把图片和视频分享给好友。';
@@ -686,7 +686,7 @@ class LoopStreamChatLocalizations implements StreamChatLocalizations {
   String get saveVideoLabel => '保存视频';
 
   @override
-  String get uploadErrorLabel => '上传失败';
+  String get uploadErrorLabel => '图片没有上传成功';
 
   @override
   String get giphyLabel => 'Giphy';
@@ -710,7 +710,7 @@ class LoopStreamChatLocalizations implements StreamChatLocalizations {
   String galleryPaginationText({
     required int currentPage,
     required int totalPages,
-  }) => '${currentPage + 1} / $totalPages';
+  }) => '第 ${currentPage + 1} 张 / 共 $totalPages 张';
 
   @override
   String get fileText => '文件';
@@ -731,7 +731,8 @@ class LoopStreamChatLocalizations implements StreamChatLocalizations {
   String get viewLibrary => '查看相册';
 
   @override
-  String attachmentLimitExceedError(int limit) => '附件数量超出上限：最多只能添加 $limit 个附件';
+  String attachmentLimitExceedError(int limit) =>
+      '一条消息最多 $limit 张图片，多出来的没有加进来。';
 
   @override
   String get downloadLabel => '下载';
@@ -1048,7 +1049,7 @@ class LoopStreamChatLocalizations implements StreamChatLocalizations {
   String get openFilesLabel => '打开文件';
 
   @override
-  String get unsupportedAttachmentLabel => '不支持的附件';
+  String get unsupportedAttachmentLabel => '这条消息里有打不开的内容';
 
   @override
   String get confirmLabel => '确认';

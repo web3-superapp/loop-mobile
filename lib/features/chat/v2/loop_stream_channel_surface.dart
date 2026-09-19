@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_server_clock.dart';
+import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_outgoing_message_order.dart';
 import 'package:loop_mobile/integrations/communication/stream_server_clock_source.dart';
@@ -21,8 +22,8 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 /// LOOP owns only the locator, the chrome and the copy. Message history,
 /// pagination, delivery state, read state, threads, reactions and the composer
 /// stay with the official Stream widgets, so no LOOP DTO ever mirrors a
-/// provider fact. Attachments and voice recording are disabled application
-/// wide; this surface only restates the composer placeholder.
+/// provider fact. The composer sends text and pictures; voice recording is
+/// disabled application wide. This surface only restates the placeholder.
 class LoopStreamChannelSurface extends ConsumerWidget {
   const LoopStreamChannelSurface({
     required this.cid,
@@ -413,10 +414,14 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
           onQuotedMessageCleared: _composerController.clearQuotedMessage,
           preMessageSending: _beforeSend,
           onMessageSent: _afterSend,
-          // Attachments and voice recording stay off: LOOP claims no upload,
-          // permission or recording capability in this step.
-          disableAttachments: true,
+          // Pictures go through the one gate in `loop_chat_image_composer.dart`
+          // — images only, 10 MB, nine per message — which the component
+          // builder applies to every composer, including this one. Voice
+          // recording stays off: LOOP has proven no recording capability.
           enableVoiceRecording: false,
+          allowedAttachmentPickerTypes: loopChatImagePickerTypes,
+          attachmentLimit: loopChatImageMaxCount,
+          useSystemAttachmentPicker: true,
           placeholderBuilder: (context, placeholder) => widget.composerHint,
         ),
       ],

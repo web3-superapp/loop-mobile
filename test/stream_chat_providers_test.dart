@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
+import 'package:loop_mobile/integrations/communication/loop_chat_image_composer.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_sdk_session.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
@@ -122,14 +123,38 @@ void main() {
     final composer = composerBuilder!(
       tester.element(find.byType(StreamChat)),
       const MessageComposerProps(
-        disableAttachments: false,
+        disableAttachments: true,
         enableVoiceRecording: true,
+        attachmentLimit: 30,
       ),
     );
-    expect(composer, isA<DefaultStreamMessageComposer>());
-    final props = (composer as DefaultStreamMessageComposer).props;
-    expect(props.disableAttachments, isTrue);
+    // S45: every composer in the application goes through LOOP's image gate,
+    // whichever props the call site passed.
+    expect(composer, isA<LoopChatImageComposer>());
+    final props = loopChatImageComposerProps(
+      (composer as LoopChatImageComposer).props,
+    );
+    expect(props.disableAttachments, isFalse);
     expect(props.enableVoiceRecording, isFalse);
+    expect(props.useSystemAttachmentPicker, isTrue);
+    expect(props.allowedAttachmentPickerTypes, <AttachmentPickerType>[
+      AttachmentPickerType.images,
+    ]);
+    expect(props.attachmentLimit, 9);
+
+    final attachmentBuilders = streamChat.componentBuilders;
+    expect(
+      attachmentBuilders?.extension<StreamImageAttachmentProps>(),
+      isNotNull,
+    );
+    expect(
+      attachmentBuilders?.extension<StreamGalleryAttachmentProps>(),
+      isNotNull,
+    );
+    expect(
+      attachmentBuilders?.extension<StreamMediaGalleryPreviewProps>(),
+      isNotNull,
+    );
   });
 
   testWidgets('an empty Stream key never mounts an SDK scope', (tester) async {

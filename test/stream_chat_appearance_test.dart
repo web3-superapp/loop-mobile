@@ -192,6 +192,11 @@ void main() {
       const List<String> allowed = <String>[
         'Stream Chat',
         'Giphy',
+        // The four image formats LOOP sends. A format identifier is its own
+        // name; 「联合图像专家组」 would not tell a member anything.
+        'JPG',
+        'PNG',
+        'WebP',
         'GIF',
         'MB',
         'zh_Hans',
@@ -233,14 +238,14 @@ void main() {
       expect(a11y.messageDeliveredStatusLabel, '已送达');
       expect(a11y.messageSentStatusLabel, '已发送');
       expect(a11y.messageSendingStatusLabel, '发送中');
-      expect(a11y.attachmentPickerTooltip, '附件');
-      expect(a11y.attachmentPickerOpenedAnnouncement, '附件面板已打开');
+      expect(a11y.attachmentPickerTooltip, '图片');
+      expect(a11y.attachmentPickerOpenedAnnouncement, '图片面板已打开');
       expect(a11y.recordingStartedAnnouncement, '开始录音');
-      expect(a11y.attachmentsAddedAnnouncement(count: 3), '已添加 3 个附件');
+      expect(a11y.attachmentsAddedAnnouncement(count: 3), '已添加 3 张图片');
       expect(a11y.unreadMessagesLabel(count: 2), '2 条未读');
       expect(a11y.slowModeTooltip(seconds: 5), '慢速模式，还需等待 5 秒');
-      expect(a11y.imageAttachmentLabel(), '图片附件');
-      expect(a11y.imageAttachmentLabel(title: 'a.png'), '图片附件，a.png');
+      expect(a11y.imageAttachmentLabel(), '图片');
+      expect(a11y.imageAttachmentLabel(title: 'a.png'), '图片，a.png');
       expect(a11y.formatDuration(const Duration(seconds: 9)), '9 秒');
       expect(
         a11y.formatDuration(const Duration(minutes: 2, seconds: 5)),
