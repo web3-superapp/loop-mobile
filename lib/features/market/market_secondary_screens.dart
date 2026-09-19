@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
@@ -13,6 +14,8 @@ import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_read_gateway.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
+import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
+import 'package:loop_mobile/features/market/watchlist/watchlist_membership_controller.dart';
 import 'package:loop_mobile/features/market/token_screen.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -562,6 +565,13 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
                           // tap that would open nothing.
                           if (pair.poolRef is MarketPoolIdRef)
                             'Uniswap V4 池 · 暂不支持详情',
+                          // The watchlist holds registry assets. A pool whose
+                          // base token the registry does not carry has nothing
+                          // to add, and the row says so rather than offering a
+                          // star that would be refused.
+                          if (pair.poolRef is MarketPoolAddressRef &&
+                              pair.registryAssetId == null)
+                            '暂不支持加自选',
                           // A zero quote address is the coin itself, not a
                           // missing token.
                           if (pair.quotesNativeCoin) '计价 BNB',
@@ -587,6 +597,11 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
                           if (pair.volumeH24Usd == null) '24 小时成交额暂时读不到',
                         ].join(' · '),
                         subtitleMaxLines: 2,
+                        trailingBadge: pair.registryAssetId == null
+                            ? null
+                            : _NewPairWatchAction(
+                                assetId: pair.registryAssetId!,
+                              ),
                         trailing: pair.volumeH24Usd == null
                             ? null
                             : loopFormatCompactFigure(
@@ -633,6 +648,62 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
           tone: LoopNoticeTone.warn,
         ),
       ],
+    );
+  }
+}
+
+/// The 加自选 action on one 新币发现 row.
+///
+/// The row could only be read before this. It writes through the same
+/// controller the Token page's star does, so both say the same thing about
+/// the same outcome, and it appears only where LOOP already knows which
+/// registry asset the row's base token is: an address alone is not an asset
+/// id, and the write would be refused as an unregistered asset.
+///
+/// The list is not read when the page opens. One document holds every
+/// membership on this screen, and reading it once per row would be a hundred
+/// reads of the same thing; the star therefore starts in its third state —
+/// not known — and the first press reads before it writes, which is the
+/// behaviour the star already documents.
+class _NewPairWatchAction extends ConsumerWidget {
+  const _NewPairWatchAction({required this.assetId});
+
+  final String assetId;
+
+  Future<void> _toggle(BuildContext context, WidgetRef ref) async {
+    final result = await ref
+        .read(watchlistMembershipControllerProvider(assetId).notifier)
+        .toggle();
+    if (!context.mounted) return;
+    showWatchlistToggleToast(context, result);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // The watchlist is a different resource from the market read this page
+    // ran on: its own capability and its own gateway decide this control, so
+    // a market outage never claims an asset is unwatched.
+    final capability = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.watchlist),
+    );
+    final mode = ref.watch(watchlistGatewayProvider).mode;
+    final membership = ref.watch(
+      watchlistMembershipControllerProvider(assetId),
+    );
+    final blocked =
+        loopChainCapabilityBlocks(mode, capability) ||
+        membership.phase == LoopChainViewPhase.unavailable;
+    return LoopIconButton(
+      key: ValueKey<String>('new-pair-watchlist-$assetId'),
+      icon: 'star',
+      label: blocked ? '自选当前不可用' : membership.actionLabel,
+      color: membership.isWatched ? LoopColors.lime : null,
+      // An unread list has no on/off state to report; claiming `false` would
+      // say the asset is not watched.
+      toggled: blocked || !membership.isKnown ? null : membership.isWatched,
+      onPressed: blocked || membership.busy
+          ? null
+          : () => unawaited(_toggle(context, ref)),
     );
   }
 }

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
+import 'package:loop_mobile/features/market/watchlist/watchlist_membership_controller.dart';
+import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -149,5 +151,46 @@ class MarketSegmentBar extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Says what one watchlist press did, wherever it was pressed.
+///
+/// The star on the Token page and the 加自选 action on 新币发现 write through the
+/// same controller, so they say the same thing about the same outcome: the two
+/// limit refusals were composed on device and name the limit, and only a
+/// failure carries a server reason.
+void showWatchlistToggleToast(
+  BuildContext context,
+  WatchlistToggleResult result,
+) {
+  switch (result.outcome) {
+    case WatchlistToggleOutcome.added:
+      LoopToast.show(context, message: '已加入自选', kind: LoopToastKind.ok);
+    case WatchlistToggleOutcome.removed:
+      LoopToast.show(context, message: '已移出自选', kind: LoopToastKind.ok);
+    // Refused on device, so the sentence names the limit rather than the
+    // server's `VALIDATION_FAILED`, which is about an unregistered asset.
+    case WatchlistToggleOutcome.itemLimitReached:
+      LoopToast.show(
+        context,
+        message: '自选已达 $watchlistMaxItems 项，先在自选管理里移除一个再加入。',
+        kind: LoopToastKind.warn,
+      );
+    case WatchlistToggleOutcome.groupLimitReached:
+      LoopToast.show(
+        context,
+        message:
+            '分组已达 $watchlistMaxGroups 个，无法新建默认分组「$watchlistDefaultGroupName」。',
+        kind: LoopToastKind.warn,
+      );
+    case WatchlistToggleOutcome.failed:
+      LoopToast.show(
+        context,
+        message: result.failureKind == LoopChainFailureKind.versionConflict
+            ? '自选已在其他设备上改动，这次没有保存。请重试。'
+            : loopChainFailureReason(result.failureKind),
+        kind: LoopToastKind.err,
+      );
   }
 }
