@@ -133,6 +133,18 @@ abstract interface class AudioRoomCallHandle {
 
   bool get retirementStarted;
 
+  /// What this call is doing right now.
+  AudioRoomCallReading get reading;
+
+  /// Every change to [reading], for as long as this call exists.
+  ///
+  /// The mounted call view reads the provider's state for itself. Everything
+  /// else — the strip that says the account is still in a room while the
+  /// reader looks at another tab, and whoever holds the call across a page
+  /// that came off the screen — has no view to read it from, and a reading
+  /// taken before the page closed is not what the call is doing now.
+  Stream<AudioRoomCallReading> get readings;
+
   Future<void> joinMuted();
 
   Future<bool> setMicrophoneEnabled({required bool enabled});
@@ -352,6 +364,25 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
 
   @override
   bool get retirementStarted => _commands.retirementStarted;
+
+  @override
+  AudioRoomCallReading get reading => _readingOf(_call.state.value);
+
+  @override
+  Stream<AudioRoomCallReading> get readings => _call.partialState(_readingOf);
+
+  /// The same figures the call panel prints, from the same official state.
+  static AudioRoomCallReading _readingOf(CallState state) {
+    final connected = state.status.isConnected;
+    return AudioRoomCallReading(
+      phase: StreamCallStatusPresentation.livePhase(state.status),
+      participantCount: StreamCallParticipantPresentation.liveCount(
+        connected: connected,
+        participantCount: state.participantCount,
+        knownParticipants: state.callParticipants.length,
+      ),
+    );
+  }
 
   @override
   Future<void> joinMuted() async {

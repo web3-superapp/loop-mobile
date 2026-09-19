@@ -1147,6 +1147,25 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
   int suspendAudioCalls = 0;
   final List<String> microphoneCommandLog = <String>[];
 
+  final StreamController<AudioRoomCallReading> _readings =
+      StreamController<AudioRoomCallReading>.broadcast();
+  AudioRoomCallReading _reading = const AudioRoomCallReading(
+    phase: AudioRoomLivePhase.connecting,
+    participantCount: null,
+  );
+
+  @override
+  AudioRoomCallReading get reading => _reading;
+
+  @override
+  Stream<AudioRoomCallReading> get readings => _readings.stream;
+
+  /// Stands in for the provider's call state moving on its own.
+  void emit(AudioRoomCallReading reading) {
+    _reading = reading;
+    _readings.add(reading);
+  }
+
   @override
   bool get retirementStarted => _commands.retirementStarted;
 
@@ -1202,6 +1221,15 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
   }
 
   void _reportStatus(CallStatus status, VoidCallback? onDisconnected) {
+    // One official status, read the two ways production reads it: the handle
+    // publishes it for everything outside the call view, and the view applies
+    // the collapse policy for the page it is mounted in.
+    emit(
+      AudioRoomCallReading(
+        phase: StreamCallStatusPresentation.livePhase(status),
+        participantCount: null,
+      ),
+    );
     if (StreamCallDisconnectPolicy.collapses(
       status: status,
       retirementStarted: retirementStarted,

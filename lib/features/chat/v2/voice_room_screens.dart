@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/chat/calls/active_voice_media.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_link.dart';
@@ -1353,79 +1354,245 @@ class _ViewerActions extends StatelessWidget {
 /// The strip used to print 「上次观察 N 人」 — a reading taken at some earlier
 /// moment, which on the review device was 「上次观察 0 人」 under a banner
 /// saying the reader was in the room.
+///
+/// The call now outlives the page, so the strip carries what it is doing: a
+/// connection that is being made, one that is being put back, and one that
+/// stopped each say so. A strip that stated 「N 人已加入」 through all of them
+/// was the reason 「稳定态永远是已加入」 had to be the rule — there was nothing
+/// else it could know once the page closed.
 String voiceRoomBannerLabel({
   required String communityName,
   required VoiceRoomRole role,
   required int? count,
-  required bool connected,
+  required AudioRoomLivePhase phase,
 }) {
   final head = '正在语音房 · $communityName · ${role.label}';
-  if (count == null) {
+  return switch (phase) {
     // Connected without a count yet: the strip says the connection stands and
     // that the number is still coming, never 0.
-    return connected ? '$head · 人数正在统计' : head;
-  }
-  return connected ? '$head · $count 人在通话' : '$head · $count 人已加入';
+    AudioRoomLivePhase.connected =>
+      count == null ? '$head · 人数正在统计' : '$head · $count 人在通话',
+    AudioRoomLivePhase.connecting => '$head · 正在连接语音',
+    AudioRoomLivePhase.reconnecting => '$head · 语音正在重连',
+    AudioRoomLivePhase.disconnected => '$head · 语音已断开',
+    // No call of this device's own: the only figure there is counts
+    // memberships, not connections, and it is named for that.
+    AudioRoomLivePhase.idle => count == null ? head : '$head · $count 人已加入',
+  };
 }
 
-class VoiceRoomMinimizedBanner extends ConsumerWidget {
+class VoiceRoomMinimizedBanner extends ConsumerStatefulWidget {
   const VoiceRoomMinimizedBanner({required this.onOpen, super.key});
 
   final ValueChanged<String> onOpen;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VoiceRoomMinimizedBanner> createState() =>
+      _VoiceRoomMinimizedBannerState();
+}
+
+class _VoiceRoomMinimizedBannerState
+    extends ConsumerState<VoiceRoomMinimizedBanner> {
+  /// True once the reader asked to leave from the strip and before the second
+  /// tap that means it.
+  ///
+  /// 离开 ends the membership, so it asks first here exactly as it does on the
+  /// room page. The question is asked in the strip itself rather than in the
+  /// page's sheet: this widget sits above the router and has no navigator to
+  /// put a sheet on.
+  var _confirmingExit = false;
+  var _leaving = false;
+
+  @override
+  Widget build(BuildContext context) {
     final session = ref.watch(voiceRoomSessionProvider);
     final onRoomPage = ref.watch(voiceRoomPagePresenceProvider) > 0;
     if (session == null || onRoomPage) {
       return const SizedBox.shrink();
     }
-    // A live figure only while this device is in that call; otherwise what
-    // LOOP recorded for the room. The strip never prints a count taken at
-    // some earlier moment as if it were now, and the label below says which
-    // of the two it is holding.
+    // What this device's own call is doing, when it holds one for this room.
+    // Otherwise there is only LOOP's record of who joined, which is a
+    // different reading of a different thing, and the label says which.
     final live = ref.watch(audioRoomLivePresenceProvider);
-    final connected =
-        live != null && live.connected && live.roomId == session.callRoomId;
-    final count = connected ? live.participantCount : session.joinedCount;
+    final thisRoom = live != null && live.roomId == session.callRoomId;
+    final phase = thisRoom ? live.phase : AudioRoomLivePhase.idle;
+    final count = thisRoom && phase == AudioRoomLivePhase.connected
+        ? live.participantCount
+        : session.joinedCount;
+    // The host has no 离开: the room's life cycle belongs to whoever opened
+    // it, and the server refuses the command outright.
+    final canLeave = session.role != VoiceRoomRole.host;
     return Material(
       key: const ValueKey<String>('voiceroom-minimized-banner'),
       color: LoopColors.lime,
-      child: InkWell(
-        onTap: () => onOpen(session.communityId),
-        child: SafeArea(
-          bottom: false,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 44),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: LoopSpacing.page,
-                vertical: 10,
-              ),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      voiceRoomBannerLabel(
-                        communityName: session.communityName,
-                        role: session.role,
-                        count: count,
-                        connected: connected,
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            InkWell(
+              onTap: _leaving ? null : () => widget.onOpen(session.communityId),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 44),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: LoopSpacing.page),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          voiceRoomBannerLabel(
+                            communityName: session.communityName,
+                            role: session.role,
+                            count: count,
+                            phase: phase,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: LoopTypography.withWeight(
+                            LoopTypography.body(13, color: LoopColors.ink),
+                            FontWeight.w600,
+                          ),
+                        ),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: LoopTypography.withWeight(
-                        LoopTypography.body(13, color: LoopColors.ink),
-                        FontWeight.w600,
+                      const SizedBox(width: LoopSpacing.tight),
+                      if (canLeave && !_confirmingExit)
+                        _BannerAction(
+                          key: const ValueKey<String>('voiceroom-banner-leave'),
+                          label: '离开',
+                          onPressed: () =>
+                              setState(() => _confirmingExit = true),
+                        ),
+                      _BannerAction(
+                        key: const ValueKey<String>('voiceroom-banner-open'),
+                        // A stopped call is put back by going into the room,
+                        // which connects again on its own.
+                        label: phase == AudioRoomLivePhase.disconnected
+                            ? '重新连接'
+                            : '返回房间',
+                        onPressed: _leaving
+                            ? null
+                            : () => widget.onOpen(session.communityId),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            if (_confirmingExit)
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: LoopSpacing.page,
+                  bottom: 6,
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        '离开后你会退出这次通话，举手也会一并取消。',
+                        maxLines: 2,
+                        style: LoopTypography.body(12, color: LoopColors.ink),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: LoopSpacing.tight),
-                  Text(
-                    '返回房间',
-                    style: LoopTypography.body(12, color: LoopColors.ink),
-                  ),
-                ],
+                    const SizedBox(width: LoopSpacing.tight),
+                    _BannerAction(
+                      key: const ValueKey<String>(
+                        'voiceroom-banner-leave-cancel',
+                      ),
+                      label: '取消',
+                      onPressed: _leaving
+                          ? null
+                          : () => setState(() => _confirmingExit = false),
+                    ),
+                    _BannerAction(
+                      key: const ValueKey<String>(
+                        'voiceroom-banner-leave-confirm',
+                      ),
+                      label: _leaving ? '正在离开…' : '确认离开',
+                      onPressed: _leaving
+                          ? null
+                          : () => unawaited(_leave(session)),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Leaves the room from wherever the reader happens to be.
+  ///
+  /// The same order as the room page's own 离开: the provider call goes down
+  /// first, because releasing the membership under a call this device is
+  /// still connected to leaves a connected room this account is not in.
+  Future<void> _leave(VoiceRoomSession session) async {
+    if (_leaving) return;
+    setState(() => _leaving = true);
+    final disconnected = await ref
+        .read(activeVoiceMediaProvider.notifier)
+        .retire();
+    if (!mounted) return;
+    CommunityFailureKind? failure;
+    String? reasonCode;
+    try {
+      await ref.read(voiceRoomGatewayProvider).leave(session.voiceRoomId);
+    } on CommunityGatewayException catch (error) {
+      failure = error.kind;
+      reasonCode = error.reasonCode;
+    } catch (_) {
+      failure = CommunityFailureKind.unexpected;
+    }
+    if (!mounted) return;
+    setState(() {
+      _leaving = false;
+      _confirmingExit = false;
+    });
+    if (failure != null) {
+      LoopToast.show(
+        context,
+        message: voiceRoomFailureText(failure, reasonCode),
+        kind: LoopToastKind.warn,
+      );
+      return;
+    }
+    ref.read(voiceRoomSessionProvider.notifier).leave(session.communityId);
+    LoopToast.show(
+      context,
+      message: disconnected ? '已离开语音房' : '已离开语音房，语音连接的收尾没有确认',
+    );
+  }
+}
+
+/// One tappable word on the strip, with a target a thumb can hit.
+class _BannerAction extends StatelessWidget {
+  const _BannerAction({
+    required this.label,
+    required this.onPressed,
+    super.key,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      child: InkWell(
+        onTap: onPressed,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Center(
+              widthFactor: 1,
+              child: Text(
+                label,
+                style: LoopTypography.withWeight(
+                  LoopTypography.body(12, color: LoopColors.ink),
+                  onPressed == null ? FontWeight.w400 : FontWeight.w600,
+                ),
               ),
             ),
           ),

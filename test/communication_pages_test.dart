@@ -2355,6 +2355,202 @@ void main() {
       expect(opened, <String>[testCommunityId]);
     });
 
+    // S41: the call belongs to the app, not to the page. Closing the room
+    // page used to dispose the widget that held it, so a reader who opened
+    // another tab stopped hearing the room mid-sentence.
+    testWidgets('closing the room page does not take the call down', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        _VoiceRoomBannerHarness(opened: <String>[]),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+
+      final report = find.byKey(const ValueKey<String>('fake-presence'));
+      await scrollToCommunitySection(tester, report);
+      await tester.tap(report);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
+      await tester.pumpAndSettle();
+
+      expect(media.leaveCalls, 0);
+      expect(voice.commands, isNot(contains('media:leave')));
+      // The strip carries the call's own head count, on whatever screen the
+      // reader is looking at.
+      expect(
+        find.text('正在语音房 · $testVoiceRoomCommunityName · 听众 · 3 人在通话'),
+        findsOneWidget,
+      );
+
+      // Coming back is a view binding to a call that never stopped: no second
+      // call, no second token.
+      await tester.tap(find.byKey(const ValueKey<String>('harness-open')));
+      await tester.pumpAndSettle();
+      expect(media.handles, hasLength(1));
+      expect(media.joinCalls, 1);
+      expect(find.text('语音已连接（测试）'), findsOneWidget);
+    });
+
+    testWidgets('the strip says what the call is doing, not what it was', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        _VoiceRoomBannerHarness(opened: <String>[]),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+      final report = find.byKey(const ValueKey<String>('fake-presence'));
+      await scrollToCommunitySection(tester, report);
+      await tester.tap(report);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
+      await tester.pumpAndSettle();
+
+      // The provider drops the call while the reader is on another screen.
+      // Nothing is putting it back, and the strip stops saying the room is
+      // being heard.
+      media.handles.first.emit(AudioRoomLivePhase.disconnected);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('正在语音房 · $testVoiceRoomCommunityName · 听众 · 语音已断开'),
+        findsOneWidget,
+      );
+      expect(find.text('重新连接'), findsOneWidget);
+      expect(find.text('返回房间'), findsNothing);
+      // The dead call is taken down, and the room says the membership stands.
+      expect(media.leaveCalls, 1);
+      expect(voice.commands, contains('load'));
+      expect(voice.commands, isNot(contains('leave')));
+    });
+
+    // Voice is foreground-only, and that rule did not move with the call:
+    // LOOP leaving the foreground ends it whether or not a room page is on
+    // screen. There is no background session behind any of this.
+    testWidgets('LOOP leaving the foreground still ends the call', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        _VoiceRoomBannerHarness(opened: <String>[]),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
+      await tester.pumpAndSettle();
+      expect(media.leaveCalls, 0);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+
+      expect(media.leaveCalls, 1);
+      // The membership is untouched: backgrounding is not leaving the room.
+      expect(voice.commands, isNot(contains('leave')));
+
+      // Back in the foreground, the strip no longer says the room is being
+      // heard — it says what LOOP recorded, and tapping it goes back in.
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(
+        find.text('正在语音房 · $testVoiceRoomCommunityName · 听众 · 46 人已加入'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a room that ended while away takes the strip with it', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        _VoiceRoomBannerHarness(opened: <String>[]),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
+      await tester.pumpAndSettle();
+
+      voice.loadSnapshot = testVoiceRoomSnapshot(
+        role: VoiceRoomRole.listener,
+        state: VoiceRoomState.ended,
+      );
+      media.handles.first.emit(AudioRoomLivePhase.disconnected);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-minimized-banner')),
+        findsNothing,
+      );
+      expect(media.leaveCalls, 1);
+    });
+
+    testWidgets('离开 from the strip ends the call and the membership', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        _VoiceRoomBannerHarness(opened: <String>[]),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('harness-close')));
+      await tester.pumpAndSettle();
+
+      // Leaving ends the membership, so the strip asks before it does.
+      await tester.tap(
+        find.byKey(const ValueKey<String>('voiceroom-banner-leave')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('离开后你会退出这次通话，举手也会一并取消。'), findsOneWidget);
+      expect(media.leaveCalls, 0);
+      expect(voice.commands, isNot(contains('leave')));
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('voiceroom-banner-leave-confirm')),
+      );
+      await tester.pumpAndSettle();
+
+      // Same order as the room page's own exit: the call goes down first.
+      expect(media.leaveCalls, 1);
+      expect(
+        voice.commands.indexOf('leave'),
+        greaterThan(voice.commands.indexOf('media:leave')),
+      );
+      expect(find.text('已离开语音房'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-minimized-banner')),
+        findsNothing,
+      );
+
+      // The app holds nothing now: opening the room again makes a new call.
+      await tester.tap(find.byKey(const ValueKey<String>('harness-open')));
+      await tester.pumpAndSettle();
+      expect(media.handles, hasLength(2));
+    });
+
     // A banner for a room that no longer exists takes the reader back to a
     // page with nothing on it.
     testWidgets('a room that ended takes the banner with it', (tester) async {
@@ -2425,7 +2621,7 @@ void main() {
           communityName: 'Builders Guild',
           role: VoiceRoomRole.host,
           count: 4,
-          connected: true,
+          phase: AudioRoomLivePhase.connected,
         ),
         '正在语音房 · Builders Guild · 主持人 · 4 人在通话',
       );
@@ -2434,7 +2630,7 @@ void main() {
           communityName: 'Builders Guild',
           role: VoiceRoomRole.host,
           count: 4,
-          connected: false,
+          phase: AudioRoomLivePhase.idle,
         ),
         '正在语音房 · Builders Guild · 主持人 · 4 人已加入',
       );
@@ -2444,7 +2640,7 @@ void main() {
           communityName: 'Builders Guild',
           role: VoiceRoomRole.speaker,
           count: null,
-          connected: false,
+          phase: AudioRoomLivePhase.idle,
         ),
         '正在语音房 · Builders Guild · 发言人',
       );
@@ -2454,9 +2650,39 @@ void main() {
           communityName: 'Builders Guild',
           role: VoiceRoomRole.speaker,
           count: null,
-          connected: true,
+          phase: AudioRoomLivePhase.connected,
         ),
         '正在语音房 · Builders Guild · 发言人 · 人数正在统计',
+      );
+      // S41: the call outlives the page, so the strip carries what it is
+      // doing instead of one word for every moment off the call. A figure
+      // from another moment is never printed under any of them.
+      expect(
+        voiceRoomBannerLabel(
+          communityName: 'Builders Guild',
+          role: VoiceRoomRole.listener,
+          count: 46,
+          phase: AudioRoomLivePhase.connecting,
+        ),
+        '正在语音房 · Builders Guild · 听众 · 正在连接语音',
+      );
+      expect(
+        voiceRoomBannerLabel(
+          communityName: 'Builders Guild',
+          role: VoiceRoomRole.listener,
+          count: 46,
+          phase: AudioRoomLivePhase.reconnecting,
+        ),
+        '正在语音房 · Builders Guild · 听众 · 语音正在重连',
+      );
+      expect(
+        voiceRoomBannerLabel(
+          communityName: 'Builders Guild',
+          role: VoiceRoomRole.listener,
+          count: 46,
+          phase: AudioRoomLivePhase.disconnected,
+        ),
+        '正在语音房 · Builders Guild · 听众 · 语音已断开',
       );
     });
   });
@@ -2531,6 +2757,29 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
   int leaveCalls = 0;
   int microphoneCalls = 0;
   var _retired = false;
+  final StreamController<AudioRoomCallReading> _readings =
+      StreamController<AudioRoomCallReading>.broadcast();
+  AudioRoomCallReading _reading = const AudioRoomCallReading(
+    phase: AudioRoomLivePhase.connecting,
+    participantCount: null,
+  );
+
+  @override
+  AudioRoomCallReading get reading => _reading;
+
+  @override
+  Stream<AudioRoomCallReading> get readings => _readings.stream;
+
+  /// Stands in for the provider's call state moving on its own. The reading
+  /// leaves the call itself, which is what the strip reads once the room page
+  /// is no longer on the screen.
+  void emit(AudioRoomLivePhase phase, {int? participantCount}) {
+    _reading = AudioRoomCallReading(
+      phase: phase,
+      participantCount: participantCount,
+    );
+    _readings.add(_reading);
+  }
 
   @override
   bool get retirementStarted => _retired;
@@ -2580,10 +2829,13 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
         // taken earlier.
         TextButton(
           key: const ValueKey<String>('fake-presence'),
-          onPressed: () => onPresence?.call(
-            phase: AudioRoomLivePhase.connected,
-            participantCount: 3,
-          ),
+          onPressed: () {
+            emit(AudioRoomLivePhase.connected, participantCount: 3);
+            onPresence?.call(
+              phase: AudioRoomLivePhase.connected,
+              participantCount: 3,
+            );
+          },
           child: const Text('报告人数'),
         ),
         // Stands in for the SDK putting a dropped connection back on its own:
@@ -2591,20 +2843,26 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
         // not just that the device is 「not connected」.
         TextButton(
           key: const ValueKey<String>('fake-presence-reconnecting'),
-          onPressed: () => onPresence?.call(
-            phase: AudioRoomLivePhase.reconnecting,
-            participantCount: null,
-          ),
+          onPressed: () {
+            emit(AudioRoomLivePhase.reconnecting);
+            onPresence?.call(
+              phase: AudioRoomLivePhase.reconnecting,
+              participantCount: null,
+            );
+          },
           child: const Text('报告重连中'),
         ),
         // Stands in for the seconds between the connection and the SFU's
         // first head count: connected, and nobody counted yet.
         TextButton(
           key: const ValueKey<String>('fake-presence-counting'),
-          onPressed: () => onPresence?.call(
-            phase: AudioRoomLivePhase.connected,
-            participantCount: null,
-          ),
+          onPressed: () {
+            emit(AudioRoomLivePhase.connected);
+            onPresence?.call(
+              phase: AudioRoomLivePhase.connected,
+              participantCount: null,
+            );
+          },
           child: const Text('报告连接但未统计'),
         ),
         // Stands in for the provider stopping this call with nobody putting
@@ -2674,6 +2932,12 @@ class _VoiceRoomBannerHarnessState extends State<_VoiceRoomBannerHarness> {
           key: const ValueKey<String>('harness-close'),
           onPressed: () => setState(() => _open = false),
           child: const Text('close'),
+        ),
+        // Stands in for the reader coming back to the room from the strip.
+        TextButton(
+          key: const ValueKey<String>('harness-open'),
+          onPressed: () => setState(() => _open = true),
+          child: const Text('open'),
         ),
       ],
     );

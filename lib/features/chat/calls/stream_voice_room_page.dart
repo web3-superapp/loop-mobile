@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/calls/active_voice_media.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_link.dart';
@@ -121,6 +122,10 @@ class StreamVoiceRoomPage extends ConsumerWidget {
       onCallStopped: onCallStopped,
       viewerRole: viewerRole,
       presence: ref.read(audioRoomLivePresenceProvider.notifier),
+      // The call outlives this widget: it belongs to the app, and this
+      // surface is one view of it.
+      activeMedia: ref.read(activeVoiceMediaProvider.notifier),
+      heldCall: ref.watch(activeVoiceMediaProvider),
       principalKey: principalKey,
       authorization: authorization,
       target: resolvedTarget,
@@ -169,6 +174,8 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
     required this.onCallStopped,
     required this.viewerRole,
     required this.presence,
+    required this.activeMedia,
+    required this.heldCall,
     required this.principalKey,
     required this.authorization,
     required this.target,
@@ -191,6 +198,14 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
 
   /// Where this surface publishes the call's own head count.
   final AudioRoomLivePresenceController? presence;
+
+  /// Who owns the call this surface shows. Closing the page is not a decision
+  /// about the audio, so the handle is held here and this widget only binds a
+  /// view to it.
+  final ActiveVoiceMediaController? activeMedia;
+
+  /// The call the app holds right now, as of this build.
+  final AudioRoomCallHandle? heldCall;
   final String? principalKey;
   final AsyncValue<StreamVideoSessionAuthorization>? authorization;
   final AsyncValue<AudioRoomTarget?>? target;
@@ -213,7 +228,6 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
 class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     with WidgetsBindingObserver {
   AudioRoomCallHandle? _joiningCall;
-  AudioRoomCallHandle? _foregroundCall;
   List<AudioRoomCallHandle> _cleanupHandles = const <AudioRoomCallHandle>[];
   Future<List<bool>>? _backgroundRetirement;
   var _appIsForeground = true;
@@ -262,10 +276,25 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     return value != null && value.hasValue ? value.value : null;
   }
 
+  /// The call this surface shows, which the app owns.
+  ///
+  /// A page that comes back to a room the device is still in finds the call
+  /// here: nothing is made, no token is asked for and nothing is joined a
+  /// second time. A call the app holds for another room is not this surface's
+  /// to show — [_joinMuted] takes that one down before it makes its own.
+  AudioRoomCallHandle? get _foregroundCall {
+    final held = widget.heldCall;
+    if (held == null) return null;
+    final roomId = _target?.roomId;
+    if (roomId != null && held.roomId != roomId) return null;
+    return held;
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    widget.activeMedia?.attachView(this);
     widget.link?.attach(_disconnectForExit, exitSettled: _exitSettled);
     final lifecycle = WidgetsBinding.instance.lifecycleState;
     _appIsForeground =
@@ -281,20 +310,24 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       oldWidget.link?.detach(_disconnectForExit);
       widget.link?.attach(_disconnectForExit, exitSettled: _exitSettled);
     }
-    final oldTarget = oldWidget.target;
-    final oldRoomId = oldTarget != null && oldTarget.hasValue
-        ? oldTarget.value?.roomId
-        : null;
     final newRoomId = _target?.roomId;
     final boundRoomId = _foregroundCall?.roomId ?? _joiningCall?.roomId;
-    final callFactoryChanged = !identical(
-      oldWidget.callFactory,
-      widget.callFactory,
-    );
+    // A factory that is not there yet, or has gone for a moment, is not a
+    // different client: the authorization lands in two steps and the provider
+    // behind it is rebuilt more than once on the way. Only a factory that was
+    // replaced by another one hands out calls the old client cannot serve —
+    // and only then is the call this surface holds stale.
+    final callFactoryChanged =
+        oldWidget.callFactory != null &&
+        widget.callFactory != null &&
+        !identical(oldWidget.callFactory, widget.callFactory);
+    // A room this surface no longer points at, or a call the current client
+    // cannot serve. A target that is not known yet is neither: the call the
+    // app holds outlives the read that names the room, and coming back to the
+    // page hands this surface that call before the room record has landed.
     if (boundRoomId != null &&
         (callFactoryChanged ||
-            newRoomId != boundRoomId ||
-            oldRoomId != newRoomId)) {
+            (newRoomId != null && newRoomId != boundRoomId))) {
       _retireForTargetChange();
     }
   }
@@ -303,22 +336,40 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     widget.link?.detach(_disconnectForExit);
-    _withdrawPresence();
+    final media = widget.activeMedia;
+    var held = media?.call;
+    // A call whose leave the provider refused is not one this page can go on
+    // showing from another screen; it goes down with the page, as it did
+    // before the app took ownership.
+    AudioRoomCallHandle? abandoned;
+    if (held != null && held.retirementStarted) {
+      abandoned = held;
+      // A provider write from a widget's teardown is not allowed, so the
+      // hand-back waits a microtask; the retirement below does not.
+      final releasing = held;
+      scheduleMicrotask(() => media?.surrender(releasing));
+      held = null;
+    }
+    // Otherwise leaving this page is not leaving the room, and it is no
+    // longer leaving the call either: the app holds it, keeps the reading
+    // coming and puts it on the strip. Only the calls this surface was
+    // taking down go here.
+    if (held == null) _withdrawPresence();
     _generation += 1;
     _cleanupGeneration += 1;
     _lifecycleGeneration += 1;
     final joiningCall = _joiningCall;
-    final foregroundCall = _foregroundCall;
     _joiningCall = null;
-    _foregroundCall = null;
     final handles = _uniqueHandles(<AudioRoomCallHandle?>[
       joiningCall,
-      foregroundCall,
+      abandoned,
       ..._cleanupHandles,
     ]);
     for (final handle in handles) {
+      if (identical(handle, held)) continue;
       unawaited(_retireIgnoringFailure(handle));
     }
+    media?.detachView(this);
     super.dispose();
   }
 
@@ -734,10 +785,14 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     }
 
     final AudioRoomCallHandle callHandle = handle;
+    final media = widget.activeMedia;
+    // The app takes the call from here: a join still in flight when the
+    // reader goes to another tab is not abandoned, and the room page that
+    // comes back is handed this same call.
+    media?.hold(callHandle);
     setState(() {
       _joining = true;
       _joiningCall = callHandle;
-      _foregroundCall = callHandle;
       _joinError = null;
     });
 
@@ -754,6 +809,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
           '${failure?.detail ?? error}',
         );
       }
+      media?.surrender(callHandle);
       if (!mounted || generation != _generation) {
         await _retireIgnoringFailure(callHandle);
         return;
@@ -762,7 +818,6 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       setState(() {
         _joining = false;
         _joiningCall = null;
-        _foregroundCall = null;
         _cleanupHandles = <AudioRoomCallHandle>[callHandle];
         _cleanupPending = true;
         _cleanupFailed = false;
@@ -775,7 +830,12 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     }
 
     if (!mounted || generation != _generation) {
-      await _retireIgnoringFailure(callHandle);
+      // A page that came off the screen mid-join leaves the call with the
+      // app, which is now holding it; anything else is a call this surface
+      // was already replacing.
+      if (!identical(media?.call, callHandle)) {
+        await _retireIgnoringFailure(callHandle);
+      }
       return;
     }
     setState(() {
@@ -803,12 +863,18 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     try {
       await handle.leave();
     } catch (_) {
+      // A leave the provider did not confirm keeps the call exactly where it
+      // is: the call view stays mounted so the microphone can be closed and
+      // the exit tried again, and the app goes on holding a call that is
+      // still there.
       if (mounted) setState(() => _leaving = false);
       rethrow;
     }
+    // The reader is out: the app stops holding the call, so no strip is left
+    // saying the room is still being heard.
+    widget.activeMedia?.surrender(handle);
     if (!mounted) return;
     setState(() {
-      if (identical(_foregroundCall, handle)) _foregroundCall = null;
       if (identical(_joiningCall, handle)) _joiningCall = null;
       _joining = false;
       _leaving = false;
@@ -829,12 +895,17 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       foregroundCall,
     ]);
     if (handles.isEmpty) return;
+    if (foregroundCall != null) {
+      // This runs from `didUpdateWidget`, where a provider write is not
+      // allowed; the call is already on its way out either way.
+      final media = widget.activeMedia;
+      scheduleMicrotask(() => media?.surrender(foregroundCall));
+    }
     final cleanupGeneration = ++_cleanupGeneration;
     setState(() {
       _joining = false;
       _leaving = false;
       _joiningCall = null;
-      _foregroundCall = null;
       _cleanupHandles = handles;
       _cleanupPending = true;
       _cleanupFailed = false;
@@ -884,11 +955,11 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       stopped,
       ..._cleanupHandles,
     ]);
+    widget.activeMedia?.surrender(stopped);
     final cleanupGeneration = ++_cleanupGeneration;
     setState(() {
       _joining = false;
       _joiningCall = null;
-      _foregroundCall = null;
       _cleanupHandles = handles;
       _cleanupPending = true;
       _cleanupFailed = false;
@@ -937,12 +1008,16 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       foregroundCall,
       ..._cleanupHandles,
     ]);
+    // LOOP itself left the foreground, which is the one place a voice call is
+    // allowed to run. The app stops holding it here too: there is no
+    // background session behind this, and the strip must not say a room is
+    // being heard while it is not.
+    if (foregroundCall != null) widget.activeMedia?.surrender(foregroundCall);
     setState(() {
       _appIsForeground = false;
       _joining = false;
       _leaving = false;
       _joiningCall = null;
-      _foregroundCall = null;
       _cleanupHandles = handles;
       _cleanupPending = handles.isNotEmpty;
       _cleanupFailed = false;

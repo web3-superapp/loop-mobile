@@ -111,6 +111,37 @@ String? audioRoomLivePhaseNote(AudioRoomLivePhase phase) => switch (phase) {
   AudioRoomLivePhase.connected => null,
 };
 
+/// One reading of one call, taken from the provider's own call state.
+///
+/// The call view reads that state for itself, but it is the only thing that
+/// can: a strip on another tab, and whoever keeps the call alive while no
+/// view is mounted, have no widget to read it from. The call hands out the
+/// same reading the panel prints, so nothing outside has to keep a second
+/// account of what the connection is doing.
+@immutable
+final class AudioRoomCallReading {
+  const AudioRoomCallReading({
+    required this.phase,
+    required this.participantCount,
+  });
+
+  final AudioRoomLivePhase phase;
+
+  /// How many people the call counts, or null while it cannot count anyone.
+  /// A connected reading is never 0; see [AudioRoomLivePresence].
+  final int? participantCount;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AudioRoomCallReading &&
+          other.phase == phase &&
+          other.participantCount == participantCount;
+
+  @override
+  int get hashCode => Object.hash(phase, participantCount);
+}
+
 /// What this device's own provider call reports, while it holds one.
 ///
 /// It is the only live count in the client: the room resource carries what
