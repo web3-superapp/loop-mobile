@@ -192,6 +192,20 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
       // The prototype's "@AI 提问 · 贴 CA 自动识别" hint is not reproduced: neither
       // capability exists yet, so the composer promises only a message.
       composerHint: '发消息',
+      // Stream answered the membership query with nothing. LOOP's own record
+      // of this account's channel membership is the only fact available about
+      // why, so its reason code supplies the sentence; without one the
+      // surface states only what it observed.
+      unresolvedMessage: switch (chat.memberState) {
+        CommunityChatMemberState.pending => communicationUnavailableReason(
+          'COMMUNITY_CHANNEL_MEMBER_SYNCING',
+        ),
+        CommunityChatMemberState.capacityPending =>
+          communicationUnavailableReason('COMMUNITY_CHANNEL_CAPACITY_PENDING'),
+        CommunityChatMemberState.removed ||
+        CommunityChatMemberState.synced => null,
+        null => null,
+      },
       // Presence and the pinned announcement are one line, and only when the
       // server stated them. `onlineCount` and `announcements` are both
       // `{status: unavailable}` projections in this step, so the strip is

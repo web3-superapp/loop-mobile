@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
@@ -30,6 +31,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
     this.header,
     this.banner,
     this.notConnectedMessage = '这个会话暂时打不开，稍后再试。',
+    this.unresolvedMessage,
     this.keyPrefix = 'loop-stream-channel',
   });
 
@@ -47,6 +49,11 @@ class LoopStreamChannelSurface extends ConsumerWidget {
   final Widget? banner;
   final String notConnectedMessage;
 
+  /// What to say when Stream answers the membership query with no channel for
+  /// this account. The caller passes the sentence its own server reason code
+  /// maps to; without one the surface states only what it observed.
+  final String? unresolvedMessage;
+
   /// The key prefix for this surface's state blocks. A page passes its own
   /// slug so an acceptance assertion names that page rather than the shared
   /// surface that happened to render.
@@ -55,7 +62,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (parseLoopStreamChannelCid(cid) == null) {
-      return _ChannelStateBlock(
+      return LoopStreamChannelStateBlock(
         key: ValueKey<String>('$keyPrefix-invalid'),
         message: '这个会话链接不是 LOOP 支持的频道地址，本页没有发起任何连接。',
         icon: 'warn',
@@ -66,7 +73,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
         .when(
           skipLoadingOnReload: false,
           skipLoadingOnRefresh: false,
-          loading: () => _ChannelStateBlock(
+          loading: () => LoopStreamChannelStateBlock(
             key: ValueKey<String>('$keyPrefix-connecting'),
             message: '正在恢复聊天会话…',
             loading: true,
@@ -75,7 +82,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
           // anything: the conversation is paused, not broken. Only a server
           // answer may render as an error.
           error: (error, stackTrace) => loopStreamFailureIsOffline(error)
-              ? _ChannelStateBlock(
+              ? LoopStreamChannelStateBlock(
                   key: ValueKey<String>('$keyPrefix-offline'),
                   offlinePausedActions: const <String>[
                     '打开会话',
@@ -87,7 +94,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
                   onRetry: () =>
                       ref.invalidate(streamChatAuthorizationProvider),
                 )
-              : _ChannelStateBlock(
+              : LoopStreamChannelStateBlock(
                   key: ValueKey<String>('$keyPrefix-error'),
                   message: '聊天授权没有恢复成功，本页没有发起任何消息操作。',
                   icon: 'warn',
@@ -100,7 +107,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
             if (authorization != StreamSessionAuthorization.authorized ||
                 session == null ||
                 currentUser == null) {
-              return _ChannelStateBlock(
+              return LoopStreamChannelStateBlock(
                 key: ValueKey<String>('$keyPrefix-not-connected'),
                 message: notConnectedMessage,
                 icon: 'warn',
@@ -113,6 +120,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
               cid: cid,
               userId: currentUser.id,
               composerHint: composerHint,
+              unresolvedMessage: unresolvedMessage,
               header: header,
               banner: banner,
               keyPrefix: keyPrefix,
@@ -133,6 +141,7 @@ class _MemberChannelBody extends StatefulWidget {
     required this.cid,
     required this.userId,
     required this.composerHint,
+    required this.unresolvedMessage,
     required this.header,
     required this.banner,
     required this.keyPrefix,
@@ -143,6 +152,7 @@ class _MemberChannelBody extends StatefulWidget {
   final String cid;
   final String userId;
   final String composerHint;
+  final String? unresolvedMessage;
   final Widget? header;
   final Widget? banner;
   final String keyPrefix;
@@ -224,7 +234,7 @@ class _MemberChannelBodyState extends State<_MemberChannelBody> {
       future: _channel,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return _ChannelStateBlock(
+          return LoopStreamChannelStateBlock(
             key: ValueKey<String>('${widget.keyPrefix}-confirming'),
             message: '正在确认这个频道以及你的成员身份…',
             loading: true,
@@ -232,19 +242,35 @@ class _MemberChannelBodyState extends State<_MemberChannelBody> {
         }
         // The membership query is the same read: a query that never reached
         // Stream did not disprove membership, so it pauses rather than
-        // claiming the account is not a member.
-        if (loopStreamFailureIsOffline(snapshot.error)) {
-          return _ChannelStateBlock(
-            key: ValueKey<String>('${widget.keyPrefix}-offline'),
-            offlinePausedActions: const <String>['打开会话', '发消息', '搜索', '转发'],
-            message: '设备当前离线，没有确认这个频道的成员身份，也没有发送任何消息。',
-            onRetry: () => setState(_reload),
-          );
-        }
+        // claiming the account is not a member. Every other cause gets its
+        // own sentence too — see [loopStreamChannelBlockOf].
         if (snapshot.hasError || snapshot.data == null) {
-          return _ChannelStateBlock(
-            key: ValueKey<String>('${widget.keyPrefix}-unavailable'),
-            message: '你还不是这个群的成员，LOOP 没有打开任何会话。',
+          final block = loopStreamChannelBlockOf(snapshot.error);
+          if (kDebugMode && snapshot.error != null) {
+            // The real class and the provider's own words stay here. They are
+            // the only account of what failed, and neither is a sentence for
+            // a reader.
+            debugPrint(
+              'LOOP channel blocked: ${block.name} · ${widget.cid} · '
+              '${snapshot.error.runtimeType} · ${snapshot.error}',
+            );
+          }
+          if (block == LoopStreamChannelBlock.offline) {
+            return LoopStreamChannelStateBlock(
+              key: ValueKey<String>('${widget.keyPrefix}-offline'),
+              offlinePausedActions: const <String>['打开会话', '发消息', '搜索', '转发'],
+              message: '设备当前离线，没有确认这个频道的成员身份，也没有发送任何消息。',
+              onRetry: () => setState(_reload),
+            );
+          }
+          return LoopStreamChannelStateBlock(
+            key: ValueKey<String>(
+              '${widget.keyPrefix}-${loopStreamChannelBlockKey(block)}',
+            ),
+            message: loopStreamChannelBlockMessage(
+              block,
+              unresolvedMessage: widget.unresolvedMessage,
+            ),
             icon: 'warn',
             onRetry: () => setState(_reload),
           );
@@ -398,8 +424,43 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
   }
 }
 
-class _ChannelStateBlock extends StatelessWidget {
-  const _ChannelStateBlock({
+/// zh-CN copy for a channel that did not open.
+///
+/// One sentence per cause, and none of them claims a fact the client did not
+/// observe. [LoopStreamChannelBlock.offline] is not handled here: the offline
+/// state names the actions it paused instead of stating a failure.
+String loopStreamChannelBlockMessage(
+  LoopStreamChannelBlock block, {
+  String? unresolvedMessage,
+}) => switch (block) {
+  // Stream itself refused this account the channel. This is the only case
+  // that may name membership.
+  LoopStreamChannelBlock.refused => '你还不是这个群的成员，LOOP 没有打开任何会话。',
+  LoopStreamChannelBlock.notOpened => '没能打开这个频道的会话，请稍后重试。',
+  LoopStreamChannelBlock.unresolved =>
+    unresolvedMessage ?? '这个频道还没有同步到你的账号，LOOP 没有打开任何会话。',
+  LoopStreamChannelBlock.offline => '设备当前离线，没有确认这个频道的成员身份，也没有发送任何消息。',
+};
+
+/// The key suffix a blocked channel renders under, so an acceptance assertion
+/// names the cause and not just "unavailable".
+String loopStreamChannelBlockKey(LoopStreamChannelBlock block) =>
+    switch (block) {
+      LoopStreamChannelBlock.refused => 'not-member',
+      LoopStreamChannelBlock.notOpened => 'not-opened',
+      LoopStreamChannelBlock.unresolved => 'unresolved',
+      LoopStreamChannelBlock.offline => 'offline',
+    };
+
+/// One state of a channel surface, sized to its own content.
+///
+/// It used to be a bare `Padding`, which inside the page's `Expanded` handed
+/// its card the whole remaining height: the error read as a tall panel with an
+/// empty field under the retry button. It is laid out the way every other
+/// closed page is — content-sized, centred in the space it was given, and
+/// scrollable, so a long sentence with the keyboard up stays reachable.
+class LoopStreamChannelStateBlock extends StatelessWidget {
+  const LoopStreamChannelStateBlock({
     required this.message,
     super.key,
     this.icon = 'info',
@@ -417,28 +478,58 @@ class _ChannelStateBlock extends StatelessWidget {
   /// stopped instead of reporting a failure that never happened.
   final List<String>? offlinePausedActions;
 
+  /// The room a blocked state may take above and below its content. It is a
+  /// margin, not a share of the page.
+  static const double verticalMargin = 24;
+
   @override
   Widget build(BuildContext context) {
+    // A skeleton is the shape of the list it stands in for, so it keeps the
+    // top of the page rather than floating in the middle of it.
     if (loading) {
       return const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16),
-        child: LoopSkeleton(type: LoopSkeletonType.list, rows: 4),
+        padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: LoopSkeleton(type: LoopSkeletonType.list, rows: 4),
+        ),
       );
     }
     final paused = offlinePausedActions;
-    if (paused != null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: LoopOfflineState(pausedActions: paused, onRetry: onRetry),
-      );
-    }
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: onRetry == null
+    return _centred(
+      paused != null
+          ? LoopOfflineState(
+              pausedActions: paused,
+              onRetry: onRetry,
+              margin: EdgeInsets.zero,
+            )
+          : onRetry == null
           ? LoopEmpty(icon: icon, message: '会话不可用', reason: message)
-          : LoopErrorState(reason: message, onRetry: onRetry),
+          : LoopErrorState(
+              reason: message,
+              onRetry: onRetry,
+              margin: EdgeInsets.zero,
+            ),
     );
   }
+
+  /// Content height plus [verticalMargin] top and bottom, centred while it
+  /// fits and scrollable once it does not.
+  ///
+  /// `Center` hands the scroll view loose constraints, so the view takes the
+  /// height of the card rather than the height of the page; the card's own
+  /// `mainAxisSize.min` column then stops it growing. Nothing under the retry
+  /// button belongs to the card.
+  Widget _centred(Widget child) => Center(
+    child: SingleChildScrollView(
+      key: const ValueKey<String>('loop-stream-channel-state-block'),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: verticalMargin,
+      ),
+      child: child,
+    ),
+  );
 }
 
 /// The pinned-notice strip above a channel. It renders an explanation, never
