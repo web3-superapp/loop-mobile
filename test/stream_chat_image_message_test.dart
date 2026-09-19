@@ -47,7 +47,7 @@ Attachment localImage({
   uploadState: uploadState,
   extraData: <String, Object>{
     'file_size': size,
-    if (mimeType != null) 'mime_type': mimeType,
+    'mime_type': ?mimeType,
   },
 );
 
