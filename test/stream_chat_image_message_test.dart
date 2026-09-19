@@ -45,10 +45,7 @@ Attachment localImage({
   type: type,
   file: AttachmentFile(name: name, size: size, bytes: onePixelPng),
   uploadState: uploadState,
-  extraData: <String, Object>{
-    'file_size': size,
-    'mime_type': ?mimeType,
-  },
+  extraData: <String, Object>{'file_size': size, 'mime_type': ?mimeType},
 );
 
 void main() {
