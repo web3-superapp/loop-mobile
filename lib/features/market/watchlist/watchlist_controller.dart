@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_controllers.dart';
+import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 
@@ -279,6 +280,11 @@ final class WatchlistEditorController extends Notifier<WatchlistEditorState>
             ? state.selectedGroupIndex
             : 0,
       );
+      // 行情 projects this same resource, and order is the whole point of the
+      // list. Without this, a saved order reached the page behind this one
+      // only when the reader happened to pull it down — the page they came
+      // back to still showed the order they had just changed.
+      ref.invalidate(marketOverviewControllerProvider);
       return true;
     } on LoopChainException catch (error) {
       state = state.copyWith(
