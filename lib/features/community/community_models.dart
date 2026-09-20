@@ -372,6 +372,117 @@ final class CommunityVoiceSection {
       status == CommunityVoiceStatus.available && currentRoomId != null;
 }
 
+/// One announcement a community published about itself.
+///
+/// It is a record of something the community said, so every field on it is
+/// the server's: the client never composes a title, never re-dates a post and
+/// never promotes one row over another. `pinned` is the server's own flag and
+/// the list arrives in the server's order.
+@immutable
+final class CommunityAnnouncement {
+  const CommunityAnnouncement({
+    required this.announcementId,
+    required this.kind,
+    required this.title,
+    required this.byline,
+    required this.publishedAt,
+    required this.pinned,
+  });
+
+  final String announcementId;
+
+  /// What sort of announcement it is, as the server named it.
+  ///
+  /// It is deliberately not an enum: it selects the row's glyph and nothing
+  /// else — no permission, no route, no claim — so a kind this build has not
+  /// seen draws the neutral glyph instead of failing a page whose title,
+  /// byline and time are all perfectly readable. It is never rendered.
+  final String kind;
+
+  final String title;
+
+  /// Who published it, when the server says who. `null` is a stated absence.
+  final String? byline;
+  final DateTime publishedAt;
+  final bool pinned;
+}
+
+/// `announcements`: the published list, or the server's reason for not having
+/// one. An available list that is empty is a reading of its own — this
+/// community has announced nothing — and is never dressed as unavailable.
+@immutable
+sealed class CommunityAnnouncementFeed {
+  const CommunityAnnouncementFeed();
+}
+
+@immutable
+final class CommunityAnnouncementFeedUnavailable
+    extends CommunityAnnouncementFeed {
+  const CommunityAnnouncementFeedUnavailable(this.reasonCode);
+
+  final String reasonCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CommunityAnnouncementFeedUnavailable &&
+          other.reasonCode == reasonCode;
+
+  @override
+  int get hashCode => reasonCode.hashCode;
+}
+
+@immutable
+final class CommunityAnnouncementFeedPublished
+    extends CommunityAnnouncementFeed {
+  const CommunityAnnouncementFeedPublished(this.items);
+
+  /// In the server's order, pinned rows included where the server put them.
+  final List<CommunityAnnouncement> items;
+}
+
+/// One official link a community publishes about itself.
+@immutable
+final class CommunityOfficialLink {
+  const CommunityOfficialLink({required this.label, required this.url});
+
+  final String label;
+
+  /// `https://` only, checked on the way in.
+  final String url;
+}
+
+/// `officialLinks`: the published list, or the server's reason for not having
+/// one. As with the announcements, an empty available list is a reading.
+@immutable
+sealed class CommunityOfficialLinkList {
+  const CommunityOfficialLinkList();
+}
+
+@immutable
+final class CommunityOfficialLinksUnavailable
+    extends CommunityOfficialLinkList {
+  const CommunityOfficialLinksUnavailable(this.reasonCode);
+
+  final String reasonCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CommunityOfficialLinksUnavailable &&
+          other.reasonCode == reasonCode;
+
+  @override
+  int get hashCode => reasonCode.hashCode;
+}
+
+@immutable
+final class CommunityOfficialLinksPublished extends CommunityOfficialLinkList {
+  const CommunityOfficialLinksPublished(this.items);
+
+  final List<CommunityOfficialLink> items;
+}
+
 @immutable
 final class CommunityDetail {
   const CommunityDetail({
@@ -393,8 +504,13 @@ final class CommunityDetail {
   /// server's own reason for not having counted them.
   final CommunityOnlineCount onlineCount;
 
-  final LoopUnavailableFact announcements;
-  final LoopUnavailableFact officialLinks;
+  /// The community's own published announcements, or the server's reason for
+  /// publishing none.
+  final CommunityAnnouncementFeed announcements;
+
+  /// The links the community publishes about itself, or the server's reason
+  /// for publishing none.
+  final CommunityOfficialLinkList officialLinks;
   final CommunityChatSection chat;
   final CommunityVoiceSection voice;
 }

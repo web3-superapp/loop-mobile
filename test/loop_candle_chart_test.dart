@@ -352,9 +352,12 @@ void main() {
       // over the money surfaces, so the function is pinned to the screens
       // that are allowed to summarise: the Token Card's metric cells, and the
       // new-pairs rows, whose trailing column is the same kind of slot and
-      // whose sub-cent pools otherwise printed 「$0」.
+      // whose sub-cent pools otherwise printed 「$0」. The community record
+      // carries the same Token Card, reading the same market fact into the
+      // same three cells, so it summarises on the same terms.
       const allowed = <String>{
         'lib/features/chain/chain_widgets.dart',
+        'lib/features/community/community_profile_screen.dart',
         'lib/features/market/market_secondary_screens.dart',
         'lib/features/market/token_screen.dart',
         // The same Token Card, under a chat bubble: the same three metric

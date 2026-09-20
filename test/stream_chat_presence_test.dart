@@ -7,7 +7,6 @@
 // counted as offline. The session now opens the connection.
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_profile_screen.dart';
@@ -167,12 +166,7 @@ void main() {
       ),
     );
 
-    await tester.scrollUntilVisible(
-      find.byKey(const ValueKey<String>('community-online-count-row')),
-      120,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('3 人'), findsOneWidget);
+    expect(find.textContaining('3 在线'), findsOneWidget);
     expect(client.connectCalls, 1);
   });
 }

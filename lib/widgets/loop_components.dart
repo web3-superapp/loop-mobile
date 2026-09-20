@@ -1553,7 +1553,10 @@ class LoopButton extends StatelessWidget {
     this.block = false,
     this.icon,
     this.semanticLabel,
-  });
+  }) : assert(
+         label != '' || (icon != null && semanticLabel != null),
+         'A button with no label must carry a glyph and a semantic label.',
+       );
 
   final String label;
   final VoidCallback? onPressed;
@@ -1562,6 +1565,9 @@ class LoopButton extends StatelessWidget {
   /// `.btn-block`: full width.
   final bool block;
   final String? icon;
+
+  /// What the button is, for assistive technology. It is required for a
+  /// glyph-only button, whose [label] is empty.
   final String? semanticLabel;
 
   @override
@@ -1623,19 +1629,24 @@ class LoopButton extends StatelessWidget {
         children: <Widget>[
           if (icon != null) ...<Widget>[
             LoopIcon(icon!, size: 17, color: foreground),
-            const SizedBox(width: 7),
+            if (label.isNotEmpty) const SizedBox(width: 7),
           ],
-          Flexible(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: LoopTypography.label(
-                12,
-                weight: FontWeight.w700,
-                color: foreground,
+          // `.btn-pair` carries one glyph-only button in the prototype (the
+          // voice control): an empty label is that button, and it takes its
+          // whole meaning from `semanticLabel` rather than from an empty
+          // `Text` sitting beside the glyph.
+          if (label.isNotEmpty)
+            Flexible(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: LoopTypography.label(
+                  12,
+                  weight: FontWeight.w700,
+                  color: foreground,
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

@@ -606,29 +606,21 @@ void main() {
         ),
       );
 
-      final row = find.byKey(
-        const ValueKey<String>('community-online-count-row'),
+      // The reading sits in the identity line, beside the member count, which
+      // is where a reader looks for it.
+      expect(find.textContaining('128 成员 · 1 在线'), findsOneWidget);
+      // 「1 在线」 alone would be read as "active recently" or as the
+      // membership, so the explanation is one tap away, on the reading
+      // itself — not four permanent lines halfway down the record.
+      expect(find.textContaining('与 Stream 保持连接'), findsNothing);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-online-count-explain')),
       );
-      await tester.scrollUntilVisible(
-        row,
-        120,
-        scrollable: find.byType(Scrollable).first,
-      );
-      expect(find.text('1 人'), findsOneWidget);
-      // The observation carries its own time, in UTC, as the server gave it.
-      expect(find.text('观察于 2026-09-16 06:44 UTC'), findsOneWidget);
-      // 「在线 1 人」 alone would be read as "active recently" or as the
-      // membership, so the page says what was counted.
+      await tester.pumpAndSettle();
       expect(find.textContaining('与 Stream 保持连接'), findsOneWidget);
       expect(find.textContaining('最近活跃'), findsOneWidget);
-      expect(
-        find.byKey(
-          const ValueKey<String>(
-            'community-unavailable-STREAM_PRESENCE_NOT_CONNECTED',
-          ),
-        ),
-        findsNothing,
-      );
+      // The observation carries its own time, in UTC, as the server gave it.
+      expect(find.text('观察于 2026-09-16 06:44 UTC'), findsOneWidget);
     });
 
     testWidgets('a zero observation is a reading, not an absence', (
@@ -648,18 +640,13 @@ void main() {
         ),
       );
 
-      final row = find.byKey(
-        const ValueKey<String>('community-online-count-row'),
-      );
-      await tester.scrollUntilVisible(
-        row,
-        120,
-        scrollable: find.byType(Scrollable).first,
-      );
       // Stream answered zero: the page prints it instead of hiding behind the
-      // unavailable card it uses when nobody asked.
-      expect(find.text('0 人'), findsOneWidget);
-      expect(find.text('观察于 2026-09-16 06:44 UTC'), findsOneWidget);
+      // silence it keeps when nobody asked.
+      expect(find.textContaining('128 成员 · 0 在线'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('community-online-count-explain')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a presence read that failed never becomes a number', (
@@ -677,20 +664,12 @@ void main() {
         ),
       );
 
-      final card = find.byKey(
-        const ValueKey<String>(
-          'community-unavailable-STREAM_PRESENCE_READ_TIMEOUT',
-        ),
-      );
-      await tester.scrollUntilVisible(
-        card,
-        120,
-        scrollable: find.byType(Scrollable).first,
-      );
-      expect(card, findsOneWidget);
-      expect(find.textContaining('超时'), findsOneWidget);
+      // A reading that was not taken has no segment in the identity line and
+      // no explanation to offer: the line carries the member count alone.
+      expect(find.text('128 成员'), findsOneWidget);
+      expect(find.textContaining('在线'), findsNothing);
       expect(
-        find.byKey(const ValueKey<String>('community-online-count-row')),
+        find.byKey(const ValueKey<String>('community-online-count-explain')),
         findsNothing,
       );
       expect(find.textContaining('0 人'), findsNothing);
@@ -707,26 +686,29 @@ void main() {
         ),
       );
 
-      final row = find.byKey(
-        const ValueKey<String>('community-mining-power-weight'),
+      final card = find.byKey(
+        const ValueKey<String>('community-mining-summary'),
       );
-      await tester.scrollUntilVisible(
-        row,
-        120,
-        scrollable: find.byType(Scrollable).first,
-      );
-      // A community's number is a sum over one bound asset, so the weight and
-      // the head count that produced it are on the card with it.
-      expect(find.text('0.8'), findsOneWidget);
+      await scrollToCommunitySection(tester, card);
+      // The reviewed weight is the card's own figure, and the community's
+      // power is the line under it: both are sums over one bound asset.
       expect(
-        find.byKey(
-          const ValueKey<String>('community-mining-power-participants'),
-        ),
+        find.byKey(const ValueKey<String>('community-mining-weight')),
         findsOneWidget,
       );
-      expect(find.text('开发基线'), findsOneWidget);
+      expect(find.text('0.8'), findsOneWidget);
+      expect(find.textContaining('社区总算力 0'), findsOneWidget);
+      // The reading says which baseline settled it, and when.
+      expect(find.textContaining('开发基线'), findsOneWidget);
+      expect(find.textContaining('2026-09-15 14:58 UTC'), findsOneWidget);
       // The version that settled it stays a backend identifier.
       expect(find.textContaining('miningFormula-devBaseline'), findsNothing);
+      // The three per-account columns have no source in this read, so they
+      // print the dash and the card says where they are read instead.
+      expect(find.text('我的持仓'), findsOneWidget);
+      expect(find.text('我的算力'), findsOneWidget);
+      expect(find.text('预估/日'), findsOneWidget);
+      expect(find.textContaining('社区挖矿面板里读'), findsOneWidget);
     });
 
     testWidgets('a weight still under review says so instead of a value', (
@@ -747,24 +729,22 @@ void main() {
         ),
       );
 
-      final row = find.byKey(
-        const ValueKey<String>('community-mining-power-weight'),
+      final card = find.byKey(
+        const ValueKey<String>('community-mining-summary'),
       );
-      await tester.scrollUntilVisible(
-        row,
-        120,
-        scrollable: find.byType(Scrollable).first,
-      );
+      await scrollToCommunitySection(tester, card);
       expect(find.textContaining('权重还在审核中'), findsOneWidget);
-      // The settled power stays the server's own 0: a pending weight is why
-      // it is zero, not a reason to hide it.
+      // A weight under review has no value to print, and the settled power
+      // stays the server's own 0: the pending weight is why it is zero.
       expect(
-        find.descendant(
-          of: find.byKey(const ValueKey<String>('community-mining-power-row')),
-          matching: find.text('0'),
-        ),
-        findsOneWidget,
+        tester
+            .widget<Text>(
+              find.byKey(const ValueKey<String>('community-mining-weight')),
+            )
+            .data,
+        '—',
       );
+      expect(find.textContaining('社区总算力 0'), findsOneWidget);
     });
 
     testWidgets('a community with nothing bound has no weight to review', (
@@ -785,16 +765,12 @@ void main() {
         ),
       );
 
-      final row = find.byKey(
-        const ValueKey<String>('community-mining-power-weight'),
+      final card = find.byKey(
+        const ValueKey<String>('community-mining-summary'),
       );
-      await tester.scrollUntilVisible(
-        row,
-        120,
-        scrollable: find.byType(Scrollable).first,
-      );
-      // The row states the fact it was given. A review nobody is performing
-      // is not a state this card may announce (Decision 0046).
+      await scrollToCommunitySection(tester, card);
+      // The card states the fact it was given. A review nobody is performing
+      // is not a state it may announce (Decision 0046).
       expect(find.textContaining('没有绑定代币，没有权重可审'), findsOneWidget);
       expect(find.textContaining('权重还在审核中'), findsNothing);
     });
@@ -814,7 +790,9 @@ void main() {
         find.byKey(const ValueKey<String>('community-bound-asset')),
         findsNothing,
       );
-      expect(find.text('未绑定资产'), findsOneWidget);
+      // One quiet line, not an information card: an absence must not take
+      // more room than the facts around it.
+      expect(find.text('未绑定社区币'), findsOneWidget);
     });
 
     testWidgets('a bound asset shows the key without a market figure', (
@@ -836,13 +814,16 @@ void main() {
       final card = find.byKey(const ValueKey<String>('community-bound-asset'));
       await scrollToCommunitySection(tester, card);
       expect(card, findsOneWidget);
-      expect(find.textContaining('还没有解析'), findsOneWidget);
+      // The card reads the market module for this key. Nothing answers in
+      // this harness, so every figure states its absence and none of them
+      // becomes a number.
+      expect(find.textContaining('行情暂时读不到'), findsOneWidget);
+      expect(find.text('暂无价格'), findsOneWidget);
       expect(find.textContaining(r'$'), findsNothing);
-      // No series is readable in this harness, so the card carries no chart
-      // slot: an empty 106px box under 「下面的走势线来自行情页」 pointed at a
-      // line that was not there.
+      // No series is readable either, so the card carries no chart slot: an
+      // empty 106px box under a range label points at a line that is not
+      // there.
       expect(find.textContaining('暂无走势'), findsOneWidget);
-      expect(find.textContaining('下面的走势线来自行情页'), findsNothing);
       expect(find.textContaining('根收盘价'), findsNothing);
     });
 
@@ -855,19 +836,25 @@ void main() {
         community: FakeCommunityGateway(detail: testDetail()),
       );
 
-      // Page order: presence, mining, announcements, official links.
-      for (final reason in <String>[
-        'STREAM_PRESENCE_NOT_CONNECTED',
-        'MINING_FORMULA_BASELINE_PENDING',
-        'COMMUNITY_ANNOUNCEMENTS_DEFERRED',
-        'COMMUNITY_LINKS_DEFERRED',
-      ]) {
-        final finder = find.byKey(
-          ValueKey<String>('community-unavailable-$reason'),
-        );
-        await scrollToCommunitySection(tester, finder);
-        expect(finder, findsOneWidget, reason: reason);
-      }
+      // Every unavailable field states the server's own reason where it
+      // stands, and none of them becomes a figure.
+      final mining = find.byKey(
+        const ValueKey<String>('community-mining-summary-note'),
+      );
+      await scrollToCommunitySection(tester, mining);
+      expect(find.textContaining('挖矿规则还没有确定'), findsOneWidget);
+      final announcements = find.byKey(
+        const ValueKey<String>('community-announcements-unavailable'),
+      );
+      await scrollToCommunitySection(tester, announcements);
+      expect(announcements, findsOneWidget);
+      expect(find.textContaining('暂无公告'), findsOneWidget);
+      final links = find.byKey(
+        const ValueKey<String>('community-links-unavailable'),
+      );
+      await scrollToCommunitySection(tester, links);
+      expect(links, findsOneWidget);
+      expect(find.textContaining('暂无官方链接'), findsOneWidget);
     });
 
     testWidgets('a verified community is not told its channel waits on '
@@ -880,14 +867,11 @@ void main() {
         community: FakeCommunityGateway(detail: testDetail()),
       );
 
-      final chat = find.byKey(
-        const ValueKey<String>('community-profile-open-chat'),
+      final reasons = find.byKey(
+        const ValueKey<String>('community-profile-action-reasons'),
       );
-      await scrollToCommunitySection(tester, chat);
-      expect(
-        find.descendant(of: chat, matching: find.text('该社区还没有官方群频道。')),
-        findsOneWidget,
-      );
+      await scrollToCommunitySection(tester, reasons);
+      expect(find.textContaining('该社区还没有官方群频道。'), findsOneWidget);
       // The one code covers both a missing row and an unfinished one, so the
       // page states the fact and claims no cause for it.
       expect(find.textContaining('通过验证后'), findsNothing);
@@ -989,17 +973,12 @@ void main() {
       final notice = find.byKey(
         const ValueKey<String>('community-owner-cannot-leave'),
       );
+      await scrollToCommunitySection(tester, notice);
       expect(notice, findsOneWidget);
       // The transfer demotes the previous owner to Admin, which is what the
-      // members page's confirmation says. This notice says the same thing.
-      expect(
-        find.descendant(of: notice, matching: find.textContaining('降为 Admin')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: notice, matching: find.textContaining('普通成员')),
-        findsNothing,
-      );
+      // members page's confirmation says. This line says the same thing.
+      expect(find.textContaining('降为 Admin'), findsOneWidget);
+      expect(find.textContaining('普通成员'), findsNothing);
     });
 
     testWidgets('a banned viewer is told, and cannot leave or act', (
@@ -1051,6 +1030,81 @@ void main() {
         findsOneWidget,
       );
       expect(gateway.commands, isEmpty);
+    });
+
+    testWidgets('the record is laid out in the prototype\'s own order', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityProfileScreen(communityId: testCommunityId),
+        size: const Size(390, 4000),
+        community: FakeCommunityGateway(
+          detail: testDetail(
+            community: testCommunity(
+              boundAssetKey:
+                  'eip155:56:0x00000000000000000000000000000000000000aa',
+            ),
+            viewer: testViewer(role: CommunityRole.member),
+            onlineCount: CommunityOnlineCountObserved(
+              count: 2,
+              observedAt: DateTime.utc(2026, 9, 16, 6, 44),
+              source: CommunityPresenceSource.streamMemberPresence,
+            ),
+            announcements: CommunityAnnouncementFeedPublished(
+              <CommunityAnnouncement>[
+                CommunityAnnouncement(
+                  announcementId: 'a-1',
+                  kind: 'pinned',
+                  title: 'Q3 路线图已发布',
+                  byline: '项目方',
+                  publishedAt: DateTime.utc(2026, 9, 16, 5),
+                  pinned: true,
+                ),
+              ],
+            ),
+            officialLinks: const CommunityOfficialLinksPublished(
+              <CommunityOfficialLink>[
+                CommunityOfficialLink(
+                  label: 'Website',
+                  url: 'https://example.invalid/loop',
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // The frozen order, top to bottom: folio, identity, the three
+      // controls, the token card, mining, announcements, official links,
+      // membership. A section that moves moves this test.
+      final order = <Finder>[
+        find.byKey(const ValueKey<String>('loop-page-primary')),
+        find.byKey(const ValueKey<String>('community-profile-logo')),
+        find.byKey(const ValueKey<String>('community-profile-open-chat')),
+        find.byKey(const ValueKey<String>('community-bound-asset')),
+        find.byKey(const ValueKey<String>('community-mining-summary')),
+        find.byKey(const ValueKey<String>('community-announcements')),
+        find.byKey(const ValueKey<String>('community-links')),
+        find.byKey(const ValueKey<String>('community-leave-action')),
+      ];
+      var previous = double.negativeInfinity;
+      for (var index = 0; index < order.length; index += 1) {
+        final finder = order[index];
+        expect(finder, findsOneWidget, reason: 'section $index');
+        final offset = tester.getTopLeft(finder).dy;
+        expect(
+          offset,
+          greaterThan(previous),
+          reason: 'section $index is out of the prototype order',
+        );
+        previous = offset;
+      }
+      // The two blocks the record no longer carries: a second identity card
+      // repeating the folio, and a 聊天与语音 row group.
+      expect(find.text('社区官方群'), findsNothing);
+      expect(find.text('语音房'), findsNothing);
+      expect(find.text('在线'), findsNothing);
     });
   });
 
@@ -1120,12 +1174,15 @@ void main() {
         voice: testVoiceLive,
       );
 
-      await scrollToVoice(
-        tester,
-        find.byKey(const ValueKey<String>('community-profile-open-voice')),
+      // A live room is entered through the glyph button; the opening control
+      // is not on the page at all.
+      final enter = find.byKey(
+        const ValueKey<String>('community-profile-open-voice'),
       );
+      await scrollToVoice(tester, enter);
       expect(createButton, findsNothing);
-      expect(find.text('进入'), findsOneWidget);
+      expect(tester.widget<LoopButton>(enter).onPressed, isNotNull);
+      expect(tester.widget<LoopButton>(enter).semanticLabel, '进入语音房');
     });
 
     testWidgets('ending the room drops the row the community page had read', (
@@ -1147,8 +1204,18 @@ void main() {
         voiceRoom: voiceRoom,
       );
 
-      // The community page was read while the room was live, and says so.
-      expect(find.text('当前有进行中的语音房'), findsOneWidget);
+      // The community page was read while the room was live, so the voice
+      // control is an entry rather than an opening.
+      expect(
+        find.byKey(const ValueKey<String>('community-profile-open-voice')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('community-profile-create-voice-room'),
+        ),
+        findsNothing,
+      );
 
       // The server's answer changes the moment the room ends; the page under
       // the room still holds the old one until it reads again.
@@ -1180,8 +1247,18 @@ void main() {
         find.byKey(const ValueKey<String>('harness-open-community')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('当前有进行中的语音房'), findsNothing);
-      expect(find.text('进入'), findsNothing);
+      // The room is gone, so the owner is offered the opening again and the
+      // entry is not on the page.
+      expect(
+        find.byKey(const ValueKey<String>('community-profile-open-voice')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('community-profile-create-voice-room'),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('opening a room is confirmed first, then entered', (

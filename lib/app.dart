@@ -642,6 +642,8 @@ GoRouter _buildRouter(
               context.push(MiningRoute.community(communityId)),
           onOpenToken: (assetId) =>
               context.push(MarketAssetRoute.token(assetId)),
+          onOpenChart: (assetId) =>
+              context.push(MarketAssetRoute.chart(assetId)),
         ),
       ),
       GoRoute(

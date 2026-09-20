@@ -167,13 +167,21 @@ CommunityDetail testDetail({
   CommunityVoiceSection voice = testVoiceUnavailable,
   LoopMiningPowerFact? miningPower,
   CommunityOnlineCount? onlineCount,
+  CommunityAnnouncementFeed? announcements,
+  CommunityOfficialLinkList? officialLinks,
 }) => CommunityDetail(
   community: community ?? testCommunity(),
   viewer: viewer ?? testViewer(),
   miningPower: miningPower ?? testMiningPower,
   onlineCount: onlineCount ?? testOnlineCount,
-  announcements: const LoopUnavailableFact('COMMUNITY_ANNOUNCEMENTS_DEFERRED'),
-  officialLinks: const LoopUnavailableFact('COMMUNITY_LINKS_DEFERRED'),
+  announcements:
+      announcements ??
+      const CommunityAnnouncementFeedUnavailable(
+        'COMMUNITY_ANNOUNCEMENTS_DEFERRED',
+      ),
+  officialLinks:
+      officialLinks ??
+      const CommunityOfficialLinksUnavailable('COMMUNITY_LINKS_DEFERRED'),
   chat: chat,
   voice: voice,
 );

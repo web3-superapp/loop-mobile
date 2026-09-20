@@ -5,6 +5,7 @@ import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 
@@ -208,68 +209,454 @@ String communitySettlementLabel(DateTime computedAt) {
       '${two(value.hour)}:${two(value.minute)} UTC';
 }
 
-/// Renders `onlineCount`.
+/// A count in the community record's own mono voice, grouped in thousands.
 ///
-/// An observation prints the number the server counted and when it counted
-/// it, and says in the same breath what was counted: members of the
-/// community's official Stream channel holding a live connection right now.
-/// It is not "watching this channel", not "active recently", and not the
-/// membership — so the card states that rather than letting 「在线 N 人」 be
-/// read as any of them. Anything else keeps the unavailable card: a read that
-/// failed never becomes a 0.
-class CommunityOnlineCountCard extends StatelessWidget {
-  const CommunityOnlineCountCard({
-    required this.fact,
+/// `128420 成员` is read digit by digit; `128,420 成员` is read at a glance,
+/// which is the only thing the separator is for. It never rounds and never
+/// abbreviates: the number printed is the number the server sent.
+String communityCountLabel(int count) {
+  final digits = count.abs().toString();
+  final buffer = StringBuffer(count < 0 ? '-' : '');
+  for (var index = 0; index < digits.length; index += 1) {
+    if (index > 0 && (digits.length - index) % 3 == 0) buffer.write(',');
+    buffer.write(digits[index]);
+  }
+  return buffer.toString();
+}
+
+/// What the 在线 figure in the identity line is, said in full.
+///
+/// The page prints one number beside the member count, which is where a
+/// reader looks for it; this is where the number explains itself. It used to
+/// be a permanent four-line notice halfway down the record, which is a
+/// paragraph about a fact nobody had asked about yet.
+Future<void> showCommunityPresenceMeaningSheet(
+  BuildContext context, {
+  required int count,
+  required DateTime observedAt,
+}) async {
+  await showLoopSheet<void>(
+    context,
+    barrierLabel: '关闭在线人数说明',
+    builder: (sheetContext) => Padding(
+      key: const ValueKey<String>('community-online-meaning-sheet'),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            '这里数的是连接，不是活跃',
+            style: LoopTypography.heading(18, weight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '这是社区官方频道的成员里，此刻仍与 Stream 保持连接的人数'
+            '（${communityCountLabel(count)} 人），不是「正在看这个频道」，'
+            '不是「最近活跃」，也不是社区成员总数。它是一次观察，不是持续统计。',
+            style: LoopTypography.body(13, color: LoopColors.muted),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '观察于 ${communityObservedAtLabel(observedAt)}',
+            style: LoopTypography.figure(12, color: LoopColors.text3),
+          ),
+          const SizedBox(height: 18),
+          LoopButtonPair(
+            padded: false,
+            children: <Widget>[
+              LoopButton(
+                key: const ValueKey<String>('community-online-meaning-close'),
+                label: '知道了',
+                onPressed: () => Navigator.of(sheetContext).pop(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// The community's own identity block (`#scr-community-profile .pad`): the
+/// logo, the name, one mono line of counts and the community's description.
+///
+/// The counts line only ever carries facts the server sent. An unavailable
+/// presence reading drops the 在线 segment instead of explaining itself in
+/// place: the explanation belongs to the reading, and the reading is not
+/// there.
+class CommunityIdentityBlock extends StatelessWidget {
+  const CommunityIdentityBlock({
+    required this.community,
+    required this.onlineCount,
     super.key,
-    this.margin = const EdgeInsets.symmetric(horizontal: 16),
+    this.onExplainPresence,
   });
 
-  final CommunityOnlineCount fact;
-  final EdgeInsets margin;
+  final CommunitySummary community;
+  final CommunityOnlineCount onlineCount;
+
+  /// Opens the presence explanation. Offered only when a reading exists.
+  final VoidCallback? onExplainPresence;
 
   @override
   Widget build(BuildContext context) {
-    switch (fact) {
-      case CommunityOnlineCountUnavailable(:final reasonCode):
-        return CommunityUnavailableCard(
-          label: '在线人数',
-          fact: LoopUnavailableFact(reasonCode),
-          margin: margin,
-        );
-      case CommunityOnlineCountObserved(:final count, :final observedAt):
-        return Padding(
-          padding: margin,
+    final observed = onlineCount is CommunityOnlineCountObserved
+        ? onlineCount as CommunityOnlineCountObserved
+        : null;
+    final members = communityCountLabel(community.memberCount);
+    final counts = <InlineSpan>[
+      TextSpan(text: '$members 成员'),
+      if (observed != null) ...<InlineSpan>[
+        const TextSpan(text: ' · '),
+        TextSpan(
+          text: '${communityCountLabel(observed.count)} 在线',
+          style: LoopTypography.figure(12, color: LoopColors.lime),
+        ),
+      ],
+    ];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          CommunityLogoTile(
+            key: const ValueKey<String>('community-profile-logo'),
+            name: community.name,
+            size: 88,
+            radius: LoopRadius.controlValue,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(community.name, style: LoopTypography.title(19)),
+                const SizedBox(height: 3),
+                Text.rich(
+                  TextSpan(
+                    children: counts,
+                    style: LoopTypography.figure(12, color: LoopColors.text2),
+                  ),
+                  key: const ValueKey<String>('community-profile-counts'),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  community.description ?? '这个社区还没有填写简介。',
+                  style: LoopTypography.body(12, color: LoopColors.text2),
+                ),
+              ],
+            ),
+          ),
+          if (observed != null && onExplainPresence != null)
+            LoopIconButton(
+              key: const ValueKey<String>('community-online-count-explain'),
+              icon: 'info',
+              label: '在线人数是怎么数的',
+              onPressed: onExplainPresence,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The community record's mining block (`#scr-community-profile .card`
+/// → `mining-community`): the reviewed weight, the community's own power,
+/// and the three per-account columns.
+///
+/// The card keeps its shape whatever the server answered. A column with no
+/// source prints an em dash and the line under the card says which columns
+/// those are and why — replacing the whole card with a paragraph would lose
+/// the two figures that *are* readable along with the way into the panel.
+class CommunityMiningSummaryCard extends StatelessWidget {
+  const CommunityMiningSummaryCard({
+    required this.fact,
+    super.key,
+    this.onOpenPanel,
+  });
+
+  final LoopMiningPowerFact fact;
+  final VoidCallback? onOpenPanel;
+
+  @override
+  Widget build(BuildContext context) {
+    final settled = fact is LoopCommunityMiningPower
+        ? fact as LoopCommunityMiningPower
+        : null;
+    final weight = switch (settled?.weight) {
+      MiningCommunityWeightApproved(:final value) => value,
+      _ => communityMissingFigure,
+    };
+    final power = settled?.power ?? communityMissingFigure;
+    // Where the three per-account columns are read. They are one account's
+    // figures across the community's asset, and this record carries none of
+    // them; the panel does.
+    const panel = '我的持仓、我的算力与预估收益要在社区挖矿面板里读，这张卡片不替它们估算。';
+    final note = switch (fact) {
+      LoopMiningPowerUnavailable(:final reasonCode) =>
+        '${communityUnavailableReason(reasonCode)}$panel',
+      LoopCommunityMiningPower(:final weight, :final computedAt) =>
+        '最近一次算力快照 · ${communityObservedAtLabel(computedAt)}。'
+            '${switch (weight) {
+              MiningCommunityWeightApproved() => '',
+              MiningCommunityWeightPending(reviewStatus: MiningWeightReviewStatus.pendingReview) => '权重还在审核中，这里不显示权重数值。',
+              MiningCommunityWeightPending() => '没有绑定代币，没有权重可审。',
+            }}$panel',
+      LoopMiningPowerSettled(:final computedAt) =>
+        '最近一次算力快照 · ${communityObservedAtLabel(computedAt)}。$panel',
+    };
+    final subtitle = settled != null && settled.isBaseline
+        ? 'Mining Weight · 社区总算力 $power · $miningBaselineLabel'
+        : 'Mining Weight · 社区总算力 $power';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LoopSurfaceCard(
+          key: const ValueKey<String>('community-mining-summary'),
+          margin: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+          onTap: onOpenPanel,
+          semanticLabel: '社区挖矿面板，权重 $weight，社区算力 $power',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              LoopRecordGroup(
-                key: const ValueKey<String>('community-online-count'),
-                rows: <LoopRecordRow>[
-                  LoopRecordRow(
-                    key: const ValueKey<String>('community-online-count-row'),
-                    title: '在线',
-                    subtitle: '观察于 ${communitySettlementLabel(observedAt)}',
-                    trailing: '$count 人',
-                    semanticLabel:
-                        '在线 $count 人，观察于 '
-                        '${communitySettlementLabel(observedAt)}',
+              Row(
+                children: <Widget>[
+                  const LoopIcon('mine', size: 21, color: LoopColors.lime),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          weight,
+                          key: const ValueKey<String>(
+                            'community-mining-weight',
+                          ),
+                          style: LoopTypography.figure(
+                            17,
+                            color: LoopColors.lime,
+                          ),
+                        ),
+                        Text(
+                          subtitle,
+                          style: LoopTypography.caption(
+                            11,
+                            color: LoopColors.text2,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  if (onOpenPanel != null)
+                    const LoopIcon(
+                      'chevron',
+                      size: 14,
+                      color: LoopColors.text3,
+                    ),
                 ],
               ),
-              LoopNotice(
-                key: const ValueKey<String>('community-online-count-meaning'),
-                icon: 'info',
-                title: '这里数的是连接，不是活跃',
-                body:
-                    '这是社区官方频道的成员里，此刻仍与 Stream 保持连接的人数（$count 人），'
-                    '不是「正在看这个频道」，不是「最近活跃」，也不是社区成员总数。'
-                    '它是一次观察，不是持续统计。',
-                margin: const EdgeInsets.only(top: 10),
+              const SizedBox(height: 11),
+              const Divider(height: 1, thickness: 1, color: LoopColors.line),
+              const SizedBox(height: 11),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const <Widget>[
+                  _MiningColumn(label: '我的持仓'),
+                  SizedBox(width: 16),
+                  _MiningColumn(label: '我的算力', accent: true),
+                  SizedBox(width: 16),
+                  _MiningColumn(label: '预估/日'),
+                ],
               ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Text(
+            note,
+            key: const ValueKey<String>('community-mining-summary-note'),
+            style: LoopTypography.caption(11, color: LoopColors.text3),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// One column of the mining card. Every one of the three is an account-level
+/// figure the community record does not carry, so each prints the dash and
+/// the card's own line says where the figure lives.
+class _MiningColumn extends StatelessWidget {
+  const _MiningColumn({required this.label, this.accent = false});
+
+  final String label;
+  final bool accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Text(
+          communityMissingFigure,
+          style: LoopTypography.figure(
+            13,
+            color: accent ? LoopColors.lime : LoopColors.chalk,
+          ),
+        ),
+        Text(label, style: LoopTypography.caption(11, color: LoopColors.text3)),
+      ],
+    );
+  }
+}
+
+/// The published announcement rows (`.row` × n), or the one quiet line a
+/// community with nothing published gets.
+///
+/// An unavailable board and an empty one are different sentences: the first
+/// says the server could not answer, the second says this community has not
+/// announced anything.
+class CommunityAnnouncementBoard extends StatelessWidget {
+  const CommunityAnnouncementBoard({
+    required this.feed,
+    super.key,
+    this.onOpen,
+  });
+
+  final CommunityAnnouncementFeed feed;
+
+  /// Where an announcement is read in full. Announcements live in the
+  /// official group, so the row goes there; with no way in, the row states
+  /// the announcement and takes no tap.
+  final VoidCallback? onOpen;
+
+  /// The glyph one kind draws. An unknown kind keeps the neutral one.
+  static String glyphFor(String kind) => switch (kind) {
+    'pinned' || 'pin' => 'pin',
+    'voiceRoom' || 'ama' => 'mic',
+    'update' || 'release' => 'news',
+    _ => 'news',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    switch (feed) {
+      case CommunityAnnouncementFeedUnavailable(:final reasonCode):
+        // A board that could not be read is still a board with nothing on
+        // it, so the line reads the same way as an empty one — and then says
+        // why, because 「暂无」 on its own would claim the community has
+        // announced nothing.
+        return CommunityQuietLine(
+          key: const ValueKey<String>('community-announcements-unavailable'),
+          text: '暂无公告 · ${communityUnavailableReason(reasonCode)}',
+        );
+      case CommunityAnnouncementFeedPublished(:final items):
+        if (items.isEmpty) {
+          return const CommunityQuietLine(
+            key: ValueKey<String>('community-announcements-empty'),
+            text: '暂无公告',
+          );
+        }
+        return LoopRecordGroup(
+          key: const ValueKey<String>('community-announcements'),
+          rows: <LoopRecordRow>[
+            for (var index = 0; index < items.length; index += 1)
+              LoopRecordRow(
+                key: ValueKey<String>(
+                  'community-announcement-${items[index].announcementId}',
+                ),
+                leading: LoopIcon(
+                  glyphFor(items[index].kind),
+                  size: 18,
+                  color: LoopColors.text2,
+                ),
+                title: items[index].title,
+                subtitle: items[index].byline == null
+                    ? communityObservedAtLabel(items[index].publishedAt)
+                    : '${items[index].byline} · '
+                          '${communityObservedAtLabel(items[index].publishedAt)}',
+                onTap: onOpen,
+                position: communityRowPosition(index, items.length),
+              ),
+          ],
+        );
+    }
+  }
+}
+
+/// The official links (`.segs`), or the one quiet line when there are none.
+///
+/// LOOP has no browser of its own here, so a pill copies the address instead
+/// of claiming to open it. The address is what the reader takes away either
+/// way, and nothing is opened that LOOP cannot state it opened.
+class CommunityOfficialLinkRow extends StatelessWidget {
+  const CommunityOfficialLinkRow({required this.links, super.key, this.onCopy});
+
+  final CommunityOfficialLinkList links;
+  final ValueChanged<CommunityOfficialLink>? onCopy;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (links) {
+      case CommunityOfficialLinksUnavailable(:final reasonCode):
+        return CommunityQuietLine(
+          key: const ValueKey<String>('community-links-unavailable'),
+          text: '暂无官方链接 · ${communityUnavailableReason(reasonCode)}',
+        );
+      case CommunityOfficialLinksPublished(:final items):
+        if (items.isEmpty) {
+          return const CommunityQuietLine(
+            key: ValueKey<String>('community-links-empty'),
+            text: '暂无官方链接',
+          );
+        }
+        return SingleChildScrollView(
+          key: const ValueKey<String>('community-links'),
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          child: Row(
+            children: <Widget>[
+              for (var index = 0; index < items.length; index += 1) ...<Widget>[
+                if (index > 0) const SizedBox(width: 7),
+                LoopSeg(
+                  key: ValueKey<String>('community-link-${items[index].label}'),
+                  label: items[index].label,
+                  selected: false,
+                  onSelected: onCopy == null
+                      ? null
+                      : () => onCopy!(items[index]),
+                ),
+              ],
             ],
           ),
         );
     }
+  }
+}
+
+/// One line of quiet copy where a card would over-answer.
+///
+/// 「暂无公告」 is a whole reading; wrapping it in a dashed empty-state box
+/// gives an absence more room on the page than the facts around it.
+class CommunityQuietLine extends StatelessWidget {
+  const CommunityQuietLine({required this.text, super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      child: Text(
+        text,
+        style: LoopTypography.caption(12, color: LoopColors.text3),
+      ),
+    );
   }
 }
 
@@ -441,10 +828,25 @@ String communityMembershipLabel(CommunityMembership membership) =>
 /// atlas does not carry, so the tile shows the community's own initials rather
 /// than an unrelated preset image.
 class CommunityLogoTile extends StatelessWidget {
-  const CommunityLogoTile({required this.name, super.key, this.size = 44});
+  const CommunityLogoTile({
+    required this.name,
+    super.key,
+    this.size = 44,
+    this.radius,
+    this.bordered = false,
+  });
 
   final String name;
   final double size;
+
+  /// Corner radius. The prototype draws this tile at three sizes with three
+  /// radii — 12 in a row, 16 in the identity block, the shell radius on the
+  /// folio — so the caller states it rather than the tile guessing from size.
+  final double? radius;
+
+  /// `.folio-media-identity{border:1px solid rgba(243,245,239,.2)}`: the edge
+  /// the tile draws when it sits on the folio rather than inside a card.
+  final bool bordered;
 
   static String monogramFor(String name) {
     final trimmed = name.trim();
@@ -463,7 +865,8 @@ class CommunityLogoTile extends StatelessWidget {
         // Same rule as the other monogram tiles: the fill and the letters come
         // from the ground, so the tile survives a move onto a Chalk card.
         color: LoopGround.fillOf(context),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(radius ?? LoopRadius.innerValue),
+        border: bordered ? Border.all(color: LoopGround.edgeOf(context)) : null,
       ),
       child: Text(
         monogramFor(name),

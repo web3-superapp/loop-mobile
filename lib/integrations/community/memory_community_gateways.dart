@@ -120,10 +120,35 @@ final class MemoryCommunityGateway implements CommunityGateway {
       ),
       miningPower: _previewMining,
       onlineCount: _previewOnlineCount,
-      announcements: const LoopUnavailableFact(
-        'COMMUNITY_ANNOUNCEMENTS_DEFERRED',
+      // Preview data, visibly labelled as such by the page's own 演示数据
+      // notice: it exists so the board and the link row can be read at all
+      // before the server publishes either.
+      announcements: CommunityAnnouncementFeedPublished(<CommunityAnnouncement>[
+        CommunityAnnouncement(
+          announcementId: 'demo-announcement-01',
+          kind: 'pinned',
+          title: '演示公告 · 本周路线图',
+          byline: '演示数据',
+          publishedAt: DateTime.utc(2026, 9, 18, 9, 30),
+          pinned: true,
+        ),
+        CommunityAnnouncement(
+          announcementId: 'demo-announcement-02',
+          kind: 'voiceRoom',
+          title: '演示公告 · 周四语音房',
+          byline: '演示数据',
+          publishedAt: DateTime.utc(2026, 9, 17, 12),
+          pinned: false,
+        ),
+      ]),
+      officialLinks: const CommunityOfficialLinksPublished(
+        <CommunityOfficialLink>[
+          CommunityOfficialLink(
+            label: 'Website',
+            url: 'https://example.invalid/demo',
+          ),
+        ],
       ),
-      officialLinks: const LoopUnavailableFact('COMMUNITY_LINKS_DEFERRED'),
       // The Preview owns no Stream channel, so it never reports `available`
       // and never invents a channel CID.
       chat: joined

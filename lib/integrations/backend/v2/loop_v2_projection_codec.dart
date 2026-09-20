@@ -475,14 +475,116 @@ abstract final class LoopV2ProjectionCodec {
     );
   }
 
+  /// An announcement identifier. It is opaque: the client keys a row with it
+  /// and never parses it.
+  static final RegExp announcementIdPattern = RegExp(
+    r'^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$',
+  );
+
+  /// The server's own name for the sort of announcement a row is. It picks a
+  /// glyph and nothing else, so it is shape-checked rather than enumerated.
+  static final RegExp announcementKindPattern = RegExp(
+    r'^[a-z][A-Za-z0-9_]{0,31}$',
+  );
+
+  /// An official link. `https://` only, and never one carrying credentials.
+  static final RegExp officialLinkUrlPattern = RegExp(r'^https://[^\s]+$');
+
+  /// `announcements`: the community's own published list, or the server's
+  /// reason for having none.
+  ///
+  /// The available branch is strict on every axis a row is read by: a missing
+  /// field, a malformed identifier, a repeated one, an unreadable time or a
+  /// list longer than a page can carry is a contract break rather than a
+  /// partially rendered board.
+  static CommunityAnnouncementFeed announcements(Object? raw) {
+    if (raw is! Map) invalid();
+    if (raw['status'] != 'available') {
+      return CommunityAnnouncementFeedUnavailable(unavailable(raw).reasonCode);
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'items',
+    });
+    final items = <CommunityAnnouncement>[];
+    final seen = <String>{};
+    for (final entry in requireList(map['items'], maximum: 50)) {
+      final item = LoopV2Contract.strictMap(entry, const <String>{
+        'announcementId',
+        'kind',
+        'title',
+        'byline',
+        'publishedAt',
+        'pinned',
+      });
+      final announcementId = item['announcementId'];
+      if (announcementId is! String ||
+          !announcementIdPattern.hasMatch(announcementId) ||
+          !seen.add(announcementId)) {
+        invalid();
+      }
+      final kind = item['kind'];
+      if (kind is! String || !announcementKindPattern.hasMatch(kind)) {
+        invalid();
+      }
+      items.add(
+        CommunityAnnouncement(
+          announcementId: announcementId,
+          kind: kind,
+          title: requireText(item, 'title'),
+          byline: optionalText(item, 'byline'),
+          publishedAt: requireTimestamp(item, 'publishedAt'),
+          pinned: requireBool(item, 'pinned'),
+        ),
+      );
+    }
+    return CommunityAnnouncementFeedPublished(items);
+  }
+
+  /// `officialLinks`: the links the community publishes, or the server's
+  /// reason for publishing none. A link that is not `https://`, or that
+  /// carries credentials, is refused rather than shown.
+  static CommunityOfficialLinkList officialLinks(Object? raw) {
+    if (raw is! Map) invalid();
+    if (raw['status'] != 'available') {
+      return CommunityOfficialLinksUnavailable(unavailable(raw).reasonCode);
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'items',
+    });
+    final items = <CommunityOfficialLink>[];
+    final seen = <String>{};
+    for (final entry in requireList(map['items'], maximum: 12)) {
+      final item = LoopV2Contract.strictMap(entry, const <String>{
+        'label',
+        'url',
+      });
+      final label = requireText(item, 'label');
+      final url = item['url'];
+      if (label.length > 32 ||
+          url is! String ||
+          url.length < 9 ||
+          url.length > 512 ||
+          url.contains('@') ||
+          !officialLinkUrlPattern.hasMatch(url) ||
+          !aliasPattern.hasMatch(url) ||
+          !seen.add(url)) {
+        invalid();
+      }
+      items.add(CommunityOfficialLink(label: label, url: url));
+    }
+    return CommunityOfficialLinksPublished(items);
+  }
+
   static CommunityDetail detail(Map<String, Object?> root) {
     return CommunityDetail(
       community: community(root['community']),
       viewer: viewer(root['viewer']),
       miningPower: miningPowerFact(root['miningPower']),
       onlineCount: onlineCount(root['onlineCount']),
-      announcements: unavailable(root['announcements']),
-      officialLinks: unavailable(root['officialLinks']),
+      announcements: announcements(root['announcements']),
+      officialLinks: officialLinks(root['officialLinks']),
       chat: chatSection(root['chat']),
       voice: voiceSection(root['voice']),
     );
