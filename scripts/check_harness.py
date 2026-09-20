@@ -10414,7 +10414,7 @@ FRIEND_FRONTEND_TEST_MARKERS = {
         "group user mention candidates are hidden and cannot be selected",
         "group conversation labels never fall back to member identity",
         "group channel chrome hides stock typing and global identities",
-        "group list cell sanitizes preview and avatar while direct keeps official chrome",
+        "every inbox cell is named by LOOP, never by a Stream identity projection",
     ),
     Path("test/group_alias_mention_autocomplete_test.dart"): (
         "a candidate is the Alias this channel resolved, never Stream",
@@ -11113,9 +11113,11 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
         # Decision 0065 gave the direct branch its own cell so the inbox
         # timestamp can carry LOOP's Chinese 24-hour formatter. The dispatcher
         # still discriminates on the same Alias predicate, and the two cells
-        # are now scanned separately: only the group cell may not restore the
-        # stock global identity projections, while the direct cell is expected
-        # to keep them.
+        # are scanned separately — but since R14-1 neither of them may name a
+        # row from a Stream identity projection: `StreamChannelName` /
+        # `StreamChannelAvatar` derive a 1:1 row from the peer's `User.name`,
+        # which answers `User.id` for every LOOP account, and drew
+        # `loop_7e25…` in the inbox.
         dispatch_start = stream_identity.find(
             "Widget loopStreamChannelListIdentityItem"
         )
@@ -11138,6 +11140,41 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
             errors.append(
                 "Group Stream channel list must route group cells to the safe item and direct cells to the official one"
             )
+
+        direct_item_start = stream_identity.find(
+            "class _LoopStreamDirectChannelListItem"
+        )
+        direct_item_end = stream_identity.find(
+            "class _LoopStreamGroupChannelListItem", direct_item_start + 1
+        )
+        direct_item_section = (
+            stream_identity[direct_item_start:direct_item_end]
+            if direct_item_start >= 0 and direct_item_end > direct_item_start
+            else ""
+        )
+        if any(
+            marker not in direct_item_section
+            for marker in (
+                "title: const Text(loopDirectConversationNeutralLabel)",
+                "Text(loopDirectConversationNeutralInitial)",
+                "ValueKey<String>('loop-direct-channel-neutral-avatar')",
+                "StreamMessagePreviewText(message: lastMessage)",
+            )
+        ):
+            errors.append(
+                "Direct Stream channel list item must use LOOP's neutral direct label, initial and authorless preview"
+            )
+        for forbidden in (
+            "StreamChannelName(",
+            "StreamChannelAvatar(",
+            "StreamTypingIndicator(",
+            "ChannelListTileSubtitle(",
+        ):
+            if forbidden in direct_item_section:
+                errors.append(
+                    "Direct Stream channel list item must not name a row from a Stream identity projection: "
+                    + forbidden
+                )
 
         list_item_start = stream_identity.find(
             "class _LoopStreamGroupChannelListItem"
@@ -11206,7 +11243,11 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "Group Stream channel page must preserve official messaging behavior behind safe group chrome"
             )
 
-        for forbidden in ("StreamChannelAvatar(", "StreamTypingIndicator("):
+        for forbidden in (
+            "StreamChannelName(",
+            "StreamChannelAvatar(",
+            "StreamTypingIndicator(",
+        ):
             if forbidden in list_item_section or forbidden in safe_page_section:
                 errors.append(
                     "Group Stream list and channel chrome must not restore stock global identity projections: "

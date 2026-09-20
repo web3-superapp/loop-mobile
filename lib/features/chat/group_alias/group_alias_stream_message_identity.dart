@@ -21,6 +21,28 @@ const String loopGroupMemberNeutralLabel = '成员';
 /// Neutral group label used when Stream does not carry a reviewed group name.
 const String loopGroupConversationNeutralLabel = '群聊';
 
+/// Neutral label for a direct conversation LOOP has no name for.
+///
+/// The inbox reads its rows from Stream alone, and Stream carries no name for
+/// a LOOP account: `User.name` is empty, so `StreamChannelName` derived a 1:1
+/// row's title from the peer's Stream id and drew `loop_7e25…` at the top of
+/// the most-read list in the app (device report 2026-09-20 · R14-1).
+///
+/// The peer's honest name — `alias ?? loopId` from their public profile — has
+/// no source here. `POST /v2/chat/direct-channels` answers a CID *for* a
+/// public profile and there is no read that goes the other way
+/// (`frontend-v2-communication-api.md` §3), and a channel the peer opened was
+/// never announced to this client at all. So the row says only what it knows:
+/// this is a direct conversation. It never says `loop_`.
+const String loopDirectConversationNeutralLabel = '私聊';
+
+/// The one character the neutral direct avatar may draw.
+///
+/// It comes from [loopDirectConversationNeutralLabel], not from a Stream id:
+/// the initial Stream's own avatar drew was `L`, the first letter of
+/// `loop_…` (device report 2026-09-20 · R14-5).
+const String loopDirectConversationNeutralInitial = '私';
+
 const String _aliasIdField = 'loop_group_alias_id';
 const String _aliasField = 'loop_group_alias';
 const String _aliasVersionField = 'loop_group_alias_version';
@@ -204,10 +226,10 @@ Widget loopStreamChannelListTimestamp(Channel channel) =>
 /// Replaces every cell in an official [StreamChannelListView].
 ///
 /// Both branches keep official tap/long-press, unread, mute, pin and live
-/// channel state, and both carry LOOP's timestamp formatter. A direct cell
-/// keeps Stream's own avatar, name and subtitle widgets; only a group cell
-/// removes the typing/global avatar projections and sanitizes the
-/// last-message preview.
+/// channel state, and both carry LOOP's timestamp formatter. Neither branch
+/// lets a Stream identity projection name the row: a group cell reads the
+/// reviewed group name, a direct cell reads LOOP's neutral direct label, and
+/// both draw a LOOP avatar instead of Stream's.
 Widget loopStreamChannelListIdentityItem(StreamChannelListItem defaultItem) {
   if (!loopStreamChannelUsesGroupMessageAlias(defaultItem.props.channel.cid)) {
     return _LoopStreamDirectChannelListItem(props: defaultItem.props);
@@ -215,13 +237,19 @@ Widget loopStreamChannelListIdentityItem(StreamChannelListItem defaultItem) {
   return _LoopStreamGroupChannelListItem(props: defaultItem.props);
 }
 
-/// Stream's own direct cell, rebuilt only so the timestamp can carry LOOP's
-/// formatter.
+/// One direct cell in the inbox.
 ///
-/// `StreamChannelListItem.copyWith` exposes no timestamp slot and
-/// `_DefaultStreamChannelListItem` is private, so the official sub-widgets are
-/// composed here instead. Every one of them — avatar, name, subtitle with its
-/// typing indicator and delivery status — is Stream's, unchanged.
+/// Stream's own `StreamChannelName` / `StreamChannelAvatar` used to render
+/// here. For a 1:1 channel without a stored name both of them derive the row
+/// from the *other member's* `User.name`, whose getter answers `User.id` when
+/// the account has no name — every LOOP account — so the row's title was the
+/// peer's Stream id and its initials were `L` (device report 2026-09-20 ·
+/// R14-1 / R14-5). LOOP has no read that turns a direct channel back into the
+/// peer's public profile, so this cell names the conversation rather than the
+/// person, and the preview carries no author at all.
+///
+/// Everything that is not a name stays Stream's: the live muted/pinned/unread
+/// state, the last-message preview widget, tap and long-press.
 class _LoopStreamDirectChannelListItem extends StatelessWidget {
   const _LoopStreamDirectChannelListItem({required this.props});
 
@@ -231,35 +259,47 @@ class _LoopStreamDirectChannelListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final channel = props.channel;
     final state = channel.state!;
-    return StreamBuilder<bool>(
-      initialData: channel.isMuted,
-      stream: channel.isMutedStream,
-      builder: (context, mutedSnapshot) => StreamBuilder<bool>(
-        initialData: channel.isPinned,
-        stream: channel.isPinnedStream,
-        builder: (context, pinnedSnapshot) => StreamBuilder<int>(
-          initialData: state.unreadCount,
-          stream: state.unreadCountStream,
-          builder: (context, unreadSnapshot) => StreamChannelListTile(
-            avatar: props.leading ?? StreamChannelAvatar(channel: channel),
-            title: props.title ?? StreamChannelName(channel: channel),
-            subtitle:
-                props.subtitle ??
-                ChannelListTileSubtitle(
-                  channel: channel,
-                  sendingIndicatorBuilder: props.sendingIndicatorBuilder,
+    return StreamBuilder<ChannelState>(
+      initialData: state.channelState,
+      stream: state.channelStateStream,
+      builder: (context, snapshot) {
+        final channelState = snapshot.data ?? state.channelState;
+        final messages = channelState.messages ?? const <Message>[];
+        final lastMessage = messages.isEmpty ? null : messages.last;
+        return StreamBuilder<bool>(
+          initialData: channel.isMuted,
+          stream: channel.isMutedStream,
+          builder: (context, mutedSnapshot) => StreamBuilder<bool>(
+            initialData: channel.isPinned,
+            stream: channel.isPinnedStream,
+            builder: (context, pinnedSnapshot) => StreamBuilder<int>(
+              initialData: state.unreadCount,
+              stream: state.unreadCountStream,
+              builder: (context, unreadSnapshot) => StreamChannelListTile(
+                avatar: const CircleAvatar(
+                  key: ValueKey<String>('loop-direct-channel-neutral-avatar'),
+                  child: Text(loopDirectConversationNeutralInitial),
                 ),
-            timestamp:
-                props.trailing ?? loopStreamChannelListTimestamp(channel),
-            unreadCount: unreadSnapshot.data ?? state.unreadCount,
-            isMuted: mutedSnapshot.data ?? channel.isMuted,
-            isPinned: pinnedSnapshot.data ?? channel.isPinned,
-            onTap: props.onTap,
-            onLongPress: props.onLongPress,
-            selected: props.selected,
+                title: const Text(loopDirectConversationNeutralLabel),
+                // No `channel:` argument, so the official formatter prints the
+                // message and nothing else: with one it would prefix the
+                // author for a channel whose member count drifted above two
+                // (`message_preview_formatter.dart:228`).
+                subtitle: lastMessage == null
+                    ? Text(context.translations.emptyMessagesText)
+                    : StreamMessagePreviewText(message: lastMessage),
+                timestamp: loopStreamChannelListTimestamp(channel),
+                unreadCount: unreadSnapshot.data ?? state.unreadCount,
+                isMuted: mutedSnapshot.data ?? channel.isMuted,
+                isPinned: pinnedSnapshot.data ?? channel.isPinned,
+                onTap: props.onTap,
+                onLongPress: props.onLongPress,
+                selected: props.selected,
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

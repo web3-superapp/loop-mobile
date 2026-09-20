@@ -499,7 +499,7 @@ void main() {
   });
 
   testWidgets(
-    'group list cell sanitizes preview and avatar while direct keeps official chrome',
+    'every inbox cell is named by LOOP, never by a Stream identity projection',
     (tester) async {
       var tapped = false;
       final channelHarness = _ChannelHarness.group(
@@ -544,32 +544,48 @@ void main() {
       expect(tapped, isTrue);
       await _disposeHarness(tester, channelHarness);
 
+      // A direct cell names the conversation, never the peer's Stream id.
+      // `StreamChannelName` used to render here and drew `loop_7e25…` on the
+      // device, because a 1:1 channel with no stored name falls back to the
+      // other member's `User.name` — the id, for every LOOP account.
+      var directTapped = false;
       final directHarness = _ChannelHarness.direct(
-        member: _member(userId: 'direct-sender', accountName: 'Direct Friend'),
-        senderId: 'direct-sender',
-        // `StreamChannelName` derives an unnamed channel from the connected
-        // user, which this offline harness has no way to supply.
-        channelName: 'Direct Friend',
+        member: _member(
+          userId: 'loop_7e25420ed7ca4645b4860b1f9e734dad',
+          accountName: '',
+        ),
+        senderId: 'loop_7e25420ed7ca4645b4860b1f9e734dad',
+        messageText: '晚点聊',
       );
       addTearDown(directHarness.dispose);
       await _pumpInChannel(
         tester,
         harness: directHarness,
         child: loopStreamChannelListIdentityItem(
-          StreamChannelListItem(channel: directHarness.channel),
+          StreamChannelListItem(
+            channel: directHarness.channel,
+            onTap: () => directTapped = true,
+          ),
         ),
       );
 
-      // A direct cell keeps Stream's own avatar and subtitle — only the
-      // timestamp formatter is LOOP's.
-      expect(find.byType(StreamChannelAvatar), findsOneWidget);
-      expect(find.byType(StreamTypingIndicator), findsOneWidget);
+      expect(find.text(loopDirectConversationNeutralLabel), findsOneWidget);
+      expect(find.text(loopDirectConversationNeutralInitial), findsOneWidget);
+      expect(find.textContaining('loop_'), findsNothing);
+      expect(find.text('L'), findsNothing);
+      expect(find.byType(StreamChannelName), findsNothing);
+      expect(find.byType(StreamChannelAvatar), findsNothing);
+      expect(find.byType(StreamTypingIndicator), findsNothing);
+      // Stream still owns the preview, the live row state and the tap.
+      expect(find.textContaining('晚点聊'), findsOneWidget);
       expect(
         tester
             .widget<ChannelLastMessageDate>(find.byType(ChannelLastMessageDate))
             .formatter,
         isNotNull,
       );
+      await tester.tap(find.byType(StreamChannelListTile));
+      expect(directTapped, isTrue);
       await _disposeHarness(tester, directHarness);
     },
   );
@@ -680,11 +696,13 @@ final class _ChannelHarness {
     required Member member,
     required String senderId,
     String? channelName,
+    String messageText = 'Hello from LOOP',
   }) => _ChannelHarness._create(
     channelId: 'loop_direct_8e7d73c5',
     member: member,
     senderId: senderId,
     channelName: channelName,
+    messageText: messageText,
   );
 
   factory _ChannelHarness._create({
