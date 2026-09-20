@@ -12,6 +12,7 @@ import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/app/notifications/loop_notification_coordinator.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/app/session/loop_communication_retirement.dart';
+import 'package:loop_mobile/app/session/onboarding_sequence.dart';
 import 'package:loop_mobile/app/session/post_auth_bootstrap_coordinator.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/app/session/wallet_provisioning_controller.dart';
@@ -27,6 +28,7 @@ import 'package:loop_mobile/features/account/email_auth_controller.dart';
 import 'package:loop_mobile/features/account/loop_id_setup_screen.dart';
 import 'package:loop_mobile/features/account/privy_login_screen.dart';
 import 'package:loop_mobile/features/account/privy_otp_screen.dart';
+import 'package:loop_mobile/features/account/wallet_create_step_screen.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/features/chat/chat.dart';
 import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
@@ -248,14 +250,28 @@ class _LoopAppState extends ConsumerState<LoopApp> {
             .publish(landing, kind: kind);
       },
       navigate: (landing) {
-        if (!mounted || landing != LoopProfileLanding.loopIdSetup) return;
+        if (!mounted) return;
+        // The server calling the profile active is the only thing that ends
+        // the opening sequence, and it ends it for good.
+        if (landing == LoopProfileLanding.community) {
+          unawaited(
+            ref
+                .read(loopOnboardingSequenceProvider.notifier)
+                .complete(
+                  principalKey: ref
+                      .read(loopSessionProvider)
+                      .account
+                      ?.privyUserId,
+                ),
+          );
+          return;
+        }
+        if (landing != LoopProfileLanding.loopIdSetup) return;
         // Only lift an owner out of the credential or landing pages. A deep
         // link the owner opened deliberately is never interrupted.
         const liftable = <String>{'/auth', '/auth/otp', '/community'};
         final location = router.state.matchedLocation;
-        if (liftable.contains(location)) {
-          router.go(LoopRouteManifest.pathFor('loop-id-setup'));
-        }
+        if (liftable.contains(location)) unawaited(_enterOnboardingSequence());
       },
     );
     // The banner the failed check raises is the only surface that reports it,
@@ -270,6 +286,13 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       notificationCoordinator.onIdentityMayHaveChanged();
       postAuthBootstrapCoordinator.onSessionChanged(previous, next);
       postAuthProfileCoordinator.onSessionChanged(previous, next);
+      // Leaving the account drops the in-memory position only. The stored
+      // one survives, so signing in again as the same pending account
+      // resumes on the step it stopped on.
+      if (next.mode == LoopSessionMode.signedOut ||
+          next.mode == LoopSessionMode.preview) {
+        ref.read(loopOnboardingSequenceProvider.notifier).leave();
+      }
     });
     ref.listenManual(loopBootstrapSessionProvider, (previous, next) {
       if (!identical(previous, next)) {
@@ -277,6 +300,22 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       }
     });
     notificationCoordinator.start();
+  }
+
+  /// Opens the five-step account sequence at the step this account is on.
+  ///
+  /// The position comes from device storage, so killing the process and
+  /// reopening continues where the owner stopped instead of restarting at
+  /// 02. It is only ever reached from a `GET /v2/profile` read that answered
+  /// `pending`; an active account cannot enter here.
+  Future<void> _enterOnboardingSequence() async {
+    final principal = ref.read(loopSessionProvider).account?.privyUserId ?? '';
+    if (principal.trim().isEmpty) return;
+    final step = await ref
+        .read(loopOnboardingSequenceProvider.notifier)
+        .begin(principal);
+    if (!mounted) return;
+    router.go(LoopRouteManifest.pathFor(step.slug));
   }
 
   @override
@@ -449,8 +488,36 @@ GoRouter _buildRouter(
       ),
       GoRoute(
         path: '/auth/loop-id',
-        builder: (context, state) => LoopIdSetupScreen(
-          onActivated: () => context.go(LoopRouteManifest.defaultPath),
+        builder: (context, state) => Consumer(
+          builder: (context, ref, child) {
+            final sequence = ref.watch(loopOnboardingSequenceProvider);
+            return LoopIdSetupScreen(
+              // Step 05 can go back to 04 while the sequence is running.
+              // Opened on its own it has nothing behind it, so it shows no
+              // back action rather than an action that leads nowhere.
+              onBack: sequence.isActive
+                  ? () {
+                      ref
+                          .read(loopOnboardingSequenceProvider.notifier)
+                          .moveTo(LoopOnboardingStep.security);
+                      if (Navigator.of(context).canPop()) {
+                        context.pop();
+                      } else {
+                        context.go(LoopRouteManifest.pathFor('security-setup'));
+                      }
+                    }
+                  : null,
+              onActivated: () {
+                // Activation is what ends the sequence: the stored position
+                // is dropped and Community replaces the whole stack, so no
+                // back gesture can re-enter a finished opening.
+                unawaited(
+                  ref.read(loopOnboardingSequenceProvider.notifier).complete(),
+                );
+                context.go(LoopRouteManifest.defaultPath);
+              },
+            );
+          },
         ),
       ),
       ShellRoute(
@@ -1207,6 +1274,11 @@ final List<RouteBase> _accountRoutes =
 /// told about by the integration layer.
 Widget _accountScreen(BuildContext context, WidgetRef ref, String id) {
   final config = ref.watch(appConfigProvider);
+  final sequence = ref.watch(loopOnboardingSequenceProvider);
+  final step = _onboardingStepFor(id);
+  if (sequence.isActive && step != null) {
+    return _onboardingStepScreen(context, ref, step, config);
+  }
   void back() {
     if (Navigator.of(context).canPop()) {
       context.pop();
@@ -1229,6 +1301,77 @@ Widget _accountScreen(BuildContext context, WidgetRef ref, String id) {
         : null,
     onNavigate: (destination) => context.go(_accountPath(destination)),
   );
+}
+
+/// Which of the four opening steps a manifest slug renders, or `null` for a
+/// page that is not part of the sequence.
+LoopOnboardingStep? _onboardingStepFor(String id) => switch (id) {
+  'wallet-create' => LoopOnboardingStep.walletCreate,
+  'wallet-recovery' => LoopOnboardingStep.walletBackup,
+  'security-setup' => LoopOnboardingStep.security,
+  'loop-id-setup' => LoopOnboardingStep.loopId,
+  _ => null,
+};
+
+/// The same account pages, mounted as the opening sequence.
+///
+/// The sequence exists because the prototype opens an account in five steps
+/// and the product promised them: 01 verify, 02 wallet, 03 recovery, 04
+/// protection, 05 LOOP ID. Routing straight to 05 — which is what shipped —
+/// skipped three of them on a real first login (device report 2026-09-20).
+///
+/// 02 has no back action: the credential behind it is already accepted, so
+/// there is no login page to return to. 03, 04 and 05 step back one page and
+/// record the move, so a process killed there resumes on the same step.
+Widget _onboardingStepScreen(
+  BuildContext context,
+  WidgetRef ref,
+  LoopOnboardingStep step,
+  AppConfig config,
+) {
+  final controller = ref.read(loopOnboardingSequenceProvider.notifier);
+
+  void advance(LoopOnboardingStep next) {
+    controller.moveTo(next);
+    context.push(LoopRouteManifest.pathFor(next.slug));
+  }
+
+  void retreat(LoopOnboardingStep previous) {
+    controller.moveTo(previous);
+    if (Navigator.of(context).canPop()) {
+      context.pop();
+    } else {
+      context.go(LoopRouteManifest.pathFor(previous.slug));
+    }
+  }
+
+  return switch (step) {
+    LoopOnboardingStep.walletCreate => WalletCreateStepScreen(
+      onContinue: () => advance(LoopOnboardingStep.walletBackup),
+    ),
+    LoopOnboardingStep.walletBackup => AccountSurfaceScreen.fromId(
+      'wallet-recovery',
+      versionLabel: 'Version ${config.loopClientVersionForCurrentBuild}',
+      capabilities: PrivyWalletCapabilities(
+        canConnectExternalWallet: config.canConnectExternalWallet,
+      ),
+      onBack: () => retreat(LoopOnboardingStep.walletCreate),
+      onRecoveryDecision: (method) =>
+          controller.recordRecoveryDecision(method?.name),
+      onNavigate: (_) => advance(LoopOnboardingStep.security),
+    ),
+    LoopOnboardingStep.security => AccountSurfaceScreen.fromId(
+      'security-setup',
+      versionLabel: 'Version ${config.loopClientVersionForCurrentBuild}',
+      capabilities: PrivyWalletCapabilities(
+        canConnectExternalWallet: config.canConnectExternalWallet,
+      ),
+      onBack: () => retreat(LoopOnboardingStep.walletBackup),
+      onNavigate: (_) => advance(LoopOnboardingStep.loopId),
+    ),
+    // 05 is mounted by `/auth/loop-id`, which owns the activation call.
+    LoopOnboardingStep.loopId => const UnknownAccountScreen(),
+  };
 }
 
 // Manifest 7-profile pages with an existing screen. Copy permissions, seed

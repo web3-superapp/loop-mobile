@@ -31,6 +31,8 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_s5_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s6_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s7_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s8_providers.dart';
+import 'package:loop_mobile/app/session/onboarding_sequence.dart';
+import 'package:loop_mobile/integrations/personalization/shared_preferences_onboarding_store.dart';
 import 'package:loop_mobile/integrations/sharing/system_chat_merge_export_sink.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
@@ -49,6 +51,12 @@ Future<void> main() async {
         ),
         loopDisplayPreferencesInitialProvider.overrideWithValue(
           displayBootstrap.initial,
+        ),
+        // Where the five-step opening got to, per account. A device that
+        // refuses the write falls back to the in-process default, which
+        // simply restarts the sequence at 02 after a cold start.
+        loopOnboardingProgressStoreProvider.overrideWithValue(
+          SharedPreferencesLoopOnboardingProgressStore(),
         ),
         friendGatewayProvider.overrideWith(
           (ref) => ref.watch(loopProductionFriendGatewayProvider),

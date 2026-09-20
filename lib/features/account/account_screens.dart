@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/account/wallet_creation_facts.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -58,9 +59,11 @@ class AccountSurfaceScreen extends StatelessWidget {
     this.surfaceId, {
     super.key,
     this.capabilities = const PrivyWalletCapabilities.unavailable(),
+    this.walletCreation,
     this.onNavigate,
     this.onBack,
     this.onPrimaryAction,
+    this.onRecoveryDecision,
     this.versionLabel = 'Version 0.1.0',
   });
 
@@ -74,9 +77,19 @@ class AccountSurfaceScreen extends StatelessWidget {
 
   final String surfaceId;
   final PrivyWalletCapabilities capabilities;
+
+  /// The wallet observations the 02 page renders. Absent outside the opening
+  /// sequence, where nothing has been observed and the page says so.
+  final LoopWalletCreationFacts? walletCreation;
+
   final AccountNavigation? onNavigate;
   final VoidCallback? onBack;
   final VoidCallback? onPrimaryAction;
+
+  /// What step 03 decided, reported with the method the owner chose or
+  /// `null` for 稍后设置. It records a decision, never an enrolment.
+  final ValueChanged<WalletRecoveryMethod?>? onRecoveryDecision;
+
   final String versionLabel;
 
   String get _id => surfaceId.replaceFirst('#', '').toLowerCase();
@@ -98,13 +111,20 @@ class AccountSurfaceScreen extends StatelessWidget {
         onConnect: onPrimaryAction,
       ),
       'wallet-create' => WalletCreateScreen(
-        capabilityAvailable: capabilities.canCreateEmbeddedWallet,
+        facts:
+            walletCreation ??
+            (capabilities.canCreateEmbeddedWallet
+                ? const LoopWalletCreationFacts(
+                    phase: LoopWalletCreationPhase.working,
+                  )
+                : const LoopWalletCreationFacts.capabilityUnconfirmed()),
         onBack: onBack,
         onContinue: () => _navigate(context, 'wallet-recovery'),
       ),
       'wallet-recovery' => WalletRecoveryScreen(
         capabilities: capabilities,
         onBack: onBack,
+        onDecision: onRecoveryDecision,
         onContinue: () => _navigate(context, 'security-setup'),
       ),
       'security-setup' => SecuritySetupScreen(
@@ -424,13 +444,13 @@ class ExternalWalletScreen extends StatelessWidget {
 
 class WalletCreateScreen extends StatelessWidget {
   const WalletCreateScreen({
-    required this.capabilityAvailable,
+    required this.facts,
     required this.onContinue,
     super.key,
     this.onBack,
   });
 
-  final bool capabilityAvailable;
+  final LoopWalletCreationFacts facts;
   final VoidCallback onContinue;
   final VoidCallback? onBack;
 
@@ -445,42 +465,80 @@ class WalletCreateScreen extends StatelessWidget {
         label: '设置恢复方式',
         primary: true,
         block: true,
-        onPressed: capabilityAvailable ? onContinue : null,
+        onPressed: facts.canContinue ? onContinue : null,
       ),
       body: <Widget>[
         const IdentityProgress(step: 2, total: 5, label: '创建钱包'),
         const IdentityStepCopy('内置钱包由 Privy 在设备上创建，密钥不会经过 LOOP。'),
-        if (capabilityAvailable)
-          const LoopNotice(
+        switch (facts.phase) {
+          LoopWalletCreationPhase.observed => const LoopNotice(
+            key: ValueKey<String>('wallet-create-observed'),
+            icon: 'check',
+            title: '钱包已创建',
+            body: '这个账号下已经能看到内置钱包。下一步继续设置恢复方式。',
+          ),
+          LoopWalletCreationPhase.working => const LoopNotice(
             key: ValueKey<String>('wallet-create-progress'),
             icon: 'wallet',
             title: '正在创建你的钱包',
-            body: '密钥在本地生成并写入安全区。完成前请不要关闭 App。',
-          )
-        else
-          const LoopNotice(
+            body: '密钥在本地生成并写入安全区。看到钱包之前，下面的进度不会替它打勾。',
+          ),
+          LoopWalletCreationPhase.timedOut => const LoopNotice(
+            key: ValueKey<String>('wallet-create-timeout'),
+            icon: 'clock',
+            tone: LoopNoticeTone.warn,
+            title: '钱包还在创建中，可以先继续',
+            body: '等了 60 秒仍然没有看到钱包。这不影响登录，也不代表失败；钱包出现后会自动显示在钱包页。',
+          ),
+          LoopWalletCreationPhase.unavailable => const LoopNotice(
             key: ValueKey<String>('wallet-create-unavailable'),
             icon: 'warn',
             tone: LoopNoticeTone.warn,
             title: '钱包创建暂不可用',
             body: 'Privy 尚未确认内置钱包能力。这一页不会伪造进度，也没有创建任何钱包。',
           ),
+        },
+        if (facts.providerMessage case final String message)
+          LoopNotice(
+            key: const ValueKey<String>('wallet-create-provider-message'),
+            icon: 'warn',
+            tone: LoopNoticeTone.danger,
+            title: '这次创建没有完成',
+            body: message,
+          ),
         const LoopLabel('这一步会做什么'),
-        const LoopRecordGroup(
+        LoopRecordGroup(
           rows: <LoopRecordRow>[
-            LoopRecordRow(
+            _step(
+              id: 'keypair',
               title: '生成密钥对',
-              subtitle: '在设备本地生成，不上传',
+              detail: '在设备本地生成，不上传',
+              done: facts.walletObserved,
+              pendingDetail: '钱包出现后才算完成',
               position: LoopRowPosition.first,
             ),
-            LoopRecordRow(
+            _step(
+              id: 'secure-element',
               title: '写入安全区',
-              subtitle: '由系统钥匙串 / Keystore 保管',
+              detail: '由系统钥匙串 / Keystore 保管',
+              done: facts.walletObserved,
+              pendingDetail: '钱包出现后才算完成',
               position: LoopRowPosition.middle,
             ),
-            LoopRecordRow(
+            _step(
+              id: 'recovery',
+              title: '设置恢复方式',
+              detail: '换设备时用它拿回资产',
+              done: facts.recoveryEnrolled,
+              pendingDetail: '第 3 步选择后才算完成',
+              position: LoopRowPosition.middle,
+            ),
+            _step(
+              id: 'loop-id',
               title: '绑定 LOOP ID',
-              subtitle: '钱包地址随时可换，LOOP ID 不变',
+              detail: '钱包地址随时可换，LOOP ID 不变',
+              done: facts.loopIdActivated,
+              pendingDetail: '第 5 步完成后才算完成',
               position: LoopRowPosition.last,
             ),
           ],
@@ -492,6 +550,32 @@ class WalletCreateScreen extends StatelessWidget {
           margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
         ),
       ],
+    );
+  }
+
+  /// One creation step. It reads `已完成` only from an observation this run
+  /// actually made; everything else says which step will produce it.
+  LoopRecordRow _step({
+    required String id,
+    required String title,
+    required String detail,
+    required bool done,
+    required String pendingDetail,
+    required LoopRowPosition position,
+  }) {
+    return LoopRecordRow(
+      key: ValueKey<String>('wallet-create-step-$id'),
+      leading: LoopIcon(
+        done ? 'check' : 'clock',
+        size: 19,
+        color: done ? LoopColors.lime : LoopColors.text3,
+      ),
+      title: title,
+      subtitle: done ? detail : '$detail · $pendingDetail',
+      trailing: done ? '已完成' : '未完成',
+      position: position,
+      subtitleMaxLines: 2,
+      semanticLabel: done ? '$title，已完成' : '$title，未完成：$pendingDetail',
     );
   }
 }
@@ -520,6 +604,7 @@ class WalletRecoveryScreen extends StatefulWidget {
     required this.onContinue,
     super.key,
     this.onBack,
+    this.onDecision,
     this.loading = false,
     this.failureReason,
     this.onRetry,
@@ -528,6 +613,10 @@ class WalletRecoveryScreen extends StatefulWidget {
   final PrivyWalletCapabilities capabilities;
   final VoidCallback onContinue;
   final VoidCallback? onBack;
+
+  /// Reports the method the owner chose, or `null` when the step is skipped.
+  /// Nothing is enrolled, so the report is a choice and never a credential.
+  final ValueChanged<WalletRecoveryMethod?>? onDecision;
 
   /// The capability document has not been observed yet.
   final bool loading;
@@ -572,12 +661,14 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
             key: const ValueKey<String>('wallet-recovery-confirm'),
             label: '确认',
             primary: true,
-            onPressed: _chosen != null && !blocked ? widget.onContinue : null,
+            onPressed: _chosen != null && !blocked
+                ? () => _decide(_chosen)
+                : null,
           ),
           LoopButton(
             key: const ValueKey<String>('wallet-recovery-later'),
             label: '稍后设置',
-            onPressed: widget.onContinue,
+            onPressed: () => _decide(null),
           ),
         ],
       ),
@@ -662,6 +753,11 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
         ],
       ],
     );
+  }
+
+  void _decide(WalletRecoveryMethod? method) {
+    widget.onDecision?.call(method);
+    widget.onContinue();
   }
 
   LoopRecordRow _methodRow(WalletRecoveryMethod method) {

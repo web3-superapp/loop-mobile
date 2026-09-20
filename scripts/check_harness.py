@@ -3821,13 +3821,21 @@ def check_local_display_preferences_contract(root: Path) -> list[str]:
     allowed_importer = Path(
         "lib/integrations/personalization/shared_preferences_display_store.dart"
     )
+    # Two reviewed adapters may touch device-local preferences, and no other
+    # file may. The second one (S53) stores where the five-step account
+    # opening got to; it is pinned just as narrowly by
+    # `check_onboarding_sequence_contract`.
+    allowed_importers = {
+        allowed_importer,
+        ONBOARDING_PROGRESS_STORE_OWNER,
+    }
     lib_root = root / "lib"
     if lib_root.is_dir():
         for path in lib_root.rglob("*.dart"):
             relative = path.relative_to(root)
             source = strip_dart_comments(read_text(path))
             if "package:shared_preferences/shared_preferences.dart" in source:
-                if relative != allowed_importer:
+                if relative not in allowed_importers:
                     errors.append(
                         "Shared Preferences must stay behind the reviewed display store adapter: "
                         + str(relative)
@@ -3989,6 +3997,158 @@ BUILD_PROFILE_TEST_MARKERS = {
         "a build-profile mismatch strips Privy provider inputs",
     ),
 }
+
+
+def check_onboarding_sequence_contract(root: Path) -> list[str]:
+    """Keep the five-step account opening reachable, resumable and truthful."""
+
+    errors = require_fragments(
+        root,
+        {
+            # S53 (decision 0075): the prototype opens an account in five
+            # numbered steps. Shipping only step 05 skipped three pages the
+            # product promised (device report 2026-09-20).
+            "lib/app/session/onboarding_sequence.dart": (
+                "enum LoopOnboardingStep",
+                "walletCreate(2, 'wallet-create',",
+                "walletBackup(3, 'wallet-recovery',",
+                "security(4, 'security-setup',",
+                "loopId(5, 'loop-id-setup',",
+                "static const total = 5",
+                "abstract interface class LoopOnboardingProgressStore",
+                "class UnavailableLoopOnboardingProgressStore",
+                "loopOnboardingProgressStoreProvider",
+                "Future<LoopOnboardingStep> begin(String principalKey)",
+                "void moveTo(LoopOnboardingStep step)",
+                "void recordRecoveryDecision(String? methodName)",
+                "Future<void> complete({String? principalKey})",
+                "void leave()",
+            ),
+            "lib/integrations/personalization/shared_preferences_onboarding_store.dart": (
+                "class SharedPreferencesLoopOnboardingProgressStore",
+                "SharedPreferencesAsync()",
+                "loop.onboarding.v1.step.",
+                "LoopOnboardingStep.tryParse(",
+            ),
+            "lib/features/account/wallet_creation_facts.dart": (
+                "enum LoopWalletCreationPhase",
+                "class LoopWalletCreationFacts",
+                "static const Duration pollInterval = Duration(seconds: 2)",
+                "static const int maximumAttempts = 30",
+                "loopEmbeddedWalletWatchProvider",
+                "loopWalletCreationFactsProvider",
+                "directory.embedded.isNotEmpty",
+            ),
+            "lib/features/account/wallet_create_step_screen.dart": (
+                "class WalletCreateStepScreen",
+                "loopEmbeddedWalletWatchProvider.notifier).start()",
+                "loopWalletCreationFactsProvider",
+            ),
+            "lib/app.dart": (
+                "Future<void> _enterOnboardingSequence() async",
+                "_onboardingStepScreen(",
+                "LoopOnboardingStep? _onboardingStepFor(String id)",
+                "loopOnboardingSequenceProvider.notifier).leave()",
+            ),
+            "lib/main.dart": (
+                "loopOnboardingProgressStoreProvider.overrideWithValue(",
+                "SharedPreferencesLoopOnboardingProgressStore()",
+            ),
+            "test/s53_onboarding_sequence_test.dart": (
+                "a pending account lands on 02, not straight on 05",
+                "a killed process reopens on the step it stopped on",
+                "an active account never enters the sequence",
+                "60 seconds without a wallet times out and never fails",
+                'a refused read is never read as "you have no wallet"',
+                "a seen wallet ticks the two steps it actually proves",
+                "an unseen wallet leaves every step unfinished",
+                "the key is namespaced and partitioned by account",
+            ),
+            "docs/decisions/0075-open-an-account-in-five-steps.md": (
+                "## Status",
+                "## Context",
+                "## Decision",
+                "## Consequences",
+                "## Evidence",
+            ),
+            "docs/product/implementation-constraints.md": (
+                "The opening sequence stores a step name only",
+            ),
+            "docs/product-decisions.md": (
+                "A pending account opens through all five prototype steps",
+            ),
+        },
+    )
+
+    # The 02 page may never tick a row it has not observed. Every completion
+    # in the reviewed slice reads a fact off the facts object.
+    account_path = root / "lib/features/account/account_screens.dart"
+    if account_path.is_file():
+        source = strip_dart_comments(read_text(account_path))
+        start = source.find("class WalletCreateScreen")
+        end = source.find("class WalletRecoveryScreen", start + 1)
+        if start < 0 or end < 0:
+            errors.append("the wallet-create step must stay one bounded slice")
+        else:
+            slice_ = source[start:end]
+            for marker in (
+                "facts.walletObserved",
+                "facts.recoveryEnrolled",
+                "facts.loopIdActivated",
+                "wallet-create-step-",
+            ):
+                if marker not in slice_:
+                    errors.append(
+                        "the wallet-create step must read every tick off an "
+                        "observation: missing " + marker
+                    )
+            if re.search(r"\bdone\s*:\s*true\b", slice_):
+                errors.append(
+                    "the wallet-create step must not hard-code a finished step"
+                )
+
+    adapter_path = root / ONBOARDING_PROGRESS_STORE_OWNER
+    if adapter_path.is_file():
+        adapter_source = strip_dart_comments(read_text(adapter_path))
+        adapter = strip_dart_comments_and_strings(adapter_source)
+        imports = re.findall(
+            r"^import\s+['\"]([^'\"]+)['\"](?:\s+show\s+[^;]+)?\s*;",
+            adapter_source,
+            flags=re.MULTILINE,
+        )
+        if imports != [
+            "package:flutter/foundation.dart",
+            "package:loop_mobile/app/session/onboarding_sequence.dart",
+            "package:shared_preferences/shared_preferences.dart",
+        ]:
+            errors.append(
+                "the onboarding progress adapter imports only Flutter "
+                "annotations, its narrow port, and Shared Preferences"
+            )
+        if "static const String keyPrefix = 'loop.onboarding.v1.step.';" not in (
+            adapter_source
+        ):
+            errors.append(
+                "the onboarding progress adapter must retain its exact "
+                "namespaced key prefix"
+            )
+        preference_members = re.findall(r"\bpreferences\.(\w+)\b", adapter)
+        if preference_members != ["getString", "setString", "remove"]:
+            errors.append(
+                "the onboarding progress adapter may call only "
+                "SharedPreferencesAsync getString/setString/remove"
+            )
+        if len(re.findall(r"\bSharedPreferencesAsync\s*\(\s*\)", adapter)) != 1:
+            errors.append(
+                "the onboarding progress adapter must create exactly one "
+                "SharedPreferencesAsync adapter"
+            )
+        if len(re.findall(r"\bstatic\s+const\s+String\s+\w+\s*=", adapter)) != 1:
+            errors.append(
+                "the onboarding progress adapter must declare exactly one key"
+            )
+
+    return errors
 
 
 def check_build_profile_configuration_contract(root: Path) -> list[str]:
@@ -4381,6 +4541,13 @@ V2_SESSION_TEST_MARKERS = {
         "signing out blocks every login entry until backend cleanup really ends",
     ),
 }
+# S53: the only file allowed to store where the five-step account opening
+# got to. The value is a step name partitioned by the opaque V2 owner
+# partition — never a credential, an account resource or a claim that
+# anything was enrolled.
+ONBOARDING_PROGRESS_STORE_OWNER = Path(
+    "lib/integrations/personalization/shared_preferences_onboarding_store.dart"
+)
 V2_SECURE_STORAGE_OWNER = Path(
     "lib/integrations/backend/v2/loop_v2_session_store.dart"
 )
@@ -11755,6 +11922,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_chat_preview_conversation_id_contract(root))
     errors.extend(check_security_capability_truth_contract(root))
     errors.extend(check_local_display_preferences_contract(root))
+    errors.extend(check_onboarding_sequence_contract(root))
     errors.extend(check_build_profile_configuration_contract(root))
     errors.extend(check_network_dio_policy_contract(root))
     errors.extend(check_stream_token_client_contract(root))
@@ -11817,7 +11985,7 @@ def main() -> int:
     print(
         "Harness check passed: profile, five-destination V2 contract, "
         "V2 community truth, pins, "
-        "Spot-only product, New Pairs source-scoped truth, Chat snapshot, Preview request truth and exact conversation identity, security capability truth, device-local display preferences, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
+        "Spot-only product, New Pairs source-scoped truth, Chat snapshot, Preview request truth and exact conversation identity, security capability truth, device-local display preferences, five-step account opening, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
         "S5 chain/market/wallet-read truth, S6 money-action truth, "
         "S7 launch/mining/referral truth, S9 dual chain slots, "
         "seven-band typography with bundled Noto Sans SC, "
