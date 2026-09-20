@@ -85,17 +85,22 @@ class LoopStatGrid extends StatelessWidget {
       final left = stats[index];
       final right = index + 1 < stats.length ? stats[index + 1] : null;
       rows.add(
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Expanded(child: _LoopStatCell(stat: left)),
-            const SizedBox(width: gap),
-            Expanded(
-              child: right == null
-                  ? const SizedBox.shrink()
-                  : _LoopStatCell(stat: right),
-            ),
-          ],
+        // The grid sits in a sliver, where height is unbounded: `stretch`
+        // alone would ask a cell to be infinitely tall. The intrinsic pass
+        // measures the taller cell first, which is what makes a pair line up.
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Expanded(child: _LoopStatCell(stat: left)),
+              const SizedBox(width: gap),
+              Expanded(
+                child: right == null
+                    ? const SizedBox.shrink()
+                    : _LoopStatCell(stat: right),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -424,16 +429,18 @@ class LoopActionGrid extends StatelessWidget {
         LoopSpacing.page,
         LoopSpacing.card,
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          for (final (index, action) in actions.indexed) ...<Widget>[
-            if (index > 0) const SizedBox(width: 9),
-            Expanded(
-              child: _LoopActionTile(action: action, onBlocked: onBlocked),
-            ),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            for (final (index, action) in actions.indexed) ...<Widget>[
+              if (index > 0) const SizedBox(width: 9),
+              Expanded(
+                child: _LoopActionTile(action: action, onBlocked: onBlocked),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -517,18 +524,20 @@ class LoopPrimaryActionRow extends StatelessWidget {
         LoopSpacing.page,
         10,
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Expanded(
-            flex: 2,
-            child: _LoopPayTile(action: primary, onBlocked: onBlocked),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _LoopCompactTile(action: secondary, onBlocked: onBlocked),
-          ),
-        ],
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Expanded(
+              flex: 2,
+              child: _LoopPayTile(action: primary, onBlocked: onBlocked),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _LoopCompactTile(action: secondary, onBlocked: onBlocked),
+            ),
+          ],
+        ),
       ),
     );
   }

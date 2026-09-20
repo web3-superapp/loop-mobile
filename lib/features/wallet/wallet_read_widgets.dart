@@ -32,6 +32,7 @@ LoopRecordRow walletBalanceRow(
   LoopAssetBalanceRow row, {
   VoidCallback? onTap,
   DateTime? now,
+  String? miningText,
 }) {
   final balance = row.balance;
   final valuation = row.valuation;
@@ -73,6 +74,10 @@ LoopRecordRow walletBalanceRow(
         value == Decimal.zero ? '' : '待确认 ${loopFormatDecimal(value)}',
     },
     if (row.crossCheck.isMisaligned) '数据源尚未对齐',
+    // The prototype's asset row carries the holding's mining power beside the
+    // balance; the caller hands whatever the snapshot said, including its own
+    // dash. This row never derives it.
+    ?miningText,
   ].where((part) => part.isNotEmpty).toList(growable: false);
 
   return LoopRecordRow(
@@ -84,6 +89,7 @@ LoopRecordRow walletBalanceRow(
     ),
     title: row.symbol,
     subtitle: subtitleParts.join(' · '),
+    subtitleMaxLines: miningText == null ? 1 : 2,
     trailing: trailing,
     trailingCaption: caption,
     trailingBadge: badge,

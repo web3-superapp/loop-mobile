@@ -124,9 +124,7 @@ void main() {
       expect(find.text('以 WBNB 计价'), findsWidgets);
     });
 
-    testWidgets('the deferred security rows never state a count', (
-      tester,
-    ) async {
+    testWidgets('the security rows never state a count', (tester) async {
       await pumpS5Page(
         tester,
         const WalletScreen(),
@@ -135,14 +133,19 @@ void main() {
 
       await scrollToS5Section(
         tester,
-        find.byKey(const ValueKey<String>('wallet-security-unavailable')),
+        find.byKey(const ValueKey<String>('wallet-approvals-entry')),
       );
-      expect(find.textContaining('安全中心 / DApp'), findsOneWidget);
+      // The prototype's four rows, in its order, none of them stating a figure
+      // this page never read.
+      expect(find.text('安全中心'), findsOneWidget);
+      expect(find.text('DApp 核对'), findsOneWidget);
+      expect(find.text('授权盘点'), findsOneWidget);
+      expect(find.text('网络与 RPC'), findsOneWidget);
       expect(find.textContaining('8 个有效授权'), findsNothing);
       expect(find.textContaining('4 条链已启用'), findsNothing);
     });
 
-    testWidgets('the funds actions open their own manifest slugs', (
+    testWidgets('the security rows open their own manifest slugs', (
       tester,
     ) async {
       final opened = <String>[];
@@ -153,10 +156,10 @@ void main() {
       );
 
       for (final entry in const <(String, String)>[
-        ('wallet-pay-entry', '/pay'),
-        ('wallet-swap-entry', '/wallet/swap'),
-        ('wallet-send-entry', '/wallet/send'),
-        ('wallet-bridge-entry', '/wallet/bridge'),
+        ('wallet-security-entry', '/profile/security'),
+        ('wallet-dapp-entry', '/wallet/dapp'),
+        ('wallet-approvals-entry', '/wallet/approvals'),
+        ('wallet-networks-entry', '/wallet/networks'),
       ]) {
         await scrollToS5Section(tester, find.byKey(ValueKey<String>(entry.$1)));
         await tester.tap(find.byKey(ValueKey<String>(entry.$1)));
@@ -166,11 +169,60 @@ void main() {
       // Each entry opens its own page, which owns its unavailable state; this
       // page never speaks for the four destinations.
       expect(opened, <String>[
-        '/pay',
-        '/wallet/swap',
-        '/wallet/send',
-        '/wallet/bridge',
+        '/profile/security',
+        '/wallet/dapp',
+        '/wallet/approvals',
+        '/wallet/networks',
       ]);
+    });
+
+    testWidgets('the prototype blocks are laid out in the prototype order', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const WalletScreen(),
+        wallet: FakeWalletReadGateway(),
+      );
+
+      // Pay + 兑换, then 发送 / 接收 / 跨链, then the holdings power strip,
+      // then the assets. The order is the page's whole argument, so it is
+      // pinned rather than left to a screenshot.
+      final order = <Key>[
+        const ValueKey<String>('wallet-pay-entry'),
+        const ValueKey<String>('wallet-swap-entry'),
+        const ValueKey<String>('wallet-send-entry'),
+        const ValueKey<String>('wallet-receive-entry'),
+        const ValueKey<String>('wallet-bridge-entry'),
+        const ValueKey<String>('wallet-power-hint'),
+      ];
+      var previous = double.negativeInfinity;
+      for (final key in order) {
+        final finder = find.byKey(key);
+        expect(finder, findsOneWidget, reason: '\$key is missing');
+        final top = tester.getTopLeft(finder).dy;
+        expect(
+          top,
+          greaterThanOrEqualTo(previous),
+          reason: '\$key is out of order',
+        );
+        previous = top;
+      }
+    });
+
+    testWidgets('a holding carries the mining power the snapshot read', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const WalletScreen(),
+        wallet: FakeWalletReadGateway(),
+      );
+
+      // Mining is not wired in this harness, so the snapshot has no row for
+      // the holding: the slot renders a dash and never a zero.
+      expect(find.textContaining('算力 —'), findsWidgets);
+      expect(find.textContaining('算力 0'), findsNothing);
     });
 
     testWidgets('an unavailable chain capability stops the page', (

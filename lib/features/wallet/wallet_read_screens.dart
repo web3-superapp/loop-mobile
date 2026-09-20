@@ -16,8 +16,10 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
+import 'package:loop_mobile/features/wallet/wallet_mining_hooks.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -118,30 +120,17 @@ class WalletScreen extends ConsumerStatefulWidget {
 }
 
 class _WalletScreenState extends ConsumerState<WalletScreen> {
-  /// One money-action row.
+  /// What a blocked action answers with.
   ///
-  /// A closed gate replaces the promise with the server's own sentence and
-  /// marks the row 不可用. The tap still opens the destination: that page owns
-  /// the full explanation, and hiding the entry would make the capability
-  /// impossible to look up.
-  LoopRecordRow _moneyActionRow({
-    required Key rowKey,
-    required String title,
-    required String subtitle,
-    required bool available,
-    required String unavailableSubtitle,
-    required VoidCallback onTap,
-  }) => LoopRecordRow(
-    key: rowKey,
-    title: title,
-    subtitle: available ? subtitle : unavailableSubtitle,
-    subtitleMaxLines: 2,
-    trailingBadge: available
-        ? null
-        : const LoopBadge('不可用', key: ValueKey<String>('unavailable-badge')),
-    semanticLabel: available ? null : '$title，当前不可用',
-    onTap: onTap,
-  );
+  /// The prototype's four money actions are a Lime `Pay` pill, a compact
+  /// 兑换 and a three-up 发送 / 接收 / 跨链 grid. They used to be demoted to
+  /// list rows wearing a grey 不可用 badge, which emptied the page's first
+  /// screen of every action it has (audit item 3). They keep their shape now;
+  /// a closed gate takes the disabled paint and says, on the tap, the one
+  /// sentence the server gave.
+  void _blocked(String reason) {
+    LoopToast.show(context, message: reason, kind: LoopToastKind.warn);
+  }
 
   void _open(String location) {
     final navigate = widget.onNavigate;
@@ -191,6 +180,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     final sendReason = loopReasonCodeText(
       sendGate.reasonCode ?? 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
     );
+    // The prototype's asset rows carry each holding's mining power. It is the
+    // Mining module's own snapshot, read through the same controller Mining
+    // uses; a snapshot that has no row for a holding renders a dash.
+    final miningAssets = watchWalletMiningAssets(ref);
 
     return LoopDashboardPage(
       key: const ValueKey<String>('wallet-screen'),
@@ -271,21 +264,52 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             ),
           )
         else ...<Widget>[
-          LoopButtonPair(
-            children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('wallet-receive-action'),
+          // The prototype's first screen: the Lime `Pay` pill beside 兑换,
+          // then 发送 / 接收 / 跨链 as a three-up grid. Every entry keeps its
+          // shape whether or not its gate is open.
+          LoopPrimaryActionRow(
+            onBlocked: _blocked,
+            primary: LoopAction(
+              actionKey: const ValueKey<String>('wallet-pay-entry'),
+              label: 'Pay',
+              icon: 'camera',
+              // Pay has no reviewed runtime at all, so there is no gate to
+              // read and the sentence is the product's own.
+              blockedReason: '扫码支付还没有开放。',
+            ),
+            secondary: LoopAction(
+              actionKey: const ValueKey<String>('wallet-swap-entry'),
+              label: '兑换',
+              icon: 'swap-vert',
+              onPressed: swapAvailable ? () => _open('/wallet/swap') : null,
+              blockedReason: swapAvailable ? null : swapReason,
+            ),
+          ),
+          LoopActionGrid(
+            onBlocked: _blocked,
+            actions: <LoopAction>[
+              LoopAction(
+                actionKey: const ValueKey<String>('wallet-send-entry'),
+                label: '发送',
+                icon: 'arrow-up',
+                onPressed: sendAvailable ? () => _open('/wallet/send') : null,
+                blockedReason: sendAvailable ? null : sendReason,
+              ),
+              LoopAction(
+                actionKey: const ValueKey<String>('wallet-receive-entry'),
                 label: '接收',
-                primary: true,
+                icon: 'arrow-down',
                 onPressed: () => _open(WalletRoute.receive(walletId)),
               ),
-              LoopButton(
-                key: const ValueKey<String>('wallet-networks-action'),
-                label: '网络与 RPC',
-                onPressed: () => _open('/wallet/networks'),
+              LoopAction(
+                actionKey: const ValueKey<String>('wallet-bridge-entry'),
+                label: '跨链',
+                icon: 'globe',
+                blockedReason: '跨链还没有开放。',
               ),
             ],
           ),
+          WalletHoldingsPowerHint(onOpenMining: () => _open('/mining')),
           const LoopLabel('资产'),
           if (balances!.balances.isEmpty)
             const LoopEmpty(
@@ -299,15 +323,22 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 for (final row in balances.balances)
                   walletBalanceRow(
                     row,
+                    miningText: walletAssetPowerText(miningAssets, row.assetId),
                     onTap: () =>
                         _open(MarketAssetRoute.walletAsset(row.assetId)),
                   ),
               ],
             ),
-          WalletSnapshotFooter(snapshot: balances.snapshot),
+          // One provenance line, not two: the block a figure was read at and
+          // the reserve taken out of it are the same sentence about the same
+          // snapshot.
           LoopProvenanceFooter(
-            key: const ValueKey<String>('wallet-gas-reserve'),
+            key: const ValueKey<String>('wallet-snapshot-footer'),
             text:
+                '区块 '
+                '${loopGroupedFigure(balances.snapshot.blockNumber.toString())} · '
+                '${loopGroupedFigure(balances.snapshot.confirmations.toString())} 确认 · '
+                '观察于 ${loopRelativeTime(balances.snapshot.observedAt)} · '
                 '手续费保留 '
                 '${loopFormatDecimal(balances.gasReservePolicy.nativeReserve)} BNB',
           ),
@@ -318,61 +349,30 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             const LoopLabel('Launch 链'),
             WalletLaunchChainCard(launchChain: balances.launchChain!),
           ],
-          const LoopLabel('资金动作'),
-          // The prototype's Pay / 兑换 / 发送 / 跨链 entries stay in place and
-          // each opens its own manifest slug. What a row promises, though, is
-          // read here and acted on one screen later: 「在本机签名并广播」 over
-          // a destination whose write gate the server has closed is a promise
-          // this page cannot keep. Each row states its own gate instead, and
-          // says so before the tap rather than after it.
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              _moneyActionRow(
-                rowKey: const ValueKey<String>('wallet-pay-entry'),
-                title: 'Pay',
-                subtitle: '扫码支付尚未开放',
-                // Pay has no reviewed runtime at all: the row already says so
-                // and there is no gate to read.
-                available: false,
-                unavailableSubtitle: '扫码支付尚未开放',
-                onTap: () => _open('/pay'),
-              ),
-              _moneyActionRow(
-                rowKey: const ValueKey<String>('wallet-swap-entry'),
-                title: '兑换',
-                subtitle: '通过 Privy 报价并在统一签名出口确认',
-                available: swapAvailable,
-                unavailableSubtitle: swapReason,
-                onTap: () => _open('/wallet/swap'),
-              ),
-              _moneyActionRow(
-                rowKey: const ValueKey<String>('wallet-send-entry'),
-                title: '发送',
-                subtitle: '交易由 LOOP 构造，在本机签名并广播',
-                available: sendAvailable,
-                unavailableSubtitle: sendReason,
-                onTap: () => _open('/wallet/send'),
-              ),
-              _moneyActionRow(
-                rowKey: const ValueKey<String>('wallet-bridge-entry'),
-                title: '跨链',
-                subtitle: '跨链尚未开放',
-                available: false,
-                unavailableSubtitle: '跨链尚未开放',
-                onTap: () => _open('/wallet/bridge'),
-              ),
-            ],
-          ),
           const LoopLabel('安全与连接'),
-          const LoopUnavailableCard(
-            key: ValueKey<String>('wallet-security-unavailable'),
-            label: '安全中心 / DApp 浏览器状态不可用',
-            reasonCode: 'WALLET_SECURITY_FACTS_DEFERRED',
-          ),
+          // The prototype's four rows, in its order. The counts it shows —
+          // 「8 个有效授权」, 「4 条链已启用」 — are not read here, so each row
+          // says what its page is for instead of stating a figure this page
+          // never asked for.
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               LoopRecordRow(
+                key: const ValueKey<String>('wallet-security-entry'),
+                leading: const LoopRowIcon(icon: 'lock'),
+                title: '安全中心',
+                subtitle: '设备、会话与账户保护',
+                onTap: () => _open('/profile/security'),
+              ),
+              LoopRecordRow(
+                key: const ValueKey<String>('wallet-dapp-entry'),
+                leading: const LoopRowIcon(icon: 'globe'),
+                title: 'DApp 核对',
+                subtitle: '本地核对网址；连接与签名尚未开放',
+                onTap: () => _open('/wallet/dapp'),
+              ),
+              LoopRecordRow(
                 key: const ValueKey<String>('wallet-approvals-entry'),
+                leading: const LoopRowIcon(icon: 'shield'),
                 title: '授权盘点',
                 subtitle: '当场重读的 allowance()，回收会发送 approve(spender, 0)',
                 // 「回收会发送 approve(spe…」 cut the sentence exactly where it
@@ -381,33 +381,17 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 onTap: () => _open('/wallet/approvals'),
               ),
               LoopRecordRow(
-                key: const ValueKey<String>('wallet-security-entry'),
-                title: '安全中心',
-                subtitle: '设备、会话与账户保护',
-                onTap: () => _open('/profile/security'),
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('wallet-dapp-entry'),
-                title: 'DApp 核对',
-                subtitle: '本地核对网址；连接与签名尚未开放',
-                onTap: () => _open('/wallet/dapp'),
-              ),
-              LoopRecordRow(
                 key: const ValueKey<String>('wallet-networks-entry'),
+                leading: const LoopRowIcon(icon: 'settings'),
                 title: '网络与 RPC',
                 // The page lists whatever the server published: the primary
                 // chain always, and the Launch slot when it differs from it.
                 subtitle: '已启用的网络与 RPC 端点健康',
                 onTap: () => _open('/wallet/networks'),
               ),
-              LoopRecordRow(
-                key: const ValueKey<String>('wallet-wallets-entry'),
-                title: '我的钱包',
-                subtitle: '切换当前使用中的钱包',
-                onTap: () => _open('/wallet/manage'),
-              ),
             ],
           ),
+          const SizedBox(height: 20),
         ],
       ],
     );
@@ -434,10 +418,14 @@ class _WalletPrimary extends StatelessWidget {
   Widget build(BuildContext context) {
     final active = directory?.active;
     final netWorth = balances?.netWorth;
+    // A folio heading is a figure or a conclusion, never the page's own title:
+    // 「钱包」 over the wallet page made the primary a second title bar (audit
+    // item 1). Before the first read there is no figure, and the heading says
+    // that instead.
     final heading = switch (netWorth) {
       LoopNetWorthValued(valueUsd: final value) => loopFormatUsd(value),
       LoopNetWorthUnavailable() => '净值不可用',
-      null => '钱包',
+      null => '余额还没有读到',
     };
     return LoopFolioPrimary(
       key: const ValueKey<String>('wallet-folio'),
