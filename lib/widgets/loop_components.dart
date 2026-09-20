@@ -1326,6 +1326,7 @@ class LoopRecordGroup extends StatelessWidget {
             trailingBadge: rows[index].trailingBadge,
             onTap: rows[index].onTap,
             semanticLabel: rows[index].semanticLabel,
+            selected: rows[index].selected,
             position: rows.length == 1
                 ? LoopRowPosition.single
                 : index == 0
