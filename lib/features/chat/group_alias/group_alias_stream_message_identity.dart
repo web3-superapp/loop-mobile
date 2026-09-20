@@ -863,6 +863,95 @@ StreamMessageItemProps _groupDisplayProps(
   );
 }
 
+/// The display copy a direct conversation's message widgets read.
+///
+/// A direct channel has no Alias namespace, so until now its messages went to
+/// Stream untouched — and the avatar beside the peer's bubble drew `L`, the
+/// first letter of `loop_…`, because `User.name` answers `User.id` for every
+/// LOOP account (device report 2026-09-20 · R14-5). The peer's honest name is
+/// the one the page header already shows, published on [LoopDirectPeerScope],
+/// and the avatar draws its initial. A page with no published identity — a
+/// deep link carries none — falls back to 「私」, the same character the inbox
+/// row uses, and never to anything derived from an id.
+///
+/// The label is deliberately *not* written onto
+/// [loopStreamDisplayLabelField]: in a direct conversation the person is
+/// named once, in the header above it, so no name is drawn over each bubble.
+/// The reader's own projection is left exactly as Stream had it.
+@visibleForTesting
+Message sanitizeLoopDirectMessageForDisplay({
+  required Message message,
+  required String? peerLabel,
+  required String? currentUserId,
+}) => _sanitizeDirectMessage(
+  message,
+  peerLabel ?? loopDirectConversationNeutralInitial,
+  currentUserId,
+  depth: 0,
+);
+
+Message _sanitizeDirectMessage(
+  Message message,
+  String label,
+  String? currentUserId, {
+  required int depth,
+}) {
+  User displayUser(User user) =>
+      user.id == currentUserId ? user : User(id: user.id, name: label);
+
+  final quotedMessage = message.quotedMessage;
+  return message.copyWith(
+    user: message.user == null ? null : displayUser(message.user!),
+    quotedMessage: quotedMessage == null || depth >= 3
+        ? null
+        : _sanitizeDirectMessage(
+            quotedMessage,
+            label,
+            currentUserId,
+            depth: depth + 1,
+          ),
+  );
+}
+
+StreamMessageItemProps _directDisplayProps(
+  StreamMessageItemProps props, {
+  required String? peerLabel,
+  required String? currentUserId,
+}) {
+  final displayMessage = sanitizeLoopDirectMessageForDisplay(
+    message: props.message,
+    peerLabel: peerLabel,
+    currentUserId: currentUserId,
+  );
+  if (identical(displayMessage, props.message)) return props;
+  return StreamMessageItemProps(
+    message: displayMessage,
+    padding: props.padding,
+    spacing: props.spacing,
+    backgroundColor: props.backgroundColor,
+    maxWidth: props.maxWidth,
+    swipeToReply: props.swipeToReply,
+    onMessageTap: props.onMessageTap,
+    onMessageLongPress: props.onMessageLongPress,
+    // The global avatar sheet cannot express the one name this conversation
+    // has, so the identity-bearing entry points stay off here too.
+    onUserAvatarTap: null,
+    onMessageLinkTap: props.onMessageLinkTap,
+    onMentionTap: null,
+    onThreadTap: props.onThreadTap,
+    onViewInChannelTap: props.onViewInChannelTap,
+    onReplyTap: props.onReplyTap,
+    onReactionTap: props.onReactionTap,
+    onQuotedMessageTap: props.onQuotedMessageTap,
+    reactionSorting: props.reactionSorting,
+    actionsBuilder: props.actionsBuilder,
+    onMessageActions: props.onMessageActions,
+    onBouncedErrorMessageActions: props.onBouncedErrorMessageActions,
+    onEditMessageTap: props.onEditMessageTap,
+    attachmentBuilders: props.attachmentBuilders,
+  );
+}
+
 class _LoopStreamGroupMessageItem extends StatelessWidget {
   const _LoopStreamGroupMessageItem({required this.props});
 
@@ -872,10 +961,15 @@ class _LoopStreamGroupMessageItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final channel = StreamChannel.maybeOf(context)?.channel;
     if (!loopStreamChannelUsesGroupMessageAlias(channel?.cid)) {
+      final directProps = _directDisplayProps(
+        props,
+        peerLabel: LoopDirectPeerScope.maybeOf(context),
+        currentUserId: StreamChat.of(context).currentUser?.id,
+      );
       return LoopStreamMessageRow(
-        message: props.message,
-        padding: props.padding,
-        child: DefaultStreamMessageItem(props: props),
+        message: directProps.message,
+        padding: directProps.padding,
+        child: DefaultStreamMessageItem(props: directProps),
       );
     }
 

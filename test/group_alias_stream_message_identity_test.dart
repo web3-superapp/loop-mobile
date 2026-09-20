@@ -339,26 +339,90 @@ void main() {
     await _disposeHarness(tester, channelHarness);
   });
 
-  testWidgets('known direct channel keeps the official Stream sender name', (
+  testWidgets(
+    'a direct channel names its peer from the page, not from Stream',
+    (tester) async {
+      // R14-5. Neither the account name Stream happens to carry nor another
+      // channel's Alias may reach a direct bubble. The one name here is the
+      // peer's published profile, and the avatar's initial comes from it.
+      final channelHarness = _ChannelHarness.direct(
+        member: _member(
+          userId: 'direct-sender',
+          accountName: 'Direct Friend',
+          extraData: _validProjection('Must Not Apply'),
+        ),
+        senderId: 'direct-sender',
+      );
+      addTearDown(channelHarness.dispose);
+
+      await _pumpInChannel(
+        tester,
+        harness: channelHarness,
+        peer: 'Voyager_09',
+        child: StreamMessageLayout(
+          data: const StreamMessageLayoutData(),
+          child: StreamMessageItem(
+            message: channelHarness.message,
+            onMessageTap: (_) {},
+          ),
+        ),
+      );
+
+      expect(find.byType(DefaultStreamMessageItem), findsOneWidget);
+      expect(_renderedMessage(tester).user?.name, 'Voyager_09');
+      // The name belongs to the header above the conversation, not over every
+      // bubble, so LOOP assigns no display label here.
+      expect(loopStreamDisplayLabelOf(_renderedMessage(tester).user), isNull);
+      expect(find.text('Direct Friend'), findsNothing);
+      expect(find.text('Must Not Apply'), findsNothing);
+      expect(find.text(loopGroupMemberNeutralLabel), findsNothing);
+      await _disposeHarness(tester, channelHarness);
+    },
+  );
+
+  testWidgets('a direct bubble with no published peer never draws an id', (
     tester,
   ) async {
     final channelHarness = _ChannelHarness.direct(
       member: _member(
-        userId: 'direct-sender',
-        accountName: 'Direct Friend',
-        extraData: _validProjection('Must Not Apply'),
+        userId: 'loop_7e25420ed7ca4645b4860b1f9e734dad',
+        accountName: '',
       ),
-      senderId: 'direct-sender',
+      senderId: 'loop_7e25420ed7ca4645b4860b1f9e734dad',
     );
     addTearDown(channelHarness.dispose);
 
     await _pumpMessage(tester, harness: channelHarness);
 
-    expect(find.byType(DefaultStreamMessageItem), findsOneWidget);
-    expect(find.text('Direct Friend'), findsOneWidget);
-    expect(find.text('Must Not Apply'), findsNothing);
-    expect(find.text(loopGroupMemberNeutralLabel), findsNothing);
+    expect(
+      _renderedMessage(tester).user?.name,
+      loopDirectConversationNeutralInitial,
+    );
+    expect(find.textContaining('loop_'), findsNothing);
+    expect(find.text('L'), findsNothing);
     await _disposeHarness(tester, channelHarness);
+  });
+
+  test('the reader is left as Stream had them in a direct conversation', () {
+    final message = Message(
+      id: 'm1',
+      text: 'hi',
+      user: User(id: 'loop_self', name: 'loop_self'),
+      quotedMessage: Message(
+        id: 'm0',
+        text: 'earlier',
+        user: User(id: 'loop_peer', name: 'loop_peer'),
+      ),
+    );
+
+    final display = sanitizeLoopDirectMessageForDisplay(
+      message: message,
+      peerLabel: 'Voyager_09',
+      currentUserId: 'loop_self',
+    );
+
+    expect(display.user?.name, 'loop_self');
+    expect(display.quotedMessage?.user?.name, 'Voyager_09');
   });
 
   testWidgets(
