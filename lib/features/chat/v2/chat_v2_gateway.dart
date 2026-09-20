@@ -17,6 +17,14 @@ abstract interface class ChatV2Gateway {
 
   Future<ChatOperation> pollOperation(String operationId);
 
+  /// One page of the caller's direct channels with each peer's public
+  /// identity (decision 0056).
+  ///
+  /// This is the inbox's only source for who a direct conversation is with.
+  /// [cursor] continues the same view and carries the page size, so nothing
+  /// else travels with it.
+  Future<DirectChannelPage> listDirectChannels({String? cursor});
+
   /// Leaves one small group. A lost response is safe to replay with the same
   /// idempotency key.
   Future<void> leaveGroup(String groupId);
@@ -38,6 +46,10 @@ final class UnavailableChatV2Gateway implements ChatV2Gateway {
 
   @override
   Future<ChatOperation> pollOperation(String operationId) => _unavailable();
+
+  @override
+  Future<DirectChannelPage> listDirectChannels({String? cursor}) =>
+      _unavailable();
 
   @override
   Future<void> leaveGroup(String groupId) => _unavailable();

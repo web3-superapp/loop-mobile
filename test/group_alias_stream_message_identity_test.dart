@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
+import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
+import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 const String _aliasId = 'bb5e12c2-40e2-4577-9951-57fac0b5ce5e';
@@ -589,6 +592,174 @@ void main() {
       await _disposeHarness(tester, directHarness);
     },
   );
+
+  testWidgets('a named direct row reads the peer LOOP recorded', (
+    tester,
+  ) async {
+    // R14-1 / R15-1. The title and the avatar initial come from the same
+    // public profile the conversation header will show, so the inbox and the
+    // page name one person once.
+    final harness = _ChannelHarness.direct(
+      member: _member(
+        userId: 'loop_7e25420ed7ca4645b4860b1f9e734dad',
+        accountName: '',
+      ),
+      senderId: 'loop_7e25420ed7ca4645b4860b1f9e734dad',
+      messageText: '晚点聊',
+    );
+    addTearDown(harness.dispose);
+
+    await _pumpInChannel(
+      tester,
+      harness: harness,
+      directory: LoopDirectChannelDirectory.fromEntries(<DirectChannelEntry>[
+        DirectChannelEntry(
+          streamCid: harness.channel.cid!,
+          peer: const LoopPublicProfile(
+            publicProfileId: '7e25420e-d7ca-46b1-9a2f-3c4d5e6f7a8b',
+            loopId: 'LOOP-2T6JZTG8',
+            alias: 'Voyager_09',
+            avatarRef: null,
+          ),
+          createdAt: DateTime.utc(2026, 9, 20, 6, 45),
+        ),
+      ]),
+      child: loopStreamChannelListIdentityItem(
+        StreamChannelListItem(channel: harness.channel),
+      ),
+    );
+
+    expect(find.text('Voyager_09'), findsOneWidget);
+    expect(find.text('V'), findsOneWidget);
+    expect(find.text(loopDirectConversationNeutralLabel), findsNothing);
+    expect(find.textContaining('loop_'), findsNothing);
+    expect(find.text('L'), findsNothing);
+    await _disposeHarness(tester, harness);
+  });
+
+  testWidgets('a peer with no public profile reads as a deactivated account', (
+    tester,
+  ) async {
+    final harness = _ChannelHarness.direct(
+      member: _member(
+        userId: 'loop_7e25420ed7ca4645b4860b1f9e734dad',
+        accountName: '',
+      ),
+      senderId: 'loop_7e25420ed7ca4645b4860b1f9e734dad',
+      messageText: '晚点聊',
+    );
+    addTearDown(harness.dispose);
+
+    await _pumpInChannel(
+      tester,
+      harness: harness,
+      directory: LoopDirectChannelDirectory.fromEntries(<DirectChannelEntry>[
+        DirectChannelEntry(
+          streamCid: harness.channel.cid!,
+          peer: null,
+          createdAt: DateTime.utc(2026, 9, 18, 11, 2),
+        ),
+      ]),
+      child: loopStreamChannelListIdentityItem(
+        StreamChannelListItem(channel: harness.channel),
+      ),
+    );
+
+    expect(find.text(loopDirectDeactivatedPeerLabel), findsOneWidget);
+    expect(find.text(loopDirectDeactivatedPeerInitial), findsOneWidget);
+    expect(find.textContaining('loop_'), findsNothing);
+    await _disposeHarness(tester, harness);
+  });
+
+  testWidgets('a direct row LOOP has no answer for stays neutral', (
+    tester,
+  ) async {
+    // The index was read, and this conversation is not in it: a 503, a page
+    // that has not landed, or a channel the peer opened. LOOP says only that
+    // this is a direct conversation.
+    final harness = _ChannelHarness.direct(
+      member: _member(
+        userId: 'loop_7e25420ed7ca4645b4860b1f9e734dad',
+        accountName: 'Leaked Account Name',
+      ),
+      senderId: 'loop_7e25420ed7ca4645b4860b1f9e734dad',
+      messageText: '晚点聊',
+    );
+    addTearDown(harness.dispose);
+
+    await _pumpInChannel(
+      tester,
+      harness: harness,
+      directory: LoopDirectChannelDirectory.fromEntries(<DirectChannelEntry>[
+        DirectChannelEntry(
+          streamCid: 'messaging:loop_direct_${'b' * 32}',
+          peer: const LoopPublicProfile(
+            publicProfileId: '7e25420e-d7ca-46b1-9a2f-3c4d5e6f7a8b',
+            loopId: 'LOOP-2T6JZTG8',
+            alias: 'Voyager_09',
+            avatarRef: null,
+          ),
+          createdAt: DateTime.utc(2026, 9, 20, 6, 45),
+        ),
+      ]),
+      child: loopStreamChannelListIdentityItem(
+        StreamChannelListItem(channel: harness.channel),
+      ),
+    );
+
+    expect(find.text(loopDirectConversationNeutralLabel), findsOneWidget);
+    expect(find.text(loopDirectConversationNeutralInitial), findsOneWidget);
+    expect(find.text('Voyager_09'), findsNothing);
+    expect(find.text('Leaked Account Name'), findsNothing);
+    expect(find.textContaining('loop_'), findsNothing);
+    await _disposeHarness(tester, harness);
+  });
+
+  test('the direct row resolver keeps its three answers apart', () {
+    const cid = 'messaging:loop_direct_0123456789abcdef0123456789abcdef';
+    const peer = LoopPublicProfile(
+      publicProfileId: '7e25420e-d7ca-46b1-9a2f-3c4d5e6f7a8b',
+      loopId: 'LOOP-2T6JZTG8',
+      alias: null,
+      avatarRef: null,
+    );
+    final named = resolveLoopDirectRowIdentity(
+      cid: cid,
+      directory: LoopDirectChannelDirectory(<String, LoopPublicProfile?>{
+        cid: peer,
+      }),
+    );
+    expect(named.title, 'LOOP-2T6JZTG8');
+    expect(named.initial, 'L');
+    expect(named.peer, peer);
+
+    final deactivated = resolveLoopDirectRowIdentity(
+      cid: cid,
+      directory: LoopDirectChannelDirectory(<String, LoopPublicProfile?>{
+        cid: null,
+      }),
+    );
+    expect(deactivated.title, loopDirectDeactivatedPeerLabel);
+    expect(deactivated.initial, loopDirectDeactivatedPeerInitial);
+    expect(deactivated.peer, isNull);
+
+    final unknown = resolveLoopDirectRowIdentity(cid: cid, directory: null);
+    expect(unknown.title, loopDirectConversationNeutralLabel);
+    expect(unknown.initial, loopDirectConversationNeutralInitial);
+    expect(unknown.peer, isNull);
+
+    expect(
+      resolveLoopDirectRowIdentity(
+        cid: null,
+        directory: LoopDirectChannelDirectory(<String, LoopPublicProfile?>{
+          cid: peer,
+        }),
+      ).title,
+      loopDirectConversationNeutralLabel,
+    );
+    expect(loopDirectRowInitial('  开发预览 '), '开');
+    expect(loopDirectRowInitial('   '), loopDirectConversationNeutralInitial);
+  });
 }
 
 Map<String, Object?> _validProjection(String alias) => <String, Object?>{
@@ -634,11 +805,16 @@ Future<void> _pumpInChannel(
   required _ChannelHarness harness,
   required Widget child,
   String? peer,
+  LoopDirectChannelDirectory? directory,
 }) async {
   Widget body = Scaffold(body: child);
   // What the `dm` page publishes about the person the conversation is with.
   if (peer != null) {
     body = LoopDirectPeerScope(displayName: peer, child: body);
+  }
+  // What the inbox publishes about every direct channel it knows.
+  if (directory != null) {
+    body = LoopDirectChannelDirectoryScope(directory: directory, child: body);
   }
   await tester.pumpWidget(
     MaterialApp(

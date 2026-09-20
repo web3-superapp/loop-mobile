@@ -33,6 +33,55 @@ abstract final class LoopV2CommunicationCodec {
     'contractVersion',
   };
 
+  static const directChannelPageKeys = <String>{
+    'items',
+    'nextCursor',
+    'contractVersion',
+  };
+
+  /// `GET /v2/chat/direct-channels` — the inbox's map from a Stream direct CID
+  /// to the other member's public identity (decision 0056).
+  ///
+  /// `peer` is nullable by contract: an account with no presentable public
+  /// profile reads as a deactivated user. Everything else is strict, and the
+  /// response carries no Stream user id at all, so nothing here can become a
+  /// `loop_…` on screen.
+  static DirectChannelPage directChannels(Map<String, Object?> root) {
+    LoopV2ProjectionCodec.requireContractVersion(root);
+    final items = <DirectChannelEntry>[];
+    final seen = <String>{};
+    for (final raw in LoopV2ProjectionCodec.requireList(
+      root['items'],
+      maximum: 50,
+    )) {
+      final item = LoopV2Contract.strictMap(raw, const <String>{
+        'streamCid',
+        'peer',
+        'createdAt',
+      });
+      final streamCid = LoopV2Contract.requiredString(
+        item,
+        'streamCid',
+        pattern: directCidPattern,
+      );
+      // One CID may name only one conversation: a duplicate would let two
+      // inbox rows claim the same channel under two different people.
+      if (!seen.add(streamCid)) _invalid();
+      final rawPeer = item['peer'];
+      items.add(
+        DirectChannelEntry(
+          streamCid: streamCid,
+          peer: rawPeer == null ? null : LoopV2ProjectionCodec.profile(rawPeer),
+          createdAt: LoopV2ProjectionCodec.requireTimestamp(item, 'createdAt'),
+        ),
+      );
+    }
+    return DirectChannelPage(
+      items: items,
+      nextCursor: LoopV2ProjectionCodec.cursor(root, 'nextCursor'),
+    );
+  }
+
   static const snapshotKeys = <String>{
     'room',
     'viewer',

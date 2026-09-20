@@ -82,6 +82,15 @@ final class DioLoopV2CommunicationGateway
   );
 
   @override
+  Future<DirectChannelPage> listDirectChannels({String? cursor}) => _read(
+    (accessToken) => _api.listDirectChannels(
+      accessToken: accessToken,
+      clientVersion: _clientVersion,
+      cursor: cursor,
+    ),
+  );
+
+  @override
   Future<void> leaveGroup(String groupId) => _write(
     'group-leave:$groupId',
     (accessToken, key) => _api.leaveGroup(

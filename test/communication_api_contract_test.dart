@@ -225,7 +225,178 @@ Response<Object?> _response(
   return (api, captured);
 }
 
+Map<String, Object?> _directChannelsBody({Object? items, Object? nextCursor}) =>
+    <String, Object?>{
+      'items':
+          items ??
+          <Object?>[
+            <String, Object?>{
+              'streamCid': 'messaging:loop_direct_$_hex',
+              'peer': <String, Object?>{
+                'publicProfileId': _profileId,
+                'loopId': 'LOOP-2T6JZTG8',
+                'alias': 'Voyager_09',
+                'avatarRef': null,
+              },
+              'createdAt': '2026-09-20T06:45:09.123Z',
+            },
+            <String, Object?>{
+              'streamCid': 'messaging:loop_direct_${'a' * 32}',
+              'peer': null,
+              'createdAt': '2026-09-18T11:02:44.010Z',
+            },
+          ],
+      'nextCursor': nextCursor,
+      'contractVersion': '2.0',
+    };
+
 void main() {
+  group('direct-channel inbox index', () {
+    test('one page names each peer and admits a null peer', () async {
+      final (api, captured) = _api(_directChannelsBody());
+
+      final page = await api.listDirectChannels(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+      );
+
+      expect(captured.single.uri.path, '/v2/chat/direct-channels');
+      expect(captured.single.method, 'GET');
+      expect(captured.single.headers['x-loop-contract-version'], '2.0');
+      expect(captured.single.headers.containsKey('idempotency-key'), isFalse);
+      expect(page.items.length, 2);
+      expect(page.items.first.streamCid, 'messaging:loop_direct_$_hex');
+      expect(page.items.first.peer?.alias, 'Voyager_09');
+      expect(page.items.first.peer?.loopId, 'LOOP-2T6JZTG8');
+      expect(page.items.last.peer, isNull);
+      expect(page.nextCursor, isNull);
+    });
+
+    test('a cursor page is asked for by cursor alone', () async {
+      final (api, captured) = _api(
+        _directChannelsBody(items: const <Object?>[], nextCursor: null),
+      );
+
+      final page = await api.listDirectChannels(
+        accessToken: _token,
+        clientVersion: _clientVersion,
+        cursor: 'abc.def',
+      );
+
+      expect(captured.single.uri.queryParameters['cursor'], 'abc.def');
+      expect(captured.single.uri.queryParameters.containsKey('limit'), isFalse);
+      expect(page.items, isEmpty);
+    });
+
+    test('a cursor and a limit together are refused before the wire', () async {
+      final (api, captured) = _api(_directChannelsBody());
+
+      await expectLater(
+        api.listDirectChannels(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          limit: 10,
+          cursor: 'abc.def',
+        ),
+        throwsA(
+          isA<LoopBackendFailure>().having(
+            (failure) => failure.kind,
+            'kind',
+            LoopBackendFailureKind.invalidRequest,
+          ),
+        ),
+      );
+      expect(captured, isEmpty);
+    });
+
+    test('a limit over the contract ceiling never leaves the device', () async {
+      final (api, captured) = _api(_directChannelsBody());
+
+      await expectLater(
+        api.listDirectChannels(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+          limit: 51,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+      expect(captured, isEmpty);
+    });
+
+    test('a Stream user id in the row is an invalid payload', () async {
+      final (api, _) = _api(
+        _directChannelsBody(
+          items: <Object?>[
+            <String, Object?>{
+              'streamCid': 'messaging:loop_direct_$_hex',
+              'peer': <String, Object?>{
+                'publicProfileId': _profileId,
+                'loopId': 'LOOP-2T6JZTG8',
+                'alias': 'Voyager_09',
+                'avatarRef': null,
+              },
+              'createdAt': '2026-09-20T06:45:09.123Z',
+              'streamUserId': 'loop_7e25420ed7ca46b19a2f3c4d5e6f7a8b',
+            },
+          ],
+        ),
+      );
+
+      await expectLater(
+        api.listDirectChannels(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+        ),
+        throwsA(
+          isA<LoopBackendFailure>().having(
+            (failure) => failure.kind,
+            'kind',
+            LoopBackendFailureKind.invalidPayload,
+          ),
+        ),
+      );
+    });
+
+    test('a group CID is not a direct channel', () async {
+      final (api, _) = _api(
+        _directChannelsBody(
+          items: <Object?>[
+            <String, Object?>{
+              'streamCid': 'messaging:loop_group_$_hex',
+              'peer': null,
+              'createdAt': '2026-09-20T06:45:09.123Z',
+            },
+          ],
+        ),
+      );
+
+      await expectLater(
+        api.listDirectChannels(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('the same CID twice cannot name two people', () async {
+      final row = <String, Object?>{
+        'streamCid': 'messaging:loop_direct_$_hex',
+        'peer': null,
+        'createdAt': '2026-09-20T06:45:09.123Z',
+      };
+      final (api, _) = _api(_directChannelsBody(items: <Object?>[row, row]));
+
+      await expectLater(
+        api.listDirectChannels(
+          accessToken: _token,
+          clientVersion: _clientVersion,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+  });
+
   group('communication transport', () {
     test(
       'a direct-channel write carries exactly one canonical UUIDv4 key',

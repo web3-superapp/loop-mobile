@@ -2,8 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
+import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
+import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
@@ -28,11 +30,11 @@ const String loopGroupConversationNeutralLabel = '群聊';
 /// row's title from the peer's Stream id and drew `loop_7e25…` at the top of
 /// the most-read list in the app (device report 2026-09-20 · R14-1).
 ///
-/// The peer's honest name — `alias ?? loopId` from their public profile — has
-/// no source here. `POST /v2/chat/direct-channels` answers a CID *for* a
-/// public profile and there is no read that goes the other way
-/// (`frontend-v2-communication-api.md` §3), and a channel the peer opened was
-/// never announced to this client at all. So the row says only what it knows:
+/// The peer's honest name — `alias ?? loopId` from their public profile — now
+/// has a source: `GET /v2/chat/direct-channels` (decision 0056) indexes this
+/// account's own direct channels by CID, and the inbox publishes it through
+/// [LoopDirectChannelDirectoryScope]. This label is what remains when that
+/// read has not landed, or answered `503`: the row says only what it knows —
 /// this is a direct conversation. It never says `loop_`.
 const String loopDirectConversationNeutralLabel = '私聊';
 
@@ -42,6 +44,82 @@ const String loopDirectConversationNeutralLabel = '私聊';
 /// the initial Stream's own avatar drew was `L`, the first letter of
 /// `loop_…` (device report 2026-09-20 · R14-5).
 const String loopDirectConversationNeutralInitial = '私';
+
+/// What a direct row reads when the peer has no presentable public profile.
+///
+/// `peer: null` is a contract value, not a missing read: that account is
+/// deactivated or was never activated. Saying so is honest, and it is
+/// different from saying nothing (decision 0056).
+const String loopDirectDeactivatedPeerLabel = '已注销用户';
+
+/// The one character the deactivated-peer avatar may draw.
+const String loopDirectDeactivatedPeerInitial = '注';
+
+/// How one direct inbox row names itself.
+///
+/// [peer] is non-null only when LOOP holds that person's public profile, so
+/// it is also the test for whether this row may open a conversation that
+/// already knows who it is with.
+@immutable
+final class LoopDirectRowIdentity {
+  const LoopDirectRowIdentity({
+    required this.title,
+    required this.initial,
+    required this.peer,
+  });
+
+  /// `alias ?? loopId`, 「已注销用户」 or 「私聊」. Never a Stream value.
+  final String title;
+
+  /// The single character the row's avatar draws. Same source as [title].
+  final String initial;
+
+  final LoopPublicProfile? peer;
+}
+
+/// The first character of a resolved title, for the row's avatar.
+///
+/// It is taken as a grapheme cluster so an emoji or a combining mark is not
+/// split in half, and it is never derived from an id.
+@visibleForTesting
+String loopDirectRowInitial(String title) {
+  final trimmed = title.trim();
+  if (trimmed.isEmpty) return loopDirectConversationNeutralInitial;
+  return trimmed.characters.first.toUpperCase();
+}
+
+/// Names one direct row from LOOP's own index, or not at all.
+///
+/// Three answers, and they stay distinct: a known peer is named; a known
+/// account with no public profile reads as 「已注销用户」; and a CID the index
+/// does not carry — the read has not landed, or the module answered `503` —
+/// keeps the neutral label. Stream is never consulted for any of them.
+LoopDirectRowIdentity resolveLoopDirectRowIdentity({
+  required String? cid,
+  required LoopDirectChannelDirectory? directory,
+}) {
+  if (directory == null || !directory.knows(cid)) {
+    return const LoopDirectRowIdentity(
+      title: loopDirectConversationNeutralLabel,
+      initial: loopDirectConversationNeutralInitial,
+      peer: null,
+    );
+  }
+  final peer = directory.peerOf(cid);
+  if (peer == null) {
+    return const LoopDirectRowIdentity(
+      title: loopDirectDeactivatedPeerLabel,
+      initial: loopDirectDeactivatedPeerInitial,
+      peer: null,
+    );
+  }
+  final title = peer.displayName;
+  return LoopDirectRowIdentity(
+    title: title,
+    initial: loopDirectRowInitial(title),
+    peer: peer,
+  );
+}
 
 const String _aliasIdField = 'loop_group_alias_id';
 const String _aliasField = 'loop_group_alias';
@@ -310,9 +388,10 @@ Widget loopStreamChannelListIdentityItem(StreamChannelListItem defaultItem) {
 /// from the *other member's* `User.name`, whose getter answers `User.id` when
 /// the account has no name — every LOOP account — so the row's title was the
 /// peer's Stream id and its initials were `L` (device report 2026-09-20 ·
-/// R14-1 / R14-5). LOOP has no read that turns a direct channel back into the
-/// peer's public profile, so this cell names the conversation rather than the
-/// person, and the preview carries no author at all.
+/// R14-1 / R14-5). The name this cell draws comes from LOOP's own index of
+/// its direct channels instead ([resolveLoopDirectRowIdentity]); a CID that
+/// index does not carry keeps the neutral label rather than borrowing one
+/// from the provider.
 ///
 /// Everything that is not a name stays Stream's: the live muted/pinned/unread
 /// state, the last-message preview widget, tap and long-press.
@@ -325,6 +404,10 @@ class _LoopStreamDirectChannelListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final channel = props.channel;
     final state = channel.state!;
+    final identity = resolveLoopDirectRowIdentity(
+      cid: channel.cid,
+      directory: LoopDirectChannelDirectoryScope.maybeOf(context),
+    );
     return StreamBuilder<ChannelState>(
       initialData: state.channelState,
       stream: state.channelStateStream,
@@ -342,15 +425,11 @@ class _LoopStreamDirectChannelListItem extends StatelessWidget {
               initialData: state.unreadCount,
               stream: state.unreadCountStream,
               builder: (context, unreadSnapshot) => StreamChannelListTile(
-                avatar: const CircleAvatar(
-                  key: ValueKey<String>('loop-direct-channel-neutral-avatar'),
-                  child: Text(loopDirectConversationNeutralInitial),
+                avatar: CircleAvatar(
+                  key: const ValueKey<String>('loop-direct-channel-avatar'),
+                  child: Text(identity.initial),
                 ),
-                title: const Text(loopDirectConversationNeutralLabel),
-                // No `channel:` argument, so the official formatter prints the
-                // message and nothing else: with one it would prefix the
-                // author for a channel whose member count drifted above two
-                // (`message_preview_formatter.dart:228`).
+                title: Text(identity.title),
                 subtitle: lastMessage == null
                     ? Text(context.translations.emptyMessagesText)
                     : StreamMessagePreviewText(message: lastMessage),

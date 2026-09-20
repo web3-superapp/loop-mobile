@@ -9,6 +9,8 @@ import 'package:loop_mobile/features/chat/friends/chat_create_menu_button.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_screen.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
+import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
+import 'package:loop_mobile/features/chat/v2/direct_message_screen.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_ui.dart';
@@ -461,7 +463,7 @@ class _ExistingMemberStreamChannelPageState
   }
 }
 
-class _StreamChannelListBody extends StatefulWidget {
+class _StreamChannelListBody extends ConsumerStatefulWidget {
   const _StreamChannelListBody({
     required this.client,
     required this.userId,
@@ -472,10 +474,12 @@ class _StreamChannelListBody extends StatefulWidget {
   final String userId;
 
   @override
-  State<_StreamChannelListBody> createState() => _StreamChannelListBodyState();
+  ConsumerState<_StreamChannelListBody> createState() =>
+      _StreamChannelListBodyState();
 }
 
-class _StreamChannelListBodyState extends State<_StreamChannelListBody> {
+class _StreamChannelListBodyState
+    extends ConsumerState<_StreamChannelListBody> {
   late final StreamChannelListController _controller =
       createLoopStreamChannelListController(
         client: widget.client,
@@ -490,54 +494,105 @@ class _StreamChannelListBodyState extends State<_StreamChannelListBody> {
 
   @override
   Widget build(BuildContext context) {
+    // Who each direct conversation is with, read once from LOOP's own index
+    // (decision 0056). A failed or still-running read publishes the empty
+    // index, and every direct row then keeps its neutral label: the inbox
+    // never borrows a name from Stream.
+    final directory =
+        ref.watch(directChannelDirectoryProvider).value ??
+        LoopDirectChannelDirectory.empty();
     // No filled panel around the list: it is laid out in the page's whole
     // remaining height, so one conversation came out as a single row at the
     // top of an 1100px empty box. The rows sit on the page itself.
-    return KeyedSubtree(
-      key: const ValueKey<String>('stream-chat-channel-list'),
-      child: StreamChannelListView(
-        controller: _controller,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemBuilder: (context, channels, index, defaultItem) =>
-            loopStreamChannelListIdentityItem(defaultItem),
-        emptyBuilder: (context) => const Align(
-          alignment: Alignment.topCenter,
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: LoopStateCard(
-              title: '还没有会话',
-              message: '为这个账号建立的会话会出现在这里。',
-              icon: Icons.chat_bubble_outline_rounded,
-            ),
-          ),
-        ),
-        errorBuilder: (context, error) => Align(
-          alignment: Alignment.topCenter,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: LoopStateCard(
-              title: '会话列表读不到',
-              message: '这一页没有读到会话列表，本地已有的历史没有被删除。',
-              icon: Icons.cloud_off_outlined,
-              tone: LoopTone.warning,
-              action: OutlinedButton.icon(
-                onPressed: () => _controller.refresh(),
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('重试'),
+    return LoopDirectChannelDirectoryScope(
+      directory: directory,
+      child: KeyedSubtree(
+        key: const ValueKey<String>('stream-chat-channel-list'),
+        child: StreamChannelListView(
+          controller: _controller,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          itemBuilder: (context, channels, index, defaultItem) =>
+              loopStreamChannelListIdentityItem(defaultItem),
+          emptyBuilder: (context) => const Align(
+            alignment: Alignment.topCenter,
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: LoopStateCard(
+                title: '还没有会话',
+                message: '为这个账号建立的会话会出现在这里。',
+                icon: Icons.chat_bubble_outline_rounded,
               ),
             ),
           ),
+          errorBuilder: (context, error) => Align(
+            alignment: Alignment.topCenter,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: LoopStateCard(
+                title: '会话列表读不到',
+                message: '这一页没有读到会话列表，本地已有的历史没有被删除。',
+                icon: Icons.cloud_off_outlined,
+                tone: LoopTone.warning,
+                action: OutlinedButton.icon(
+                  onPressed: () => _controller.refresh(),
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('重试'),
+                ),
+              ),
+            ),
+          ),
+          onChannelTap: (channel) => _openChannel(context, channel, directory),
         ),
-        onChannelTap: (channel) => _openChannel(context, channel),
       ),
     );
   }
 
-  static void _openChannel(BuildContext context, Channel channel) {
-    final cid = channel.cid;
-    if (cid == null || parseLoopStreamChannelCid(cid) == null) return;
-    unawaited(context.push<void>('/chat/channel/${Uri.encodeComponent(cid)}'));
+  static void _openChannel(
+    BuildContext context,
+    Channel channel,
+    LoopDirectChannelDirectory directory,
+  ) {
+    final destination = loopInboxChannelDestination(
+      cid: channel.cid,
+      directory: directory,
+    );
+    if (destination == null) return;
+    unawaited(
+      context.push<void>(destination.location, extra: destination.target),
+    );
   }
+}
+
+/// Where one inbox row goes, and what it may carry there.
+///
+/// A direct row LOOP can name travels the same way the 「关注与粉丝」 entry
+/// does: the peer's public profile rides as typed navigation state, so the
+/// conversation header and the `@` candidate read the same person from the
+/// same source (device report 2026-09-20 · R15-1). The identity is never put
+/// in the URL — a deep link must not be able to name a conversation — so a
+/// row LOOP cannot name opens through the plain CID link, exactly as before,
+/// and the page then stays neutral.
+@visibleForTesting
+({String location, DirectMessageTarget? target})? loopInboxChannelDestination({
+  required String? cid,
+  required LoopDirectChannelDirectory directory,
+}) {
+  if (cid == null || parseLoopStreamChannelCid(cid) == null) return null;
+  final encoded = Uri.encodeComponent(cid);
+  final peer = loopStreamChannelUsesGroupMessageAlias(cid)
+      ? null
+      : resolveLoopDirectRowIdentity(cid: cid, directory: directory).peer;
+  final publicProfileId = peer?.publicProfileId;
+  if (peer != null && publicProfileId != null) {
+    return (
+      location: '/chat/dm?cid=$encoded',
+      target: DirectMessageTarget(
+        publicProfileId: publicProfileId,
+        identity: peer,
+      ),
+    );
+  }
+  return (location: '/chat/channel/$encoded', target: null);
 }
 
 class _StreamChannelUnavailablePage extends StatelessWidget {

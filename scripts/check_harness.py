@@ -11157,17 +11157,23 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
             if direct_item_start >= 0 and direct_item_end > direct_item_start
             else ""
         )
+        # R15-1. The row's name comes from LOOP's own direct-channel index
+        # (decision 0056) through the one resolver, and the avatar initial is
+        # taken from that same title. Both must come from `identity`: reading
+        # anything else here is how `loop_7e25…` reached the inbox.
         if any(
             marker not in direct_item_section
             for marker in (
-                "title: const Text(loopDirectConversationNeutralLabel)",
-                "Text(loopDirectConversationNeutralInitial)",
-                "ValueKey<String>('loop-direct-channel-neutral-avatar')",
+                "resolveLoopDirectRowIdentity(",
+                "directory: LoopDirectChannelDirectoryScope.maybeOf(context)",
+                "title: Text(identity.title)",
+                "child: Text(identity.initial)",
+                "ValueKey<String>('loop-direct-channel-avatar')",
                 "StreamMessagePreviewText(message: lastMessage)",
             )
         ):
             errors.append(
-                "Direct Stream channel list item must use LOOP's neutral direct label, initial and authorless preview"
+                "Direct Stream channel list item must name its row from LOOP's direct-channel index"
             )
         for forbidden in (
             "StreamChannelName(",

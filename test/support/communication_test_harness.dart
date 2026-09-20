@@ -218,6 +218,32 @@ final class FakeChatV2Gateway implements ChatV2Gateway {
     return Future<ChatOperation>.value(_operation());
   }
 
+  /// The direct-channel index the inbox reads. Tests set the pages they want;
+  /// by default there is no index at all, so every row stays neutral.
+  List<DirectChannelPage> directChannelPages = const <DirectChannelPage>[];
+
+  @override
+  Future<DirectChannelPage> listDirectChannels({String? cursor}) {
+    commands.add('direct-channels:${cursor ?? ''}');
+    final kind = failure;
+    if (kind != null) {
+      return Future<DirectChannelPage>.error(CommunityGatewayException(kind));
+    }
+    final index = cursor == null
+        ? 0
+        : directChannelPages.indexWhere((page) => page.nextCursor == cursor) +
+              1;
+    if (index < 0 || index >= directChannelPages.length) {
+      return Future<DirectChannelPage>.value(
+        DirectChannelPage(
+          items: const <DirectChannelEntry>[],
+          nextCursor: null,
+        ),
+      );
+    }
+    return Future<DirectChannelPage>.value(directChannelPages[index]);
+  }
+
   @override
   Future<void> leaveGroup(String groupId) {
     commands.add('leave-group:$groupId');

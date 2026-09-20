@@ -53,6 +53,46 @@ final class ChatDirectChannelResult {
   final String streamCid;
 }
 
+/// One row of the caller's direct-channel index (decision 0056).
+///
+/// It is the only way an inbox row can say who a direct conversation is with:
+/// Stream carries no name for a LOOP account, and `POST /v2/chat/direct-
+/// channels` only answers a CID *for* a public profile. LOOP's own
+/// `direct_channels` table is the authority here; Stream is never read.
+@immutable
+final class DirectChannelEntry {
+  const DirectChannelEntry({
+    required this.streamCid,
+    required this.peer,
+    required this.createdAt,
+  });
+
+  /// `messaging:loop_direct_<32 hex>` — the same value the write returns.
+  final String streamCid;
+
+  /// The other member's public identity, in the exact `GET /v2/connections`
+  /// shape. `null` when that account has no presentable public profile: the
+  /// row then reads as a deactivated user, never as a Stream id.
+  final LoopPublicProfile? peer;
+
+  final DateTime createdAt;
+}
+
+/// One keyset page of [DirectChannelEntry] rows, newest first.
+@immutable
+final class DirectChannelPage {
+  DirectChannelPage({
+    required List<DirectChannelEntry> items,
+    required this.nextCursor,
+  }) : items = List<DirectChannelEntry>.unmodifiable(items);
+
+  final List<DirectChannelEntry> items;
+
+  /// Non-null only when another page exists. It carries the page size, so it
+  /// is never sent together with a limit.
+  final String? nextCursor;
+}
+
 @immutable
 final class ChatGroupResult {
   const ChatGroupResult({

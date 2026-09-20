@@ -26,6 +26,16 @@ abstract interface class LoopV2CommunicationApi {
     required String operationId,
   });
 
+  /// One page of the caller's direct channels with each peer's public
+  /// identity. `limit` and `cursor` are mutually exclusive: the cursor already
+  /// carries the page size.
+  Future<DirectChannelPage> listDirectChannels({
+    required String accessToken,
+    required String clientVersion,
+    int? limit,
+    String? cursor,
+  });
+
   Future<void> leaveGroup({
     required String accessToken,
     required String clientVersion,
@@ -222,6 +232,44 @@ final class DioLoopV2CommunicationApi implements LoopV2CommunicationApi {
       final operation = _operation(response);
       if (operation.operationId != id) LoopV2ProjectionCodec.invalid();
       return operation;
+    } on DioException catch (error) {
+      throw LoopV2Contract.mapDioFailure(error, allowedCodes: readErrors);
+    }
+  }
+
+  @override
+  Future<DirectChannelPage> listDirectChannels({
+    required String accessToken,
+    required String clientVersion,
+    int? limit,
+    String? cursor,
+  }) async {
+    // The cursor carries the page size, so asking for both is a request the
+    // server would reject; it is refused here rather than sent.
+    if (cursor != null && limit != null) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+    }
+    if (limit != null && (limit < 1 || limit > 50)) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+    }
+    if (cursor != null &&
+        (cursor.length < 3 ||
+            cursor.length > LoopV2ProjectionCodec.maximumCursorLength ||
+            !LoopV2ProjectionCodec.cursorPattern.hasMatch(cursor))) {
+      throw const LoopBackendFailure(LoopBackendFailureKind.invalidRequest);
+    }
+    try {
+      final response = await _dio.get<Object?>(
+        directChannelsPath,
+        queryParameters: <String, Object?>{'limit': ?limit, 'cursor': ?cursor},
+        options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
+      );
+      LoopV2Contract.validateSuccess(response, statusCode: 200);
+      final root = LoopV2Contract.strictMap(
+        response.data,
+        LoopV2CommunicationCodec.directChannelPageKeys,
+      );
+      return LoopV2CommunicationCodec.directChannels(root);
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(error, allowedCodes: readErrors);
     }

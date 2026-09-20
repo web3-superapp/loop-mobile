@@ -11,13 +11,19 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_screen.dart';
+import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/features/chat/stream_chat_inbox_page.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
+import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
+import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 import 'support/authenticated_test_privy_gateway.dart';
+import 'support/communication_test_harness.dart';
 import 'support/loop_ground_probe.dart';
 
 void main() {
@@ -86,6 +92,156 @@ void main() {
         Filter.equal('type', 'messaging'),
         Filter.in_('members', <Object>['loop-user-42']),
       ]),
+    );
+  });
+
+  const directCid = 'messaging:loop_direct_0123456789abcdef0123456789abcdef';
+  const groupCid = 'messaging:loop_group_0123456789abcdef0123456789abcdef';
+  const peer = LoopPublicProfile(
+    publicProfileId: '7e25420e-d7ca-46b1-9a2f-3c4d5e6f7a8b',
+    loopId: 'LOOP-2T6JZTG8',
+    alias: 'Voyager_09',
+    avatarRef: null,
+  );
+
+  test('a named direct row opens the conversation carrying its peer', () {
+    final destination = loopInboxChannelDestination(
+      cid: directCid,
+      directory: LoopDirectChannelDirectory(<String, LoopPublicProfile?>{
+        directCid: peer,
+      }),
+    );
+
+    expect(
+      destination?.location,
+      '/chat/dm?cid=${Uri.encodeComponent(directCid)}',
+    );
+    expect(destination?.target?.publicProfileId, peer.publicProfileId);
+    expect(destination?.target?.identity, peer);
+    // The name travels as navigation state, never in the URL.
+    expect(destination?.location.contains('Voyager_09'), isFalse);
+  });
+
+  test('a row LOOP cannot name opens with no identity at all', () {
+    for (final directory in <LoopDirectChannelDirectory>[
+      LoopDirectChannelDirectory.empty(),
+      LoopDirectChannelDirectory(const <String, LoopPublicProfile?>{
+        directCid: null,
+      }),
+    ]) {
+      final destination = loopInboxChannelDestination(
+        cid: directCid,
+        directory: directory,
+      );
+      expect(
+        destination?.location,
+        '/chat/channel/${Uri.encodeComponent(directCid)}',
+      );
+      expect(destination?.target, isNull);
+    }
+  });
+
+  test('a group row never carries a direct identity', () {
+    final destination = loopInboxChannelDestination(
+      cid: groupCid,
+      directory: LoopDirectChannelDirectory(<String, LoopPublicProfile?>{
+        groupCid: peer,
+      }),
+    );
+
+    expect(
+      destination?.location,
+      '/chat/channel/${Uri.encodeComponent(groupCid)}',
+    );
+    expect(destination?.target, isNull);
+    expect(
+      loopInboxChannelDestination(
+        cid: 'livestream:loop_direct_x',
+        directory: LoopDirectChannelDirectory.empty(),
+      ),
+      isNull,
+    );
+    expect(
+      loopInboxChannelDestination(
+        cid: null,
+        directory: LoopDirectChannelDirectory.empty(),
+      ),
+      isNull,
+    );
+  });
+
+  test('the direct-channel index reads every page once', () async {
+    final gateway = FakeChatV2Gateway()
+      ..directChannelPages = <DirectChannelPage>[
+        DirectChannelPage(
+          items: <DirectChannelEntry>[
+            DirectChannelEntry(
+              streamCid: directCid,
+              peer: peer,
+              createdAt: DateTime.utc(2026, 9, 20, 6, 45),
+            ),
+          ],
+          nextCursor: 'page2.sig',
+        ),
+        DirectChannelPage(
+          items: <DirectChannelEntry>[
+            DirectChannelEntry(
+              streamCid: 'messaging:loop_direct_${'a' * 32}',
+              peer: null,
+              createdAt: DateTime.utc(2026, 9, 18, 11, 2),
+            ),
+          ],
+          nextCursor: null,
+        ),
+      ];
+    final container = ProviderContainer(
+      overrides: [chatV2GatewayProvider.overrideWithValue(gateway)],
+    );
+    addTearDown(container.dispose);
+
+    final directory = await container.read(
+      directChannelDirectoryProvider.future,
+    );
+
+    expect(gateway.commands, <String>[
+      'direct-channels:',
+      'direct-channels:page2.sig',
+    ]);
+    expect(directory.length, 2);
+    expect(directory.peerOf(directCid), peer);
+    expect(directory.knows('messaging:loop_direct_${'a' * 32}'), isTrue);
+    expect(directory.peerOf('messaging:loop_direct_${'a' * 32}'), isNull);
+  });
+
+  test('an index the module refused leaves every row unnamed', () async {
+    final container = ProviderContainer(
+      overrides: [
+        chatV2GatewayProvider.overrideWithValue(
+          FakeChatV2Gateway(failure: CommunityFailureKind.unavailable),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    final subscription = container.listen(
+      directChannelDirectoryProvider,
+      (previous, next) {},
+      fireImmediately: true,
+    );
+    addTearDown(subscription.close);
+    await Future<void>.delayed(Duration.zero);
+
+    final state = container.read(directChannelDirectoryProvider);
+    expect(state.hasError, isTrue);
+    expect(state.error, isA<CommunityGatewayException>());
+    // Nothing is published, so nothing is named.
+    expect(state.value, isNull);
+    // The row then keeps the neutral label: a refused read names nobody.
+    expect(
+      resolveLoopDirectRowIdentity(
+        cid: directCid,
+        directory: LoopDirectChannelDirectory.empty(),
+      ).title,
+      loopDirectConversationNeutralLabel,
     );
   });
 

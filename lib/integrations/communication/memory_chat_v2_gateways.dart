@@ -66,6 +66,27 @@ final class MemoryChatV2Gateway implements ChatV2Gateway {
     );
   }
 
+  /// Two demo rows: one named peer and one account with no public profile,
+  /// so the Preview shows both inbox spellings. The CIDs are fixtures and
+  /// match no real channel.
+  @override
+  Future<DirectChannelPage> listDirectChannels({String? cursor}) async =>
+      DirectChannelPage(
+        items: <DirectChannelEntry>[
+          DirectChannelEntry(
+            streamCid: 'messaging:loop_direct_0123456789abcdef0123456789abcdef',
+            peer: _previewHost,
+            createdAt: DateTime.utc(2026, 9, 18, 11, 2, 44),
+          ),
+          DirectChannelEntry(
+            streamCid: 'messaging:loop_direct_fedcba9876543210fedcba9876543210',
+            peer: null,
+            createdAt: DateTime.utc(2026, 9, 17, 8, 30),
+          ),
+        ],
+        nextCursor: null,
+      );
+
   @override
   Future<void> leaveGroup(String groupId) async => _leftGroups.add(groupId);
 }
