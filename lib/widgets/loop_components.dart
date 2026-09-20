@@ -1003,6 +1003,7 @@ class LoopRecordRow extends StatelessWidget {
     super.key,
     this.leading,
     this.subtitle,
+    this.subtitleSpans,
     this.trailing,
     this.trailingCaption,
     this.trailingCaptionUp,
@@ -1016,6 +1017,16 @@ class LoopRecordRow extends StatelessWidget {
   final Widget? leading;
   final String title;
   final String? subtitle;
+
+  /// The secondary line when part of it carries its own voice.
+  ///
+  /// `.row-s` is one 11px line, except for the figures inside it: the
+  /// prototype lifts `.row-s .mining-accent` to 12.5/700 Lime because a
+  /// community's weight is a decision fact and 「128,420 成员」 is not. A row
+  /// that needs that contrast hands the spans; every other row keeps
+  /// [subtitle] and the single style. Both are never set at once — the spans
+  /// win, and [subtitle] stays the accessible reading of the same line.
+  final List<InlineSpan>? subtitleSpans;
 
   /// How many lines the secondary copy may take before it ellipses.
   ///
@@ -1074,7 +1085,14 @@ class LoopRecordRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleMedium,
                 ),
-                if (subtitle != null)
+                if (subtitleSpans != null)
+                  Text.rich(
+                    TextSpan(children: subtitleSpans),
+                    maxLines: subtitleMaxLines,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall,
+                  )
+                else if (subtitle != null)
                   Text(
                     subtitle!,
                     maxLines: subtitleMaxLines,
@@ -1186,6 +1204,7 @@ class LoopRecordGroup extends StatelessWidget {
             leading: rows[index].leading,
             title: rows[index].title,
             subtitle: rows[index].subtitle,
+            subtitleSpans: rows[index].subtitleSpans,
             // Every field a row carries must be copied here: the group
             // rebuilds each row rather than mounting the one it was given,
             // so anything omitted is silently dropped on every grouped row.

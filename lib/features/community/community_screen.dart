@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/chat_state.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
+import 'package:loop_mobile/features/community/community_home_widgets.dart';
 import 'package:loop_mobile/features/community/search_controller.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
@@ -14,7 +16,6 @@ import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -96,8 +97,29 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
     }
 
     final home = state.value;
-    final joinedCount = home?.joined.length;
     final loading = state.phase == CommunityViewPhase.loading;
+    final joined = home?.joined ?? const <JoinedCommunity>[];
+    // The prototype's own heading: how many of the reader's communities are
+    // bound to an asset, which is the whole of what 「在挖矿」 means here. The
+    // aggregate carries the binding on every joined row, so this is a reading
+    // and not a second request.
+    final miningCount = joined
+        .where((entry) => entry.community.hasBoundAsset)
+        .length;
+    final mining = <JoinedCommunity>[
+      for (final entry in joined)
+        if (entry.community.hasBoundAsset) entry,
+    ];
+    final others = <JoinedCommunity>[
+      for (final entry in joined)
+        if (!entry.community.hasBoundAsset) entry,
+    ];
+    // Ranking the reader's communities by discussion, counting live rooms and
+    // totalling unread all need a Stream reading this page does not have: the
+    // aggregate publishes both as unavailable facts and carries no unread per
+    // joined community. So every clause is absent, and the folio says why
+    // instead of printing a sentence with the numbers cut out of it.
+    final activity = communityActivityCaption();
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
         const SingleActivator(LogicalKeyboardKey.escape): _closePanel,
@@ -120,25 +142,32 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                 // back to the control that opened the panel.
                 Focus(
                   focusNode: _searchToggleFocus,
-                  child: LoopIconButton(
+                  child: CommunityToolButton(
                     key: const ValueKey<String>('community-search-toggle'),
                     icon: 'search',
                     label: _panel == CommunityPanel.search ? '关闭搜索' : '打开全局搜索',
+                    toggled: _panel == CommunityPanel.search,
                     onPressed: () => _toggle(CommunityPanel.search),
                   ),
                 ),
                 Focus(
                   focusNode: _messageToggleFocus,
-                  child: LoopIconButton(
+                  child: CommunityToolButton(
                     key: const ValueKey<String>('community-message-toggle'),
                     icon: 'bell',
                     label: _panel == CommunityPanel.messages
                         ? '关闭消息面板'
                         : '打开消息面板',
+                    // `.community-unread-badge` has no source in this version:
+                    // LOOP publishes no total unread count, so the badge slot
+                    // stays empty rather than carrying a number nobody
+                    // counted.
+                    unreadCount: null,
+                    toggled: _panel == CommunityPanel.messages,
                     onPressed: () => _toggle(CommunityPanel.messages),
                   ),
                 ),
-                LoopIconButton(
+                CommunityToolButton(
                   key: const ValueKey<String>('community-profile-action'),
                   icon: 'user',
                   label: '查看个人中心',
@@ -149,12 +178,13 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   // The discover hero sits above the index card, as in the
-                  // frozen prototype. The aggregate carries a handful of
-                  // communities and no total, so the hero says how many it is
-                  // showing and never how many exist.
+                  // frozen prototype.
                   if (home != null)
-                    _DiscoverHero(
-                      previewCount: home.discover.length,
+                    CommunityDiscoverHero(
+                      key: const ValueKey<String>('community-discover-hero'),
+                      // `discover` is a preview the server cut to a handful,
+                      // so its length is not a count of verified communities
+                      // and the kicker never prints it as one.
                       onTap: () => _open('/community/discover'),
                     ),
                   LoopFolioPrimary(
@@ -166,19 +196,17 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     // The skeleton below was already saying 「正在读取」 while
                     // this hero said 「暂无数值 / 社区数据暂时读不到」 for the
                     // first seconds of every cold start.
-                    heading: joinedCount == null
+                    heading: home == null
                         ? (loading ? '正在读取' : communityMissingHeading)
-                        : '$joinedCount 个已加入的社区',
-                    // `discover` is a preview the server cut to a handful, so
-                    // its length is not a count of verified communities and is
-                    // not printed as one.
+                        : '$miningCount 个社区在挖矿',
                     caption: home == null
                         ? loading
                               ? '已加入的社区数量读到之后显示在这里。'
                               : '社区数据暂时读不到，这一页不显示任何数字。'
-                        : '已验证社区在发现页浏览 · '
-                              '数据观察于 ${communityObservedAtLabel(home.observedAt)}',
-                    stamp: home == null ? null : 'DATABASE',
+                        : activity ?? '讨论热度与语音房活动还没有开放。',
+                    // `.folio-stamp` is 「N LIVE」 in the prototype. Nothing
+                    // here counts live rooms, so the corner stays empty; it
+                    // is not a slot for the word DATABASE.
                   ),
                 ],
               ),
@@ -211,24 +239,41 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                     ),
                   )
                 else ...<Widget>[
-                  const LoopLabel('已加入的社区'),
-                  if (home.joined.isEmpty)
+                  if (joined.isEmpty) ...<Widget>[
+                    const LoopLabel('已加入的社区'),
                     const LoopEmpty(
                       key: ValueKey<String>('community-joined-empty'),
                       message: '还没有加入任何社区',
                       reason: '从"发现社区"开始，加入后这里会显示你的社区。',
-                    )
-                  else
+                    ),
+                  ],
+                  // Two groups, in the prototype's order: the communities that
+                  // bound an asset — the ones a reader is here to mine — and
+                  // then everything else.
+                  if (mining.isNotEmpty) ...<Widget>[
+                    // `<p class="label" style="padding-top:0">` — the first
+                    // label on this page sits against the folio.
+                    const LoopLabel('带币社区 · 可挖矿', tight: true),
                     LoopRecordGroup(
+                      key: const ValueKey<String>('community-mining-group'),
                       rows: <LoopRecordRow>[
-                        for (
-                          var index = 0;
-                          index < home.joined.length;
-                          index += 1
-                        )
-                          _joinedRow(home.joined, index),
+                        for (final entry in mining) _joinedRow(entry),
                       ],
                     ),
+                  ],
+                  if (others.isNotEmpty) ...<Widget>[
+                    LoopLabel(
+                      '其他社区',
+                      followsLabel: mining.isNotEmpty,
+                      tight: mining.isEmpty,
+                    ),
+                    LoopRecordGroup(
+                      key: const ValueKey<String>('community-other-group'),
+                      rows: <LoopRecordRow>[
+                        for (final entry in others) _joinedRow(entry),
+                      ],
+                    ),
+                  ],
                   if (home.joinedTruncated)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -252,6 +297,10 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                         '推荐只按成员数与创建时间排列，'
                         '不是个性化算法推荐。',
                     margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                  ),
+                  CommunityObservedFootnote(
+                    key: const ValueKey<String>('community-observed-at'),
+                    observedAt: home.observedAt,
                   ),
                 ],
                 const SizedBox(height: 20),
@@ -306,6 +355,13 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
                             _closePanel();
                             _open('/chat/search');
                           },
+                          onOpenVoiceRoom: (communityId) {
+                            _closePanel();
+                            _open(
+                              '/chat/voice?id='
+                              '${Uri.encodeQueryComponent(communityId)}',
+                            );
+                          },
                         ),
                 ),
               ),
@@ -315,89 +371,57 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
     );
   }
 
-  LoopRecordRow _joinedRow(List<JoinedCommunity> items, int index) {
-    final entry = items[index];
+  /// One joined community, in the prototype's own row.
+  ///
+  /// The second line is `48,120 成员 · <accent>`: the head count in mono, and
+  /// then the one fact that decides whether this community mines. The
+  /// community's approved weight lives behind a per-community mining read this
+  /// page does not issue, so the accent carries the community's verification
+  /// state when the operator has not verified it — and nothing at all when it
+  /// is verified and the weight is simply not on this page.
+  LoopRecordRow _joinedRow(JoinedCommunity entry) {
     final community = entry.community;
-    final status = communityMembershipLabel(entry.membership);
-    // A community the operator has not verified yet is a fact about the
-    // community, not about this membership — the row printed 「8 名成员 ·
-    // 成员」 for a 审核中 community and it read exactly like the twenty
-    // verified ones next to it. The discovery desk states it, so does this.
     final unverified =
         community.verificationStatus != CommunityVerification.verified
         ? communityVerificationLabel(community.verificationStatus)
         : null;
-    final subtitle = <String>[
-      '${community.memberCount} 名成员',
-      ?unverified,
-      status,
-    ].join(' · ');
+    // A muted or banned membership is the reader's own standing and outranks
+    // everything else on the line; a plain 「成员」 told a reader nothing the
+    // row did not already say.
+    final standing = entry.membership.status == CommunityMemberStatus.active
+        ? null
+        : communityMembershipLabel(entry.membership);
+    final accent = standing ?? unverified;
+    final members = communityMemberCountLabel(community.memberCount);
     return LoopRecordRow(
       key: ValueKey<String>('community-joined-${community.communityId}'),
-      leading: CommunityLogoTile(name: community.name),
+      leading: CommunityLogoAvatar(
+        name: community.name,
+        logoRef: community.logoRef,
+      ),
       title: community.name,
-      subtitle: subtitle,
-      onTap: () => _open('/community/profile?id=${community.communityId}'),
-      position: communityRowPosition(index, items.length),
-      semanticLabel:
-          '${community.name}，'
-          '${unverified == null ? '' : '$unverified，'}'
-          '$status，${community.memberCount} 名成员',
-    );
-  }
-}
-
-class _DiscoverHero extends StatelessWidget {
-  const _DiscoverHero({required this.previewCount, required this.onTap});
-
-  /// How many rows this hero is previewing. Never a total: the aggregate
-  /// does not carry one.
-  final int previewCount;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopSurfaceCard(
-      key: const ValueKey<String>('community-discover-hero'),
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-      background: LoopColors.lime,
-      borderColor: LoopColors.lime,
-      onTap: onTap,
-      semanticLabel: '发现新社区，这里预览 $previewCount 个',
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  'DISCOVER',
-                  style: LoopTypography.eyebrow(
-                    11,
-                    color: LoopColors.ink.withValues(alpha: 0.6),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '发现新社区',
-                  style: LoopTypography.heading(18, color: LoopColors.ink),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '按成员数或创建时间浏览已验证社区。这里先给 $previewCount 个，'
-                  '全部在发现页。',
-                  style: LoopTypography.caption(
-                    12,
-                    color: LoopColors.ink.withValues(alpha: 0.72),
-                  ),
-                ),
-              ],
+      subtitle: accent == null ? members : '$members · $accent',
+      subtitleSpans: <InlineSpan>[
+        TextSpan(text: members, style: LoopMono.stamp),
+        if (accent != null) ...<InlineSpan>[
+          const TextSpan(text: ' · '),
+          TextSpan(
+            text: accent,
+            style: LoopTypography.figure(
+              13,
+              weight: FontWeight.w700,
+              color: LoopColors.lime,
             ),
           ),
-          const SizedBox(width: 10),
-          const LoopIcon('chevron', size: 18, color: LoopColors.ink),
         ],
-      ),
+      ],
+      // `.badge.badge-up` on the right of the row. LOOP publishes no unread
+      // count per community in this version, so no row carries one; a zero is
+      // never drawn.
+      onTap: () => _open('/community/profile?id=${community.communityId}'),
+      semanticLabel:
+          '${community.name}，$members'
+          '${accent == null ? '' : '，$accent'}',
     );
   }
 }
@@ -478,6 +502,7 @@ class _CommunityMessagePanel extends ConsumerWidget {
     required this.onOpenChat,
     required this.onOpenRequests,
     required this.onOpenMessageSearch,
+    required this.onOpenVoiceRoom,
   });
 
   final CommunityHome? home;
@@ -485,6 +510,7 @@ class _CommunityMessagePanel extends ConsumerWidget {
   final VoidCallback onOpenChat;
   final VoidCallback onOpenRequests;
   final VoidCallback onOpenMessageSearch;
+  final ValueChanged<String> onOpenVoiceRoom;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -494,6 +520,12 @@ class _CommunityMessagePanel extends ConsumerWidget {
     // not read a room of its own: what it has is the same membership the
     // strip above the router stands on.
     final session = ref.watch(voiceRoomSessionProvider);
+    // Stranger requests are the one count this client can answer without a
+    // new read. Outside the Development Preview the gateway is unconfigured,
+    // the future fails without touching the network, and the row is absent.
+    final requests = ref.watch(messageRequestsProvider);
+    final requestCount = requests.asData?.value.length;
+    final newCount = (session == null ? 0 : 1) + (requestCount ?? 0);
     return LoopSurfaceCard(
       key: const ValueKey<String>('community-message-panel'),
       // Floats over page content, so it needs an opaque surface: the page
@@ -504,17 +536,48 @@ class _CommunityMessagePanel extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text(
-            'MESSAGE CENTER',
-            style: LoopTypography.eyebrow(11, color: LoopColors.muted),
+          CommunityMessagePanelHead(newCount: newCount),
+          // A row exists only where a reading exists. Nothing on this panel
+          // is a placeholder for a count LOOP does not publish.
+          if (session != null)
+            CommunityMessageRow(
+              key: const ValueKey<String>('community-live-voice-row'),
+              icon: 'voice',
+              title: session.communityName,
+              subtitle: '语音房正在进行',
+              stamp: 'LIVE',
+              onTap: () => onOpenVoiceRoom(session.communityId),
+            ),
+          if (requestCount != null && requestCount > 0)
+            CommunityMessageRow(
+              key: const ValueKey<String>('community-message-requests-row'),
+              icon: 'mail',
+              title: '陌生人请求',
+              subtitle: '$requestCount 条请求待处理',
+              onTap: onOpenRequests,
+            ),
+          CommunityMessageRow(
+            key: const ValueKey<String>('community-open-chat'),
+            icon: 'chat',
+            title: '聊天',
+            subtitle: '打开会话收件箱',
+            onTap: onOpenChat,
           ),
-          const SizedBox(height: 10),
+          if (requestCount == null || requestCount == 0)
+            CommunityMessageRow(
+              key: const ValueKey<String>('community-open-requests'),
+              icon: 'mail',
+              title: '陌生人请求',
+              subtitle: '接受、忽略或举报',
+              onTap: onOpenRequests,
+            ),
           // Two 「读不到」 cards stood here on one panel for two things that
           // had not failed: LOOP does not publish a total unread count in
           // this version, and a reader who is in no room is not a room that
           // could not be read. Each says what is actually the case; a code
           // that means something else still renders as the failure it is.
-          if (unread != null)
+          if (unread != null) ...<Widget>[
+            const SizedBox(height: 10),
             unread.reasonCode == 'STREAM_UNREAD_NOT_CONNECTED'
                 ? const LoopEmpty(
                     key: ValueKey<String>('community-unread-deferred'),
@@ -528,55 +591,33 @@ class _CommunityMessagePanel extends ConsumerWidget {
                     fact: unread,
                     margin: EdgeInsets.zero,
                   ),
-          if (liveVoice != null) ...<Widget>[
+          ],
+          if (liveVoice != null &&
+              liveVoice.reasonCode != 'STREAM_VOICE_NOT_CONNECTED') ...<Widget>[
             const SizedBox(height: 10),
-            if (liveVoice.reasonCode == 'STREAM_VOICE_NOT_CONNECTED')
-              LoopEmpty(
-                key: const ValueKey<String>('community-live-voice-state'),
-                message: session == null
-                    ? '你现在不在任何语音房里'
-                    : '正在语音房 · ${session.communityName}',
-                reason: session == null
-                    ? '加入之后这里会显示你所在的房间。'
-                          '某个社区有没有进行中的语音房，在它的社区页可以看到。'
-                    : '你仍然在这个房间里。顶部的提示可以直接回到它。',
-                margin: EdgeInsets.zero,
-              )
-            else
-              CommunityUnavailableCard(
-                key: const ValueKey<String>('community-live-voice-unavailable'),
-                label: '语音房',
-                fact: liveVoice,
-                margin: EdgeInsets.zero,
-              ),
+            CommunityUnavailableCard(
+              key: const ValueKey<String>('community-live-voice-unavailable'),
+              label: '语音房',
+              fact: liveVoice,
+              margin: EdgeInsets.zero,
+            ),
+          ] else if (liveVoice != null && session == null) ...<Widget>[
+            const SizedBox(height: 10),
+            const LoopEmpty(
+              key: ValueKey<String>('community-live-voice-state'),
+              message: '你现在不在任何语音房里',
+              reason:
+                  '加入之后这里会显示你所在的房间。'
+                  '某个社区有没有进行中的语音房，在它的社区页可以看到。',
+              margin: EdgeInsets.zero,
+            ),
           ],
           const SizedBox(height: 12),
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('community-open-chat'),
-                title: '聊天',
-                subtitle: '打开会话收件箱',
-                position: LoopRowPosition.first,
-                onTap: onOpenChat,
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('community-open-requests'),
-                title: '陌生人请求',
-                subtitle: '接受、忽略或举报',
-                position: LoopRowPosition.middle,
-                onTap: onOpenRequests,
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('community-open-message-search'),
-                title: '搜索消息',
-                subtitle: '在已接通的会话里检索',
-                position: LoopRowPosition.last,
-                onTap: onOpenMessageSearch,
-              ),
-            ],
+          CommunityMessageSearchButton(
+            key: const ValueKey<String>('community-open-message-search'),
+            onPressed: onOpenMessageSearch,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           LoopButton(
             key: const ValueKey<String>('community-message-close'),
             label: '关闭消息面板',

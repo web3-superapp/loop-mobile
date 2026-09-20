@@ -31,12 +31,13 @@ CommunitySummary _community({
   CommunityVerification verification = CommunityVerification.verified,
   String? boundAssetKey,
   String? description,
+  String? logoRef,
 }) => CommunitySummary(
   communityId: id,
   name: name,
   slug: slug,
   description: description,
-  logoRef: null,
+  logoRef: logoRef,
   verificationStatus: verification,
   boundAssetKey: boundAssetKey,
   memberCount: memberCount,
@@ -57,12 +58,17 @@ final _previewCommunities = <CommunitySummary>[
     memberCount: 128,
     description: '开发预览中的示例社区，成员数与角色都是本地内存值。',
     boundAssetKey: 'eip155:56:0x00000000000000000000000000000000000000aa',
+    // A preset from the server's own community catalog, so the Preview
+    // exercises the atlas path the production rows take. It is preview data
+    // and the page labels it 演示数据 above these rows.
+    logoRef: 'avatar:preset/community-01',
   ),
   _community(
     id: '4bb85f64-5717-4562-b3fc-2c963f66afb7',
     name: '演示社区 · Builders',
     slug: 'demo-builders',
     memberCount: 42,
+    logoRef: 'avatar:preset/community-02',
   ),
   _community(
     id: '5cc85f64-5717-4562-b3fc-2c963f66afc8',
@@ -70,6 +76,9 @@ final _previewCommunities = <CommunitySummary>[
     slug: 'demo-pending',
     memberCount: 3,
     verification: CommunityVerification.pending,
+    // 05..12 exist in the catalog and have no cell in the frozen local
+    // atlas, so this row shows its own initials — the fallback path.
+    logoRef: 'avatar:preset/community-09',
   ),
 ];
 

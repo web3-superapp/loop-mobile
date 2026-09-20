@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/chat/group_alias/group_alias_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
 import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
 import 'package:loop_mobile/features/chat/v2/chat_search_screen.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
@@ -84,12 +85,13 @@ CommunitySummary testCommunity({
   int memberCount = 128,
   CommunityVerification verification = CommunityVerification.verified,
   String? boundAssetKey,
+  String? logoRef,
 }) => CommunitySummary(
   communityId: communityId,
   name: name,
   slug: 'frog-holders',
   description: null,
-  logoRef: null,
+  logoRef: logoRef,
   verificationStatus: verification,
   boundAssetKey: boundAssetKey,
   memberCount: memberCount,
@@ -762,6 +764,11 @@ Future<void> pumpCommunityPage(
   List<ChatForwardMessage>? selectedForward,
   ChatForwardState? forwardState,
   ChatSearchGateway? chatSearch,
+
+  /// The room this account is in, as the shell's own banner knows it. It is
+  /// the only live-voice reading the community home has, so a test that wants
+  /// the panel's LIVE row seeds it here.
+  VoiceRoomSession? voiceRoomSession,
   Future<StreamSessionAuthorization> Function()? streamAuthorization,
 
   /// Arms the media surface the voice room page mounts: supplying either of
@@ -851,6 +858,13 @@ Future<void> pumpCommunityPage(
       ),
     ),
   );
+  if (voiceRoomSession != null) {
+    // The banner is entered the way the room page enters it, because the
+    // controller is final and a seeded subclass cannot stand in for it.
+    ProviderScope.containerOf(tester.element(find.byType(MaterialApp)))
+        .read(voiceRoomSessionProvider.notifier)
+        .enter(voiceRoomSession);
+  }
   if (settle) {
     await tester.pumpAndSettle();
   } else {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -22,6 +23,7 @@ CommunityHome _home({
   int joined = 1,
   bool truncated = false,
   int discover = 1,
+  int mining = 0,
 }) => CommunityHome(
   joined: <JoinedCommunity>[
     for (var index = 0; index < joined; index += 1)
@@ -29,6 +31,11 @@ CommunityHome _home({
         community: testCommunity(
           communityId: '3fa85f64-5717-4562-b3fc-2c963f66af$index$index',
           name: 'Joined $index',
+          // The first [mining] rows bound an asset, which is the whole of
+          // what 「在挖矿」 means on this page and what splits the two groups.
+          boundAssetKey: index < mining
+              ? 'eip155:56:0x00000000000000000000000000000000000000a$index'
+              : null,
         ),
         membership: CommunityMembership(
           role: CommunityRole.member,
@@ -113,19 +120,25 @@ void main() {
     });
 
     testWidgets('ready renders only server figures', (tester) async {
-      final gateway = FakeCommunityGateway(home: _home(joined: 2, discover: 3));
+      final gateway = FakeCommunityGateway(
+        home: _home(joined: 3, discover: 3, mining: 2),
+      );
       await pumpCommunityPage(
         tester,
         const CommunityScreen(),
         community: gateway,
       );
 
-      expect(find.text('2 个已加入的社区'), findsOneWidget);
+      // The prototype's own heading: how many of the reader's communities
+      // bound an asset, not how many were joined.
+      expect(find.text('2 个社区在挖矿'), findsOneWidget);
       // `discover` is a preview the server cut to a handful. Its length was
       // printed as the number of verified communities, which read 5 while the
-      // directory held 36, so the page now states only what it is showing.
+      // directory held 36, and then as 「这里先给 3 个」, which is the same
+      // figure wearing a different sentence. The hero states neither.
       expect(find.textContaining('个已验证社区'), findsNothing);
-      expect(find.textContaining('这里先给 3 个'), findsOneWidget);
+      expect(find.textContaining('这里先给'), findsNothing);
+      expect(find.textContaining('VERIFIED'), findsNothing);
       expect(find.text('Joined 0'), findsOneWidget);
       // The discover list moved to its own page; the hero states the count.
       expect(find.text('Discover 0'), findsNothing);
@@ -178,7 +191,8 @@ void main() {
         // The membership is a full one — 审核中 is the community's own state,
         // and the row used to read exactly like a verified community's.
         expect(find.textContaining('审核中'), findsOneWidget);
-        expect(find.text('1 个已加入的社区'), findsOneWidget);
+        // It bound no asset, so it is not one of the mining communities.
+        expect(find.text('0 个社区在挖矿'), findsOneWidget);
       },
     );
 
@@ -190,7 +204,7 @@ void main() {
         community: gateway,
       );
 
-      expect(find.text('0 个已加入的社区'), findsOneWidget);
+      expect(find.text('0 个社区在挖矿'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('community-joined-empty')),
         findsOneWidget,
@@ -290,7 +304,7 @@ void main() {
 
       expect(find.text('演示数据'), findsOneWidget);
       expect(find.text('开发预览'), findsWidgets);
-      expect(find.text('1 个已加入的社区'), findsOneWidget);
+      expect(find.text('0 个社区在挖矿'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('community-capability-unavailable')),
         findsNothing,
@@ -358,6 +372,210 @@ void main() {
         find.byKey(const ValueKey<String>('community-live-voice-unavailable')),
         findsOneWidget,
       );
+      expect(find.text('你现在不在任何语音房里'), findsNothing);
+    });
+
+    testWidgets('the page is laid out in the prototype\'s own order', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityScreen(),
+        community: FakeCommunityGateway(
+          home: _home(joined: 3, discover: 2, mining: 2),
+        ),
+      );
+
+      // The order is the prototype's: the discover band, then the index
+      // folio, then the mining communities, then everything else, and the
+      // reading's timestamp last. It used to be folio, then one flat list.
+      final order = <Key>[
+        const ValueKey<String>('community-discover-hero'),
+        const ValueKey<String>('community-folio'),
+        const ValueKey<String>('community-mining-group'),
+        const ValueKey<String>('community-other-group'),
+        const ValueKey<String>('community-observed-at'),
+      ];
+      final tops = <double>[
+        for (final key in order) tester.getTopLeft(find.byKey(key)).dy,
+      ];
+      for (var index = 1; index < tops.length; index += 1) {
+        expect(
+          tops[index],
+          greaterThan(tops[index - 1]),
+          reason: '${order[index]} must sit below ${order[index - 1]}',
+        );
+      }
+      expect(find.text('带币社区 · 可挖矿'), findsOneWidget);
+      expect(find.text('其他社区'), findsOneWidget);
+    });
+
+    testWidgets('the index folio carries no report vocabulary', (tester) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityScreen(),
+        community: FakeCommunityGateway(home: _home(joined: 1, mining: 1)),
+      );
+
+      // 「数据观察于 … / DATABASE」 was the page's primary sentence, in the one
+      // place a reader looks first. The reading still has to be datable, so
+      // the timestamp survives at the foot of the page — and the stamp, which
+      // the prototype spends on 「N LIVE」, is not spent on the word DATABASE.
+      expect(find.text('DATABASE'), findsNothing);
+      final folio = tester.widget<LoopFolioPrimary>(
+        find.byKey(const ValueKey<String>('community-folio')),
+      );
+      expect(folio.stamp, isNull);
+      expect(folio.caption, isNot(contains('数据观察于')));
+      expect(find.textContaining('数据观察于 2026-09-08 01:00 UTC'), findsOneWidget);
+    });
+
+    testWidgets('a row prints the head count and never an unread zero', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityScreen(),
+        community: FakeCommunityGateway(
+          home: CommunityHome(
+            joined: <JoinedCommunity>[
+              JoinedCommunity(
+                community: testCommunity(
+                  name: 'Frog Holders',
+                  memberCount: 48120,
+                  boundAssetKey:
+                      'eip155:56:0x00000000000000000000000000000000000000aa',
+                ),
+                membership: CommunityMembership(
+                  role: CommunityRole.member,
+                  status: CommunityMemberStatus.active,
+                  joinedAt: DateTime.utc(2026, 7),
+                ),
+              ),
+            ],
+            joinedTruncated: false,
+            discover: const <CommunitySummary>[],
+            unread: const LoopUnavailableFact('STREAM_UNREAD_NOT_CONNECTED'),
+            liveVoice: const LoopUnavailableFact('STREAM_VOICE_NOT_CONNECTED'),
+            observedAt: DateTime.utc(2026, 9, 8, 1),
+            source: 'database',
+            recommendation: const CommunityRecommendation(
+              recommendationId: '22222222-2222-4222-8222-222222222222',
+              ruleVersion: 'rule:verified-members-v1',
+            ),
+          ),
+        ),
+      );
+
+      // 「48120 成员」 is six digits a reader has to count; grouping is
+      // display-only and reversible.
+      expect(find.textContaining('48,120 成员'), findsOneWidget);
+      // The weight belongs to a per-community mining read this page does not
+      // issue, so the row carries no 「×」 at all rather than a placeholder.
+      expect(find.textContaining('×'), findsNothing);
+      // `.badge.badge-up` carries an unread count. There is no unread source,
+      // so no row wears one and no row wears a zero.
+      expect(find.byType(LoopBadge), findsNothing);
+    });
+
+    testWidgets('a preset logo resolves to the community atlas', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityScreen(),
+        community: FakeCommunityGateway(
+          home: CommunityHome(
+            joined: <JoinedCommunity>[
+              JoinedCommunity(
+                community: testCommunity(
+                  communityId: '3fa85f64-5717-4562-b3fc-2c963f66af11',
+                  name: 'Alpha One',
+                  logoRef: 'avatar:preset/community-01',
+                ),
+                membership: CommunityMembership(
+                  role: CommunityRole.member,
+                  status: CommunityMemberStatus.active,
+                  joinedAt: DateTime.utc(2026, 7),
+                ),
+              ),
+              JoinedCommunity(
+                community: testCommunity(
+                  communityId: '3fa85f64-5717-4562-b3fc-2c963f66af22',
+                  name: 'Beta Nine',
+                  logoRef: 'avatar:preset/community-09',
+                ),
+                membership: CommunityMembership(
+                  role: CommunityRole.member,
+                  status: CommunityMemberStatus.active,
+                  joinedAt: DateTime.utc(2026, 7),
+                ),
+              ),
+            ],
+            joinedTruncated: false,
+            discover: const <CommunitySummary>[],
+            unread: const LoopUnavailableFact('STREAM_UNREAD_NOT_CONNECTED'),
+            liveVoice: const LoopUnavailableFact('STREAM_VOICE_NOT_CONNECTED'),
+            observedAt: DateTime.utc(2026, 9, 8, 1),
+            source: 'database',
+            recommendation: const CommunityRecommendation(
+              recommendationId: '22222222-2222-4222-8222-222222222222',
+              ruleVersion: 'rule:verified-members-v1',
+            ),
+          ),
+        ),
+      );
+
+      // 01..04 are the four cells the frozen 2x2 atlas carries.
+      expect(
+        find.byKey(
+          const ValueKey<String>('community-logo-avatar:preset/community-01'),
+        ),
+        findsOneWidget,
+      );
+      // 09 is a catalog preset with no local image: initials, not somebody
+      // else's logo.
+      expect(
+        find.byKey(
+          const ValueKey<String>('community-logo-avatar:preset/community-09'),
+        ),
+        findsNothing,
+      );
+      // 09 draws its own initials; 01 draws the atlas cell and no monogram.
+      expect(find.text('BE'), findsOneWidget);
+      expect(find.text('AL'), findsNothing);
+    });
+
+    testWidgets('the message panel states a room this account is in', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityScreen(),
+        community: FakeCommunityGateway(home: _home()),
+        voiceRoomSession: const VoiceRoomSession(
+          communityId: testCommunityId,
+          communityName: 'Frog Holders',
+          voiceRoomId: 'room-1',
+          callRoomId: null,
+          role: VoiceRoomRole.listener,
+          joinedCount: 12,
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-message-toggle')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('community-live-voice-row')),
+        findsOneWidget,
+      );
+      expect(find.text('LIVE'), findsOneWidget);
+      expect(find.text('1 NEW'), findsOneWidget);
+      // The room is on the panel as a row, so the panel does not also say
+      // this account is in no room.
       expect(find.text('你现在不在任何语音房里'), findsNothing);
     });
 
