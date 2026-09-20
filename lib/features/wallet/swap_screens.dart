@@ -19,6 +19,7 @@ import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -117,28 +118,44 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                 onPressed: () => _open('/wallet/swap/route', extra: quote),
               ),
             ],
+      // The prototype's swap primary is a Chalk card and its heading is the
+      // quote itself (audit §A.11, items 1 and 2).
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('swap-folio'),
+        variant: LoopFolioVariant.chalk,
         kicker: 'SWAP QUOTE',
         heading: quote == null
-            ? '钱包内兑换'
+            ? '还没有报价'
             : '${quote.quote.inputAmount.display} ${quote.sourceAsset.symbol}'
                   ' → ${quote.quote.estimatedOutputAmount.display} '
                   '${quote.destinationAsset.symbol}',
-        caption: '报价、滑点、价格影响与费用都在同一页可核对。',
+        caption: '钱包内兑换；报价、滑点、路由和费用都在同一页可核对。',
         stamp: quote == null ? null : 'REVIEW QUOTE',
       ),
-      primaryAction: _primaryAction(capability, quote),
-      block: blocked
-          ? LoopCapabilityPageBlock.of(
-              key: const ValueKey<String>('swap-capability-block'),
-              title: '兑换当前不可用',
-              capability: capability,
-              fallbackReasonCode: 'PRIVY_NOT_CONFIGURED',
-            )
-          : null,
+      primaryAction: blocked ? null : _primaryAction(capability, quote),
       body: <Widget>[
-        if (walletId == null || balancesState == null)
+        // A closed gate used to take the whole page. The prototype's swap is
+        // two figure boxes and a button; the page keeps them, every figure a
+        // dash, and the gate's own sentence stands where the quote would be
+        // (audit item 4).
+        if (blocked) ...<Widget>[
+          const LoopFigureBox(
+            key: ValueKey<String>('swap-source-blocked'),
+            caption: '支付',
+            figure: loopFigureDash,
+          ),
+          const LoopFigureBox(
+            key: ValueKey<String>('swap-destination-blocked'),
+            caption: '获得',
+            figure: loopFigureDash,
+          ),
+          LoopCapabilityBlockCard(
+            key: const ValueKey<String>('swap-capability-block'),
+            label: '兑换当前不可用',
+            capability: capability,
+            fallbackReasonCode: 'PRIVY_NOT_CONFIGURED',
+          ),
+        ] else if (walletId == null || balancesState == null)
           LoopChainStateBlock(
             keyPrefix: 'swap-directory',
             phase: ref.watch(walletDirectoryControllerProvider).phase,
@@ -722,6 +739,7 @@ class SwapRouteScreen extends StatelessWidget {
       onBack: onBack,
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('swap-route-folio'),
+        variant: LoopFolioVariant.chalk,
         kicker: 'ROUTE & FEES',
         heading:
             '${value.estimatedOutputAmount.display} '

@@ -591,6 +591,47 @@ class LoopCapabilityPageBlock extends StatelessWidget {
   }
 }
 
+/// The same capability gate, as a strip inside a page that keeps its shape.
+///
+/// A deferred capability is not a page with nothing on it. The prototype's
+/// action pages keep their primary, their group headings and the room their
+/// content will take, and state the reason inside that shape (visual audit
+/// 2026-09-20, item 4). Use this where the page still has something to show —
+/// a heading, a figure box, a group — and [LoopCapabilityPageBlock] only where
+/// the page genuinely has nothing at all.
+class LoopCapabilityBlockCard extends StatelessWidget {
+  const LoopCapabilityBlockCard({
+    required this.label,
+    required this.capability,
+    super.key,
+    this.fallbackReasonCode,
+  });
+
+  /// What the reader cannot do here.
+  final String label;
+  final LoopCapabilityProjection capability;
+
+  /// The rule to name when the server closed the gate without naming one. It
+  /// is ignored for an unreachable gate, which has no server reason at all.
+  final String? fallbackReasonCode;
+
+  @override
+  Widget build(BuildContext context) {
+    if (capability.unreachable) {
+      return LoopEmpty(
+        key: const ValueKey<String>('capability-unreachable'),
+        icon: 'offline',
+        message: label,
+        reason: loopChainFailureReason(LoopChainFailureKind.offline),
+      );
+    }
+    return LoopUnavailableCard(
+      label: label,
+      reasonCode: capability.reasonCode ?? fallbackReasonCode,
+    );
+  }
+}
+
 /// One rendered market fact: the figure, its quality marker and its source.
 ///
 /// An unavailable fact renders its explanation, never `0` and never `—`.

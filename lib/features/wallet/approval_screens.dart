@@ -106,6 +106,7 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
       onBack: widget.onBack,
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('approval-guard-folio'),
+        variant: LoopFolioVariant.chalk,
         kicker: 'APPROVAL REQUEST',
         heading: intent == null
             ? '${widget.request.symbol} 授权'

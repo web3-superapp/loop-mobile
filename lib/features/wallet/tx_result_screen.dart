@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
+import 'package:loop_mobile/features/wallet/wallet_mining_hooks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -146,6 +147,7 @@ class _TransactionResultScreenState
         onBack: widget.onBack,
         folio: const LoopFolioPrimary(
           key: ValueKey<String>('tx-result-folio'),
+          variant: LoopFolioVariant.chalk,
           kicker: 'TRANSACTION RESULT',
           heading: '没有可展示的结果',
           caption: '结果页只展示一笔具体操作，需要指定是哪一笔。',
@@ -188,6 +190,7 @@ class _TransactionResultScreenState
       onBack: widget.onBack,
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('tx-result-folio'),
+        variant: LoopFolioVariant.chalk,
         kicker: 'TRANSACTION RESULT',
         heading: intent == null ? '正在读取结果' : _headline(intent),
         caption: intent == null ? '结果以链上核对为准，这一页不会自己判断成败。' : _caption(intent),
@@ -258,6 +261,11 @@ class _TransactionResultScreenState
                 onPressed: () => unawaited(_retry()),
               ),
             ),
+          // The prototype puts the mining strip right under the result, where
+          // it closes the buy → power loop (audit item 8). It reads the
+          // Mining module's own snapshot; a snapshot it could not read is a
+          // dash, never a zero.
+          WalletHoldingsPowerHint(onOpenMining: () => _open('/mining')),
           _ResultFacts(intent: intent),
           const LoopLabel('分享'),
           LoopButtonPair(
@@ -282,12 +290,6 @@ class _TransactionResultScreenState
                 onPressed: () => _open('/community/chat'),
               ),
             ],
-          ),
-          const LoopNotice(
-            key: ValueKey<String>('tx-result-power'),
-            icon: 'mine',
-            title: '算力影响不可用',
-            body: '挖矿算力与日产出暂时读不到，这里不显示数字。',
           ),
           MoneyFactsFooter(intent: intent),
         ],

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_controllers.dart';
 import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
@@ -65,6 +66,31 @@ bool sendCapabilityBlocks(WidgetRef ref) => moneyActionBlocks(
   ref.watch(walletIntentsGatewayProvider).mode,
   ref.watch(loopCapabilityProvider(LoopV2CapabilityId.sendApprovals)),
 );
+
+/// The same gate, as a strip inside a page that keeps its own shape.
+///
+/// A deferred capability is not a page with nothing on it: the prototype's
+/// action pages keep their primary and their group headings and state the
+/// reason where the content would be (visual audit item 4). The page still
+/// pins no confirmation button — there is nothing to confirm.
+Widget sendCapabilityBlockCard(
+  WidgetRef ref, {
+  required Key key,
+  required String label,
+}) {
+  final capability = ref.watch(
+    loopCapabilityProvider(LoopV2CapabilityId.sendApprovals),
+  );
+  return LoopUnavailableCard(
+    key: key,
+    label: label,
+    // An unreachable gate has no server reason to render; the client never
+    // invents one for it.
+    reasonCode: capability.unreachable
+        ? null
+        : capability.reasonCode ?? 'WALLET_INTENT_RUNTIME_UNAVAILABLE',
+  );
+}
 
 /// The whole-page block a closed send/approval gate renders. A blocked action
 /// page shows no pinned confirmation button: there is nothing to confirm.
@@ -148,22 +174,29 @@ class _SendAssetScreenState extends ConsumerState<SendAssetScreen> {
       archetype: LoopPageArchetype.action,
       title: '发送',
       onBack: widget.onBack,
+      // The prototype's send primary is a Chalk card with the STEP 1 stamp.
       folio: const LoopFolioPrimary(
         key: ValueKey<String>('send-asset-folio'),
+        variant: LoopFolioVariant.chalk,
         kicker: 'FROM WALLET',
         heading: '选择要发送的资产',
-        caption: '余额与网络先展示，再进入收款地址。',
+        caption: '余额、网络与算力影响先展示，再进入收款地址。',
         stamp: 'STEP 1',
       ),
-      block: blocked
-          ? sendCapabilityPageBlock(
-              ref,
-              key: const ValueKey<String>('send-capability-block'),
-              title: '发送当前不可用',
-            )
-          : null,
       body: <Widget>[
-        if (walletId == null)
+        // A closed write gate used to take the whole page, leaving a centred
+        // grey circle where the prototype has a primary, an asset list and a
+        // mining warning (visual audit §A.10, item 4). The page keeps its
+        // shape; the gate's own sentence stands where the list would be, and
+        // nothing on it can be acted on.
+        if (blocked) ...<Widget>[
+          const LoopLabel('选择资产'),
+          sendCapabilityBlockCard(
+            ref,
+            key: const ValueKey<String>('send-capability-block'),
+            label: '发送当前不可用',
+          ),
+        ] else if (walletId == null)
           LoopChainStateBlock(
             keyPrefix: 'send-directory',
             phase: directory.phase,
@@ -387,10 +420,16 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
       archetype: LoopPageArchetype.action,
       title: '发送到',
       onBack: widget.onBack,
+      // Chalk, with the recipient the preflight checked as the heading — the
+      // prototype's `0x71bd…0b91` (audit §A.15). Before a preflight there is
+      // no recipient, and the heading says what the step is for.
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('send-recipient-folio'),
+        variant: LoopFolioVariant.chalk,
         kicker: 'WALLET SEND',
-        heading: widget.draft.symbol,
+        heading: preflight == null
+            ? '填写收款地址'
+            : loopTruncatedAddress(preflight.recipient.checksumAddress),
         caption: '地址与网络先校验，金额会在下一步单独确认。',
         stamp: 'STEP 2',
       ),
@@ -641,9 +680,10 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
       onBack: widget.onBack,
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('send-confirm-folio'),
+        variant: LoopFolioVariant.chalk,
         kicker: 'FINAL REVIEW',
         heading: '${widget.draft.amount ?? ''} ${widget.draft.symbol}'.trim(),
-        caption: '收款方、网络费与试算结果全部确认后才会请求签名。',
+        caption: '收款方、网络费与到账数量全部确认后才请求签名。',
         stamp: 'SIGN',
       ),
       primaryAction: intent == null
