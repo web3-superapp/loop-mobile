@@ -11396,15 +11396,81 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "The direct conversation page must name its peer from the passed profile and publish it to the Stream widgets"
             )
 
-    app_root = root / "lib/app.dart"
-    if app_root.is_file():
-        app_source = strip_dart_comments(read_text(app_root))
-        for index in re.finditer(r"DirectMessageTarget\(", app_source):
-            arguments = _dart_call_arguments(app_source, index.end() - 1)
+    # R15-1. Every place in the product that opens a direct conversation hands
+    # over the peer's public profile. Passing the id alone is what left the
+    # header reading the literal 「私聊」 with no `@` candidates at all.
+    for relative in (
+        "lib/app.dart",
+        "lib/features/chat/stream_chat_inbox_page.dart",
+    ):
+        target_path = root / relative
+        if not target_path.is_file():
+            continue
+        target_source = strip_dart_comments(read_text(target_path))
+        for index in re.finditer(r"DirectMessageTarget\(", target_source):
+            arguments = _dart_call_arguments(target_source, index.end() - 1)
             if arguments is None or "identity:" not in arguments:
                 errors.append(
                     "Opening a direct conversation must carry the peer's public profile, not the id alone"
                 )
+
+    # R15-1. The inbox reads LOOP's own direct-channel index, publishes it to
+    # the rows, and carries the same profile into the page it opens. The name
+    # travels as typed navigation state only: a deep link must never be able
+    # to name a conversation, so the location it builds carries the CID alone.
+    inbox_path = root / "lib/features/chat/stream_chat_inbox_page.dart"
+    if inbox_path.is_file():
+        inbox_source = strip_dart_comments(read_text(inbox_path))
+        if any(
+            marker not in inbox_source
+            for marker in (
+                "ref.watch(directChannelDirectoryProvider)",
+                "LoopDirectChannelDirectoryScope(",
+                "resolveLoopDirectRowIdentity(cid: cid, directory: directory)",
+                "loopInboxChannelDestination(",
+                "location: '/chat/dm?cid=$encoded'",
+                "location: '/chat/channel/$encoded'",
+            )
+        ):
+            errors.append(
+                "The inbox must name a direct row from LOOP's index and open it with that same profile"
+            )
+        for forbidden in ("alias", "displayName", "loopId"):
+            if f"$encoded&{forbidden}" in inbox_source or (
+                f"?{forbidden}=" in inbox_source
+            ):
+                errors.append(
+                    "A direct conversation's name must never travel in the URL: "
+                    + forbidden
+                )
+
+    # Decision 0056. The index the inbox names its rows from is decoded
+    # strictly: an unknown field, a non-direct CID or the same CID twice would
+    # each let a row claim a person the server did not name.
+    direct_index_path = (
+        root
+        / "lib/integrations/backend/v2/communication/loop_v2_communication_codec.dart"
+    )
+    if direct_index_path.is_file():
+        direct_index = strip_dart_comments(read_text(direct_index_path))
+        index_start = direct_index.find(
+            "static DirectChannelPage directChannels("
+        )
+        index_section = (
+            direct_index[index_start:] if index_start >= 0 else ""
+        )
+        if any(
+            marker not in index_section
+            for marker in (
+                "LoopV2Contract.strictMap(raw, const <String>{",
+                "pattern: directCidPattern,",
+                "if (!seen.add(streamCid)) _invalid();",
+                "LoopV2ProjectionCodec.profile(rawPeer)",
+            )
+        ):
+            errors.append(
+                "The direct-channel index must be decoded strictly, with one peer per direct CID"
+            )
 
     alias_transport_path = (
         root / "lib/integrations/social/dio_loop_group_alias_gateway.dart"

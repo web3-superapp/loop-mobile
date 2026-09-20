@@ -203,6 +203,8 @@ FRIEND_FRONTEND_FIXTURE_FILES = (
     "lib/integrations/social/loop_social_repository.dart",
     "lib/integrations/social/loop_social_transport_models.dart",
     "lib/integrations/social/memory_friend_gateway.dart",
+    # Decision 0056: the read the inbox names its private rows from.
+    "lib/integrations/backend/v2/communication/loop_v2_communication_codec.dart",
     "test/friend_feature_test.dart",
     "test/friend_request_feature_test.dart",
     "test/social_ui_safety_edges_test.dart",
@@ -803,6 +805,142 @@ class HarnessTests(unittest.TestCase):
                 "route group cells to the safe item" in error for error in result
             ),
             msg=f"expected direct channel-list cell guard: {result}",
+        )
+
+    def test_direct_row_must_be_named_by_the_loop_index(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = (
+                root
+                / "lib/features/chat/group_alias/group_alias_stream_message_identity.dart"
+            )
+            source = path.read_text(encoding="utf-8")
+            marker = "title: Text(identity.title)"
+            self.assertIn(marker, source)
+            path.write_text(
+                source.replace(
+                    marker,
+                    "title: StreamChannelName(channel: channel)",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any(
+                "name its row from LOOP's direct-channel index" in error
+                for error in result
+            ),
+            msg=f"expected direct row identity-source guard: {result}",
+        )
+
+    def test_direct_row_avatar_cannot_drift_from_its_title(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = (
+                root
+                / "lib/features/chat/group_alias/group_alias_stream_message_identity.dart"
+            )
+            source = path.read_text(encoding="utf-8")
+            marker = "child: Text(identity.initial)"
+            self.assertIn(marker, source)
+            path.write_text(
+                source.replace(marker, "child: Text(channel.id![0])", 1),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any(
+                "name its row from LOOP's direct-channel index" in error
+                for error in result
+            ),
+            msg=f"expected direct row avatar-source guard: {result}",
+        )
+
+    def test_inbox_must_carry_the_peer_into_the_conversation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/features/chat/stream_chat_inbox_page.dart"
+            source = path.read_text(encoding="utf-8")
+            marker = "identity: peer,"
+            self.assertIn(marker, source)
+            path.write_text(source.replace(marker, "", 1), encoding="utf-8")
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("not the id alone" in error for error in result),
+            msg=f"expected inbox direct-identity hand-off guard: {result}",
+        )
+
+    def test_inbox_must_publish_the_direct_channel_index(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/features/chat/stream_chat_inbox_page.dart"
+            source = path.read_text(encoding="utf-8")
+            marker = "LoopDirectChannelDirectoryScope("
+            self.assertIn(marker, source)
+            path.write_text(
+                source.replace(marker, "KeyedSubtree(", 1),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any(
+                "name a direct row from LOOP's index" in error
+                for error in result
+            ),
+            msg=f"expected inbox index-publication guard: {result}",
+        )
+
+    def test_direct_channel_index_must_be_decoded_strictly(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = (
+                root
+                / "lib/integrations/backend/v2/communication/loop_v2_communication_codec.dart"
+            )
+            source = path.read_text(encoding="utf-8")
+            marker = "if (!seen.add(streamCid)) _invalid();"
+            self.assertIn(marker, source)
+            path.write_text(source.replace(marker, "", 1), encoding="utf-8")
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("one peer per direct CID" in error for error in result),
+            msg=f"expected direct-channel index decoding guard: {result}",
+        )
+
+    def test_conversation_must_open_with_an_empty_composer(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_friend_frontend_fixture(root)
+            path = root / "lib/app.dart"
+            source = path.read_text(encoding="utf-8")
+            marker = "draftMessagesEnabled: false"
+            self.assertIn(marker, source)
+            path.write_text(
+                source.replace(marker, "draftMessagesEnabled: true", 1),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_friend_frontend_contract(root)
+
+        self.assertTrue(
+            any("empty composer" in error for error in result),
+            msg=f"expected restored-draft guard: {result}",
         )
 
     def test_group_channel_route_cannot_bypass_safe_page(self) -> None:
