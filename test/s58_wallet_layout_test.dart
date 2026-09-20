@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/wallet/approval_screens.dart';
 import 'package:loop_mobile/features/wallet/deferred_screens.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';

@@ -1,5 +1,6 @@
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_screens.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
@@ -46,7 +47,10 @@ void main() {
 
       // Disabled semantics, not a dead rectangle.
       final semantics = tester.getSemantics(send);
-      expect(semantics.hasFlag(SemanticsFlag.isEnabled), isFalse);
+      expect(
+        semantics.getSemanticsData().flagsCollection.isEnabled,
+        Tristate.isFalse,
+      );
 
       // A tap answers with the server's sentence rather than in silence.
       await tester.tap(send);
@@ -71,8 +75,8 @@ void main() {
       final send = find.byKey(const ValueKey<String>('wallet-send-entry'));
       await scrollToS5Section(tester, send);
       expect(
-        tester.getSemantics(send).hasFlag(SemanticsFlag.isEnabled),
-        isTrue,
+        tester.getSemantics(send).getSemanticsData().flagsCollection.isEnabled,
+        Tristate.isTrue,
       );
 
       await tester.tap(send);
