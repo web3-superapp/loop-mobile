@@ -251,7 +251,26 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          _RoomFacts(snapshot: snapshot),
+          if (!widget.expanded) ...<Widget>[
+            // `#scr-voiceroom` opens on who is talking, then says how many
+            // are listening and where that list is. The room's four figures
+            // are this page's fine print and follow the controls, the way the
+            // prototype's own note does (audit 2026-09-20 · B.8 / D-5).
+            const LoopLabel('正在发言', tight: true),
+            VoiceRoomSpeakerGrid(
+              roster: state.roster(VoiceRoomRosterView.speaker),
+              onRetry: () =>
+                  unawaited(controller.loadRoster(VoiceRoomRosterView.speaker)),
+            ),
+            LoopLabel('听众 ${snapshot.participants.listenerCount}'),
+            const LoopNotice(
+              key: ValueKey<String>('voiceroom-listeners-elsewhere'),
+              icon: 'info',
+              body: '听众列表在展开视图查看。',
+              margin: EdgeInsets.fromLTRB(16, 0, 16, 0),
+            ),
+          ],
+          if (widget.expanded) _RoomFacts(snapshot: snapshot),
           if (snapshot.viewer.hasJoined && snapshot.room.isJoinable)
             if (!snapshot.room.audioOpen)
               // The room is live in LOOP and not open on the provider's side.
@@ -297,23 +316,6 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                 // and the surface says nothing about the audio until it does.
                 onCallStopped: controller.refreshRoom,
               ),
-          if (!widget.expanded) ...<Widget>[
-            // The prototype's lobby: the speaker grid, then the listener
-            // count with the one sentence that says where the list is.
-            const LoopLabel('正在发言'),
-            VoiceRoomSpeakerGrid(
-              roster: state.roster(VoiceRoomRosterView.speaker),
-              onRetry: () =>
-                  unawaited(controller.loadRoster(VoiceRoomRosterView.speaker)),
-            ),
-            LoopLabel('听众 ${snapshot.participants.listenerCount}'),
-            const LoopNotice(
-              key: ValueKey<String>('voiceroom-listeners-elsewhere'),
-              icon: 'info',
-              body: '听众列表在展开视图查看。',
-              margin: EdgeInsets.fromLTRB(16, 0, 16, 0),
-            ),
-          ],
           if (widget.expanded) ...<Widget>[
             for (final view in VoiceRoomRosterView.values)
               _RosterSection(
@@ -348,6 +350,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             onCancel: () => _run(controller.cancelHandRaise, '已取消举手'),
             onBack: back,
           ),
+          if (!widget.expanded) _RoomFacts(snapshot: snapshot),
           if (state.failureKind != null)
             LoopNotice(
               key: const ValueKey<String>('voiceroom-action-failure'),

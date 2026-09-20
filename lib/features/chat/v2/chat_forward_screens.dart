@@ -612,16 +612,33 @@ class _ChatMergePreviewScreenState
       subtitle: '默认匿名',
       onBack: widget.onBack,
       framedTools: true,
-      primary: LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.state,
-        kicker: 'ANONYMOUS BY DEFAULT',
-        heading: '${rows.length} 条内容',
-        caption:
-            '合并预览只输出「$chatMergeAnonymousLabel」、时间与正文，'
-            '不含昵称、LOOP ID 或钱包地址。',
-        stamp: 'ANONYMOUS',
-      ),
+      // `#scr-chat-merge-preview` has no folio of its own: the Chalk card
+      // *is* `[data-ll-primary]`, because the page's one primary narrative is
+      // the image about to be exported. A deep hero above it turned the
+      // preview into an illustration of itself (audit 2026-09-20 · B.7).
+      //
+      // The exported image is captured from exactly this subtree, so the
+      // anonymous rendering inside it is the only thing that can be encoded.
+      primary: rows.isEmpty
+          ? const LoopFolioPrimary(
+              variant: LoopFolioVariant.quiet,
+              archetype: LoopFolioArchetype.state,
+              kicker: 'ANONYMOUS BY DEFAULT',
+              heading: '0 条内容',
+              caption:
+                  '合并预览只输出「$chatMergeAnonymousLabel」、时间与正文，'
+                  '不含昵称、LOOP ID 或钱包地址。',
+              stamp: 'ANONYMOUS',
+            )
+          : RepaintBoundary(
+              key: _cardKey,
+              child: _MergeCard(
+                key: const ValueKey<String>('chat-merge-card'),
+                rows: rows,
+                sourceLabel: state.sourceLabel,
+                selectedCount: state.selectedMessages.length,
+              ),
+            ),
       sections: <Widget>[
         if (rows.isEmpty)
           const LoopEmpty(
@@ -637,19 +654,8 @@ class _ChatMergePreviewScreenState
               tone: LoopNoticeTone.warn,
               title: '已截断',
               body: '一次最多合并 $chatMergeSelectionLimit 条，多出的部分不会出现在预览里。',
-              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             ),
-          // The exported image is captured from exactly this subtree, so the
-          // anonymous rendering above is the only thing that can be encoded.
-          RepaintBoundary(
-            key: _cardKey,
-            child: _MergeCard(
-              key: const ValueKey<String>('chat-merge-card'),
-              rows: rows,
-              sourceLabel: state.sourceLabel,
-              selectedCount: state.selectedMessages.length,
-            ),
-          ),
           LoopButtonPair(
             children: <Widget>[
               LoopButton(
@@ -741,7 +747,7 @@ class _MergeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LoopChalkCard(
-    margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+    margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
