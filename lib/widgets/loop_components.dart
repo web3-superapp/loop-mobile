@@ -29,12 +29,40 @@ class LoopTopbar extends StatelessWidget {
     this.updating = false,
     this.titleMaxLines = 2,
     this.dense = false,
+    this.subtitle,
+    this.framedTools = false,
+    this.titleField,
   });
 
   final String title;
 
   /// Small line above the title (`.topbar small`).
   final String? kicker;
+
+  /// The 11px line *under* the title (`.topbar>div>p`).
+  ///
+  /// A conversation header states who or what the room is on the first line
+  /// and the one fact that qualifies it — a LOOP ID, a presence count — on the
+  /// second. That second line is below the name in the prototype, not above
+  /// it: [kicker] is the page's own mono eyebrow and reads as a section
+  /// marker, which is the wrong voice for `LOOP-4D5E6F · 在线`.
+  final String? subtitle;
+
+  /// Whether the back control and the tools carry the prototype's `.tool-btn`
+  /// ground (44x44, `--card`, `--line` hairline, 13 radius).
+  ///
+  /// Off by default so no page changes shape without asking. A chat header
+  /// asks, because the prototype draws every one of its controls framed and a
+  /// row of bare glyphs over a message list has no edge to be tapped by.
+  final bool framedTools;
+
+  /// A field that replaces the title column entirely (`chat-search`).
+  ///
+  /// The search page's top bar *is* the input: the prototype puts the rounded
+  /// field between the back control and the bar's right edge, so the first
+  /// thing the page offers is the thing it is for. When set, [title] is kept
+  /// as the bar's accessibility name and is not drawn.
+  final Widget? titleField;
   final VoidCallback? onBack;
   final String backLabel;
   final List<Widget> actions;
@@ -80,35 +108,54 @@ class LoopTopbar extends StatelessWidget {
                 icon: 'back',
                 label: backLabel,
                 onPressed: onBack,
+                framed: framedTools,
               ),
               SizedBox(width: dense ? gap : 10),
             ],
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  if (kicker != null)
-                    Text(
-                      kicker!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: LoopMono.label,
+            if (titleField != null)
+              Expanded(
+                child: Semantics(header: true, label: title, child: titleField),
+              )
+            else
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    if (kicker != null)
+                      Text(
+                        kicker!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LoopMono.label,
+                      ),
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        title,
+                        maxLines: titleMaxLines,
+                        overflow: TextOverflow.ellipsis,
+                        style: dense
+                            ? theme.textTheme.headlineSmall
+                            : theme.textTheme.headlineLarge,
+                      ),
                     ),
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      title,
-                      maxLines: titleMaxLines,
-                      overflow: TextOverflow.ellipsis,
-                      style: dense
-                          ? theme.textTheme.headlineSmall
-                          : theme.textTheme.headlineLarge,
-                    ),
-                  ),
-                ],
+                    if (subtitle != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 3),
+                        child: Text(
+                          subtitle!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: LoopTypography.caption(
+                            11,
+                            color: LoopColors.text2,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
             if (updating) ...<Widget>[
               const SizedBox(width: 8),
               const LoopUpdatingBadge(),
@@ -133,12 +180,22 @@ class LoopIconButton extends StatelessWidget {
     this.onPressed,
     this.color,
     this.toggled,
+    this.framed = false,
   });
 
   final String icon;
   final String label;
   final VoidCallback? onPressed;
   final Color? color;
+
+  /// `.tool-btn`: `--card` ground behind a `--line` hairline, 13 radius.
+  ///
+  /// The prototype frames every top-bar control this way. LOOP drew them bare,
+  /// which is legible over a page that starts with a folio card and is not
+  /// over a message list, where four unframed glyphs read as decoration
+  /// (audit 2026-09-20 · B.2). Opt-in, so a caller that has not been checked
+  /// against the prototype keeps exactly the shape it had.
+  final bool framed;
 
   /// Whether this button reports an on/off state a screen reader should hear.
   /// `null` — the default — is a plain button with no toggle semantics.
@@ -157,9 +214,16 @@ class LoopIconButton extends StatelessWidget {
         child: InkWell(
           onTap: onPressed,
           borderRadius: BorderRadius.circular(13),
-          child: SizedBox(
+          child: Container(
             width: LoopTouch.minimum,
             height: LoopTouch.minimum,
+            decoration: framed
+                ? BoxDecoration(
+                    color: LoopGround.tintOf(context),
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(color: LoopGround.hairlineOf(context)),
+                  )
+                : null,
             child: Center(
               child: LoopIcon(
                 icon,
@@ -284,6 +348,7 @@ class LoopFolioPrimary extends StatelessWidget {
     this.compact = false,
     this.trailing,
     this.headingTone = LoopFolioHeadingTone.accent,
+    this.ring = true,
   });
 
   final String heading;
@@ -309,6 +374,15 @@ class LoopFolioPrimary extends StatelessWidget {
   /// or failing condition asks for [LoopFolioHeadingTone.neutral] so the
   /// figure is read as a figure.
   final LoopFolioHeadingTone headingTone;
+
+  /// Whether the corner ring is drawn.
+  ///
+  /// The prototype draws it on one selector only —
+  /// `.folio-primary.folio-state::after` — so a Chalk hero has no decorative
+  /// circle in its top-right corner and LOOP's did (audit 2026-09-20 · B.4).
+  /// The default keeps every existing caller's pixels; a page checked against
+  /// the prototype turns it off.
+  final bool ring;
 
   /// `.folio-caption{max-width:80%}`.
   static const double captionMaxWidthFactor = 0.8;
@@ -473,26 +547,27 @@ class LoopFolioPrimary extends StatelessWidget {
     return Stack(
       children: <Widget>[
         // `.folio-state::after` ring.
-        Positioned(
-          right: -30,
-          top: -36,
-          child: IgnorePointer(
-            child: Container(
-              width: 128,
-              height: 128,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: ringColor),
-                boxShadow: <BoxShadow>[
-                  BoxShadow(
-                    color: ringColor.withValues(alpha: 0.035),
-                    spreadRadius: 18,
-                  ),
-                ],
+        if (ring)
+          Positioned(
+            right: -30,
+            top: -36,
+            child: IgnorePointer(
+              child: Container(
+                width: 128,
+                height: 128,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: ringColor),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: ringColor.withValues(alpha: 0.035),
+                      spreadRadius: 18,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
         Padding(
           padding: EdgeInsets.all(padding),
           child: Column(

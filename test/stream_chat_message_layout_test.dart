@@ -198,7 +198,10 @@ void main() {
       await _disposeHarness(tester, harness);
     });
 
-    testWidgets('the reader\'s own message keeps no avatar column', (
+    // `.msg.me` is `.msg` reversed: it keeps its own `.msg-av`, on the
+    // reader's own side of the row. Dropping it left every second message in
+    // a thread 34pt wider than the one above it (audit 2026-09-20 · B.3).
+    testWidgets('the reader\'s own message keeps its avatar column', (
       tester,
     ) async {
       final harness = _ChannelHarness.group(messageText: 'gm');
@@ -210,7 +213,7 @@ void main() {
         ),
       );
 
-      expect(find.byKey(LoopStreamMessageRow.avatarKey), findsNothing);
+      expect(find.byKey(LoopStreamMessageRow.avatarKey), findsOneWidget);
 
       await _disposeHarness(tester, harness);
     });

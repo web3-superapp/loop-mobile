@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// Lime, as Stream's brand ladder reads it.
@@ -139,13 +140,13 @@ loopStreamMessageItemTheme() => StreamMessageItemThemeData(
   // avatar into it at the top of the row — see [LoopStreamMessageRow]. Stream
   // itself would drop the avatar on every message but the last of a run; the
   // prototype shows one beside every message.
-  avatarVisibility: StreamMessageLayoutVisibility.resolveWith(
-    (layout) => switch ((layout.channelKind, layout.alignment)) {
-      (StreamMessageChannelKind.direct, _) => StreamVisibility.gone,
-      (_, StreamMessageAlignment.end) => StreamVisibility.gone,
-      _ => StreamVisibility.hidden,
-    },
-  ),
+  //
+  // Both sides carry one: `.msg.me` is a row-reverse of the same markup and
+  // keeps its own `.msg-av`, so the prototype's two-column rhythm holds down
+  // the whole thread instead of collapsing on every second message. A direct
+  // conversation is the same markup again (`#scr-dm`), so it reserves the
+  // column too.
+  avatarVisibility: StreamMessageLayoutVisibility.all(StreamVisibility.hidden),
   bubble: StreamMessageBubbleStyle(
     backgroundColor: StreamMessageLayoutProperty.resolveWith(
       (layout) => switch (layout.contentKind) {
@@ -158,30 +159,28 @@ loopStreamMessageItemTheme() => StreamMessageItemThemeData(
     // Stream's default hairline on the incoming bubble is dropped rather than
     // restated in a LOOP colour.
     side: StreamMessageLayoutBorderSide.all(BorderSide.none),
+    // `.msg-txt{border-radius:5px 16px 16px 16px}` and `.msg.me
+    // .msg-txt{border-radius:16px 5px 16px 16px}` — one rule each, with no
+    // stacking selector. Every message in the prototype carries the tail on
+    // its author's side, because every message also carries its own avatar
+    // and its own `.msg-who`. Keying the tail to the top of a run instead
+    // rounded off every message but the first, and a thread of replies lost
+    // the one shape that says which side wrote it (audit 2026-09-20 · B.3).
     shape: StreamMessageLayoutProperty.resolveWith(
       (layout) => RoundedRectangleBorder(
-        borderRadius: switch ((layout.alignment, layout.stackPosition)) {
-          (
-            StreamMessageAlignment.start,
-            StreamMessageStackPosition.single || StreamMessageStackPosition.top,
-          ) =>
-            const BorderRadiusDirectional.only(
-              topStart: Radius.circular(LoopRadius.bubbleTailValue),
-              topEnd: Radius.circular(LoopRadius.controlValue),
-              bottomStart: Radius.circular(LoopRadius.controlValue),
-              bottomEnd: Radius.circular(LoopRadius.controlValue),
-            ),
-          (
-            StreamMessageAlignment.end,
-            StreamMessageStackPosition.single || StreamMessageStackPosition.top,
-          ) =>
-            const BorderRadiusDirectional.only(
-              topStart: Radius.circular(LoopRadius.controlValue),
-              topEnd: Radius.circular(LoopRadius.bubbleTailValue),
-              bottomStart: Radius.circular(LoopRadius.controlValue),
-              bottomEnd: Radius.circular(LoopRadius.controlValue),
-            ),
-          _ => const BorderRadius.all(Radius.circular(LoopRadius.controlValue)),
+        borderRadius: switch (layout.alignment) {
+          StreamMessageAlignment.start => const BorderRadiusDirectional.only(
+            topStart: Radius.circular(LoopRadius.bubbleTailValue),
+            topEnd: Radius.circular(LoopRadius.controlValue),
+            bottomStart: Radius.circular(LoopRadius.controlValue),
+            bottomEnd: Radius.circular(LoopRadius.controlValue),
+          ),
+          StreamMessageAlignment.end => const BorderRadiusDirectional.only(
+            topStart: Radius.circular(LoopRadius.controlValue),
+            topEnd: Radius.circular(LoopRadius.bubbleTailValue),
+            bottomStart: Radius.circular(LoopRadius.controlValue),
+            bottomEnd: Radius.circular(LoopRadius.controlValue),
+          ),
         },
       ),
     ),
@@ -598,6 +597,67 @@ class _LoopStreamMessageText extends StatelessWidget {
         loopStreamPlainMessageText(props.text),
         style: color == null ? style : style.copyWith(color: color),
       ),
+    );
+  }
+}
+
+/// The prototype's `.msg-av`: initials on `--card2`, never a provider avatar.
+///
+/// Stream's `DefaultStreamMessageLeading` draws [StreamUserAvatar], which for
+/// an account with no image falls back to `StreamGradientAvatar` — a polygon
+/// gradient picked from Stream's own palette by `userId.hashCode`. That put
+/// violet and teal circles down the left edge of a LOOP conversation (audit
+/// 2026-09-20 · B.3 / D-10), outside the Ink/Lime/Chalk system, and it keyed
+/// them to the one string a LOOP surface must never render.
+///
+/// This builder draws the label the surface already resolved — the community
+/// persona, the group Alias, the direct peer this page published — as
+/// initials. A message whose author this client has resolved no label for
+/// gets the neutral tile: the column keeps its width, and nobody is named.
+Widget loopStreamMessageLeadingBuilder(
+  BuildContext context,
+  StreamMessageLeadingProps props,
+) => _LoopStreamMessageLeading(props: props);
+
+class _LoopStreamMessageLeading extends StatelessWidget {
+  const _LoopStreamMessageLeading({required this.props});
+
+  final StreamMessageLeadingProps props;
+
+  /// `.msg-av{width:34px;height:34px}`.
+  static const double size = 34;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = loopStreamDisplayLabelOf(props.message.user);
+    final avatar = label == null
+        ? Container(
+            key: const ValueKey<String>('loop-message-avatar-unnamed'),
+            width: size,
+            height: size,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: LoopGround.fillOf(context),
+              shape: BoxShape.circle,
+              border: Border.all(color: LoopGround.hairlineOf(context)),
+            ),
+            child: LoopIcon(
+              'users',
+              size: 15,
+              color: LoopGround.auxiliaryOf(context),
+            ),
+          )
+        : LoopInitialsAvatar(
+            key: const ValueKey<String>('loop-message-avatar-initials'),
+            label: label,
+            size: size,
+          );
+    final onTap = props.onTap;
+    if (onTap == null) return avatar;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: avatar,
     );
   }
 }

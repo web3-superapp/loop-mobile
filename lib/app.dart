@@ -97,6 +97,10 @@ final _loopStreamComponentBuilders = StreamComponentBuilders(
     // proven no recording capability and claims none.
     messageComposer: (context, props) => LoopChatImageComposer(props: props),
     messageItem: loopStreamGroupMessageItemBuilder,
+    // S58c: the gutter LOOP reserves beside every bubble is drawn with the
+    // label this surface resolved, on the Ink/Lime/Chalk ladder. Stream's own
+    // leading would fall back to a gradient keyed to the account id.
+    messageLeading: loopStreamMessageLeadingBuilder,
     mentionItem: loopStreamGroupMentionItemBuilder,
     // Decision 0065: LOOP prints a 24-hour clock, so the footer's timestamp
     // no longer follows Jiffy's locale-driven 12-hour format.

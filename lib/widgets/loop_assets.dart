@@ -403,3 +403,51 @@ class _MonogramFallback extends StatelessWidget {
     return Semantics(image: true, label: semanticLabel, child: child);
   }
 }
+
+/// The prototype's `.msg-av` / `.row-ico` initials tile.
+///
+/// `.msg-av{width:34px;height:34px;border-radius:50%;background:var(--card2)}`
+/// and `.row-ico{width:44px;height:44px;border-radius:15px;
+/// background:var(--card2);font-family:var(--mono);color:var(--tx2)}`. Both
+/// are the same tile at two sizes and two corner radii, and both take their
+/// ground from [LoopGround] so the tile stays visible inside a Chalk card.
+///
+/// It exists because a LOOP surface has exactly one thing it may draw for a
+/// person or a conversation it has no picture of: the initials of the label
+/// that surface already resolved. A provider's own generated avatar is a
+/// third-party palette and a third-party identity; neither belongs on a LOOP
+/// page.
+class LoopInitialsAvatar extends StatelessWidget {
+  const LoopInitialsAvatar({
+    required this.label,
+    super.key,
+    this.size = 34,
+    this.shape = BoxShape.circle,
+    this.radius,
+    this.foreground,
+    this.semanticLabel,
+  });
+
+  /// The already-resolved display label. Its first two runes are drawn.
+  final String label;
+  final double size;
+  final BoxShape shape;
+
+  /// Corner radius when [shape] is [BoxShape.rectangle].
+  final double? radius;
+  final Color? foreground;
+
+  /// `null` excludes the tile from semantics: the row beside it already names
+  /// the same person, and a screen reader does not need the initials twice.
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) => _MonogramFallback(
+    text: loopMonogram(label),
+    size: size,
+    shape: shape,
+    radius: radius,
+    foreground: foreground,
+    semanticLabel: semanticLabel,
+  );
+}

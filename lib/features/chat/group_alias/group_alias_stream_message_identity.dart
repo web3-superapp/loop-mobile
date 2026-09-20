@@ -12,6 +12,7 @@ import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.da
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// Neutral sender label used when the current Stream member projection cannot
@@ -497,9 +498,14 @@ class _LoopStreamDirectChannelListItem extends StatelessWidget {
               initialData: state.unreadCount,
               stream: state.unreadCountStream,
               builder: (context, unreadSnapshot) => StreamChannelListTile(
-                avatar: CircleAvatar(
+                // `.row-ico`: the resolved name's initials on `--card2`.
+                // A `CircleAvatar` here took the Material scheme's primary —
+                // Lime — and printed a solid Lime disc per row (audit
+                // 2026-09-20 · D-10).
+                avatar: LoopInitialsAvatar(
                   key: const ValueKey<String>('loop-direct-channel-avatar'),
-                  child: Text(identity.initial),
+                  label: identity.initial,
+                  size: 40,
                 ),
                 title: Text(identity.title),
                 subtitle: lastMessage == null
@@ -560,9 +566,13 @@ class _LoopStreamGroupChannelListItem extends StatelessWidget {
             initialData: channel.isPinned,
             stream: channel.isPinnedStream,
             builder: (context, pinnedSnapshot) => StreamChannelListTile(
-              avatar: const CircleAvatar(
-                key: ValueKey<String>('loop-group-channel-neutral-avatar'),
-                child: Icon(Icons.group_rounded),
+              avatar: LoopInitialsAvatar(
+                key: const ValueKey<String>(
+                  'loop-group-channel-neutral-avatar',
+                ),
+                label: label,
+                size: 40,
+                shape: BoxShape.rectangle,
               ),
               title: Text(label),
               subtitle: displayMessage == null
