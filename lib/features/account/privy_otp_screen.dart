@@ -60,6 +60,7 @@ class _PrivyOtpScreenState extends ConsumerState<PrivyOtpScreen> {
       archetype: LoopPageArchetype.intro,
       title: '验证邮箱',
       onBack: widget.onBack ?? () => controller.changeEmail(),
+      actionsFollowBody: true,
       primaryAction: LoopButton(
         key: const ValueKey<String>('privy-auth-primary-button'),
         label: authState.isBusy ? '验证中…' : '验证',
@@ -237,6 +238,9 @@ class _OtpGrid extends StatelessWidget {
   final ValueChanged<String> onChanged;
   final ValueChanged<String>? onSubmitted;
 
+  /// `.otp-cell{height:56px}`, with room for a larger text scale.
+  static const double cellHeight = 56;
+
   @override
   Widget build(BuildContext context) {
     final digits = controller.text;
@@ -255,14 +259,22 @@ class _OtpGrid extends StatelessWidget {
                     readOnly: true,
                     child: Container(
                       key: ValueKey<String>('privy-otp-cell-${index + 1}'),
-                      height: LoopTouch.minimum,
+                      // `.otp-cell{height:56px;font-size:26px}`: the six cells
+                      // are the page, not a row of inputs inside it.
+                      height: cellHeight,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: LoopColors.card,
-                        borderRadius: BorderRadius.circular(12),
+                        color: index < digits.length
+                            ? LoopColors.chalk.withValues(alpha: 0.09)
+                            : LoopColors.chalk.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(
+                          LoopRadius.innerValue,
+                        ),
                         border: Border.all(
                           color: index == digits.length && enabled
                               ? LoopColors.lime
+                              : index < digits.length
+                              ? LoopColors.line2
                               : LoopColors.line,
                         ),
                       ),
@@ -270,7 +282,8 @@ class _OtpGrid extends StatelessWidget {
                         child: Text(
                           index < digits.length ? digits[index] : '',
                           style: LoopTypography.figure(
-                            20,
+                            26,
+                            weight: FontWeight.w600,
                             height: 1.15,
                             color: LoopColors.chalk,
                           ),

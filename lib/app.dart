@@ -1291,7 +1291,6 @@ Widget _accountScreen(BuildContext context, WidgetRef ref, String id) {
 
   return AccountSurfaceScreen.fromId(
     id,
-    versionLabel: 'Version ${config.loopClientVersionForCurrentBuild}',
     capabilities: PrivyWalletCapabilities(
       canConnectExternalWallet: config.canConnectExternalWallet,
     ),
@@ -1353,7 +1352,6 @@ Widget _onboardingStepScreen(
     ),
     LoopOnboardingStep.walletBackup => AccountSurfaceScreen.fromId(
       'wallet-recovery',
-      versionLabel: 'Version ${config.loopClientVersionForCurrentBuild}',
       capabilities: PrivyWalletCapabilities(
         canConnectExternalWallet: config.canConnectExternalWallet,
       ),
@@ -1364,7 +1362,6 @@ Widget _onboardingStepScreen(
     ),
     LoopOnboardingStep.security => AccountSurfaceScreen.fromId(
       'security-setup',
-      versionLabel: 'Version ${config.loopClientVersionForCurrentBuild}',
       capabilities: PrivyWalletCapabilities(
         canConnectExternalWallet: config.canConnectExternalWallet,
       ),
@@ -1468,8 +1465,16 @@ Widget _systemSurface(BuildContext context, WidgetRef ref, String id) {
             readOnlyAssetAccess: region.readOnlyAssetAccess,
           )
         : null,
-    onRegionContinue: region.decision == LoopRegionPolicyDecision.blocked
-        ? returnToCommunity
+    // The three prototype exits. They are wired only while the decision is
+    // actually blocked, so an unknown region never grows an action.
+    onRegionViewAssets: region.decision == LoopRegionPolicyDecision.blocked
+        ? () => context.go(LoopRouteManifest.pathFor('wallet'))
+        : null,
+    onRegionExportKey: region.decision == LoopRegionPolicyDecision.blocked
+        ? () => context.go(LoopRouteManifest.pathFor('key-export'))
+        : null,
+    onRegionSupport: region.decision == LoopRegionPolicyDecision.blocked
+        ? () => context.go(LoopRouteManifest.pathFor('support'))
         : null,
     showcase: ref.watch(loopSystemShowcaseProvider),
   );

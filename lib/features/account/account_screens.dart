@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/wallet_creation_facts.dart';
@@ -64,7 +66,6 @@ class AccountSurfaceScreen extends StatelessWidget {
     this.onBack,
     this.onPrimaryAction,
     this.onRecoveryDecision,
-    this.versionLabel = 'Version 0.1.0',
   });
 
   static const supportedIds = <String>{
@@ -90,8 +91,6 @@ class AccountSurfaceScreen extends StatelessWidget {
   /// `null` for 稍后设置. It records a decision, never an enrolment.
   final ValueChanged<WalletRecoveryMethod?>? onRecoveryDecision;
 
-  final String versionLabel;
-
   String get _id => surfaceId.replaceFirst('#', '').toLowerCase();
 
   void _navigate(BuildContext context, String destination) {
@@ -101,10 +100,7 @@ class AccountSurfaceScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (_id) {
-      'splash' => SplashScreen(
-        versionLabel: versionLabel,
-        onContinue: () => _navigate(context, 'auth'),
-      ),
+      'splash' => SplashScreen(onContinue: () => _navigate(context, 'auth')),
       'auth-wallet' => ExternalWalletScreen(
         capabilityAvailable: capabilities.canConnectExternalWallet,
         onBack: onBack,
@@ -224,6 +220,10 @@ class IdentityProgress extends StatelessWidget {
 }
 
 /// `.identity-step-copy`: one line of primary narrative for a step page.
+///
+/// It is left-aligned, as `.identity-step-copy` is: the line sits directly
+/// under a left-aligned progress track and a left-aligned title, and centring
+/// it broke that column on every step page (audit 2026-09-20 §D#9).
 class IdentityStepCopy extends StatelessWidget {
   const IdentityStepCopy(this.text, {super.key});
 
@@ -243,9 +243,41 @@ class IdentityStepCopy extends StatelessWidget {
         child: Text(
           key: const ValueKey<String>('identity-step-copy'),
           text,
-          textAlign: TextAlign.center,
+          textAlign: TextAlign.start,
           style: LoopTypography.body(14, color: LoopColors.text2),
         ),
+      ),
+    );
+  }
+}
+
+/// `.row-ico`: the 44 square that carries an option row's glyph.
+///
+/// A recovery method and an app lock are chosen by shape first; the prototype
+/// gives each row a filled square so the three read as three things rather
+/// than three paragraphs. The glyph turns Lime only on the chosen row
+/// (`.row-choice.is-chosen .row-ico`), so the colour is a selection mark and
+/// never a claim that the method is available or enrolled.
+class IdentityOptionIcon extends StatelessWidget {
+  const IdentityOptionIcon(this.icon, {this.chosen = false, super.key});
+
+  final String icon;
+  final bool chosen;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 44,
+      height: 44,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: LoopColors.card2,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: LoopIcon(
+        icon,
+        size: 21,
+        color: chosen ? LoopColors.lime : LoopColors.text2,
       ),
     );
   }
@@ -289,13 +321,8 @@ class CapabilityChoiceRow extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class SplashScreen extends StatelessWidget {
-  const SplashScreen({
-    required this.versionLabel,
-    required this.onContinue,
-    super.key,
-  });
+  const SplashScreen({required this.onContinue, super.key});
 
-  final String versionLabel;
   final VoidCallback onContinue;
 
   @override
@@ -309,22 +336,14 @@ class SplashScreen extends StatelessWidget {
             const LoopBrandMark(
               key: ValueKey<String>('loop-splash-wordmark'),
               kind: LoopBrandMarkKind.wordmark,
-              height: 64,
+              height: 96,
               semanticLabel: 'LOOP',
             ),
-            const SizedBox(height: 28),
-            const SizedBox(
-              width: 200,
-              child: LinearProgressIndicator(
-                key: ValueKey<String>('loop-splash-loader'),
-                minHeight: 3,
-                backgroundColor: LoopColors.line2,
-                valueColor: AlwaysStoppedAnimation<Color>(LoopColors.lime),
-              ),
-            ),
+            const SizedBox(height: 20),
+            const LoopBrandLoader(key: ValueKey<String>('loop-splash-loader')),
             const Spacer(),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: LoopButton(
                 key: const ValueKey<String>('loop-splash-enter'),
                 label: '进入 LOOP',
@@ -333,17 +352,55 @@ class SplashScreen extends StatelessWidget {
                 onPressed: onContinue,
               ),
             ),
-            const SizedBox(height: 14),
-            Text(
-              versionLabel,
-              style: LoopTypography.figure(
-                11,
-                weight: FontWeight.w500,
-                color: LoopColors.text3,
-              ),
-            ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 24),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// `.loop-brand-loader`: the rail, the Lime line and the dot at its end.
+///
+/// The prototype's line animates once and stops; under `reduceMotion` it is
+/// drawn already complete. This is the static reading of the same mark: a
+/// 244-wide rail with the Lime line over it and the dot at the right end, so
+/// the launch frame is the prototype's and not a Material progress bar
+/// (audit 2026-09-20 §C.1).
+class LoopBrandLoader extends StatelessWidget {
+  const LoopBrandLoader({super.key, this.width = 244});
+
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'LOOP 正在加载',
+      liveRegion: true,
+      child: SizedBox(
+        width: width,
+        height: 12,
+        child: Center(
+          child: Stack(
+            alignment: Alignment.centerRight,
+            children: <Widget>[
+              Container(
+                height: 2,
+                decoration: BoxDecoration(
+                  color: LoopColors.lime,
+                  borderRadius: BorderRadius.circular(1),
+                ),
+              ),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: LoopColors.lime,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -372,6 +429,7 @@ class ExternalWalletScreen extends StatelessWidget {
       archetype: LoopPageArchetype.intro,
       title: '连接钱包',
       onBack: onBack,
+      actionsFollowBody: true,
       primaryAction: LoopButton(
         key: const ValueKey<String>('external-wallet-connect'),
         label: '选择钱包并签名',
@@ -386,6 +444,12 @@ class ExternalWalletScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
+              LoopNotice(
+                icon: 'info',
+                title: '外部钱包只是登录凭证',
+                body: '它不是 LOOP 交易钱包，也不能授权任何交易。',
+                margin: EdgeInsets.only(bottom: 10),
+              ),
               LoopNotice(
                 icon: 'mine',
                 title: '连接已有钱包就能挖矿',
@@ -427,12 +491,6 @@ class ExternalWalletScreen extends StatelessWidget {
           message: '已安装钱包清单暂不可读',
           reason: '连接钱包后才会显示可用的钱包名称。',
         ),
-        const LoopNotice(
-          icon: 'info',
-          title: '外部钱包只是登录凭证',
-          body: '它不是 LOOP 交易钱包，也不能授权任何交易。',
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
-        ),
       ],
     );
   }
@@ -456,10 +514,32 @@ class WalletCreateScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final phase = facts.phase;
+    final (String headline, String detail) = switch (phase) {
+      LoopWalletCreationPhase.observed => (
+        '钱包已创建',
+        '这个账号下已经能看到内置钱包。LOOP 不使用助记词。',
+      ),
+      LoopWalletCreationPhase.working => (
+        '正在创建你的钱包',
+        '密钥在本地生成，不会离开这台设备。LOOP 不使用助记词。',
+      ),
+      LoopWalletCreationPhase.timedOut => (
+        '钱包还在创建中，可以先继续',
+        '等了 60 秒仍然没有看到钱包，这不代表失败。LOOP 不使用助记词。',
+      ),
+      LoopWalletCreationPhase.unavailable => (
+        '还没有开始创建',
+        'Privy 尚未确认内置钱包能力，这一页不会伪造进度。LOOP 不使用助记词。',
+      ),
+    };
     return LoopFocusPage(
       archetype: LoopPageArchetype.intro,
       title: '创建 LOOP 钱包',
       onBack: onBack,
+      // `.wallet-create-action{margin-top:auto}`: this is the one step page
+      // whose button the prototype does push to the bottom, because the ring
+      // above it owns the rest of the screen.
       primaryAction: LoopButton(
         key: const ValueKey<String>('wallet-create-continue'),
         label: '设置恢复方式',
@@ -469,35 +549,15 @@ class WalletCreateScreen extends StatelessWidget {
       ),
       body: <Widget>[
         const IdentityProgress(step: 2, total: 5, label: '创建钱包'),
-        const IdentityStepCopy('内置钱包由 Privy 在设备上创建，密钥不会经过 LOOP。'),
-        switch (facts.phase) {
-          LoopWalletCreationPhase.observed => const LoopNotice(
-            key: ValueKey<String>('wallet-create-observed'),
-            icon: 'check',
-            title: '钱包已创建',
-            body: '这个账号下已经能看到内置钱包。下一步继续设置恢复方式。',
-          ),
-          LoopWalletCreationPhase.working => const LoopNotice(
-            key: ValueKey<String>('wallet-create-progress'),
-            icon: 'wallet',
-            title: '正在创建你的钱包',
-            body: '密钥在本地生成并写入安全区。看到钱包之前，下面的进度不会替它打勾。',
-          ),
-          LoopWalletCreationPhase.timedOut => const LoopNotice(
-            key: ValueKey<String>('wallet-create-timeout'),
-            icon: 'clock',
-            tone: LoopNoticeTone.warn,
-            title: '钱包还在创建中，可以先继续',
-            body: '等了 60 秒仍然没有看到钱包。这不影响登录，也不代表失败；钱包出现后会自动显示在钱包页。',
-          ),
-          LoopWalletCreationPhase.unavailable => const LoopNotice(
+        const IdentityStepCopy('安全钱包正在本地初始化。'),
+        if (phase == LoopWalletCreationPhase.unavailable)
+          const LoopNotice(
             key: ValueKey<String>('wallet-create-unavailable'),
             icon: 'warn',
             tone: LoopNoticeTone.warn,
             title: '钱包创建暂不可用',
             body: 'Privy 尚未确认内置钱包能力。这一页不会伪造进度，也没有创建任何钱包。',
           ),
-        },
         if (facts.providerMessage case final String message)
           LoopNotice(
             key: const ValueKey<String>('wallet-create-provider-message'),
@@ -506,78 +566,221 @@ class WalletCreateScreen extends StatelessWidget {
             title: '这次创建没有完成',
             body: message,
           ),
-        const LoopLabel('这一步会做什么'),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            _step(
-              id: 'keypair',
-              title: '生成密钥对',
-              detail: '在设备本地生成，不上传',
-              done: facts.walletObserved,
-              pendingDetail: '钱包出现后才算完成',
-              position: LoopRowPosition.first,
-            ),
-            _step(
-              id: 'secure-element',
-              title: '写入安全区',
-              detail: '由系统钥匙串 / Keystore 保管',
-              done: facts.walletObserved,
-              pendingDetail: '钱包出现后才算完成',
-              position: LoopRowPosition.middle,
-            ),
-            _step(
-              id: 'recovery',
-              title: '设置恢复方式',
-              detail: '换设备时用它拿回资产',
-              done: facts.recoveryEnrolled,
-              pendingDetail: '第 3 步选择后才算完成',
-              position: LoopRowPosition.middle,
-            ),
-            _step(
-              id: 'loop-id',
-              title: '绑定 LOOP ID',
-              detail: '钱包地址随时可换，LOOP ID 不变',
-              done: facts.loopIdActivated,
-              pendingDetail: '第 5 步完成后才算完成',
-              position: LoopRowPosition.last,
-            ),
-          ],
-        ),
-        const LoopNotice(
-          icon: 'info',
-          title: 'LOOP 不使用助记词',
-          body: '恢复通过 Passkey、恢复密码或自动恢复完成；下一步会让你选择。',
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+        // `.wallet-create-progress`: the ring, the headline, one line of copy
+        // and the plain checklist. The prototype's ring spins; a static arc
+        // says the same thing and says it the same way under reduceMotion.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            LoopSpacing.page,
+            26,
+            LoopSpacing.page,
+            0,
+          ),
+          child: Column(
+            children: <Widget>[
+              WalletCreationRing(
+                key: ValueKey<String>('wallet-create-ring-${phase.name}'),
+                complete: facts.walletObserved,
+              ),
+              const SizedBox(height: 26),
+              Text(
+                key: switch (phase) {
+                  LoopWalletCreationPhase.observed => const ValueKey<String>(
+                    'wallet-create-observed',
+                  ),
+                  LoopWalletCreationPhase.working => const ValueKey<String>(
+                    'wallet-create-progress',
+                  ),
+                  LoopWalletCreationPhase.timedOut => const ValueKey<String>(
+                    'wallet-create-timeout',
+                  ),
+                  LoopWalletCreationPhase.unavailable => const ValueKey<String>(
+                    'wallet-create-idle',
+                  ),
+                },
+                headline,
+                textAlign: TextAlign.center,
+                style: LoopTypography.display(21),
+              ),
+              const SizedBox(height: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 260),
+                child: Text(
+                  detail,
+                  textAlign: TextAlign.center,
+                  style: LoopTypography.body(12.5, color: LoopColors.text2),
+                ),
+              ),
+              const SizedBox(height: 22),
+              _step(
+                id: 'keypair',
+                title: '生成密钥对',
+                done: facts.walletObserved,
+                pendingDetail: '钱包出现后才算完成',
+              ),
+              _step(
+                id: 'secure-element',
+                title: '写入安全区',
+                done: facts.walletObserved,
+                pendingDetail: '钱包出现后才算完成',
+              ),
+              _step(
+                id: 'recovery',
+                title: '设置恢复方式',
+                done: facts.recoveryEnrolled,
+                pendingDetail: '第 3 步选择后才算完成',
+              ),
+              _step(
+                id: 'loop-id',
+                title: '绑定 LOOP ID',
+                done: facts.loopIdActivated,
+                pendingDetail: '第 5 步完成后才算完成',
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  /// One creation step. It reads `已完成` only from an observation this run
-  /// actually made; everything else says which step will produce it.
-  LoopRecordRow _step({
+  /// One creation step. It reads 已完成 only from an observation this run
+  /// actually made; everything else states which step will produce it.
+  Widget _step({
     required String id,
     required String title,
-    required String detail,
     required bool done,
     required String pendingDetail,
-    required LoopRowPosition position,
   }) {
-    return LoopRecordRow(
+    return Semantics(
       key: ValueKey<String>('wallet-create-step-$id'),
-      leading: LoopIcon(
-        done ? 'check' : 'clock',
-        size: 19,
-        color: done ? LoopColors.lime : LoopColors.text3,
+      container: true,
+      label: done ? '$title，已完成' : '$title，未完成：$pendingDetail',
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 280, minHeight: 30),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: done
+                    ? const LoopIcon('check', size: 15, color: LoopColors.lime)
+                    : Container(
+                        width: 11,
+                        height: 11,
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: LoopColors.text3,
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      title,
+                      textAlign: TextAlign.start,
+                      style: LoopTypography.body(
+                        13,
+                        color: done ? LoopColors.text2 : LoopColors.chalk,
+                      ),
+                    ),
+                    if (!done)
+                      Text(
+                        pendingDetail,
+                        textAlign: TextAlign.start,
+                        style: LoopTypography.caption(
+                          11,
+                          color: LoopColors.text3,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                done ? '已完成' : '未完成',
+                style: LoopTypography.figure(
+                  11,
+                  weight: FontWeight.w500,
+                  color: done ? LoopColors.lime : LoopColors.text3,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      title: title,
-      subtitle: done ? detail : '$detail · $pendingDetail',
-      trailing: done ? '已完成' : '未完成',
-      position: position,
-      subtitleMaxLines: 2,
-      semanticLabel: done ? '$title，已完成' : '$title，未完成：$pendingDetail',
     );
   }
+}
+
+/// `.wallet-create-ring`: the 120 ring with the app mark inside it.
+class WalletCreationRing extends StatelessWidget {
+  const WalletCreationRing({required this.complete, super.key});
+
+  /// The wallet was actually seen: the arc closes instead of standing open.
+  final bool complete;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 120,
+      height: 120,
+      child: CustomPaint(
+        painter: _WalletCreationRingPainter(complete: complete),
+        child: const Center(
+          child: LoopBrandMark(
+            kind: LoopBrandMarkKind.appIcon,
+            height: 54,
+            semanticLabel: 'LOOP',
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WalletCreationRingPainter extends CustomPainter {
+  const _WalletCreationRingPainter({required this.complete});
+
+  final bool complete;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final centre = Offset(size.width / 2, size.height / 2);
+    const radius = 46.0;
+    canvas.drawCircle(
+      centre,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..color = LoopColors.chalk.withValues(alpha: 0.1),
+    );
+    canvas.drawArc(
+      Rect.fromCircle(center: centre, radius: radius),
+      -math.pi / 2,
+      complete ? math.pi * 2 : math.pi / 2,
+      false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..strokeCap = StrokeCap.round
+        ..color = LoopColors.lime,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_WalletCreationRingPainter oldDelegate) =>
+      oldDelegate.complete != complete;
 }
 
 // ---------------------------------------------------------------------------
@@ -653,21 +856,28 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
       archetype: LoopPageArchetype.intro,
       title: '恢复方式',
       onBack: widget.onBack,
-      // The skip risk lives in the disclosure, so the primary pair stays
-      // reachable on the first screen.
-      primaryAction: LoopButtonPair(
+      // The prototype stacks the two full-width buttons under the options and
+      // puts the skip risk above them, so the risk is read before the choice
+      // is made. Both flow with the body rather than sitting on a pinned bar.
+      actionsFollowBody: true,
+      primaryActionBeforeDisclosure: false,
+      primaryAction: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           LoopButton(
             key: const ValueKey<String>('wallet-recovery-confirm'),
             label: '确认',
             primary: true,
+            block: true,
             onPressed: _chosen != null && !blocked
                 ? () => _decide(_chosen)
                 : null,
           ),
+          const SizedBox(height: 10),
           LoopButton(
             key: const ValueKey<String>('wallet-recovery-later'),
             label: '稍后设置',
+            block: true,
             onPressed: () => _decide(null),
           ),
         ],
@@ -766,15 +976,15 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
     final index = WalletRecoveryMethod.values.indexOf(method);
     return LoopRecordRow(
       key: ValueKey<String>('recovery-${method.name}'),
-      leading: LoopIcon(
-        method.icon,
-        size: 19,
-        color: available ? LoopColors.lime : LoopColors.text3,
-      ),
+      leading: IdentityOptionIcon(method.icon, chosen: chosen),
       title: method.title,
       subtitle: available
           ? method.detail
           : '${method.detail} · ${_reason(method)}',
+      // `.row-choice .row-s{white-space:normal}`: the sentence that decides
+      // whether an owner can get back in may not end in an ellipsis.
+      subtitleMaxLines: 2,
+      selected: chosen,
       trailing: chosen
           ? '已选'
           : available
@@ -803,6 +1013,7 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
       key: ValueKey<String>('recovery-$title'),
       title: title,
       subtitle: available ? detail : '$detail · $reason',
+      subtitleMaxLines: 2,
       trailing: available ? '可用' : '不可用',
       position: position,
       semanticLabel: available ? '$title，能力可用' : '$title，不可用：$reason',
@@ -832,6 +1043,7 @@ class SecuritySetupScreen extends StatelessWidget {
       archetype: LoopPageArchetype.intro,
       title: '安全设置',
       onBack: onBack,
+      actionsFollowBody: true,
       primaryAction: LoopButton(
         key: const ValueKey<String>('security-setup-continue'),
         label: '下一步',
@@ -855,6 +1067,7 @@ class SecuritySetupScreen extends StatelessWidget {
             _row(
               title: '生物识别',
               detail: '打开 App 与签名前验证',
+              icon: 'user',
               available: capabilities.canUseBiometrics,
               reason: '设备生物识别能力尚未确认',
               position: LoopRowPosition.first,
@@ -862,6 +1075,7 @@ class SecuritySetupScreen extends StatelessWidget {
             _row(
               title: '6 位 PIN',
               detail: '生物识别不可用时的备用',
+              icon: 'keypad',
               available: capabilities.canUseApplicationPin,
               reason: '应用 PIN 需要账号绑定的凭证生命周期决策',
               position: LoopRowPosition.last,
@@ -869,20 +1083,21 @@ class SecuritySetupScreen extends StatelessWidget {
           ],
         ),
         const LoopLabel('交易验证'),
+        // Prototype order: the amount rule first, the second factor after it.
         LoopRecordGroup(
           rows: <LoopRecordRow>[
-            _row(
-              title: 'MFA',
-              detail: 'SMS / TOTP / Passkey',
-              available: capabilities.canUseTransactionMfa,
-              reason: '钱包 MFA 的设置回调尚不存在',
-              position: LoopRowPosition.first,
-            ),
             _row(
               title: '大额交易二次验证',
               detail: '超过阈值时重新验证身份',
               available: capabilities.canUseTransactionMfa,
               reason: '阈值与验证通道均未确定',
+              position: LoopRowPosition.first,
+            ),
+            _row(
+              title: 'MFA',
+              detail: 'SMS / TOTP / Passkey',
+              available: capabilities.canUseTransactionMfa,
+              reason: '钱包 MFA 的设置回调尚不存在',
               position: LoopRowPosition.last,
             ),
           ],
@@ -903,11 +1118,16 @@ class SecuritySetupScreen extends StatelessWidget {
     required bool available,
     required String reason,
     required LoopRowPosition position,
+    String? icon,
   }) {
     return LoopRecordRow(
       key: ValueKey<String>('security-$title'),
+      leading: icon == null ? null : IdentityOptionIcon(icon),
       title: title,
       subtitle: available ? detail : '$detail · $reason',
+      // The reason a protection is off is the whole point of the row; one
+      // line ellipsed it away (audit 2026-09-20 §C.7).
+      subtitleMaxLines: 2,
       trailing: available ? '可用' : '不可用',
       position: position,
       semanticLabel: available ? '$title，可用但未开启' : '$title，不可用：$reason',

@@ -64,163 +64,200 @@ class _PrivyLoginScreenState extends ConsumerState<PrivyLoginScreen> {
     final controller = ref.read(emailAuthProvider.notifier);
     final showApple = ref.watch(isIosIdentityPlatformProvider);
 
-    return LoopFocusPage(
-      archetype: LoopPageArchetype.intro,
-      title: '欢迎来到 LOOP',
-      primaryAction: LoopButton(
-        key: const ValueKey<String>('privy-auth-primary-button'),
-        label: authState.isBusy ? '发送中…' : '发送验证码',
-        primary: true,
-        block: true,
-        onPressed: authState.isBusy
-            ? null
-            : () => unawaited(_sendCode(controller)),
-      ),
-      body: <Widget>[
-        const Padding(
-          padding: EdgeInsets.only(bottom: 14),
-          child: Center(
-            child: LoopBrandMark(
-              key: ValueKey<String>('privy-auth-mark'),
-              kind: LoopBrandMarkKind.appIcon,
-              height: 84,
-              semanticLabel: 'LOOP',
-            ),
+    // `#scr-auth` carries no topbar: the brand mark, the welcome line and the
+    // methods are the page. The title stays in the semantics of the head so
+    // assistive technology still hears it (audit 2026-09-20 §C.2).
+    return Scaffold(
+      key: const ValueKey<String>('privy-auth-screen'),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            bottom: loopChildPageBottomInset(context) + 12,
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            LoopSpacing.page,
-            0,
-            LoopSpacing.page,
-            LoopSpacing.group,
-          ),
-          child: Text(
-            '登录后自动创建钱包，持仓即产生算力。',
-            textAlign: TextAlign.center,
-            style: LoopTypography.body(14, color: LoopColors.text2),
-          ),
-        ),
-        if (!config.canInitializePrivy && !previewEnabled)
-          const LoopNotice(
-            key: ValueKey<String>('privy-auth-configuration-incomplete'),
-            icon: 'warn',
-            tone: LoopNoticeTone.warn,
-            title: '登录配置不完整',
-            body: '缺少 Privy Mobile App Client ID，真实的验证码请求保持关闭。',
-          ),
-        const LoopLabel('用邮箱登录'),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-          child: LoopSurfaceCard(
-            child: AutofillGroup(
-              child: TextField(
-                key: const ValueKey<String>('privy-email-field'),
-                controller: _emailController,
-                enabled: !authState.isBusy,
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.done,
-                autofillHints: const <String>[AutofillHints.email],
-                autocorrect: false,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  hintText: 'name@example.com',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              // `.identity-head`: mark, title, one line of copy.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 44, 16, 26),
+                child: Semantics(
+                  header: true,
+                  container: true,
+                  child: Column(
+                    children: <Widget>[
+                      const LoopBrandMark(
+                        key: ValueKey<String>('privy-auth-mark'),
+                        kind: LoopBrandMarkKind.appIcon,
+                        height: 104,
+                        semanticLabel: 'LOOP',
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        '欢迎来到 LOOP',
+                        textAlign: TextAlign.center,
+                        style: LoopTypography.display(24),
+                      ),
+                      const SizedBox(height: 14),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 280),
+                        child: Text(
+                          '登录后自动创建钱包，持仓即产生算力。',
+                          textAlign: TextAlign.center,
+                          style: LoopTypography.caption(
+                            11,
+                            color: LoopColors.text2,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                onSubmitted: authState.isBusy
-                    ? null
-                    : (_) => unawaited(_sendCode(controller)),
               ),
-            ),
+              if (!config.canInitializePrivy && !previewEnabled)
+                const LoopNotice(
+                  key: ValueKey<String>('privy-auth-configuration-incomplete'),
+                  icon: 'warn',
+                  tone: LoopNoticeTone.warn,
+                  title: '登录配置不完整',
+                  body: '缺少 Privy Mobile App Client ID，真实的验证码请求保持关闭。',
+                ),
+              // `.auth-methods`: Apple, Google, email, 或, external wallet.
+              if (showApple)
+                _AuthMethod(
+                  identifier: 'privy-apple-login-button',
+                  label: '使用 Apple 继续',
+                  primary: true,
+                  busy:
+                      authState.activeOperation == IdentityAuthOperation.apple,
+                  available: config.canInitializePrivy,
+                  unavailableReason: '缺少 Privy Mobile App Client ID',
+                  onPressed: authState.isBusy
+                      ? null
+                      : controller.loginWithApple,
+                ),
+              _AuthMethod(
+                identifier: 'privy-google-login-button',
+                label: '使用 Google 继续',
+                primary: !showApple,
+                busy: authState.activeOperation == IdentityAuthOperation.google,
+                available: config.canInitializePrivy,
+                unavailableReason: '缺少 Privy Mobile App Client ID',
+                onPressed: authState.isBusy ? null : controller.loginWithGoogle,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: LoopSpacing.page,
+                ),
+                child: LoopSurfaceCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      AutofillGroup(
+                        child: TextField(
+                          key: const ValueKey<String>('privy-email-field'),
+                          controller: _emailController,
+                          enabled: !authState.isBusy,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.done,
+                          autofillHints: const <String>[AutofillHints.email],
+                          autocorrect: false,
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            isDense: true,
+                            hintText: '用邮箱登录 · name@example.com',
+                          ),
+                          onSubmitted: authState.isBusy
+                              ? null
+                              : (_) => unawaited(_sendCode(controller)),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      LoopButton(
+                        key: const ValueKey<String>(
+                          'privy-auth-primary-button',
+                        ),
+                        label: authState.isBusy ? '发送中…' : '发送验证码',
+                        block: true,
+                        onPressed: authState.isBusy
+                            ? null
+                            : () => unawaited(_sendCode(controller)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (authState.errorMessage != null)
+                LoopNotice(
+                  key: const ValueKey<String>('privy-auth-error'),
+                  icon: 'close',
+                  tone: LoopNoticeTone.danger,
+                  title: '无法继续',
+                  body: authState.errorMessage!,
+                  margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                ),
+              const _AuthDivider(),
+              _AuthMethod(
+                identifier: 'privy-wallet-login-button',
+                label: '连接已有钱包',
+                busy:
+                    authState.activeOperation ==
+                    IdentityAuthOperation.externalWalletLogin,
+                available: config.canConnectExternalWallet,
+                unavailableReason: config.hasValidReownProjectId
+                    ? '缺少 Privy Mobile App Client ID'
+                    : '缺少有效的 Reown Project ID',
+                onPressed: authState.isBusy
+                    ? null
+                    : () =>
+                          unawaited(controller.connectExternalWallet(context)),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  6,
+                  LoopSpacing.page,
+                  0,
+                ),
+                child: Text(
+                  '继续即表示同意用户协议与隐私政策 · 外部钱包只是登录凭证，不是 LOOP 交易钱包，不能授权任何交易',
+                  textAlign: TextAlign.center,
+                  style: LoopTypography.caption(11, color: LoopColors.text3),
+                ),
+              ),
+              if (previewEnabled) ...<Widget>[
+                const LoopLabel('开发预览'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: LoopSpacing.page,
+                  ),
+                  child: LoopButton(
+                    key: const ValueKey<String>(
+                      'enter-development-preview-button',
+                    ),
+                    label: '进入开发预览',
+                    block: true,
+                    onPressed: () =>
+                        ref.read(loopSessionProvider.notifier).enterPreview(),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    LoopSpacing.page,
+                    10,
+                    LoopSpacing.page,
+                    0,
+                  ),
+                  child: Text(
+                    '开发预览 · 不会创建钱包、连接 Stream、提交交易或伪造 Provider 状态。',
+                    textAlign: TextAlign.center,
+                    style: LoopTypography.caption(11, color: LoopColors.text3),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
-        if (authState.errorMessage != null)
-          LoopNotice(
-            key: const ValueKey<String>('privy-auth-error'),
-            icon: 'close',
-            tone: LoopNoticeTone.danger,
-            title: '无法继续',
-            body: authState.errorMessage!,
-            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-          ),
-        const LoopLabel('或'),
-        _AuthMethod(
-          identifier: 'privy-google-login-button',
-          label: '使用 Google 继续',
-          busy: authState.activeOperation == IdentityAuthOperation.google,
-          available: config.canInitializePrivy,
-          unavailableReason: '缺少 Privy Mobile App Client ID',
-          onPressed: authState.isBusy ? null : controller.loginWithGoogle,
-        ),
-        if (showApple)
-          _AuthMethod(
-            identifier: 'privy-apple-login-button',
-            label: '使用 Apple 继续',
-            busy: authState.activeOperation == IdentityAuthOperation.apple,
-            available: config.canInitializePrivy,
-            unavailableReason: '缺少 Privy Mobile App Client ID',
-            onPressed: authState.isBusy ? null : controller.loginWithApple,
-          ),
-        _AuthMethod(
-          identifier: 'privy-wallet-login-button',
-          label: '连接已有钱包',
-          busy:
-              authState.activeOperation ==
-              IdentityAuthOperation.externalWalletLogin,
-          available: config.canConnectExternalWallet,
-          unavailableReason: config.hasValidReownProjectId
-              ? '缺少 Privy Mobile App Client ID'
-              : '缺少有效的 Reown Project ID',
-          onPressed: authState.isBusy
-              ? null
-              : () => unawaited(controller.connectExternalWallet(context)),
-        ),
-        const LoopNotice(
-          icon: 'info',
-          title: '外部钱包只是登录凭证',
-          body: '它不是 LOOP 交易钱包，也不能授权任何交易。',
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            LoopSpacing.page,
-            14,
-            LoopSpacing.page,
-            0,
-          ),
-          child: Text(
-            '继续即表示同意用户协议与隐私政策',
-            textAlign: TextAlign.center,
-            style: LoopTypography.caption(11, color: LoopColors.text3),
-          ),
-        ),
-        if (previewEnabled) ...<Widget>[
-          const LoopLabel('开发预览'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
-            child: LoopButton(
-              key: const ValueKey<String>('enter-development-preview-button'),
-              label: '进入开发预览',
-              block: true,
-              onPressed: () =>
-                  ref.read(loopSessionProvider.notifier).enterPreview(),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              LoopSpacing.page,
-              10,
-              LoopSpacing.page,
-              0,
-            ),
-            child: Text(
-              '开发预览 · 不会创建钱包、连接 Stream、提交交易或伪造 Provider 状态。',
-              textAlign: TextAlign.center,
-              style: LoopTypography.caption(11, color: LoopColors.text3),
-            ),
-          ),
-        ],
-        const SizedBox(height: 18),
-      ],
+      ),
     );
   }
 
@@ -243,6 +280,7 @@ class _AuthMethod extends StatelessWidget {
     required this.available,
     required this.unavailableReason,
     required this.onPressed,
+    this.primary = false,
   });
 
   final String identifier;
@@ -251,6 +289,9 @@ class _AuthMethod extends StatelessWidget {
   final bool available;
   final String unavailableReason;
   final VoidCallback? onPressed;
+
+  /// `.auth-method-primary`: the one method the prototype pushes.
+  final bool primary;
 
   @override
   Widget build(BuildContext context) {
@@ -267,6 +308,7 @@ class _AuthMethod extends StatelessWidget {
           LoopButton(
             key: ValueKey<String>(identifier),
             label: busy ? '$label…' : label,
+            primary: primary,
             block: true,
             onPressed: available ? onPressed : null,
           ),
@@ -278,6 +320,33 @@ class _AuthMethod extends StatelessWidget {
                 style: LoopTypography.caption(11, color: LoopColors.text3),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// `.auth-divider`: a hairline either side of a mono 或.
+class _AuthDivider extends StatelessWidget {
+  const _AuthDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        LoopSpacing.page,
+        14,
+        LoopSpacing.page,
+        14,
+      ),
+      child: Row(
+        children: <Widget>[
+          const Expanded(child: Divider(height: 1, color: LoopColors.line)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text('或', style: LoopTypography.eyebrow(10)),
+          ),
+          const Expanded(child: Divider(height: 1, color: LoopColors.line)),
         ],
       ),
     );
@@ -387,9 +456,12 @@ class _PrivySessionRestoreScreenState extends State<PrivySessionRestoreScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
+                // The launch frame wears the wordmark the prototype's
+                // `#scr-splash` wears, so a cold start is recognisably the
+                // same page (audit 2026-09-20 §C.1).
                 const LoopBrandMark(
-                  kind: LoopBrandMarkKind.appIcon,
-                  height: 72,
+                  kind: LoopBrandMarkKind.wordmark,
+                  height: 88,
                   semanticLabel: 'LOOP',
                 ),
                 const SizedBox(height: 24),
@@ -418,10 +490,13 @@ class _PrivySessionRestoreScreenState extends State<PrivySessionRestoreScreen> {
                     ),
                   ),
                   const SizedBox(height: 18),
+                  // `.loop-brand-loader{width:min(244px,64vw)}`. The line
+                  // stays indeterminate here: this frame is waiting for an
+                  // answer, and a full bar would claim one arrived.
                   const SizedBox(
-                    width: 160,
+                    width: 244,
                     child: LinearProgressIndicator(
-                      minHeight: 3,
+                      minHeight: 2,
                       backgroundColor: LoopColors.line2,
                       valueColor: AlwaysStoppedAnimation<Color>(
                         LoopColors.lime,

@@ -138,6 +138,7 @@ class LoopFocusPage extends StatelessWidget {
     this.primaryAction,
     this.disclosure,
     this.primaryActionBeforeDisclosure = true,
+    this.actionsFollowBody = false,
     this.updating = false,
     this.block,
   });
@@ -167,6 +168,20 @@ class LoopFocusPage extends StatelessWidget {
   /// reachable on the first screen. Set false only when the disclosure is the
   /// page's own risk copy and must be read before acting.
   final bool primaryActionBeforeDisclosure;
+
+  /// The action and the disclosure flow at the end of the body instead of
+  /// being pinned above the bottom inset.
+  ///
+  /// Pinning is right for a page whose body is a list the reader may scroll
+  /// for a while: the one next step stays on the first screen. It is wrong for
+  /// the prototype's step pages, which lay the button out in normal flow
+  /// directly under the last row (`identity-*` carries no pinned bar, and the
+  /// single `margin-top:auto` in `style-v2.css` belongs to `wallet-create`
+  /// alone). Pinned, 验证邮箱 / 连接钱包 / 创建 LOOP ID put 400–500 px of empty
+  /// screen between their last line and their button — audit 2026-09-20 §D#9.
+  ///
+  /// Default false, so every page that does not ask keeps the pinned bar.
+  final bool actionsFollowBody;
 
   /// The page is re-reading data it already shows (`state.refreshing`).
   final bool updating;
@@ -210,43 +225,63 @@ class LoopFocusPage extends StatelessWidget {
                     // chip were both reported that way. A group's worth of
                     // room makes the boundary unambiguous.
                     padding: EdgeInsets.only(
-                      bottom: primaryAction == null
+                      bottom: primaryAction == null || actionsFollowBody
                           ? bottom
                           : LoopSpacing.group,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: body,
+                      children: <Widget>[
+                        ...body,
+                        if (actionsFollowBody) ..._flowingActions(),
+                      ],
                     ),
                   ),
                 ),
               ],
-              if (block == null && !primaryActionBeforeDisclosure) ?disclosure,
-              if (block == null && primaryAction != null)
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    LoopSpacing.page,
-                    LoopSpacing.tight,
-                    LoopSpacing.page,
-                    primaryActionBeforeDisclosure && disclosure != null
-                        ? LoopSpacing.tight
-                        : bottom,
+              if (block == null && !actionsFollowBody) ...<Widget>[
+                if (!primaryActionBeforeDisclosure) ?disclosure,
+                if (primaryAction != null)
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      LoopSpacing.page,
+                      LoopSpacing.tight,
+                      LoopSpacing.page,
+                      primaryActionBeforeDisclosure && disclosure != null
+                          ? LoopSpacing.tight
+                          : bottom,
+                    ),
+                    child: primaryAction,
                   ),
-                  child: primaryAction,
-                ),
-              if (block == null &&
-                  primaryActionBeforeDisclosure &&
-                  disclosure != null)
-                Padding(
-                  padding: EdgeInsets.only(bottom: bottom),
-                  child: disclosure,
-                ),
+                if (primaryActionBeforeDisclosure && disclosure != null)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: bottom),
+                    child: disclosure,
+                  ),
+              ],
             ],
           ),
         ),
       ),
     );
   }
+
+  /// The same two regions the pinned bar carries, in the same order, laid out
+  /// in the body's normal flow.
+  List<Widget> _flowingActions() => <Widget>[
+    if (!primaryActionBeforeDisclosure) ?disclosure,
+    if (primaryAction != null)
+      Padding(
+        padding: const EdgeInsets.fromLTRB(
+          LoopSpacing.page,
+          LoopSpacing.tight,
+          LoopSpacing.page,
+          0,
+        ),
+        child: primaryAction,
+      ),
+    if (primaryActionBeforeDisclosure) ?disclosure,
+  ];
 }
 
 /// `dashboard`: sticky topbar (z 8 over Ink), the single primary region first,

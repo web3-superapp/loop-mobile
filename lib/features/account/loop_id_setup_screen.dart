@@ -60,6 +60,7 @@ class _LoopIdSetupScreenState extends ConsumerState<LoopIdSetupScreen> {
       title: '创建 LOOP ID',
       onBack: widget.onBack,
       primaryActionBeforeDisclosure: true,
+      actionsFollowBody: true,
       primaryAction: LoopButton(
         key: const ValueKey<String>('loop-id-submit'),
         label: switch (state.phase) {

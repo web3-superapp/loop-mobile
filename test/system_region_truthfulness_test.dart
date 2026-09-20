@@ -11,7 +11,7 @@ void main() {
       tester,
       location: '/system/region',
       unavailableKey: 'region-policy-unavailable',
-      absentClaims: <String>['部分功能在当前地区不可用', '继续使用 LOOP', '查看资格政策'],
+      absentClaims: <String>['部分功能在当前地区不可用', '查看资产', '导出私钥', '查看资格政策'],
     );
   });
 
@@ -22,7 +22,9 @@ void main() {
       tester,
       SystemSurfaceScreen.fromId(
         'region-restricted',
-        onRegionContinue: () {},
+        onRegionViewAssets: () {},
+        onRegionExportKey: () {},
+        onRegionSupport: () {},
         onRegionPolicy: () {},
         onSecondaryAction: () {},
       ),
@@ -30,7 +32,10 @@ void main() {
     expect(find.text('地区策略还没有开放'), findsOneWidget);
     expect(find.textContaining('不会从设备语言、SIM 或 IP 推断'), findsOneWidget);
     expect(find.text('部分功能在当前地区不可用'), findsNothing);
-    expect(find.text('继续使用 LOOP'), findsNothing);
+    // An unknown region grows no exit: the three only belong to a decision.
+    expect(find.text('查看资产'), findsNothing);
+    expect(find.text('导出私钥'), findsNothing);
+    expect(find.text('联系客服'), findsNothing);
     expect(find.text('查看资格政策'), findsNothing);
     expect(find.text('返回 LOOP'), findsOneWidget);
   });
@@ -49,7 +54,7 @@ void main() {
               reasonCode: 'REGION_BLOCKED',
               readOnlyAssetAccess: true,
             ),
-        onRegionContinue: () => continues += 1,
+        onRegionViewAssets: () => continues += 1,
         onRegionPolicy: () => policy += 1,
         onRetry: () => fail('generic retry must stay isolated from region'),
         onPrimaryAction: () => fail('generic primary must stay isolated'),
@@ -64,7 +69,7 @@ void main() {
     expect(find.text('地区策略还没有开放'), findsNothing);
     expect(find.text('返回 LOOP'), findsNothing);
     expect(find.textContaining('Spot'), findsNothing);
-    await tester.tap(find.text('继续使用 LOOP'));
+    await tester.tap(find.text('查看资产'));
     await tester.tap(find.text('查看资格政策'));
     expect((continues, policy), (1, 1));
 
@@ -77,13 +82,20 @@ void main() {
     );
     expect(find.text('RESTRICTED'), findsOneWidget);
     expect(find.textContaining('不列出未确认的可用范围'), findsOneWidget);
-    expect(find.text('继续使用 LOOP'), findsNothing);
+    // Every exit is still on the page, off, with the reason under it.
+    expect(find.text('查看资产'), findsOneWidget);
+    expect(find.text('导出私钥'), findsOneWidget);
+    expect(find.text('联系客服'), findsOneWidget);
+    expect(find.text('钱包页当前不可达。'), findsOneWidget);
+    expect(find.text('查看资格政策'), findsNothing);
   });
 
   testWidgets('region actions appear independently and never generically', (
     tester,
   ) async {
-    var continues = 0;
+    var assets = 0;
+    var exports = 0;
+    var supports = 0;
     var policyOpens = 0;
     await pumpSystemSurface(
       tester,
@@ -91,12 +103,16 @@ void main() {
         'region-restricted',
         featureAvailabilityRestriction:
             const LoopFeatureAvailabilityRestriction(),
-        onRegionContinue: () => continues += 1,
+        onRegionViewAssets: () => assets += 1,
+        onRegionExportKey: () => exports += 1,
+        onRegionSupport: () => supports += 1,
       ),
     );
     expect(find.text('查看资格政策'), findsNothing);
-    await tester.tap(find.text('继续使用 LOOP'));
-    expect(continues, 1);
+    await tester.tap(find.text('查看资产'));
+    await tester.tap(find.text('导出私钥'));
+    await tester.tap(find.text('联系客服'));
+    expect((assets, exports, supports), (1, 1, 1));
 
     await pumpSystemSurface(
       tester,
@@ -107,7 +123,10 @@ void main() {
         onRegionPolicy: () => policyOpens += 1,
       ),
     );
-    expect(find.text('继续使用 LOOP'), findsNothing);
+    // An exit with no destination is shown off, and it cannot be invoked.
+    expect(find.text('钱包页当前不可达。'), findsOneWidget);
+    await tester.tap(find.text('查看资产'));
+    expect(assets, 1);
     await tester.tap(find.text('查看资格政策'));
     expect(policyOpens, 1);
 
@@ -122,7 +141,6 @@ void main() {
         onSecondaryAction: () => fail('generic secondary must stay isolated'),
       ),
     );
-    expect(find.text('继续使用 LOOP'), findsNothing);
     expect(find.text('查看资格政策'), findsNothing);
     expect(find.text('返回 LOOP'), findsNothing);
   });
@@ -134,7 +152,7 @@ void main() {
         'region-restricted',
         featureAvailabilityRestriction:
             const LoopFeatureAvailabilityRestriction(),
-        onRegionContinue: () {},
+        onRegionViewAssets: () {},
         onRegionPolicy: () {},
       ),
       textScale: 2,

@@ -8205,6 +8205,11 @@ _LIGHT_GROUND_EXEMPT_CLASSES = frozenset(
         "LoopTabBar",
         # The toast is its own content: one glyph and one line, both Ink.
         "LoopToastView",
+        # The record row's Lime is `.row-choice.is-chosen::before`: a 3px
+        # selection edge down the leading side of the row. It carries nothing
+        # — the caller's `leading` and the row's own text sit beside it on the
+        # dark row fill — so it is a mark, not a ground.
+        "LoopRecordRow",
     }
 )
 

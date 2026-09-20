@@ -16,7 +16,7 @@ void main() {
       tester,
       location: '/system/update',
       unavailableKey: 'update-policy-unavailable',
-      absentClaims: <String>['请更新 LOOP 后继续', '立即更新', '不可跳过'],
+      absentClaims: <String>['请更新 LOOP 后继续', '前往更新', '无法跳过'],
     );
   });
 
@@ -49,12 +49,16 @@ void main() {
       findsNothing,
     );
     expect(find.text('返回 LOOP'), findsNothing);
-    // No reviewed store action is wired yet: the page says so, no button.
+    // No reviewed store action is wired yet. The exit stays on the page, off,
+    // with the reason under it: a gate with no control on it is what left the
+    // blocked owner with nothing to do (audit 2026-09-20 §C.9).
     expect(
       find.byKey(const ValueKey<String>('force-update-store-unavailable')),
       findsOneWidget,
     );
-    expect(find.text('立即更新'), findsNothing);
+    expect(find.text('前往更新'), findsOneWidget);
+    expect(find.text('没有已审阅的商店跳转，请手动打开应用商店。'), findsOneWidget);
+    expect(find.text('已批准的版本策略要求更新，无法跳过'), findsOneWidget);
   });
 
   testWidgets('a supported client is never blocked by an available policy', (
@@ -109,7 +113,7 @@ void main() {
       find.byKey(const ValueKey<String>('system-state-blocking')),
       findsOneWidget,
     );
-    await tester.tap(find.text('立即更新'));
+    await tester.tap(find.text('前往更新'));
     expect(updates, 1);
   });
 
@@ -127,8 +131,9 @@ void main() {
     );
     expect(find.text('强制更新下限'), findsOneWidget);
     expect(find.text('最低支持版本'), findsNothing);
-    // No reviewed store action: the update button must not appear.
-    expect(find.text('立即更新'), findsNothing);
+    // No reviewed store action: the exit is present and disabled.
+    expect(find.text('前往更新'), findsOneWidget);
+    expect(find.text('没有已审阅的商店跳转，请手动打开应用商店。'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('force-update-store-unavailable')),
       findsOneWidget,
@@ -175,7 +180,7 @@ void main() {
       textScale: 2,
     );
     expect(tester.takeException(), isNull);
-    await tester.ensureVisible(find.text('立即更新'));
+    await tester.ensureVisible(find.text('前往更新'));
   });
 }
 

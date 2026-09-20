@@ -13,7 +13,7 @@ void main() {
   loopWatchGround();
 
   group('splash', () {
-    testWidgets('offers the single entry action and the build version', (
+    testWidgets('is the wordmark, the brand loader and one entry action', (
       tester,
     ) async {
       var entered = false;
@@ -21,7 +21,6 @@ void main() {
         tester,
         AccountSurfaceScreen.fromId(
           'splash',
-          versionLabel: 'Version 0.1.0+1',
           onNavigate: (_) => entered = true,
         ),
       );
@@ -34,7 +33,9 @@ void main() {
         find.byKey(const ValueKey<String>('loop-splash-loader')),
         findsOneWidget,
       );
-      expect(find.text('Version 0.1.0+1'), findsOneWidget);
+      // `#scr-splash` carries no build version; the prototype's frame is the
+      // mark, the line and the CTA (audit 2026-09-20 §C.1).
+      expect(find.textContaining('Version'), findsNothing);
 
       await tester.tap(find.byKey(const ValueKey<String>('loop-splash-enter')));
       await tester.pump();
@@ -80,10 +81,7 @@ void main() {
         find.byKey(const ValueKey<String>('external-wallet-unavailable')),
         findsNothing,
       );
-      await tester.tap(
-        find.byKey(const ValueKey<String>('external-wallet-connect')),
-      );
-      await tester.pump();
+      await _tap(tester, 'external-wallet-connect');
       expect(connected, isTrue);
     });
   });
@@ -121,10 +119,7 @@ void main() {
         ),
       );
 
-      await tester.tap(
-        find.byKey(const ValueKey<String>('wallet-create-continue')),
-      );
-      await tester.pump();
+      await _tap(tester, 'wallet-create-continue');
       expect(destinations, <String>['wallet-recovery']);
     });
   });
@@ -180,19 +175,14 @@ void main() {
       expect(_enabled(tester, 'wallet-recovery-confirm'), isFalse);
 
       // An unavailable row cannot be selected.
-      await tester.tap(find.byKey(const ValueKey<String>('recovery-cloud')));
-      await tester.pump();
+      await _tap(tester, 'recovery-cloud');
       expect(_enabled(tester, 'wallet-recovery-confirm'), isFalse);
 
-      await tester.tap(find.byKey(const ValueKey<String>('recovery-passkey')));
-      await tester.pump();
+      await _tap(tester, 'recovery-passkey');
       expect(find.text('已选'), findsOneWidget);
       expect(_enabled(tester, 'wallet-recovery-confirm'), isTrue);
 
-      await tester.tap(
-        find.byKey(const ValueKey<String>('wallet-recovery-confirm')),
-      );
-      await tester.pump();
+      await _tap(tester, 'wallet-recovery-confirm');
       expect(destinations, <String>['security-setup']);
     });
 
@@ -256,10 +246,7 @@ void main() {
       expect(find.text('可用'), findsOneWidget);
       expect(find.text('不可用'), findsNWidgets(3));
 
-      await tester.tap(
-        find.byKey(const ValueKey<String>('security-setup-continue')),
-      );
-      await tester.pump();
+      await _tap(tester, 'security-setup-continue');
       expect(destinations, <String>['loop-id-setup']);
     });
   });
@@ -313,6 +300,16 @@ Future<void> _pump(WidgetTester tester, Widget child) async {
 }
 
 void _noop() {}
+
+/// A step page lays its action out in the body's flow, so a control may sit
+/// below the fold on a 390x844 screen before it is reached.
+Future<void> _tap(WidgetTester tester, String key) async {
+  final finder = find.byKey(ValueKey<String>(key));
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
 
 bool _enabled(WidgetTester tester, String key) {
   final button = tester.widget<LoopButton>(find.byKey(ValueKey<String>(key)));

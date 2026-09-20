@@ -122,7 +122,7 @@ void main() {
       'Voyager_7',
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey<String>('loop-id-submit')));
+    await _tapKey(tester, 'loop-id-submit');
     await tester.pumpAndSettle();
 
     expect(activation.calls, 1);
@@ -158,13 +158,10 @@ void main() {
     );
     await tester.pumpAndSettle();
     await _openDisclosure(tester);
-    await tester.tap(
-      find.byKey(const ValueKey<String>('loop-id-interest-MEME')),
-    );
-    await tester.pumpAndSettle();
+    await _tapKey(tester, 'loop-id-interest-MEME');
 
     expect(_pressed(tester, 'loop-id-submit'), isNotNull);
-    await tester.tap(find.byKey(const ValueKey<String>('loop-id-submit')));
+    await _tapKey(tester, 'loop-id-submit');
     await tester.pumpAndSettle();
 
     expect(activation.calls, 1);
@@ -192,7 +189,7 @@ void main() {
       'admin',
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey<String>('loop-id-submit')));
+    await _tapKey(tester, 'loop-id-submit');
     await tester.pumpAndSettle();
 
     expect(
@@ -220,7 +217,7 @@ void main() {
       'Voyager_7',
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey<String>('loop-id-submit')));
+    await _tapKey(tester, 'loop-id-submit');
     await tester.pumpAndSettle();
 
     expect(
@@ -265,8 +262,7 @@ void main() {
     expect(find.textContaining('仅本地偏好，投递仍不可用'), findsOneWidget);
     expect(find.byType(Switch), findsNothing);
 
-    await tester.tap(find.byKey(const ValueKey<String>('loop-id-push-toggle')));
-    await tester.pumpAndSettle();
+    await _tapKey(tester, 'loop-id-push-toggle');
     expect(
       container.read(loopIdSetupControllerProvider).pushNotificationsRequested,
       isFalse,
@@ -276,6 +272,16 @@ void main() {
 
 VoidCallback? _pressed(WidgetTester tester, String key) {
   return tester.widget<LoopButton>(find.byKey(ValueKey<String>(key))).onPressed;
+}
+
+/// The action and the disclosure flow with the body, so a control may sit
+/// below the fold before it is reached.
+Future<void> _tapKey(WidgetTester tester, String key) async {
+  final finder = find.byKey(ValueKey<String>(key));
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
 }
 
 Future<void> _openDisclosure(WidgetTester tester) async {

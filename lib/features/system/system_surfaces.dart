@@ -255,7 +255,9 @@ class SystemSurfaceScreen extends StatelessWidget {
     this.onMaintenanceRecheck,
     this.onMaintenanceStatus,
     this.onMaintenanceReadOnly,
-    this.onRegionContinue,
+    this.onRegionViewAssets,
+    this.onRegionExportKey,
+    this.onRegionSupport,
     this.onRegionPolicy,
     this.onPermissionRequest,
     this.onPermissionOpenSettings,
@@ -302,7 +304,13 @@ class SystemSurfaceScreen extends StatelessWidget {
   /// Dedicated "view read-only content" action for an active maintenance
   /// notice. The generic secondary action stays out of every explicit state.
   final SystemAction? onMaintenanceReadOnly;
-  final SystemAction? onRegionContinue;
+
+  /// The three `#scr-region-blocked` exits. Each is null when its page is not
+  /// reachable from here; the gate then shows it as off with a reason rather
+  /// than dropping it.
+  final SystemAction? onRegionViewAssets;
+  final SystemAction? onRegionExportKey;
+  final SystemAction? onRegionSupport;
   final SystemAction? onRegionPolicy;
   final SystemAction? onPermissionRequest;
   final SystemAction? onPermissionOpenSettings;
@@ -356,7 +364,9 @@ class SystemSurfaceScreen extends StatelessWidget {
       ),
       'region-restricted' => _RegionPage(
         restriction: featureAvailabilityRestriction,
-        onContinue: onRegionContinue,
+        onViewAssets: onRegionViewAssets,
+        onExportKey: onRegionExportKey,
+        onSupport: onRegionSupport,
         onPolicy: onRegionPolicy,
         onReturn: onSecondaryAction,
         onBack: onBack,
@@ -566,7 +576,6 @@ class _StatePage extends StatelessWidget {
     required this.body,
     this.onBack,
     this.primaryAction,
-    this.blocking = false,
   });
 
   final String title;
@@ -574,7 +583,53 @@ class _StatePage extends StatelessWidget {
   final List<Widget> body;
   final VoidCallback? onBack;
   final Widget? primaryAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      key: const ValueKey<String>('system-state-dismissible'),
+      child: LoopFocusPage(
+        archetype: LoopPageArchetype.state,
+        title: title,
+        onBack: onBack,
+        folio: folio,
+        body: body,
+        primaryAction: primaryAction,
+      ),
+    );
+  }
+}
+
+/// A whole-page policy gate: one Chalk card, centred, with its exits under it.
+///
+/// `#scr-force-update` and `#scr-region-blocked` are the two pages in the
+/// frozen prototype that carry no topbar at all: a `chalk-card` folio sits in
+/// the middle of the screen and the ways out are stacked beneath it. Rendered
+/// as an ordinary top-aligned state page they lost both the Chalk ground and,
+/// worse, every exit — a blocked owner saw an explanation with nothing to do
+/// (audit 2026-09-20 §C.9, §C.10).
+class _PolicyGatePage extends StatelessWidget {
+  const _PolicyGatePage({
+    required this.folio,
+    required this.exits,
+    this.facts = const <Widget>[],
+    this.footnote,
+    this.blocking = true,
+  });
+
+  final LoopFolioPrimary folio;
+
+  /// Read-only evidence shown between the card and the exits.
+  final List<Widget> facts;
+
+  /// One exit per row, in the prototype's order, each already stating why it
+  /// is off when it is off.
+  final List<Widget> exits;
+  final String? footnote;
   final bool blocking;
+
+  /// `.btn` column width in `#scr-region-blocked`.
+  static const double exitWidth = 250;
 
   @override
   Widget build(BuildContext context) {
@@ -583,13 +638,101 @@ class _StatePage extends StatelessWidget {
         blocking ? 'system-state-blocking' : 'system-state-dismissible',
       ),
       canPop: !blocking,
-      child: LoopFocusPage(
-        archetype: LoopPageArchetype.state,
-        title: title,
-        onBack: blocking ? null : onBack,
-        folio: folio,
-        body: body,
-        primaryAction: primaryAction,
+      child: Semantics(
+        container: true,
+        identifier: loopPageIdentifier(
+          LoopPageArchetype.state,
+          LoopLayoutMode.focus,
+        ),
+        explicitChildNodes: true,
+        child: Scaffold(
+          key: const ValueKey<String>('loop-page-policy-gate'),
+          body: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    folio,
+                    ...facts,
+                    if (exits.isNotEmpty)
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxWidth: exitWidth,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            mainAxisSize: MainAxisSize.min,
+                            children: exits,
+                          ),
+                        ),
+                      ),
+                    if (footnote case final String line)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(28, 14, 28, 0),
+                        child: Text(
+                          line,
+                          textAlign: TextAlign.center,
+                          style: LoopTypography.caption(
+                            11,
+                            color: LoopColors.text3,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One exit on a policy gate. An exit with no reviewed destination stays on
+/// the page as a disabled control with the reason under it, because removing
+/// it is what left the blocked page with nothing on it.
+class _PolicyExit extends StatelessWidget {
+  const _PolicyExit({
+    required this.label,
+    required this.onPressed,
+    required this.unavailableReason,
+    this.primary = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final String unavailableReason;
+  final bool primary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          LoopButton(
+            key: ValueKey<String>('policy-exit-$label'),
+            label: label,
+            primary: primary,
+            block: true,
+            onPressed: onPressed,
+          ),
+          if (onPressed == null)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                unavailableReason,
+                textAlign: TextAlign.center,
+                style: LoopTypography.caption(11, color: LoopColors.text3),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -870,6 +1013,7 @@ class _ForceUpdatePage extends StatelessWidget {
           heading: '版本策略还没有开放',
           caption: '打开此页不代表当前版本不受支持或不安全。',
           stamp: 'UNKNOWN',
+          variant: LoopFolioVariant.chalk,
           archetype: LoopFolioArchetype.state,
         ),
         body: const <Widget>[
@@ -882,17 +1026,16 @@ class _ForceUpdatePage extends StatelessWidget {
         primaryAction: _returnAction(onContinue),
       );
     }
-    return _StatePage(
-      title: '强制更新',
-      blocking: true,
+    return _PolicyGatePage(
       folio: const LoopFolioPrimary(
-        kicker: 'UPDATE REQUIRED',
+        kicker: 'RELEASE GATE',
         heading: '请更新 LOOP 后继续',
         caption: '已批准的版本策略要求受支持的版本，此要求不可跳过。',
         stamp: 'REQUIRED',
+        variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.state,
       ),
-      body: <Widget>[
+      facts: <Widget>[
         LoopSurfaceCard(
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
           padding: EdgeInsets.zero,
@@ -918,14 +1061,15 @@ class _ForceUpdatePage extends StatelessWidget {
             body: '暂时不能直接跳转商店，请手动前往应用商店更新。',
           ),
       ],
-      primaryAction: onUpdate == null
-          ? null
-          : LoopButton(
-              label: '立即更新',
-              primary: true,
-              block: true,
-              onPressed: onUpdate,
-            ),
+      exits: <Widget>[
+        _PolicyExit(
+          label: '前往更新',
+          primary: true,
+          onPressed: onUpdate,
+          unavailableReason: '没有已审阅的商店跳转，请手动打开应用商店。',
+        ),
+      ],
+      footnote: '已批准的版本策略要求更新，无法跳过',
     );
   }
 }
@@ -1015,14 +1159,22 @@ class _MaintenancePage extends StatelessWidget {
 class _RegionPage extends StatelessWidget {
   const _RegionPage({
     required this.restriction,
-    required this.onContinue,
+    required this.onViewAssets,
+    required this.onExportKey,
+    required this.onSupport,
     required this.onPolicy,
     required this.onReturn,
     required this.onBack,
   });
 
   final LoopFeatureAvailabilityRestriction? restriction;
-  final VoidCallback? onContinue;
+
+  /// `#scr-region-blocked` exits, in the prototype's order. A restricted owner
+  /// keeps control of their assets, so the page keeps the three ways to act on
+  /// them even while the product is closed.
+  final VoidCallback? onViewAssets;
+  final VoidCallback? onExportKey;
+  final VoidCallback? onSupport;
   final VoidCallback? onPolicy;
   final VoidCallback? onReturn;
   final VoidCallback? onBack;
@@ -1035,10 +1187,11 @@ class _RegionPage extends StatelessWidget {
         title: '地区限制',
         onBack: onBack,
         folio: const LoopFolioPrimary(
-          kicker: 'REGION POLICY',
+          kicker: 'ACCESS POLICY',
           heading: '地区策略还没有开放',
           caption: '打开此页不代表你所在的地区或账号受限。',
           stamp: 'UNKNOWN',
+          variant: LoopFolioVariant.chalk,
           archetype: LoopFolioArchetype.state,
         ),
         body: const <Widget>[
@@ -1051,36 +1204,49 @@ class _RegionPage extends StatelessWidget {
         primaryAction: _returnAction(onReturn),
       );
     }
-    return _StatePage(
-      title: '地区限制',
-      onBack: onBack,
+    return _PolicyGatePage(
+      // A restriction is not a whole-app block: the three exits are the way
+      // off this page, so it does not trap the back gesture.
+      blocking: false,
       folio: LoopFolioPrimary(
-        kicker: 'REGION POLICY',
+        kicker: 'ACCESS POLICY',
         heading: '部分功能在当前地区不可用',
         caption: restriction.readOnlyAssetAccess == true
             ? '资产保持只读可见；受限功能按各自页面的当前状态显示。'
             : '受限功能按各自页面的当前状态显示；此页不列出未确认的可用范围。',
         stamp: 'RESTRICTED',
+        variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.state,
       ),
-      body: <Widget>[
-        const LoopNotice(
+      facts: const <Widget>[
+        LoopNotice(
           icon: 'globe',
           title: '这页不提供位置或原因细节',
           body: '不推断你所在的位置，也不确认其他功能一定可用。',
         ),
-        if (onContinue != null || onPolicy != null)
-          LoopButtonPair(
-            children: <Widget>[
-              if (onContinue != null)
-                LoopButton(
-                  label: '继续使用 LOOP',
-                  primary: true,
-                  onPressed: onContinue,
-                ),
-              if (onPolicy != null)
-                LoopButton(label: '查看资格政策', onPressed: onPolicy),
-            ],
+      ],
+      exits: <Widget>[
+        _PolicyExit(
+          label: '查看资产',
+          primary: true,
+          onPressed: onViewAssets,
+          unavailableReason: '钱包页当前不可达。',
+        ),
+        _PolicyExit(
+          label: '导出私钥',
+          onPressed: onExportKey,
+          unavailableReason: '私钥导出页当前不可达。',
+        ),
+        _PolicyExit(
+          label: '联系客服',
+          onPressed: onSupport,
+          unavailableReason: '帮助页当前不可达。',
+        ),
+        if (onPolicy != null)
+          _PolicyExit(
+            label: '查看资格政策',
+            onPressed: onPolicy,
+            unavailableReason: '没有已批准的资格政策链接。',
           ),
       ],
     );

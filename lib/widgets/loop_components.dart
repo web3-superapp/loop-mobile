@@ -1012,6 +1012,7 @@ class LoopRecordRow extends StatelessWidget {
     this.position = LoopRowPosition.single,
     this.semanticLabel,
     this.subtitleMaxLines = 1,
+    this.selected = false,
   });
 
   final Widget? leading;
@@ -1052,6 +1053,14 @@ class LoopRecordRow extends StatelessWidget {
   final VoidCallback? onTap;
   final LoopRowPosition position;
   final String? semanticLabel;
+
+  /// `.row-choice.is-chosen`: this row is the one currently chosen.
+  ///
+  /// The prototype marks it on the row itself — a Lime wash over the row and a
+  /// 3px Lime bar down its leading edge — not only with a badge in the value
+  /// column. A list of three otherwise identical options is read by its shape
+  /// before it is read by its words (audit 2026-09-20 §C.6).
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
@@ -1140,7 +1149,9 @@ class LoopRecordRow extends StatelessWidget {
     // the rounded decoration keeps a uniform border.
     final row = Container(
       decoration: BoxDecoration(
-        color: LoopColors.chalk.withValues(alpha: 0.045),
+        color: selected
+            ? LoopColors.lime.withValues(alpha: 0.09)
+            : LoopColors.chalk.withValues(alpha: 0.045),
         borderRadius: radius,
         boxShadow: bottomRadius
             ? const <BoxShadow>[
@@ -1158,7 +1169,27 @@ class LoopRecordRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           if (topRadius) Container(height: 1, color: LoopDepth.liftCardEdge),
-          content,
+          if (selected)
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Container(
+                    width: 3,
+                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: const BoxDecoration(
+                      color: LoopColors.lime,
+                      borderRadius: BorderRadius.horizontal(
+                        right: Radius.circular(3),
+                      ),
+                    ),
+                  ),
+                  Expanded(child: content),
+                ],
+              ),
+            )
+          else
+            content,
           if (!bottomRadius)
             Container(
               height: 1,
