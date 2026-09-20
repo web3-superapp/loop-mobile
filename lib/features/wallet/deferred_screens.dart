@@ -399,22 +399,18 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
               ],
             ),
         ],
-        const LoopLabel('域名信誉'),
-        // With no address typed there is nothing to look up: 「读不到」 named a
-        // failed read that never happened. The unavailable card is for a
-        // domain that exists and has no reputation to show.
-        if (typed.isEmpty)
-          const LoopEmpty(
-            key: ValueKey<String>('dapp-reputation-empty'),
-            message: '还没有可查询的域名',
-            reason: '输入网址后再核对；这一项不会凭空给出结论。',
-          )
-        else
+        // With no address typed there is nothing to look up, and a second
+        // empty group saying so was one more placeholder in a page the audit
+        // already found full of them (item 5). The reputation group exists
+        // once there is a domain to have one.
+        if (typed.isNotEmpty) ...<Widget>[
+          const LoopLabel('域名信誉'),
           const LoopUnavailableCard(
             key: ValueKey<String>('dapp-reputation-unavailable'),
             label: '读不到域名信誉',
             reasonCode: DappReviewScreen.reputationReasonCode,
           ),
+        ],
         const LoopLabel('连接与签名'),
         LoopUnavailableCard(
           key: const ValueKey<String>('dapp-execution-unavailable'),

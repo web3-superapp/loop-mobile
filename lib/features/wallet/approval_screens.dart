@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/wallet/money_actions_controllers.dart';
 import 'package:loop_mobile/features/wallet/money_actions_gateway.dart';
@@ -665,7 +666,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
         blockNumber: final blockNumber,
       ):
         subtitle =
-            '${row.spender.checksumAddress} · '
+            '${loopTruncatedAddress(row.spender.checksumAddress)} · '
             '${unlimited ? '无限额度' : '额度 $display'} · '
             '区块 ${loopGroupedFigure(blockNumber.toString())}';
         badge = unlimited

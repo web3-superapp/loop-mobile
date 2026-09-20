@@ -110,12 +110,10 @@ void main() {
       expect(find.byKey(const ValueKey<String>('dapp-connect')), findsNothing);
       expect(find.byKey(const ValueKey<String>('dapp-sign')), findsNothing);
       expect(find.text('签名请求'), findsNothing);
-      // Nothing was typed, so nothing was looked up: this is a vacancy, not a
-      // read that failed.
-      expect(
-        find.byKey(const ValueKey<String>('dapp-reputation-empty')),
-        findsOneWidget,
-      );
+      // Nothing was typed, so nothing was looked up and the reputation group
+      // does not exist yet: a second empty group saying so was one more
+      // placeholder on a page the audit already found full of them.
+      expect(find.text('域名信誉'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('dapp-reputation-unavailable')),
         findsNothing,

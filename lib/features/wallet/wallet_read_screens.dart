@@ -447,7 +447,8 @@ class _WalletPrimary extends StatelessWidget {
         (_, _, null) => '钱包列表暂时读不到，这里不显示余额。',
         _ => '还没有选定当前钱包，这里不显示余额。',
       },
-      stamp: netWorth is LoopNetWorthValued ? 'NET WORTH' : null,
+      // The prototype's wallet ledger card carries no stamp: the address line
+      // and the 净值明细 chevron are the whole footer.
       trailing: LoopIconButton(
         key: const ValueKey<String>('wallet-networth-entry'),
         icon: 'chevron',
@@ -966,12 +967,16 @@ String _assetChainName(String assetId) {
 }
 
 /// The same chain, as the folio's uppercase stamp.
-String? _assetChainStamp(String assetId) {
-  final chainId = assetId.substring(0, assetId.lastIndexOf(':'));
-  return loopKnownChainIds.contains(chainId)
-      ? loopChainName(chainId).toUpperCase()
-      : null;
-}
+///
+/// The stamp is capped at 42% of the card, so 「BNB SMART CHAIN」 rendered as
+/// 「BNB SMART CHA…」. The two published chains get the short form a stamp has
+/// room for; an unknown chain gets no stamp rather than a truncated one.
+String? _assetChainStamp(String assetId) =>
+    switch (assetId.substring(0, assetId.lastIndexOf(':'))) {
+      loopPrimaryChainId => 'BSC',
+      loopLaunchTestnetChainId => 'BSC TESTNET',
+      _ => null,
+    };
 
 /// The asset's own `1h` close line, inside the prototype's chart panel.
 ///
@@ -1898,6 +1903,21 @@ class _TransactionHistoryScreenState
       archetype: LoopPageArchetype.record,
       title: '交易历史',
       onBack: widget.onBack,
+      actions: <Widget>[
+        // The prototype's 导出. There is no export path, and the control says
+        // so rather than disappearing.
+        LoopSeg(
+          key: const ValueKey<String>('tx-history-export-action'),
+          label: '导出',
+          selected: false,
+          onSelected: null,
+          onBlocked: () => LoopToast.show(
+            context,
+            message: '导出还没有开放。记录可以在这一页翻阅。',
+            kind: LoopToastKind.warn,
+          ),
+        ),
+      ],
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('tx-history-folio'),
         archetype: LoopFolioArchetype.record,
@@ -1907,6 +1927,7 @@ class _TransactionHistoryScreenState
         // hero, which reads as a row the list lost.
         heading: page == null ? '记录还没有读到' : '${_segmentCount(page)} 笔',
         caption: '发送、接收、兑换与跨链结果按时间形成统一钱包记录。',
+        stamp: page == null ? null : '${_segmentCount(page)} TXNS',
       ),
       block: blocked
           ? _walletPageBlock(
@@ -2151,8 +2172,11 @@ class _NetworksScreenState extends ConsumerState<NetworksScreen> {
             ? LoopFolioHeadingTone.accent
             : LoopFolioHeadingTone.neutral,
         heading: status == null
-            ? '网络与 RPC'
+            ? '网络状态还没有读到'
             : '${status.rpc.healthyCount} / ${status.rpc.endpoints.length} 正常',
+        stamp: status == null
+            ? null
+            : '${status.rpc.healthyCount} / ${status.rpc.endpoints.length} OK',
         caption: status?.launchChain == null
             ? '只有 BNB Smart Chain 一条网络；端点只显示主机名，永远不下发完整 RPC 地址。'
             : '主网 BNB Smart Chain 加上 LOOP 发布的 Launch 链；'

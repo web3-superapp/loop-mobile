@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/wallet/approval_screens.dart';
 import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_signing.dart';
@@ -634,7 +635,13 @@ void main() {
       );
 
       expect(find.text('USDT'), findsOneWidget);
-      expect(find.textContaining(s6SpenderChecksum), findsOneWidget);
+      // The prototype truncates a spender on a row, as it truncates every
+      // other address; the full value is still the model's.
+      expect(
+        find.textContaining(loopTruncatedAddress(s6SpenderChecksum)),
+        findsOneWidget,
+      );
+      expect(find.text(s6SpenderChecksum), findsNothing);
       expect(find.textContaining('区块 120,695,250'), findsOneWidget);
     });
 

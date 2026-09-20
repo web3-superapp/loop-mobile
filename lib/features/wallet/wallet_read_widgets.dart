@@ -91,7 +91,7 @@ LoopRecordRow walletBalanceRow(
     ),
     title: row.symbol,
     subtitle: subtitleParts.join(' · '),
-    subtitleMaxLines: miningText == null ? 1 : 2,
+    subtitleMaxLines: miningText == null ? 1 : 3,
     trailing: trailing,
     trailingCaption: caption,
     trailingBadge: badge,
@@ -202,18 +202,56 @@ class WalletNetWorthCard extends StatelessWidget {
         );
       case final LoopNetWorthValued valued:
         final marker = loopFactQualityMarker(valued.quality);
+        // Compact is a strip, not a card: a card with a badge and one line in
+        // it read as a block that had lost its figure.
+        if (compact) {
+          return Padding(
+            key: const ValueKey<String>('wallet-networth-card'),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: <Widget>[
+                    if (valued.partial)
+                      LoopBadge(
+                        '部分估值 · ${valued.unavailableCount} 项无价格',
+                        key: const ValueKey<String>('wallet-networth-partial'),
+                        kind: LoopBadgeKind.down,
+                      ),
+                    if (marker != null) LoopBadge(marker),
+                    const LoopBadge(
+                      '不是可用余额',
+                      key: ValueKey<String>('wallet-networth-not-spendable'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  <String>[
+                    '来源 ${loopFactSourceLabel(valued.priceSource)}',
+                    '观察于 ${loopRelativeTime(valued.asOf, now: now)}',
+                    if (valued.partial) '只是已估值资产的合计，不是总资产',
+                  ].join(' · '),
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+              ],
+            ),
+          );
+        }
         return LoopSurfaceCard(
           key: const ValueKey<String>('wallet-networth-card'),
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              if (!compact) ...<Widget>[
-                Text('净值（${valued.valuationCurrency}）', style: LoopMono.label),
-                const SizedBox(height: 6),
-                Text(loopFormatUsd(valued.valueUsd), style: LoopMono.display),
-                const SizedBox(height: 8),
-              ],
+              Text('净值（${valued.valuationCurrency}）', style: LoopMono.label),
+              const SizedBox(height: 6),
+              Text(loopFormatUsd(valued.valueUsd), style: LoopMono.display),
+              const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 6,
