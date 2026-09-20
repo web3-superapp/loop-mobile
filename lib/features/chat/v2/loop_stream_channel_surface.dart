@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_server_clock.dart';
+import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_outgoing_message_order.dart';
@@ -469,6 +470,13 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
 
   @override
   Widget build(BuildContext context) {
+    // Decision 0055. In a group or community channel a member is named by the
+    // Alias this channel projected, so the `@` overlay is LOOP's: Stream's own
+    // one searches and types the account identity. A direct channel keeps
+    // Stream's overlay, where the row names the peer from their profile.
+    final aliasMentions = loopChannelAutocompleteTriggers(
+      StreamChannel.of(context).channel.cid,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -495,6 +503,8 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
           // builder applies to every composer, including this one. Voice
           // recording stays off: LOOP has proven no recording capability.
           enableVoiceRecording: false,
+          enableMentionsOverlay: aliasMentions.isEmpty,
+          customAutocompleteTriggers: aliasMentions,
           allowedAttachmentPickerTypes: loopChatImagePickerTypes,
           attachmentLimit: loopChatImageMaxCount,
           useSystemAttachmentPicker: true,

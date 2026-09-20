@@ -2887,6 +2887,10 @@ def check_chat_preview_message_request_contract(root: Path) -> list[str]:
                 "CommunicationFailure.previewRequestNotPending",
                 "CommunicationFailure.previewRequestReasonInvalid",
             ),
+            "lib/features/chat/v2/loop_stream_channel_surface.dart": (
+                "enableMentionsOverlay: aliasMentions.isEmpty",
+                "customAutocompleteTriggers: aliasMentions",
+            ),
             "lib/features/chat/chat_inbox_page.dart": (
                 "final requests = ref.watch(messageRequestsProvider);",
                 "final requestCount = requests.hasValue ? requests.value!.length : null;",
@@ -10412,6 +10416,16 @@ FRIEND_FRONTEND_TEST_MARKERS = {
         "group channel chrome hides stock typing and global identities",
         "group list cell sanitizes preview and avatar while direct keeps official chrome",
     ),
+    Path("test/group_alias_mention_autocomplete_test.dart"): (
+        "a candidate is the Alias this channel resolved, never Stream",
+        "the query is an Alias prefix, matched without case",
+        "a member with no Alias, and the member themselves, are absent",
+        "only a group or community composer installs the Alias trigger",
+        "a group candidate row shows the Alias and its initial",
+        "typing an Alias prefix narrows the group candidates",
+        "tapping a candidate types the Alias and keeps the link",
+        "a bubble draws the Alias for a mention, never the Stream id",
+    ),
     Path("test/group_alias_resolver_test.dart"): (
         "keeps only the validated messaging channel ID",
         "rejects direct, malformed, unsafe, and oversized CIDs with zero resolver calls",
@@ -10566,6 +10580,13 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "sanitizeLoopGroupMessageForDisplay",
                 "loopStreamGroupMessageItemBuilder",
                 "loopStreamGroupMentionItemBuilder",
+                # Decision 0055 · R13-5. A group `@` names candidates from the
+                # same member projection the bubble does, so the row can be
+                # offered at all; Stream's own overlay is turned off wherever
+                # this trigger is installed.
+                "resolveLoopGroupMentionCandidates",
+                "loopGroupMentionAutocompleteTrigger",
+                "loopChannelAutocompleteTriggers",
                 "loopStreamChannelListIdentityItem",
                 "class LoopStreamGroupChannelHeader",
                 "class LoopStreamGroupChannelPage",

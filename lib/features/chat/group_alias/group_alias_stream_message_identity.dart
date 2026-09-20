@@ -68,7 +68,10 @@ String? parseLoopGroupAliasMemberProjection(Map<String, Object?> extraData) {
 /// The Stream [User.name] and [User.id] are deliberately not fallbacks. A
 /// missing, duplicate, conflicting, malformed, or future projection resolves
 /// to [loopGroupMemberNeutralLabel].
-@visibleForTesting
+///
+/// This is the one place a member is named in a group channel: the bubble, the
+/// long-press header, the reply banner and the `@` candidate row all come back
+/// here, so a member reads as the same person everywhere in the channel.
 String resolveLoopGroupMessageSenderLabel({
   required String senderUserId,
   required Iterable<Member> members,
@@ -123,11 +126,14 @@ Widget loopStreamGroupMessageItemBuilder(
 /// is usable: `User.name` is empty for every LOOP account and `User.id` is the
 /// LOOP row key (device report 2026-09-19 · F5).
 ///
-/// * In a group or community channel the row fails closed. Stream's own
-///   callback closes over the global [User] and accepts `user.name` into the
-///   composer (`stream_message_composer.dart:976`), so a row that merely
-///   looked right would still type the id into the message. There is no
-///   Alias-aware composer contract yet.
+/// * A group or community channel no longer reaches here at all: its composer
+///   turns Stream's overlay off and installs
+///   [loopGroupMentionAutocompleteTrigger], which resolves, filters and
+///   completes candidates by the channel Alias. This branch stays as the
+///   closed door behind that decision — Stream's own callback closes over the
+///   global [User] and accepts `user.name` into the composer
+///   (`stream_message_composer.dart:976`), so any stock overlay that did mount
+///   in a group channel would type the id into the message.
 /// * In a direct channel the peer does have an honest name — the public
 ///   profile the page's own header shows — published through
 ///   [LoopDirectPeerScope]. The row renders it, and the tap accepts *that*
@@ -401,6 +407,12 @@ class _LoopStreamGroupChannelPageState
       messageComposerController: _composerController,
       onQuotedMessageCleared: _composerController.clearQuotedMessage,
       enableVoiceRecording: false,
+      // This page only ever mounts a group channel, so the `@` overlay is
+      // always LOOP's Alias one.
+      enableMentionsOverlay: false,
+      customAutocompleteTriggers: <StreamAutocompleteTrigger>[
+        loopGroupMentionAutocompleteTrigger(),
+      ],
       allowedAttachmentPickerTypes: loopChatImagePickerTypes,
       attachmentLimit: loopChatImageMaxCount,
       useSystemAttachmentPicker: true,
@@ -509,6 +521,10 @@ class _LoopStreamGroupThreadPageState
             focusNode: _focusNode,
             messageComposerController: _composerController,
             enableVoiceRecording: false,
+            enableMentionsOverlay: false,
+            customAutocompleteTriggers: <StreamAutocompleteTrigger>[
+              loopGroupMentionAutocompleteTrigger(),
+            ],
             allowedAttachmentPickerTypes: loopChatImagePickerTypes,
             attachmentLimit: loopChatImageMaxCount,
             useSystemAttachmentPicker: true,
@@ -707,3 +723,204 @@ class _LoopStreamGroupMessageItem extends StatelessWidget {
     );
   }
 }
+
+/// The same card height Stream's own mention overlay uses, so a long roster
+/// scrolls inside the card instead of pushing the composer off the screen.
+const double _loopGroupMentionMaxHeight = 176;
+
+/// One member a group `@` can complete to.
+///
+/// The Alias is the word this channel resolved for that member — the same word
+/// the bubble above their message carries. There is no second name here: the
+/// Stream account name is empty and the Stream id is the LOOP row key, and
+/// neither is ever carried on this object.
+@immutable
+class LoopGroupMentionCandidate {
+  const LoopGroupMentionCandidate({required this.userId, required this.alias});
+
+  /// Stream's internal id. Used to link the mention, never drawn.
+  final String userId;
+
+  /// The channel-scoped Alias. The one string this row may print.
+  final String alias;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LoopGroupMentionCandidate &&
+          other.userId == userId &&
+          other.alias == alias;
+
+  @override
+  int get hashCode => Object.hash(userId, alias);
+}
+
+/// The members a group `@<query>` may complete to, in a stable order.
+///
+/// Stream's own candidate search matches `User.name` (empty for every LOOP
+/// account, so its getter answers the id) and would therefore both fail to
+/// match an Alias prefix and offer the id as the row's text. LOOP resolves
+/// candidates from the channel's own member projection instead, through
+/// [resolveLoopGroupMessageSenderLabel] — the very function that names the
+/// sender above a bubble, so a candidate and the message it later produces
+/// read as the same person.
+///
+/// A member whose projection is missing, malformed, ambiguous, or future has
+/// no name in this channel, so there is nothing to offer and no row appears.
+/// [currentUserId] is dropped: a member does not mention themselves.
+@visibleForTesting
+List<LoopGroupMentionCandidate> resolveLoopGroupMentionCandidates({
+  required Iterable<Member> members,
+  required String query,
+  String? currentUserId,
+}) {
+  final roster = List<Member>.unmodifiable(members);
+  final prefix = query.trim().toLowerCase();
+  final seen = <String>{};
+  final candidates = <LoopGroupMentionCandidate>[];
+
+  for (final member in roster) {
+    final userId = member.userId ?? member.user?.id;
+    if (userId == null || userId.isEmpty) continue;
+    if (currentUserId != null && userId == currentUserId) continue;
+    if (!seen.add(userId)) continue;
+
+    final alias = resolveLoopGroupMessageSenderLabel(
+      senderUserId: userId,
+      members: roster,
+    );
+    if (alias == loopGroupMemberNeutralLabel) continue;
+    if (!alias.toLowerCase().startsWith(prefix)) continue;
+
+    candidates.add(LoopGroupMentionCandidate(userId: userId, alias: alias));
+  }
+
+  candidates.sort(
+    (a, b) => a.alias.toLowerCase().compareTo(b.alias.toLowerCase()),
+  );
+  return List<LoopGroupMentionCandidate>.unmodifiable(candidates);
+}
+
+/// The `@` overlay a group or community channel shows.
+///
+/// It replaces Stream's [StreamMentionAutocompleteOptions] for those channels
+/// (`enableMentionsOverlay: false` plus this trigger), because that widget
+/// queries and names candidates by the account identity LOOP may not draw.
+/// Everything else about the composer stays Stream's.
+///
+/// The roster offered is the channel's own loaded member list, watched live.
+/// It is not extended by a server query: Stream's `queryMembers` filters on
+/// `name`, which for a LOOP account is the id, so a request made on an Alias
+/// prefix would answer with the wrong people or with nobody. A member the
+/// channel has not loaded is therefore not offered — the same honest limit as
+/// a member whose projection has not landed.
+class LoopGroupMentionAutocompleteOptions extends StatelessWidget {
+  const LoopGroupMentionAutocompleteOptions({
+    required this.query,
+    required this.messageComposerController,
+    super.key,
+  });
+
+  /// The text typed after `@`, matched against the Alias as a prefix.
+  final String query;
+
+  /// The composer this overlay completes into.
+  final StreamMessageComposerController messageComposerController;
+
+  @override
+  Widget build(BuildContext context) {
+    final channel = StreamChannel.maybeOf(context)?.channel;
+    final state = channel?.state;
+    if (state == null) return const SizedBox.shrink();
+
+    final currentUserId = StreamChat.of(context).currentUser?.id;
+    final initialMembers = List<Member>.unmodifiable(
+      state.channelState.members ?? const <Member>[],
+    );
+    final membersStream = state.channelStateStream
+        .map(
+          (channelState) => List<Member>.unmodifiable(
+            channelState.members ?? const <Member>[],
+          ),
+        )
+        .distinct(listEquals);
+
+    return StreamBuilder<List<Member>>(
+      initialData: initialMembers,
+      stream: membersStream,
+      builder: (context, snapshot) {
+        final members = snapshot.hasError
+            ? const <Member>[]
+            : snapshot.data ?? const <Member>[];
+        final candidates = resolveLoopGroupMentionCandidates(
+          members: members,
+          query: query,
+          currentUserId: currentUserId,
+        );
+        if (candidates.isEmpty) return const SizedBox.shrink();
+
+        final (:elevation, :margin, :shape) = AutocompleteOptionsStyle.fixed
+            .resolve(context.streamColorScheme.borderDefault);
+        return StreamAutocompleteOptions<LoopGroupMentionCandidate>(
+          options: candidates,
+          maxHeight: _loopGroupMentionMaxHeight,
+          elevation: elevation,
+          margin: margin,
+          shape: shape,
+          optionBuilder: (context, candidate) => DefaultStreamMentionItem(
+            // The official row, handed a display-only projection: its title
+            // and its avatar initials both read the Alias, and no account
+            // field reaches it.
+            props: StreamMentionItemProps(
+              mention: StreamUserMention(
+                user: loopStreamDisplayUser(
+                  id: candidate.userId,
+                  label: candidate.alias,
+                ),
+              ),
+              onTap: () => _accept(context, candidate),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _accept(BuildContext context, LoopGroupMentionCandidate candidate) {
+    // Two separate facts leave with the message. `mentioned_users` is a list
+    // of ids on the payload (`message.g.dart:89`), so the Stream mention link
+    // survives even though the text spells the Alias; the text is the word
+    // the member just read in the row.
+    final alreadyMentioned = messageComposerController.mentionedUsers.any(
+      (user) => user.id == candidate.userId,
+    );
+    if (!alreadyMentioned) {
+      messageComposerController.addMentionedUser(User(id: candidate.userId));
+    }
+    StreamAutocomplete.of(context).acceptAutocompleteOption(candidate.alias);
+  }
+}
+
+/// The `@` trigger a group or community composer installs instead of Stream's.
+///
+/// Pair it with `enableMentionsOverlay: false` on the same composer: a direct
+/// channel keeps Stream's own overlay, where
+/// `loopStreamGroupMentionItemBuilder` names the peer from their profile.
+StreamAutocompleteTrigger loopGroupMentionAutocompleteTrigger() =>
+    StreamAutocompleteTrigger(
+      trigger: '@',
+      optionsViewBuilder: (context, autocompleteQuery, controller) =>
+          LoopGroupMentionAutocompleteOptions(
+            query: autocompleteQuery.query,
+            messageComposerController: controller,
+          ),
+    );
+
+/// The triggers one LOOP composer installs for [cid].
+///
+/// Group and community channels get the Alias overlay; a direct channel gets
+/// none of its own and keeps Stream's.
+List<StreamAutocompleteTrigger> loopChannelAutocompleteTriggers(String? cid) =>
+    loopStreamChannelUsesGroupMessageAlias(cid)
+    ? <StreamAutocompleteTrigger>[loopGroupMentionAutocompleteTrigger()]
+    : const <StreamAutocompleteTrigger>[];
