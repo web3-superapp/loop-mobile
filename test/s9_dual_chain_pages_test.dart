@@ -366,9 +366,10 @@ void main() {
       // "Not proven yet" is neither a fault nor a proof.
       expect(find.text('待校验'), findsOneWidget);
       expect(find.text('异常'), findsNothing);
-      // The primary chain row and its endpoint are untouched by the Launch
-      // slot's pending verification.
-      expect(find.text('正常'), findsNWidgets(2));
+      // The primary chain row is untouched by the Launch slot's pending
+      // verification. Its endpoint carries the same badge behind the operator
+      // disclosure, which this assertion does not open.
+      expect(find.text('正常'), findsOneWidget);
     });
 
     testWidgets('an unreachable or mismatched slot stays 异常', (tester) async {

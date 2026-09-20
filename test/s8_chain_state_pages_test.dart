@@ -61,6 +61,7 @@ final class _Case {
     required this.absentWhileLoading,
     required this.absentWhileLoadingLabel,
     this.offlineUnpinned = false,
+    this.disclosure,
   });
 
   /// The manifest slug, used in the test name.
@@ -78,6 +79,13 @@ final class _Case {
 
   /// `true` when no other test pins this prefix's offline state.
   final bool offlineUnpinned;
+
+  /// The disclosure this block lives behind, when it lives behind one.
+  ///
+  /// The wallet pages keep their operator facts under the prototype's own
+  /// disclosure, so the state block inside it is not built until the summary
+  /// is tapped. The case takes that tap; it does not weaken the assertion.
+  final Key? disclosure;
 }
 
 final List<_Case> _cases = <_Case>[
@@ -264,6 +272,7 @@ final List<_Case> _cases = <_Case>[
     ),
     absentWhileLoadingLabel: 'the registry facts card',
     offlineUnpinned: true,
+    disclosure: const ValueKey<String>('wallet-asset-facts-disclosure'),
     pump: (tester, {failure, pending = false}) => pumpS5Page(
       tester,
       const WalletAssetScreen(assetId: s5NativeAssetId),
@@ -366,6 +375,17 @@ LoopChainStatus _statusWithoutEndpoints() {
   );
 }
 
+/// Opens the case's disclosure, when it has one.
+Future<void> _openIfNeeded(
+  WidgetTester tester,
+  _Case testCase, {
+  bool settle = true,
+}) async {
+  final key = testCase.disclosure;
+  if (key == null) return;
+  await openLoopDisclosure(tester, key, settle: settle);
+}
+
 void main() {
   // -------------------------------------------------------------------------
   // Loading / Error / Offline — one table, every page.
@@ -378,6 +398,7 @@ void main() {
       ) async {
         await testCase.pump(tester, pending: true);
         await _pumpFrames(tester);
+        await _openIfNeeded(tester, testCase, settle: false);
 
         expect(
           find.byKey(ValueKey<String>('${testCase.prefix}-state-loading')),
@@ -397,6 +418,7 @@ void main() {
         '${testCase.prefix} reports an unreadable answer as an error',
         (tester) async {
           await testCase.pump(failure: LoopChainFailureKind.unexpected, tester);
+          await _openIfNeeded(tester, testCase);
 
           expect(
             find.byKey(ValueKey<String>('${testCase.prefix}-state-error')),
@@ -415,6 +437,7 @@ void main() {
           tester,
         ) async {
           await testCase.pump(failure: LoopChainFailureKind.offline, tester);
+          await _openIfNeeded(tester, testCase);
 
           expect(
             find.byKey(ValueKey<String>('${testCase.prefix}-state-offline')),
@@ -915,9 +938,9 @@ void main() {
       // An RPC list with no entry is not "there is nothing to show": it means
       // the deployment configured no endpoint, which is a stated reason code.
       // So the page renders an unavailable card rather than an empty one.
-      await scrollToS5Section(
+      await openLoopDisclosure(
         tester,
-        find.byKey(const ValueKey<String>('networks-no-endpoints')),
+        const ValueKey<String>('networks-operator-disclosure'),
       );
       expect(
         find.byKey(const ValueKey<String>('networks-no-endpoints')),

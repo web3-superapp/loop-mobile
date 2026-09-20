@@ -826,8 +826,9 @@ void main() {
 
       expect(find.text('PRIVY 嵌入式钱包'), findsOneWidget);
       expect(find.text('已连接的外部钱包'.toUpperCase()), findsOneWidget);
-      expect(find.textContaining('0x0000…00a1'), findsOneWidget);
-      // The full address is never rendered on this page.
+      // The active wallet is the page's heading as well as a row, so the
+      // truncation appears twice; the full address appears nowhere.
+      expect(find.textContaining('0x0000…00a1'), findsNWidgets(2));
       expect(find.text(s5Address), findsNothing);
       expect(find.text('使用中'), findsOneWidget);
     });
@@ -1098,6 +1099,13 @@ void main() {
           chain: FakeChainGateway(),
         );
 
+        // The endpoints are operator facts and live behind the prototype's
+        // disclosure; every one of them is still on this page.
+        await openLoopDisclosure(
+          tester,
+          const ValueKey<String>('networks-operator-disclosure'),
+        );
+
         // The opaque reference is unmatchable by a reader and stays off
         // screen; the server's own host name heads the row, and the position
         // it was published in follows it.
@@ -1107,7 +1115,9 @@ void main() {
         expect(find.textContaining('端点 1'), findsOneWidget);
         // Still no URL: no scheme, no path, no key.
         expect(find.textContaining('https://'), findsNothing);
-        expect(find.textContaining('延迟 515ms'), findsOneWidget);
+        // The chain row states the best latency any endpoint answered with,
+        // and the endpoint row states its own; both are 515ms here.
+        expect(find.textContaining('延迟 515ms'), findsNWidgets(2));
         expect(find.textContaining('落后 0 块'), findsOneWidget);
         expect(find.text('1 / 1 正常'), findsOneWidget);
         // The check result is a display name, never the wire value.
@@ -1156,6 +1166,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(chain.status.resolves, 2);
       expect(block, findsNothing);
+      await openLoopDisclosure(
+        tester,
+        const ValueKey<String>('networks-operator-disclosure'),
+      );
       expect(find.text('bsc-rpc.publicnode.com'), findsOneWidget);
       expect(find.text('1 / 1 正常'), findsOneWidget);
     });
@@ -1237,6 +1251,10 @@ void main() {
         ),
       );
 
+      await openLoopDisclosure(
+        tester,
+        const ValueKey<String>('networks-operator-disclosure'),
+      );
       expect(find.text('异常'), findsWidgets);
     });
 
@@ -1299,6 +1317,10 @@ void main() {
         chain: FakeChainGateway(),
       );
 
+      await openLoopDisclosure(
+        tester,
+        const ValueKey<String>('networks-operator-disclosure'),
+      );
       await scrollToS5Section(
         tester,
         find.byKey(const ValueKey<String>('lane-erc20_transfer')),

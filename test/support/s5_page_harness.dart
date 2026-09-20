@@ -676,3 +676,36 @@ Future<void> scrollToS5Section(WidgetTester tester, Finder finder) async {
     scrollable: find.byType(Scrollable).first,
   );
 }
+
+/// Opens the [LoopDisclosure] keyed [key] and settles.
+///
+/// The wallet pages moved their operator facts — the registry tables, the RPC
+/// endpoints, the indexer lanes — behind the prototype's own disclosure, so a
+/// test that asserts one of those facts takes the tap a reader would take.
+/// Every fact is still exactly one tap away; none of them left the page.
+Future<void> openLoopDisclosure(
+  WidgetTester tester,
+  Key key, {
+  bool settle = true,
+}) async {
+  final summary = find.byKey(key);
+  await tester.scrollUntilVisible(
+    summary,
+    240,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.tap(
+    find.descendant(
+      of: summary,
+      matching: find.byKey(const ValueKey<String>('loop-disclosure-summary')),
+    ),
+  );
+  if (settle) {
+    // A read still in flight keeps a skeleton animating, so the frame is
+    // pumped a fixed number of times instead of settled.
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+    await tester.pump();
+  }
+}
