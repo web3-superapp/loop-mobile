@@ -145,10 +145,8 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
         'contractVersion',
       });
       LoopV2ChainCodec.requireContractVersion(root);
-      final asset = LoopV2ChainCodec.chainAsset(root['asset']);
-      if (asset.assetId != target) LoopV2ChainCodec.invalid();
       return MarketAssetDetail(
-        asset: asset,
+        asset: _assetIdentity(root['asset'], target),
         capability: LoopV2ChainCodec.assetCapability(root['capability']),
         price: LoopV2ChainCodec.fact(root['price']),
         priceChange24h: LoopV2ChainCodec.fact(root['priceChange24h']),
@@ -486,6 +484,25 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       ),
       pairCreatedAt: LoopV2ChainCodec.optionalTimestamp(map, 'pairCreatedAt'),
     );
+  }
+
+  /// The three answers §4a gives for one address.
+  ///
+  /// `pending`/`verified`/`blocked`/`unregistered` all carry a full identity
+  /// block; `unavailable` carries only `status` and `reasonCode`, and the
+  /// requested id is the only identity there is. Decoding the second as the
+  /// first is what refused a well-formed 200 — the asset block is not the
+  /// same object with fields left out.
+  static MarketAssetIdentity _assetIdentity(Object? raw, String assetId) {
+    if (_isUnavailable(raw)) {
+      return MarketAssetIdentityUnavailable(
+        assetId: assetId,
+        reasonCode: LoopV2ChainCodec.unavailable(raw).reasonCode,
+      );
+    }
+    final asset = LoopV2ChainCodec.chainAsset(raw);
+    if (asset.assetId != assetId) LoopV2ChainCodec.invalid();
+    return MarketAssetIdentitySettled(asset);
   }
 
   static MarketCommunityBlock _community(Object? raw) {

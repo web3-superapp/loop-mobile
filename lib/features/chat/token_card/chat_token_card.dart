@@ -133,12 +133,23 @@ class ChatTokenCard extends ConsumerWidget {
   ) {
     final detail = entry.asset.value;
     if (detail != null) {
-      // Two answers carry a document and still have nothing to show: the
-      // registry blocked the asset, and no provider could describe the
-      // address at all. Both state the server's own reason instead of
-      // printing an identity nobody reported.
-      if (detail.capability.blocksEntirePage ||
-          detail.asset.status == LoopAssetStatus.unavailable) {
+      // Two answers carry a document and still have nothing to show, and they
+      // are not the same answer. No provider could describe the address for
+      // this request — the payload has no identity in it at all — or the
+      // registry carries the asset and will not let it be shown. Each states
+      // its own reason instead of printing an identity nobody reported.
+      if (detail.asset case final MarketAssetIdentityUnavailable identity) {
+        return _unreadableCard(
+          context,
+          entry,
+          cache,
+          reason: marketAssetUnavailableSentence(identity),
+          // Asking again while the provider's quota is spent buys the same
+          // sentence and one fewer request.
+          holdRetry: identity.reasonCode == 'MARKET_PROVIDER_RATE_LIMITED',
+        );
+      }
+      if (detail.capability.blocksEntirePage) {
         return _unreadableCard(
           context,
           entry,
@@ -166,7 +177,7 @@ class ChatTokenCard extends ConsumerWidget {
         reason: loopChainFailureReason(LoopChainFailureKind.offline),
         action: LoopButton(
           label: '重试',
-          onPressed: () => unawaited(cache.resolve(address)),
+          onPressed: () => unawaited(cache.resolve(address, force: true)),
         ),
       ),
       // Nothing has failed and nothing has answered yet.
@@ -202,6 +213,7 @@ class ChatTokenCard extends ConsumerWidget {
     ChatTokenCardEntry entry,
     ChatTokenCardCache cache, {
     String? reason,
+    bool holdRetry = false,
   }) {
     final blockedReasonCode = cache.blockedReasonCode;
     final sentence =
@@ -211,8 +223,10 @@ class ChatTokenCard extends ConsumerWidget {
             : loopChainFailureReason(entry.asset.failureKind));
     // The server said the asks are coming too fast. A retry button next to
     // that sentence invites the next one, so the card states the wait and
-    // offers no way to spend it.
+    // offers no way to spend it. A 429 envelope and a 200 whose reason is the
+    // provider's spent quota are the same cooldown.
     final rateLimited =
+        holdRetry ||
         entry.asset.failureKind == LoopChainFailureKind.rateLimited;
     return LoopTokenCard(
       key: ValueKey<String>('chat-token-card-unavailable-$address'),
@@ -231,7 +245,9 @@ class ChatTokenCard extends ConsumerWidget {
       actions: <LoopTokenCardAction>[
         LoopTokenCardAction(
           '重试',
-          onTap: rateLimited ? null : () => unawaited(cache.resolve(address)),
+          onTap: rateLimited
+              ? null
+              : () => unawaited(cache.resolve(address, force: true)),
         ),
         LoopTokenCardAction(
           '代币页',
@@ -260,18 +276,21 @@ class ChatTokenCard extends ConsumerWidget {
     final community = detail.community;
     final riskFacts = chatTokenCardRiskFacts(detail.security);
     final riskFactCount = chatTokenCardRiskFactCount(detail.security);
-    final source = detail.asset.source;
+    // Reached only through the settled branch above: an answer with no
+    // identity never gets here.
+    final asset = detail.asset.settled!;
+    final source = asset.source;
     final unregistered =
-        detail.asset.status == LoopAssetStatus.unregistered ||
+        asset.status == LoopAssetStatus.unregistered ||
         source.kind == LoopAssetSourceKind.providerLookup;
     final footnotes = <String>[
       // A contract the registry does not carry is still answered, and the
       // card says so rather than letting a reader take the card itself as a
       // listing. Where the identity came from is part of that sentence: a
       // provider's own answer is not a chain call LOOP made.
-      if (detail.asset.status != LoopAssetStatus.verified)
+      if (asset.status != LoopAssetStatus.verified)
         <String>[
-          '资产目录状态 · ${detail.asset.status.label}',
+          '资产目录状态 · ${asset.status.label}',
           if (source.provider != null)
             '身份来自 ${loopFactSourceLabel(source.provider!)}',
           if (source.fetchedAt != null)
@@ -290,12 +309,12 @@ class ChatTokenCard extends ConsumerWidget {
       key: ValueKey<String>('chat-token-card-$address'),
       state: LoopTokenCardState.normal,
       model: LoopTokenCardModel(
-        symbol: loopAssetSymbolLabel(detail.asset),
+        symbol: loopAssetSymbolLabel(asset),
         // With no ticker the heading is already the address, so the line
         // under it names the chain instead of printing the same string
         // twice in a second typeface.
-        identifier: detail.asset.symbol == null
-            ? loopChainName(detail.asset.chainId)
+        identifier: asset.symbol == null
+            ? loopChainName(asset.chainId)
             : loopChatTokenShortAddress(address),
         price: detail.price.isAvailable
             ? loopFormatUsd(detail.price.value!)

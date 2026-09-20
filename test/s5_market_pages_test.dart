@@ -464,6 +464,65 @@ void main() {
       expect(find.text('\$747.39'), findsNothing);
     });
 
+    // S57: a 200 whose asset block says "nothing could describe this".
+    testWidgets('an address nothing could describe names the address', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const TokenDetailScreen(assetId: s5WbnbAssetId),
+        market: FakeMarketReadGateway(
+          asset: S5Answer<MarketAssetDetail>(value: s5UnreadableDetail()),
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('token-asset-unavailable')),
+        findsOneWidget,
+      );
+      expect(
+        find.text('这个地址暂时读不到 · ${loopTruncatedAssetId(s5WbnbAssetId)}'),
+        findsOneWidget,
+      );
+      // The server's own sentence, not the code it travelled as.
+      expect(find.text('数据服务限流中，暂时没有新数值。'), findsWidgets);
+      expect(find.textContaining('MARKET_PROVIDER'), findsNothing);
+      // There is no ticker to head the page with, so the address does it.
+      expect(find.text('WBNB'), findsNothing);
+      // The figures beside it are unavailable for the same reason, and none
+      // of them renders as a zero.
+      expect(find.text(r'$747.39'), findsNothing);
+      expect(find.text(r'$0.00'), findsNothing);
+      // The provider's quota is spent: the retry is stated and held shut.
+      final retry = tester.widget<LoopButton>(
+        find.byKey(const ValueKey<String>('token-asset-unavailable-retry')),
+      );
+      expect(retry.label, '重试');
+      expect(retry.onPressed, isNull);
+    });
+
+    testWidgets('an unreadable address that is not rate limited may retry', (
+      tester,
+    ) async {
+      final market = FakeMarketReadGateway(
+        asset: S5Answer<MarketAssetDetail>(
+          value: s5UnreadableDetail(reasonCode: 'MARKET_PROVIDER_UNREACHABLE'),
+        ),
+      );
+      await pumpS5Page(
+        tester,
+        const TokenDetailScreen(assetId: s5WbnbAssetId),
+        market: market,
+      );
+
+      final reads = market.assetReads.length;
+      await tester.tap(
+        find.byKey(const ValueKey<String>('token-asset-unavailable-retry')),
+      );
+      await tester.pumpAndSettle();
+      expect(market.assetReads.length, greaterThan(reads));
+    });
+
     testWidgets('a not-found asset is an error state, not an empty page', (
       tester,
     ) async {

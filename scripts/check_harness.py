@@ -6934,6 +6934,24 @@ CHAT_TOKEN_CARD_UNREGISTERED_MODEL_FRAGMENTS = (
     "final String? symbol;",
     "final int? decimals;",
 )
+# S57: the asset endpoint answers one address in two shapes, and the second
+# carries no identity at all — only a status and a reason. They are separate
+# types so a surface cannot read a ticker, an address or a precision that was
+# never reported, and the settled half stays non-nullable for the first.
+MARKET_ASSET_IDENTITY_PATH = Path("lib/features/market/market_read_models.dart")
+MARKET_ASSET_IDENTITY_FRAGMENTS = (
+    "sealed class MarketAssetIdentity",
+    "final class MarketAssetIdentitySettled extends MarketAssetIdentity",
+    "final class MarketAssetIdentityUnavailable extends MarketAssetIdentity",
+    "final MarketAssetIdentity asset;",
+)
+MARKET_ASSET_IDENTITY_CODEC_PATH = Path(
+    "lib/integrations/backend/v2/market/loop_v2_market_api.dart"
+)
+MARKET_ASSET_IDENTITY_CODEC_FRAGMENTS = (
+    "static MarketAssetIdentity _assetIdentity(Object? raw, String assetId)",
+    "MarketAssetIdentityUnavailable(",
+)
 CHAT_TOKEN_CARD_UNREGISTERED_CODEC_FRAGMENTS = (
     "optionalText(map, 'symbol', maxLength: 32)",
     "optionalInt(map, 'decimals', maximum: 36)",
@@ -6960,6 +6978,7 @@ CHAT_TOKEN_CARD_BEHAVIOR_MARKERS = (
     "an unregistered address is answered, and says so",
     "buy and sell stay on the card and state why they are shut",
     "an address the registry does not carry says exactly that",
+    "an address nothing could describe says so, not a ticker",
     "a closed provider renders the reason, not a figure",
     "an offline device says so and keeps the retry",
     "three bubbles naming the same contract are one read",
@@ -7136,12 +7155,31 @@ def check_chat_token_card_contract(root: Path) -> list[str]:
                 "present on the wire; a provider that reports no ticker and "
                 "no precision would then drop the whole asset"
             )
-    for fragment in ("LoopAssetStatus.unregistered", "LoopAssetStatus.unavailable"):
+    for fragment in ("LoopAssetStatus.unregistered", "MarketAssetIdentityUnavailable"):
         if fragment not in view:
             errors.append(
                 f"{CHAT_TOKEN_CARD_VIEW_PATH} no longer reads "
                 f"`{fragment}`; an address outside the registry would then be "
                 "presented exactly like a listed one"
+            )
+    identity = strip_dart_comments(read_text(root / MARKET_ASSET_IDENTITY_PATH))
+    for fragment in MARKET_ASSET_IDENTITY_FRAGMENTS:
+        if fragment not in identity:
+            errors.append(
+                f"{MARKET_ASSET_IDENTITY_PATH} no longer carries "
+                f"`{fragment}`; an answer that could describe nothing would "
+                "then be held as an asset whose every field is null, and a "
+                "surface would print a ticker no provider reported"
+            )
+    asset_codec = strip_dart_comments(
+        read_text(root / MARKET_ASSET_IDENTITY_CODEC_PATH)
+    )
+    for fragment in MARKET_ASSET_IDENTITY_CODEC_FRAGMENTS:
+        if fragment not in asset_codec:
+            errors.append(
+                f"{MARKET_ASSET_IDENTITY_CODEC_PATH} no longer carries "
+                f"`{fragment}`; a 200 whose asset block states only a status "
+                "and a reason would be refused as an invalid payload"
             )
     errors.extend(
         check_behavior_test_evidence(

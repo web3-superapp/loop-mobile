@@ -842,18 +842,129 @@ void main() {
         assetId: s5WbnbAssetId,
       );
 
-      expect(detail.asset.status, LoopAssetStatus.unregistered);
-      expect(detail.asset.status.label, '未登记');
-      expect(detail.asset.symbol, isNull);
-      expect(detail.asset.decimals, isNull);
-      expect(detail.asset.hasPrecision, isFalse);
-      expect(detail.asset.source.kind, LoopAssetSourceKind.providerLookup);
-      expect(detail.asset.source.provider, LoopFactSource.dexscreener);
-      expect(detail.asset.source.quality, LoopFactQuality.stale);
+      final identity = detail.asset;
+      expect(identity, isA<MarketAssetIdentitySettled>());
+      final asset = identity.settled!;
+      expect(asset.status, LoopAssetStatus.unregistered);
+      expect(asset.status.label, '未登记');
+      expect(asset.symbol, isNull);
+      expect(asset.decimals, isNull);
+      expect(asset.hasPrecision, isFalse);
+      expect(asset.source.kind, LoopAssetSourceKind.providerLookup);
+      expect(asset.source.provider, LoopFactSource.dexscreener);
+      expect(asset.source.quality, LoopFactQuality.stale);
       // With no ticker the address is what a surface may print.
       expect(
-        loopAssetSymbolLabel(detail.asset),
+        marketAssetIdentityLabel(identity),
         loopTruncatedAssetId(s5WbnbAssetId),
+      );
+    });
+
+    // S57: the third branch of §4a. No provider could describe the address,
+    // so the `asset` block carries only a status and a reason — no id, no
+    // address, no ticker. A 200 shaped like this is an answer, and the client
+    // decodes it instead of refusing the payload.
+    test('an asset nothing could describe is decoded, not refused', () async {
+      final body = s5AssetDetailBody();
+      body['asset'] = s5Unavailable('MARKET_PROVIDER_RATE_LIMITED');
+      body['capability'] = <String, Object?>{
+        'viewable': false,
+        'swappable': false,
+        'value': 'temporarily_unavailable',
+        'reasonCode': 'MARKET_PROVIDER_RATE_LIMITED',
+      };
+      for (final key in <String>[
+        'price',
+        'priceChange24h',
+        'liquidityUsd',
+        'volume24h',
+        'marketCap',
+        'fdv',
+      ]) {
+        body[key] = s5UnavailableFact('MARKET_PROVIDER_RATE_LIMITED');
+      }
+      body['primaryPair'] = null;
+      final api = DioLoopV2MarketApi(
+        s5Dio((options, handler) => handler.resolve(s5Response(options, body))),
+      );
+
+      final detail = await api.getAsset(
+        accessToken: _accessToken,
+        clientVersion: s5ClientVersion,
+        assetId: s5WbnbAssetId,
+      );
+
+      final identity = detail.asset;
+      expect(identity, isA<MarketAssetIdentityUnavailable>());
+      expect(identity.settled, isNull);
+      // The payload states no id; the one the request was made with is the
+      // only identity there is, and it is never guessed from elsewhere.
+      expect(identity.assetId, s5WbnbAssetId);
+      expect(
+        (identity as MarketAssetIdentityUnavailable).reasonCode,
+        'MARKET_PROVIDER_RATE_LIMITED',
+      );
+      expect(
+        detail.capability.value,
+        LoopAssetCapabilityValue.temporarilyUnavailable,
+      );
+      expect(detail.price.isAvailable, isFalse);
+      // No ticker is invented for the slot: the address speaks for itself.
+      expect(
+        marketAssetIdentityLabel(identity),
+        loopTruncatedAssetId(s5WbnbAssetId),
+      );
+      expect(
+        marketAssetUnavailableSentence(identity),
+        '这个地址暂时读不到 · ${loopReasonCodeText('MARKET_PROVIDER_RATE_LIMITED')}',
+      );
+      expect(
+        marketAssetUnavailableHeading(identity),
+        '这个地址暂时读不到 · ${loopTruncatedAssetId(s5WbnbAssetId)}',
+      );
+    });
+
+    // The registry's own row is the first of the three and stays settled.
+    test('a registered asset still decodes into a named identity', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio(
+          (options, handler) =>
+              handler.resolve(s5Response(options, s5AssetDetailBody())),
+        ),
+      );
+
+      final detail = await api.getAsset(
+        accessToken: _accessToken,
+        clientVersion: s5ClientVersion,
+        assetId: s5WbnbAssetId,
+      );
+
+      expect(detail.asset, isA<MarketAssetIdentitySettled>());
+      expect(detail.asset.settled!.symbol, 'WBNB');
+      expect(detail.assetId, s5WbnbAssetId);
+      expect(marketAssetIdentityLabel(detail.asset), 'WBNB');
+    });
+
+    // The unavailable branch is exactly two fields. A block that carries an
+    // identity *and* calls itself unavailable is two answers at once, and the
+    // client takes neither.
+    test('an unavailable asset block with an identity is refused', () async {
+      final body = s5AssetDetailBody();
+      final asset = Map<String, Object?>.from(body['asset']! as Map);
+      asset['status'] = 'unavailable';
+      asset['reasonCode'] = 'MARKET_PROVIDER_RATE_LIMITED';
+      body['asset'] = asset;
+      final api = DioLoopV2MarketApi(
+        s5Dio((options, handler) => handler.resolve(s5Response(options, body))),
+      );
+
+      await expectLater(
+        api.getAsset(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+          assetId: s5WbnbAssetId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
       );
     });
 

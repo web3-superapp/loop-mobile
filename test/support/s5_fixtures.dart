@@ -864,13 +864,43 @@ const s5ViewableCapability = LoopAssetCapability(
   reasonCode: 'SWAP_MODULE_NOT_DELIVERED',
 );
 
+/// §4a's third answer: nothing could describe this contract for this request.
+///
+/// The asset block states a reason and nothing else — no id, no address, no
+/// ticker — and every figure beside it is unavailable for the same reason.
+MarketAssetDetail s5UnreadableDetail({
+  String assetId = s5WbnbAssetId,
+  String reasonCode = 'MARKET_PROVIDER_RATE_LIMITED',
+}) => MarketAssetDetail(
+  asset: MarketAssetIdentityUnavailable(
+    assetId: assetId,
+    reasonCode: reasonCode,
+  ),
+  capability: LoopAssetCapability(
+    viewable: false,
+    swappable: false,
+    value: LoopAssetCapabilityValue.temporarilyUnavailable,
+    reasonCode: reasonCode,
+  ),
+  price: LoopFact.unavailable(reasonCode),
+  priceChange24h: LoopFact.unavailable(reasonCode),
+  liquidityUsd: LoopFact.unavailable(reasonCode),
+  volume24h: LoopFact.unavailable(reasonCode),
+  marketCap: LoopFact.unavailable(reasonCode),
+  fdv: LoopFact.unavailable(reasonCode),
+  primaryPair: null,
+  community: const MarketCommunityUnavailable('COMMUNITY_NOT_BOUND'),
+  security: MarketSecurityUnavailable(reasonCode),
+  holderCount: const LoopFact.unavailable('MARKET_FACT_NOT_REPORTED'),
+);
+
 MarketAssetDetail s5Detail({
   LoopAssetCapability? capability,
   MarketSecurityBlock? security,
   MarketCommunityBlock? community,
   LoopFact? price,
 }) => MarketAssetDetail(
-  asset: s5Asset(),
+  asset: MarketAssetIdentitySettled(s5Asset()),
   capability: capability ?? s5ViewableCapability,
   price: price ?? s5FreshFact('747.39'),
   priceChange24h: s5FreshFact('0.27'),

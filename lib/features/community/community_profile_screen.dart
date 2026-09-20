@@ -538,7 +538,7 @@ class _BoundAssetSectionState extends ConsumerState<_BoundAssetSection> {
     }
     final detail = state.value;
     final symbol =
-        detail?.asset.symbol ?? loopTruncatedAssetId(widget.assetKey);
+        detail?.asset.settled?.symbol ?? loopTruncatedAssetId(widget.assetKey);
     final candles = ref.watch(
       marketCandlesControllerProvider(
         MarketCandleRequest(

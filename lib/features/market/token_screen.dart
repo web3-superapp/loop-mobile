@@ -152,8 +152,8 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           .read(marketAssetControllerProvider(assetId).notifier)
           .reload,
       archetype: LoopPageArchetype.record,
-      title: detail == null ? 'Token' : loopAssetSymbolLabel(detail.asset),
-      kicker: detail?.asset.name,
+      title: detail == null ? 'Token' : marketAssetIdentityLabel(detail.asset),
+      kicker: detail?.asset.settled?.name,
       onBack: widget.onBack,
       updating: state.refreshing,
       actions: <Widget>[
@@ -211,7 +211,33 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
             reasonCode: detail.capability.reasonCode ?? 'ASSET_BLOCKED',
           )
         else ...<Widget>[
-          if (detail.capability.suppressesLiveFigures)
+          // Nothing could describe this contract for this request. The page
+          // still stands — every figure below states its own reason — but it
+          // opens by naming the address it asked about instead of a heading
+          // that would read as an identity LOOP has.
+          if (detail.asset case final MarketAssetIdentityUnavailable identity)
+            LoopUnavailableCard(
+              key: const ValueKey<String>('token-asset-unavailable'),
+              label: marketAssetUnavailableHeading(identity),
+              reasonCode: identity.reasonCode,
+              action: LoopButton(
+                key: const ValueKey<String>('token-asset-unavailable-retry'),
+                label: '重试',
+                // The server said the asks are coming too fast. Asking again
+                // now spends the next one for the same sentence, so the
+                // button states the wait rather than inviting it.
+                onPressed: _providerRateLimited(identity.reasonCode)
+                    ? null
+                    : () => unawaited(
+                        ref
+                            .read(
+                              marketAssetControllerProvider(assetId).notifier,
+                            )
+                            .reload(),
+                      ),
+              ),
+            )
+          else if (detail.capability.suppressesLiveFigures)
             LoopUnavailableCard(
               key: const ValueKey<String>('token-live-suppressed'),
               label: '链上读取暂时不可用',
@@ -229,7 +255,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
             key: const ValueKey<String>('token-card'),
             state: LoopTokenCardState.normal,
             model: LoopTokenCardModel(
-              symbol: loopAssetSymbolLabel(detail.asset),
+              symbol: marketAssetIdentityLabel(detail.asset),
               identifier: loopTruncatedAssetId(assetId),
               price: detail.price.isAvailable
                   ? loopFormatUsd(detail.price.value!)
@@ -363,6 +389,13 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
   }
 }
 
+/// Whether the server's reason is the provider's own quota being spent.
+///
+/// A retry against it buys the same sentence and one fewer request, so the
+/// surfaces that offer a retry hold it shut while this is the reason.
+bool _providerRateLimited(String? reasonCode) =>
+    reasonCode == 'MARKET_PROVIDER_RATE_LIMITED';
+
 /// One Token Card metric cell from a fact. An unavailable fact renders why
 /// there is no figure, never `0` and never an em dash.
 ///
@@ -395,7 +428,7 @@ class _TokenHero extends StatelessWidget {
         variant: LoopFolioVariant.lime,
         archetype: LoopFolioArchetype.record,
         kicker: 'TOKEN FACTS',
-        heading: loopAssetSymbolLabel(resolved.asset),
+        heading: marketAssetIdentityLabel(resolved.asset),
         caption: loopReasonCodeText(
           resolved.capability.reasonCode ?? 'ASSET_BLOCKED',
         ),
@@ -421,20 +454,20 @@ class _TokenHero extends StatelessWidget {
       archetype: LoopFolioArchetype.record,
       kicker: 'TOKEN FACTS',
       heading: priceValue == null
-          ? loopAssetSymbolLabel(resolved.asset)
+          ? marketAssetIdentityLabel(resolved.asset)
           : loopFormatUsd(priceValue),
       caption: priceValue == null
           ? loopReasonCodeText(price.reasonCode)
           // A contract no provider named has no name to print beside its
           // quote; the provenance still stands on its own.
           : <String>[
-              ?resolved.asset.name,
+              ?resolved.asset.settled?.name,
               loopFactProvenance(price),
             ].join(' · '),
       stamp: changeValue == null ? null : loopFormatPercent(changeValue),
       trailing: LoopTokenLogo(
-        assetSymbol: loopAssetSymbolLabel(resolved.asset),
-        fallbackMonogram: loopAssetSymbolLabel(resolved.asset),
+        assetSymbol: marketAssetIdentityLabel(resolved.asset),
+        fallbackMonogram: marketAssetIdentityLabel(resolved.asset),
         size: 44,
       ),
     );

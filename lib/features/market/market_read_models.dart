@@ -265,6 +265,92 @@ final class MarketSecurityUnavailable extends MarketSecurityBlock {
   final String reasonCode;
 }
 
+/// The `asset` block of `GET /v2/market/assets/{assetId}`.
+///
+/// §4a of the market contract answers a contract address in one of two
+/// shapes, and they are not the same document with fields missing:
+///
+/// * something described the contract — the registry, or a provider looked it
+///   up for this request alone — so there is a settled identity to print;
+/// * nothing could describe it at this moment, and the payload carries only
+///   `status` and the server's `reasonCode`. There is no `assetId`, no
+///   `address`, no ticker and no precision in it at all.
+///
+/// Folding the second into a record of nullable fields would let a surface
+/// read a `symbol` that was never reported, so the two are separate types and
+/// a surface must say which one it is holding.
+sealed class MarketAssetIdentity {
+  const MarketAssetIdentity();
+
+  /// The CAIP identity this answer is about. On the unavailable branch it is
+  /// the id the request was made with, because the payload states none.
+  String get assetId;
+
+  /// The identity facts, when something reported them. `null` is the whole
+  /// point of the unavailable branch and never a placeholder to fill in.
+  LoopChainAsset? get settled;
+}
+
+/// The registry's row, or a provider's lookup: either way a named identity.
+final class MarketAssetIdentitySettled extends MarketAssetIdentity {
+  const MarketAssetIdentitySettled(this.asset);
+
+  final LoopChainAsset asset;
+
+  @override
+  String get assetId => asset.assetId;
+
+  @override
+  LoopChainAsset get settled => asset;
+}
+
+/// No provider could describe this address for this request.
+///
+/// The address is all there is to show. No ticker may be invented for the
+/// slot, and the server's own [reasonCode] is what the surface states.
+final class MarketAssetIdentityUnavailable extends MarketAssetIdentity {
+  const MarketAssetIdentityUnavailable({
+    required this.assetId,
+    required this.reasonCode,
+  });
+
+  @override
+  final String assetId;
+
+  final String reasonCode;
+
+  @override
+  LoopChainAsset? get settled => null;
+}
+
+/// The heading one surface prints for [identity].
+///
+/// An identity nobody reported leaves the truncated address to speak for
+/// itself, exactly as a provider that reported no ticker does.
+String marketAssetIdentityLabel(MarketAssetIdentity identity) =>
+    switch (identity) {
+      MarketAssetIdentitySettled(:final asset) => loopAssetSymbolLabel(asset),
+      MarketAssetIdentityUnavailable(:final assetId) => loopTruncatedAssetId(
+        assetId,
+      ),
+    };
+
+/// The phrase every surface leads with when nothing could describe the
+/// contract. It says what happened to the read, not what the address is: an
+/// address LOOP cannot read is not an address that was judged.
+const String marketAssetUnavailableLead = '这个地址暂时读不到';
+
+/// For a surface whose heading is already the address: the lead, then the
+/// server's own reason for having no answer.
+String marketAssetUnavailableSentence(
+  MarketAssetIdentityUnavailable identity,
+) => '$marketAssetUnavailableLead · ${loopReasonCodeText(identity.reasonCode)}';
+
+/// For a surface that renders the reason on a line of its own: the lead, then
+/// the address that was asked about.
+String marketAssetUnavailableHeading(MarketAssetIdentityUnavailable identity) =>
+    '$marketAssetUnavailableLead · ${loopTruncatedAssetId(identity.assetId)}';
+
 /// `GET /v2/market/assets/{assetId}` — the `token` page.
 @immutable
 final class MarketAssetDetail {
@@ -283,7 +369,7 @@ final class MarketAssetDetail {
     required this.holderCount,
   });
 
-  final LoopChainAsset asset;
+  final MarketAssetIdentity asset;
   final LoopAssetCapability capability;
   final LoopFact price;
   final LoopFact priceChange24h;
@@ -295,6 +381,9 @@ final class MarketAssetDetail {
   final MarketCommunityBlock community;
   final MarketSecurityBlock security;
   final LoopFact holderCount;
+
+  /// The CAIP identity this document answers for.
+  String get assetId => asset.assetId;
 }
 
 // ---------------------------------------------------------------------------

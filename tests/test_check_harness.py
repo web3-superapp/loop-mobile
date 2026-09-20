@@ -271,6 +271,8 @@ CHAT_TOKEN_CARD_FIXTURE_FILES = (
     "lib/features/chat/v2/direct_message_screen.dart",
     "lib/features/chain/chain_models.dart",
     "lib/integrations/backend/v2/loop_v2_chain_codec.dart",
+    "lib/features/market/market_read_models.dart",
+    "lib/integrations/backend/v2/market/loop_v2_market_api.dart",
     "test/s52_chat_token_card_test.dart",
 )
 
@@ -8483,13 +8485,39 @@ class ChatTokenCardContractTests(unittest.TestCase):
     def test_a_card_blind_to_the_registry_status_is_rejected(self) -> None:
         result = self._mutate(
             "lib/features/chat/token_card/chat_token_card.dart",
-            "detail.asset.status == LoopAssetStatus.unavailable",
-            "false",
+            "if (detail.asset case final MarketAssetIdentityUnavailable identity) {",
+            "if (false) {",
         )
 
         self.assertTrue(
             any("presented exactly like a listed one" in error for error in result),
             msg=f"expected the registry-status guard: {result}",
+        )
+
+    def test_a_flattened_asset_identity_is_rejected(self) -> None:
+        """S57: an answer that could describe nothing is its own shape."""
+
+        result = self._mutate(
+            "lib/features/market/market_read_models.dart",
+            "sealed class MarketAssetIdentity",
+            "abstract class MarketAssetIdentityLoose",
+        )
+
+        self.assertTrue(
+            any("every field is null" in error for error in result),
+            msg=f"expected the sealed-identity guard: {result}",
+        )
+
+    def test_a_codec_that_refuses_the_unavailable_asset_is_rejected(self) -> None:
+        result = self._mutate(
+            "lib/integrations/backend/v2/market/loop_v2_market_api.dart",
+            "MarketAssetIdentityUnavailable(",
+            "MarketAssetIdentityGuessed(",
+        )
+
+        self.assertTrue(
+            any("only a status" in error for error in result),
+            msg=f"expected the unavailable-asset decode guard: {result}",
         )
 
     def test_a_hollowed_out_behavior_test_is_rejected(self) -> None:

@@ -50,24 +50,26 @@ MarketSecurityBlock _security() => MarketSecurityAvailable(
 /// (`frontend-v2-market-api.md` §4a): identity from a provider lookup, no
 /// ticker and no precision on the DexScreener path, and no holder count.
 MarketAssetDetail _unregisteredDetail() => MarketAssetDetail(
-  asset: LoopChainAsset(
-    assetId: 'eip155:56:$_address',
-    chainId: 'eip155:56',
-    address: _address,
-    symbol: null,
-    name: null,
-    decimals: null,
-    status: LoopAssetStatus.unregistered,
-    source: LoopAssetSource(
-      kind: LoopAssetSourceKind.providerLookup,
-      provider: LoopFactSource.geckoterminal,
-      fetchedAt: DateTime.utc(2026, 9, 20, 14, 52),
-      ttlSeconds: 3600,
-      quality: LoopFactQuality.fresh,
-      blockNumber: null,
-      verifiedAt: null,
+  asset: MarketAssetIdentitySettled(
+    LoopChainAsset(
+      assetId: 'eip155:56:$_address',
+      chainId: 'eip155:56',
+      address: _address,
+      symbol: null,
+      name: null,
+      decimals: null,
+      status: LoopAssetStatus.unregistered,
+      source: LoopAssetSource(
+        kind: LoopAssetSourceKind.providerLookup,
+        provider: LoopFactSource.geckoterminal,
+        fetchedAt: DateTime.utc(2026, 9, 20, 14, 52),
+        ttlSeconds: 3600,
+        quality: LoopFactQuality.fresh,
+        blockNumber: null,
+        verifiedAt: null,
+      ),
+      updatedAt: DateTime.utc(2026, 9, 20, 14, 52),
     ),
-    updatedAt: DateTime.utc(2026, 9, 20, 14, 52),
   ),
   capability: const LoopAssetCapability(
     viewable: true,
@@ -330,6 +332,63 @@ void main() {
       // cell says which gap it is.
       expect(find.text('未收录'), findsOneWidget);
       expect(find.text('暂无 LOOP 社区'), findsOneWidget);
+    });
+
+    // S57: the server answered 200 and said it has no identity for this
+    // address. The card states that, shows the address it asked about, and
+    // holds the retry shut while the provider's quota is spent.
+    testWidgets('an address nothing could describe says so, not a ticker', (
+      tester,
+    ) async {
+      final market = FakeMarketReadGateway(
+        asset: S5Answer<MarketAssetDetail>(
+          value: s5UnreadableDetail(assetId: 'eip155:56:$_address'),
+        ),
+      );
+      await _pumpCard(tester, market: market);
+
+      expect(
+        find.byKey(ValueKey<String>('chat-token-card-unavailable-$_address')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          '这个地址暂时读不到 · '
+          '${loopReasonCodeText('MARKET_PROVIDER_RATE_LIMITED')}',
+        ),
+        findsOneWidget,
+      );
+      // The address it asked about, and nothing invented to head the card.
+      expect(find.text(loopChatTokenShortAddress(_address)), findsNWidgets(2));
+      expect(find.textContaining('MARKET_PROVIDER'), findsNothing);
+      // Every figure beside it is unavailable for the same reason.
+      expect(find.text('数据不可得'), findsNWidgets(3));
+      expect(find.text('没有读到报价'), findsOneWidget);
+
+      // The retry is on the card and cannot be spent while the quota is out.
+      final reads = market.assetReads.length;
+      await tester.tap(find.text('重试'), warnIfMissed: false);
+      await tester.pump();
+      expect(market.assetReads.length, reads);
+    });
+
+    testWidgets('an unreadable address that is not rate limited may retry', (
+      tester,
+    ) async {
+      final market = FakeMarketReadGateway(
+        asset: S5Answer<MarketAssetDetail>(
+          value: s5UnreadableDetail(
+            assetId: 'eip155:56:$_address',
+            reasonCode: 'MARKET_PROVIDER_UNREACHABLE',
+          ),
+        ),
+      );
+      await _pumpCard(tester, market: market);
+
+      final reads = market.assetReads.length;
+      await tester.tap(find.text('重试'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(market.assetReads.length, greaterThan(reads));
     });
 
     testWidgets('an address the registry does not carry says exactly that', (

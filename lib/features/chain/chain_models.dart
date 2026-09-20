@@ -52,6 +52,12 @@ enum LoopAssetStatus {
   /// The registry has no row for this contract and no provider could
   /// describe it at this moment. Identity is missing, not absent: the address
   /// is all there is to show, and no ticker may be invented to fill the slot.
+  ///
+  /// The market contract states this one without an identity block at all
+  /// (only `status` and `reasonCode`), so `GET /v2/market/assets/{assetId}`
+  /// decodes it into `MarketAssetIdentityUnavailable` rather than into an
+  /// asset whose every field is null. This value stays for the endpoints that
+  /// do report a full block.
   unavailable('unavailable', '暂时读不到');
 
   const LoopAssetStatus(this.wireName, this.label);

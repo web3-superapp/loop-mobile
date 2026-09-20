@@ -142,7 +142,13 @@ final class ChatTokenCardCache
 
   /// Reads [address] unless this conversation already holds a fresh answer or
   /// is already reading it.
-  Future<void> resolve(String address) async {
+  ///
+  /// [force] is the reader pressing 重试: they have seen the answer this entry
+  /// holds and asked for another one, so the freshness window is not a reason
+  /// to refuse them. A read already in flight still is — pressing twice is one
+  /// request, not two. A closed capability is not overridden either: there is
+  /// nothing to ask.
+  Future<void> resolve(String address, {bool force = false}) async {
     if (_blocked) {
       // The capability is closed, so there is nothing to ask and nothing that
       // could change until the document itself changes. The entry is written
@@ -158,7 +164,9 @@ final class ChatTokenCardCache
     if (_reading.contains(address)) return;
     final held = state[address];
     final now = ref.read(chatTokenCardClockProvider)();
-    if (held != null && held.readAt != null && !held.isStale(now)) return;
+    if (!force && held != null && held.readAt != null && !held.isStale(now)) {
+      return;
+    }
 
     final generation = _generation;
     _reading.add(address);
