@@ -123,6 +123,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('swap-folio'),
         variant: LoopFolioVariant.chalk,
+        ring: false,
         kicker: 'SWAP QUOTE',
         heading: quote == null
             ? '还没有报价'
@@ -740,6 +741,7 @@ class SwapRouteScreen extends StatelessWidget {
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('swap-route-folio'),
         variant: LoopFolioVariant.chalk,
+        ring: false,
         kicker: 'ROUTE & FEES',
         heading:
             '${value.estimatedOutputAmount.display} '

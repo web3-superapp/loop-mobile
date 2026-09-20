@@ -526,6 +526,7 @@ class _NetWorthScreenState extends ConsumerState<NetWorthScreen> {
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('networth-folio'),
         variant: LoopFolioVariant.chalk,
+        ring: false,
         archetype: LoopFolioArchetype.listing,
         kicker: 'WALLET OVERVIEW',
         heading: switch (netWorth) {
@@ -1393,6 +1394,7 @@ class _ReceiveScreenState extends ConsumerState<ReceiveScreen> {
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('receive-folio'),
         variant: LoopFolioVariant.chalk,
+        ring: false,
         archetype: LoopFolioArchetype.action,
         kicker: 'RECEIVE ADDRESS',
         heading: network == null

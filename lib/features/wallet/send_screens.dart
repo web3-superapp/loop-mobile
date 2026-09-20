@@ -178,6 +178,7 @@ class _SendAssetScreenState extends ConsumerState<SendAssetScreen> {
       folio: const LoopFolioPrimary(
         key: ValueKey<String>('send-asset-folio'),
         variant: LoopFolioVariant.chalk,
+        ring: false,
         kicker: 'FROM WALLET',
         heading: '选择要发送的资产',
         caption: '余额、网络与算力影响先展示，再进入收款地址。',
@@ -426,6 +427,7 @@ class _SendRecipientScreenState extends ConsumerState<SendRecipientScreen> {
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('send-recipient-folio'),
         variant: LoopFolioVariant.chalk,
+        ring: false,
         kicker: 'WALLET SEND',
         heading: preflight == null
             ? '填写收款地址'
@@ -681,6 +683,7 @@ class _SendConfirmScreenState extends ConsumerState<SendConfirmScreen> {
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('send-confirm-folio'),
         variant: LoopFolioVariant.chalk,
+        ring: false,
         kicker: 'FINAL REVIEW',
         heading: '${widget.draft.amount ?? ''} ${widget.draft.symbol}'.trim(),
         caption: '收款方、网络费与到账数量全部确认后才请求签名。',

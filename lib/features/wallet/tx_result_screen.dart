@@ -148,6 +148,7 @@ class _TransactionResultScreenState
         folio: const LoopFolioPrimary(
           key: ValueKey<String>('tx-result-folio'),
           variant: LoopFolioVariant.chalk,
+          ring: false,
           kicker: 'TRANSACTION RESULT',
           heading: '没有可展示的结果',
           caption: '结果页只展示一笔具体操作，需要指定是哪一笔。',
@@ -191,6 +192,7 @@ class _TransactionResultScreenState
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('tx-result-folio'),
         variant: LoopFolioVariant.chalk,
+        ring: false,
         kicker: 'TRANSACTION RESULT',
         heading: intent == null ? '正在读取结果' : _headline(intent),
         caption: intent == null ? '结果以链上核对为准，这一页不会自己判断成败。' : _caption(intent),

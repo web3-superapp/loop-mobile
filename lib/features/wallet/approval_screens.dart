@@ -108,6 +108,7 @@ class _ApprovalGuardScreenState extends ConsumerState<ApprovalGuardScreen> {
       folio: LoopFolioPrimary(
         key: const ValueKey<String>('approval-guard-folio'),
         variant: LoopFolioVariant.chalk,
+        ring: false,
         kicker: 'APPROVAL REQUEST',
         heading: intent == null
             ? '${widget.request.symbol} 授权'
@@ -517,6 +518,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('approvals-folio'),
         variant: LoopFolioVariant.chalk,
+        ring: false,
         archetype: LoopFolioArchetype.record,
         kicker: 'WALLET APPROVALS',
         heading: inventory == null

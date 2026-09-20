@@ -42,6 +42,7 @@ class PayScreen extends ConsumerWidget {
       primary: const LoopFolioPrimary(
         key: ValueKey<String>('pay-folio'),
         variant: LoopFolioVariant.chalk,
+        ring: false,
         archetype: LoopFolioArchetype.listing,
         kicker: 'SCAN TO PAY',
         heading: '扫码支付',
@@ -182,6 +183,7 @@ class BridgeStatusScreen extends ConsumerWidget {
       primary: const LoopFolioPrimary(
         key: ValueKey<String>('bridge-status-folio'),
         variant: LoopFolioVariant.chalk,
+        ring: false,
         archetype: LoopFolioArchetype.state,
         kicker: 'BRIDGE PROGRESS',
         heading: '跨链进度尚未开放',
@@ -283,6 +285,7 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
           LoopFolioPrimary(
             key: const ValueKey<String>('dapp-folio'),
             variant: LoopFolioVariant.chalk,
+            ring: false,
             archetype: LoopFolioArchetype.action,
             kicker: 'DAPP REVIEW · READ ONLY',
             heading: switch (review.verdict) {
