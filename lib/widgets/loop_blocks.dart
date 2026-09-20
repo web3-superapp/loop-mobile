@@ -225,6 +225,13 @@ class LoopChartPanel extends StatelessWidget {
   /// `.chart-panel{min-height:156px}`.
   final double height;
 
+  /// The ink of the Graphite ground this panel paints.
+  ///
+  /// The panel's fill is opaque and does not change with what it was placed
+  /// on, so it declares its own ground rather than letting a descendant derive
+  /// Ink from a Chalk card it happens to sit inside.
+  static const Color _ink = LoopColors.chalk;
+
   @override
   Widget build(BuildContext context) {
     final plot = child;
@@ -244,59 +251,74 @@ class LoopChartPanel extends StatelessWidget {
           borderRadius: LoopRadius.card,
           border: Border.all(color: LoopColors.line),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Row(
+        // The panel is Graphite whatever it was put on, so it declares its
+        // own ground: a caller that placed it on a Chalk card would otherwise
+        // leave every figure in it deriving Ink and painting nothing.
+        child: DefaultTextStyle.merge(
+          style: const TextStyle(color: _ink),
+          child: IconTheme.merge(
+            data: const IconThemeData(color: _ink),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Expanded(
-                  child: Text(
-                    range,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: LoopTypography.figure(11, color: LoopColors.muted),
-                  ),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        range,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LoopTypography.figure(
+                          11,
+                          color: LoopColors.muted,
+                        ),
+                      ),
+                    ),
+                    if (current != null) ...<Widget>[
+                      const SizedBox(width: 10),
+                      Text(
+                        current!,
+                        style: LoopTypography.figure(11, color: _ink),
+                      ),
+                    ],
+                    if (direction != null) ...<Widget>[
+                      const SizedBox(width: 10),
+                      Text(
+                        direction!,
+                        style: LoopTypography.figure(
+                          11,
+                          color: switch (directionUp) {
+                            true => LoopColors.lime,
+                            false => _ink,
+                            null => LoopColors.muted,
+                          },
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-                if (current != null) ...<Widget>[
-                  const SizedBox(width: 10),
-                  Text(
-                    current!,
-                    style: LoopTypography.figure(11, color: LoopColors.chalk),
-                  ),
-                ],
-                if (direction != null) ...<Widget>[
-                  const SizedBox(width: 10),
-                  Text(
-                    direction!,
-                    style: LoopTypography.figure(
-                      11,
-                      color: switch (directionUp) {
-                        true => LoopColors.lime,
-                        false => LoopColors.chalk,
-                        null => LoopColors.muted,
-                      },
+                const SizedBox(height: 12),
+                if (plot != null)
+                  SizedBox(height: height - 56, child: plot)
+                else
+                  SizedBox(
+                    height: height - 56,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        absence!,
+                        key: const ValueKey<String>('loop-chart-panel-absence'),
+                        style: LoopTypography.caption(
+                          11,
+                          color: LoopColors.text3,
+                        ),
+                      ),
                     ),
                   ),
-                ],
               ],
             ),
-            const SizedBox(height: 12),
-            if (plot != null)
-              SizedBox(height: height - 56, child: plot)
-            else
-              SizedBox(
-                height: height - 56,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    absence!,
-                    key: const ValueKey<String>('loop-chart-panel-absence'),
-                    style: LoopTypography.caption(11, color: LoopColors.text3),
-                  ),
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );

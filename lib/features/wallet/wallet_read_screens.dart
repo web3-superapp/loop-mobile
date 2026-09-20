@@ -896,7 +896,7 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
             ],
           ),
           const LoopLabel('收发记录'),
-          _AssetActivityBlock(
+          _WalletAssetTransfers(
             walletId: walletId,
             assetId: assetId,
             onOpenHistory: () => _open(WalletRoute.history(walletId)),
@@ -1023,8 +1023,8 @@ class _AssetSparklinePanel extends ConsumerWidget {
 /// It reads the wallet activity the history page reads and shows the three
 /// most recent rows for this asset, each with the direction icon the prototype
 /// gives it. The full tape stays one tap away.
-class _AssetActivityBlock extends ConsumerWidget {
-  const _AssetActivityBlock({
+class _WalletAssetTransfers extends ConsumerWidget {
+  const _WalletAssetTransfers({
     required this.walletId,
     required this.assetId,
     required this.onOpenHistory,
@@ -1692,7 +1692,7 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
             key: ValueKey<String>('wallets-notice'),
             icon: 'id',
             title: '一个 LOOP ID，多个钱包',
-            body: 'LOOP ID 是你的社交身份；钱包是可绑定、可更换的凭证。每个请求指向的是一个不透明的钱包编号，不是地址。',
+            body: 'LOOP ID 是你的社交身份；钱包是可绑定、可更换的凭证。地址不是账号标识：每个请求指向的是一个不透明的钱包编号。',
           ),
           const LoopLabel('Privy 嵌入式钱包'),
           _WalletList(
