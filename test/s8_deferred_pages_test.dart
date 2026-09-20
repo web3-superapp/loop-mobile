@@ -16,14 +16,18 @@ void main() {
   ) async {
     await pumpS8Page(tester, const PayScreen());
 
+    // The prototype keeps the viewfinder's room with the reason in it, rather
+    // than dropping the page to two lines of copy (visual audit §A.14). It is
+    // a placeholder, not a preview: no camera, no field, no action.
     expect(
       find.byKey(const ValueKey<String>('pay-unavailable')),
       findsOneWidget,
     );
-    expect(find.text('Pay 尚未开放'), findsOneWidget);
+    expect(find.text('扫码支付'), findsOneWidget);
+    expect(find.text('Coming soon'), findsOneWidget);
+    expect(find.textContaining('还没有开放'), findsWidgets);
     expect(find.byType(TextField), findsNothing);
     expect(find.byType(LoopButton), findsNothing);
-    expect(find.textContaining('Coming soon'), findsNothing);
   });
 
   testWidgets('bridge offers no amount, no route and no fee', (tester) async {
@@ -39,21 +43,23 @@ void main() {
     expect(find.textContaining('约 2 分钟'), findsNothing);
   });
 
-  testWidgets('bridge-status is one whole-page state, with no steps at all', (
+  testWidgets('bridge-status keeps its skeleton and invents no step', (
     tester,
   ) async {
     await pumpS8Page(tester, const BridgeStatusScreen());
 
-    // The page is the state (C-19): no folio heading above it, no card with a
-    // screen of black under it.
+    // The page keeps its skeleton — primary, 步骤 heading, reason — because
+    // the shape is what says which page this is (visual audit §A.13, item 4).
+    // What it must not do is put a state on a step.
     expect(
       find.byKey(const ValueKey<String>('bridge-status-page-block')),
       findsOneWidget,
     );
     expect(
       find.byKey(const ValueKey<String>('bridge-status-folio')),
-      findsNothing,
+      findsOneWidget,
     );
+    expect(find.text('步骤'), findsOneWidget);
     // No step is presented in any state: nothing is transferring, so 等待 was
     // a run this page invented, and 完成 / 进行中 never existed.
     for (var index = 1; index <= 3; index += 1) {
@@ -199,8 +205,22 @@ void main() {
     ) async {
       await pumpS8Page(tester, const DappReviewScreen());
 
+      // The sentence is behind the prototype's own disclosure now; it is
+      // still exactly one tap away and still says the same thing.
+      final summary = find.byKey(
+        const ValueKey<String>('dapp-scope-disclosure'),
+      );
+      await scrollToS8Section(tester, summary);
+      await tester.tap(
+        find.descendant(
+          of: summary,
+          matching: find.byKey(
+            const ValueKey<String>('loop-disclosure-summary'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
       final notice = find.byKey(const ValueKey<String>('dapp-no-fetch-notice'));
-      await scrollToS8Section(tester, notice);
       expect(notice, findsOneWidget);
       expect(find.textContaining('不会跟随任何跳转'), findsOneWidget);
       // The prototype's connected DApp card, allowance count and reputation

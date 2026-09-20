@@ -1076,7 +1076,7 @@ WALLET_PROVIDERLESS_CONTROL_BEHAVIOR_TEST_MARKERS = {
     ),
     Path("test/s8_deferred_pages_test.dart"): (
         "bridge offers no amount, no route and no fee",
-        "bridge-status is one whole-page state, with no steps at all",
+        "bridge-status keeps its skeleton and invents no step",
     ),
 }
 WALLET_PROVIDERLESS_CONTROL_EXECUTABLE_TEST_EVIDENCE = {
@@ -1103,7 +1103,7 @@ WALLET_PROVIDERLESS_CONTROL_EXECUTABLE_TEST_EVIDENCE = {
             r"\bfind\.byType\s*\(\s*TextField\s*\)\s*,\s*findsNothing",
             r"\bfind\.textContaining\s*\([\s\S]*?\)\s*,\s*findsNothing",
         ),
-        "bridge-status is one whole-page state, with no steps at all": (
+        "bridge-status keeps its skeleton and invents no step": (
             r"\bawait\s+pumpS8Page\s*\(",
             r"\bfor\s*\(\s*var\s+index\s*=\s*1\s*;",
             r"\bfind\.byKey\s*\([\s\S]*?\)\s*,\s*findsOneWidget",
@@ -6103,13 +6103,22 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
             # S8 (decision 0060) retired the Bridge Preview snapshot: there is
             # no bridge runtime, so the status page renders no route. S27d
             # (walkthrough C-19) retired the three pending step rows with it:
-            # nobody observes those steps, so the whole page is the server's
-            # one reason in the page's own block.
+            # nobody observes those steps, so 完成 / 进行中 / 等待 are states
+            # this page may not invent.
+            #
+            # S58 (visual audit 2026-09-20 §A.13, item 4) put the page's
+            # skeleton back: C-19 had been implemented by replacing the whole
+            # page with a centred `LoopPageBlock`, which took the primary and
+            # the 步骤 heading down with the invented rows and left the page
+            # unrecognisable. The prototype keeps a deferred page's shape and
+            # states the reason inside it, so the lock now names the shape and
+            # leaves the no-invented-step rule to the test below, which
+            # asserts it directly.
             "lib/features/wallet/deferred_screens.dart": (
                 "class BridgeScreen",
                 "class BridgeStatusScreen",
+                "bridge-status-folio",
                 "bridge-status-page-block",
-                "LoopPageBlock(",
                 "BRIDGE_RUNTIME_DEFERRED",
             ),
             "lib/features/wallet/wallet_preview_activity.dart": (
@@ -6136,7 +6145,7 @@ def check_wallet_providerless_controls_contract(root: Path) -> list[str]:
             ),
             "test/s8_deferred_pages_test.dart": (
                 "bridge offers no amount, no route and no fee",
-                "bridge-status is one whole-page state, with no steps at all",
+                "bridge-status keeps its skeleton and invents no step",
             ),
         },
     )

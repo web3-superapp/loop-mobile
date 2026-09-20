@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/chain/loop_chain_ids.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/security/loop_url_review.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -35,19 +37,25 @@ class PayScreen extends ConsumerWidget {
       archetype: LoopPageArchetype.listing,
       title: 'Pay',
       onBack: onBack,
+      // Chalk primary with the CAMERA stamp, as the prototype has it. A
+      // deferred capability is still a page with a shape (audit §A.14).
       primary: const LoopFolioPrimary(
         key: ValueKey<String>('pay-folio'),
-        variant: LoopFolioVariant.quiet,
+        variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.listing,
         kicker: 'SCAN TO PAY',
-        heading: '扫码支付尚未开放',
-        caption: '扫码支付还没有开放，这里不会打开相机，也不会生成收款码。',
+        heading: '扫码支付',
+        caption: '识别结果不会直接发起签名；金额、网络与收款方会再次展示。',
+        stamp: 'CAMERA',
       ),
       sections: <Widget>[
-        LoopUnavailableCard(
+        // The prototype keeps the viewfinder's room, with the reason in it.
+        LoopPlaceholderStage(
           key: const ValueKey<String>('pay-unavailable'),
-          label: 'Pay 尚未开放',
-          reasonCode: _reasonFor(capability, deferredReasonCode),
+          icon: 'camera',
+          title: 'Pay',
+          badge: 'Coming soon',
+          body: loopReasonCodeText(_reasonFor(capability, deferredReasonCode)),
         ),
         const LoopNotice(
           key: ValueKey<String>('pay-why-notice'),
@@ -55,12 +63,6 @@ class PayScreen extends ConsumerWidget {
           title: '为什么现在不做',
           body: '支付涉及合规与支付商准入，需要独立评估。先把社区、挖矿与 Launch 的闭环跑通。',
           margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
-        ),
-        const LoopNotice(
-          key: ValueKey<String>('pay-signing-notice'),
-          icon: 'shield',
-          title: '扫码不会直接发起签名',
-          body: '即使这个能力开放，识别结果也只会先展示金额、网络与收款方，再进入统一签名出口。',
         ),
         const SizedBox(height: 20),
       ],
@@ -92,22 +94,38 @@ class BridgeScreen extends ConsumerWidget {
         archetype: LoopFolioArchetype.action,
         kicker: 'BRIDGE INTENT',
         heading: '跨链尚未开放',
-        caption: '跨链还没有开放，这里不显示来源链、目标链、数量、费用与到账时间。',
+        caption: '先选来源链、目标链与数量，再显示预计费用和到账时间。',
+        stamp: 'REVIEW',
       ),
       sections: <Widget>[
+        // The prototype's 从 / 到 boxes keep their room. Each figure is a
+        // dash: a bridge fee, a receive amount and an ETA can only come from a
+        // real route, and there is none.
+        const LoopFigureBox(
+          key: ValueKey<String>('bridge-from'),
+          caption: '从',
+          figure: loopFigureDash,
+        ),
+        const LoopFigureBox(
+          key: ValueKey<String>('bridge-to'),
+          caption: '到',
+          figure: loopFigureDash,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
+          child: LoopButton(
+            key: const ValueKey<String>('bridge-start'),
+            label: '开始跨链',
+            primary: true,
+            block: true,
+            // Disabled, with the shape the prototype gives the action.
+            onPressed: null,
+          ),
+        ),
         LoopUnavailableCard(
           key: const ValueKey<String>('bridge-unavailable'),
           label: '跨链尚未开放',
           reasonCode: _reasonFor(capability, deferredReasonCode),
-        ),
-        const LoopNotice(
-          key: ValueKey<String>('bridge-scope-notice'),
-          icon: 'info',
-          title: '这里不会出现预估数字',
-          body:
-              '跨链费、到账数量与预计时间只能由真实路由给出。没有路由就没有这些数字，'
-              '这一页不会用示例数据代替它们。',
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
         ),
         if (onOpenStatus != null)
           Padding(
@@ -119,6 +137,15 @@ class BridgeScreen extends ConsumerWidget {
               onPressed: onOpenStatus,
             ),
           ),
+        const LoopNotice(
+          key: ValueKey<String>('bridge-scope-notice'),
+          icon: 'info',
+          title: '这里不会出现预估数字',
+          body:
+              '跨链费、到账数量与预计时间只能由真实路由给出。没有路由就没有这些数字，'
+              '这一页不会用示例数据代替它们。',
+          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+        ),
         const SizedBox(height: 20),
       ],
     );
@@ -152,24 +179,49 @@ class BridgeStatusScreen extends ConsumerWidget {
       archetype: LoopPageArchetype.state,
       title: '跨链进度',
       onBack: onBack,
-      // Replaced by the block below; the page has no primary region of its
-      // own because it has no reading to head.
-      primary: const SizedBox.shrink(),
-      block: LoopPageBlock(
-        key: const ValueKey<String>('bridge-status-page-block'),
-        // 读不到 would say LOOP tried and failed. Nothing was tried, because
-        // bridging has not been built.
-        title: '跨链进度尚未开放',
-        message: loopReasonCodeText(_reasonFor(capability, deferredReasonCode)),
-        action: onOpenWallet == null
-            ? null
-            : LoopButton(
-                key: const ValueKey<String>('bridge-status-back-to-wallet'),
-                label: '返回钱包',
-                onPressed: onOpenWallet,
-              ),
+      primary: const LoopFolioPrimary(
+        key: ValueKey<String>('bridge-status-folio'),
+        variant: LoopFolioVariant.chalk,
+        archetype: LoopFolioArchetype.state,
+        kicker: 'BRIDGE PROGRESS',
+        heading: '跨链进度尚未开放',
+        caption: '源链确认、桥接中和目标链到账是三个独立状态。',
+        stamp: 'NOT OPEN',
       ),
-      sections: const <Widget>[],
+      sections: <Widget>[
+        // The prototype's 步骤 group keeps its heading. Its three rows do not
+        // appear: nothing is in flight, so 完成 / 进行中 / 等待 would be three
+        // states this page invented for a transfer that does not exist. The
+        // group states the one fact there is.
+        const LoopLabel('步骤'),
+        LoopEmpty(
+          key: const ValueKey<String>('bridge-status-page-block'),
+          icon: 'warn',
+          // 读不到 would say LOOP tried and failed. Nothing was tried,
+          // because bridging has not been built.
+          message: '还没有可跟踪的跨链',
+          reason: loopReasonCodeText(
+            _reasonFor(capability, deferredReasonCode),
+          ),
+        ),
+        if (onOpenWallet != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
+            child: LoopButton(
+              key: const ValueKey<String>('bridge-status-back-to-wallet'),
+              label: '返回钱包',
+              block: true,
+              onPressed: onOpenWallet,
+            ),
+          ),
+        const LoopNotice(
+          key: ValueKey<String>('bridge-status-leave-notice'),
+          icon: 'info',
+          title: '可以离开此页',
+          body: '跨链开放后会在后台继续，完成后推送通知，也可以从交易历史查看。',
+        ),
+        const SizedBox(height: 20),
+      ],
     );
   }
 }
@@ -214,32 +266,65 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
       archetype: LoopPageArchetype.action,
       title: 'DApp 核对',
       onBack: widget.onBack,
-      primary: LoopFolioPrimary(
-        key: const ValueKey<String>('dapp-folio'),
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.action,
-        kicker: 'DAPP REVIEW · READ ONLY',
-        heading: switch (review.verdict) {
-          LoopUrlVerdict.normalized => review.host!,
-          LoopUrlVerdict.flagged => review.host!,
-          LoopUrlVerdict.blocked => typed.isEmpty ? '输入一个网址' : '这个网址不能使用',
-        },
-        caption: '核对完全在本机完成：不会打开这个网址，不会跟随跳转，也不会连接钱包。',
+      // The prototype puts the address bar at the top of the page, where a
+      // browser puts it, and the Chalk review card under it (audit §A.9).
+      primary: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          LoopOmnibox(
+            key: const ValueKey<String>('dapp-omnibox'),
+            fieldKey: const ValueKey<String>('dapp-address-field'),
+            controller: _address,
+            hintText: '搜索资产 / 社区 / 用户 / Launch / DApp / 网址',
+            trailingKey: 'GLOBAL',
+            onChanged: _onChanged,
+          ),
+          LoopFolioPrimary(
+            key: const ValueKey<String>('dapp-folio'),
+            variant: LoopFolioVariant.chalk,
+            archetype: LoopFolioArchetype.action,
+            kicker: 'DAPP REVIEW · READ ONLY',
+            heading: switch (review.verdict) {
+              LoopUrlVerdict.normalized => review.host!,
+              LoopUrlVerdict.flagged => review.host!,
+              LoopUrlVerdict.blocked =>
+                typed.isEmpty ? '还没有可核对的网址' : '这个网址不能使用',
+            },
+            caption: '核对完全在本机完成：不会打开这个网址，不会跟随跳转，也不会连接钱包。',
+            stamp: switch (review.verdict) {
+              LoopUrlVerdict.normalized => 'EXACT ORIGIN',
+              LoopUrlVerdict.flagged => 'CHECK ORIGIN',
+              LoopUrlVerdict.blocked => typed.isEmpty ? null : 'BLOCKED',
+            },
+          ),
+        ],
       ),
       sections: <Widget>[
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: TextField(
-            key: const ValueKey<String>('dapp-address-field'),
-            controller: _address,
-            keyboardType: TextInputType.url,
-            autocorrect: false,
-            onChanged: _onChanged,
-            decoration: const InputDecoration(
-              hintText: '输入网址，例如 app.example.org',
-            ),
+        // The prototype's chip row. It carries only what this page knows
+        // without asking anybody: the origin it normalised and the one chain
+        // the product is bound to. Gas price and open-approval counts are two
+        // more reads, and this page makes none.
+        if (review.canonical != null)
+          LoopChipRow(
+            key: const ValueKey<String>('dapp-chips'),
+            children: <Widget>[
+              LoopBadge(review.host!),
+              LoopBadge(loopChainName(loopPrimaryChainId)),
+              LoopBadge(
+                switch (review.verdict) {
+                  LoopUrlVerdict.normalized => '规范化完成',
+                  LoopUrlVerdict.flagged => '需注意',
+                  LoopUrlVerdict.blocked => '已阻止',
+                },
+                kind: switch (review.verdict) {
+                  LoopUrlVerdict.normalized => LoopBadgeKind.up,
+                  LoopUrlVerdict.flagged => LoopBadgeKind.mining,
+                  LoopUrlVerdict.blocked => LoopBadgeKind.mute,
+                },
+              ),
+            ],
           ),
-        ),
         const LoopLabel('本地核对'),
         if (typed.isEmpty)
           const LoopEmpty(
@@ -344,14 +429,18 @@ class _DappReviewScreenState extends ConsumerState<DappReviewScreen> {
         // nothing back, because there is nothing behind either of them: the
         // card above already states that connecting and signing are not open.
         // An action that cannot run is not offered as a button.
-        const LoopNotice(
-          key: ValueKey<String>('dapp-no-fetch-notice'),
-          icon: 'shield',
-          title: '这一页不会打开网址',
-          body:
-              '核对是纯本地计算：没有请求、没有 DNS 解析，也不会跟随任何跳转，'
-              '所以你看到的域名一定是你输入的那个。',
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+        const LoopDisclosure(
+          key: ValueKey<String>('dapp-scope-disclosure'),
+          summary: '这一页不会打开网址',
+          child: LoopNotice(
+            key: ValueKey<String>('dapp-no-fetch-notice'),
+            icon: 'shield',
+            title: '这一页不会打开网址',
+            body:
+                '核对是纯本地计算：没有请求、没有 DNS 解析，也不会跟随任何跳转，'
+                '所以你看到的域名一定是你输入的那个。',
+            margin: EdgeInsets.fromLTRB(0, 8, 0, 8),
+          ),
         ),
         const SizedBox(height: 20),
       ],

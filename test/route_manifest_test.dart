@@ -314,7 +314,8 @@ void main() {
         find.byKey(const ValueKey<String>('pay-unavailable')),
         findsOneWidget,
       );
-      expect(find.text('Pay 尚未开放'), findsOneWidget);
+      expect(find.text('Coming soon'), findsOneWidget);
+      expect(find.textContaining('还没有开放'), findsWidgets);
       expect(find.byType(FilledButton), findsNothing);
       expect(find.byType(OutlinedButton), findsNothing);
       expect(find.byType(TextField), findsNothing);

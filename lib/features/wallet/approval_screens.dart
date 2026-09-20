@@ -13,7 +13,9 @@ import 'package:loop_mobile/features/wallet/money_actions_models.dart';
 import 'package:loop_mobile/features/wallet/money_actions_widgets.dart';
 import 'package:loop_mobile/features/wallet/send_screens.dart';
 import 'package:loop_mobile/features/wallet/transfer_amount.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
 
@@ -492,12 +494,31 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
       archetype: LoopPageArchetype.listing,
       title: '授权盘点',
       onBack: widget.onBack,
+      actions: <Widget>[
+        // The prototype's 批量回收. One revoke is one signature, so a batch
+        // needs a write path that does not exist; the control keeps its shape
+        // and says so.
+        LoopSeg(
+          key: const ValueKey<String>('approvals-batch-action'),
+          label: '批量回收',
+          selected: false,
+          onSelected: null,
+          onBlocked: () => LoopToast.show(
+            context,
+            message: '批量回收还没有开放。每一笔回收都是一次单独的签名。',
+            kind: LoopToastKind.warn,
+          ),
+        ),
+      ],
+      // The prototype's approvals primary is a Chalk card, and its heading is
+      // the count of live approvals (audit §A.8, items 1 and 2).
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('approvals-folio'),
+        variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.record,
         kicker: 'WALLET APPROVALS',
         heading: inventory == null
-            ? '授权盘点'
+            ? '授权清单还没有读到'
             : '${inventory.summary.activeCount} 个有效授权',
         caption: inventory == null
             ? '有效额度来自当场重读的 allowance()，不是索引里的历史事件。'
@@ -513,15 +534,27 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
               key: const ValueKey<String>('approvals-capability-block'),
               title: '授权盘点当前不可用',
             )
-          : unavailable
-          ? LoopPageBlock(
-              key: const ValueKey<String>('approvals-page-block'),
-              title: '授权盘点当前不可用',
-              message: loopChainFailureReason(state!.failureKind),
-            )
           : null,
       sections: <Widget>[
-        if (walletId == null || state == null || !state.isReady)
+        // A refusal used to take the whole page, leaving the primary and every
+        // group behind a centred grey circle (audit item 4). The page keeps
+        // its skeleton — primary, group heading, reason — because the shape is
+        // what says which page this is.
+        if (unavailable) ...<Widget>[
+          const LoopStatGrid(
+            stats: <LoopStat>[
+              LoopStat(label: '无限授权', value: loopFigureDash),
+              LoopStat(label: '限额授权', value: loopFigureDash),
+            ],
+          ),
+          const LoopLabel('按额度排序'),
+          LoopEmpty(
+            key: const ValueKey<String>('approvals-page-block'),
+            icon: 'warn',
+            message: '授权清单当前不可用',
+            reason: loopChainFailureReason(state!.failureKind),
+          ),
+        ] else if (walletId == null || state == null || !state.isReady)
           LoopChainStateBlock(
             keyPrefix: 'approvals',
             phase: state?.phase ?? LoopChainViewPhase.loading,
@@ -556,8 +589,27 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
               title: '回收没有准备成功',
               reason: loopChainFailureReason(_revokeFailure!.kind),
             ),
+          // The prototype opens with the two counts, as a 2x2.
+          LoopStatGrid(
+            stats: <LoopStat>[
+              LoopStat(
+                statKey: const ValueKey<String>('approvals-stat-unlimited'),
+                label: '无限授权',
+                value: '${inventory!.summary.unlimitedCount}',
+                tone: inventory.summary.unlimitedCount > 0
+                    ? LoopStatTone.down
+                    : LoopStatTone.neutral,
+              ),
+              LoopStat(
+                statKey: const ValueKey<String>('approvals-stat-limited'),
+                label: '限额授权',
+                value:
+                    '${inventory.summary.activeCount - inventory.summary.unlimitedCount}',
+              ),
+            ],
+          ),
           const LoopLabel('按额度排序'),
-          if (inventory!.items.isEmpty)
+          if (inventory.items.isEmpty)
             const LoopEmpty(
               key: ValueKey<String>('approvals-empty'),
               message: '这个钱包没有有效授权',
@@ -578,14 +630,21 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                 '链头 ${loopGroupedFigure(inventory.freshness.headBlockNumber.toString())} · 观察于 '
                 '${loopRelativeTime(inventory.freshness.observedAt, now: widget.clock?.call())}',
           ),
-          const LoopNotice(
-            key: ValueKey<String>('approvals-source-notice'),
-            title: '数据出处',
-            body:
-                '候选来自链上 Approval 事件，每一行的额度都是当场重读的 allowance()。'
-                '覆盖起点以下的区块只索引了转账，更早授予的授权不会出现在这里。'
-                '回收会发送一笔 approve(spender, 0) 交易并产生网络费。',
+          // Three sentences about indexing coverage are not what a reader
+          // came for; they were the page's last block and its longest.
+          const LoopDisclosure(
+            key: ValueKey<String>('approvals-source-disclosure'),
+            summary: '数据出处',
+            child: LoopNotice(
+              key: ValueKey<String>('approvals-source-notice'),
+              title: '数据出处',
+              body:
+                  '候选来自链上 Approval 事件，每一行的额度都是当场重读的 allowance()。'
+                  '覆盖起点以下的区块只索引了转账，更早授予的授权不会出现在这里。'
+                  '回收会发送一笔 approve(spender, 0) 交易并产生网络费。',
+            ),
           ),
+          const SizedBox(height: 20),
         ],
       ],
     );
@@ -612,8 +671,16 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
             ? const LoopBadge('无限', kind: LoopBadgeKind.down)
             : const LoopBadge('限额');
     }
+    final unlimited =
+        allowance is LoopAllowanceAvailable && allowance.isUnlimited;
     return LoopRecordRow(
       key: ValueKey<String>('approval-${row.assetId}-${row.spender.address}'),
+      // The prototype heads an unlimited approval with a warning glyph and a
+      // limited one with a check.
+      leading: LoopRowIcon(
+        icon: unlimited ? 'warn' : 'check',
+        tone: unlimited ? LoopRowIconTone.neutral : LoopRowIconTone.accent,
+      ),
       title: row.symbol,
       subtitle: subtitle,
       trailingBadge: badge,

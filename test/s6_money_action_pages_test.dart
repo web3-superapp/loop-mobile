@@ -651,23 +651,28 @@ void main() {
         ),
       );
 
-      // The refusal is the whole page (C-19): it takes the page's own block,
-      // and the folio that could only repeat the title is not drawn above a
-      // screen of black.
+      // The refusal keeps the page's skeleton — primary, figure grid, group
+      // heading, reason — because the shape is what says which page this is
+      // (visual audit §A.8, item 4). A centred grey circle over an empty top
+      // half said nothing at all.
       expect(
         find.byKey(const ValueKey<String>('approvals-page-block')),
         findsOneWidget,
       );
       expect(
         find.byKey(const ValueKey<String>('approvals-folio')),
-        findsNothing,
+        findsOneWidget,
       );
+      expect(find.text('按额度排序'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('approvals-state-unavailable')),
         findsNothing,
       );
-      // A count that was never read is not a zero.
+      // A count that was never read is not a zero — in the heading or in the
+      // figure grid.
       expect(find.textContaining('0 个有效授权'), findsNothing);
+      expect(find.text('0'), findsNothing);
+      expect(find.text('—'), findsNWidgets(2));
     });
 
     testWidgets('an unreadable allowance never renders as a limit', (
@@ -978,6 +983,12 @@ void main() {
       );
 
       expect(find.textContaining('授权记录自区块 120,600,000 起'), findsOneWidget);
+      // Three sentences about indexing coverage moved behind the prototype's
+      // disclosure; they are still exactly one tap away.
+      await openLoopDisclosure(
+        tester,
+        const ValueKey<String>('approvals-source-disclosure'),
+      );
       expect(find.textContaining('更早授予的授权不会出现在这里'), findsOneWidget);
     });
 

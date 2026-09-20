@@ -4940,10 +4940,13 @@ class HarnessTests(unittest.TestCase):
             target.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             target.write_text(
+                # S58 put the 步骤 heading back on the page (visual audit
+                # §A.13): the guard fires on a badge under it, which is what a
+                # restored step row would look like.
                 source.replace(
-                    "      sections: const <Widget>[],",
-                    "      sections: const <Widget>["
-                    "LoopBadge('\u7b49\u5f85')],",
+                    "        const LoopLabel('\u6b65\u9aa4'),",
+                    "        const LoopLabel('\u6b65\u9aa4'),"
+                    "LoopBadge('\u7b49\u5f85'),",
                 ),
                 encoding="utf-8",
             )
