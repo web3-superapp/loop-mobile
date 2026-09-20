@@ -327,14 +327,63 @@ Message prepareLoopGroupMentionsForSend({
   return message.copyWith(mentionedUsers: named);
 }
 
+/// Keeps a private `@` linked to the peer it names when the message leaves.
+///
+/// The same filter that dropped a group Alias drops this one: the member
+/// types the peer's alias, and a LOOP account carries no Stream name, so
+/// neither token `removeMentionsIfNotIncluded` looks for was in the body and
+/// `@Voyager_09` left with `mentioned_users: []` — no unread, no push, no
+/// highlight for the one person it was addressed to (device report
+/// 2026-09-20 · R15-3).
+///
+/// So the mentioned user is named locally with the word the page itself shows
+/// for the peer, and Stream's own filter then finds it. The body is left
+/// alone, and the projection is not sent: `mentioned_users` serializes as ids.
+/// The reader is never renamed — a member does not mention themselves, and a
+/// stale self-mention is left exactly as Stream had it.
+@visibleForTesting
+Message prepareLoopDirectMentionsForSend({
+  required Message message,
+  required String peerLabel,
+  required String? currentUserId,
+}) {
+  final mentioned = message.mentionedUsers;
+  if (mentioned.isEmpty) return message;
+
+  var changed = false;
+  final named = <User>[];
+  for (final user in mentioned) {
+    if (user.id == currentUserId || user.name == peerLabel) {
+      named.add(user);
+      continue;
+    }
+    changed = true;
+    named.add(User(id: user.id, name: peerLabel));
+  }
+  if (!changed) return message;
+  return message.copyWith(mentionedUsers: named);
+}
+
 /// The pre-send step a LOOP composer installs for the channel it is in.
 ///
-/// A direct channel has no Alias namespace and keeps Stream's own behavior.
+/// A group channel names its mentions from the live member roster. A direct
+/// channel has no roster to read a name from, so the caller passes the peer
+/// name its own page published; without one nothing is renamed and the
+/// mention stands or falls on Stream's own tokens.
 Message loopPrepareChannelMessageForSend({
   required Message message,
   required Channel channel,
+  String? directPeerLabel,
+  String? currentUserId,
 }) {
-  if (!loopStreamChannelUsesGroupMessageAlias(channel.cid)) return message;
+  if (!loopStreamChannelUsesGroupMessageAlias(channel.cid)) {
+    if (directPeerLabel == null) return message;
+    return prepareLoopDirectMentionsForSend(
+      message: message,
+      peerLabel: directPeerLabel,
+      currentUserId: currentUserId,
+    );
+  }
   return prepareLoopGroupMentionsForSend(
     message: message,
     members: channel.state?.channelState.members ?? const <Member>[],
@@ -1091,6 +1140,43 @@ List<LoopGroupMentionCandidate> resolveLoopGroupMentionCandidates({
   return List<LoopGroupMentionCandidate>.unmodifiable(candidates);
 }
 
+/// The one person a private `@` may complete to, or nobody.
+///
+/// A direct channel carries no Alias namespace and Stream's own candidate
+/// search reads `User.name` — the id — so LOOP resolves the candidate itself:
+/// the room's single other member, named with the public profile the page
+/// published. Anything that is not exactly that fails closed. A roster that
+/// has not loaded, a channel that somehow holds more than one other member,
+/// and a page with no published identity all offer nothing, because none of
+/// them can prove who would be mentioned.
+@visibleForTesting
+List<LoopGroupMentionCandidate> resolveLoopDirectMentionCandidates({
+  required Iterable<Member> members,
+  required String query,
+  required String? peerLabel,
+  String? currentUserId,
+}) {
+  if (peerLabel == null || peerLabel.isEmpty) {
+    return const <LoopGroupMentionCandidate>[];
+  }
+  final others = <String>{};
+  for (final member in members) {
+    final userId = member.userId ?? member.user?.id;
+    if (userId == null || userId.isEmpty) continue;
+    if (userId == currentUserId) continue;
+    others.add(userId);
+  }
+  if (others.length != 1) return const <LoopGroupMentionCandidate>[];
+  if (!peerLabel.toLowerCase().startsWith(query.trim().toLowerCase())) {
+    return const <LoopGroupMentionCandidate>[];
+  }
+  return List<LoopGroupMentionCandidate>.unmodifiable(
+    <LoopGroupMentionCandidate>[
+      LoopGroupMentionCandidate(userId: others.single, alias: peerLabel),
+    ],
+  );
+}
+
 /// The `@` overlay a group or community channel shows.
 ///
 /// It replaces Stream's [StreamMentionAutocompleteOptions] for those channels
@@ -1124,6 +1210,72 @@ class LoopGroupMentionAutocompleteOptions extends StatelessWidget {
     if (state == null) return const SizedBox.shrink();
 
     final currentUserId = StreamChat.of(context).currentUser?.id;
+    return _LoopMembersBuilder(
+      state: state,
+      builder: (context, members) => _LoopMentionCandidateCard(
+        candidates: resolveLoopGroupMentionCandidates(
+          members: members,
+          query: query,
+          currentUserId: currentUserId,
+        ),
+        messageComposerController: messageComposerController,
+      ),
+    );
+  }
+}
+
+/// The `@` overlay a direct conversation shows.
+///
+/// A direct channel has no Alias namespace, so until now it kept Stream's own
+/// overlay, whose row and whose tap both read `User.name` — the id. The one
+/// honest name here is the peer's public profile, which the page publishes on
+/// [LoopDirectPeerScope]; there is exactly one other person in the room, so
+/// there is exactly one candidate, and without a published identity there is
+/// none at all.
+class LoopDirectMentionAutocompleteOptions extends StatelessWidget {
+  const LoopDirectMentionAutocompleteOptions({
+    required this.query,
+    required this.messageComposerController,
+    super.key,
+  });
+
+  /// The text typed after `@`, matched against the peer's name as a prefix.
+  final String query;
+
+  final StreamMessageComposerController messageComposerController;
+
+  @override
+  Widget build(BuildContext context) {
+    final channel = StreamChannel.maybeOf(context)?.channel;
+    final state = channel?.state;
+    if (state == null) return const SizedBox.shrink();
+
+    final peerLabel = LoopDirectPeerScope.maybeOf(context);
+    final currentUserId = StreamChat.of(context).currentUser?.id;
+    return _LoopMembersBuilder(
+      state: state,
+      builder: (context, members) => _LoopMentionCandidateCard(
+        candidates: resolveLoopDirectMentionCandidates(
+          members: members,
+          query: query,
+          peerLabel: peerLabel,
+          currentUserId: currentUserId,
+        ),
+        messageComposerController: messageComposerController,
+      ),
+    );
+  }
+}
+
+/// Watches one channel's loaded member list.
+class _LoopMembersBuilder extends StatelessWidget {
+  const _LoopMembersBuilder({required this.state, required this.builder});
+
+  final ChannelClientState state;
+  final Widget Function(BuildContext context, List<Member> members) builder;
+
+  @override
+  Widget build(BuildContext context) {
     final initialMembers = List<Member>.unmodifiable(
       state.channelState.members ?? const <Member>[],
     );
@@ -1138,59 +1290,71 @@ class LoopGroupMentionAutocompleteOptions extends StatelessWidget {
     return StreamBuilder<List<Member>>(
       initialData: initialMembers,
       stream: membersStream,
-      builder: (context, snapshot) {
-        final members = snapshot.hasError
+      builder: (context, snapshot) => builder(
+        context,
+        snapshot.hasError
             ? const <Member>[]
-            : snapshot.data ?? const <Member>[];
-        final candidates = resolveLoopGroupMentionCandidates(
-          members: members,
-          query: query,
-          currentUserId: currentUserId,
-        );
-        if (candidates.isEmpty) return const SizedBox.shrink();
+            : snapshot.data ?? const <Member>[],
+      ),
+    );
+  }
+}
 
-        final (:elevation, :margin, :shape) = AutocompleteOptionsStyle.fixed
-            .resolve(context.streamColorScheme.borderDefault);
-        return StreamAutocompleteOptions<LoopGroupMentionCandidate>(
-          options: candidates,
-          maxHeight: _loopGroupMentionMaxHeight,
-          elevation: elevation,
-          margin: margin,
-          shape: shape,
-          // The card's own default is `backgroundElevation1`, which LOOP maps
-          // to the 6%-opaque chalk wash every flat panel on a page uses. A
-          // panel drawn *over* the conversation cannot be a wash: on the
-          // device the messages underneath read straight through the
-          // candidates and half the roster was unreadable against a lime
-          // bubble (report 2026-09-20 · R14-4). This overlay is a floating
-          // surface, so it takes the opaque elevated ground.
-          color: context.streamColorScheme.backgroundElevation3,
-          optionBuilder: (context, candidate) => DefaultStreamMentionItem(
-            // The official row, handed a display-only projection: its title
-            // and its avatar initials both read the Alias, and no account
-            // field reaches it.
-            props: StreamMentionItemProps(
-              mention: StreamUserMention(
-                user: loopStreamDisplayUser(
-                  id: candidate.userId,
-                  label: candidate.alias,
-                ),
-              ),
-              onTap: () => _accept(context, candidate),
+/// The one card both LOOP `@` overlays draw.
+class _LoopMentionCandidateCard extends StatelessWidget {
+  const _LoopMentionCandidateCard({
+    required this.candidates,
+    required this.messageComposerController,
+  });
+
+  final List<LoopGroupMentionCandidate> candidates;
+  final StreamMessageComposerController messageComposerController;
+
+  @override
+  Widget build(BuildContext context) {
+    if (candidates.isEmpty) return const SizedBox.shrink();
+
+    final (:elevation, :margin, :shape) = AutocompleteOptionsStyle.fixed
+        .resolve(context.streamColorScheme.borderDefault);
+    return StreamAutocompleteOptions<LoopGroupMentionCandidate>(
+      options: candidates,
+      maxHeight: _loopGroupMentionMaxHeight,
+      elevation: elevation,
+      margin: margin,
+      shape: shape,
+      // The card's own default is `backgroundElevation1`, which LOOP maps to
+      // the 6%-opaque chalk wash every flat panel on a page uses. A panel
+      // drawn *over* the conversation cannot be a wash: on the device the
+      // messages underneath read straight through the candidates — half a
+      // group roster against a lime bubble (report 2026-09-20 · R14-4), and
+      // the conversation's own clock through the private one (R15-4). This
+      // overlay is a floating surface, so it takes the opaque elevated
+      // ground, and both overlays take it from here.
+      color: context.streamColorScheme.backgroundElevation3,
+      optionBuilder: (context, candidate) => DefaultStreamMentionItem(
+        // The official row, handed a display-only projection: its title and
+        // its avatar initials both read the name LOOP resolved, and no
+        // account field reaches it.
+        props: StreamMentionItemProps(
+          mention: StreamUserMention(
+            user: loopStreamDisplayUser(
+              id: candidate.userId,
+              label: candidate.alias,
             ),
           ),
-        );
-      },
+          onTap: () => _accept(context, candidate),
+        ),
+      ),
     );
   }
 
   void _accept(BuildContext context, LoopGroupMentionCandidate candidate) {
     // Two separate facts leave with the message. The text is the word the
     // member just read in the row; `mentioned_users` is a list of ids on the
-    // payload (`message.g.dart:89`). The Alias rides along as the mentioned
-    // user's local name, because Stream drops a mention whose token it cannot
-    // find in the body — see [prepareLoopGroupMentionsForSend], which re-reads
-    // it from the live roster on the way out and so also covers an edit.
+    // payload (`message.g.dart:89`). The resolved name rides along as the
+    // mentioned user's local name, because Stream drops a mention whose token
+    // it cannot find in the body — see [loopPrepareChannelMessageForSend],
+    // which re-reads it on the way out and so also covers an edit.
     final alreadyMentioned = messageComposerController.mentionedUsers.any(
       (user) => user.id == candidate.userId,
     );
@@ -1205,9 +1369,7 @@ class LoopGroupMentionAutocompleteOptions extends StatelessWidget {
 
 /// The `@` trigger a group or community composer installs instead of Stream's.
 ///
-/// Pair it with `enableMentionsOverlay: false` on the same composer: a direct
-/// channel keeps Stream's own overlay, where
-/// `loopStreamGroupMentionItemBuilder` names the peer from their profile.
+/// Pair it with `enableMentionsOverlay: false` on the same composer.
 StreamAutocompleteTrigger loopGroupMentionAutocompleteTrigger() =>
     StreamAutocompleteTrigger(
       trigger: '@',
@@ -1218,11 +1380,31 @@ StreamAutocompleteTrigger loopGroupMentionAutocompleteTrigger() =>
           ),
     );
 
+/// The `@` trigger a direct composer installs instead of Stream's.
+StreamAutocompleteTrigger loopDirectMentionAutocompleteTrigger() =>
+    StreamAutocompleteTrigger(
+      trigger: '@',
+      optionsViewBuilder: (context, autocompleteQuery, controller) =>
+          LoopDirectMentionAutocompleteOptions(
+            query: autocompleteQuery.query,
+            messageComposerController: controller,
+          ),
+    );
+
 /// The triggers one LOOP composer installs for [cid].
 ///
-/// Group and community channels get the Alias overlay; a direct channel gets
-/// none of its own and keeps Stream's.
-List<StreamAutocompleteTrigger> loopChannelAutocompleteTriggers(String? cid) =>
-    loopStreamChannelUsesGroupMessageAlias(cid)
-    ? <StreamAutocompleteTrigger>[loopGroupMentionAutocompleteTrigger()]
-    : const <StreamAutocompleteTrigger>[];
+/// Every LOOP channel now brings its own `@`: a group or community channel
+/// completes to the channel Alias, a direct channel to the peer the page
+/// published. Stream's own overlay is never mounted, because both its row and
+/// its tap read `User.name`, which for a LOOP account is the id.
+List<StreamAutocompleteTrigger> loopChannelAutocompleteTriggers(String? cid) {
+  if (loopStreamChannelUsesGroupMessageAlias(cid)) {
+    return <StreamAutocompleteTrigger>[loopGroupMentionAutocompleteTrigger()];
+  }
+  // A locator LOOP cannot read names no room, so it installs no `@` of its
+  // own; the composer that asked has already refused to mount such a channel.
+  if (cid == null || parseLoopStreamChannelCid(cid) == null) {
+    return const <StreamAutocompleteTrigger>[];
+  }
+  return <StreamAutocompleteTrigger>[loopDirectMentionAutocompleteTrigger()];
+}

@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
+import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
@@ -120,7 +121,11 @@ void main() {
     });
   });
 
-  test('only a group or community composer installs the Alias trigger', () {
+  test('every LOOP channel installs its own `@`, never the stock one', () {
+    // R15-3. Stream's own overlay reads `User.name` in both the row and the
+    // tap, so it may not mount anywhere in LOOP. A group completes to the
+    // channel Alias; a private conversation completes to the peer the page
+    // published.
     final group = loopChannelAutocompleteTriggers(
       'messaging:loop_community_5a2f766100000000',
     );
@@ -131,13 +136,126 @@ void main() {
           .trigger,
       '@',
     );
-    // A direct channel keeps Stream's own overlay, where the row names the
-    // peer from their public profile.
     expect(
-      loopChannelAutocompleteTriggers('messaging:loop_direct_8e7d73c5'),
-      isEmpty,
+      loopChannelAutocompleteTriggers('messaging:loop_direct_8e7d73c5')
+          .single
+          .trigger,
+      '@',
     );
+    // A locator LOOP cannot read names no room, so it installs nothing.
     expect(loopChannelAutocompleteTriggers(null), isEmpty);
+    expect(loopChannelAutocompleteTriggers('livestream:x'), isEmpty);
+  });
+
+  group('a private conversation completes to the one person in it', () {
+    List<Member> directRoster() => <Member>[_member(_me), _member(_tundra)];
+
+    test('the candidate is the published peer, never Stream', () {
+      final candidates = resolveLoopDirectMentionCandidates(
+        members: directRoster(),
+        query: '',
+        peerLabel: 'Voyager_09',
+        currentUserId: _me,
+      );
+
+      expect(candidates.single.userId, _tundra);
+      expect(candidates.single.alias, 'Voyager_09');
+    });
+
+    test('the query is the peer name as a prefix, matched without case', () {
+      List<LoopGroupMentionCandidate> forQuery(String query) =>
+          resolveLoopDirectMentionCandidates(
+            members: directRoster(),
+            query: query,
+            peerLabel: 'Voyager_09',
+            currentUserId: _me,
+          );
+
+      expect(forQuery('voy'), hasLength(1));
+      expect(forQuery('VOYAGER_09'), hasLength(1));
+      expect(forQuery('war'), isEmpty);
+    });
+
+    test('without a published peer, or a room of two, there is nobody', () {
+      expect(
+        resolveLoopDirectMentionCandidates(
+          members: directRoster(),
+          query: '',
+          peerLabel: null,
+          currentUserId: _me,
+        ),
+        isEmpty,
+      );
+      // A roster that has not loaded proves nothing about who is here.
+      expect(
+        resolveLoopDirectMentionCandidates(
+          members: const <Member>[],
+          query: '',
+          peerLabel: 'Voyager_09',
+          currentUserId: _me,
+        ),
+        isEmpty,
+      );
+      // More than one other member is not a private conversation.
+      expect(
+        resolveLoopDirectMentionCandidates(
+          members: <Member>[_member(_me), _member(_tundra), _member(_harbor)],
+          query: '',
+          peerLabel: 'Voyager_09',
+          currentUserId: _me,
+        ),
+        isEmpty,
+      );
+      // A member does not mention themselves.
+      expect(
+        resolveLoopDirectMentionCandidates(
+          members: <Member>[_member(_me)],
+          query: '',
+          peerLabel: 'Voyager_09',
+          currentUserId: _me,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('the private mention link leaves with the message', () {
+      final message = Message(
+        id: 'message-1',
+        text: '@Voyager_09 r15dm',
+        mentionedUsers: <User>[User(id: _tundra)],
+      );
+      // The defect, pinned: `toJson` looks for `@<id>` or `@<name>`, and a
+      // LOOP account answers the id for both, so the link was dropped.
+      expect(message.toJson()['mentioned_users'], isEmpty);
+
+      final prepared = prepareLoopDirectMentionsForSend(
+        message: message,
+        peerLabel: 'Voyager_09',
+        currentUserId: _me,
+      );
+
+      expect(prepared.text, '@Voyager_09 r15dm');
+      expect(prepared.text, isNot(contains('loop_')));
+      expect(prepared.toJson()['mentioned_users'], <String>[_tundra]);
+      expect(prepared.toJson()['text'], '@Voyager_09 r15dm');
+    });
+
+    test('the reader is never renamed by the private pre-send step', () {
+      final selfMention = Message(
+        id: 'message-2',
+        text: '@Voyager_09 r15dm',
+        mentionedUsers: <User>[User(id: _me)],
+      );
+
+      expect(
+        prepareLoopDirectMentionsForSend(
+          message: selfMention,
+          peerLabel: 'Voyager_09',
+          currentUserId: _me,
+        ).mentionedUsers.single.name,
+        _me,
+      );
+    });
   });
 
   testWidgets('a group candidate row shows the Alias and its initial', (
@@ -291,6 +409,8 @@ void main() {
         <String>[_tundra],
       );
 
+      // A private conversation has no roster to read a name from, so without
+      // the name its own page published nothing is renamed.
       final direct = channelFor('loop_direct_8e7d73c5');
       addTearDown(direct.dispose);
       expect(
@@ -300,7 +420,71 @@ void main() {
         ).mentionedUsers.single.name,
         _tundra,
       );
+      expect(
+        loopPrepareChannelMessageForSend(
+          message: Message(
+            id: 'message-3',
+            text: '@Voyager_09 r15dm',
+            mentionedUsers: <User>[User(id: _tundra)],
+          ),
+          channel: direct,
+          directPeerLabel: 'Voyager_09',
+          currentUserId: _me,
+        ).toJson()['mentioned_users'],
+        <String>[_tundra],
+      );
     });
+  });
+
+  testWidgets('a private candidate row shows the peer and types it', (
+    tester,
+  ) async {
+    // R15-3. The `@` in a private conversation used to be text only: Stream's
+    // own overlay drew the id and its tap typed the id, so LOOP closed the
+    // row entirely and the conversation had no working `@` at all.
+    final harness = _ComposerHarness.direct();
+    addTearDown(harness.dispose);
+
+    await _pumpDirectComposer(tester, harness);
+    await _type(tester, '@voy');
+
+    expect(find.byType(DefaultStreamMentionItem), findsOneWidget);
+    expect(find.text('Voyager_09'), findsOneWidget);
+    expect(find.textContaining('loop_'), findsNothing);
+
+    await tester.tap(find.byType(DefaultStreamMentionItem));
+    await tester.pumpAndSettle();
+
+    expect(harness.controller.text, '@Voyager_09 ');
+    expect(harness.controller.text, isNot(contains('loop_')));
+    expect(harness.controller.mentionedUsers.map((user) => user.id), <String>[
+      _tundra,
+    ]);
+    // The link really leaves with the message, not just the text.
+    expect(harness.controller.value.toJson()['mentioned_users'], <String>[
+      _tundra,
+    ]);
+
+    await _teardown(tester, harness);
+  });
+
+  testWidgets('a private `@` with no published peer offers nothing', (
+    tester,
+  ) async {
+    final harness = _ComposerHarness.direct();
+    addTearDown(harness.dispose);
+
+    await _pumpDirectComposer(tester, harness, peer: null);
+    await _type(tester, '@');
+
+    expect(find.byType(DefaultStreamMentionItem), findsNothing);
+    expect(
+      find.byType(StreamAutocompleteOptions<LoopGroupMentionCandidate>),
+      findsNothing,
+    );
+    expect(find.textContaining('loop_'), findsNothing);
+
+    await _teardown(tester, harness);
   });
 
   testWidgets('the candidate card is a surface, not a wash', (tester) async {
@@ -507,11 +691,37 @@ Future<void> _pumpComposer(WidgetTester tester, _ComposerHarness harness) =>
       ),
     );
 
+/// The private half: the composer's autocomplete under the peer the `dm`
+/// page published.
+Future<void> _pumpDirectComposer(
+  WidgetTester tester,
+  _ComposerHarness harness, {
+  String? peer = 'Voyager_09',
+}) => _pumpInChannel(
+  tester,
+  harness,
+  StreamAutocomplete(
+    focusNode: harness.focusNode,
+    messageComposerController: harness.controller,
+    autocompleteTriggers: <StreamAutocompleteTrigger>[
+      loopDirectMentionAutocompleteTrigger(),
+    ],
+  ),
+  peer: peer,
+);
+
 Future<void> _pumpInChannel(
   WidgetTester tester,
   _ComposerHarness harness,
-  Widget child,
-) async {
+  Widget child, {
+  String? peer,
+}) async {
+  Widget body = Scaffold(
+    body: Align(alignment: Alignment.bottomCenter, child: child),
+  );
+  if (peer != null) {
+    body = LoopDirectPeerScope(displayName: peer, child: body);
+  }
   await tester.pumpWidget(
     MaterialApp(
       home: StreamChat(
@@ -522,12 +732,7 @@ Future<void> _pumpInChannel(
             mentionItem: loopStreamGroupMentionItemBuilder,
           ),
         ),
-        child: StreamChannel.value(
-          channel: harness.channel,
-          child: Scaffold(
-            body: Align(alignment: Alignment.bottomCenter, child: child),
-          ),
-        ),
+        child: StreamChannel.value(channel: harness.channel, child: body),
       ),
     ),
   );
@@ -550,10 +755,22 @@ Future<void> _teardown(WidgetTester tester, _ComposerHarness harness) async {
 }
 
 final class _ComposerHarness {
-  _ComposerHarness() {
+  _ComposerHarness({
+    this.channelId = 'loop_community_5a2f766100000000',
+    List<Member>? members,
+  }) : members = members ?? _roster() {
     // ignore: invalid_use_of_internal_member
     client.state.currentUser = OwnUser(id: _me);
   }
+
+  /// A private conversation: two members and a `loop_direct_` locator.
+  factory _ComposerHarness.direct() => _ComposerHarness(
+    channelId: 'loop_direct_8e7d73c5',
+    members: <Member>[_member(_me), _member(_tundra)],
+  );
+
+  final String channelId;
+  final List<Member> members;
 
   final StreamChatClient client = StreamChatClient(
     'public-stream-api-key',
@@ -563,14 +780,14 @@ final class _ComposerHarness {
     client,
     ChannelState(
       channel: ChannelModel(
-        id: 'loop_community_5a2f766100000000',
+        id: channelId,
         type: 'messaging',
-        memberCount: 4,
+        memberCount: members.length,
         // Without the capability the composer draws its read-only notice
         // instead of a field, and nothing could be typed at all.
         ownCapabilities: <String>['send-message', 'upload-file'],
       ),
-      members: _roster(),
+      members: members,
     ),
   );
   final FocusNode focusNode = FocusNode();

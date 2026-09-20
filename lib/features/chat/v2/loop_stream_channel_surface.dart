@@ -7,6 +7,7 @@ import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_server_clock.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
+import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_outgoing_message_order.dart';
@@ -449,13 +450,16 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
     _sendStartedAt = message.remoteCreatedAt == null
         ? LoopServerClock.instance.deviceNow()
         : null;
-    // The other half of the same step: an `@` in a group or community channel
-    // spells the channel Alias, which Stream's own mention filter does not
-    // recognize, so the member it names is named with it here and the link
-    // leaves with the message (device report 2026-09-20 · R14-2).
+    // The other half of the same step: an `@` spells a name Stream's own
+    // mention filter does not recognize — the channel Alias in a group, the
+    // peer's profile name in a direct conversation — so the person it names
+    // is named with it here and the link leaves with the message (device
+    // report 2026-09-20 · R14-2 / R15-3).
     return loopPrepareChannelMessageForSend(
       message: message,
       channel: StreamChannel.of(context).channel,
+      directPeerLabel: LoopDirectPeerScope.maybeOf(context),
+      currentUserId: StreamChat.of(context).currentUser?.id,
     );
   }
 
@@ -477,11 +481,11 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
 
   @override
   Widget build(BuildContext context) {
-    // Decision 0055. In a group or community channel a member is named by the
-    // Alias this channel projected, so the `@` overlay is LOOP's: Stream's own
-    // one searches and types the account identity. A direct channel keeps
-    // Stream's overlay, where the row names the peer from their profile.
-    final aliasMentions = loopChannelAutocompleteTriggers(
+    // Decision 0055. The `@` overlay is LOOP's in every channel: Stream's own
+    // one searches and types the account identity, which for a LOOP account
+    // is the row key. A group or community channel completes to the channel
+    // Alias; a direct conversation completes to the peer this page published.
+    final loopMentions = loopChannelAutocompleteTriggers(
       StreamChannel.of(context).channel.cid,
     );
     return Column(
@@ -510,8 +514,8 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
           // builder applies to every composer, including this one. Voice
           // recording stays off: LOOP has proven no recording capability.
           enableVoiceRecording: false,
-          enableMentionsOverlay: aliasMentions.isEmpty,
-          customAutocompleteTriggers: aliasMentions,
+          enableMentionsOverlay: loopMentions.isEmpty,
+          customAutocompleteTriggers: loopMentions,
           allowedAttachmentPickerTypes: loopChatImagePickerTypes,
           attachmentLimit: loopChatImageMaxCount,
           useSystemAttachmentPicker: true,
