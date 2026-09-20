@@ -189,9 +189,10 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
       key: ValueKey<String>('community-chat-${chat.channelCid}'),
       cid: chat.channelCid!,
       keyPrefix: 'community-chat-channel',
-      // The prototype's "@AI 提问 · 贴 CA 自动识别" hint is not reproduced: neither
-      // capability exists yet, so the composer promises only a message.
-      composerHint: '发消息',
+      // One half of the prototype's hint is real now: an address pasted into
+      // a message opens a Token Card. The other half — "@AI 提问" — stays
+      // out, because there is no Community AI to ask.
+      composerHint: loopChatComposerHint,
       // Stream answered the membership query with nothing. LOOP's own record
       // of this account's channel membership is the only fact available about
       // why, so its reason code supplies the sentence; without one the

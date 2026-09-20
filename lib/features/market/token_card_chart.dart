@@ -55,20 +55,49 @@ class _TokenCardSparklineState extends ConsumerState<TokenCardSparkline> {
       });
     }
 
+    return TokenCardSparklineView(
+      state: state,
+      keyPrefix: widget.keyPrefix,
+      unavailableText: widget.unavailableText,
+    );
+  }
+}
+
+/// The same line, drawn from a series its owner already holds.
+///
+/// A surface that reads the series itself — the chat card keeps one answer per
+/// contract for the whole conversation instead of one per bubble — hands it
+/// here, so the rule for when a line may be drawn at all lives in exactly one
+/// place. There is still no second source: this widget starts no read and
+/// invents no shape.
+class TokenCardSparklineView extends StatelessWidget {
+  const TokenCardSparklineView({
+    required this.state,
+    super.key,
+    this.keyPrefix = 'token-card-sparkline',
+    this.unavailableText,
+  });
+
+  final LoopChainResourceState<MarketCandleSeries> state;
+  final String keyPrefix;
+  final String? unavailableText;
+
+  @override
+  Widget build(BuildContext context) {
     final absence = tokenCardSparklineAbsence(
       state,
-      unavailableText: widget.unavailableText,
+      unavailableText: unavailableText,
     );
     if (absence != null) {
       return _TokenCardChartNotice(
-        blockKey: '${widget.keyPrefix}-${absence.keySuffix}',
+        blockKey: '$keyPrefix-${absence.keySuffix}',
         text: absence.text,
       );
     }
     final available = state.value!.candles as MarketCandlesAvailable;
     final closes = loopSparklineCloses(available.items);
     return LoopSparkline(
-      key: ValueKey<String>('${widget.keyPrefix}-line'),
+      key: ValueKey<String>('$keyPrefix-line'),
       closes: closes,
       semanticLabel:
           '${closes.length} 个 1H 收盘价的走势线，单位 ${available.priceUnit}，'

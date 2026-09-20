@@ -625,7 +625,6 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       'quoteAssetId',
       'quoteSymbol',
     });
-    if (pool['protocol'] != 'pancakeswap_v3') LoopV2ChainCodec.invalid();
 
     final items = <LoopCandle>[];
     DateTime? previousOpen;
@@ -708,7 +707,16 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
           pattern: LoopV2ChainCodec.addressPattern,
           maxLength: 42,
         ),
-        protocol: 'pancakeswap_v3',
+        // The pool's protocol is whichever id the answering source uses:
+        // LOOP's own indexer says `pancakeswap_v3`, and a provider lookup for
+        // an unregistered contract says the provider's own dex id. It is
+        // printed, never branched on, so it is read as text.
+        protocol: LoopV2ChainCodec.requireString(
+          pool,
+          'protocol',
+          pattern: LoopV2ChainCodec.displayTextPattern,
+          maxLength: 64,
+        ),
         quoteAssetId: LoopV2ChainCodec.optionalString(
           pool,
           'quoteAssetId',

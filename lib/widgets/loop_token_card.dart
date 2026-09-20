@@ -67,6 +67,7 @@ final class LoopTokenCardModel {
     this.communityIcon = 'chat',
     this.badge,
     this.riskFacts = const <LoopTokenRiskFact>[],
+    this.footnotes = const <String>[],
     this.chartRangeLabel,
     this.chart,
   });
@@ -88,6 +89,12 @@ final class LoopTokenCardModel {
   final String communityIcon;
   final String? badge;
   final List<LoopTokenRiskFact> riskFacts;
+
+  /// Small print under the card's own rows: where a figure came from, and why
+  /// an action the card still shows cannot be taken. Each line is one
+  /// sentence the owner can prove; the list is empty when there is nothing to
+  /// add, and never carries a placeholder.
+  final List<String> footnotes;
   final String? chartRangeLabel;
 
   /// Owner-supplied chart (Graphite ground, Lime line). Null hides the slot.
@@ -217,8 +224,11 @@ class LoopTokenCard extends StatelessWidget {
                           secondary: secondary,
                           muted: muted,
                         ),
-                        if (state == LoopTokenCardState.risk &&
-                            model.riskFacts.isNotEmpty)
+                        // Facts the owner read about the contract are shown
+                        // wherever they exist, not only in the state named
+                        // after them: a card that also has a quote and a line
+                        // must not have to drop them to say what it read.
+                        if (model.riskFacts.isNotEmpty)
                           _RiskBar(
                             facts: model.riskFacts,
                             foreground: foreground,
@@ -248,6 +258,13 @@ class LoopTokenCard extends StatelessWidget {
                                 ? LoopColors.inkText2
                                 : LoopColors.text2,
                             accent: state == LoopTokenCardState.graduated,
+                          ),
+                        if (model.footnotes.isNotEmpty)
+                          _Footnotes(
+                            lines: model.footnotes,
+                            color: chalk
+                                ? LoopColors.inkText2
+                                : LoopColors.text2,
                           ),
                         if (actions.isNotEmpty)
                           _Actions(
@@ -561,6 +578,32 @@ class _CommunityLine extends StatelessWidget {
           Expanded(
             child: Text(text, style: LoopTypography.caption(11, color: color)),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Footnotes extends StatelessWidget {
+  const _Footnotes({required this.lines, required this.color});
+
+  final List<String> lines;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const ValueKey<String>('loop-token-card-footnotes'),
+      padding: const EdgeInsets.fromLTRB(15, 10, 15, 10),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: LoopGround.hairlineOf(context))),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          for (final line in lines)
+            Text(line, style: LoopTypography.caption(11, color: color)),
         ],
       ),
     );

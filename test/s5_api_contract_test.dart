@@ -806,6 +806,81 @@ void main() {
   });
 
   group('market', () {
+    // S52: a contract pasted into a conversation may never have been
+    // registered. The backend answers it with the same document and a status
+    // of its own; the client decodes that status instead of discarding the
+    // whole asset for carrying a word it had no branch for.
+    test('an unregistered asset is decoded, not dropped', () async {
+      final body = s5AssetDetailBody();
+      body['asset'] = <String, Object?>{
+        'assetId': s5WbnbAssetId,
+        'chainId': 'eip155:56',
+        'address': s5WbnbAssetId.substring(s5WbnbAssetId.lastIndexOf(':') + 1),
+        // The DexScreener path reports neither a ticker nor a precision.
+        'symbol': null,
+        'name': null,
+        'decimals': null,
+        'status': 'unregistered',
+        'source': <String, Object?>{
+          'kind': 'provider_lookup',
+          'provider': 'dexscreener',
+          'fetchedAt': '2026-09-20T14:52:33.120Z',
+          'ttlSeconds': 3600,
+          'quality': 'stale',
+          'blockNumber': null,
+          'verifiedAt': null,
+        },
+        'updatedAt': '2026-09-20T14:52:33.120Z',
+      };
+      final api = DioLoopV2MarketApi(
+        s5Dio((options, handler) => handler.resolve(s5Response(options, body))),
+      );
+
+      final detail = await api.getAsset(
+        accessToken: _accessToken,
+        clientVersion: s5ClientVersion,
+        assetId: s5WbnbAssetId,
+      );
+
+      expect(detail.asset.status, LoopAssetStatus.unregistered);
+      expect(detail.asset.status.label, '未登记');
+      expect(detail.asset.symbol, isNull);
+      expect(detail.asset.decimals, isNull);
+      expect(detail.asset.hasPrecision, isFalse);
+      expect(detail.asset.source.kind, LoopAssetSourceKind.providerLookup);
+      expect(detail.asset.source.provider, LoopFactSource.dexscreener);
+      expect(detail.asset.source.quality, LoopFactQuality.stale);
+      // With no ticker the address is what a surface may print.
+      expect(
+        loopAssetSymbolLabel(detail.asset),
+        loopTruncatedAssetId(s5WbnbAssetId),
+      );
+    });
+
+    test('a provider name on a chain call is refused', () async {
+      final body = s5AssetDetailBody();
+      final asset = Map<String, Object?>.from(body['asset']! as Map);
+      asset['source'] = <String, Object?>{
+        'kind': 'chain_call',
+        'provider': 'dexscreener',
+        'blockNumber': '120628195',
+        'verifiedAt': '2026-09-08T05:12:21.926Z',
+      };
+      body['asset'] = asset;
+      final api = DioLoopV2MarketApi(
+        s5Dio((options, handler) => handler.resolve(s5Response(options, body))),
+      );
+
+      await expectLater(
+        api.getAsset(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+          assetId: s5WbnbAssetId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
     test('facts keep their own quality and provenance', () async {
       final api = DioLoopV2MarketApi(
         s5Dio(
@@ -978,6 +1053,35 @@ void main() {
       expect(candles.items.first.isOpen, isFalse);
       expect(candles.items.last.isOpen, isTrue);
       expect(candles.items.first.open, Decimal.parse('747.12'));
+    });
+
+    // S52: an unregistered address is charted from the provider's own pool,
+    // whose dex id is the provider's word. The client prints it; it never
+    // required it to be LOOP's own constant.
+    test('a pool names its protocol in the source own words', () async {
+      final body = s5CandlesBody(source: 'geckoterminal');
+      final candles = Map<String, Object?>.from(body['candles']! as Map);
+      final pool = Map<String, Object?>.from(candles['pool']! as Map);
+      pool['protocol'] = 'pancakeswap-v3-bsc';
+      pool['quoteAssetId'] = null;
+      pool['quoteSymbol'] = 'USD';
+      candles['pool'] = pool;
+      body['candles'] = candles;
+      final api = DioLoopV2MarketApi(
+        s5Dio((options, handler) => handler.resolve(s5Response(options, body))),
+      );
+
+      final series = await api.getCandles(
+        accessToken: _accessToken,
+        clientVersion: s5ClientVersion,
+        assetId: s5WbnbAssetId,
+        interval: LoopCandleInterval.oneHour,
+      );
+
+      final available = series.candles as MarketCandlesAvailable;
+      expect(available.pool.protocol, 'pancakeswap-v3-bsc');
+      expect(available.pool.quoteAssetId, isNull);
+      expect(available.source, LoopFactSource.geckoterminal);
     });
 
     test('proxied candles carry the asset whose pool was charted', () async {

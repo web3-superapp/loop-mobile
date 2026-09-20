@@ -7,6 +7,7 @@ import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/core/time/loop_server_clock.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
+import 'package:loop_mobile/features/chat/token_card/chat_token_card_cache.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
@@ -27,6 +28,15 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 /// stay with the official Stream widgets, so no LOOP DTO ever mirrors a
 /// provider fact. The composer sends text and pictures; voice recording is
 /// disabled application wide. This surface only restates the placeholder.
+
+/// The composer placeholder every LOOP conversation shows.
+///
+/// It names the two things the composer actually does. Pasting a contract
+/// address opens a Token Card under the message — that is a read LOOP
+/// performs on the address, not a claim about the token and not an assistant.
+/// The prototype's "@AI 提问" half stays out: there is no Community AI to ask.
+const String loopChatComposerHint = '发消息 · 贴合约地址自动识别代币';
+
 class LoopStreamChannelSurface extends ConsumerWidget {
   const LoopStreamChannelSurface({
     required this.cid,
@@ -65,6 +75,11 @@ class LoopStreamChannelSurface extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // The conversation's Token Card answers live as long as this surface
+    // does. Listening rather than watching is deliberate: the cards read
+    // their own entry, and rebuilding the whole message list every time one
+    // address answers would undo the point of keeping the answers at all.
+    ref.listen(chatTokenCardCacheProvider, (previous, next) {});
     if (parseLoopStreamChannelCid(cid) == null) {
       return LoopStreamChannelStateBlock(
         key: ValueKey<String>('$keyPrefix-invalid'),

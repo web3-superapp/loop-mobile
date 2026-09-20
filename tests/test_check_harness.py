@@ -260,6 +260,29 @@ def write_friend_frontend_fixture(root: Path) -> None:
         target.write_bytes(source.read_bytes())
 
 
+CHAT_TOKEN_CARD_FIXTURE_FILES = (
+    "lib/features/chat/token_card/chat_token_detection.dart",
+    "lib/features/chat/token_card/chat_token_card_cache.dart",
+    "lib/features/chat/token_card/chat_token_card.dart",
+    "lib/features/chat/group_alias/group_alias_stream_message_identity.dart",
+    "lib/features/chat/v2/loop_stream_channel_surface.dart",
+    "lib/features/chat/v2/community_chat_screen.dart",
+    "lib/features/chat/v2/group_screens.dart",
+    "lib/features/chat/v2/direct_message_screen.dart",
+    "lib/features/chain/chain_models.dart",
+    "lib/integrations/backend/v2/loop_v2_chain_codec.dart",
+    "test/s52_chat_token_card_test.dart",
+)
+
+
+def write_chat_token_card_fixture(root: Path) -> None:
+    for relative in CHAT_TOKEN_CARD_FIXTURE_FILES:
+        source = REPOSITORY_ROOT / relative
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(source.read_bytes())
+
+
 class HarnessTests(unittest.TestCase):
     def test_current_repository_passes(self) -> None:
         self.assertEqual([], check_harness.validate(REPOSITORY_ROOT))
@@ -8284,6 +8307,202 @@ class HarnessTests(unittest.TestCase):
                 {},
             )
             self.assertEqual(set(markers), set(configured), msg=str(relative))
+
+
+class ChatTokenCardContractTests(unittest.TestCase):
+    """S52 · the probe that watches the card a pasted address opens."""
+
+    def _mutate(self, relative: str, old: str, new: str) -> list[str]:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_chat_token_card_fixture(root)
+            path = root / relative
+            source = path.read_text(encoding="utf-8")
+            self.assertIn(
+                old, source, msg=f"{relative} no longer contains the anchor"
+            )
+            path.write_text(source.replace(old, new, 1), encoding="utf-8")
+            return check_harness.check_chat_token_card_contract(root)
+
+    def test_the_reviewed_slice_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_chat_token_card_fixture(root)
+            self.assertEqual(
+                [], check_harness.check_chat_token_card_contract(root)
+            )
+
+    def test_a_missing_half_of_the_card_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_chat_token_card_fixture(root)
+            (
+                root / "lib/features/chat/token_card/chat_token_card_cache.dart"
+            ).unlink()
+            result = check_harness.check_chat_token_card_contract(root)
+
+        self.assertTrue(
+            any("one cached read" in error for error in result),
+            msg=f"expected the missing-file guard: {result}",
+        )
+
+    def test_an_unbounded_matcher_reads_a_transaction_hash(self) -> None:
+        result = self._mutate(
+            "lib/features/chat/token_card/chat_token_detection.dart",
+            r"(?![0-9a-fA-F])",
+            "",
+        )
+
+        self.assertTrue(
+            any("transaction hash" in error for error in result),
+            msg=f"expected the address-boundary guard: {result}",
+        )
+
+    def test_a_second_matcher_inside_chat_is_rejected(self) -> None:
+        result = self._mutate(
+            "lib/features/chat/v2/direct_message_screen.dart",
+            "class DirectMessageScreen",
+            "final _second = RegExp(r'0x[0-9a-fA-F]{40}');\n\nclass DirectMessageScreen",
+        )
+
+        self.assertTrue(
+            any("its own contract-address matcher" in error for error in result),
+            msg=f"expected the single-detector guard: {result}",
+        )
+
+    def test_an_unbounded_card_count_is_rejected(self) -> None:
+        result = self._mutate(
+            "lib/features/chat/token_card/chat_token_detection.dart",
+            "loopChatTokenCardsPerMessage = 3",
+            "loopChatTokenCardsPerMessage = 30",
+        )
+
+        self.assertTrue(
+            any("how many" in error for error in result),
+            msg=f"expected the card-count guard: {result}",
+        )
+
+    def test_a_card_that_reaches_past_the_market_port_is_rejected(self) -> None:
+        result = self._mutate(
+            "lib/features/chat/token_card/chat_token_card_cache.dart",
+            "ref.read(marketReadGatewayProvider)",
+            "ref.read(_somethingElseProvider)",
+        )
+
+        self.assertTrue(
+            any("market port" in error for error in result),
+            msg=f"expected the port guard: {result}",
+        )
+
+    def test_a_pressable_buy_action_is_rejected(self) -> None:
+        result = self._mutate(
+            "lib/features/chat/token_card/chat_token_card.dart",
+            "const LoopTokenCardAction('\u4e70\u5165', buy: true)",
+            "LoopTokenCardAction('\u4e70\u5165', buy: true, onTap: () {})",
+        )
+
+        self.assertTrue(
+            any("stays unpressable" in error for error in result),
+            msg=f"expected the money-action guard: {result}",
+        )
+
+    def test_a_card_that_draws_its_own_line_is_rejected(self) -> None:
+        result = self._mutate(
+            "lib/features/chat/token_card/chat_token_card.dart",
+            "TokenCardSparklineView(",
+            "_ChatSparkline(",
+        )
+
+        self.assertTrue(
+            any("1H line" in error for error in result),
+            msg=f"expected the sparkline guard: {result}",
+        )
+
+    def test_a_bubble_that_lost_its_card_is_rejected(self) -> None:
+        result = self._mutate(
+            "lib/features/chat/group_alias/group_alias_stream_message_identity.dart",
+            "ChatTokenCard(address: address)",
+            "SizedBox.shrink()",
+        )
+
+        self.assertTrue(
+            any("recognition that does not exist" in error for error in result),
+            msg=f"expected the wiring guard: {result}",
+        )
+
+    def test_a_composer_that_promises_an_assistant_is_rejected(self) -> None:
+        result = self._mutate(
+            "lib/features/chat/v2/loop_stream_channel_surface.dart",
+            "\u53d1\u6d88\u606f \u00b7 \u8d34\u5408\u7ea6\u5730\u5740\u81ea\u52a8\u8bc6\u522b\u4ee3\u5e01",
+            "\u53d1\u6d88\u606f \u00b7 @AI \u63d0\u95ee",
+        )
+
+        self.assertTrue(
+            any("assistant" in error for error in result),
+            msg=f"expected the composer-promise guard: {result}",
+        )
+
+    def test_a_conversation_with_its_own_placeholder_is_rejected(self) -> None:
+        result = self._mutate(
+            "lib/features/chat/v2/group_screens.dart",
+            "composerHint: loopChatComposerHint",
+            "composerHint: '\u53d1\u6d88\u606f'",
+        )
+
+        self.assertTrue(
+            any("its own composer placeholder" in error for error in result),
+            msg=f"expected the shared-placeholder guard: {result}",
+        )
+
+    def test_a_client_that_cannot_express_an_unregistered_asset_is_rejected(
+        self,
+    ) -> None:
+        result = self._mutate(
+            "lib/features/chain/chain_models.dart",
+            "providerLookup('provider_lookup')",
+            "providerLookupRemoved('x')",
+        )
+
+        self.assertTrue(
+            any("provider lookup" in error for error in result),
+            msg=f"expected the unregistered-identity guard: {result}",
+        )
+
+    def test_a_codec_that_demands_a_precision_is_rejected(self) -> None:
+        result = self._mutate(
+            "lib/integrations/backend/v2/loop_v2_chain_codec.dart",
+            "optionalInt(map, 'decimals', maximum: 36)",
+            "requireInt(map, 'decimals', maximum: 36)",
+        )
+
+        self.assertTrue(
+            any("no precision" in error for error in result),
+            msg=f"expected the optional-precision guard: {result}",
+        )
+
+    def test_a_card_blind_to_the_registry_status_is_rejected(self) -> None:
+        result = self._mutate(
+            "lib/features/chat/token_card/chat_token_card.dart",
+            "detail.asset.status == LoopAssetStatus.unavailable",
+            "false",
+        )
+
+        self.assertTrue(
+            any("presented exactly like a listed one" in error for error in result),
+            msg=f"expected the registry-status guard: {result}",
+        )
+
+    def test_a_hollowed_out_behavior_test_is_rejected(self) -> None:
+        result = self._mutate(
+            "test/s52_chat_token_card_test.dart",
+            "a ticker is never an identity",
+            "a ticker is sometimes an identity",
+        )
+
+        self.assertTrue(
+            any("behavior evidence" in error for error in result),
+            msg=f"expected the behavior-evidence guard: {result}",
+        )
 
 
 if __name__ == "__main__":

@@ -990,6 +990,12 @@ class _RegistryFactsCard extends StatelessWidget {
       );
     }
     final asset = view.asset;
+    // A wallet asset is a registry asset, so precision is normally there. It
+    // is still read as a fact that may be missing: an asset described by a
+    // provider rather than by a chain call can carry none, and the integer
+    // below is meaningless without it — so that row is dropped rather than
+    // labelled with a precision nobody reported.
+    final decimals = asset.decimals;
     return LoopSurfaceCard(
       key: const ValueKey<String>('wallet-asset-registry'),
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
@@ -997,10 +1003,13 @@ class _RegistryFactsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           LoopKeyValue(label: '资产标识', value: loopTruncatedAssetId(assetId)),
-          LoopKeyValue(label: '精度', value: '${asset.decimals}'),
-          if (rawValue != null)
+          LoopKeyValue(
+            label: '精度',
+            value: decimals == null ? '数据不可得' : '$decimals',
+          ),
+          if (rawValue != null && decimals != null)
             LoopKeyValue(
-              label: '最小单位余额（${asset.decimals} 位精度的整数）',
+              label: '最小单位余额（$decimals 位精度的整数）',
               value: loopGroupedFigure(rawValue!),
             ),
           LoopKeyValue(label: '登记状态', value: asset.status.label),

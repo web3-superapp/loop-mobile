@@ -6902,6 +6902,256 @@ def check_chat_camera_contract(root: Path) -> list[str]:
     return errors
 
 
+# ---------------------------------------------------------------------------
+# S52 · the Token Card a chat message earns by naming a contract address
+# ---------------------------------------------------------------------------
+
+CHAT_TOKEN_CARD_DETECTION_PATH = Path(
+    "lib/features/chat/token_card/chat_token_detection.dart"
+)
+CHAT_TOKEN_CARD_CACHE_PATH = Path(
+    "lib/features/chat/token_card/chat_token_card_cache.dart"
+)
+CHAT_TOKEN_CARD_VIEW_PATH = Path("lib/features/chat/token_card/chat_token_card.dart")
+CHAT_TOKEN_CARD_MESSAGE_PATH = Path(
+    "lib/features/chat/group_alias/group_alias_stream_message_identity.dart"
+)
+CHAT_TOKEN_CARD_SURFACE_PATH = Path(
+    "lib/features/chat/v2/loop_stream_channel_surface.dart"
+)
+CHAT_TOKEN_CARD_TEST_PATH = Path("test/s52_chat_token_card_test.dart")
+CHAT_TOKEN_CARD_MODELS_PATH = Path("lib/features/chain/chain_models.dart")
+CHAT_TOKEN_CARD_CODEC_PATH = Path(
+    "lib/integrations/backend/v2/loop_v2_chain_codec.dart"
+)
+# An address the registry does not carry is answered by a provider lookup, and
+# the three things that answer can be missing are the three the client must not
+# invent: the ticker, the name and the precision.
+CHAT_TOKEN_CARD_UNREGISTERED_MODEL_FRAGMENTS = (
+    "unregistered('unregistered'",
+    "unavailable('unavailable'",
+    "providerLookup('provider_lookup')",
+    "final String? symbol;",
+    "final int? decimals;",
+)
+CHAT_TOKEN_CARD_UNREGISTERED_CODEC_FRAGMENTS = (
+    "optionalText(map, 'symbol', maxLength: 32)",
+    "optionalInt(map, 'decimals', maximum: 36)",
+)
+CHAT_TOKEN_CARD_COMPOSER_SCREENS = (
+    Path("lib/features/chat/v2/community_chat_screen.dart"),
+    Path("lib/features/chat/v2/group_screens.dart"),
+    Path("lib/features/chat/v2/direct_message_screen.dart"),
+)
+# A 20-byte address is the only thing a message may be read for. The two
+# boundaries are the rule, not decoration: without them the first 40 hex
+# characters of a 32-byte hash read as somebody else's contract.
+CHAT_TOKEN_CARD_PATTERN_FRAGMENTS = (
+    "(?<![0-9A-Za-z])",
+    "0x[0-9a-fA-F]{40}",
+    "(?![0-9a-fA-F])",
+)
+CHAT_TOKEN_CARD_BEHAVIOR_MARKERS = (
+    "a ticker is never an identity",
+    "a hash, a truncation and a glued word are not addresses",
+    "a message opens at most three cards, in writing order",
+    "while the read is in flight nothing is claimed",
+    "a read asset carries identity, quote, metrics and facts",
+    "an unregistered address is answered, and says so",
+    "buy and sell stay on the card and state why they are shut",
+    "an address the registry does not carry says exactly that",
+    "a closed provider renders the reason, not a figure",
+    "an offline device says so and keeps the retry",
+    "three bubbles naming the same contract are one read",
+)
+
+
+def check_chat_token_card_contract(root: Path) -> list[str]:
+    """S52: a pasted contract address opens a card, and nothing else does.
+
+    The message itself is never rewritten and never carries a fact, so every
+    figure on the card comes from a read this client performed through the
+    market port — the same port the token page reads — and every state the
+    read can land in has a card that states it.
+    """
+
+    errors: list[str] = []
+    required = (
+        CHAT_TOKEN_CARD_DETECTION_PATH,
+        CHAT_TOKEN_CARD_CACHE_PATH,
+        CHAT_TOKEN_CARD_VIEW_PATH,
+        CHAT_TOKEN_CARD_TEST_PATH,
+    )
+    for relative in required:
+        if not (root / relative).is_file():
+            errors.append(
+                f"{relative} is missing; the chat Token Card is detection, "
+                "one cached read and one view, and none of the three may "
+                "disappear on its own"
+            )
+    if errors:
+        return errors
+
+    detection = read_text(root / CHAT_TOKEN_CARD_DETECTION_PATH)
+    detection_code = strip_dart_comments(detection)
+    if detection_code.count("RegExp(") != 1:
+        errors.append(
+            f"{CHAT_TOKEN_CARD_DETECTION_PATH} declares more than one "
+            "matcher; a message is read for a contract address and for "
+            "nothing else, so a second pattern is a second identity"
+        )
+    for fragment in CHAT_TOKEN_CARD_PATTERN_FRAGMENTS:
+        if fragment not in detection_code:
+            errors.append(
+                f"{CHAT_TOKEN_CARD_DETECTION_PATH} no longer bounds the "
+                f"address with `{fragment}`; an unbounded match reads the "
+                "first 40 hex characters of a transaction hash as a contract"
+            )
+    if "loopChatTokenCardsPerMessage = 3;" not in detection_code:
+        errors.append(
+            f"{CHAT_TOKEN_CARD_DETECTION_PATH} no longer bounds how many "
+            "cards one message opens; a pasted list would bury the message "
+            "it was written under"
+        )
+
+    # No second detector anywhere in chat: one rule, one place.
+    for path in sorted((root / "lib" / "features" / "chat").rglob("*.dart")):
+        relative = path.relative_to(root)
+        if relative == CHAT_TOKEN_CARD_DETECTION_PATH:
+            continue
+        if "[0-9a-fA-F]{40}" in strip_dart_comments(read_text(path)):
+            errors.append(
+                f"{relative} writes its own contract-address matcher; "
+                "detection lives in "
+                f"{CHAT_TOKEN_CARD_DETECTION_PATH} alone"
+            )
+
+    cache = strip_dart_comments(read_text(root / CHAT_TOKEN_CARD_CACHE_PATH))
+    if "ref.read(marketReadGatewayProvider)" not in cache:
+        errors.append(
+            f"{CHAT_TOKEN_CARD_CACHE_PATH} no longer reads through the market "
+            "port; a chat card may not reach a transport of its own"
+        )
+    if "Duration(seconds: 60)" not in cache:
+        errors.append(
+            f"{CHAT_TOKEN_CARD_CACHE_PATH} no longer holds an answer for a "
+            "bounded time; without it a scrolled list re-reads one contract "
+            "per frame"
+        )
+    for fragment in ("Dio", "'/v2/"):
+        if fragment in cache:
+            errors.append(
+                f"{CHAT_TOKEN_CARD_CACHE_PATH} contains `{fragment}`; the "
+                "feature layer states what it needs and the adapter decides "
+                "how it is fetched"
+            )
+
+    view = strip_dart_comments(read_text(root / CHAT_TOKEN_CARD_VIEW_PATH))
+    if "LoopV2CapabilityId.privySwap" not in view:
+        errors.append(
+            f"{CHAT_TOKEN_CARD_VIEW_PATH} no longer reads the swap gate; "
+            "买入 and 卖出 must be shut by the same gate the wallet reads, "
+            "not by a sentence of this card's own"
+        )
+    for action in ("const LoopTokenCardAction('买入', buy: true)", "const LoopTokenCardAction('卖出')"):
+        if action not in view:
+            errors.append(
+                f"{CHAT_TOKEN_CARD_VIEW_PATH} no longer renders {action}; a "
+                "money action on a chat card stays visible and stays "
+                "unpressable, because hiding it answers a question the gate "
+                "did not answer"
+            )
+    if "TokenCardSparklineView(" not in view:
+        errors.append(
+            f"{CHAT_TOKEN_CARD_VIEW_PATH} no longer draws the 1H line "
+            "through the shared Token Card sparkline; a card that draws its "
+            "own shape can draw one that is not a price"
+        )
+    for fragment in S7_SIGNING_MARKERS:
+        if fragment in view:
+            errors.append(
+                f"{CHAT_TOKEN_CARD_VIEW_PATH} contains `{fragment}`; a chat "
+                "card opens no signing entry"
+            )
+
+    message_item = strip_dart_comments(
+        read_text(root / CHAT_TOKEN_CARD_MESSAGE_PATH)
+    )
+    for fragment in ("loopDetectChatTokenAddresses(", "ChatTokenCard("):
+        if fragment not in message_item:
+            errors.append(
+                f"{CHAT_TOKEN_CARD_MESSAGE_PATH} no longer puts a card under "
+                f"the bubble (`{fragment}` is gone); recognition that no "
+                "message reaches is recognition that does not exist"
+            )
+
+    surface = read_text(root / CHAT_TOKEN_CARD_SURFACE_PATH)
+    hint = re.search(
+        r"const String loopChatComposerHint = '([^']*)';", surface
+    )
+    if hint is None:
+        errors.append(
+            f"{CHAT_TOKEN_CARD_SURFACE_PATH} no longer declares "
+            "loopChatComposerHint; every conversation promises the same "
+            "thing in the same words"
+        )
+    else:
+        if "贴合约地址" not in hint.group(1):
+            errors.append(
+                "loopChatComposerHint no longer tells the writer that a "
+                "pasted contract address is read; a composer that does not "
+                "say it leaves the card unexplained"
+            )
+        if "AI" in hint.group(1):
+            errors.append(
+                "loopChatComposerHint promises an assistant; there is no "
+                "Community AI to ask, so the composer may not offer one"
+            )
+    for relative in CHAT_TOKEN_CARD_COMPOSER_SCREENS:
+        path = root / relative
+        if not path.is_file():
+            continue
+        screen = strip_dart_comments(read_text(path))
+        if "composerHint: loopChatComposerHint" not in screen:
+            errors.append(
+                f"{relative} writes its own composer placeholder; the three "
+                "conversations promise the same thing, so they read one "
+                "constant"
+            )
+
+    models = strip_dart_comments(read_text(root / CHAT_TOKEN_CARD_MODELS_PATH))
+    for fragment in CHAT_TOKEN_CARD_UNREGISTERED_MODEL_FRAGMENTS:
+        if fragment not in models:
+            errors.append(
+                f"{CHAT_TOKEN_CARD_MODELS_PATH} no longer carries "
+                f"`{fragment}`; an address answered by a provider lookup has "
+                "a status, a source and three fields that may be absent, and "
+                "a client that cannot express one of them invents it instead"
+            )
+    codec = strip_dart_comments(read_text(root / CHAT_TOKEN_CARD_CODEC_PATH))
+    for fragment in CHAT_TOKEN_CARD_UNREGISTERED_CODEC_FRAGMENTS:
+        if fragment not in codec:
+            errors.append(
+                f"{CHAT_TOKEN_CARD_CODEC_PATH} requires `{fragment}` to be "
+                "present on the wire; a provider that reports no ticker and "
+                "no precision would then drop the whole asset"
+            )
+    for fragment in ("LoopAssetStatus.unregistered", "LoopAssetStatus.unavailable"):
+        if fragment not in view:
+            errors.append(
+                f"{CHAT_TOKEN_CARD_VIEW_PATH} no longer reads "
+                f"`{fragment}`; an address outside the registry would then be "
+                "presented exactly like a listed one"
+            )
+    errors.extend(
+        check_behavior_test_evidence(
+            root,
+            {CHAT_TOKEN_CARD_TEST_PATH: CHAT_TOKEN_CARD_BEHAVIOR_MARKERS},
+        )
+    )
+    return errors
+
+
 def check_records(root: Path) -> list[str]:
     errors: list[str] = []
     for path in sorted((root / "docs/decisions").glob("*.md")):
@@ -11937,6 +12187,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_reown_identity_contract(root))
     errors.extend(check_audio_room_native_contract(root))
     errors.extend(check_chat_camera_contract(root))
+    errors.extend(check_chat_token_card_contract(root))
     errors.extend(check_product_contract(root))
     errors.extend(check_v2_primary_navigation_contract(root))
     errors.extend(check_v2_community_truth_contract(root))
@@ -11994,7 +12245,7 @@ def main() -> int:
         "plate-free launch icon, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, user-visible copy, "
-        "channel-resolved chat names, "
+        "channel-resolved chat names, recognised chat contract addresses, "
         "and secret rules are consistent."
     )
     return 0

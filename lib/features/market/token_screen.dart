@@ -152,7 +152,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           .read(marketAssetControllerProvider(assetId).notifier)
           .reload,
       archetype: LoopPageArchetype.record,
-      title: detail?.asset.symbol ?? 'Token',
+      title: detail == null ? 'Token' : loopAssetSymbolLabel(detail.asset),
       kicker: detail?.asset.name,
       onBack: widget.onBack,
       updating: state.refreshing,
@@ -229,7 +229,7 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
             key: const ValueKey<String>('token-card'),
             state: LoopTokenCardState.normal,
             model: LoopTokenCardModel(
-              symbol: detail.asset.symbol,
+              symbol: loopAssetSymbolLabel(detail.asset),
               identifier: loopTruncatedAssetId(assetId),
               price: detail.price.isAvailable
                   ? loopFormatUsd(detail.price.value!)
@@ -395,7 +395,7 @@ class _TokenHero extends StatelessWidget {
         variant: LoopFolioVariant.lime,
         archetype: LoopFolioArchetype.record,
         kicker: 'TOKEN FACTS',
-        heading: resolved.asset.symbol,
+        heading: loopAssetSymbolLabel(resolved.asset),
         caption: loopReasonCodeText(
           resolved.capability.reasonCode ?? 'ASSET_BLOCKED',
         ),
@@ -421,15 +421,20 @@ class _TokenHero extends StatelessWidget {
       archetype: LoopFolioArchetype.record,
       kicker: 'TOKEN FACTS',
       heading: priceValue == null
-          ? resolved.asset.symbol
+          ? loopAssetSymbolLabel(resolved.asset)
           : loopFormatUsd(priceValue),
       caption: priceValue == null
           ? loopReasonCodeText(price.reasonCode)
-          : '${resolved.asset.name} · ${loopFactProvenance(price)}',
+          // A contract no provider named has no name to print beside its
+          // quote; the provenance still stands on its own.
+          : <String>[
+              ?resolved.asset.name,
+              loopFactProvenance(price),
+            ].join(' · '),
       stamp: changeValue == null ? null : loopFormatPercent(changeValue),
       trailing: LoopTokenLogo(
-        assetSymbol: resolved.asset.symbol,
-        fallbackMonogram: resolved.asset.symbol,
+        assetSymbol: loopAssetSymbolLabel(resolved.asset),
+        fallbackMonogram: loopAssetSymbolLabel(resolved.asset),
         size: 44,
       ),
     );

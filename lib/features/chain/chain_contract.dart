@@ -307,6 +307,9 @@ String loopReasonCodeText(String? reasonCode) => switch (reasonCode) {
   // asset capability
   'SWAP_MODULE_NOT_DELIVERED' => '兑换还没有开放，这一页没有买卖入口。',
   'ASSET_NOT_READABLE' => '这个资产已经读不到，保留这一行方便你移除。',
+  // The address was described by a market provider, not by the registry. It
+  // is a statement about where the facts came from, not a warning.
+  'ASSET_NOT_REGISTERED' => '这个地址不在 LOOP 资产目录里，下面的数据来自行情数据源，不能买卖。',
   'ASSET_BLOCKED' => '这个资产已被屏蔽。',
   // market providers
   'MARKET_RUNTIME_UNAVAILABLE' => '行情暂时不可用，稍后再试。',

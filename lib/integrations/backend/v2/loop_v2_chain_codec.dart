@@ -177,10 +177,15 @@ abstract final class LoopV2ChainCodec {
     Map<String, Object?> source,
     String key, {
     int? minimum,
+    int? maximum,
   }) {
     final value = source[key];
     if (value == null) return null;
-    if (value is! int || (minimum != null && value < minimum)) invalid();
+    if (value is! int ||
+        (minimum != null && value < minimum) ||
+        (maximum != null && value > maximum)) {
+      invalid();
+    }
     return value;
   }
 
@@ -230,6 +235,14 @@ abstract final class LoopV2ChainCodec {
       maxLength: maxLength,
     );
   }
+
+  static String? optionalText(
+    Map<String, Object?> source,
+    String key, {
+    int maxLength = 128,
+  }) => source[key] == null
+      ? null
+      : requireText(source, key, maxLength: maxLength);
 
   static String requireText(
     Map<String, Object?> source,
@@ -404,20 +417,44 @@ abstract final class LoopV2ChainCodec {
     );
   }
 
+  /// The asset's provenance block.
+  ///
+  /// A registry asset names the chain call it was read from. An address the
+  /// registry does not carry names the market provider that described it, and
+  /// carries that lookup's own freshness — four fields a chain call never
+  /// has. They are optional on the wire and tied to the kind here, so a
+  /// registry asset can never arrive wearing a provider's name.
   static LoopAssetSource assetSource(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, const <String>{
-      'kind',
-      'blockNumber',
-      'verifiedAt',
-    });
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      const <String>{'kind', 'blockNumber', 'verifiedAt'},
+      const <String>{'provider', 'fetchedAt', 'ttlSeconds', 'quality'},
+    );
     final rawKind = map['kind'];
     if (rawKind is! String) invalid();
     final kind = LoopAssetSourceKind.tryParse(rawKind);
     if (kind == null) invalid();
+    final provider = optionalFactSource(map, 'provider');
+    final lookup = kind == LoopAssetSourceKind.providerLookup;
+    if (lookup != (provider != null)) invalid();
+    final rawQuality = map['quality'];
+    LoopFactQuality? quality;
+    if (rawQuality != null) {
+      if (rawQuality is! String) invalid();
+      quality = LoopFactQuality.tryParse(rawQuality);
+      if (quality == null) invalid();
+    }
+    // A lookup with no observation time could not be marked stale or fresh,
+    // and the card would have to state a freshness nobody reported.
+    if (lookup && (quality == null || map['fetchedAt'] == null)) invalid();
     return LoopAssetSource(
       kind: kind,
       blockNumber: optionalBlockNumber(map, 'blockNumber'),
       verifiedAt: optionalTimestamp(map, 'verifiedAt'),
+      provider: provider,
+      fetchedAt: optionalTimestamp(map, 'fetchedAt'),
+      ttlSeconds: optionalInt(map, 'ttlSeconds', minimum: 1),
+      quality: quality,
     );
   }
 
@@ -447,9 +484,11 @@ abstract final class LoopV2ChainCodec {
         pattern: addressPattern,
         maxLength: 42,
       ),
-      symbol: requireText(map, 'symbol', maxLength: 32),
-      name: requireText(map, 'name'),
-      decimals: requireInt(map, 'decimals', maximum: 36),
+      // A provider that reported no ticker, no name or no precision leaves
+      // them null; the surface shows the address and formats no quantity.
+      symbol: optionalText(map, 'symbol', maxLength: 32),
+      name: optionalText(map, 'name'),
+      decimals: optionalInt(map, 'decimals', maximum: 36),
       status: requireAssetStatus(map, 'status'),
       source: assetSource(map['source']),
       updatedAt: requireTimestamp(map, 'updatedAt'),

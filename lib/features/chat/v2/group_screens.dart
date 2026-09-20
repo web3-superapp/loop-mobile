@@ -108,7 +108,7 @@ class GroupChatScreen extends ConsumerWidget {
                   key: ValueKey<String>('group-$value'),
                   cid: value,
                   keyPrefix: 'group-channel',
-                  composerHint: '发消息',
+                  composerHint: loopChatComposerHint,
                   header: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[

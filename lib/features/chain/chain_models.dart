@@ -40,7 +40,19 @@ String loopTruncatedAssetId(String assetId) {
 enum LoopAssetStatus {
   pending('pending', '待核验'),
   verified('verified', '已核验'),
-  blocked('blocked', '已屏蔽');
+  blocked('blocked', '已屏蔽'),
+
+  /// The registry has no row for this contract, and the facts alongside it
+  /// were read from the chain and the market providers for this request
+  /// alone. It is how a contract pasted into a conversation can be answered
+  /// at all; it is not a lesser kind of verification, and it never means the
+  /// asset was checked and found wanting.
+  unregistered('unregistered', '未登记'),
+
+  /// The registry has no row for this contract and no provider could
+  /// describe it at this moment. Identity is missing, not absent: the address
+  /// is all there is to show, and no ticker may be invented to fill the slot.
+  unavailable('unavailable', '暂时读不到');
 
   const LoopAssetStatus(this.wireName, this.label);
 
@@ -92,7 +104,12 @@ final class LoopAssetSummary {
 enum LoopAssetSourceKind {
   chainCall('chain_call'),
   chainNative('chain_native'),
-  operatorBlock('operator_block');
+  operatorBlock('operator_block'),
+
+  /// Identity read from a market provider for this request alone, because
+  /// the registry carries no row for the contract. It is not a chain call and
+  /// must never be labelled as one.
+  providerLookup('provider_lookup');
 
   const LoopAssetSourceKind(this.wireName);
 
@@ -112,11 +129,27 @@ final class LoopAssetSource {
     required this.kind,
     required this.blockNumber,
     required this.verifiedAt,
+    this.provider,
+    this.fetchedAt,
+    this.ttlSeconds,
+    this.quality,
   });
 
   final LoopAssetSourceKind kind;
   final BigInt? blockNumber;
   final DateTime? verifiedAt;
+
+  /// Which market provider answered, when [kind] is
+  /// [LoopAssetSourceKind.providerLookup]. `null` on every other kind.
+  final LoopFactSource? provider;
+
+  /// When that lookup was performed, and how long it is good for.
+  final DateTime? fetchedAt;
+  final int? ttlSeconds;
+
+  /// `stale` says the provider could not be reached and this identity is the
+  /// last one it gave. The surface marks it; it never presents it as current.
+  final LoopFactQuality? quality;
 }
 
 /// Registry facts for one asset. `symbol`/`name`/`decimals` come only from an
@@ -138,15 +171,32 @@ final class LoopChainAsset {
   final String assetId;
   final String chainId;
   final String? address;
-  final String symbol;
-  final String name;
-  final int decimals;
+
+  /// The ticker, when something could report one. A contract no provider
+  /// described carries `null` here, and the surface shows the address: a
+  /// placeholder ticker would be a name LOOP made up.
+  final String? symbol;
+  final String? name;
+
+  /// `null` when the answering provider does not report precision. No raw
+  /// on-chain quantity may be formatted without it — a wrong exponent is a
+  /// wrong number, not a rounding.
+  final int? decimals;
   final LoopAssetStatus status;
   final LoopAssetSource source;
   final DateTime updatedAt;
 
   bool get isNative => assetId.endsWith(':native');
+
+  /// Whether a raw on-chain quantity of this asset may be converted at all.
+  bool get hasPrecision => decimals != null;
 }
+
+/// The word a surface prints for [asset].
+///
+/// A provider that reported no ticker leaves the address to speak for itself.
+String loopAssetSymbolLabel(LoopChainAsset asset) =>
+    asset.symbol ?? loopTruncatedAssetId(asset.assetId);
 
 enum LoopAssetCapabilityValue {
   viewable('viewable'),

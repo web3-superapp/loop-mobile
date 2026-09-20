@@ -357,6 +357,9 @@ void main() {
         'lib/features/chain/chain_widgets.dart',
         'lib/features/market/market_secondary_screens.dart',
         'lib/features/market/token_screen.dart',
+        // The same Token Card, under a chat bubble: the same three metric
+        // cells, and nothing a member is committing to.
+        'lib/features/chat/token_card/chat_token_card.dart',
       };
       final callers = <String>{};
       for (final file in Directory('lib').listSync(recursive: true)) {

@@ -5,6 +5,8 @@ import 'package:loop_mobile/features/chat/friends/friend_models.dart';
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
+import 'package:loop_mobile/features/chat/token_card/chat_token_card.dart';
+import 'package:loop_mobile/features/chat/token_card/chat_token_detection.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
@@ -1039,16 +1041,20 @@ class _LoopStreamGroupMessageItem extends StatelessWidget {
         peerLabel: LoopDirectPeerScope.maybeOf(context),
         currentUserId: StreamChat.of(context).currentUser?.id,
       );
-      return LoopStreamMessageRow(
-        message: directProps.message,
-        padding: directProps.padding,
-        child: DefaultStreamMessageItem(props: directProps),
+      return _withTokenCards(
+        context,
+        directProps.message,
+        LoopStreamMessageRow(
+          message: directProps.message,
+          padding: directProps.padding,
+          child: DefaultStreamMessageItem(props: directProps),
+        ),
       );
     }
 
     final state = channel?.state;
     if (state == null) {
-      return _buildDefault(const <Member>[]);
+      return _buildDefault(context, const <Member>[]);
     }
 
     final initialMembers = List<Member>.unmodifiable(
@@ -1069,22 +1075,57 @@ class _LoopStreamGroupMessageItem extends StatelessWidget {
         final members = snapshot.hasError
             ? const <Member>[]
             : snapshot.data ?? const <Member>[];
-        return _buildDefault(members);
+        return _buildDefault(context, members);
       },
     );
   }
 
-  Widget _buildDefault(List<Member> members) {
+  Widget _buildDefault(BuildContext context, List<Member> members) {
     // The Alias-projected copy is the one the avatar reads too, so the
     // initials over the gutter and the name above the bubble stay the same
     // member.
     final displayProps = _groupDisplayProps(props, members);
-    return LoopStreamMessageRow(
-      message: displayProps.message,
-      padding: displayProps.padding,
-      child: DefaultStreamMessageItem(props: displayProps),
+    return _withTokenCards(
+      context,
+      displayProps.message,
+      LoopStreamMessageRow(
+        message: displayProps.message,
+        padding: displayProps.padding,
+        child: DefaultStreamMessageItem(props: displayProps),
+      ),
     );
   }
+}
+
+/// Puts a Token Card under a bubble whose text names a contract address.
+///
+/// The bubble is untouched: the address stays in the message exactly as it
+/// was written, and the card below it is LOOP reading that address — the
+/// message itself carries no facts and is never rewritten.
+///
+/// The long-press preview renders the same item; it gets no cards, because a
+/// preview is a copy of the bubble and a second card there would read the
+/// same contract twice for one message.
+Widget _withTokenCards(BuildContext context, Message message, Widget row) {
+  if (StreamMessageLayout.presentationOf(context) !=
+      StreamMessagePresentation.standard) {
+    return row;
+  }
+  if (message.isDeleted) return row;
+  final addresses = loopDetectChatTokenAddresses(message.text ?? '');
+  if (addresses.isEmpty) return row;
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    mainAxisSize: MainAxisSize.min,
+    children: <Widget>[
+      row,
+      for (final address in addresses)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: ChatTokenCard(address: address),
+        ),
+    ],
+  );
 }
 
 /// The same card height Stream's own mention overlay uses, so a long roster
