@@ -7374,7 +7374,7 @@ def check_chat_attachment_contract(root: Path) -> list[str]:
             "lib/app.dart": (
                 "LoopStreamTokenCardAttachmentBuilder()",
                 "LoopStreamTokenCardMessagePreviewFormatter()",
-                "configData: _loopStreamConfiguration",
+                "configData: loopStreamChatConfiguration",
             ),
             "lib/features/chat/chat_preview_route_guard.dart": (
                 "gateway.mode == CommunicationMode.preview",
@@ -11350,6 +11350,32 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
             errors.append(
                 "A group mention must never write a Stream id into the message body"
             )
+
+    # R15-5. Stream's draft feature uploads the composer on every keystroke
+    # and restores it on the next visit, so a channel opened with a stray `@`
+    # left over from an earlier session. LOOP never designed for either half,
+    # and a restored LOOP `@` carries no roster to read its channel-scoped
+    # name back with. A conversation opens with an empty composer.
+    stream_config_path = root / "lib/app.dart"
+    if stream_config_path.is_file():
+        stream_config = strip_dart_comments(read_text(stream_config_path))
+        config_start = stream_config.find("StreamChatConfigurationData(")
+        if config_start < 0:
+            errors.append(
+                "The Stream configuration LOOP mounts must stay in app.dart"
+            )
+        else:
+            config_arguments = _dart_call_arguments(
+                stream_config,
+                stream_config.index("(", config_start),
+            )
+            if (
+                config_arguments is None
+                or "draftMessagesEnabled: false" not in config_arguments
+            ):
+                errors.append(
+                    "A LOOP conversation must open with an empty composer, not a restored provider draft"
+                )
 
     # R14-3. A direct conversation is named by LOOP's own profile record or
     # not at all, and the only construction site of a `DirectMessageTarget`

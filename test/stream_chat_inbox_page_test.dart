@@ -104,6 +104,16 @@ void main() {
     avatarRef: null,
   );
 
+  test('a conversation opens with an empty composer', () {
+    // R15-5. Stream's draft feature uploads the composer on every keystroke
+    // and restores it on the next visit. The device showed the second half of
+    // that: a bare `@` left over from an earlier visit, which opens the whole
+    // candidate list on the first tap of the field. A restored LOOP `@` could
+    // not be trusted either — it is a channel-scoped name and the stored
+    // draft carries no roster to read it back with.
+    expect(loopStreamChatConfiguration.draftMessagesEnabled, isFalse);
+  });
+
   test('a named direct row opens the conversation carrying its peer', () {
     final destination = loopInboxChannelDestination(
       cid: directCid,

@@ -115,11 +115,27 @@ final _loopStreamComponentBuilders = StreamComponentBuilders(
   ),
 );
 
-final _loopStreamConfiguration = StreamChatConfigurationData(
+/// The configuration every official Stream widget in LOOP reads.
+final loopStreamChatConfiguration = StreamChatConfigurationData(
   messagePreviewFormatter: const LoopStreamTokenCardMessagePreviewFormatter(),
   attachmentBuilders: const <LoopStreamTokenCardAttachmentBuilder>[
     LoopStreamTokenCardAttachmentBuilder(),
   ],
+  // Stream's draft feature writes the composer's contents to the provider on
+  // every keystroke and restores them the next time the channel is opened.
+  // LOOP never designed for either half. On the device it meant walking into
+  // a group and finding a bare `@` left over from an earlier visit, which
+  // opens the whole candidate list on the first tap of the field and is one
+  // stray tap away from sending somebody a message they did not write
+  // (device report 2026-09-20 · R15-5). And what it restores cannot be
+  // trusted anyway: a LOOP `@` is a channel-scoped name, and the stored
+  // draft carries no roster to read it back with.
+  //
+  // So a conversation opens with an empty composer. Nothing a member typed
+  // and did not send leaves the device, and nothing from an earlier visit
+  // comes back. Text typed in one visit is lost when the page is left — LOOP
+  // has no local draft store of its own, and this is the honest cost.
+  draftMessagesEnabled: false,
 );
 
 class LoopApp extends ConsumerStatefulWidget {
@@ -322,7 +338,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
               key: ObjectKey(streamSession.client),
               client: streamSession.client,
               themeData: loopStreamChatThemeData(),
-              configData: _loopStreamConfiguration,
+              configData: loopStreamChatConfiguration,
               componentBuilders: _loopStreamComponentBuilders,
               child: content,
             ),
