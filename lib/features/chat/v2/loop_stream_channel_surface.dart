@@ -11,6 +11,7 @@ import 'package:loop_mobile/integrations/communication/stream_chat_appearance.da
 import 'package:loop_mobile/integrations/communication/stream_outgoing_message_order.dart';
 import 'package:loop_mobile/integrations/communication/stream_server_clock_source.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
+import 'package:loop_mobile/integrations/communication/stream_connection.dart';
 import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
@@ -115,7 +116,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
                 onRetry: () => ref.invalidate(streamChatAuthorizationProvider),
               );
             }
-            return _MemberChannelBody(
+            return LoopStreamMemberChannelBody(
               key: ValueKey<String>('$keyPrefix-$cid-${currentUser.id}'),
               client: session.client,
               cid: cid,
@@ -131,13 +132,24 @@ class LoopStreamChannelSurface extends ConsumerWidget {
   }
 }
 
+/// Resolves the one channel a surface shows, or nothing.
+///
+/// The surface supplies Stream's membership query; a test supplies its own
+/// answer. It is called only with a live websocket — see
+/// [loopStreamConnectedRead].
+typedef LoopStreamMemberChannelQuery = Future<List<Channel>> Function();
+
 /// Server-side membership proof before any official channel UI mounts.
 ///
 /// A channel-list query cannot create a missing channel, unlike
 /// `client.channel(...).watch()`. A CID the account is not a member of simply
 /// resolves to nothing.
-class _MemberChannelBody extends StatefulWidget {
-  const _MemberChannelBody({
+///
+/// Every LOOP conversation — direct message, community official group, friend
+/// group — mounts through this one body, so the connect-before-read rule
+/// (device report 2026-09-19 · F1) is stated once and holds for all three.
+class LoopStreamMemberChannelBody extends StatefulWidget {
+  const LoopStreamMemberChannelBody({
     required this.client,
     required this.cid,
     required this.userId,
@@ -147,6 +159,8 @@ class _MemberChannelBody extends StatefulWidget {
     required this.banner,
     required this.keyPrefix,
     super.key,
+    this.connection,
+    this.query,
   });
 
   final StreamChatClient client;
@@ -158,29 +172,51 @@ class _MemberChannelBody extends StatefulWidget {
   final Widget? banner;
   final String keyPrefix;
 
+  /// The websocket this body reads over. Defaults to [client]'s own.
+  final LoopStreamConnection? connection;
+
+  /// The membership query. Defaults to Stream's channel-list query for
+  /// [cid] and [userId].
+  final LoopStreamMemberChannelQuery? query;
+
   @override
-  State<_MemberChannelBody> createState() => _MemberChannelBodyState();
+  State<LoopStreamMemberChannelBody> createState() =>
+      _LoopStreamMemberChannelBodyState();
 }
 
-class _MemberChannelBodyState extends State<_MemberChannelBody> {
+class _LoopStreamMemberChannelBodyState
+    extends State<LoopStreamMemberChannelBody>
+    with WidgetsBindingObserver {
   late Future<Channel?> _channel;
+  late LoopStreamConnection _connection;
   LoopOutgoingMessageOrder? _outgoingOrder;
   StreamSubscription<Event>? _clockSource;
+
+  /// Whether a resume has already asked this body to reconnect and is still
+  /// waiting for the answer. One resume buys one attempt; a failed attempt
+  /// leaves the retry button and does not schedule another by itself.
+  bool _resumeReadInFlight = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _connection =
+        widget.connection ?? LoopStreamClientConnection(widget.client);
     _clockSource = loopWatchStreamServerClock(widget.client);
-    _channel = _load();
+    _channel = _start();
   }
 
   @override
-  void didUpdateWidget(covariant _MemberChannelBody oldWidget) {
+  void didUpdateWidget(covariant LoopStreamMemberChannelBody oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.client, widget.client) ||
+        !identical(oldWidget.connection, widget.connection) ||
         oldWidget.cid != widget.cid ||
         oldWidget.userId != widget.userId) {
       unawaited(_clockSource?.cancel());
+      _connection =
+          widget.connection ?? LoopStreamClientConnection(widget.client);
       _clockSource = loopWatchStreamServerClock(widget.client);
       _reload();
     }
@@ -188,6 +224,7 @@ class _MemberChannelBodyState extends State<_MemberChannelBody> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _outgoingOrder?.dispose();
     _outgoingOrder = null;
     unawaited(_clockSource?.cancel());
@@ -195,26 +232,50 @@ class _MemberChannelBodyState extends State<_MemberChannelBody> {
     super.dispose();
   }
 
+  /// The OS closes the websocket behind a backgrounded app, and nothing on
+  /// screen says so: the page the member comes back to is the page they left,
+  /// and until S47 the only way out of it was a retry that re-ran the same
+  /// query on the same dead socket. Coming back to the app now re-opens the
+  /// socket and re-reads, once.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state != AppLifecycleState.resumed) return;
+    if (_resumeReadInFlight || _connection.isConnected) return;
+    _resumeReadInFlight = true;
+    setState(_reload);
+  }
+
   void _reload() {
     _outgoingOrder?.dispose();
     _outgoingOrder = null;
-    _channel = _load();
+    _channel = _start();
   }
 
+  /// Starts one read and keeps its failure off the zone's uncaught handler.
+  ///
+  /// `setState` only schedules the rebuild that re-subscribes the
+  /// `FutureBuilder`, so a read that fails before that frame has no listener
+  /// yet and is reported as an unhandled exception — one per retry press, as
+  /// the 2026-09-19 device log shows. `ignore()` claims the failure without
+  /// consuming it: the builder still receives it and still renders the block.
+  Future<Channel?> _start() {
+    final pending = _load();
+    pending.ignore();
+    return pending;
+  }
+
+  /// One read, over a socket this method opens first when there is none.
   Future<Channel?> _load() async {
-    final channels = await widget.client.queryChannelsOnline(
-      filter: Filter.and(<Filter>[
-        Filter.equal('cid', widget.cid),
-        Filter.equal('type', 'messaging'),
-        Filter.in_('members', <Object>[widget.userId]),
-      ]),
-      state: true,
-      watch: true,
-      presence: true,
-      memberLimit: 30,
-      messageLimit: 25,
-      paginationParams: const PaginationParams(limit: 1),
-    );
+    try {
+      return await loopStreamConnectedRead(_connection, _resolve);
+    } finally {
+      _resumeReadInFlight = false;
+    }
+  }
+
+  Future<Channel?> _resolve() async {
+    final channels = await (widget.query ?? _queryMemberChannel)();
     if (channels.length != 1) return null;
     final channel = channels.single;
     if (channel.cid != widget.cid ||
@@ -228,6 +289,21 @@ class _MemberChannelBodyState extends State<_MemberChannelBody> {
     _outgoingOrder = LoopOutgoingMessageOrder(channel: channel)..attach();
     return channel;
   }
+
+  Future<List<Channel>> _queryMemberChannel() =>
+      widget.client.queryChannelsOnline(
+        filter: Filter.and(<Filter>[
+          Filter.equal('cid', widget.cid),
+          Filter.equal('type', 'messaging'),
+          Filter.in_('members', <Object>[widget.userId]),
+        ]),
+        state: true,
+        watch: true,
+        presence: true,
+        memberLimit: 30,
+        messageLimit: 25,
+        paginationParams: const PaginationParams(limit: 1),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -441,6 +517,9 @@ String loopStreamChannelBlockMessage(
   // Stream itself refused this account the channel. This is the only case
   // that may name membership.
   LoopStreamChannelBlock.refused => '你还不是这个群的成员，LOOP 没有打开任何会话。',
+  // Nothing was asked, so nothing about membership may be said. The socket is
+  // the thing that is missing, and the network is where the member looks.
+  LoopStreamChannelBlock.notConnected => '没有连上聊天服务，请检查网络后重试。',
   LoopStreamChannelBlock.notOpened => '没能打开这个频道的会话，请稍后重试。',
   LoopStreamChannelBlock.unresolved =>
     unresolvedMessage ?? '这个频道还没有同步到你的账号，LOOP 没有打开任何会话。',
@@ -452,6 +531,7 @@ String loopStreamChannelBlockMessage(
 String loopStreamChannelBlockKey(LoopStreamChannelBlock block) =>
     switch (block) {
       LoopStreamChannelBlock.refused => 'not-member',
+      LoopStreamChannelBlock.notConnected => 'disconnected',
       LoopStreamChannelBlock.notOpened => 'not-opened',
       LoopStreamChannelBlock.unresolved => 'unresolved',
       LoopStreamChannelBlock.offline => 'offline',

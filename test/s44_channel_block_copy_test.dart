@@ -67,7 +67,9 @@ void main() {
     test('a client with no connection, or a failed query, did not ask', () {
       // The SDK's own refusal to query without a live websocket
       // (`client.dart:891`). This is the one that reached the reader as
-      // "you are not a member of this group".
+      // "you are not a member of this group". S47 gave it its own cause —
+      // the socket, which a retry can now re-open — see
+      // `s47_stream_reconnect_test.dart`.
       expect(
         loopStreamChannelBlockOf(
           const StreamChatError(
@@ -75,7 +77,7 @@ void main() {
             'Please call `connectUser` to connect the client.',
           ),
         ),
-        LoopStreamChannelBlock.notOpened,
+        LoopStreamChannelBlock.notConnected,
       );
       expect(
         loopStreamChannelBlockOf(TimeoutException('Channel query timed out')),

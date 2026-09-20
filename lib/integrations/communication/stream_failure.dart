@@ -1,4 +1,5 @@
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
+import 'package:loop_mobile/integrations/communication/stream_connection.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// Whether a chat failure is a connectivity observation rather than an answer.
@@ -47,6 +48,12 @@ enum LoopStreamChannelBlock {
   /// The device never reached Stream, so nothing was asked.
   offline,
 
+  /// The chat session holds no live websocket and one could not be opened, so
+  /// the read was never sent. Distinct from [offline]: the device may have a
+  /// network and still have no socket, which is what an app returning from the
+  /// background looks like.
+  notConnected,
+
   /// Stream answered, and the answer refused this account the channel.
   refused,
 
@@ -66,6 +73,14 @@ enum LoopStreamChannelBlock {
 LoopStreamChannelBlock loopStreamChannelBlockOf(Object? error) {
   if (error == null) return LoopStreamChannelBlock.unresolved;
   if (loopStreamFailureIsOffline(error)) return LoopStreamChannelBlock.offline;
+  // The read stopped before it was sent because there was no socket to send it
+  // on, and opening one did not succeed either. If that attempt failed on the
+  // way out, the device is offline and says so.
+  if (error is LoopStreamNotConnected) {
+    return loopStreamFailureIsOffline(error.cause)
+        ? LoopStreamChannelBlock.offline
+        : LoopStreamChannelBlock.notConnected;
+  }
   if (error is StreamChatNetworkError) {
     return _isAccessRefusal(error.errorCode, error.statusCode)
         ? LoopStreamChannelBlock.refused
@@ -76,10 +91,16 @@ LoopStreamChannelBlock loopStreamChannelBlockOf(Object? error) {
         ? LoopStreamChannelBlock.refused
         : LoopStreamChannelBlock.notOpened;
   }
-  // Everything else — including the SDK's own
-  // `StreamChatError('You cannot use queryChannels without an active
-  // connection…')` and a `TimeoutException` from its 30s query guard — is a
-  // read that produced no answer.
+  // The SDK's own refusal to query without a live socket
+  // (`client.dart:890`). A LOOP read reaches it through
+  // [loopStreamConnectedRead] and is reported as [notConnected] above; this
+  // catches the same words arriving from a path that did not.
+  if (error is StreamChatError &&
+      error.message.contains('without an active connection')) {
+    return LoopStreamChannelBlock.notConnected;
+  }
+  // Everything else — including a `TimeoutException` from the SDK's 30s query
+  // guard — is a read that produced no answer.
   return LoopStreamChannelBlock.notOpened;
 }
 
