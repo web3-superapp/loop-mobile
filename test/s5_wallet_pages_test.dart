@@ -530,7 +530,29 @@ void main() {
   });
 
   group('asset', () {
-    testWidgets('the five balance meanings are shown separately', (
+    /// Opens 余额说明与资产事实.
+    ///
+    /// The three key/value tables used to be the whole page and pushed every
+    /// prototype block off the screen (visual audit item 5). They moved behind
+    /// the prototype's own disclosure; every fact they carry is still exactly
+    /// one tap away, and these tests take that tap.
+    Future<void> openAssetFacts(WidgetTester tester) async {
+      final summary = find.byKey(
+        const ValueKey<String>('wallet-asset-facts-disclosure'),
+      );
+      await scrollToS5Section(tester, summary);
+      await tester.tap(
+        find.descendant(
+          of: summary,
+          matching: find.byKey(
+            const ValueKey<String>('loop-disclosure-summary'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the prototype blocks are laid out in the prototype order', (
       tester,
     ) async {
       await pumpS5Page(
@@ -540,7 +562,70 @@ void main() {
         chain: FakeChainGateway(),
       );
 
-      expect(find.text('链上余额'), findsOneWidget);
+      // 2x2 grid → chart → mining → the three actions → chain split. That is
+      // the prototype's order, and the order is what the audit found lost.
+      final order = <Key>[
+        const ValueKey<String>('wallet-asset-stat-balance'),
+        const ValueKey<String>('wallet-asset-chart'),
+        const ValueKey<String>('wallet-asset-power-hint'),
+        const ValueKey<String>('wallet-asset-send'),
+        const ValueKey<String>('wallet-asset-chain-row'),
+      ];
+      var previous = double.negativeInfinity;
+      for (final key in order) {
+        final finder = find.byKey(key);
+        expect(finder, findsOneWidget, reason: '$key is missing');
+        final top = tester.getTopLeft(finder).dy;
+        expect(
+          top,
+          greaterThanOrEqualTo(previous),
+          reason: '$key is out of order',
+        );
+        previous = top;
+      }
+      // No key/value table is on the surface any more.
+      expect(find.text('最小单位余额（18 位精度的整数）'), findsNothing);
+    });
+
+    testWidgets('a figure the read has no answer for is a dash, never a zero', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const WalletAssetScreen(assetId: s5NativeAssetId),
+        wallet: FakeWalletReadGateway(
+          balances: S5Answer<LoopWalletBalances>(
+            value: s5Balances(
+              rows: <LoopAssetBalanceRow>[
+                s5Row(
+                  balance: const LoopBalanceUnavailable('BSC_RPC_UNAVAILABLE'),
+                  valuation: const LoopValuationUnavailable(
+                    'MARKET_PRICE_PROVIDER_NOT_CONFIGURED',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        chain: FakeChainGateway(),
+      );
+
+      expect(find.text('—'), findsNWidgets(4));
+      expect(find.text('0'), findsNothing);
+    });
+
+    testWidgets('the five balance meanings are shown separately', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const WalletAssetScreen(assetId: s5NativeAssetId),
+        wallet: FakeWalletReadGateway(),
+        chain: FakeChainGateway(),
+      );
+      await openAssetFacts(tester);
+
+      expect(find.text('链上余额'), findsWidgets);
       expect(find.text('可用'), findsOneWidget);
       expect(find.text('可动用（扣除手续费保留）'), findsOneWidget);
       expect(find.text('手续费保留'), findsOneWidget);
@@ -561,6 +646,7 @@ void main() {
         wallet: FakeWalletReadGateway(),
         chain: FakeChainGateway(),
       );
+      await openAssetFacts(tester);
 
       await scrollToS5Section(
         tester,
@@ -594,6 +680,7 @@ void main() {
       );
 
       expect(find.text('7'), findsWidgets);
+      await openAssetFacts(tester);
       await scrollToS5Section(
         tester,
         find.byKey(const ValueKey<String>('wallet-asset-crosscheck')),

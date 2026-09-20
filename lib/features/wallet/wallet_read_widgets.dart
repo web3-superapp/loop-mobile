@@ -8,9 +8,11 @@ import 'package:loop_mobile/app/session/wallet_provisioning_controller.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
@@ -100,6 +102,54 @@ LoopRecordRow walletBalanceRow(
   );
 }
 
+/// One indexed transfer, as both the history tape and the asset page list it.
+///
+/// The prototype heads every activity row with a circular glyph badge —
+/// incoming, outgoing, claim — and the app's rows had no leading column at all
+/// (visual audit item 7). Direction decides the glyph and its ground; nothing
+/// else about the row changed.
+LoopRecordRow walletActivityRow(
+  LoopWalletActivityEntry entry, {
+  DateTime? now,
+}) {
+  final incoming = entry.direction == LoopTransferDirection.incoming;
+  return LoopRecordRow(
+    key: ValueKey<String>('tx-entry-${entry.entryId}'),
+    leading: LoopRowIcon(
+      icon: switch (entry.direction) {
+        LoopTransferDirection.incoming => 'arrow-down',
+        LoopTransferDirection.outgoing => 'arrow-up',
+        LoopTransferDirection.self => 'shuffle',
+      },
+      tone: incoming ? LoopRowIconTone.accent : LoopRowIconTone.neutral,
+    ),
+    title:
+        '${switch (entry.direction) {
+          LoopTransferDirection.incoming => '收到',
+          LoopTransferDirection.outgoing => '发出',
+          LoopTransferDirection.self => '自转',
+        }} ${entry.symbol}',
+    subtitle: <String>[
+      loopConfirmationLabel(entry.status),
+      if (entry.confirmations != null)
+        '${loopGroupedFigure(entry.confirmations.toString())} 确认',
+      '区块 ${loopGroupedFigure(entry.blockNumber.toString())}',
+      '对方 ${loopTruncatedAddress(entry.counterpartyAddress)}',
+      loopRelativeTime(entry.observedAt, now: now),
+    ].join(' · '),
+    // Five facts beside a figure column: the line ended at
+    // 「已确认 · 17 确认 · 区块 122235831 · 9 …」, losing the counterparty and
+    // the stamp.
+    subtitleMaxLines: 3,
+    trailing: loopFormatDecimal(entry.displayValue),
+    trailingCaptionUp: incoming,
+    trailingCaption: loopTruncatedAddress(entry.transactionHash),
+    trailingBadge: entry.status == LoopConfirmationStatus.reorged
+        ? const LoopBadge('已回滚', kind: LoopBadgeKind.down)
+        : null,
+  );
+}
+
 /// The snapshot footer every balance block carries: all figures come from one
 /// block height, observed at one moment.
 class WalletSnapshotFooter extends StatelessWidget {
@@ -123,10 +173,23 @@ class WalletSnapshotFooter extends StatelessWidget {
 /// The net-worth card. It always states that this is not a spendable balance,
 /// and a `partial` total says how many rows could not be valued.
 class WalletNetWorthCard extends StatelessWidget {
-  const WalletNetWorthCard({required this.netWorth, super.key, this.now});
+  const WalletNetWorthCard({
+    required this.netWorth,
+    super.key,
+    this.now,
+    this.compact = false,
+  });
 
   final LoopNetWorth netWorth;
   final DateTime? now;
+
+  /// Drops the label and the figure, keeping the badges and the provenance.
+  ///
+  /// The net-worth page heads itself with the total, so the card under it was
+  /// the same figure a second time in a second type size (audit §A.2). What
+  /// the card alone carries — 不是可用余额, the partial count, the quality mark
+  /// and the source — stays, because the heading cannot say any of it.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -145,10 +208,12 @@ class WalletNetWorthCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Text('净值（${valued.valuationCurrency}）', style: LoopMono.label),
-              const SizedBox(height: 6),
-              Text(loopFormatUsd(valued.valueUsd), style: LoopMono.display),
-              const SizedBox(height: 8),
+              if (!compact) ...<Widget>[
+                Text('净值（${valued.valuationCurrency}）', style: LoopMono.label),
+                const SizedBox(height: 6),
+                Text(loopFormatUsd(valued.valueUsd), style: LoopMono.display),
+                const SizedBox(height: 8),
+              ],
               Wrap(
                 spacing: 8,
                 runSpacing: 6,
