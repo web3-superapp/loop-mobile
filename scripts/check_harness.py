@@ -10425,6 +10425,10 @@ FRIEND_FRONTEND_TEST_MARKERS = {
         "typing an Alias prefix narrows the group candidates",
         "tapping a candidate types the Alias and keeps the link",
         "a bubble draws the Alias for a mention, never the Stream id",
+        "Stream drops a mention whose token is the channel Alias",
+        "naming the mentioned member with the Alias keeps the link",
+        "an edit is prepared the same way, from the live roster",
+        "only a group or community channel is prepared",
     ),
     Path("test/group_alias_resolver_test.dart"): (
         "keeps only the validated messaging channel ID",
@@ -11253,6 +11257,55 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                     "Group Stream list and channel chrome must not restore stock global identity projections: "
                     + forbidden
                 )
+
+    # R14-2. A group `@` types the channel Alias, and `Message.toJson` drops
+    # any mention whose token it cannot find in the body, so every composer
+    # has to name the mentioned member with that Alias on the way out or the
+    # mention leaves as plain text. One rule for every composer LOOP mounts.
+    for relative in (
+        "lib/features/chat/group_alias/group_alias_stream_message_identity.dart",
+        "lib/features/chat/v2/loop_stream_channel_surface.dart",
+    ):
+        composer_path = root / relative
+        if not composer_path.is_file():
+            continue
+        composer_source = strip_dart_comments(read_text(composer_path))
+        for index in re.finditer(r"StreamMessageComposer\(", composer_source):
+            arguments = _dart_call_arguments(composer_source, index.end() - 1)
+            if arguments is None or "preMessageSending:" not in arguments:
+                errors.append(
+                    "Every LOOP composer must prepare a group mention before sending: "
+                    + relative
+                )
+        if "loopPrepareChannelMessageForSend(" not in composer_source:
+            errors.append(
+                "Every LOOP composer must prepare a group mention before sending: "
+                + relative
+            )
+
+    mention_identity_path = (
+        root
+        / "lib/features/chat/group_alias/group_alias_stream_message_identity.dart"
+    )
+    if mention_identity_path.is_file():
+        mention_identity = strip_dart_comments(read_text(mention_identity_path))
+        send_start = mention_identity.find("Message prepareLoopGroupMentionsForSend")
+        send_end = mention_identity.find(
+            "Message loopPrepareChannelMessageForSend", send_start + 1
+        )
+        send_section = (
+            mention_identity[send_start:send_end]
+            if send_start >= 0 and send_end > send_start
+            else ""
+        )
+        if "copyWith(mentionedUsers: named)" not in send_section:
+            errors.append(
+                "A group mention must be kept by naming the mentioned member, not by rewriting the message body"
+            )
+        if "text:" in send_section:
+            errors.append(
+                "A group mention must never write a Stream id into the message body"
+            )
 
     # R14-3. A direct conversation is named by LOOP's own profile record or
     # not at all, and the only construction site of a `DirectMessageTarget`

@@ -197,6 +197,72 @@ Widget loopStreamGroupMentionItemBuilder(
   );
 }
 
+/// Keeps a group `@` linked to the member it names when the message leaves.
+///
+/// `Message.toJson` runs `removeMentionsIfNotIncluded()` before anything is
+/// serialized, and that filter keeps a mention only when the body spells
+/// `@<user.id>` or `@<user.name>` as a standalone word
+/// (`stream_chat-10.3.0/lib/src/core/models/message.dart:905`). LOOP types the
+/// channel Alias, and a LOOP account carries no Stream name — the getter
+/// answers the id — so neither token matched and the whole mention was
+/// dropped on the way out: the device's own `@Harbor-7001` came back from the
+/// server with `mentioned_users: []` (device report 2026-09-20 · R14-2). The
+/// `@` was text, and text alone raises no unread, no push and no highlight.
+///
+/// So the mentioned user is named *locally* with the Alias this channel
+/// resolved, which is exactly the word the member typed, and Stream's own
+/// filter then finds it. The body is left alone: writing the id into the text
+/// would have linked the mention too, but that id would then be the stored
+/// message — read back by chat search, by forwarding, and by every surface
+/// that has no member roster to translate it with.
+///
+/// Nothing about this projection is sent: `mentioned_users` serializes as a
+/// list of ids (`User.toIds`, `message.g.dart:89`), so the Alias stays on the
+/// device and the server learns only who was mentioned.
+@visibleForTesting
+Message prepareLoopGroupMentionsForSend({
+  required Message message,
+  required Iterable<Member> members,
+}) {
+  final mentioned = message.mentionedUsers;
+  if (mentioned.isEmpty) return message;
+
+  final roster = List<Member>.unmodifiable(members);
+  var changed = false;
+  final named = <User>[];
+  for (final user in mentioned) {
+    final alias = resolveLoopGroupMessageSenderLabel(
+      senderUserId: user.id,
+      members: roster,
+    );
+    // A member this channel cannot name is left exactly as Stream had them:
+    // the mention then stands or falls on Stream's own tokens, and LOOP has
+    // invented nothing.
+    if (alias == loopGroupMemberNeutralLabel || user.name == alias) {
+      named.add(user);
+      continue;
+    }
+    changed = true;
+    named.add(User(id: user.id, name: alias));
+  }
+  if (!changed) return message;
+  return message.copyWith(mentionedUsers: named);
+}
+
+/// The pre-send step a LOOP composer installs for the channel it is in.
+///
+/// A direct channel has no Alias namespace and keeps Stream's own behavior.
+Message loopPrepareChannelMessageForSend({
+  required Message message,
+  required Channel channel,
+}) {
+  if (!loopStreamChannelUsesGroupMessageAlias(channel.cid)) return message;
+  return prepareLoopGroupMentionsForSend(
+    message: message,
+    members: channel.state?.channelState.members ?? const <Member>[],
+  );
+}
+
 /// Uses a reviewed group name without falling back to Stream member names.
 @visibleForTesting
 String resolveLoopGroupConversationLabel(Map<String, Object?> extraData) {
@@ -446,6 +512,13 @@ class _LoopStreamGroupChannelPageState
       focusNode: _focusNode,
       messageComposerController: _composerController,
       onQuotedMessageCleared: _composerController.clearQuotedMessage,
+      // The `@` the member typed is an Alias, which Stream's own mention
+      // filter would not recognize: this names the mentioned member with it
+      // so the link leaves with the message.
+      preMessageSending: (message) => loopPrepareChannelMessageForSend(
+        message: message,
+        channel: StreamChannel.of(context).channel,
+      ),
       enableVoiceRecording: false,
       // This page only ever mounts a group channel, so the `@` overlay is
       // always LOOP's Alias one.
@@ -560,6 +633,10 @@ class _LoopStreamGroupThreadPageState
         : StreamMessageComposer(
             focusNode: _focusNode,
             messageComposerController: _composerController,
+            preMessageSending: (message) => loopPrepareChannelMessageForSend(
+              message: message,
+              channel: StreamChannel.of(context).channel,
+            ),
             enableVoiceRecording: false,
             enableMentionsOverlay: false,
             customAutocompleteTriggers: <StreamAutocompleteTrigger>[
@@ -927,15 +1004,19 @@ class LoopGroupMentionAutocompleteOptions extends StatelessWidget {
   }
 
   void _accept(BuildContext context, LoopGroupMentionCandidate candidate) {
-    // Two separate facts leave with the message. `mentioned_users` is a list
-    // of ids on the payload (`message.g.dart:89`), so the Stream mention link
-    // survives even though the text spells the Alias; the text is the word
-    // the member just read in the row.
+    // Two separate facts leave with the message. The text is the word the
+    // member just read in the row; `mentioned_users` is a list of ids on the
+    // payload (`message.g.dart:89`). The Alias rides along as the mentioned
+    // user's local name, because Stream drops a mention whose token it cannot
+    // find in the body — see [prepareLoopGroupMentionsForSend], which re-reads
+    // it from the live roster on the way out and so also covers an edit.
     final alreadyMentioned = messageComposerController.mentionedUsers.any(
       (user) => user.id == candidate.userId,
     );
     if (!alreadyMentioned) {
-      messageComposerController.addMentionedUser(User(id: candidate.userId));
+      messageComposerController.addMentionedUser(
+        User(id: candidate.userId, name: candidate.alias),
+      );
     }
     StreamAutocomplete.of(context).acceptAutocompleteOption(candidate.alias);
   }

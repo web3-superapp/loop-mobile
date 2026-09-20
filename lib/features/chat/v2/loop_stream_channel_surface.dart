@@ -449,7 +449,14 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
     _sendStartedAt = message.remoteCreatedAt == null
         ? LoopServerClock.instance.deviceNow()
         : null;
-    return message;
+    // The other half of the same step: an `@` in a group or community channel
+    // spells the channel Alias, which Stream's own mention filter does not
+    // recognize, so the member it names is named with it here and the link
+    // leaves with the message (device report 2026-09-20 · R14-2).
+    return loopPrepareChannelMessageForSend(
+      message: message,
+      channel: StreamChannel.of(context).channel,
+    );
   }
 
   void _afterSend(Message message) {

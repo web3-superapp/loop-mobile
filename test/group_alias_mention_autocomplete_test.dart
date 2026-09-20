@@ -185,13 +185,112 @@ void main() {
     // What the member reads is what the message carries…
     expect(harness.controller.text, '@Tundra-3726 ');
     expect(harness.controller.text, isNot(contains('loop_')));
-    // …and the Stream mention link leaves with it: `mentioned_users` is an id
-    // list on the payload, independent of the text.
+    // …and the Stream mention link leaves with it.
     expect(harness.controller.mentionedUsers.map((user) => user.id), <String>[
+      _tundra,
+    ]);
+    expect(harness.controller.value.toJson()['mentioned_users'], <String>[
       _tundra,
     ]);
 
     await _teardown(tester, harness);
+  });
+
+  group('the mention link leaves with the message', () {
+    // R14-2. Device report 2026-09-20: the group `@` read correctly on screen
+    // but the server stored `mentioned_users: []`, so the mention raised no
+    // unread, no push and no highlight — it was only text.
+    Message mention({String? name}) => Message(
+      id: 'message-1',
+      text: '@Tundra-3726 看一下',
+      mentionedUsers: <User>[User(id: _tundra, name: name)],
+    );
+
+    test('Stream drops a mention whose token is the channel Alias', () {
+      // The defect itself, pinned: `toJson` filters mentions by `@<user.id>`
+      // and `@<user.name>`, and a LOOP account answers the id for both.
+      expect(mention().toJson()['mentioned_users'], isEmpty);
+    });
+
+    test('naming the mentioned member with the Alias keeps the link', () {
+      final prepared = prepareLoopGroupMentionsForSend(
+        message: mention(),
+        members: _roster(),
+      );
+
+      // The body is untouched: no Stream id is ever written into a message.
+      expect(prepared.text, '@Tundra-3726 看一下');
+      expect(prepared.text, isNot(contains('loop_')));
+      expect(prepared.toJson()['mentioned_users'], <String>[_tundra]);
+      // Only ids are sent, so the Alias never leaves the device this way.
+      expect(prepared.toJson()['text'], '@Tundra-3726 看一下');
+    });
+
+    test('an edit is prepared the same way, from the live roster', () {
+      // A message read back from the server carries mentioned users with no
+      // name at all, so an edit would silently drop the link.
+      final reloaded = mention(name: null);
+      expect(reloaded.toJson()['mentioned_users'], isEmpty);
+      expect(
+        prepareLoopGroupMentionsForSend(
+          message: reloaded,
+          members: _roster(),
+        ).toJson()['mentioned_users'],
+        <String>[_tundra],
+      );
+    });
+
+    test(
+      'a member this channel cannot name is left exactly as Stream had them',
+      () {
+        final unknown = Message(
+          id: 'message-2',
+          text: '@Someone 看一下',
+          mentionedUsers: <User>[User(id: _unprojected)],
+        );
+        final prepared = prepareLoopGroupMentionsForSend(
+          message: unknown,
+          members: _roster(),
+        );
+
+        expect(prepared.mentionedUsers.single.name, _unprojected);
+        expect(prepared.toJson()['mentioned_users'], isEmpty);
+      },
+    );
+
+    test('only a group or community channel is prepared', () {
+      final client = StreamChatClient(
+        'public-stream-api-key',
+        logLevel: Level.OFF,
+      );
+      Channel channelFor(String id) => Channel.fromState(
+        client,
+        ChannelState(
+          channel: ChannelModel(id: id, type: 'messaging'),
+          members: _roster(),
+        ),
+      );
+
+      final group = channelFor('loop_community_5a2f766100000000');
+      addTearDown(group.dispose);
+      expect(
+        loopPrepareChannelMessageForSend(
+          message: mention(),
+          channel: group,
+        ).toJson()['mentioned_users'],
+        <String>[_tundra],
+      );
+
+      final direct = channelFor('loop_direct_8e7d73c5');
+      addTearDown(direct.dispose);
+      expect(
+        loopPrepareChannelMessageForSend(
+          message: mention(),
+          channel: direct,
+        ).mentionedUsers.single.name,
+        _tundra,
+      );
+    });
   });
 
   testWidgets('a bubble draws the Alias for a mention, never the Stream id', (
