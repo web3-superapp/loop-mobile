@@ -163,6 +163,13 @@ String launchReasonCodeText(String? reasonCode) => switch (reasonCode) {
   'MINING_REFERRAL_BOOST_PENDING' => '生效的公式版本还没有批准邀请加成，这一项暂时没有数值。',
   'MINING_SNAPSHOT_NOT_AVAILABLE' => '还没有任何一次算力快照。',
   'MINING_SNAPSHOT_STALE' => '最近一次算力快照用的是旧的公式版本，等下一次快照后再看。',
+  // Decision 0057: a run that cannot value a held asset is not published, so
+  // reading nothing is never published as a zero. These three say which of
+  // 「还没算完」/「还没轮到这个钱包」/「这个资产没有报价」 it is.
+  'MINING_SNAPSHOT_INCOMPLETE' => '最近一次计算里有资产读不到参考价，这次没有发布；也还没有可以回退的完整快照。',
+  'MINING_SNAPSHOT_PENDING' => '这个钱包还没有进入任何一次完整的算力快照，下一次算力快照之后显示。',
+  'MINING_PRICE_PAIR_NOT_FOUND' => '这个资产暂时没有可用报价，这次没有计入。',
+  'MINING_SNAPSHOT_PUBLISHED_INCOMPLETE' => '那一次算力快照的数据不完整，已经作废。',
   'MINING_ACCOUNT_NOT_IN_SNAPSHOT' => '最近一次算力快照里没有这个账号的钱包余额。',
   'MINING_NETWORK_POWER_ZERO' => '全网算力为 0，还算不出份额。',
   'MINING_DAILY_OUTPUT_NOT_CONFIGURED' => '当前公式版本还没有配置每日产量。',

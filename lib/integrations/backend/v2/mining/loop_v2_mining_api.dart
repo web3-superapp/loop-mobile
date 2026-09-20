@@ -69,22 +69,119 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         allowedCodes: LoopV2ModuleRequest.readErrors,
       );
 
+  /// The newest run under the version in force (Decision 0057).
+  ///
+  /// It is an added field, so a deployment that does not send it is decoded
+  /// exactly as before; when it is sent, the run's own shape is checked. A
+  /// completed run has nothing unread and no reason — that is what completing
+  /// means — and an invalidated one was withdrawn by an operator rather than
+  /// stopped by a holding, so neither may carry an unread list.
+  static MiningSnapshotAttempt? _snapshotAttempt(Object? raw) {
+    if (raw == null) return null;
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'snapshotId',
+      'status',
+      'computedAt',
+      'reasonCode',
+      'unreadInputs',
+    });
+    final status = MiningSnapshotAttemptStatus.tryParse(
+      LoopV2S7Codec.requireEnum(map, 'status', const <String>{
+        'complete',
+        'incomplete',
+        'invalidated',
+      }),
+    );
+    if (status == null) LoopV2S7Codec.invalid();
+    final unread = <MiningUnreadInput>[];
+    final seen = <String>{};
+    for (final entry in LoopV2S7Codec.requireList(
+      map['unreadInputs'],
+      maximum: 200,
+    )) {
+      final row = LoopV2Contract.strictMap(entry, const <String>{
+        'assetId',
+        'reasonCode',
+      });
+      final assetId = LoopV2S7Codec.requirePattern(
+        row,
+        'assetId',
+        LoopV2S7Codec.holdingAssetIdPattern,
+        maxLength: 80,
+      );
+      // The same asset twice would name one unread holding as two.
+      if (!seen.add(assetId)) LoopV2S7Codec.invalid();
+      unread.add(
+        MiningUnreadInput(
+          assetId: assetId,
+          reasonCode: LoopV2S7Codec.requireReasonCode(row, 'reasonCode'),
+        ),
+      );
+    }
+    final reasonCode = map['reasonCode'] == null
+        ? null
+        : LoopV2S7Codec.requireReasonCode(map, 'reasonCode');
+    if (status != MiningSnapshotAttemptStatus.incomplete && unread.isNotEmpty) {
+      LoopV2S7Codec.invalid();
+    }
+    // A run that completed is the published snapshot itself: it has no reason
+    // to give, and a reason here would be a completed run explaining a
+    // failure.
+    if (status == MiningSnapshotAttemptStatus.complete && reasonCode != null) {
+      LoopV2S7Codec.invalid();
+    }
+    return MiningSnapshotAttempt(
+      snapshotId: LoopV2S7Codec.requireId(map, 'snapshotId'),
+      status: status,
+      computedAt: LoopV2S7Codec.requireTimestamp(map, 'computedAt'),
+      reasonCode: reasonCode,
+      unreadInputs: List<MiningUnreadInput>.unmodifiable(unread),
+    );
+  }
+
   static MiningSnapshotRef _snapshot(Object? raw) {
     if (raw is! Map) LoopV2S7Codec.invalid();
     if (raw['status'] == 'unavailable') {
+      final unavailable = LoopV2Contract.strictMapWithOptional(
+        raw,
+        const <String>{'status', 'reasonCode'},
+        const <String>{'latestAttempt'},
+      );
       return MiningSnapshotUnavailable(
-        LoopV2S7Codec.unavailable(raw).reasonCode,
+        LoopV2S7Codec.requireReasonCode(unavailable, 'reasonCode'),
+        latestAttempt: _snapshotAttempt(unavailable['latestAttempt']),
       );
     }
-    final map = LoopV2Contract.strictMap(raw, const <String>{
-      'snapshotId',
-      'blockNumber',
-      'blockHash',
-      'formulaVersion',
-      'priceVersion',
-      'computedAt',
-    });
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      const <String>{
+        'snapshotId',
+        'blockNumber',
+        'blockHash',
+        'formulaVersion',
+        'priceVersion',
+        'computedAt',
+      },
+      // Added by Decision 0057. A deployment without them is read exactly as
+      // before: no later run is known, so nothing is stale.
+      const <String>{'stale', 'latestAttempt'},
+    );
+    final stale = map.containsKey('stale')
+        ? LoopV2S7Codec.requireBool(map, 'stale')
+        : false;
+    final attempt = _snapshotAttempt(map['latestAttempt']);
+    if (attempt != null) {
+      // Not stale means the newest run *is* this snapshot; stale means a
+      // later run exists and did not become these numbers. A payload saying
+      // both at once would leave the page unable to date what it prints.
+      if (attempt.isComplete == stale) LoopV2S7Codec.invalid();
+      if (attempt.isComplete && attempt.snapshotId != map['snapshotId']) {
+        LoopV2S7Codec.invalid();
+      }
+    }
     return MiningSnapshotComputed(
+      stale: stale,
+      latestAttempt: attempt,
       snapshotId: LoopV2S7Codec.requireId(map, 'snapshotId'),
       blockNumber: LoopV2S7Codec.requirePattern(
         map,
@@ -119,21 +216,28 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
   }
 
   static MiningAssetRow _assetRow(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, const <String>{
-      'assetId',
-      'symbol',
-      'holding',
-      'referencePriceUsd',
-      'referencePriceQuality',
-      'referencePriceProxyAssetId',
-      'weight',
-      'power',
-      'blockNumber',
-    });
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      const <String>{
+        'assetId',
+        'symbol',
+        'holding',
+        'referencePriceUsd',
+        'referencePriceQuality',
+        'referencePriceProxyAssetId',
+        'weight',
+        'power',
+        'blockNumber',
+      },
+      // Added by Decision 0059 alongside the `derived` quality. A deployment
+      // without the key prices every row the old way.
+      const <String>{'referencePricePairAddress'},
+    );
     final quality = MiningReferencePriceQuality.tryParse(
       LoopV2S7Codec.requireEnum(map, 'referencePriceQuality', const <String>{
         'fresh',
         'proxied',
+        'derived',
       }),
     );
     if (quality == null) LoopV2S7Codec.invalid();
@@ -143,10 +247,20 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
       LoopV2S7Codec.holdingAssetIdPattern,
       maxLength: 80,
     );
-    // A proxied price with no proxy, and a fresh price carrying one, both
-    // leave the row unable to say where its price came from.
+    final pairAddress = LoopV2S7Codec.optionalPattern(
+      map,
+      'referencePricePairAddress',
+      LoopV2S7Codec.pairAddressPattern,
+      maxLength: 42,
+    );
+    // A proxied price with no proxy, and a price that is not proxied carrying
+    // one, both leave the row unable to say where its price came from.
     if (quality.isProxied != (proxy != null)) LoopV2S7Codec.invalid();
+    // A derived price is one pool divided out, and the row has to name that
+    // pool: without it the reader cannot tell what the number was read from.
+    if (quality.isDerived && pairAddress == null) LoopV2S7Codec.invalid();
     return MiningAssetRow(
+      referencePricePairAddress: pairAddress,
       assetId: LoopV2S7Codec.requirePattern(
         map,
         'assetId',

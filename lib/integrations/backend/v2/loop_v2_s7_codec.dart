@@ -43,6 +43,11 @@ abstract final class LoopV2S7Codec {
   static final RegExp holdingAssetIdPattern = RegExp(
     r'^eip155:[1-9][0-9]{0,9}:(0x[0-9a-f]{40}|native)$',
   );
+
+  /// The pool one reference price was read from (Decision 0059). It is a
+  /// lower-case contract address and is shown in short form, never resolved
+  /// into a venue name the client would be guessing.
+  static final RegExp pairAddressPattern = RegExp(r'^0x[0-9a-f]{40}$');
   static final RegExp textPattern = RegExp(
     r'^[^\p{Cc}\p{Cf}\p{Cs}\p{Zl}\p{Zp}]+$',
     unicode: true,

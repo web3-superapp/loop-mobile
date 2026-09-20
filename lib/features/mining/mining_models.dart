@@ -9,8 +9,82 @@ import 'package:loop_mobile/features/launch/launch_contract.dart';
 /// the server's own `reasonCode`. Nothing here can hold a number the server
 /// did not send, and no ratio, weight or emission is written into the client.
 
-/// A settled power snapshot. It cannot exist before a formula version is
-/// approved, so the unavailable branch is the only one this step renders.
+/// How the newest run under the version in force ended (Decision 0057).
+///
+/// A run that could not value a held asset is never published, so `complete`
+/// is the only status a *published* snapshot has; the other two describe a
+/// run that happened after the numbers on the page were computed.
+enum MiningSnapshotAttemptStatus {
+  complete('complete'),
+  incomplete('incomplete'),
+  invalidated('invalidated');
+
+  const MiningSnapshotAttemptStatus(this.wireName);
+
+  final String wireName;
+
+  static MiningSnapshotAttemptStatus? tryParse(String value) {
+    for (final status in values) {
+      if (status.wireName == value) return status;
+    }
+    return null;
+  }
+}
+
+/// One holding the latest run could not value, with the server's own reason.
+///
+/// It is why that run was not published: a weighted asset with a positive
+/// balance and no readable reference price would otherwise have been summed
+/// as nothing (Decision 0057). The client never renames the reason.
+@immutable
+final class MiningUnreadInput {
+  const MiningUnreadInput({required this.assetId, required this.reasonCode});
+
+  final String assetId;
+  final String reasonCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MiningUnreadInput &&
+          other.assetId == assetId &&
+          other.reasonCode == reasonCode;
+
+  @override
+  int get hashCode => Object.hash(assetId, reasonCode);
+}
+
+/// The newest run under the version in force, whatever became of it.
+///
+/// When the page is not stale this is the very snapshot it is reading. When
+/// it is stale, this is the run that happened afterwards and did not become
+/// the numbers on the page, and [unreadInputs] is what stopped it.
+@immutable
+final class MiningSnapshotAttempt {
+  const MiningSnapshotAttempt({
+    required this.snapshotId,
+    required this.status,
+    required this.computedAt,
+    required this.reasonCode,
+    required this.unreadInputs,
+  });
+
+  final String snapshotId;
+  final MiningSnapshotAttemptStatus status;
+  final DateTime computedAt;
+
+  /// The server's own reason. `null` on a run that completed.
+  final String? reasonCode;
+
+  /// Empty except on a run that could not value a holding.
+  final List<MiningUnreadInput> unreadInputs;
+
+  bool get isComplete => status == MiningSnapshotAttemptStatus.complete;
+
+  bool get isInvalidated => status == MiningSnapshotAttemptStatus.invalidated;
+}
+
+/// A settled power snapshot, or the server's reason there is none.
 @immutable
 sealed class MiningSnapshotRef {
   const MiningSnapshotRef();
@@ -18,9 +92,13 @@ sealed class MiningSnapshotRef {
 
 @immutable
 final class MiningSnapshotUnavailable extends MiningSnapshotRef {
-  const MiningSnapshotUnavailable(this.reasonCode);
+  const MiningSnapshotUnavailable(this.reasonCode, {this.latestAttempt});
 
   final String reasonCode;
+
+  /// Present when the version in force has run at least once and no run of it
+  /// ever completed: it says why there is nothing to show.
+  final MiningSnapshotAttempt? latestAttempt;
 }
 
 @immutable
@@ -32,6 +110,8 @@ final class MiningSnapshotComputed extends MiningSnapshotRef {
     required this.formulaVersion,
     required this.priceVersion,
     required this.computedAt,
+    this.stale = false,
+    this.latestAttempt,
   });
 
   final String snapshotId;
@@ -40,7 +120,23 @@ final class MiningSnapshotComputed extends MiningSnapshotRef {
   final String formulaVersion;
   final String priceVersion;
   final DateTime computedAt;
+
+  /// True when a later run under the same version did not complete, so the
+  /// numbers on the page are this snapshot's and are older than that run
+  /// (Decision 0057). It is never a reason to hide them: they were computed
+  /// from a full set of holdings, which is exactly why the later run was not
+  /// published.
+  final bool stale;
+
+  /// The newest run under the version in force. It is this snapshot itself
+  /// while [stale] is false.
+  final MiningSnapshotAttempt? latestAttempt;
 }
+
+/// Whether the numbers a page is printing came from a snapshot that a later
+/// run has already overtaken without completing.
+bool miningSnapshotIsStale(MiningSnapshotRef? snapshot) =>
+    snapshot is MiningSnapshotComputed && snapshot.stale;
 
 /// One mining figure. The server either settled it under an effective formula
 /// version, or it did not, and then only its own `reasonCode` exists. The
@@ -203,7 +299,8 @@ final class MiningSummary {
 /// asset's own.
 enum MiningReferencePriceQuality {
   fresh('fresh'),
-  proxied('proxied');
+  proxied('proxied'),
+  derived('derived');
 
   const MiningReferencePriceQuality(this.wireName);
 
@@ -217,6 +314,12 @@ enum MiningReferencePriceQuality {
   }
 
   bool get isProxied => this == MiningReferencePriceQuality.proxied;
+
+  /// The asset was the quote token of the pair its price was read from, so
+  /// the price is that pair divided out and checked against the band the
+  /// version declared (Decision 0059). It is an observation, not an estimate,
+  /// and the row says which pool it came from.
+  bool get isDerived => this == MiningReferencePriceQuality.derived;
 }
 
 /// One asset the settlement weighted. Every figure is the server's own decimal
@@ -234,6 +337,7 @@ final class MiningAssetRow {
     required this.weight,
     required this.power,
     required this.blockNumber,
+    this.referencePricePairAddress,
   });
 
   final String assetId;
@@ -252,6 +356,11 @@ final class MiningAssetRow {
   /// would leave the row unable to say where its price came from.
   final String? referencePriceProxyAssetId;
 
+  /// The pool the price was read from. Non-null on a derived price, which is
+  /// that pool divided out; it may also be present on a direct reading the
+  /// version pinned to one pair, and is absent everywhere else.
+  final String? referencePricePairAddress;
+
   /// The effective weight already in the power: the formula's asset weight
   /// times the approved community weight, when one community binds the asset.
   final String weight;
@@ -259,6 +368,8 @@ final class MiningAssetRow {
   final String blockNumber;
 
   bool get isProxiedPrice => referencePriceQuality.isProxied;
+
+  bool get isDerivedPrice => referencePriceQuality.isDerived;
 }
 
 /// One asset the account holds that the settlement did not weight. The reason
@@ -343,6 +454,12 @@ String miningAssetLabel(String assetId) {
       ? '${loopChainName(chainId)} 原生代币'
       : '原生代币';
 }
+
+/// The pool one derived price was read from, in short form. The full address
+/// is the identity and stays in the model; the row only has to let a reader
+/// recognise it.
+String miningPricePoolLabel(String pairAddress) =>
+    loopTruncatedAddress(pairAddress);
 
 /// The heading for one asset row. A registry symbol is the row's name; without
 /// one the id itself is all the row may say, and it says that instead of

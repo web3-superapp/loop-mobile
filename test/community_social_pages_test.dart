@@ -130,6 +130,43 @@ void main() {
       expect(find.textContaining('miningFormula-devBaseline'), findsNothing);
     });
 
+    // Decision 0057: the row keeps the number and dates it, because the run
+    // after this snapshot could not value a holding and was never published.
+    testWidgets('a reading a later run overtook is dated on the row', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const ConnectionsScreen(),
+        social: FakeSocialGateway(
+          connections: _connections(
+            miningPower: LoopAccountMiningPower(
+              power: '230.5',
+              snapshotId: testSnapshotId,
+              formulaVersion: testFormulaVersion,
+              computedAt: DateTime.utc(2026, 9, 15, 14, 58, 54),
+              scope: MiningFormulaScope.developmentBaseline,
+              stale: true,
+            ),
+          ),
+        ),
+      );
+
+      final card = find.byKey(
+        const ValueKey<String>('community-mining-power-row'),
+      );
+      await tester.scrollUntilVisible(
+        card,
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('230.5'), findsOneWidget);
+      expect(
+        find.textContaining('显示的是 2026-09-15 14:58 UTC 的算力快照 · 最近一次快照未完成'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('the settling version stays inside the 详情', (tester) async {
       await pumpCommunityPage(
         tester,

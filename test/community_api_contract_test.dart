@@ -423,6 +423,123 @@ void main() {
       expect(power, isNot(isA<LoopCommunityMiningPower>()));
     });
 
+    // Decision 0057. A later run that could not value a holding is never
+    // published, so the card keeps this number and says which moment it is
+    // from. The key is added, so a deployment without it reads as before.
+    test('a settled power says when a later run did not finish', () async {
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          final body = detailBody()
+            ..['miningPower'] = <String, Object?>{
+              'status': 'available',
+              'subject': 'community',
+              'power': '4.482309',
+              'snapshotId': _snapshotId,
+              'formulaVersion': _formulaVersion,
+              'computedAt': '2026-09-15T14:58:54.366Z',
+              'scope': 'development_baseline',
+              'stale': true,
+              'weight': <String, Object?>{
+                'status': 'approved',
+                'value': '0.8',
+                'configVersion': _formulaVersion,
+                'reviewedAt': '2026-09-15T14:58:52.089Z',
+              },
+              'participants': <String, Object?>{
+                'status': 'available',
+                'count': 1,
+              },
+            };
+          handler.resolve(_response(options, body));
+        }),
+      );
+
+      final detail = await api.getCommunity(
+        accessToken: 'token',
+        clientVersion: clientVersion,
+        communityId: communityId,
+      );
+
+      final power = detail.miningPower as LoopCommunityMiningPower;
+      expect(power.stale, isTrue);
+      expect(power.power, '4.482309');
+    });
+
+    test('a member row carries the same flag, and defaults to false', () async {
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          final body = memberBody();
+          final items = body['items']! as List<Object?>;
+          (items.first
+              as Map<String, Object?>)['miningPower'] = <String, Object?>{
+            'status': 'available',
+            'subject': 'account',
+            'power': '230.5',
+            'snapshotId': _snapshotId,
+            'formulaVersion': _formulaVersion,
+            'computedAt': '2026-09-15T14:58:54.366Z',
+            'scope': 'development_baseline',
+            'stale': true,
+          };
+          (items.last
+              as Map<String, Object?>)['miningPower'] = <String, Object?>{
+            'status': 'available',
+            'subject': 'account',
+            'power': '0',
+            'snapshotId': _snapshotId,
+            'formulaVersion': _formulaVersion,
+            'computedAt': '2026-09-15T14:58:54.366Z',
+            'scope': 'development_baseline',
+          };
+          handler.resolve(_response(options, body));
+        }),
+      );
+
+      final directory = await api.listMembers(
+        accessToken: 'token',
+        clientVersion: clientVersion,
+        communityId: communityId,
+        role: CommunityMemberFilter.all,
+      );
+
+      expect(
+        (directory.items.first.miningPower as LoopAccountMiningPower).stale,
+        isTrue,
+      );
+      expect(
+        (directory.items.last.miningPower as LoopAccountMiningPower).stale,
+        isFalse,
+      );
+    });
+
+    test('a staleness flag that is not a boolean is refused', () async {
+      final api = DioLoopV2CommunityApi(
+        _dio((options, handler) {
+          final body = detailBody()
+            ..['miningPower'] = <String, Object?>{
+              'status': 'available',
+              'subject': 'account',
+              'power': '1',
+              'snapshotId': _snapshotId,
+              'formulaVersion': _formulaVersion,
+              'computedAt': '2026-09-15T14:58:54.366Z',
+              'scope': 'development_baseline',
+              'stale': 'true',
+            };
+          handler.resolve(_response(options, body));
+        }),
+      );
+
+      await expectLater(
+        api.getCommunity(
+          accessToken: 'token',
+          clientVersion: clientVersion,
+          communityId: communityId,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
     test('a product version puts no development label on a row', () async {
       final api = DioLoopV2CommunityApi(
         _dio((options, handler) {

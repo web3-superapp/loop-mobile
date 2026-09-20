@@ -929,6 +929,35 @@ void main() {
       expect(find.textContaining('社区挖矿面板里读'), findsOneWidget);
     });
 
+    // Decision 0057: the number stays, and the card says which moment it is
+    // from, because the run after it could not value a holding and was never
+    // published.
+    testWidgets('a community power a later run overtook is dated', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityProfileScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          detail: testDetail(
+            miningPower: testSettledCommunityMiningPower(stale: true),
+          ),
+        ),
+      );
+
+      final card = find.byKey(
+        const ValueKey<String>('community-mining-summary'),
+      );
+      await scrollToCommunitySection(tester, card);
+      expect(
+        find.textContaining('显示的是 2026-09-15 14:58 UTC 的算力快照 · 最近一次快照未完成'),
+        findsOneWidget,
+      );
+      // The figure is still the one the last complete snapshot settled.
+      expect(find.textContaining('社区总算力 0'), findsOneWidget);
+      expect(find.text('0.8'), findsOneWidget);
+    });
+
     testWidgets('a weight still under review says so instead of a value', (
       tester,
     ) async {

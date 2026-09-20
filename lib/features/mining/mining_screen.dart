@@ -92,6 +92,10 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
+          // The numbers below are the last complete snapshot's whenever a
+          // later run did not finish, so the page dates them before it
+          // prints them.
+          MiningStaleNotice(slug: 'summary', snapshot: summary.snapshot),
           const LoopLabel('算力与产出'),
           _MetricsBlock(summary: summary),
           const LoopLabel('公式版本'),
@@ -286,12 +290,16 @@ class _SnapshotBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (snapshot) {
-      MiningSnapshotUnavailable(:final reasonCode) => LoopEmpty(
-        key: const ValueKey<String>('mining-snapshot-unavailable'),
-        icon: 'clock',
-        message: miningSnapshotAbsenceMessage(reasonCode),
-        reason: miningSnapshotAbsenceReason(reasonCode),
-      ),
+      MiningSnapshotUnavailable(:final reasonCode, :final latestAttempt) =>
+        LoopEmpty(
+          key: const ValueKey<String>('mining-snapshot-unavailable'),
+          icon: 'clock',
+          message: miningSnapshotAbsenceMessage(reasonCode),
+          reason: miningSnapshotAbsenceReason(
+            reasonCode,
+            attempt: latestAttempt,
+          ),
+        ),
       MiningSnapshotComputed(:final blockNumber, :final computedAt) =>
         LoopRecordGroup(
           key: const ValueKey<String>('mining-snapshot'),

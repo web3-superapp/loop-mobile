@@ -426,6 +426,44 @@ MiningSnapshotComputed s7MiningSnapshot() => MiningSnapshotComputed(
   computedAt: DateTime.utc(2026, 9, 15, 14, 58, 54, 366),
 );
 
+/// The 2026-09-20 Development state (Decision 0057): the snapshot on the page
+/// is complete, and the run after it could not price the account's USDT, so
+/// it was never published.
+MiningSnapshotAttempt s7MiningUnreadAttempt({
+  String status = 'incomplete',
+  String? reasonCode = 'MINING_SNAPSHOT_INCOMPLETE',
+  List<MiningUnreadInput>? unreadInputs,
+}) => MiningSnapshotAttempt(
+  snapshotId: '9d2913e7-811a-42c9-a9c2-0f5f97671629',
+  status: MiningSnapshotAttemptStatus.tryParse(status)!,
+  computedAt: DateTime.utc(2026, 9, 20, 15, 5),
+  reasonCode: reasonCode,
+  unreadInputs:
+      unreadInputs ??
+      const <MiningUnreadInput>[
+        MiningUnreadInput(
+          assetId: s7UsdtAssetId,
+          reasonCode: 'MINING_PRICE_PAIR_NOT_FOUND',
+        ),
+      ],
+);
+
+/// The same published snapshot, dated against a later run that did not
+/// finish.
+MiningSnapshotComputed s7MiningStaleSnapshot({
+  MiningSnapshotAttempt? attempt,
+}) => MiningSnapshotComputed(
+  snapshotId: '0e358b31-e49f-48b9-89b2-c5c908c3ad5e',
+  blockNumber: '122037728',
+  blockHash:
+      '0x3decab82b150493d90cb8fe47b3873c6e3b8c72aecf08ce91b4aceb266bda28a',
+  formulaVersion: s7BaselineVersion,
+  priceVersion: s7PriceVersion,
+  computedAt: DateTime.utc(2026, 9, 15, 14, 58, 54, 366),
+  stale: true,
+  latestAttempt: attempt ?? s7MiningUnreadAttempt(),
+);
+
 MiningAssets s7MiningAssets({
   MiningFigure? totalPower,
   List<MiningAssetRow>? included,

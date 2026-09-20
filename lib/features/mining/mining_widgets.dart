@@ -3,6 +3,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
+import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
@@ -151,6 +152,50 @@ class MiningMetricRow extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The line a page prints beside figures that a later run has overtaken
+/// (Decision 0057).
+///
+/// A run that could not value a held holding is never published, so the page
+/// keeps showing the last complete snapshot instead of falling to zero. That
+/// is the right behaviour and the wrong thing to show silently: the reader is
+/// looking at a moment that is no longer the newest one. The line says which
+/// moment it is and what stopped the next one; it never withdraws the
+/// numbers, and it prints nothing at all when the newest run is the snapshot
+/// on the page.
+class MiningStaleNotice extends StatelessWidget {
+  const MiningStaleNotice({
+    required this.slug,
+    required this.snapshot,
+    this.symbols = const <String, String>{},
+    super.key,
+  });
+
+  final String slug;
+  final MiningSnapshotRef? snapshot;
+
+  /// Registry symbols by asset id, where the page has them. Without one an
+  /// unread holding is named by the id it stands for, never by a guess.
+  final Map<String, String> symbols;
+
+  @override
+  Widget build(BuildContext context) {
+    final source = snapshot;
+    if (source is! MiningSnapshotComputed || !source.stale) {
+      return const SizedBox.shrink();
+    }
+    return LoopNotice(
+      key: ValueKey<String>('mining-stale-$slug'),
+      icon: 'clock',
+      body: miningStaleLine(
+        computedAtLabel: launchTimestampLabel(source.computedAt),
+        attempt: source.latestAttempt,
+        symbols: symbols,
+      ),
+      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
     );
   }
 }

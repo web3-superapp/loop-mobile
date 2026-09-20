@@ -2876,6 +2876,381 @@ void main() {
     });
   });
 
+  // Decision 0057: a run that cannot value a held asset is never published,
+  // so every read keeps answering the last complete snapshot and says that a
+  // later run did not finish. The fields are additive, so the same decoders
+  // must still read a deployment that does not send them.
+  group('mining snapshot attempts', () {
+    const attemptId = '9d2913e7-811a-42c9-a9c2-0f5f97671629';
+    const snapshotId = '0e358b31-e49f-48b9-89b2-c5c908c3ad5e';
+
+    Map<String, Object?> attempt({
+      String id = attemptId,
+      String status = 'incomplete',
+      Object? reasonCode = 'MINING_SNAPSHOT_INCOMPLETE',
+      List<Object?>? unreadInputs,
+    }) => <String, Object?>{
+      'snapshotId': id,
+      'status': status,
+      'computedAt': '2026-09-20T15:05:00.000Z',
+      'reasonCode': reasonCode,
+      'unreadInputs':
+          unreadInputs ??
+          <Object?>[
+            <String, Object?>{
+              'assetId': _usdtAssetId,
+              'reasonCode': 'MINING_PRICE_PAIR_NOT_FOUND',
+            },
+          ],
+    };
+
+    Map<String, Object?> snapshot({
+      Object? stale = _absent,
+      Object? latestAttempt = _absent,
+    }) => <String, Object?>{
+      ..._miningSnapshot(),
+      if (!identical(stale, _absent)) 'stale': stale,
+      if (!identical(latestAttempt, _absent)) 'latestAttempt': latestAttempt,
+    };
+
+    Map<String, Object?> summaryBody(
+      Object? snapshotBlock,
+    ) => <String, Object?>{
+      'power': <String, Object?>{'status': 'available', 'value': '4.482309'},
+      'networkPower': <String, Object?>{
+        'status': 'available',
+        'value': '4.482309',
+      },
+      'estimatedToday': _unavailable('MINING_NETWORK_POWER_ZERO'),
+      'accumulated': _unavailable('REWARD_AUTHORITY_PENDING'),
+      'claimable': _unavailable('REWARD_AUTHORITY_PENDING'),
+      'referralBoost': _unavailable(_referralBoostPending),
+      'formula': _effectiveFormula(),
+      'snapshot': snapshotBlock,
+      'contractVersion': '2.0',
+    };
+
+    Future<MiningSummary> readSummary(Object? snapshotBlock) =>
+        DioLoopV2MiningApi(
+          _dio(
+            _RecordingAdapter(
+              statusCode: 200,
+              body: summaryBody(snapshotBlock),
+            ),
+          ),
+        ).getSummary(accessToken: _token, clientVersion: _clientVersion);
+
+    test('a stale snapshot carries the run that did not finish', () async {
+      final summary = await readSummary(
+        snapshot(stale: true, latestAttempt: attempt()),
+      );
+
+      final block = summary.snapshot as MiningSnapshotComputed;
+      expect(block.snapshotId, snapshotId);
+      expect(block.stale, isTrue);
+      // The numbers stay the published snapshot's: reading nothing is never
+      // published as a zero.
+      expect((summary.power as MiningFigureValue).value, '4.482309');
+      final run = block.latestAttempt!;
+      expect(run.status, MiningSnapshotAttemptStatus.incomplete);
+      expect(run.snapshotId, attemptId);
+      expect(run.computedAt, DateTime.utc(2026, 9, 20, 15, 5));
+      expect(run.reasonCode, 'MINING_SNAPSHOT_INCOMPLETE');
+      expect(run.unreadInputs, <MiningUnreadInput>[
+        const MiningUnreadInput(
+          assetId: _usdtAssetId,
+          reasonCode: 'MINING_PRICE_PAIR_NOT_FOUND',
+        ),
+      ]);
+      expect(miningSnapshotIsStale(block), isTrue);
+    });
+
+    test('a deployment without the two fields reads as before', () async {
+      final summary = await readSummary(snapshot());
+
+      final block = summary.snapshot as MiningSnapshotComputed;
+      expect(block.stale, isFalse);
+      expect(block.latestAttempt, isNull);
+      expect(miningSnapshotIsStale(block), isFalse);
+    });
+
+    test('the newest run being this snapshot is not stale', () async {
+      final summary = await readSummary(
+        snapshot(
+          stale: false,
+          latestAttempt: attempt(
+            id: snapshotId,
+            status: 'complete',
+            reasonCode: null,
+            unreadInputs: <Object?>[],
+          ),
+        ),
+      );
+
+      final block = summary.snapshot as MiningSnapshotComputed;
+      expect(block.stale, isFalse);
+      expect(block.latestAttempt!.isComplete, isTrue);
+      expect(block.latestAttempt!.snapshotId, snapshotId);
+    });
+
+    test('an operator-withdrawn run reads as invalidated', () async {
+      final summary = await readSummary(
+        snapshot(
+          stale: true,
+          latestAttempt: attempt(
+            status: 'invalidated',
+            reasonCode: 'MINING_SNAPSHOT_PUBLISHED_INCOMPLETE',
+            unreadInputs: <Object?>[],
+          ),
+        ),
+      );
+
+      final run = (summary.snapshot as MiningSnapshotComputed).latestAttempt!;
+      expect(run.isInvalidated, isTrue);
+      expect(run.reasonCode, 'MINING_SNAPSHOT_PUBLISHED_INCOMPLETE');
+      expect(run.unreadInputs, isEmpty);
+    });
+
+    test('no complete snapshot still explains itself', () async {
+      final summary = await readSummary(<String, Object?>{
+        'status': 'unavailable',
+        'reasonCode': 'MINING_SNAPSHOT_INCOMPLETE',
+        'latestAttempt': attempt(),
+      });
+
+      final block = summary.snapshot as MiningSnapshotUnavailable;
+      expect(block.reasonCode, 'MINING_SNAPSHOT_INCOMPLETE');
+      expect(
+        block.latestAttempt!.unreadInputs.single.reasonCode,
+        'MINING_PRICE_PAIR_NOT_FOUND',
+      );
+      expect(miningSnapshotIsStale(block), isFalse);
+    });
+
+    test('a run status outside the three is refused', () async {
+      await expectLater(
+        readSummary(
+          snapshot(stale: true, latestAttempt: attempt(status: 'failed')),
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a page that is not stale cannot carry an unfinished run', () async {
+      await expectLater(
+        readSummary(snapshot(stale: false, latestAttempt: attempt())),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a stale page cannot carry a completed run', () async {
+      await expectLater(
+        readSummary(
+          snapshot(
+            stale: true,
+            latestAttempt: attempt(
+              id: snapshotId,
+              status: 'complete',
+              reasonCode: null,
+              unreadInputs: <Object?>[],
+            ),
+          ),
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a completed run naming another snapshot is refused', () async {
+      await expectLater(
+        readSummary(
+          snapshot(
+            stale: false,
+            latestAttempt: attempt(
+              status: 'complete',
+              reasonCode: null,
+              unreadInputs: <Object?>[],
+            ),
+          ),
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a completed run with an unread holding is refused', () async {
+      await expectLater(
+        readSummary(
+          snapshot(
+            stale: false,
+            latestAttempt: attempt(
+              id: snapshotId,
+              status: 'complete',
+              reasonCode: null,
+            ),
+          ),
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('the same unread asset twice is refused', () async {
+      await expectLater(
+        readSummary(
+          snapshot(
+            stale: true,
+            latestAttempt: attempt(
+              unreadInputs: <Object?>[
+                <String, Object?>{
+                  'assetId': _usdtAssetId,
+                  'reasonCode': 'MINING_PRICE_PAIR_NOT_FOUND',
+                },
+                <String, Object?>{
+                  'assetId': _usdtAssetId,
+                  'reasonCode': 'MINING_PRICE_NOT_FRESH',
+                },
+              ],
+            ),
+          ),
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('the composition page reads the same block on `source`', () async {
+      final assets = await DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningAssets(
+              source: snapshot(stale: true, latestAttempt: attempt()),
+            ),
+          ),
+        ),
+      ).getAssets(accessToken: _token, clientVersion: _clientVersion);
+
+      final source = assets.source as MiningSnapshotComputed;
+      expect(source.stale, isTrue);
+      expect(source.latestAttempt!.unreadInputs.single.assetId, _usdtAssetId);
+    });
+
+    test('an excluded row carries the new price reason verbatim', () async {
+      final assets = await DioLoopV2MiningApi(
+        _dio(
+          _RecordingAdapter(
+            statusCode: 200,
+            body: _miningAssets(
+              excluded: <Object?>[
+                <String, Object?>{
+                  'assetId': _usdtAssetId,
+                  'symbol': 'USDT',
+                  'reasonCode': 'MINING_PRICE_PAIR_NOT_FOUND',
+                },
+              ],
+            ),
+          ),
+        ),
+      ).getAssets(accessToken: _token, clientVersion: _clientVersion);
+
+      expect(assets.excluded.single.reasonCode, 'MINING_PRICE_PAIR_NOT_FOUND');
+    });
+
+    test(
+      'a wallet no snapshot includes yet is an unavailable figure',
+      () async {
+        final summary = await DioLoopV2MiningApi(
+          _dio(
+            _RecordingAdapter(
+              statusCode: 200,
+              body: <String, Object?>{
+                ...summaryBody(_miningSnapshot()),
+                'power': _unavailable('MINING_SNAPSHOT_PENDING'),
+              },
+            ),
+          ),
+        ).getSummary(accessToken: _token, clientVersion: _clientVersion);
+
+        expect(
+          (summary.power as MiningFigureUnavailable).reasonCode,
+          'MINING_SNAPSHOT_PENDING',
+        );
+      },
+    );
+  });
+
+  // Decision 0059: a stablecoin that is only ever the quote token of its own
+  // deepest pairs is priced by dividing that pair out, inside a declared
+  // band. The row has to say which pool it was read from.
+  group('mining derived reference prices', () {
+    const pairAddress = '0x16b9a82891338f9ba80e2d6970fdda79d1eb0dae';
+
+    Future<MiningAssets> readAssets(Map<String, Object?> row) =>
+        DioLoopV2MiningApi(
+          _dio(
+            _RecordingAdapter(
+              statusCode: 200,
+              body: _miningAssets(included: <Object?>[row]),
+            ),
+          ),
+        ).getAssets(accessToken: _token, clientVersion: _clientVersion);
+
+    test('a derived row names its pool', () async {
+      final assets = await readAssets(<String, Object?>{
+        ..._assetRow(
+          assetId: _usdtAssetId,
+          symbol: 'USDT',
+          holding: '2.99',
+          referencePriceUsd: '0.999535369961668021',
+          quality: 'derived',
+          weight: '1.5',
+          power: '4.487909963',
+        ),
+        'referencePricePairAddress': pairAddress,
+      });
+
+      final row = assets.included.single;
+      expect(row.referencePriceQuality, MiningReferencePriceQuality.derived);
+      expect(row.isDerivedPrice, isTrue);
+      expect(row.isProxiedPrice, isFalse);
+      expect(row.referencePricePairAddress, pairAddress);
+      expect(miningPricePoolLabel(pairAddress), '0x16b9…0dae');
+    });
+
+    test('a row without the added key reads as before', () async {
+      final assets = await readAssets(_assetRow());
+
+      expect(assets.included.single.referencePricePairAddress, isNull);
+      expect(
+        assets.included.single.referencePriceQuality,
+        MiningReferencePriceQuality.fresh,
+      );
+    });
+
+    test('a derived price with no pool is refused', () async {
+      await expectLater(
+        readAssets(
+          _assetRow(assetId: _usdtAssetId, symbol: 'USDT', quality: 'derived'),
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a quality outside the three is refused', () async {
+      await expectLater(
+        readAssets(_assetRow(quality: 'guessed')),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a pool that is not an address is refused', () async {
+      await expectLater(
+        readAssets(<String, Object?>{
+          ..._assetRow(quality: 'derived'),
+          'referencePricePairAddress': 'PancakeSwap v2',
+        }),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+  });
+
   group('referral transport', () {
     Map<String, Object?> referralBody({
       String status = 'unbound',

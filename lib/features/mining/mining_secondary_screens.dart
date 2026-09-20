@@ -101,6 +101,11 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
+          MiningStaleNotice(
+            slug: 'assets',
+            snapshot: assets.source,
+            symbols: _assetSymbols(assets),
+          ),
           const LoopLabel('我的总算力'),
           _AssetsTotal(
             totalPower: assets.totalPower,
@@ -162,7 +167,10 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
           const LoopLabel('公式版本'),
           MiningFormulaBlock(formula: assets.formula),
           const LoopLabel(miningSnapshotSectionLabel),
-          _AssetsSourceBlock(source: assets.source),
+          _AssetsSourceBlock(
+            source: assets.source,
+            symbols: _assetSymbols(assets),
+          ),
           const LoopLabel('社区权重'),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
@@ -180,10 +188,18 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
             key: const ValueKey<String>('mining-assets-price-notice'),
             icon: 'shield',
             title: '参考价不是瞬时成交价',
-            body: assets.included.any((row) => row.isProxiedPrice)
-                ? '参考价由多个渠道的价格计算得出。有的资产没有自己的交易对，'
-                      '用的是另一个已登记代币的价格，这里已经逐行标出。'
-                : '参考价由多个渠道的价格计算得出，不是某一笔成交的价格。',
+            body: switch ((
+              assets.included.any((row) => row.isProxiedPrice),
+              assets.included.any((row) => row.isDerivedPrice),
+            )) {
+              (true, _) =>
+                '参考价由多个渠道的价格计算得出。有的资产没有自己的交易对，'
+                    '用的是另一个已登记代币的价格，这里已经逐行标出。',
+              (false, true) =>
+                '参考价由多个渠道的价格计算得出。有的资产只出现在别的代币的报价对里，'
+                    '价格由那个报价对推导得出，并且必须落在公式版本声明的区间内，这里已经逐行标出。',
+              (false, false) => '参考价由多个渠道的价格计算得出，不是某一笔成交的价格。',
+            },
             margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),
@@ -246,7 +262,15 @@ LoopRecordRow _includedRow(
   final proxyLabel = proxy == null
       ? ''
       : miningAssetTitle(symbol: symbols[proxy], assetId: proxy);
-  final priceNote = proxy == null ? '' : '（代理价，来自 $proxyLabel）';
+  final pool = row.referencePricePairAddress;
+  // Three ways a price can have been read, and the row says which one it was:
+  // the asset's own pair, another token's (Decision 0044), or one pool
+  // divided out and checked against the declared band (Decision 0059).
+  final priceNote = proxy != null
+      ? '（代理价，来自 $proxyLabel）'
+      : row.isDerivedPrice && pool != null
+      ? '（推导价，来源池 ${miningPricePoolLabel(pool)}）'
+      : '';
   // A named row still says which asset it is: the id is the identity, the
   // symbol is only how the registry writes it.
   final identity = row.symbol == null
@@ -260,9 +284,11 @@ LoopRecordRow _includedRow(
     subtitleMaxLines: 2,
     trailing: row.power,
     trailingCaption: '权重 ${row.weight}',
-    semanticLabel: proxy == null
-        ? '$label，算力 ${row.power}'
-        : '$label，算力 ${row.power}，参考价来自另一个代币的代理价',
+    semanticLabel: proxy != null
+        ? '$label，算力 ${row.power}，参考价来自另一个代币的代理价'
+        : row.isDerivedPrice
+        ? '$label，算力 ${row.power}，参考价由一个报价对推导得出'
+        : '$label，算力 ${row.power}',
     position: position,
   );
 }
@@ -325,19 +351,28 @@ class _AssetsTotal extends StatelessWidget {
 /// Which settlement these rows came from. The identifiers it carries are
 /// backend strings, so only the block height and the time reach the row.
 class _AssetsSourceBlock extends StatelessWidget {
-  const _AssetsSourceBlock({required this.source});
+  const _AssetsSourceBlock({required this.source, this.symbols = const {}});
 
   final MiningSnapshotRef source;
+
+  /// Registry symbols by asset id, so an unread holding is named the way the
+  /// rows above name it.
+  final Map<String, String> symbols;
 
   @override
   Widget build(BuildContext context) {
     return switch (source) {
-      MiningSnapshotUnavailable(:final reasonCode) => LoopEmpty(
-        key: const ValueKey<String>('mining-assets-source-unavailable'),
-        icon: 'clock',
-        message: miningSnapshotAbsenceMessage(reasonCode),
-        reason: miningSnapshotAbsenceReason(reasonCode),
-      ),
+      MiningSnapshotUnavailable(:final reasonCode, :final latestAttempt) =>
+        LoopEmpty(
+          key: const ValueKey<String>('mining-assets-source-unavailable'),
+          icon: 'clock',
+          message: miningSnapshotAbsenceMessage(reasonCode),
+          reason: miningSnapshotAbsenceReason(
+            reasonCode,
+            attempt: latestAttempt,
+            symbols: symbols,
+          ),
+        ),
       MiningSnapshotComputed(:final blockNumber, :final computedAt) =>
         LoopRecordGroup(
           key: const ValueKey<String>('mining-assets-source'),
@@ -658,6 +693,7 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
               onRetry: () => unawaited(controller.reload()),
             )
           else ...<Widget>[
+            MiningStaleNotice(slug: 'rank', snapshot: rank.snapshot),
             const LoopLabel('榜单'),
             _RankingBlock(ranking: rank.ranking),
             const LoopLabel('我的名次'),
@@ -994,6 +1030,7 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
+          MiningStaleNotice(slug: 'community', snapshot: community.snapshot),
           const LoopLabel('社区权重'),
           _WeightBlock(weight: community.weight),
           const LoopLabel('算力规则'),
@@ -1244,12 +1281,16 @@ class _CommunitySnapshotBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (snapshot) {
-      MiningSnapshotUnavailable(:final reasonCode) => LoopEmpty(
-        key: const ValueKey<String>('mining-community-snapshot-unavailable'),
-        icon: 'clock',
-        message: miningSnapshotAbsenceMessage(reasonCode),
-        reason: miningSnapshotAbsenceReason(reasonCode),
-      ),
+      MiningSnapshotUnavailable(:final reasonCode, :final latestAttempt) =>
+        LoopEmpty(
+          key: const ValueKey<String>('mining-community-snapshot-unavailable'),
+          icon: 'clock',
+          message: miningSnapshotAbsenceMessage(reasonCode),
+          reason: miningSnapshotAbsenceReason(
+            reasonCode,
+            attempt: latestAttempt,
+          ),
+        ),
       MiningSnapshotComputed(:final blockNumber, :final computedAt) =>
         LoopRecordGroup(
           key: const ValueKey<String>('mining-community-snapshot'),

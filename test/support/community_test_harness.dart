@@ -59,12 +59,14 @@ LoopCommunityMiningPower testSettledCommunityMiningPower({
   MiningCommunityWeight? weight,
   MiningParticipants? participants,
   MiningFormulaScope scope = MiningFormulaScope.developmentBaseline,
+  bool stale = false,
 }) => LoopCommunityMiningPower(
   power: '0',
   snapshotId: testSnapshotId,
   formulaVersion: testFormulaVersion,
   computedAt: DateTime.utc(2026, 9, 15, 14, 58, 54),
   scope: scope,
+  stale: stale,
   weight:
       weight ??
       MiningCommunityWeightApproved(

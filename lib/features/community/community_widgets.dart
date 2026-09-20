@@ -4,6 +4,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
+import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -394,18 +395,27 @@ class CommunityMiningSummaryCard extends StatelessWidget {
     // figures across the community's asset, and this record carries none of
     // them; the panel does.
     const panel = '我的持仓、我的算力与预估收益要在社区挖矿面板里读，这张卡片不替它们估算。';
+    // A later run that did not complete leaves this number the last complete
+    // snapshot's (Decision 0057). The card dates it instead of withdrawing
+    // it; why that run stopped is on the mining page, which this card opens.
+    final dated = switch (fact) {
+      LoopMiningPowerSettled(:final computedAt, stale: true) =>
+        '${miningStaleLine(computedAtLabel: communityObservedAtLabel(computedAt))}。',
+      LoopMiningPowerSettled(:final computedAt) =>
+        '最近一次算力快照 · ${communityObservedAtLabel(computedAt)}。',
+      LoopMiningPowerUnavailable() => '',
+    };
     final note = switch (fact) {
       LoopMiningPowerUnavailable(:final reasonCode) =>
         '${communityUnavailableReason(reasonCode)}$panel',
-      LoopCommunityMiningPower(:final weight, :final computedAt) =>
-        '最近一次算力快照 · ${communityObservedAtLabel(computedAt)}。'
+      LoopCommunityMiningPower(:final weight) =>
+        '$dated'
             '${switch (weight) {
               MiningCommunityWeightApproved() => '',
               MiningCommunityWeightPending(reviewStatus: MiningWeightReviewStatus.pendingReview) => '权重还在审核中，这里不显示权重数值。',
               MiningCommunityWeightPending() => '没有绑定代币，没有权重可审。',
             }}$panel',
-      LoopMiningPowerSettled(:final computedAt) =>
-        '最近一次算力快照 · ${communityObservedAtLabel(computedAt)}。$panel',
+      LoopMiningPowerSettled() => '$dated$panel',
     };
     final subtitle = settled != null && settled.isBaseline
         ? 'Mining Weight · 社区总算力 $power · $miningBaselineLabel'
@@ -690,6 +700,7 @@ class CommunityMiningPowerCard extends StatelessWidget {
         :final formulaVersion,
         :final computedAt,
         :final isBaseline,
+        :final stale,
       ):
         final identifier = formulaVersion;
         return Padding(
@@ -703,8 +714,13 @@ class CommunityMiningPowerCard extends StatelessWidget {
                   LoopRecordRow(
                     key: const ValueKey<String>('community-mining-power-row'),
                     title: label,
-                    subtitle:
-                        '最近一次算力快照 · ${communitySettlementLabel(computedAt)}',
+                    subtitle: stale
+                        ? miningStaleLine(
+                            computedAtLabel: communitySettlementLabel(
+                              computedAt,
+                            ),
+                          )
+                        : '最近一次算力快照 · ${communitySettlementLabel(computedAt)}',
                     // The stamp ended at 「10:23 U…」, which drops the zone
                     // the time is stated in.
                     subtitleMaxLines: 2,

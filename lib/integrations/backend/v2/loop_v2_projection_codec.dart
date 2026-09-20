@@ -139,7 +139,7 @@ abstract final class LoopV2ProjectionCodec {
     }
     final subject = raw['subject'];
     if (subject == 'community') {
-      final map = LoopV2Contract.strictMap(raw, const <String>{
+      final map = LoopV2Contract.strictMapWithOptional(raw, const <String>{
         'status',
         'subject',
         'power',
@@ -149,19 +149,20 @@ abstract final class LoopV2ProjectionCodec {
         'scope',
         'weight',
         'participants',
-      });
+      }, _miningStaleKey);
       return LoopCommunityMiningPower(
         power: _miningPower(map),
         snapshotId: _miningSnapshotId(map),
         formulaVersion: _miningFormulaVersion(map),
         computedAt: requireTimestamp(map, 'computedAt'),
         scope: LoopV2S7Codec.formulaScope(map),
+        stale: _miningStale(map),
         weight: LoopV2S7Codec.communityWeight(map['weight']),
         participants: LoopV2S7Codec.participants(map['participants']),
       );
     }
     if (subject != 'account') invalid();
-    final map = LoopV2Contract.strictMap(raw, const <String>{
+    final map = LoopV2Contract.strictMapWithOptional(raw, const <String>{
       'status',
       'subject',
       'power',
@@ -169,14 +170,25 @@ abstract final class LoopV2ProjectionCodec {
       'formulaVersion',
       'computedAt',
       'scope',
-    });
+    }, _miningStaleKey);
     return LoopAccountMiningPower(
       power: _miningPower(map),
       snapshotId: _miningSnapshotId(map),
       formulaVersion: _miningFormulaVersion(map),
       computedAt: requireTimestamp(map, 'computedAt'),
       scope: LoopV2S7Codec.formulaScope(map),
+      stale: _miningStale(map),
     );
+  }
+
+  /// Added by Decision 0057 on both settled shapes. A deployment that does
+  /// not send it is read exactly as before: no later run is known, so the
+  /// number is not dated against one.
+  static const Set<String> _miningStaleKey = <String>{'stale'};
+
+  static bool _miningStale(Map<String, Object?> map) {
+    if (!map.containsKey('stale')) return false;
+    return LoopV2S7Codec.requireBool(map, 'stale');
   }
 
   static String _miningPower(Map<String, Object?> map) =>

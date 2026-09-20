@@ -195,6 +195,7 @@ sealed class LoopMiningPowerSettled extends LoopMiningPowerFact {
     required this.formulaVersion,
     required this.computedAt,
     required this.scope,
+    this.stale = false,
   });
 
   /// The server's own unsigned decimal string, rendered verbatim.
@@ -211,6 +212,12 @@ sealed class LoopMiningPowerSettled extends LoopMiningPowerFact {
   /// never read for meaning.
   final MiningFormulaScope scope;
 
+  /// True when a later run under the same version did not complete, so this
+  /// number is the last complete snapshot's and is older than that run
+  /// (Decision 0057). The card dates the number instead of withdrawing it;
+  /// why the later run stopped is on the mining page, not on this row.
+  final bool stale;
+
   bool get isBaseline => scope.isBaseline;
 }
 
@@ -225,6 +232,7 @@ final class LoopCommunityMiningPower extends LoopMiningPowerSettled {
     required super.scope,
     required this.weight,
     required this.participants,
+    super.stale,
   });
 
   /// The reviewed weight already inside [power], in the same shape the mining
@@ -243,6 +251,7 @@ final class LoopCommunityMiningPower extends LoopMiningPowerSettled {
           other.formulaVersion == formulaVersion &&
           other.computedAt == computedAt &&
           other.scope == scope &&
+          other.stale == stale &&
           other.weight == weight &&
           other.participants == participants;
 
@@ -253,6 +262,7 @@ final class LoopCommunityMiningPower extends LoopMiningPowerSettled {
     formulaVersion,
     computedAt,
     scope,
+    stale,
     weight,
     participants,
   );
@@ -269,6 +279,7 @@ final class LoopAccountMiningPower extends LoopMiningPowerSettled {
     required super.formulaVersion,
     required super.computedAt,
     required super.scope,
+    super.stale,
   });
 
   @override
@@ -279,11 +290,12 @@ final class LoopAccountMiningPower extends LoopMiningPowerSettled {
           other.snapshotId == snapshotId &&
           other.formulaVersion == formulaVersion &&
           other.computedAt == computedAt &&
-          other.scope == scope;
+          other.scope == scope &&
+          other.stale == stale;
 
   @override
   int get hashCode =>
-      Object.hash(power, snapshotId, formulaVersion, computedAt, scope);
+      Object.hash(power, snapshotId, formulaVersion, computedAt, scope, stale);
 }
 
 /// The fixed four-field identity projection. No `profile_code`, wallet

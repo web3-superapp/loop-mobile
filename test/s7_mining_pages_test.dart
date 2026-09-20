@@ -39,6 +39,10 @@ const List<String> _reasonCodesOnTheWire = <String>[
   'MINING_FORMULA_BASELINE_PENDING',
   'MINING_SNAPSHOT_NOT_AVAILABLE',
   'MINING_SNAPSHOT_STALE',
+  'MINING_SNAPSHOT_INCOMPLETE',
+  'MINING_SNAPSHOT_PENDING',
+  'MINING_PRICE_PAIR_NOT_FOUND',
+  'MINING_SNAPSHOT_PUBLISHED_INCOMPLETE',
   'MINING_ACCOUNT_NOT_IN_SNAPSHOT',
   'MINING_NETWORK_POWER_ZERO',
   'MINING_DAILY_OUTPUT_NOT_CONFIGURED',
@@ -2063,6 +2067,322 @@ void main() {
         expect(row, findsOneWidget, reason: 'L$level');
       }
       expect(find.textContaining('referralRulesV1'), findsNothing);
+    });
+  });
+
+  // Decision 0057. A run that could not value a held asset is never
+  // published, so the pages keep the last complete snapshot's numbers — and
+  // have to say that the moment they are printing is no longer the newest.
+  group('a snapshot a later run has overtaken', () {
+    /// What every stale page prints, with the asset named as the composition
+    /// page names it.
+    final staleLine = miningStaleLine(
+      computedAtLabel: '2026-09-15 14:58 UTC',
+      attempt: s7MiningUnreadAttempt(),
+      symbols: const <String, String>{s7UsdtAssetId: 'USDT'},
+    );
+
+    test('the line dates the numbers and names what stopped the next run', () {
+      expect(
+        staleLine,
+        '显示的是 2026-09-15 14:58 UTC 的算力快照 · 最近一次快照未完成（USDT 暂时没有可用报价）',
+      );
+      // Without the composition page's symbols the asset is still named by
+      // the id it stands for, never by a guess.
+      expect(
+        miningStaleLine(
+          computedAtLabel: '2026-09-15 14:58 UTC',
+          attempt: s7MiningUnreadAttempt(),
+        ),
+        contains('0x55d3…7955 暂时没有可用报价'),
+      );
+      // A run an operator withdrew is not a run that did not finish.
+      expect(
+        miningStaleLine(
+          computedAtLabel: '2026-09-15 14:58 UTC',
+          attempt: s7MiningUnreadAttempt(
+            status: 'invalidated',
+            reasonCode: 'MINING_SNAPSHOT_PUBLISHED_INCOMPLETE',
+            unreadInputs: const <MiningUnreadInput>[],
+          ),
+        ),
+        '显示的是 2026-09-15 14:58 UTC 的算力快照 · 最近一次快照已作废（那次快照的数据不完整）',
+      );
+      // No internal word reaches the reader.
+      for (final line in <String>[
+        staleLine,
+        miningSnapshotAbsenceReason(
+          'MINING_SNAPSHOT_INCOMPLETE',
+          attempt: s7MiningUnreadAttempt(),
+        ),
+      ]) {
+        for (final internal in <String>[
+          'incomplete',
+          'latestAttempt',
+          'unreadInputs',
+          'MINING_',
+          'stale',
+        ]) {
+          expect(line.contains(internal), isFalse, reason: internal);
+        }
+      }
+    });
+
+    testWidgets('the summary dates its figures and keeps them', (tester) async {
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(
+          summary: S7Answer<MiningSummary>(
+            value: s7MiningSummary(
+              power: const MiningFigureValue('4.482309'),
+              networkPower: const MiningFigureValue('4.482309'),
+              formula: s7EffectiveFormula(),
+              snapshot: s7MiningStaleSnapshot(),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('mining-stale-summary')),
+        findsOneWidget,
+      );
+      // Reading nothing was never published as a zero: the figure the last
+      // complete snapshot settled is still on the page.
+      expect(find.text('4.482309'), findsWidgets);
+      expect(find.textContaining('最近一次快照未完成'), findsWidgets);
+    });
+
+    testWidgets('a snapshot nothing overtook prints no line', (tester) async {
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(
+          summary: S7Answer<MiningSummary>(
+            value: s7MiningSummary(
+              power: const MiningFigureValue('4.482309'),
+              formula: s7EffectiveFormula(),
+              snapshot: s7MiningSnapshot(),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('mining-stale-summary')),
+        findsNothing,
+      );
+      expect(find.textContaining('最近一次快照未完成'), findsNothing);
+    });
+
+    testWidgets('the composition page names the unread asset by symbol', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(
+            value: s7MiningAssets(
+              totalPower: const MiningFigureValue('4.482309'),
+              included: <MiningAssetRow>[
+                s7MiningAssetRow(
+                  assetId: s7UsdtAssetId,
+                  symbol: 'USDT',
+                  holding: '2.99',
+                  referencePriceUsd: '0.9994',
+                  weight: '1.5',
+                  power: '4.482309',
+                ),
+              ],
+              source: s7MiningStaleSnapshot(),
+              formula: s7EffectiveFormula(),
+            ),
+          ),
+        ),
+      );
+
+      final notice = find.byKey(const ValueKey<String>('mining-stale-assets'));
+      await scrollToS7Section(tester, notice);
+      expect(notice, findsOneWidget);
+      expect(find.textContaining('USDT 暂时没有可用报价'), findsWidgets);
+    });
+
+    testWidgets('the board and the community panel say it too', (tester) async {
+      await pumpS7Page(
+        tester,
+        const MiningRankScreen(),
+        mining: FakeMiningGateway(
+          rank: S7Answer<MiningRank>(
+            value: s7MiningRank(
+              scope: MiningRankScope.communities,
+              snapshot: s7MiningStaleSnapshot(),
+              formula: s7EffectiveFormula(),
+            ),
+          ),
+        ),
+      );
+
+      final board = find.byKey(const ValueKey<String>('mining-stale-rank'));
+      await scrollToS7Section(tester, board);
+      expect(board, findsOneWidget);
+
+      await pumpS7Page(
+        tester,
+        const MiningCommunityScreen(communityId: s7CommunityId),
+        mining: FakeMiningGateway(
+          community: S7Answer<MiningCommunity>(
+            value: s7MiningCommunity(snapshot: s7MiningStaleSnapshot()),
+          ),
+        ),
+      );
+
+      final panel = find.byKey(
+        const ValueKey<String>('mining-stale-community'),
+      );
+      await scrollToS7Section(tester, panel);
+      expect(panel, findsOneWidget);
+    });
+
+    testWidgets('no complete snapshot is a different sentence from none at '
+        'all', (tester) async {
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(
+          summary: S7Answer<MiningSummary>(
+            value: s7MiningSummary(
+              power: const MiningFigureUnavailable(
+                'MINING_SNAPSHOT_INCOMPLETE',
+              ),
+              networkPower: const MiningFigureUnavailable(
+                'MINING_SNAPSHOT_INCOMPLETE',
+              ),
+              formula: s7EffectiveFormula(),
+              snapshot: MiningSnapshotUnavailable(
+                'MINING_SNAPSHOT_INCOMPLETE',
+                latestAttempt: s7MiningUnreadAttempt(),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final block = find.byKey(
+        const ValueKey<String>('mining-snapshot-unavailable'),
+      );
+      await scrollToS7Section(tester, block);
+      expect(find.text('还没有完整的算力快照'), findsOneWidget);
+      expect(find.text('还没有算力快照'), findsNothing);
+      expect(find.textContaining('没有可以回退的完整快照'), findsWidgets);
+      // The figures are absent, never zero.
+      expect(find.text('0'), findsNothing);
+      expect(find.text(launchMissingFigure), findsWidgets);
+    });
+
+    testWidgets('a wallet no snapshot includes yet is told what happens next', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningScreen(),
+        mining: FakeMiningGateway(
+          summary: S7Answer<MiningSummary>(
+            value: s7MiningSummary(
+              power: const MiningFigureUnavailable('MINING_SNAPSHOT_PENDING'),
+              networkPower: const MiningFigureValue('4.482309'),
+              formula: s7EffectiveFormula(),
+              snapshot: s7MiningSnapshot(),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.textContaining('下一次算力快照之后显示'), findsWidgets);
+      expect(find.text('0'), findsNothing);
+    });
+
+    testWidgets('an asset with no quote says so on its own row', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(
+            value: s7MiningAssets(
+              totalPower: const MiningFigureValue('0'),
+              included: <MiningAssetRow>[s7MiningAssetRow()],
+              excluded: const <MiningExcludedAsset>[
+                MiningExcludedAsset(
+                  assetId: s7UsdtAssetId,
+                  symbol: 'USDT',
+                  reasonCode: 'MINING_PRICE_PAIR_NOT_FOUND',
+                ),
+              ],
+              source: s7MiningSnapshot(),
+              formula: s7EffectiveFormula(),
+            ),
+          ),
+        ),
+      );
+
+      final row = find.byKey(
+        ValueKey<String>('mining-assets-excluded-$s7UsdtAssetId'),
+      );
+      await scrollToS7Section(tester, row);
+      expect(row, findsOneWidget);
+      expect(
+        find.textContaining(
+          launchReasonCodeText('MINING_PRICE_PAIR_NOT_FOUND'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a derived price names the pool it was read from', (
+      tester,
+    ) async {
+      await pumpS7Page(
+        tester,
+        const MiningAssetsScreen(),
+        mining: FakeMiningGateway(
+          assets: S7Answer<MiningAssets>(
+            value: s7MiningAssets(
+              totalPower: const MiningFigureValue('4.487909'),
+              included: <MiningAssetRow>[
+                MiningAssetRow(
+                  assetId: s7UsdtAssetId,
+                  symbol: 'USDT',
+                  holding: '2.99',
+                  referencePriceUsd: '0.999535369961668021',
+                  referencePriceQuality: MiningReferencePriceQuality.derived,
+                  referencePriceProxyAssetId: null,
+                  referencePricePairAddress:
+                      '0x16b9a82891338f9ba80e2d6970fdda79d1eb0dae',
+                  weight: '1.5',
+                  power: '4.487909',
+                  blockNumber: '123001455',
+                ),
+              ],
+              source: s7MiningSnapshot(),
+              formula: s7EffectiveFormula(),
+            ),
+          ),
+        ),
+      );
+
+      final row = find.byKey(
+        ValueKey<String>('mining-assets-row-$s7UsdtAssetId'),
+      );
+      await scrollToS7Section(tester, row);
+      expect(find.textContaining('推导价，来源池 0x16b9…0dae'), findsOneWidget);
+      // The full address is the identity and stays in the model.
+      expect(
+        find.textContaining('0x16b9a82891338f9ba80e2d6970fdda79d1eb0dae'),
+        findsNothing,
+      );
     });
   });
 }
