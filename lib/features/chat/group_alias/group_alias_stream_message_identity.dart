@@ -430,6 +430,27 @@ Widget loopStreamChannelListIdentityItem(StreamChannelListItem defaultItem) {
   return _LoopStreamGroupChannelListItem(props: defaultItem.props);
 }
 
+/// The channel a direct row's preview is formatted against.
+///
+/// The official formatter branches on the member count: the reader's own
+/// message takes the 「你: 」 prefix, a channel of more than two names the
+/// author, and anything else is printed bare
+/// (`message_preview_formatter.dart:228`). `8b4780f` passed no channel at
+/// all, to keep that middle branch — which would print the author's Stream
+/// identity — away from a 1:1 row. The cost showed up on the device: a group
+/// row read 「你: …」 and a private row did not, so the same list answered
+/// "who said this" in two different ways (device report 2026-09-20 · R15-2).
+///
+/// A direct channel is 1:1 by construction, so the count is pinned at two
+/// here: the reader's own message is marked, the peer's is printed bare, and
+/// the author branch stays unreachable no matter what the provider's count
+/// drifts to.
+@visibleForTesting
+ChannelModel loopDirectPreviewChannel(ChannelModel? channel) =>
+    (channel ?? ChannelModel(id: 'loop_direct', type: 'messaging')).copyWith(
+      memberCount: 2,
+    );
+
 /// One direct cell in the inbox.
 ///
 /// Stream's own `StreamChannelName` / `StreamChannelAvatar` used to render
@@ -481,7 +502,10 @@ class _LoopStreamDirectChannelListItem extends StatelessWidget {
                 title: Text(identity.title),
                 subtitle: lastMessage == null
                     ? Text(context.translations.emptyMessagesText)
-                    : StreamMessagePreviewText(message: lastMessage),
+                    : StreamMessagePreviewText(
+                        message: lastMessage,
+                        channel: loopDirectPreviewChannel(channelState.channel),
+                      ),
                 timestamp: loopStreamChannelListTimestamp(channel),
                 unreadCount: unreadSnapshot.data ?? state.unreadCount,
                 isMuted: mutedSnapshot.data ?? channel.isMuted,

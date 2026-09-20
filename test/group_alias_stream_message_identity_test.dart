@@ -6,6 +6,7 @@ import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 const String _aliasId = 'bb5e12c2-40e2-4577-9951-57fac0b5ce5e';
@@ -779,6 +780,49 @@ void main() {
     await _disposeHarness(tester, harness);
   });
 
+  testWidgets('a private row marks what the reader sent, as a group row does', (
+    tester,
+  ) async {
+    // R15-2. The same list answered "who said this" in two ways: a group row
+    // read 「你: …」 and a private row did not.
+    final harness = _ChannelHarness.direct(
+      member: _member(
+        userId: 'loop_7e25420ed7ca4645b4860b1f9e734dad',
+        accountName: '',
+      ),
+      senderId: 'loop_self',
+      messageText: '晚点聊',
+    );
+    addTearDown(harness.dispose);
+    // ignore: invalid_use_of_internal_member
+    harness.client.state.currentUser = OwnUser(id: 'loop_self');
+
+    await _pumpInChannel(
+      tester,
+      harness: harness,
+      child: loopStreamChannelListIdentityItem(
+        StreamChannelListItem(channel: harness.channel),
+      ),
+    );
+
+    expect(find.textContaining('你: '), findsOneWidget);
+    expect(find.textContaining('晚点聊'), findsOneWidget);
+    expect(find.textContaining('loop_'), findsNothing);
+    await _disposeHarness(tester, harness);
+  });
+
+  test('a private preview is always formatted as a room of two', () {
+    // The author branch — the one that would print a Stream identity — is
+    // unreachable no matter what the provider\u0027s count drifts to.
+    expect(
+      loopDirectPreviewChannel(
+        ChannelModel(id: 'loop_direct_x', type: 'messaging', memberCount: 7),
+      ).memberCount,
+      2,
+    );
+    expect(loopDirectPreviewChannel(null).memberCount, 2);
+  });
+
   test('the direct row resolver keeps its three answers apart', () {
     const cid = 'messaging:loop_direct_0123456789abcdef0123456789abcdef';
     const peer = LoopPublicProfile(
@@ -882,6 +926,13 @@ Future<void> _pumpInChannel(
   }
   await tester.pumpWidget(
     MaterialApp(
+      // The product's own zh-CN Stream copy, so an assertion here reads the
+      // words the member reads instead of the SDK's English defaults.
+      localizationsDelegates: const <LocalizationsDelegate<Object?>>[
+        LoopStreamChatLocalizationsDelegate(),
+        DefaultMaterialLocalizations.delegate,
+        DefaultWidgetsLocalizations.delegate,
+      ],
       home: StreamChat(
         client: harness.client,
         componentBuilders: StreamComponentBuilders(

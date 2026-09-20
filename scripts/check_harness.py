@@ -10415,6 +10415,7 @@ FRIEND_FRONTEND_TEST_MARKERS = {
         "a named direct row reads the peer LOOP recorded",
         "a peer with no public profile reads as a deactivated account",
         "a direct row LOOP has no answer for stays neutral",
+        "a private row marks what the reader sent, as a group row does",
         "group user mention candidates are hidden and cannot be selected",
         "group conversation labels never fall back to member identity",
         "group channel chrome hides stock typing and global identities",
@@ -11178,7 +11179,8 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "title: Text(identity.title)",
                 "child: Text(identity.initial)",
                 "ValueKey<String>('loop-direct-channel-avatar')",
-                "StreamMessagePreviewText(message: lastMessage)",
+                "message: lastMessage,",
+                "channel: loopDirectPreviewChannel(channelState.channel)",
             )
         ):
             errors.append(
