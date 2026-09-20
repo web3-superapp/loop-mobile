@@ -257,6 +257,57 @@ enum CommunityChatMemberState {
   }
 }
 
+/// Whether the persona LOOP issued has reached the provider.
+///
+/// `pending` means LOOP has the name and the channel member does not carry it
+/// yet, so the room still reads the neutral label for this account.
+enum CommunityChatPersonaProjection {
+  pending('pending'),
+  confirmed('confirmed');
+
+  const CommunityChatPersonaProjection(this.wireName);
+
+  final String wireName;
+
+  static CommunityChatPersonaProjection? tryParse(String value) {
+    for (final item in values) {
+      if (item.wireName == value) return item;
+    }
+    return null;
+  }
+}
+
+/// The name this account is shown under inside one community's official group.
+///
+/// Decision 0055: every `(community, account)` pair has one server-issued,
+/// immutable, community-unique persona. It is the only name LOOP may state
+/// about the reader in that room, and it says nothing about anybody else —
+/// another member's name is read from that member's own channel projection
+/// and from nowhere else.
+@immutable
+final class CommunityChatPersona {
+  const CommunityChatPersona({
+    required this.alias,
+    required this.projectionState,
+  });
+
+  final String alias;
+  final CommunityChatPersonaProjection projectionState;
+
+  bool get isPending =>
+      projectionState == CommunityChatPersonaProjection.pending;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CommunityChatPersona &&
+          other.alias == alias &&
+          other.projectionState == projectionState;
+
+  @override
+  int get hashCode => Object.hash(alias, projectionState);
+}
+
 /// The `chat` section of a community record.
 ///
 /// Only [CommunityChatStatus.available] ever carries a [channelCid]; every
@@ -268,12 +319,18 @@ final class CommunityChatSection {
     required this.channelCid,
     required this.memberState,
     required this.reasonCode,
+    this.viewerPersona,
   });
 
   final CommunityChatStatus status;
   final String? channelCid;
   final CommunityChatMemberState? memberState;
   final String? reasonCode;
+
+  /// The reader's own name in this community, when the server has issued one.
+  /// `null` means it has not been generated yet, or this account is not a
+  /// member — the page states neither in place of the other.
+  final CommunityChatPersona? viewerPersona;
 
   bool get isAvailable =>
       status == CommunityChatStatus.available && channelCid != null;

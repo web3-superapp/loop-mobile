@@ -27,6 +27,7 @@ import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.da
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
 import 'package:loop_mobile/integrations/communication/stream_outgoing_message_order.dart';
+import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// A 1×1 PNG. Small enough to inline, real enough for `Image.memory`.
@@ -357,7 +358,9 @@ void main() {
     testWidgets('左右滑动数得清第几张，且不提供下载或分享', (tester) async {
       final message = Message(
         id: 'm1',
-        user: User(id: 'other', name: '别人'),
+        // The channel resolved a label for this sender; that label is the
+        // only name the viewer may print (device report 2026-09-19 · F5).
+        user: loopStreamDisplayUser(id: 'loop_other', label: '别人'),
         createdAt: DateTime.utc(2026, 9, 19, 4, 7),
       );
       final attachments = <StreamMediaGalleryAttachment>[
@@ -400,12 +403,46 @@ void main() {
       // The sender stays readable on every page, so a picture is never an
       // anonymous full-screen surface.
       expect(find.text('别人'), findsOneWidget);
+      expect(find.text('loop_other'), findsNothing);
+    });
+
+    testWidgets('没有解析出名字时，不拿内部 id 顶替', (tester) async {
+      // What Stream actually carries for a LOOP account: no name at all, so
+      // the SDK's own getter answers with the id.
+      final message = Message(
+        id: 'm1',
+        user: User(id: 'loop_3bb585972e3145e7b5f0957803a824ed'),
+        createdAt: DateTime.utc(2026, 9, 19, 4, 7),
+      );
+      await tester.pumpWidget(
+        _themed(
+          Builder(
+            builder: (context) => loopStreamMediaGalleryPreviewBuilder(
+              context,
+              StreamMediaGalleryPreviewProps(
+                attachments: <StreamMediaGalleryAttachment>[
+                  StreamMediaGalleryAttachment(
+                    attachment: localImage(),
+                    message: message,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(LoopChatImageViewer), findsOneWidget);
+      expect(find.textContaining('loop_3bb58597'), findsNothing);
+      // The picture still carries the instant it was sent.
+      expect(find.textContaining('12:07'), findsOneWidget);
     });
 
     testWidgets('只有一张时不数「第几张」', (tester) async {
       final message = Message(
         id: 'm1',
-        user: User(id: 'me', name: '我'),
+        user: loopStreamDisplayUser(id: 'loop_me', label: '我'),
       );
       await tester.pumpWidget(
         _themed(

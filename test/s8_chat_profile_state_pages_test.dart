@@ -90,7 +90,7 @@ final class _FakeChatSearchGateway implements ChatSearchGateway {
 ChatSearchHit _hit() => ChatSearchHit(
   messageId: 'm1',
   cid: testGroupCid,
-  senderLabel: '群成员',
+  senderLabel: '成员',
   channelLabel: '群聊',
   text: '看看这个',
   createdAt: DateTime.utc(2026, 9, 8, 12),

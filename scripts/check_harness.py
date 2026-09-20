@@ -8425,6 +8425,130 @@ def check_user_visible_copy(root: Path) -> list[str]:
     return errors
 
 
+# A chat identity that is never a name. LOOP upserts every account to Stream as
+# `{ id }` alone, so `User.name` is empty and the SDK's getter answers with
+# `User.id` — `loop_` plus the LOOP row key, identical in every room the
+# account is in (device report 2026-09-19 · F5). Either one reaching a `Text`
+# puts an internal primary key on the screen.
+STREAM_USER_IDENTITY_FIELD = re.compile(
+    r"(?<![A-Za-z0-9_])"
+    r"(?:\w*[Uu]ser|sender|author|member|currentUser)\w*\s*[!?]?\s*"
+    r"\.\s*(?:name|id)(?![A-Za-z0-9_])"
+)
+
+# The widgets that draw their first positional argument.
+STREAM_TEXT_WIDGET_CALL = re.compile(
+    r"(?<![A-Za-z0-9_$.])(Text|SelectableText)\s*\("
+)
+
+# The direct-message top bar is the one place a conversation is named after the
+# person on the other end, and it does so from LOOP's own profile record
+# (`identity.displayName` / `identity.loopId`), never from a Stream `User`.
+# Listed so the exception is written down rather than implied.
+STREAM_USER_TEXT_ALLOWLIST = ("lib/features/chat/v2/direct_message_screen.dart",)
+
+
+def _dart_call_arguments(source: str, open_index: int) -> str | None:
+    """The text between one `(` and its match, or None when unbalanced."""
+
+    depth = 0
+    index = open_index
+    quote: str | None = None
+    while index < len(source):
+        char = source[index]
+        if quote is not None:
+            if char == "\\":
+                index += 2
+                continue
+            if char == quote:
+                quote = None
+            index += 1
+            continue
+        if char in "'\"":
+            quote = char
+        elif char in "([{":
+            depth += 1
+        elif char in ")]}":
+            depth -= 1
+            if depth == 0:
+                return source[open_index + 1 : index]
+        index += 1
+    return None
+
+
+def _first_positional_argument(arguments: str) -> str | None:
+    """The first argument of a call, when it is positional."""
+
+    depth = 0
+    quote: str | None = None
+    index = 0
+    while index < len(arguments):
+        char = arguments[index]
+        if quote is not None:
+            if char == "\\":
+                index += 2
+                continue
+            if char == quote:
+                quote = None
+            index += 1
+            continue
+        if char in "'\"":
+            quote = char
+        elif char in "([{":
+            depth += 1
+        elif char in ")]}":
+            depth -= 1
+        elif char == "," and depth == 0:
+            break
+        index += 1
+    first = arguments[:index]
+    # `Text(key: ..., ...)` has no positional first argument at all.
+    if re.match(r"\s*[A-Za-z_][A-Za-z0-9_]*\s*:(?!:)", first):
+        return None
+    return first
+
+
+def check_stream_user_identity_rendering(root: Path) -> list[str]:
+    """Keep the Stream account id and account name off the screen.
+
+    Device report 2026-09-19 · F5. `User.name` is empty for every LOOP account
+    and `User.id` is the LOOP row key, so both read as
+    `loop_3bb585972e3145e7b5f0957803a824ed` in all twenty of an account's
+    rooms. A name on a chat surface is the label that channel resolved —
+    today the group Alias projection carried on the channel's own member,
+    read back through `loopStreamDisplayLabelOf` — and a member with no label
+    is not named at all.
+
+    Only the drawn argument counts: routing on `user.id`, keying on it, or
+    comparing it is how Stream's own widgets work.
+    """
+
+    errors: list[str] = []
+    for path in sorted((root / "lib").rglob("*.dart")):
+        relative = path.relative_to(root).as_posix()
+        if relative in STREAM_USER_TEXT_ALLOWLIST:
+            continue
+        source = read_text(path)
+        for match in STREAM_TEXT_WIDGET_CALL.finditer(source):
+            arguments = _dart_call_arguments(source, match.end() - 1)
+            if arguments is None:
+                continue
+            first = _first_positional_argument(arguments)
+            if first is None:
+                continue
+            found = STREAM_USER_IDENTITY_FIELD.search(first)
+            if found is None:
+                continue
+            line = source.count("\n", 0, match.start()) + 1
+            errors.append(
+                f"{relative}:{line} draws `{found.group(0).strip()}`: a Stream "
+                "account id or account name is the same string in every room, "
+                "so a chat surface prints the label the channel resolved "
+                "(loopStreamDisplayLabelOf) or no name at all"
+            )
+    return errors
+
+
 def check_notification_contract(root: Path) -> list[str]:
     """Keep provider callbacks behind one adapter and routing provider-neutral."""
 
@@ -10433,7 +10557,7 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "class GroupAliasPage",
             ),
             "lib/features/chat/group_alias/group_alias_stream_message_identity.dart": (
-                "loopGroupMemberNeutralLabel = '群成员'",
+                "loopGroupMemberNeutralLabel = '成员'",
                 "loopGroupConversationNeutralLabel = '群聊'",
                 "parseLoopGroupAliasMemberProjection",
                 "if (!setEquals(projectionFields, _aliasProjectionFields)) return null;",
@@ -11385,6 +11509,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_perp_positions_application_contract(root))
     errors.extend(check_source_guards(root))
     errors.extend(check_user_visible_copy(root))
+    errors.extend(check_stream_user_identity_rendering(root))
     errors.extend(check_typography_band_contract(root))
     errors.extend(check_light_ground_contract(root))
     errors.extend(check_page_mount_theme_contract(root))
@@ -11421,6 +11546,7 @@ def main() -> int:
         "plate-free launch icon, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, user-visible copy, "
+        "channel-resolved chat names, "
         "and secret rules are consistent."
     )
     return 0

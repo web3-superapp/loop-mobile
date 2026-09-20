@@ -1325,6 +1325,75 @@ void main() {
       expect(unavailable.reasonCode, 'COMMUNITY_MEMBERSHIP_REQUIRED');
     });
 
+    test('the reader\'s own persona is decoded, or stated absent', () {
+      // Decision 0055: one server-issued, community-unique name per
+      // `(community, account)`. It names the reader and nobody else.
+      final confirmed = LoopV2ProjectionCodec.chatSection(<String, Object?>{
+        'status': 'available',
+        'channelCid': 'messaging:loop_community_$_hex',
+        'memberState': 'synced',
+        'reasonCode': null,
+        'viewerPersona': <String, Object?>{
+          'alias': 'Harbor-4821',
+          'projectionState': 'confirmed',
+        },
+      });
+      expect(confirmed.viewerPersona?.alias, 'Harbor-4821');
+      expect(confirmed.viewerPersona?.isPending, isFalse);
+
+      final pending = LoopV2ProjectionCodec.chatSection(<String, Object?>{
+        'status': 'syncing',
+        'channelCid': null,
+        'memberState': 'pending',
+        'reasonCode': 'COMMUNITY_CHANNEL_MEMBER_SYNCING',
+        'viewerPersona': <String, Object?>{
+          'alias': 'Harbor-4821',
+          'projectionState': 'pending',
+        },
+      });
+      expect(pending.viewerPersona?.isPending, isTrue);
+
+      // A non-member gets an explicit null, and the client states nothing.
+      final absent = LoopV2ProjectionCodec.chatSection(<String, Object?>{
+        'status': 'unavailable',
+        'channelCid': null,
+        'memberState': null,
+        'reasonCode': 'COMMUNITY_MEMBERSHIP_REQUIRED',
+        'viewerPersona': null,
+      });
+      expect(absent.viewerPersona, isNull);
+    });
+
+    test('a persona LOOP cannot read is not replaced by a guess', () {
+      Object? section(Object? persona) =>
+          LoopV2ProjectionCodec.chatSection(<String, Object?>{
+            'status': 'unavailable',
+            'channelCid': null,
+            'memberState': null,
+            'reasonCode': 'COMMUNITY_MEMBERSHIP_REQUIRED',
+            'viewerPersona': persona,
+          });
+      for (final malformed in <Object?>[
+        <String, Object?>{'alias': 'Harbor-4821'},
+        <String, Object?>{'alias': '', 'projectionState': 'confirmed'},
+        <String, Object?>{'alias': ' Harbor', 'projectionState': 'confirmed'},
+        <String, Object?>{'alias': 'Harbor-4821', 'projectionState': 'queued'},
+        <String, Object?>{'alias': 42, 'projectionState': 'confirmed'},
+        <String, Object?>{
+          'alias': 'Harbor-4821',
+          'projectionState': 'confirmed',
+          'loopUserId': 'must-not-be-here',
+        },
+        'Harbor-4821',
+      ]) {
+        expect(
+          () => section(malformed),
+          throwsA(isA<LoopBackendFailure>()),
+          reason: '$malformed',
+        );
+      }
+    });
+
     test('a live voice section must carry the room it claims', () {
       expect(
         () => LoopV2ProjectionCodec.voiceSection(<String, Object?>{

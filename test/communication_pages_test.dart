@@ -200,6 +200,21 @@ void main() {
       expect(find.textContaining('成员上限'), findsOneWidget);
     });
 
+    test('a persona still on its way says that, and no name', () {
+      expect(
+        communityChatPersonaSegment(
+          const CommunityChatPersona(
+            alias: 'Harbor-4821',
+            projectionState: CommunityChatPersonaProjection.pending,
+          ),
+        ),
+        '正在同步你的显示名',
+      );
+      // Nothing issued, or not a member: the page states neither in place of
+      // the other.
+      expect(communityChatPersonaSegment(null), isNull);
+    });
+
     testWidgets(
       'an available channel mounts the Stream surface, not a fixture',
       (tester) async {

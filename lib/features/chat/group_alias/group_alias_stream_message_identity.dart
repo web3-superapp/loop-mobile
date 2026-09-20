@@ -6,11 +6,16 @@ import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
+import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// Neutral sender label used when the current Stream member projection cannot
 /// prove a valid group-scoped Alias.
-const String loopGroupMemberNeutralLabel = '群成员';
+///
+/// Decision 0055 (`frontend-v2-communication-api.md` §4) fixes this word: a
+/// member whose projection has not landed reads as 「成员」, and never as an
+/// account-level name or a Stream id.
+const String loopGroupMemberNeutralLabel = '成员';
 
 /// Neutral group label used when Stream does not carry a reviewed group name.
 const String loopGroupConversationNeutralLabel = '群聊';
@@ -514,6 +519,8 @@ Message _sanitizeMessage(
       senderUserId: user.id,
       members: members,
     );
+    // Read, never rendered: both spellings Stream may have written into the
+    // text are replaced by the channel-scoped label before the text is drawn.
     displayText = _replaceMentionLiteral(displayText, user.id, label);
     if (user.name != user.id) {
       displayText = _replaceMentionLiteral(displayText, user.name, label);
@@ -563,7 +570,11 @@ User _groupDisplayUser(User user, List<Member> members) {
     senderUserId: user.id,
     members: members,
   );
-  return User(id: user.id, name: label);
+  // The label is written where a renderer reads it from, not only onto
+  // `User.name`: a LOOP surface that prints a name asks for the label LOOP
+  // resolved and draws nothing when there is none (device report
+  // 2026-09-19 · F5).
+  return loopStreamDisplayUser(id: user.id, label: label);
 }
 
 StreamMessageItemProps _groupDisplayProps(

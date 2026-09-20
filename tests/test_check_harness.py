@@ -4275,6 +4275,70 @@ class HarnessTests(unittest.TestCase):
 
         self.assertEqual([], result)
 
+    def test_stream_user_identity_cannot_be_drawn_as_a_name(self) -> None:
+        """Device report 2026-09-19 · F5: the one string that is never a name."""
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "chat" / "bubble.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "Widget build(BuildContext context) => Column(\n"
+                "  children: <Widget>[\n"
+                "    Text(\n"
+                "      user.name,\n"
+                "      maxLines: 1,\n"
+                "    ),\n"
+                "    Text(message.user!.id, style: style),\n"
+                "    SelectableText(sender?.name ?? ''),\n"
+                "  ],\n"
+                ");\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_stream_user_identity_rendering(root)
+
+        joined = "\n".join(result)
+        self.assertEqual(3, len(result), msg=joined)
+        self.assertIn("bubble.dart:3 draws `user.name`", joined)
+        self.assertIn("bubble.dart:7 draws `user!.id`", joined)
+        self.assertIn("bubble.dart:8 draws `sender?.name`", joined)
+
+    def test_stream_user_identity_may_still_be_routed_on(self) -> None:
+        """Stream's own widgets key, compare and anchor on the id."""
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "chat" / "bubble.dart"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "Widget build(BuildContext context) => Column(\n"
+                "  children: <Widget>[\n"
+                "    Text(label, key: ValueKey<String>(user.id)),\n"
+                "    Text(loopStreamDisplayLabelOf(user) ?? '成员'),\n"
+                "    if (user.id == currentUser?.id) const Text('我'),\n"
+                "  ],\n"
+                ");\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_stream_user_identity_rendering(root)
+
+        self.assertEqual([], result)
+
+    def test_stream_user_identity_allows_the_direct_message_top_bar(self) -> None:
+        """The DM header names the peer from LOOP's own profile record."""
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "lib" / "features" / "chat" / "v2"
+            source.mkdir(parents=True)
+            (source / "direct_message_screen.dart").write_text(
+                "final title = Text(user.name);\n",
+                encoding="utf-8",
+            )
+            result = check_harness.check_stream_user_identity_rendering(root)
+
+        self.assertEqual([], result)
+
     def test_user_visible_copy_allows_the_about_version_list(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

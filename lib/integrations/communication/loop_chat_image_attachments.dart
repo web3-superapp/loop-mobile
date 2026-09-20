@@ -19,6 +19,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
+import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
@@ -329,7 +330,11 @@ class _LoopChatImageViewerHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sender = message.user?.name.trim();
+    // The label the channel resolved for this sender, or nothing. Stream's own
+    // `User.name` is empty for every LOOP account and reads back as the
+    // internal id (device report 2026-09-19 · F5), so a picture opened from a
+    // conversation with no resolved label carries only its timestamp.
+    final sender = loopStreamDisplayLabelOf(message.user);
     final sentAt = message.createdAt.toLocal();
     final stamp =
         '${loopStreamDayLabel(sentAt)} ${loopStreamClockLabel(sentAt)}';
@@ -355,7 +360,7 @@ class _LoopChatImageViewerHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  if (sender != null && sender.isNotEmpty)
+                  if (sender != null)
                     Text(
                       sender,
                       maxLines: 1,

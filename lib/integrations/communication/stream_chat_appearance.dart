@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_localizations_zh.dart';
+import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 /// Lime, as Stream's brand ladder reads it.
@@ -371,9 +372,18 @@ class _LoopStreamMessageHeader extends StatelessWidget {
     final currentUser = StreamChat.of(context).currentUser;
 
     Widget? usernameWidget;
-    // The same test the official footer applies: a group channel names every
-    // author but the reader themself.
+    // The same test the official footer applies — a group channel names every
+    // author but the reader themself — plus LOOP's own: the name is the label
+    // this channel resolved for that member, and there is no second choice.
+    //
+    // Device report 2026-09-19 · F5: `user.name` used to be drawn here, and
+    // Stream carries none, so the SDK handed back `User.id` — `loop_` plus the
+    // LOOP row key, the same string in every room. A member with no resolved
+    // label is not named at all; in a direct channel the header above the
+    // conversation already says who it is.
+    final label = loopStreamDisplayLabelOf(user);
     if (user != null &&
+        label != null &&
         layout.channelKind == StreamMessageChannelKind.group &&
         user.id != currentUser?.id) {
       final metadata = StreamMessageItemTheme.of(context).metadata;
@@ -382,7 +392,7 @@ class _LoopStreamMessageHeader extends StatelessWidget {
           LoopTypography.caption(11);
       final color = metadata?.usernameColor?.resolve(layout);
       usernameWidget = Text(
-        user.name,
+        label,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: color == null ? style : style.copyWith(color: color),

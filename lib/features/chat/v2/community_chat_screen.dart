@@ -217,12 +217,30 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
           CommunityPreviewNotice(mode: state.mode, resource: '社区官方群'),
           LoopChatHeaderStrip(
             key: const ValueKey<String>('community-chat-header-strip'),
+            // The one identity fact LOOP may state about the reader in this
+            // room: the persona this community issued them (decision 0055).
+            // Everybody else's name is read from that member's own channel
+            // projection, never from a LOOP record.
+            segments: <String>[
+              ?communityChatPersonaSegment(chat.viewerPersona),
+            ],
             collapsed: loopChatKeyboardIsUp(context),
           ),
         ],
       ),
     );
   }
+}
+
+/// One line naming the reader inside this community's official group.
+///
+/// `null` when the server has stated no persona: not issued yet, or this
+/// account is not a member. A persona LOOP has issued but the provider has not
+/// confirmed is named as what it is — the room still shows this account under
+/// the neutral label until the projection lands.
+String? communityChatPersonaSegment(CommunityChatPersona? persona) {
+  if (persona == null) return null;
+  return persona.isPending ? '正在同步你的显示名' : '你在这个社区显示为 ${persona.alias}';
 }
 
 class _SyncingBlock extends StatelessWidget {

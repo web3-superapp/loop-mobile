@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
+import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 const String _aliasId = 'bb5e12c2-40e2-4577-9951-57fac0b5ce5e';
@@ -185,12 +186,18 @@ void main() {
 
     expect(display.user?.name, 'Sender Owl');
     expect(display.user?.image, isNull);
-    expect(display.user?.extraData, <String, Object?>{'name': 'Sender Owl'});
+    // Exactly two keys: the Alias, and the LOOP label field a renderer reads
+    // it back from. No account-level custom data survives the sanitizer.
+    expect(display.user?.extraData, <String, Object?>{
+      'name': 'Sender Owl',
+      loopStreamDisplayLabelField: 'Sender Owl',
+    });
+    expect(loopStreamDisplayLabelOf(display.user), 'Sender Owl');
     expect(display.mentionedUsers.map((user) => user.name), <String>[
       'Mention Owl',
       loopGroupMemberNeutralLabel,
     ]);
-    expect(display.text, 'hello @Mention Owl, @Mention Owl, and @群成员');
+    expect(display.text, 'hello @Mention Owl, @Mention Owl, and @成员');
     expect(display.quotedMessage?.user?.name, 'Quote Owl');
     expect(display.latestReactions?.single.user?.name, 'Reaction Owl');
     expect(display.ownReactions?.single.user?.name, 'Sender Owl');

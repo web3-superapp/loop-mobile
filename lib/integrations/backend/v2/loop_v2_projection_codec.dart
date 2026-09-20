@@ -339,12 +339,17 @@ abstract final class LoopV2ProjectionCodec {
   /// Only `available` may carry a channel CID, and it must carry one. Any other
   /// pairing is a contract break rather than a partially trusted projection.
   static CommunityChatSection chatSection(Object? raw) {
-    final map = LoopV2Contract.strictMap(raw, const <String>{
-      'status',
-      'channelCid',
-      'memberState',
-      'reasonCode',
-    });
+    // `viewerPersona` (decision 0055) is stated on all three chat statuses by
+    // a current server. It is read as optional only so the recorded responses
+    // this client is replayed against — captured before the field existed —
+    // still decode; an absent key carries the same meaning as the explicit
+    // `null` the server sends for a non-member, and nothing else about the
+    // section is relaxed.
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      const <String>{'status', 'channelCid', 'memberState', 'reasonCode'},
+      const <String>{'viewerPersona'},
+    );
     final rawStatus = map['status'];
     if (rawStatus is! String) invalid();
     final status = CommunityChatStatus.tryParse(rawStatus);
@@ -369,7 +374,36 @@ abstract final class LoopV2ProjectionCodec {
       channelCid: channelCid,
       memberState: memberState,
       reasonCode: reasonCode(map, 'reasonCode'),
+      viewerPersona: chatViewerPersona(map['viewerPersona']),
     );
+  }
+
+  /// The reader's own name in one community's official group (decision 0055).
+  ///
+  /// `null` is a stated absence — not yet issued, or not a member — and is
+  /// decoded as such. Anything else must be the exact pair the contract
+  /// names; a persona LOOP cannot read is not replaced by a guess.
+  static CommunityChatPersona? chatViewerPersona(Object? raw) {
+    if (raw == null) return null;
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'alias',
+      'projectionState',
+    });
+    final alias = map['alias'];
+    if (alias is! String ||
+        alias.isEmpty ||
+        alias.length > 64 ||
+        alias != alias.trim() ||
+        !aliasPattern.hasMatch(alias)) {
+      invalid();
+    }
+    final rawProjection = map['projectionState'];
+    if (rawProjection is! String) invalid();
+    final projectionState = CommunityChatPersonaProjection.tryParse(
+      rawProjection,
+    );
+    if (projectionState == null) invalid();
+    return CommunityChatPersona(alias: alias, projectionState: projectionState);
   }
 
   static CommunityVoiceSection voiceSection(Object? raw) {
