@@ -35,7 +35,16 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 /// address opens a Token Card under the message — that is a read LOOP
 /// performs on the address, not a claim about the token and not an assistant.
 /// The prototype's "@AI 提问" half stays out: there is no Community AI to ask.
-const String loopChatComposerHint = '发消息 · 贴合约地址自动识别代币';
+// Two characters shorter than it was: at the app's 14pt body the old string
+// wrapped the field onto a second line and made the composer half again as
+// tall as the prototype's (audit 2026-09-20 · B.2). The promise is unchanged.
+const String loopChatComposerHint = '发消息 · 贴合约地址识别代币';
+
+/// The placeholder a direct conversation shows (`#scr-dm .composer input`).
+///
+/// A private thread gets the bare word: the prototype offers no hint there,
+/// and the field is already the narrowest one in the app.
+const String loopDirectComposerHint = '发消息';
 
 class LoopStreamChannelSurface extends ConsumerWidget {
   const LoopStreamChannelSurface({
@@ -766,3 +775,98 @@ class LoopChatHeaderFold extends StatelessWidget {
 /// always answer "no".
 bool loopChatKeyboardIsUp(BuildContext context) =>
     MediaQuery.viewInsetsOf(context).bottom > 0;
+
+/// The prototype's AI message, rendered as the unavailability it is.
+///
+/// `#scr-community-chat` closes with a `.msg` whose avatar is the ✦ glyph and
+/// whose `.msg-who` reads `PEPE AI`: the community's assistant answering in
+/// the thread. LOOP has no Community AI — the capability reads
+/// `COMMUNITY_AI_RUNTIME_DEFERRED` — so the row keeps the prototype's shape
+/// and says exactly that in the bubble. It is not a message: it carries no
+/// timestamp, no delivery mark and no author the provider ever reported, and
+/// it sits above the thread rather than inside it, so it can never be read as
+/// something somebody said.
+///
+/// Rendering nothing here was the other option, and it cost the page the one
+/// element the prototype gives most of its width to (audit 2026-09-20 · B.2).
+/// A reader who came for `@AI 提问` is owed the answer that there is no AI,
+/// in the place the AI would have answered.
+class LoopChatAiUnavailableBubble extends StatelessWidget {
+  const LoopChatAiUnavailableBubble({
+    required this.name,
+    required this.reason,
+    super.key,
+    this.collapsed,
+  });
+
+  /// The assistant's name in this room — the community's own, so the row
+  /// names the thing that is missing rather than "AI".
+  final String name;
+
+  /// The server's reason for the capability being closed.
+  final String reason;
+
+  /// See [LoopChatHeaderStrip.collapsed].
+  final bool? collapsed;
+
+  @override
+  Widget build(BuildContext context) {
+    if (collapsed ?? loopChatKeyboardIsUp(context)) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      key: const ValueKey<String>('loop-chat-ai-unavailable'),
+      // `.msg{padding:8px 16px}`.
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: LoopGround.fillOf(context),
+              shape: BoxShape.circle,
+              border: Border.all(color: LoopGround.hairlineOf(context)),
+            ),
+            child: const LoopIcon('ai', size: 16, color: LoopColors.text3),
+          ),
+          // `.msg{gap:10px}`.
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                // `.msg-who`.
+                Text(name, style: LoopTypography.caption(11)),
+                const SizedBox(height: 4),
+                // `.msg-txt`, without the Lime that marks a real reply.
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: const BoxDecoration(
+                    color: LoopColors.card,
+                    borderRadius: BorderRadiusDirectional.only(
+                      topStart: Radius.circular(LoopRadius.bubbleTailValue),
+                      topEnd: Radius.circular(LoopRadius.controlValue),
+                      bottomStart: Radius.circular(LoopRadius.controlValue),
+                      bottomEnd: Radius.circular(LoopRadius.controlValue),
+                    ),
+                  ),
+                  child: Text(
+                    reason,
+                    style: LoopTypography.body(14, color: LoopColors.text2),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

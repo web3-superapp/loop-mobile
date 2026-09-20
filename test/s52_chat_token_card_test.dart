@@ -522,5 +522,7 @@ void main() {
     expect(loopChatComposerHint, contains('贴合约地址'));
     expect(loopChatComposerHint, contains('发消息'));
     expect(loopChatComposerHint.contains('AI'), isFalse);
+    // It has to stay on one line beside the attachment and send controls.
+    expect(loopChatComposerHint.runes.length, lessThanOrEqualTo(16));
   });
 }

@@ -179,7 +179,7 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
       key: ValueKey<String>('dm-$cid'),
       cid: cid,
       keyPrefix: 'dm-channel',
-      composerHint: loopChatComposerHint,
+      composerHint: loopDirectComposerHint,
       header: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[

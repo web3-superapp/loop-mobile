@@ -6,6 +6,7 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/loop_stream_channel_surface.dart';
+import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
@@ -73,7 +74,14 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
           children: <Widget>[
             LoopTopbar(
               title: detail?.community.name ?? communityMissingName,
+              // `#scr-community-chat .topbar` puts the room's one presence
+              // fact on an 11px line *under* the name. A mono eyebrow above
+              // it reads as a section marker, which a conversation header is
+              // not; the preview marker still earns that slot, because a
+              // reader has to know the room is a preview before they read a
+              // word of it.
               kicker: communityPreviewKicker(mode),
+              subtitle: communityChatPresenceLine(detail),
               onBack: widget.onBack,
               minHeight: 72,
               // Four tools plus the back control leave the channel name a
@@ -85,18 +93,24 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
               // where it was.
               titleMaxLines: 2,
               dense: true,
+              // `.back.tool-btn` and `.seg`: the prototype frames every
+              // control in this bar. Over a message list a row of bare glyphs
+              // has no edge to be aimed at (audit 2026-09-20 · B.2).
+              framedTools: true,
               actions: <Widget>[
                 if (detail?.chat.channelCid case final String cid) ...<Widget>[
                   LoopIconButton(
                     key: const ValueKey<String>('community-chat-open-search'),
                     icon: 'search',
                     label: '搜索这个会话',
+                    framed: true,
                     onPressed: () => widget.onOpenSearch?.call(cid),
                   ),
                   LoopIconButton(
                     key: const ValueKey<String>('community-chat-open-forward'),
                     icon: 'shuffle',
                     label: '转发消息',
+                    framed: true,
                     onPressed: () => widget.onOpenForward?.call(cid),
                   ),
                 ],
@@ -105,6 +119,7 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
                     key: const ValueKey<String>('community-chat-open-voice'),
                     icon: 'voice',
                     label: '进入语音房',
+                    framed: true,
                     onPressed: () => widget.onOpenVoiceRoom?.call(
                       detail.community.communityId,
                     ),
@@ -113,6 +128,7 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
                     key: const ValueKey<String>('community-chat-open-profile'),
                     icon: 'info',
                     label: '社区信息',
+                    framed: true,
                     onPressed: () => widget.onOpenProfile?.call(
                       detail.community.communityId,
                     ),
@@ -170,6 +186,9 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
     }
 
     final chat = detail.chat;
+    final aiGate = ref.watch(
+      loopCapabilityProvider(LoopV2CapabilityId.communityAi),
+    );
     if (chat.isSyncing) {
       return _SyncingBlock(
         reasonCode: chat.reasonCode,
@@ -227,10 +246,64 @@ class _CommunityChatScreenState extends ConsumerState<CommunityChatScreen> {
             ],
             collapsed: loopChatKeyboardIsUp(context),
           ),
+          // `.notice` with the pin glyph, directly under the bar — the
+          // prototype's `Q3 路线图已发布 · 项目方`. It appears only when this
+          // community actually pinned something; an absent announcement earns
+          // no strip of its own.
+          if (communityChatPinnedAnnouncement(detail.announcements)
+              case final CommunityAnnouncement pinned)
+            LoopChatHeaderFold(
+              collapsed: loopChatKeyboardIsUp(context),
+              child: LoopNotice(
+                key: const ValueKey<String>('community-chat-pinned'),
+                icon: 'pin',
+                body: pinned.byline == null
+                    ? pinned.title
+                    : '${pinned.title} · ${pinned.byline}',
+                margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+              ),
+            ),
+          // The prototype's last message in this room is the community's AI
+          // answering. There is none, so the row states that instead.
+          if (!aiGate.isUsable)
+            LoopChatAiUnavailableBubble(
+              key: const ValueKey<String>('community-chat-ai-unavailable'),
+              name: '${detail.community.name} AI',
+              reason: communicationUnavailableReason(
+                aiGate.reasonCode ?? 'COMMUNITY_AI_RUNTIME_DEFERRED',
+              ),
+              collapsed: loopChatKeyboardIsUp(context),
+            ),
         ],
       ),
     );
   }
+}
+
+/// The room's presence line, or `null` when the server stated none.
+///
+/// `#scr-community-chat .topbar` prints `3,241 在线` under the name. It is one
+/// observation with one number; a community whose presence LOOP could not read
+/// gets no line at all rather than a dash or a zero.
+String? communityChatPresenceLine(CommunityDetail? detail) =>
+    switch (detail?.onlineCount) {
+      CommunityOnlineCountObserved(:final count) => '$count 在线',
+      _ => null,
+    };
+
+/// The announcement this community pinned, or `null`.
+///
+/// The prototype's strip carries one line, so this returns the first pinned
+/// row in the server's own order. An unavailable feed and a published feed
+/// with nothing pinned are the same answer here: no strip.
+CommunityAnnouncement? communityChatPinnedAnnouncement(
+  CommunityAnnouncementFeed feed,
+) {
+  if (feed is! CommunityAnnouncementFeedPublished) return null;
+  for (final item in feed.items) {
+    if (item.pinned) return item;
+  }
+  return null;
 }
 
 /// One line naming the reader inside this community's official group.
