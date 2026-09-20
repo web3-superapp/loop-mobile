@@ -53,6 +53,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
     super.key,
     this.header,
     this.banner,
+    this.footer,
     this.notConnectedMessage = '这个会话暂时打不开，稍后再试。',
     this.unresolvedMessage,
     this.keyPrefix = 'loop-stream-channel',
@@ -70,6 +71,13 @@ class LoopStreamChannelSurface extends ConsumerWidget {
 
   /// Rendered between the header and the message list (pinned notice area).
   final Widget? banner;
+
+  /// Rendered between the message list and the composer.
+  ///
+  /// `#scr-dm` closes the thread with its protection note and only then the
+  /// composer: the last thing a reader passes on the way to the field, not
+  /// the first thing they meet on the way in (audit 2026-09-20 · B.3).
+  final Widget? footer;
   final String notConnectedMessage;
 
   /// What to say when Stream answers the membership query with no channel for
@@ -151,6 +159,7 @@ class LoopStreamChannelSurface extends ConsumerWidget {
               unresolvedMessage: unresolvedMessage,
               header: header,
               banner: banner,
+              footer: footer,
               keyPrefix: keyPrefix,
             );
           },
@@ -183,6 +192,7 @@ class LoopStreamMemberChannelBody extends StatefulWidget {
     required this.unresolvedMessage,
     required this.header,
     required this.banner,
+    required this.footer,
     required this.keyPrefix,
     super.key,
     this.connection,
@@ -196,6 +206,7 @@ class LoopStreamMemberChannelBody extends StatefulWidget {
   final String? unresolvedMessage;
   final Widget? header;
   final Widget? banner;
+  final Widget? footer;
   final String keyPrefix;
 
   /// The websocket this body reads over. Defaults to [client]'s own.
@@ -385,6 +396,7 @@ class _LoopStreamMemberChannelBodyState
             composerHint: widget.composerHint,
             header: widget.header,
             banner: widget.banner,
+            footer: widget.footer,
           ),
         );
       },
@@ -428,11 +440,13 @@ class _LoopChannelBody extends StatefulWidget {
     required this.composerHint,
     required this.header,
     required this.banner,
+    required this.footer,
   });
 
   final String composerHint;
   final Widget? header;
   final Widget? banner;
+  final Widget? footer;
 
   @override
   State<_LoopChannelBody> createState() => _LoopChannelBodyState();
@@ -526,6 +540,7 @@ class _LoopChannelBodyState extends State<_LoopChannelBody> {
             enableSafeArea: false,
           ),
         ),
+        if (widget.footer != null) widget.footer!,
         StreamMessageComposer(
           key: const ValueKey<String>('loop-stream-message-composer'),
           focusNode: _focusNode,

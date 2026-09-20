@@ -84,11 +84,16 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
           children: <Widget>[
             LoopTopbar(
               title: identity?.displayName ?? '私聊',
-              kicker: identity?.alias == null
-                  ? communityPreviewKicker(mode)
-                  : identity!.loopId,
+              // `#scr-dm .topbar` prints `NightOwl` at 15px and
+              // `LOOP-4D5E6F · 在线` at 11px *under* it. LOOP had the LOOP ID
+              // in the mono eyebrow above the name, which reads as a section
+              // marker and put the identifier before the person (audit
+              // 2026-09-20 · B.3).
+              kicker: communityPreviewKicker(mode),
+              subtitle: identity?.loopId,
               onBack: widget.onBack,
               minHeight: 72,
+              framedTools: true,
             ),
             Expanded(
               child: _body(
@@ -103,6 +108,7 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
   }
 
   Widget _body({required bool blocked, required String? capabilityReason}) {
+    final identity = widget.target?.identity;
     final state = ref.watch(directChannelControllerProvider);
     final controller = ref.read(directChannelControllerProvider.notifier);
     final cid = widget.channelCid ?? state.streamCid;
@@ -184,17 +190,38 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           CommunityPreviewNotice(mode: state.mode, resource: '私聊'),
+          // `#scr-dm` opens on a Chalk hero, not on a warning. The page's one
+          // primary narrative states what this conversation is; the caveat
+          // about encryption is the last thing before the composer, below.
           LoopChatHeaderFold(
             collapsed: loopChatKeyboardIsUp(context),
-            child: const LoopNotice(
-              key: ValueKey<String>('dm-protection-note'),
-              icon: 'info',
-              title: '不声明端到端加密',
-              body: '私聊由 Stream Chat 承载，保护能力取决于供应商策略，LOOP 不做端到端加密承诺。',
-              margin: EdgeInsets.fromLTRB(16, 10, 16, 4),
+            child: LoopFolioPrimary(
+              variant: LoopFolioVariant.chalk,
+              archetype: LoopFolioArchetype.listing,
+              ring: false,
+              compact: true,
+              kicker: 'DIRECT MESSAGE',
+              heading: identity == null
+                  ? '一对一的私聊'
+                  : '和 ${identity.displayName} 的私聊',
+              caption: '私聊默认展示最少身份信息，资产与签名请求会单独标识。',
+              stamp: 'PRIVATE',
             ),
           ),
         ],
+      ),
+      // `#scr-dm` puts the protection note at the foot of the thread. It used
+      // to be the first card on the page, which made "we do not promise
+      // end-to-end encryption" the opening line of every private conversation.
+      footer: LoopChatHeaderFold(
+        collapsed: loopChatKeyboardIsUp(context),
+        child: const LoopNotice(
+          key: ValueKey<String>('dm-protection-note'),
+          icon: 'info',
+          title: '不声明端到端加密',
+          body: '私聊由 Stream Chat 承载，保护能力取决于供应商策略，LOOP 不做端到端加密承诺。',
+          margin: EdgeInsets.fromLTRB(16, 4, 16, 8),
+        ),
       ),
     );
 

@@ -70,6 +70,7 @@ Future<void> _pumpBody(
                   unresolvedMessage: null,
                   header: null,
                   banner: null,
+                  footer: null,
                   keyPrefix: 'community-chat-channel',
                   connection: connection,
                   query: query,
