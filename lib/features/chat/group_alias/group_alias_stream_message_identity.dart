@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/features/chat/friends/friend_models.dart';
+import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_models.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
@@ -116,21 +117,56 @@ Widget loopStreamGroupMessageItemBuilder(
 
 /// Root Stream component builder for mention autocomplete rows.
 ///
-/// Stream's autocomplete callback closes over the global [User], so replacing
-/// only the rendered name would still insert that global name into the
-/// composer. User mentions therefore fail closed in group channels until an
-/// Alias-aware composer contract exists. Non-user mentions and direct-channel
-/// mentions retain the official implementation.
+/// Non-user mentions — channel, here, role, user group — carry no account
+/// identity and keep the official implementation untouched. A *user* mention
+/// is the one row that has to name a person, and neither name Stream can offer
+/// is usable: `User.name` is empty for every LOOP account and `User.id` is the
+/// LOOP row key (device report 2026-09-19 · F5).
+///
+/// * In a group or community channel the row fails closed. Stream's own
+///   callback closes over the global [User] and accepts `user.name` into the
+///   composer (`stream_message_composer.dart:976`), so a row that merely
+///   looked right would still type the id into the message. There is no
+///   Alias-aware composer contract yet.
+/// * In a direct channel the peer does have an honest name — the public
+///   profile the page's own header shows — published through
+///   [LoopDirectPeerScope]. The row renders it, and the tap accepts *that*
+///   text, so what lands in the message is the same word the reader saw.
+///   Without a published identity, or for any candidate that is not the peer,
+///   the row fails closed the same way a group row does.
 Widget loopStreamGroupMentionItemBuilder(
   BuildContext context,
   StreamMentionItemProps props,
 ) {
+  final mention = props.mention;
+  if (mention is! StreamUserMention) {
+    return DefaultStreamMentionItem(props: props);
+  }
   final channel = StreamChannel.maybeOf(context)?.channel;
-  final isGroup = loopStreamChannelUsesGroupMessageAlias(channel?.cid);
-  if (isGroup && props.mention is StreamUserMention) {
+  if (loopStreamChannelUsesGroupMessageAlias(channel?.cid)) {
     return const SizedBox.shrink();
   }
-  return DefaultStreamMentionItem(props: props);
+  final peer = LoopDirectPeerScope.maybeOf(context);
+  final currentUserId = StreamChat.of(context).currentUser?.id;
+  if (peer == null || mention.user.id == currentUserId) {
+    return const SizedBox.shrink();
+  }
+  // Stream's own tap accepts `user.name` — the id — into the composer, so it
+  // is replaced rather than reused. The ancestor is looked up here, while the
+  // row is built, because a row LOOP cannot complete is not offered as one
+  // that can be: no autocomplete above it means no tap.
+  final autocomplete = context
+      .findAncestorStateOfType<State<StreamAutocomplete>>();
+  return DefaultStreamMentionItem(
+    props: StreamMentionItemProps(
+      mention: StreamUserMention(
+        user: loopStreamDisplayUser(id: mention.user.id, label: peer),
+      ),
+      onTap: autocomplete == null
+          ? null
+          : () => StreamAutocomplete.of(context).acceptAutocompleteOption(peer),
+    ),
+  );
 }
 
 /// Uses a reviewed group name without falling back to Stream member names.

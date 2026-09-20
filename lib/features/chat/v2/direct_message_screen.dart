@@ -6,6 +6,7 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
+import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
 import 'package:loop_mobile/features/chat/v2/loop_stream_channel_surface.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
@@ -174,7 +175,7 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
       );
     }
 
-    return LoopStreamChannelSurface(
+    final surface = LoopStreamChannelSurface(
       key: ValueKey<String>('dm-$cid'),
       cid: cid,
       keyPrefix: 'dm-channel',
@@ -196,6 +197,14 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
         ],
       ),
     );
+
+    // The peer's public identity travels down with the conversation, so the
+    // Stream widgets under it name the same person the header does instead of
+    // the provider's account id. Without a trusted identity — a deep link
+    // carries none — nothing is published and they fail closed.
+    final peer = widget.target?.identity?.displayName;
+    if (peer == null) return surface;
+    return LoopDirectPeerScope(displayName: peer, child: surface);
   }
 
   Future<void> _sendMessageRequest() async {

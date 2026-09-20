@@ -156,11 +156,17 @@ reconciliation; it does not become a second message-history or presence API.
   provider/operator/traffic correlation.
 - Group message presentation reads only the exact v1 Alias projection from the
   current channel's Stream `Member` record. Missing, duplicate, malformed or
-  future projections render the neutral `群成员` label and never fall back to
+  future projections render the neutral `成员` label and never fall back to
   the account-level Stream `User.name`, image, custom data or stable user ID.
   This presentation boundary applies to message senders, quotes, mentions,
-  reactions, thread participants and other identity-bearing official widgets;
-  direct channels retain the normal Stream identity presentation.
+  reactions, thread participants and other identity-bearing official widgets.
+  Amended 2026-09-20 (decision 0055, device report F5): the neutral label is
+  `成员`, and direct channels no longer retain Stream's identity presentation
+  either. LOOP publishes no name to Stream, so `User.name` is empty and
+  `User.id` — the LOOP row key — is what the SDK hands back; a direct bubble
+  therefore carries no sender name at all, and a direct mention candidate is
+  named from the peer's public profile (`alias ?? loopId`, the page header's
+  own source) rather than from the provider.
 
 ### Explicit exclusions
 

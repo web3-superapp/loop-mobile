@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
+import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 const String _aliasId = 'bb5e12c2-40e2-4577-9951-57fac0b5ce5e';
@@ -392,34 +393,79 @@ void main() {
   );
 
   testWidgets(
-    'direct user mention candidates retain official Stream behavior',
+    'a direct mention candidate is named from the public profile, not Stream',
     (tester) async {
+      // Decision 0055 · the DM half. Stream carries no name for a LOOP
+      // account, so its own row would read `loop_<row key>`; the page's header
+      // already names the peer from their public profile, and the row says the
+      // same word. Stream's tap accepts `user.name` into the composer, so it
+      // is replaced too — the leak is what would be *typed*, not only what is
+      // shown.
       var selected = false;
       final channelHarness = _ChannelHarness.direct(
-        member: _member(userId: 'direct-sender', accountName: 'Direct Friend'),
-        senderId: 'direct-sender',
+        member: _member(userId: 'loop_direct_peer', accountName: ''),
+        senderId: 'loop_direct_peer',
       );
       addTearDown(channelHarness.dispose);
 
       await _pumpInChannel(
         tester,
         harness: channelHarness,
+        peer: 'Voyager_09',
         child: StreamMentionItem.fromProps(
           props: StreamMentionItemProps(
-            mention: StreamUserMention(
-              user: User(id: 'direct-sender', name: 'Direct Friend'),
-            ),
+            mention: StreamUserMention(user: User(id: 'loop_direct_peer')),
             onTap: () => selected = true,
           ),
         ),
       );
 
-      expect(find.text('Direct Friend'), findsOneWidget);
+      expect(find.byType(DefaultStreamMentionItem), findsOneWidget);
+      expect(find.text('Voyager_09'), findsOneWidget);
+      expect(find.textContaining('loop_direct_peer'), findsNothing);
+
+      // Stream's own callback — the one that would type the id — is gone.
       await tester.tap(find.byType(DefaultStreamMentionItem));
-      expect(selected, isTrue);
+      await tester.pump();
+      expect(selected, isFalse);
       await _disposeHarness(tester, channelHarness);
     },
   );
+
+  testWidgets('a direct candidate with no published identity is hidden', (
+    tester,
+  ) async {
+    // A deep link carries no trusted identity, so the page publishes none and
+    // the row fails closed rather than reaching for the provider's id.
+    var selected = false;
+    final channelHarness = _ChannelHarness.direct(
+      member: _member(
+        userId: 'loop_direct_peer',
+        accountName: 'Leaked Account Name',
+      ),
+      senderId: 'loop_direct_peer',
+    );
+    addTearDown(channelHarness.dispose);
+
+    await _pumpInChannel(
+      tester,
+      harness: channelHarness,
+      child: StreamMentionItem.fromProps(
+        props: StreamMentionItemProps(
+          mention: StreamUserMention(
+            user: User(id: 'loop_direct_peer', name: 'Leaked Account Name'),
+          ),
+          onTap: () => selected = true,
+        ),
+      ),
+    );
+
+    expect(find.byType(DefaultStreamMentionItem), findsNothing);
+    expect(find.text('Leaked Account Name'), findsNothing);
+    expect(find.textContaining('loop_direct_peer'), findsNothing);
+    expect(selected, isFalse);
+    await _disposeHarness(tester, channelHarness);
+  });
 
   testWidgets('group channel chrome hides stock typing and global identities', (
     tester,
@@ -571,7 +617,13 @@ Future<void> _pumpInChannel(
   WidgetTester tester, {
   required _ChannelHarness harness,
   required Widget child,
+  String? peer,
 }) async {
+  Widget body = Scaffold(body: child);
+  // What the `dm` page publishes about the person the conversation is with.
+  if (peer != null) {
+    body = LoopDirectPeerScope(displayName: peer, child: body);
+  }
   await tester.pumpWidget(
     MaterialApp(
       home: StreamChat(
@@ -582,10 +634,7 @@ Future<void> _pumpInChannel(
             mentionItem: loopStreamGroupMentionItemBuilder,
           ),
         ),
-        child: StreamChannel.value(
-          channel: harness.channel,
-          child: Scaffold(body: child),
-        ),
+        child: StreamChannel.value(channel: harness.channel, child: body),
       ),
     ),
   );
