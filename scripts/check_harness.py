@@ -10429,6 +10429,7 @@ FRIEND_FRONTEND_TEST_MARKERS = {
         "naming the mentioned member with the Alias keeps the link",
         "an edit is prepared the same way, from the live roster",
         "only a group or community channel is prepared",
+        "the candidate card is a surface, not a wash",
     ),
     Path("test/group_alias_resolver_test.dart"): (
         "keeps only the validated messaging channel ID",
@@ -11282,6 +11283,32 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "Every LOOP composer must prepare a group mention before sending: "
                 + relative
             )
+
+    # R14-4. The `@` card is drawn over the conversation, so it cannot be one
+    # of the page's translucent panels: `backgroundElevation1` is LOOP's 6%
+    # chalk wash and the messages underneath read straight through it.
+    overlay_path = (
+        root
+        / "lib/features/chat/group_alias/group_alias_stream_message_identity.dart"
+    )
+    if overlay_path.is_file():
+        overlay_source = strip_dart_comments(read_text(overlay_path))
+        options_start = overlay_source.find(
+            "StreamAutocompleteOptions<LoopGroupMentionCandidate>("
+        )
+        if options_start >= 0:
+            options_arguments = _dart_call_arguments(
+                overlay_source,
+                overlay_source.index("(", options_start),
+            )
+            if (
+                options_arguments is None
+                or "color: context.streamColorScheme.backgroundElevation3"
+                not in options_arguments
+            ):
+                errors.append(
+                    "The group mention overlay must be drawn on an opaque ground, not a translucent page panel"
+                )
 
     mention_identity_path = (
         root

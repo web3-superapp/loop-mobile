@@ -984,6 +984,14 @@ class LoopGroupMentionAutocompleteOptions extends StatelessWidget {
           elevation: elevation,
           margin: margin,
           shape: shape,
+          // The card's own default is `backgroundElevation1`, which LOOP maps
+          // to the 6%-opaque chalk wash every flat panel on a page uses. A
+          // panel drawn *over* the conversation cannot be a wash: on the
+          // device the messages underneath read straight through the
+          // candidates and half the roster was unreadable against a lime
+          // bubble (report 2026-09-20 · R14-4). This overlay is a floating
+          // surface, so it takes the opaque elevated ground.
+          color: context.streamColorScheme.backgroundElevation3,
           optionBuilder: (context, candidate) => DefaultStreamMentionItem(
             // The official row, handed a display-only projection: its title
             // and its avatar initials both read the Alias, and no account

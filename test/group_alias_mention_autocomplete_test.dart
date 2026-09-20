@@ -5,9 +5,15 @@
 // ——安全，但等于群聊没有 @。频道成员的 member custom 上已经有人格
 // （`loop_group_alias`），这份测试把「候选＝人格」这条线钉住：显示的是人格、
 // 过滤的是人格、插进输入框的是人格，而 Stream 的 mention 链接仍然带走。
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
+import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
 import 'package:loop_mobile/integrations/communication/stream_display_identity.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
@@ -16,6 +22,10 @@ const String _me = 'loop_3bb585972e3145e7b5f0957803a824ed';
 const String _tundra = 'loop_7e25420ed7ca4645b4860b1f9e734dad';
 const String _harbor = 'loop_40b0d058f0b94d1c9a8e2f6b1d0c3a55';
 const String _unprojected = 'loop_9c1a77e0ab2f43d8bf5e6c0d1e2f3a4b';
+
+/// A ground colour no LOOP token uses, so a pixel near it under the `@` card
+/// is proof the card let the conversation through.
+const Color _groundColor = Color(0xFFFF00FF);
 
 void main() {
   group('candidate resolution', () {
@@ -291,6 +301,123 @@ void main() {
         _tundra,
       );
     });
+  });
+
+  testWidgets('the candidate card is a surface, not a wash', (tester) async {
+    // R14-4. The device showed the roster half-unreadable: message bubbles,
+    // the date separator and the delivery ticks all read straight through the
+    // card. It was never a paint-order problem — Stream's card defaults to
+    // `backgroundElevation1`, which LOOP maps to `LoopColors.card`, the
+    // 6%-opaque chalk wash a flat in-page panel uses. A panel drawn over the
+    // conversation has to be opaque.
+    final harness = _ComposerHarness();
+    addTearDown(harness.dispose);
+    // Rendering the frame needs real async, and the Stream client's
+    // connectivity monitor subscribes to a platform channel the test binding
+    // has no implementation for. Answer it instead of letting the plugin's
+    // exception land on this test.
+    const connectivity = MethodChannel(
+      'dev.fluttercommunity.plus/connectivity_status',
+    );
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(connectivity, (call) async => null);
+    addTearDown(() => messenger.setMockMethodCallHandler(connectivity, null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: LoopTheme.dark,
+        home: RepaintBoundary(
+          key: const ValueKey<String>('mention-overlay-ground'),
+          // The palette Stream 10.3 reads is the `StreamTheme` extension on
+          // the ambient Material theme (decision 0065), so the product's own
+          // grounds are the ones under test here.
+          child: Builder(
+            builder: (context) => Theme(
+              data: Theme.of(context).copyWith(
+                extensions: [
+                  ...Theme.of(context).extensions.values,
+                  loopStreamTheme(platform: Theme.of(context).platform),
+                ],
+              ),
+              child: StreamChat(
+                client: harness.client,
+                themeData: loopStreamChatThemeData(),
+                componentBuilders: StreamComponentBuilders(
+                  extensions: streamChatComponentBuilders(
+                    messageItem: loopStreamGroupMessageItemBuilder,
+                    mentionItem: loopStreamGroupMentionItemBuilder,
+                  ),
+                ),
+                child: StreamChannel.value(
+                  channel: harness.channel,
+                  child: Scaffold(
+                    body: Column(
+                      children: <Widget>[
+                        // Stands in for what a conversation puts behind the card.
+                        const Expanded(child: ColoredBox(color: _groundColor)),
+                        StreamAutocomplete(
+                          focusNode: harness.focusNode,
+                          messageComposerController: harness.controller,
+                          autocompleteTriggers: <StreamAutocompleteTrigger>[
+                            loopGroupMentionAutocompleteTrigger(),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await _type(tester, '@');
+
+    final card = find.byType(
+      StreamAutocompleteOptions<LoopGroupMentionCandidate>,
+    );
+    expect(card, findsOneWidget);
+    expect(
+      tester
+          .widget<StreamAutocompleteOptions<LoopGroupMentionCandidate>>(card)
+          .color
+          ?.a,
+      1,
+    );
+
+    // …and nothing behind it reaches the reader.
+    final bounds = tester.getRect(card);
+    final boundary = tester.renderObject<RenderRepaintBoundary>(
+      find.byKey(const ValueKey<String>('mention-overlay-ground')),
+    );
+    await tester.runAsync(() async {
+      final image = await boundary.toImage();
+      addTearDown(image.dispose);
+      final pixels = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      var ground = 0;
+      for (var y = bounds.top.toInt() + 2; y < bounds.bottom.toInt() - 2; y++) {
+        for (
+          var x = bounds.left.toInt() + 2;
+          x < bounds.right.toInt() - 2;
+          x++
+        ) {
+          final offset = (y * image.width + x) * 4;
+          // A wash lets most of the ground through, so the pixel stays within
+          // a few percent of it; an opaque surface is nowhere near it.
+          if ((pixels!.getUint8(offset) - _groundColor.r * 255).abs() < 40 &&
+              (pixels.getUint8(offset + 1) - _groundColor.g * 255).abs() < 40 &&
+              (pixels.getUint8(offset + 2) - _groundColor.b * 255).abs() < 40) {
+            ground += 1;
+          }
+        }
+      }
+      expect(ground, 0);
+    });
+
+    await _teardown(tester, harness);
   });
 
   testWidgets('a bubble draws the Alias for a mention, never the Stream id', (
