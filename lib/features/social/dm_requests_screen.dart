@@ -15,6 +15,19 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
+/// `#scr-dm-requests`'s `.folio-stamp`: `1 NEW`.
+///
+/// It names what it counts. A bare digit in the corner of the hero was drawn
+/// as a ringed circle and read as a badge with no unit (audit 2026-09-20 ·
+/// B.4). A read that has not landed still counts nothing, so it gets no stamp
+/// rather than a zero it has not proved.
+String? messageRequestsStamp(CommunityViewPhase phase, int count) =>
+    switch (phase) {
+      CommunityViewPhase.ready => '$count NEW',
+      CommunityViewPhase.empty => '0 NEW',
+      _ => null,
+    };
+
 /// `dm-requests` · accept, ignore or report a stranger request.
 ///
 /// The message body and the AI moderation verdict have no source in this
@@ -69,11 +82,7 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
         caption: '接受后建立联系；忽略后 24 小时内不再提醒；举报等于拒绝并屏蔽。',
         // `.folio-stamp` is a pill that names what it counts — `1 NEW` — not a
         // bare digit in a circle (audit 2026-09-20 · B.4).
-        stamp: switch (state.phase) {
-          CommunityViewPhase.ready => '${state.items.length} NEW',
-          CommunityViewPhase.empty => '0 NEW',
-          _ => null,
-        },
+        stamp: messageRequestsStamp(state.phase, state.items.length),
         // A Chalk hero has no `::after` ring in the prototype; only
         // `.folio-primary.folio-state` does.
         ring: false,

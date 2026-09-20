@@ -18,6 +18,7 @@ import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -134,11 +135,17 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     }
 
     final snapshot = state.snapshot;
-    // The roster is the session page's read alone: the lobby never asks for
-    // it, and each view is asked for once — the controller holds the in-flight
+    // `#scr-voiceroom` opens on the `正在发言` grid, so the lobby asks for the
+    // speaker view — the same read the session page takes, no new kind of
+    // request. The listener list stays the session page's alone: the
+    // prototype's lobby says in so many words that it is in the expanded
+    // view. Each view is asked for once; the controller holds the in-flight
     // guard, so a rebuild does not re-ask.
-    if (widget.expanded && snapshot != null) {
-      for (final view in VoiceRoomRosterView.values) {
+    if (snapshot != null) {
+      final views = widget.expanded
+          ? VoiceRoomRosterView.values
+          : const <VoiceRoomRosterView>[VoiceRoomRosterView.speaker];
+      for (final view in views) {
         if (state.roster(view).phase == CommunityViewPhase.loading) {
           scheduleMicrotask(() {
             if (mounted) unawaited(controller.loadRoster(view));
@@ -177,6 +184,10 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       // title says which room this is instead of the word for all of them.
       title: snapshot == null ? '语音房' : '${snapshot.room.communityName} 语音房',
       kicker: communityPreviewKicker(mode),
+      // `#scr-voiceroom .topbar` carries `● 进行中 · 3,241 在线 · 12 人发言`
+      // under the room's name.
+      subtitle: voiceRoomTopbarLine(snapshot),
+      framedTools: true,
       onBack: back,
       actions: <Widget>[
         if (!widget.expanded && snapshot != null && id != null)
@@ -188,20 +199,18 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
           ),
       ],
       primary: LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
+        // `#scr-voiceroom` and `#scr-voiceroom-full` are Chalk pages, and
+        // their heading is a figure — `PEPE 语音房 · 13 人`, `13 人在麦上` —
+        // not the word for all voice rooms (audit 2026-09-20 · B.8 / D-1).
+        variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.listing,
+        ring: false,
         kicker: widget.expanded ? 'VOICE SESSION' : 'VOICE LOBBY',
-        heading: snapshot == null
-            ? '语音房'
-            : snapshot.room.isLive
-            ? '进行中'
-            : '已结束',
+        heading: voiceRoomHeading(snapshot),
         caption: snapshot == null
             ? '语音房状态暂时读不到，这里不显示人数。'
             : '进入前请确认主持人、发言人与录音说明。',
-        stamp: snapshot == null
-            ? null
-            : (snapshot.room.isLive ? 'LIVE' : 'ENDED'),
+        stamp: voiceRoomStamp(snapshot),
       ),
       sections: <Widget>[
         CommunityPreviewNotice(mode: mode, resource: '语音房'),
@@ -288,6 +297,23 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                 // and the surface says nothing about the audio until it does.
                 onCallStopped: controller.refreshRoom,
               ),
+          if (!widget.expanded) ...<Widget>[
+            // The prototype's lobby: the speaker grid, then the listener
+            // count with the one sentence that says where the list is.
+            const LoopLabel('正在发言'),
+            VoiceRoomSpeakerGrid(
+              roster: state.roster(VoiceRoomRosterView.speaker),
+              onRetry: () =>
+                  unawaited(controller.loadRoster(VoiceRoomRosterView.speaker)),
+            ),
+            LoopLabel('听众 ${snapshot.participants.listenerCount}'),
+            const LoopNotice(
+              key: ValueKey<String>('voiceroom-listeners-elsewhere'),
+              icon: 'info',
+              body: '听众列表在展开视图查看。',
+              margin: EdgeInsets.fromLTRB(16, 0, 16, 0),
+            ),
+          ],
           if (widget.expanded) ...<Widget>[
             for (final view in VoiceRoomRosterView.values)
               _RosterSection(
@@ -1729,4 +1755,163 @@ class _BannerAction extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The `.folio-heading` of a voice-room page: a figure, or a conclusion.
+///
+/// `#scr-voiceroom` reads `PEPE 语音房 · 13 人` and `#scr-voiceroom-full`
+/// reads `13 人在麦上`. LOOP printed the word 语音房 in both, which turned the
+/// hero into a second title bar (audit 2026-09-20 · D-1). The figure here is
+/// LOOP's own join record — the one head count the page has without a live
+/// connection — and a room whose count the server did not state falls back to
+/// the condition rather than to a zero.
+String voiceRoomHeading(VoiceRoomSnapshot? snapshot) {
+  if (snapshot == null) return '语音房状态读不到';
+  if (!snapshot.room.isLive) return '已结束';
+  final joined = snapshot.participants.joinedCount;
+  return joined == null ? '进行中' : '$joined 人在房间里';
+}
+
+/// The `.folio-stamp`: `13 LIVE` where there is a figure, `LIVE` where there
+/// is not.
+String? voiceRoomStamp(VoiceRoomSnapshot? snapshot) {
+  if (snapshot == null) return null;
+  if (!snapshot.room.isLive) return 'ENDED';
+  final joined = snapshot.participants.joinedCount;
+  return joined == null ? 'LIVE' : '$joined LIVE';
+}
+
+/// The 11px line under the room's name in the top bar.
+///
+/// The prototype states the room's condition and its two figures. LOOP states
+/// only the ones the server actually gave: the condition always, then the
+/// speaker and listener split, which is a LOOP role record rather than a
+/// presence reading and is labelled as such on the page below.
+String? voiceRoomTopbarLine(VoiceRoomSnapshot? snapshot) {
+  if (snapshot == null) return null;
+  if (!snapshot.room.isLive) return '已结束';
+  final participants = snapshot.participants;
+  return '进行中 · 发言 ${participants.speakerCount} · '
+      '听众 ${participants.listenerCount}';
+}
+
+/// The prototype's `正在发言` grid: one 52px tile per speaker, with the role
+/// under the name.
+///
+/// `#scr-voiceroom` opens on this grid, and LOOP's lobby opened on a
+/// key-value table of four figures (audit 2026-09-20 · B.8). It reads the
+/// same speaker roster the session page reads — no new kind of request — and
+/// states every one of the five states in the grid's own place.
+class VoiceRoomSpeakerGrid extends StatelessWidget {
+  const VoiceRoomSpeakerGrid({
+    required this.roster,
+    required this.onRetry,
+    super.key,
+  });
+
+  final VoiceRoomRosterState roster;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => switch (roster.phase) {
+    CommunityViewPhase.loading => const LoopSkeleton(
+      key: ValueKey<String>('voiceroom-speakers-loading'),
+      type: LoopSkeletonType.list,
+      rows: 1,
+    ),
+    CommunityViewPhase.empty => const LoopEmpty(
+      key: ValueKey<String>('voiceroom-speakers-empty'),
+      message: '当前没有人在发言',
+      reason: 'LOOP 记录里这个房间还没有发言人。主持人不在这份名单里。',
+    ),
+    CommunityViewPhase.offline => LoopOfflineState(
+      key: const ValueKey<String>('voiceroom-speakers-offline'),
+      pausedActions: const <String>['查看发言人'],
+      onRetry: onRetry,
+    ),
+    CommunityViewPhase.permission => LoopPermissionState(
+      key: const ValueKey<String>('voiceroom-speakers-permission'),
+      icon: 'shield',
+      title: '没有权限查看发言人名单',
+      purpose: communityFailureReason(roster.failureKind),
+    ),
+    CommunityViewPhase.unavailable => LoopEmpty(
+      key: const ValueKey<String>('voiceroom-speakers-unavailable'),
+      icon: 'warn',
+      message: '发言人名单当前不可用',
+      reason: communityFailureReason(roster.failureKind),
+    ),
+    CommunityViewPhase.error => LoopErrorState(
+      key: const ValueKey<String>('voiceroom-speakers-error'),
+      title: '发言人名单读不到',
+      reason: communityFailureReason(roster.failureKind),
+      onRetry: onRetry,
+    ),
+    CommunityViewPhase.ready => Padding(
+      key: const ValueKey<String>('voiceroom-speakers'),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      child: Wrap(
+        spacing: 14,
+        runSpacing: 14,
+        children: <Widget>[
+          for (final member in roster.items)
+            _SpeakerTile(
+              name: voiceRoomMemberName(member),
+              muted: member.muted,
+            ),
+        ],
+      ),
+    ),
+  };
+}
+
+class _SpeakerTile extends StatelessWidget {
+  const _SpeakerTile({required this.name, required this.muted});
+
+  final String name;
+  final bool muted;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 64,
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        // The speaking tile wears the prototype's Lime ring; a muted one is
+        // the plain tile. Neither claims to know the microphone: the ring
+        // says LOOP has not marked this account muted, which is what the
+        // page's own rows say too.
+        Container(
+          width: 52,
+          height: 52,
+          decoration: muted
+              ? null
+              : const BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.fromBorderSide(
+                    BorderSide(color: LoopColors.lime, width: 2),
+                  ),
+                ),
+          alignment: Alignment.center,
+          child: LoopInitialsAvatar(label: name, size: muted ? 52 : 46),
+        ),
+        const SizedBox(height: 5),
+        Text(
+          name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: LoopTypography.caption(11),
+        ),
+        Text(
+          muted ? '已静音' : '发言中',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: LoopTypography.caption(
+            11,
+            color: muted ? LoopColors.text3 : LoopColors.lime,
+          ),
+        ),
+      ],
+    ),
+  );
 }

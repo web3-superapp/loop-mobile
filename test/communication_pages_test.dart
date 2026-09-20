@@ -2454,7 +2454,13 @@ void main() {
       expect(more, findsNothing);
     });
 
-    testWidgets('the lobby asks for no roster at all', (tester) async {
+    // `#scr-voiceroom` opens on the `正在发言` grid, so the lobby reads the
+    // speaker view — the same request the session page takes. The listener
+    // list stays the session page's: the prototype's lobby says in so many
+    // words that it is in the expanded view.
+    testWidgets('the lobby asks for the speakers and nothing else', (
+      tester,
+    ) async {
       final voice = hostGateway();
       await pumpCommunityPage(
         tester,
@@ -2462,10 +2468,11 @@ void main() {
         voiceRoom: voice,
       );
 
-      expect(
-        voice.commands.where((command) => command.startsWith('members:')),
-        isEmpty,
-      );
+      final reads = voice.commands
+          .where((command) => command.startsWith('members:'))
+          .toList(growable: false);
+      expect(reads, hasLength(1));
+      expect(reads.single, contains('speaker'));
     });
   });
 

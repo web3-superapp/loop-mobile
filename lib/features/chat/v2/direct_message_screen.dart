@@ -28,6 +28,25 @@ final class DirectMessageTarget {
   final LoopPublicProfile? identity;
 }
 
+/// `#scr-dm`'s `.folio-primary.chalk-card`.
+///
+/// The heading names the conversation — `和 NightOwl 的私聊` — so the page's
+/// one primary narrative is what this thread *is*, not the word for every
+/// private thread. Without a trusted identity the page has no name to use and
+/// says only what kind of conversation it is.
+LoopFolioPrimary directMessageFolio(LoopPublicProfile? identity) =>
+    LoopFolioPrimary(
+      variant: LoopFolioVariant.chalk,
+      archetype: LoopFolioArchetype.listing,
+      // A Chalk hero carries no `::after` ring in the prototype.
+      ring: false,
+      compact: true,
+      kicker: 'DIRECT MESSAGE',
+      heading: identity == null ? '一对一的私聊' : '和 ${identity.displayName} 的私聊',
+      caption: '私聊默认展示最少身份信息，资产与签名请求会单独标识。',
+      stamp: 'PRIVATE',
+    );
+
 /// `dm` · one direct conversation.
 ///
 /// A friendship is the only admission. Without one the page explains that a
@@ -200,18 +219,7 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
           // about encryption is the last thing before the composer, below.
           LoopChatHeaderFold(
             collapsed: loopChatKeyboardIsUp(context),
-            child: LoopFolioPrimary(
-              variant: LoopFolioVariant.chalk,
-              archetype: LoopFolioArchetype.listing,
-              ring: false,
-              compact: true,
-              kicker: 'DIRECT MESSAGE',
-              heading: identity == null
-                  ? '一对一的私聊'
-                  : '和 ${identity.displayName} 的私聊',
-              caption: '私聊默认展示最少身份信息，资产与签名请求会单独标识。',
-              stamp: 'PRIVATE',
-            ),
+            child: directMessageFolio(identity),
           ),
         ],
       ),

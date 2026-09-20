@@ -133,7 +133,12 @@ class LoopTopbar extends StatelessWidget {
                       header: true,
                       child: Text(
                         title,
-                        maxLines: titleMaxLines,
+                        // The bar's height is fixed. A title that may wrap,
+                        // a kicker above it and a subtitle below it do not
+                        // all fit, and the subtitle is the line that carries
+                        // the room's own state, so the title gives up its
+                        // second line rather than the bar overflowing.
+                        maxLines: subtitle == null ? titleMaxLines : 1,
                         overflow: TextOverflow.ellipsis,
                         style: dense
                             ? theme.textTheme.headlineSmall
