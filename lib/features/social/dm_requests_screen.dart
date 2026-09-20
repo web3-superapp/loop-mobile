@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/social/social_controllers.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -62,12 +63,20 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
           CommunityViewPhase.empty => '0 个待处理',
           _ => communityMissingHeading,
         },
-        caption: '接受、忽略或举报。举报会同时屏蔽发起人并写入审计。',
+        // The one sentence this page owes a reader before they decide, and
+        // the sentences it used to owe them in a fourth card at the bottom:
+        // one explanation per page is the ceiling (audit 2026-09-20 · D-5).
+        caption: '接受后建立联系；忽略后 24 小时内不再提醒；举报等于拒绝并屏蔽。',
+        // `.folio-stamp` is a pill that names what it counts — `1 NEW` — not a
+        // bare digit in a circle (audit 2026-09-20 · B.4).
         stamp: switch (state.phase) {
-          CommunityViewPhase.ready => '${state.items.length}',
-          CommunityViewPhase.empty => '0',
+          CommunityViewPhase.ready => '${state.items.length} NEW',
+          CommunityViewPhase.empty => '0 NEW',
           _ => null,
         },
+        // A Chalk hero has no `::after` ring in the prototype; only
+        // `.folio-primary.folio-state` does.
+        ring: false,
       ),
       block: communityCapabilityBlocks(mode, capability)
           ? CommunityCapabilityPageBlock(
@@ -123,15 +132,6 @@ class _MessageRequestsScreenState extends ConsumerState<MessageRequestsScreen> {
                 ),
               ),
           ],
-          const LoopNotice(
-            key: ValueKey<String>('dm-requests-scope-notice'),
-            icon: 'info',
-            title: '这一步能做什么',
-            body:
-                '接受后建立联系；忽略后 24 小时内不再提醒；举报等于拒绝并屏蔽。'
-                '消息预览与 AI 巡查还没有开放，这里不显示正文或风险提示。',
-            margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
-          ),
         ],
       ),
     );
@@ -204,6 +204,15 @@ class _RequestCard extends StatelessWidget {
           rows: <LoopRecordRow>[
             LoopRecordRow(
               key: ValueKey<String>('dm-request-row-${entry.messageRequestId}'),
+              // `.row-ico`: the prototype's request row opens with the
+              // sender's tile, so the name has a face beside it before the
+              // three decisions under it.
+              leading: LoopInitialsAvatar(
+                label: entry.profile.displayName,
+                size: 44,
+                shape: BoxShape.rectangle,
+                radius: 15,
+              ),
               title: entry.profile.displayName,
               subtitle: entry.profile.loopId,
               trailing: '待处理',

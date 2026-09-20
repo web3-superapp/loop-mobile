@@ -7,10 +7,13 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chat/v2/chat_conversation_label.dart';
 import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
+import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_failure.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -52,16 +55,26 @@ final class ChatForwardMessage {
 /// One channel the account is already a member of.
 @immutable
 final class ChatForwardTarget {
-  const ChatForwardTarget({required this.cid, required this.label});
+  const ChatForwardTarget({
+    required this.cid,
+    required this.label,
+    required this.detail,
+  });
 
   final String cid;
+
+  /// The conversation's own name, or the kind when LOOP has no name for it.
   final String label;
+
+  /// The kind, and the membership figure the provider stated.
+  final String detail;
 }
 
 @immutable
 final class ChatForwardState {
   const ChatForwardState({
     this.sourceCid,
+    this.sourceLabel,
     this.messages = const <ChatForwardMessage>[],
     this.targets = const <ChatForwardTarget>[],
     this.selected = const <String>{},
@@ -72,6 +85,12 @@ final class ChatForwardState {
   });
 
   final String? sourceCid;
+
+  /// The name of the conversation these messages came from, or `null` when
+  /// LOOP has none. `#scr-chat-forward` prints it as the hero's heading —
+  /// `PEPE Official · 3 messages` — so the page says what is being forwarded
+  /// and not only how much.
+  final String? sourceLabel;
   final List<ChatForwardMessage> messages;
   final List<ChatForwardTarget> targets;
   final Set<String> selected;
@@ -105,6 +124,7 @@ final class ChatForwardState {
 
   ChatForwardState copyWith({
     String? sourceCid,
+    String? sourceLabel,
     List<ChatForwardMessage>? messages,
     List<ChatForwardTarget>? targets,
     Set<String>? selected,
@@ -114,6 +134,7 @@ final class ChatForwardState {
     bool? busy,
   }) => ChatForwardState(
     sourceCid: sourceCid ?? this.sourceCid,
+    sourceLabel: sourceLabel ?? this.sourceLabel,
     messages: messages ?? this.messages,
     targets: targets ?? this.targets,
     selected: selected ?? this.selected,
@@ -172,9 +193,13 @@ base class ChatForwardController extends Notifier<ChatForwardState> {
         paginationParams: const PaginationParams(limit: 1),
       );
       final messages = <ChatForwardMessage>[];
+      String? sourceLabel;
       if (sourceChannels.length == 1 &&
           sourceChannels.single.cid == sourceCid &&
           sourceChannels.single.membership?.userId == userId) {
+        sourceLabel = loopStoredConversationName(
+          sourceChannels.single.extraData,
+        );
         for (final message
             in sourceChannels.single.state?.messages ?? const <Message>[]) {
           messages.add(
@@ -201,6 +226,12 @@ base class ChatForwardController extends Notifier<ChatForwardState> {
           limit: chatForwardTargetPageSize,
         ),
       );
+      // LOOP's own index of its direct channels: the one authority for who a
+      // 1:1 conversation is with. A read that has not landed leaves those
+      // rows neutral rather than borrowing a name from the provider.
+      final directory = ref
+          .read(directChannelDirectoryProvider)
+          .maybeWhen(data: (value) => value, orElse: () => null);
       final targets = <ChatForwardTarget>[];
       for (final channel in destinations) {
         final cid = channel.cid;
@@ -209,19 +240,27 @@ base class ChatForwardController extends Notifier<ChatForwardState> {
         if (surface == null) continue;
         // A destination must be a channel the account already belongs to.
         if (channel.membership?.userId != userId) continue;
+        // The row is named after the conversation, not after its kind. Nine
+        // community channels used to arrive as nine rows reading 社区官方群,
+        // with nothing to tell them apart (audit 2026-09-20 · B.6).
+        final label = resolveChatConversationLabel(
+          surface: surface,
+          extraData: channel.extraData,
+          cid: cid,
+          memberCount: channel.memberCount,
+          directory: directory,
+        );
         targets.add(
           ChatForwardTarget(
             cid: cid,
-            label: switch (surface) {
-              LoopChatSurface.communityChat => '社区官方群',
-              LoopChatSurface.group => '群聊',
-              LoopChatSurface.direct => '私聊',
-            },
+            label: label.title,
+            detail: label.subtitle,
           ),
         );
       }
       state = ChatForwardState(
         sourceCid: sourceCid,
+        sourceLabel: sourceLabel,
         messages: List<ChatForwardMessage>.unmodifiable(messages),
         targets: List<ChatForwardTarget>.unmodifiable(targets),
       );
@@ -254,7 +293,7 @@ base class ChatForwardController extends Notifier<ChatForwardState> {
     if (session == null || source == null || state.busy) return null;
     final target = state.targets.firstWhere(
       (item) => item.cid == targetCid,
-      orElse: () => const ChatForwardTarget(cid: '', label: ''),
+      orElse: () => const ChatForwardTarget(cid: '', label: '', detail: ''),
     );
     // Only an already-joined channel from the loaded list may be a target.
     if (target.cid.isEmpty) return null;
@@ -340,12 +379,24 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
       key: const ValueKey<String>('chat-forward-screen'),
       archetype: LoopPageArchetype.state,
       title: '转发消息',
+      // `#scr-chat-forward .topbar` carries `3 SELECTED · CHOOSE DESTINATION`
+      // under the title: the count and the next step, in one line, before the
+      // reader reaches the hero.
+      kicker: null,
+      subtitle: '$selectedCount 条已选择 · 选择目标会话',
       onBack: widget.onBack,
+      framedTools: true,
       primary: LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
+        // `.chalk-card.folio-state.folio-primary` resolves to
+        // `background:var(--lime);color:var(--ink)` — the one solid Lime hero
+        // in the prototype, and the app had none (audit 2026-09-20 · B.6).
+        variant: LoopFolioVariant.lime,
         archetype: LoopFolioArchetype.state,
         kicker: 'SELECTED THREAD',
-        heading: '$selectedCount 条已选择',
+        heading: switch ((state.sourceLabel, selectedCount)) {
+          (final String source?, final int count) => '$source · $count 条',
+          (null, final int count) => '$count 条已选择',
+        },
         caption:
             '一次最多转发 $chatForwardSelectionLimit 条，目标只能是你已加入的会话。'
             '已删除或没有正文的消息会被跳过并计数。',
@@ -400,16 +451,10 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
                   _messageRow(state, index),
               ],
             ),
-          const LoopLabel('发送到'),
-          const LoopNotice(
-            key: ValueKey<String>('chat-forward-target-scope'),
-            icon: 'info',
-            title: '只列出最近的会话',
-            body:
-                '这里显示你最近更新的 $chatForwardTargetPageSize 个已加入会话，'
-                '不是全部会话。找不到目标时请先在会话列表里打开它。',
-            margin: EdgeInsets.fromLTRB(16, 4, 16, 0),
-          ),
+          // `.label` — the prototype's `发送到`, with the scope of the list in
+          // it rather than in a fourth explanation card below it
+          // (audit 2026-09-20 · B.6).
+          const LoopLabel('发送到 · 最近 $chatForwardTargetPageSize 个会话'),
           if (state.targets.isEmpty)
             const LoopEmpty(
               key: ValueKey<String>('chat-forward-no-targets'),
@@ -484,8 +529,15 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
     final target = state.targets[index];
     return LoopRecordRow(
       key: ValueKey<String>('chat-forward-target-${target.cid}'),
+      // `.row-ico`: the prototype's destination rows all carry one.
+      leading: LoopInitialsAvatar(
+        label: target.label,
+        size: 44,
+        shape: BoxShape.rectangle,
+        radius: 15,
+      ),
       title: target.label,
-      subtitle: '已加入的会话',
+      subtitle: target.detail,
       position: index == 0
           ? LoopRowPosition.first
           : index == state.targets.length - 1
@@ -555,7 +607,11 @@ class _ChatMergePreviewScreenState
       key: const ValueKey<String>('chat-merge-preview-screen'),
       archetype: LoopPageArchetype.state,
       title: '合并长图预览',
+      // `#scr-chat-merge-preview .topbar`: `Merge Preview` over
+      // `ANONYMOUS BY DEFAULT`.
+      subtitle: '默认匿名',
       onBack: widget.onBack,
+      framedTools: true,
       primary: LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.state,
@@ -587,48 +643,12 @@ class _ChatMergePreviewScreenState
           // anonymous rendering above is the only thing that can be encoded.
           RepaintBoundary(
             key: _cardKey,
-            child: LoopChalkCard(
+            child: _MergeCard(
               key: const ValueKey<String>('chat-merge-card'),
-              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  for (final row in rows)
-                    Padding(
-                      key: ValueKey<String>('chat-merge-row-${row.messageId}'),
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            '$chatMergeAnonymousLabel · '
-                            '${communityObservedAtLabel(row.createdAt)}',
-                            style: LoopTypography.figure(
-                              11,
-                              color: LoopColors.inkText3,
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            row.text,
-                            style: LoopTypography.caption(
-                              11,
-                              color: LoopColors.ink,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
+              rows: rows,
+              sourceLabel: state.sourceLabel,
+              selectedCount: state.selectedMessages.length,
             ),
-          ),
-          const LoopNotice(
-            key: ValueKey<String>('chat-merge-privacy-note'),
-            icon: 'shield',
-            title: '不输出身份',
-            body: '钱包地址、昵称与内部编号不会出现在长图里，长图也不会上传。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           LoopButtonPair(
             children: <Widget>[
@@ -690,4 +710,205 @@ class _ChatMergePreviewScreenState
       image.dispose();
     }
   }
+}
+
+/// The exported image itself, as the reader sees it before it exists.
+///
+/// `#scr-chat-merge-preview` is one Chalk card holding the whole export: the
+/// source over the title, the `3/5 VISIBLE` Ink badge beside them, a rule,
+/// then numbered rows with a hairline between each, and the privacy line
+/// along the bottom edge. LOOP had split it into a deep hero, a grey card of
+/// three bare paragraphs and a separate notice, so the preview no longer
+/// looked like the thing being exported (audit 2026-09-20 · B.7).
+///
+/// The capture boundary is around exactly this widget, so everything drawn
+/// here — and nothing else — is what the PNG contains.
+class _MergeCard extends StatelessWidget {
+  const _MergeCard({
+    required this.rows,
+    required this.sourceLabel,
+    required this.selectedCount,
+    super.key,
+  });
+
+  final List<ChatForwardMessage> rows;
+
+  /// The conversation the selection came from, when LOOP has its name.
+  final String? sourceLabel;
+
+  /// How many messages were picked, including the ones that cannot be shown.
+  final int selectedCount;
+
+  @override
+  Widget build(BuildContext context) => LoopChalkCard(
+    margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    sourceLabel == null ? '已选择的会话' : '$sourceLabel · 已选择的会话',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopTypography.eyebrow(
+                      11,
+                      color: LoopColors.inkText3,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '社区信号摘要',
+                    style: LoopTypography.display(26, color: LoopColors.ink),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            // `3/5 VISIBLE`: how much of the selection the image can carry.
+            // It is a count of rows, not a verdict on the ones left out —
+            // those are the deleted and the empty, and the page says which.
+            Container(
+              key: const ValueKey<String>('chat-merge-visible-badge'),
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+              decoration: const BoxDecoration(
+                color: LoopColors.ink,
+                borderRadius: BorderRadius.all(Radius.circular(14)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    '${rows.length}/$selectedCount',
+                    style: LoopTypography.display(17, color: LoopColors.chalk),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    '将输出',
+                    style: LoopTypography.eyebrow(
+                      11,
+                      color: LoopColors.chalk.withValues(alpha: 0.72),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        // `.ledger-rule`.
+        Container(
+          height: 1,
+          margin: const EdgeInsets.symmetric(vertical: 14),
+          color: LoopColors.ink.withValues(alpha: 0.18),
+        ),
+        for (var index = 0; index < rows.length; index += 1)
+          _MergeRow(
+            key: ValueKey<String>('chat-merge-row-${rows[index].messageId}'),
+            row: rows[index],
+            ordinal: index + 1,
+            // `01` is Ink, `02` is Lime, `03` is Ink again: the prototype
+            // alternates so a long column of numbers keeps a beat.
+            accent: index.isOdd,
+            last: index == rows.length - 1,
+          ),
+        Container(
+          height: 1,
+          margin: const EdgeInsets.only(top: 13),
+          color: LoopColors.ink.withValues(alpha: 0.18),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const LoopIcon('shield', size: 13, color: LoopColors.inkText3),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                '钱包地址、昵称与内部编号不会出现在长图里，长图也不会上传。',
+                style: LoopTypography.caption(11, color: LoopColors.inkText3),
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+/// One numbered row of the export.
+class _MergeRow extends StatelessWidget {
+  const _MergeRow({
+    required this.row,
+    required this.ordinal,
+    required this.accent,
+    required this.last,
+    super.key,
+  });
+
+  final ChatForwardMessage row;
+  final int ordinal;
+  final bool accent;
+  final bool last;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(vertical: 11),
+    decoration: last
+        ? null
+        : BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: LoopColors.ink.withValues(alpha: 0.18)),
+            ),
+          ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Container(
+          width: 44,
+          height: 44,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: accent ? LoopColors.lime : LoopColors.ink,
+            borderRadius: const BorderRadius.all(Radius.circular(15)),
+          ),
+          child: Text(
+            ordinal.toString().padLeft(2, '0'),
+            style: LoopTypography.figure(
+              11,
+              color: accent ? LoopColors.ink : LoopColors.chalk,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                chatMergeAnonymousLabel,
+                style: LoopTypography.label(14, color: LoopColors.ink),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                communityObservedAtLabel(row.createdAt),
+                style: LoopTypography.figure(11, color: LoopColors.inkText3),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                row.text,
+                style: LoopTypography.caption(11, color: LoopColors.ink),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
 }

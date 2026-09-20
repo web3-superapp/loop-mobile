@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/integrations/communication/stream_communication_gateway.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
@@ -40,6 +41,36 @@ String chatSearchSenderLabel(LoopChatSurface surface) => switch (surface) {
   LoopChatSurface.group => loopGroupMemberNeutralLabel,
   LoopChatSurface.direct => '私聊',
 };
+
+/// The result line with every occurrence of [term] lifted into Lime.
+///
+/// Case-insensitive, and `null` when the term is empty or does not occur, so
+/// the row falls back to its plain subtitle rather than carrying a span list
+/// that says nothing. The text itself is never altered.
+List<InlineSpan>? chatSearchHighlightSpans(String text, String term) {
+  if (term.isEmpty) return null;
+  final haystack = text.toLowerCase();
+  final needle = term.toLowerCase();
+  var cursor = 0;
+  final spans = <InlineSpan>[];
+  while (true) {
+    final at = haystack.indexOf(needle, cursor);
+    if (at < 0) break;
+    if (at > cursor) {
+      spans.add(TextSpan(text: text.substring(cursor, at)));
+    }
+    spans.add(
+      TextSpan(
+        text: text.substring(at, at + term.length),
+        style: const TextStyle(color: LoopColors.lime),
+      ),
+    );
+    cursor = at + term.length;
+  }
+  if (spans.isEmpty) return null;
+  if (cursor < text.length) spans.add(TextSpan(text: text.substring(cursor)));
+  return List<InlineSpan>.unmodifiable(spans);
+}
 
 /// One decoded search hit. Stream types stop at this boundary.
 @immutable
@@ -310,52 +341,69 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
       archetype: LoopPageArchetype.listing,
       title: '搜消息',
       onBack: widget.onBack,
+      framedTools: true,
+      // `#scr-chat-search .topbar` *is* the field: back control, then a
+      // rounded input with the magnifier inside it, all the way to the bar's
+      // right edge. LOOP printed the word 搜消息 as a page title and dropped
+      // the field below the hero, so the first thing offered on a search page
+      // was not the search (audit 2026-09-20 · B.5).
+      titleField: TextField(
+        key: const ValueKey<String>('chat-search-input'),
+        controller: _query,
+        enabled: connected,
+        autofocus: true,
+        textInputAction: TextInputAction.search,
+        onSubmitted: (_) => unawaited(_search()),
+        style: LoopTypography.caption(13.5),
+        decoration: InputDecoration(
+          hintText: '搜消息',
+          isDense: true,
+          filled: true,
+          fillColor: LoopColors.card,
+          prefixIcon: const Padding(
+            padding: EdgeInsets.fromLTRB(12, 0, 6, 0),
+            child: LoopIcon('search', size: 16, color: LoopColors.text3),
+          ),
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: 34,
+            minHeight: 44,
+          ),
+          contentPadding: const EdgeInsets.fromLTRB(0, 11, 14, 11),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: LoopColors.line),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: LoopColors.line),
+          ),
+        ),
+      ),
       folio: LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
+        // `#scr-chat-search` is a Chalk page, and its heading is the scope
+        // and the size of what is being searched — `PEPE 社区 · 1,284 条` —
+        // not the page's own title.
+        variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.listing,
+        ring: false,
+        compact: true,
         kicker: 'MESSAGE SEARCH',
-        heading: hits == null ? '搜索会话内容' : '${hits.length} 条结果',
+        heading: hits == null
+            ? '${_scope.label} · 还没有检索'
+            : '${_scope.label} · ${hits.length} 条',
         caption: '只在你有权访问的会话里检索；全局资产与社区搜索仍从社区首页进入。',
       ),
       filters: Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            TextField(
-              key: const ValueKey<String>('chat-search-input'),
-              controller: _query,
-              enabled: connected,
-              textInputAction: TextInputAction.search,
-              onSubmitted: (_) => unawaited(_search()),
-              style: LoopTypography.caption(11),
-              decoration: InputDecoration(
-                hintText: '搜消息',
-                isDense: true,
-                filled: true,
-                fillColor: LoopColors.card,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: LoopColors.line),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            LoopSegBar(
-              key: const ValueKey<String>('chat-search-scopes'),
-              labels: <String>[for (final scope in _scopes) scope.label],
-              selectedIndex: _scopes.indexOf(_scope),
-              onSelected: (index) {
-                if (!connected) return;
-                setState(() => _scope = _scopes[index]);
-                unawaited(_search());
-              },
-            ),
-          ],
+        child: LoopSegBar(
+          key: const ValueKey<String>('chat-search-scopes'),
+          labels: <String>[for (final scope in _scopes) scope.label],
+          selectedIndex: _scopes.indexOf(_scope),
+          onSelected: (index) {
+            if (!connected) return;
+            setState(() => _scope = _scopes[index]);
+            unawaited(_search());
+          },
         ),
       ),
       collection: _collection(connected: connected, hits: hits),
@@ -428,11 +476,25 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
       itemCount: hits.length,
       itemBuilder: (context, index) {
         final hit = hits[index];
+        final title = hit.senderLabel == hit.channelLabel
+            ? hit.channelLabel
+            : '${hit.senderLabel} · ${hit.channelLabel}';
         return LoopRecordRow(
           key: ValueKey<String>('chat-search-hit-${hit.messageId}'),
-          title: hit.senderLabel == hit.channelLabel
-              ? hit.channelLabel
-              : '${hit.senderLabel} · ${hit.channelLabel}',
+          // `.row-ico`: every result row in the prototype opens with the
+          // sender's tile. The row is two lines of copy without it, and three
+          // hits in a row read as one paragraph (audit 2026-09-20 · D-7).
+          leading: LoopInitialsAvatar(
+            label: hit.senderLabel,
+            size: 44,
+            shape: BoxShape.rectangle,
+            radius: 15,
+          ),
+          title: title,
+          // `<b style="color:var(--mint)">内盘</b>`: the term that was
+          // searched for is Lime inside the line it was found in, so a reader
+          // scanning the list sees where each hit matched.
+          subtitleSpans: chatSearchHighlightSpans(hit.text, _query.text.trim()),
           subtitle: hit.text,
           trailingCaption: communityObservedAtLabel(hit.createdAt),
           position: index == 0

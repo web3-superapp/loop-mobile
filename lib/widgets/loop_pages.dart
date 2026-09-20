@@ -300,6 +300,8 @@ class LoopDashboardPage extends StatelessWidget {
     this.updating = false,
     this.block,
     this.onRefresh,
+    this.subtitle,
+    this.framedTools = false,
   });
 
   final LoopPageArchetype archetype;
@@ -307,6 +309,12 @@ class LoopDashboardPage extends StatelessWidget {
   final String? kicker;
   final VoidCallback? onBack;
   final List<Widget> actions;
+
+  /// The 11px line under the title (`LoopTopbar.subtitle`).
+  final String? subtitle;
+
+  /// Whether the bar's controls take the `.tool-btn` frame.
+  final bool framedTools;
 
   /// The one `[data-page-primary]` region (usually a [LoopFolioPrimary]).
   final Widget primary;
@@ -357,10 +365,12 @@ class LoopDashboardPage extends StatelessWidget {
                   child: LoopTopbar(
                     title: title,
                     kicker: kicker,
+                    subtitle: subtitle,
                     onBack: onBack,
                     actions: actions,
                     minHeight: LoopLayout.topbarContentHeight,
                     updating: updating,
+                    framedTools: framedTools,
                   ),
                 ),
               ),
@@ -441,6 +451,8 @@ class LoopStreamPage extends StatelessWidget {
     this.updating = false,
     this.block,
     this.onRefresh,
+    this.titleField,
+    this.framedTools = false,
   });
 
   final LoopPageArchetype archetype;
@@ -448,6 +460,12 @@ class LoopStreamPage extends StatelessWidget {
   final String? kicker;
   final VoidCallback? onBack;
   final List<Widget> actions;
+
+  /// A field that takes the whole title column (`LoopTopbar.titleField`).
+  final Widget? titleField;
+
+  /// Whether the bar's controls take the `.tool-btn` frame.
+  final bool framedTools;
 
   /// The one `[data-page-primary]` region. It scrolls with [collection]:
   /// see [_StreamBody].
@@ -517,6 +535,8 @@ class LoopStreamPage extends StatelessWidget {
                 actions: actions,
                 minHeight: LoopLayout.topbarContentHeight,
                 updating: updating,
+                titleField: titleField,
+                framedTools: framedTools,
               ),
               if (block != null)
                 Expanded(child: block!)

@@ -688,9 +688,16 @@ void main() {
       );
 
       // Only the anonymous label is rendered, so only it can be captured.
-      expect(find.text('匿名成员 · 2026-09-08 09:34 UTC'), findsOneWidget);
+      // The author and the clock are two lines of the export row now, the way
+      // `#scr-chat-merge-preview` sets them.
+      expect(find.text('匿名成员'), findsOneWidget);
+      expect(find.text('2026-09-08 09:34 UTC'), findsOneWidget);
       expect(find.textContaining('LOOP-'), findsNothing);
       expect(find.textContaining('0x'), findsNothing);
+      // `01`: the row carries its ordinal, and `1/1` says the whole
+      // selection made it into the image.
+      expect(find.text('01'), findsOneWidget);
+      expect(find.text('1/1'), findsOneWidget);
 
       final export = find.byKey(const ValueKey<String>('chat-merge-export'));
       await scrollToCommunitySection(tester, export);

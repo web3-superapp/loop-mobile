@@ -90,7 +90,12 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
               // marker and put the identifier before the person (audit
               // 2026-09-20 · B.3).
               kicker: communityPreviewKicker(mode),
-              subtitle: identity?.loopId,
+              // An account with no alias is already named by its LOOP ID on
+              // the title line; printing it twice says nothing the second
+              // time.
+              subtitle: identity == null || identity.alias == null
+                  ? null
+                  : identity.loopId,
               onBack: widget.onBack,
               minHeight: 72,
               framedTools: true,
