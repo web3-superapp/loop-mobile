@@ -1821,9 +1821,9 @@ class _WalletList extends StatelessWidget {
                   ? LoopRowIconTone.accent
                   : LoopRowIconTone.neutral,
             ),
-            // `.row[style="background:var(--mint-soft)"]`: the prototype tints
-            // the wallet in use rather than leaving the badge to carry it.
-            tinted: wallet.walletId == activeWalletId,
+            // The prototype marks the wallet in use on the row itself, not
+            // only with the badge in the value column.
+            selected: wallet.walletId == activeWalletId,
             title: wallet.kind == LoopWalletKind.embedded ? '嵌入式钱包' : '外部钱包',
             // Truncation is a client-side display concern; the model keeps the
             // full address and the request only ever carries `walletId`.
