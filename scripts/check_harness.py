@@ -11254,6 +11254,35 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                     + forbidden
                 )
 
+    # R14-3. A direct conversation is named by LOOP's own profile record or
+    # not at all, and the only construction site of a `DirectMessageTarget`
+    # has to carry one: passing the id alone left `identity` null on every
+    # device visit, so the header read the literal 「私聊」 and the `@` row
+    # failed closed with nothing to offer.
+    direct_screen_path = root / "lib/features/chat/v2/direct_message_screen.dart"
+    if direct_screen_path.is_file():
+        direct_screen = strip_dart_comments(read_text(direct_screen_path))
+        if any(
+            marker not in direct_screen
+            for marker in (
+                "identity?.displayName ?? '私聊'",
+                "LoopDirectPeerScope(displayName: peer, child: surface)",
+            )
+        ):
+            errors.append(
+                "The direct conversation page must name its peer from the passed profile and publish it to the Stream widgets"
+            )
+
+    app_root = root / "lib/app.dart"
+    if app_root.is_file():
+        app_source = strip_dart_comments(read_text(app_root))
+        for index in re.finditer(r"DirectMessageTarget\(", app_source):
+            arguments = _dart_call_arguments(app_source, index.end() - 1)
+            if arguments is None or "identity:" not in arguments:
+                errors.append(
+                    "Opening a direct conversation must carry the peer's public profile, not the id alone"
+                )
+
     alias_transport_path = (
         root / "lib/integrations/social/dio_loop_group_alias_gateway.dart"
     )

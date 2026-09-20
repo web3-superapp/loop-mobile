@@ -969,11 +969,22 @@ GoRouter _buildRouter(
           onBack: () => _popOrHome(context),
           // The identity travels as typed navigation state, never in the URL:
           // a deep link must not be able to put an unverified alias in the
-          // conversation header.
-          onOpenConversation: (publicProfileId) => context.push(
-            '/chat/dm',
-            extra: DirectMessageTarget(publicProfileId: publicProfileId),
-          ),
+          // conversation header. It does have to travel, though — until R14-3
+          // this call passed the id alone, so `DirectMessageTarget.identity`
+          // was null at the only place in the product that constructs one and
+          // every conversation opened under the literal 「私聊」 with no `@`
+          // candidates at all.
+          onOpenConversation: (profile) {
+            final publicProfileId = profile.publicProfileId;
+            if (publicProfileId == null) return;
+            context.push(
+              '/chat/dm',
+              extra: DirectMessageTarget(
+                publicProfileId: publicProfileId,
+                identity: profile,
+              ),
+            );
+          },
         ),
       ),
       GoRoute(

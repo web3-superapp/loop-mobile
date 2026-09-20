@@ -15,6 +15,7 @@ import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message
 import 'package:loop_mobile/features/chat/v2/chat_search_screen.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/community_chat_screen.dart';
+import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_screen.dart';
 import 'package:loop_mobile/features/chat/v2/group_screens.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
@@ -319,6 +320,82 @@ void main() {
         find.byKey(const ValueKey<String>('dm-channel-not-connected')),
         findsOneWidget,
       );
+    });
+
+    testWidgets('the conversation is named by the profile the caller passed', (
+      tester,
+    ) async {
+      // R14-3: the only place in the product that opens a conversation used to
+      // pass the id alone, so `identity` was always null — the header read the
+      // literal 「私聊」 and the `@` row under it had no name to offer and
+      // failed closed on every real device visit.
+      await pumpCommunityPage(
+        tester,
+        DirectMessageScreen(
+          target: DirectMessageTarget(
+            publicProfileId: testMemberId,
+            identity: testProfile(
+              publicProfileId: testMemberId,
+              loopId: 'LOOP-3HJKMNPQ',
+              alias: 'Voyager_09',
+            ),
+          ),
+        ),
+        chat: FakeChatV2Gateway(),
+      );
+
+      expect(find.text('Voyager_09'), findsOneWidget);
+      expect(find.text('LOOP-3HJKMNPQ'), findsOneWidget);
+      expect(find.text('私聊'), findsNothing);
+      expect(find.textContaining('loop_'), findsNothing);
+      // The same word travels to the Stream widgets under the page, so the
+      // `@` candidate row names the peer the header just named.
+      expect(
+        tester
+            .widget<LoopDirectPeerScope>(find.byType(LoopDirectPeerScope))
+            .displayName,
+        'Voyager_09',
+      );
+    });
+
+    testWidgets('without an alias the header falls back to the LOOP ID', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        DirectMessageScreen(
+          target: DirectMessageTarget(
+            publicProfileId: testMemberId,
+            identity: testProfile(
+              publicProfileId: testMemberId,
+              loopId: 'LOOP-3HJKMNPQ',
+              alias: null,
+            ),
+          ),
+        ),
+        chat: FakeChatV2Gateway(),
+      );
+
+      expect(find.text('LOOP-3HJKMNPQ'), findsOneWidget);
+      expect(
+        tester
+            .widget<LoopDirectPeerScope>(find.byType(LoopDirectPeerScope))
+            .displayName,
+        'LOOP-3HJKMNPQ',
+      );
+    });
+
+    testWidgets('a deep link carries no identity, so none is published', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const DirectMessageScreen(channelCid: 'messaging:loop_direct_8e7d73c5'),
+        chat: FakeChatV2Gateway(),
+      );
+
+      expect(find.text('私聊'), findsOneWidget);
+      expect(find.byType(LoopDirectPeerScope), findsNothing);
     });
 
     testWidgets('an operator-required outcome is not presented as a failure', (

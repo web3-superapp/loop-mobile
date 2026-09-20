@@ -24,9 +24,14 @@ class ConnectionsScreen extends ConsumerStatefulWidget {
 
   final VoidCallback? onBack;
 
-  /// `dm` is still an unavailable placeholder before D7; the row explains that
-  /// instead of pretending a conversation exists.
-  final ValueChanged<String>? onOpenConversation;
+  /// Opens the conversation with one row's account.
+  ///
+  /// The whole public profile travels, not just its id: the `dm` page's header
+  /// and the `@` row under it name the peer from the same four fields this row
+  /// just drew, and this screen is the only place in the product that holds
+  /// them at the moment the conversation is opened (device report
+  /// 2026-09-20 · R14-3).
+  final ValueChanged<LoopPublicProfile>? onOpenConversation;
 
   @override
   ConsumerState<ConnectionsScreen> createState() => _ConnectionsScreenState();
@@ -250,7 +255,7 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
     );
     if (choice == null || !mounted) return;
     if (choice == 'dm') {
-      widget.onOpenConversation?.call(target);
+      widget.onOpenConversation?.call(entry.profile);
       return;
     }
     final confirmed = await confirmCommunityAction(

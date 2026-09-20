@@ -368,7 +368,7 @@ void main() {
 
     testWidgets('the row offers dm and a confirmed unfollow', (tester) async {
       final gateway = FakeSocialGateway(connections: _connections());
-      final opened = <String>[];
+      final opened = <LoopPublicProfile>[];
       await pumpCommunityPage(
         tester,
         ConnectionsScreen(onOpenConversation: opened.add),
@@ -381,7 +381,11 @@ void main() {
         find.byKey(const ValueKey<String>('connection-action-dm')),
       );
       await tester.pumpAndSettle();
-      expect(opened, <String>[testMemberId]);
+      // The whole profile travels, so the conversation can be named by the
+      // same four fields this row drew (R14-3).
+      expect(opened.single.publicProfileId, testMemberId);
+      expect(opened.single.displayName, 'frog_member');
+      expect(opened.single.loopId, 'LOOP-3HJKMNPQ');
 
       await tester.tap(find.text('frog_member'));
       await tester.pumpAndSettle();
