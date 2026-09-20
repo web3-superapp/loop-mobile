@@ -24,6 +24,7 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/communication_test_harness.dart';
 import 'support/community_test_harness.dart';
+import 'support/loop_ground_probe.dart';
 
 final class _FakeChatSearchGateway implements ChatSearchGateway {
   _FakeChatSearchGateway(this.hits);
@@ -46,6 +47,8 @@ LoopFolioPrimary _folio(WidgetTester tester) =>
     tester.widget<LoopFolioPrimary>(find.byType(LoopFolioPrimary));
 
 void main() {
+  loopWatchGround();
+
   group('B.3 · dm opens on the Chalk hero', () {
     test('the page primary is the Chalk card, without the state ring', () {
       final folio = directMessageFolio(
@@ -139,8 +142,9 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
+        MaterialApp(
+          theme: LoopTheme.dark,
+          home: const Scaffold(
             body: LoopChatAiUnavailableBubble(
               name: 'PEPE AI',
               reason: 'Community AI 还没有开放。',
@@ -158,8 +162,9 @@ void main() {
 
     testWidgets('the row folds away while the keyboard is up', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
+        MaterialApp(
+          theme: LoopTheme.dark,
+          home: const Scaffold(
             body: LoopChatAiUnavailableBubble(
               name: 'PEPE AI',
               reason: 'Community AI 还没有开放。',
@@ -174,8 +179,6 @@ void main() {
 
     test('the composer promises one line of recognition', () {
       expect(loopChatComposerHint, '发消息 · 贴合约地址识别代币');
-      // `#scr-dm .composer input` carries the bare word.
-      expect(loopDirectComposerHint, '发消息');
     });
   });
 

@@ -871,10 +871,10 @@ class HarnessTests(unittest.TestCase):
                 / "lib/features/chat/group_alias/group_alias_stream_message_identity.dart"
             )
             source = path.read_text(encoding="utf-8")
-            marker = "child: Text(identity.initial)"
+            marker = "label: identity.initial"
             self.assertIn(marker, source)
             path.write_text(
-                source.replace(marker, "child: Text(channel.id![0])", 1),
+                source.replace(marker, "label: channel.id!", 1),
                 encoding="utf-8",
             )
 
@@ -8435,7 +8435,7 @@ class ChatTokenCardContractTests(unittest.TestCase):
     def test_a_composer_that_promises_an_assistant_is_rejected(self) -> None:
         result = self._mutate(
             "lib/features/chat/v2/loop_stream_channel_surface.dart",
-            "\u53d1\u6d88\u606f \u00b7 \u8d34\u5408\u7ea6\u5730\u5740\u81ea\u52a8\u8bc6\u522b\u4ee3\u5e01",
+            "\u53d1\u6d88\u606f \u00b7 \u8d34\u5408\u7ea6\u5730\u5740\u8bc6\u522b\u4ee3\u5e01",
             "\u53d1\u6d88\u606f \u00b7 @AI \u63d0\u95ee",
         )
 

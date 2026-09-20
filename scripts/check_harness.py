@@ -11637,7 +11637,11 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
                 "resolveLoopDirectRowIdentity(",
                 "directory: LoopDirectChannelDirectoryScope.maybeOf(context)",
                 "title: Text(identity.title)",
-                "child: Text(identity.initial)",
+                # S58c: the tile is LOOP's own `.row-ico`, not a `CircleAvatar`
+                # taking the Material scheme's primary, and its initials still
+                # come from the resolved title and nothing else.
+                "label: identity.initial",
+                "LoopInitialsAvatar(",
                 "ValueKey<String>('loop-direct-channel-avatar')",
                 "message: lastMessage,",
                 "channel: loopDirectPreviewChannel(channelState.channel)",
@@ -11674,8 +11678,12 @@ def check_friend_frontend_contract(root: Path) -> list[str]:
             for marker in (
                 "sanitizeLoopGroupMessageForDisplay(",
                 "resolveLoopGroupConversationLabel(",
-                "avatar: const CircleAvatar(",
-                "ValueKey<String>('loop-group-channel-neutral-avatar')",
+                # S58c: as above — the group cell's tile is the reviewed group
+                # label's initials on `--card2`, never a provider avatar and
+                # never the scheme's primary as a solid disc.
+                "avatar: LoopInitialsAvatar(",
+                "label: label,",
+                "'loop-group-channel-neutral-avatar'",
                 "StreamMessagePreviewText(",
             )
         ):

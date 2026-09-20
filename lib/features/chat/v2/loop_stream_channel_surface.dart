@@ -40,11 +40,11 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 // tall as the prototype's (audit 2026-09-20 · B.2). The promise is unchanged.
 const String loopChatComposerHint = '发消息 · 贴合约地址识别代币';
 
-/// The placeholder a direct conversation shows (`#scr-dm .composer input`).
-///
-/// A private thread gets the bare word: the prototype offers no hint there,
-/// and the field is already the narrowest one in the app.
-const String loopDirectComposerHint = '发消息';
+// `#scr-dm .composer input` carries the bare 发消息, and LOOP's direct
+// conversation does not: the Token Card builder is registered for every
+// channel, so a contract address pasted into a private thread opens a card
+// there too. A placeholder that did not say so would leave that card
+// unexplained on the one surface where it is least expected.
 
 class LoopStreamChannelSurface extends ConsumerWidget {
   const LoopStreamChannelSurface({
