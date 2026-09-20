@@ -484,6 +484,11 @@ class LoopStreamChatLocalizations implements StreamChatLocalizations {
   @override
   String get addAFileLabel => '添加图片';
 
+  // S46: the two rows of LOOP's attachment panel, read together. The first is
+  // Stream's own system-picker row, the second is the title of LOOP's camera
+  // option (`loop_chat_camera.dart`) — one string, so the surfaces cannot say
+  // two different things. Neither says 「附件」: that is the wire field's name,
+  // not what a member sends.
   @override
   String get photoFromCameraLabel => '拍照';
 
@@ -492,6 +497,11 @@ class LoopStreamChatLocalizations implements StreamChatLocalizations {
 
   @override
   String get uploadAPhotoLabel => '从相册选择图片';
+
+  // A camera that was refused is not an upload that failed, and LOOP owns no
+  // way to open the system settings page, so the sentence the member reads is
+  // LOOP's own: `loopChatCameraPermissionMessage`. Stream's gallery-permission
+  // copy below belongs to the tabbed picker, which LOOP never mounts.
 
   @override
   String get uploadAVideoLabel => '上传视频';

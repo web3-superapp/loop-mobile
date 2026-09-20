@@ -13,11 +13,16 @@
 //  * the Chinese word. The panel says 图片, never 附件: "attachment" is a
 //    provider's word for a wire field, not something a member sends.
 //
+// S46 adds a fourth: the camera row. The system attachment picker ships no
+// camera option at all, so LOOP builds one (`loop_chat_camera.dart`) and puts
+// what it captures through the same gate as a picked picture.
+//
 // The gate is a listener on the composer's own controller rather than a
 // subclass: `StreamMessageComposerController` has a private constructor, and
 // every add path in the SDK — the picker, the drag target, the paste handler —
 // ends at its `attachments` setter, so one listener sees them all.
 import 'package:flutter/widgets.dart';
+import 'package:loop_mobile/integrations/communication/loop_chat_camera.dart';
 import 'package:loop_mobile/integrations/communication/loop_chat_image_policy.dart';
 import 'package:loop_mobile/integrations/communication/stream_failure.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -32,15 +37,36 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 /// own gallery grid from `photo_manager`, which needs `READ_MEDIA_IMAGES` on
 /// Android 13+; the system picker hands the choice to the platform's own photo
 /// chooser, which needs no permission at all and never sees the rest of the
-/// library. LOOP declares no new Android permission for this step.
-MessageComposerProps loopChatImageComposerProps(MessageComposerProps props) =>
-    props.copyWith(
-      disableAttachments: false,
-      enableVoiceRecording: false,
-      useSystemAttachmentPicker: true,
-      allowedAttachmentPickerTypes: loopChatImagePickerTypes,
-      attachmentLimit: loopChatImageMaxCount,
-    );
+/// library.
+///
+/// S46 adds one row to that picker: 拍照. It is LOOP's own option because the
+/// system picker ships none, and it is the only reason the manifest declares
+/// `android.permission.CAMERA` (ruling of 2026-09-19). [onProblem] is what the
+/// member reads when the capture is refused or fails; the composer passes its
+/// own toast.
+MessageComposerProps loopChatImageComposerProps(
+  MessageComposerProps props, {
+  LoopChatCameraCapture capture = loopChatCaptureFromCamera,
+  void Function(String message)? onProblem,
+}) => props.copyWith(
+  disableAttachments: false,
+  enableVoiceRecording: false,
+  useSystemAttachmentPicker: true,
+  allowedAttachmentPickerTypes: loopChatImagePickerTypes,
+  attachmentLimit: loopChatImageMaxCount,
+  attachmentPickerOptionsBuilder: (context, defaults) =>
+      <AttachmentPickerOption>[
+        ...defaults,
+        loopChatCameraPickerOption(
+          context,
+          capture: capture,
+          // A composer mounted without a reporter still takes the photo; it
+          // simply has nowhere to say why one was refused. Every LOOP surface
+          // passes one.
+          onProblem: onProblem ?? (_) {},
+        ),
+      ],
+);
 
 /// Holds one composer controller to LOOP's image rule.
 ///
@@ -183,7 +209,7 @@ class _LoopChatImageComposerState extends State<LoopChatImageComposer> {
 
   @override
   Widget build(BuildContext context) => DefaultStreamMessageComposer(
-    props: loopChatImageComposerProps(widget.props).copyWith(
+    props: loopChatImageComposerProps(widget.props, onProblem: _toast).copyWith(
       onError: (error, _) => _toast(loopChatImageFailureMessage(error)),
     ),
   );

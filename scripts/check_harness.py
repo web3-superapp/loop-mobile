@@ -536,9 +536,41 @@ ANDROID_AUDIO_ROOM_REMOVED_COMPONENTS = {
         }
     ),
 }
+# The still camera left this set on 2026-09-19: the chat composer may take a
+# photo, and `check_chat_camera_contract` now requires the one declaration that
+# allows it. Audio Room still gets no camera of its own — the hardware feature
+# and Stream's call-camera components stay removed below.
 ANDROID_AUDIO_ROOM_FORBIDDEN_ACTIVE_PERMISSIONS = frozenset(
-    {*ANDROID_AUDIO_ROOM_REMOVED_PERMISSIONS, "android.permission.CAMERA"}
+    ANDROID_AUDIO_ROOM_REMOVED_PERMISSIONS
 )
+ANDROID_CHAT_CAMERA_PERMISSION = "android.permission.CAMERA"
+IOS_CHAT_CAMERA_USAGE_KEY = "NSCameraUsageDescription"
+# Two-sided on purpose. A declared permission with no caller is one nobody can
+# answer for in a store review; a caller with no declaration is a crash on the
+# first tap. Both sides are named here.
+CHAT_CAMERA_CONTRACTS = {
+    "lib/integrations/communication/loop_chat_camera.dart": (
+        "loopChatCameraPickerOption",
+        "StreamAttachmentHandler.instance.pickImage(source: .camera)",
+        "const String loopChatCameraPermissionMessage = "
+        "'没有相机权限，去系统设置里允许 LOOP 使用相机后再试'",
+        # The captured photo is judged by S45's rule, not a second one.
+        "loopChatReviewImages(<Attachment>[...current, photo])",
+    ),
+    "lib/integrations/communication/loop_chat_image_composer.dart": (
+        "attachmentPickerOptionsBuilder:",
+        "loopChatCameraPickerOption(",
+    ),
+    "test/stream_chat_camera_test.dart": ("loopChatCameraPermissionMessage",),
+}
+CHAT_CAMERA_TEST_MARKERS = {
+    Path("test/stream_chat_camera_test.dart"): (
+        "就在相册那一行旁边，叫「拍照」",
+        "取消拍照既不发消息，也不报错",
+        "没有相机权限时，只说去系统设置",
+        "拍出来的图走的是 S45 那条闸门",
+    ),
+}
 IOS_AUDIO_ROOM_FORBIDDEN_ENTITLEMENTS = frozenset(
     {
         "aps-environment",
@@ -6608,8 +6640,6 @@ def check_audio_room_native_contract(root: Path) -> list[str]:
         microphone_description = info.get("NSMicrophoneUsageDescription")
         if not isinstance(microphone_description, str) or not microphone_description.strip():
             errors.append("iOS foreground Audio Room requires a non-empty NSMicrophoneUsageDescription")
-        if "NSCameraUsageDescription" in info:
-            errors.append("iOS foreground Audio Room must not declare NSCameraUsageDescription")
         if "UIBackgroundModes" in info:
             errors.append("iOS foreground Audio Room must not declare UIBackgroundModes")
 
@@ -6659,6 +6689,46 @@ def markdown_sections(path: Path) -> dict[str, str]:
         elif current:
             sections[current].append(line)
     return {name: "\n".join(lines).strip() for name, lines in sections.items()}
+
+
+def check_chat_camera_contract(root: Path) -> list[str]:
+    """Hold the chat camera to the one permission the ruling bought it."""
+
+    errors: list[str] = []
+    manifest_path = root / "android/app/src/main/AndroidManifest.xml"
+    manifest, manifest_errors = _parse_xml(manifest_path, "Android main manifest")
+    errors.extend(manifest_errors)
+    if manifest is not None:
+        active = [
+            permission
+            for permission in manifest.findall("uses-permission")
+            if permission.get(ANDROID_NAME) == ANDROID_CHAT_CAMERA_PERMISSION
+            and permission.get(ANDROID_TOOLS_NODE) != "remove"
+        ]
+        if len(active) != 1:
+            errors.append(
+                "chat camera requires exactly one active "
+                f"`{ANDROID_CHAT_CAMERA_PERMISSION}` declaration"
+            )
+
+    info_path = root / "ios/Runner/Info.plist"
+    info, info_errors = _parse_plist(info_path, "iOS Runner Info.plist")
+    errors.extend(info_errors)
+    if info is not None:
+        description = info.get(IOS_CHAT_CAMERA_USAGE_KEY)
+        if not isinstance(description, str) or not description.strip():
+            errors.append(
+                f"chat camera requires a non-empty {IOS_CHAT_CAMERA_USAGE_KEY}"
+            )
+        elif not any(word in description for word in ("相机", "拍照")):
+            errors.append(
+                f"{IOS_CHAT_CAMERA_USAGE_KEY} must tell the member, in Chinese, "
+                "what the camera is for"
+            )
+
+    errors.extend(require_fragments(root, CHAT_CAMERA_CONTRACTS))
+    errors.extend(check_behavior_test_evidence(root, CHAT_CAMERA_TEST_MARKERS))
+    return errors
 
 
 def check_records(root: Path) -> list[str]:
@@ -11294,6 +11364,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_android_release_network_contract(root))
     errors.extend(check_reown_identity_contract(root))
     errors.extend(check_audio_room_native_contract(root))
+    errors.extend(check_chat_camera_contract(root))
     errors.extend(check_product_contract(root))
     errors.extend(check_v2_primary_navigation_contract(root))
     errors.extend(check_v2_community_truth_contract(root))

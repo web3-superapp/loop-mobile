@@ -225,6 +225,23 @@ FRIEND_FRONTEND_FIXTURE_FILES = (
 )
 
 
+CHAT_CAMERA_FIXTURE_FILES = (
+    "android/app/src/main/AndroidManifest.xml",
+    "ios/Runner/Info.plist",
+    "lib/integrations/communication/loop_chat_camera.dart",
+    "lib/integrations/communication/loop_chat_image_composer.dart",
+    "test/stream_chat_camera_test.dart",
+)
+
+
+def write_chat_camera_fixture(root: Path) -> None:
+    for relative in CHAT_CAMERA_FIXTURE_FILES:
+        source = REPOSITORY_ROOT / relative
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(source.read_bytes())
+
+
 def write_reown_identity_fixture(root: Path) -> None:
     for relative in REOWN_IDENTITY_FIXTURE_FILES:
         source = REPOSITORY_ROOT / relative
@@ -6933,7 +6950,6 @@ class HarnessTests(unittest.TestCase):
             )
             manifest_text = manifest_text.replace(
                 "    <application>",
-                '    <uses-permission android:name="android.permission.CAMERA" />\n'
                 '    <uses-feature android:name="android.hardware.camera" />\n'
                 "    <application>",
             )
@@ -6942,7 +6958,6 @@ class HarnessTests(unittest.TestCase):
             info_path = root / "ios" / "Runner" / "Info.plist"
             with info_path.open("rb") as stream:
                 info = plistlib.load(stream)
-            info["NSCameraUsageDescription"] = "camera"
             info["UIBackgroundModes"] = ["audio", "voip"]
             with info_path.open("wb") as stream:
                 plistlib.dump(info, stream)
@@ -6963,9 +6978,10 @@ class HarnessTests(unittest.TestCase):
         expected_fragments = (
             "POST_NOTIFICATIONS",
             "IncomingCallActivity",
-            "android.permission.CAMERA",
+            # The still camera left this guard on 2026-09-19 (the chat composer
+            # declares it); the camera *hardware feature* never belonged to
+            # Audio Room and is still refused.
             "android.hardware.camera",
-            "NSCameraUsageDescription",
             "UIBackgroundModes",
             "aps-environment",
             "import CallKit",
@@ -6978,6 +6994,78 @@ class HarnessTests(unittest.TestCase):
                 any(fragment in error for error in result),
                 msg=f"expected foreground Audio Room guard error containing {fragment!r}: {result}",
             )
+
+    def test_chat_camera_contract_accepts_the_declared_camera(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_chat_camera_fixture(root)
+            result = check_harness.check_chat_camera_contract(root)
+        self.assertEqual([], result)
+
+    def test_chat_camera_contract_detects_an_undeclared_camera(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_chat_camera_fixture(root)
+            manifest = root / "android" / "app" / "src" / "main" / "AndroidManifest.xml"
+            manifest.write_text(
+                manifest.read_text(encoding="utf-8").replace(
+                    '<uses-permission android:name="android.permission.CAMERA" />',
+                    "",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_chat_camera_contract(root)
+        self.assertTrue(any("android.permission.CAMERA" in error for error in result))
+
+    def test_chat_camera_contract_requires_a_chinese_ios_purpose_string(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_chat_camera_fixture(root)
+            info_path = root / "ios" / "Runner" / "Info.plist"
+            with info_path.open("rb") as stream:
+                info = plistlib.load(stream)
+            info["NSCameraUsageDescription"] = "camera"
+            with info_path.open("wb") as stream:
+                plistlib.dump(info, stream)
+            result = check_harness.check_chat_camera_contract(root)
+        self.assertTrue(
+            any("NSCameraUsageDescription" in error for error in result), result
+        )
+
+    def test_chat_camera_contract_detects_a_permission_without_a_caller(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_chat_camera_fixture(root)
+            (root / "lib/integrations/communication/loop_chat_camera.dart").unlink()
+            composer = root / "lib/integrations/communication/loop_chat_image_composer.dart"
+            composer.write_text(
+                composer.read_text(encoding="utf-8").replace(
+                    "loopChatCameraPickerOption(", "_removed(",
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_chat_camera_contract(root)
+        self.assertTrue(any("loop_chat_camera.dart" in error for error in result))
+        self.assertTrue(
+            any("loopChatCameraPickerOption(" in error for error in result), result
+        )
+
+    def test_chat_camera_behavior_tests_cannot_be_hollowed_out(self) -> None:
+        markers = check_harness.CHAT_CAMERA_TEST_MARKERS[
+            Path("test/stream_chat_camera_test.dart")
+        ]
+        hollow = "void main() {\n" + "\n".join(
+            f"testWidgets({marker!r}, (tester) async {{ final observed = true; }});"
+            for marker in markers
+        ) + "\n}\n"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_chat_camera_fixture(root)
+            (root / "test/stream_chat_camera_test.dart").write_text(
+                hollow, encoding="utf-8"
+            )
+            result = check_harness.check_chat_camera_contract(root)
+        self.assertTrue(any("no assertion" in error for error in result), result)
 
     def test_perp_positions_paths_are_required(self) -> None:
         expected = {

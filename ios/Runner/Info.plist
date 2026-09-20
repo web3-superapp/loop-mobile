@@ -55,6 +55,8 @@
 		<string>trust</string>
 		<string>rainbow</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>用于在聊天中拍照发送图片</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>用于在 Loop 语音房中发言</string>
 	<key>UIApplicationSceneManifest</key>
