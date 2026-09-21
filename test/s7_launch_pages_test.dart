@@ -294,7 +294,17 @@ void main() {
         find.byKey(const ValueKey<String>('launch-tier-result')),
         findsOneWidget,
       );
+      // The heading is the result, and it is the contract's own null: never a
+      // guessed tier, and never a tier ladder the client wrote down (03
+      // §10.1). The strip beside it carries the conditions, not the answer.
+      expect(find.text(launchMissingResult), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('launch-tier-conditions')),
+        findsOneWidget,
+      );
       expect(find.text('Priority'), findsNothing);
+      expect(find.text('Community'), findsNothing);
+      expect(find.text('Public'), findsNothing);
     });
 
     testWidgets('a configured mode still shows the server reason', (
@@ -491,22 +501,34 @@ void main() {
   });
 
   group('launch-holders / launch-graduation / launch-history', () {
-    testWidgets('holders renders three unavailable blocks, never a percent', (
-      tester,
-    ) async {
-      await pumpS7Page(
-        tester,
-        const LaunchHoldersScreen(launchId: s7LaunchId),
-        launch: FakeLaunchGateway(),
-      );
+    testWidgets(
+      'holders states each of its three facts once, never a percent',
+      (tester) async {
+        await pumpS7Page(
+          tester,
+          const LaunchHoldersScreen(launchId: s7LaunchId),
+          launch: FakeLaunchGateway(),
+        );
 
-      for (final label in <String>['持有人分布', '我的持仓', '单地址持仓上限']) {
-        final block = find.byKey(ValueKey<String>('launch-unavailable-$label'));
-        await scrollToS7Section(tester, block);
-        expect(block, findsOneWidget, reason: label);
-      }
-      expect(find.textContaining('0.50%'), findsNothing);
-    });
+        // The cap and the concentration are the composite's two readings; the
+        // reader's own position keeps its row in the list; the distribution
+        // carries the reason. The same sentence used to be printed three times
+        // under three one-row groups (visual audit 2026-09-21 §H.7).
+        expect(find.textContaining('单地址持仓上限'), findsOneWidget);
+        expect(find.textContaining('Top 10 合计'), findsOneWidget);
+        final me = find.byKey(const ValueKey<String>('launch-holders-me'));
+        await scrollToS7Section(tester, me);
+        expect(me, findsOneWidget);
+        final distribution = find.byKey(
+          const ValueKey<String>('launch-unavailable-持有人分布'),
+        );
+        await scrollToS7Section(tester, distribution);
+        expect(distribution, findsOneWidget);
+        expect(find.textContaining('Launch 合约还没有上线'), findsOneWidget);
+        expect(find.textContaining('0.50%'), findsNothing);
+        expect(_figures(tester), isEmpty);
+      },
+    );
 
     testWidgets('graduation keeps four pending steps and no percentage', (
       tester,
@@ -518,6 +540,10 @@ void main() {
       );
 
       expect(find.text('待触发'), findsNWidgets(4));
+      // Each step says what it does; the rail's own property is stated once,
+      // in the notice (visual audit 2026-09-21 §H.8).
+      expect(find.text('达到毕业条件的瞬间冻结内盘撮合'), findsOneWidget);
+      expect(find.text('内盘持仓上限随外盘开放同步解除'), findsOneWidget);
       expect(find.textContaining('61%'), findsNothing);
       expect(find.textContaining('生态税'), findsNothing);
       expect(find.textContaining('「已结束」只表示排期结束'), findsOneWidget);

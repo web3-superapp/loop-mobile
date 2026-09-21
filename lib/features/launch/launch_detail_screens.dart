@@ -674,14 +674,28 @@ class _LaunchGraduationScreenState
       title: '毕业与迁移',
       kicker: 'GRADUATION PROGRESS',
       onBack: widget.onBack,
-      primary: const LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'GRADUATION PROGRESS',
-        // Never a percentage: progress needs the liquidity axis.
-        heading: launchMissingHeading,
-        caption: '毕业进度看的是流动性。合约上线前还没有可核对的进度。',
-        stamp: 'PENDING',
+      primary: const LoopLedgerComposite(
+        primary: LoopFolioPrimary(
+          variant: LoopFolioVariant.quiet,
+          archetype: LoopFolioArchetype.record,
+          kicker: 'GRADUATION PROGRESS',
+          // Never a percentage: progress needs the liquidity axis.
+          heading: launchMissingHeading,
+          caption: '毕业进度看的是流动性。合约上线前还没有可核对的进度。',
+          stamp: 'PENDING',
+          margin: EdgeInsets.zero,
+          squareBottom: true,
+        ),
+        // The prototype's progress rail. It is drawn empty rather than at
+        // zero: no liquidity reading exists, and a zero-width bar would be a
+        // figure nobody measured.
+        detail: <Widget>[
+          LoopProgressBar(value: null, semanticLabel: '毕业进度暂时读不到'),
+          LoopHairline(),
+          LoopCompositeDetailNote(
+            '市值 $launchMissingFigure / 毕业线 $launchMissingFigure · 达线后立即触发迁移',
+          ),
+        ],
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -704,7 +718,7 @@ class _LaunchGraduationScreenState
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          const LoopLabel('迁移步骤'),
+          const LoopLabel('Migration Rail'),
           LoopRecordGroup(
             key: const ValueKey<String>('launch-graduation-steps'),
             rows: <LoopRecordRow>[
@@ -713,26 +727,30 @@ class _LaunchGraduationScreenState
                   key: ValueKey<String>(
                     'launch-graduation-step-${steps[index].step.wireName}',
                   ),
-                  leading: _StepIndexTile(index: index + 1),
+                  leading: LoopMonoTile(
+                    label: (index + 1).toString().padLeft(2, '0'),
+                  ),
                   title: launchGraduationStepLabel(steps[index].step),
-                  subtitle: '每一步完成后才进入下一步',
+                  // Each step says what it does. The rail's own property —
+                  // one step at a time — is stated once, in the notice below.
+                  subtitle: launchGraduationStepDetail(steps[index].step),
+                  subtitleMaxLines: 2,
                   trailingBadge: const LoopBadge(
                     '待触发',
                     kind: LoopBadgeKind.mute,
                   ),
                   position: launchRowPosition(index, steps.length),
                   semanticLabel:
-                      '${launchGraduationStepLabel(steps[index].step)}，待触发',
+                      '${launchGraduationStepLabel(steps[index].step)}，'
+                      '${launchGraduationStepDetail(steps[index].step)}，待触发',
                 ),
             ],
           ),
-          const LoopLabel('流动性池信息'),
+          const LoopLabel('流动性池'),
           LaunchUnavailableCard(
             label: '池地址与锁定信息',
             fact: detail.graduation.poolEvidence,
           ),
-          const LoopLabel('流动性状态'),
-          LaunchUnavailableCard(label: '外盘行情', fact: detail.market),
           LoopNotice(
             key: const ValueKey<String>('launch-graduation-notice'),
             icon: 'shield',
@@ -740,36 +758,13 @@ class _LaunchGraduationScreenState
             title: '毕业不是排期状态',
             body:
                 '「已结束」只表示排期结束，不等于已毕业。'
-                '是否毕业要看流动性和交易池，两项目前都读不到。',
+                '是否毕业要看流动性和交易池，两项目前都读不到。'
+                '迁移由服务端权威状态推进，每一步完成后才进入下一步。',
             margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),
         ],
       ],
-    );
-  }
-}
-
-class _StepIndexTile extends StatelessWidget {
-  const _StepIndexTile({required this.index});
-
-  final int index;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        // Same rule as the other numbered tiles.
-        color: LoopGround.fillOf(context),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        index.toString().padLeft(2, '0'),
-        style: LoopTypography.figure(13, color: LoopGround.inkOf(context)),
-      ),
     );
   }
 }
@@ -813,17 +808,37 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
       title: '我的资格',
       kicker: 'ELIGIBILITY',
       onBack: widget.onBack,
-      primary: LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'ELIGIBILITY',
-        // The tier is `null` by contract: the heading says it has no value,
-        // never a guessed "Public".
-        heading: eligibility?.tier ?? launchMissingResult,
-        caption: '这是当前资格结果，不是等级；资格不依赖 LOOP 质押。',
-        stamp: eligibility == null
-            ? null
-            : launchEligibilityModeLabel(eligibility.mode),
+      primary: LoopLedgerComposite(
+        primary: LoopFolioPrimary(
+          variant: LoopFolioVariant.quiet,
+          archetype: LoopFolioArchetype.record,
+          kicker: 'ELIGIBILITY',
+          // The tier is `null` by contract: the heading says it has no value,
+          // never a guessed "Public".
+          heading: eligibility?.tier ?? launchMissingResult,
+          caption: '这是当前资格结果，不是等级；条件与快照时间同时展示。',
+          stamp: eligibility == null
+              ? null
+              : launchEligibilityModeLabel(eligibility.mode),
+          margin: EdgeInsets.zero,
+          squareBottom: true,
+        ),
+        // The two conditions behind the result. Neither restates it: the
+        // heading is the answer, the strip is what produced it.
+        detail: <Widget>[
+          if (eligibility != null)
+            LoopCompositeDetailRow(
+              key: const ValueKey<String>('launch-tier-conditions'),
+              label: '资格模式',
+              value: launchEligibilityModeLabel(eligibility.mode),
+              valueSize: 18,
+              trailingLabel: '快照区块',
+              trailingValue: eligibility.snapshotBlock ?? loopFigureDash,
+              spoken: eligibility.snapshotBlock == null
+                  ? launchPendingConfirmationLabel
+                  : null,
+            ),
+        ],
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -844,6 +859,16 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
+          LoopButtonPair(
+            children: <Widget>[
+              LoopButton(
+                key: const ValueKey<String>('launch-tier-open-stake'),
+                label: '查看 LOOP 质押',
+                primary: true,
+                onPressed: widget.onOpenStake,
+              ),
+            ],
+          ),
           const LoopLabel('资格模式'),
           LoopRecordGroup(
             key: const ValueKey<String>('launch-tier-mode'),
@@ -877,34 +902,24 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('launch-tier-depends-on-staking'),
                 title: '是否依赖质押',
-                subtitle: '资格规则由这次发射决定，与 LOOP 质押数量无关',
+                // Decision 0053: the mode decides. The row reports what this
+                // launch's approved mode answered, and claims nothing about
+                // the next one.
+                subtitle: '由这次发射的资格模式决定',
                 trailing: eligibility.dependsOnStaking ? '是' : '否',
                 position: LoopRowPosition.last,
               ),
             ],
           ),
-          const LoopLabel('资格结果'),
-          LoopEmpty(
+          LoopNotice(
             key: const ValueKey<String>('launch-tier-result'),
             icon: 'ticket',
-            message: '当前没有资格结论',
-            reason: launchReasonCodeText(eligibility.reasonCode),
-          ),
-          LoopButtonPair(
-            children: <Widget>[
-              LoopButton(
-                key: const ValueKey<String>('launch-tier-open-stake'),
-                label: '查看 LOOP 质押',
-                onPressed: widget.onOpenStake,
-              ),
-            ],
-          ),
-          const LoopNotice(
-            key: ValueKey<String>('launch-tier-notice'),
-            icon: 'info',
             title: '资格不是等级，也不是权益',
-            body: '资格是这次发射的准入结果，会随配置和快照变化。这里不显示任何门槛、费率或时间窗口。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            body:
+                '${launchReasonCodeText(eligibility.reasonCode)}'
+                '资格是这次发射的准入结果，会随配置和快照变化；'
+                '这里不显示任何门槛、费率或时间窗口。',
+            margin: const EdgeInsets.fromLTRB(16, 22, 16, 0),
           ),
           const SizedBox(height: 20),
         ],
@@ -946,13 +961,33 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
       title: '内盘持有人',
       kicker: 'HOLDER DISTRIBUTION',
       onBack: widget.onBack,
-      primary: const LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'HOLDER DISTRIBUTION',
-        heading: launchMissingHeading,
-        caption: '持有人数量、集中度、我的仓位与单地址上限都需要合约读数，当前全部不可得。',
-        stamp: 'UNAVAILABLE',
+      primary: LoopLedgerComposite(
+        primary: const LoopFolioPrimary(
+          variant: LoopFolioVariant.quiet,
+          archetype: LoopFolioArchetype.record,
+          kicker: 'HOLDER DISTRIBUTION',
+          heading: launchMissingHeading,
+          caption: '持有人数量、集中度、我的仓位与单地址上限都需要合约读数，当前全部不可得。',
+          stamp: 'UNAVAILABLE',
+          margin: EdgeInsets.zero,
+          squareBottom: true,
+        ),
+        // `.launch-holders-summary`: concentration and the cap, side by side,
+        // the two readings the prototype welds under this folio.
+        detail: <Widget>[
+          LoopCompositeDetailRow(
+            label: 'Top 10 合计',
+            value: loopFigureDash,
+            valueSize: 18,
+            trailingLabel: '单地址持仓上限',
+            trailingValue: loopFigureDash,
+            spoken: holders == null
+                ? launchPendingConfirmationLabel
+                : launchReasonCodeText(holders.walletCap.reasonCode),
+          ),
+          const LoopHairline(),
+          const LoopCompositeDetailNote('上限由 LOOP 内盘合约执行'),
+        ],
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -974,18 +1009,32 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          const LoopLabel('分布'),
+          const LoopLabel('Top Holders'),
+          // The ranking has no source, so no address is invented. The one row
+          // the reader owns keeps its place in the list, with the Lime `YOU`
+          // tile the prototype marks it with, and its figures as em dashes.
+          LoopRecordGroup(
+            key: const ValueKey<String>('launch-holders-list'),
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('launch-holders-me'),
+                leading: const LoopMonoTile(label: 'YOU', accent: true),
+                title: '我的仓位',
+                subtitle: '持仓 $launchMissingFigure · 还可买 $launchMissingFigure',
+                trailing: launchMissingFigure,
+                semanticLabel:
+                    '我的仓位，'
+                    '${launchReasonCodeText(holders.myPosition.reasonCode)}',
+              ),
+            ],
+          ),
           LaunchUnavailableCard(label: '持有人分布', fact: holders.holders),
-          const LoopLabel('我的仓位'),
-          LaunchUnavailableCard(label: '我的持仓', fact: holders.myPosition),
-          const LoopLabel('单地址上限'),
-          LaunchUnavailableCard(label: '单地址持仓上限', fact: holders.walletCap),
           const LoopNotice(
             key: ValueKey<String>('launch-holders-notice'),
-            icon: 'shield',
+            icon: 'chart',
             title: '空白不是「没有持有人」',
             body: '暂时读不到合约信息，因此不显示地址、比例或上限。读不到不等于「分布为零」。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: EdgeInsets.fromLTRB(16, 22, 16, 0),
           ),
           const SizedBox(height: 20),
         ],
@@ -1027,13 +1076,29 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
       title: '我的参与记录',
       kicker: 'PARTICIPATION LOG',
       onBack: widget.onBack,
-      primary: const LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'PARTICIPATION LOG',
-        heading: launchMissingHeading,
-        caption: '购买、权益与退款记录都要看链上数据，目前读不到，因此不显示笔数或盈亏。',
-        stamp: 'UNAVAILABLE',
+      primary: const LoopLedgerComposite(
+        primary: LoopFolioPrimary(
+          variant: LoopFolioVariant.quiet,
+          archetype: LoopFolioArchetype.record,
+          kicker: 'PARTICIPATION LOG',
+          heading: launchMissingHeading,
+          caption: '购买、权益与退款记录都要看链上数据，目前读不到，因此不显示笔数或盈亏。',
+          stamp: 'UNAVAILABLE',
+          margin: EdgeInsets.zero,
+          squareBottom: true,
+        ),
+        detail: <Widget>[
+          LoopCompositeDetailRow(
+            label: '参与次数',
+            value: loopFigureDash,
+            valueSize: 18,
+            trailingLabel: '累计结果',
+            trailingValue: loopFigureDash,
+            spoken: launchPendingConfirmationLabel,
+          ),
+          LoopHairline(),
+          LoopCompositeDetailNote('内盘与毕业后记录统一归档'),
+        ],
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -1055,14 +1120,14 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          const LoopLabel('记录出处'),
+          const LoopLabel('Records'),
           LaunchUnavailableCard(label: '购买、权益与退款记录', fact: history.source),
           const LoopNotice(
             key: ValueKey<String>('launch-history-notice'),
-            icon: 'shield',
+            icon: 'info',
             title: '空列表不代表没有参与',
             body: '这里是「暂时读不到」，不是「没有记录」。合约上线后才会出现可核对的购买、权益与退款。',
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: EdgeInsets.fromLTRB(16, 22, 16, 0),
           ),
           const SizedBox(height: 20),
         ],

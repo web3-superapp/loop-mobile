@@ -573,6 +573,21 @@ String launchGraduationStepLabel(LaunchGraduationStepKind step) =>
       LaunchGraduationStepKind.openExternalTrading => '开放外盘交易',
     };
 
+/// What each migration step does, in the words 03 §10.1 uses for the rail.
+///
+/// The four rows used to carry one sentence between them — 「每一步完成后才
+/// 进入下一步」 — which is a property of the rail, not of any step, and left
+/// the four looking interchangeable (visual audit 2026-09-21 §H.8). No
+/// sentence here carries a cap, a rate or a threshold: the steps are the
+/// mechanism, and the numbers stay with the configuration that fixes them.
+String launchGraduationStepDetail(LaunchGraduationStepKind step) =>
+    switch (step) {
+      LaunchGraduationStepKind.stopInternalTrading => '达到毕业条件的瞬间冻结内盘撮合',
+      LaunchGraduationStepKind.preparePool => '归集资金并在 DEX 建立流动性池',
+      LaunchGraduationStepKind.addAndLockLiquidity => '注入并锁定后状态才变为已毕业',
+      LaunchGraduationStepKind.openExternalTrading => '内盘持仓上限随外盘开放同步解除',
+    };
+
 @immutable
 final class LaunchGraduationStep {
   const LaunchGraduationStep({required this.step, required this.status});
