@@ -18,9 +18,11 @@ import 'package:loop_mobile/features/profile/about/about_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/security/security_gateway.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_models.dart';
+import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
 import 'package:loop_mobile/features/profile/settings/settings_gateway.dart';
 import 'package:loop_mobile/features/profile/support/support_gateway.dart';
 import 'package:loop_mobile/integrations/device/local_auth_device_authenticator.dart';
+import 'package:loop_mobile/integrations/privy/privy_mfa_gateway.dart';
 import 'package:loop_mobile/integrations/device/secure_storage_app_lock_store.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_display_store.dart';
 import 'package:loop_mobile/integrations/personalization/loop_personalization_providers.dart';
@@ -63,6 +65,12 @@ Future<void> main() async {
         ),
         loopAppLockStoreProvider.overrideWithValue(
           const SecureStorageLoopAppLockStore(),
+        ),
+        // The account's second factor lives at Privy. Production resolves it
+        // from the same SDK session the rest of the account reads; a build
+        // with no session keeps the unavailable gateway.
+        loopMfaGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopPrivyMfaGatewayProvider),
         ),
         // Where the five-step opening got to, per account. A device that
         // refuses the write falls back to the in-process default, which

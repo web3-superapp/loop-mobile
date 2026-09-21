@@ -5,6 +5,9 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/wallet_creation_facts.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_gate.dart';
+import 'package:loop_mobile/features/security/mfa/mfa_controller.dart';
+import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
+import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -71,6 +74,8 @@ class AccountSurfaceScreen extends StatelessWidget {
     this.splashPhase = LoopSplashPhase.entry,
     this.appLock,
     this.onToggleAppLock,
+    this.mfa,
+    this.onOpenMfa,
   });
 
   static const supportedIds = <String>{
@@ -103,6 +108,11 @@ class AccountSurfaceScreen extends StatelessWidget {
   /// composed none.
   final LoopAppLockState? appLock;
   final VoidCallback? onToggleAppLock;
+
+  /// What the login service says it holds as a second factor, for
+  /// `security-setup`. Absent in a tree with no provider behind it.
+  final LoopMfaState? mfa;
+  final VoidCallback? onOpenMfa;
 
   String get _id => surfaceId.replaceFirst('#', '').toLowerCase();
 
@@ -143,6 +153,8 @@ class AccountSurfaceScreen extends StatelessWidget {
         capabilities: capabilities,
         appLock: appLock,
         onToggleAppLock: onToggleAppLock,
+        mfa: mfa,
+        onOpenMfa: onOpenMfa,
         onBack: onBack,
         onContinue: () => _navigate(context, 'loop-id-setup'),
       ),
@@ -875,6 +887,15 @@ const walletAutomaticRecoveryEvidence =
 /// it in this version.
 const walletRecoveryProviderPending = '当前版本的登录服务还没有开放这一项';
 
+/// Why Passkey is not offered, which is a different thing from the rest.
+///
+/// The login service does support passkeys. What is missing is on LOOP's
+/// side: a passkey belongs to a domain, and the App has no domain credential
+///配置 yet — no Associated Domains entitlement, no `assetlinks.json`. Calling
+/// the SDK without one fails on the device every time, so the row says what
+/// is actually missing instead of offering a button that cannot work.
+const walletRecoveryPasskeyPending = '还要先给 LOOP 配好 Passkey 用的域名凭据，当前版本还没有';
+
 class WalletRecoveryScreen extends StatefulWidget {
   const WalletRecoveryScreen({
     required this.capabilities,
@@ -929,7 +950,7 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
 
   String _reason(WalletRecoveryMethod method) => switch (method) {
     WalletRecoveryMethod.cloud => walletAutomaticRecoveryEvidence,
-    WalletRecoveryMethod.passkey ||
+    WalletRecoveryMethod.passkey => walletRecoveryPasskeyPending,
     WalletRecoveryMethod.password => walletRecoveryProviderPending,
   };
 
@@ -1135,6 +1156,8 @@ class SecuritySetupScreen extends StatelessWidget {
     this.onBack,
     this.appLock,
     this.onToggleAppLock,
+    this.mfa,
+    this.onOpenMfa,
   });
 
   final PrivyWalletCapabilities capabilities;
@@ -1149,6 +1172,13 @@ class SecuritySetupScreen extends StatelessWidget {
   /// Turns the lock on or off. The system's own prompt runs first, in the
   /// controller; this page never decides that anybody was authenticated.
   final VoidCallback? onToggleAppLock;
+
+  /// The account's second factor as the login service last reported it, or
+  /// `null` in a tree with no provider. `null` is not "off".
+  final LoopMfaState? mfa;
+
+  /// Opens the provider's enrolment sheet. The page performs no enrolment.
+  final VoidCallback? onOpenMfa;
 
   @override
   Widget build(BuildContext context) {
@@ -1183,17 +1213,14 @@ class SecuritySetupScreen extends StatelessWidget {
             _row(
               title: '大额交易二次验证',
               detail: '超过阈值时重新验证身份',
-              available: capabilities.canUseTransactionMfa,
-              reason: '多大金额要再验一次还没有定下来',
+              // The threshold is a rule nobody has written down yet, and this
+              // build has no on-chain write that could cross one. Opening a
+              // switch for it would be a switch with nothing behind it.
+              available: false,
+              reason: '多大金额要再验一次还没有定下来，这个版本也还没有会触发它的链上操作',
               position: LoopRowPosition.first,
             ),
-            _row(
-              title: 'MFA',
-              detail: 'SMS / TOTP / Passkey',
-              available: capabilities.canUseTransactionMfa,
-              reason: walletRecoveryProviderPending,
-              position: LoopRowPosition.last,
-            ),
+            _mfaRow(),
           ],
         ),
         const LoopNotice(
@@ -1244,6 +1271,49 @@ class SecuritySetupScreen extends StatelessWidget {
           : enabled
           ? '应用锁，已开启，点按后验证身份可关闭'
           : '应用锁，未开启，点按后验证身份可开启',
+    );
+  }
+
+  /// The account's second factor at the login service.
+  ///
+  /// Every word in this row came back from the provider: 已开启 means Privy
+  /// answered that the account holds a method and named it. An unread or
+  /// unavailable provider is 不可用, never 未开启 — "we could not ask" and
+  /// "you have none" are different facts.
+  LoopRecordRow _mfaRow() {
+    final mfa = this.mfa;
+    final enrolled = mfa?.enrollments ?? const <LoopMfaEnrollment>[];
+    final known = mfa?.phase == LoopMfaPhase.known;
+    final reading = mfa?.phase == LoopMfaPhase.reading;
+    final trailing = reading
+        ? '读取中…'
+        : !known
+        ? '不可用'
+        : enrolled.isEmpty
+        ? '未开启'
+        : '已开启';
+    final detail = enrolled.isEmpty
+        ? 'SMS / TOTP / Passkey'
+        : enrolled.map((one) => one.kind.label).join(' · ');
+    final reason = mfa == null
+        ? '这次运行没有连上登录服务'
+        : mfa.failure == null
+        ? '还没有读到登录服务的回答'
+        : loopMfaFailureText(mfa.failure!);
+    return LoopRecordRow(
+      key: const ValueKey<String>('security-mfa'),
+      title: 'MFA',
+      subtitle: known ? detail : '$detail · $reason',
+      subtitleMaxLines: 2,
+      selected: enrolled.isNotEmpty,
+      trailing: trailing,
+      onTap: known && !(mfa?.isBusy ?? false) ? onOpenMfa : null,
+      position: LoopRowPosition.last,
+      semanticLabel: known
+          ? enrolled.isEmpty
+                ? 'MFA，未开启，点按开启'
+                : 'MFA，已开启：$detail'
+          : 'MFA，不可用：$reason',
     );
   }
 

@@ -18,6 +18,8 @@ import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.d
 import 'package:loop_mobile/app/session/wallet_provisioning_controller.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart';
 import 'package:loop_mobile/features/security/app_lock/app_lock_gate.dart';
+import 'package:loop_mobile/features/security/mfa/mfa_controller.dart';
+import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
 import 'package:loop_mobile/core/network/loop_connectivity_signal.dart';
 import 'package:loop_mobile/core/navigation/launch_route.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
@@ -1411,6 +1413,8 @@ Widget _accountScreen(BuildContext context, WidgetRef ref, String id) {
     ),
     appLock: ref.watch(loopAppLockProvider),
     onToggleAppLock: () => unawaited(_toggleAppLock(ref)),
+    mfa: _watchMfa(ref, id),
+    onOpenMfa: () => unawaited(showLoopMfaSheet(context)),
     // F1: the launch page is also the page a verified session waits on while
     // `GET /v2/profile` decides where it belongs. It says so instead of
     // offering a way in that leads nowhere.
@@ -1429,6 +1433,20 @@ Widget _accountScreen(BuildContext context, WidgetRef ref, String id) {
         : null,
     onNavigate: (destination) => context.go(_accountPath(destination)),
   );
+}
+
+/// The account's second factor, read once when 04 is mounted.
+///
+/// The read is started from the page that shows it rather than at start-up:
+/// it costs a provider round trip, and nothing else in the product depends on
+/// the answer. A page that is not 04 never asks.
+LoopMfaState? _watchMfa(WidgetRef ref, String id) {
+  if (id != 'security-setup') return null;
+  final state = ref.watch(loopMfaProvider);
+  if (state.phase == LoopMfaPhase.unknown) {
+    Future<void>.microtask(() => ref.read(loopMfaProvider.notifier).load());
+  }
+  return state;
 }
 
 /// Turns the device-local lock on or off.
@@ -1506,6 +1524,8 @@ Widget _onboardingStepScreen(
       ),
       appLock: ref.watch(loopAppLockProvider),
       onToggleAppLock: () => unawaited(_toggleAppLock(ref)),
+      mfa: _watchMfa(ref, 'security-setup'),
+      onOpenMfa: () => unawaited(showLoopMfaSheet(context)),
       onBack: () => retreat(LoopOnboardingStep.walletBackup),
       onNavigate: (_) => advance(LoopOnboardingStep.loopId),
     ),

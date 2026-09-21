@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/integrations/privy/privy_device_signer.dart';
 import 'package:loop_mobile/integrations/privy/privy_production_adapter.dart';
+import 'package:loop_mobile/integrations/privy/privy_mfa_gateway.dart';
 import 'package:privy_flutter/privy_flutter.dart';
 
 enum PrivySessionKind {
@@ -346,11 +347,19 @@ class UnconfiguredPrivyAuthGateway
 }
 
 class PrivySdkAuthGateway
+    with PrivySdkMfaAccount
     implements
         PrivyAuthGateway,
         PrivyCredentialGateway,
-        PrivyDeviceSigningHost {
+        PrivyDeviceSigningHost,
+        PrivyMfaAccountGateway {
   PrivySdkAuthGateway._(this._privy);
+
+  /// The account the second factor belongs to. It is the same `PrivyUser` the
+  /// session reports, so MFA can never be read for an owner who has been
+  /// signed out.
+  @override
+  PrivyUser? get mfaUser => _currentUser;
 
   factory PrivySdkAuthGateway.create(AppConfig config) {
     if (!config.canInitializePrivy) {
@@ -364,7 +373,14 @@ class PrivySdkAuthGateway
         logLevel: PrivyLogLevel.none,
       ),
     );
-    return PrivySdkAuthGateway._(privy);
+    final gateway = PrivySdkAuthGateway._(privy);
+    // An account that enrolled MFA can have a wallet operation blocked by it.
+    // Without a listener the SDK holds that operation for five minutes and
+    // then fails it; with this one it fails at once, with a sentence.
+    unawaited(
+      privy.mfa.setConfig(MfaConfig(listener: LoopReleasingMfaListener(privy))),
+    );
+    return gateway;
   }
 
   final Privy _privy;

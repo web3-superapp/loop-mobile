@@ -3558,6 +3558,105 @@ def check_app_lock_contract(root: Path) -> list[str]:
     return errors
 
 
+ACCOUNT_MFA_TEST_MARKERS = {
+    Path("test/mfa_test.dart"): (
+        "a provider that cannot be asked is unavailable, not empty",
+        "an application with MFA switched off says exactly that",
+        "a secret is not an enrolment",
+        "the account is enrolled only by what the provider returned",
+        "a refused removal leaves the method exactly where it was",
+        "no provider behind the page is 不可用, never 未开启",
+    ),
+}
+
+
+def check_account_mfa_contract(root: Path) -> list[str]:
+    """Keep the second factor the provider's, and its absence unclaimed.
+
+    MFA lives at Privy. LOOP may report what Privy answered and may start the
+    provider's own enrolment; it may never record an enrolment of its own, and
+    it may never read "we could not ask" as "you have none".
+    """
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/features/security/mfa/mfa_models.dart": (
+                "abstract interface class LoopMfaGateway",
+                "class UnavailableLoopMfaGateway",
+                "enum LoopMfaFailureKind",
+                "notEnabled",
+                "loopMfaGatewayProvider",
+            ),
+            "lib/features/security/mfa/mfa_controller.dart": (
+                "enum LoopMfaPhase",
+                "LoopMfaPhase.unavailable",
+                "Future<void> beginTotp()",
+                "Future<bool> submitTotp(String code)",
+                "Future<bool> removeTotp()",
+                "void cancelTotp()",
+            ),
+            "lib/features/security/mfa/mfa_sheet.dart": (
+                "String loopMfaFailureText(",
+                "mfa-sheet-secret",
+                "mfa-sheet-code",
+                "mfa-sheet-submit",
+            ),
+            "lib/integrations/privy/privy_mfa_gateway.dart": (
+                ".mfa.totp.enroll.generateSecret()",
+                ".mfa.totp.enroll.submit(code)",
+                ".mfa.totp.unenroll()",
+                "class PrivyMfaFailureClassifier",
+                "class LoopReleasingMfaListener",
+                "resumeBlockedActions(",
+            ),
+            "lib/main.dart": ("loopMfaGatewayProvider.overrideWith(",),
+            "test/mfa_test.dart": tuple(
+                marker
+                for markers in ACCOUNT_MFA_TEST_MARKERS.values()
+                for marker in markers
+            ),
+        },
+    )
+
+    # The controller may only publish an enrolment that arrived in the answer
+    # to the call that changed it. A locally assembled list would be LOOP
+    # deciding it had enrolled somebody.
+    controller_path = root / "lib/features/security/mfa/mfa_controller.dart"
+    if controller_path.is_file():
+        controller = strip_dart_comments(read_text(controller_path))
+        if re.search(
+            r"enrollments\s*:\s*<LoopMfaEnrollment>\[[^\]]*LoopMfaEnrollment\(",
+            controller,
+        ):
+            errors.append(
+                "the MFA controller must not construct an enrolment of its own"
+            )
+        compact = re.sub(r"\s+", " ", controller)
+        if compact.count(
+            "phase: LoopMfaPhase.known, enrollments: List.unmodifiable("
+            "enrollments)"
+        ) < 3:
+            errors.append(
+                "the MFA controller must publish the provider's own list after "
+                "every read, enrolment and removal"
+            )
+
+    # The SDK is spoken to in one file, like every other provider surface.
+    for path in sorted((root / "lib").rglob("*.dart")):
+        source = read_text(path)
+        if "user.mfa." not in source and ".mfa.totp" not in source:
+            continue
+        relative = path.relative_to(root).as_posix()
+        if not relative.startswith("lib/integrations/privy/"):
+            errors.append(
+                f"only the Privy integration may call the SDK's MFA API: {relative}"
+            )
+
+    errors.extend(check_behavior_test_evidence(root, ACCOUNT_MFA_TEST_MARKERS))
+    return errors
+
+
 def check_security_capability_truth_contract(root: Path) -> list[str]:
     """Keep method availability separate from enrollment and stored state."""
 
@@ -3694,17 +3793,41 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
             # so 已开启 may appear in the lock's row and nowhere else — and
             # that row has to read the lock's state rather than guess it.
             lock_start = setup.find("LoopRecordRow _appLockRow()")
-            lock_end = setup.find("LoopRecordRow _row(", lock_start + 1)
+            mfa_start = setup.find("LoopRecordRow _mfaRow()")
+            row_start = setup.find("LoopRecordRow _row(")
             lock = (
-                setup[lock_start:lock_end]
-                if lock_start >= 0 and lock_end > lock_start
+                setup[lock_start:mfa_start]
+                if 0 <= lock_start < mfa_start
                 else ""
             )
+            mfa = setup[mfa_start:row_start] if 0 <= mfa_start < row_start else ""
             if not lock:
                 errors.append(
                     "A11 must keep its device lock row as one bounded reviewed slice"
                 )
-            elsewhere = setup.replace(lock, "")
+            if not mfa:
+                errors.append(
+                    "A11 must keep its MFA row as one bounded reviewed slice"
+                )
+            # Two rows on this page can be on, and each may only say so from
+            # the answer its own owner gave: the device for the lock, the
+            # login service for MFA.
+            for marker in (
+                "mfa?.enrollments",
+                "LoopMfaPhase.known",
+                "onOpenMfa",
+            ):
+                if mfa and marker not in mfa:
+                    errors.append(
+                        "A11's MFA row must report the provider's own answer: "
+                        "missing " + marker
+                    )
+            if mfa and re.search(r"onTap\s*:\s*known\s*&&", mfa) is None:
+                errors.append(
+                    "A11's MFA row must offer its control only once the "
+                    "provider has answered"
+                )
+            elsewhere = setup.replace(lock, "").replace(mfa, "")
             if re.search(r"'(?:已开启|已启用|已设置)'", elsewhere):
                 errors.append(
                     "A11 must not present a capability as an enabled protection"
@@ -12575,6 +12698,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_chat_preview_conversation_id_contract(root))
     errors.extend(check_security_capability_truth_contract(root))
     errors.extend(check_app_lock_contract(root))
+    errors.extend(check_account_mfa_contract(root))
     errors.extend(check_local_display_preferences_contract(root))
     errors.extend(check_onboarding_sequence_contract(root))
     errors.extend(check_build_profile_configuration_contract(root))
@@ -12640,7 +12764,7 @@ def main() -> int:
     print(
         "Harness check passed: profile, five-destination V2 contract, "
         "V2 community truth, pins, "
-        "Spot-only product, New Pairs source-scoped truth, Chat snapshot, Preview request truth and exact conversation identity, security capability truth, device-local application lock, device-local display preferences, five-step account opening, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
+        "Spot-only product, New Pairs source-scoped truth, Chat snapshot, Preview request truth and exact conversation identity, security capability truth, provider-owned MFA, device-local application lock, device-local display preferences, five-step account opening, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
         "S5 chain/market/wallet-read truth, S6 money-action truth, "
         "S7 launch/mining/referral truth, S9 dual chain slots, "
         "seven-band typography with bundled Noto Sans SC, "

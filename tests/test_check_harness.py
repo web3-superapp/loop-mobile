@@ -7608,6 +7608,52 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected A11 switch guard: {result}",
         )
 
+    def test_mfa_controller_may_not_invent_an_enrolment(self) -> None:
+        """An enrolment is the provider's answer, never a local decision."""
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/features/security/mfa/mfa_controller.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "enrollments: List.unmodifiable(enrollments),",
+                    "enrollments: const <LoopMfaEnrollment>["
+                    "LoopMfaEnrollment(kind: LoopMfaMethodKind.totp)],",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_account_mfa_contract(root)
+
+        self.assertTrue(
+            any("provider's own list" in error for error in result),
+            msg=f"expected the MFA enrolment-source guard: {result}",
+        )
+
+    def test_only_the_privy_integration_may_call_the_mfa_sdk(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            page = root / "lib/features/account/account_screens.dart"
+            page.parent.mkdir(parents=True)
+            page.write_text(
+                "final result = await user.mfa.totp.unenroll();\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_account_mfa_contract(root)
+
+        self.assertTrue(
+            any(
+                "only the Privy integration may call the SDK's MFA API" in error
+                for error in result
+            ),
+            msg=f"expected the MFA SDK boundary guard: {result}",
+        )
+
     def test_app_lock_requires_a_fragment_activity_host(self) -> None:
         """The system biometric prompt is a fragment; a FlutterActivity host
         would fail on the device and nowhere else."""

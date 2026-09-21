@@ -715,8 +715,25 @@ void main() {
           find.byKey(ValueKey<String>('recovery-$method')),
         );
         expect(row.trailing, '不可用');
-        expect(row.subtitle, contains(walletRecoveryProviderPending));
       }
+      // Passkey is not blocked by the login service — it is blocked by a
+      // domain credential LOOP has not configured, and says so.
+      expect(
+        tester
+            .widget<LoopRecordRow>(
+              find.byKey(const ValueKey<String>('recovery-passkey')),
+            )
+            .subtitle,
+        contains(walletRecoveryPasskeyPending),
+      );
+      expect(
+        tester
+            .widget<LoopRecordRow>(
+              find.byKey(const ValueKey<String>('recovery-password')),
+            )
+            .subtitle,
+        contains(walletRecoveryProviderPending),
+      );
       // The old sentences named the integration's internals at the owner.
       expect(find.textContaining('尚未确认'), findsNothing);
       expect(find.textContaining('reasonCode'), findsNothing);
@@ -797,7 +814,7 @@ void main() {
       for (final reason in <String>[
         '还没有读到这台设备的锁屏能力',
         '多大金额要再验一次还没有定下来',
-        walletRecoveryProviderPending,
+        '这次运行没有连上登录服务',
       ]) {
         expect(find.textContaining(reason), findsOneWidget);
       }
