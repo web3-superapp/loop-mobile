@@ -13,15 +13,16 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/market/loop_candle_chart.dart';
 import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
+import 'package:loop_mobile/features/market/market_mining_hooks.dart';
 import 'package:loop_mobile/features/market/market_read_gateway.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/market_widgets.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_membership_controller.dart';
+import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/notifications/notification_controllers.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/features/market/token_card_chart.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -145,6 +146,15 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
     final swapGate = ref.watch(
       loopCapabilityProvider(LoopV2CapabilityId.privySwap),
     );
+    // Mining, where 行情 touches it: the prototype's Token Card carries a
+    // `Mining Weight` strip and LOOP printed 「不可用」 over the whole module
+    // (audit 2026-09-21 §G.2). This is the rules answer the Mining module
+    // already reads; a weight it does not list is left off.
+    final miningRules = watchMarketMiningRules(ref);
+    final miningWeight = marketMiningWeightFor(miningRules, assetId);
+    final swapBlockedReason = swapGate.isAvailable
+        ? (detail?.capability.reasonCode ?? 'SWAP_MODULE_NOT_DELIVERED')
+        : (swapGate.reasonCode ?? 'WALLET_INTENT_RUNTIME_UNAVAILABLE');
 
     return LoopDashboardPage(
       key: ValueKey<String>('token-screen-$assetId'),
@@ -181,7 +191,23 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
               : () => unawaited(_toggleWatchlist(assetId)),
         ),
       ],
-      primary: _TokenHero(assetId: assetId, detail: detail),
+      // The prototype's token page has no `data-page-primary` hero: the
+      // signature card *is* the primary region. LOOP pushed a second Lime
+      // hero above it, which printed the price twice and cost the first
+      // screen the metrics, the mining strip and the action row (audit
+      // 2026-09-21 §G.2 and §D+ item 13).
+      primary: _TokenPrimaryCard(
+        assetId: assetId,
+        detail: detail,
+        miningWeight: miningWeight,
+        // The card's 买入 / 卖出 read the same one gate the entry button
+        // below does, and nothing else.
+        tradable: detail?.capability.swappable ?? false,
+        onOpenChart: () => _open(MarketAssetRoute.chart(assetId)),
+        onOpenCommunity: (communityId) =>
+            _open('/community/profile?id=$communityId'),
+        onTrade: () => _open('/wallet/swap'),
+      ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('token-capability-block'),
@@ -245,60 +271,6 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
                   detail.capability.reasonCode ??
                   'BSC_CHAIN_RUNTIME_UNAVAILABLE',
             ),
-          // `.tcard.tcard-signature.tcard-token-hero` — the prototype's own
-          // signature card: quote, chart, three metrics, actions. Every figure
-          // comes from the same `MarketAssetDetail` the fact list reads, and an
-          // unavailable one renders its `reasonCode` instead of a number. The
-          // card's own provenance line names the source and observation time of
-          // the quote it shows.
-          LoopTokenCard(
-            key: const ValueKey<String>('token-card'),
-            state: LoopTokenCardState.normal,
-            model: LoopTokenCardModel(
-              symbol: marketAssetIdentityLabel(detail.asset),
-              identifier: loopTruncatedAssetId(assetId),
-              price: detail.price.isAvailable
-                  ? loopFormatUsd(detail.price.value!)
-                  : null,
-              priceReason: detail.price.isAvailable
-                  ? null
-                  : loopReasonCodeText(detail.price.reasonCode),
-              change: detail.priceChange24h.isAvailable
-                  ? loopFormatPercent(detail.priceChange24h.value!)
-                  : null,
-              changeUp: detail.priceChange24h.isAvailable
-                  ? detail.priceChange24h.value! >= Decimal.zero
-                  : null,
-              metrics: <LoopTokenMetric>[
-                _cardMetric('市值', detail.marketCap),
-                _cardMetric('流动性', detail.liquidityUsd),
-                _cardMetric('持有人', detail.holderCount, usd: false),
-              ],
-              communityIcon: 'info',
-              communityLine: detail.price.isAvailable
-                  ? '报价 ${loopFactProvenance(detail.price)}'
-                  : '这张卡片的每个数字都取自下方同一份数据，读不到的一项会说明原因，不会显示 0。',
-              chartRangeLabel: '1H · 最近 $loopSparklineWindow 根收盘价',
-              chart: TokenCardSparkline(
-                assetId: assetId,
-                keyPrefix: 'token-card-chart',
-                unavailableText: '1H 走势不可用，原因见下方 K 线。',
-              ),
-            ),
-            actions: <LoopTokenCardAction>[
-              LoopTokenCardAction(
-                '图表',
-                onTap: () => _open(MarketAssetRoute.chart(assetId)),
-              ),
-              if (detail.community case MarketCommunityBound(
-                communityId: final communityId,
-              ))
-                LoopTokenCardAction(
-                  '社区',
-                  onTap: () => _open('/community/profile?id=$communityId'),
-                ),
-            ],
-          ),
           const LoopLabel('K 线'),
           _TokenCandleBlock(
             assetId: assetId,
@@ -328,11 +300,22 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
                 _open('/community/profile?id=$communityId'),
           ),
           const LoopLabel('挖矿数据'),
-          const LoopUnavailableCard(
-            key: ValueKey<String>('token-mining-unavailable'),
-            label: 'Mining Weight 与预估收益不可用',
-            reasonCode: 'MINING_RUNTIME_DEFERRED',
-          ),
+          if (miningWeight == null)
+            const LoopUnavailableCard(
+              key: ValueKey<String>('token-mining-unavailable'),
+              label: 'Mining Weight 与预估收益不可用',
+              reasonCode: 'MINING_RUNTIME_DEFERRED',
+            )
+          else
+            LoopPowerHint(
+              key: const ValueKey<String>('token-mining-weight'),
+              text: 'Mining Weight',
+              figure: <String>[
+                miningWeight.label,
+                if (miningWeight.baseline) miningBaselineLabel,
+              ].join(' · '),
+              onTap: () => _open('/mining'),
+            ),
           const LoopLabel('合约事实'),
           _SecurityBlock(block: detail.security),
           const LoopNotice(
@@ -359,8 +342,10 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
               ),
             ],
           ),
-          // The only gate for a Swap entry point. The backend pins it to false
-          // until D15, so no buy/sell control is rendered here.
+          // The only gate for a Swap entry point. The backend pins it to
+          // false until D15, so the card's 买入 / 卖出 segments above are
+          // drawn disabled and this card holds the one full sentence that
+          // says why.
           if (detail.capability.swappable)
             LoopButton(
               key: const ValueKey<String>('token-swap-entry'),
@@ -372,16 +357,12 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
           else
             LoopUnavailableCard(
               key: const ValueKey<String>('token-swap-unavailable'),
-              label: '兑换入口当前不可用',
+              label: '买入、卖出与兑换当前不可用',
               // A closed gate is the whole app's answer and outranks this
               // asset's own: while it is shut, every surface says the one
               // sentence it publishes. Only once it opens can this asset have
               // a reason of its own.
-              reasonCode: swapGate.isAvailable
-                  ? (detail.capability.reasonCode ??
-                        'SWAP_MODULE_NOT_DELIVERED')
-                  : (swapGate.reasonCode ??
-                        'WALLET_INTENT_RUNTIME_UNAVAILABLE'),
+              reasonCode: swapBlockedReason,
             ),
         ],
       ],
@@ -412,64 +393,122 @@ LoopTokenMetric _cardMetric(String label, LoopFact fact, {bool usd = true}) =>
           : loopReasonCodeSummaryText(fact.reasonCode),
     );
 
-class _TokenHero extends StatelessWidget {
-  const _TokenHero({required this.assetId, required this.detail});
+/// The prototype's `.tcard.tcard-signature.tcard-token-hero`, in the page's
+/// `[data-page-primary]` slot.
+///
+/// Quote, 1H line, three metrics, the Mining Weight strip and the four-segment
+/// action row — 买入 / 卖出 / 图表 / 社区 — all in one card, exactly as the
+/// prototype opens this page. Every figure comes from the same
+/// `MarketAssetDetail` the fact list further down reads, and an unavailable
+/// one renders its `reasonCode` instead of a number.
+class _TokenPrimaryCard extends StatelessWidget {
+  const _TokenPrimaryCard({
+    required this.assetId,
+    required this.detail,
+    required this.miningWeight,
+    required this.tradable,
+    required this.onOpenChart,
+    required this.onOpenCommunity,
+    required this.onTrade,
+  });
 
   final String assetId;
   final MarketAssetDetail? detail;
+  final MarketMiningWeight? miningWeight;
+
+  /// Whether 买入 / 卖出 may be pressed at all. While it is false the two
+  /// segments stay on the card and stay disabled: the prototype's first
+  /// screen is a four-segment row, and dropping two of them moved the
+  /// question 「能不能买」 off the page entirely (audit 2026-09-21 §G.2).
+  final bool tradable;
+  final VoidCallback onOpenChart;
+  final void Function(String communityId) onOpenCommunity;
+  final VoidCallback onTrade;
 
   @override
   Widget build(BuildContext context) {
     final resolved = detail;
-    // A blocked asset shows no fact at all, not even in the hero.
-    if (resolved != null && resolved.capability.blocksEntirePage) {
-      return LoopFolioPrimary(
-        key: const ValueKey<String>('token-folio-blocked'),
-        variant: LoopFolioVariant.lime,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'TOKEN FACTS',
-        heading: marketAssetIdentityLabel(resolved.asset),
-        caption: loopReasonCodeText(
-          resolved.capability.reasonCode ?? 'ASSET_BLOCKED',
+    if (resolved == null) {
+      // 识别中: the prototype's own loading card, not a second title bar.
+      return LoopTokenCard(
+        key: const ValueKey<String>('token-card-loading'),
+        state: LoopTokenCardState.loading,
+        model: LoopTokenCardModel(
+          symbol: loopTruncatedAssetId(assetId),
+          identifier: loopTruncatedAssetId(assetId),
         ),
       );
     }
-    if (resolved == null) {
-      return LoopFolioPrimary(
-        key: const ValueKey<String>('token-folio-pending'),
-        variant: LoopFolioVariant.lime,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'TOKEN FACTS',
-        heading: loopTruncatedAssetId(assetId),
-        caption: '资产数据暂时读不到，这里不显示数字。',
+    if (resolved.capability.blocksEntirePage) {
+      // A blocked asset shows no fact at all, not even a quote.
+      return LoopTokenCard(
+        key: const ValueKey<String>('token-card-blocked'),
+        state: LoopTokenCardState.partial,
+        model: LoopTokenCardModel(
+          symbol: marketAssetIdentityLabel(resolved.asset),
+          identifier: loopTruncatedAssetId(assetId),
+          priceReason: loopReasonCodeText(
+            resolved.capability.reasonCode ?? 'ASSET_BLOCKED',
+          ),
+        ),
       );
     }
-    final price = resolved.price;
-    final change = resolved.priceChange24h;
-    final priceValue = price.value;
-    final changeValue = change.value;
-    return LoopFolioPrimary(
-      key: const ValueKey<String>('token-folio'),
-      variant: LoopFolioVariant.lime,
-      archetype: LoopFolioArchetype.record,
-      kicker: 'TOKEN FACTS',
-      heading: priceValue == null
-          ? marketAssetIdentityLabel(resolved.asset)
-          : loopFormatUsd(priceValue),
-      caption: priceValue == null
-          ? loopReasonCodeText(price.reasonCode)
-          // A contract no provider named has no name to print beside its
-          // quote; the provenance still stands on its own.
-          : <String>[
-              ?resolved.asset.settled?.name,
-              loopFactProvenance(price),
-            ].join(' · '),
-      stamp: changeValue == null ? null : loopFormatPercent(changeValue),
-      trailing: LoopTokenLogo(
-        assetSymbol: marketAssetIdentityLabel(resolved.asset),
-        fallbackMonogram: marketAssetIdentityLabel(resolved.asset),
-        size: 44,
+    final community = resolved.community;
+    final weight = miningWeight;
+    return LoopTokenCard(
+      key: const ValueKey<String>('token-card'),
+      state: LoopTokenCardState.normal,
+      model: LoopTokenCardModel(
+        symbol: marketAssetIdentityLabel(resolved.asset),
+        identifier: loopTruncatedAssetId(assetId),
+        price: resolved.price.isAvailable
+            ? loopFormatUsd(resolved.price.value!)
+            : null,
+        priceReason: resolved.price.isAvailable
+            ? null
+            : loopReasonCodeText(resolved.price.reasonCode),
+        change: resolved.priceChange24h.isAvailable
+            ? loopFormatPercent(resolved.priceChange24h.value!)
+            : null,
+        changeUp: resolved.priceChange24h.isAvailable
+            ? resolved.priceChange24h.value! >= Decimal.zero
+            : null,
+        metrics: <LoopTokenMetric>[
+          _cardMetric('市值', resolved.marketCap),
+          _cardMetric('流动性', resolved.liquidityUsd),
+          _cardMetric('持有人', resolved.holderCount, usd: false),
+        ],
+        // `.tcard-community`: the prototype's Lime strip is the mining line,
+        // not a provenance note. It falls back to the quote's provenance only
+        // when no weight was published for this asset.
+        communityIcon: weight == null ? 'info' : 'mine',
+        communityLine: weight != null
+            ? <String>[
+                'Mining Weight ${weight.label}',
+                if (weight.baseline) miningBaselineLabel,
+                if (community case MarketCommunityBound(
+                  memberCount: final memberCount,
+                ))
+                  '$memberCount 成员',
+              ].join(' · ')
+            : resolved.price.isAvailable
+            ? '报价 ${loopFactProvenance(resolved.price)}'
+            : '这张卡片的每个数字都取自下方同一份数据，读不到的一项会说明原因，不会显示 0。',
+        footnotes: <String>[if (!tradable) '买入与卖出当前不可用，原因见本页底部。'],
+        chartRangeLabel: '1H · 最近 $loopSparklineWindow 根收盘价',
+        chart: TokenCardSparkline(
+          assetId: assetId,
+          keyPrefix: 'token-card-chart',
+          unavailableText: '1H 走势不可用，原因见下方 K 线。',
+        ),
       ),
+      actions: <LoopTokenCardAction>[
+        LoopTokenCardAction('买入', buy: true, onTap: tradable ? onTrade : null),
+        LoopTokenCardAction('卖出', onTap: tradable ? onTrade : null),
+        LoopTokenCardAction('图表', onTap: onOpenChart),
+        if (community case MarketCommunityBound(communityId: final communityId))
+          LoopTokenCardAction('社区', onTap: () => onOpenCommunity(communityId)),
+      ],
     );
   }
 }
@@ -512,6 +551,9 @@ class TokenCandleSection extends ConsumerStatefulWidget {
     super.key,
     this.trailing,
     this.height = 210,
+    this.movingAveragePeriods = const <int>[],
+    this.showVolume = true,
+    this.footer,
   });
 
   final String assetId;
@@ -519,6 +561,17 @@ class TokenCandleSection extends ConsumerStatefulWidget {
   final ValueChanged<LoopCandleInterval> onIntervalChanged;
   final Widget? trailing;
   final double height;
+
+  /// `.kline-ma`: the close-price averages drawn over the bodies and read out
+  /// above them. Empty on the inline card, which has no indicator row.
+  final List<int> movingAveragePeriods;
+
+  /// `.kline-volume`: the bar row under the price panel.
+  final bool showVolume;
+
+  /// `.kline-tools`: the control row the owning page puts under the interval
+  /// segments, inside the same terminal card.
+  final Widget? footer;
 
   @override
   ConsumerState<TokenCandleSection> createState() => _TokenCandleSectionState();
@@ -595,6 +648,8 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
                   MarketCandlesAvailable() => _CandleBody(
                     block: block,
                     height: widget.height,
+                    movingAveragePeriods: widget.movingAveragePeriods,
+                    showVolume: widget.showVolume,
                   ),
                 },
             ],
@@ -604,16 +659,24 @@ class _TokenCandleSectionState extends ConsumerState<TokenCandleSection> {
           selected: widget.interval,
           onSelected: widget.onIntervalChanged,
         ),
+        if (widget.footer != null) widget.footer!,
       ],
     );
   }
 }
 
 class _CandleBody extends StatelessWidget {
-  const _CandleBody({required this.block, required this.height});
+  const _CandleBody({
+    required this.block,
+    required this.height,
+    this.movingAveragePeriods = const <int>[],
+    this.showVolume = true,
+  });
 
   final MarketCandlesAvailable block;
   final double height;
+  final List<int> movingAveragePeriods;
+  final bool showVolume;
 
   @override
   Widget build(BuildContext context) {
@@ -645,11 +708,34 @@ class _CandleBody extends StatelessWidget {
             ),
           ],
         ),
+        // `.kline-ma`: the averages the chart draws, read out above it. They
+        // are computed here from the closes already on screen, so the line
+        // says so rather than borrowing the series' source.
+        if (movingAveragePeriods.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 6),
+          Wrap(
+            key: const ValueKey<String>('candles-moving-averages'),
+            spacing: 12,
+            runSpacing: 4,
+            children: <Widget>[
+              for (final period in movingAveragePeriods)
+                if (loopCandleMovingAverageLabel(block.items, period)
+                    case final label?)
+                  Text(label, style: LoopMono.body),
+              Text(
+                'VOL ${loopFormatDecimal(last.volume, maxFractionDigits: 2)}',
+                style: LoopMono.body,
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 8),
         LoopCandleChart(
           key: const ValueKey<String>('token-candle-chart'),
           candles: block.items,
           height: height,
+          movingAveragePeriods: movingAveragePeriods,
+          showVolume: showVolume,
           semanticLabel:
               '${block.items.length} 根 K 线，单位 ${block.priceUnit}'
               '${last.isOpen ? '，最后一根尚未收盘' : ''}',

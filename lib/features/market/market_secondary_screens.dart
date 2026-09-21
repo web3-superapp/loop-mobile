@@ -18,6 +18,7 @@ import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_membership_controller.dart';
 import 'package:loop_mobile/features/market/token_screen.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -82,6 +83,14 @@ class FullChartScreen extends ConsumerStatefulWidget {
 class _FullChartScreenState extends ConsumerState<FullChartScreen> {
   LoopCandleInterval _interval = LoopCandleInterval.oneHour;
 
+  /// `.kline-tools`: MA and VOL are drawn from the closes already on screen,
+  /// so they can be switched here. EMA, MACD, RSI and the drawing tools have
+  /// no implementation at all and stay disabled under the one reason code the
+  /// card below states in full.
+  static const List<int> _maPeriods = <int>[7, 25];
+  bool _movingAverages = true;
+  bool _volume = true;
+
   @override
   Widget build(BuildContext context) {
     final assetId = widget.assetId;
@@ -102,11 +111,36 @@ class _FullChartScreenState extends ConsumerState<FullChartScreen> {
         body: const <Widget>[],
       );
     }
+    // The prototype's top bar is `PEPE` over `$0.0000082 +12.4%`; LOOP put
+    // the page's own name in the title slot and the contract address above it
+    // (audit 2026-09-21 §G.3). Both lines come from the asset read this page
+    // already shares with the token page behind it.
+    final identity = ref.watch(marketAssetControllerProvider(assetId));
+    if (identity.phase == LoopChainViewPhase.loading) {
+      scheduleMicrotask(() {
+        if (mounted) {
+          unawaited(
+            ref.read(marketAssetControllerProvider(assetId).notifier).load(),
+          );
+        }
+      });
+    }
+    final detail = identity.value;
+    final price = detail?.price;
+    final change = detail?.priceChange24h;
+    final quote = <String>[
+      if (price != null && price.isAvailable) loopFormatUsd(price.value!),
+      if (change != null && change.isAvailable)
+        loopFormatPercent(change.value!),
+    ].join(' ');
+
     return LoopFocusPage(
       key: ValueKey<String>('chart-full-$assetId'),
       archetype: LoopPageArchetype.record,
-      title: '全屏 K 线',
-      kicker: loopTruncatedAssetId(assetId),
+      title: detail == null
+          ? loopTruncatedAssetId(assetId)
+          : marketAssetIdentityLabel(detail.asset),
+      subtitle: quote.isEmpty ? loopTruncatedAssetId(assetId) : quote,
       onBack: widget.onBack,
       body: <Widget>[
         TokenCandleSection(
@@ -114,18 +148,38 @@ class _FullChartScreenState extends ConsumerState<FullChartScreen> {
           assetId: assetId,
           interval: _interval,
           height: 320,
+          movingAveragePeriods: _movingAverages ? _maPeriods : const <int>[],
+          showVolume: _volume,
           onIntervalChanged: (value) => setState(() => _interval = value),
+          footer: MarketSegmentBar(
+            key: const ValueKey<String>('chart-full-indicators'),
+            labels: const <String>['MA', 'EMA', 'MACD', 'RSI', 'VOL'],
+            selectedIndices: <int>{if (_movingAverages) 0, if (_volume) 4},
+            enabled: const <bool>[true, false, false, false, true],
+            onSelected: (index) => setState(() {
+              if (index == 0) _movingAverages = !_movingAverages;
+              if (index == 4) _volume = !_volume;
+            }),
+            blockedMessages: <String?>[
+              null,
+              for (var index = 0; index < 3; index += 1)
+                loopReasonCodeText('MARKET_CHART_TOOLS_DEFERRED'),
+              null,
+            ],
+          ),
         ),
         const LoopLabel('指标与画线'),
         const LoopUnavailableCard(
           key: ValueKey<String>('chart-full-indicators-unavailable'),
-          label: 'MA / EMA / MACD / RSI 与画线工具不可用',
+          label: 'EMA / MACD / RSI 与画线工具不可用',
           reasonCode: 'MARKET_CHART_TOOLS_DEFERRED',
         ),
         const LoopNotice(
           key: ValueKey<String>('chart-full-interval-notice'),
           title: '可选周期',
-          body: '可选周期为 15m / 1H / 4H / 1D / 1W。1m 暂时不可用。',
+          body:
+              '可选周期为 15m / 1H / 4H / 1D / 1W。1m 暂时不可用。'
+              'MA 与 VOL 由本机按这张图上的收盘价与成交量计算，没有单独的数据来源。',
         ),
       ],
     );
@@ -189,8 +243,13 @@ class _HolderDistributionScreenState
       archetype: LoopPageArchetype.listing,
       title: '持有人分布',
       onBack: widget.onBack,
+      // `.folio-primary.chalk-card`: the prototype's Chalk hero. LOOP drew
+      // the same Lime hero it uses everywhere, so the whole module read as
+      // one colour (audit 2026-09-21 §G.4, §D item 2).
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('token-holders-folio'),
+        variant: LoopFolioVariant.chalk,
+        ring: false,
         archetype: LoopFolioArchetype.listing,
         kicker: 'HOLDER LEDGER',
         heading: count == null || count.value == null
@@ -201,6 +260,9 @@ class _HolderDistributionScreenState
             : count.isAvailable
             ? loopFactProvenance(count)
             : loopReasonCodeText(count.reasonCode),
+        stamp: count != null && count.isAvailable
+            ? loopFormatDecimal(count.value!, maxFractionDigits: 0)
+            : null,
       ),
       block: blocked
           ? _marketPageBlock(
@@ -228,6 +290,27 @@ class _HolderDistributionScreenState
             ),
           )
         else ...<Widget>[
+          // `.stat-grid`: the prototype's two cells. The concentration half
+          // has no source in this step and says so in the figure's place,
+          // which keeps the grid's shape without printing a zero.
+          MarketStatGrid(
+            key: const ValueKey<String>('token-holders-stats'),
+            cells: <MarketStatCell>[
+              MarketStatCell.fact(
+                '持有人总数',
+                holders.holderCount,
+                formatter: (value) =>
+                    loopFormatDecimal(value, maxFractionDigits: 0),
+              ),
+              MarketStatCell(
+                label: 'Top 10 集中度',
+                value: loopReasonCodeSummaryText(
+                  holders.distribution.reasonCode,
+                ),
+                available: false,
+              ),
+            ],
+          ),
           const LoopLabel('持有人总数'),
           LoopSurfaceCard(
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
@@ -314,12 +397,14 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
       onBack: widget.onBack,
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('token-trades-folio'),
+        variant: LoopFolioVariant.chalk,
+        ring: false,
         archetype: LoopFolioArchetype.listing,
         kicker: 'ACTIVITY TAPE',
         heading: block is MarketTradesAvailable
             ? '${block.items.length} 笔链上成交'
-            : '链上成交',
-        caption: '来自已登记 PancakeSwap V3 池的 Swap 事件，每条带交易哈希、区块与确认状态。',
+            : '最新链上成交记录',
+        caption: '方向、数量和时间按同一节奏扫描，来自已登记 PancakeSwap V3 池的 Swap 事件。',
       ),
       block: blocked
           ? _marketPageBlock(
@@ -410,6 +495,9 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
         trade.amountQuote >= TradingActivityScreen.largeTradeQuoteThreshold;
     return LoopRecordRow(
       key: ValueKey<String>('trade-${trade.tradeId}'),
+      // `.row-ico` with the direction arrow: the prototype's tape is read by
+      // its leading marks before it is read by its words.
+      leading: MarketDirectionAvatar(inbound: isBuy),
       title:
           '${isBuy ? '买入' : '卖出'} '
           '${loopFormatDecimal(trade.amountQuote, maxFractionDigits: 2)} '
@@ -422,6 +510,7 @@ class _TradingActivityScreenState extends ConsumerState<TradingActivityScreen> {
         '区块 ${loopGroupedFigure(trade.blockNumber.toString())}',
         loopRelativeTime(trade.blockTimestamp),
       ].join(' · '),
+      subtitleMaxLines: 2,
       trailing: loopFormatDecimal(trade.amountAsset),
       trailingCaptionUp: isBuy,
       trailingCaption: isBuy ? '流出池' : '流入池',
@@ -504,12 +593,17 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
       onBack: widget.onBack,
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('new-pairs-folio'),
+        variant: LoopFolioVariant.chalk,
+        ring: false,
         archetype: LoopFolioArchetype.listing,
         kicker: 'NEW PAIRS',
         heading: block is MarketNewPairsAvailable
-            ? '${block.items.length} 个新对'
+            ? '${block.items.length} 个新对 · 高风险'
             : '新币发现',
         caption: '先看流动性、合约状态与数据出处，再看短期价格。',
+        // `.folio-stamp`: this page's subject is the risk, and the stamp is
+        // where the prototype states it.
+        stamp: 'HIGH RISK',
       ),
       block: blocked
           ? _marketPageBlock(
@@ -554,6 +648,12 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
                         key: ValueKey<String>(
                           'new-pair-${pair.poolRef.rowKey}',
                         ),
+                        // `.row-ico`: every prototype row on this page is
+                        // headed by the pool's own token mark (§D item 7).
+                        leading: LoopTokenLogo(
+                          assetSymbol: pair.name,
+                          fallbackMonogram: pair.name,
+                        ),
                         title: pair.name,
                         subtitle: <String>[
                           // The provider's own DEX string, printed verbatim:
@@ -575,8 +675,7 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
                           // A zero quote address is the coin itself, not a
                           // missing token.
                           if (pair.quotesNativeCoin) '计价 BNB',
-                          if (pair.createdAt != null)
-                            '创建于 ${loopRelativeTime(pair.createdAt!)}',
+
                           // A pool minutes old holds fractions of a dollar.
                           // Rounded to cents that printed 「$0」, which on a
                           // page that promises to say why a figure is missing
@@ -608,6 +707,11 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
                                 pair.volumeH24Usd!,
                                 preciseBelowOne: true,
                               ),
+                        // `.row-end .d`: the prototype's age column. It read
+                        // as the fourth fact of a two-line subtitle before.
+                        trailingCaption: pair.createdAt == null
+                            ? null
+                            : loopRelativeTime(pair.createdAt!),
                         onTap: !pair.opensDetail
                             ? null
                             : () => _open(
@@ -745,10 +849,12 @@ class _SmartMoneyScreenState extends ConsumerState<SmartMoneyScreen> {
       onBack: widget.onBack,
       folio: const LoopFolioPrimary(
         key: ValueKey<String>('smart-money-folio'),
+        variant: LoopFolioVariant.chalk,
+        ring: false,
         archetype: LoopFolioArchetype.listing,
         kicker: 'PUBLIC WALLET WATCH',
-        heading: '暂未开放',
-        caption: '这里不会展示任何地址、胜率或跟随建议。',
+        heading: '还没有可观察的地址',
+        caption: '观察地址的动作是线索，不是跟单承诺或收益推荐。',
       ),
       block: blocked
           ? _marketPageBlock(
@@ -768,12 +874,25 @@ class _SmartMoneyScreenState extends ConsumerState<SmartMoneyScreen> {
               ref.read(marketSmartMoneyControllerProvider.notifier).reload(),
             ),
           )
-        else
+        else ...<Widget>[
+          // The prototype's two groups, in its order. Neither is invented:
+          // both state the server's own reason where its rows would be, so
+          // the page keeps the shape it will have once the data exists.
+          const LoopLabel('关注地址'),
           LoopUnavailableCard.fact(
             key: const ValueKey<String>('smart-money-unavailable'),
-            label: '聪明钱追踪不可用',
+            label: '关注地址不可用',
             fact: fact,
           ),
+          const LoopLabel('最近动向'),
+          // The server's own sentence is stated once, by the block above.
+          // This one says what it depends on instead of repeating it.
+          const LoopEmpty(
+            key: ValueKey<String>('smart-money-moves-unavailable'),
+            message: '还没有可列的动向',
+            reason: '动向来自关注地址，而关注地址还没有开放。',
+          ),
+        ],
         const LoopNotice(
           key: ValueKey<String>('smart-money-notice'),
           title: '胜率不是预测',

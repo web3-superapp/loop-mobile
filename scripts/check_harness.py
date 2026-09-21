@@ -836,6 +836,11 @@ S7_SIGNING_MARKERS = ("showLoopSignSheet", "LoopSignSheet", "SigningIntent")
 S5_TOKEN_SURFACE_PATH = Path("lib/features/market/token_screen.dart")
 S5_SWAP_GATE = "if (detail.capability.swappable)"
 S5_SWAP_ENTRY_KEY = "'token-swap-entry'"
+# The Token Card's own 买入 / 卖出 segments are the prototype's first-screen
+# action row (audit 2026-09-21 §G.2). They must be shut by the same one gate
+# the entry button below them is shut by, so the page reads `swappable` in
+# exactly these two places and nowhere else.
+S5_SWAP_CARD_GATE = "tradable: detail?.capability.swappable ?? false,"
 S5_QR_ENCODER_PATH = Path("lib/core/qr/loop_qr_code.dart")
 S5_QR_ENCODER_IMPORTS = frozenset({"'package:flutter/foundation.dart'"})
 S5_HYPERLIQUID_IMPORT_ROOT = "package:loop_mobile/integrations/hyperliquid/"
@@ -5740,13 +5745,23 @@ def check_spot_candle_contract(root: Path) -> list[str]:
             for required in (
                 "onBack: widget.onBack",
                 "chart-full-indicators-unavailable",
-                "MARKET_CHART_TOOLS_DEFERRED",
             ):
                 if required not in chart_source:
                     errors.append(
                         "C3 must return through the application router and state "
                         f"its missing chart tools; missing `{required}`"
                     )
+            # The reason names the same three tools twice: once as the answer
+            # a press on a disabled `.kline-tools` chip gets, once as the card
+            # that states the whole sentence. MA and VOL are not in it — both
+            # are drawn from the closes already on screen — so a page that
+            # dropped either use would be offering an inert control again.
+            if chart_source.count("MARKET_CHART_TOOLS_DEFERRED") != 2:
+                errors.append(
+                    "C3 must return through the application router and state "
+                    "its missing chart tools; `MARKET_CHART_TOOLS_DEFERRED` "
+                    "must answer the disabled chips and head the card"
+                )
 
     for relative in ("lib/features/market/loop_candle_chart.dart",):
         path = root / relative
@@ -5757,6 +5772,32 @@ def check_spot_candle_contract(root: Path) -> list[str]:
             if forbidden in source:
                 errors.append(
                     f"{relative} must remain read-only without execution navigation `{forbidden}`"
+                )
+        # `style-v2.css` publishes ink / lime / chalk and its `.kline-body`
+        # rules are one hue: rising is solid Lime, falling is a hollow Chalk
+        # outline. A candle painted in a second hue is a colour the design
+        # system does not have (audit 2026-09-21 §D+ item 12).
+        for forbidden in (
+            "LoopColors.danger",
+            "LoopColors.mint",
+            "LoopColors.vapor",
+            "Colors.red",
+            "Colors.green",
+        ):
+            if forbidden in source:
+                errors.append(
+                    f"{relative} must paint one hue: rising Lime, falling a "
+                    f"hollow Chalk outline; found `{forbidden}`"
+                )
+        for required in (
+            "static const Color _upBody = LoopColors.lime;",
+            "static const Color _downFill = Color(0x24F3F5EF);",
+            "static const Color _downStroke = Color(0xC7F3F5EF);",
+        ):
+            if required not in source:
+                errors.append(
+                    f"{relative} must paint one hue: rising Lime, falling a "
+                    f"hollow Chalk outline; missing `{required}`"
                 )
 
     return errors
@@ -9515,8 +9556,10 @@ def check_s5_truth_contract(root: Path) -> list[str]:
                 f"{len(declared)}"
             )
 
-    # 3. The Swap entry point is gated on `capability.swappable` and nothing
-    #    else. The backend pins it to false until D15.
+    # 3. Every buy/sell/swap control is gated on `capability.swappable` and
+    #    nothing else. The backend pins it to false until D15. The word may
+    #    appear exactly twice: the Token Card's action row and the entry
+    #    button, both reading the same flag directly.
     token_path = root / S5_TOKEN_SURFACE_PATH
     if token_path.is_file():
         token_source = strip_dart_comments(read_text(token_path))
@@ -9525,12 +9568,15 @@ def check_s5_truth_contract(root: Path) -> list[str]:
         if (
             gate_at < 0
             or entry_at < gate_at
-            or token_source.count("swappable") != 1
+            or token_source.count("swappable") != 2
+            or token_source.count("capability.swappable") != 2
+            or S5_SWAP_CARD_GATE not in token_source
             or token_source.count(S5_SWAP_ENTRY_KEY) != 1
         ):
             errors.append(
                 "the Swap entry point must be gated on exactly one "
-                f"`{S5_SWAP_GATE}`"
+                f"`{S5_SWAP_GATE}`, and the Token Card's 买入 / 卖出 on "
+                f"exactly one `{S5_SWAP_CARD_GATE}`"
             )
         else:
             guarded = token_source[gate_at + len(S5_SWAP_GATE) : entry_at]

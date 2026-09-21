@@ -141,11 +141,22 @@ class LoopFocusPage extends StatelessWidget {
     this.actionsFollowBody = false,
     this.updating = false,
     this.block,
+    this.subtitle,
+    this.framedTools = false,
   });
 
   final LoopPageArchetype archetype;
   final String title;
   final String? kicker;
+
+  /// The 11px line under the title (`LoopTopbar.subtitle`).
+  ///
+  /// The prototype's record top bars carry a reading here — `$0.0000082
+  /// +12.4%` under `PEPE` — rather than a second identifier.
+  final String? subtitle;
+
+  /// Whether the bar's controls take the `.tool-btn` frame.
+  final bool framedTools;
   final VoidCallback? onBack;
   final List<Widget> actions;
   final LoopFolioPrimary? folio;
@@ -205,10 +216,12 @@ class LoopFocusPage extends StatelessWidget {
               LoopTopbar(
                 title: title,
                 kicker: kicker,
+                subtitle: subtitle,
                 onBack: onBack,
                 actions: actions,
                 minHeight: LoopLayout.topbarContentHeight,
                 updating: updating,
+                framedTools: framedTools,
               ),
               if (block != null)
                 Expanded(child: block!)
