@@ -251,8 +251,14 @@ final List<_StateCase> _cases = <_StateCase>[
         ),
       ),
     ),
-    readyKey: 'mining-assets-total',
-    alsoUnreadKeys: <String>['mining-assets-empty-notice'],
+    // 我的总算力 is the composite strip's reading and is part of the page's
+    // shape, so it is on screen — as an em dash — before anything is read.
+    // The conclusion this page draws is the priced list itself.
+    readyKey: 'mining-assets-price-notice',
+    alsoUnreadKeys: <String>[
+      'mining-assets-empty-notice',
+      'mining-assets-included',
+    ],
     // While the read is in flight the folio says it is reading. 「暂无数值」 is
     // a conclusion about an answer, and no answer has arrived; the skeleton
     // frame is pinned in s7_mining_pages_test.dart instead.
@@ -275,7 +281,7 @@ final List<_StateCase> _cases = <_StateCase>[
         ),
       ),
     ),
-    readyKey: 'mining-rewards-metrics',
+    readyKey: 'mining-rewards-ledger',
     alsoUnreadKeys: <String>['mining-rewards-claim'],
     // While the read is in flight the folio says it is reading. 「暂无数值」 is
     // a conclusion about an answer, and no answer has arrived; the skeleton

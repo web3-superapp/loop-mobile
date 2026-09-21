@@ -12,6 +12,8 @@ import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -82,7 +84,34 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
           onPressed: widget.onOpenRules,
         ),
       ],
-      primary: _assetsHero(assets, state.phase),
+      primary: MiningCompositePrimary(
+        primary: _assetsHero(assets, state.phase),
+        detail: <Widget>[
+          MiningDetailRow(
+            key: const ValueKey<String>('mining-assets-total'),
+            label: '我的总算力',
+            value: switch (assets?.totalPower) {
+              MiningFigureValue(:final value) => loopGroupedFigure(value),
+              _ => launchMissingFigure,
+            },
+            spoken: switch (assets?.totalPower) {
+              MiningFigureValue(:final value) => loopGroupedFigure(value),
+              MiningFigureUnavailable(:final reasonCode) =>
+                launchReasonCodeText(reasonCode),
+              null => '还没有读到',
+            },
+          ),
+          if (assets != null && miningGateIsBaseline(assets.formula))
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                miningBaselineLabel,
+                key: const ValueKey<String>('mining-assets-total-baseline'),
+                style: LoopTypography.caption(11, color: LoopColors.text2),
+              ),
+            ),
+        ],
+      ),
       block: blocked
           ? _miningCapabilityBlock(
               'mining-assets-capability-unavailable',
@@ -106,12 +135,18 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
             snapshot: assets.source,
             symbols: _assetSymbols(assets),
           ),
-          const LoopLabel('我的总算力'),
-          _AssetsTotal(
-            totalPower: assets.totalPower,
-            baseline: miningGateIsBaseline(assets.formula),
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('mining-assets-open-communities'),
+                leading: const LoopRowIcon(icon: 'clock'),
+                title: '查看社区挖矿面板',
+                subtitle: '每个社区的权重按审核结果授予',
+                onTap: widget.onOpenCommunities,
+              ),
+            ],
           ),
-          const LoopLabel('计入的资产'),
+          const LoopLabel('Included Assets'),
           if (assets.isUnsettled)
             const LoopNotice(
               key: ValueKey<String>('mining-assets-empty-notice'),
@@ -132,15 +167,15 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
               key: const ValueKey<String>('mining-assets-included'),
               rows: <LoopRecordRow>[
                 for (var index = 0; index < assets.included.length; index += 1)
-                  _includedRow(
+                  miningCompositionRow(
                     assets.included[index],
                     launchRowPosition(index, assets.included.length),
-                    _assetSymbols(assets),
+                    symbols: _assetSymbols(assets),
                   ),
               ],
             ),
           if (!assets.isUnsettled) ...<Widget>[
-            const LoopLabel('未计入的资产'),
+            const LoopLabel('Excluded Assets'),
             if (assets.excluded.isEmpty)
               const LoopEmpty(
                 key: ValueKey<String>('mining-assets-excluded-empty'),
@@ -164,6 +199,8 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
                 ],
               ),
           ],
+          const LoopLabel('Reference Price'),
+          _ReferencePriceBlock(referencePrice: assets.referencePrice),
           const LoopLabel('公式版本'),
           MiningFormulaBlock(formula: assets.formula),
           const LoopLabel(miningSnapshotSectionLabel),
@@ -171,19 +208,6 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
             source: assets.source,
             symbols: _assetSymbols(assets),
           ),
-          const LoopLabel('社区权重'),
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('mining-assets-open-communities'),
-                title: '查看社区挖矿面板',
-                subtitle: '每个社区的权重按审核结果授予',
-                onTap: widget.onOpenCommunities,
-              ),
-            ],
-          ),
-          const LoopLabel('参考价'),
-          _ReferencePriceBlock(referencePrice: assets.referencePrice),
           LoopNotice(
             key: const ValueKey<String>('mining-assets-price-notice'),
             icon: 'shield',
@@ -209,30 +233,32 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
   }
 }
 
-/// The hero. A settled total prints the server's own decimal; without a
-/// settlement the page says the absence in words rather than a 29px dash — and
-/// in words, not in a state name: the stamp is a settled reading or nothing.
+/// The hero.
 ///
-/// Which words is the server's to decide. The caption used to name the formula
-/// as the thing being waited on, in the same frame as a read that had not
-/// landed and in the frame after one that landed under a formula already in
-/// effect. A frame that has read nothing says only that it is reading, and a
-/// total with no figure carries the reason the total itself came with.
+/// The prototype heads this page with the expression itself — `持有量 ×
+/// 参考价 × 权重` — because the page *is* that expression, asset by asset;
+/// the total it produces is the reading welded under the card. The App used
+/// to print the total here and the formula nowhere, which left the heading
+/// saying 暂无数值 over a page whose subject is how a number is made (visual
+/// audit §I.3).
+///
+/// The caption is the only part that moves: a frame that has read nothing
+/// says so, and an answer with no total carries the reason the total came
+/// with.
 LoopFolioPrimary _assetsHero(MiningAssets? assets, LaunchViewPhase phase) {
-  final (String heading, String caption) = switch (assets?.totalPower) {
-    MiningFigureValue(:final value) => (value, '持有量、参考价与权重都来自最近一次算力快照，不是收益。'),
-    MiningFigureUnavailable(:final reasonCode) => (
-      launchMissingHeading,
-      launchReasonCodeText(reasonCode),
+  final caption = switch (assets?.totalPower) {
+    MiningFigureValue() => '每个资产的贡献、排除状态与数据来源分别列明。',
+    MiningFigureUnavailable(:final reasonCode) => launchReasonCodeText(
+      reasonCode,
     ),
-    null when phase == LaunchViewPhase.loading => ('正在读取', '总算力读到之后显示在这里。'),
-    null => (launchMissingHeading, '这一页还没有读到算力明细。'),
+    null when phase == LaunchViewPhase.loading => '每个资产的贡献与排除状态读到之后显示在这里。',
+    null => '这一页还没有读到算力明细。',
   };
   return LoopFolioPrimary(
     variant: LoopFolioVariant.quiet,
     archetype: LoopFolioArchetype.record,
     kicker: 'POWER FORMULA',
-    heading: heading,
+    heading: miningPowerFormulaHeading,
     caption: caption,
   );
 }
@@ -248,51 +274,6 @@ Map<String, String> _assetSymbols(MiningAssets assets) => <String, String>{
     if (row.symbol != null) row.assetId: row.symbol!,
 };
 
-/// One weighted asset. The row is headed by the registry's own symbol, with
-/// the id it stands for kept beside the inputs; the three inputs stay beside
-/// the figure they produced, and a price taken from another token says so on
-/// the row itself.
-LoopRecordRow _includedRow(
-  MiningAssetRow row,
-  LoopRowPosition position,
-  Map<String, String> symbols,
-) {
-  final label = miningAssetTitle(symbol: row.symbol, assetId: row.assetId);
-  final proxy = row.referencePriceProxyAssetId;
-  final proxyLabel = proxy == null
-      ? ''
-      : miningAssetTitle(symbol: symbols[proxy], assetId: proxy);
-  final pool = row.referencePricePairAddress;
-  // Three ways a price can have been read, and the row says which one it was:
-  // the asset's own pair, another token's (Decision 0044), or one pool
-  // divided out and checked against the declared band (Decision 0059).
-  final priceNote = proxy != null
-      ? '（代理价，来自 $proxyLabel）'
-      : row.isDerivedPrice && pool != null
-      ? '（推导价，来源池 ${miningPricePoolLabel(pool)}）'
-      : '';
-  // A named row still says which asset it is: the id is the identity, the
-  // symbol is only how the registry writes it.
-  final identity = row.symbol == null
-      ? ''
-      : '${miningAssetLabel(row.assetId)} · ';
-  return LoopRecordRow(
-    key: ValueKey<String>('mining-assets-row-${row.assetId}'),
-    title: label,
-    subtitle:
-        '$identity持有 ${row.holding} · 参考价 ${row.referencePriceUsd} 美元$priceNote',
-    subtitleMaxLines: 2,
-    trailing: row.power,
-    trailingCaption: '权重 ${row.weight}',
-    semanticLabel: proxy != null
-        ? '$label，算力 ${row.power}，参考价来自另一个代币的代理价'
-        : row.isDerivedPrice
-        ? '$label，算力 ${row.power}，参考价由一个报价对推导得出'
-        : '$label，算力 ${row.power}',
-    position: position,
-  );
-}
-
 /// One asset the settlement skipped, with the server's own reason in words.
 LoopRecordRow _excludedRow(MiningExcludedAsset row, LoopRowPosition position) =>
     LoopRecordRow(
@@ -306,47 +287,6 @@ LoopRecordRow _excludedRow(MiningExcludedAsset row, LoopRowPosition position) =>
       trailingBadge: const LoopBadge('未计入'),
       position: position,
     );
-
-/// 我的总算力. A settled figure prints; an unsettled one keeps the em dash and
-/// the server's own reason, and never becomes a zero. A figure the development
-/// baseline produced says so beside itself, exactly as the summary's does.
-///
-/// The reason is the folio's to say: it heads this same figure, three
-/// centimetres up the page, with the same sentence. It stays in this cell's
-/// semantic label, where a screen reader reads it on the figure it belongs to.
-class _AssetsTotal extends StatelessWidget {
-  const _AssetsTotal({required this.totalPower, required this.baseline});
-
-  final MiningFigure totalPower;
-  final bool baseline;
-
-  @override
-  Widget build(BuildContext context) {
-    return switch (totalPower) {
-      MiningFigureUnavailable(:final reasonCode) => LaunchEmptyMetric(
-        key: const ValueKey<String>('mining-assets-total'),
-        label: '我的总算力',
-        reasonCode: reasonCode,
-        showReason: false,
-      ),
-      MiningFigureValue(:final value) => LoopRecordGroup(
-        key: const ValueKey<String>('mining-assets-total'),
-        rows: <LoopRecordRow>[
-          LoopRecordRow(
-            key: const ValueKey<String>('mining-assets-total-row'),
-            title: '我的总算力',
-            subtitle: '计入的资产加总',
-            trailing: value,
-            trailingCaption: baseline ? miningBaselineLabel : null,
-            semanticLabel: baseline
-                ? '我的总算力，$value，$miningBaselineLabel'
-                : '我的总算力，$value',
-          ),
-        ],
-      ),
-    };
-  }
-}
 
 /// Which settlement these rows came from. The identifiers it carries are
 /// backend strings, so only the block height and the time reach the row.
@@ -473,7 +413,50 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
       title: '奖励与领取',
       kicker: 'CLAIMABLE REWARD',
       onBack: widget.onBack,
-      primary: _rewardsHero(rewards, state.phase),
+      primary: MiningCompositePrimary(
+        primary: _rewardsHero(rewards, state.phase),
+        detail: <Widget>[
+          Text(
+            '待领取 LOOP · 每日 00:00 UTC 结算',
+            key: const ValueKey<String>('mining-rewards-cadence'),
+            style: LoopTypography.caption(11, color: LoopColors.text2),
+          ),
+          const MiningDetailRule(),
+          MiningDetailRow(
+            key: const ValueKey<String>('mining-rewards-readings'),
+            label: '今日预估',
+            value: switch (rewards?.estimatedToday) {
+              MiningDailyOutputEstimate(:final value) => loopGroupedFigure(
+                value,
+              ),
+              _ => launchMissingFigure,
+            },
+            spoken: switch (rewards?.estimatedToday) {
+              MiningDailyOutputEstimate(:final value) => loopGroupedFigure(
+                value,
+              ),
+              MiningDailyOutputUnavailable(:final reasonCode) =>
+                launchReasonCodeText(reasonCode),
+              null => '还没有读到',
+            },
+            trailingLabel: '累计已挖',
+            trailingValue: launchMissingFigure,
+          ),
+          if (rewards?.estimatedToday case final MiningDailyOutputEstimate e)
+            if (e.isPlaceholderBudget)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  <String>[
+                    if (e.scope.isBaseline) miningBaselineLabel,
+                    '按占位产量估算，奖励代币还没有确定。',
+                  ].join(' · '),
+                  key: const ValueKey<String>('mining-rewards-budget-note'),
+                  style: LoopTypography.caption(11, color: LoopColors.text2),
+                ),
+              ),
+        ],
+      ),
       block: blocked
           ? _miningCapabilityBlock(
               'mining-rewards-capability-unavailable',
@@ -492,47 +475,21 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          const LoopLabel('奖励规则'),
-          // 今日预估 is the one slot an effective version can settle. When it
-          // is settled it is a figure, said exactly as 算力与产出 says it; the
-          // two that the reward authority closes stay in the grid, and the
-          // folio above still speaks their reason once.
-          if (rewards.estimatedToday
-              case final MiningDailyOutputEstimate estimate) ...<Widget>[
-            MiningMetricRow(
-              slug: 'estimated-today',
-              label: '今日预估',
-              figure: MiningFigureValue(estimate.value),
-              baseline: estimate.scope.isBaseline,
-              note: estimate.isPlaceholderBudget ? '按占位产量估算，奖励代币还没有确定。' : null,
-            ),
-            LaunchEmptyMetricGrid(
-              key: const ValueKey<String>('mining-rewards-metrics'),
-              metrics: <(String, String)>[
-                ('待领取', rewards.claimable.reasonCode),
-                ('累计已挖', rewards.accumulated.reasonCode),
-              ],
-              spokenReason: launchReasonCodeText(rewards.claimable.reasonCode),
-            ),
-          ] else
-            LaunchEmptyMetricGrid(
-              key: const ValueKey<String>('mining-rewards-metrics'),
-              metrics: <(String, String)>[
-                ('待领取', rewards.claimable.reasonCode),
-                (
-                  '今日预估',
-                  (rewards.estimatedToday as MiningDailyOutputUnavailable)
-                      .reasonCode,
-                ),
-                ('累计已挖', rewards.accumulated.reasonCode),
-              ],
-              // 待领取 and 累计已挖 are usually closed by the same thing, and the
-              // folio above already said what it is. The cells keep the em dash.
-              spokenReason: launchReasonCodeText(rewards.claimable.reasonCode),
-            ),
-          const LoopLabel('领取'),
+          MiningDashReasons(
+            slug: 'mining-rewards',
+            // 待领取 is the heading itself, and the caption under it is the
+            // claim's own reason; it is not written twice.
+            said: <String>{launchReasonCodeText(rewards.claimable.reasonCode)},
+            entries: <(String, String)>[
+              if (rewards.estimatedToday case MiningDailyOutputUnavailable(
+                :final reasonCode,
+              ))
+                ('今日预估', launchReasonCodeText(reasonCode)),
+              ('累计已挖', launchReasonCodeText(rewards.accumulated.reasonCode)),
+            ],
+          ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             child: LoopButton(
               key: const ValueKey<String>('mining-rewards-claim'),
               label: '领取到钱包',
@@ -553,16 +510,18 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
             body: '可以领取时，这个按钮会变为可用；现在它不会提交任何操作。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
-          const LoopLabel('结算记录'),
+          const LoopLabel('Claim Records'),
           _RewardsLedgerBlock(
             source: rewards.source,
             claimable: rewards.claimable,
           ),
           const LoopNotice(
             key: ValueKey<String>('mining-rewards-ledger-notice'),
-            icon: 'info',
-            title: '没有条目不等于没有产出',
-            body: '这里只列奖励账本的条目。算力，以及每一次算力快照的区块与时间，在算力明细里。',
+            icon: 'chart',
+            title: '结算公式',
+            body:
+                '我的算力 ÷ 全网算力 × 当日产量。预估会随全网算力变化，最终以服务端结算状态为准；'
+                '这里只列奖励账本的条目，算力在算力明细里。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),
@@ -615,11 +574,18 @@ LoopFolioPrimary _rewardsHero(MiningRewards? rewards, LaunchViewPhase phase) {
     ),
   };
   return LoopFolioPrimary(
-    variant: LoopFolioVariant.quiet,
+    // `#scr-mining-rewards .ledger-card.folio-primary` carries no
+    // `.ledger-quiet`: this is one of the two saturated Lime heroes in the
+    // module, and the App had painted both of them the quiet green.
+    variant: LoopFolioVariant.lime,
     archetype: LoopFolioArchetype.record,
     kicker: 'CLAIMABLE REWARD',
     heading: heading,
     caption: caption,
+    // `.folio-stamp` states a reading, never a state name: it appears only
+    // when the server says the claim can actually be executed.
+    stamp: (rewards?.claimExecutable ?? false) ? 'CLAIMABLE' : null,
+    ring: false,
   );
 }
 
@@ -658,7 +624,37 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
       title: '算力排行榜',
       kicker: 'NETWORK POSITION',
       onBack: widget.onBack,
-      primary: _rankHero(rank),
+      primary: MiningCompositePrimary(
+        primary: _rankHero(rank),
+        detail: <Widget>[
+          MiningDetailRow(
+            key: const ValueKey<String>('mining-rank-reading'),
+            label: '我的名次',
+            value: switch (rank?.myPosition) {
+              MiningRankPositionSettled(:final position) => '第 $position 名',
+              _ => launchMissingFigure,
+            },
+            spoken: switch (rank?.myPosition) {
+              MiningRankPositionSettled(:final position) => '第 $position 名',
+              MiningRankPositionUnavailable(:final reasonCode) =>
+                launchReasonCodeText(reasonCode),
+              null => '还没有读到',
+            },
+            trailingLabel: '已确认算力',
+            trailingValue: switch (rank?.myPosition) {
+              MiningRankPositionSettled(:final power) => loopGroupedFigure(
+                power,
+              ),
+              _ => launchMissingFigure,
+            },
+          ),
+          const MiningDetailRule(),
+          Text(
+            '榜单按服务端已确认算力快照排序',
+            style: LoopTypography.caption(11, color: LoopColors.text2),
+          ),
+        ],
+      ),
       block: blocked
           ? _miningCapabilityBlock(
               'mining-rank-capability-unavailable',
@@ -694,10 +690,12 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
             )
           else ...<Widget>[
             MiningStaleNotice(slug: 'rank', snapshot: rank.snapshot),
-            const LoopLabel('榜单'),
+            LoopLabel(
+              scope == MiningRankScope.communities
+                  ? 'Community Ranking'
+                  : 'User Ranking',
+            ),
             _RankingBlock(ranking: rank.ranking),
-            const LoopLabel('我的名次'),
-            _MyPositionBlock(myPosition: rank.myPosition),
             const LoopLabel('公式版本'),
             MiningFormulaBlock(formula: rank.formula),
             const LoopLabel('显示规则'),
@@ -759,6 +757,14 @@ LoopFolioPrimary _rankHero(MiningRank? rank) {
     kicker: 'NETWORK POSITION',
     heading: heading,
     caption: caption,
+    // `.folio-stamp` on this page is `50,000 H` — the settled power behind the
+    // place, never a state name.
+    stamp: switch (rank?.myPosition) {
+      MiningRankPositionSettled(:final power) =>
+        '${loopGroupedFigure(power)} H',
+      _ => null,
+    },
+    ring: false,
   );
 }
 
@@ -912,6 +918,12 @@ LoopRecordRow _userRow(
     key: ValueKey<String>(
       'mining-rank-user-$index-${row.power ?? 'withheld'}-$name',
     ),
+    // `.row-ico` carries the place itself on the user board; an entry with no
+    // place carries the dash rather than a number it was not given.
+    leading: LoopRowIcon(
+      monogram: row.isRanked ? '#${row.position}' : launchMissingFigure,
+      tone: row.isSelf ? LoopRowIconTone.accent : LoopRowIconTone.neutral,
+    ),
     title: name,
     subtitle: subtitle,
     subtitleMaxLines: 2,
@@ -934,7 +946,10 @@ LoopRecordRow _communityRow(
   LoopRowPosition position,
 ) => LoopRecordRow(
   key: ValueKey<String>('mining-rank-community-${row.community.communityId}'),
-  title: row.community.name,
+  leading: LoopInitialsAvatar(label: row.community.name, size: 44),
+  title: row.isRanked
+      ? '#${row.position} ${row.community.name}'
+      : row.community.name,
   subtitle: row.isRanked
       ? '第 ${row.position} 名 · ${row.participants} 人有算力'
       : '$_miningUnrankedLabel · ${row.participants} 人有算力',
@@ -944,42 +959,21 @@ LoopRecordRow _communityRow(
   position: position,
 );
 
-/// 我的名次. A missing place keeps the server's own reason — a zero power and
-/// an account outside the settlement are different facts.
-class _MyPositionBlock extends StatelessWidget {
-  const _MyPositionBlock({required this.myPosition});
-
-  final MiningRankPosition myPosition;
-
-  @override
-  Widget build(BuildContext context) {
-    return switch (myPosition) {
-      MiningRankPositionUnavailable(:final reasonCode) => LaunchUnavailableCard(
-        label: '我的名次',
-        fact: LaunchUnavailable(reasonCode),
-      ),
-      MiningRankPositionSettled(:final position, :final power) =>
-        LoopRecordGroup(
-          key: const ValueKey<String>('mining-rank-my-position'),
-          rows: <LoopRecordRow>[
-            LoopRecordRow(
-              key: const ValueKey<String>('mining-rank-my-position-row'),
-              title: '我的名次',
-              subtitle: '算力 $power',
-              trailing: '第 $position 名',
-            ),
-          ],
-        ),
-    };
-  }
-}
-
 /// `mining-community` · one community's mining panel.
 class MiningCommunityScreen extends ConsumerStatefulWidget {
-  const MiningCommunityScreen({super.key, this.communityId, this.onBack});
+  const MiningCommunityScreen({
+    super.key,
+    this.communityId,
+    this.onBack,
+    this.onOpenRank,
+  });
 
   final String? communityId;
   final VoidCallback? onBack;
+
+  /// `#scr-mining-community .topbar .tool-btn`: the board this panel's place
+  /// comes from.
+  final VoidCallback? onOpenRank;
 
   @override
   ConsumerState<MiningCommunityScreen> createState() =>
@@ -1010,7 +1004,38 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
       title: community?.community.name ?? '社区挖矿面板',
       kicker: 'COMMUNITY POWER',
       onBack: widget.onBack,
-      primary: _communityHero(community, state.phase),
+      actions: <Widget>[
+        LoopIconButton(
+          key: const ValueKey<String>('mining-community-rank-action'),
+          icon: 'chart',
+          label: '查看排行榜',
+          onPressed: widget.onOpenRank,
+        ),
+      ],
+      primary: MiningCompositePrimary(
+        primary: _communityHero(community, state.phase),
+        detail: <Widget>[
+          MiningDetailRow(
+            key: const ValueKey<String>('mining-community-reading'),
+            label: '社区排名',
+            value: switch (community?.rank) {
+              MiningRankPositionSettled(:final position) => '第 $position 名',
+              _ => launchMissingFigure,
+            },
+            spoken: switch (community?.rank) {
+              MiningRankPositionSettled(:final position) => '第 $position 名',
+              MiningRankPositionUnavailable(:final reasonCode) =>
+                launchReasonCodeText(reasonCode),
+              null => '还没有读到',
+            },
+            trailingLabel: '参与人数',
+            trailingValue: switch (community?.participants) {
+              MiningParticipantsCount(:final count) => '$count',
+              _ => launchMissingFigure,
+            },
+          ),
+        ],
+      ),
       block: blocked
           ? _miningCapabilityBlock(
               'mining-community-capability-unavailable',
@@ -1031,10 +1056,12 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
           )
         else ...<Widget>[
           MiningStaleNotice(slug: 'community', snapshot: community.snapshot),
+          const LoopLabel('My Contribution'),
+          _MyContributionCard(community: community),
+          const LoopLabel('Community Records'),
+          _CommunityRecords(community: community),
           const LoopLabel('社区权重'),
           _WeightBlock(weight: community.weight),
-          const LoopLabel('算力规则'),
-          _CommunityMetrics(community: community),
           const LoopLabel(miningSnapshotSectionLabel),
           _CommunitySnapshotBlock(snapshot: community.snapshot),
           const LoopLabel('绑定资产'),
@@ -1161,114 +1188,158 @@ LoopFolioPrimary _communityHero(
     kicker: 'COMMUNITY POWER',
     heading: heading,
     caption: caption,
+    // `.folio-stamp` is `0.35×` — the weight already inside the figure above,
+    // printed only once the review granted one.
+    stamp: switch (community?.weight) {
+      MiningCommunityWeightApproved(:final value) => '$value×',
+      _ => null,
+    },
+    ring: false,
   );
 }
 
-/// 算力规则. While nothing was settled the four figures share one sentence;
-/// once they are settled each one prints, and a zero says which reading it is
-/// rather than becoming an em dash.
-class _CommunityMetrics extends StatelessWidget {
-  const _CommunityMetrics({required this.community});
+/// `MY CONTRIBUTION` — the prototype's one Chalk card in this module.
+///
+/// The App had no Chalk surface on any mining page, so the six pages read as
+/// one unbroken dark run (visual audit §I.1). The two cells are the two facts
+/// this reader owns here: the power their holding contributes, and the weight
+/// that is already inside it. Neither is computed on the device.
+class _MyContributionCard extends StatelessWidget {
+  const _MyContributionCard({required this.community});
 
   final MiningCommunity community;
 
   @override
   Widget build(BuildContext context) {
-    final power = community.communityPower;
-    final contribution = community.myContribution;
-    final rank = community.rank;
-    final participants = community.participants;
-    if (power is MiningFigureUnavailable &&
-        contribution is MiningFigureUnavailable &&
-        rank is MiningRankPositionUnavailable &&
-        participants is MiningParticipantsUnavailable) {
-      return LaunchEmptyMetricGrid(
-        key: const ValueKey<String>('mining-community-metrics'),
-        metrics: <(String, String)>[
-          ('社区总算力', power.reasonCode),
-          ('我的贡献', contribution.reasonCode),
-          ('社区排名', rank.reasonCode),
-          ('参与人数', participants.reasonCode),
-        ],
-        // The folio heads 社区总算力 and already carries its reason.
-        spokenReason: launchReasonCodeText(power.reasonCode),
-      );
-    }
+    final (
+      String contribution,
+      String spokenContribution,
+    ) = switch (community.myContribution) {
+      MiningFigureValue(:final value) => (
+        loopGroupedFigure(value),
+        loopGroupedFigure(value),
+      ),
+      MiningFigureUnavailable(:final reasonCode) => (
+        launchMissingFigure,
+        launchReasonCodeText(reasonCode),
+      ),
+    };
+    final (String weight, String spokenWeight) = switch (community.weight) {
+      MiningCommunityWeightApproved(:final value) => ('$value×', '$value×'),
+      MiningCommunityWeightPending(:final reasonCode) => (
+        launchMissingFigure,
+        launchReasonCodeText(reasonCode),
+      ),
+    };
+    return LoopChalkCard(
+      key: const ValueKey<String>('mining-community-contribution'),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      child: Semantics(
+        container: true,
+        label: '我的算力，$spokenContribution。社区权重，$spokenWeight',
+        child: ExcludeSemantics(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Expanded(child: _cell('我的算力', contribution)),
+                  const SizedBox(width: 14),
+                  Expanded(child: _cell('社区权重', weight)),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                child: Container(
+                  height: 1,
+                  color: LoopColors.ink.withValues(alpha: 0.14),
+                ),
+              ),
+              Text(
+                '权重由平台审核结果授予，已经算在上面的算力里。',
+                style: LoopTypography.caption(
+                  10,
+                  color: LoopColors.ink.withValues(alpha: 0.58),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static Widget _cell(String label, String value) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: <Widget>[
+      Text(
+        value,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: LoopTypography.figure(
+          16,
+          weight: FontWeight.w700,
+          color: LoopColors.ink,
+        ),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        label,
+        style: LoopTypography.caption(
+          9,
+          color: LoopColors.ink.withValues(alpha: 0.58),
+        ),
+      ),
+    ],
+  );
+}
+
+/// `COMMUNITY RECORDS` — the two readings the panel is a record of.
+class _CommunityRecords extends StatelessWidget {
+  const _CommunityRecords({required this.community});
+
+  final MiningCommunity community;
+
+  @override
+  Widget build(BuildContext context) {
     return LoopRecordGroup(
       key: const ValueKey<String>('mining-community-metrics'),
       rows: <LoopRecordRow>[
-        _figureRow(
-          slug: 'power',
-          label: '社区总算力',
-          figure: power,
-          position: LoopRowPosition.first,
-          // Same figure as the folio heading, so the same sentence is not
-          // written twice on one screen.
-          reasonSaidAbove: true,
-        ),
-        _figureRow(
-          slug: 'contribution',
-          label: '我的贡献',
-          figure: contribution,
-          position: LoopRowPosition.middle,
-        ),
-        LoopRecordRow(
-          key: const ValueKey<String>('mining-community-metric-rank'),
-          title: '社区排名',
-          subtitle: switch (rank) {
-            MiningRankPositionUnavailable(:final reasonCode) =>
-              launchReasonCodeText(reasonCode),
-            MiningRankPositionSettled(:final power) => '算力 $power',
-          },
-          subtitleMaxLines: 2,
-          trailing: switch (rank) {
-            MiningRankPositionUnavailable() => launchMissingFigure,
-            MiningRankPositionSettled(:final position) => '第 $position 名',
-          },
-          position: LoopRowPosition.middle,
-        ),
         LoopRecordRow(
           key: const ValueKey<String>('mining-community-metric-participants'),
-          title: '参与人数',
-          subtitle: switch (participants) {
+          title: '参与挖矿的持有人',
+          subtitle: switch (community.participants) {
             MiningParticipantsUnavailable(:final reasonCode) =>
               launchReasonCodeText(reasonCode),
-            MiningParticipantsCount() => '算出了算力的成员',
+            MiningParticipantsCount() => '最近一次算力快照里算出了算力的成员',
           },
           subtitleMaxLines: 2,
-          trailing: switch (participants) {
+          trailing: switch (community.participants) {
             MiningParticipantsUnavailable() => launchMissingFigure,
             MiningParticipantsCount(:final count) => '$count',
+          },
+          position: LoopRowPosition.first,
+        ),
+        LoopRecordRow(
+          key: const ValueKey<String>('mining-community-metric-power'),
+          title: '社区总算力',
+          // The folio heads this same figure and already carries its reason.
+          subtitle: switch (community.communityPower) {
+            MiningFigureUnavailable() => null,
+            MiningFigureValue() => '成员在绑定资产上的算力之和',
+          },
+          subtitleMaxLines: 2,
+          trailing: switch (community.communityPower) {
+            MiningFigureUnavailable() => launchMissingFigure,
+            MiningFigureValue(:final value) => loopGroupedFigure(value),
           },
           position: LoopRowPosition.last,
         ),
       ],
     );
   }
-
-  static LoopRecordRow _figureRow({
-    required String slug,
-    required String label,
-    required MiningFigure figure,
-    required LoopRowPosition position,
-    bool reasonSaidAbove = false,
-  }) => LoopRecordRow(
-    key: ValueKey<String>('mining-community-metric-$slug'),
-    title: label,
-    subtitle: switch (figure) {
-      MiningFigureUnavailable() when reasonSaidAbove => null,
-      MiningFigureUnavailable(:final reasonCode) => launchReasonCodeText(
-        reasonCode,
-      ),
-      MiningFigureValue() => '来自最近一次算力快照',
-    },
-    subtitleMaxLines: 2,
-    trailing: switch (figure) {
-      MiningFigureUnavailable() => launchMissingFigure,
-      MiningFigureValue(:final value) => value,
-    },
-    position: position,
-  );
 }
 
 /// Which settlement this panel read. The identifiers it carries are backend
@@ -1367,38 +1438,62 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
       onRefresh: controller.reload,
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
-      title: '权重与价格保护',
+      // The prototype's topbar says 挖矿规则 and its hero says 权重与价格保护;
+      // the App had the two the other way round (visual audit §I.7).
+      title: '挖矿规则',
       kicker: 'POWER RULES',
       onBack: widget.onBack,
-      primary: LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'POWER RULES',
-        // The hero used to announce a draft over a page whose first section
-        // is 「已批准的版本」 with an 已批准 badge inside it, so one screen
-        // said both that the rule was pending and that it was approved. The
-        // sentence now follows whether a version has been approved, and the
-        // big line shows the rule in force when there is one.
-        heading: switch ((approved, draft)) {
-          (final MiningFormulaVersion version, _) => miningRuleKeyText(
-            version.expressionKey,
+      primary: MiningCompositePrimary(
+        primary: LoopFolioPrimary(
+          variant: LoopFolioVariant.quiet,
+          archetype: LoopFolioArchetype.record,
+          kicker: 'POWER RULES',
+          // The hero used to announce a draft over a page whose first section
+          // is 「已批准的版本」 with an 已批准 badge inside it, so one screen
+          // said both that the rule was pending and that it was approved. The
+          // sentence now follows whether a version has been approved, and the
+          // big line shows the rule in force when there is one.
+          heading: '权重与价格保护',
+          caption: switch ((approved, draft)) {
+            (null, null) => '还没有已批准的公式，也没有待批准的草案。',
+            (null, _) => '还没有已批准的公式。下面这条是等待批准的草案。',
+            (_, null) => '这一版已批准，当前生效；没有待批准的草案。',
+            (_, _) => '这一版已批准，当前生效。下面另有等待批准的草案。',
+          },
+          stamp: switch ((approved, draft)) {
+            (_?, _) => '已批准',
+            (null, _?) => '待批准',
+            (null, null) => null,
+          },
+          ring: false,
+        ),
+        detail: <Widget>[
+          Text('DAILY OUTPUT', style: LoopMono.label),
+          const SizedBox(height: 8),
+          Text.rich(
+            TextSpan(
+              children: <InlineSpan>[
+                TextSpan(
+                  text: '每日产出 ',
+                  style: LoopTypography.caption(
+                    11,
+                    color: LoopColors.chalk,
+                  ).copyWith(fontWeight: FontWeight.w700),
+                ),
+                TextSpan(
+                  text: switch (approved ?? draft) {
+                    final MiningFormulaVersion version => miningRuleKeyText(
+                      version.dailyOutputKey,
+                    ),
+                    null => launchMissingFigure,
+                  },
+                  style: LoopTypography.caption(11, color: LoopColors.text2),
+                ),
+              ],
+            ),
+            key: const ValueKey<String>('mining-rules-daily-output'),
           ),
-          (null, final MiningFormulaVersion version) => miningRuleKeyText(
-            version.expressionKey,
-          ),
-          (null, null) => launchMissingHeading,
-        },
-        caption: switch ((approved, draft)) {
-          (null, null) => '还没有已批准的公式，也没有待批准的草案。',
-          (null, _) => '还没有已批准的公式。上面这条是等待批准的草案。',
-          (_, null) => '这一版已批准，当前生效；没有待批准的草案。',
-          (_, _) => '这一版已批准，当前生效。下面另有等待批准的草案。',
-        },
-        stamp: switch ((approved, draft)) {
-          (_?, _) => '已批准',
-          (null, _?) => '待批准',
-          (null, null) => null,
-        },
+        ],
       ),
       block: blocked
           ? _miningCapabilityBlock(
@@ -1551,7 +1646,8 @@ class _FormulaVersionBlock extends StatelessWidget {
       LoopRecordRow(
         key: ValueKey<String>('$keyPrefix-daily-output'),
         title: '每日产出',
-        subtitle: miningRuleKeyText(version.dailyOutputKey),
+        // The expression itself is the composite strip's, stated once at the
+        // top of the page; this row carries the budget the version pins.
         // The budget is published with its own status, so it is printed with
         // it: a placeholder number never stands on the page by itself. The
         // separators are display only and are dropped whenever they cannot be
@@ -1565,21 +1661,39 @@ class _FormulaVersionBlock extends StatelessWidget {
         position: LoopRowPosition.middle,
       ),
       LoopRecordRow(
+        key: ValueKey<String>('$keyPrefix-referral-boost'),
+        title: '邀请加成',
+        subtitle: '加成只计入 Mining Power',
+        trailingCaption: miningFormulaStatusLabel(version.referralBoostStatus),
+        position: LoopRowPosition.last,
+      ),
+    ];
+    // `WEIGHT RANGE`: the prototype heads each band with its own tile, so the
+    // two bands are told apart before they are read (visual audit §I.7).
+    final weightRows = <LoopRecordRow>[
+      LoopRecordRow(
         key: ValueKey<String>('$keyPrefix-weight-loop'),
-        title: 'LOOP 权重',
+        leading: const LoopRowIcon(
+          monogram: 'LOOP',
+          tone: LoopRowIconTone.accent,
+        ),
+        title: 'LOOP',
         subtitle: miningRuleKeyText(version.weightRange.loop.descriptionKey),
+        subtitleMaxLines: 2,
         trailing: launchMissingFigure,
         trailingCaption: miningFormulaStatusLabel(
           version.weightRange.loop.status,
         ),
-        position: LoopRowPosition.middle,
+        position: LoopRowPosition.first,
       ),
       LoopRecordRow(
         key: ValueKey<String>('$keyPrefix-weight-community'),
-        title: '社区币权重',
+        leading: const LoopRowIcon(monogram: 'COMM'),
+        title: '经审核的社区币',
         subtitle: miningRuleKeyText(
           version.weightRange.community.descriptionKey,
         ),
+        subtitleMaxLines: 2,
         // The bounds print only once the version pinned them; until then the
         // band is a rule with no numbers and keeps the em dash.
         trailing: switch (version.weightRange.community.range) {
@@ -1589,21 +1703,6 @@ class _FormulaVersionBlock extends StatelessWidget {
         trailingCaption: miningFormulaStatusLabel(
           version.weightRange.community.status,
         ),
-        position: LoopRowPosition.middle,
-      ),
-      for (final guard in version.priceGuardRules)
-        LoopRecordRow(
-          key: ValueKey<String>('$keyPrefix-guard-${guard.ruleKey}'),
-          title: '价格保护',
-          subtitle: miningRuleKeyText(guard.ruleKey),
-          trailingCaption: miningFormulaStatusLabel(guard.status),
-          position: LoopRowPosition.middle,
-        ),
-      LoopRecordRow(
-        key: ValueKey<String>('$keyPrefix-referral-boost'),
-        title: '邀请加成',
-        subtitle: '加成只计入 Mining Power',
-        trailingCaption: miningFormulaStatusLabel(version.referralBoostStatus),
         position: LoopRowPosition.last,
       ),
     ];
@@ -1655,24 +1754,77 @@ class _FormulaVersionBlock extends StatelessWidget {
             ],
           ),
         ],
-        const LoopLabel('评审因子'),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+        const LoopLabel('Weight Range'),
+        LoopRecordGroup(
+          key: ValueKey<String>('$keyPrefix-weight-range'),
+          rows: weightRows,
+        ),
+        const LoopLabel('Review Factors'),
+        LoopChalkCard(
+          key: ValueKey<String>('$keyPrefix-review-factors'),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               for (final factor in version.weightRange.reviewFactorKeys)
                 Padding(
                   key: ValueKey<String>('$keyPrefix-factor-$factor'),
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Text(
-                    '· ${miningRuleKeyText(factor)}',
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    miningRuleKeyText(factor),
+                    style: LoopTypography.caption(11, color: LoopColors.ink),
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                child: Container(
+                  height: 1,
+                  color: LoopColors.ink.withValues(alpha: 0.14),
+                ),
+              ),
+              Text(
+                '具体量化分值不公开，权重以平台综合评定结果为准。',
+                style: LoopTypography.caption(
+                  9,
+                  color: LoopColors.ink.withValues(alpha: 0.62),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (version.priceGuardRules.isNotEmpty) ...<Widget>[
+          const LoopLabel('Reference Price Guard'),
+          LoopRecordGroup(
+            key: ValueKey<String>('$keyPrefix-guards'),
+            rows: <LoopRecordRow>[
+              for (
+                var index = 0;
+                index < version.priceGuardRules.length;
+                index += 1
+              )
+                LoopRecordRow(
+                  key: ValueKey<String>(
+                    '$keyPrefix-guard-'
+                    '${version.priceGuardRules[index].ruleKey}',
+                  ),
+                  leading: LoopRowIcon(
+                    monogram: (index + 1).toString().padLeft(2, '0'),
+                  ),
+                  title: miningRuleKeyText(
+                    version.priceGuardRules[index].ruleKey,
+                  ),
+                  subtitle: miningFormulaStatusLabel(
+                    version.priceGuardRules[index].status,
+                  ),
+                  position: launchRowPosition(
+                    index,
+                    version.priceGuardRules.length,
                   ),
                 ),
             ],
           ),
-        ),
+        ],
       ],
     );
   }

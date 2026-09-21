@@ -10,6 +10,12 @@ import 'package:loop_mobile/features/mining/mining_models.dart';
 /// writes one every few minutes — not when anything was settled, owed or
 /// paid. 「最近一次结算」 read as a payout on pages whose every figure is
 /// power, so the word names the computation it actually is.
+/// The expression the whole module is about, as the prototype writes it.
+///
+/// It is a conclusion, not a page title: 算力明细 heads its card with the
+/// expression and prints the total it produces underneath.
+const String miningPowerFormulaHeading = '持有量 × 参考价 × 权重';
+
 const String miningSnapshotSectionLabel = '算力快照';
 const String miningSnapshotRowTitle = '最近一次算力快照';
 

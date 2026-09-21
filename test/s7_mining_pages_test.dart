@@ -164,19 +164,28 @@ void main() {
         mining: FakeMiningGateway(),
       );
 
-      for (final label in <String>[
-        '我的算力',
-        '全网算力',
-        '今日预估',
-        '累计已挖',
-        '待领取',
-        '邀请加成',
+      // The three readings the hero carries, each an em dash of its own.
+      for (final slug in <String>[
+        'estimated-today',
+        'accumulated',
+        'claimable',
       ]) {
-        final metric = find.byKey(ValueKey<String>('launch-metric-$label'));
-        await scrollToS7Section(tester, metric);
-        expect(metric, findsOneWidget, reason: label);
+        final cell = find.byKey(ValueKey<String>('mining-summary-hero-$slug'));
+        expect(cell, findsOneWidget, reason: slug);
+        expect(tester.widget<Text>(cell).data, launchMissingFigure);
       }
-      expect(find.text(launchMissingFigure), findsWidgets);
+      // 我的算力 is the heading, and it says the absence in words.
+      expect(
+        find.byKey(const ValueKey<String>('mining-summary-hero-power')),
+        findsOneWidget,
+      );
+      expect(find.textContaining(launchMissingHeading), findsWidgets);
+      // 全网算力 keeps its dash in the sentence that states the rule.
+      final holding = find.byKey(
+        const ValueKey<String>('mining-holding-notice'),
+      );
+      await scrollToS7Section(tester, holding);
+      expect(find.textContaining('全网总算力 $launchMissingFigure'), findsOneWidget);
       expect(_figures(tester), isEmpty);
     });
 
@@ -189,23 +198,18 @@ void main() {
         mining: FakeMiningGateway(),
       );
 
-      final folio = find.byKey(const ValueKey<String>('loop-folio-primary'));
-      expect(folio, findsOneWidget);
-      // At 29px in Lime the metric cells' em dash stops reading as a
-      // placeholder and becomes a stray green rule, so the hero states the
-      // absence. It is still not a 0, not a fixture and not blank.
-      expect(
-        find.descendant(of: folio, matching: find.text(launchMissingHeading)),
-        findsOneWidget,
+      final heading = find.byKey(
+        const ValueKey<String>('mining-summary-hero-power'),
       );
-      expect(
-        find.descendant(of: folio, matching: find.text(launchMissingFigure)),
-        findsNothing,
-      );
-      expect(
-        find.descendant(of: folio, matching: find.text('0')),
-        findsNothing,
-      );
+      expect(heading, findsOneWidget);
+      // At 44px the em dash stops reading as a placeholder and becomes a
+      // stray rule, so the heading states the absence in words. It is still
+      // not a 0, not a fixture and not blank.
+      expect(find.textContaining(launchMissingHeading), findsWidgets);
+      final text = tester.widget<Text>(heading).textSpan!.toPlainText();
+      expect(text, launchMissingHeading);
+      // No unit follows a figure that is not there.
+      expect(text.contains('H'), isFalse);
       // The cells keep the dash: only the heading changed voice.
       expect(find.text(launchMissingFigure), findsWidgets);
     });
@@ -270,17 +274,28 @@ void main() {
       // not cover are not left reading as if it did; the other two keep their
       // own, different sentences — the reward ledger's, and the boost's own
       // code (Decision 0046), which speaks for the boost slot alone.
+      // The hero states the pending version once, and the line under it
+      // names the metrics whose dash a different fact — the reward ledger's —
+      // accounts for, without repeating that fact three times.
+      expect(
+        find.byKey(const ValueKey<String>('mining-hero-dash-reasons')),
+        findsOneWidget,
+      );
+      expect(find.text('待领取：奖励发放还没有开启，暂时不能领取。'), findsOneWidget);
+      // The hero caption already speaks for 今日预估 and 累计已挖, so the
+      // gate's own sentence is written exactly once more on the page — beside
+      // the one dash the caption does not cover, 全网总算力.
       expect(
         find.textContaining('挖矿公式还没有批准，算力、产量、排行与邀请加成都暂时不可用。'),
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey<String>('launch-metric-grid-reason')),
-        findsOneWidget,
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('mining-hero-dash-reasons')),
+          matching: find.textContaining('挖矿公式还没有批准'),
+        ),
+        findsNothing,
       );
-      expect(find.textContaining('我的算力、全网算力、今日预估'), findsOneWidget);
-      expect(find.text('奖励发放还没有开启，暂时不能领取。'), findsOneWidget);
-      expect(find.text('生效的公式版本还没有批准邀请加成，这一项暂时没有数值。'), findsOneWidget);
     });
 
     testWidgets('a shared reason names the dashes it speaks for', (
@@ -295,12 +310,11 @@ void main() {
       );
 
       final reason = find.byKey(
-        const ValueKey<String>('launch-metric-grid-reason'),
+        const ValueKey<String>('mining-hero-dash-reasons'),
       );
       await scrollToS7Section(tester, reason);
-      // 今日预估 carries a figure and a note of its own directly above this
-      // line, which left 累计已挖 and 待领取 as two em dashes with nothing
-      // under them and one sentence that read as the note's continuation.
+      // 今日预估 carries a figure of its own in the same strip, which left
+      // 累计已挖 and 待领取 as two em dashes with nothing under them.
       expect(find.textContaining('累计已挖、待领取：'), findsOneWidget);
     });
 
@@ -315,13 +329,13 @@ void main() {
         ),
       );
 
-      final boost = find.byKey(const ValueKey<String>('launch-metric-邀请加成'));
+      // The boost is a card of its own now; a version is in effect and 我的算力
+      // prints 1000 on this same page, so nothing here may claim that power,
+      // output and rank are all unavailable.
+      final boost = find.text('邀请关系加成');
       await scrollToS7Section(tester, boost);
       expect(boost, findsOneWidget);
-      // A version is in effect and 我的算力 prints 1000 on this same page, so
-      // the boost slot may not claim that power, output and rank are all
-      // unavailable.
-      expect(find.textContaining('还没有批准邀请加成'), findsWidgets);
+      expect(find.textContaining('当前加成 $launchMissingFigure'), findsOneWidget);
       expect(find.textContaining('算力、产量、排行与邀请加成都暂时不可用'), findsNothing);
     });
 
@@ -340,12 +354,11 @@ void main() {
       // that can be removed to give the string back character for character.
       // It never appears without the label that says which kind of number it
       // is.
-      expect(find.text('1000'), findsWidgets);
-      expect(find.text('4,000'), findsOneWidget);
-      expect(find.text('开发基线'), findsWidgets);
+      expect(find.textContaining('1,000'), findsWidgets);
+      expect(find.textContaining('4,000'), findsOneWidget);
+      expect(find.textContaining('开发基线'), findsWidgets);
       // A placeholder budget is never a bare 1000000 on the screen.
       expect(find.text('1000000'), findsNothing);
-      expect(find.textContaining('占位产量'), findsOneWidget);
       // The version is an identifier: it stays out of every sentence.
       expect(find.textContaining('miningFormula-devBaseline'), findsNothing);
     });
@@ -401,21 +414,14 @@ void main() {
 
       // A settled zero is a reading, not an absence: it keeps the figure and
       // says which rule produced it.
-      expect(find.text('0'), findsWidgets);
-      expect(find.text('开发基线'), findsWidgets);
+      expect(find.textContaining('0'), findsWidgets);
+      expect(find.textContaining('开发基线'), findsWidgets);
       expect(find.textContaining('全网算力为 0'), findsOneWidget);
-      // 我的算力 is a settled row now, not one of the em-dash cells.
-      expect(
-        find.byKey(const ValueKey<String>('mining-metric-power')),
-        findsOneWidget,
+      // 我的算力 is the settled heading, not one of the em-dash cells.
+      final heading = find.byKey(
+        const ValueKey<String>('mining-summary-hero-power'),
       );
-      expect(
-        find.descendant(
-          of: find.byKey(const ValueKey<String>('mining-metric-power')),
-          matching: find.text(launchMissingFigure),
-        ),
-        findsNothing,
-      );
+      expect(tester.widget<Text>(heading).textSpan!.toPlainText(), '0 H');
     });
 
     testWidgets('the snapshot is absent, not zero', (tester) async {
@@ -564,7 +570,11 @@ void main() {
         );
       }
       expect(find.textContaining('挖矿公式'), findsNothing);
-      expect(find.text('正在读取'), findsOneWidget);
+      // The heading is the expression the page is about, and it is true
+      // before anything is read; only the caption says that nothing is in
+      // yet. The total keeps the em dash rather than a 0.
+      expect(find.text(miningPowerFormulaHeading), findsOneWidget);
+      expect(find.textContaining('读到之后显示在这里'), findsOneWidget);
       expect(find.text(launchMissingHeading), findsNothing);
       expect(find.text('0'), findsNothing);
     });
@@ -695,11 +705,11 @@ void main() {
       );
       await scrollToS7Section(tester, row);
       expect(row, findsOneWidget);
-      // Every figure is the server's own decimal, printed verbatim.
-      expect(find.textContaining('持有 12.5'), findsOneWidget);
-      expect(find.textContaining('参考价 2.26'), findsOneWidget);
-      expect(find.text('权重 0.8'), findsOneWidget);
+      // The three inputs are the prototype's expression, in the order the
+      // formula multiplies them, and every figure is the server's own decimal.
+      expect(find.textContaining(r'12.5 × $2.26 × 0.8×'), findsOneWidget);
       expect(find.text('22.6'), findsOneWidget);
+      expect(find.text('算力'), findsWidgets);
       // The list is no longer empty, so the contract notice is gone.
       expect(
         find.byKey(const ValueKey<String>('mining-assets-empty-notice')),
@@ -983,19 +993,22 @@ void main() {
       );
 
       // 待领取, 累计已挖 and the ledger are all closed by the reward authority,
-      // and the folio says so. The cells keep the em dash and stay quiet.
+      // and the folio says so once. The strip keeps the em dashes and stays
+      // quiet.
       expect(find.text(launchReasonCodeText(s7RewardPending)), findsOneWidget);
-      for (final label in <String>['待领取', '累计已挖']) {
-        final metric = find.byKey(ValueKey<String>('launch-metric-$label'));
-        expect(
-          find.descendant(of: metric, matching: find.text(launchMissingFigure)),
-          findsOneWidget,
-          reason: label,
-        );
-      }
-      // A reason that is not the folio's is still the metric's to say.
       expect(
-        find.text(launchReasonCodeText('MINING_NETWORK_POWER_ZERO')),
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('mining-rewards-readings')),
+          matching: find.textContaining(launchMissingFigure),
+        ),
+        findsWidgets,
+      );
+      // A reason that is not the folio's is still stated, and named.
+      expect(
+        find.text(
+          '今日预估：'
+          '${launchReasonCodeText('MINING_NETWORK_POWER_ZERO')}',
+        ),
         findsOneWidget,
       );
     });
@@ -1011,31 +1024,25 @@ void main() {
         ),
       );
 
-      final row = find.byKey(
-        const ValueKey<String>('mining-metric-estimated-today'),
-      );
-      await scrollToS7Section(tester, row);
+      final row = find.byKey(const ValueKey<String>('mining-rewards-readings'));
       expect(row, findsOneWidget);
       // Grouped for reading; removing the separators gives the server's own
       // string back unchanged.
-      expect(find.text('1,000,000'), findsOneWidget);
+      expect(find.textContaining('1,000,000'), findsOneWidget);
       expect(find.text('1000000'), findsNothing);
       // The baseline label and the placeholder sentence travel with it, so the
       // number never stands on the page by itself.
       expect(find.textContaining(miningBaselineLabel), findsWidgets);
-      expect(find.textContaining('按占位产量估算'), findsOneWidget);
-      // 今日预估 has left the grid; the two the authority closes stay in it.
       expect(
-        find.byKey(const ValueKey<String>('launch-metric-今日预估')),
-        findsNothing,
+        find.byKey(const ValueKey<String>('mining-rewards-budget-note')),
+        findsOneWidget,
       );
-      for (final label in <String>['待领取', '累计已挖']) {
-        expect(
-          find.byKey(ValueKey<String>('launch-metric-$label')),
-          findsOneWidget,
-          reason: label,
-        );
-      }
+      expect(find.textContaining('按占位产量估算'), findsOneWidget);
+      // 累计已挖 keeps its em dash beside the settled share.
+      expect(
+        find.descendant(of: row, matching: find.textContaining('累计已挖')),
+        findsOneWidget,
+      );
       // S22e: the authority's reason is still the folio's, once.
       expect(find.text(launchReasonCodeText(s7RewardPending)), findsOneWidget);
     });
@@ -1140,7 +1147,15 @@ void main() {
       expect(find.text('匿名成员'), findsOneWidget);
       expect(find.text('whale'), findsOneWidget);
       expect(find.textContaining(s7PublicProfileId), findsNothing);
-      expect(find.textContaining('算力为 0，暂时没有名次'), findsOneWidget);
+      // 我的名次 is the composite strip's reading now; a place the settlement
+      // did not give keeps the em dash there.
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('mining-rank-reading')),
+          matching: find.textContaining(launchMissingFigure),
+        ),
+        findsWidgets,
+      );
     });
 
     testWidgets('an unranked hero says the settlement happened, not that it '
@@ -1191,11 +1206,12 @@ void main() {
         ),
       );
 
-      // The hero carries the board's own rule, from the copy table — once for
-      // the hero and once for 我的名次.
+      // The hero carries the board's own rule, from the copy table, exactly
+      // once: the strip beside it keeps the em dash and speaks the same
+      // sentence only to a screen reader.
       expect(
         find.text(launchReasonCodeText('MINING_RANK_NOT_APPLICABLE')),
-        findsNWidgets(2),
+        findsOneWidget,
       );
       expect(find.textContaining('等算力结算'), findsNothing);
       expect(find.text('UNAVAILABLE'), findsNothing);
@@ -1375,8 +1391,18 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('第 1 名'), findsOneWidget);
-      // The hero, my row on the board and 我的名次 all say the same place.
-      expect(find.text('第 2 名'), findsNWidgets(3));
+      // The hero and my row on the board say the same place; the composite
+      // strip says it a third time in its own rich line.
+      expect(find.text('第 2 名'), findsNWidgets(2));
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('mining-rank-reading')),
+          matching: find.textContaining('第 2 名'),
+        ),
+        findsOneWidget,
+      );
+      // `.folio-stamp` carries the settled power behind the place.
+      expect(find.textContaining('1,000 H'), findsOneWidget);
       expect(find.text('3000'), findsOneWidget);
       expect(find.text('我'), findsOneWidget);
       final participants = find.byKey(
@@ -1645,9 +1671,21 @@ void main() {
       expect(metrics, findsOneWidget);
       // A settled zero keeps its figure: it is a reading, not an absence.
       expect(find.text('0'), findsWidgets);
-      // The weight is why this community has a power at all.
-      expect(find.text('0.8'), findsOneWidget);
-      expect(find.textContaining('算力为 0，暂时没有名次'), findsOneWidget);
+      // The weight is why this community has a power at all, and it is on the
+      // Chalk contribution card as well as in the stamp.
+      expect(find.textContaining('0.8'), findsWidgets);
+      expect(
+        find.byKey(const ValueKey<String>('mining-community-contribution')),
+        findsOneWidget,
+      );
+      // A place the settlement did not give keeps the em dash in the strip.
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('mining-community-reading')),
+          matching: find.textContaining(launchMissingFigure),
+        ),
+        findsWidgets,
+      );
       final snapshot = find.byKey(
         const ValueKey<String>('mining-community-snapshot'),
       );
@@ -1674,12 +1712,18 @@ void main() {
         ),
       );
 
-      final metrics = find.byKey(
-        const ValueKey<String>('mining-community-metrics'),
+      // The place and the head count are the composite strip's two readings.
+      final reading = find.byKey(
+        const ValueKey<String>('mining-community-reading'),
       );
-      await scrollToS7Section(tester, metrics);
-      expect(find.text('第 7 名'), findsOneWidget);
-      expect(find.text('42'), findsOneWidget);
+      expect(
+        find.descendant(of: reading, matching: find.textContaining('第 7 名')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: reading, matching: find.textContaining('42')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('the formula version stays inside the 详情', (tester) async {
@@ -2032,7 +2076,7 @@ void main() {
         const MiningRulesScreen(),
         mining: FakeMiningGateway(),
       );
-      expect(find.text('还没有已批准的公式。上面这条是等待批准的草案。'), findsOneWidget);
+      expect(find.text('还没有已批准的公式。下面这条是等待批准的草案。'), findsOneWidget);
     });
 
     testWidgets('with nothing in force the sentence still stands', (
@@ -2150,7 +2194,7 @@ void main() {
       );
       // Reading nothing was never published as a zero: the figure the last
       // complete snapshot settled is still on the page.
-      expect(find.text('4.482309'), findsWidgets);
+      expect(find.textContaining('4.482309'), findsWidgets);
       expect(find.textContaining('最近一次快照未完成'), findsWidgets);
     });
 

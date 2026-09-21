@@ -560,6 +560,8 @@ GoRouter _buildRouter(
                     context.push(LoopRouteManifest.pathFor('mining-rules')),
                 onOpenReferral: () =>
                     context.push(LoopRouteManifest.pathFor('referral')),
+                onOpenMarket: () =>
+                    context.go(LoopRouteManifest.pathFor('market')),
               ),
             ),
           ),
@@ -1231,6 +1233,7 @@ final List<RouteBase> _miningRoutes = <RouteBase>[
     builder: (context, state) => MiningCommunityScreen(
       communityId: MiningRoute.parse(state.uri, MiningRoute.communityPath),
       onBack: () => _popOrHome(context),
+      onOpenRank: () => context.push(LoopRouteManifest.pathFor('mining-rank')),
     ),
   ),
   GoRoute(
