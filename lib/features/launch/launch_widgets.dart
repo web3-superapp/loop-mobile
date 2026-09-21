@@ -339,6 +339,9 @@ LoopRecordRow launchRoundRow({
     leading: _RoundIndexTile(index: round.roundIndex),
     title: 'Round ${round.roundIndex}',
     subtitle: parts.join(' · '),
+    // Four pending facts joined by `·` ran past the value column and lost the
+    // last one entirely; the row takes the second line the audit asks for.
+    subtitleMaxLines: 2,
     trailingBadge: LoopBadge(
       selected ? '已选择' : (round.isConfirmed ? '已确认' : '待确认'),
       kind: selected || round.isConfirmed

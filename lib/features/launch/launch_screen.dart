@@ -76,6 +76,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
           key: const ValueKey<String>('launch-stake-action'),
           icon: 'lock',
           label: '管理质押',
+          framed: true,
           onPressed: widget.onOpenStake,
         ),
         // Round rules belong to one launch, so the control only appears once
@@ -87,6 +88,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
             key: const ValueKey<String>('launch-rules-action'),
             icon: 'info',
             label: 'Launch 规则',
+            framed: true,
             onPressed: widget.onOpenRules,
           ),
       ],

@@ -116,13 +116,17 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
       key: const ValueKey<String>('launch-trade-screen'),
       archetype: LoopPageArchetype.action,
       title: detail?.launch.ticker ?? 'Launch 认购',
-      kicker: '内盘 · 只买不卖',
+      // The prototype writes the trading conditions on the line under the
+      // title, not as an eyebrow above it.
+      subtitle:
+          '内盘 · 只买不卖 · 手续费 ${launchFeeLabel(detail?.config) ?? launchMissingFigure}',
       onBack: widget.onBack,
       actions: <Widget>[
         LoopIconButton(
           key: const ValueKey<String>('launch-trade-holders-action'),
           icon: 'users',
           label: '查看持有人',
+          framed: true,
           onPressed: widget.onOpenHolders,
         ),
       ],
@@ -511,7 +515,6 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
       key: const ValueKey<String>('loop-stake-screen'),
       archetype: LoopPageArchetype.record,
       title: 'LOOP 质押',
-      kicker: 'STAKING POSITION',
       onBack: widget.onBack,
       // 暂无数值 described a page with no figures as if figures were owed,
       // and the English state name beside it was the wire value of the
@@ -712,7 +715,6 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
       key: const ValueKey<String>('loop-economy-screen'),
       archetype: LoopPageArchetype.record,
       title: 'LOOP 生态账本',
-      kicker: 'PUBLIC ECONOMY',
       onBack: widget.onBack,
       primary: LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,
@@ -1042,7 +1044,6 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
       key: const ValueKey<String>('launch-apply-screen'),
       archetype: LoopPageArchetype.action,
       title: '申请发射',
-      kicker: 'CURATED LAUNCH',
       onBack: widget.onBack,
       primary: LoopFolioPrimary(
         variant: LoopFolioVariant.quiet,

@@ -80,6 +80,7 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
           key: const ValueKey<String>('launch-detail-rounds-action'),
           icon: 'info',
           label: '轮次规则',
+          framed: true,
           onPressed: widget.onOpenRounds,
         ),
       ],
@@ -315,11 +316,14 @@ class _LaunchRoundProgressCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
+                        // Lime at 28px turns the em dash into a stray green
+                        // rule (see `launchMissingHeading`'s own note): the
+                        // clock keeps the neutral weight until it has a time.
                         launchMissingFigure,
                         style: LoopTypography.figure(
-                          28,
+                          24,
                           height: 1.05,
-                          color: LoopColors.lime,
+                          color: LoopColors.chalk,
                         ),
                       ),
                     ],
@@ -502,7 +506,6 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '销售轮次规则',
-      kicker: 'ROUND CONFIGURATION',
       onBack: widget.onBack,
       primary: LoopLedgerComposite(
         primary: LoopFolioPrimary(
@@ -672,7 +675,6 @@ class _LaunchGraduationScreenState
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '毕业与迁移',
-      kicker: 'GRADUATION PROGRESS',
       onBack: widget.onBack,
       primary: const LoopLedgerComposite(
         primary: LoopFolioPrimary(
@@ -806,7 +808,6 @@ class _LaunchTierScreenState extends ConsumerState<LaunchTierScreen> {
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '我的资格',
-      kicker: 'ELIGIBILITY',
       onBack: widget.onBack,
       primary: LoopLedgerComposite(
         primary: LoopFolioPrimary(
@@ -959,7 +960,6 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '内盘持有人',
-      kicker: 'HOLDER DISTRIBUTION',
       onBack: widget.onBack,
       primary: LoopLedgerComposite(
         primary: const LoopFolioPrimary(
@@ -1019,6 +1019,10 @@ class _LaunchHoldersScreenState extends ConsumerState<LaunchHoldersScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('launch-holders-me'),
                 leading: const LoopMonoTile(label: 'YOU', accent: true),
+                // `.row{background:var(--mint-soft)}`: the prototype washes
+                // the reader's own row so it is findable in the list before
+                // it is read.
+                selected: true,
                 title: '我的仓位',
                 subtitle: '持仓 $launchMissingFigure · 还可买 $launchMissingFigure',
                 trailing: launchMissingFigure,
@@ -1074,7 +1078,6 @@ class _LaunchHistoryScreenState extends ConsumerState<LaunchHistoryScreen> {
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '我的参与记录',
-      kicker: 'PARTICIPATION LOG',
       onBack: widget.onBack,
       primary: const LoopLedgerComposite(
         primary: LoopFolioPrimary(
