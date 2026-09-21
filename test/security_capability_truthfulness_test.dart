@@ -41,12 +41,12 @@ void main() {
         find.byKey(const ValueKey<String>('protection-setup-unavailable')),
         findsOneWidget,
       );
-      expect(find.text('保护设置还没有开放'), findsOneWidget);
+      expect(find.text('这几项现在还开不了'), findsOneWidget);
       expect(find.byType(Switch), findsNothing);
       expect(find.byType(TextField), findsNothing);
       expect(find.text('Save protection'), findsNothing);
       expect(find.textContaining('stored by the app'), findsNothing);
-      expect(find.textContaining('App 不会自行存储 PIN'), findsOneWidget);
+      expect(find.textContaining('LOOP 不会保存 PIN'), findsOneWidget);
       // A declared device capability is never reported as an enabled
       // protection: the passed-in capabilities only relabel the rows.
       expect(find.text('可用'), findsOneWidget);

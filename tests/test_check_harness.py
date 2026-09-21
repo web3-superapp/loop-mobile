@@ -7608,6 +7608,77 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected A11 switch guard: {result}",
         )
 
+    def test_a03_cannot_call_a_recovery_method_enabled_without_evidence(self) -> None:
+        """自动恢复 may say 已启用 only while it prints why that is true."""
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/features/account/account_screens.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "WalletRecoveryMethod.cloud => walletAutomaticRecoveryEvidence,",
+                    "WalletRecoveryMethod.cloud => '自动恢复已经开好了',",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_security_capability_truth_contract(root)
+
+        self.assertTrue(
+            any("evidence constant" in error for error in result),
+            msg=f"expected the 03 evidence guard: {result}",
+        )
+
+    def test_a03_evidence_sentence_must_name_its_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/features/account/account_screens.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            start = source.index("const walletAutomaticRecoveryEvidence =")
+            end = source.index(";", start)
+            path.write_text(
+                source[:start]
+                + "const walletAutomaticRecoveryEvidence = '换设备后还能拿回来'"
+                + source[end:],
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_security_capability_truth_contract(root)
+
+        self.assertTrue(
+            any("whose behaviour it is" in error for error in result),
+            msg=f"expected the 03 source-attribution guard: {result}",
+        )
+
+    def test_a03_confirm_cannot_be_gated_on_an_enrolment_it_cannot_make(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/features/account/account_screens.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "onPressed: blocked ? null : () => _decide(_chosen),",
+                    "onPressed: _chosen != null ? () => _decide(_chosen) : null,",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_security_capability_truth_contract(root)
+
+        self.assertTrue(
+            any("确认 available" in error for error in result),
+            msg=f"expected the 03 dead-end guard: {result}",
+        )
+
     def test_a11_cannot_claim_an_unconnected_secure_storage_save(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

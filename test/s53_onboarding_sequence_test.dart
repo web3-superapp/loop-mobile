@@ -669,9 +669,76 @@ void main() {
         find.byKey(const ValueKey<String>('wallet-recovery-unavailable')),
         findsOneWidget,
       );
-      expect(find.text('不可用'), findsNWidgets(3));
-      expect(_enabled(tester, 'wallet-recovery-confirm'), isFalse);
+      // Passkey and 恢复密码. 自动恢复 is not among them, and 社交恢复 /
+      // 导出私钥 are behind the disclosure the prototype folds them into.
+      expect(find.text('不可用'), findsNWidgets(2));
+      // F2: nothing to enrol is not a reason to trap the owner on the step.
+      expect(_enabled(tester, 'wallet-recovery-confirm'), isTrue);
       expect(_enabled(tester, 'wallet-recovery-later'), isTrue);
+    });
+
+    testWidgets('03 says 自动恢复 is on, and says why that is true', (
+      tester,
+    ) async {
+      await _pumpPhone(
+        tester,
+        const AccountSurfaceScreen.fromId('wallet-recovery'),
+      );
+
+      // The only 已启用 on the page, and it carries its evidence: whose
+      // behaviour it is, and what the owner does with it on a new device.
+      expect(find.text('已启用'), findsOneWidget);
+      expect(
+        find.textContaining(walletAutomaticRecoveryEvidence),
+        findsWidgets,
+      );
+      final row = tester.widget<LoopRecordRow>(
+        find.byKey(const ValueKey<String>('recovery-cloud')),
+      );
+      expect(row.trailing, '已启用');
+      // Nothing is enrolled by tapping it: it is a report, not a choice.
+      expect(row.onTap, isNull);
+      expect(row.semanticLabel, contains('已启用'));
+      expect(row.semanticLabel, contains('Privy'));
+    });
+
+    testWidgets('03 explains an unavailable method in words an owner can use', (
+      tester,
+    ) async {
+      await _pumpPhone(
+        tester,
+        const AccountSurfaceScreen.fromId('wallet-recovery'),
+      );
+
+      for (final method in <String>['passkey', 'password']) {
+        final row = tester.widget<LoopRecordRow>(
+          find.byKey(ValueKey<String>('recovery-$method')),
+        );
+        expect(row.trailing, '不可用');
+        expect(row.subtitle, contains(walletRecoveryProviderPending));
+      }
+      // The old sentences named the integration's internals at the owner.
+      expect(find.textContaining('尚未确认'), findsNothing);
+      expect(find.textContaining('reasonCode'), findsNothing);
+      // 跳过 no longer threatens a loss the account is not exposed to.
+      expect(find.text('跳过的后果'), findsNothing);
+    });
+
+    testWidgets('03 records the default when nothing was chosen', (
+      tester,
+    ) async {
+      final decisions = <WalletRecoveryMethod?>[];
+      await _pumpPhone(
+        tester,
+        AccountSurfaceScreen.fromId(
+          'wallet-recovery',
+          onRecoveryDecision: decisions.add,
+          onNavigate: (_) {},
+        ),
+      );
+
+      await _tap(tester, const ValueKey<String>('wallet-recovery-confirm'));
+      expect(decisions, <WalletRecoveryMethod?>[null]);
     });
 
     testWidgets('03 reports what was decided, including nothing at all', (
@@ -716,6 +783,28 @@ void main() {
       expect(find.text('已开启'), findsNothing);
       expect(find.text('不可用'), findsNWidgets(4));
       expect(_enabled(tester, 'security-setup-continue'), isTrue);
+    });
+
+    testWidgets('04 gives every closed protection a reason in plain words', (
+      tester,
+    ) async {
+      await _pumpPhone(
+        tester,
+        const AccountSurfaceScreen.fromId('security-setup'),
+      );
+
+      for (final reason in <String>[
+        '这台设备还没有确认可用的生物识别',
+        '当前版本还没有开放 App 自己的 PIN',
+        '多大金额要再验一次还没有定下来',
+        walletRecoveryProviderPending,
+      ]) {
+        expect(find.textContaining(reason), findsOneWidget);
+      }
+      // No integration vocabulary is pointed at the owner.
+      expect(find.textContaining('凭证生命周期'), findsNothing);
+      expect(find.textContaining('回调'), findsNothing);
+      expect(find.textContaining('验证通道'), findsNothing);
     });
   });
 }

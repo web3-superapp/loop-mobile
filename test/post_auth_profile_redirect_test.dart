@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
@@ -260,36 +259,34 @@ void main() {
       expect(published, LoopProfileLanding.loopIdSetup);
     });
 
-    test(
+    testWidgets(
       'a read that never answers becomes unavailable, not a wait forever',
-      () {
-        fakeAsync((async) {
-          LoopProfileLanding? published;
-          ProfileGatewayFailureKind? publishedKind;
-          final coordinator = PostAuthProfileRedirectCoordinator(
-            readProfile: () => Completer<ProfileResource>().future,
-            prepare: (_) async {},
-            publish: (landing, kind) {
-              if (landing == null) return;
-              published = landing;
-              publishedKind = kind;
-            },
-            navigate: (_) {},
-            readCeiling: const Duration(seconds: 15),
-          );
+      (tester) async {
+        LoopProfileLanding? published;
+        ProfileGatewayFailureKind? publishedKind;
+        final coordinator = PostAuthProfileRedirectCoordinator(
+          readProfile: () => Completer<ProfileResource>().future,
+          prepare: (_) async {},
+          publish: (landing, kind) {
+            if (landing == null) return;
+            published = landing;
+            publishedKind = kind;
+          },
+          navigate: (_) {},
+          readCeiling: const Duration(seconds: 15),
+        );
 
-          coordinator.onSessionChanged(
-            _signedOut(),
-            _authenticated('did:privy:owner-a'),
-          );
-          async.elapse(const Duration(seconds: 14));
-          expect(published, isNull);
+        coordinator.onSessionChanged(
+          _signedOut(),
+          _authenticated('did:privy:owner-a'),
+        );
+        await tester.pump(const Duration(seconds: 14));
+        expect(published, isNull);
 
-          async.elapse(const Duration(seconds: 2));
-          expect(published, LoopProfileLanding.communityUnavailable);
-          expect(publishedKind, ProfileGatewayFailureKind.unavailable);
-          expect(loopProfileRecheckCanHelp(publishedKind), isTrue);
-        });
+        await tester.pump(const Duration(seconds: 2));
+        expect(published, LoopProfileLanding.communityUnavailable);
+        expect(publishedKind, ProfileGatewayFailureKind.unavailable);
+        expect(loopProfileRecheckCanHelp(publishedKind), isTrue);
       },
     );
   });

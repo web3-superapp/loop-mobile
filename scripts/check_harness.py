@@ -3427,7 +3427,12 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
             "lib/features/account/account_screens.dart": (
                 "protection-setup-unavailable",
                 "security-setup-continue",
-                "App 不会自行存储 PIN",
+                "LOOP 不会保存 PIN",
+                # F2: what a page says about a method it does not offer is
+                # said in the owner's words, and what it says about the one
+                # method that is in force carries its evidence.
+                "const walletAutomaticRecoveryEvidence",
+                "const walletRecoveryProviderPending",
             ),
             # S8 (decision 0060) rebuilt H5 on `GET /v2/security/capabilities`
             # and `GET /v2/security/summary`: six methods that are off, each
@@ -3463,6 +3468,11 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
                 marker
                 for markers in SECURITY_CAPABILITY_TRUTH_TEST_MARKERS.values()
                 for marker in markers
+            ),
+            "test/s53_onboarding_sequence_test.dart": (
+                "03 says 自动恢复 is on, and says why that is true",
+                "03 explains an unavailable method in words an owner can use",
+                "04 gives every closed protection a reason in plain words",
             ),
             "AGENTS.md": (
                 "Capability availability never proves enrollment, configuration, enforcement, or secure persistence.",
@@ -3544,6 +3554,64 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
                 errors.append(
                     "A11 must not present a capability as an enabled protection"
                 )
+
+    # 03 is the other page that names protections. It may call exactly one
+    # method enabled — the Privy embedded wallet's own default recovery — and
+    # only while it also prints the sentence that makes that true and says
+    # whose behaviour it is. Everything else on the page stays a capability.
+    if account_path.is_file():
+        source = strip_dart_comments(read_text(account_path))
+        start = source.find("class WalletRecoveryScreen")
+        end = source.find("class SecuritySetupScreen", start + 1)
+        if start < 0 or end < 0:
+            errors.append("03 recovery must retain one bounded reviewed slice")
+        else:
+            recovery = source[start:end]
+            claims = re.findall(r"'(?:\u5df2\u5f00\u542f|\u5df2\u542f\u7528|\u5df2\u8bbe\u7f6e)'", recovery)
+            if claims and "walletAutomaticRecoveryEvidence" not in recovery:
+                errors.append(
+                    "03 may call a recovery method enabled only where it also "
+                    "shows the evidence sentence"
+                )
+            if (
+                re.search(
+                    r"WalletRecoveryMethod\.cloud\s*=>\s*"
+                    r"walletAutomaticRecoveryEvidence",
+                    recovery,
+                )
+                is None
+            ):
+                errors.append(
+                    "03 must read 自动恢复's sentence off the evidence constant"
+                )
+            # An enabled method is reported, never offered: tapping it would
+            # claim the owner chose something they did not.
+            if re.search(r"onTap\s*:\s*selectable\s*\?", recovery) is None:
+                errors.append(
+                    "03 must offer only a selectable method, never an enabled one"
+                )
+            # F2: the step is not a dead end. 确认 continues with whatever is
+            # true, so a build with nothing to enrol cannot trap the owner.
+            if (
+                re.search(
+                    r"onPressed\s*:\s*blocked\s*\?\s*null\s*:\s*"
+                    r"\(\)\s*=>\s*_decide\(_chosen\)",
+                    recovery,
+                )
+                is None
+            ):
+                errors.append(
+                    "03 must keep 确认 available whether or not a method was chosen"
+                )
+
+    evidence = re.search(
+        r"const\s+walletAutomaticRecoveryEvidence\s*=\s*'([^']*)'",
+        read_text(account_path) if account_path.is_file() else "",
+    )
+    if evidence is None:
+        errors.append("the 自动恢复 evidence sentence must be one named constant")
+    elif "Privy" not in evidence.group(1):
+        errors.append("the 自动恢复 evidence sentence must name whose behaviour it is")
 
     security_path = root / "lib/features/profile/security/security_screens.dart"
     if security_path.is_file():

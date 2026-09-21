@@ -134,13 +134,15 @@ void main() {
         find.byKey(const ValueKey<String>('wallet-recovery-unavailable')),
         findsOneWidget,
       );
-      // The three selectable methods; the two disclosure rows stay collapsed.
-      expect(find.text('不可用'), findsNWidgets(3));
+      // Passkey and 恢复密码; the two disclosure rows stay collapsed and
+      // 自动恢复 is not an option at all — it is already in force.
+      expect(find.text('不可用'), findsNWidgets(2));
       expect(find.text('可用'), findsNothing);
       expect(find.text('已选'), findsNothing);
-      // Confirm cannot pretend a recovery method was chosen.
-      expect(_enabled(tester, 'wallet-recovery-confirm'), isFalse);
-      // Skipping stays possible and honest about the consequence.
+      expect(find.text('已启用'), findsOneWidget);
+      // Nothing to enrol is not a reason to trap the owner on the step: both
+      // actions continue, and neither claims an enrolment (F2).
+      expect(_enabled(tester, 'wallet-recovery-confirm'), isTrue);
       expect(_enabled(tester, 'wallet-recovery-later'), isTrue);
     });
 
@@ -157,34 +159,38 @@ void main() {
       expect(find.textContaining('导入'), findsNothing);
     });
 
-    testWidgets('confirm needs an available method to be chosen first', (
-      tester,
-    ) async {
-      final destinations = <String>[];
-      await _pump(
-        tester,
-        AccountSurfaceScreen.fromId(
-          'wallet-recovery',
-          capabilities: const PrivyWalletCapabilities(canUsePasskey: true),
-          onNavigate: destinations.add,
-        ),
-      );
+    testWidgets(
+      'only an available method can be selected, and it is optional',
+      (tester) async {
+        final destinations = <String>[];
+        final decisions = <WalletRecoveryMethod?>[];
+        await _pump(
+          tester,
+          AccountSurfaceScreen.fromId(
+            'wallet-recovery',
+            capabilities: const PrivyWalletCapabilities(canUsePasskey: true),
+            onNavigate: destinations.add,
+            onRecoveryDecision: decisions.add,
+          ),
+        );
 
-      expect(find.text('可用'), findsOneWidget);
-      // Availability alone is not a choice.
-      expect(_enabled(tester, 'wallet-recovery-confirm'), isFalse);
+        expect(find.text('可用'), findsOneWidget);
+        expect(find.text('已选'), findsNothing);
 
-      // An unavailable row cannot be selected.
-      await _tap(tester, 'recovery-cloud');
-      expect(_enabled(tester, 'wallet-recovery-confirm'), isFalse);
+        // The enabled row reports; it is not a choice to make.
+        await _tap(tester, 'recovery-cloud');
+        expect(find.text('已选'), findsNothing);
 
-      await _tap(tester, 'recovery-passkey');
-      expect(find.text('已选'), findsOneWidget);
-      expect(_enabled(tester, 'wallet-recovery-confirm'), isTrue);
+        await _tap(tester, 'recovery-passkey');
+        expect(find.text('已选'), findsOneWidget);
 
-      await _tap(tester, 'wallet-recovery-confirm');
-      expect(destinations, <String>['security-setup']);
-    });
+        await _tap(tester, 'wallet-recovery-confirm');
+        expect(decisions, <WalletRecoveryMethod?>[
+          WalletRecoveryMethod.passkey,
+        ]);
+        expect(destinations, <String>['security-setup']);
+      },
+    );
 
     testWidgets('a loading or failed capability read blocks every option', (
       tester,

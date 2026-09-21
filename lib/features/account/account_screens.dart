@@ -829,12 +829,17 @@ class _WalletCreationRingPainter extends CustomPainter {
 // wallet-recovery · intro / focus
 // ---------------------------------------------------------------------------
 
-/// One selectable recovery method. Selecting it records a local intent only;
-/// nothing is enrolled, stored or proven until the capability exists.
+/// One recovery method the page lists.
+///
+/// [cloud] is not like the other two. It is how a Privy embedded wallet is
+/// recovered by default — the provider keeps the wallet reachable through the
+/// login method itself — so it is already in force for every account that has
+/// one. The other two are enrolments LOOP would have to perform, and the SDK
+/// in this build exposes no call that performs them.
 enum WalletRecoveryMethod {
   passkey('Passkey（推荐）', '用设备生物识别，跟随系统钥匙串同步', 'key'),
   password('恢复密码', '自己设一个密码，忘了就找不回', 'lock'),
-  cloud('自动恢复', '凭登录方式恢复，最省事但依赖供应商', 'cloud');
+  cloud('自动恢复', '凭登录方式恢复，换设备后用同一邮箱登录即可', 'cloud');
 
   const WalletRecoveryMethod(this.title, this.detail, this.icon);
 
@@ -842,6 +847,22 @@ enum WalletRecoveryMethod {
   final String detail;
   final String icon;
 }
+
+/// The one sentence that makes 自动恢复 an enabled method rather than a claim.
+///
+/// A page may say 已启用 only where it can also say why it is true and who
+/// says so. This is that evidence: Privy's own documented behaviour for the
+/// embedded wallets LOOP creates, named as Privy's and not as LOOP's.
+const walletAutomaticRecoveryEvidence =
+    'Privy 内置钱包默认由登录方式恢复；换设备后用同一邮箱登录即可（来源：Privy）';
+
+/// What the product can say today about a method it does not offer.
+///
+/// The old sentences named the integration («设备或 Privy 尚未确认 Passkey
+/// 能力»). An owner cannot do anything with that, and it reads as a fault.
+/// This says the same thing in the owner's terms: the service has not opened
+/// it in this version.
+const walletRecoveryProviderPending = '当前版本的登录服务还没有开放这一项';
 
 class WalletRecoveryScreen extends StatefulWidget {
   const WalletRecoveryScreen({
@@ -874,22 +895,36 @@ class WalletRecoveryScreen extends StatefulWidget {
   State<WalletRecoveryScreen> createState() => _WalletRecoveryScreenState();
 }
 
+/// What one row on step 03 is: already in force, offered, or neither.
+enum _RecoveryRowState { enabled, selectable, unavailable }
+
 class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
   WalletRecoveryMethod? _chosen;
 
-  bool _available(WalletRecoveryMethod method) => switch (method) {
-    WalletRecoveryMethod.passkey => widget.capabilities.canUsePasskey,
-    WalletRecoveryMethod.password => widget.capabilities.canUseRecoveryPassword,
-    WalletRecoveryMethod.cloud => widget.capabilities.canUseCloudRecovery,
+  _RecoveryRowState _stateOf(WalletRecoveryMethod method) => switch (method) {
+    // 自动恢复 is the Privy embedded wallet's own default. It is not a switch
+    // LOOP owns, so it is never offered as a choice — it is reported, with
+    // the sentence that makes it true.
+    WalletRecoveryMethod.cloud => _RecoveryRowState.enabled,
+    WalletRecoveryMethod.passkey =>
+      widget.capabilities.canUsePasskey
+          ? _RecoveryRowState.selectable
+          : _RecoveryRowState.unavailable,
+    WalletRecoveryMethod.password =>
+      widget.capabilities.canUseRecoveryPassword
+          ? _RecoveryRowState.selectable
+          : _RecoveryRowState.unavailable,
   };
 
   String _reason(WalletRecoveryMethod method) => switch (method) {
-    WalletRecoveryMethod.passkey => '设备或 Privy 尚未确认 Passkey 能力',
-    WalletRecoveryMethod.password => '恢复密码还没有开放',
-    WalletRecoveryMethod.cloud => '账号恢复还没有开放',
+    WalletRecoveryMethod.cloud => walletAutomaticRecoveryEvidence,
+    WalletRecoveryMethod.passkey ||
+    WalletRecoveryMethod.password => walletRecoveryProviderPending,
   };
 
-  bool get _anyAvailable => WalletRecoveryMethod.values.any(_available);
+  bool get _anySelectable => WalletRecoveryMethod.values.any(
+    (method) => _stateOf(method) == _RecoveryRowState.selectable,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -906,14 +941,18 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
       primaryAction: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
+          // The step is never a dead end. An account already has a working
+          // recovery method the moment its wallet exists, so 确认 continues
+          // with whatever is true — the chosen method if one was chosen, the
+          // default otherwise. Disabling it left owners on a page they could
+          // not leave when nothing was enrollable (device report 2026-09-21
+          // · F2).
           LoopButton(
             key: const ValueKey<String>('wallet-recovery-confirm'),
             label: '确认',
             primary: true,
             block: true,
-            onPressed: _chosen != null && !blocked
-                ? () => _decide(_chosen)
-                : null,
+            onPressed: blocked ? null : () => _decide(_chosen),
           ),
           const SizedBox(height: 10),
           LoopButton(
@@ -938,23 +977,27 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
                     title: '社交恢复 2-of-3',
                     detail: '指定 3 个守护人，2 个同意即可恢复',
                     available: widget.capabilities.canUseSocialRecovery,
-                    reason: '守护人还没有开放',
+                    reason: walletRecoveryProviderPending,
                     position: LoopRowPosition.first,
                   ),
                   _capabilityRow(
                     title: '导出私钥',
                     detail: '随时可导出，这是你的逃生舱',
                     available: widget.capabilities.canExportPrivateKey,
-                    reason: '私钥导出还没有开放',
+                    reason: walletRecoveryProviderPending,
                     position: LoopRowPosition.last,
                   ),
                 ],
               ),
+              // The honest residual risk. It is no longer "you may lose
+              // everything": the account has a recovery method. What it
+              // depends on is the login method, and that is the thing to
+              // keep.
               const LoopNotice(
                 icon: 'warn',
-                tone: LoopNoticeTone.danger,
-                title: '跳过的后果',
-                body: '换设备或清除数据后可能永久失去资产访问权。恢复方式可用后请尽快设置。',
+                tone: LoopNoticeTone.warn,
+                title: '自动恢复依赖你的登录方式',
+                body: '邮箱或登录方式丢了，钱包也会一起丢。再加一种方式会更稳妥，等这些方式开放后可以随时补上。',
                 margin: EdgeInsets.only(top: 12),
               ),
             ],
@@ -963,12 +1006,12 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
       ),
       body: <Widget>[
         const IdentityProgress(step: 3, total: 5, label: '设置恢复方式'),
-        const IdentityStepCopy('建议至少设置一种长期可用的恢复凭证。'),
+        const IdentityStepCopy('你的钱包已经有一种恢复方式，其余的等开放后再补。'),
         const LoopNotice(
-          icon: 'warn',
-          tone: LoopNoticeTone.warn,
-          title: '这一步决定你换手机后能不能拿回资产',
-          body: 'LOOP 没有助记词兜底，恢复方式是唯一的路。',
+          key: ValueKey<String>('wallet-recovery-default'),
+          icon: 'check',
+          title: '换手机后你已经能拿回资产',
+          body: '$walletAutomaticRecoveryEvidence。LOOP 没有助记词，这条路就是默认的那条。',
         ),
         if (widget.loading)
           const Padding(
@@ -987,15 +1030,14 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
             onRetry: widget.onRetry,
           )
         else ...<Widget>[
-          if (!_anyAvailable)
+          if (!_anySelectable)
             const LoopNotice(
               key: ValueKey<String>('wallet-recovery-unavailable'),
-              icon: 'warn',
-              tone: LoopNoticeTone.warn,
-              title: '暂时没有可用的恢复方式',
-              body: 'Privy 尚未确认任何恢复能力。下面的选项都不能在本地模拟或预先勾选。',
+              icon: 'info',
+              title: '现在还不能再加一种',
+              body: '$walletRecoveryProviderPending。下面的选项不会在本地模拟，也不会预先勾选。',
             ),
-          const LoopLabel('选择方式'),
+          const LoopLabel('恢复方式'),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               for (final method in WalletRecoveryMethod.values)
@@ -1013,34 +1055,41 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
   }
 
   LoopRecordRow _methodRow(WalletRecoveryMethod method) {
-    final available = _available(method);
+    final state = _stateOf(method);
+    final enabled = state == _RecoveryRowState.enabled;
+    final selectable = state == _RecoveryRowState.selectable;
     final chosen = _chosen == method;
     final index = WalletRecoveryMethod.values.indexOf(method);
+    final reason = _reason(method);
     return LoopRecordRow(
       key: ValueKey<String>('recovery-${method.name}'),
-      leading: IdentityOptionIcon(method.icon, chosen: chosen),
+      leading: IdentityOptionIcon(method.icon, chosen: chosen || enabled),
       title: method.title,
-      subtitle: available
-          ? method.detail
-          : '${method.detail} · ${_reason(method)}',
+      // An enabled row carries its evidence; an unavailable row carries the
+      // reason. Neither is ever a bare state word.
+      subtitle: selectable ? method.detail : '${method.detail} · $reason',
       // `.row-choice .row-s{white-space:normal}`: the sentence that decides
       // whether an owner can get back in may not end in an ellipsis.
-      subtitleMaxLines: 2,
+      subtitleMaxLines: 3,
       selected: chosen,
-      trailing: chosen
+      trailing: enabled
+          ? '已启用'
+          : chosen
           ? '已选'
-          : available
+          : selectable
           ? '可用'
           : '不可用',
-      onTap: available ? () => setState(() => _chosen = method) : null,
+      onTap: selectable ? () => setState(() => _chosen = method) : null,
       position: index == 0
           ? LoopRowPosition.first
           : index == WalletRecoveryMethod.values.length - 1
           ? LoopRowPosition.last
           : LoopRowPosition.middle,
-      semanticLabel: available
+      semanticLabel: enabled
+          ? '${method.title}，已启用：$reason'
+          : selectable
           ? '${method.title}，${chosen ? '已选' : '可选'}'
-          : '${method.title}，不可用：${_reason(method)}',
+          : '${method.title}，不可用：$reason',
     );
   }
 
@@ -1095,13 +1144,13 @@ class SecuritySetupScreen extends StatelessWidget {
       ),
       body: <Widget>[
         const IdentityProgress(step: 4, total: 5, label: '安全设置'),
-        const IdentityStepCopy('应用锁与交易验证由 Privy 与设备共同决定。'),
+        const IdentityStepCopy('应用锁与交易验证由这台设备和登录服务共同决定。'),
         const LoopNotice(
           key: ValueKey<String>('protection-setup-unavailable'),
           icon: 'warn',
           tone: LoopNoticeTone.warn,
-          title: '保护设置还没有开放',
-          body: '这里不会保存 PIN，也不会声称已经开启任何保护。可用性只说明能力，不代表已启用。',
+          title: '这几项现在还开不了',
+          body: '下面写的是每一项开不了的原因。LOOP 不会保存 PIN，也不会把「能开」说成「已经开了」。',
         ),
         const LoopLabel('应用锁'),
         LoopRecordGroup(
@@ -1111,7 +1160,7 @@ class SecuritySetupScreen extends StatelessWidget {
               detail: '打开 App 与签名前验证',
               icon: 'user',
               available: capabilities.canUseBiometrics,
-              reason: '设备生物识别能力尚未确认',
+              reason: '这台设备还没有确认可用的生物识别',
               position: LoopRowPosition.first,
             ),
             _row(
@@ -1119,7 +1168,7 @@ class SecuritySetupScreen extends StatelessWidget {
               detail: '生物识别不可用时的备用',
               icon: 'keypad',
               available: capabilities.canUseApplicationPin,
-              reason: '应用 PIN 需要账号绑定的凭证生命周期决策',
+              reason: '当前版本还没有开放 App 自己的 PIN',
               position: LoopRowPosition.last,
             ),
           ],
@@ -1132,14 +1181,14 @@ class SecuritySetupScreen extends StatelessWidget {
               title: '大额交易二次验证',
               detail: '超过阈值时重新验证身份',
               available: capabilities.canUseTransactionMfa,
-              reason: '阈值与验证通道均未确定',
+              reason: '多大金额要再验一次还没有定下来',
               position: LoopRowPosition.first,
             ),
             _row(
               title: 'MFA',
               detail: 'SMS / TOTP / Passkey',
               available: capabilities.canUseTransactionMfa,
-              reason: '钱包 MFA 的设置回调尚不存在',
+              reason: walletRecoveryProviderPending,
               position: LoopRowPosition.last,
             ),
           ],
