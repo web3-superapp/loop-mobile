@@ -153,6 +153,9 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
+          // Directly under the hero: the figures it just printed are what the
+          // demonstration holdings changed.
+          MiningDemoHoldingsNotice(slug: 'summary', snapshot: summary.snapshot),
           MiningDashReasons(
             slug: 'mining-hero',
             // The hero caption already speaks for every dash the pending

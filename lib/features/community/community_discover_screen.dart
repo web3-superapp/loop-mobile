@@ -15,33 +15,32 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
-/// The four prototype segments. Only the two backed by
-/// `GET /v2/communities?sort=` can be selected; the other two are disabled
-/// with the reason, because "算力最高" and "讨论最多" have no source yet.
+/// The four prototype segments, each backed by a `GET /v2/communities?sort=`
+/// value (decision 0061).
+///
+/// 「算力最高」 ranks by the settled community power every mining read
+/// resolves to, 「讨论最多」 by the messages the official channel was seen
+/// carrying over the last week. Whether either can be applied is the server's
+/// answer on that page, not a client-side switch: a segment whose order comes
+/// back unavailable states the reason and offers the member order instead.
+/// There is no 「增长最快」 segment, because nothing measures growth.
 enum CommunityDiscoverSegment {
   members('成员最多', CommunityDirectorySort.members),
-  power('算力最高', null),
-  discussion('讨论最多', null),
+  power('算力最高', CommunityDirectorySort.miningPower),
+  discussion('讨论最多', CommunityDirectorySort.activity),
   newest('新社区', CommunityDirectorySort.newest);
 
   const CommunityDiscoverSegment(this.label, this.sort);
 
   final String label;
-  final CommunityDirectorySort? sort;
+  final CommunityDirectorySort sort;
 
-  bool get isAvailable => sort != null;
-
-  /// Why the segment has nothing to sort by.
-  ///
-  /// It names the missing source and nothing else. "挖矿开放后再试" and
-  /// "聊天开放后再试" were written when neither module was live; both are, and
-  /// the sentence went on telling the owner to wait for something that had
-  /// already happened. A copy string states no schedule.
-  String get deferredReason => switch (this) {
-    CommunityDiscoverSegment.power => '算力排序暂时不可用：目录接口不返回社区算力，没有可以排序的数据。',
-    CommunityDiscoverSegment.discussion => '讨论量排序暂时不可用：目录接口不返回讨论量，没有可以排序的数据。',
-    _ => '',
-  };
+  static CommunityDiscoverSegment of(CommunityDirectorySort sort) {
+    for (final segment in values) {
+      if (segment.sort == sort) return segment;
+    }
+    return CommunityDiscoverSegment.members;
+  }
 }
 
 class CommunityDiscoverScreen extends ConsumerStatefulWidget {
@@ -65,8 +64,6 @@ class CommunityDiscoverScreen extends ConsumerStatefulWidget {
 
 class _CommunityDiscoverScreenState
     extends ConsumerState<CommunityDiscoverScreen> {
-  CommunityDiscoverSegment _segment = CommunityDiscoverSegment.members;
-
   /// Collects the application, confirms it, then submits it exactly once.
   /// The five refusal codes each get their own copy; only a 201 navigates.
   Future<void> _apply() async {
@@ -115,7 +112,11 @@ class _CommunityDiscoverScreenState
       });
     }
 
-    final selectedSegment = _segment;
+    final orderingReason = state.orderingReasonCode;
+    // The chip that reads as chosen is the order the controller is on, so a
+    // segment can never look selected while the list beside it was ranked by
+    // something else.
+    final selectedSegment = CommunityDiscoverSegment.of(state.sort);
     return LoopStreamPage(
       key: const ValueKey<String>('community-discover-screen'),
       archetype: LoopPageArchetype.listing,
@@ -129,12 +130,13 @@ class _CommunityDiscoverScreenState
         // The directory answers one cursor page at a time and carries no
         // total, so a heading may only count what is loaded — and it says
         // that it is what it is counting until the last page is in.
-        heading: state.phase != CommunityViewPhase.ready
+        heading:
+            state.phase != CommunityViewPhase.ready || orderingReason != null
             ? communityMissingHeading
             : state.nextCursor == null
             ? '${state.items.length} 个社区'
             : '已载入 ${state.items.length} 个社区',
-        caption: '排序只用成员数和创建时间这两项可核对的信息。热门不等于推荐。',
+        caption: '排序只用成员数、创建时间、算力与 7 天讨论量这些可核对的数字。热门不等于推荐。',
         stamp: state.recommendation == null ? null : 'RULE',
       ),
       filters: Padding(
@@ -150,22 +152,8 @@ class _CommunityDiscoverScreenState
                     key: ValueKey<String>('discover-seg-${segment.name}'),
                     label: segment.label,
                     selected: segment == selectedSegment,
-                    onSelected: segment.isAvailable
-                        ? () {
-                            setState(() => _segment = segment);
-                            unawaited(controller.selectSort(segment.sort!));
-                          }
-                        : null,
-                    // A sort with no source still answers the tap: the two
-                    // disabled chips took every tap in silence, which reads
-                    // as a control that is broken.
-                    onBlocked: segment.isAvailable
-                        ? null
-                        : () => LoopToast.show(
-                            context,
-                            message: segment.deferredReason,
-                            kind: LoopToastKind.warn,
-                          ),
+                    onSelected: () =>
+                        unawaited(controller.selectSort(segment.sort)),
                   ),
                 ),
             ],
@@ -188,15 +176,25 @@ class _CommunityDiscoverScreenState
         padding: const EdgeInsets.only(bottom: 24),
         children: <Widget>[
           CommunityPreviewNotice(mode: mode, resource: '社区目录'),
-          for (final segment in CommunityDiscoverSegment.values)
-            if (!segment.isAvailable)
-              LoopEmpty(
-                key: ValueKey<String>('discover-seg-${segment.name}-reason'),
-                icon: 'warn',
-                message: '"${segment.label}" 暂不可用',
-                reason: segment.deferredReason,
+          if (orderingReason != null)
+            // The page answered and the order did not: an empty list here
+            // would say 「没有社区」, which is not what was measured.
+            LoopEmpty(
+              key: const ValueKey<String>(
+                'community-discover-ordering-unavailable',
               ),
-          if (state.phase != CommunityViewPhase.ready)
+              icon: 'warn',
+              message: '「${selectedSegment.label}」暂时不可用',
+              reason: communityUnavailableReason(orderingReason),
+              action: LoopButton(
+                key: const ValueKey<String>('community-discover-ordering-back'),
+                label: '按成员最多排序',
+                onPressed: () => unawaited(
+                  controller.selectSort(CommunityDirectorySort.members),
+                ),
+              ),
+            )
+          else if (state.phase != CommunityViewPhase.ready)
             CommunityStateBlock(
               phase: state.phase,
               failureKind: state.failureKind,
@@ -211,6 +209,7 @@ class _CommunityDiscoverScreenState
                   communityDirectoryRow(
                     community: state.items[index],
                     position: communityRowPosition(index, state.items.length),
+                    sort: state.sort,
                     onTap: () => widget.onOpenCommunity?.call(
                       state.items[index].communityId,
                     ),

@@ -245,19 +245,196 @@ abstract final class LoopV2ProjectionCodec {
     );
   }
 
-  static CommunitySummary community(Object? raw) {
+  static const _communityKeys = <String>{
+    'communityId',
+    'name',
+    'slug',
+    'description',
+    'logoRef',
+    'verificationStatus',
+    'boundAssetKey',
+    'memberCount',
+    'createdAt',
+    'configVersion',
+  };
+
+  static CommunitySummary community(Object? raw) =>
+      _community(LoopV2Contract.strictMap(raw, _communityKeys));
+
+  /// One row of `GET /v2/communities`, which carries the fact the page was
+  /// ordered by and nothing else (decision 0061).
+  ///
+  /// [sort] is the order the **response** declared, not the one the request
+  /// asked for: a row carrying the other sort's fact, or a stored sort's row
+  /// carrying either, is a projection whose provenance the page cannot state,
+  /// so it is refused rather than half-read.
+  static CommunitySummary communityRow(
+    Object? raw, {
+    required CommunityDirectorySort sort,
+  }) {
+    final map = LoopV2Contract.strictMapWithOptional(
+      raw,
+      _communityKeys,
+      const <String>{'miningPower', 'activity'},
+    );
+    final power = map.containsKey('miningPower')
+        ? miningPowerFact(map['miningPower'])
+        : null;
+    final activityFact = map.containsKey('activity')
+        ? communityActivity(map['activity'])
+        : null;
+    switch (sort) {
+      case CommunityDirectorySort.miningPower:
+        if (power == null || activityFact != null) invalid();
+      case CommunityDirectorySort.activity:
+        if (activityFact == null || power != null) invalid();
+      case CommunityDirectorySort.members:
+      case CommunityDirectorySort.newest:
+        if (power != null || activityFact != null) invalid();
+    }
+    // A community's power is a sum over its bound asset; an account's is not
+    // a fact about the community, so a row carrying one cannot be ranked.
+    if (power is LoopAccountMiningPower) invalid();
+    return _community(map, miningPower: power, activity: activityFact);
+  }
+
+  /// `activity` on a discover row: a counted window, or the reason the
+  /// channel was not read. A row without a fresh reading is never a zero.
+  static CommunityActivityFact communityActivity(Object? raw) {
+    if (raw is! Map) invalid();
+    if (raw['status'] != 'available') {
+      return CommunityActivityUnavailable(unavailable(raw).reasonCode);
+    }
     final map = LoopV2Contract.strictMap(raw, const <String>{
-      'communityId',
-      'name',
-      'slug',
-      'description',
-      'logoRef',
-      'verificationStatus',
-      'boundAssetKey',
-      'memberCount',
-      'createdAt',
-      'configVersion',
+      'status',
+      'messageCount',
+      'windowDays',
+      'bounded',
+      'observedAt',
     });
+    final windowDays = requireCount(map, 'windowDays');
+    if (windowDays < 1 || windowDays > 365) invalid();
+    return CommunityActivityCount(
+      messageCount: requireCount(map, 'messageCount'),
+      windowDays: windowDays,
+      bounded: requireBool(map, 'bounded'),
+      observedAt: requireTimestamp(map, 'observedAt'),
+    );
+  }
+
+  /// `ordering` on `GET /v2/communities`: what the page was ordered by, and
+  /// on which measured fact.
+  ///
+  /// [requested] is the sort the request carried. A deployment predating
+  /// decision 0061 sends no `ordering` at all, and its only two sorts are the
+  /// stored columns, so the absent key is read as exactly that — the reading
+  /// this client already made of those responses. It can be tightened to a
+  /// required key once every deployment answers it.
+  static CommunityOrdering communityOrdering(
+    Object? raw, {
+    required CommunityDirectorySort requested,
+  }) {
+    if (raw == null) {
+      return CommunityOrderingApplied(
+        sort: requested,
+        basis: const CommunityStoredBasis(),
+      );
+    }
+    if (raw is! Map) invalid();
+    final rawSort = raw['sort'];
+    if (rawSort is! String) invalid();
+    final sort = CommunityDirectorySort.tryParse(rawSort);
+    // The page states the order it applied; a page ordered by something else
+    // than what was asked for would be silently answering another question.
+    if (sort == null || sort != requested) invalid();
+    if (raw['status'] != 'available') {
+      final map = LoopV2Contract.strictMap(raw, const <String>{
+        'status',
+        'sort',
+        'reasonCode',
+      });
+      if (map['status'] != 'unavailable') invalid();
+      final reasonCode = map['reasonCode'];
+      if (reasonCode is! String ||
+          reasonCode.length > 64 ||
+          !LoopV2Contract.reasonCodePattern.hasMatch(reasonCode)) {
+        invalid();
+      }
+      return CommunityOrderingUnavailable(sort: sort, reasonCode: reasonCode);
+    }
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'sort',
+      'basis',
+    });
+    return CommunityOrderingApplied(
+      sort: sort,
+      basis: _orderingBasis(map['basis'], sort: sort),
+    );
+  }
+
+  static CommunityOrderingBasis _orderingBasis(
+    Object? raw, {
+    required CommunityDirectorySort sort,
+  }) {
+    if (raw is! Map) invalid();
+    final kind = raw['kind'];
+    switch (kind) {
+      case 'stored':
+        LoopV2Contract.strictMap(raw, const <String>{'kind'});
+        if (sort.carriesRowFact) invalid();
+        return const CommunityStoredBasis();
+      case 'miningSnapshot':
+        if (sort != CommunityDirectorySort.miningPower) invalid();
+        final map = LoopV2Contract.strictMap(raw, const <String>{
+          'kind',
+          'snapshotId',
+          'formulaVersion',
+          'computedAt',
+          'scope',
+          'stale',
+        });
+        return CommunityMiningBasis(
+          snapshotId: LoopV2Contract.requiredString(
+            map,
+            'snapshotId',
+            pattern: LoopV2Contract.uuidPattern,
+          ),
+          formulaVersion: LoopV2Contract.requiredString(
+            map,
+            'formulaVersion',
+            pattern: miningFormulaVersionPattern,
+            maxLength: 128,
+          ),
+          computedAt: requireTimestamp(map, 'computedAt'),
+          scope: LoopV2S7Codec.formulaScope(map),
+          stale: requireBool(map, 'stale'),
+        );
+      case 'channelActivity':
+        if (sort != CommunityDirectorySort.activity) invalid();
+        final map = LoopV2Contract.strictMap(raw, const <String>{
+          'kind',
+          'windowDays',
+          'observedCommunityCount',
+          'observedAt',
+        });
+        final windowDays = requireCount(map, 'windowDays');
+        if (windowDays < 1 || windowDays > 365) invalid();
+        return CommunityActivityBasis(
+          windowDays: windowDays,
+          observedCommunityCount: requireCount(map, 'observedCommunityCount'),
+          observedAt: requireTimestamp(map, 'observedAt'),
+        );
+      default:
+        invalid();
+    }
+  }
+
+  static CommunitySummary _community(
+    Map<String, Object?> map, {
+    LoopMiningPowerFact? miningPower,
+    CommunityActivityFact? activity,
+  }) {
     final verification = map['verificationStatus'];
     final configVersion = map['configVersion'];
     if (verification is! String || configVersion != 'communityV1') invalid();
@@ -282,6 +459,8 @@ abstract final class LoopV2ProjectionCodec {
       memberCount: requireCount(map, 'memberCount'),
       createdAt: requireTimestamp(map, 'createdAt'),
       configVersion: configVersion as String,
+      miningPower: miningPower,
+      activity: activity,
     );
   }
 

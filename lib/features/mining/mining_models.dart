@@ -112,6 +112,7 @@ final class MiningSnapshotComputed extends MiningSnapshotRef {
     required this.computedAt,
     this.stale = false,
     this.latestAttempt,
+    this.holdingsSource,
   });
 
   final String snapshotId;
@@ -131,7 +132,44 @@ final class MiningSnapshotComputed extends MiningSnapshotRef {
   /// The newest run under the version in force. It is this snapshot itself
   /// while [stale] is false.
   final MiningSnapshotAttempt? latestAttempt;
+
+  /// Which kinds of balance produced the numbers (decision 0061). A
+  /// deployment that predates the field says nothing, and the page then
+  /// claims nothing about it.
+  final MiningHoldingsSource? holdingsSource;
+
+  /// True when at least one figure counted a holding that was written for
+  /// development rather than observed on chain. The page has to say so.
+  bool get includesDemonstrationHoldings =>
+      holdingsSource != null && holdingsSource != MiningHoldingsSource.chain;
 }
+
+/// What the balances behind a settled run were.
+///
+/// `chain` is the only value a production deployment can publish. The other
+/// two mean the numbers are real arithmetic over holdings nobody holds, which
+/// is a thing the page must state rather than hide.
+enum MiningHoldingsSource {
+  chain('chain'),
+  mockSeed('mock_seed'),
+  mixed('mixed');
+
+  const MiningHoldingsSource(this.wireName);
+
+  final String wireName;
+
+  static MiningHoldingsSource? tryParse(String value) {
+    for (final source in values) {
+      if (source.wireName == value) return source;
+    }
+    return null;
+  }
+}
+
+/// True when the snapshot a page is printing counted demonstration holdings.
+bool miningSnapshotIncludesDemonstrationHoldings(MiningSnapshotRef? snapshot) =>
+    snapshot is MiningSnapshotComputed &&
+    snapshot.includesDemonstrationHoldings;
 
 /// Whether the numbers a page is printing came from a snapshot that a later
 /// run has already overtaken without completing.

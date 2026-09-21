@@ -163,9 +163,18 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
         'computedAt',
       },
       // Added by Decision 0057. A deployment without them is read exactly as
-      // before: no later run is known, so nothing is stale.
-      const <String>{'stale', 'latestAttempt'},
+      // before: no later run is known, so nothing is stale. `holdingsSource`
+      // is Decision 0061's addition: without it the page says nothing about
+      // which kinds of balance were counted.
+      const <String>{'stale', 'latestAttempt', 'holdingsSource'},
     );
+    final rawHoldingsSource = map['holdingsSource'];
+    MiningHoldingsSource? holdingsSource;
+    if (rawHoldingsSource != null) {
+      if (rawHoldingsSource is! String) LoopV2S7Codec.invalid();
+      holdingsSource = MiningHoldingsSource.tryParse(rawHoldingsSource);
+      if (holdingsSource == null) LoopV2S7Codec.invalid();
+    }
     final stale = map.containsKey('stale')
         ? LoopV2S7Codec.requireBool(map, 'stale')
         : false;
@@ -182,6 +191,7 @@ final class DioLoopV2MiningApi implements LoopV2MiningApi {
     return MiningSnapshotComputed(
       stale: stale,
       latestAttempt: attempt,
+      holdingsSource: holdingsSource,
       snapshotId: LoopV2S7Codec.requireId(map, 'snapshotId'),
       blockNumber: LoopV2S7Codec.requirePattern(
         map,

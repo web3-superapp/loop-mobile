@@ -257,25 +257,45 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
         options: LoopV2ModuleRequest.readOptions(accessToken, clientVersion),
       );
       LoopV2Contract.validateSuccess(response, statusCode: 200);
-      final root = LoopV2Contract.strictMap(response.data, const <String>{
-        'items',
-        'nextCursor',
-        'recommendation',
-        'contractVersion',
-      });
+      final root = LoopV2Contract.strictMapWithOptional(
+        response.data,
+        const <String>{
+          'items',
+          'nextCursor',
+          'recommendation',
+          'contractVersion',
+        },
+        // Added by decision 0061 and always sent by a deployment that carries
+        // it; optional here only so the recorded responses of the deployment
+        // that predates it still read. See `communityOrdering`.
+        const <String>{'ordering'},
+      );
       LoopV2ProjectionCodec.requireContractVersion(root);
+      final ordering = LoopV2ProjectionCodec.communityOrdering(
+        root['ordering'],
+        requested: sort,
+      );
+      final items = List<CommunitySummary>.unmodifiable(<CommunitySummary>[
+        for (final raw in LoopV2ProjectionCodec.requireList(
+          root['items'],
+          maximum: 50,
+        ))
+          LoopV2ProjectionCodec.communityRow(raw, sort: sort),
+      ]);
+      final nextCursor = LoopV2ProjectionCodec.cursor(root, 'nextCursor');
+      // An order nobody could apply reads nothing: a page that still carried
+      // rows would leave the client unable to say what it was showing.
+      if (ordering is CommunityOrderingUnavailable &&
+          (items.isNotEmpty || nextCursor != null)) {
+        LoopV2ProjectionCodec.invalid();
+      }
       return CommunityDirectoryPage(
-        items: List<CommunitySummary>.unmodifiable(<CommunitySummary>[
-          for (final raw in LoopV2ProjectionCodec.requireList(
-            root['items'],
-            maximum: 50,
-          ))
-            LoopV2ProjectionCodec.community(raw),
-        ]),
-        nextCursor: LoopV2ProjectionCodec.cursor(root, 'nextCursor'),
+        items: items,
+        nextCursor: nextCursor,
         recommendation: LoopV2ProjectionCodec.recommendation(
           root['recommendation'],
         ),
+        ordering: ordering,
       );
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(

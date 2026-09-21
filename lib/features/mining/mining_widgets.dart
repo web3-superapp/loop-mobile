@@ -201,6 +201,40 @@ class MiningStaleNotice extends StatelessWidget {
   }
 }
 
+/// The line a page prints when the figures above it counted holdings that
+/// were written for development instead of observed on chain (decision 0061).
+///
+/// The arithmetic is real — real prices, the formula in force — and the
+/// holdings are not held by anyone, so the number is a demonstration rather
+/// than a statement about what this account owns. A deployment that reads
+/// only chain balances prints nothing here, and production can publish no
+/// other value.
+class MiningDemoHoldingsNotice extends StatelessWidget {
+  const MiningDemoHoldingsNotice({
+    required this.slug,
+    required this.snapshot,
+    super.key,
+  });
+
+  final String slug;
+  final MiningSnapshotRef? snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!miningSnapshotIncludesDemonstrationHoldings(snapshot)) {
+      return const SizedBox.shrink();
+    }
+    return LoopNotice(
+      key: ValueKey<String>('mining-demo-holdings-$slug'),
+      icon: 'warn',
+      tone: LoopNoticeTone.warn,
+      title: '含演示持仓 · 仅开发环境',
+      body: '这些算力里有开发环境写入的持仓，链上没有人真的持有它们。',
+      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // The prototype's mining primaries (`docs/prototype/screens/mining*.html`)
 // ---------------------------------------------------------------------------

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
@@ -161,39 +162,57 @@ void main() {
       );
       expect(find.text('离线 · 显示缓存'), findsNothing);
 
-      // The two weighted holdings the snapshot priced, each with the
-      // expression that produced its power.
-      for (final assetId in <String>[
-        'eip155:56:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
-        'eip155:56:native',
-      ]) {
-        final row = find.byKey(ValueKey<String>('mining-assets-row-$assetId'));
-        await scrollToS7Section(tester, row);
-        expect(row, findsOneWidget, reason: assetId);
-      }
-      expect(find.textContaining(r'0 × $762.28 × 1×'), findsNWidgets(2));
-      // Decision 0044: the chain's own coin is priced through a declared
-      // proxy, and the row says whose price it is.
-      expect(find.textContaining('代理价，来自 WBNB'), findsOneWidget);
-
-      // Decision 0057: a later run did not finish, so the page keeps the last
-      // complete snapshot and dates it, naming the holding that stopped the
-      // next one by the symbol the same answer carries.
-      final stale = find.byKey(const ValueKey<String>('mining-stale-assets'));
-      await scrollToS7Section(tester, stale);
-      expect(stale, findsOneWidget);
-      expect(find.textContaining('USDT 的参考价不够新'), findsOneWidget);
-
-      // The two the snapshot skipped, each with the server's own reason.
-      for (final assetId in <String>[
-        'eip155:56:0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82',
-        'eip155:56:0x55d398326f99059ff775485246999027b3197955',
-      ]) {
+      // Every weighted holding the snapshot priced, each with the expression
+      // that produced its power. What the numbers are belongs to the capture
+      // — a Development stack that holds different amounts on a different
+      // day is still the same answer shape — so the assertion is that the
+      // page prints the row's own figures, not one day's figures.
+      expect(assets.included, isNotEmpty);
+      for (final asset in assets.included) {
         final row = find.byKey(
-          ValueKey<String>('mining-assets-excluded-$assetId'),
+          ValueKey<String>('mining-assets-row-${asset.assetId}'),
         );
         await scrollToS7Section(tester, row);
-        expect(row, findsOneWidget, reason: assetId);
+        expect(row, findsOneWidget, reason: asset.assetId);
+        expect(
+          find.textContaining(
+            '${asset.holding} × \$${asset.referencePriceUsd} × '
+            '${asset.weight}×',
+          ),
+          findsWidgets,
+          reason: asset.assetId,
+        );
+      }
+      // Decision 0044: a coin priced through a declared proxy says whose
+      // price it is.
+      for (final asset in assets.included) {
+        final proxy = asset.referencePriceProxyAssetId;
+        if (proxy == null) continue;
+        expect(
+          find.textContaining('代理价，来自'),
+          findsWidgets,
+          reason: asset.assetId,
+        );
+      }
+
+      // Decision 0057: when a later run did not finish, the page keeps the
+      // last complete snapshot and dates it; when nothing overtook it, the
+      // line is absent rather than reworded.
+      final stale = find.byKey(const ValueKey<String>('mining-stale-assets'));
+      if (miningSnapshotIsStale(assets.source)) {
+        await scrollToS7Section(tester, stale);
+        expect(stale, findsOneWidget);
+      } else {
+        expect(stale, findsNothing);
+      }
+
+      // Whatever the snapshot skipped, each with the server's own reason.
+      for (final skipped in assets.excluded) {
+        final row = find.byKey(
+          ValueKey<String>('mining-assets-excluded-${skipped.assetId}'),
+        );
+        await scrollToS7Section(tester, row);
+        expect(row, findsOneWidget, reason: skipped.assetId);
       }
     });
 
@@ -210,10 +229,11 @@ void main() {
         mining: _RecordedMiningGateway(assets, summary: summary),
       );
 
-      // The tab's own answer: a settled zero under the development baseline,
-      // with its unit, and the three readings the reward authority closes.
+      // The tab's own answer: the settled figure the capture carries, under
+      // the development baseline, with its unit.
       final hero = find.byKey(const ValueKey<String>('mining-summary-hero'));
       expect(hero, findsOneWidget);
+      final power = summary!.power;
       expect(
         tester
             .widget<Text>(
@@ -221,7 +241,10 @@ void main() {
             )
             .textSpan!
             .toPlainText(),
-        '0 H',
+        switch (power) {
+          MiningFigureValue(:final value) => '${loopGroupedFigure(value)} H',
+          MiningFigureUnavailable() => launchMissingHeading,
+        },
       );
 
       // And 算力明细 on the same screen, from the same read the detail page
@@ -231,7 +254,10 @@ void main() {
       );
       await scrollToS7Section(tester, composition);
       expect(composition, findsOneWidget);
-      expect(find.textContaining(r'× $762.28 ×'), findsWidgets);
+      expect(
+        find.textContaining('× \$${assets.included.first.referencePriceUsd} ×'),
+        findsWidgets,
+      );
     });
   });
 }

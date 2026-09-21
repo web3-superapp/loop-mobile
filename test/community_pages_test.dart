@@ -599,11 +599,16 @@ void main() {
   });
 
   group('community-discover', () {
-    testWidgets('only the two server-backed segments are selectable', (
+    testWidgets('all four segments carry a server-backed order', (
       tester,
     ) async {
       final gateway = FakeCommunityGateway(
         directoryPage: CommunityDirectoryPage(
+          ordering: const CommunityOrderingApplied(
+            sort: CommunityDirectorySort.members,
+            basis: CommunityStoredBasis(),
+          ),
+
           items: <CommunitySummary>[testCommunity()],
           nextCursor: null,
           recommendation: const CommunityRecommendation(
@@ -621,14 +626,23 @@ void main() {
       LoopSeg seg(String name) => tester.widget<LoopSeg>(
         find.byKey(ValueKey<String>('discover-seg-$name')),
       );
-      expect(seg('members').onSelected, isNotNull);
-      expect(seg('newest').onSelected, isNotNull);
-      expect(seg('power').onSelected, isNull);
-      expect(seg('discussion').onSelected, isNull);
-      expect(find.textContaining('算力排序暂时不可用'), findsOneWidget);
-      expect(find.textContaining('讨论量排序暂时不可用'), findsOneWidget);
-      // Neither reason may promise a date, and neither may point at a module
-      // that is already live: both Mining and group chat are.
+      for (final name in <String>['members', 'newest', 'power', 'discussion']) {
+        expect(seg(name).onSelected, isNotNull, reason: name);
+      }
+      // The two orders decision 0061 added are asked for by name, so a
+      // deployment that cannot apply one answers for itself.
+      await tester.tap(
+        find.byKey(const ValueKey<String>('discover-seg-power')),
+      );
+      await tester.pumpAndSettle();
+      expect(gateway.commands.last, startsWith('list:miningPower:'));
+      await tester.tap(
+        find.byKey(const ValueKey<String>('discover-seg-discussion')),
+      );
+      await tester.pumpAndSettle();
+      expect(gateway.commands.last, startsWith('list:activity:'));
+      // Nothing on the page tells the reader to wait for a module that is
+      // already live.
       expect(find.textContaining('开放后'), findsNothing);
     });
 
@@ -637,6 +651,11 @@ void main() {
     ) async {
       final gateway = FakeCommunityGateway(
         directoryPage: CommunityDirectoryPage(
+          ordering: const CommunityOrderingApplied(
+            sort: CommunityDirectorySort.members,
+            basis: CommunityStoredBasis(),
+          ),
+
           items: <CommunitySummary>[testCommunity()],
           nextCursor: null,
           recommendation: const CommunityRecommendation(
@@ -663,6 +682,11 @@ void main() {
       // heading read "20 个社区" over a directory of 36.
       final gateway = FakeCommunityGateway(
         directoryPage: CommunityDirectoryPage(
+          ordering: const CommunityOrderingApplied(
+            sort: CommunityDirectorySort.members,
+            basis: CommunityStoredBasis(),
+          ),
+
           items: <CommunitySummary>[testCommunity()],
           nextCursor: 'cursor-2',
           recommendation: const CommunityRecommendation(
@@ -683,6 +707,11 @@ void main() {
       // With the last page in, the loaded rows are the whole answer and the
       // heading may say so.
       gateway.directoryPage = CommunityDirectoryPage(
+        ordering: const CommunityOrderingApplied(
+          sort: CommunityDirectorySort.members,
+          basis: CommunityStoredBasis(),
+        ),
+
         items: <CommunitySummary>[testCommunity()],
         nextCursor: null,
         recommendation: const CommunityRecommendation(
@@ -700,6 +729,11 @@ void main() {
     testWidgets('choosing 新社区 refetches with the newest sort', (tester) async {
       final gateway = FakeCommunityGateway(
         directoryPage: CommunityDirectoryPage(
+          ordering: const CommunityOrderingApplied(
+            sort: CommunityDirectorySort.members,
+            basis: CommunityStoredBasis(),
+          ),
+
           items: <CommunitySummary>[testCommunity()],
           nextCursor: null,
           recommendation: const CommunityRecommendation(
@@ -727,6 +761,11 @@ void main() {
     ) async {
       final gateway = FakeCommunityGateway(
         directoryPage: const CommunityDirectoryPage(
+          ordering: CommunityOrderingApplied(
+            sort: CommunityDirectorySort.members,
+            basis: CommunityStoredBasis(),
+          ),
+
           items: <CommunitySummary>[],
           nextCursor: null,
           recommendation: CommunityRecommendation(
@@ -752,6 +791,11 @@ void main() {
     ) async {
       final gateway = FakeCommunityGateway(
         directoryPage: CommunityDirectoryPage(
+          ordering: const CommunityOrderingApplied(
+            sort: CommunityDirectorySort.members,
+            basis: CommunityStoredBasis(),
+          ),
+
           items: <CommunitySummary>[testCommunity()],
           nextCursor: null,
           recommendation: const CommunityRecommendation(

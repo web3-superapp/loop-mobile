@@ -10,6 +10,11 @@ import 'package:loop_mobile/widgets/loop_components.dart';
 import 'support/community_test_harness.dart';
 
 CommunityDirectoryPage _directory() => CommunityDirectoryPage(
+  ordering: const CommunityOrderingApplied(
+    sort: CommunityDirectorySort.members,
+    basis: CommunityStoredBasis(),
+  ),
+
   items: <CommunitySummary>[testCommunity()],
   nextCursor: null,
   recommendation: const CommunityRecommendation(

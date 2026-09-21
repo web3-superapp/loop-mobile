@@ -221,6 +221,11 @@ void main() {
       testWidgets('the directory re-attempts once', (tester) async {
         final gateway = FakeCommunityGateway(
           directoryPage: CommunityDirectoryPage(
+            ordering: const CommunityOrderingApplied(
+              sort: CommunityDirectorySort.members,
+              basis: CommunityStoredBasis(),
+            ),
+
             items: <CommunitySummary>[testCommunity()],
             nextCursor: null,
             recommendation: _recommendation,

@@ -223,6 +223,11 @@ void main() {
         size: _device,
         community: FakeCommunityGateway(
           directoryPage: CommunityDirectoryPage(
+            ordering: const CommunityOrderingApplied(
+              sort: CommunityDirectorySort.members,
+              basis: CommunityStoredBasis(),
+            ),
+
             items: <CommunitySummary>[
               for (var index = 0; index < 50; index += 1)
                 testCommunity(

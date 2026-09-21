@@ -125,6 +125,7 @@ final class CommunityDiscoverState {
     this.items = const <CommunitySummary>[],
     this.nextCursor,
     this.recommendation,
+    this.ordering,
     this.failureKind,
     this.loadingMore = false,
     this.refreshing = false,
@@ -153,6 +154,11 @@ final class CommunityDiscoverState {
   final List<CommunitySummary> items;
   final String? nextCursor;
   final CommunityRecommendation? recommendation;
+
+  /// What the loaded page was ordered by. Null until a page has answered.
+  /// An unavailable ordering is read before [items]: the page is not empty,
+  /// the order is missing.
+  final CommunityOrdering? ordering;
   final CommunityFailureKind? failureKind;
   final bool loadingMore;
 
@@ -161,6 +167,17 @@ final class CommunityDiscoverState {
   final bool refreshing;
 
   bool get canLoadMore => nextCursor != null && !loadingMore;
+
+  /// The reason the chosen order could not be applied, if it could not.
+  ///
+  /// A failed read answers for itself: the last ordering this page was told
+  /// about says nothing about a request that never arrived, so an offline or
+  /// broken read keeps its own state instead of this one.
+  String? get orderingReasonCode => switch (ordering) {
+    CommunityOrderingUnavailable(:final reasonCode) when failureKind == null =>
+      reasonCode,
+    _ => null,
+  };
 
   bool get isPreview => mode == CommunityGatewayMode.preview;
 }
@@ -232,6 +249,7 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
       membership: _membership,
       items: state.items,
       recommendation: state.recommendation,
+      ordering: state.ordering,
       refreshing: true,
     );
     return _fetch(append: false);
@@ -250,6 +268,7 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
         items: previous.items,
         nextCursor: previous.nextCursor,
         recommendation: previous.recommendation,
+        ordering: previous.ordering,
         loadingMore: true,
       );
     }
@@ -272,7 +291,12 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
           : page.items;
       state = CommunityDiscoverState(
         mode: previous.mode,
-        phase: merged.isEmpty
+        // An ordering the server could not apply answered the page: the list
+        // is not empty of communities, it was never ranked. The screen says
+        // which order is missing, so the phase stays out of it.
+        phase: page.orderingFailed
+            ? CommunityViewPhase.ready
+            : merged.isEmpty
             ? CommunityViewPhase.empty
             : CommunityViewPhase.ready,
         sort: previous.sort,
@@ -280,6 +304,7 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
         items: List<CommunitySummary>.unmodifiable(merged),
         nextCursor: page.nextCursor,
         recommendation: page.recommendation,
+        ordering: page.ordering,
       );
     } on CommunityGatewayException catch (error) {
       if (!isCurrent(generation)) return;
@@ -303,6 +328,7 @@ final class CommunityDiscoverController extends Notifier<CommunityDiscoverState>
         items: previous.items,
         nextCursor: previous.nextCursor,
         recommendation: previous.recommendation,
+        ordering: previous.ordering,
         failureKind: error.kind,
       );
     } catch (_) {

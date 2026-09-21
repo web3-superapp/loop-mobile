@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
+import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
@@ -914,22 +916,113 @@ LoopRecordRow communityDirectoryRow({
   required CommunitySummary community,
   required VoidCallback? onTap,
   LoopRowPosition position = LoopRowPosition.single,
+  CommunityDirectorySort sort = CommunityDirectorySort.members,
 }) {
   final verification = communityVerificationLabel(community.verificationStatus);
+  final members = '${community.memberCount} 名成员';
+  final ranked = communityDirectoryRowFigure(community, sort: sort);
+  if (ranked == null) {
+    return LoopRecordRow(
+      key: ValueKey<String>('community-row-${community.communityId}'),
+      leading: CommunityLogoTile(name: community.name),
+      title: community.name,
+      // The slug is the server's addressing handle; it told a reader browsing
+      // the directory nothing 「mock-vol-01」 did not already hide.
+      subtitle: verification,
+      trailing: '${community.memberCount}',
+      trailingCaption: '成员',
+      onTap: onTap,
+      position: position,
+      semanticLabel: '${community.name}，$verification，$members',
+    );
+  }
+  // The column the list is ranked by is the one the value slot states; the
+  // member count moves onto the second line so both stay readable.
   return LoopRecordRow(
     key: ValueKey<String>('community-row-${community.communityId}'),
     leading: CommunityLogoTile(name: community.name),
     title: community.name,
-    // The slug is the server's addressing handle; it told a reader browsing
-    // the directory nothing 「mock-vol-01」 did not already hide.
-    subtitle: verification,
-    trailing: '${community.memberCount}',
-    trailingCaption: '成员',
+    subtitle: '$verification · $members',
+    trailing: ranked.value,
+    trailingCaption: ranked.caption,
     onTap: onTap,
     position: position,
     semanticLabel:
-        '${community.name}，$verification，${community.memberCount} 名成员',
+        '${community.name}，$verification，$members，'
+        '${ranked.caption}${ranked.semanticValue}',
   );
+}
+
+/// The value slot of a ranked discover row, or null when the sort ranks by a
+/// column the row already showed.
+@immutable
+final class CommunityRowFigure {
+  const CommunityRowFigure({
+    required this.value,
+    required this.caption,
+    required this.semanticValue,
+  });
+
+  /// The mono figure, or 「—」 when the fact behind the order is not there
+  /// for this community. It is never a zero: an observed 0 and an absent
+  /// number are two different answers.
+  final String value;
+  final String caption;
+
+  /// What a screen reader hears instead of the mono form.
+  final String semanticValue;
+}
+
+CommunityRowFigure? communityDirectoryRowFigure(
+  CommunitySummary community, {
+  required CommunityDirectorySort sort,
+}) {
+  switch (sort) {
+    case CommunityDirectorySort.members:
+    case CommunityDirectorySort.newest:
+      return null;
+    case CommunityDirectorySort.miningPower:
+      final fact = community.miningPower;
+      return switch (fact) {
+        LoopMiningPowerSettled(:final power) => CommunityRowFigure(
+          value: loopGroupedFigure(power),
+          caption: '算力',
+          semanticValue: loopGroupedFigure(power),
+        ),
+        LoopMiningPowerUnavailable(:final reasonCode) => CommunityRowFigure(
+          value: launchMissingFigure,
+          caption: '算力',
+          semanticValue: communityUnavailableReason(reasonCode),
+        ),
+        null => const CommunityRowFigure(
+          value: launchMissingFigure,
+          caption: '算力',
+          semanticValue: '暂时读不到',
+        ),
+      };
+    case CommunityDirectorySort.activity:
+      final fact = community.activity;
+      return switch (fact) {
+        // A full page of messages that still began inside the window means
+        // more exist than were counted, so the row prints a floor.
+        CommunityActivityCount(:final messageCount, :final bounded) =>
+          CommunityRowFigure(
+            value: bounded ? '≥$messageCount' : '$messageCount',
+            caption: '7 天讨论',
+            semanticValue: bounded ? '至少 $messageCount 条' : '$messageCount 条',
+          ),
+        CommunityActivityUnavailable(:final reasonCode) => CommunityRowFigure(
+          value: launchMissingFigure,
+          caption: '7 天讨论',
+          semanticValue: communityUnavailableReason(reasonCode),
+        ),
+        null => const CommunityRowFigure(
+          value: launchMissingFigure,
+          caption: '7 天讨论',
+          semanticValue: '暂时读不到',
+        ),
+      };
+  }
 }
 
 /// Row position inside a group of [length] rows.

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/mining/mining_models.dart';
 
 enum CommunityVerification {
   pending('pending'),
@@ -58,15 +59,149 @@ enum CommunityMemberStatus {
   }
 }
 
-/// `GET /v2/communities` sort. Only the two server-backed orders exist; the
-/// prototype's other segments have no source and stay disabled.
+/// `GET /v2/communities` sort.
+///
+/// The four the prototype draws all exist on the wire (decision 0061): the
+/// two stored columns, the settled community power and the messages the
+/// official channel was seen carrying over the last week. There is no
+/// 「增长最快」 segment, because nothing measures growth.
 enum CommunityDirectorySort {
   members('members'),
-  newest('newest');
+  newest('newest'),
+  miningPower('miningPower'),
+  activity('activity');
 
   const CommunityDirectorySort(this.wireName);
 
   final String wireName;
+
+  static CommunityDirectorySort? tryParse(String value) {
+    for (final item in values) {
+      if (item.wireName == value) return item;
+    }
+    return null;
+  }
+
+  /// True when the row carries the fact it was ordered by. The two stored
+  /// sorts carry nothing extra, and an item that still did would be a
+  /// projection this client cannot place.
+  bool get carriesRowFact =>
+      this == CommunityDirectorySort.miningPower ||
+      this == CommunityDirectorySort.activity;
+}
+
+/// What a discover page was ordered by, as the server states it.
+///
+/// It is always answered, and it is read before the rows: an empty page under
+/// an `unavailable` ordering is a question nobody could answer, not a
+/// directory with no communities in it.
+@immutable
+sealed class CommunityOrdering {
+  const CommunityOrdering({required this.sort});
+
+  final CommunityDirectorySort sort;
+}
+
+@immutable
+final class CommunityOrderingApplied extends CommunityOrdering {
+  const CommunityOrderingApplied({required super.sort, required this.basis});
+
+  final CommunityOrderingBasis basis;
+}
+
+@immutable
+final class CommunityOrderingUnavailable extends CommunityOrdering {
+  const CommunityOrderingUnavailable({
+    required super.sort,
+    required this.reasonCode,
+  });
+
+  final String reasonCode;
+}
+
+/// Where the order came from. The client never restates it as a number; it
+/// only decides whether the page may carry a development-baseline label and
+/// whether the figures it ranks by are older than the newest run.
+@immutable
+sealed class CommunityOrderingBasis {
+  const CommunityOrderingBasis();
+}
+
+/// A column the community row already stores: the member count, the creation
+/// time. Nothing dates it beyond the row itself.
+@immutable
+final class CommunityStoredBasis extends CommunityOrderingBasis {
+  const CommunityStoredBasis();
+}
+
+/// The settled run every mining read resolves to, so the ranking and the
+/// mining pages can never disagree about which numbers are in force.
+@immutable
+final class CommunityMiningBasis extends CommunityOrderingBasis {
+  const CommunityMiningBasis({
+    required this.snapshotId,
+    required this.formulaVersion,
+    required this.computedAt,
+    required this.scope,
+    required this.stale,
+  });
+
+  final String snapshotId;
+
+  /// A backend identifier. It belongs in a LoopDisclosure, never in a
+  /// sentence.
+  final String formulaVersion;
+  final DateTime computedAt;
+  final MiningFormulaScope scope;
+
+  /// True when a later run did not complete, exactly as on the mining pages.
+  final bool stale;
+}
+
+/// Messages counted inside a window that the server closed itself.
+@immutable
+final class CommunityActivityBasis extends CommunityOrderingBasis {
+  const CommunityActivityBasis({
+    required this.windowDays,
+    required this.observedCommunityCount,
+    required this.observedAt,
+  });
+
+  final int windowDays;
+  final int observedCommunityCount;
+  final DateTime observedAt;
+}
+
+/// One community's message count inside the activity window.
+@immutable
+sealed class CommunityActivityFact {
+  const CommunityActivityFact();
+}
+
+@immutable
+final class CommunityActivityCount extends CommunityActivityFact {
+  const CommunityActivityCount({
+    required this.messageCount,
+    required this.windowDays,
+    required this.bounded,
+    required this.observedAt,
+  });
+
+  final int messageCount;
+  final int windowDays;
+
+  /// True when the page of messages read was full and still began inside the
+  /// window: more exist than were counted, so [messageCount] is a floor and
+  /// the row must be rendered as one.
+  final bool bounded;
+  final DateTime observedAt;
+}
+
+@immutable
+final class CommunityActivityUnavailable extends CommunityActivityFact {
+  const CommunityActivityUnavailable(this.reasonCode);
+
+  final String reasonCode;
 }
 
 enum CommunityVerificationFilter {
@@ -120,6 +255,8 @@ final class CommunitySummary {
     required this.memberCount,
     required this.createdAt,
     required this.configVersion,
+    this.miningPower,
+    this.activity,
   });
 
   final String communityId;
@@ -135,6 +272,15 @@ final class CommunitySummary {
   final int memberCount;
   final DateTime createdAt;
   final String configVersion;
+
+  /// The community's settled power, carried only by a discover page ordered
+  /// by it (decision 0061). Everywhere else it is absent — not zero, and not
+  /// unavailable: the row was never asked for it.
+  final LoopMiningPowerFact? miningPower;
+
+  /// The messages the official channel was seen carrying inside the window,
+  /// carried only by a discover page ordered by it.
+  final CommunityActivityFact? activity;
 
   bool get isVerified => verificationStatus == CommunityVerification.verified;
 
@@ -569,6 +715,7 @@ final class CommunityDirectoryPage {
     required this.items,
     required this.nextCursor,
     required this.recommendation,
+    required this.ordering,
   });
 
   final List<CommunitySummary> items;
@@ -576,6 +723,14 @@ final class CommunityDirectoryPage {
   /// Opaque; echoed back verbatim and never parsed.
   final String? nextCursor;
   final CommunityRecommendation recommendation;
+
+  /// What the page was ordered by. Read it before [items]: an empty page
+  /// under an unavailable ordering says the order could not be applied, and
+  /// rendering it as 「没有社区」 would be a claim nobody measured.
+  final CommunityOrdering ordering;
+
+  /// True when the page could not be ordered at all.
+  bool get orderingFailed => ordering is CommunityOrderingUnavailable;
 }
 
 @immutable

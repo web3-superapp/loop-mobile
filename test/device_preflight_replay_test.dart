@@ -132,6 +132,20 @@ final class _Ids {
   }
 
   String get communityId => _seg(2);
+
+  /// The directory sort the capture was taken with. The response states the
+  /// order it applied and the decoder refuses one that answers a different
+  /// question, so a replay has to ask the question the capture asked.
+  CommunityDirectorySort get directorySort {
+    final query = Uri.splitQueryString(
+      route.contains('?') ? route.split('?').last : '',
+    );
+    final raw = query['sort'];
+    if (raw == null) return CommunityDirectorySort.members;
+    return CommunityDirectorySort.tryParse(raw) ??
+        CommunityDirectorySort.members;
+  }
+
   String get miningCommunityId => _seg(3);
   String get chatOperationId => _seg(3);
   String get approvalAssetId => _seg(2);
@@ -272,7 +286,7 @@ List<_Case> _cases() => <_Case>[
       return DioLoopV2CommunityApi(d).listCommunities(
         accessToken: _token,
         clientVersion: _clientVersion,
-        sort: CommunityDirectorySort.members,
+        sort: ids.directorySort,
         verification: CommunityVerificationFilter.all,
         membership: CommunityMembershipFilter.all,
       );

@@ -401,6 +401,17 @@ String communityUnavailableReason(String reasonCode) => switch (reasonCode) {
   'STREAM_PRESENCE_NOT_OBSERVED' => '这一步没有观察在线人数，回到社区详情可以重新读。',
   'COMMUNICATION_RUNTIME_UNAVAILABLE' => '通信服务暂时不可用，问不到在线人数。',
   'MINING_FORMULA_BASELINE_PENDING' => '挖矿规则还没有确定，暂时不显示算力。',
+  // The two discover orders and the row facts behind them (decision 0061).
+  // None of them ever becomes a zero: a community nobody counted and a
+  // community with nothing to count are different answers.
+  'MINING_SNAPSHOT_NOT_AVAILABLE' => '还没有算出过算力，暂时不能按算力排序。',
+  'MINING_SNAPSHOT_INCOMPLETE' => '最近一次结算没有完成，暂时不能按算力排序。',
+  'MINING_SNAPSHOT_STALE' => '最近一次结算用的是旧规则，暂时不能按算力排序。',
+  'MINING_RUNTIME_UNAVAILABLE' => '挖矿暂时不可用，暂时不能按算力排序。',
+  'COMMUNITY_ACTIVITY_NOT_OBSERVED' => '讨论量暂时读不到，这个排序现在用不了。',
+  'COMMUNITY_ACTIVITY_CHANNEL_NOT_OBSERVED' => '这个社区的讨论量暂时读不到。',
+  'COMMUNITY_ASSET_NOT_BOUND' => '这个社区还没有绑定资产，没有算力。',
+  'COMMUNITY_WEIGHT_PENDING_REVIEW' => '这个社区的算力权重还在审核中。',
   'COMMUNITY_ANNOUNCEMENTS_DEFERRED' => '社区公告还没有开放。',
   'COMMUNITY_LINKS_DEFERRED' => '官方链接还没有开放。',
   'MESSAGE_PREVIEW_DEFERRED' => '消息预览还没有开放。',

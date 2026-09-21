@@ -222,6 +222,24 @@ final class MemoryCommunityGateway implements CommunityGateway {
     CommunityMembershipFilter membership = CommunityMembershipFilter.all,
     String? cursor,
   }) async {
+    // The preview fixture holds member counts and creation times and nothing
+    // else. Power and message counts are measured facts, so the two orders
+    // that rank by them answer here the way an unmeasured deployment does,
+    // rather than ranking the preview by a number nobody computed.
+    if (sort == CommunityDirectorySort.miningPower ||
+        sort == CommunityDirectorySort.activity) {
+      return CommunityDirectoryPage(
+        items: const <CommunitySummary>[],
+        nextCursor: null,
+        recommendation: _recommendation,
+        ordering: CommunityOrderingUnavailable(
+          sort: sort,
+          reasonCode: sort == CommunityDirectorySort.miningPower
+              ? 'MINING_SNAPSHOT_NOT_AVAILABLE'
+              : 'COMMUNITY_ACTIVITY_NOT_OBSERVED',
+        ),
+      );
+    }
     final items = <CommunitySummary>[
       for (final community in _previewCommunities)
         if ((verification == CommunityVerificationFilter.all ||
@@ -239,6 +257,10 @@ final class MemoryCommunityGateway implements CommunityGateway {
       items: List<CommunitySummary>.unmodifiable(items),
       nextCursor: null,
       recommendation: _recommendation,
+      ordering: CommunityOrderingApplied(
+        sort: sort,
+        basis: const CommunityStoredBasis(),
+      ),
     );
   }
 

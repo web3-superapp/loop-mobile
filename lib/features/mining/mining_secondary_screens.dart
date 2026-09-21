@@ -134,6 +134,7 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
             snapshot: assets.source,
             symbols: _assetSymbols(assets),
           ),
+          MiningDemoHoldingsNotice(slug: 'assets', snapshot: assets.source),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               LoopRecordRow(
@@ -691,6 +692,7 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
             )
           else ...<Widget>[
             MiningStaleNotice(slug: 'rank', snapshot: rank.snapshot),
+            MiningDemoHoldingsNotice(slug: 'rank', snapshot: rank.snapshot),
             LoopLabel(
               scope == MiningRankScope.communities
                   ? 'Community Ranking'
@@ -1058,6 +1060,10 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
           )
         else ...<Widget>[
           MiningStaleNotice(slug: 'community', snapshot: community.snapshot),
+          MiningDemoHoldingsNotice(
+            slug: 'community',
+            snapshot: community.snapshot,
+          ),
           const LoopLabel('My Contribution'),
           _MyContributionCard(community: community),
           const LoopLabel('Community Records'),

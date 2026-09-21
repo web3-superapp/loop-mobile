@@ -416,7 +416,9 @@ const s7WbnbAssetId = 'eip155:56:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c';
 const s7NativeAssetId = 'eip155:56:native';
 const s7PriceVersion = 'dexscreener:2026-09-15T14:58:51.862Z';
 
-MiningSnapshotComputed s7MiningSnapshot() => MiningSnapshotComputed(
+MiningSnapshotComputed s7MiningSnapshot({
+  MiningHoldingsSource? holdingsSource,
+}) => MiningSnapshotComputed(
   snapshotId: '0e358b31-e49f-48b9-89b2-c5c908c3ad5e',
   blockNumber: '122037728',
   blockHash:
@@ -424,6 +426,7 @@ MiningSnapshotComputed s7MiningSnapshot() => MiningSnapshotComputed(
   formulaVersion: s7BaselineVersion,
   priceVersion: s7PriceVersion,
   computedAt: DateTime.utc(2026, 9, 15, 14, 58, 54, 366),
+  holdingsSource: holdingsSource,
 );
 
 /// The 2026-09-20 Development state (Decision 0057): the snapshot on the page

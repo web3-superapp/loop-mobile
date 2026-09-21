@@ -88,6 +88,8 @@ CommunitySummary testCommunity({
   CommunityVerification verification = CommunityVerification.verified,
   String? boundAssetKey,
   String? logoRef,
+  LoopMiningPowerFact? miningPower,
+  CommunityActivityFact? activity,
 }) => CommunitySummary(
   communityId: communityId,
   name: name,
@@ -99,6 +101,8 @@ CommunitySummary testCommunity({
   memberCount: memberCount,
   createdAt: DateTime.utc(2026, 6),
   configVersion: 'communityV1',
+  miningPower: miningPower,
+  activity: activity,
 );
 
 LoopPublicProfile testProfile({
@@ -303,6 +307,12 @@ final class FakeCommunityGateway implements CommunityGateway {
   CommunityDetail? detail;
   CommunityMemberDirectory? members;
 
+  /// Per-sort directory pages, keyed by the sort the gateway was called with.
+  /// A missing entry falls back to [directoryPage], so an existing test keeps
+  /// answering every segment with one page.
+  Map<CommunityDirectorySort, CommunityDirectoryPage> directoryPagesBySort =
+      <CommunityDirectorySort, CommunityDirectoryPage>{};
+
   /// Per-filter directories. A missing entry falls back to [members], so an
   /// existing test keeps its single-view behaviour.
   Map<CommunityMemberFilter, CommunityMemberDirectory> membersByFilter;
@@ -380,7 +390,7 @@ final class FakeCommunityGateway implements CommunityGateway {
     String? cursor,
   }) {
     commands.add('list:${sort.wireName}:${membership.wireName}:$cursor');
-    return _read(directoryPage);
+    return _read(directoryPagesBySort[sort] ?? directoryPage);
   }
 
   @override
