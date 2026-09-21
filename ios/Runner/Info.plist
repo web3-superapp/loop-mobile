@@ -55,6 +55,8 @@
 		<string>trust</string>
 		<string>rainbow</string>
 	</array>
+	<key>NSFaceIDUsageDescription</key>
+	<string>用于在开启应用锁后验证你的身份</string>
 	<key>NSCameraUsageDescription</key>
 	<string>用于在聊天中拍照发送图片</string>
 	<key>NSMicrophoneUsageDescription</key>

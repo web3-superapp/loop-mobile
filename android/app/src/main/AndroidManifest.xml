@@ -7,6 +7,11 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
+    <!-- The device-local application lock asks the system to authenticate the
+         owner. LOOP holds no biometric material: the prompt, the template and
+         the passcode behind it all belong to the operating system. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+
     <!-- Ruling of 2026-09-19: the chat composer may take a photo. The still
          camera belongs to that one row; Audio Room stays audio-only and no
          camera hardware feature is declared. -->

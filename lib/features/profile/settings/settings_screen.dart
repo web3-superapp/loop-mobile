@@ -8,6 +8,8 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/profile/settings/settings_controller.dart';
 import 'package:loop_mobile/features/profile/settings/settings_gateway.dart';
+import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart';
+import 'package:loop_mobile/features/security/app_lock/app_lock_gate.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -59,6 +61,20 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
       LoopDisplayPreferencesPersistence.saving => '已生效，正在保存到本机',
       LoopDisplayPreferencesPersistence.unavailable => '本次运行内生效；本机保存当前不可用',
     };
+
+    final appLock = ref.watch(loopAppLockProvider);
+    final appLockLabel = appLock.busy
+        ? '验证中…'
+        : !appLock.isAvailable
+        ? '不可用'
+        : appLock.enabled
+        ? '已开启'
+        : '已关闭';
+    final appLockDetail = appLock.capability == null
+        ? '还没有读到这台设备的锁屏能力'
+        : appLock.enabled && !appLock.persisted
+        ? '${loopAppLockFactorText(appLock.capability!)} · 这次有效，重开 App 后不会记得'
+        : loopAppLockFactorText(appLock.capability!);
 
     return LoopDashboardPage(
       key: const ValueKey<String>('settings-screen'),
@@ -131,6 +147,32 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
                   .read(loopDisplayPreferencesProvider.notifier)
                   .setReduceMotion(!preferences.reduceMotion),
               semanticLabel: '减少动效，${preferences.reduceMotion ? '已开启' : '已关闭'}',
+            ),
+            // The device-local lock belongs beside 减少动效: it is this
+            // installation's choice, it reads no account resource, and the
+            // account half of the page being unavailable has nothing to do
+            // with it. The prototype's three groups stay three.
+            LoopRecordRow(
+              key: const ValueKey<String>('settings-app-lock'),
+              title: '应用锁',
+              subtitle: appLockDetail,
+              subtitleMaxLines: 2,
+              trailingBadge: LoopBadge(
+                appLockLabel,
+                kind: appLock.enabled ? LoopBadgeKind.up : LoopBadgeKind.mute,
+              ),
+              // Both directions run the system's own prompt first: a lock
+              // that could be switched off without it would not be a lock.
+              onTap: appLock.isAvailable && !appLock.busy
+                  ? () => unawaited(
+                      appLock.enabled
+                          ? ref.read(loopAppLockProvider.notifier).disable()
+                          : ref.read(loopAppLockProvider.notifier).enable(),
+                    )
+                  : null,
+              semanticLabel: appLock.isAvailable
+                  ? '应用锁，$appLockLabel，点按后验证身份可切换'
+                  : '应用锁，不可用：$appLockDetail',
               position: LoopRowPosition.last,
             ),
           ],

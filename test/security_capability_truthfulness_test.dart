@@ -41,15 +41,16 @@ void main() {
         find.byKey(const ValueKey<String>('protection-setup-unavailable')),
         findsOneWidget,
       );
-      expect(find.text('这几项现在还开不了'), findsOneWidget);
+      expect(find.text('交易验证还开不了'), findsOneWidget);
       expect(find.byType(Switch), findsNothing);
       expect(find.byType(TextField), findsNothing);
       expect(find.text('Save protection'), findsNothing);
       expect(find.textContaining('stored by the app'), findsNothing);
       expect(find.textContaining('LOOP 不会保存 PIN'), findsOneWidget);
-      // A declared device capability is never reported as an enabled
-      // protection: the passed-in capabilities only relabel the rows.
-      expect(find.text('可用'), findsOneWidget);
+      // A declared Privy capability is never reported as an enabled
+      // protection, and with no device lock composed the one row that can be
+      // on says 不可用 like the rest: 大额交易二次验证, MFA and 应用锁.
+      expect(find.text('可用'), findsNothing);
       expect(find.text('不可用'), findsNWidgets(3));
 
       await _tap(
@@ -149,7 +150,11 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('可用'), findsNothing);
-    expect(find.text('不可用'), findsNWidgets(4));
+    // 应用锁, 大额交易二次验证 and MFA. In a widget test the device answers
+    // that it can authenticate nobody, so even the one protection that can
+    // be on is offered as unavailable.
+    expect(find.text('不可用'), findsNWidgets(3));
+    expect(find.text('已开启'), findsNothing);
     expect(find.byType(Switch), findsNothing);
   });
 

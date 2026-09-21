@@ -7608,6 +7608,77 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected A11 switch guard: {result}",
         )
 
+    def test_app_lock_requires_a_fragment_activity_host(self) -> None:
+        """The system biometric prompt is a fragment; a FlutterActivity host
+        would fail on the device and nowhere else."""
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("android/app/src/main/kotlin/com/cywd/loop/MainActivity.kt")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace("FlutterFragmentActivity", "FlutterActivity"),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_app_lock_contract(root)
+
+        self.assertTrue(
+            any("FlutterFragmentActivity" in error for error in result),
+            msg=f"expected the Android host guard: {result}",
+        )
+
+    def test_app_lock_store_may_keep_only_one_boolean(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path(
+                "lib/integrations/device/secure_storage_app_lock_store.dart"
+            )
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace(
+                    "_storage.write(key: key, value: enabled ? '1' : '0')",
+                    "_storage.write(key: key, value: pin)",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_app_lock_contract(root)
+
+        self.assertTrue(
+            any("one boolean and nothing else" in error for error in result),
+            msg=f"expected the app lock store guard: {result}",
+        )
+        self.assertTrue(
+            any("a secret it never holds" in error for error in result),
+            msg=f"expected the app lock secret guard: {result}",
+        )
+
+    def test_only_the_device_adapter_may_speak_to_local_auth(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            page = root / "lib/features/account/account_screens.dart"
+            page.parent.mkdir(parents=True)
+            page.write_text(
+                "import 'package:local_auth/local_auth.dart';\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_app_lock_contract(root)
+
+        self.assertTrue(
+            any(
+                "only the device adapter may import local_auth" in error
+                for error in result
+            ),
+            msg=f"expected the local_auth boundary guard: {result}",
+        )
+
     def test_a03_cannot_call_a_recovery_method_enabled_without_evidence(self) -> None:
         """自动恢复 may say 已启用 only while it prints why that is true."""
 

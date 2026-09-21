@@ -16,6 +16,8 @@ import 'package:loop_mobile/app/session/onboarding_sequence.dart';
 import 'package:loop_mobile/app/session/post_auth_bootstrap_coordinator.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/app/session/wallet_provisioning_controller.dart';
+import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart';
+import 'package:loop_mobile/features/security/app_lock/app_lock_gate.dart';
 import 'package:loop_mobile/core/network/loop_connectivity_signal.dart';
 import 'package:loop_mobile/core/navigation/launch_route.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
@@ -176,9 +178,21 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     // re-arms a read that already failed.
     metaObserver = ref.read(loopV2MetaObserverProvider);
     _lifecycleListener = AppLifecycleListener(
-      onResume: () =>
-          metaObserver.observe(LoopV2MetaObservationTrigger.appResumed),
+      onResume: () {
+        metaObserver.observe(LoopV2MetaObservationTrigger.appResumed);
+        // The owner may have added or removed a screen lock while LOOP was
+        // away, and the lock's window is measured from the moment it left.
+        final lock = ref.read(loopAppLockProvider.notifier);
+        lock.onEnteredForeground();
+        unawaited(lock.refreshCapability());
+      },
+      // `onHide` is the outbound half of the pair: `onInactive` also fires on
+      // the way back, and marking there would reset the window on return.
+      onHide: () => ref.read(loopAppLockProvider.notifier).onLeftForeground(),
     );
+    // Reading the lock is a device question and never waits on a session: a
+    // locked App is not readable whether or not anybody is signed in.
+    unawaited(ref.read(loopAppLockProvider.notifier).load());
     _connectivitySubscription = ref
         .read(loopConnectivitySignalProvider)
         .onRestored
@@ -469,6 +483,10 @@ class _LoopAppState extends ConsumerState<LoopApp> {
             Expanded(child: content),
           ],
         );
+        // The curtain is above every LOOP surface and below nothing. It is
+        // drawn over the App rather than replacing it, so unlocking returns
+        // the owner to the page they were on.
+        content = LoopAppLockGate(child: content);
         // One toast host above the router: fixed above the tab bar, z 90.
         // The recovery scope sits above it so every page — including one whose
         // whole body is a block — can offer the read again. It re-arms the
@@ -1391,6 +1409,8 @@ Widget _accountScreen(BuildContext context, WidgetRef ref, String id) {
     capabilities: PrivyWalletCapabilities(
       canConnectExternalWallet: config.canConnectExternalWallet,
     ),
+    appLock: ref.watch(loopAppLockProvider),
+    onToggleAppLock: () => unawaited(_toggleAppLock(ref)),
     // F1: the launch page is also the page a verified session waits on while
     // `GET /v2/profile` decides where it belongs. It says so instead of
     // offering a way in that leads nowhere.
@@ -1409,6 +1429,18 @@ Widget _accountScreen(BuildContext context, WidgetRef ref, String id) {
         : null,
     onNavigate: (destination) => context.go(_accountPath(destination)),
   );
+}
+
+/// Turns the device-local lock on or off.
+///
+/// Both directions run the system's own prompt first, inside the controller.
+/// This is only the wire from a row to it: the page decides nothing about
+/// whether anybody was authenticated.
+Future<void> _toggleAppLock(WidgetRef ref) {
+  final controller = ref.read(loopAppLockProvider.notifier);
+  return ref.read(loopAppLockProvider).enabled
+      ? controller.disable()
+      : controller.enable();
 }
 
 /// Which of the four opening steps a manifest slug renders, or `null` for a
@@ -1472,6 +1504,8 @@ Widget _onboardingStepScreen(
       capabilities: PrivyWalletCapabilities(
         canConnectExternalWallet: config.canConnectExternalWallet,
       ),
+      appLock: ref.watch(loopAppLockProvider),
+      onToggleAppLock: () => unawaited(_toggleAppLock(ref)),
       onBack: () => retreat(LoopOnboardingStep.walletBackup),
       onNavigate: (_) => advance(LoopOnboardingStep.loopId),
     ),

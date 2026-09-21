@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/wallet_creation_facts.dart';
+import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart';
+import 'package:loop_mobile/features/security/app_lock/app_lock_gate.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -67,6 +69,8 @@ class AccountSurfaceScreen extends StatelessWidget {
     this.onPrimaryAction,
     this.onRecoveryDecision,
     this.splashPhase = LoopSplashPhase.entry,
+    this.appLock,
+    this.onToggleAppLock,
   });
 
   static const supportedIds = <String>{
@@ -94,6 +98,11 @@ class AccountSurfaceScreen extends StatelessWidget {
 
   /// What the launch page is waiting for, if anything. Only `splash` reads it.
   final LoopSplashPhase splashPhase;
+
+  /// The device-local lock, for `security-setup`. Absent in a tree that
+  /// composed none.
+  final LoopAppLockState? appLock;
+  final VoidCallback? onToggleAppLock;
 
   String get _id => surfaceId.replaceFirst('#', '').toLowerCase();
 
@@ -132,6 +141,8 @@ class AccountSurfaceScreen extends StatelessWidget {
       ),
       'security-setup' => SecuritySetupScreen(
         capabilities: capabilities,
+        appLock: appLock,
+        onToggleAppLock: onToggleAppLock,
         onBack: onBack,
         onContinue: () => _navigate(context, 'loop-id-setup'),
       ),
@@ -1122,11 +1133,22 @@ class SecuritySetupScreen extends StatelessWidget {
     required this.onContinue,
     super.key,
     this.onBack,
+    this.appLock,
+    this.onToggleAppLock,
   });
 
   final PrivyWalletCapabilities capabilities;
   final VoidCallback onContinue;
   final VoidCallback? onBack;
+
+  /// The device-local lock, as the composition reads it, or `null` in a tree
+  /// that composed none. `null` is not "off": it is a page with no lock to
+  /// report, and it says so rather than offering a control that does nothing.
+  final LoopAppLockState? appLock;
+
+  /// Turns the lock on or off. The system's own prompt runs first, in the
+  /// controller; this page never decides that anybody was authenticated.
+  final VoidCallback? onToggleAppLock;
 
   @override
   Widget build(BuildContext context) {
@@ -1144,35 +1166,16 @@ class SecuritySetupScreen extends StatelessWidget {
       ),
       body: <Widget>[
         const IdentityProgress(step: 4, total: 5, label: '安全设置'),
-        const IdentityStepCopy('应用锁与交易验证由这台设备和登录服务共同决定。'),
+        const IdentityStepCopy('应用锁由这台设备把关，交易验证由登录服务决定。'),
         const LoopNotice(
           key: ValueKey<String>('protection-setup-unavailable'),
           icon: 'warn',
           tone: LoopNoticeTone.warn,
-          title: '这几项现在还开不了',
+          title: '交易验证还开不了',
           body: '下面写的是每一项开不了的原因。LOOP 不会保存 PIN，也不会把「能开」说成「已经开了」。',
         ),
         const LoopLabel('应用锁'),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            _row(
-              title: '生物识别',
-              detail: '打开 App 与签名前验证',
-              icon: 'user',
-              available: capabilities.canUseBiometrics,
-              reason: '这台设备还没有确认可用的生物识别',
-              position: LoopRowPosition.first,
-            ),
-            _row(
-              title: '6 位 PIN',
-              detail: '生物识别不可用时的备用',
-              icon: 'keypad',
-              available: capabilities.canUseApplicationPin,
-              reason: '当前版本还没有开放 App 自己的 PIN',
-              position: LoopRowPosition.last,
-            ),
-          ],
-        ),
+        LoopRecordGroup(rows: <LoopRecordRow>[_appLockRow()]),
         const LoopLabel('交易验证'),
         // Prototype order: the amount rule first, the second factor after it.
         LoopRecordGroup(
@@ -1200,6 +1203,47 @@ class SecuritySetupScreen extends StatelessWidget {
           margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
         ),
       ],
+    );
+  }
+
+  /// The one protection on this page LOOP can actually turn on.
+  ///
+  /// It is the device's lock: the system asks for a face, a fingerprint or
+  /// the passcode behind them, and answers yes or no. LOOP stores one boolean
+  /// and nothing that could be compared against a PIN, because it never sees
+  /// one. Both directions go through the same prompt — a lock anybody could
+  /// switch off would not be a lock.
+  LoopRecordRow _appLockRow() {
+    final lock = appLock;
+    final available = lock?.isAvailable ?? false;
+    final enabled = lock?.enabled ?? false;
+    final busy = lock?.busy ?? false;
+    final detail = lock?.capability == null
+        ? '还没有读到这台设备的锁屏能力'
+        : loopAppLockFactorText(lock!.capability!);
+    final subtitle = enabled && lock != null && !lock.persisted
+        ? '$detail · 这次有效，重开 App 后不会记得'
+        : detail;
+    return LoopRecordRow(
+      key: const ValueKey<String>('security-app-lock'),
+      leading: const IdentityOptionIcon('lock'),
+      title: '应用锁',
+      subtitle: subtitle,
+      subtitleMaxLines: 2,
+      selected: enabled,
+      trailing: busy
+          ? '验证中…'
+          : !available
+          ? '不可用'
+          : enabled
+          ? '已开启'
+          : '未开启',
+      onTap: available && !busy ? onToggleAppLock : null,
+      semanticLabel: !available
+          ? '应用锁，不可用：$detail'
+          : enabled
+          ? '应用锁，已开启，点按后验证身份可关闭'
+          : '应用锁，未开启，点按后验证身份可开启',
     );
   }
 

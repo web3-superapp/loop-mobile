@@ -17,8 +17,11 @@ import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/about/about_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/security/security_gateway.dart';
+import 'package:loop_mobile/features/security/app_lock/app_lock_models.dart';
 import 'package:loop_mobile/features/profile/settings/settings_gateway.dart';
 import 'package:loop_mobile/features/profile/support/support_gateway.dart';
+import 'package:loop_mobile/integrations/device/local_auth_device_authenticator.dart';
+import 'package:loop_mobile/integrations/device/secure_storage_app_lock_store.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_display_store.dart';
 import 'package:loop_mobile/integrations/personalization/loop_personalization_providers.dart';
 import 'package:loop_mobile/integrations/social/loop_social_providers.dart';
@@ -51,6 +54,15 @@ Future<void> main() async {
         ),
         loopDisplayPreferencesInitialProvider.overrideWithValue(
           displayBootstrap.initial,
+        ),
+        // The device-local application lock. The authenticator is the
+        // operating system's own prompt; the store keeps one boolean and
+        // nothing else, because LOOP holds no PIN and no biometric material.
+        loopDeviceAuthenticatorProvider.overrideWithValue(
+          const LocalAuthDeviceAuthenticator(),
+        ),
+        loopAppLockStoreProvider.overrideWithValue(
+          const SecureStorageLoopAppLockStore(),
         ),
         // Where the five-step opening got to, per account. A device that
         // refuses the write falls back to the in-process default, which

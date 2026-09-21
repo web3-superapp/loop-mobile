@@ -3396,8 +3396,10 @@ SECURITY_CAPABILITY_TRUTH_EXECUTABLE_TEST_EVIDENCE = {
             r"\brouter\.go\s*\(",
             r"\bfind\.byKey\s*\(\s*const\s+ValueKey<String>\s*\(",
             r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNothing",
-            # Every reviewed A11 method stays unavailable in production.
-            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*4\s*\)",
+            # Every reviewed A11 method stays unavailable in production: the
+            # two Privy ones, and the device lock a widget test has no device
+            # to open.
+            r"\bfind\.text\s*\([\s\S]*?\)\s*,\s*findsNWidgets\s*\(\s*3\s*\)",
             r"\bfind\.byType\s*\(\s*Switch\s*\)\s*,\s*findsNothing",
         ),
         "production LoopApp H5 fails closed with no adapter": (
@@ -3415,6 +3417,145 @@ SECURITY_CAPABILITY_TRUTH_EXECUTABLE_TEST_EVIDENCE = {
         ),
     },
 }
+
+
+APP_LOCK_TEST_MARKERS = {
+    Path("test/app_lock_test.dart"): (
+        "a stored on whose credential is gone is not enabled",
+        "it is on only after the device said yes, and it persists",
+        "turning it off needs the same proof as turning it on",
+        "a credential removed under the lock opens it and turns it off",
+        "a minute away closes the curtain",
+        "a locked App is covered and offers one way through",
+    ),
+}
+
+
+def check_app_lock_contract(root: Path) -> list[str]:
+    """Keep the device-local lock the device's, and LOOP's storage empty.
+
+    LOOP has no PIN of its own and must never acquire one: the lock asks the
+    operating system, which owns the face, the fingerprint and the passcode
+    behind them. What LOOP keeps is one boolean saying the owner turned it on.
+    """
+
+    errors = require_fragments(
+        root,
+        {
+            "lib/features/security/app_lock/app_lock_models.dart": (
+                "abstract interface class LoopDeviceAuthenticator",
+                "abstract interface class LoopAppLockStore",
+                "class UnavailableLoopDeviceAuthenticator",
+                "loopDeviceAuthenticatorProvider",
+                "loopAppLockStoreProvider",
+            ),
+            "lib/features/security/app_lock/app_lock_controller.dart": (
+                "const loopAppLockGrace = Duration(seconds: 60)",
+                "Future<bool> enable()",
+                "Future<bool> disable()",
+                "Future<bool> unlock()",
+                "void onLeftForeground()",
+                "void onEnteredForeground()",
+            ),
+            "lib/features/security/app_lock/app_lock_gate.dart": (
+                "class LoopAppLockGate",
+                "loop-app-lock-curtain",
+                "loop-app-lock-unlock",
+            ),
+            "lib/integrations/device/local_auth_device_authenticator.dart": (
+                "import 'package:local_auth/local_auth.dart';",
+                "biometricOnly: false",
+                "LocalAuthExceptionCode.noCredentialsSet",
+            ),
+            "lib/integrations/device/secure_storage_app_lock_store.dart": (
+                "loop.app_lock.v1.enabled",
+            ),
+            "lib/main.dart": (
+                "loopDeviceAuthenticatorProvider.overrideWithValue(",
+                "loopAppLockStoreProvider.overrideWithValue(",
+            ),
+            "lib/app.dart": (
+                "LoopAppLockGate(child: content)",
+                "onLeftForeground()",
+                "lock.onEnteredForeground()",
+            ),
+            "test/app_lock_test.dart": tuple(
+                marker
+                for markers in APP_LOCK_TEST_MARKERS.values()
+                for marker in markers
+            ),
+        },
+    )
+
+    # The plugin is spoken to in exactly one file. A product page that imported
+    # it could authenticate on its own and report whatever it liked.
+    for path in sorted((root / "lib").rglob("*.dart")):
+        if "package:local_auth" not in read_text(path):
+            continue
+        relative = path.relative_to(root).as_posix()
+        if relative != "lib/integrations/device/local_auth_device_authenticator.dart":
+            errors.append(f"only the device adapter may import local_auth: {relative}")
+
+    # Nothing derived from a PIN may be persisted, because nothing is ever
+    # seen. The store writes one of two characters under one key.
+    store_path = root / "lib/integrations/device/secure_storage_app_lock_store.dart"
+    if store_path.is_file():
+        store = strip_dart_comments(read_text(store_path))
+        if (
+            re.search(
+                r"write\(\s*key\s*:\s*key\s*,\s*value\s*:\s*enabled\s*\?\s*'1'\s*:\s*'0'\s*\)",
+                store,
+            )
+            is None
+        ):
+            errors.append(
+                "the app lock store must persist one boolean and nothing else"
+            )
+        for marker in ("pin", "Pin", "PIN", "passcode"):
+            if marker in store:
+                errors.append(
+                    "the app lock store must not name a secret it never holds: "
+                    + marker
+                )
+
+    manifest_path = root / "android/app/src/main/AndroidManifest.xml"
+    manifest, manifest_errors = _parse_xml(manifest_path, "Android main manifest")
+    errors.extend(manifest_errors)
+    if manifest is not None:
+        active = [
+            permission
+            for permission in manifest.findall("uses-permission")
+            if permission.get(ANDROID_NAME) == "android.permission.USE_BIOMETRIC"
+            and permission.get(ANDROID_TOOLS_NODE) != "remove"
+        ]
+        if len(active) != 1:
+            errors.append(
+                "the device lock requires exactly one active "
+                "`android.permission.USE_BIOMETRIC` declaration"
+            )
+
+    activity_path = root / "android/app/src/main/kotlin/com/cywd/loop/MainActivity.kt"
+    if activity_path.is_file():
+        if "FlutterFragmentActivity" not in read_text(activity_path):
+            errors.append(
+                "the Android host must be a FlutterFragmentActivity: the system "
+                "biometric prompt is a fragment"
+            )
+    else:
+        errors.append("missing Android MainActivity")
+
+    info_path = root / "ios/Runner/Info.plist"
+    info, info_errors = _parse_plist(info_path, "iOS Runner Info.plist")
+    errors.extend(info_errors)
+    if info is not None:
+        description = info.get("NSFaceIDUsageDescription")
+        if not isinstance(description, str) or not description.strip():
+            errors.append(
+                "the device lock requires a non-empty NSFaceIDUsageDescription"
+            )
+
+    errors.extend(check_behavior_test_evidence(root, APP_LOCK_TEST_MARKERS))
+    return errors
 
 
 def check_security_capability_truth_contract(root: Path) -> list[str]:
@@ -3547,12 +3688,51 @@ def check_security_capability_truth_contract(root: Path) -> list[str]:
                 errors.append(
                     "A11 must preserve exactly one truthful continue-without-changes action"
                 )
-            # Every listed method states an availability, never an
-            # enrollment. Only positive trailing labels are inspected, so the
-            # page may still say that availability does not mean enabled.
-            if re.search(r"trailing\s*:\s*'(?:已开启|已启用|已设置)'", setup):
+            # One protection on this page can actually be on: the device's
+            # own lock, which the operating system enforces and answers for.
+            # Everything else states an availability and never an enrolment,
+            # so 已开启 may appear in the lock's row and nowhere else — and
+            # that row has to read the lock's state rather than guess it.
+            lock_start = setup.find("LoopRecordRow _appLockRow()")
+            lock_end = setup.find("LoopRecordRow _row(", lock_start + 1)
+            lock = (
+                setup[lock_start:lock_end]
+                if lock_start >= 0 and lock_end > lock_start
+                else ""
+            )
+            if not lock:
+                errors.append(
+                    "A11 must keep its device lock row as one bounded reviewed slice"
+                )
+            elsewhere = setup.replace(lock, "")
+            if re.search(r"'(?:已开启|已启用|已设置)'", elsewhere):
                 errors.append(
                     "A11 must not present a capability as an enabled protection"
+                )
+            for marker in (
+                "lock?.enabled",
+                "lock?.isAvailable",
+                "onToggleAppLock",
+                "loopAppLockFactorText(",
+            ):
+                if lock and marker not in lock:
+                    errors.append(
+                        "A11's lock row must report the device lock it was "
+                        "given: missing " + marker
+                    )
+            # The control is offered only while the device can be asked, and
+            # the asking itself happens in the controller, never here.
+            if lock and (
+                re.search(
+                    r"onTap\s*:\s*available\s*&&\s*!busy\s*\?\s*"
+                    r"onToggleAppLock\s*:\s*null",
+                    lock,
+                )
+                is None
+            ):
+                errors.append(
+                    "A11's lock row must offer its control only while the "
+                    "device can be asked"
                 )
 
     # 03 is the other page that names protections. It may call exactly one
@@ -4632,6 +4812,18 @@ ONBOARDING_PROGRESS_STORE_OWNER = Path(
 V2_SECURE_STORAGE_OWNER = Path(
     "lib/integrations/backend/v2/loop_v2_session_store.dart"
 )
+# The platform secure store has two owners and no more. The first keeps the
+# V2 session journal — device id, tokens, everything a stolen device could be
+# replayed with. The second keeps the application lock's single boolean and
+# nothing else: LOOP never sees a PIN or a biometric template, so there is no
+# secret there to leak, and `check_app_lock_contract` holds it to one of two
+# characters under one key. A third owner is a decision, not an edit.
+SECURE_STORAGE_OWNERS = frozenset(
+    {
+        V2_SECURE_STORAGE_OWNER,
+        Path("lib/integrations/device/secure_storage_app_lock_store.dart"),
+    }
+)
 # The activation journal (decision 0053) reuses the session store's secure
 # facade instead of opening a second platform store. It may name the facade
 # type, but only the owner above may import or instantiate the platform SDK.
@@ -4927,15 +5119,21 @@ def check_v2_session_contract(root: Path) -> list[str]:
             relative = path.relative_to(root)
             source = strip_dart_comments(read_text(path))
             executable = strip_dart_comments_and_strings(source)
-            if "package:flutter_secure_storage/" in source and relative != V2_SECURE_STORAGE_OWNER:
+            if (
+                "package:flutter_secure_storage/" in source
+                and relative not in SECURE_STORAGE_OWNERS
+            ):
                 errors.append(
-                    "flutter_secure_storage imports must stay inside the V2 "
-                    f"session store: {relative}"
+                    "flutter_secure_storage imports must stay inside a "
+                    f"reviewed secure store: {relative}"
                 )
-            if re.search(r"\bFlutterSecureStorage\b", executable) and relative != V2_SECURE_STORAGE_OWNER:
+            if (
+                re.search(r"\bFlutterSecureStorage\b", executable)
+                and relative not in SECURE_STORAGE_OWNERS
+            ):
                 errors.append(
                     "FlutterSecureStorage may be instantiated or typed only by "
-                    f"the V2 session store: {relative}"
+                    f"a reviewed secure store: {relative}"
                 )
             if re.search(
                 r"\b(?:LoopV2SecureKeyValueStore|FlutterLoopV2SecureKeyValueStore)\b",
@@ -12376,6 +12574,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_chat_preview_message_request_contract(root))
     errors.extend(check_chat_preview_conversation_id_contract(root))
     errors.extend(check_security_capability_truth_contract(root))
+    errors.extend(check_app_lock_contract(root))
     errors.extend(check_local_display_preferences_contract(root))
     errors.extend(check_onboarding_sequence_contract(root))
     errors.extend(check_build_profile_configuration_contract(root))
@@ -12441,7 +12640,7 @@ def main() -> int:
     print(
         "Harness check passed: profile, five-destination V2 contract, "
         "V2 community truth, pins, "
-        "Spot-only product, New Pairs source-scoped truth, Chat snapshot, Preview request truth and exact conversation identity, security capability truth, device-local display preferences, five-step account opening, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
+        "Spot-only product, New Pairs source-scoped truth, Chat snapshot, Preview request truth and exact conversation identity, security capability truth, device-local application lock, device-local display preferences, five-step account opening, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
         "S5 chain/market/wallet-read truth, S6 money-action truth, "
         "S7 launch/mining/referral truth, S9 dual chain slots, "
         "seven-band typography with bundled Noto Sans SC, "

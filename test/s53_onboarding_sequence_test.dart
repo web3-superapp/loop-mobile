@@ -780,8 +780,9 @@ void main() {
         findsOneWidget,
       );
       expect(find.byType(Switch), findsNothing);
+      // Nothing is on: this tree composed no device lock at all.
       expect(find.text('已开启'), findsNothing);
-      expect(find.text('不可用'), findsNWidgets(4));
+      expect(find.text('不可用'), findsNWidgets(3));
       expect(_enabled(tester, 'security-setup-continue'), isTrue);
     });
 
@@ -794,8 +795,7 @@ void main() {
       );
 
       for (final reason in <String>[
-        '这台设备还没有确认可用的生物识别',
-        '当前版本还没有开放 App 自己的 PIN',
+        '还没有读到这台设备的锁屏能力',
         '多大金额要再验一次还没有定下来',
         walletRecoveryProviderPending,
       ]) {
