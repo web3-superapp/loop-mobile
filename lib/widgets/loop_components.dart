@@ -1109,6 +1109,7 @@ class LoopRecordRow extends StatelessWidget {
     this.trailingCaption,
     this.trailingCaptionUp,
     this.trailingBadge,
+    this.trailingChart,
     this.onTap,
     this.position = LoopRowPosition.single,
     this.semanticLabel,
@@ -1151,6 +1152,23 @@ class LoopRecordRow extends StatelessWidget {
   /// a state rather than a number uses this so the value column is never read
   /// as data.
   final Widget? trailingBadge;
+
+  /// `.market-spark`: a small owner-drawn shape between the text column and
+  /// the value column.
+  ///
+  /// The prototype's 行情 rows give half their width to a 1H line, and the
+  /// audit (2026-09-21 §G.1) found every one of them missing. The slot takes
+  /// a fixed box so a row with a shape and a row without one keep the same
+  /// height, and it carries no figure of its own: the value column beside it
+  /// still states the price and the change.
+  final Widget? trailingChart;
+
+  /// `.market-spark`: the box [trailingChart] is drawn in.
+  ///
+  /// The prototype gives it 140 because its block also holds the range, the
+  /// change and the price; here those stay in the value column beside it, so
+  /// the slot is only the line.
+  static const Size trailingChartSize = Size(56, 28);
   final VoidCallback? onTap;
   final LoopRowPosition position;
   final String? semanticLabel;
@@ -1215,6 +1233,14 @@ class LoopRecordRow extends StatelessWidget {
           if (trailingBadge != null) ...<Widget>[
             const SizedBox(width: 10),
             trailingBadge!,
+          ],
+          if (trailingChart != null) ...<Widget>[
+            const SizedBox(width: 8),
+            SizedBox(
+              width: trailingChartSize.width,
+              height: trailingChartSize.height,
+              child: trailingChart,
+            ),
           ],
           if (trailing != null || trailingCaption != null) ...<Widget>[
             const SizedBox(width: 12),
@@ -1345,6 +1371,7 @@ class LoopRecordGroup extends StatelessWidget {
             trailingCaption: rows[index].trailingCaption,
             trailingCaptionUp: rows[index].trailingCaptionUp,
             trailingBadge: rows[index].trailingBadge,
+            trailingChart: rows[index].trailingChart,
             onTap: rows[index].onTap,
             semanticLabel: rows[index].semanticLabel,
             selected: rows[index].selected,

@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
+import 'package:loop_mobile/features/mining/mining_gateway.dart';
 import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
@@ -620,6 +621,11 @@ Future<void> pumpS5Page(
   WatchlistGateway? watchlist,
   AlertsGateway? alerts,
   NotificationsGateway? notifications,
+
+  /// Only the market pages that carry a mining hook pass this: the行情 rows
+  /// and the Token Card read the weight the Mining module publishes, through
+  /// the Mining module's own gateway.
+  MiningGateway? mining,
   LoopV2MetaSnapshot? meta,
   PrivyAuthGateway? privy,
   Size size = const Size(390, 2400),
@@ -644,6 +650,7 @@ Future<void> pumpS5Page(
         if (alerts != null) alertsGatewayProvider.overrideWithValue(alerts),
         if (notifications != null)
           notificationsGatewayProvider.overrideWithValue(notifications),
+        if (mining != null) miningGatewayProvider.overrideWithValue(mining),
         // Only the pages that render a session-dependent block pass this. It
         // is the same seam the app uses, so no page gets a second one.
         if (privy != null) privyAuthGatewayProvider.overrideWithValue(privy),
