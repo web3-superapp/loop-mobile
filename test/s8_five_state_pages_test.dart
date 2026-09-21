@@ -84,7 +84,9 @@ final List<_S7StateCase> _s7Cases = <_S7StateCase>[
         ),
       ),
     ),
-    readyKey: 'launch-detail-slots',
+    // The record's identity card only exists once the read landed; the
+    // configuration slots moved behind the page's disclosure control.
+    readyKey: 'launch-detail-identity',
     emptyReason:
         'GET /v2/launches/{launchId} 要么返回一个项目，要么失败；契约里没有'
         '「读到了但没有内容」这一档，所以 launch-detail 永远到不了 empty 相。',
