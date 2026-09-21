@@ -1,30 +1,66 @@
+import 'package:decimal/decimal.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 import 'package:loop_mobile/widgets/loop_token_card.dart';
 
-/// Development Preview showcase fixtures for `token-card-states` and
-/// `sign-sheet-states` (values from the frozen prototype `FX`). Only
-/// `lib/main_preview.dart` may inject this; production never constructs it.
-LoopSystemShowcase buildLoopSystemShowcasePreview() {
+/// The mono eyebrow a component-specification page wears.
+///
+/// `token-card-states` and `sign-sheet-states` are the only pages whose job
+/// is the component itself: the prototype draws five real Token Cards and
+/// four real signing sheets on them, and the audit of 2026-09-21 (§K.8, §K.9,
+/// §D+ item 14) found LOOP rendering a hero that promised 「5 种卡片状态」 over
+/// a body with none. A specimen is not an observation, so it does not wait
+/// for one — it is labelled instead, and the label sits above the folio where
+/// it frames everything under it rather than pushing the content down.
+const String loopComponentSpecimenLabel = '组件样例';
+
+/// The same eyebrow for a *state* page whose specimen reads like a claim.
+///
+/// `当前设备离线` and `03:00–05:00 UTC` are sentences about now. Drawn as
+/// specimens they need the stronger label.
+const String loopStateSpecimenLabel = '组件样例 · 不是当前状态';
+
+/// The five Token Cards and four signing sheets of the frozen prototype
+/// (`token-card-states.html`, `sign-sheet-states.html`; figures from its
+/// `FX` table).
+///
+/// [sourceLabel] is what the page prints above its folio. It defaults to
+/// 组件样例 — the specification pages' own label — and `lib/main_preview.dart`
+/// passes 演示数据 · 开发预览 so a Development Preview build still says which
+/// root it is running.
+LoopSystemShowcase buildLoopSystemSpecimens({
+  String sourceLabel = loopComponentSpecimenLabel,
+}) {
   return LoopSystemShowcase(
-    sourceLabel: '演示数据 · 开发预览',
+    sourceLabel: sourceLabel,
     tokenCards: <LoopTokenCardShowcaseItem>[
       LoopTokenCardShowcaseItem(
         label: '态 1 · 正常',
         state: LoopTokenCardState.normal,
-        model: const LoopTokenCardModel(
+        // The prototype draws the normal state, and only it, on Chalk.
+        chalk: true,
+        // The frozen prototype's own `FX.pepe` row, not the inline HTML
+        // defaults it overwrites at runtime.
+        model: LoopTokenCardModel(
           symbol: 'PEPE',
           identifier: '0x6982…1933',
-          price: r'$0.000013',
-          change: '+4.8%',
+          price: r'$0.0000082',
+          change: '+12.4%',
           changeUp: true,
-          metrics: <LoopTokenMetric>[
-            LoopTokenMetric('市值', r'$5.4B'),
-            LoopTokenMetric('流动性', r'$42.8M'),
-            LoopTokenMetric('持有人', '418K'),
+          metrics: const <LoopTokenMetric>[
+            LoopTokenMetric('市值', r'$3.4B'),
+            LoopTokenMetric('流动性', r'$18.2M'),
+            LoopTokenMetric('持有人', '284,912'),
           ],
-          communityLine: 'LOOP 社区 128K 成员 · 0.35×',
+          communityLine: 'LOOP 社区 128,420 成员 · 0.35×',
           chartRangeLabel: '1H · 固定演示',
+          chart: LoopSparkline(
+            closes: _specimenCloses,
+            semanticLabel: 'PEPE 1 小时走势 · 组件样例',
+            color: LoopColors.lime,
+          ),
         ),
         actions: const <LoopTokenCardAction>[
           LoopTokenCardAction('买入', buy: true),
@@ -167,3 +203,43 @@ LoopSystemShowcase buildLoopSystemShowcasePreview() {
     ],
   );
 }
+
+/// The Development Preview alias. It exists so the explicit Preview root
+/// keeps naming its own label rather than relying on the default.
+LoopSystemShowcase buildLoopSystemShowcasePreview() =>
+    buildLoopSystemSpecimens(sourceLabel: '演示数据 · 开发预览');
+
+/// The 24 hourly closes the normal card's line draws.
+///
+/// A fixed series, like the prototype's `1H · 固定演示`: a specification page
+/// must draw the same shape every time it is opened, so it never reads a
+/// market. Nothing outside this card may reuse these numbers — they are a
+/// line's geometry, not a quote.
+final List<Decimal> _specimenCloses = List<Decimal>.unmodifiable(
+  <String>[
+    '0.0000071',
+    '0.0000069',
+    '0.0000072',
+    '0.0000070',
+    '0.0000074',
+    '0.0000073',
+    '0.0000076',
+    '0.0000075',
+    '0.0000078',
+    '0.0000077',
+    '0.0000074',
+    '0.0000076',
+    '0.0000079',
+    '0.0000078',
+    '0.0000081',
+    '0.0000080',
+    '0.0000079',
+    '0.0000082',
+    '0.0000081',
+    '0.0000083',
+    '0.0000082',
+    '0.0000084',
+    '0.0000083',
+    '0.0000082',
+  ].map(Decimal.parse),
+);

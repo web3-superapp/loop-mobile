@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
+import 'package:loop_mobile/features/system/system_specimens.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -199,12 +200,17 @@ final class LoopTokenCardShowcaseItem {
     required this.state,
     required this.model,
     this.actions = const <LoopTokenCardAction>[],
+    this.chalk = false,
   });
 
   final String label;
   final LoopTokenCardState state;
   final LoopTokenCardModel model;
   final List<LoopTokenCardAction> actions;
+
+  /// `.tcard.tcard-signature.chalk-card`: the prototype draws only the
+  /// normal state on the Chalk ground.
+  final bool chalk;
 }
 
 /// One sign-sheet example for the `sign-sheet-states` showcase.
@@ -345,7 +351,6 @@ class SystemSurfaceScreen extends StatelessWidget {
         observation: serviceErrorObservation,
         onRetry: onServiceRetry,
         onSupport: onServiceSupport,
-        onContinue: onSecondaryAction,
         onBack: onBack,
       ),
       'force-update' => _ForceUpdatePage(
@@ -359,7 +364,6 @@ class SystemSurfaceScreen extends StatelessWidget {
         onRecheck: onMaintenanceRecheck,
         onStatus: onMaintenanceStatus,
         onReadOnly: onMaintenanceReadOnly,
-        onContinue: onSecondaryAction,
         onBack: onBack,
       ),
       'region-restricted' => _RegionPage(
@@ -376,7 +380,6 @@ class SystemSurfaceScreen extends StatelessWidget {
         onRequest: onPermissionRequest,
         onOpenSettings: onPermissionOpenSettings,
         onNotNow: onPermissionNotNow,
-        onContinue: onSecondaryAction,
         onBack: onBack,
       ),
       'toast' => _ToastStatesPage(
@@ -392,12 +395,10 @@ class SystemSurfaceScreen extends StatelessWidget {
       'token-card-states' => _TokenCardStatesPage(
         showcase: showcase,
         onBack: onBack,
-        onContinue: onSecondaryAction,
       ),
       'sign-sheet-states' => _SignSheetStatesPage(
         showcase: showcase,
         onBack: onBack,
-        onContinue: onSecondaryAction,
       ),
       _ => _UnknownSystemPage(onBack: onBack),
     };
@@ -576,13 +577,32 @@ class _StatePage extends StatelessWidget {
     required this.body,
     this.onBack,
     this.primaryAction,
+    this.kicker,
+    this.actionFollowsBody = false,
   });
 
   final String title;
+
+  /// The mono eyebrow above the title.
+  ///
+  /// It carries one thing on these pages: that what is drawn below is a
+  /// specimen and not a reading ([loopComponentSpecimenLabel] /
+  /// [loopStateSpecimenLabel]). It is a bar line rather than a notice card on
+  /// purpose — the audit's finding was that the explanatory card had *become*
+  /// the page, so the label may not take a block of the body.
+  final String? kicker;
   final LoopFolioPrimary folio;
   final List<Widget> body;
   final VoidCallback? onBack;
   final Widget? primaryAction;
+
+  /// The action flows under the last row instead of being pinned.
+  ///
+  /// The prototype writes `<div class="pad"><button class="btn-block">` in
+  /// normal flow, and on a page whose body is two cards a pinned bar puts
+  /// 500px of empty screen between the last line and the button — the same
+  /// finding as audit §D item 9.
+  final bool actionFollowsBody;
 
   @override
   Widget build(BuildContext context) {
@@ -591,10 +611,66 @@ class _StatePage extends StatelessWidget {
       child: LoopFocusPage(
         archetype: LoopPageArchetype.state,
         title: title,
+        kicker: kicker,
         onBack: onBack,
         folio: folio,
         body: body,
         primaryAction: primaryAction,
+        actionsFollowBody: actionFollowsBody,
+      ),
+    );
+  }
+}
+
+/// The prototype's `.empty` block: a centred glyph, one line and one way out,
+/// inside a hairline frame (`.refined-page .folio-body>.empty`).
+///
+/// [LoopEmpty] is the inline strip used *inside* a loaded page; the offline
+/// page's 无法连接到服务器 card is the other shape — it is the page's middle and
+/// it owns the retry.
+class _CenteredStateBlock extends StatelessWidget {
+  const _CenteredStateBlock({
+    required this.icon,
+    required this.message,
+    this.action,
+    super.key,
+  });
+
+  final String icon;
+  final String message;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      child: Semantics(
+        container: true,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: LoopRadius.card,
+            border: Border.all(color: LoopColors.line),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 34, horizontal: 22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                LoopIcon(icon, size: 32, color: LoopColors.text3),
+                const SizedBox(height: 12),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: LoopTypography.caption(11, color: LoopColors.text3),
+                ),
+                if (action != null) ...<Widget>[
+                  const SizedBox(height: 18),
+                  action!,
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -817,24 +893,50 @@ class _OfflinePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final observation = this.observation;
     if (observation == null) {
+      // No observation means no one has reported a network state, so the
+      // page draws its two specimens instead — 全断 and 单链断 on one screen,
+      // which is what `offline.html` exists to show (audit §K.2). The bar
+      // says 组件样例 · 不是当前状态 above every line of it.
       return _StatePage(
         title: '无网络',
+        kicker: loopStateSpecimenLabel,
         onBack: onBack,
         folio: const LoopFolioPrimary(
-          kicker: 'CONNECTIVITY',
-          heading: '连接状态还没有开放',
-          caption: '打开这一页不代表设备离线或服务故障。',
-          stamp: 'UNKNOWN',
+          key: ValueKey<String>('connectivity-specimen'),
+          kicker: 'LAST SYNC · 09:38',
+          heading: '当前设备离线',
+          caption: '缓存仍可查看；发送、兑换与跨链已经暂停。',
+          stamp: 'OFFLINE',
           archetype: LoopFolioArchetype.state,
         ),
-        body: const <Widget>[
-          _SourceUnavailableNotice(
-            keyName: 'connectivity-source-unavailable',
-            title: '读不到连接状态',
-            body: '暂时读不到设备网络与 LOOP 服务的状态，这一页不会替你判断是否离线。',
+        body: <Widget>[
+          const LoopNotice(
+            icon: 'offline',
+            tone: LoopNoticeTone.danger,
+            title: '完全离线',
+            body: '检查 Wi-Fi 或蜂窝数据。资产数据为最后一次同步的缓存，可能已过期。',
           ),
+          _CenteredStateBlock(
+            key: const ValueKey<String>('connectivity-specimen-retry'),
+            icon: 'offline',
+            message: '无法连接到服务器',
+            // 重试 has no request of its own to repeat here: it returns to
+            // the page that opened this one, which reads again as it builds.
+            action: LoopButton(label: '重试', onPressed: onRetry),
+          ),
+          const LoopLabel('部分故障（另一种态）', followsLabel: true),
+          const LoopNotice(
+            icon: 'warn',
+            tone: LoopNoticeTone.warn,
+            title: 'BSC 网络暂时不可用',
+            body: '其他链正常。BSC 上的资产余额可能不准，该链的交易已暂停。',
+          ),
+          const LoopNotice(
+            title: '为什么区分这两种',
+            body: '完全断网时所有操作都要拦；单链故障时其他链应该照常可用 —— 一刀切会让用户以为整个 App 坏了。',
+          ),
+          const SizedBox(height: 20),
         ],
-        primaryAction: _returnAction(onContinue),
       );
     }
     final scope = observation.scope;
@@ -915,38 +1017,47 @@ class _ServerErrorPage extends StatelessWidget {
     required this.observation,
     required this.onRetry,
     required this.onSupport,
-    required this.onContinue,
     required this.onBack,
   });
 
   final LoopServiceErrorObservation? observation;
   final VoidCallback? onRetry;
   final VoidCallback? onSupport;
-  final VoidCallback? onContinue;
   final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
     final observation = this.observation;
     if (observation == null) {
+      // The specimen of `server-error.html`: the shape a failed request
+      // takes, with the prototype's own 502 and trace id (audit §K.3).
       return _StatePage(
         title: '服务状态',
+        kicker: loopStateSpecimenLabel,
         onBack: onBack,
         folio: const LoopFolioPrimary(
+          key: ValueKey<String>('service-error-specimen'),
           kicker: 'SERVICE STATUS',
-          heading: '服务状态还没有开放',
-          caption: '打开此页不代表某个请求返回了错误或未确认的结果。',
-          stamp: 'UNKNOWN',
+          heading: '服务暂时不可用',
+          caption: '钱包仍在你的设备上；稍后重试或联系支持。',
+          stamp: 'RETRY',
           archetype: LoopFolioArchetype.state,
         ),
-        body: const <Widget>[
-          _SourceUnavailableNotice(
-            keyName: 'service-error-source-unavailable',
-            title: '没有请求错误上下文',
-            body: '只有在某个功能真的出错时，这一页才会显示服务不可用。',
+        body: <Widget>[
+          const LoopNotice(
+            icon: 'maintenance',
+            tone: LoopNoticeTone.danger,
+            title: '错误 502',
+            body: '追踪号 7f3a2c9e · Wallet 资产仍在链上，不受影响。',
           ),
+          LoopButtonPair(
+            children: <Widget>[
+              LoopButton(label: '重试', primary: true, onPressed: onRetry),
+              LoopButton(label: '联系客服', onPressed: onSupport),
+            ],
+          ),
+          const SizedBox(height: 20),
         ],
-        primaryAction: _returnAction(onContinue),
       );
     }
     final trace = observation.traceId;
@@ -1084,7 +1195,6 @@ class _MaintenancePage extends StatelessWidget {
     required this.onRecheck,
     required this.onStatus,
     required this.onReadOnly,
-    required this.onContinue,
     required this.onBack,
   });
 
@@ -1095,31 +1205,40 @@ class _MaintenancePage extends StatelessWidget {
   /// Only the explicit-notice state exposes this; it is never the generic
   /// "return to LOOP" action of the source-unavailable state.
   final VoidCallback? onReadOnly;
-  final VoidCallback? onContinue;
   final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
     final notice = this.notice;
     if (notice == null) {
+      // The specimen of `maintenance.html`. Its one promise — Mining Power
+      // keeps accruing — is the reason the page exists (audit §K.4).
       return _StatePage(
         title: '计划维护',
+        kicker: loopStateSpecimenLabel,
         onBack: onBack,
         folio: const LoopFolioPrimary(
-          kicker: 'MAINTENANCE',
-          heading: '维护状态还没有开放',
-          caption: '打开此页不代表有计划中或进行中的维护。',
-          stamp: 'UNKNOWN',
+          key: ValueKey<String>('maintenance-specimen'),
+          kicker: 'MAINTENANCE WINDOW',
+          heading: '03:00–05:00 UTC',
+          caption: '期间暂停社区互动；钱包与 Mining 数据保持只读。',
+          stamp: '2H WINDOW',
           archetype: LoopFolioArchetype.state,
         ),
         body: const <Widget>[
-          _SourceUnavailableNotice(
-            keyName: 'maintenance-source-unavailable',
-            title: '没有已批准的维护通知',
-            body: '必须提供一份当前生效的通知，此页才会报告维护窗口与受影响服务。',
+          LoopNotice(
+            icon: 'mine',
+            title: 'Mining Power 正常累计',
+            body: '维护结束后可正常领取，不会漏算。',
           ),
         ],
-        primaryAction: _returnAction(onContinue),
+        actionFollowsBody: true,
+        primaryAction: LoopButton(
+          key: const ValueKey<String>('maintenance-specimen-read-only'),
+          label: '查看只读内容',
+          block: true,
+          onPressed: onReadOnly,
+        ),
       );
     }
     return _StatePage(
@@ -1285,7 +1404,6 @@ class _PermissionPage extends StatelessWidget {
     required this.onRequest,
     required this.onOpenSettings,
     required this.onNotNow,
-    required this.onContinue,
     required this.onBack,
   });
 
@@ -1293,7 +1411,6 @@ class _PermissionPage extends StatelessWidget {
   final VoidCallback? onRequest;
   final VoidCallback? onOpenSettings;
   final VoidCallback? onNotNow;
-  final VoidCallback? onContinue;
   final VoidCallback? onBack;
 
   @override
@@ -1329,12 +1446,28 @@ class _PermissionPage extends StatelessWidget {
           body: '用于应用锁与签名前验证。生物特征由系统保管，LOOP 拿不到。',
         ),
         if (copy == null) ...<Widget>[
-          const LoopLabel('当前申请', followsLabel: true),
-          const _SourceUnavailableNotice(
-            keyName: 'permission-prompt-unavailable',
-            title: '当前没有待处理的权限申请',
-            body: '从你要使用的功能进入，LOOP 才能说明本次具体申请的用途与范围；此页不会代为请求或推断系统状态。',
+          // No live prompt: the page shows the prototype's 被拒后的引导 as a
+          // specimen instead of a card saying there is nothing to show
+          // (audit §K.5). It is the same LoopPermissionState the real
+          // request uses, so this group is the component's own baseline.
+          const LoopLabel('被拒后的引导（组件样例）', followsLabel: true),
+          LoopPermissionState(
+            key: const ValueKey<String>('permission-denied-specimen'),
+            icon: 'bell',
+            denied: true,
+            title: '通知权限已被系统关闭',
+            purpose: '你将收不到挖矿结算与 Launch 提醒。可在 系统设置 → LOOP → 通知 中重新开启。',
+            onOpenSettings:
+                onOpenSettings ??
+                (LoopToastHost.maybeOf(context) == null
+                    ? null
+                    : () => LoopToast.show(
+                        context,
+                        message: '请在系统设置中打开 LOOP 权限',
+                        kind: LoopToastKind.warn,
+                      )),
           ),
+          const SizedBox(height: 20),
         ] else ...<Widget>[
           LoopLabel(denied ? '被拒后的引导' : '本次申请', followsLabel: true),
           LoopPermissionState(
@@ -1357,7 +1490,6 @@ class _PermissionPage extends StatelessWidget {
             ),
         ],
       ],
-      primaryAction: copy == null ? _returnAction(onContinue) : null,
     );
   }
 }
@@ -1380,9 +1512,9 @@ class _ToastStatesPage extends StatelessWidget {
   final VoidCallback? onBack;
 
   static const samples = <(String, LoopToastKind, String)>[
-    ('成功', LoopToastKind.ok, '示例 · 地址已复制'),
-    ('警告', LoopToastKind.warn, '示例 · 价格已变动，请刷新报价'),
-    ('错误', LoopToastKind.err, '示例 · 交易失败：gas 不足'),
+    ('成功', LoopToastKind.ok, '地址已复制'),
+    ('警告', LoopToastKind.warn, '价格已变动，请刷新报价'),
+    ('错误', LoopToastKind.err, '交易失败：gas 不足'),
   ];
 
   @override
@@ -1392,6 +1524,7 @@ class _ToastStatesPage extends StatelessWidget {
     final canToast = LoopToastHost.maybeOf(context) != null;
     return _StatePage(
       title: 'Toast 三态',
+      kicker: hasFeedback ? null : loopComponentSpecimenLabel,
       onBack: onBack,
       folio: const LoopFolioPrimary(
         kicker: 'FEEDBACK SURFACE',
@@ -1408,12 +1541,7 @@ class _ToastStatesPage extends StatelessWidget {
             onAction: onAction,
             onDismiss: onDismiss,
           ),
-        ] else
-          const LoopNotice(
-            key: ValueKey<String>('feedback-source-unavailable'),
-            icon: 'info',
-            body: '下面是组件示例。当前没有功能提供真实的成功、警告或错误结果；打开此页不代表任何动作发生过。',
-          ),
+        ],
         const LoopNotice(icon: 'info', body: '点按钮触发真实 Toast，2.6 秒后自动消失。'),
         for (final (label, kind, message) in samples) ...<Widget>[
           LoopLabel(label, followsLabel: true),
@@ -1466,6 +1594,7 @@ class _SkeletonStatesPage extends StatelessWidget {
     final valid = presentation != null && presentation.isPresentable;
     return _StatePage(
       title: '骨架屏三类',
+      kicker: valid ? null : loopComponentSpecimenLabel,
       onBack: onBack,
       folio: const LoopFolioPrimary(
         kicker: 'LOADING SYSTEM',
@@ -1488,12 +1617,7 @@ class _SkeletonStatesPage extends StatelessWidget {
                 }}骨架；占位不代表结果数量、身份或成功。',
           ),
           LoopSkeletonView(presentation: presentation),
-        ] else
-          const LoopNotice(
-            key: ValueKey<String>('loading-source-unavailable'),
-            icon: 'info',
-            body: '下面是三类骨架的示例布局。当前没有功能处于加载中；打开此页不代表有请求在进行。',
-          ),
+        ],
         const LoopChalkCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1523,21 +1647,22 @@ class _SkeletonStatesPage extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _TokenCardStatesPage extends StatelessWidget {
-  const _TokenCardStatesPage({
-    required this.showcase,
-    required this.onBack,
-    required this.onContinue,
-  });
+  const _TokenCardStatesPage({required this.showcase, required this.onBack});
 
   final LoopSystemShowcase? showcase;
   final VoidCallback? onBack;
-  final VoidCallback? onContinue;
 
   @override
   Widget build(BuildContext context) {
-    final items = showcase?.tokenCards ?? const <LoopTokenCardShowcaseItem>[];
+    // This page *is* the Token Card's specification, so it renders the five
+    // states itself. Nothing here comes from a Provider and nothing here is
+    // a reading — the bar above the folio says so, and the Development
+    // Preview root replaces the label with its own.
+    final showcase = this.showcase ?? buildLoopSystemSpecimens();
+    final items = showcase.tokenCards;
     return _StatePage(
       title: 'Token Card 五态',
+      kicker: showcase.sourceLabel,
       onBack: onBack,
       folio: const LoopFolioPrimary(
         kicker: 'TOKEN CARD SYSTEM',
@@ -1546,44 +1671,32 @@ class _TokenCardStatesPage extends StatelessWidget {
         archetype: LoopFolioArchetype.state,
       ),
       body: <Widget>[
-        if (items.isEmpty)
-          const _SourceUnavailableNotice(
-            keyName: 'token-card-showcase-unavailable',
-            title: '组件示例还没有开放',
-            body: '正式会话不注入演示资产；Token Card 出现在聊天流、社区主页、行情列表与搜索结果中，由各自的数据源驱动。',
-          )
-        else ...<Widget>[
-          LoopNotice(
-            key: const ValueKey<String>('token-card-showcase-label'),
-            icon: 'info',
-            tone: LoopNoticeTone.warn,
-            title: showcase!.sourceLabel,
-            body: '以下卡片的数值为固定演示，不来自任何 Provider。',
+        for (final (index, item) in items.indexed) ...<Widget>[
+          LoopLabel(item.label, followsLabel: index > 0, tight: index == 0),
+          LoopTokenCard(
+            state: item.state,
+            model: item.model,
+            actions: item.actions,
+            chalk: item.chalk,
           ),
-          for (final item in items) ...<Widget>[
-            LoopLabel(item.label, followsLabel: true),
-            LoopTokenCard(
-              state: item.state,
-              model: item.model,
-              actions: item.actions,
+          // The prototype folds this note under the first card, where it
+          // answers the question the first card raises.
+          if (index == 0)
+            const LoopDisclosure(
+              summary: '查看组件出现位置',
+              child: LoopNotice(
+                margin: EdgeInsets.fromLTRB(16, 10, 16, 14),
+                body: '正常、识别中与 Launch 资产共享结构，不共享风险判断。此组件出现在聊天流、社区主页、行情列表、搜索结果四处，不占独立路由。',
+              ),
             ),
-          ],
-          const LoopDisclosure(
-            summary: '查看组件出现位置',
-            child: LoopNotice(
-              margin: EdgeInsets.fromLTRB(16, 10, 16, 14),
-              body: '正常、识别中与 Launch 资产共享结构，不共享风险判断。此组件出现在聊天流、社区主页、行情列表、搜索结果四处，不占独立路由。',
-            ),
-          ),
-          const LoopNotice(
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
-            title: '风险态只列事实',
-            body: '每条都标注出处和时间，不给「危险」「不安全」这类结论 —— 判断权留给你。',
-          ),
         ],
+        const LoopNotice(
+          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+          title: '风险态只列事实',
+          body: '每条都标注出处和时间，不给「危险」「不安全」这类结论 —— 判断权留给你。',
+        ),
         const SizedBox(height: 20),
       ],
-      primaryAction: items.isEmpty ? _returnAction(onContinue) : null,
     );
   }
 }
@@ -1593,21 +1706,18 @@ class _TokenCardStatesPage extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _SignSheetStatesPage extends StatelessWidget {
-  const _SignSheetStatesPage({
-    required this.showcase,
-    required this.onBack,
-    required this.onContinue,
-  });
+  const _SignSheetStatesPage({required this.showcase, required this.onBack});
 
   final LoopSystemShowcase? showcase;
   final VoidCallback? onBack;
-  final VoidCallback? onContinue;
 
   @override
   Widget build(BuildContext context) {
-    final items = showcase?.signSheets ?? const <LoopSignSheetShowcaseItem>[];
+    final showcase = this.showcase ?? buildLoopSystemSpecimens();
+    final items = showcase.signSheets;
     return _StatePage(
       title: '签名弹层四态',
+      kicker: showcase.sourceLabel,
       onBack: onBack,
       folio: const LoopFolioPrimary(
         kicker: 'ONE SIGNING EXIT',
@@ -1622,68 +1732,51 @@ class _SignSheetStatesPage extends StatelessWidget {
           title: '全产品唯一签名出口',
           body: 'Send、Swap、Launch 买入、授权全部汇聚到这一个弹层；质押要等独立合约方案批准后才会加入。',
         ),
-        if (items.isEmpty)
-          const _SourceUnavailableNotice(
-            keyName: 'sign-sheet-showcase-unavailable',
-            title: '组件示例还没有开放',
-            body: '正式会话不会注入演示交易；真实签名来自发送、兑换与授权流程。',
-          )
-        else ...<Widget>[
-          LoopNotice(
-            key: const ValueKey<String>('sign-sheet-showcase-label'),
-            icon: 'info',
-            tone: LoopNoticeTone.warn,
-            title: showcase!.sourceLabel,
-            body: '以下金额与策略均为固定演示，不会签名或广播。',
-          ),
-          for (final item in items) ...<Widget>[
-            LoopLabel(item.label, followsLabel: true),
-            if (item.state == LoopSignSheetState.pending)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                child: LoopButton(
-                  key: const ValueKey<String>('sign-sheet-trigger-pending'),
-                  label: '触发待确认弹层',
-                  block: true,
-                  onPressed: () => LoopSignSheet.show(
-                    context,
-                    sheet: LoopSignSheet(
-                      state: item.state,
-                      facts: item.facts,
-                      reason: item.reason,
-                      confirmLabel: '确认',
-                      onConfirm: () => Navigator.of(context).pop(),
-                      onCancel: () => Navigator.of(context).pop(),
-                    ),
+        for (final item in items) ...<Widget>[
+          LoopLabel(item.label, followsLabel: true),
+          if (item.state == LoopSignSheetState.pending)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              child: LoopButton(
+                key: const ValueKey<String>('sign-sheet-trigger-pending'),
+                label: '触发待确认弹层',
+                block: true,
+                onPressed: () => LoopSignSheet.show(
+                  context,
+                  sheet: LoopSignSheet(
+                    state: item.state,
+                    facts: item.facts,
+                    reason: item.reason,
+                    confirmLabel: '确认',
+                    onConfirm: () => Navigator.of(context).pop(),
+                    onCancel: () => Navigator.of(context).pop(),
                   ),
                 ),
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: LoopSignSheet(
-                  state: item.state,
-                  facts: item.facts,
-                  reason: item.reason,
-                  confirmLabel: '确认',
-                  onConfirm: () {},
-                  onCancel: () {},
-                  onAdjustPolicy:
-                      item.state == LoopSignSheetState.policyRejected
-                      ? () {}
-                      : null,
-                ),
               ),
-          ],
-          const LoopNotice(
-            margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
-            title: '策略拒绝不是错误',
-            body: '是钱包按你的规则挡住了 —— 所以文案要说清是哪条规则、怎么改，而不是只说「失败」。',
-          ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: LoopSignSheet(
+                state: item.state,
+                facts: item.facts,
+                reason: item.reason,
+                confirmLabel: '确认',
+                onConfirm: () {},
+                onCancel: () {},
+                onAdjustPolicy: item.state == LoopSignSheetState.policyRejected
+                    ? () {}
+                    : null,
+              ),
+            ),
         ],
+        const LoopNotice(
+          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+          title: '策略拒绝不是错误',
+          body: '是钱包按你的规则挡住了 —— 所以文案要说清是哪条规则、怎么改，而不是只说「失败」。',
+        ),
         const SizedBox(height: 20),
       ],
-      primaryAction: items.isEmpty ? _returnAction(onContinue) : null,
     );
   }
 }

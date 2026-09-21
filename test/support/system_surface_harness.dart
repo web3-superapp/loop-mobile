@@ -103,6 +103,58 @@ Future<void> expectProductionUnavailable(
   expect(find.byType(LoopTabBar), findsOneWidget);
 }
 
+/// Opens [location] in the production app and asserts the
+/// component-specification contract every page in §K owns: the mono bar line
+/// [kicker] frames the page, each key in [specimenKeys] is rendered, and the
+/// topbar back lands on Community.
+///
+/// A specification page has no observation to wait for, so it is the opposite
+/// contract to [expectProductionUnavailable]: what must be present is the
+/// component, and what must be present *with* it is the label saying it is a
+/// specimen.
+Future<void> expectProductionSpecimen(
+  WidgetTester tester, {
+  required String location,
+  required String kicker,
+  List<String> specimenKeys = const <String>[],
+  List<String> specimenText = const <String>[],
+  bool settle = true,
+}) async {
+  final router = await pumpProductionApp(tester);
+  router.go(location);
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    // Pulsing placeholders never settle; pump bounded frames instead.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+  }
+
+  expect(router.routeInformationProvider.value.uri.path, location);
+  expect(find.text(kicker), findsOneWidget, reason: kicker);
+  expect(find.byType(LoopTabBar), findsNothing);
+  for (final key in specimenKeys) {
+    await scrollPageTo(tester, find.byKey(ValueKey<String>(key)));
+    expect(find.byKey(ValueKey<String>(key)), findsOneWidget, reason: key);
+  }
+  for (final text in specimenText) {
+    await scrollPageTo(tester, find.text(text).first);
+    expect(find.text(text), findsWidgets, reason: text);
+  }
+
+  final back = find.byKey(const ValueKey<String>('loop-topbar-back'));
+  await tester.ensureVisible(back);
+  await tester.tap(back);
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+  }
+  expect(router.routeInformationProvider.value.uri.path, '/community');
+  expect(find.byType(LoopTabBar), findsOneWidget);
+}
+
 /// Scrolls the page's body list until [target] is built and visible. Pages
 /// are lazy lists, so a finder alone cannot see rows below the fold.
 Future<void> scrollPageTo(WidgetTester tester, Finder target) async {

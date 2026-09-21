@@ -1,35 +1,48 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/system/system_specimens.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 
 import 'support/system_surface_harness.dart';
 
 void main() {
-  testWidgets('production maintenance route stays unknown', (tester) async {
-    await expectProductionUnavailable(
+  testWidgets('production maintenance route draws the specimen', (
+    tester,
+  ) async {
+    await expectProductionSpecimen(
       tester,
       location: '/system/maintenance',
-      unavailableKey: 'maintenance-source-unavailable',
-      absentClaims: <String>['维护通知已生效', 'UTC', '再次检查', '查看服务状态'],
+      kicker: loopStateSpecimenLabel,
+      specimenKeys: <String>[
+        'maintenance-specimen',
+        'maintenance-specimen-read-only',
+      ],
+      specimenText: <String>['Mining Power 正常累计'],
     );
   });
 
-  testWidgets('naked maintenance surface never infers a window', (
+  testWidgets('the maintenance specimen keeps the window and the promise', (
     tester,
   ) async {
+    var readOnly = 0;
     await pumpSystemSurface(
       tester,
       SystemSurfaceScreen.fromId(
         'maintenance',
-        onMaintenanceRecheck: () {},
-        onMaintenanceStatus: () {},
-        onSecondaryAction: () {},
+        onMaintenanceReadOnly: () => readOnly += 1,
+        onMaintenanceRecheck: () => fail('the specimen has no 再次检查'),
+        onMaintenanceStatus: () => fail('the specimen has no 查看服务状态'),
+        onSecondaryAction: () => fail('a specimen page has no 返回 LOOP'),
       ),
     );
-    expect(find.text('维护状态还没有开放'), findsOneWidget);
-    expect(find.text('维护通知已生效'), findsNothing);
+    expect(find.text(loopStateSpecimenLabel), findsOneWidget);
+    expect(find.text('03:00–05:00 UTC'), findsOneWidget);
+    expect(find.text('2H WINDOW'), findsOneWidget);
+    expect(find.text('Mining Power 正常累计'), findsOneWidget);
     expect(find.text('再次检查'), findsNothing);
     expect(find.text('查看服务状态'), findsNothing);
-    expect(find.text('返回 LOOP'), findsOneWidget);
+    expect(find.text('返回 LOOP'), findsNothing);
+    await tester.tap(find.text('查看只读内容'));
+    expect(readOnly, 1);
   });
 
   testWidgets('explicit notice shows only the supplied window and actions', (
@@ -53,7 +66,7 @@ void main() {
     );
     expect(find.text('03:00–05:00 UTC'), findsOneWidget);
     expect(find.text('WINDOW'), findsOneWidget);
-    expect(find.text('维护状态还没有开放'), findsNothing);
+    expect(find.text(loopStateSpecimenLabel), findsNothing);
     expect(find.text('返回 LOOP'), findsNothing);
     await tester.tap(find.text('再次检查'));
     await tester.tap(find.text('查看服务状态'));
@@ -125,19 +138,19 @@ void main() {
     await tester.tap(find.text('查看只读内容'));
     expect(readOnly, 1);
 
-    // The source-unavailable state keeps the generic return action.
-    var returns = 0;
+    // The specimen has its own read-only exit and never the generic one.
+    var specimenReadOnly = 0;
     await pumpSystemSurface(
       tester,
       SystemSurfaceScreen.fromId(
         'maintenance',
-        onMaintenanceReadOnly: () => fail('read-only requires a notice'),
-        onSecondaryAction: () => returns += 1,
+        onMaintenanceReadOnly: () => specimenReadOnly += 1,
+        onSecondaryAction: () => fail('a specimen page has no 返回 LOOP'),
       ),
     );
-    expect(find.text('查看只读内容'), findsNothing);
-    await tester.tap(find.text('返回 LOOP'));
-    expect(returns, 1);
+    expect(find.text('返回 LOOP'), findsNothing);
+    await tester.tap(find.text('查看只读内容'));
+    expect(specimenReadOnly, 1);
   });
 
   testWidgets('maintenance states remain usable at 2x text', (tester) async {

@@ -8,36 +8,43 @@ void main() {
   testWidgets('production permission route explains but requests nothing', (
     tester,
   ) async {
-    await expectProductionUnavailable(
+    await expectProductionSpecimen(
       tester,
       location: '/system/permission',
-      unavailableKey: 'permission-prompt-unavailable',
-      absentClaims: <String>['前往系统设置', '已被系统关闭', '暂不'],
+      kicker: 'PERMISSION CONTROL',
+      specimenKeys: <String>['permission-denied-specimen'],
+      specimenText: <String>['通知权限', '相机权限', '生物识别', '通知权限已被系统关闭'],
     );
   });
 
-  testWidgets('naked permission surface keeps the explanations only', (
+  testWidgets('without a prompt the page draws the denied-state specimen', (
     tester,
   ) async {
     await pumpSystemSurface(
       tester,
       SystemSurfaceScreen.fromId(
         'permission',
-        onPermissionRequest: () {},
-        onPermissionOpenSettings: () {},
-        onPermissionNotNow: () {},
-        onSecondaryAction: () {},
+        onPermissionRequest: () => fail('a specimen never requests'),
+        onPermissionNotNow: () => fail('a specimen has no 暂不'),
+        onSecondaryAction: () => fail('a specimen page has no 返回 LOOP'),
       ),
     );
     expect(find.text('使用前再申请'), findsOneWidget);
     expect(find.text('通知权限'), findsOneWidget);
     expect(find.text('相机权限'), findsOneWidget);
     expect(find.text('生物识别'), findsOneWidget);
-    expect(find.text('当前没有待处理的权限申请'), findsOneWidget);
+    expect(find.text('被拒后的引导（组件样例）'), findsOneWidget);
+    expect(find.text('通知权限已被系统关闭'), findsOneWidget);
+    expect(find.text('当前没有待处理的权限申请'), findsNothing);
     expect(find.text('继续'), findsNothing);
-    expect(find.text('前往系统设置'), findsNothing);
     expect(find.text('暂不'), findsNothing);
-    expect(find.text('返回 LOOP'), findsOneWidget);
+    expect(find.text('返回 LOOP'), findsNothing);
+    // The specimen's own exit is the prototype's toast, not a system call.
+    await scrollPageTo(tester, find.text('前往系统设置'));
+    await tester.tap(find.text('前往系统设置'));
+    await tester.pump();
+    expect(find.text('请在系统设置中打开 LOOP 权限'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 4));
   });
 
   testWidgets('education and settings modes expose only their exact actions', (

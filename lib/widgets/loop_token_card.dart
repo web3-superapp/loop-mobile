@@ -223,6 +223,7 @@ class LoopTokenCard extends StatelessWidget {
                           foreground: foreground,
                           secondary: secondary,
                           muted: muted,
+                          chalk: chalk,
                         ),
                         // Facts the owner read about the contract are shown
                         // wherever they exist, not only in the state named
@@ -295,6 +296,7 @@ class _Head extends StatelessWidget {
     required this.foreground,
     required this.secondary,
     required this.muted,
+    required this.chalk,
   });
 
   final LoopTokenCardModel model;
@@ -302,6 +304,7 @@ class _Head extends StatelessWidget {
   final Color foreground;
   final Color secondary;
   final bool muted;
+  final bool chalk;
 
   @override
   Widget build(BuildContext context) {
@@ -419,14 +422,30 @@ class _Head extends StatelessWidget {
                       model.change!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: LoopTypography.figure(
-                        11,
-                        color: switch (model.changeUp) {
-                          true => LoopColors.lime,
-                          false => LoopColors.chalk,
-                          null => secondary,
-                        },
-                      ),
+                      // `style-v2.css:213` — on a Chalk ground the accent is
+                      // not Lime but the ground's own ink with a hairline
+                      // underline (`.chalk-card :is(.up,…)`). Lime on Chalk
+                      // is a contrast of 1.1: the figure is painted and not
+                      // there. `.down` is not in that rule and its Chalk is
+                      // just as invisible, so it takes the ground's secondary
+                      // ink rather than the token named for the dark page.
+                      style:
+                          LoopTypography.figure(
+                            11,
+                            color: switch ((model.changeUp, chalk)) {
+                              (true, false) => LoopColors.lime,
+                              (true, true) => LoopColors.ink,
+                              (false, false) => LoopColors.chalk,
+                              (false, true) => LoopColors.inkText2,
+                              (null, _) => secondary,
+                            },
+                          ).copyWith(
+                            decoration: model.changeUp == true && chalk
+                                ? TextDecoration.underline
+                                : null,
+                            decorationThickness: 1,
+                            decorationColor: LoopColors.ink,
+                          ),
                     ),
                   ),
               ],

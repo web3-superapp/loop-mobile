@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/system/system_specimens.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
@@ -13,10 +14,7 @@ void main() {
     router.go('/preview/toast');
     await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const ValueKey<String>('feedback-source-unavailable')),
-      findsOneWidget,
-    );
+    expect(find.text(loopComponentSpecimenLabel), findsOneWidget);
     expect(find.byType(LoopGlobalNotice), findsNothing);
     expect(find.text('当前反馈'), findsNothing);
 
@@ -38,9 +36,10 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    // Static comparison rows are visibly samples.
-    await scrollPageTo(tester, find.text('示例 · 交易失败：gas 不足').last);
-    expect(find.textContaining('示例 · '), findsWidgets);
+    // The rows carry the prototype's own copy; the bar line above the
+    // folio is what says they are samples, not a prefix on every string.
+    await scrollPageTo(tester, find.text('交易失败：gas 不足').last);
+    expect(find.textContaining('示例 · '), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey<String>('loop-topbar-back')));
     await tester.pumpAndSettle();

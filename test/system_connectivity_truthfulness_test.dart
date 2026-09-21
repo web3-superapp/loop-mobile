@@ -1,50 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/system/system_specimens.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/system_surface_harness.dart';
 
 void main() {
-  testWidgets('production offline route stays unknown without a source', (
+  testWidgets('production offline route draws both specimen states', (
     tester,
   ) async {
-    await expectProductionUnavailable(
+    await expectProductionSpecimen(
       tester,
       location: '/system/offline',
-      unavailableKey: 'connectivity-source-unavailable',
-      absentClaims: <String>['当前设备离线', '完全离线', '重试'],
+      kicker: loopStateSpecimenLabel,
+      specimenKeys: <String>[
+        'connectivity-specimen',
+        'connectivity-specimen-retry',
+      ],
+      specimenText: <String>['完全离线', 'BSC 网络暂时不可用', '为什么区分这两种'],
     );
   });
 
-  testWidgets('naked offline surface never infers an offline state', (
+  testWidgets('the offline specimen is labelled and never claims now', (
     tester,
   ) async {
-    var generic = 0;
+    var retries = 0;
     await pumpSystemSurface(
       tester,
       SystemSurfaceScreen.fromId(
         'offline',
-        onRetry: () => generic += 1,
+        onRetry: () => retries += 1,
         onPrimaryAction: () => fail('generic primary must stay isolated'),
-        onSecondaryAction: () => generic += 1,
+        onSecondaryAction: () => fail('a specimen page has no 返回 LOOP'),
       ),
     );
-    expect(find.text('连接状态还没有开放'), findsOneWidget);
-    expect(find.text('UNKNOWN'), findsOneWidget);
-    expect(find.text('当前设备离线'), findsNothing);
-    expect(find.text('无法连接到服务器'), findsNothing);
-    expect(find.text('重试'), findsNothing);
-    expect(find.text('LAST SYNC · 09:38'), findsNothing);
-    expect(find.text('部分故障（另一种态）'), findsNothing);
-    expect(find.textContaining('网络暂时不可用'), findsNothing);
+    // The prototype page, drawn in full — under a bar that says it is one.
+    expect(find.text(loopStateSpecimenLabel), findsOneWidget);
+    expect(find.text('当前设备离线'), findsOneWidget);
+    expect(find.text('LAST SYNC · 09:38'), findsOneWidget);
+    expect(find.text('OFFLINE'), findsOneWidget);
+    expect(find.text('无法连接到服务器'), findsOneWidget);
+    expect(find.text('部分故障（另一种态）'), findsOneWidget);
+    expect(find.text('BSC 网络暂时不可用'), findsOneWidget);
+    // No banner is raised over the rest of the app by a specimen, and the
+    // page keeps no generic 返回 LOOP.
     expect(find.byType(LoopConnectivityBanner), findsNothing);
+    expect(find.text('返回 LOOP'), findsNothing);
     expect(
       find.byKey(const ValueKey<String>('system-state-dismissible')),
       findsOneWidget,
     );
-    await tester.tap(find.text('返回 LOOP'));
-    expect(generic, 1);
+    await tester.ensureVisible(find.text('重试'));
+    await tester.tap(find.text('重试'));
+    expect(retries, 1);
   });
 
   testWidgets('explicit scopes render their exact notice and actions', (
@@ -74,7 +83,11 @@ void main() {
       );
       expect(find.text(heading), findsWidgets, reason: scope.name);
       expect(find.text(notice), findsWidgets, reason: scope.name);
-      expect(find.text('连接状态还没有开放'), findsNothing, reason: scope.name);
+      expect(
+        find.text(loopStateSpecimenLabel),
+        findsNothing,
+        reason: scope.name,
+      );
       expect(find.text('返回 LOOP'), findsNothing, reason: scope.name);
       // No lastSyncAt and no per-chain source: neither may be invented.
       expect(
@@ -191,7 +204,7 @@ void main() {
         textScale: 2,
       );
       expect(tester.takeException(), isNull);
-      final action = find.text(observation == null ? '返回 LOOP' : '查看缓存内容');
+      final action = find.text(observation == null ? '重试' : '查看缓存内容');
       await tester.ensureVisible(action);
       await tester.tap(action);
     }

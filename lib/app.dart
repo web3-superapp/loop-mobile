@@ -1455,6 +1455,14 @@ Widget _systemSurface(BuildContext context, WidgetRef ref, String id) {
     id,
     onBack: back,
     onSecondaryAction: returnToCommunity,
+    // The three state pages own real exits. 重试 has no request of its own
+    // to repeat from here, so it returns to the page that opened this one —
+    // that page reads again as it rebuilds; 联系客服 and 查看只读内容 are the
+    // prototype's `data-go="support"` / `data-go="community"`.
+    onRetry: back,
+    onServiceRetry: back,
+    onServiceSupport: () => context.go(LoopRouteManifest.pathFor('support')),
+    onMaintenanceReadOnly: returnToCommunity,
     forceUpdateRequirement:
         version.decision == LoopVersionPolicyDecision.updateRequired
         ? LoopForceUpdateRequirement(

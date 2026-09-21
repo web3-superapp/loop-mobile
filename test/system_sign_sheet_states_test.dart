@@ -1,21 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:loop_mobile/features/system/system_showcase_preview.dart';
+import 'package:loop_mobile/features/system/system_specimens.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/widgets/loop_sign_sheet.dart';
 
 import 'support/system_surface_harness.dart';
 
 void main() {
-  testWidgets('production sign-sheet-states route shows no fixture sheets', (
+  testWidgets('production sign-sheet-states route draws all four states', (
     tester,
   ) async {
-    await expectProductionUnavailable(
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final router = await pumpProductionApp(tester);
+    router.go('/system/sign-sheet');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text(loopComponentSpecimenLabel), findsOneWidget);
+    expect(find.text('演示数据 · 开发预览'), findsNothing);
+    await scrollPageTo(
       tester,
-      location: '/system/sign-sheet',
-      unavailableKey: 'sign-sheet-showcase-unavailable',
-      absentClaims: <String>['5,000 USDC', '演示数据', '触发待确认弹层'],
+      find.byKey(const ValueKey<String>('sign-sheet-trigger-pending')),
     );
+    for (final state in <LoopSignSheetState>[
+      LoopSignSheetState.simulationFailed,
+      LoopSignSheetState.signing,
+      LoopSignSheetState.policyRejected,
+    ]) {
+      final key = ValueKey<String>('loop-sign-sheet-${state.name}');
+      await scrollPageTo(tester, find.byKey(key));
+      expect(find.byKey(key), findsOneWidget, reason: state.name);
+    }
+    await scrollPageTo(tester, find.text('策略拒绝不是错误'));
+    expect(find.text('策略拒绝不是错误'), findsOneWidget);
   });
 
   testWidgets('preview showcase renders the four states and opens the sheet', (
@@ -39,6 +59,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('演示数据 · 开发预览'), findsOneWidget);
+    expect(find.text(loopComponentSpecimenLabel), findsNothing);
     for (final state in <LoopSignSheetState>[
       LoopSignSheetState.simulationFailed,
       LoopSignSheetState.signing,

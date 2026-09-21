@@ -107,6 +107,34 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('on Chalk the 24h accent is ink and underlined, not Lime', (
+    tester,
+  ) async {
+    // `style-v2.css:213` — `.chalk-card :is(.up,…)` drops Lime for the
+    // ground's ink plus a hairline underline. Lime on Chalk measures 1.1:1,
+    // which is a figure that is painted and not there.
+    await _pump(
+      tester,
+      const LoopTokenCard(
+        state: LoopTokenCardState.normal,
+        model: _pepe,
+        chalk: true,
+      ),
+    );
+    final change = tester.widget<Text>(find.text('+4.8%')).style;
+    expect(change?.color, LoopColors.ink);
+    expect(change?.decoration, TextDecoration.underline);
+
+    // The dark card is untouched.
+    await _pump(
+      tester,
+      const LoopTokenCard(state: LoopTokenCardState.normal, model: _pepe),
+    );
+    final dark = tester.widget<Text>(find.text('+4.8%')).style;
+    expect(dark?.color, LoopColors.lime);
+    expect(dark?.decoration, isNot(TextDecoration.underline));
+  });
+
   testWidgets('loading disables actions and shows placeholders only', (
     tester,
   ) async {

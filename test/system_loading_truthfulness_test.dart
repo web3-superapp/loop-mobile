@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/system/system_specimens.dart';
 import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
@@ -15,10 +16,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(
-      find.byKey(const ValueKey<String>('loading-source-unavailable')),
-      findsOneWidget,
-    );
+    expect(find.text(loopComponentSpecimenLabel), findsOneWidget);
     expect(find.text('当前加载'), findsNothing);
     expect(find.byType(LoopSkeletonView), findsNothing);
     expect(find.text('列表骨架'.toUpperCase()), findsOneWidget);

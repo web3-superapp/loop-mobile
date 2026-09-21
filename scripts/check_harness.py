@@ -823,7 +823,7 @@ S7_RETIRED_PROTOTYPE_COPY = (
 # there is no proven rate to label.
 S7_TOKEN_CARD_PATHS = (
     Path("lib/widgets/loop_token_card.dart"),
-    Path("lib/features/system/system_showcase_preview.dart"),
+    Path("lib/features/system/system_specimens.dart"),
 )
 S7_SURFACE_ROOTS = (
     Path("lib/features/launch"),
