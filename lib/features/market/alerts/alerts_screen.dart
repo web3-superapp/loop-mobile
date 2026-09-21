@@ -14,7 +14,9 @@ import 'package:loop_mobile/features/market/alerts/alerts_gateway.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/notifications/notification_controllers.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -83,17 +85,21 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       title: '价格提醒',
       onBack: widget.onBack,
       actions: <Widget>[
-        LoopIconButton(
+        // `.topbar .seg`: the prototype's 新建 text pill. A bell glyph here
+        // reads as「打开通知」, not「新建一条提醒」(audit 2026-09-21 §G.7).
+        LoopSeg(
           key: const ValueKey<String>('alerts-create-action'),
-          icon: 'bell',
-          label: '新建价格提醒',
-          onPressed: blocked || state.busy
+          label: '新建',
+          selected: false,
+          onSelected: blocked || state.busy
               ? null
               : () => unawaited(_openEditor(controller)),
         ),
       ],
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('alerts-folio'),
+        variant: LoopFolioVariant.chalk,
+        ring: false,
         archetype: LoopFolioArchetype.listing,
         kicker: 'PRICE ALERTS',
         // The list answers one cursor page at a time and the response carries
@@ -219,6 +225,12 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
       // would remount the row on every refresh; the highlight is carried by
       // the badge and the subtitle instead.
       key: ValueKey<String>('alert-${alert.alertId}'),
+      // `.row-ico`: the prototype heads every alert with the asset's own
+      // token mark, so a list of thresholds is read by its assets first.
+      leading: LoopTokenLogo(
+        assetSymbol: alert.displayName,
+        fallbackMonogram: alert.displayName,
+      ),
       // The threshold keeps its exact characters; only the separators that
       // cannot change it are added, so 900000 stops being seven digits to
       // count.
@@ -284,6 +296,25 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         kind: LoopToastKind.ok,
       );
     }
+  }
+}
+
+/// `.row-ico` with a check: one triggered record.
+class _TriggeredAvatar extends StatelessWidget {
+  const _TriggeredAvatar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36,
+      height: 36,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: LoopColors.limeSoft,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const LoopIcon('check', size: 18, color: LoopColors.lime),
+    );
   }
 }
 
@@ -502,6 +533,9 @@ class _AlertNotificationFeedState
               for (final entry in entries)
                 LoopRecordRow(
                   key: ValueKey<String>('alerts-feed-${entry.notificationId}'),
+                  // The prototype's 触发历史 rows carry a check mark, which
+                  // is what tells them apart from the armed list above.
+                  leading: const _TriggeredAvatar(),
                   title: _feedTitle(entry),
                   subtitle: _feedDetail(entry),
                   subtitleMaxLines: 2,

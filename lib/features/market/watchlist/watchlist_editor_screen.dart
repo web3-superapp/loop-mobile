@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/market/watchlist/watchlist_controller.dart'
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -71,15 +72,19 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
       kicker: loopChainPreviewKicker(mode),
       onBack: widget.onBack,
       actions: <Widget>[
-        LoopIconButton(
+        // `.topbar .seg`: the prototype's 完成 text pill. A bare ✓ glyph did
+        // not read as a save (audit 2026-09-21 §G.6).
+        LoopSeg(
           key: const ValueKey<String>('watchlist-save-action'),
-          icon: 'check',
-          label: '保存自选',
-          onPressed: state.canSave ? () => unawaited(_save(controller)) : null,
+          label: '完成',
+          selected: false,
+          onSelected: state.canSave ? () => unawaited(_save(controller)) : null,
         ),
       ],
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('watchlist-folio'),
+        variant: LoopFolioVariant.chalk,
+        ring: false,
         archetype: LoopFolioArchetype.listing,
         kicker: 'WATCHLIST CONTROL',
         heading: state.isReady ? '${state.itemCount} 个自选资产' : '自选管理',
@@ -152,6 +157,36 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
                   ? () => unawaited(_save(controller))
                   : null,
             ),
+          // The prototype's order: the list the page exists to edit comes
+          // first, and 分组 sits under it. LOOP put the chips, two buttons
+          // and two ⓘ cards between the hero and the list, which pushed the
+          // list onto the second screen (audit 2026-09-21 §G.6).
+          if (group != null) ...<Widget>[
+            const LoopLabel('拖动排序 · 左滑删除'),
+            if (group.items.isEmpty)
+              LoopEmpty(
+                key: const ValueKey<String>('watchlist-group-empty'),
+                message: '这个分组还没有资产',
+                reason: '打开代币页，点右上角星标即可加入自选。',
+                action: LoopButton(
+                  key: const ValueKey<String>('watchlist-group-empty-add'),
+                  label: '添加资产',
+                  onPressed: () => _open('/market/new'),
+                ),
+              )
+            else
+              _ReorderableWatchlist(
+                group: group,
+                busy: state.busy,
+                onReorder: controller.reorder,
+                onRemove: (index) => unawaited(
+                  _confirmRemove(controller, group.items[index], index),
+                ),
+                onOpen: (item) => item.isReadable
+                    ? _open(MarketAssetRoute.token(item.assetId))
+                    : null,
+              ),
+          ],
           const LoopLabel('分组'),
           if (state.groups.isEmpty)
             LoopEmpty(
@@ -233,32 +268,6 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
                     '分组已达上限 $watchlistMaxGroups 个。'
                     '要新建一个，先删掉一个现有分组。',
                 margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              ),
-          ],
-          if (group != null) ...<Widget>[
-            const LoopLabel('拖动排序 · 左滑删除'),
-            if (group.items.isEmpty)
-              LoopEmpty(
-                key: const ValueKey<String>('watchlist-group-empty'),
-                message: '这个分组还没有资产',
-                reason: '打开代币页，点右上角星标即可加入自选。',
-                action: LoopButton(
-                  key: const ValueKey<String>('watchlist-group-empty-add'),
-                  label: '添加资产',
-                  onPressed: () => _open('/market/new'),
-                ),
-              )
-            else
-              _ReorderableWatchlist(
-                group: group,
-                busy: state.busy,
-                onReorder: controller.reorder,
-                onRemove: (index) => unawaited(
-                  _confirmRemove(controller, group.items[index], index),
-                ),
-                onOpen: (item) => item.isReadable
-                    ? _open(MarketAssetRoute.token(item.assetId))
-                    : null,
               ),
           ],
           LoopButtonPair(
@@ -478,64 +487,126 @@ class _ReorderableWatchlist extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: ReorderableListView.builder(
-        key: const ValueKey<String>('watchlist-reorderable'),
-        shrinkWrap: true,
-        buildDefaultDragHandles: false,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: group.items.length,
-        onReorderItem: busy ? (_, _) {} : onReorder,
-        itemBuilder: (context, index) {
-          final item = group.items[index];
-          return Padding(
-            key: ValueKey<String>('watchlist-item-${item.assetId}'),
-            padding: const EdgeInsets.only(bottom: 8),
-            child: LoopSurfaceCard(
-              onTap: item.isReadable ? () => onOpen(item) : null,
-              child: Row(
-                children: <Widget>[
-                  ReorderableDragStartListener(
-                    index: index,
-                    child: const Padding(
-                      padding: EdgeInsets.only(right: 12),
-                      child: Icon(
-                        Icons.drag_handle_rounded,
-                        size: 20,
-                        color: LoopColors.text3,
+      // `.row` inside one container: the prototype's rows share a card and a
+      // hairline. LOOP gave every row its own card with air between them, and
+      // the list lost its rhythm (audit 2026-09-21 §G.6).
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: LoopColors.chalk.withValues(alpha: 0.045),
+          borderRadius: LoopRadius.card,
+        ),
+        child: ReorderableListView.builder(
+          key: const ValueKey<String>('watchlist-reorderable'),
+          shrinkWrap: true,
+          buildDefaultDragHandles: false,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: group.items.length,
+          onReorderItem: busy ? (_, _) {} : onReorder,
+          itemBuilder: (context, index) {
+            final item = group.items[index];
+            final last = index == group.items.length - 1;
+            return Material(
+              key: ValueKey<String>('watchlist-item-${item.assetId}'),
+              type: MaterialType.transparency,
+              child: InkWell(
+                onTap: item.isReadable ? () => onOpen(item) : null,
+                child: Container(
+                  constraints: const BoxConstraints(
+                    minHeight: LoopTouch.minimum,
+                  ),
+                  padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+                  decoration: BoxDecoration(
+                    border: last
+                        ? null
+                        : Border(
+                            bottom: BorderSide(
+                              color: LoopColors.chalk.withValues(alpha: 0.1),
+                            ),
+                          ),
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      // `.row-ico` with `#i-drag`: the handle has a container
+                      // in the prototype, so it reads as something to grab.
+                      ReorderableDragStartListener(
+                        index: index,
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: LoopGround.fillOf(context),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const LoopIcon(
+                            'drag',
+                            size: 18,
+                            color: LoopColors.text2,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          item.displayName,
-                          style: Theme.of(context).textTheme.titleMedium,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Text(
+                              item.displayName,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              item.displayDetail,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          item.displayDetail,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      if (!item.isReadable) ...<Widget>[
+                        const LoopBadge('不可读'),
+                        const SizedBox(width: 8),
                       ],
-                    ),
+                      // `.badge.badge-down`: a word, not a bin glyph. This
+                      // stages a removal in the draft; nothing leaves the
+                      // server until 保存.
+                      Semantics(
+                        button: true,
+                        enabled: !busy,
+                        label: '移除 ${item.displayName}',
+                        child: Material(
+                          type: MaterialType.transparency,
+                          child: InkWell(
+                            key: ValueKey<String>(
+                              'watchlist-remove-${item.assetId}',
+                            ),
+                            onTap: busy ? null : () => onRemove(index),
+                            borderRadius: BorderRadius.circular(9),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 8,
+                              ),
+                              child: ExcludeSemantics(
+                                child: LoopBadge(
+                                  '删除',
+                                  kind: LoopBadgeKind.down,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 10),
-                  if (!item.isReadable) const LoopBadge('不可读'),
-                  IconButton(
-                    key: ValueKey<String>('watchlist-remove-${item.assetId}'),
-                    onPressed: busy ? null : () => onRemove(index),
-                    tooltip: '移除 ${item.displayName}',
-                    icon: const Icon(Icons.delete_outline_rounded, size: 20),
-                  ),
-                ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
