@@ -253,6 +253,25 @@ void main() {
       );
     });
 
+    testWidgets('a row that can read a value states it, not what it is for', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const TokenDetailScreen(assetId: s5WbnbAssetId),
+        market: FakeMarketReadGateway(),
+      );
+
+      await scrollToS5Section(
+        tester,
+        find.byKey(const ValueKey<String>('token-holders-entry')),
+      );
+      final row = tester.widget<LoopRecordRow>(
+        find.byKey(const ValueKey<String>('token-holders-entry')),
+      );
+      expect(row.subtitle, startsWith('8,019,338 持有人'));
+    });
+
     testWidgets('a page that could not read the asset still opens as a card', (
       tester,
     ) async {

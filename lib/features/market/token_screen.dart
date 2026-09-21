@@ -331,7 +331,13 @@ class _TokenDetailScreenState extends ConsumerState<TokenDetailScreen> {
               LoopRecordRow(
                 key: const ValueKey<String>('token-holders-entry'),
                 title: '持有人分布',
-                subtitle: '持有人总数来自 GoPlus；分布与集中度暂时读不到',
+                // A row's second line states the value it can read, and
+                // falls back to a description only when it cannot (audit
+                // 2026-09-21 §D+ item 11).
+                subtitle: detail.holderCount.isAvailable
+                    ? '${loopFormatDecimal(detail.holderCount.value!, maxFractionDigits: 0)} 持有人 · 分布与集中度暂时读不到'
+                    : '持有人总数与分布暂时读不到',
+                subtitleMaxLines: 2,
                 onTap: () => _open(MarketAssetRoute.holders(assetId)),
               ),
               LoopRecordRow(
