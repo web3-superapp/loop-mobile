@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -17,6 +18,12 @@ import 'package:loop_mobile/widgets/loop_pages.dart';
 /// The catalogue is an off-chain directory. Its segments come only from
 /// `scheduleStatus`; "已毕业" is a liquidity-axis fact and stays unavailable,
 /// so it is a separate block rather than a fourth tab of the same list.
+///
+/// The order of the first screen is the prototype's: the folio states the
+/// count, the segment bar follows it, and the projects follow the bar. The
+/// chain statement and the capability's own evidence moved to the foot of the
+/// page, where they explain an empty list rather than hide it (audit
+/// 2026-09-21 §H.2).
 class LaunchScreen extends ConsumerStatefulWidget {
   const LaunchScreen({
     super.key,
@@ -53,14 +60,16 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
     }
     final segment = ref.watch(launchSegmentControllerProvider);
     final overview = state.value;
+    final testnet = launchSurfaceIsTestnet(capability: capability);
 
     return LoopDashboardPage(
       key: const ValueKey<String>('launch-screen'),
       onRefresh: controller.reload,
       updating: state.refreshing,
       archetype: LoopPageArchetype.listing,
+      // The prototype's bar is one line: `Launch` plus two framed round tools.
       title: 'Launch',
-      kicker: 'LAUNCH DESK · 链下目录',
+      framedTools: true,
       tabPage: true,
       actions: <Widget>[
         LoopIconButton(
@@ -82,7 +91,9 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
           ),
       ],
       primary: LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
+        // `.lime-page .folio-primary` — the catalogue and the trade page are
+        // the two saturated Lime heroes in the module.
+        variant: LoopFolioVariant.lime,
         archetype: LoopFolioArchetype.listing,
         kicker: 'LAUNCH DESK',
         // No countdown, no graduation percentage, no "my tier": all three are
@@ -111,12 +122,6 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          _EvidenceNotice(capability: capability),
-          // Decision 0038: the catalogue has no single launch, so the chain
-          // statement comes from the capability the server published.
-          LaunchChainBlock(
-            testnet: launchSurfaceIsTestnet(capability: capability),
-          ),
           LoopSegBar(
             key: const ValueKey<String>('launch-segments'),
             labels: <String>[
@@ -134,6 +139,14 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
                 .read(launchSegmentControllerProvider.notifier)
                 .select(LaunchSegment.values[index]),
           ),
+          // One line, closeable, directly under the bar. The four-sentence
+          // form of the same explanation stays on the surfaces a signature is
+          // prepared on.
+          LoopTestnetNotice(
+            visible: testnet,
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            compact: true,
+          ),
           _SegmentList(
             segment: segment,
             overview: overview,
@@ -143,13 +156,23 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
           // Graduation is a liquidity fact. It is never derived from a
           // schedule that says "ended".
           LaunchUnavailableCard(label: '已毕业项目', fact: overview.graduated),
-          const LoopLabel('我的资格'),
-          LaunchUnavailableCard(
-            label: '我的 Launch 资格',
-            fact: overview.myEligibility,
+          const LoopNotice(
+            key: ValueKey<String>('launch-curation-notice'),
+            icon: 'target',
+            title: '精品发射，不是每天几万个',
+            body:
+                'LOOP 只联合交易所、KOL、社区与 IP 孵化有故事、有传播、有持续运营的 MEME。'
+                '每次发射的总量、轮次与上限都以这次发射被批准的配置为准。',
+            margin: EdgeInsets.fromLTRB(16, 22, 16, 0),
           ),
-          const LoopLabel('LOOP 质押'),
-          LaunchUnavailableCard(label: 'LOOP 质押', fact: overview.staking),
+          // Decision 0038: the catalogue has no single launch, so the chain
+          // statement comes from the capability the server published. It is a
+          // footnote to the list, not a gate in front of it.
+          Padding(
+            padding: const EdgeInsets.only(top: 14),
+            child: LaunchChainBlock(testnet: testnet, notice: false),
+          ),
+          _EvidenceNotice(capability: capability),
           LaunchSourceFooter(
             source: overview.catalog.source,
             kind: LaunchSourceKind.catalog,
@@ -159,6 +182,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
             rows: <LoopRecordRow>[
               LoopRecordRow(
                 key: const ValueKey<String>('launch-open-economy'),
+                leading: const LoopRowIcon(icon: 'droplet'),
                 title: '生态经济面板',
                 subtitle: '只显示 LOOP 账本可以证明的计数',
                 onTap: widget.onOpenEconomy,
@@ -223,12 +247,18 @@ class _SegmentList extends StatelessWidget {
       LaunchSegment.ended => overview.segments.ended,
     };
     if (items.isEmpty) {
-      return LoopEmpty(
+      // An empty segment keeps the page's own card shape. The centred grey
+      // disc it used to draw belongs to a page with nothing on it; this page
+      // has a bar, a catalogue and a statement of why the bar reads zero
+      // (audit 2026-09-21 §H.2).
+      return LoopNotice(
         key: ValueKey<String>('launch-segment-empty-${segment.name}'),
-        message: '${launchSegmentLabel(segment)}：暂无项目',
-        reason: segment == LaunchSegment.awaitingSchedule
+        icon: 'target',
+        title: '${launchSegmentLabel(segment)}：暂无项目',
+        body: segment == LaunchSegment.awaitingSchedule
             ? '通过审核但还没有排期的项目会出现在这里。'
             : '这个分段目前没有已登记的项目。分段只反映排期状态，不代表链上进度。',
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       );
     }
     return LoopRecordGroup(

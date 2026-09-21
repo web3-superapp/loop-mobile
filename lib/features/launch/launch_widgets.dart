@@ -640,9 +640,21 @@ bool launchSurfaceIsTestnet({
 /// Launch surface. On the primary chain it renders nothing at all, so a build
 /// whose Launch slot is `eip155:56` looks exactly as it did before.
 class LaunchChainBlock extends StatelessWidget {
-  const LaunchChainBlock({required this.testnet, super.key});
+  const LaunchChainBlock({
+    required this.testnet,
+    super.key,
+    this.notice = true,
+  });
 
   final bool testnet;
+
+  /// Whether the block also carries the shared explanation.
+  ///
+  /// The catalogue states the chain at the foot of the page and carries the
+  /// one-line form of the explanation under its segment bar instead, so the
+  /// first screen belongs to the projects (audit 2026-09-21 §H.2). Every
+  /// other Launch surface keeps both in one place.
+  final bool notice;
 
   @override
   Widget build(BuildContext context) {
@@ -667,7 +679,7 @@ class LaunchChainBlock extends StatelessWidget {
             ),
           ],
         ),
-        const LoopTestnetNotice(visible: true),
+        if (notice) const LoopTestnetNotice(visible: true),
       ],
     );
   }

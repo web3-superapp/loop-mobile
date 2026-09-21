@@ -771,10 +771,20 @@ class LoopTestnetNotice extends ConsumerWidget {
     required this.visible,
     super.key,
     this.margin = const EdgeInsets.fromLTRB(16, 14, 16, 0),
+    this.compact = false,
   });
 
   final bool visible;
   final EdgeInsets margin;
+
+  /// Whether the notice states the chain in one line.
+  ///
+  /// The four-sentence body belongs on the surface a signature is prepared
+  /// on. On the Launch catalogue it cost the first screen: the audit
+  /// (2026-09-21 §H.2) found the segment chips pushed below the fold by this
+  /// card plus the chain row above it. The compact form keeps the same title,
+  /// the same dismiss control and the same provider, and drops the body.
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -785,7 +795,7 @@ class LoopTestnetNotice extends ConsumerWidget {
       key: const ValueKey<String>('loop-testnet-notice'),
       icon: 'info',
       title: loopTestnetNoticeTitle,
-      body: loopTestnetNoticeBody,
+      body: compact ? null : loopTestnetNoticeBody,
       margin: margin,
       trailing: LoopIconButton(
         key: const ValueKey<String>('loop-testnet-notice-dismiss'),

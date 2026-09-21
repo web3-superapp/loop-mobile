@@ -1015,3 +1015,369 @@ class LoopFigureBox extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// .ledger-composite / .ledger-composite-detail
+// ---------------------------------------------------------------------------
+
+/// The ground a [LoopLedgerComposite] is welded onto.
+enum LoopCompositeGround {
+  /// `.ledger-composite{background:var(--graphite)}`.
+  graphite,
+
+  /// `.launch-detail-composite{background:var(--chalk)}`.
+  chalk,
+}
+
+/// `.ledger-composite` — a folio with one strip welded under it.
+///
+/// The prototype uses it wherever a page's conclusion needs one or two
+/// readings attached to it (`launch-rounds`, `launch-graduation`,
+/// `launch-history`, `launch-holders`, `loop-stake`, `launch-detail`). The
+/// folio handed in must carry `margin: EdgeInsets.zero` and
+/// `squareBottom: true`, because the strip shares its bottom edge.
+class LoopLedgerComposite extends StatelessWidget {
+  const LoopLedgerComposite({
+    required this.primary,
+    required this.detail,
+    super.key,
+    this.ground = LoopCompositeGround.graphite,
+    this.detailPadding = const EdgeInsets.fromLTRB(18, 16, 18, 17),
+    this.margin = const EdgeInsets.fromLTRB(16, 0, 16, 14),
+  });
+
+  final Widget primary;
+
+  /// The content of `.ledger-composite-detail`. Empty renders the folio alone.
+  final List<Widget> detail;
+  final LoopCompositeGround ground;
+  final EdgeInsets detailPadding;
+  final EdgeInsets margin;
+
+  @override
+  Widget build(BuildContext context) {
+    final chalk = ground == LoopCompositeGround.chalk;
+    final body = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        primary,
+        if (detail.isNotEmpty)
+          Container(
+            padding: detailPadding,
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  // `.ledger-composite-detail{border-top:1px solid
+                  // rgba(243,245,239,.1)}` / `.is-chalk{rgba(5,6,4,.11)}`.
+                  color: chalk
+                      ? LoopColors.ink.withValues(alpha: 0.11)
+                      : LoopColors.chalk.withValues(alpha: 0.1),
+                ),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: detail,
+            ),
+          ),
+      ],
+    );
+    return Padding(
+      padding: margin,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(LoopRadius.shellValue),
+        child: ColoredBox(
+          color: chalk ? LoopColors.chalk : LoopColors.graphite,
+          child: chalk
+              ? DefaultTextStyle.merge(
+                  style: const TextStyle(color: LoopColors.ink),
+                  child: IconTheme.merge(
+                    data: const IconThemeData(color: LoopColors.ink),
+                    child: body,
+                  ),
+                )
+              : body,
+        ),
+      ),
+    );
+  }
+}
+
+/// `.ledger-composite-detail .detail-row`: one reading, or two side by side.
+///
+/// The figure is [loopFigureDash] when nothing was read; [spoken] is what a
+/// screen reader hears in its place.
+class LoopCompositeDetailRow extends StatelessWidget {
+  const LoopCompositeDetailRow({
+    required this.label,
+    required this.value,
+    super.key,
+    this.trailingLabel,
+    this.trailingValue,
+    this.valueSize = 26,
+    this.spoken,
+  });
+
+  final String label;
+  final String value;
+  final String? trailingLabel;
+  final String? trailingValue;
+
+  /// `.ledger-composite-detail .detail-value{font:800 26px/1}`.
+  final double valueSize;
+  final String? spoken;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      label: <String>[
+        '$label，${spoken ?? value}',
+        if (trailingLabel != null) '$trailingLabel，${trailingValue ?? ''}',
+      ].join('。'),
+      child: ExcludeSemantics(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: <Widget>[
+            Flexible(child: _cell(context, label, value, valueSize, false)),
+            if (trailingLabel != null) ...<Widget>[
+              const SizedBox(width: 18),
+              Flexible(
+                child: _cell(
+                  context,
+                  trailingLabel!,
+                  trailingValue ?? loopFigureDash,
+                  18,
+                  true,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _cell(
+    BuildContext context,
+    String label,
+    String value,
+    double size,
+    bool end,
+  ) => Column(
+    crossAxisAlignment: end ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: <Widget>[
+      Text(
+        value,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: LoopTypography.figure(
+          size,
+          height: 1.05,
+          weight: FontWeight.w800,
+          color: LoopGround.inkOf(context),
+        ),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        label,
+        maxLines: 2,
+        style: LoopTypography.caption(
+          11,
+          color: LoopGround.secondaryOf(context),
+        ),
+      ),
+    ],
+  );
+}
+
+/// `.ledger-composite-detail>p`: one sentence inside a composite strip.
+class LoopCompositeDetailNote extends StatelessWidget {
+  const LoopCompositeDetailNote(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    text,
+    style: LoopTypography.caption(11, color: LoopGround.secondaryOf(context)),
+  );
+}
+
+/// `.ledger-rule`: the hairline inside a card or a composite strip.
+class LoopHairline extends StatelessWidget {
+  const LoopHairline({
+    super.key,
+    this.margin = const EdgeInsets.symmetric(vertical: 13),
+  });
+
+  final EdgeInsets margin;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: margin,
+    child: Container(
+      height: 1,
+      color: LoopGround.inkOf(context).withValues(alpha: 0.16),
+    ),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// .bar — a progress track
+// ---------------------------------------------------------------------------
+
+/// `.bar` / `.bar>i`: a 6px Lime progress track.
+///
+/// [value] is `null` when the progress behind it was not read. The track is
+/// then drawn empty and described as unknown, because an empty track that
+/// claimed `0%` would be a figure nobody read.
+class LoopProgressBar extends StatelessWidget {
+  const LoopProgressBar({
+    required this.value,
+    required this.semanticLabel,
+    super.key,
+  });
+
+  final double? value;
+  final String semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final fraction = value;
+    return Semantics(
+      label: semanticLabel,
+      child: ExcludeSemantics(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: Container(
+            height: 6,
+            color: LoopGround.fillOf(context),
+            alignment: Alignment.centerLeft,
+            child: fraction == null
+                ? const SizedBox.shrink()
+                : FractionallySizedBox(
+                    widthFactor: fraction.clamp(0, 1),
+                    child: const ColoredBox(color: LoopColors.lime),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// .row-ico.mono — a mono code tile
+// ---------------------------------------------------------------------------
+
+/// `.row-ico.mono`: the square tile that carries a sequence number, a time
+/// code or the reader's own marker (`01`, `00:00`, `YOU`).
+class LoopMonoTile extends StatelessWidget {
+  const LoopMonoTile({
+    required this.label,
+    super.key,
+    this.accent = false,
+    this.size = 44,
+  });
+
+  final String label;
+
+  /// `.row-ico` on a Lime-washed row: Lime ground, Ink glyph.
+  final bool accent;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      decoration: BoxDecoration(
+        color: accent ? LoopColors.lime : LoopGround.fillOf(context),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: LoopTypography.figure(
+          11,
+          color: accent ? LoopColors.ink : LoopGround.secondaryOf(context),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// .hero-num / .hero-sub
+// ---------------------------------------------------------------------------
+
+/// `.hero-num` + `.hero-sub`: the oversized result a page states under its
+/// folio, with one line of context beneath it.
+class LoopHeroFigure extends StatelessWidget {
+  const LoopHeroFigure({
+    required this.figure,
+    super.key,
+    this.caption,
+    this.accent = true,
+    this.semanticLabel,
+  });
+
+  final String figure;
+  final String? caption;
+
+  /// `.hero-num.launch-accent`: Lime. A figure that is not good news, or that
+  /// was not read at all, asks for the neutral weight instead.
+  final bool accent;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      label: semanticLabel ?? <String>[figure, ?caption].join('。'),
+      child: ExcludeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: LoopSpacing.page),
+              child: Text(
+                figure,
+                style: LoopTypography.title(
+                  32,
+                  weight: FontWeight.w800,
+                  color: accent ? LoopColors.lime : LoopGround.inkOf(context),
+                ),
+              ),
+            ),
+            if (caption != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  LoopSpacing.page,
+                  4,
+                  LoopSpacing.page,
+                  LoopSpacing.page,
+                ),
+                child: Text(
+                  caption!,
+                  style: LoopTypography.caption(
+                    11,
+                    color: LoopGround.secondaryOf(context),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
