@@ -746,6 +746,39 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
+          const LoopLabel('Launch'),
+          // `.chalk-card` with a 2x2 grid: the prototype's Launch half of the
+          // ledger. The registry count is LOOP's own and is a number; the
+          // other three need the contract and print the em dash.
+          _EconomyLaunchCard(economy: economy),
+          const LoopLabel('LOOP'),
+          LoopStatGrid(
+            key: const ValueKey<String>('loop-economy-loop-stats'),
+            stats: <LoopStat>[
+              const LoopStat(label: '总量', value: loopFigureDash),
+              const LoopStat(label: '累计分发', value: loopFigureDash),
+              LoopStat(label: '已确认轮次', value: '${economy.confirmedRoundCount}'),
+              LoopStat(label: '已通过申请', value: '${economy.projects.approved}'),
+            ],
+          ),
+          _EconomyReasons(economy: economy),
+          const LoopLabel('Value Flywheel'),
+          LoopRecordGroup(
+            key: const ValueKey<String>('loop-economy-flywheel'),
+            rows: <LoopRecordRow>[
+              for (var index = 0; index < _flywheel.length; index += 1)
+                LoopRecordRow(
+                  key: ValueKey<String>('loop-economy-flywheel-$index'),
+                  leading: LoopMonoTile(
+                    label: (index + 1).toString().padLeft(2, '0'),
+                  ),
+                  title: _flywheel[index].$1,
+                  subtitle: _flywheel[index].$2,
+                  subtitleMaxLines: 2,
+                  position: launchRowPosition(index, _flywheel.length),
+                ),
+            ],
+          ),
           const LoopLabel('申请状态计数'),
           LoopRecordGroup(
             key: const ValueKey<String>('loop-economy-projects'),
@@ -790,10 +823,6 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
                 ),
             ],
           ),
-          const LoopLabel('暂时无法核对的项目'),
-          LaunchUnavailableCard(label: '总量', fact: economy.totalSupply),
-          LaunchUnavailableCard(label: '累计分发', fact: economy.distributed),
-          LaunchUnavailableCard(label: '累计生态税', fact: economy.ecosystemTax),
           // The economy response carries no configuration version, so the
           // footer omits the segment rather than restating an assumed one.
           LaunchSourceFooter(
@@ -803,6 +832,121 @@ class _LoopEconomyScreenState extends ConsumerState<LoopEconomyScreen> {
           ),
           const SizedBox(height: 20),
         ],
+      ],
+    );
+  }
+}
+
+/// The prototype's `Value Flywheel`: what LOOP's economy does with a launch
+/// once it graduates. No rate appears — the retired permanent-tax figure is
+/// forbidden copy (03 §10.1) and the live one is not approved.
+const List<(String, String)> _flywheel = <(String, String)>[
+  ('精品项目完成 Launch', '社区传播与内盘交易形成流动性'),
+  ('达线毕业并进入外盘', '迁移后由外部流动性承接交易'),
+  ('价值回流 LOOP', '增强流动性、挖矿吸引力与下一轮分发'),
+];
+
+/// `loop-economy` 的 `.chalk-card`: the Launch half of the public ledger.
+class _EconomyLaunchCard extends StatelessWidget {
+  const _EconomyLaunchCard({required this.economy});
+
+  final LaunchEconomy economy;
+
+  /// Every launch LOOP has registered, whatever its schedule says. It is a
+  /// count of LOOP's own records, which is the only kind of number this page
+  /// is allowed to print.
+  int get _registered {
+    final counts = economy.launches;
+    return counts.unscheduled + counts.scheduled + counts.live + counts.ended;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopChalkCard(
+      key: const ValueKey<String>('loop-economy-launch-card'),
+      child: Builder(
+        builder: (context) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Expanded(child: _cell(context, '$_registered', '已登记发射')),
+                Expanded(child: _cell(context, loopFigureDash, '已毕业')),
+              ],
+            ),
+            const LoopHairline(),
+            Row(
+              children: <Widget>[
+                Expanded(child: _cell(context, loopFigureDash, '累计成交量')),
+                Expanded(child: _cell(context, loopFigureDash, '累计生态税')),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _cell(BuildContext context, String value, String label) => Semantics(
+    container: true,
+    label:
+        '$label，'
+        '${value == loopFigureDash ? launchReasonCodeText(economy.ecosystemTax.reasonCode) : value}',
+    child: ExcludeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            value,
+            style: LoopTypography.figure(
+              16,
+              weight: FontWeight.w700,
+              color: LoopGround.inkOf(context),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            style: LoopTypography.caption(
+              11,
+              color: LoopGround.auxiliaryOf(context),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// The reasons behind the ledger's em dashes, each stated once.
+///
+/// Three unavailable strips used to carry the same sentence three times; the
+/// figures now sit in the grids and the sentences are de-duplicated here.
+class _EconomyReasons extends StatelessWidget {
+  const _EconomyReasons({required this.economy});
+
+  final LaunchEconomy economy;
+
+  @override
+  Widget build(BuildContext context) {
+    final codes = <String>{
+      economy.totalSupply.reasonCode,
+      economy.distributed.reasonCode,
+      economy.ecosystemTax.reasonCode,
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        for (final code in codes)
+          LoopEmpty(
+            key: ValueKey<String>('loop-economy-reason-$code'),
+            icon: 'info',
+            message: '总量、累计分发与累计生态税暂时没有数值',
+            reason: launchReasonCodeText(code),
+          ),
       ],
     );
   }
@@ -904,11 +1048,16 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
         variant: LoopFolioVariant.quiet,
         archetype: LoopFolioArchetype.action,
         kicker: 'CURATED LAUNCH',
+        // The heading is a conclusion, not the page's own title: the length
+        // of the review pipeline before a draft exists, the applicant's own
+        // state once one does.
         heading: selected == null
-            ? '新建申请'
+            ? '${_reviewPipeline.length} 步审核'
             : launchReviewStatusLabel(selected.reviewStatus),
         caption: '提交不代表通过。审核由人工进行，结果与上线时间以最新状态为准。',
-        stamp: selected == null ? null : 'v${selected.materialVersion}',
+        stamp: selected == null
+            ? '${_reviewPipeline.length} STEPS'
+            : 'v${selected.materialVersion}',
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -931,6 +1080,24 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
+          // `Review Record`: the four states the server's own machine moves a
+          // draft through, with the applicant's current one marked. The
+          // prototype opens on this block; the App opened straight onto the
+          // form, so the page never said what submitting leads to
+          // (visual audit 2026-09-21 §H.12).
+          const LoopLabel('Review Record'),
+          LoopRecordGroup(
+            key: const ValueKey<String>('launch-apply-pipeline'),
+            rows: <LoopRecordRow>[
+              for (var index = 0; index < _reviewPipeline.length; index += 1)
+                _pipelineRow(
+                  index: index,
+                  current: selected == null
+                      ? null
+                      : _reviewPipelineIndex(selected.reviewStatus),
+                ),
+            ],
+          ),
           if (state.projects.isNotEmpty) ...<Widget>[
             const LoopLabel('我的申请'),
             LoopRecordGroup(
@@ -1023,6 +1190,16 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
               ),
             ],
           ),
+          // `details.focus-disclosure`: the curation statement and the
+          // submission caveat, where the prototype keeps them.
+          const LoopDisclosure(
+            key: ValueKey<String>('launch-apply-principles'),
+            summary: '筛选原则与提交说明',
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 14),
+              child: _CurationCard(),
+            ),
+          ),
           const LoopNotice(
             key: ValueKey<String>('launch-apply-notice'),
             icon: 'info',
@@ -1033,6 +1210,32 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
           const SizedBox(height: 20),
         ],
       ],
+    );
+  }
+
+  /// One row of the `Review Record` block.
+  ///
+  /// The subtitle is the state's own next step, not a description of the
+  /// page: 「能读到值就写值」 (visual audit §D+ #11).
+  LoopRecordRow _pipelineRow({required int index, required int? current}) {
+    final (label, status) = _reviewPipeline[index];
+    final isCurrent = current == index;
+    return LoopRecordRow(
+      key: ValueKey<String>('launch-apply-pipeline-$index'),
+      leading: LoopMonoTile(
+        label: (index + 1).toString().padLeft(2, '0'),
+        accent: isCurrent,
+      ),
+      title: label,
+      subtitle: launchReviewStatusHint(status),
+      subtitleMaxLines: 2,
+      trailingBadge: isCurrent
+          ? const LoopBadge('当前', kind: LoopBadgeKind.launch)
+          : null,
+      position: launchRowPosition(index, _reviewPipeline.length),
+      semanticLabel:
+          '$label，${launchReviewStatusHint(status)}'
+          '${isCurrent ? '，当前状态' : ''}',
     );
   }
 
@@ -1058,6 +1261,61 @@ class _LaunchApplyScreenState extends ConsumerState<LaunchApplyScreen> {
       semanticLabel:
           '${project.name}，${launchReviewStatusLabel(project.reviewStatus)}'
           '${selected ? '，已选中' : ''}',
+    );
+  }
+}
+
+/// The review pipeline, in the order the server's own state machine moves a
+/// draft through it. The terminal states share the last step, because an
+/// applicant reaches exactly one of them.
+const List<(String, LaunchReviewStatus)> _reviewPipeline =
+    <(String, LaunchReviewStatus)>[
+      ('草稿', LaunchReviewStatus.draft),
+      ('已提交', LaunchReviewStatus.submitted),
+      ('审核中', LaunchReviewStatus.inReview),
+      ('审核结果', LaunchReviewStatus.approved),
+    ];
+
+/// Which pipeline step one review status stands at.
+int _reviewPipelineIndex(LaunchReviewStatus status) => switch (status) {
+  LaunchReviewStatus.draft => 0,
+  LaunchReviewStatus.submitted => 1,
+  LaunchReviewStatus.inReview => 2,
+  LaunchReviewStatus.returned ||
+  LaunchReviewStatus.approved ||
+  LaunchReviewStatus.rejected => 3,
+};
+
+/// `details > .record-card`: what LOOP curates for, in the prototype's words.
+class _CurationCard extends StatelessWidget {
+  const _CurationCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopRecordCard(
+      key: const ValueKey<String>('launch-apply-curation'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            'CURATED LAUNCH',
+            style: LoopTypography.eyebrow(11, color: LoopColors.text3),
+          ),
+          const SizedBox(height: 8),
+          Text('先评估，再发射', style: LoopTypography.title(24)),
+          const SizedBox(height: 5),
+          Text(
+            'LOOP 与交易所、KOL 和社区共同筛选有叙事、有传播力、可长期运营的项目。',
+            style: LoopTypography.caption(11, color: LoopColors.text2),
+          ),
+          const LoopHairline(),
+          Text(
+            '人工审核 · 上限配置 · 流动性方案',
+            style: LoopTypography.caption(11, color: LoopColors.text3),
+          ),
+        ],
+      ),
     );
   }
 }

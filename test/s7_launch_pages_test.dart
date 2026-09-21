@@ -586,11 +586,15 @@ void main() {
       await scrollToS7Section(tester, projects);
       expect(projects, findsOneWidget);
 
+      // The three figures the ledger cannot prove sit in the grids as em
+      // dashes, and the sentence that explains all three is stated once —
+      // not three times under three one-row strips (visual audit §H.11).
       for (final label in <String>['总量', '累计分发', '累计生态税']) {
-        final block = find.byKey(ValueKey<String>('launch-unavailable-$label'));
-        await scrollToS7Section(tester, block);
-        expect(block, findsOneWidget, reason: label);
+        final cell = find.text(label);
+        await scrollToS7Section(tester, cell);
+        expect(cell, findsOneWidget, reason: label);
       }
+      expect(find.textContaining('总量、累计分发与累计生态税暂时没有数值'), findsOneWidget);
       expect(find.textContaining('980,000'), findsNothing);
     });
 
