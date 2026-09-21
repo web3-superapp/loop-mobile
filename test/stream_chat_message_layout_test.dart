@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_appearance.dart';
+import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:stream_chat_flutter/stream_chat_flutter.dart';
 
 import 'support/loop_ground_probe.dart';
@@ -198,13 +199,37 @@ void main() {
       await _disposeHarness(tester, harness);
     });
 
-    // `.msg.me` is `.msg` reversed: it keeps its own `.msg-av`, on the
-    // reader's own side of the row. Dropping it left every second message in
-    // a thread 34pt wider than the one above it (audit 2026-09-20 · B.3).
-    testWidgets('the reader\'s own message keeps its avatar column', (
+    testWidgets('the incoming tile draws the Alias, not a provider avatar', (
       tester,
     ) async {
       final harness = _ChannelHarness.group(messageText: 'gm');
+      await _pumpMessage(tester, harness: harness);
+
+      // The painted one, in the gutter LOOP reserved. (Stream's own leading
+      // holds the same tile open, unpainted, to keep the column's width.)
+      final tile = find.descendant(
+        of: find.byKey(LoopStreamMessageRow.avatarKey),
+        matching: find.byType(LoopInitialsAvatar),
+      );
+      expect(tile, findsOneWidget);
+      expect(tester.widget<LoopInitialsAvatar>(tile).label, '星航员');
+
+      await _disposeHarness(tester, harness);
+    });
+  });
+
+  // Device report 2026-09-21: a circled 「成员」 stood beside every message the
+  // member had sent themself, across the row from their own bubble. LOOP
+  // publishes no name for an account into a room, so the own tile resolved
+  // the neutral label and drew it; and the gutter it was painted into is the
+  // one on the row's start side, while an own row reserves its own on the
+  // end. The own message is its bubble, and nothing else.
+  group('S65 the reader\'s own message is a bubble alone', () {
+    testWidgets('no avatar, no reserved gutter, no name', (tester) async {
+      final harness = _ChannelHarness.group(
+        messageText: '刚买了，算力涨到 4,347 了',
+        ownMessage: true,
+      );
       await _pumpMessage(
         tester,
         harness: harness,
@@ -213,9 +238,70 @@ void main() {
         ),
       );
 
-      expect(find.byKey(LoopStreamMessageRow.avatarKey), findsOneWidget);
+      // Neither LOOP's tile nor Stream's own leading is in the row: the
+      // column is `gone`, not merely empty.
+      expect(find.byKey(LoopStreamMessageRow.avatarKey), findsNothing);
+      expect(find.byType(StreamMessageLeading), findsNothing);
+      expect(find.byType(LoopInitialsAvatar), findsNothing);
+      // The monogram the device drew, and the label it came from.
+      expect(find.text(loopGroupMemberNeutralLabel), findsNothing);
 
       await _disposeHarness(tester, harness);
+    });
+
+    testWidgets('the bubble is Lime, Ink text, against the end margin', (
+      tester,
+    ) async {
+      final harness = _ChannelHarness.group(
+        messageText: 'gm',
+        ownMessage: true,
+      );
+      await _pumpMessage(
+        tester,
+        harness: harness,
+        layout: const StreamMessageLayoutData(
+          alignment: StreamMessageAlignment.end,
+        ),
+      );
+
+      final bubble = find.byType(StreamMessageBubble);
+      final pageWidth = tester.getSize(find.byType(Scaffold)).width;
+      // `.msg{padding:8px 16px}` — and no avatar column between the bubble
+      // and that inset.
+      expect(
+        tester.getTopRight(bubble).dx,
+        closeTo(pageWidth - LoopSpacing.page, 1),
+      );
+      expect(tester.widget<Text>(find.text('gm')).style!.color, LoopColors.ink);
+
+      await _disposeHarness(tester, harness);
+    });
+
+    // `#scr-dm` is the same markup: the peer keeps a column, the reader does
+    // not, and neither bubble is captioned with a name.
+    testWidgets('a direct conversation answers the same way', (tester) async {
+      final own = _ChannelHarness.direct(
+        messageText: '好，我先小仓试试',
+        ownMessage: true,
+      );
+      await _pumpMessage(
+        tester,
+        harness: own,
+        layout: const StreamMessageLayoutData(
+          alignment: StreamMessageAlignment.end,
+        ),
+      );
+      expect(find.byKey(LoopStreamMessageRow.avatarKey), findsNothing);
+      expect(find.byType(StreamMessageLeading), findsNothing);
+      await _disposeHarness(tester, own);
+
+      final peer = _ChannelHarness.direct(messageText: '那个 CA 我查过了');
+      await _pumpMessage(tester, harness: peer);
+      expect(find.byKey(LoopStreamMessageRow.avatarKey), findsOneWidget);
+      // The peer is named once, in the page header above the conversation:
+      // no name is drawn over the bubble here.
+      expect(find.text('NightOwl'), findsNothing);
+      await _disposeHarness(tester, peer);
     });
   });
 }
@@ -276,6 +362,9 @@ StreamComponentBuilders loopStreamComponentBuildersForTest() =>
       messageText: loopStreamMessageTextBuilder,
       extensions: streamChatComponentBuilders(
         messageItem: loopStreamGroupMessageItemBuilder,
+        // As `lib/app.dart` registers it: the gutter is drawn from the label
+        // LOOP resolved, never from Stream's id-keyed gradient (S58c).
+        messageLeading: loopStreamMessageLeadingBuilder,
         mentionItem: loopStreamGroupMentionItemBuilder,
         messageFooter: loopStreamMessageFooterBuilder,
         messageHeader: loopStreamMessageHeaderBuilder,
@@ -283,6 +372,7 @@ StreamComponentBuilders loopStreamComponentBuildersForTest() =>
     );
 
 const String _senderId = 'stream-sender';
+const String _readerId = 'stream-reader';
 
 final class _ChannelHarness {
   _ChannelHarness._({
@@ -291,19 +381,20 @@ final class _ChannelHarness {
     required this.message,
   });
 
-  factory _ChannelHarness.group({required String messageText}) {
-    final client = StreamChatClient(
-      'public-stream-api-key',
-      logLevel: Level.OFF,
-    );
-    final user = User(id: _senderId, name: 'voyager');
-    final message = Message(
-      id: 'message-1',
-      text: messageText,
-      user: user,
-      createdAt: DateTime.utc(2026, 9, 16, 12),
-      state: MessageState.sent,
-    );
+  /// A community / group room.
+  ///
+  /// `ownMessage: true` is the device's own case: the message is the reader's
+  /// and their member row carries no Alias projection, so every LOOP label
+  /// for them resolves to 「成员」.
+  factory _ChannelHarness.group({
+    required String messageText,
+    bool ownMessage = false,
+  }) {
+    final client = _client();
+    final user = ownMessage
+        ? User(id: _readerId, name: 'reader')
+        : User(id: _senderId, name: 'voyager');
+    final message = _message(messageText, user);
     final channel = Channel.fromState(
       client,
       ChannelState(
@@ -315,12 +406,16 @@ final class _ChannelHarness {
         members: <Member>[
           Member(
             userId: _senderId,
-            user: user,
+            user: User(id: _senderId, name: 'voyager'),
             extraData: const <String, Object?>{
               'loop_group_alias_id': 'bb5e12c2-40e2-4577-9951-57fac0b5ce5e',
               'loop_group_alias': '星航员',
               'loop_group_alias_version': 1,
             },
+          ),
+          Member(
+            userId: _readerId,
+            user: User(id: _readerId, name: 'reader'),
           ),
         ],
         messages: <Message>[message],
@@ -332,6 +427,64 @@ final class _ChannelHarness {
       message: message,
     );
   }
+
+  /// A 1:1 conversation — `loop_direct_…`, so no Alias namespace.
+  factory _ChannelHarness.direct({
+    required String messageText,
+    bool ownMessage = false,
+  }) {
+    final client = _client();
+    final user = ownMessage
+        ? User(id: _readerId, name: 'reader')
+        : User(id: _senderId, name: 'NightOwl');
+    final message = _message(messageText, user);
+    final channel = Channel.fromState(
+      client,
+      ChannelState(
+        channel: ChannelModel(
+          id: 'loop_direct_8e7d73c5',
+          type: 'messaging',
+          memberCount: 2,
+        ),
+        members: <Member>[
+          Member(
+            userId: _senderId,
+            user: User(id: _senderId),
+          ),
+          Member(
+            userId: _readerId,
+            user: User(id: _readerId),
+          ),
+        ],
+        messages: <Message>[message],
+      ),
+    );
+    return _ChannelHarness._(
+      client: client,
+      channel: channel,
+      message: message,
+    );
+  }
+
+  /// A client that knows who the reader is: `alignment == end` is the SDK's
+  /// own reading of `message.user.id == currentUser.id`.
+  static StreamChatClient _client() {
+    final client = StreamChatClient(
+      'public-stream-api-key',
+      logLevel: Level.OFF,
+    );
+    // ignore: invalid_use_of_internal_member
+    client.state.currentUser = OwnUser(id: _readerId);
+    return client;
+  }
+
+  static Message _message(String text, User user) => Message(
+    id: 'message-1',
+    text: text,
+    user: user,
+    createdAt: DateTime.utc(2026, 9, 16, 12),
+    state: MessageState.sent,
+  );
 
   final StreamChatClient client;
   final Channel channel;

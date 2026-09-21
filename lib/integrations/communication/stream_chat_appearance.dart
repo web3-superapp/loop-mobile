@@ -139,14 +139,32 @@ loopStreamMessageItemTheme() => StreamMessageItemThemeData(
   // the reader's own. `hidden` keeps that column's width while LOOP draws the
   // avatar into it at the top of the row — see [LoopStreamMessageRow]. Stream
   // itself would drop the avatar on every message but the last of a run; the
-  // prototype shows one beside every message.
+  // prototype shows one beside every message it did not write.
   //
-  // Both sides carry one: `.msg.me` is a row-reverse of the same markup and
-  // keeps its own `.msg-av`, so the prototype's two-column rhythm holds down
-  // the whole thread instead of collapsing on every second message. A direct
-  // conversation is the same markup again (`#scr-dm`), so it reserves the
-  // column too.
-  avatarVisibility: StreamMessageLayoutVisibility.all(StreamVisibility.hidden),
+  // The reader's own message carries no column at all. `.msg.me` in the
+  // prototype does draw a `V7` disc over a `我` line, but both are mock
+  // account facts: LOOP publishes no name for an account into a room, so the
+  // tile fell back to the neutral 「成员」 label and a circled 「成员」 stood
+  // beside every message the member had sent themself (device report
+  // 2026-09-21). Two things were wrong with it and neither had a fix that
+  // kept the column: naming the reader 「成员」 in their own room is worse
+  // than not naming them, and the gutter Stream reserves on an end-aligned
+  // row sits on that row's own end side while [LoopStreamMessageRow] paints
+  // at `PositionedDirectional(start:)` — so the tile landed against the far
+  // edge of the screen, a full row away from the bubble it belonged to.
+  //
+  // `gone` is therefore the answer on the reader's side, as it is in Stream's
+  // own defaults (`stream_chat_flutter-10.3.0/lib/src/message_widget/
+  // stream_message_item.dart:1117`): the own message is its bubble, Lime and
+  // end-aligned, and the member needs no monogram to know who wrote it. A
+  // direct conversation keeps the incoming column, because the peer's bubble
+  // is still an author's bubble (`#scr-dm`).
+  avatarVisibility: StreamMessageLayoutVisibility.resolveWith(
+    (layout) => switch (layout.alignment) {
+      StreamMessageAlignment.start => StreamVisibility.hidden,
+      StreamMessageAlignment.end => StreamVisibility.gone,
+    },
+  ),
   bubble: StreamMessageBubbleStyle(
     backgroundColor: StreamMessageLayoutProperty.resolveWith(
       (layout) => switch (layout.contentKind) {
@@ -278,11 +296,14 @@ StreamChatThemeData loopStreamChatThemeData() => StreamChatThemeData(
 /// lines away from the name it belongs to (C-15).
 ///
 /// The row therefore keeps Stream's own gutter — [loopStreamMessageItemTheme]
-/// marks the avatar `hidden`, which reserves its width and paints nothing —
-/// and this widget draws the official [StreamMessageLeading] into that gutter
-/// at the row's top. The geometry is the theme's own: the item's padding is a
-/// LOOP token, so the avatar's origin is that padding's top-start corner.
-/// Nothing else about the official item changes.
+/// marks an incoming avatar `hidden`, which reserves its width and paints
+/// nothing — and this widget draws the official [StreamMessageLeading] into
+/// that gutter at the row's top. The geometry is the theme's own: the item's
+/// padding is a LOOP token, so the avatar's origin is that padding's top-start
+/// corner. Nothing else about the official item changes.
+///
+/// Only an incoming row has that gutter: the reader's own message is drawn as
+/// a Lime bubble alone, with no monogram and no name.
 class LoopStreamMessageRow extends StatelessWidget {
   const LoopStreamMessageRow({
     super.key,
@@ -315,10 +336,16 @@ class LoopStreamMessageRow extends StatelessWidget {
     final layout = StreamMessageLayout.of(context);
     // Only the rows whose gutter is reserved carry an avatar. A `visible`
     // avatar would mean the theme stopped reserving and Stream is drawing its
-    // own; `gone` means there is no gutter at all.
+    // own; `gone` means there is no gutter at all — which is what the reader's
+    // own message asks for ([loopStreamMessageItemTheme]).
     if (theme.avatarVisibility?.resolve(layout) != StreamVisibility.hidden) {
       return child;
     }
+    // The gutter this widget paints into is the one at the row's start. An
+    // end-aligned row reserves its gutter on the opposite side, so painting
+    // there would put the tile across the screen from its own bubble; the
+    // reader's own message is never given one (device report 2026-09-21).
+    if (layout.alignment == StreamMessageAlignment.end) return child;
 
     final resolvedPadding = (padding ?? theme.padding ?? EdgeInsets.zero)
         .resolve(Directionality.of(context));
@@ -381,10 +408,17 @@ class _LoopStreamMessageHeader extends StatelessWidget {
     // label is not named at all; in a direct channel the header above the
     // conversation already says who it is.
     final label = loopStreamDisplayLabelOf(user);
+    // `alignment == end` is the SDK's own reading of "this member wrote it"
+    // (`message_list_view.dart:1094`), and it survives a moment where the
+    // client has no `currentUser` to compare against. The reader is never
+    // named above their own bubble on either test.
+    final isOwnMessage =
+        layout.alignment == StreamMessageAlignment.end ||
+        (currentUser != null && user?.id == currentUser.id);
     if (user != null &&
         label != null &&
         layout.channelKind == StreamMessageChannelKind.group &&
-        user.id != currentUser?.id) {
+        !isOwnMessage) {
       final metadata = StreamMessageItemTheme.of(context).metadata;
       final style =
           metadata?.usernameTextStyle?.resolve(layout) ??
