@@ -485,19 +485,20 @@ class _LoopAppState extends ConsumerState<LoopApp> {
             Expanded(child: content),
           ],
         );
-        // The curtain is above every LOOP surface and below nothing. It is
-        // drawn over the App rather than replacing it, so unlocking returns
-        // the owner to the page they were on.
-        content = LoopAppLockGate(child: content);
         // One toast host above the router: fixed above the tab bar, z 90.
         // The recovery scope sits above it so every page — including one whose
         // whole body is a block — can offer the read again. It re-arms the
         // public capability observation, which is the read that leaves a page
         // unreachable in the first place; it starts no product request and
         // decides nothing about what the answer means.
+        // The curtain is above every LOOP surface and below nothing — the
+        // toast host included, because a toast that outlived the moment the
+        // lock closed would print a line of the App over its own cover. It
+        // is drawn over the App rather than replacing it, so unlocking
+        // returns the owner to the page they were on.
         return LoopPageRecoveryScope(
           retry: metaObserver.retryObservation,
-          child: LoopToastHost(child: content),
+          child: LoopAppLockGate(child: LoopToastHost(child: content)),
         );
       },
     );

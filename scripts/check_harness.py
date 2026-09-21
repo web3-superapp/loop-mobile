@@ -3475,7 +3475,10 @@ def check_app_lock_contract(root: Path) -> list[str]:
                 "loopAppLockStoreProvider.overrideWithValue(",
             ),
             "lib/app.dart": (
-                "LoopAppLockGate(child: content)",
+                # The curtain is the outermost LOOP widget, above the toast
+                # host: a toast drawn over it would print a line of the App
+                # on its own cover.
+                "LoopAppLockGate(child: LoopToastHost(child: content))",
                 "onLeftForeground()",
                 "lock.onEnteredForeground()",
             ),
