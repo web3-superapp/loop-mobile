@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
@@ -10,6 +11,7 @@ import 'package:loop_mobile/features/social/social_controllers.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -190,6 +192,10 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
     final target = entry.profile.publicProfileId;
     return LoopRecordRow(
       key: ValueKey<String>('connection-row-${target ?? entry.profile.loopId}'),
+      // `.row-ico.mono`: the prototype heads every connection row with a
+      // monogram tile, and the App's rows had no leading element at all
+      // (audit 2026-09-21 §J.10, §D #7).
+      leading: LoopRowIcon(monogram: loopMonogram(entry.profile.displayName)),
       title: entry.profile.displayName,
       subtitle: entry.profile.loopId,
       // The relationship is a state, not a figure.

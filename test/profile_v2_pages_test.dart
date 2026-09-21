@@ -76,11 +76,12 @@ void main() {
       );
       expect(find.text('Voyager_7'), findsWidgets);
       expect(find.text(loopId), findsOneWidget);
-      // Metrics have no source, so they stay explicitly unreadable.
-      expect(
-        find.byKey(const ValueKey<String>('profile-metrics-unavailable')),
-        findsOneWidget,
+      // Metrics have no source, so the mining row states its figure as
+      // unread and hands the reader the page that owns it.
+      final mining = tester.widget<LoopRecordRow>(
+        find.byKey(const ValueKey<String>('profile-open-mining')),
       );
+      expect(mining.trailing, '—');
       expect(find.textContaining('24,820'), findsNothing);
     });
 
@@ -113,7 +114,11 @@ void main() {
         const ValueKey<String>('profile-open-connections'),
       );
       await tester.scrollUntilVisible(connections, 120);
-      expect(tester.widget<LoopRecordRow>(connections).subtitle, '你关注的人与你的粉丝');
+      // The prototype's account rows carry a state value or nothing at all;
+      // this page can read none of those states, so it says nothing rather
+      // than describing the destination (audit 2026-09-21 §D+ #11).
+      expect(tester.widget<LoopRecordRow>(connections).subtitle, isNull);
+      expect(tester.widget<LoopRecordRow>(connections).onTap, isNotNull);
     });
 
     testWidgets('unavailable, offline and error each get their own block', (
@@ -265,7 +270,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const ValueKey<String>('profile-edit-save')));
+      await _tapSave(tester);
       await tester.pumpAndSettle();
 
       expect(gateway.savedValues?.alias, 'Voyager_8');
@@ -289,7 +294,7 @@ void main() {
         'admin',
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey<String>('profile-edit-save')));
+      await _tapSave(tester);
       await tester.pumpAndSettle();
 
       expect(
@@ -326,7 +331,7 @@ void main() {
         'Voyager_8',
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey<String>('profile-edit-save')));
+      await _tapSave(tester);
       await tester.pumpAndSettle();
 
       expect(
@@ -351,7 +356,7 @@ void main() {
         'Voyager_8',
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey<String>('profile-edit-save')));
+      await _tapSave(tester);
       await tester.pumpAndSettle();
 
       expect(
@@ -385,7 +390,7 @@ void main() {
         find.byKey(const ValueKey<String>('loop-profile-avatar-monogram')),
         findsWidgets,
       );
-      await tester.tap(find.byKey(const ValueKey<String>('profile-edit-save')));
+      await _tapSave(tester);
       await tester.pumpAndSettle();
       expect(gateway.savedValues?.avatarRef, isNull);
     });
@@ -456,6 +461,15 @@ Future<void> _scrollTo(WidgetTester tester, String key) async {
     scrollable: find.byType(Scrollable).first,
   );
   await tester.pumpAndSettle();
+}
+
+/// 保存 flows at the end of the body, so it is scrolled to before it is
+/// tapped — the page is longer than the viewport on a phone.
+Future<void> _tapSave(WidgetTester tester) async {
+  final save = find.byKey(const ValueKey<String>('profile-edit-save'));
+  await tester.ensureVisible(save);
+  await tester.pumpAndSettle();
+  await tester.tap(save);
 }
 
 VoidCallback? _pressed(WidgetTester tester, String key) {

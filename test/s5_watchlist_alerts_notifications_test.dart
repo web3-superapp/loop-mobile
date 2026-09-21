@@ -705,14 +705,18 @@ void main() {
           ),
         );
       }
-      // The detail line and the locked badge both say it; the switch is absent.
-      expect(find.text('无法关闭'), findsNWidgets(2));
-      expect(
-        find.byKey(
-          const ValueKey<String>('notification-switch-security.event'),
-        ),
-        findsNothing,
+      // The locked row says so on its own line, carries the 已开启 pill and
+      // offers no control. The prototype has no slider anywhere, so neither
+      // does this page (audit 2026-09-21 §D+ #12).
+      expect(find.byType(Switch), findsNothing);
+      final lockedRow = find.byKey(
+        const ValueKey<String>('notification-category-security.event'),
       );
+      expect(
+        find.descendant(of: lockedRow, matching: find.textContaining('无法关闭')),
+        findsOneWidget,
+      );
+      expect(tester.widget<LoopRecordRow>(lockedRow).onTap, isNull);
     });
 
     testWidgets('the summary counts what is delivered, not what is stored', (
@@ -731,19 +735,16 @@ void main() {
       expect(find.text('9 项开启'), findsNothing);
 
       // Every switch that stores an intent without producing anything says so
-      // on its own row; the one that works carries no such mark.
+      // on its own row; the one that works carries no such mark. It is said
+      // in the row's own second line, because a second pill beside the state
+      // pill put two status controls on one row.
       for (final category in LoopNotificationCategory.values) {
         final row = find.byKey(
           ValueKey<String>('notification-category-${category.wireName}'),
         );
         await scrollToS5Section(tester, row);
         expect(
-          find.descendant(
-            of: row,
-            matching: find.byKey(
-              ValueKey<String>('notification-inert-${category.wireName}'),
-            ),
-          ),
+          find.descendant(of: row, matching: find.textContaining('暂不生效')),
           category == LoopNotificationCategory.tradePriceAlert
               ? findsNothing
               : findsOneWidget,
@@ -764,10 +765,14 @@ void main() {
 
       await scrollToS5Section(
         tester,
-        find.byKey(const ValueKey<String>('notification-switch-community.all')),
+        find.byKey(
+          const ValueKey<String>('notification-category-community.all'),
+        ),
       );
       await tester.tap(
-        find.byKey(const ValueKey<String>('notification-switch-community.all')),
+        find.byKey(
+          const ValueKey<String>('notification-category-community.all'),
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -793,10 +798,14 @@ void main() {
 
       await scrollToS5Section(
         tester,
-        find.byKey(const ValueKey<String>('notification-switch-community.all')),
+        find.byKey(
+          const ValueKey<String>('notification-category-community.all'),
+        ),
       );
       await tester.tap(
-        find.byKey(const ValueKey<String>('notification-switch-community.all')),
+        find.byKey(
+          const ValueKey<String>('notification-category-community.all'),
+        ),
       );
       await tester.pumpAndSettle();
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
@@ -10,6 +11,7 @@ import 'package:loop_mobile/features/social/social_controllers.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
@@ -195,10 +197,15 @@ class _BlocklistScreenState extends ConsumerState<BlocklistScreen> {
     final title = entry.profile?.displayName ?? entry.stableId;
     return LoopRecordRow(
       key: ValueKey<String>('block-row-${entry.stableId}'),
+      // `.row-ico.mono` + `.badge`: the prototype's blocked row is a monogram
+      // tile, a reason and a 解除 pill — not two lines of text with a mono
+      // value where the pill belongs (audit 2026-09-21 §J.12, §D #7).
+      leading: LoopRowIcon(monogram: loopMonogram(title)),
       title: title,
       subtitle: blockReasonText(entry.reasonCode),
-      trailing: '解除',
+      trailingBadge: const LoopBadge('解除'),
       position: communityRowPosition(index, length),
+      chevron: false,
       onTap: state.busy ? null : () => unawaited(_unblock(entry, controller)),
       semanticLabel: '$title，${blockReasonText(entry.reasonCode)}，可解除屏蔽',
     );

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/notifications/notification_controllers.dart';
@@ -66,20 +67,9 @@ class _NotificationPreferencesScreenState
       title: '通知设置',
       kicker: loopChainPreviewKicker(mode),
       onBack: widget.onBack,
-      primary: LoopFolioPrimary(
-        key: const ValueKey<String>('notification-preferences-folio'),
-        archetype: LoopFolioArchetype.action,
-        kicker: 'NOTIFICATION SUMMARY',
-        // 「9 项开启」 counted stored intents and read as nine kinds of
-        // notification; only price alerts are emitted. The summary counts what
-        // actually arrives and the sentence says what the rest are.
-        heading: resource == null
-            ? '通知设置'
-            : '${resource.deliveringEnabledCount} 项开启并生效',
-        caption:
-            '其余开关已保存，但对应的通知还没有开始产生。'
-            '安全事件始终开启且无法关闭；这里保存的是意图，不代表已经能送达。',
-      ),
+      // The prototype has no `[data-page-primary]` here: it opens on a Chalk
+      // summary card and then goes straight to 挖矿. The hero that stood in
+      // its place printed 「通知设置」 twice in one screen (§D+ #13).
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('notification-capability-block'),
@@ -90,6 +80,43 @@ class _NotificationPreferencesScreenState
           : null,
       sections: <Widget>[
         LoopChainPreviewNotice(mode: mode, resource: '通知设置'),
+        if (resource != null)
+          LoopChalkCard(
+            key: const ValueKey<String>('notification-preferences-summary'),
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  'NOTIFICATION SUMMARY',
+                  style: LoopTypography.eyebrow(
+                    10,
+                    color: LoopColors.ink.withValues(alpha: 0.62),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // 「9 项开启」 counted stored intents and read as nine kinds of
+                // notification; only price alerts are emitted.
+                Text(
+                  '${resource.deliveringEnabledCount} 项开启并生效',
+                  style: LoopTypography.heading(
+                    26,
+                    weight: FontWeight.w800,
+                    color: LoopColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '安全事件始终开启且无法关闭；这里保存的是意图，不代表已经能送达。',
+                  style: LoopTypography.caption(
+                    11,
+                    color: LoopColors.ink.withValues(alpha: 0.72),
+                  ),
+                ),
+              ],
+            ),
+          ),
         if (!state.isReady || resource == null)
           LoopChainStateBlock(
             keyPrefix: 'notification-preferences',
@@ -183,16 +210,68 @@ class _NotificationPreferencesScreenState
     if (categories.isEmpty) return const <Widget>[];
     return <Widget>[
       LoopLabel(section),
-      for (final category in categories)
-        _CategorySwitch(
-          key: ValueKey<String>('notification-category-${category.wireName}'),
-          category: category,
-          enabled: resource.enabledFor(category),
-          locked: resource.lockedFor(category),
-          busy: state.busy || state.requiresReload,
-          onChanged: (value) => unawaited(_toggle(controller, category, value)),
-        ),
+      // `.label` + one card of `.row`s, not one card per switch: the same ten
+      // categories used to run 1.7 screens long (audit 2026-09-21 §J.9).
+      LoopRecordGroup(
+        key: ValueKey<String>('notification-section-$section'),
+        rows: <LoopRecordRow>[
+          for (var index = 0; index < categories.length; index += 1)
+            _categoryRow(
+              categories[index],
+              resource: resource,
+              busy: state.busy || state.requiresReload,
+              controller: controller,
+              position: categories.length == 1
+                  ? LoopRowPosition.single
+                  : index == 0
+                  ? LoopRowPosition.first
+                  : index == categories.length - 1
+                  ? LoopRowPosition.last
+                  : LoopRowPosition.middle,
+            ),
+        ],
+      ),
     ];
+  }
+
+  /// One category as `.row` + `.badge`.
+  ///
+  /// The prototype states a notification preference with a Lime 已开启 /
+  /// muted 已关闭 pill. A Material `Switch` is not in `style-v2.css` and
+  /// appears nowhere else in the app; beside the separate 暂不生效 pill it
+  /// also put two status controls on one row (audit 2026-09-21 §D+ #12).
+  LoopRecordRow _categoryRow(
+    LoopNotificationCategory category, {
+    required LoopNotificationPreferences resource,
+    required bool busy,
+    required NotificationPreferencesController controller,
+    required LoopRowPosition position,
+  }) {
+    final enabled = resource.enabledFor(category);
+    final locked = resource.lockedFor(category);
+    final detail = <String>[
+      // `securityEvent.detail` already says 无法关闭; nothing repeats it.
+      ?category.detail,
+      if (!category.deliversToday) '暂不生效',
+    ].join(' · ');
+    final state = enabled ? '已开启' : '已关闭';
+    return LoopRecordRow(
+      key: ValueKey<String>('notification-category-${category.wireName}'),
+      title: category.label,
+      subtitle: detail.isEmpty ? null : detail,
+      subtitleMaxLines: 2,
+      trailingBadge: LoopBadge(
+        state,
+        kind: enabled ? LoopBadgeKind.up : LoopBadgeKind.mute,
+      ),
+      position: position,
+      chevron: false,
+      semanticLabel:
+          '${category.label}，$state${detail.isEmpty ? '' : '，$detail'}',
+      onTap: locked || busy
+          ? null
+          : () => unawaited(_toggle(controller, category, !enabled)),
+    );
   }
 
   Future<void> _toggle(
@@ -205,67 +284,5 @@ class _NotificationPreferencesScreenState
     if (applied) {
       LoopToast.show(context, message: '通知设置已保存', kind: LoopToastKind.ok);
     }
-  }
-}
-
-class _CategorySwitch extends StatelessWidget {
-  const _CategorySwitch({
-    required this.category,
-    required this.enabled,
-    required this.locked,
-    required this.busy,
-    required this.onChanged,
-    super.key,
-  });
-
-  final LoopNotificationCategory category;
-  final bool enabled;
-  final bool locked;
-  final bool busy;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoopSurfaceCard(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  category.label,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                if (category.detail != null) ...<Widget>[
-                  const SizedBox(height: 3),
-                  Text(
-                    category.detail!,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          if (!category.deliversToday) ...<Widget>[
-            LoopBadge(
-              key: ValueKey<String>('notification-inert-${category.wireName}'),
-              '暂不生效',
-            ),
-            const SizedBox(width: 10),
-          ],
-          if (locked)
-            const LoopBadge('无法关闭', kind: LoopBadgeKind.up)
-          else
-            Switch(
-              key: ValueKey<String>('notification-switch-${category.wireName}'),
-              value: enabled,
-              onChanged: busy ? null : onChanged,
-            ),
-        ],
-      ),
-    );
   }
 }

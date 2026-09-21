@@ -1115,6 +1115,7 @@ class LoopRecordRow extends StatelessWidget {
     this.semanticLabel,
     this.subtitleMaxLines = 1,
     this.selected = false,
+    this.chevron = true,
   });
 
   final Widget? leading;
@@ -1180,6 +1181,14 @@ class LoopRecordRow extends StatelessWidget {
   /// column. A list of three otherwise identical options is read by its shape
   /// before it is read by its words (audit 2026-09-20 §C.6).
   final bool selected;
+
+  /// Whether a tappable row draws `.chev`.
+  ///
+  /// The prototype's rows carry a chevron **or** a badge, never both: a row
+  /// whose right-hand element is 已开启 / 解除 is operated in place, and a
+  /// chevron beside it promises a page that does not exist. Default true, so
+  /// every navigation row keeps the mark it already had.
+  final bool chevron;
 
   @override
   Widget build(BuildContext context) {
@@ -1265,7 +1274,7 @@ class LoopRecordRow extends StatelessWidget {
               ],
             ),
           ],
-          if (onTap != null) ...<Widget>[
+          if (onTap != null && chevron) ...<Widget>[
             const SizedBox(width: 8),
             const LoopIcon('chevron', size: 15, color: LoopColors.text3),
           ],

@@ -54,7 +54,33 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
         caption: '版本与构建号来自这台设备；协议版本、规则与开源清单由 LOOP 提供。',
         stamp: about == null ? null : 'CONTRACT ${about.contractVersion}',
       ),
+      // The prototype's order: 法务 first, then the risk disclosure — the one
+      // compliance text this page owns. Build and policy rows are this
+      // build's own additions and follow (audit 2026-09-21 §J.14).
       sections: <Widget>[
+        const LoopLabel('法务'),
+        if (state.value == null)
+          LoopChainStateBlock(
+            keyPrefix: 'about',
+            phase: state.phase,
+            failureKind: state.failureKind,
+            emptyMessage: '暂时读不到产品记录',
+            skeleton: LoopSkeletonType.detail,
+            onRetry: () =>
+                unawaited(ref.read(aboutControllerProvider.notifier).reload()),
+          )
+        else
+          _AboutTermsBlock(termsGate: about!.termsGate),
+        const LoopLabel('风险提示'),
+        const LoopNotice(
+          key: ValueKey<String>('about-risk-notice'),
+          icon: 'warn',
+          tone: LoopNoticeTone.warn,
+          title: '加密资产风险',
+          body:
+              '加密资产价格波动剧烈，可能损失全部本金。LOOP 是非托管工具，不提供投资建议，'
+              '不对任何交易结果负责。挖矿产出取决于全网算力竞争，不构成收益承诺。',
+        ),
         const LoopLabel('本机构建'),
         LoopRecordGroup(
           rows: <LoopRecordRow>[
@@ -79,19 +105,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
             ),
           ],
         ),
-        if (state.value == null)
-          LoopChainStateBlock(
-            keyPrefix: 'about',
-            phase: state.phase,
-            failureKind: state.failureKind,
-            emptyMessage: '暂时读不到产品记录',
-            skeleton: LoopSkeletonType.detail,
-            onRetry: () =>
-                unawaited(ref.read(aboutControllerProvider.notifier).reload()),
-          )
-        else ...<Widget>[
-          const LoopLabel('法务'),
-          _AboutTermsBlock(termsGate: about!.termsGate),
+        if (about != null) ...<Widget>[
           const LoopLabel('当前规则'),
           _AboutRulesBlock(versions: about.configVersions),
           LoopProvenanceFooter(
@@ -126,16 +140,6 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
         const LoopProvenanceFooter(
           key: ValueKey<String>('about-open-source-note'),
           text: '组件版本以本次构建的锁定文件为准，这一页不显示版本号。',
-        ),
-        const LoopLabel('风险提示'),
-        const LoopNotice(
-          key: ValueKey<String>('about-risk-notice'),
-          icon: 'warn',
-          tone: LoopNoticeTone.warn,
-          title: '加密资产风险',
-          body:
-              '加密资产价格波动剧烈，可能损失全部本金。LOOP 是非托管工具，不提供投资建议，'
-              '不对任何交易结果负责。挖矿产出取决于全网算力竞争，不构成收益承诺。',
         ),
         if (about != null)
           LoopUnavailableCard(

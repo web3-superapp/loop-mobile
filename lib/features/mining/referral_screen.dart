@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
+import 'package:loop_mobile/features/mining/mining_widgets.dart';
 import 'package:loop_mobile/features/mining/referral_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -67,17 +68,35 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
           onPressed: () => unawaited(_explain()),
         ),
       ],
-      primary: LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'FINAL BOOST',
-        // The boost has no value: it depends on the unapproved formula.
-        heading: launchMissingHeading,
-        caption: overview == null
-            ? '加成只计入 Mining Power，不是收入、佣金或返佣。'
-            : '${overview.validRelationships} 个有效关系 · '
-                  '${overview.pendingRelationships} 个待验证；加成只计入 Mining Power。',
-      ),
+      // `.ledger-card` with the five depths inside it: the prototype keeps
+      // L1–L5 in the hero so the whole shape of the relationship is one
+      // glance. They had been moved out into five stacked rows further down
+      // the page (audit 2026-09-21 §J.11).
+      primary: overview == null
+          ? LoopFolioPrimary(
+              variant: LoopFolioVariant.quiet,
+              archetype: LoopFolioArchetype.record,
+              kicker: 'FINAL BOOST',
+              // The boost has no value: it depends on the unapproved formula.
+              heading: launchMissingHeading,
+              caption: '加成只计入 Mining Power，不是收入、佣金或返佣。',
+            )
+          : MiningCompositePrimary(
+              key: const ValueKey<String>('referral-hero'),
+              primary: LoopFolioPrimary(
+                variant: LoopFolioVariant.quiet,
+                archetype: LoopFolioArchetype.record,
+                kicker: 'FINAL BOOST',
+                heading: launchMissingHeading,
+                caption:
+                    '${overview.validRelationships} 个有效关系 · '
+                    '${overview.pendingRelationships} 个待验证；'
+                    '加成只计入 Mining Power。',
+                margin: EdgeInsets.zero,
+                squareBottom: true,
+              ),
+              detail: <Widget>[_LevelBand(levels: overview.levels)],
+            ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
               key: const ValueKey<String>('referral-capability-unavailable'),
@@ -99,8 +118,8 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
         else ...<Widget>[
           const LoopLabel('我的邀请码'),
           _InviteCodeBlock(code: overview.inviteCode),
-          const LoopLabel('各层关系'),
-          _LevelBlock(levels: overview.levels),
+          const LoopLabel('关系深度如何计算'),
+          _DepthExplainer(levels: overview.levels),
           const LoopLabel('加成'),
           LaunchUnavailableCard(label: 'Mining Power 加成', fact: overview.boost),
           const LoopLabel('我的邀请人'),
@@ -229,8 +248,86 @@ class _InviteCodeBlock extends ConsumerWidget {
   }
 }
 
-class _LevelBlock extends StatelessWidget {
-  const _LevelBlock({required this.levels});
+/// `.ledger-card > grid-template-columns:repeat(5,…)`: the five depths side
+/// by side inside the hero, each with its boost and its own verified count.
+class _LevelBand extends StatelessWidget {
+  const _LevelBand({required this.levels});
+
+  final List<ReferralLevel> levels;
+
+  @override
+  Widget build(BuildContext context) {
+    // The five cells carry the same two lines, so they come out the same
+    // height; `stretch` here would ask for a height the strip does not have.
+    return Row(
+      key: const ValueKey<String>('referral-levels'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        for (var index = 0; index < levels.length; index += 1) ...<Widget>[
+          if (index > 0) const SizedBox(width: 5),
+          Expanded(child: _LevelCell(level: levels[index])),
+        ],
+      ],
+    );
+  }
+}
+
+class _LevelCell extends StatelessWidget {
+  const _LevelCell({required this.level});
+
+  final ReferralLevel level;
+
+  @override
+  Widget build(BuildContext context) {
+    // The prototype fills the current depth and tints the rest.
+    final current = level.level == 1;
+    return Semantics(
+      container: true,
+      label:
+          'L${level.level}，加成 ${level.boostPercent}%，'
+          '有效关系 ${level.counts.valid}，待验证 ${level.counts.pending}',
+      child: ExcludeSemantics(
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(7, 9, 7, 9),
+          decoration: BoxDecoration(
+            color: current ? LoopColors.lime : LoopColors.card2,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                'L${level.level} · ${level.boostPercent}%',
+                maxLines: 1,
+                overflow: TextOverflow.clip,
+                style: LoopTypography.eyebrow(
+                  9,
+                  color: current ? LoopColors.ink : LoopColors.text2,
+                ),
+              ),
+              const SizedBox(height: 7),
+              Text(
+                '${level.counts.valid}',
+                maxLines: 1,
+                style: LoopTypography.figure(
+                  15,
+                  weight: FontWeight.w700,
+                  color: current ? LoopColors.ink : LoopColors.chalk,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// `关系深度如何计算`: the prototype's three-row explanation of what L1, L2
+/// and L3+ mean, which the App had replaced with five stacked count rows.
+class _DepthExplainer extends StatelessWidget {
+  const _DepthExplainer({required this.levels});
 
   final List<ReferralLevel> levels;
 
@@ -240,7 +337,7 @@ class _LevelBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         LoopRecordGroup(
-          key: const ValueKey<String>('referral-levels'),
+          key: const ValueKey<String>('referral-depth'),
           rows: <LoopRecordRow>[
             for (var index = 0; index < levels.length; index += 1)
               _levelRow(levels[index], index, levels.length),
@@ -269,9 +366,7 @@ class _LevelBlock extends StatelessWidget {
       leading: _LevelTile(level: level.level),
       title: 'L${level.level} · ${level.boostPercent}%',
       subtitle: '${referralLevelDescription(level.level)}\n$detail',
-      // The trailing figure is the only provable one: how many valid edges.
-      trailing: '${counts.valid}',
-      trailingCaption: '有效',
+      subtitleMaxLines: 2,
       position: launchRowPosition(index, length),
       semanticLabel:
           'L${level.level}，加成 ${level.boostPercent}%，'

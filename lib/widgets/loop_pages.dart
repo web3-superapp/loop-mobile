@@ -303,8 +303,8 @@ class LoopDashboardPage extends StatelessWidget {
   const LoopDashboardPage({
     required this.archetype,
     required this.title,
-    required this.primary,
     required this.sections,
+    this.primary,
     super.key,
     this.kicker,
     this.onBack,
@@ -330,7 +330,12 @@ class LoopDashboardPage extends StatelessWidget {
   final bool framedTools;
 
   /// The one `[data-page-primary]` region (usually a [LoopFolioPrimary]).
-  final Widget primary;
+  ///
+  /// Null when the prototype's page has none. Not every page carries a hero:
+  /// `settings`, `notif-settings` and `support` open straight on their first
+  /// group, and giving them one printed the page title twice in one screen
+  /// (audit 2026-09-21 §D+ #13).
+  final Widget? primary;
   final List<Widget> sections;
 
   /// Top-level tab page: bottom inset comes from the shell.
@@ -390,12 +395,13 @@ class LoopDashboardPage extends StatelessWidget {
               if (block != null)
                 SliverFillRemaining(hasScrollBody: false, child: block!)
               else ...<Widget>[
-                SliverToBoxAdapter(
-                  child: KeyedSubtree(
-                    key: const ValueKey<String>('loop-page-primary'),
-                    child: primary,
+                if (primary != null)
+                  SliverToBoxAdapter(
+                    child: KeyedSubtree(
+                      key: const ValueKey<String>('loop-page-primary'),
+                      child: primary!,
+                    ),
                   ),
-                ),
                 SliverList.list(children: sections),
               ],
               SliverPadding(padding: EdgeInsets.only(bottom: bottom)),

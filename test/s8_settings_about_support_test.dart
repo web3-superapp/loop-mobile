@@ -102,10 +102,11 @@ void main() {
       // it; the page also has no row called 可被搜索.
       expect(find.textContaining('跟单'), findsNothing);
       expect(find.textContaining('可被搜索'), findsNothing);
-      expect(
-        tester.widget<LoopRecordRow>(row).subtitle,
-        '匿名模式、显示 LOOP ID 与可见性',
-      );
+      // The prototype's account rows are a title, a value and a chevron. This
+      // page reads no privacy state, so the row carries no second line rather
+      // than a description of the destination (audit 2026-09-21 §D+ #11).
+      expect(tester.widget<LoopRecordRow>(row).subtitle, isNull);
+      expect(tester.widget<LoopRecordRow>(row).onTap, isNotNull);
     });
 
     testWidgets('sign out is offered only when the composition provides it', (
@@ -448,6 +449,12 @@ void main() {
       );
 
       // 「工作日24 小时内回复」 ran a Chinese word straight into a Latin digit.
+      // The sentence now lives in the page's closing disclosure, which is the
+      // prototype's own home for it.
+      await tester.tap(
+        find.byKey(const ValueKey<String>('support-policy-disclosure')),
+      );
+      await tester.pumpAndSettle();
       expect(find.textContaining('工作日 24 小时内回复'), findsOneWidget);
       expect(find.textContaining('工作日24'), findsNothing);
     });

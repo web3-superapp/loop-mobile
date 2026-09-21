@@ -11,6 +11,7 @@ import 'package:loop_mobile/features/profile/support/support_controller.dart';
 import 'package:loop_mobile/features/profile/support/support_gateway.dart';
 import 'package:loop_mobile/features/profile/support/support_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
@@ -116,24 +117,42 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
       archetype: LoopPageArchetype.record,
       title: '帮助与客服',
       onBack: widget.onBack,
-      primary: LoopFolioPrimary(
-        key: const ValueKey<String>('support-folio'),
-        archetype: LoopFolioArchetype.record,
-        kicker: 'LOOP SUPPORT',
-        heading: '先查答案，再提交工单',
-        caption: policy == null
-            ? '官方不会主动私聊你，也不会索要私钥、助记词或验证码。'
-            : '${policy.businessDaysOnly ? '工作日 ' : ''}'
-                  '${policy.responseWindowHours} 小时内回复；'
-                  '官方不会主动私聊你。',
-      ),
+      // The prototype has no hero here: it opens on 联系我们, and its
+      // 「先查答案，再提交工单」 card is the body of the closing disclosure.
+      // A hero carrying that line over a page with no answers on it was the
+      // page denying itself (audit 2026-09-21 §D+ #13, §D+ #14).
       sections: <Widget>[
-        const LoopNotice(
-          key: ValueKey<String>('support-scam-notice'),
-          icon: 'warn',
-          tone: LoopNoticeTone.warn,
-          title: '官方不会主动私聊你',
-          body: '任何私聊索要私钥、助记词或验证码的都是诈骗，请直接举报。',
+        const LoopLabel('联系我们'),
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('support-open-community'),
+              leading: const LoopRowIcon(monogram: 'LOOP'),
+              title: 'LOOP 官方社区',
+              subtitle: '成员数与在线状态暂时读不到，这里不显示数字',
+              position: LoopRowPosition.single,
+              onTap: () => widget.onNavigate('community-discover'),
+            ),
+          ],
+        ),
+        // Five bundled answers, so the page has a first path that is not a
+        // ticket. They are product copy, not an indexed article resource.
+        const LoopLabel('常见问题'),
+        Column(
+          children: <Widget>[
+            for (final answer in _supportAnswers)
+              LoopDisclosure(
+                key: ValueKey<String>('support-answer-${answer.$1}'),
+                summary: answer.$1,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                  child: Text(
+                    answer.$2,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ),
+          ],
         ),
         const LoopLabel('提交工单'),
         if (blocked)
@@ -243,39 +262,61 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
               margin: EdgeInsets.fromLTRB(16, 12, 16, 0),
             ),
         ],
-        const LoopLabel('常见问题'),
-        Column(
-          children: <Widget>[
-            for (final answer in _supportAnswers)
-              LoopDisclosure(
-                key: ValueKey<String>('support-answer-${answer.$1}'),
-                summary: answer.$1,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                  child: Text(
-                    answer.$2,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const LoopLabel('官方社区'),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            LoopRecordRow(
-              key: const ValueKey<String>('support-open-community'),
-              title: 'LOOP 官方社区',
-              subtitle: '成员数与在线状态暂时读不到，这里不显示数字',
-              onTap: () => widget.onNavigate('community-discover'),
-            ),
-          ],
-        ),
         if (policy != null)
           LoopProvenanceFooter(
             key: const ValueKey<String>('support-escalation'),
             text: '紧急问题请在工单正文里写明，目前没有单独的加急通道。',
           ),
+        // The prototype closes on the warning, not opens on it.
+        const LoopNotice(
+          key: ValueKey<String>('support-scam-notice'),
+          icon: 'warn',
+          tone: LoopNoticeTone.warn,
+          title: '官方不会主动私聊你',
+          body: '任何私聊索要私钥、助记词或验证码的都是诈骗，请直接举报。',
+          margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
+        ),
+        LoopDisclosure(
+          key: const ValueKey<String>('support-policy-disclosure'),
+          summary: '查看客服说明',
+          child: LoopChalkCard(
+            margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  'LOOP SUPPORT',
+                  style: LoopTypography.eyebrow(
+                    10,
+                    color: LoopColors.ink.withValues(alpha: 0.62),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  '先查答案，再提交工单',
+                  style: LoopTypography.heading(
+                    26,
+                    weight: FontWeight.w800,
+                    color: LoopColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  policy == null
+                      ? '官方不会主动私聊你，也不会索要私钥、助记词或验证码。'
+                      : '${policy.businessDaysOnly ? '工作日 ' : ''}'
+                            '${policy.responseWindowHours} 小时内回复；'
+                            '官方不会主动私聊你。',
+                  style: LoopTypography.caption(
+                    11,
+                    color: LoopColors.ink.withValues(alpha: 0.72),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         const SizedBox(height: 20),
       ],
     );

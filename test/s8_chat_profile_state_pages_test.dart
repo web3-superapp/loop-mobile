@@ -775,7 +775,9 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey<String>('notification-switch-community.all')),
+        find.byKey(
+          const ValueKey<String>('notification-category-community.all'),
+        ),
         findsNothing,
       );
       expect(find.textContaining('项开启'), findsNothing);
@@ -828,7 +830,9 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey<String>('notification-switch-community.all')),
+        find.byKey(
+          const ValueKey<String>('notification-category-community.all'),
+        ),
         findsNothing,
       );
     });
@@ -846,10 +850,14 @@ void main() {
 
       await scrollToS5Section(
         tester,
-        find.byKey(const ValueKey<String>('notification-switch-community.all')),
+        find.byKey(
+          const ValueKey<String>('notification-category-community.all'),
+        ),
       );
       await tester.tap(
-        find.byKey(const ValueKey<String>('notification-switch-community.all')),
+        find.byKey(
+          const ValueKey<String>('notification-category-community.all'),
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -879,10 +887,14 @@ void main() {
 
       await scrollToS5Section(
         tester,
-        find.byKey(const ValueKey<String>('notification-switch-community.all')),
+        find.byKey(
+          const ValueKey<String>('notification-category-community.all'),
+        ),
       );
       await tester.tap(
-        find.byKey(const ValueKey<String>('notification-switch-community.all')),
+        find.byKey(
+          const ValueKey<String>('notification-category-community.all'),
+        ),
       );
       await tester.pumpAndSettle();
 

@@ -21,8 +21,10 @@ import 'package:loop_mobile/features/profile/privacy/privacy_gateway.dart';
 import 'package:loop_mobile/features/profile/privacy/privacy_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
+import 'package:loop_mobile/widgets/loop_sheet.dart';
 import 'package:loop_mobile/widgets/loop_toast.dart';
 
 // ---------------------------------------------------------------------------
@@ -265,9 +267,17 @@ class LoopTogglePreferenceRow extends StatelessWidget {
       child: LoopRecordRow(
         title: title,
         subtitle: subtitle,
-        trailing: value ? onLabel : offLabel,
+        // `.row .badge`: the prototype states a preference as a pill, not as
+        // a mono value in the figure column. A row that read 「已关闭 ›」 in
+        // the same grey as a number could not be scanned for its state at all
+        // (audit 2026-09-21 §J.4).
+        trailingBadge: LoopBadge(
+          value ? onLabel : offLabel,
+          kind: value ? LoopBadgeKind.up : LoopBadgeKind.mute,
+        ),
         onTap: onChanged,
         position: position,
+        chevron: false,
         semanticLabel: '$title，${value ? onLabel : offLabel}',
       ),
     );
@@ -348,20 +358,29 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
             resource: resource!,
             onEdit: () => widget.onNavigate('profile-edit'),
           ),
-        const LoopLabel('LOOP'),
+        const LoopLabel('挖矿'),
         // 「挖矿数据还没有开放」 was written before the mining tab shipped and
         // kept being read as "mining is closed" long after the tab started
         // settling power every five minutes. What this page lacks is a reader
-        // of its own, so it says that and points at the page that has one.
-        LoopEmpty(
-          key: const ValueKey<String>('profile-metrics-unavailable'),
-          message: 'LOOP 余额与质押暂不可读',
-          reason: '这一页不读这两项数字。算力与算力明细在挖矿页，那里是唯一的出处。',
-          action: LoopButton(
-            key: const ValueKey<String>('profile-open-mining'),
-            label: '去挖矿页看算力',
-            onPressed: () => widget.onNavigate('mining'),
-          ),
+        // of its own, so it keeps the prototype's row — icon, figure column,
+        // chevron — and states the figure as unread rather than as zero
+        // (audit 2026-09-21 §J.2, §D #8).
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-mining'),
+              leading: const LoopRowIcon(
+                icon: 'mine',
+                tone: LoopRowIconTone.accent,
+              ),
+              title: '总算力',
+              subtitle: '这一页不读算力。算力与排名在挖矿页，那里是唯一的出处。',
+              subtitleMaxLines: 2,
+              trailing: communityMissingFigure,
+              semanticLabel: '总算力，这一页读不到，去挖矿页查看',
+              onTap: () => widget.onNavigate('mining'),
+            ),
+          ],
         ),
         const LoopLabel('我的社区'),
         ProfileCommunitiesRow(onNavigate: widget.onNavigate),
@@ -386,45 +405,54 @@ class _ProfileHomeScreenState extends ConsumerState<ProfileHomeScreen> {
             ),
           ],
         ),
+        // The prototype's 账户 group is four rows and each second line is a
+        // state value, not a description of the destination. This page cannot
+        // read any of those four states without a request of its own, so the
+        // rows carry no second line rather than a functional catalogue
+        // (audit 2026-09-21 §D+ #11).
         const LoopLabel('账户'),
         LoopRecordGroup(
           rows: <LoopRecordRow>[
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-wallets'),
               title: '我的钱包',
-              subtitle: '绑定的钱包与地址',
+              position: LoopRowPosition.first,
               onTap: () => widget.onNavigate('wallets'),
             ),
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-privacy'),
               title: '隐私中心',
-              subtitle: '匿名模式、可见性与被搜索',
               onTap: () => widget.onNavigate('privacy'),
             ),
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-security'),
               title: '安全中心',
-              subtitle: '应用锁、MFA 与设备',
               onTap: () => widget.onNavigate('security'),
-            ),
-            LoopRecordRow(
-              key: const ValueKey<String>('profile-open-friend-requests'),
-              title: '好友请求',
-              subtitle: '收到的好友申请（好友列表已折叠进搜索与关注）',
-              onTap: () => widget.onNavigate('friend-requests'),
             ),
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-connections'),
               title: '关注与粉丝',
-              // The destination works and counts what it finds; this row used
-              // to call it closed.
-              subtitle: '你关注的人与你的粉丝',
+              position: LoopRowPosition.last,
               onTap: () => widget.onNavigate('connections'),
+            ),
+          ],
+        ),
+        // Two destinations the prototype reaches from elsewhere but this
+        // build has nowhere else to put; they stay, under their own label,
+        // instead of swelling the prototype's four-row group to six.
+        const LoopLabel('消息'),
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('profile-open-friend-requests'),
+              title: '好友请求',
+              position: LoopRowPosition.first,
+              onTap: () => widget.onNavigate('friend-requests'),
             ),
             LoopRecordRow(
               key: const ValueKey<String>('profile-open-notifications'),
               title: '通知设置',
-              subtitle: '推送投递仍不可用',
+              position: LoopRowPosition.last,
               onTap: () => widget.onNavigate('notif-settings'),
             ),
           ],
@@ -598,42 +626,63 @@ class _ProfileIdentityCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 12),
-          // `.chalk-card .seg`: Ink ground with Chalk text, not the Lime fill.
-          Semantics(
-            button: true,
+          _ChalkCardButton(
+            key: const ValueKey<String>('profile-open-edit'),
             label: '编辑资料',
-            child: Material(
-              color: LoopColors.ink,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-                side: const BorderSide(color: LoopColors.ink),
-              ),
-              child: InkWell(
-                key: const ValueKey<String>('profile-open-edit'),
-                onTap: onEdit,
-                borderRadius: BorderRadius.circular(14),
-                child: Container(
-                  constraints: const BoxConstraints(
-                    minWidth: LoopTouch.minimum,
-                    minHeight: LoopTouch.minimum,
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  alignment: Alignment.center,
-                  child: ExcludeSemantics(
-                    child: Text(
-                      '编辑资料',
-                      style: LoopTypography.label(
-                        12,
-                        weight: FontWeight.w700,
-                        color: LoopColors.chalk,
-                      ),
-                    ),
-                  ),
+            onTap: onEdit,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// `.chalk-card .seg`: Ink ground with Chalk text, not the Lime fill.
+///
+/// A Chalk card is the one ground where the app's secondary button vanishes:
+/// its fill and its edge are derived from the ground it sits on, which on
+/// Chalk is Chalk. The prototype paints this control Ink and its word Chalk.
+class _ChalkCardButton extends StatelessWidget {
+  const _ChalkCardButton({required this.label, required this.onTap, super.key});
+
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      child: Material(
+        color: enabled ? LoopColors.ink : LoopColors.ink.withValues(alpha: 0.4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: LoopColors.ink),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            constraints: const BoxConstraints(
+              minWidth: LoopTouch.minimum,
+              minHeight: LoopTouch.minimum,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 15),
+            alignment: Alignment.center,
+            child: ExcludeSemantics(
+              child: Text(
+                label,
+                style: LoopTypography.label(
+                  12,
+                  weight: FontWeight.w700,
+                  color: LoopColors.chalk,
                 ),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -769,10 +818,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         archetype: LoopFolioArchetype.action,
         kicker: 'PROFILE EDIT',
         heading: state.draft.alias ?? '尚未设置别名',
-        caption: '别名、头像、简介与关注赛道可修改；LOOP ID 与钱包地址保持不同边界。',
+        caption: '昵称、简介与标签可修改；LOOP ID 和钱包地址保持不同边界。',
         stamp: 'PUBLIC',
         compact: true,
+        ring: false,
       ),
+      // 保存 flows under the last field instead of being pinned above the
+      // bottom inset with a screen of nothing between (audit §D #9).
+      actionsFollowBody: true,
       primaryAction: LoopButton(
         key: const ValueKey<String>('profile-edit-save'),
         label: state.phase == ProfilePhase.saving ? '保存中…' : '保存',
@@ -1038,35 +1091,25 @@ class _AvatarPickerCard extends ConsumerWidget {
   final bool uploadUsable;
   final ValueChanged<String?> onSelected;
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final catalog = ref.watch(avatarCatalogProvider);
-    return LoopChalkCard(
-      key: const ValueKey<String>('profile-avatar-picker'),
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Center(
-            child: LoopProfileAvatar(avatarRef: selected, alias: alias),
-          ),
-          const SizedBox(height: 12),
-          catalog.when(
-            loading: () => const LoopSkeleton(
-              key: ValueKey<String>('profile-avatar-loading'),
-              type: LoopSkeletonType.list,
-              rows: 1,
-            ),
-            error: (error, stackTrace) => Text(
-              key: const ValueKey<String>('profile-avatar-unavailable'),
-              '预设头像清单暂不可读，保留当前头像。',
-              textAlign: TextAlign.center,
-              style: LoopTypography.caption(
-                12,
-                color: LoopColors.ink.withValues(alpha: 0.72),
-              ),
-            ),
-            data: (presets) => Wrap(
+  /// The twelve presets, on the sheet the 更换头像 control opens.
+  ///
+  /// The prototype's card is one avatar and one Ink button; the grid that had
+  /// been inlined here put thirteen faces on the first screen and gave the
+  /// page a visual weight the prototype's does not have (audit 2026-09-21
+  /// §J.3).
+  Future<void> _choose(BuildContext context, List<AvatarPreset> presets) async {
+    final choice = await showLoopSheet<String>(
+      context,
+      barrierLabel: '关闭头像选择',
+      builder: (sheetContext) => Padding(
+        key: const ValueKey<String>('profile-avatar-sheet'),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            const LoopLabel('更换头像'),
+            Wrap(
               alignment: WrapAlignment.center,
               spacing: 8,
               runSpacing: 8,
@@ -1078,15 +1121,63 @@ class _AvatarPickerCard extends ConsumerWidget {
                     selected: preset.isMonogram
                         ? selected == null || selected == preset.avatarRef
                         : selected == preset.avatarRef,
-                    onTap: enabled
-                        ? () => onSelected(
-                            preset.isMonogram ? null : preset.avatarRef,
-                          )
-                        : null,
+                    onTap: () =>
+                        Navigator.of(sheetContext)
+                            .pop(preset.isMonogram ? '' : preset.avatarRef),
                   ),
               ],
             ),
+            const SizedBox(height: 14),
+          ],
+        ),
+      ),
+    );
+    if (choice == null) return;
+    onSelected(choice.isEmpty ? null : choice);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final catalog = ref.watch(avatarCatalogProvider);
+    final presets = catalog.asData?.value;
+    return LoopChalkCard(
+      key: const ValueKey<String>('profile-avatar-picker'),
+      margin: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Center(
+            child: LoopProfileAvatar(avatarRef: selected, alias: alias),
           ),
+          const SizedBox(height: 12),
+          if (catalog.isLoading)
+            const LoopSkeleton(
+              key: ValueKey<String>('profile-avatar-loading'),
+              type: LoopSkeletonType.list,
+              rows: 1,
+            )
+          else
+            Center(
+              child: _ChalkCardButton(
+                key: const ValueKey<String>('profile-avatar-change'),
+                label: '更换头像',
+                onTap: enabled && presets != null && presets.isNotEmpty
+                    ? () => unawaited(_choose(context, presets))
+                    : null,
+              ),
+            ),
+          if (catalog.hasError) ...<Widget>[
+            const SizedBox(height: 10),
+            Text(
+              key: const ValueKey<String>('profile-avatar-unavailable'),
+              '预设头像清单暂不可读，保留当前头像。',
+              textAlign: TextAlign.center,
+              style: LoopTypography.caption(
+                12,
+                color: LoopColors.ink.withValues(alpha: 0.72),
+              ),
+            ),
+          ],
           if (!uploadUsable) ...<Widget>[
             const SizedBox(height: 10),
             Text(
@@ -1243,10 +1334,17 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
         archetype: LoopFolioArchetype.action,
         kicker: 'PRIVACY STATUS',
         heading: draft.anonymousMode ? '匿名模式已开启' : '匿名模式已关闭',
-        caption: '公开身份、可见性与地址显示分别控制。这些只是展示偏好，不构成任何授权。',
+        caption: '公开身份、社区可见性与地址显示分别控制。',
         stamp: draft.anonymousMode ? 'ON' : 'OFF',
         compact: true,
+        ring: false,
       ),
+      // `.folio-body` order, and a save that flows under the last row instead
+      // of sitting in a pinned bar above it. Pinned, the bar took the bottom
+      // of the viewport and 「屏蔽名单」 came to rest two pixels above it on
+      // first entry — reachable only after a second drag inside the list
+      // (audit 2026-09-21 §J.4).
+      actionsFollowBody: true,
       primaryAction: LoopButton(
         key: const ValueKey<String>('privacy-save'),
         label: state.phase == PrivacyPhase.saving ? '保存中…' : '保存',
@@ -1352,8 +1450,6 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
               offLabel: '仅自己',
               position: facet == PrivacyVisibilityFacet.values.first
                   ? LoopRowPosition.first
-                  : facet == PrivacyVisibilityFacet.values.last
-                  ? LoopRowPosition.last
                   : LoopRowPosition.middle,
               onChanged: state.canEdit
                   ? () => controller.editVisibility(
@@ -1364,9 +1460,12 @@ class _PrivacyCenterScreenState extends ConsumerState<PrivacyCenterScreen> {
                     )
                   : null,
             ),
+          // The prototype closes the 可见性 card with this row rather than
+          // floating it alone under the card.
           LoopRecordRow(
             key: const ValueKey<String>('privacy-open-blocklist'),
             title: '屏蔽名单',
+            position: LoopRowPosition.last,
             onTap: () => widget.onNavigate('blocklist'),
           ),
           const LoopNotice(

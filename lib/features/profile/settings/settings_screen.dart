@@ -65,13 +65,9 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
       archetype: LoopPageArchetype.action,
       title: '设置',
       onBack: widget.onBack,
-      primary: const LoopFolioPrimary(
-        key: ValueKey<String>('settings-folio'),
-        archetype: LoopFolioArchetype.action,
-        kicker: 'ACCOUNT SETTINGS',
-        heading: '设置',
-        caption: '语言与货币单位暂时固定，不能修改；减少动效只保存在这台设备上。',
-      ),
+      // The prototype opens straight on 通用. A hero here restated the page
+      // title as its own heading — 「设置」 above 「设置」 (audit 2026-09-21
+      // §D+ #13).
       sections: <Widget>[
         const LoopLabel('通用'),
         if (blocked)
@@ -89,29 +85,38 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
             onRetry: () => unawaited(
               ref.read(accountSettingsControllerProvider.notifier).reload(),
             ),
-          )
-        else
-          LoopRecordGroup(
-            rows: <LoopRecordRow>[
+          ),
+        // `.row`: title, the current value in the figure column, chevron. The
+        // 「为什么不能改」 sentence each of these carried turned a one-line
+        // state list into a two-line functional catalogue and made the page a
+        // screen longer (audit 2026-09-21 §D+ #11, §J.13).
+        //
+        // 主题 and 减少动效 belong to 通用 in the prototype, and neither reads
+        // the account resource: they stay in the card whatever the account
+        // half of the page answered.
+        LoopRecordGroup(
+          rows: <LoopRecordRow>[
+            if (settings != null) ...<LoopRecordRow>[
               LoopRecordRow(
                 key: const ValueKey<String>('settings-language'),
                 title: '语言',
-                subtitle: '暂时固定为 ${settings.policy.fixed.language}，不能修改',
                 trailing: settings.values.languageLabel,
                 position: LoopRowPosition.first,
               ),
               LoopRecordRow(
                 key: const ValueKey<String>('settings-display-currency'),
                 title: '货币单位',
-                subtitle: '暂时固定，不能修改；行情仍显示各自的报价币',
                 trailing: settings.values.displayCurrency,
-                position: LoopRowPosition.last,
               ),
             ],
-          ),
-        const LoopLabel('这台设备'),
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
+            LoopRecordRow(
+              key: const ValueKey<String>('settings-theme'),
+              title: '主题',
+              trailing: '深色',
+              position: settings == null
+                  ? LoopRowPosition.first
+                  : LoopRowPosition.middle,
+            ),
             LoopRecordRow(
               key: const ValueKey<String>('settings-reduce-motion'),
               title: '减少动效',
@@ -126,13 +131,6 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
                   .read(loopDisplayPreferencesProvider.notifier)
                   .setReduceMotion(!preferences.reduceMotion),
               semanticLabel: '减少动效，${preferences.reduceMotion ? '已开启' : '已关闭'}',
-              position: LoopRowPosition.first,
-            ),
-            const LoopRecordRow(
-              key: ValueKey<String>('settings-theme'),
-              title: '主题',
-              subtitle: '本构建只有深色一套设计系统，没有可切换的选项',
-              trailing: '深色',
               position: LoopRowPosition.last,
             ),
           ],
@@ -157,33 +155,28 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
         const LoopLabel('账户'),
         LoopRecordGroup(
           rows: <LoopRecordRow>[
+            // Four destinations, no second line: the prototype's account rows
+            // carry a state value or nothing at all, and this page cannot
+            // read any of those four states without a second request each.
             LoopRecordRow(
               key: const ValueKey<String>('settings-open-privacy'),
               title: '隐私中心',
-              // What that page actually holds. 「跟单可见性」 named a facet the
-              // V2 privacy contract does not carry — copytrade is retired —
-              // and 「可被搜索」 named no row on it either; the row it meant is
-              // 「显示 LOOP ID」.
-              subtitle: '匿名模式、显示 LOOP ID 与可见性',
               onTap: () => widget.onNavigate('privacy'),
               position: LoopRowPosition.first,
             ),
             LoopRecordRow(
               key: const ValueKey<String>('settings-open-security'),
               title: '安全中心',
-              subtitle: '设备、会话与账户保护',
               onTap: () => widget.onNavigate('security'),
             ),
             LoopRecordRow(
               key: const ValueKey<String>('settings-open-notifications'),
               title: '通知',
-              subtitle: '十个通知类别；推送投递仍不可用',
               onTap: () => widget.onNavigate('notif-settings'),
             ),
             LoopRecordRow(
               key: const ValueKey<String>('settings-open-networks'),
               title: '网络与 RPC',
-              subtitle: '已启用的网络与 RPC 端点健康',
               onTap: () => widget.onNavigate('networks'),
               position: LoopRowPosition.last,
             ),
@@ -195,14 +188,12 @@ class _GeneralSettingsScreenState extends ConsumerState<GeneralSettingsScreen> {
             LoopRecordRow(
               key: const ValueKey<String>('settings-open-about'),
               title: '关于与法务',
-              subtitle: '版本、规则与开源许可',
               onTap: () => widget.onNavigate('about'),
               position: LoopRowPosition.first,
             ),
             LoopRecordRow(
               key: const ValueKey<String>('settings-open-support'),
               title: '帮助与客服',
-              subtitle: '提交工单并查看进度',
               onTap: () => widget.onNavigate('support'),
               position: LoopRowPosition.last,
             ),

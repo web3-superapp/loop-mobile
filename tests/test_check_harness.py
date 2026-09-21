@@ -7711,7 +7711,9 @@ class HarnessTests(unittest.TestCase):
             path.parent.mkdir(parents=True)
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
-                source.replace("'key-export',", "'unknown',", 1),
+                # The route literal is written inline, so the fixture replaces
+                # the literal itself rather than a formatter-dependent comma.
+                source.replace("'key-export'", "'unknown'", 1),
                 encoding="utf-8",
             )
 

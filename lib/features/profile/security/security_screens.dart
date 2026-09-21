@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/profile/security/security_controllers.dart'
 import 'package:loop_mobile/features/profile/security/security_gateway.dart';
 import 'package:loop_mobile/features/profile/security/security_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -137,8 +138,14 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
       archetype: LoopPageArchetype.action,
       title: '安全中心',
       onBack: widget.onBack,
+      // `.folio-primary.chalk-card`: the prototype's security posture card is
+      // white on the Ink page, which is what gives this module its light /
+      // dark rhythm. It had been the only page of the four here that kept the
+      // dark hero (audit 2026-09-21 §J.5, §D #2). LOOP does not score a
+      // posture, so the heading stays a figure the server sent.
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('security-folio'),
+        variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.action,
         kicker: 'SECURITY POSTURE',
         heading: switch (devices) {
@@ -152,6 +159,7 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
         caption:
             '这里不打安全评分。LOOP 还没有开放的写「还没有开放」，'
             '你可以开而没有开的写「未开启」。',
+        ring: false,
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -162,8 +170,11 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
             )
           : null,
       sections: <Widget>[
-        const LoopLabel('账户保护'),
-        if (!methods.isReady)
+        // 验证 and 恢复 are the prototype's own two groups; one 账户保护 list
+        // of six put 「导出私钥」 next to 「多因素验证」 and lost the reading
+        // order the page is arranged by (audit 2026-09-21 §J.5).
+        if (!methods.isReady) ...<Widget>[
+          const LoopLabel('验证'),
           LoopChainStateBlock(
             keyPrefix: 'security-methods',
             phase: methods.phase,
@@ -174,8 +185,8 @@ class _SecurityCenterScreenState extends ConsumerState<SecurityCenterScreen> {
                   .read(securityCapabilitiesControllerProvider.notifier)
                   .reload(),
             ),
-          )
-        else
+          ),
+        ] else
           _SecurityMethodGroup(
             capabilities: methods.value!,
             onNavigate: widget.onNavigate,
@@ -243,29 +254,54 @@ class _SecurityMethodGroup extends StatelessWidget {
   final LoopSecurityCapabilities capabilities;
   final ValueChanged<String> onNavigate;
 
+  /// `验证` in the prototype: the two factors that guard a session.
+  static const _verification = <LoopSecurityCapabilityId>{
+    LoopSecurityCapabilityId.mfa,
+    LoopSecurityCapabilityId.passkey,
+  };
+
+  List<LoopRecordRow> _rows(
+    List<LoopSecurityCapability> items,
+  ) => <LoopRecordRow>[
+    for (var index = 0; index < items.length; index += 1)
+      _SecurityMethodRow(
+        capability: items[index],
+        position: items.length == 1
+            ? LoopRowPosition.single
+            : index == 0
+            ? LoopRowPosition.first
+            : index == items.length - 1
+            ? LoopRowPosition.last
+            : LoopRowPosition.middle,
+        onTap: switch (items[index].id) {
+          LoopSecurityCapabilityId.socialRecovery => () => onNavigate(
+            'social-recovery',
+          ),
+          LoopSecurityCapabilityId.keyExport => () => onNavigate('key-export'),
+          _ => null,
+        },
+      ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final items = capabilities.items;
+    final verification = items
+        .where((item) => _verification.contains(item.id))
+        .toList(growable: false);
+    final recovery = items
+        .where((item) => !_verification.contains(item.id))
+        .toList(growable: false);
     return Column(
       children: <Widget>[
-        LoopRecordGroup(
-          rows: <LoopRecordRow>[
-            for (var index = 0; index < items.length; index += 1)
-              _SecurityMethodRow(
-                capability: items[index],
-                position: LoopRowPosition.middle,
-                onTap: switch (items[index].id) {
-                  LoopSecurityCapabilityId.socialRecovery => () => onNavigate(
-                    'social-recovery',
-                  ),
-                  LoopSecurityCapabilityId.keyExport => () => onNavigate(
-                    'key-export',
-                  ),
-                  _ => null,
-                },
-              ),
-          ],
-        ),
+        if (verification.isNotEmpty) ...<Widget>[
+          const LoopLabel('验证'),
+          LoopRecordGroup(rows: _rows(verification)),
+        ],
+        if (recovery.isNotEmpty) ...<Widget>[
+          const LoopLabel('恢复'),
+          LoopRecordGroup(rows: _rows(recovery)),
+        ],
         LoopDisclosure(
           key: const ValueKey<String>('security-methods-guide'),
           summary: '这些保护怎么开启',
@@ -507,14 +543,18 @@ class _DeviceManagementScreenState
       archetype: LoopPageArchetype.action,
       title: '设备管理',
       onBack: widget.onBack,
+      // `.folio-primary.chalk-card`, as on the prototype's TRUSTED DEVICES
+      // card. No stamp: LOOP has no trust signal to put in one.
       primary: LoopFolioPrimary(
         key: const ValueKey<String>('devices-folio'),
+        variant: LoopFolioVariant.chalk,
         archetype: LoopFolioArchetype.action,
         kicker: 'DEVICE SESSIONS',
         heading: directory == null
             ? '设备管理'
             : '${directory.deviceCount} 台设备 · ${directory.activeCount} 个会话',
         caption: '这里不显示设备名称和位置，只显示平台、版本、会话标识与登录时间。',
+        ring: false,
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -794,8 +834,9 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
         archetype: LoopFolioArchetype.action,
         kicker: 'WALLET KEY CONTROL',
         heading: '私钥由你控制',
-        caption: '这是你的逃生舱：导出后可以把资产带到任何钱包，不受 LOOP 或 Privy 限制。',
+        caption: '导出前完成风险阅读、身份验证与本地显示确认。',
         stamp: 'SENSITIVE',
+        ring: false,
       ),
       body: <Widget>[
         const LoopNotice(
@@ -836,27 +877,46 @@ class _KeyExportScreenState extends ConsumerState<KeyExportScreen> {
         const LoopLabel('这一步现在不会发生什么'),
         const LoopRecordGroup(
           rows: <LoopRecordRow>[
+            // Both lines used to stop at an ellipsis one word before the
+            // qualification that is their point (audit §J.7, §D #9).
             LoopRecordRow(
               key: ValueKey<String>('key-export-no-verification'),
               title: '不会要求你验证',
               subtitle: '没有 Face ID、没有验证码：验证只在真的能导出时才有意义。',
+              subtitleMaxLines: 2,
               position: LoopRowPosition.first,
             ),
             LoopRecordRow(
               key: ValueKey<String>('key-export-no-key'),
               title: '不会显示任何私钥',
               subtitle: '这一页永远不会渲染遮罩后的密钥样例，那会让人误以为已经导出过。',
+              subtitleMaxLines: 2,
               position: LoopRowPosition.last,
             ),
           ],
         ),
       ],
+      // The prototype lays this button out under the last row it belongs to,
+      // not pinned above the bottom inset (§D #9).
+      actionsFollowBody: true,
       primaryAction: const LoopButton(
         key: ValueKey<String>('key-export-action'),
         label: '验证并导出',
         block: true,
         primary: true,
         onPressed: null,
+      ),
+      disclosure: LoopDisclosure(
+        key: const ValueKey<String>('key-export-control-disclosure'),
+        summary: '控制说明',
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+          child: Text(
+            '导出会要求 Face ID、MFA 与一次风险确认，并在导出期间禁止截图与录屏。'
+            '这一页不会预先渲染任何私钥样例：一段被遮罩的字符会被读成「已经导出过」。',
+            style: LoopTypography.caption(12, color: LoopColors.text2),
+          ),
+        ),
       ),
     );
   }
@@ -912,8 +972,9 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
         archetype: LoopFolioArchetype.action,
         kicker: 'SOCIAL RECOVERY',
         heading: '2-of-3 守护人',
-        caption: '守护人只参与恢复确认，看不到你的资产，也动不了你的钱。',
+        caption: '守护人只参与恢复确认，不能查看资产或发起交易。',
         stamp: '2 OF 3',
+        ring: false,
       ),
       body: <Widget>[
         const LoopNotice(
@@ -944,20 +1005,39 @@ class _SocialRecoveryScreenState extends ConsumerState<SocialRecoveryScreen> {
             label: '社交恢复当前不可用',
             reasonCode: method.reasonCode,
           ),
-        const LoopNotice(
+        // The prototype's own shape for "no guardians yet": a label and an
+        // empty frame, not a paragraph about why the list is missing
+        // (audit 2026-09-21 §J.8). No count: there is no guardian resource to
+        // count, so 「0 / 3」 would be a figure with no source.
+        const LoopLabel('守护人'),
+        const LoopEmpty(
           key: ValueKey<String>('social-recovery-no-guardians'),
-          icon: 'info',
-          title: '这里没有守护人名单',
-          body: '守护人还没有开放，这里不显示任何守护人。',
-          margin: EdgeInsets.fromLTRB(16, 14, 16, 14),
+          icon: 'user',
+          message: '还没有添加守护人',
+          reason: '守护人还没有开放，这里不会列出任何人。',
         ),
       ],
+      // The prototype puts 添加守护人 straight under the empty frame; pinned,
+      // it sat about 280px below it (§D #9).
+      actionsFollowBody: true,
       primaryAction: const LoopButton(
         key: ValueKey<String>('social-recovery-action'),
         label: '添加守护人',
         block: true,
         primary: true,
         onPressed: null,
+      ),
+      disclosure: LoopDisclosure(
+        key: const ValueKey<String>('social-recovery-disclosure'),
+        summary: '社交恢复状态说明',
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+          child: Text(
+            '守护人由你邀请，对方要在自己的 App 里主动确认；未确认的不计入 2-of-3。'
+            '守护人看不到你的资产，也不能发起交易。',
+            style: LoopTypography.caption(12, color: LoopColors.text2),
+          ),
+        ),
       ),
     );
   }
