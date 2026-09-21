@@ -359,17 +359,25 @@ void main() {
       );
 
       expect(find.text('不可执行'), findsOneWidget);
+      // The amount box keeps the prototype's shape and accepts nothing: there
+      // is no field to type an amount into (03 §10.1).
       expect(find.byType(TextField), findsNothing);
       expect(find.textContaining('质押还没有开放'), findsWidgets);
       // The hero states the fact rather than reporting a missing figure, and
       // the wire value of the executability flag never reaches the screen.
       expect(find.text('暂无数值'), findsNothing);
       expect(find.textContaining('NOT EXECUTABLE'), findsNothing);
-      // No stake or unstake action exists at all.
-      for (final button in tester.widgetList<LoopButton>(
-        find.byType(LoopButton),
-      )) {
-        expect(button.label, isNot(contains('质押')));
+      // Every staking action on the page is disabled, and none of them can
+      // reach a signing sheet.
+      final actions = tester
+          .widgetList<LoopButton>(find.byType(LoopButton))
+          .where((button) => button.label.contains('质押'));
+      expect(actions, isNotEmpty);
+      for (final button in actions) {
+        expect(button.onPressed, isNull, reason: button.label);
+      }
+      for (final seg in tester.widgetList<LoopSeg>(find.byType(LoopSeg))) {
+        expect(seg.onSelected, isNull, reason: seg.label);
       }
     });
   });

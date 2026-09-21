@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_controllers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -125,13 +126,15 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
           onPressed: widget.onOpenHolders,
         ),
       ],
+      // `.lime-page`: the catalogue and the buy quote are the module's two
+      // saturated Lime heroes (visual audit 2026-09-21 §H.6).
       folio: const LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
+        variant: LoopFolioVariant.lime,
         archetype: LoopFolioArchetype.action,
-        kicker: 'BUY QUOTE',
+        kicker: 'FINAL BUY QUOTE',
         // No quote: price, fee and cap are all contract facts.
         heading: launchMissingHeading,
-        caption: '价格、手续费与剩余额度暂时读不到，现在无法报价。',
+        caption: '支付、获得、费用与剩余额度在签名前完成最终复核。现在还读不到报价。',
         stamp: 'DISABLED',
       ),
       block: blocked
@@ -164,20 +167,14 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
               launch: detail?.launch,
             ),
           ),
-          const LoopLabel('支付金额'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
-              key: const ValueKey<String>('launch-trade-amount'),
-              controller: _amount,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(
-                labelText: '支付数量',
-                helperText: '可以填写，但暂时不能提交：报价与额度还读不到。',
-              ),
-            ),
+          // The prototype's Chalk quote box: what is paid on top, what would
+          // be received underneath. The second half had no shape at all, so
+          // the page asked for an amount and never said what it would buy
+          // (visual audit 2026-09-21 §H.6).
+          _TradeQuoteCard(
+            amount: _amount,
+            ticker: detail?.launch.ticker ?? launchMissingFigure,
+            feeLabel: launchFeeLabel(detail?.config),
           ),
           const LoopLabel('本轮参数'),
           _TradeParameters(
@@ -231,6 +228,17 @@ class _LaunchTradeScreenState extends ConsumerState<LaunchTradeScreen> {
             body: '内盘阶段没有卖出接口。毕业并建立外部流动性之后，交易才会转到行情模块。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
+          // `details.focus-disclosure`: the price, the round clock and the
+          // graduation track, in the shape the prototype gives them. Every
+          // figure is a contract fact and every one of them is an em dash.
+          const LoopDisclosure(
+            key: ValueKey<String>('launch-trade-facts'),
+            summary: '固定价格与合约限制',
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 14),
+              child: _TradeLimitsCard(),
+            ),
+          ),
           const SizedBox(height: 20),
         ],
       ],
@@ -249,6 +257,187 @@ String _missingInputReason({
   if (roundId == null) return '请先选择要参与的轮次。';
   if (payAmount == null) return '请输入一个有效的支付数量。';
   return '可以提交，结果以提交后的状态为准。';
+}
+
+/// The prototype's Chalk buy box: `支付 USD1` over the amount, a hairline,
+/// then `预计获得` over the token it would buy.
+///
+/// The lower half has no source — price and fee are contract facts — so it
+/// prints [launchMissingFigure]. The upper half is a real input: the amount
+/// the reader would pay is theirs to type, and the page refuses to submit it,
+/// which is a different statement from refusing to accept it.
+class _TradeQuoteCard extends StatelessWidget {
+  const _TradeQuoteCard({
+    required this.amount,
+    required this.ticker,
+    required this.feeLabel,
+  });
+
+  final TextEditingController amount;
+  final String ticker;
+  final String? feeLabel;
+
+  /// The settlement asset of the frozen Launchpad baseline (03 §10.1).
+  static const String payAsset = 'USD1';
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopChalkCard(
+      key: const ValueKey<String>('launch-trade-quote'),
+      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      child: Builder(
+        builder: (context) {
+          final ink = LoopGround.inkOf(context);
+          final auxiliary = LoopGround.auxiliaryOf(context);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                '支付 $payAsset',
+                style: LoopTypography.eyebrow(11, color: auxiliary),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Expanded(
+                    child: TextField(
+                      key: const ValueKey<String>('launch-trade-amount'),
+                      controller: amount,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      cursorColor: ink,
+                      style: LoopTypography.figure(
+                        24,
+                        weight: FontWeight.w700,
+                        color: ink,
+                      ),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        filled: false,
+                        contentPadding: EdgeInsets.zero,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        hintText: '0',
+                        hintStyle: LoopTypography.figure(
+                          24,
+                          weight: FontWeight.w700,
+                          color: auxiliary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(payAsset, style: LoopTypography.figure(13, color: ink)),
+                ],
+              ),
+              const LoopHairline(),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: <Widget>[
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          '预计获得',
+                          style: LoopTypography.caption(11, color: auxiliary),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          launchMissingFigure,
+                          style: LoopTypography.figure(
+                            18,
+                            weight: FontWeight.w700,
+                            color: ink,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(ticker, style: LoopTypography.figure(13, color: ink)),
+                ],
+              ),
+              const SizedBox(height: 7),
+              Text(
+                '包含本轮手续费 ${feeLabel ?? launchMissingFigure} · '
+                '钱包余额 $launchMissingFigure · '
+                '已持有 $launchMissingFigure · 还可买 $launchMissingFigure',
+                style: LoopTypography.caption(11, color: auxiliary),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// `details.focus-disclosure > .record-card`: the fixed price, the round clock
+/// and the graduation track. All four figures are contract facts.
+class _TradeLimitsCard extends StatelessWidget {
+  const _TradeLimitsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopRecordCard(
+      key: const ValueKey<String>('launch-trade-limits'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      '固定价格',
+                      style: LoopTypography.eyebrow(
+                        11,
+                        color: LoopColors.text3,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      launchMissingFigure,
+                      style: LoopTypography.figure(25, height: 1.05),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(launchMissingFigure, style: LoopTypography.figure(16)),
+                  Text(
+                    '本轮剩余',
+                    style: LoopTypography.caption(11, color: LoopColors.text3),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const LoopHairline(),
+          Text(
+            '市值 $launchMissingFigure · 毕业线 $launchMissingFigure',
+            style: LoopTypography.caption(11, color: LoopColors.text2),
+          ),
+          const SizedBox(height: 10),
+          const LoopProgressBar(value: null, semanticLabel: '毕业进度暂时读不到'),
+        ],
+      ),
+    );
+  }
 }
 
 class _TradeParameters extends StatelessWidget {
@@ -328,12 +517,29 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
       // and the English state name beside it was the wire value of the
       // executability flag. Neither is what a reader needs: staking has not
       // opened, and the sentence under the heading says what that costs.
-      primary: const LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'STAKING POSITION',
-        heading: '质押还没有开放',
-        caption: '质押数量、可用余额与解除等待期都需要质押合约；本页不提供任何金额输入或签名入口。',
+      primary: const LoopLedgerComposite(
+        primary: LoopFolioPrimary(
+          variant: LoopFolioVariant.quiet,
+          archetype: LoopFolioArchetype.record,
+          kicker: 'STAKING POSITION',
+          heading: '质押还没有开放',
+          caption: '质押数量、可用余额与解除等待期都需要质押合约；本页不构造任何交易，也不打开签名。',
+          stamp: '未开放',
+          margin: EdgeInsets.zero,
+          squareBottom: true,
+        ),
+        // `.loop-stake-balance`: the two readings the prototype welds under
+        // this folio. Both need the staking contract, so both are em dashes.
+        detail: <Widget>[
+          LoopCompositeDetailRow(
+            label: '钱包可用余额',
+            value: loopFigureDash,
+            valueSize: 18,
+            trailingLabel: '已质押',
+            trailingValue: loopFigureDash,
+            spoken: '质押还没有开放',
+          ),
+        ],
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -354,37 +560,121 @@ class _LoopStakeScreenState extends ConsumerState<LoopStakeScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
+          // `.loop-stake-tabs`: the prototype's two-way choice, kept as the
+          // shape of the page and disabled, so the page reads as a form that
+          // has not opened rather than as a page that never had one
+          // (visual audit 2026-09-21 §H.10).
+          LoopChipRow(
+            key: const ValueKey<String>('loop-stake-tabs'),
+            children: const <Widget>[
+              LoopSeg(label: '质押', selected: true, onSelected: null),
+              LoopSeg(label: '解除质押', selected: false, onSelected: null),
+            ],
+          ),
+          _StakeAmountCard(executable: stake.executable),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            child: LoopButton(
+              key: const ValueKey<String>('loop-stake-submit'),
+              label: '确认质押',
+              primary: true,
+              block: true,
+              // 03 §10.1: staking has no approved contract scheme, so the
+              // action is marked non-executable and no signing entry point
+              // exists on this page at all.
+              onPressed: null,
+              semanticLabel: '确认质押，当前不可执行',
+            ),
+          ),
+          LaunchUnavailableCard(
+            label: '我的质押',
+            fact: stake.stake,
+            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+          ),
           LaunchChainBlock(
             testnet: launchSurfaceIsTestnet(capability: capability),
-          ),
-          const LoopLabel('质押状态'),
-          LaunchUnavailableCard(label: '我的质押', fact: stake.stake),
-          const LoopLabel('可执行性'),
-          LoopRecordGroup(
-            key: const ValueKey<String>('loop-stake-executable'),
-            rows: <LoopRecordRow>[
-              LoopRecordRow(
-                key: const ValueKey<String>('loop-stake-executable-row'),
-                title: '质押与解除质押',
-                subtitle: '合约缺席时，本页不提供任何金额输入或签名入口',
-                subtitleMaxLines: 2,
-                trailingBadge: LoopBadge(
-                  stake.executable ? '可执行' : '不可执行',
-                  kind: LoopBadgeKind.mute,
-                ),
-              ),
-            ],
           ),
           const LoopNotice(
             key: ValueKey<String>('loop-stake-notice'),
             icon: 'lock',
-            title: '资格不依赖质押',
-            body: 'Launch 资格由每次发射自己的规则决定，与是否质押 LOOP 无关。这里不承诺任何倍率、等待期或权益。',
+            title: '质押与 Launch 资格',
+            body:
+                '质押用于 Launch 参与资格；某一次发射是否依赖质押，由它自己被批准的资格模式决定。'
+                '质押与挖矿算力的关系以批准的公式版本为准，这里不承诺任何倍率、等待期或权益。',
             margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
           ),
           const SizedBox(height: 20),
         ],
       ],
+    );
+  }
+}
+
+/// `.chalk-card.loop-stake-form`: the amount box, in the shape the prototype
+/// gives it and with no way to type into it.
+///
+/// It is deliberately not a [TextField]. 03 §10.1 withholds the staking
+/// contract until its own scheme is approved, so there is nothing to validate
+/// an amount against and nothing to sign it with; a field that accepted a
+/// number would be promising a transaction this build cannot build.
+class _StakeAmountCard extends StatelessWidget {
+  const _StakeAmountCard({required this.executable});
+
+  final bool executable;
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopChalkCard(
+      key: const ValueKey<String>('loop-stake-executable'),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      child: Builder(
+        builder: (context) {
+          final ink = LoopGround.inkOf(context);
+          final auxiliary = LoopGround.auxiliaryOf(context);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      '质押数量',
+                      style: LoopTypography.eyebrow(11, color: auxiliary),
+                    ),
+                  ),
+                  LoopBadge(
+                    executable ? '可执行' : '不可执行',
+                    kind: LoopBadgeKind.mute,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      launchMissingFigure,
+                      style: LoopTypography.figure(
+                        24,
+                        weight: FontWeight.w700,
+                        color: ink,
+                      ),
+                    ),
+                  ),
+                  Text('LOOP', style: LoopTypography.figure(13, color: ink)),
+                ],
+              ),
+              const LoopHairline(),
+              Text(
+                '质押合约还没有上线，这一页不接受金额输入，也不会打开签名。',
+                style: LoopTypography.caption(11, color: auxiliary),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }
