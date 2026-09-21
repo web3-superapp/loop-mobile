@@ -1057,48 +1057,53 @@ class LoopLedgerComposite extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chalk = ground == LoopCompositeGround.chalk;
-    final body = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        primary,
-        if (detail.isNotEmpty)
-          Container(
-            padding: detailPadding,
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  // `.ledger-composite-detail{border-top:1px solid
-                  // rgba(243,245,239,.1)}` / `.is-chalk{rgba(5,6,4,.11)}`.
-                  color: chalk
-                      ? LoopColors.ink.withValues(alpha: 0.11)
-                      : LoopColors.chalk.withValues(alpha: 0.1),
-                ),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: detail,
-            ),
+    // The strip is the only half that changes ground: the folio welded above
+    // it paints its own surface and its own ink, so wrapping the whole
+    // composite in the Chalk text style would repaint a dark hero's copy.
+    Widget strip = Container(
+      padding: detailPadding,
+      decoration: BoxDecoration(
+        // A Chalk composite paints the light ground on the strip alone: the
+        // folio welded above it is a dark card whose own gradient is not
+        // opaque, and a Chalk box behind it would show through and drop its
+        // copy below the contrast floor.
+        color: chalk ? LoopColors.chalk : null,
+        border: Border(
+          top: BorderSide(
+            // `.ledger-composite-detail{border-top:1px solid
+            // rgba(243,245,239,.1)}` / `.is-chalk{rgba(5,6,4,.11)}`.
+            color: chalk
+                ? LoopColors.ink.withValues(alpha: 0.11)
+                : LoopColors.chalk.withValues(alpha: 0.1),
           ),
-      ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: detail,
+      ),
     );
+    if (chalk) {
+      strip = DefaultTextStyle.merge(
+        style: const TextStyle(color: LoopColors.ink),
+        child: IconTheme.merge(
+          data: const IconThemeData(color: LoopColors.ink),
+          child: strip,
+        ),
+      );
+    }
     return Padding(
       padding: margin,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(LoopRadius.shellValue),
         child: ColoredBox(
-          color: chalk ? LoopColors.chalk : LoopColors.graphite,
-          child: chalk
-              ? DefaultTextStyle.merge(
-                  style: const TextStyle(color: LoopColors.ink),
-                  child: IconTheme.merge(
-                    data: const IconThemeData(color: LoopColors.ink),
-                    child: body,
-                  ),
-                )
-              : body,
+          color: chalk ? LoopColors.ink : LoopColors.graphite,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[primary, if (detail.isNotEmpty) strip],
+          ),
         ),
       ),
     );

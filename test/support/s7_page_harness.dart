@@ -484,3 +484,18 @@ Future<void> scrollToS7Section(WidgetTester tester, Finder finder) async {
     scrollable: find.byType(Scrollable).first,
   );
 }
+
+/// Opens a [LoopDisclosure] by its key and waits for the reveal.
+///
+/// `launch-detail` keeps the record's twelve configuration and on-chain rows
+/// behind the prototype's own `details` control, so a test that asserts one of
+/// them opens it first: the fact is on the page, one tap away, not deleted.
+Future<void> openS7Disclosure(WidgetTester tester, Key key) async {
+  final summary = find.descendant(
+    of: find.byKey(key),
+    matching: find.byKey(const ValueKey<String>('loop-disclosure-summary')),
+  );
+  await scrollToS7Section(tester, summary);
+  await tester.tap(summary);
+  await tester.pumpAndSettle();
+}

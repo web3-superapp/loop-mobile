@@ -10,6 +10,7 @@ import 'package:loop_mobile/features/launch/launch_controllers.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
 
@@ -72,8 +73,8 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: detail?.launch.ticker ?? '项目详情',
-      kicker: 'LAUNCH RECORD',
       onBack: widget.onBack,
+      framedTools: true,
       actions: <Widget>[
         LoopIconButton(
           key: const ValueKey<String>('launch-detail-rounds-action'),
@@ -82,15 +83,35 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
           onPressed: widget.onOpenRounds,
         ),
       ],
-      primary: LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'LAUNCH RECORD',
-        heading: detail?.launch.name ?? launchMissingName,
-        // No countdown, no round label, no progress: all three are contract
-        // facts. The caption states what the record can and cannot prove.
-        caption: '项目资料与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。',
-        stamp: detail == null ? null : launchPendingConfirmationLabel,
+      // `.launch-detail-composite`: the record's folio and the project's own
+      // Chalk identity card are one surface, the way the prototype welds
+      // them. The identity card is what the audit found missing entirely.
+      primary: LoopLedgerComposite(
+        ground: LoopCompositeGround.chalk,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        detailPadding: const EdgeInsets.fromLTRB(18, 15, 18, 15),
+        primary: LoopFolioPrimary(
+          variant: LoopFolioVariant.quiet,
+          archetype: LoopFolioArchetype.record,
+          kicker: 'LAUNCH RECORD',
+          heading: detail?.launch.name ?? launchMissingName,
+          // No countdown, no round label, no progress: all three are contract
+          // facts. The caption states what the record can and cannot prove.
+          caption: '项目资料与轮次配置由 LOOP 提供；链上状态、价格与毕业进度暂时读不到。',
+          stamp: detail == null ? null : launchPendingConfirmationLabel,
+          margin: EdgeInsets.zero,
+          squareBottom: true,
+        ),
+        detail: <Widget>[
+          if (detail != null)
+            LaunchIdentityStrip(
+              key: const ValueKey<String>('launch-detail-identity'),
+              name: detail.project.name,
+              ticker: detail.project.ticker,
+              narrative: detail.project.narrative,
+              contractAddress: detail.launch.contractAddress,
+            ),
+        ],
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -113,101 +134,128 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          LaunchChainBlock(
-            testnet: launchSurfaceIsTestnet(
-              capability: capability,
-              launch: detail.launch,
-            ),
+          // The record card the prototype anchors this page on: the round's
+          // remaining time, the graduation track and the two figures under
+          // it. None of the four has a source yet, so each prints its own em
+          // dash inside the shape that will hold it.
+          _LaunchRoundProgressCard(rounds: detail.rounds),
+          LoopStatGrid(
+            key: const ValueKey<String>('launch-detail-stats'),
+            stats: launchRecordStats(),
           ),
-          if (detail.project.narrative != null)
-            LoopNotice(
-              key: const ValueKey<String>('launch-detail-narrative'),
-              icon: 'info',
-              title: '${detail.project.name} · ${detail.project.ticker}',
-              body: detail.project.narrative!,
-              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-            ),
-          const LoopLabel('链上四轴'),
-          LaunchAxisBlock(state: detail.launch.onChainState),
-          const LoopLabel('配置'),
-          if (config == null)
-            const LoopEmpty(
-              key: ValueKey<String>('launch-detail-no-config'),
-              icon: 'warn',
-              message: '还没有任何配置版本',
-              reason: '轮次、上限与费率都要等到配置版本被确认后才有数值。',
-            )
-          else
-            LoopRecordGroup(
-              key: const ValueKey<String>('launch-detail-slots'),
-              rows: <LoopRecordRow>[
-                for (
-                  var index = 0;
-                  index < config.slots.entries.length;
-                  index += 1
-                )
-                  launchConfigSlotRow(
-                    label: config.slots.entries[index].$1,
-                    slot: config.slots.entries[index].$2,
-                    position: launchRowPosition(
-                      index,
-                      config.slots.entries.length,
-                    ),
-                  ),
-              ],
-            ),
-          if (detail.configPending != null)
-            LaunchUnavailableCard(
-              label: '已确认的配置版本',
-              fact: detail.configPending!,
-            ),
-          const LoopLabel('轮次'),
-          _RoundsBlock(rounds: detail.rounds),
-          const LoopLabel('行情与持有人'),
-          LaunchUnavailableCard(label: '内盘行情', fact: detail.market),
-          LaunchUnavailableCard(label: '持有人分布', fact: detail.holders),
-          const LoopLabel('相关页面'),
+          const LoopLabel('我的资格'),
           LoopRecordGroup(
             rows: <LoopRecordRow>[
               LoopRecordRow(
                 key: const ValueKey<String>('launch-detail-open-tier'),
+                leading: const LoopRowIcon(
+                  icon: 'ticket',
+                  tone: LoopRowIconTone.accent,
+                ),
                 title: '我的资格',
-                subtitle: '资格规则由每次发射自己决定，不依赖质押',
+                // Decision 0053: the mode is read, never assumed. The row
+                // states the value it has — the mode — and says so when the
+                // configuration has not chosen one.
+                subtitle: '资格结果 $launchPendingConfirmationLabel · 由这次发射的资格模式决定',
+                subtitleMaxLines: 2,
                 onTap: widget.onOpenTier,
+              ),
+            ],
+          ),
+          const LoopLabel('发射轨道'),
+          _TrackBlock(
+            rounds: detail.rounds,
+            config: config,
+            onOpenGraduation: widget.onOpenGraduation,
+          ),
+          _LinksBlock(links: detail.project.officialLinks),
+          const LoopLabel('记录'),
+          LoopRecordGroup(
+            rows: <LoopRecordRow>[
+              LoopRecordRow(
+                key: const ValueKey<String>('launch-detail-open-holders'),
+                leading: const LoopRowIcon(icon: 'users'),
+                title: '内盘持有人',
+                subtitle: launchReasonCodeText(detail.holders.reasonCode),
+                subtitleMaxLines: 2,
+                onTap: widget.onOpenHolders,
                 position: LoopRowPosition.first,
               ),
               LoopRecordRow(
-                key: const ValueKey<String>('launch-detail-open-holders'),
-                title: '内盘持有人',
-                subtitle: '需要链上读数，当前不可得',
-                onTap: widget.onOpenHolders,
-                position: LoopRowPosition.middle,
-              ),
-              LoopRecordRow(
-                key: const ValueKey<String>('launch-detail-open-graduation'),
-                title: '毕业与迁移',
-                subtitle: '四个步骤全部待触发',
-                onTap: widget.onOpenGraduation,
-                position: LoopRowPosition.middle,
-              ),
-              LoopRecordRow(
                 key: const ValueKey<String>('launch-detail-open-history'),
+                leading: const LoopRowIcon(icon: 'book'),
                 title: '我的参与记录',
-                subtitle: '记录暂时读不到，空列表不代表你没有参与',
+                subtitle: '空列表不代表你没有参与',
                 onTap: widget.onOpenHistory,
                 position: LoopRowPosition.last,
               ),
             ],
           ),
-          _LinksBlock(links: detail.project.officialLinks),
           LoopButtonPair(
             children: <Widget>[
               LoopButton(
                 key: const ValueKey<String>('launch-detail-open-trade'),
                 label: '进入内盘交易',
+                primary: true,
                 onPressed: widget.onOpenTrade,
               ),
             ],
+          ),
+          // The twelve key-value rows that used to fill two screens keep
+          // every fact they carried, behind the prototype's own disclosure
+          // control (`details.focus-disclosure`).
+          LoopDisclosure(
+            key: const ValueKey<String>('launch-detail-facts'),
+            summary: '链上四轴与配置',
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  LaunchChainBlock(
+                    testnet: launchSurfaceIsTestnet(
+                      capability: capability,
+                      launch: detail.launch,
+                    ),
+                  ),
+                  const LoopLabel('链上四轴', tight: true),
+                  LaunchAxisBlock(state: detail.launch.onChainState),
+                  const LoopLabel('配置'),
+                  if (config == null)
+                    const LoopEmpty(
+                      key: ValueKey<String>('launch-detail-no-config'),
+                      icon: 'warn',
+                      message: '还没有任何配置版本',
+                      reason: '轮次、上限与费率都要等到配置版本被确认后才有数值。',
+                    )
+                  else
+                    LoopRecordGroup(
+                      key: const ValueKey<String>('launch-detail-slots'),
+                      rows: <LoopRecordRow>[
+                        for (
+                          var index = 0;
+                          index < config.slots.entries.length;
+                          index += 1
+                        )
+                          launchConfigSlotRow(
+                            label: config.slots.entries[index].$1,
+                            slot: config.slots.entries[index].$2,
+                            position: launchRowPosition(
+                              index,
+                              config.slots.entries.length,
+                            ),
+                          ),
+                      ],
+                    ),
+                  if (detail.configPending != null)
+                    LaunchUnavailableCard(
+                      label: '已确认的配置版本',
+                      fact: detail.configPending!,
+                    ),
+                ],
+              ),
+            ),
           ),
           LoopNotice(
             key: const ValueKey<String>('launch-detail-baseline-notice'),
@@ -222,6 +270,129 @@ class _LaunchDetailScreenState extends ConsumerState<LaunchDetailScreen> {
           ),
           const SizedBox(height: 20),
         ],
+      ],
+    );
+  }
+}
+
+/// `.record-card.launch-round-card`: the round clock, the graduation track
+/// and the two figures beneath it.
+///
+/// Every one of them is a contract fact, so the card is the shape of four
+/// answers that do not exist yet: the clock prints the em dash, the track is
+/// drawn empty rather than at zero, and the reason is stated once, under the
+/// card, for all four.
+class _LaunchRoundProgressCard extends StatelessWidget {
+  const _LaunchRoundProgressCard({required this.rounds});
+
+  final List<LaunchRound> rounds;
+
+  @override
+  Widget build(BuildContext context) {
+    final first = rounds.isEmpty ? null : rounds.first;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      child: LoopRecordCard(
+        key: const ValueKey<String>('launch-detail-round-card'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        first == null ? '本轮剩余' : 'Round ${first.roundIndex} 剩余',
+                        style: LoopTypography.caption(
+                          11,
+                          color: LoopColors.text3,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        launchMissingFigure,
+                        style: LoopTypography.figure(
+                          28,
+                          height: 1.05,
+                          color: LoopColors.lime,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const LoopBadge(
+                  launchPendingConfirmationLabel,
+                  kind: LoopBadgeKind.mute,
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const LoopProgressBar(value: null, semanticLabel: '毕业进度暂时读不到'),
+            const SizedBox(height: 8),
+            Text(
+              '市值 $launchMissingFigure / 毕业线 $launchMissingFigure',
+              style: LoopTypography.caption(11, color: LoopColors.text2),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// `launch-detail` 发射轨道 / `launch-rounds` Access Timeline.
+///
+/// The rounds come from the configuration — `1..N`, never a fixed three — and
+/// the graduation step closes the track. The last row is the way into
+/// `launch-graduation`, which is where the prototype's 毕业 line leads.
+class _TrackBlock extends StatelessWidget {
+  const _TrackBlock({
+    required this.rounds,
+    required this.config,
+    this.onOpenGraduation,
+  });
+
+  final List<LaunchRound> rounds;
+  final LaunchConfig? config;
+  final VoidCallback? onOpenGraduation;
+
+  @override
+  Widget build(BuildContext context) {
+    if (rounds.isEmpty) {
+      return const LoopEmpty(
+        key: ValueKey<String>('launch-track-empty'),
+        icon: 'warn',
+        message: '还没有配置任何轮次',
+        reason: '轮次数量由每次发射自己决定。',
+      );
+    }
+    final fee = launchFeeLabel(config);
+    final length = rounds.length + 1;
+    return LoopRecordGroup(
+      key: const ValueKey<String>('launch-track'),
+      rows: <LoopRecordRow>[
+        for (var index = 0; index < rounds.length; index += 1)
+          launchTrackRow(
+            round: rounds[index],
+            feeLabel: fee,
+            position: launchRowPosition(index, length),
+          ),
+        LoopRecordRow(
+          key: const ValueKey<String>('launch-track-graduation'),
+          leading: const LoopMonoTile(label: 'END'),
+          title: '毕业与迁移',
+          subtitle: '达到毕业条件后由服务端权威状态推进',
+          trailingBadge: const LoopBadge('待触发', kind: LoopBadgeKind.mute),
+          onTap: onOpenGraduation,
+          position: launchRowPosition(length - 1, length),
+          semanticLabel: '毕业与迁移，待触发',
+        ),
       ],
     );
   }
@@ -263,16 +434,24 @@ class _LinksBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (links.isEmpty) return const SizedBox.shrink();
+    // `.segs` of link chips, the way the prototype ends the record. The URL
+    // itself was a key-value row nobody could tap; the chip names the venue.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const LoopLabel('官方链接'),
-        for (final entry in links.entries)
-          LoopKeyValue(
-            key: ValueKey<String>('launch-link-${entry.$1}'),
-            label: entry.$1,
-            value: entry.$2,
-          ),
+        const LoopLabel('链接'),
+        LoopChipRow(
+          children: <Widget>[
+            for (final entry in links.entries)
+              LoopSeg(
+                key: ValueKey<String>('launch-link-${entry.$1}'),
+                label: entry.$1,
+                selected: false,
+                onSelected: null,
+                onBlocked: null,
+              ),
+          ],
+        ),
       ],
     );
   }

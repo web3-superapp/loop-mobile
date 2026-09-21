@@ -154,6 +154,14 @@ void main() {
           meta: s7MetaSnapshot(launchChainId: 'eip155:97'),
         );
 
+        // `launch-detail` keeps the chain row with the rest of the record's
+        // facts, behind the prototype's disclosure control.
+        if (page is LaunchDetailScreen) {
+          await openS7Disclosure(
+            tester,
+            const ValueKey<String>('launch-detail-facts'),
+          );
+        }
         expect(
           find.byKey(const ValueKey<String>('launch-chain-row')),
           findsOneWidget,

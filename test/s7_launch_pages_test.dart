@@ -174,6 +174,10 @@ void main() {
         launch: FakeLaunchGateway(),
       );
 
+      await openS7Disclosure(
+        tester,
+        const ValueKey<String>('launch-detail-facts'),
+      );
       for (final axis in <String>['销售状态', '权益状态', '流动性状态', '运营状态']) {
         final row = find.byKey(ValueKey<String>('launch-axis-$axis'));
         await scrollToS7Section(tester, row);
@@ -191,6 +195,10 @@ void main() {
         launch: FakeLaunchGateway(),
       );
 
+      await openS7Disclosure(
+        tester,
+        const ValueKey<String>('launch-detail-facts'),
+      );
       final slots = find.byKey(const ValueKey<String>('launch-detail-slots'));
       await scrollToS7Section(tester, slots);
       expect(slots, findsOneWidget);

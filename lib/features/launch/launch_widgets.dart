@@ -6,6 +6,7 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_models.dart';
+import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 /// Whether an S7 page must stop at the capability gate instead of reading.
@@ -683,4 +684,158 @@ class LaunchChainBlock extends StatelessWidget {
       ],
     );
   }
+}
+
+/// `.launch-detail-project`: the Chalk identity card welded under the folio.
+///
+/// It carries what LOOP's own record can prove about the project — the
+/// monogram, the name, the one-line narrative and the contract address the
+/// launch was registered with. An address that has not been registered yet is
+/// [launchMissingFigure]; it is never derived from the launch id.
+class LaunchIdentityStrip extends StatelessWidget {
+  const LaunchIdentityStrip({
+    required this.name,
+    required this.ticker,
+    required this.narrative,
+    required this.contractAddress,
+    super.key,
+  });
+
+  final String name;
+  final String ticker;
+  final String? narrative;
+  final String? contractAddress;
+
+  /// The tail of an address, the way the prototype prints it (`…7F3AL00P`).
+  static String suffixOf(String address) => address.length <= 8
+      ? address
+      : '…${address.substring(address.length - 8)}';
+
+  @override
+  Widget build(BuildContext context) {
+    final address = contractAddress;
+    return Semantics(
+      container: true,
+      label:
+          '$name，$ticker。'
+          '${narrative ?? '还没有项目简介。'}'
+          '合约 ${address == null ? '待登记' : suffixOf(address)}',
+      child: ExcludeSemantics(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            LaunchTickerTile(ticker: ticker, size: 54),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LoopTypography.title(
+                      15,
+                      color: LoopGround.inkOf(context),
+                    ),
+                  ),
+                  if (narrative != null) ...<Widget>[
+                    const SizedBox(height: 4),
+                    Text(
+                      narrative!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: LoopTypography.caption(
+                        11,
+                        color: LoopGround.secondaryOf(context),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 6),
+                  Text(
+                    '合约 ${address == null ? launchMissingFigure : suffixOf(address)}',
+                    style: LoopTypography.figure(
+                      11,
+                      color: LoopGround.auxiliaryOf(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The four figures the prototype's `launch-detail` grid states, each with no
+/// source in this step. They are stated as a grid of em dashes rather than as
+/// a table of sentences: the shape is the claim that these four exist.
+List<LoopStat> launchRecordStats() => const <LoopStat>[
+  LoopStat(label: '总量', value: loopFigureDash),
+  LoopStat(label: '持有人', value: loopFigureDash),
+  LoopStat(label: '当前价', value: loopFigureDash),
+  LoopStat(label: '成交量', value: loopFigureDash),
+];
+
+/// `.row-ico.mono` for one round: the time the round opens, in UTC, or the
+/// placeholder when the configuration has not fixed it.
+String launchRoundTimeCode(LaunchRound round) {
+  final start = round.startsAt;
+  if (start == null) return '--:--';
+  final utc = start.toUtc();
+  String two(int part) => part.toString().padLeft(2, '0');
+  return '${two(utc.hour)}:${two(utc.minute)}';
+}
+
+/// One row of `launch-detail`'s 发射轨道 / `launch-rounds`' Access Timeline.
+///
+/// The leading tile is the round's own opening time, because the timeline is
+/// about when access opens; the value column is the round's fee, which is a
+/// configuration slot and reads [launchMissingFigure] until it is confirmed.
+LoopRecordRow launchTrackRow({
+  required LaunchRound round,
+  required String? feeLabel,
+  LoopRowPosition position = LoopRowPosition.single,
+  VoidCallback? onTap,
+}) {
+  final tier = round.eligibilityTier;
+  final start = round.startsAt;
+  final title = tier == null
+      ? 'Round ${round.roundIndex}'
+      : 'Round ${round.roundIndex} · ${launchTierLabel(tier)}';
+  final subtitle = start == null
+      ? '开放时间 $launchPendingConfirmationLabel'
+      : '开放于 ${launchTimestampLabel(start)}';
+  return LoopRecordRow(
+    key: ValueKey<String>('launch-track-${round.roundIndex}'),
+    leading: LoopMonoTile(label: launchRoundTimeCode(round)),
+    title: title,
+    subtitle: subtitle,
+    trailing: feeLabel ?? launchMissingFigure,
+    trailingCaption: '手续费',
+    onTap: onTap,
+    position: position,
+    semanticLabel:
+        '$title，$subtitle，手续费 ${feeLabel ?? launchPendingConfirmationLabel}',
+  );
+}
+
+/// The fee this configuration confirmed, as a percentage, or `null`.
+///
+/// `feeBps` is the only slot that can produce the prototype's `10%`, and only
+/// once a version confirms it. An unconfirmed slot yields `null` and the row
+/// prints the em dash; the client never assumes a ladder.
+String? launchFeeLabel(LaunchConfig? config) {
+  final slot = config?.slots.feeBps;
+  if (slot is! LaunchConfigSlotConfirmed) return null;
+  final bps = int.tryParse(slot.value);
+  if (bps == null) return slot.value;
+  final percent = bps / 100;
+  final text = percent == percent.roundToDouble()
+      ? percent.toStringAsFixed(0)
+      : percent.toStringAsFixed(2);
+  return '$text%';
 }
