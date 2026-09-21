@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
+import 'package:loop_mobile/features/security/app_lock/app_lock_models.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_controller.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
+import 'package:loop_mobile/features/security/mfa/passkey_sheet.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/loop_ground_probe.dart';
@@ -247,6 +249,504 @@ void main() {
     });
   });
 
+  group('binding a passkey', () {
+    const bound = LoopPasskeyCredential(
+      credentialId: 'cred-1',
+      label: 'iPhone',
+    );
+
+    test(
+      'a build with no domain credential asks the platform nothing',
+      () async {
+        final gateway = _FakeMfaGateway(relyingParty: null);
+        final container = _container(gateway);
+        final controller = container.read(loopMfaProvider.notifier);
+        await controller.load();
+
+        expect(await controller.linkPasskey(), isFalse);
+
+        expect(gateway.links, 0);
+        expect(
+          container.read(loopMfaProvider).failure,
+          LoopMfaFailureKind.passkeyDomainUnconfigured,
+        );
+        expect(container.read(loopMfaProvider).hasPasskey, isFalse);
+        expect(
+          loopMfaFailureText(LoopMfaFailureKind.passkeyDomainUnconfigured),
+          contains('域名凭据'),
+        );
+      },
+    );
+
+    test(
+      'the account has a passkey only because the provider said so',
+      () async {
+        final gateway = _FakeMfaGateway(
+          afterLink: const <LoopPasskeyCredential>[bound],
+        );
+        final container = _container(gateway);
+        final controller = container.read(loopMfaProvider.notifier);
+        await controller.load();
+        expect(container.read(loopMfaProvider).hasPasskey, isFalse);
+
+        expect(await controller.linkPasskey(), isTrue);
+
+        final state = container.read(loopMfaProvider);
+        expect(state.passkeys, <LoopPasskeyCredential>[bound]);
+        expect(state.passkeyWorking, isFalse);
+        // A way back in is not a second factor.
+        expect(state.hasPasskeyMfa, isFalse);
+      },
+    );
+
+    test('a dismissed system prompt binds nothing and says so', () async {
+      final gateway = _FakeMfaGateway(
+        linkFailure: const LoopMfaException(
+          LoopMfaFailureKind.cancelled,
+          providerMessage: 'androidx.credentials … activity is cancelled',
+        ),
+      );
+      final container = _container(gateway);
+      final controller = container.read(loopMfaProvider.notifier);
+      await controller.load();
+
+      expect(await controller.linkPasskey(), isFalse);
+
+      final state = container.read(loopMfaProvider);
+      expect(state.failure, LoopMfaFailureKind.cancelled);
+      expect(state.hasPasskey, isFalse);
+      // The provider's own words stay in the log, never on the page.
+      expect(state.providerMessage, contains('androidx.credentials'));
+    });
+
+    test('unbinding needs the device first, and then the provider', () async {
+      final gateway = _FakeMfaGateway(
+        passkeys: const <LoopPasskeyCredential>[bound],
+      );
+      final authenticator = _FakeAuthenticator();
+      final container = _container(gateway, authenticator: authenticator);
+      final controller = container.read(loopMfaProvider.notifier);
+      await controller.load();
+
+      expect(await controller.unlinkPasskey('cred-1'), isTrue);
+
+      expect(authenticator.prompts, 1);
+      expect(gateway.unlinked, <String>['cred-1']);
+      expect(container.read(loopMfaProvider).hasPasskey, isFalse);
+    });
+
+    test('a device with nothing to ask with is not a refusal', () async {
+      final gateway = _FakeMfaGateway(
+        passkeys: const <LoopPasskeyCredential>[bound],
+      );
+      final authenticator = _FakeAuthenticator(available: false);
+      final container = _container(gateway, authenticator: authenticator);
+      final controller = container.read(loopMfaProvider.notifier);
+      await controller.load();
+
+      expect(await controller.unlinkPasskey('cred-1'), isTrue);
+
+      // Nothing was asked, because there was nothing to ask.
+      expect(authenticator.prompts, 0);
+      expect(gateway.unlinked, <String>['cred-1']);
+    });
+
+    test('a provider that refused the unbind changes nothing', () async {
+      final gateway = _FakeMfaGateway(
+        passkeys: const <LoopPasskeyCredential>[bound],
+        unlinkFailure: const LoopMfaException(
+          LoopMfaFailureKind.notAuthenticated,
+        ),
+      );
+      final container = _container(
+        gateway,
+        authenticator: _FakeAuthenticator(),
+      );
+      final controller = container.read(loopMfaProvider.notifier);
+      await controller.load();
+
+      expect(await controller.unlinkPasskey('cred-1'), isFalse);
+
+      expect(container.read(loopMfaProvider).hasPasskey, isTrue);
+      expect(
+        container.read(loopMfaProvider).failure,
+        LoopMfaFailureKind.notAuthenticated,
+      );
+    });
+
+    test(
+      'a device that said no leaves the passkey exactly where it was',
+      () async {
+        final gateway = _FakeMfaGateway(
+          passkeys: const <LoopPasskeyCredential>[bound],
+        );
+        final container = _container(
+          gateway,
+          authenticator: _FakeAuthenticator(
+            outcome: LoopDeviceAuthOutcome.canceled,
+          ),
+        );
+        final controller = container.read(loopMfaProvider.notifier);
+        await controller.load();
+
+        expect(await controller.unlinkPasskey('cred-1'), isFalse);
+
+        expect(gateway.unlinked, isEmpty);
+        expect(container.read(loopMfaProvider).hasPasskey, isTrue);
+        expect(
+          container.read(loopMfaProvider).failure,
+          LoopMfaFailureKind.cancelled,
+        );
+      },
+    );
+  });
+
+  group('passkey as a second factor', () {
+    test('an account with no passkey gets one before it is enrolled', () async {
+      final gateway = _FakeMfaGateway();
+      final container = _container(gateway);
+      final controller = container.read(loopMfaProvider.notifier);
+      await controller.load();
+
+      expect(await controller.enablePasskeyMfa(), isTrue);
+
+      expect(gateway.links, 1);
+      // The credential enrolled is the one the link call answered with.
+      expect(gateway.enrolledPasskeys, <List<String>>[
+        <String>['cred-1'],
+      ]);
+      expect(container.read(loopMfaProvider).hasPasskeyMfa, isTrue);
+    });
+
+    test(
+      'an account that already has one is not asked to make another',
+      () async {
+        final gateway = _FakeMfaGateway(
+          passkeys: const <LoopPasskeyCredential>[
+            LoopPasskeyCredential(credentialId: 'cred-9'),
+          ],
+        );
+        final container = _container(gateway);
+        final controller = container.read(loopMfaProvider.notifier);
+        await controller.load();
+
+        expect(await controller.enablePasskeyMfa(), isTrue);
+
+        expect(gateway.links, 0);
+        expect(gateway.enrolledPasskeys, <List<String>>[
+          <String>['cred-9'],
+        ]);
+      },
+    );
+
+    test('a device with no passkey provider enrols nothing', () async {
+      final gateway = _FakeMfaGateway(
+        passkeys: const <LoopPasskeyCredential>[
+          LoopPasskeyCredential(credentialId: 'cred-9'),
+        ],
+        passkeyMfaFailure: const LoopMfaException(
+          LoopMfaFailureKind.deviceUnsupported,
+          providerMessage: 'CreateCredentialProviderConfigurationException',
+        ),
+      );
+      final container = _container(gateway);
+      final controller = container.read(loopMfaProvider.notifier);
+      await controller.load();
+
+      expect(await controller.enablePasskeyMfa(), isFalse);
+
+      final state = container.read(loopMfaProvider);
+      expect(state.hasPasskeyMfa, isFalse);
+      expect(state.failure, LoopMfaFailureKind.deviceUnsupported);
+      expect(state.passkeyWorking, isFalse);
+    });
+
+    test('switching the factor off keeps the way back in', () async {
+      final gateway = _FakeMfaGateway(
+        enrollments: const <LoopMfaEnrollment>[
+          LoopMfaEnrollment(kind: LoopMfaMethodKind.passkey),
+        ],
+        passkeys: const <LoopPasskeyCredential>[
+          LoopPasskeyCredential(credentialId: 'cred-1', enrolledInMfa: true),
+        ],
+      );
+      final container = _container(gateway);
+      final controller = container.read(loopMfaProvider.notifier);
+      await controller.load();
+
+      expect(await controller.disablePasskeyMfa(), isTrue);
+
+      expect(gateway.passkeyMfaRemovals, 1);
+      final state = container.read(loopMfaProvider);
+      expect(state.hasPasskeyMfa, isFalse);
+      expect(state.hasPasskey, isTrue);
+    });
+
+    testWidgets('04 names Passkey once the provider reported it', (
+      tester,
+    ) async {
+      await _pumpPhone(
+        tester,
+        AccountSurfaceScreen.fromId(
+          'security-setup',
+          mfa: const LoopMfaState(
+            phase: LoopMfaPhase.known,
+            enrollments: <LoopMfaEnrollment>[
+              LoopMfaEnrollment(kind: LoopMfaMethodKind.passkey),
+            ],
+          ),
+          onOpenMfa: () {},
+        ),
+      );
+
+      final row = tester.widget<LoopRecordRow>(
+        find.byKey(const ValueKey<String>('security-mfa')),
+      );
+      expect(row.trailing, '已开启');
+      expect(row.subtitle, contains('Passkey'));
+    });
+
+    testWidgets('the sheet offers Passkey beside the authenticator app', (
+      tester,
+    ) async {
+      final container = _container(_FakeMfaGateway());
+      await container.read(loopMfaProvider.notifier).load();
+      await _pumpSheet(tester, container);
+
+      expect(
+        find.byKey(const ValueKey<String>('mfa-sheet-passkey')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('mfa-sheet-begin')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey<String>('mfa-sheet-passkey')));
+      await tester.pumpAndSettle();
+
+      expect(container.read(loopMfaProvider).hasPasskeyMfa, isTrue);
+      expect(
+        tester
+            .widget<LoopButton>(
+              find.byKey(const ValueKey<String>('mfa-sheet-passkey')),
+            )
+            .label,
+        '关闭 Passkey 验证',
+      );
+    });
+
+    testWidgets('a build with no domain credential offers no passkey button', (
+      tester,
+    ) async {
+      final container = _container(_FakeMfaGateway(relyingParty: null));
+      await container.read(loopMfaProvider.notifier).load();
+      await _pumpSheet(tester, container);
+
+      expect(
+        find.byKey(const ValueKey<String>('mfa-sheet-passkey')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('mfa-sheet-passkey-unavailable')),
+        findsOneWidget,
+      );
+    });
+  });
+
+  group('03 reports the passkey the provider holds', () {
+    testWidgets('no domain credential leaves the row unavailable', (
+      tester,
+    ) async {
+      await _pumpPhone(
+        tester,
+        const AccountSurfaceScreen.fromId('wallet-recovery'),
+      );
+
+      final row = tester.widget<LoopRecordRow>(
+        find.byKey(const ValueKey<String>('recovery-passkey')),
+      );
+      expect(row.trailing, '不可用');
+      expect(row.onTap, isNull);
+      expect(row.subtitle, contains(loopPasskeyDomainPending));
+    });
+
+    testWidgets('a configured build opens the binding sheet', (tester) async {
+      var opened = 0;
+      await _pumpPhone(
+        tester,
+        AccountSurfaceScreen.fromId(
+          'wallet-recovery',
+          capabilities: const PrivyWalletCapabilities(canUsePasskey: true),
+          mfa: const LoopMfaState(phase: LoopMfaPhase.known),
+          onOpenPasskey: () => opened += 1,
+        ),
+      );
+
+      final finder = find.byKey(const ValueKey<String>('recovery-passkey'));
+      expect(tester.widget<LoopRecordRow>(finder).trailing, '可用');
+
+      await tester.tap(finder);
+      await tester.pumpAndSettle();
+      expect(opened, 1);
+    });
+
+    testWidgets('a bound passkey says 已设置 and can be opened again', (
+      tester,
+    ) async {
+      var opened = 0;
+      await _pumpPhone(
+        tester,
+        AccountSurfaceScreen.fromId(
+          'wallet-recovery',
+          capabilities: const PrivyWalletCapabilities(canUsePasskey: true),
+          mfa: const LoopMfaState(
+            phase: LoopMfaPhase.known,
+            passkeys: <LoopPasskeyCredential>[
+              LoopPasskeyCredential(credentialId: 'cred-1', label: 'iPhone'),
+            ],
+          ),
+          onOpenPasskey: () => opened += 1,
+        ),
+      );
+
+      final finder = find.byKey(const ValueKey<String>('recovery-passkey'));
+      final row = tester.widget<LoopRecordRow>(finder);
+      expect(row.trailing, '已设置');
+      expect(row.subtitle, contains('iPhone'));
+      // Nothing more to add is not what this page says once one is bound.
+      expect(
+        find.byKey(const ValueKey<String>('wallet-recovery-unavailable')),
+        findsNothing,
+      );
+
+      await tester.tap(finder);
+      await tester.pumpAndSettle();
+      expect(opened, 1);
+    });
+
+    testWidgets('an unread provider never claims a passkey', (tester) async {
+      await _pumpPhone(
+        tester,
+        AccountSurfaceScreen.fromId(
+          'wallet-recovery',
+          capabilities: const PrivyWalletCapabilities(canUsePasskey: true),
+          mfa: const LoopMfaState(phase: LoopMfaPhase.unavailable),
+          onOpenPasskey: () {},
+        ),
+      );
+
+      expect(
+        tester
+            .widget<LoopRecordRow>(
+              find.byKey(const ValueKey<String>('recovery-passkey')),
+            )
+            .trailing,
+        '可用',
+      );
+    });
+  });
+
+  group('the passkey binding sheet', () {
+    testWidgets('an account with none is told so, and offered one', (
+      tester,
+    ) async {
+      final gateway = _FakeMfaGateway();
+      final container = _container(gateway);
+      await _pumpPasskeySheet(tester, container);
+
+      expect(
+        find.byKey(const ValueKey<String>('passkey-sheet-empty')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('passkey-sheet-link')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(gateway.links, 1);
+      expect(
+        find.byKey(const ValueKey<String>('passkey-cred-1')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('unbinding is never one tap', (tester) async {
+      final gateway = _FakeMfaGateway(
+        passkeys: const <LoopPasskeyCredential>[
+          LoopPasskeyCredential(credentialId: 'cred-1', label: 'iPhone'),
+        ],
+      );
+      final container = _container(
+        gateway,
+        authenticator: _FakeAuthenticator(),
+      );
+      await _pumpPasskeySheet(tester, container);
+
+      expect(
+        find.byKey(const ValueKey<String>('passkey-sheet-unlink')),
+        findsNothing,
+      );
+
+      await tester.tap(find.byKey(const ValueKey<String>('passkey-cred-1')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('passkey-sheet-confirm')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('passkey-sheet-unlink')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(gateway.unlinked, <String>['cred-1']);
+      expect(
+        find.byKey(const ValueKey<String>('passkey-sheet-empty')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a build with no domain credential binds nothing', (
+      tester,
+    ) async {
+      final gateway = _FakeMfaGateway(relyingParty: null);
+      final container = _container(gateway);
+      await _pumpPasskeySheet(tester, container);
+
+      expect(
+        find.byKey(const ValueKey<String>('passkey-sheet-unavailable')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('passkey-sheet-link')),
+        findsNothing,
+      );
+      expect(gateway.links, 0);
+    });
+
+    testWidgets('a provider that could not be asked claims nothing', (
+      tester,
+    ) async {
+      final container = _container(
+        _FakeMfaGateway(
+          failure: const LoopMfaException(LoopMfaFailureKind.unavailable),
+        ),
+      );
+      await _pumpPasskeySheet(tester, container);
+
+      expect(
+        find.byKey(const ValueKey<String>('passkey-sheet-unknown')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('passkey-sheet-empty')),
+        findsNothing,
+      );
+    });
+  });
+
   group('the enrolment sheet', () {
     testWidgets('an application with MFA off offers no code field', (
       tester,
@@ -312,9 +812,16 @@ void main() {
 
 // ---------------------------------------------------------------------------
 
-ProviderContainer _container(LoopMfaGateway gateway) {
+ProviderContainer _container(
+  LoopMfaGateway gateway, {
+  LoopDeviceAuthenticator? authenticator,
+}) {
   final container = ProviderContainer(
-    overrides: [loopMfaGatewayProvider.overrideWithValue(gateway)],
+    overrides: [
+      loopMfaGatewayProvider.overrideWithValue(gateway),
+      if (authenticator != null)
+        loopDeviceAuthenticatorProvider.overrideWithValue(authenticator),
+    ],
   );
   addTearDown(container.dispose);
   return container;
@@ -352,6 +859,38 @@ Future<void> _pumpSheet(
   await tester.pumpAndSettle();
 }
 
+Future<void> _pumpPasskeySheet(
+  WidgetTester tester,
+  ProviderContainer container,
+) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = const Size(390, 1400);
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
+  loopArmGroundProbe(tester);
+
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp(
+        theme: LoopTheme.dark,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => Center(
+              child: TextButton(
+                onPressed: () => showLoopPasskeySheet(context),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.tap(find.text('open'));
+  await tester.pumpAndSettle();
+}
+
 Future<void> _pumpPhone(WidgetTester tester, Widget home) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = const Size(390, 1200);
@@ -370,30 +909,49 @@ bool _enabled(WidgetTester tester, String key) {
 final class _FakeMfaGateway implements LoopMfaGateway {
   _FakeMfaGateway({
     this.enrollments = const <LoopMfaEnrollment>[],
+    this.passkeys = const <LoopPasskeyCredential>[],
     this.afterSubmit,
     this.afterRemove,
+    this.afterLink,
     this.failure,
     this.beginFailure,
     this.submitFailure,
     this.removeFailure,
+    this.linkFailure,
+    this.unlinkFailure,
+    this.passkeyMfaFailure,
+    this.relyingParty = 'api-dev.quant-dinger.cc',
   });
 
   final List<LoopMfaEnrollment> enrollments;
+  final List<LoopPasskeyCredential> passkeys;
   final List<LoopMfaEnrollment>? afterSubmit;
   final List<LoopMfaEnrollment>? afterRemove;
+  final List<LoopPasskeyCredential>? afterLink;
   final LoopMfaException? failure;
   final LoopMfaException? beginFailure;
   final LoopMfaException? submitFailure;
   final LoopMfaException? removeFailure;
+  final LoopMfaException? linkFailure;
+  final LoopMfaException? unlinkFailure;
+  final LoopMfaException? passkeyMfaFailure;
+  final String? relyingParty;
 
   final List<String> submitted = <String>[];
+  final List<String> unlinked = <String>[];
+  final List<List<String>> enrolledPasskeys = <List<String>>[];
   int removals = 0;
+  int links = 0;
+  int passkeyMfaRemovals = 0;
 
   @override
-  Future<List<LoopMfaEnrollment>> readEnrollments() async {
+  String? get passkeyRelyingParty => relyingParty;
+
+  @override
+  Future<LoopSecondFactorFacts> readSecondFactor() async {
     final error = failure;
     if (error != null) throw error;
-    return enrollments;
+    return _facts();
   }
 
   @override
@@ -407,18 +965,99 @@ final class _FakeMfaGateway implements LoopMfaGateway {
   }
 
   @override
-  Future<List<LoopMfaEnrollment>> completeTotpEnrollment(String code) async {
+  Future<LoopSecondFactorFacts> completeTotpEnrollment(String code) async {
     submitted.add(code);
     final error = submitFailure;
     if (error != null) throw error;
-    return afterSubmit ?? enrollments;
+    return _facts(enrollments: afterSubmit);
   }
 
   @override
-  Future<List<LoopMfaEnrollment>> removeTotp() async {
+  Future<LoopSecondFactorFacts> removeTotp() async {
     removals += 1;
     final error = removeFailure;
     if (error != null) throw error;
-    return afterRemove ?? const <LoopMfaEnrollment>[];
+    return _facts(enrollments: afterRemove ?? const <LoopMfaEnrollment>[]);
+  }
+
+  @override
+  Future<LoopSecondFactorFacts> linkPasskey() async {
+    links += 1;
+    final error = linkFailure;
+    if (error != null) throw error;
+    return _facts(passkeys: afterLink ?? _linked);
+  }
+
+  @override
+  Future<LoopSecondFactorFacts> unlinkPasskey(String credentialId) async {
+    unlinked.add(credentialId);
+    final error = unlinkFailure;
+    if (error != null) throw error;
+    return _facts(passkeys: const <LoopPasskeyCredential>[]);
+  }
+
+  @override
+  Future<LoopSecondFactorFacts> enrollPasskeyMfa(
+    List<String> credentialIds,
+  ) async {
+    enrolledPasskeys.add(credentialIds);
+    final error = passkeyMfaFailure;
+    if (error != null) throw error;
+    return _facts(
+      enrollments: <LoopMfaEnrollment>[
+        ...enrollments,
+        const LoopMfaEnrollment(kind: LoopMfaMethodKind.passkey),
+      ],
+      passkeys: afterLink ?? (passkeys.isEmpty ? _linked : passkeys),
+    );
+  }
+
+  @override
+  Future<LoopSecondFactorFacts> removePasskeyMfa() async {
+    passkeyMfaRemovals += 1;
+    final error = passkeyMfaFailure;
+    if (error != null) throw error;
+    return _facts(
+      enrollments: <LoopMfaEnrollment>[
+        for (final one in enrollments)
+          if (one.kind != LoopMfaMethodKind.passkey) one,
+      ],
+    );
+  }
+
+  static const _linked = <LoopPasskeyCredential>[
+    LoopPasskeyCredential(credentialId: 'cred-1', label: 'iPhone'),
+  ];
+
+  LoopSecondFactorFacts _facts({
+    List<LoopMfaEnrollment>? enrollments,
+    List<LoopPasskeyCredential>? passkeys,
+  }) {
+    return LoopSecondFactorFacts(
+      enrollments: enrollments ?? this.enrollments,
+      passkeys: passkeys ?? this.passkeys,
+    );
+  }
+}
+
+/// A device that answers the App lock's prompt however a test needs.
+final class _FakeAuthenticator implements LoopDeviceAuthenticator {
+  _FakeAuthenticator({this.available = true, this.outcome});
+
+  final bool available;
+  final LoopDeviceAuthOutcome? outcome;
+  int prompts = 0;
+
+  @override
+  Future<LoopDeviceAuthCapability> readCapability() async => available
+      ? const LoopDeviceAuthCapability.available(LoopDeviceAuthFactor.biometric)
+      : const LoopDeviceAuthCapability.unavailable(
+          LoopDeviceAuthUnavailableReason.noCredentialSet,
+        );
+
+  @override
+  Future<LoopDeviceAuthResult> authenticate({required String reason}) async {
+    prompts += 1;
+    return LoopDeviceAuthResult(outcome ?? LoopDeviceAuthOutcome.succeeded);
   }
 }

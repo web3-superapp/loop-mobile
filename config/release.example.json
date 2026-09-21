@@ -6,5 +6,6 @@
   "REOWN_PROJECT_ID": "",
   "STREAM_API_KEY": "",
   "LOOP_BACKEND_BASE_URL": "",
+  "LOOP_PASSKEY_RP_DOMAIN": "",
   "FIREBASE_CONFIGURED": "false"
 }

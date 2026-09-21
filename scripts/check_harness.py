@@ -3570,6 +3570,16 @@ ACCOUNT_MFA_TEST_MARKERS = {
         "the account is enrolled only by what the provider returned",
         "a refused removal leaves the method exactly where it was",
         "no provider behind the page is 不可用, never 未开启",
+        # S64: a passkey belongs to a domain this build either has or has
+        # not been given, and to an account the provider answers for. Both
+        # facts stay the provider's, and neither is ever assumed.
+        "a build with no domain credential asks the platform nothing",
+        "the account has a passkey only because the provider said so",
+        "a dismissed system prompt binds nothing and says so",
+        "unbinding needs the device first, and then the provider",
+        "an account with no passkey gets one before it is enrolled",
+        "switching the factor off keeps the way back in",
+        "a bound passkey says 已设置 and can be opened again",
     ),
 }
 
@@ -3591,6 +3601,12 @@ def check_account_mfa_contract(root: Path) -> list[str]:
                 "enum LoopMfaFailureKind",
                 "notEnabled",
                 "loopMfaGatewayProvider",
+                # S64: what the provider holds is two lists, not one. A
+                # passkey can be a way back in without being a second
+                # factor, and the product may not read one as the other.
+                "final class LoopPasskeyCredential",
+                "final class LoopSecondFactorFacts",
+                "passkeyDomainUnconfigured",
             ),
             "lib/features/security/mfa/mfa_controller.dart": (
                 "enum LoopMfaPhase",
@@ -3599,12 +3615,32 @@ def check_account_mfa_contract(root: Path) -> list[str]:
                 "Future<bool> submitTotp(String code)",
                 "Future<bool> removeTotp()",
                 "void cancelTotp()",
+                "Future<bool> linkPasskey()",
+                "Future<bool> unlinkPasskey(String credentialId)",
+                "Future<bool> enablePasskeyMfa()",
+                "Future<bool> disablePasskeyMfa()",
+                # The domain credential is checked here, so a build without
+                # one never asks the platform a question it can only answer
+                # with an error nobody can act on.
+                "bool _passkeyConfigured()",
+                # An unbind is a way back in being taken away.
+                "_confirmOwnerPresent(",
             ),
             "lib/features/security/mfa/mfa_sheet.dart": (
                 "String loopMfaFailureText(",
                 "mfa-sheet-secret",
                 "mfa-sheet-code",
                 "mfa-sheet-submit",
+                "const loopPasskeyDomainPending",
+                "mfa-sheet-passkey",
+                "mfa-sheet-passkey-unavailable",
+            ),
+            "lib/features/security/mfa/passkey_sheet.dart": (
+                "passkey-sheet-link",
+                "passkey-sheet-confirm",
+                "passkey-sheet-unlink",
+                "passkey-sheet-unavailable",
+                "controller.unlinkPasskey(confirming)",
             ),
             "lib/integrations/privy/privy_mfa_gateway.dart": (
                 ".mfa.totp.enroll.generateSecret()",
@@ -3613,6 +3649,15 @@ def check_account_mfa_contract(root: Path) -> list[str]:
                 "class PrivyMfaFailureClassifier",
                 "class LoopReleasingMfaListener",
                 "resumeBlockedActions(",
+                "mfaPrivy.passkey.link(",
+                "mfaPrivy.passkey.unlink(",
+                ".mfa.passkeys.enroll.submit(credentialIds)",
+                ".mfa.passkeys.unenroll(",
+                "static LoopMfaFailureKind ofPasskey(",
+            ),
+            "lib/app/app_config.dart": (
+                "'LOOP_PASSKEY_RP_DOMAIN'",
+                "String get passkeyRelyingPartyForCurrentBuild",
             ),
             "lib/main.dart": ("loopMfaGatewayProvider.overrideWith(",),
             "test/mfa_test.dart": tuple(
@@ -3637,24 +3682,91 @@ def check_account_mfa_contract(root: Path) -> list[str]:
                 "the MFA controller must not construct an enrolment of its own"
             )
         compact = re.sub(r"\s+", " ", controller)
-        if compact.count(
-            "phase: LoopMfaPhase.known, enrollments: List.unmodifiable("
-            "enrollments)"
-        ) < 3:
+        # S64 gave the controller two lists to publish instead of one, so it
+        # has exactly one place that may say "known", and that place copies
+        # the answer it was handed. Anything else would be LOOP deciding what
+        # the account holds.
+        if compact.count("phase: LoopMfaPhase.known") != 1:
             errors.append(
-                "the MFA controller must publish the provider's own list after "
-                "every read, enrolment and removal"
+                "the MFA controller must have exactly one place that publishes "
+                "a provider answer"
+            )
+        for marker in (
+            "enrollments: List.unmodifiable(facts.enrollments)",
+            "passkeys: List.unmodifiable(facts.passkeys)",
+        ):
+            if marker not in compact:
+                errors.append(
+                    "the MFA controller must publish the provider's own lists "
+                    "verbatim: missing " + marker
+                )
+        if len(re.findall(r"_publish\(\s*facts", controller)) < 5:
+            errors.append(
+                "the MFA controller must publish after every read, enrolment, "
+                "binding and removal"
             )
 
     # The SDK is spoken to in one file, like every other provider surface.
     for path in sorted((root / "lib").rglob("*.dart")):
         source = read_text(path)
-        if "user.mfa." not in source and ".mfa.totp" not in source:
+        if not any(
+            marker in source
+            for marker in (
+                "user.mfa.",
+                ".mfa.totp",
+                ".mfa.passkeys",
+                ".passkey.link(",
+                ".passkey.unlink(",
+            )
+        ):
             continue
         relative = path.relative_to(root).as_posix()
         if not relative.startswith("lib/integrations/privy/"):
             errors.append(
                 f"only the Privy integration may call the SDK's MFA API: {relative}"
+            )
+
+    # A passkey belongs to a domain, and the domain is a build fact. One file
+    # reads it and one gateway decides on it, so no page can talk itself into
+    # offering a credential the platform would refuse.
+    config_path = root / "lib/app/app_config.dart"
+    if config_path.is_file():
+        config = strip_dart_comments(read_text(config_path))
+        if (
+            re.search(
+                r"passkeyRelyingPartyForCurrentBuild\s*=>\s*canInitializePrivy",
+                config,
+            )
+            is None
+        ):
+            errors.append(
+                "the passkey relying party must be gated on the provider this "
+                "build can actually initialise"
+            )
+    entitlements_path = root / "ios/Runner/Runner.entitlements"
+    if entitlements_path.is_file():
+        entitlements = read_text(entitlements_path)
+        domain_match = re.search(
+            r"String\.fromEnvironment\(\s*'LOOP_PASSKEY_RP_DOMAIN'",
+            read_text(config_path) if config_path.is_file() else "",
+        )
+        profile_path = root / "config/debug.json"
+        domain = ""
+        if profile_path.is_file():
+            try:
+                profile = json.loads(read_text(profile_path))
+            except (OSError, UnicodeError, json.JSONDecodeError):
+                profile = {}
+            if isinstance(profile, dict):
+                domain = str(profile.get("LOOP_PASSKEY_RP_DOMAIN") or "")
+        if domain_match is None:
+            errors.append(
+                "AppConfig must be the one reader of the passkey relying party"
+            )
+        elif domain and f"webcredentials:{domain}" not in entitlements:
+            errors.append(
+                "iOS must claim the same passkey domain the build profile "
+                f"configures: webcredentials:{domain}"
             )
 
     errors.extend(check_behavior_test_evidence(root, ACCOUNT_MFA_TEST_MARKERS))
@@ -4631,6 +4743,7 @@ def check_build_profile_configuration_contract(root: Path) -> list[str]:
             "REOWN_PROJECT_ID": "26a5cc1adad234fcdf7762b8d2a2b28d",
             "STREAM_API_KEY": "qpwjdy8zjbdu",
             "LOOP_BACKEND_BASE_URL": "https://api-dev.quant-dinger.cc",
+            "LOOP_PASSKEY_RP_DOMAIN": "api-dev.quant-dinger.cc",
             "FIREBASE_CONFIGURED": "false",
         },
         Path("config/release.example.json"): {
@@ -4641,6 +4754,7 @@ def check_build_profile_configuration_contract(root: Path) -> list[str]:
             "REOWN_PROJECT_ID": "",
             "STREAM_API_KEY": "",
             "LOOP_BACKEND_BASE_URL": "",
+            "LOOP_PASSKEY_RP_DOMAIN": "",
             "FIREBASE_CONFIGURED": "false",
         },
     }

@@ -6,5 +6,6 @@
   "REOWN_PROJECT_ID": "26a5cc1adad234fcdf7762b8d2a2b28d",
   "STREAM_API_KEY": "qpwjdy8zjbdu",
   "LOOP_BACKEND_BASE_URL": "https://api-dev.quant-dinger.cc",
+  "LOOP_PASSKEY_RP_DOMAIN": "api-dev.quant-dinger.cc",
   "FIREBASE_CONFIGURED": "false"
 }

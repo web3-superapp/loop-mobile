@@ -76,6 +76,7 @@ class AccountSurfaceScreen extends StatelessWidget {
     this.onToggleAppLock,
     this.mfa,
     this.onOpenMfa,
+    this.onOpenPasskey,
   });
 
   static const supportedIds = <String>{
@@ -114,6 +115,10 @@ class AccountSurfaceScreen extends StatelessWidget {
   final LoopMfaState? mfa;
   final VoidCallback? onOpenMfa;
 
+  /// Opens the passkey binding sheet, for `wallet-recovery`. Absent in a
+  /// tree with no provider behind it.
+  final VoidCallback? onOpenPasskey;
+
   String get _id => surfaceId.replaceFirst('#', '').toLowerCase();
 
   void _navigate(BuildContext context, String destination) {
@@ -145,6 +150,8 @@ class AccountSurfaceScreen extends StatelessWidget {
       ),
       'wallet-recovery' => WalletRecoveryScreen(
         capabilities: capabilities,
+        mfa: mfa,
+        onOpenPasskey: onOpenPasskey,
         onBack: onBack,
         onDecision: onRecoveryDecision,
         onContinue: () => _navigate(context, 'security-setup'),
@@ -889,12 +896,10 @@ const walletRecoveryProviderPending = '当前版本的登录服务还没有开�
 
 /// Why Passkey is not offered, which is a different thing from the rest.
 ///
-/// The login service does support passkeys. What is missing is on LOOP's
-/// side: a passkey belongs to a domain, and the App has no domain credential
-///配置 yet — no Associated Domains entitlement, no `assetlinks.json`. Calling
-/// the SDK without one fails on the device every time, so the row says what
-/// is actually missing instead of offering a button that cannot work.
-const walletRecoveryPasskeyPending = '还要先给 LOOP 配好 Passkey 用的域名凭据，当前版本还没有';
+/// It is the same sentence the second-factor sheets print, read off the one
+/// constant so the two pages can never drift apart: a passkey belongs to a
+/// domain, and a build with no domain credential cannot make one.
+const walletRecoveryPasskeyPending = loopPasskeyDomainPending;
 
 class WalletRecoveryScreen extends StatefulWidget {
   const WalletRecoveryScreen({
@@ -906,11 +911,20 @@ class WalletRecoveryScreen extends StatefulWidget {
     this.loading = false,
     this.failureReason,
     this.onRetry,
+    this.mfa,
+    this.onOpenPasskey,
   });
 
   final PrivyWalletCapabilities capabilities;
   final VoidCallback onContinue;
   final VoidCallback? onBack;
+
+  /// What the login service says this account already holds, or `null` in a
+  /// tree with no provider. `null` is not "no passkey": it is "not asked".
+  final LoopMfaState? mfa;
+
+  /// Opens the provider's own binding sheet. This page binds nothing.
+  final VoidCallback? onOpenPasskey;
 
   /// Reports the method the owner chose, or `null` when the step is skipped.
   /// Nothing is enrolled, so the report is a choice and never a credential.
@@ -927,11 +941,25 @@ class WalletRecoveryScreen extends StatefulWidget {
   State<WalletRecoveryScreen> createState() => _WalletRecoveryScreenState();
 }
 
-/// What one row on step 03 is: already in force, offered, or neither.
-enum _RecoveryRowState { enabled, selectable, unavailable }
+/// What one row on step 03 is: already in force, already set up by the
+/// owner, offered, or none of those.
+///
+/// [enabled] and [bound] are different facts and are named differently.
+/// 自动恢复 is in force because of how Privy's embedded wallets work; a
+/// passkey is set up because the owner created one and the provider says it
+/// holds it.
+enum _RecoveryRowState { enabled, bound, selectable, unavailable }
 
 class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
   WalletRecoveryMethod? _chosen;
+
+  /// Whether the provider said this account already has a passkey.
+  ///
+  /// Only an answered read counts. An unread or unavailable provider leaves
+  /// the row offering the binding, never claiming one.
+  bool get _passkeyBound =>
+      widget.mfa?.phase == LoopMfaPhase.known &&
+      (widget.mfa?.hasPasskey ?? false);
 
   _RecoveryRowState _stateOf(WalletRecoveryMethod method) => switch (method) {
     // 自动恢复 is the Privy embedded wallet's own default. It is not a switch
@@ -939,9 +967,11 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
     // the sentence that makes it true.
     WalletRecoveryMethod.cloud => _RecoveryRowState.enabled,
     WalletRecoveryMethod.passkey =>
-      widget.capabilities.canUsePasskey
-          ? _RecoveryRowState.selectable
-          : _RecoveryRowState.unavailable,
+      !widget.capabilities.canUsePasskey
+          ? _RecoveryRowState.unavailable
+          : _passkeyBound
+          ? _RecoveryRowState.bound
+          : _RecoveryRowState.selectable,
     WalletRecoveryMethod.password =>
       widget.capabilities.canUseRecoveryPassword
           ? _RecoveryRowState.selectable
@@ -954,9 +984,28 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
     WalletRecoveryMethod.password => walletRecoveryProviderPending,
   };
 
-  bool get _anySelectable => WalletRecoveryMethod.values.any(
-    (method) => _stateOf(method) == _RecoveryRowState.selectable,
-  );
+  /// What a bound passkey row says about itself, in the provider's terms.
+  String get _passkeyBoundDetail {
+    final passkeys = widget.mfa?.passkeys ?? const <LoopPasskeyCredential>[];
+    final named = passkeys
+        .map((one) => one.label)
+        .whereType<String>()
+        .where((label) => label.trim().isNotEmpty)
+        .toList(growable: false);
+    return named.isEmpty
+        ? '登录服务说这个账号已经有 Passkey'
+        : '登录服务说这个账号已经有 Passkey：${named.join(' · ')}';
+  }
+
+  /// Any method on this page the owner could still act on.
+  ///
+  /// A passkey the account already has counts: the page must not tell an
+  /// owner who just bound one that nothing more can be added.
+  bool get _anySelectable => WalletRecoveryMethod.values.any((method) {
+    final state = _stateOf(method);
+    return state == _RecoveryRowState.selectable ||
+        state == _RecoveryRowState.bound;
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1089,29 +1138,44 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
   LoopRecordRow _methodRow(WalletRecoveryMethod method) {
     final state = _stateOf(method);
     final enabled = state == _RecoveryRowState.enabled;
+    final bound = state == _RecoveryRowState.bound;
     final selectable = state == _RecoveryRowState.selectable;
     final chosen = _chosen == method;
     final index = WalletRecoveryMethod.values.indexOf(method);
     final reason = _reason(method);
+    // The passkey row is the one row whose tap reaches the provider: it
+    // opens the sheet that creates or removes the credential. Choosing it
+    // still only records a choice — the binding is the sheet's, and the row
+    // says 已设置 only after the provider answered that it holds one.
+    final detail = bound ? _passkeyBoundDetail : method.detail;
     return LoopRecordRow(
       key: ValueKey<String>('recovery-${method.name}'),
-      leading: IdentityOptionIcon(method.icon, chosen: chosen || enabled),
+      leading: IdentityOptionIcon(
+        method.icon,
+        chosen: chosen || enabled || bound,
+      ),
       title: method.title,
       // An enabled row carries its evidence; an unavailable row carries the
       // reason. Neither is ever a bare state word.
-      subtitle: selectable ? method.detail : '${method.detail} · $reason',
+      subtitle: selectable || bound ? detail : '$detail · $reason',
       // `.row-choice .row-s{white-space:normal}`: the sentence that decides
       // whether an owner can get back in may not end in an ellipsis.
       subtitleMaxLines: 3,
       selected: chosen,
       trailing: enabled
           ? '已启用'
+          : bound
+          ? '已设置'
           : chosen
           ? '已选'
           : selectable
           ? '可用'
           : '不可用',
-      onTap: selectable ? () => setState(() => _chosen = method) : null,
+      onTap: selectable
+          ? () => _choose(method)
+          : bound
+          ? widget.onOpenPasskey
+          : null,
       position: index == 0
           ? LoopRowPosition.first
           : index == WalletRecoveryMethod.values.length - 1
@@ -1119,10 +1183,24 @@ class _WalletRecoveryScreenState extends State<WalletRecoveryScreen> {
           : LoopRowPosition.middle,
       semanticLabel: enabled
           ? '${method.title}，已启用：$reason'
+          : bound
+          ? '${method.title}，已设置：$detail，点按可以解绑'
           : selectable
           ? '${method.title}，${chosen ? '已选' : '可选'}'
           : '${method.title}，不可用：$reason',
     );
+  }
+
+  /// Records the choice, and for Passkey opens the sheet that can act on it.
+  ///
+  /// Choosing is not enrolling: the decision is reported on 确认 as it always
+  /// was. What the sheet adds is a way to actually create the credential
+  /// while the owner is on the step that asked for it.
+  void _choose(WalletRecoveryMethod method) {
+    setState(() => _chosen = method);
+    if (method == WalletRecoveryMethod.passkey) {
+      widget.onOpenPasskey?.call();
+    }
   }
 
   LoopRecordRow _capabilityRow({

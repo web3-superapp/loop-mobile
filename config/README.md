@@ -24,6 +24,17 @@ build-profile-mismatched value disables V2 account/session composition rather
 than guessing a version. It is not a force-update decision and is never used
 for string-based update eligibility.
 
+`LOOP_PASSKEY_RP_DOMAIN` is the bare domain a passkey created by this build
+belongs to — `api-dev.quant-dinger.cc` in Development. A passkey is not the
+App's; it is the domain's. The value is only usable when three things agree:
+the domain serves `/.well-known/assetlinks.json` naming `com.cywd.loop` with
+this build's signing certificate fingerprint, the iOS
+`com.apple.developer.associated-domains` entitlement claims
+`webcredentials:<domain>`, and the same domain plus the Android
+`android:apk-key-hash:` origin are registered at Privy as a relying party.
+An empty or malformed value offers no passkey at all rather than calling the
+platform with a domain it will refuse.
+
 This is a distribution/configuration axis only. A Release binary does not
 enable a Production backend, Hyperliquid Mainnet, withdrawals, automated
 trading, or Spot execution; those product security gates remain disabled by

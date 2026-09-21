@@ -20,6 +20,7 @@ import 'package:loop_mobile/features/security/app_lock/app_lock_controller.dart'
 import 'package:loop_mobile/features/security/app_lock/app_lock_gate.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_controller.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
+import 'package:loop_mobile/features/security/mfa/passkey_sheet.dart';
 import 'package:loop_mobile/core/network/loop_connectivity_signal.dart';
 import 'package:loop_mobile/core/navigation/launch_route.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
@@ -1411,11 +1412,16 @@ Widget _accountScreen(BuildContext context, WidgetRef ref, String id) {
     id,
     capabilities: PrivyWalletCapabilities(
       canConnectExternalWallet: config.canConnectExternalWallet,
+      // A passkey is offered only where this build has the domain credential
+      // one belongs to. Without it the platform refuses every call, so the
+      // row says what is missing instead of opening a sheet that cannot work.
+      canUsePasskey: config.canUsePasskey,
     ),
     appLock: ref.watch(loopAppLockProvider),
     onToggleAppLock: () => unawaited(_toggleAppLock(ref)),
     mfa: _watchMfa(ref, id),
     onOpenMfa: () => unawaited(showLoopMfaSheet(context)),
+    onOpenPasskey: () => unawaited(showLoopPasskeySheet(context)),
     // F1: the launch page is also the page a verified session waits on while
     // `GET /v2/profile` decides where it belongs. It says so instead of
     // offering a way in that leads nowhere.
@@ -1442,7 +1448,9 @@ Widget _accountScreen(BuildContext context, WidgetRef ref, String id) {
 /// it costs a provider round trip, and nothing else in the product depends on
 /// the answer. A page that is not 04 never asks.
 LoopMfaState? _watchMfa(WidgetRef ref, String id) {
-  if (id != 'security-setup') return null;
+  // 03 asks the same question for a different reason: whether this account
+  // already has a passkey it can get back in with.
+  if (id != 'security-setup' && id != 'wallet-recovery') return null;
   final state = ref.watch(loopMfaProvider);
   if (state.phase == LoopMfaPhase.unknown) {
     Future<void>.microtask(() => ref.read(loopMfaProvider.notifier).load());
@@ -1512,7 +1520,10 @@ Widget _onboardingStepScreen(
       'wallet-recovery',
       capabilities: PrivyWalletCapabilities(
         canConnectExternalWallet: config.canConnectExternalWallet,
+        canUsePasskey: config.canUsePasskey,
       ),
+      mfa: _watchMfa(ref, 'wallet-recovery'),
+      onOpenPasskey: () => unawaited(showLoopPasskeySheet(context)),
       onBack: () => retreat(LoopOnboardingStep.walletCreate),
       onRecoveryDecision: (method) =>
           controller.recordRecoveryDecision(method?.name),

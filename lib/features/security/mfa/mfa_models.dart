@@ -37,6 +37,17 @@ final class LoopMfaEnrollment {
 
 /// Why a second-factor call did not do what was asked.
 enum LoopMfaFailureKind {
+  /// This build has no domain credential for a passkey, so nothing was asked
+  /// of the platform. A passkey belongs to a domain, not to an App, and a
+  /// call made without one fails on the device every time.
+  passkeyDomainUnconfigured,
+
+  /// The owner dismissed the system's own passkey prompt.
+  cancelled,
+
+  /// This device has no passkey provider the platform would let LOOP use.
+  deviceUnsupported,
+
   /// The login service has not opened MFA for this application. Nothing the
   /// owner does on this device can change it.
   notEnabled,
@@ -55,6 +66,76 @@ enum LoopMfaFailureKind {
 
   /// Something else. The provider's own sentence travels with it.
   unknown,
+}
+
+/// One passkey the login service says this account holds.
+///
+/// It is the provider's record, not a device's: the same account read on
+/// another phone reports the same credentials. LOOP stores none of it.
+@immutable
+final class LoopPasskeyCredential {
+  const LoopPasskeyCredential({
+    required this.credentialId,
+    this.label,
+    this.enrolledInMfa = false,
+    this.verifiedAt,
+  });
+
+  /// What the provider calls this credential. It is the handle an unlink is
+  /// addressed to and is never shown as a name.
+  final String credentialId;
+
+  /// The device or authenticator the provider named, when it named one.
+  final String? label;
+
+  /// The provider also accepts this credential as a second factor.
+  final bool enrolledInMfa;
+
+  final DateTime? verifiedAt;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LoopPasskeyCredential &&
+          other.credentialId == credentialId &&
+          other.label == label &&
+          other.enrolledInMfa == enrolledInMfa &&
+          other.verifiedAt == verifiedAt;
+
+  @override
+  int get hashCode =>
+      Object.hash(credentialId, label, enrolledInMfa, verifiedAt);
+}
+
+/// Everything the provider answered about this account's second factor in
+/// one reply.
+///
+/// The two lists are different facts and are kept apart: a passkey can be a
+/// way back in without being a second factor, and a second factor can exist
+/// with no passkey behind it at all.
+@immutable
+final class LoopSecondFactorFacts {
+  const LoopSecondFactorFacts({
+    this.enrollments = const <LoopMfaEnrollment>[],
+    this.passkeys = const <LoopPasskeyCredential>[],
+  });
+
+  /// The methods the provider will accept as a second factor.
+  final List<LoopMfaEnrollment> enrollments;
+
+  /// The passkeys the provider holds as ways into this account.
+  final List<LoopPasskeyCredential> passkeys;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LoopSecondFactorFacts &&
+          listEquals(other.enrollments, enrollments) &&
+          listEquals(other.passkeys, passkeys);
+
+  @override
+  int get hashCode =>
+      Object.hash(Object.hashAll(enrollments), Object.hashAll(passkeys));
 }
 
 final class LoopMfaException implements Exception {
@@ -101,8 +182,16 @@ final class LoopTotpSecret {
 /// answered or throws [LoopMfaException]; none of them may report an
 /// enrolment the provider did not confirm.
 abstract interface class LoopMfaGateway {
+  /// The domain a passkey made through this gateway would belong to, or
+  /// `null` when this build has no domain credential.
+  ///
+  /// It is read rather than passed in so the decision lives in one place:
+  /// the page asks whether a passkey can be offered at all, and the adapter
+  /// is the only thing that knows the answer.
+  String? get passkeyRelyingParty;
+
   /// What the provider currently holds for this account.
-  Future<List<LoopMfaEnrollment>> readEnrollments();
+  Future<LoopSecondFactorFacts> readSecondFactor();
 
   /// Asks the provider for a new TOTP secret. Nothing is enrolled yet: the
   /// account is enrolled by [completeTotpEnrollment], and only if the codes
@@ -110,10 +199,26 @@ abstract interface class LoopMfaGateway {
   Future<LoopTotpSecret> beginTotpEnrollment();
 
   /// Finishes TOTP enrolment with a code from the authenticator app.
-  Future<List<LoopMfaEnrollment>> completeTotpEnrollment(String code);
+  Future<LoopSecondFactorFacts> completeTotpEnrollment(String code);
 
   /// Removes TOTP from the account.
-  Future<List<LoopMfaEnrollment>> removeTotp();
+  Future<LoopSecondFactorFacts> removeTotp();
+
+  /// Creates a passkey on this device and links it to the account as a way
+  /// back in. The system's own prompt runs inside this call.
+  Future<LoopSecondFactorFacts> linkPasskey();
+
+  /// Removes one passkey from the account, by the handle the provider gave
+  /// it. Nothing is removed from the device's keychain by this: the platform
+  /// owns that copy, and the provider stops accepting it.
+  Future<LoopSecondFactorFacts> unlinkPasskey(String credentialId);
+
+  /// Asks the provider to also accept the named passkeys as a second factor.
+  Future<LoopSecondFactorFacts> enrollPasskeyMfa(List<String> credentialIds);
+
+  /// Stops the provider accepting passkeys as a second factor. The passkeys
+  /// stay linked as ways back in.
+  Future<LoopSecondFactorFacts> removePasskeyMfa();
 }
 
 /// The gateway a run gets when no Privy session is composed.
@@ -124,7 +229,10 @@ final class UnavailableLoopMfaGateway implements LoopMfaGateway {
   const UnavailableLoopMfaGateway();
 
   @override
-  Future<List<LoopMfaEnrollment>> readEnrollments() =>
+  String? get passkeyRelyingParty => null;
+
+  @override
+  Future<LoopSecondFactorFacts> readSecondFactor() =>
       throw const LoopMfaException(LoopMfaFailureKind.unavailable);
 
   @override
@@ -132,11 +240,27 @@ final class UnavailableLoopMfaGateway implements LoopMfaGateway {
       throw const LoopMfaException(LoopMfaFailureKind.unavailable);
 
   @override
-  Future<List<LoopMfaEnrollment>> completeTotpEnrollment(String code) =>
+  Future<LoopSecondFactorFacts> completeTotpEnrollment(String code) =>
       throw const LoopMfaException(LoopMfaFailureKind.unavailable);
 
   @override
-  Future<List<LoopMfaEnrollment>> removeTotp() =>
+  Future<LoopSecondFactorFacts> removeTotp() =>
+      throw const LoopMfaException(LoopMfaFailureKind.unavailable);
+
+  @override
+  Future<LoopSecondFactorFacts> linkPasskey() =>
+      throw const LoopMfaException(LoopMfaFailureKind.unavailable);
+
+  @override
+  Future<LoopSecondFactorFacts> unlinkPasskey(String credentialId) =>
+      throw const LoopMfaException(LoopMfaFailureKind.unavailable);
+
+  @override
+  Future<LoopSecondFactorFacts> enrollPasskeyMfa(List<String> credentialIds) =>
+      throw const LoopMfaException(LoopMfaFailureKind.unavailable);
+
+  @override
+  Future<LoopSecondFactorFacts> removePasskeyMfa() =>
       throw const LoopMfaException(LoopMfaFailureKind.unavailable);
 }
 

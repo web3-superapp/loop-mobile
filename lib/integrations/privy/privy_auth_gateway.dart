@@ -361,6 +361,12 @@ class PrivySdkAuthGateway
   @override
   PrivyUser? get mfaUser => _currentUser;
 
+  /// Passkey linking is a login-method operation and lives on the SDK
+  /// instance rather than on the user, so the MFA mixin is given the same
+  /// instance the session was opened with.
+  @override
+  Privy get mfaPrivy => _privy;
+
   factory PrivySdkAuthGateway.create(AppConfig config) {
     if (!config.canInitializePrivy) {
       throw StateError('Privy requires both App ID and Mobile App Client ID.');

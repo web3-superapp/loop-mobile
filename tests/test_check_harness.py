@@ -7726,7 +7726,7 @@ class HarnessTests(unittest.TestCase):
             source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
             path.write_text(
                 source.replace(
-                    "enrollments: List.unmodifiable(enrollments),",
+                    "enrollments: List.unmodifiable(facts.enrollments),",
                     "enrollments: const <LoopMfaEnrollment>["
                     "LoopMfaEnrollment(kind: LoopMfaMethodKind.totp)],",
                     1,
@@ -7737,8 +7737,33 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_account_mfa_contract(root)
 
         self.assertTrue(
-            any("provider's own list" in error for error in result),
+            any("provider's own lists" in error for error in result),
             msg=f"expected the MFA enrolment-source guard: {result}",
+        )
+
+    def test_mfa_controller_must_publish_every_provider_answer(self) -> None:
+        """S64: one publication path, used by every call that changes state.
+
+        A binding that quietly kept the last answer would be LOOP reporting a
+        passkey, or the absence of one, that the provider never confirmed.
+        """
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            relative = Path("lib/features/security/mfa/mfa_controller.dart")
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            source = (REPOSITORY_ROOT / relative).read_text(encoding="utf-8")
+            path.write_text(
+                source.replace("_publish(facts", "_keep(facts"),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_account_mfa_contract(root)
+
+        self.assertTrue(
+            any("after every read, enrolment" in error for error in result),
+            msg=f"expected the MFA publication guard: {result}",
         )
 
     def test_only_the_privy_integration_may_call_the_mfa_sdk(self) -> None:

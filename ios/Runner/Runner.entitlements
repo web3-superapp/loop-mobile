@@ -6,6 +6,10 @@
 	<array>
 		<string>Default</string>
 	</array>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>webcredentials:api-dev.quant-dinger.cc</string>
+	</array>
 	<key>keychain-access-groups</key>
 	<array/>
 </dict>
