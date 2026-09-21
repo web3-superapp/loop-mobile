@@ -354,6 +354,8 @@ class LoopFolioPrimary extends StatelessWidget {
     this.trailing,
     this.headingTone = LoopFolioHeadingTone.accent,
     this.ring = true,
+    this.margin,
+    this.squareBottom = false,
   });
 
   final String heading;
@@ -388,6 +390,18 @@ class LoopFolioPrimary extends StatelessWidget {
   /// The default keeps every existing caller's pixels; a page checked against
   /// the prototype turns it off.
   final bool ring;
+
+  /// The room the card keeps around itself.
+  ///
+  /// Null is the page margin every standalone folio uses. A folio welded into
+  /// a composite (`.ledger-composite>.folio-primary{margin:0!important}`)
+  /// passes [EdgeInsets.zero], so the strip beneath it shares one edge with
+  /// the card rather than floating 14px below it.
+  final EdgeInsets? margin;
+
+  /// `.ledger-composite>.folio-primary{border-radius:24px 24px 0 0}`: the
+  /// bottom corners are square because another surface continues there.
+  final bool squareBottom;
 
   /// `.folio-caption{max-width:80%}`.
   static const double captionMaxWidthFactor = 0.8;
@@ -450,16 +464,21 @@ class LoopFolioPrimary extends StatelessWidget {
             LoopFolioHeadingTone.neutral => LoopColors.chalk,
           }
         : LoopColors.ink;
+    final radius = squareBottom
+        ? const BorderRadius.vertical(
+            top: Radius.circular(LoopRadius.shellValue),
+          )
+        : LoopRadius.shell;
     final decoration = switch (variant) {
-      LoopFolioVariant.lime => const BoxDecoration(
+      LoopFolioVariant.lime => BoxDecoration(
         color: LoopColors.lime,
-        borderRadius: LoopRadius.shell,
-        boxShadow: LoopDepth.liftPrimaryLight,
+        borderRadius: radius,
+        boxShadow: squareBottom ? null : LoopDepth.liftPrimaryLight,
       ),
-      LoopFolioVariant.chalk => const BoxDecoration(
+      LoopFolioVariant.chalk => BoxDecoration(
         color: LoopColors.chalk,
-        borderRadius: LoopRadius.shell,
-        boxShadow: LoopDepth.liftPrimaryLight,
+        borderRadius: radius,
+        boxShadow: squareBottom ? null : LoopDepth.liftPrimaryLight,
       ),
       // The tint and the glow ride in the same gradient, because a
       // [BoxDecoration] paints its gradient *instead of* the colour declared
@@ -473,9 +492,9 @@ class LoopFolioPrimary extends StatelessWidget {
           colors: <Color>[Color(0x3BB8FF20), Color(0x13B8FF20)],
           stops: <double>[0, 0.62],
         ),
-        borderRadius: LoopRadius.shell,
+        borderRadius: radius,
         border: Border.all(color: LoopColors.lime.withValues(alpha: 0.34)),
-        boxShadow: LoopDepth.liftPrimary,
+        boxShadow: squareBottom ? null : LoopDepth.liftPrimary,
       ),
     };
     final ringColor = variant == LoopFolioVariant.quiet
@@ -488,12 +507,14 @@ class LoopFolioPrimary extends StatelessWidget {
       container: true,
       child: Container(
         key: const ValueKey<String>('loop-folio-primary'),
-        margin: const EdgeInsets.fromLTRB(
-          LoopSpacing.page,
-          0,
-          LoopSpacing.page,
-          LoopSpacing.group,
-        ),
+        margin:
+            margin ??
+            const EdgeInsets.fromLTRB(
+              LoopSpacing.page,
+              0,
+              LoopSpacing.page,
+              LoopSpacing.group,
+            ),
         constraints: BoxConstraints(
           minHeight: compact ? 142 : archetype.minHeight,
         ),

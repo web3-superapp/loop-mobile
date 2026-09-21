@@ -96,7 +96,6 @@ class _MiningScreenState extends ConsumerState<MiningScreen> {
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '我的挖矿',
-      kicker: 'MINING POWER',
       tabPage: true,
       actions: <Widget>[
         LoopIconButton(

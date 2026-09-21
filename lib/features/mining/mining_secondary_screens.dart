@@ -74,7 +74,6 @@ class _MiningAssetsScreenState extends ConsumerState<MiningAssetsScreen> {
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '算力明细',
-      kicker: 'POWER FORMULA',
       onBack: widget.onBack,
       actions: <Widget>[
         LoopIconButton(
@@ -260,6 +259,8 @@ LoopFolioPrimary _assetsHero(MiningAssets? assets, LaunchViewPhase phase) {
     kicker: 'POWER FORMULA',
     heading: miningPowerFormulaHeading,
     caption: caption,
+    margin: EdgeInsets.zero,
+    squareBottom: true,
   );
 }
 
@@ -411,7 +412,6 @@ class _MiningRewardsScreenState extends ConsumerState<MiningRewardsScreen> {
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '奖励与领取',
-      kicker: 'CLAIMABLE REWARD',
       onBack: widget.onBack,
       primary: MiningCompositePrimary(
         primary: _rewardsHero(rewards, state.phase),
@@ -586,6 +586,8 @@ LoopFolioPrimary _rewardsHero(MiningRewards? rewards, LaunchViewPhase phase) {
     // when the server says the claim can actually be executed.
     stamp: (rewards?.claimExecutable ?? false) ? 'CLAIMABLE' : null,
     ring: false,
+    margin: EdgeInsets.zero,
+    squareBottom: true,
   );
 }
 
@@ -622,7 +624,6 @@ class _MiningRankScreenState extends ConsumerState<MiningRankScreen> {
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: '算力排行榜',
-      kicker: 'NETWORK POSITION',
       onBack: widget.onBack,
       primary: MiningCompositePrimary(
         primary: _rankHero(rank),
@@ -765,6 +766,8 @@ LoopFolioPrimary _rankHero(MiningRank? rank) {
       _ => null,
     },
     ring: false,
+    margin: EdgeInsets.zero,
+    squareBottom: true,
   );
 }
 
@@ -1002,7 +1005,6 @@ class _MiningCommunityScreenState extends ConsumerState<MiningCommunityScreen> {
       updating: state.refreshing,
       archetype: LoopPageArchetype.record,
       title: community?.community.name ?? '社区挖矿面板',
-      kicker: 'COMMUNITY POWER',
       onBack: widget.onBack,
       actions: <Widget>[
         LoopIconButton(
@@ -1195,6 +1197,8 @@ LoopFolioPrimary _communityHero(
       _ => null,
     },
     ring: false,
+    margin: EdgeInsets.zero,
+    squareBottom: true,
   );
 }
 
@@ -1441,7 +1445,6 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
       // The prototype's topbar says 挖矿规则 and its hero says 权重与价格保护;
       // the App had the two the other way round (visual audit §I.7).
       title: '挖矿规则',
-      kicker: 'POWER RULES',
       onBack: widget.onBack,
       primary: MiningCompositePrimary(
         primary: LoopFolioPrimary(
@@ -1466,6 +1469,8 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
             (null, null) => null,
           },
           ring: false,
+          margin: EdgeInsets.zero,
+          squareBottom: true,
         ),
         detail: <Widget>[
           Text('DAILY OUTPUT', style: LoopMono.label),

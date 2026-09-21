@@ -573,6 +573,9 @@ class MiningCompositePrimary extends StatelessWidget {
     super.key,
   });
 
+  /// The `.folio-primary` welded to the top of the composite. It must carry
+  /// `margin: EdgeInsets.zero` and `squareBottom: true` so the strip below it
+  /// shares an edge with it rather than floating under it.
   final Widget primary;
 
   /// The rows inside `.ledger-composite-detail`.
@@ -590,14 +593,7 @@ class MiningCompositePrimary extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              // The folio already carries the page margin; inside the
-              // composite it is flush with the shell.
-              MediaQuery.removePadding(
-                context: context,
-                removeLeft: true,
-                removeRight: true,
-                child: primary,
-              ),
+              primary,
               Container(
                 padding: const EdgeInsets.fromLTRB(18, 16, 18, 17),
                 decoration: const BoxDecoration(
