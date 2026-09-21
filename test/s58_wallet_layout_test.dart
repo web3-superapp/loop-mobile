@@ -9,6 +9,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
+import 'support/s5_fixtures.dart';
 import 'support/s5_page_harness.dart';
 import 'support/s6_fixtures.dart';
 import 'support/s6_page_harness.dart';
@@ -47,6 +48,47 @@ void main() {
   LoopFolioVariant variantOf(WidgetTester tester, String key) => tester
       .widget<LoopFolioPrimary>(find.byKey(ValueKey<String>(key)))
       .variant;
+
+  group('group labels', () {
+    // `.label` in the frozen prototype is mono, uppercase and letter-spaced,
+    // and it carries whatever wording the prototype wrote there. On the wallet
+    // pages that wording is English — `Wallet Assets`, `Security &
+    // Connections`, `Wallet 收发记录` — and translating it dropped the mono
+    // eyebrow's register (audit A.1). Where the prototype wrote Chinese —
+    // 「链上分布」, 「已启用」, 「设置」 — the Chinese stays.
+    testWidgets('the wallet home keeps the prototype wording', (tester) async {
+      await pumpS5Page(
+        tester,
+        const WalletScreen(),
+        wallet: FakeWalletReadGateway(),
+      );
+
+      await scrollToS5Section(tester, find.text('WALLET ASSETS'));
+      expect(find.text('WALLET ASSETS'), findsOneWidget);
+      expect(find.text('资产'), findsNothing);
+
+      await scrollToS5Section(tester, find.text('SECURITY & CONNECTIONS'));
+      expect(find.text('SECURITY & CONNECTIONS'), findsOneWidget);
+      expect(find.text('安全与连接'), findsNothing);
+    });
+
+    testWidgets('the asset page keeps both wordings, each as written', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const WalletAssetScreen(assetId: s5NativeAssetId),
+        wallet: FakeWalletReadGateway(),
+        chain: FakeChainGateway(),
+      );
+
+      await scrollToS5Section(tester, find.text('链上分布'));
+      expect(find.text('链上分布'), findsOneWidget);
+
+      await scrollToS5Section(tester, find.text('WALLET 收发记录'));
+      expect(find.text('WALLET 收发记录'), findsOneWidget);
+    });
+  });
 
   group('networth', () {
     testWidgets('a Chalk primary, the badges, the rows, the chart', (

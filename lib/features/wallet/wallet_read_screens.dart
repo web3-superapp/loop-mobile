@@ -314,7 +314,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             ],
           ),
           WalletHoldingsPowerHint(onOpenMining: () => _open('/mining')),
-          const LoopLabel('资产'),
+          const LoopLabel('Wallet Assets'),
           if (balances!.balances.isEmpty)
             const LoopEmpty(
               key: ValueKey<String>('wallet-balances-empty'),
@@ -353,7 +353,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             const LoopLabel('Launch 链'),
             WalletLaunchChainCard(launchChain: balances.launchChain!),
           ],
-          const LoopLabel('安全与连接'),
+          const LoopLabel('Security & Connections'),
           // The prototype's four rows, in its order. The counts it shows —
           // 「8 个有效授权」, 「4 条链已启用」 — are not read here, so each row
           // says what its page is for instead of stating a figure this page
@@ -897,7 +897,7 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
               ),
             ],
           ),
-          const LoopLabel('收发记录'),
+          const LoopLabel('Wallet 收发记录'),
           _WalletAssetTransfers(
             walletId: walletId,
             assetId: assetId,
