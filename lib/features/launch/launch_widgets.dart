@@ -798,6 +798,7 @@ String launchRoundTimeCode(LaunchRound round) {
 LoopRecordRow launchTrackRow({
   required LaunchRound round,
   required String? feeLabel,
+  String keyPrefix = 'launch-track',
   LoopRowPosition position = LoopRowPosition.single,
   VoidCallback? onTap,
 }) {
@@ -810,7 +811,7 @@ LoopRecordRow launchTrackRow({
       ? '开放时间 $launchPendingConfirmationLabel'
       : '开放于 ${launchTimestampLabel(start)}';
   return LoopRecordRow(
-    key: ValueKey<String>('launch-track-${round.roundIndex}'),
+    key: ValueKey<String>('$keyPrefix-${round.roundIndex}'),
     leading: LoopMonoTile(label: launchRoundTimeCode(round)),
     title: title,
     subtitle: subtitle,
@@ -838,4 +839,81 @@ String? launchFeeLabel(LaunchConfig? config) {
       ? percent.toStringAsFixed(0)
       : percent.toStringAsFixed(2);
   return '$text%';
+}
+
+/// `Contract Limits`' Chalk card: the two wallet caps this launch's approved
+/// configuration fixes, over the sentence that says where they apply.
+///
+/// Both read [launchMissingFigure] until a version confirms them; neither is
+/// ever a percentage the client wrote down (03 §10.1).
+class LaunchCapCard extends StatelessWidget {
+  const LaunchCapCard({required this.config, super.key});
+
+  final LaunchConfig? config;
+
+  static String _value(LaunchConfigSlot? slot) => switch (slot) {
+    LaunchConfigSlotConfirmed(:final value) => value,
+    _ => launchMissingFigure,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final slots = config?.slots;
+    return LoopChalkCard(
+      key: const ValueKey<String>('launch-rounds-caps'),
+      // The card's ink only exists below its own surface, so every colour
+      // here is derived from a context inside it.
+      child: Builder(
+        builder: (context) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            _row(context, '单钱包单轮上限', _value(slots?.walletRoundCap)),
+            const SizedBox(height: 10),
+            _row(context, '单钱包项目上限', _value(slots?.walletProjectCap)),
+            const LoopHairline(),
+            Text(
+              '上限只在内盘阶段生效，由合约执行；本页不写入任何固定比例或数量，'
+              '数值以这次发射被确认的配置为准。',
+              style: LoopTypography.caption(
+                11,
+                color: LoopGround.auxiliaryOf(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _row(BuildContext context, String label, String value) => Semantics(
+    container: true,
+    label:
+        '$label，${value == launchMissingFigure ? launchPendingConfirmationLabel : value}',
+    child: ExcludeSemantics(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Flexible(
+            child: Text(
+              label,
+              style: LoopTypography.caption(
+                11,
+                color: LoopGround.secondaryOf(context),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            value,
+            style: LoopTypography.figure(
+              15,
+              weight: FontWeight.w700,
+              color: LoopGround.inkOf(context),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

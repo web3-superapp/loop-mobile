@@ -398,10 +398,17 @@ class _TrackBlock extends StatelessWidget {
   }
 }
 
-class _RoundsBlock extends StatelessWidget {
-  const _RoundsBlock({required this.rounds});
+/// `Access Timeline`: the configured rounds in opening order.
+///
+/// The leading tile is the round's own opening time — the prototype's
+/// `00:00 / 01:00 / 05:00` column — not its ordinal, because the timeline's
+/// subject is when access opens. A round whose configuration has not fixed
+/// the time keeps the placeholder tile.
+class _AccessTimeline extends StatelessWidget {
+  const _AccessTimeline({required this.rounds, required this.config});
 
   final List<LaunchRound> rounds;
+  final LaunchConfig? config;
 
   @override
   Widget build(BuildContext context) {
@@ -413,12 +420,15 @@ class _RoundsBlock extends StatelessWidget {
         reason: '轮次数量由每次发射自己决定。',
       );
     }
+    final fee = launchFeeLabel(config);
     return LoopRecordGroup(
       key: const ValueKey<String>('launch-rounds-list'),
       rows: <LoopRecordRow>[
         for (var index = 0; index < rounds.length; index += 1)
-          launchRoundRow(
+          launchTrackRow(
             round: rounds[index],
+            feeLabel: fee,
+            keyPrefix: 'launch-round',
             position: launchRowPosition(index, rounds.length),
           ),
       ],
@@ -494,17 +504,36 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
       title: '销售轮次规则',
       kicker: 'ROUND CONFIGURATION',
       onBack: widget.onBack,
-      primary: LoopFolioPrimary(
-        variant: LoopFolioVariant.quiet,
-        archetype: LoopFolioArchetype.record,
-        kicker: 'ROUND CONFIGURATION',
-        // The number of rounds comes from the configuration, never from a
-        // fixed three-round story.
-        heading: detail == null
-            ? launchMissingHeading
-            : '${detail.rounds.length} 个轮次',
-        caption: '轮数、时间、价格、资格与上限都由这次发射的配置决定；还没确认的显示为待确认。',
-        stamp: detail == null ? null : launchPendingConfirmationLabel,
+      primary: LoopLedgerComposite(
+        primary: LoopFolioPrimary(
+          variant: LoopFolioVariant.quiet,
+          archetype: LoopFolioArchetype.record,
+          kicker: 'ROUND CONFIGURATION',
+          // The number of rounds comes from the configuration, never from a
+          // fixed three-round story.
+          heading: detail == null
+              ? launchMissingHeading
+              : '${detail.rounds.length} 个轮次',
+          caption: '轮数、时间、价格、资格与上限都由这次发射的配置决定；还没确认的显示为待确认。',
+          stamp: detail == null ? null : launchPendingConfirmationLabel,
+          margin: EdgeInsets.zero,
+          squareBottom: true,
+        ),
+        // `.ledger-composite-detail`: the sentence the prototype welds under
+        // this folio, with the two figures it quotes. Both are contract facts
+        // and both print the em dash.
+        detail: const <Widget>[
+          LoopCompositeDetailNote('准入逐步开放，合约规则不因用户改变'),
+          LoopHairline(),
+          LoopCompositeDetailRow(
+            label: '总量',
+            value: loopFigureDash,
+            valueSize: 18,
+            trailingLabel: '毕业线',
+            trailingValue: loopFigureDash,
+            spoken: launchPendingConfirmationLabel,
+          ),
+        ],
       ),
       block: blocked
           ? LoopCapabilityPageBlock.of(
@@ -535,15 +564,9 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
-          LaunchChainBlock(
-            testnet: launchSurfaceIsTestnet(
-              capability: capability,
-              launch: detail.launch,
-            ),
-          ),
-          const LoopLabel('轮次'),
-          _RoundsBlock(rounds: detail.rounds),
-          const LoopLabel('合约限制'),
+          const LoopLabel('Access Timeline'),
+          _AccessTimeline(rounds: detail.rounds, config: config),
+          const LoopLabel('Contract Limits'),
           if (config == null)
             const LoopEmpty(
               key: ValueKey<String>('launch-rounds-no-config'),
@@ -551,25 +574,49 @@ class _LaunchRoundsScreenState extends ConsumerState<LaunchRoundsScreen> {
               message: '还没有任何配置版本',
               reason: '上限与费率要等到配置版本被确认后才有数值。',
             )
-          else
-            LoopRecordGroup(
-              key: const ValueKey<String>('launch-rounds-slots'),
-              rows: <LoopRecordRow>[
-                for (
-                  var index = 0;
-                  index < config.slots.entries.length;
-                  index += 1
-                )
-                  launchConfigSlotRow(
-                    label: config.slots.entries[index].$1,
-                    slot: config.slots.entries[index].$2,
-                    position: launchRowPosition(
-                      index,
-                      config.slots.entries.length,
+          else ...<Widget>[
+            LaunchCapCard(config: config),
+            // The six remaining slots keep the same row and the same 待确认
+            // wording, behind the disclosure the prototype uses for the parts
+            // of a rule page that are not the rule itself.
+            LoopDisclosure(
+              key: const ValueKey<String>('launch-rounds-facts'),
+              summary: '其余合约参数',
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    LaunchChainBlock(
+                      testnet: launchSurfaceIsTestnet(
+                        capability: capability,
+                        launch: detail.launch,
+                      ),
                     ),
-                  ),
-              ],
+                    LoopRecordGroup(
+                      key: const ValueKey<String>('launch-rounds-slots'),
+                      rows: <LoopRecordRow>[
+                        for (
+                          var index = 0;
+                          index < config.slots.entries.length;
+                          index += 1
+                        )
+                          launchConfigSlotRow(
+                            label: config.slots.entries[index].$1,
+                            slot: config.slots.entries[index].$2,
+                            position: launchRowPosition(
+                              index,
+                              config.slots.entries.length,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
+          ],
           if (detail.configPending != null)
             LaunchUnavailableCard(
               label: '已确认的配置版本',

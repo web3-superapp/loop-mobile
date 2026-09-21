@@ -161,6 +161,11 @@ void main() {
             tester,
             const ValueKey<String>('launch-detail-facts'),
           );
+        } else if (page is LaunchRoundsScreen) {
+          await openS7Disclosure(
+            tester,
+            const ValueKey<String>('launch-rounds-facts'),
+          );
         }
         expect(
           find.byKey(const ValueKey<String>('launch-chain-row')),
