@@ -650,11 +650,19 @@ class _NewPairsScreenState extends ConsumerState<NewPairsScreen> {
                         ),
                         // `.row-ico`: every prototype row on this page is
                         // headed by the pool's own token mark (§D item 7).
+                        // A pool whose Provider name was nothing but
+                        // display-unsafe code points is left without one; the
+                        // row still belongs to the reader, so it says the name
+                        // is missing and falls back to the DEX for the mark.
                         leading: LoopTokenLogo(
-                          assetSymbol: pair.name,
-                          fallbackMonogram: pair.name,
+                          assetSymbol: pair.name.isEmpty
+                              ? pair.dexId
+                              : pair.name,
+                          fallbackMonogram: pair.name.isEmpty
+                              ? pair.dexId
+                              : pair.name,
                         ),
-                        title: pair.name,
+                        title: pair.name.isEmpty ? '未命名池' : pair.name,
                         subtitle: <String>[
                           // The provider's own DEX string, printed verbatim:
                           // it is not a closed set.

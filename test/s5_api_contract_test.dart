@@ -1580,6 +1580,182 @@ void main() {
       expect(block.items.single.registryAssetId, isNull);
     });
 
+    // The 2026-09-16 preflight captured this row verbatim from the
+    // Development stack: a four.meme pool whose token name opens with
+    // U+202E RIGHT-TO-LEFT OVERRIDE. The schema bounds `name` by length only,
+    // so the response is inside the contract and the page must still read.
+    test('a pool name carrying a bidirectional override is stripped', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio(
+          (options, handler) => handler.resolve(
+            s5Response(
+              options,
+              s5NewPairsBody(
+                available: true,
+                items: <Object?>[
+                  s5NewPair(
+                    poolRef: <String, Object?>{
+                      'kind': 'address',
+                      'address': '0xb0b8762da14314b13772f58d1f1c47947d98ffff',
+                    },
+                    dexId: 'four-meme',
+                    name: '\u202eKNARF / BNB',
+                    quoteTokenAddress: marketZeroAddress,
+                    registryAssetId: null,
+                  ),
+                  s5NewPair(),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final page = await api.getNewPairs(
+        accessToken: _accessToken,
+        clientVersion: s5ClientVersion,
+      );
+
+      final block = page.newPairs as MarketNewPairsAvailable;
+      // One hostile token name may not close the page on the other rows.
+      expect(block.items, hasLength(2));
+      expect(block.items.first.name, 'KNARF / BNB');
+      expect(block.items.last.name, 'X / WBNB');
+    });
+
+    test('a dex id the provider invented is printed as it came', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio(
+          (options, handler) => handler.resolve(
+            s5Response(
+              options,
+              s5NewPairsBody(
+                available: true,
+                items: <Object?>[
+                  s5NewPair(
+                    poolRef: <String, Object?>{
+                      'kind': 'poolId',
+                      'poolId': s5PoolId,
+                    },
+                    dexId: 'pancakeswap-infinity-clmm',
+                    name: 'MOMOLPBSC / WBNB 0.181%',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final page = await api.getNewPairs(
+        accessToken: _accessToken,
+        clientVersion: s5ClientVersion,
+      );
+
+      final block = page.newPairs as MarketNewPairsAvailable;
+      expect(block.items.single.dexId, 'pancakeswap-infinity-clmm');
+    });
+
+    test('a name written in emoji is within the contract length', () async {
+      // 128 code points, 256 UTF-16 units: the schema counts the former.
+      final name = '\u{1f600}' * 128;
+      final api = DioLoopV2MarketApi(
+        s5Dio(
+          (options, handler) => handler.resolve(
+            s5Response(
+              options,
+              s5NewPairsBody(
+                available: true,
+                items: <Object?>[s5NewPair(name: name)],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final page = await api.getNewPairs(
+        accessToken: _accessToken,
+        clientVersion: s5ClientVersion,
+      );
+
+      final block = page.newPairs as MarketNewPairsAvailable;
+      expect(block.items.single.name, name);
+    });
+
+    test('a name past the contract length is rejected', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio(
+          (options, handler) => handler.resolve(
+            s5Response(
+              options,
+              s5NewPairsBody(
+                available: true,
+                items: <Object?>[s5NewPair(name: 'a' * 129)],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await expectLater(
+        api.getNewPairs(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
+    test('a name of nothing but unsafe code points reads as empty', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio(
+          (options, handler) => handler.resolve(
+            s5Response(
+              options,
+              s5NewPairsBody(
+                available: true,
+                items: <Object?>[s5NewPair(name: '\u202e\u200b')],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final page = await api.getNewPairs(
+        accessToken: _accessToken,
+        clientVersion: s5ClientVersion,
+      );
+
+      final block = page.newPairs as MarketNewPairsAvailable;
+      // The row is kept: `omittedCount` is the server's figure and a client
+      // that dropped rows of its own would make it a lie.
+      expect(block.items.single.name, isEmpty);
+    });
+
+    test('an empty dex id is rejected', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio(
+          (options, handler) => handler.resolve(
+            s5Response(
+              options,
+              s5NewPairsBody(
+                available: true,
+                items: <Object?>[s5NewPair(dexId: '')],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await expectLater(
+        api.getNewPairs(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
     test('new pairs without the omittedCount key are rejected', () async {
       final api = DioLoopV2MarketApi(
         s5Dio((options, handler) {

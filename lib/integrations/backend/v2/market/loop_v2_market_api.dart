@@ -954,8 +954,18 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
       items.add(
         MarketNewPair(
           poolRef: poolRef,
-          dexId: LoopV2ChainCodec.requireText(pairMap, 'dexId', maxLength: 64),
-          name: LoopV2ChainCodec.requireText(pairMap, 'name'),
+          // Both strings are the Provider's own: the schema bounds them by
+          // length and says nothing about their characters, because they are
+          // assembled from names minted on the chain. They are read as
+          // Provider text so a token named with a bidirectional override is
+          // stripped to what it really says instead of closing the page.
+          dexId: LoopV2ChainCodec.providerText(
+            pairMap,
+            'dexId',
+            maxLength: 64,
+            minLength: 1,
+          ),
+          name: LoopV2ChainCodec.providerText(pairMap, 'name', maxLength: 128),
           baseTokenAddress: LoopV2ChainCodec.optionalString(
             pairMap,
             'baseTokenAddress',

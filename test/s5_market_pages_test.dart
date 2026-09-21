@@ -782,6 +782,57 @@ void main() {
       expect(find.textContaining('计价 BNB'), findsOneWidget);
     });
 
+    testWidgets('a pool the provider left nameless still reads', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const NewPairsScreen(),
+        market: FakeMarketReadGateway(
+          newPairs: S5Answer<MarketNewPairsPage>(
+            value: MarketNewPairsPage(
+              newPairs: MarketNewPairsAvailable(
+                source: LoopFactSource.geckoterminal,
+                fetchedAt: DateTime.utc(2026, 9, 8, 7, 31),
+                ttlSeconds: 60,
+                quality: LoopFactQuality.fresh,
+                reasonCode: null,
+                omittedCount: 0,
+                items: <MarketNewPair>[
+                  MarketNewPair(
+                    poolRef: const MarketPoolAddressRef(s5PoolAddress),
+                    dexId: 'four-meme',
+                    // What is left of a name that was only display-unsafe
+                    // code points. The row is still the reader's, so it says
+                    // the name is missing instead of showing a blank line.
+                    name: '',
+                    baseTokenAddress: s5Address,
+                    quoteTokenAddress: marketZeroAddress,
+                    registryAssetId: null,
+                    createdAt: DateTime.utc(2026, 9, 8, 5),
+                    reserveUsd: s5Decimal('3634.5'),
+                    volumeH24Usd: s5Decimal('0.0016'),
+                  ),
+                ],
+              ),
+              riskScreening: const LoopUnavailable(
+                'MARKET_PROVIDER_GOPLUS_NOT_CONFIGURED',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.byKey(ValueKey<String>('new-pair-address:$s5PoolAddress')),
+        findsOneWidget,
+      );
+      expect(find.text('未命名池'), findsOneWidget);
+      // Twice: the subtitle's DEX string, and the mark that fell back to it
+      // because there was no name to take a monogram from.
+      expect(find.textContaining('four-meme'), findsNWidgets(2));
+    });
+
     testWidgets('a Uniswap V4 pool is shown and never opened', (tester) async {
       final navigated = <String>[];
       final market = FakeMarketReadGateway(

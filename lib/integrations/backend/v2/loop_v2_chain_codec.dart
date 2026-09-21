@@ -255,6 +255,44 @@ abstract final class LoopV2ChainCodec {
     maxLength: maxLength,
   );
 
+  /// Text a market data Provider wrote and the backend passes through.
+  ///
+  /// The contract bounds a pool name and a dex id by length only: the name is
+  /// assembled from token names taken off the chain, and anyone may mint a
+  /// token whose name carries a bidirectional override or a zero-width joiner.
+  /// Refusing the payload would let one such token close the whole page, and
+  /// printing it verbatim would let it rewrite the line the reader sees, so
+  /// the code points that could reorder or hide the rest of the row are
+  /// removed and what remains of the name is kept.
+  ///
+  /// The length bound counts code points, the way the published schema does;
+  /// a name written in emoji is within the contract and must not be refused
+  /// for the UTF-16 units Dart happens to store it in.
+  static String providerText(
+    Map<String, Object?> source,
+    String key, {
+    required int maxLength,
+    int minLength = 0,
+  }) {
+    final value = source[key];
+    if (value is! String) invalid();
+    final length = value.runes.length;
+    if (length < minLength || length > maxLength) invalid();
+    return sanitizeProviderText(value);
+  }
+
+  /// Strips the control, format, surrogate and separator code points that a
+  /// line of display text must never carry, then trims the edges the removal
+  /// may have left behind. The result may be empty: a Provider is allowed to
+  /// publish a nameless pool, and the page says so rather than dropping it.
+  static String sanitizeProviderText(String value) =>
+      value.replaceAll(_unsafeDisplayCodePoints, '').trim();
+
+  static final RegExp _unsafeDisplayCodePoints = RegExp(
+    r'[\p{Cc}\p{Cf}\p{Cs}\p{Zl}\p{Zp}]',
+    unicode: true,
+  );
+
   static BigInt requireBlockNumber(Map<String, Object?> source, String key) {
     final value = requireString(
       source,
