@@ -201,6 +201,8 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         });
     router = _buildRouter(
       () => ref.read(loopSessionProvider),
+      () => ref.read(loopProfileLandingProvider),
+      () => ref.read(loopOnboardingSequenceProvider),
       ref.read(loopRoutingErrorLogProvider),
       () => metaObserver.observe(LoopV2MetaObservationTrigger.navigation),
     );
@@ -247,11 +249,22 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         await Future<void>.delayed(Duration.zero);
         return ref.read(profileGatewayProvider).load();
       },
+      // F1: the opening sequence's position is read before the landing is
+      // published, so the launch gate opens on a position that already
+      // exists. Reading it afterwards let the router see "pending, nowhere
+      // to be yet" and put a page on screen the sequence then replaced.
+      prepare: (landing) async {
+        if (!mounted || landing != LoopProfileLanding.loopIdSetup) return;
+        await _beginOnboardingSequence();
+      },
       publish: (landing, kind) {
         if (!mounted) return;
-        ref
-            .read(loopProfileLandingProvider.notifier)
-            .publish(landing, kind: kind);
+        final controller = ref.read(loopProfileLandingProvider.notifier);
+        if (landing == null) {
+          controller.reset();
+          return;
+        }
+        controller.publish(landing, kind: kind);
       },
       navigate: (landing) {
         if (!mounted) return;
@@ -271,11 +284,16 @@ class _LoopAppState extends ConsumerState<LoopApp> {
           return;
         }
         if (landing != LoopProfileLanding.loopIdSetup) return;
-        // Only lift an owner out of the credential or landing pages. A deep
-        // link the owner opened deliberately is never interrupted.
-        const liftable = <String>{'/auth', '/auth/otp', '/community'};
+        // Only lift an owner out of the credential, launch or landing pages.
+        // A deep link the owner opened deliberately is never interrupted.
+        const liftable = <String>{
+          '/auth',
+          '/auth/otp',
+          '/community',
+          '/splash',
+        };
         final location = router.state.matchedLocation;
-        if (liftable.contains(location)) unawaited(_enterOnboardingSequence());
+        if (liftable.contains(location)) _goToOnboardingStep();
       },
     );
     // The banner the failed check raises is the only surface that reports it,
@@ -285,11 +303,14 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     ref
         .read(loopProfileLandingProvider.notifier)
         .bindRecheck(postAuthProfileCoordinator.resolve);
+    // F1: the landing is dropped before the router hears about the session,
+    // so a refresh can never re-read the previous account's answer and draw
+    // one product frame with it.
     ref.listenManual<LoopSessionState>(loopSessionProvider, (previous, next) {
+      postAuthProfileCoordinator.onSessionChanged(previous, next);
       if (previous?.mode != next.mode) router.refresh();
       notificationCoordinator.onIdentityMayHaveChanged();
       postAuthBootstrapCoordinator.onSessionChanged(previous, next);
-      postAuthProfileCoordinator.onSessionChanged(previous, next);
       // Leaving the account drops the in-memory position only. The stored
       // one survives, so signing in again as the same pending account
       // resumes on the step it stopped on.
@@ -298,6 +319,36 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         ref.read(loopOnboardingSequenceProvider.notifier).leave();
       }
     });
+    // The launch gate reads the landing and the opening position, so a change
+    // in either may need the redirect to run again. Neither listener decides
+    // anything itself; they only let the router ask.
+    //
+    // Both are deliberately narrow. A refresh rebuilds the match list from
+    // the current location, which flattens a stack the owner pushed — the
+    // opening sequence walks 02 … 05 with push and pop, and a detail page
+    // opened from a tab is nobody's business but the tab's. So the router is
+    // only asked again where the answer actually changes where it belongs.
+    ref.listenManual<LoopProfileLandingState>(loopProfileLandingProvider, (
+      previous,
+      next,
+    ) {
+      if (previous?.landing == next.landing) return;
+      // Losing the answer has to move the owner off whatever product page the
+      // previous one allowed; gaining it only ever moves a page that was
+      // waiting for it.
+      const waiting = <String>{'/splash', '/auth', '/auth/otp'};
+      if (next.isUnknown || waiting.contains(router.state.matchedLocation)) {
+        router.refresh();
+      }
+    });
+    ref.listenManual<LoopOnboardingSequenceState>(
+      loopOnboardingSequenceProvider,
+      (previous, next) {
+        if (previous?.step == next.step) return;
+        if (router.state.matchedLocation != '/splash') return;
+        router.refresh();
+      },
+    );
     ref.listenManual(loopBootstrapSessionProvider, (previous, next) {
       if (!identical(previous, next)) {
         notificationCoordinator.onIdentityMayHaveChanged();
@@ -306,20 +357,32 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     notificationCoordinator.start();
   }
 
-  /// Opens the five-step account sequence at the step this account is on.
+  /// Puts the five-step account sequence on the step this account is on.
   ///
   /// The position comes from device storage, so killing the process and
   /// reopening continues where the owner stopped instead of restarting at
   /// 02. It is only ever reached from a `GET /v2/profile` read that answered
-  /// `pending`; an active account cannot enter here.
-  Future<void> _enterOnboardingSequence() async {
+  /// `pending`; an active account cannot enter here. It navigates nowhere:
+  /// the landing has not been published yet when this runs, and the launch
+  /// gate would send any navigation straight back.
+  Future<void> _beginOnboardingSequence() async {
     final principal = ref.read(loopSessionProvider).account?.privyUserId ?? '';
     if (principal.trim().isEmpty) return;
-    final step = await ref
-        .read(loopOnboardingSequenceProvider.notifier)
-        .begin(principal);
-    if (!mounted) return;
-    router.go(LoopRouteManifest.pathFor(step.slug));
+    await ref.read(loopOnboardingSequenceProvider.notifier).begin(principal);
+  }
+
+  /// Sends the owner to the step the sequence is on.
+  ///
+  /// A sequence that could not be opened at all — an account with no
+  /// principal to partition a position by — lands in Community instead of
+  /// leaving the owner on the launch page with nothing coming.
+  void _goToOnboardingStep() {
+    final step = ref.read(loopOnboardingSequenceProvider).step;
+    router.go(
+      step == null
+          ? LoopRouteManifest.defaultPath
+          : LoopRouteManifest.pathFor(step.slug),
+    );
   }
 
   @override
@@ -439,6 +502,8 @@ Widget _chatSurface({
 
 GoRouter _buildRouter(
   LoopSessionState Function() readSession,
+  LoopProfileLandingState Function() readProfileLanding,
+  LoopOnboardingSequenceState Function() readOnboarding,
   LoopRoutingErrorLog routingErrors, [
   VoidCallback? onNavigation,
 ]) {
@@ -463,7 +528,26 @@ GoRouter _buildRouter(
       if (!session.canEnterProduct) {
         return signedOutRoutes.contains(location) ? null : '/auth';
       }
-      if (credentialRoutes.contains(location)) return '/community';
+      // F1: an accepted credential is not yet a place to be. Until
+      // `GET /v2/profile` answers, the launch page is the only page a
+      // verified session may draw — a pending account that saw Community
+      // here was taken away from it a moment later (device report
+      // 2026-09-21).
+      if (loopPostAuthHoldsAtLaunch(
+        session: session,
+        landing: readProfileLanding(),
+      )) {
+        return location == '/splash' ? null : '/splash';
+      }
+      // The answer arrived: the launch page and the credential pages hand
+      // the owner over to where the account actually belongs. An account
+      // still opening goes to the step it is on, never through Community.
+      if (credentialRoutes.contains(location) || location == '/splash') {
+        final step = readOnboarding().step;
+        return step == null
+            ? '/community'
+            : LoopRouteManifest.pathFor(step.slug);
+      }
       return null;
     },
     routes: <RouteBase>[
@@ -514,7 +598,13 @@ GoRouter _buildRouter(
               onActivated: () {
                 // Activation is what ends the sequence: the stored position
                 // is dropped and Community replaces the whole stack, so no
-                // back gesture can re-enter a finished opening.
+                // back gesture can re-enter a finished opening. The account
+                // the server just activated is also the landing every other
+                // surface reads, so the pending answer is replaced here
+                // rather than left for the next start to correct.
+                ref
+                    .read(loopProfileLandingProvider.notifier)
+                    .publish(LoopProfileLanding.community);
                 unawaited(
                   ref.read(loopOnboardingSequenceProvider.notifier).complete(),
                 );
@@ -1301,6 +1391,16 @@ Widget _accountScreen(BuildContext context, WidgetRef ref, String id) {
     capabilities: PrivyWalletCapabilities(
       canConnectExternalWallet: config.canConnectExternalWallet,
     ),
+    // F1: the launch page is also the page a verified session waits on while
+    // `GET /v2/profile` decides where it belongs. It says so instead of
+    // offering a way in that leads nowhere.
+    splashPhase:
+        loopPostAuthHoldsAtLaunch(
+          session: ref.watch(loopSessionProvider),
+          landing: ref.watch(loopProfileLandingProvider),
+        )
+        ? LoopSplashPhase.preparingAccount
+        : LoopSplashPhase.entry,
     onBack: back,
     onPrimaryAction: id == 'auth-wallet' && config.canConnectExternalWallet
         ? () => unawaited(

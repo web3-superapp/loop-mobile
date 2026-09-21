@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/session/onboarding_sequence.dart';
+import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
+import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
 import 'package:loop_mobile/features/account/wallet_creation_facts.dart';
@@ -553,6 +555,106 @@ void main() {
     });
   });
 
+  group('the launch gate before any product frame', () {
+    testWidgets('a pending account never passes through Community', (
+      tester,
+    ) async {
+      final store = InMemoryLoopOnboardingProgressStore();
+      final history = <String>[];
+      final router = await _pumpLoopApp(
+        tester,
+        store: store,
+        profileDelay: const Duration(milliseconds: 400),
+        settle: false,
+        history: history,
+      );
+
+      // Mid-wait: the launch page, saying what it is waiting for, with no
+      // way in that would lead somewhere the answer might contradict.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(router.state.matchedLocation, '/splash');
+      expect(find.text('正在准备你的账号…'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('loop-splash-enter')),
+        findsNothing,
+      );
+
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      expect(router.state.matchedLocation, '/auth/wallet/create');
+      expect(history, isNot(contains('/community')));
+      expect(history.last, '/auth/wallet/create');
+    });
+
+    testWidgets('a resumed account continues on its step, not through 02', (
+      tester,
+    ) async {
+      final store = InMemoryLoopOnboardingProgressStore();
+      await store.write(partition, LoopOnboardingStep.security);
+      final history = <String>[];
+
+      final router = await _pumpLoopApp(
+        tester,
+        store: store,
+        profileDelay: const Duration(milliseconds: 200),
+        history: history,
+      );
+
+      expect(router.state.matchedLocation, '/auth/security');
+      expect(history, isNot(contains('/community')));
+      expect(history, isNot(contains('/auth/wallet/create')));
+    });
+
+    testWidgets('an active account goes straight to Community', (tester) async {
+      final store = InMemoryLoopOnboardingProgressStore();
+      final history = <String>[];
+
+      final router = await _pumpLoopApp(
+        tester,
+        store: store,
+        status: ProfileStatus.active,
+        profileDelay: const Duration(milliseconds: 200),
+        history: history,
+      );
+
+      expect(router.state.matchedLocation, '/community');
+      expect(history, contains('/splash'));
+      for (final step in LoopOnboardingStep.values) {
+        expect(history, isNot(contains(LoopRouteManifest.pathFor(step.slug))));
+      }
+    });
+
+    testWidgets('a profile that never answers stops waiting and says so', (
+      tester,
+    ) async {
+      final store = InMemoryLoopOnboardingProgressStore();
+      final history = <String>[];
+      final router = await _pumpLoopApp(
+        tester,
+        store: store,
+        profile: null,
+        hang: true,
+        settle: false,
+        history: history,
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 5));
+      expect(router.state.matchedLocation, '/splash');
+
+      await tester.pump(loopPostAuthProfileReadCeiling);
+      await tester.pumpAndSettle();
+
+      expect(router.state.matchedLocation, '/community');
+      expect(
+        find.byKey(const ValueKey<String>('profile-availability-banner')),
+        findsOneWidget,
+      );
+    });
+  });
+
   group('steps 03 and 04 state their unavailable reasons', () {
     testWidgets('03 offers no method it cannot enrol and still lets go on', (
       tester,
@@ -649,6 +751,10 @@ Future<GoRouter> _pumpLoopApp(
   required LoopOnboardingProgressStore store,
   ProfileStatus status = ProfileStatus.pending,
   Object? profile = _unset,
+  Duration profileDelay = Duration.zero,
+  bool hang = false,
+  bool settle = true,
+  List<String>? history,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = const Size(390, 844);
@@ -662,12 +768,13 @@ Future<GoRouter> _pumpLoopApp(
           const AuthenticatedTestPrivyGateway(),
         ),
         loopOnboardingProgressStoreProvider.overrideWithValue(store),
-        if (!identical(profile, _unset) && profile == null)
-          profileGatewayProvider.overrideWithValue(
-            const UnavailableProfileGateway(),
-          )
-        else
-          profileGatewayProvider.overrideWithValue(_FakeProfileGateway(status)),
+        profileGatewayProvider.overrideWithValue(
+          hang
+              ? const _HangingProfileGateway()
+              : (!identical(profile, _unset) && profile == null)
+              ? const UnavailableProfileGateway()
+              : _FakeProfileGateway(status, delay: profileDelay),
+        ),
         // The wallet is already in the directory, so step 02 observes it on
         // its first read and leaves no poll running behind the test.
         walletReadGatewayProvider.overrideWithValue(
@@ -677,9 +784,24 @@ Future<GoRouter> _pumpLoopApp(
       child: const LoopApp(),
     ),
   );
-  await tester.pumpAndSettle();
 
-  return GoRouter.of(tester.element(find.byType(Navigator).first));
+  final router = GoRouter.of(tester.element(find.byType(Navigator).first));
+  if (history != null) {
+    // Every location the router settles on, including the ones a later
+    // redirect replaces within the same frame. `pumpAndSettle` would hide
+    // exactly the frame F1 is about.
+    history.add(router.state.matchedLocation);
+    void record() {
+      final location = router.state.matchedLocation;
+      if (history.isEmpty || history.last != location) history.add(location);
+    }
+
+    router.routerDelegate.addListener(record);
+    addTearDown(() => router.routerDelegate.removeListener(record));
+  }
+  if (settle) await tester.pumpAndSettle();
+
+  return router;
 }
 
 const Object _unset = Object();
@@ -714,15 +836,20 @@ Future<void> _tapBack(WidgetTester tester) async {
 }
 
 final class _FakeProfileGateway implements ProfileGateway {
-  const _FakeProfileGateway(this.status);
+  const _FakeProfileGateway(this.status, {this.delay = Duration.zero});
 
   final ProfileStatus status;
+
+  /// How long `GET /v2/profile` takes to answer. `Duration.zero` still costs
+  /// the event loop a turn, which is the window F1 is about.
+  final Duration delay;
 
   @override
   ProfileMode get mode => ProfileMode.production;
 
   @override
   Future<ProfileResource> load() async {
+    if (delay > Duration.zero) await Future<void>.delayed(delay);
     final active = status == ProfileStatus.active;
     return ProfileResource(
       version: active ? 1 : 0,
@@ -733,6 +860,23 @@ final class _FakeProfileGateway implements ProfileGateway {
       activatedAt: active ? DateTime.utc(2026, 9, 20, 6, 32) : null,
     );
   }
+
+  @override
+  Future<ProfileResource> replace({
+    required int expectedVersion,
+    required ProfileValues values,
+  }) => throw UnsupportedError('read-only test gateway');
+}
+
+/// `GET /v2/profile` that never answers at all.
+final class _HangingProfileGateway implements ProfileGateway {
+  const _HangingProfileGateway();
+
+  @override
+  ProfileMode get mode => ProfileMode.production;
+
+  @override
+  Future<ProfileResource> load() => Completer<ProfileResource>().future;
 
   @override
   Future<ProfileResource> replace({

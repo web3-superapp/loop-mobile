@@ -66,6 +66,7 @@ class AccountSurfaceScreen extends StatelessWidget {
     this.onBack,
     this.onPrimaryAction,
     this.onRecoveryDecision,
+    this.splashPhase = LoopSplashPhase.entry,
   });
 
   static const supportedIds = <String>{
@@ -91,6 +92,9 @@ class AccountSurfaceScreen extends StatelessWidget {
   /// `null` for 稍后设置. It records a decision, never an enrolment.
   final ValueChanged<WalletRecoveryMethod?>? onRecoveryDecision;
 
+  /// What the launch page is waiting for, if anything. Only `splash` reads it.
+  final LoopSplashPhase splashPhase;
+
   String get _id => surfaceId.replaceFirst('#', '').toLowerCase();
 
   void _navigate(BuildContext context, String destination) {
@@ -100,7 +104,10 @@ class AccountSurfaceScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (_id) {
-      'splash' => SplashScreen(onContinue: () => _navigate(context, 'auth')),
+      'splash' => SplashScreen(
+        phase: splashPhase,
+        onContinue: () => _navigate(context, 'auth'),
+      ),
       'auth-wallet' => ExternalWalletScreen(
         capabilityAvailable: capabilities.canConnectExternalWallet,
         onBack: onBack,
@@ -320,13 +327,33 @@ class CapabilityChoiceRow extends StatelessWidget {
 // splash · intro / focus
 // ---------------------------------------------------------------------------
 
+/// What the launch page is doing while it is on screen.
+enum LoopSplashPhase {
+  /// The brand frame with the way in. Nothing is being waited on.
+  entry,
+
+  /// A credential was accepted and `GET /v2/profile` has not answered yet.
+  ///
+  /// The page offers no action here on purpose: there is nowhere to go until
+  /// the answer says whether this account is already active or still opening,
+  /// and any page drawn before it is one the owner would be taken away from
+  /// (device report 2026-09-21 · F1).
+  preparingAccount,
+}
+
 class SplashScreen extends StatelessWidget {
-  const SplashScreen({required this.onContinue, super.key});
+  const SplashScreen({
+    required this.onContinue,
+    super.key,
+    this.phase = LoopSplashPhase.entry,
+  });
 
   final VoidCallback onContinue;
+  final LoopSplashPhase phase;
 
   @override
   Widget build(BuildContext context) {
+    final preparing = phase == LoopSplashPhase.preparingAccount;
     return Scaffold(
       key: const ValueKey<String>('loop-splash-screen'),
       body: SafeArea(
@@ -341,17 +368,32 @@ class SplashScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             const LoopBrandLoader(key: ValueKey<String>('loop-splash-loader')),
-            const Spacer(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: LoopButton(
-                key: const ValueKey<String>('loop-splash-enter'),
-                label: '进入 LOOP',
-                primary: true,
-                block: true,
-                onPressed: onContinue,
+            if (preparing) ...<Widget>[
+              const SizedBox(height: 18),
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  '正在准备你的账号…',
+                  key: const ValueKey<String>('loop-splash-preparing'),
+                  textAlign: TextAlign.center,
+                  style: LoopTypography.caption(12, color: LoopColors.text3),
+                ),
               ),
-            ),
+            ],
+            const Spacer(),
+            // Waiting is not a choice, so it is offered none. The entry frame
+            // keeps the prototype's single full-width action.
+            if (!preparing)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: LoopButton(
+                  key: const ValueKey<String>('loop-splash-enter'),
+                  label: '进入 LOOP',
+                  primary: true,
+                  block: true,
+                  onPressed: onContinue,
+                ),
+              ),
             const SizedBox(height: 24),
           ],
         ),

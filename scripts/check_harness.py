@@ -4050,7 +4050,11 @@ def check_onboarding_sequence_contract(root: Path) -> list[str]:
                 "loopWalletCreationFactsProvider",
             ),
             "lib/app.dart": (
-                "Future<void> _enterOnboardingSequence() async",
+                # F1: the position is read before the landing is published
+                # and the step is navigated to after it, so the launch gate
+                # never opens on a sequence that has nowhere to be yet.
+                "Future<void> _beginOnboardingSequence() async",
+                "void _goToOnboardingStep()",
                 "_onboardingStepScreen(",
                 "LoopOnboardingStep? _onboardingStepFor(String id)",
                 "loopOnboardingSequenceProvider.notifier).leave()",
@@ -4061,6 +4065,10 @@ def check_onboarding_sequence_contract(root: Path) -> list[str]:
             ),
             "test/s53_onboarding_sequence_test.dart": (
                 "a pending account lands on 02, not straight on 05",
+                "a pending account never passes through Community",
+                "a resumed account continues on its step, not through 02",
+                "an active account goes straight to Community",
+                "a profile that never answers stops waiting and says so",
                 "a killed process reopens on the step it stopped on",
                 "an active account never enters the sequence",
                 "60 seconds without a wallet times out and never fails",
@@ -7753,14 +7761,37 @@ def check_v2_primary_navigation_contract(root: Path) -> list[str]:
             )
 
         # Decision 0053: `auth-otp` became a real credential route, so the
-        # gate names the credential set explicitly. A verified session must
-        # still leave every credential page for Community immediately.
+        # gate names the credential set explicitly.
+        #
+        # F1 (device report 2026-09-21): a verified session used to leave the
+        # credential pages for Community before `GET /v2/profile` had said
+        # whether the account was active, so a pending account saw one
+        # Community frame and was then pulled into step 02. The gate now
+        # holds every verified session on the launch page until the profile
+        # answers, and hands it over to the step the account is actually on
+        # — never through Community.
         if re.search(
-            r"if\s*\(\s*credentialRoutes\.contains\(location\)\s*\)\s*"
-            r"return\s*'/community'\s*;",
+            r"if\s*\(\s*loopPostAuthHoldsAtLaunch\(\s*session\s*:\s*session\s*,"
+            r"\s*landing\s*:\s*readProfileLanding\(\)\s*,?\s*\)\s*\)\s*\{\s*"
+            r"return\s*location\s*==\s*'/splash'\s*\?\s*null\s*:\s*'/splash'\s*;",
             compact_source,
         ) is None:
-            errors.append("authenticated entry must return directly to Community")
+            errors.append(
+                "a verified session must wait on the launch page until "
+                "`GET /v2/profile` answers"
+            )
+        if re.search(
+            r"if\s*\(\s*credentialRoutes\.contains\(location\)\s*\|\|\s*"
+            r"location\s*==\s*'/splash'\s*\)\s*\{\s*"
+            r"final\s+step\s*=\s*readOnboarding\(\)\.step\s*;\s*"
+            r"return\s+step\s*==\s*null\s*\?\s*'/community'\s*:\s*"
+            r"LoopRouteManifest\.pathFor\(step\.slug\)\s*;",
+            compact_source,
+        ) is None:
+            errors.append(
+                "a decided landing must hand the credential and launch pages "
+                "to the account's own step, or to Community"
+            )
         credential_routes = re.search(
             r"const\s+credentialRoutes\s*=\s*<String>\{([^}]*)\}", compact_source
         )

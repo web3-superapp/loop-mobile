@@ -60,6 +60,33 @@ bool loopProfileRecheckCanHelp(ProfileGatewayFailureKind? kind) =>
       ProfileGatewayFailureKind.invalidData => false,
     };
 
+/// Whether a verified session has to wait on the launch page.
+///
+/// Once a credential is accepted there is exactly one thing left to learn
+/// before LOOP knows where the owner belongs: whether the server already
+/// calls the account active. Until `GET /v2/profile` answers, no product
+/// surface may be drawn — a Community frame here is a guess, and a pending
+/// account was shown that guess for a frame before being pulled into 02
+/// (device report 2026-09-21 · F1). Holding on the launch page instead makes
+/// the wait look like the App still opening, which is what it is.
+///
+/// Sessions LOOP never reads a profile for are never held: the Development
+/// Preview and a credential Privy accepted but has not verified have no
+/// answer coming, so waiting for one would never end.
+bool loopPostAuthHoldsAtLaunch({
+  required LoopSessionState session,
+  required LoopProfileLandingState landing,
+}) => session.canUseProviderBackedFeatures && landing.isUnknown;
+
+/// How long one `GET /v2/profile` read may take before the owner stops
+/// waiting for it.
+///
+/// The launch page waits on this read, so the read needs an end. Fifteen
+/// seconds is longer than the transport's own ceilings and short enough that
+/// a dead service does not look like a frozen App; running out is reported as
+/// the service being unavailable and never as an answer about the account.
+const loopPostAuthProfileReadCeiling = Duration(seconds: 15);
+
 @immutable
 final class LoopProfileLandingState {
   const LoopProfileLandingState({
@@ -88,6 +115,15 @@ final class LoopProfileLandingState {
   /// depends on it still says so, and the next published answer brings the
   /// notice back if it is still unavailable.
   final bool dismissed;
+
+  /// `GET /v2/profile` has not answered for this account yet.
+  ///
+  /// It is the only state in which LOOP does not know where the owner
+  /// belongs, and it is what the launch gate waits on: a Community frame
+  /// drawn here would be a guess that the account is active, and a pending
+  /// account saw exactly that guess before being pulled into 02 (device
+  /// report 2026-09-21 · F1).
+  bool get isUnknown => landing == null;
 
   bool get isUnavailable => landing == LoopProfileLanding.communityUnavailable;
 
@@ -187,26 +223,50 @@ final loopProfileLandingProvider =
 class PostAuthProfileRedirectCoordinator {
   PostAuthProfileRedirectCoordinator({
     required Future<ProfileResource> Function() readProfile,
+    required Future<void> Function(LoopProfileLanding landing) prepare,
     required void Function(LoopProfileLanding landing) navigate,
     required void Function(
-      LoopProfileLanding landing,
+      LoopProfileLanding? landing,
       ProfileGatewayFailureKind? kind,
     )
     publish,
+    this.readCeiling = loopPostAuthProfileReadCeiling,
     // ignore: prefer_initializing_formals
   }) : _readProfile = readProfile,
+       // ignore: prefer_initializing_formals
+       _prepare = prepare,
        // ignore: prefer_initializing_formals
        _navigate = navigate,
        // ignore: prefer_initializing_formals
        _publish = publish;
 
   final Future<ProfileResource> Function() _readProfile;
+
+  /// Brings the rest of the application into the state a decided landing
+  /// implies, before the landing is published.
+  ///
+  /// The launch gate opens on the published landing, so everything the gate
+  /// then reads has to be true already: for a pending profile that is the
+  /// opening sequence's position, which comes from device storage and is
+  /// therefore not instant. Preparing first is what keeps the owner on the
+  /// launch page for the whole wait instead of passing through step 02 on
+  /// the way to step 04.
+  final Future<void> Function(LoopProfileLanding landing) _prepare;
+
   final void Function(LoopProfileLanding landing) _navigate;
+
+  /// Publishes the decided landing, or `null` for "nothing is known yet".
+  ///
+  /// `null` is published the moment a new account starts being read, so the
+  /// previous account's answer can never be mistaken for this one's.
   final void Function(
-    LoopProfileLanding landing,
+    LoopProfileLanding? landing,
     ProfileGatewayFailureKind? kind,
   )
   _publish;
+
+  /// How long one read may take before it counts as unavailable.
+  final Duration readCeiling;
 
   String? _requestedPrincipal;
 
@@ -214,7 +274,10 @@ class PostAuthProfileRedirectCoordinator {
     if (next.mode == LoopSessionMode.signedOut ||
         next.mode == LoopSessionMode.preview) {
       _requestedPrincipal = null;
-      _publish(LoopProfileLanding.community, null);
+      // Leaving the account drops its answer rather than replacing it with
+      // Community: signed out, LOOP knows nothing about any profile, and the
+      // next account must not inherit this one's landing.
+      _publish(null, null);
       return;
     }
     final principal = _verifiedPrincipal(next);
@@ -226,26 +289,54 @@ class PostAuthProfileRedirectCoordinator {
       return;
     }
     _requestedPrincipal = principal;
+    // The gate closes here, synchronously, before anything can route on a
+    // landing that belongs to the session this one replaced.
+    _publish(null, null);
     unawaited(resolve());
   }
 
   /// Visible for the app composition and tests; safe to call again on start.
+  ///
+  /// The order is deliberate and is the whole of F1: read, prepare, publish,
+  /// navigate. Publishing is what opens the launch gate, so it comes after
+  /// the state that gate reads, and before the navigation that gate would
+  /// otherwise bounce back to the launch page.
   Future<void> resolve() async {
+    final LoopProfileLanding landing;
+    ProfileGatewayFailureKind? kind;
     try {
-      final resource = await _readProfile();
-      final landing = loopProfileLandingFor(resource);
-      _publish(landing, null);
-      _navigate(landing);
+      landing = loopProfileLandingFor(
+        await _readProfile().timeout(readCeiling),
+      );
     } on ProfileGatewayException catch (error) {
-      final landing = loopProfileLandingForFailure(error.kind);
-      _publish(landing, error.kind);
-      _navigate(landing);
+      kind = error.kind;
+      return _land(loopProfileLandingForFailure(kind), kind);
+    } on TimeoutException {
+      // A read that never answers is not an answer. It is reported as the
+      // service being unavailable, which is what the owner can act on: the
+      // notice offers the read again instead of leaving them on a launch
+      // page that waits forever.
+      kind = ProfileGatewayFailureKind.unavailable;
+      return _land(loopProfileLandingForFailure(kind), kind);
     } catch (_) {
-      const kind = ProfileGatewayFailureKind.unexpected;
-      final landing = loopProfileLandingForFailure(kind);
-      _publish(landing, kind);
-      _navigate(landing);
+      kind = ProfileGatewayFailureKind.unexpected;
+      return _land(loopProfileLandingForFailure(kind), kind);
     }
+    return _land(landing, null);
+  }
+
+  Future<void> _land(
+    LoopProfileLanding landing,
+    ProfileGatewayFailureKind? kind,
+  ) async {
+    try {
+      await _prepare(landing);
+    } on Object {
+      // Preparing is a convenience for the gate, never a condition of it. A
+      // position that could not be read still lands the owner somewhere.
+    }
+    _publish(landing, kind);
+    _navigate(landing);
   }
 
   String? _verifiedPrincipal(LoopSessionState session) {

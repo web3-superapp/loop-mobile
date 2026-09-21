@@ -1353,13 +1353,11 @@ class HarnessTests(unittest.TestCase):
             write_v2_navigation_fixture(root)
             path = root / "lib/app.dart"
             source = path.read_text(encoding="utf-8")
-            marker = (
-                "if (credentialRoutes.contains(location)) return '/community';"
-            )
+            marker = "final step = readOnboarding().step;"
             mutated = source.replace(
                 marker,
-                "if (credentialRoutes.contains(location)) return '/market';\n"
-                f"      // {marker}",
+                "return '/market';\n"
+                f"        // {marker}",
                 1,
             )
             self.assertNotEqual(source, mutated)
@@ -1368,7 +1366,29 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_v2_primary_navigation_contract(root)
 
         self.assertIn(
-            "authenticated entry must return directly to Community",
+            "a decided landing must hand the credential and launch pages to "
+            "the account's own step, or to Community",
+            result,
+        )
+
+    def test_v2_navigation_contract_requires_the_post_auth_launch_wait(self) -> None:
+        """A verified session may not reach a product page before the profile
+        read answers: that is the frame F1 reported."""
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_v2_navigation_fixture(root)
+            path = root / "lib/app.dart"
+            source = path.read_text(encoding="utf-8")
+            start = source.index("if (loopPostAuthHoldsAtLaunch(")
+            end = source.index("// The answer arrived", start)
+            path.write_text(source[:start] + source[end:], encoding="utf-8")
+
+            result = check_harness.check_v2_primary_navigation_contract(root)
+
+        self.assertIn(
+            "a verified session must wait on the launch page until "
+            "`GET /v2/profile` answers",
             result,
         )
 
