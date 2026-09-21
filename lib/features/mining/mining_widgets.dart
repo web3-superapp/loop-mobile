@@ -324,10 +324,10 @@ class MiningSummaryHero extends StatelessWidget {
           Text(
             caption,
             key: const ValueKey<String>('mining-summary-hero-caption'),
-            style: LoopTypography.caption(
-              11,
-              color: ink.withValues(alpha: 0.67),
-            ).copyWith(fontWeight: FontWeight.w700),
+            style: LoopTypography.withWeight(
+              LoopTypography.caption(11, color: ink.withValues(alpha: 0.67)),
+              FontWeight.w700,
+            ),
           ),
           if (stamp != null) ...<Widget>[
             const SizedBox(height: 9),
@@ -391,10 +391,10 @@ class MiningSummaryHero extends StatelessWidget {
                                 metrics[index].label,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: LoopTypography.caption(
-                                  10,
-                                  color: muted,
-                                ).copyWith(fontWeight: FontWeight.w700),
+                                style: LoopTypography.withWeight(
+                                  LoopTypography.caption(10, color: muted),
+                                  FontWeight.w700,
+                                ),
                               ),
                             ],
                           ),

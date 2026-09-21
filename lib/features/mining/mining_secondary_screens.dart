@@ -1480,10 +1480,10 @@ class _MiningRulesScreenState extends ConsumerState<MiningRulesScreen> {
               children: <InlineSpan>[
                 TextSpan(
                   text: '每日产出 ',
-                  style: LoopTypography.caption(
-                    11,
-                    color: LoopColors.chalk,
-                  ).copyWith(fontWeight: FontWeight.w700),
+                  style: LoopTypography.withWeight(
+                    LoopTypography.caption(11, color: LoopColors.chalk),
+                    FontWeight.w700,
+                  ),
                 ),
                 TextSpan(
                   text: switch (approved ?? draft) {
