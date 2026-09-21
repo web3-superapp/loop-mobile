@@ -815,6 +815,36 @@ void main() {
   });
 
   group('community-profile', () {
+    testWidgets('成员 is a top-bar icon control, not a section switch', (
+      tester,
+    ) async {
+      final opened = <String>[];
+      await pumpCommunityPage(
+        tester,
+        CommunityProfileScreen(
+          communityId: testCommunityId,
+          onOpenMembers: opened.add,
+        ),
+        community: FakeCommunityGateway(detail: testDetail()),
+      );
+
+      final action = find.byKey(
+        const ValueKey<String>('community-profile-open-members'),
+      );
+      expect(action, findsOneWidget);
+      final button = tester.widget<LoopIconButton>(action);
+      expect(button.icon, 'users');
+      expect(button.label, '成员');
+      expect(tester.getSize(action).height, greaterThanOrEqualTo(44));
+      // The word is spoken, not printed: a labelled segment beside the title
+      // read as a section the page was already on.
+      expect(find.text('成员'), findsNothing);
+
+      await tester.tap(action);
+      await tester.pumpAndSettle();
+      expect(opened, <String>[testCommunityId]);
+    });
+
     testWidgets('the verification state is stated once, in words', (
       tester,
     ) async {

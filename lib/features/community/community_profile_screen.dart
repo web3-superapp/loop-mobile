@@ -100,12 +100,18 @@ class _CommunityProfileScreenState
       kicker: communityPreviewKicker(mode),
       onBack: widget.onBack,
       actions: <Widget>[
+        // A top-bar action is an icon on the 44 grid like every other one
+        // (audit 2026-09-20 · B.2). 成员 wore a `LoopSeg`, which is the
+        // segmented control this page uses to switch sections — a control
+        // that reads as "you are here" next to one that leaves the page.
+        // The spoken label still says 成员.
         if (community != null)
-          LoopSeg(
+          LoopIconButton(
             key: const ValueKey<String>('community-profile-open-members'),
+            icon: 'users',
             label: '成员',
-            selected: false,
-            onSelected: widget.onOpenMembers == null
+            framed: true,
+            onPressed: widget.onOpenMembers == null
                 ? null
                 : () => widget.onOpenMembers!(community.communityId),
           ),
