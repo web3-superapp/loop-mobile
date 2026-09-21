@@ -10,76 +10,11 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:loop_mobile/core/assets/loop_assets.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
-
-/// `avatar:preset/community-01..12` — the server's community preset catalog.
-const String communityLogoPresetPrefix = 'avatar:preset/community-';
-
-/// The atlas cell for a one-based preset slot, or null when the frozen local
-/// atlas does not carry that preset.
-///
-/// Same rule as [LoopProfileAvatar.peopleSlotKey] for people: the catalog slot
-/// is a row-major index into the atlas grid. The community atlas is 2x2, so
-/// only presets 01..04 resolve; 05..12 exist in the server's catalog and have
-/// no local image, and those rows show the community's own initials rather
-/// than somebody else's logo.
-String? communityLogoSlotKey(int slot) {
-  const atlas = LoopIdentityAtlas.communities;
-  if (slot < 1 || slot > atlas.columns * atlas.rows) return null;
-  final column = (slot - 1) % atlas.columns;
-  final row = (slot - 1) ~/ atlas.columns;
-  for (final entry in atlas.slots.entries) {
-    if (entry.value.column == column && entry.value.row == row) {
-      return entry.key;
-    }
-  }
-  return null;
-}
-
-/// The atlas cell a `logoRef` names, or null for every other value.
-String? communityLogoSlotFor(String? logoRef) {
-  final reference = logoRef;
-  if (reference == null || !reference.startsWith(communityLogoPresetPrefix)) {
-    return null;
-  }
-  final slot = int.tryParse(
-    reference.substring(communityLogoPresetPrefix.length),
-  );
-  return slot == null ? null : communityLogoSlotKey(slot);
-}
-
-/// The community's preset logo, falling back to its own initials.
-class CommunityLogoAvatar extends StatelessWidget {
-  const CommunityLogoAvatar({
-    required this.name,
-    super.key,
-    this.logoRef,
-    this.size = 44,
-  });
-
-  final String name;
-  final String? logoRef;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final slot = communityLogoSlotFor(logoRef);
-    if (slot == null) return CommunityLogoTile(name: name, size: size);
-    return LoopIdentityAvatar(
-      key: ValueKey<String>('community-logo-$logoRef'),
-      atlas: LoopIdentityAtlas.communities,
-      slot: slot,
-      size: size,
-      semanticLabel: '$name 社区图标',
-      fallbackMonogram: CommunityLogoTile.monogramFor(name),
-    );
-  }
-}
 
 /// `48,120 成员` — the server's own head count, grouped for reading.
 String communityMemberCountLabel(int memberCount) =>
@@ -301,6 +236,7 @@ class CommunityMessageRow extends StatelessWidget {
     required this.title,
     required this.subtitle,
     super.key,
+    this.leading,
     this.stamp,
     this.onTap,
   });
@@ -308,6 +244,12 @@ class CommunityMessageRow extends StatelessWidget {
   final String icon;
   final String title;
   final String subtitle;
+
+  /// The identity tile this row stands for, when it stands for one. A row
+  /// about a named community shows that community's own face; the rows that
+  /// name a kind of message rather than a community keep the glyph, because
+  /// there is no identity behind them to draw.
+  final Widget? leading;
 
   /// `.community-message-live` — a Lime stamp such as `LIVE`.
   final String? stamp;
@@ -321,20 +263,21 @@ class CommunityMessageRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 9),
       child: Row(
         children: <Widget>[
-          Container(
-            width: 42,
-            height: 42,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: LoopGround.fillOf(context),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: LoopIcon(
-              icon,
-              size: 19,
-              color: LoopGround.secondaryOf(context),
-            ),
-          ),
+          leading ??
+              Container(
+                width: 42,
+                height: 42,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: LoopGround.fillOf(context),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: LoopIcon(
+                  icon,
+                  size: 19,
+                  color: LoopGround.secondaryOf(context),
+                ),
+              ),
           const SizedBox(width: 11),
           Expanded(
             child: Column(

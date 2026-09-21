@@ -3,6 +3,7 @@ import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
@@ -323,9 +324,11 @@ class CommunityIdentityBlock extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          CommunityLogoTile(
+          CommunityLogo(
             key: const ValueKey<String>('community-profile-logo'),
+            identity: community.communityId,
             name: community.name,
+            logoRef: community.logoRef,
             size: 88,
             radius: LoopRadius.controlValue,
           ),
@@ -840,63 +843,6 @@ String communityMembershipLabel(CommunityMembership membership) =>
       CommunityMemberStatus.banned => '已封禁',
     };
 
-/// Square monogram tile for a community.
-///
-/// `logoRef` is a `avatar:preset/community-01..12` reference the frozen local
-/// atlas does not carry, so the tile shows the community's own initials rather
-/// than an unrelated preset image.
-class CommunityLogoTile extends StatelessWidget {
-  const CommunityLogoTile({
-    required this.name,
-    super.key,
-    this.size = 44,
-    this.radius,
-    this.bordered = false,
-  });
-
-  final String name;
-  final double size;
-
-  /// Corner radius. The prototype draws this tile at three sizes with three
-  /// radii — 12 in a row, 16 in the identity block, the shell radius on the
-  /// folio — so the caller states it rather than the tile guessing from size.
-  final double? radius;
-
-  /// `.folio-media-identity{border:1px solid rgba(243,245,239,.2)}`: the edge
-  /// the tile draws when it sits on the folio rather than inside a card.
-  final bool bordered;
-
-  static String monogramFor(String name) {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) return 'LO';
-    final runes = trimmed.runes.take(2).toList(growable: false);
-    return String.fromCharCodes(runes).toUpperCase();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        // Same rule as the other monogram tiles: the fill and the letters come
-        // from the ground, so the tile survives a move onto a Chalk card.
-        color: LoopGround.fillOf(context),
-        borderRadius: BorderRadius.circular(radius ?? LoopRadius.innerValue),
-        border: bordered ? Border.all(color: LoopGround.edgeOf(context)) : null,
-      ),
-      child: Text(
-        monogramFor(name),
-        style: LoopTypography.figure(
-          size / 3.4,
-          color: LoopGround.inkOf(context),
-        ),
-      ),
-    );
-  }
-}
-
 /// The server's own verification state for a community, in words.
 ///
 /// It is the community's state, not the reader's membership: a community may
@@ -924,7 +870,11 @@ LoopRecordRow communityDirectoryRow({
   if (ranked == null) {
     return LoopRecordRow(
       key: ValueKey<String>('community-row-${community.communityId}'),
-      leading: CommunityLogoTile(name: community.name),
+      leading: CommunityLogo(
+        identity: community.communityId,
+        name: community.name,
+        logoRef: community.logoRef,
+      ),
       title: community.name,
       // The slug is the server's addressing handle; it told a reader browsing
       // the directory nothing 「mock-vol-01」 did not already hide.
@@ -940,7 +890,11 @@ LoopRecordRow communityDirectoryRow({
   // member count moves onto the second line so both stay readable.
   return LoopRecordRow(
     key: ValueKey<String>('community-row-${community.communityId}'),
-    leading: CommunityLogoTile(name: community.name),
+    leading: CommunityLogo(
+      identity: community.communityId,
+      name: community.name,
+      logoRef: community.logoRef,
+    ),
     title: community.name,
     subtitle: '$verification · $members',
     trailing: ranked.value,
@@ -1210,13 +1164,23 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
   final TextEditingController _assetKey = TextEditingController();
   CommunityApplicationField? _invalidField;
 
-  /// The closed set the server accepts, plus "no logo".
+  /// The closed set the server accepts, plus "no logo". All twelve are
+  /// offered because all twelve now draw a mark; the four the form used to
+  /// stop at were the four the local atlas carried.
   static const List<String?> _logoRefs = <String?>[
     null,
     'avatar:preset/community-01',
     'avatar:preset/community-02',
     'avatar:preset/community-03',
     'avatar:preset/community-04',
+    'avatar:preset/community-05',
+    'avatar:preset/community-06',
+    'avatar:preset/community-07',
+    'avatar:preset/community-08',
+    'avatar:preset/community-09',
+    'avatar:preset/community-10',
+    'avatar:preset/community-11',
+    'avatar:preset/community-12',
   ];
   String? _logoRef;
 
@@ -1301,7 +1265,24 @@ class _CommunityApplyFormState extends State<_CommunityApplyForm> {
             ),
           ),
           const SizedBox(height: 12),
-          const LoopLabel('社区标识（可留空）'),
+          Row(
+            children: <Widget>[
+              const Expanded(child: LoopLabel('社区标识（可留空）')),
+              // The chips are numbered, and a number is not a mark: the form
+              // shows the one that is selected so the choice is made by
+              // looking at it.
+              if (_logoRef != null)
+                CommunityLogo(
+                  key: ValueKey<String>(
+                    'community-apply-logo-preview-$_logoRef',
+                  ),
+                  identity: 'community-apply-preview',
+                  name: _name.text,
+                  logoRef: _logoRef,
+                  size: 36,
+                ),
+            ],
+          ),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(

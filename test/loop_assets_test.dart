@@ -89,18 +89,28 @@ void main() {
   test('identity atlas slots mirror the prototype FX.media grid', () {
     expect(LoopIdentityAtlas.people.columns, 4);
     expect(LoopIdentityAtlas.people.rows, 3);
-    expect(LoopIdentityAtlas.communities.columns, 2);
-    expect(LoopIdentityAtlas.communities.rows, 2);
+    // The community sheet is the one extension of the prototype's grid: the
+    // server publishes twelve presets, so the atlas carries twelve cells.
+    expect(LoopIdentityAtlas.communities.columns, 4);
+    expect(LoopIdentityAtlas.communities.rows, 3);
     expect(LoopIdentitySlots.people, hasLength(12));
-    expect(LoopIdentitySlots.communities, hasLength(4));
+    expect(LoopIdentitySlots.communities, hasLength(12));
 
     final whale = LoopIdentityAtlas.people.slot('whale')!;
     expect((whale.column, whale.row, whale.fallback), (3, 1, 'WH'));
     final observer = LoopIdentityAtlas.people.slot('observer')!;
     expect((observer.column, observer.row), (3, 2));
+    // The four prototype illustrations keep row 0, in catalog order.
     final mcat = LoopIdentityAtlas.communities.slot('mcat')!;
-    expect((mcat.column, mcat.row, mcat.label), (1, 1, 'MOONCAT 社区图标'));
+    expect((mcat.column, mcat.row, mcat.label), (3, 0, 'MOONCAT 社区图标'));
+    final signal = LoopIdentityAtlas.communities.slot('community-12')!;
+    expect((signal.column, signal.row), (3, 2));
     expect(LoopIdentitySlots.communityAliases['bonkcommunity'], 'bonk');
+
+    final communityCells = LoopIdentitySlots.communities.values
+        .map((slot) => (slot.column, slot.row))
+        .toSet();
+    expect(communityCells, hasLength(12));
 
     final cells = LoopIdentitySlots.people.values
         .map((slot) => (slot.column, slot.row))
@@ -251,8 +261,12 @@ void main() {
     expect(aligns.first.widthFactor, closeTo(0.25, 0.0001));
     expect(aligns.first.heightFactor, closeTo(1 / 3, 0.0001));
     expect(aligns.first.alignment, const Alignment(1, 0));
-    expect(aligns.last.widthFactor, 0.5);
-    expect(aligns.last.alignment, const Alignment(-1, 1));
+    // BONK is cell (2, 0) of the 4x3 community sheet.
+    expect(aligns.last.widthFactor, closeTo(0.25, 0.0001));
+    expect(aligns.last.heightFactor, closeTo(1 / 3, 0.0001));
+    final bonk = aligns.last.alignment as Alignment;
+    expect(bonk.x, closeTo(1 / 3, 0.0001));
+    expect(bonk.y, -1);
 
     final images = tester.widgetList<Image>(find.byType(Image));
     expect(

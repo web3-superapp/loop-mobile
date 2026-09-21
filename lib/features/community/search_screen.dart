@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/community/search_controller.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
 import 'package:loop_mobile/features/community/search_models.dart';
+import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -223,6 +225,22 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
         : result.subtitle;
     return LoopRecordRow(
       key: ValueKey<String>('search-result-${result.stableId}'),
+      // Results arrived as bare text, so a page of communities and a page of
+      // people read as one undifferentiated list. Each result carries the
+      // identity it stands for: a community its own logo — or, where the
+      // preset has no local image, the face its id is always given — and a
+      // person their avatar. `stableId` is the community's id on this wire.
+      leading: result.resultType == SearchResultType.community
+          ? CommunityLogo(
+              identity: result.stableId,
+              name: result.title,
+              logoRef: result.avatarRef,
+            )
+          : LoopProfileAvatar(
+              avatarRef: result.avatarRef,
+              alias: result.title,
+              size: 44,
+            ),
       title: result.title,
       subtitle: subtitle,
       trailing: result.memberCount == null ? null : '${result.memberCount}',

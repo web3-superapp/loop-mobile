@@ -4,6 +4,7 @@ import copy
 import importlib.util
 import json
 import plistlib
+import struct
 import tempfile
 import unittest
 from pathlib import Path
@@ -3910,6 +3911,112 @@ class HarnessTests(unittest.TestCase):
         self.assertTrue(
             any("tryParse" in error for error in result),
             msg=f"expected strict governance-action parsing guard: {result}",
+        )
+
+    _COMMUNITY_LOGO_SOURCES = (
+        "lib/core/assets/loop_assets.dart",
+        "lib/features/community/community_logo.dart",
+        "assets/communities/loop-community-atlas.webp",
+        *check_harness.COMMUNITY_LOGO_CALL_SITES,
+        "test/community_logo_test.dart",
+    )
+
+    def _community_logo_root(self, temporary: str) -> Path:
+        root = Path(temporary)
+        for relative in self._COMMUNITY_LOGO_SOURCES:
+            path = root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes((REPOSITORY_ROOT / relative).read_bytes())
+        return root
+
+    def test_community_logo_contract_accepts_the_repository(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._community_logo_root(temporary)
+            result = check_harness.check_community_identity_contract(root)
+
+        self.assertEqual(result, [], msg=f"unexpected findings: {result}")
+
+    def test_a_page_may_not_go_back_to_drawing_bare_initials(self) -> None:
+        """The retired tiles drew the same grey square for every community."""
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._community_logo_root(temporary)
+            path = root / "lib/features/community/search_screen.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "CommunityLogo(",
+                    "CommunityLogoTile(",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_community_identity_contract(root)
+
+        self.assertTrue(
+            any("CommunityLogoTile" in error for error in result),
+            msg=f"expected one-community-one-face guard: {result}",
+        )
+
+    def test_the_community_atlas_must_stay_a_four_by_three_grid(self) -> None:
+        """A sheet of another shape hands each community a slice of two marks."""
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._community_logo_root(temporary)
+            path = root / "assets/communities/loop-community-atlas.webp"
+            data = bytearray(path.read_bytes())
+            # Halve the declared height: the twelve cells stop being square.
+            width, height = check_harness._lossy_webp_size(bytes(data))
+            data[28:30] = struct.pack("<H", height // 2)
+            path.write_bytes(bytes(data))
+
+            result = check_harness.check_community_identity_contract(root)
+
+        self.assertTrue(
+            any("4x3 grid" in error for error in result),
+            msg=f"expected community atlas grid guard: {result}",
+        )
+
+    def test_a_community_face_may_not_come_from_dart_hash_code(self) -> None:
+        """`String.hashCode` is not a published value across runs."""
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._community_logo_root(temporary)
+            path = root / "lib/features/community/community_logo.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "communityLogoHash(trimmed)",
+                    "trimmed.hashCode.abs()",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_community_identity_contract(root)
+
+        self.assertTrue(
+            any("hashCode" in error for error in result),
+            msg=f"expected stable-hash guard: {result}",
+        )
+
+    def test_the_ground_catalogue_must_stay_six_distinct_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._community_logo_root(temporary)
+            path = root / "lib/features/community/community_logo.dart"
+            path.write_text(
+                path.read_text(encoding="utf-8").replace(
+                    "id: 'muted-deep'",
+                    "id: 'muted'",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_community_identity_contract(root)
+
+        self.assertTrue(
+            any("six distinct monogram" in error for error in result),
+            msg=f"expected distinct-ground guard: {result}",
         )
 
     def test_new_pairs_must_stay_a_whole_page_unavailable(self) -> None:

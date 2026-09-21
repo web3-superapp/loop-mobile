@@ -14,6 +14,7 @@ import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
+import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
@@ -365,9 +366,11 @@ class _CommunityFolio extends StatelessWidget {
           : communityVerificationLabel(resolved.verificationStatus),
       trailing: resolved == null
           ? null
-          : CommunityLogoTile(
+          : CommunityLogo(
               key: const ValueKey<String>('community-folio-logo'),
+              identity: resolved.communityId,
               name: resolved.name,
+              logoRef: resolved.logoRef,
               size: 72,
               radius: LoopRadius.shellValue,
               bordered: true,

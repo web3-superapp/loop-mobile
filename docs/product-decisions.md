@@ -64,6 +64,26 @@ Product priority and current delivery are separate:
   counts grouped by the server's `validationStatus`, and an unavailable boost.
   Only `valid` edges count as effective relationships. Every figure is a Mining
   Power input — never a commission, a payout or a downline income.
+- A community wears one face everywhere it is named. Decision 2026-09-21
+  answers a real-device report that no community icon was visible: the server
+  publishes twelve presets `avatar:preset/community-01..12`, the frozen
+  prototype drew four of them, and the eight without an image were rendered as
+  identical grey initials — while every page except the Community home drew
+  initials even for the four that did have one. The community atlas
+  `assets/communities/loop-community-atlas.webp` is now 4x3: the four
+  prototype illustrations unchanged in row 0 (LOOP, PEPE, BONK, MCAT) and
+  eight geometric Lime badges for 05..12, whose SVG sources are kept in
+  `assets/communities/src/` and are not bundled. One widget,
+  `CommunityLogo`, draws every community identity in the app — home list,
+  discovery, the record folio and its identity row, the member directory,
+  search results, the message centre, forward targets, the mining community
+  board and one community's mining panel — so a community cannot show one face
+  on one page and another face on the next. A community whose `logoRef` is
+  absent or unresolvable still gets an identity rather than a placeholder: its
+  own initials on one of six grounds mixed from Lime, Chalk, Muted and Ink,
+  chosen by a stable hash of the community id, never of its name. No fill in
+  that table may match a surface the tile lands on, which the ground probe and
+  `community_logo_test.dart` both hold it to.
 
 ## Communication
 

@@ -526,24 +526,40 @@ void main() {
         ),
       );
 
-      // 01..04 are the four cells the frozen 2x2 atlas carries.
+      // All twelve published presets are cells of the 4x3 atlas, so both rows
+      // draw their own mark and neither falls back to initials.
       expect(
         find.byKey(
-          const ValueKey<String>('community-logo-avatar:preset/community-01'),
+          const ValueKey<String>(
+            'community-logo-image-avatar:preset/community-01',
+          ),
         ),
         findsOneWidget,
       );
-      // 09 is a catalog preset with no local image: initials, not somebody
-      // else's logo.
       expect(
         find.byKey(
-          const ValueKey<String>('community-logo-avatar:preset/community-09'),
+          const ValueKey<String>(
+            'community-logo-image-avatar:preset/community-09',
+          ),
         ),
-        findsNothing,
+        findsOneWidget,
       );
-      // 09 draws its own initials; 01 draws the atlas cell and no monogram.
-      expect(find.text('BE'), findsOneWidget);
+      expect(find.text('BE'), findsNothing);
       expect(find.text('AL'), findsNothing);
+    });
+
+    testWidgets('a community the server gave no preset keeps its initials', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        const CommunityScreen(),
+        community: FakeCommunityGateway(home: _home()),
+      );
+
+      // Not another community's mark, and not an empty square: the row shows
+      // the community's own letters on the ground its id is always given.
+      expect(find.text('JO'), findsOneWidget);
     });
 
     testWidgets('the message panel states a room this account is in', (

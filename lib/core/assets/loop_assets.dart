@@ -6,6 +6,15 @@
 /// specification because the prototype has no re-read glyph. The identity atlas
 /// slot table mirrors `FX.media` in `docs/prototype/app-v2.js`; the atlas is
 /// never cut into loose images, so the mapping stays here.
+///
+/// One exception, and it is deliberate: the community atlas. The prototype
+/// shipped four community images in a 2x2 sheet while the server's catalog
+/// publishes twelve presets `community-01..12`, so eight of every twelve
+/// communities had no mark at all and a directory of them read as a column of
+/// identical grey initials on the device. The sheet is now 4x3 — the four
+/// prototype illustrations unchanged in row 0, and eight geometric Lime badges
+/// drawn for slots 05..12 (sources in `assets/communities/src`). No preset is
+/// ever drawn for a community that was given a different one.
 library;
 
 import 'package:flutter/foundation.dart';
@@ -155,8 +164,8 @@ enum LoopIdentityAtlas {
   /// People · 4 columns × 3 rows.
   people(LoopAssetPaths.people, columns: 4, rows: 3),
 
-  /// Communities · 2 columns × 2 rows.
-  communities(LoopAssetPaths.communities, columns: 2, rows: 2);
+  /// Communities · 4 columns × 3 rows.
+  communities(LoopAssetPaths.communities, columns: 4, rows: 3);
 
   const LoopIdentityAtlas(
     this.path, {
@@ -196,7 +205,8 @@ final class LoopIdentitySlot {
   final String label;
 }
 
-/// Slot table copied from `FX.media` in `docs/prototype/app-v2.js`.
+/// Slot table copied from `FX.media` in `docs/prototype/app-v2.js`, extended
+/// for the eight community presets the prototype never drew.
 abstract final class LoopIdentitySlots {
   static const Map<String, LoopIdentitySlot> people =
       <String, LoopIdentitySlot>{
@@ -289,16 +299,64 @@ abstract final class LoopIdentitySlots {
           label: 'PEPE Community 社区图标',
         ),
         'bonk': LoopIdentitySlot(
-          column: 0,
-          row: 1,
+          column: 2,
+          row: 0,
           fallback: 'BONK',
           label: 'BONK Community 社区图标',
         ),
         'mcat': LoopIdentitySlot(
-          column: 1,
-          row: 1,
+          column: 3,
+          row: 0,
           fallback: 'MCAT',
           label: 'MOONCAT 社区图标',
+        ),
+        'community-05': LoopIdentitySlot(
+          column: 0,
+          row: 1,
+          fallback: 'ORB',
+          label: '社区标识 · 轨道',
+        ),
+        'community-06': LoopIdentitySlot(
+          column: 1,
+          row: 1,
+          fallback: 'BLT',
+          label: '社区标识 · 闪电',
+        ),
+        'community-07': LoopIdentitySlot(
+          column: 2,
+          row: 1,
+          fallback: 'WAV',
+          label: '社区标识 · 波形',
+        ),
+        'community-08': LoopIdentitySlot(
+          column: 3,
+          row: 1,
+          fallback: 'HEX',
+          label: '社区标识 · 六边形',
+        ),
+        'community-09': LoopIdentitySlot(
+          column: 0,
+          row: 2,
+          fallback: 'CUB',
+          label: '社区标识 · 立方',
+        ),
+        'community-10': LoopIdentitySlot(
+          column: 1,
+          row: 2,
+          fallback: 'SHD',
+          label: '社区标识 · 盾形',
+        ),
+        'community-11': LoopIdentitySlot(
+          column: 2,
+          row: 2,
+          fallback: 'SPK',
+          label: '社区标识 · 星芒',
+        ),
+        'community-12': LoopIdentitySlot(
+          column: 3,
+          row: 2,
+          fallback: 'SIG',
+          label: '社区标识 · 信号',
         ),
       };
 

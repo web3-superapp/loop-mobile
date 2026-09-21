@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
+import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
@@ -140,6 +142,9 @@ class _CommunityMembersScreenState
     // device the keyboard never stayed up and not one character could be typed
     // (R3-3).
     final typing = _searchOpen && MediaQuery.viewInsetsOf(context).bottom > 0;
+    // The page is titled 成员 and every row on it is a person: without the
+    // community's own face nothing here says whose directory this is.
+    final community = state.community;
     return LoopStreamPage(
       key: const ValueKey<String>('community-members-screen'),
       archetype: LoopPageArchetype.listing,
@@ -171,6 +176,16 @@ class _CommunityMembersScreenState
                 state.filter != CommunityMemberFilter.all
             ? null
             : '${counts.all}',
+        trailing: community == null
+            ? null
+            : CommunityLogo(
+                key: const ValueKey<String>('community-members-logo'),
+                identity: community.communityId,
+                name: community.name,
+                logoRef: community.logoRef,
+                size: 56,
+                radius: LoopRadius.controlValue,
+              ),
       ),
       filters: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

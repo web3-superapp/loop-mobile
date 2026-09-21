@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
+import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/launch/launch_widgets.dart';
 import 'package:loop_mobile/features/mining/mining_controllers.dart';
@@ -12,7 +13,6 @@ import 'package:loop_mobile/features/mining/mining_copy.dart';
 import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/mining/mining_widgets.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_assets.dart';
 import 'package:loop_mobile/widgets/loop_blocks.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_pages.dart';
@@ -951,7 +951,16 @@ LoopRecordRow _communityRow(
   LoopRowPosition position,
 ) => LoopRecordRow(
   key: ValueKey<String>('mining-rank-community-${row.community.communityId}'),
-  leading: LoopInitialsAvatar(label: row.community.name, size: 44),
+  // The board ranks communities, so each row wears the same face that
+  // community wears on the Community tab. The mining wire carries no
+  // `logoRef`, so the row cannot resolve a preset image; the id-derived
+  // monogram is the face that community keeps wherever its preset has no
+  // local image.
+  leading: CommunityLogo(
+    identity: row.community.communityId,
+    name: row.community.name,
+    size: 44,
+  ),
   title: row.isRanked
       ? '#${row.position} ${row.community.name}'
       : row.community.name,
@@ -1190,12 +1199,25 @@ LoopFolioPrimary _communityHero(
     null when phase == LaunchViewPhase.loading => ('正在读取', '社区总算力读到之后显示在这里。'),
     null => (launchMissingHeading, '这一页还没有读到这个社区的算力。'),
   };
+  final reference = community?.community;
   return LoopFolioPrimary(
     variant: LoopFolioVariant.quiet,
     archetype: LoopFolioArchetype.record,
     kicker: 'COMMUNITY POWER',
     heading: heading,
     caption: caption,
+    // The heading is a figure and the page title is the community's name, so
+    // until the face landed the panel showed nothing that told one community's
+    // mining page from another's at a glance.
+    trailing: reference == null
+        ? null
+        : CommunityLogo(
+            key: const ValueKey<String>('mining-community-logo'),
+            identity: reference.communityId,
+            name: reference.name,
+            size: 56,
+            radius: LoopRadius.controlValue,
+          ),
     // `.folio-stamp` is `0.35×` — the weight already inside the figure above,
     // printed only once the review granted one.
     stamp: switch (community?.weight) {

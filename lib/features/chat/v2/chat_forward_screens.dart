@@ -10,6 +10,7 @@ import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chat/v2/chat_conversation_label.dart';
 import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
 import 'package:loop_mobile/features/chat/v2/direct_channel_directory.dart';
+import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_failure.dart';
@@ -527,15 +528,28 @@ class _ChatForwardScreenState extends ConsumerState<ChatForwardScreen> {
 
   LoopRecordRow _targetRow(ChatForwardState state, int index) {
     final target = state.targets[index];
+    // A community's official channel is that community, so the row wears the
+    // community's own face — the same one its home row, its record and both
+    // mining boards draw. The channel carries no `logoRef`, so a preset image
+    // cannot be resolved here; the id-derived monogram is the same face that
+    // community shows wherever its preset has no local image.
+    final communityId = loopCommunityIdForChannelCid(target.cid);
     return LoopRecordRow(
       key: ValueKey<String>('chat-forward-target-${target.cid}'),
       // `.row-ico`: the prototype's destination rows all carry one.
-      leading: LoopInitialsAvatar(
-        label: target.label,
-        size: 44,
-        shape: BoxShape.rectangle,
-        radius: 15,
-      ),
+      leading: communityId == null
+          ? LoopInitialsAvatar(
+              label: target.label,
+              size: 44,
+              shape: BoxShape.rectangle,
+              radius: 15,
+            )
+          : CommunityLogo(
+              identity: communityId,
+              name: target.label,
+              size: 44,
+              radius: 15,
+            ),
       title: target.label,
       subtitle: target.detail,
       position: index == 0

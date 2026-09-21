@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/community/community_home_widgets.dart';
 import 'package:loop_mobile/features/community/search_controller.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
+import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
@@ -395,7 +396,8 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
     final members = communityMemberCountLabel(community.memberCount);
     return LoopRecordRow(
       key: ValueKey<String>('community-joined-${community.communityId}'),
-      leading: CommunityLogoAvatar(
+      leading: CommunityLogo(
+        identity: community.communityId,
         name: community.name,
         logoRef: community.logoRef,
       ),
@@ -543,6 +545,14 @@ class _CommunityMessagePanel extends ConsumerWidget {
             CommunityMessageRow(
               key: const ValueKey<String>('community-live-voice-row'),
               icon: 'voice',
+              // The one row on this panel that names a community rather than
+              // a kind of message, so it carries that community's own face.
+              leading: CommunityLogo(
+                identity: session.communityId,
+                name: session.communityName,
+                size: 42,
+                radius: 14,
+              ),
               title: session.communityName,
               subtitle: '语音房正在进行',
               stamp: 'LIVE',

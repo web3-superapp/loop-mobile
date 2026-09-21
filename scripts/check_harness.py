@@ -7,6 +7,7 @@ import hashlib
 import json
 import plistlib
 import re
+import struct
 import subprocess
 import sys
 import xml.etree.ElementTree as ElementTree
@@ -7997,6 +7998,143 @@ def check_v2_community_truth_contract(root: Path) -> list[str]:
     return errors
 
 
+COMMUNITY_LOGO_CALL_SITES = (
+    # The Community home's joined list — the one surface that already drew a
+    # preset, and the only one, which is what the device reported.
+    "lib/features/community/community_screen.dart",
+    # Discovery and the community record's identity row share one row builder.
+    "lib/features/community/community_widgets.dart",
+    # The community record folio.
+    "lib/features/community/community_profile_screen.dart",
+    # The member directory folio: every row on that page is a person, so the
+    # community's own face is the only thing that says whose directory it is.
+    "lib/features/community/community_members_screen.dart",
+    # Global search results.
+    "lib/features/community/search_screen.dart",
+    # Forward targets: a community's official channel is that community.
+    "lib/features/chat/v2/chat_forward_screens.dart",
+    # The mining community board and one community's mining panel.
+    "lib/features/mining/mining_secondary_screens.dart",
+)
+
+COMMUNITY_LOGO_TEST_MARKERS = {
+    Path("test/community_logo_test.dart"): (
+        "01..12 each resolve to their own atlas cell",
+        "every published preset draws its image, not initials",
+        "a community with no preset draws its own initials",
+        "one id always gets one ground, whatever its name becomes",
+        "no ground is one of the surfaces the tile lands on",
+        "every ground clears 4.5:1 between its letters and its fill",
+        "home, discovery, the record and the member directory agree",
+    ),
+}
+
+
+def _lossy_webp_size(data: bytes) -> tuple[int, int]:
+    """Width and height of a simple lossy (`VP8 `) WebP."""
+
+    if data[:4] != b"RIFF" or data[8:12] != b"WEBP":
+        raise ValueError("not a RIFF/WEBP container")
+    if data[12:16] != b"VP8 ":
+        raise ValueError(f"unsupported WebP chunk {data[12:16]!r}")
+    if data[23:26] != b"\x9d\x01\x2a":
+        raise ValueError("missing VP8 key-frame sync code")
+    width, height = struct.unpack("<HH", data[26:30])
+    return width & 0x3FFF, height & 0x3FFF
+
+
+def check_community_identity_contract(root: Path) -> list[str]:
+    """One community, one face, on every page that names it.
+
+    A community arrives with `avatar:preset/community-01..12`. The frozen
+    prototype drew four of those twelve, and only the Community home drew even
+    those: every other surface rendered initials, so on the device no community
+    icon was visible anywhere (report 2026-09-21). The atlas now carries all
+    twelve cells and one widget draws all of them, which is what this check
+    holds in place.
+    """
+
+    errors = require_fragments(
+        root,
+        {
+            # The grid and the twelve cells are one fact: a 4x3 declaration
+            # with eight cells missing would silently crop the wrong image.
+            "lib/core/assets/loop_assets.dart": (
+                "communities(LoopAssetPaths.communities, columns: 4, rows: 3)",
+                *(f"'community-{slot:02d}': LoopIdentitySlot(" for slot in range(5, 13)),
+            ),
+            "lib/features/community/community_logo.dart": (
+                "class CommunityLogo extends StatelessWidget",
+                "const int communityLogoPresetCount = 12;",
+                "String? communityLogoSlotFor(String? logoRef)",
+                "int communityLogoHash(String identity)",
+                "CommunityLogoGround communityLogoGroundFor(String identity)",
+            ),
+            **{
+                relative: ("CommunityLogo(",)
+                for relative in COMMUNITY_LOGO_CALL_SITES
+            },
+        },
+    )
+
+    atlas = root / "assets/communities/loop-community-atlas.webp"
+    if not atlas.is_file():
+        errors.append(f"{atlas.relative_to(root)} is missing")
+    else:
+        try:
+            width, height = _lossy_webp_size(atlas.read_bytes())
+        except (ValueError, struct.error) as error:
+            errors.append(f"{atlas.relative_to(root)} could not be read: {error}")
+        else:
+            # Twelve square cells. The crop is computed from the grid at render
+            # time, so a sheet with a different aspect hands every community a
+            # slice of two marks.
+            if width % 4 or height % 3 or width // 4 != height // 3:
+                errors.append(
+                    f"{atlas.relative_to(root)} must be a 4x3 grid of square "
+                    f"cells for the twelve community presets, got {width}x{height}"
+                )
+
+    logo = root / "lib/features/community/community_logo.dart"
+    if logo.is_file():
+        source = read_text(logo)
+        executable = strip_dart_comments(source)
+        # Six grounds, and each one names the colour it is mixed from rather
+        # than introducing a hue the palette does not have.
+        grounds = re.findall(r"CommunityLogoGround\(\s*id: '([a-z-]+)'", executable)
+        if len(grounds) != 6 or len(set(grounds)) != 6:
+            errors.append(
+                "community_logo must offer exactly six distinct monogram "
+                f"grounds; found {grounds}"
+            )
+        # `String.hashCode` is not a published value: a face derived from it
+        # could differ between two runs of the same build.
+        if ".hashCode" in executable:
+            errors.append(
+                "a community's ground must come from the stable FNV hash, "
+                "never from `String.hashCode`"
+            )
+        if "assets/communities/src" not in source:
+            errors.append(
+                "community_logo must record where the eight badge sources live"
+            )
+
+    # The two widgets this one replaced drew initials for every community on
+    # every page but one. Neither may come back.
+    features = root / "lib/features"
+    for path in sorted(features.rglob("*.dart")):
+        text = strip_dart_comments(read_text(path))
+        for retired in ("CommunityLogoTile", "CommunityLogoAvatar"):
+            if retired in text:
+                errors.append(
+                    f"{path.relative_to(root)} still draws `{retired}`; every "
+                    "community identity goes through `CommunityLogo`"
+                )
+
+    errors.extend(check_behavior_test_evidence(root, COMMUNITY_LOGO_TEST_MARKERS))
+    return errors
+
+
 def check_v2_primary_navigation_contract(root: Path) -> list[str]:
     """Lock the runtime V2 shell without pretending the legacy catalog is migrated."""
 
@@ -12722,6 +12860,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_product_contract(root))
     errors.extend(check_v2_primary_navigation_contract(root))
     errors.extend(check_v2_community_truth_contract(root))
+    errors.extend(check_community_identity_contract(root))
     errors.extend(check_route_manifest_contract(root))
     errors.extend(check_chat_attachment_contract(root))
     errors.extend(check_production_chat_audio_room_entry(root))
@@ -12766,7 +12905,7 @@ def main() -> int:
         return 1
     print(
         "Harness check passed: profile, five-destination V2 contract, "
-        "V2 community truth, pins, "
+        "V2 community truth, one community face on every page, pins, "
         "Spot-only product, New Pairs source-scoped truth, Chat snapshot, Preview request truth and exact conversation identity, security capability truth, provider-owned MFA, device-local application lock, device-local display preferences, five-step account opening, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
         "S5 chain/market/wallet-read truth, S6 money-action truth, "
         "S7 launch/mining/referral truth, S9 dual chain slots, "
