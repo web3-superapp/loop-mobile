@@ -7546,7 +7546,7 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected post-bootstrap re-ask guard: {result}",
         )
 
-    def test_push_registration_contract_requires_the_home_arrival_gate(
+    def test_push_registration_contract_requires_the_community_arrival_gate(
         self,
     ) -> None:
         """Decision 0076: the prompt waits for Community."""
@@ -7579,7 +7579,7 @@ class HarnessTests(unittest.TestCase):
 
                 self.assertTrue(
                     any("Community" in error for error in result),
-                    msg=f"expected home-arrival guard: {result}",
+                    msg=f"expected community-arrival guard: {result}",
                 )
 
     def test_push_registration_contract_requires_the_landing_arrival(
@@ -7605,6 +7605,16 @@ class HarnessTests(unittest.TestCase):
                 "if (router.state.matchedLocation == "
                 "LoopRouteManifest.defaultPath) _onCommunityArrival();",
             ),
+            # The same mistake spelled with the path itself.
+            (
+                "if (next.landing == LoopProfileLanding.community) "
+                "_onCommunityArrival();",
+                "if (router.state.matchedLocation == '/community') "
+                "_onCommunityArrival();",
+            ),
+            # Or the drawn frame stops being the other half, which puts the
+            # dialog back over the page the owner is still looking at.
+            ("LoopProductFrameReporter(\n", "Builder(\n"),
         )
         for original, replacement in mutations:
             with self.subTest(mutation=original.strip()):
@@ -7626,11 +7636,61 @@ class HarnessTests(unittest.TestCase):
                     any(
                         "arrival in Community" in error
                         or "both paths into Community" in error
+                        or "other half of the arrival" in error
                         or "route location" in error
                         for error in result
                     ),
                     msg=f"expected arrival guard: {result}",
                 )
+
+    def test_push_registration_contract_keeps_the_build_gate_first(
+        self,
+    ) -> None:
+        """A device with no Firebase must not describe itself as an account."""
+
+        relative = (
+            "lib/app/notifications/loop_push_registration_coordinator.dart"
+        )
+        source = (check_harness.ROOT / relative).read_text(encoding="utf-8")
+        gate = "    if (!_source.isEnabled) {\n"
+        "      _record(LoopPushRegistrationGate.tokenSourceDisabled);\n"
+        "      return;\n    }\n"
+        self.assertIn(gate, source)
+        # Moved down, below the account condition, where it still passes a
+        # plain "is it present" check.
+        moved = source.replace(
+            "    if (!_source.isEnabled) {\n"
+            "      _record(LoopPushRegistrationGate.tokenSourceDisabled);\n"
+            "      return;\n"
+            "    }\n",
+            "",
+            1,
+        ).replace(
+            "    if (principal == null) {\n",
+            "    if (!_source.isEnabled) {\n"
+            "      _record(LoopPushRegistrationGate.tokenSourceDisabled);\n"
+            "      return;\n"
+            "    }\n"
+            "    if (principal == null) {\n",
+            1,
+        )
+        self.assertNotEqual(source, moved)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coordinator = root / relative
+            coordinator.parent.mkdir(parents=True)
+            coordinator.write_text(moved, encoding="utf-8")
+
+            result = check_harness.check_push_registration_contract(root)
+
+        self.assertTrue(
+            any(
+                "must be reported before the platform is looked at" in error
+                for error in result
+            ),
+            msg=f"expected build-gate ordering guard: {result}",
+        )
 
     def test_push_registration_contract_refuses_a_repeated_prompt(
         self,

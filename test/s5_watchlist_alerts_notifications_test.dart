@@ -849,9 +849,7 @@ void main() {
 
     // Decision 0076: the prompt waits for Community, and the page
     // says which moment it is waiting for rather than only that it is.
-    testWidgets('a prompt that waits for the home page says so', (
-      tester,
-    ) async {
+    testWidgets('a prompt that waits for Community says so', (tester) async {
       await pumpS5Page(
         tester,
         const NotificationPreferencesScreen(),

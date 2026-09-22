@@ -13476,11 +13476,27 @@ def check_push_registration_contract(root: Path) -> list[str]:
         # A composition with no push provider says so itself, rather than
         # reporting whichever account condition happened to be read first.
         source_gate = coordinator.find("if (!_source.isEnabled) {")
-        if source_gate < 0 or (0 <= arrival_gate < source_gate):
+        later_gates = {
+            "the platform": coordinator.find("if (platform == null) {"),
+            "the account": coordinator.find("if (principal == null) {"),
+            "the arrival in Community": arrival_gate,
+            "the capability": coordinator.find(
+                "if (!_readPushCapabilityAvailable()) {"
+            ),
+        }
+        if source_gate < 0:
             errors.append(
                 "a build with no push provider must be the first thing the "
                 "registration reports (`if (!_source.isEnabled) {`)"
             )
+        else:
+            for name, position in later_gates.items():
+                if 0 <= position < source_gate:
+                    errors.append(
+                        "a build with no push provider must be reported before "
+                        f"{name} is looked at, or a device with no Firebase "
+                        "describes itself as an account that is not ready yet"
+                    )
 
     # 7. Stream's two configurations are named once, where a rename is visible.
     registrar_path = root / "lib/integrations/communication/stream_push_device_registrar.dart"
@@ -13541,7 +13557,7 @@ def check_push_registration_contract(root: Path) -> list[str]:
         for fragment in (
             "if (next.landing == LoopProfileLanding.community) "
             "_onCommunityArrival();",
-            "ref.read(loopCommunityArrivalProvider.notifier).reach()",
+            "ref.read(loopCommunityArrivalProvider.notifier).landed()",
             "ref.read(loopCommunityArrivalProvider.notifier).leave();",
         ):
             if fragment not in collapsed:
@@ -13555,11 +13571,27 @@ def check_push_registration_contract(root: Path) -> list[str]:
                 "of the five-step opening — must mark the arrival (decision "
                 "0076)"
             )
-        if "matchedLocation == LoopRouteManifest.defaultPath" in collapsed:
+        if re.search(
+            r"matchedLocation\s*==\s*(LoopRouteManifest\.defaultPath|'/community')",
+            collapsed,
+        ):
             errors.append(
                 "the arrival in Community must not be read from a route "
                 "location: a deep link under `/community/…` would never arrive"
             )
+        # Decision 0076: the landing says where the account belongs; only the
+        # shell can say a page was drawn. Acting on the landing alone raises
+        # the dialog over the page the owner is still looking at — the launch
+        # page on a restored session, 创建 LOOP ID at the end of the opening.
+        for fragment in (
+            "LoopProductFrameReporter(",
+            "ref.read(loopCommunityArrivalProvider.notifier).productDrawn()",
+        ):
+            if fragment not in collapsed:
+                errors.append(
+                    "lib/app.dart must take the drawn product frame as the "
+                    f"other half of the arrival (`{fragment}`)"
+                )
     return errors
 
 

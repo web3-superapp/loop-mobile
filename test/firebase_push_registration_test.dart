@@ -675,6 +675,20 @@ void main() {
       expect(harness.source.permissionRequests, 0);
     });
 
+    test('没有账号又没有推送组件时，说的是没有通道，不是账号没准备好', () async {
+      final harness = _Harness(principal: null, sourceEnabled: false);
+      addTearDown(harness.dispose);
+
+      harness.coordinator.start();
+      await _settle();
+
+      expect(
+        harness.gate,
+        LoopPushRegistrationGate.tokenSourceDisabled,
+        reason: 'build 级的事实先说，它不会因为登录而改变',
+      );
+    });
+
     test('拒绝之后只再读，不再问；系统设置里改回来就能接着登记', () async {
       final harness = _Harness(
         principal: _principal,
@@ -821,18 +835,46 @@ void main() {
       expect(harness.gateway.registered, <String>[_firebaseToken]);
     });
 
+    test('落点和画面都要有：只有其中一半不算到过社区', () {
+      for (final landingFirst in <bool>[true, false]) {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+        final arrival = container.read(loopCommunityArrivalProvider.notifier);
+
+        expect(container.read(loopCommunityArrivalProvider), isFalse);
+        expect(
+          landingFirst ? arrival.landed() : arrival.productDrawn(),
+          isFalse,
+          reason: '只有一半的时候还没有人到过任何地方',
+        );
+        expect(container.read(loopCommunityArrivalProvider), isFalse);
+
+        expect(
+          landingFirst ? arrival.productDrawn() : arrival.landed(),
+          isTrue,
+          reason: '第二半到位的那一下，才是这一次到达',
+        );
+        expect(container.read(loopCommunityArrivalProvider), isTrue);
+        expect(
+          arrival.landed() || arrival.productDrawn(),
+          isFalse,
+          reason: '之后每次切回社区都不能再算一次，否则会重问一遍',
+        );
+      }
+    });
+
     test('进过社区这件事属于这一次会话，退出之后不算数', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
       final arrival = container.read(loopCommunityArrivalProvider.notifier);
-
-      expect(container.read(loopCommunityArrivalProvider), isFalse);
-      expect(arrival.reach(), isTrue);
-      expect(arrival.reach(), isFalse, reason: '只有第一次到达才是一次到达，否则每次切回社区都会重问一遍');
+      arrival.landed();
+      arrival.productDrawn();
       expect(container.read(loopCommunityArrivalProvider), isTrue);
 
       arrival.leave();
+
       expect(container.read(loopCommunityArrivalProvider), isFalse);
+      expect(arrival.landed(), isFalse, reason: '下一个账号要从两半都没有开始，不能继承上一个账号的画面');
     });
   });
 
@@ -889,7 +931,9 @@ void main() {
       container.listen(loopV2MetaSnapshotProvider, (previous, next) {});
       await container.read(loopV2MetaSnapshotProvider.future);
       // The account is already where decision 0076 asks the question.
-      container.read(loopCommunityArrivalProvider.notifier).reach();
+      container.read(loopCommunityArrivalProvider.notifier)
+        ..landed()
+        ..productDrawn();
       var republished = 0;
       container.listen(
         loopBootstrapSessionProvider,

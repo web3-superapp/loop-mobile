@@ -239,6 +239,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       () => ref.read(loopOnboardingSequenceProvider),
       ref.read(loopRoutingErrorLogProvider),
       () => metaObserver.observe(LoopV2MetaObservationTrigger.navigation),
+      _onProductFrameDrawn,
     );
     // The device registration and the notification ingress are separate
     // owners of the same provider: one says where a message could arrive, the
@@ -444,9 +445,25 @@ class _LoopAppState extends ConsumerState<LoopApp> {
   /// landing the profile read publishes, and the end of the five-step
   /// opening. Either order works and neither can double the prompt, because
   /// only the first call marks the arrival.
+  ///
+  /// Both of those places run *before* the frame that draws Community, so
+  /// this is only half of an arrival: the other half is
+  /// [_onProductFrameDrawn], and whichever of the two happens second is the
+  /// moment the device is asked.
   void _onCommunityArrival() {
     if (!mounted) return;
-    if (!ref.read(loopCommunityArrivalProvider.notifier).reach()) return;
+    if (!ref.read(loopCommunityArrivalProvider.notifier).landed()) return;
+    pushRegistrationCoordinator.onIdentityMayHaveChanged();
+  }
+
+  /// A product page has been drawn. The other half of the arrival: without
+  /// it the landing is only a statement about where the account belongs, and
+  /// acting on it raises the dialog over the page the owner is still looking
+  /// at — the launch page on a restored session, 创建 LOOP ID at the end of
+  /// the opening.
+  void _onProductFrameDrawn() {
+    if (!mounted) return;
+    if (!ref.read(loopCommunityArrivalProvider.notifier).productDrawn()) return;
     pushRegistrationCoordinator.onIdentityMayHaveChanged();
   }
 
@@ -605,6 +622,7 @@ GoRouter _buildRouter(
   LoopOnboardingSequenceState Function() readOnboarding,
   LoopRoutingErrorLog routingErrors, [
   VoidCallback? onNavigation,
+  VoidCallback? onProductFrameDrawn,
 ]) {
   return GoRouter(
     initialLocation: '/auth',
@@ -714,14 +732,21 @@ GoRouter _buildRouter(
         ),
       ),
       ShellRoute(
-        builder: (context, state, child) => LoopShell(
-          location: state.uri.path,
-          child: Column(
-            children: <Widget>[
-              const LoopSoftUpdatePrompt(),
-              const ProfileAvailabilityBanner(),
-              Expanded(child: child),
-            ],
+        // Decision 0076: the one place in LOOP that may say a product page is
+        // actually on screen. Every tab and every page under one is drawn
+        // inside this shell, and nothing above it can tell a router location
+        // from a frame.
+        builder: (context, state, child) => LoopProductFrameReporter(
+          onDrawn: onProductFrameDrawn ?? () {},
+          child: LoopShell(
+            location: state.uri.path,
+            child: Column(
+              children: <Widget>[
+                const LoopSoftUpdatePrompt(),
+                const ProfileAvailabilityBanner(),
+                Expanded(child: child),
+              ],
+            ),
           ),
         ),
         // Peer tabs fade; every other route pushes horizontally through the

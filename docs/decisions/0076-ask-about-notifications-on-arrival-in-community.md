@@ -31,17 +31,25 @@ first page that is not a step.
 ## Decision
 
 - The notification permission is requested, and the device registered, on the
-  account's **first arrival in Community** in a run. Not before, not on any
-  other page, and not a second time.
-- The arrival is the landing `GET /v2/profile` published becoming
-  `community` — not a route location. An account whose answer is Community
-  has arrived whether the router put it on the tab or on a conversation deep
-  under it, and a location string would never match the second one.
-- Both paths that produce that answer mark it: the landing the profile read
-  publishes, and the end of the five-step opening. Either order works. A
-  restored session that reaches Community before `bootstrap` answers, and one
-  whose `bootstrap` answers first, both end up registering, because the
-  arrival and the backend identity each re-evaluate the registration.
+  account's **first arrival in Community** in a run — on the first product
+  frame, not before it, not on any other page, and not a second time.
+- An arrival is two facts, and neither is enough on its own:
+  - the account **belongs** in Community: the landing `GET /v2/profile`
+    published. Not a route location — an account whose answer is Community
+    has arrived whether the router put it on the tab or on a conversation
+    deep under it, and a location string would never match the second one.
+  - a product frame has been **drawn**, reported by the one shell every page
+    under a tab is built in. The landing is published *before* the navigation
+    it causes — the opening publishes it and then goes, a restored session
+    publishes it and lets the launch gate refresh the router — and a router
+    location changes in that same turn. Acting on either alone raises the
+    dialog over the page the owner is still looking at.
+- Whichever of the two happens second is the moment. Both paths that produce
+  the landing mark their half: the landing the profile read publishes, and
+  the end of the five-step opening. A restored session that reaches Community
+  before `bootstrap` answers, and one whose `bootstrap` answers first, both
+  end up registering, because the arrival and the backend identity each
+  re-evaluate the registration.
 - The provider's own token refresh waits for the same arrival. On Android the
   first registration token exists before anybody has been asked anything, and
   registering it would put the device on the server's list at a moment nobody
@@ -59,9 +67,13 @@ first page that is not a step.
 1. **Nothing is asked during the opening.** No page of the five-step sequence
    can produce a permission dialog, and neither can the launch page.
 2. **A refusal is read, never repeated.** The device is asked at most once per
-   account. Afterwards the answer is re-read with `getNotificationSettings`,
-   which draws nothing, so a permission the owner turned on in the system
-   settings is picked up the next time LOOP comes to the foreground.
+   sign-in on this device. Afterwards the answer is re-read with
+   `getNotificationSettings`, which draws nothing, so a permission the owner
+   turned on in the system settings is picked up the next time LOOP comes to
+   the foreground. Signing out drops the device's registration, so the same
+   account signing in again is a new sign-in and may be asked again — the
+   platform still answers a second prompt from its own stored decision
+   without drawing one, unless the owner has never decided.
 3. **A registered device asks the provider for nothing.** Re-evaluation is
    idempotent and happens on the arrival, on the backend accepting the
    account, on the capability document changing its answer, and on returning
@@ -81,3 +93,8 @@ first page that is not a step.
 - The arrival is application state and not persisted: a cold start asks the
   same question of the platform again, which answers from its own stored
   decision without drawing anything.
+- Known and left alone for now: a token the provider rotates after a refusal
+  is still registered, because the refresh path checks the account, the
+  arrival and the runtime but not the permission. The row it creates is a
+  place the server *could* send to; nothing is delivered to a device the
+  owner has refused.
