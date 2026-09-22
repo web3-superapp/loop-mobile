@@ -50,59 +50,73 @@ class LoopSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Semantics(
-      scopesRoute: true,
-      namesRoute: title != null,
-      label: title,
-      explicitChildNodes: true,
-      child: FocusScope(
-        autofocus: true,
-        child: Container(
-          key: const ValueKey<String>('loop-sheet'),
-          // The sheet's own ground, and nothing else in this decoration.
-          // Flutter paints a gradient *instead of* the colour declared beside
-          // it, so an Ink ground and a Lime glow cannot share one box: with
-          // both declared the sheet painted only the 5% glow and the page
-          // underneath read straight through the words on it.
-          decoration: const BoxDecoration(
-            color: LoopColors.ink,
-            borderRadius: _radius,
-            border: Border(top: BorderSide(color: LoopColors.line2)),
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: Color(0xD1050604),
-                offset: Offset(0, -20),
-                blurRadius: 60,
-              ),
-            ],
-          ),
-          // The glow sits on that ground as its own layer.
-          child: DecoratedBox(
+    // A modal bottom sheet is not moved by the keyboard on its own: on an
+    // iPhone the 二次验证 sheet's code field and its buttons sat under the
+    // keypad (2026-09-22). The sheet gives up the keyboard's height at its
+    // foot, so its scroll view shrinks and the focused field is scrolled
+    // into what is left.
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return AnimatedPadding(
+      padding: EdgeInsets.only(bottom: keyboard),
+      duration: reduceMotion
+          ? Duration.zero
+          : const Duration(milliseconds: 120),
+      curve: Curves.easeOut,
+      child: Semantics(
+        scopesRoute: true,
+        namesRoute: title != null,
+        label: title,
+        explicitChildNodes: true,
+        child: FocusScope(
+          autofocus: true,
+          child: Container(
+            key: const ValueKey<String>('loop-sheet'),
+            // The sheet's own ground, and nothing else in this decoration.
+            // Flutter paints a gradient *instead of* the colour declared beside
+            // it, so an Ink ground and a Lime glow cannot share one box: with
+            // both declared the sheet painted only the 5% glow and the page
+            // underneath read straight through the words on it.
             decoration: const BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(0, -1),
-                radius: 1.1,
-                colors: <Color>[Color(0x0DB8FF20), Color(0x00B8FF20)],
-                stops: <double>[0, 0.64],
-              ),
+              color: LoopColors.ink,
               borderRadius: _radius,
+              border: Border(top: BorderSide(color: LoopColors.line2)),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: Color(0xD1050604),
+                  offset: Offset(0, -20),
+                  blurRadius: 60,
+                ),
+              ],
             ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 20, 0, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  if (title != null)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                      child: Text(
-                        title!,
-                        style: theme.textTheme.headlineMedium,
+            // The glow sits on that ground as its own layer.
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(0, -1),
+                  radius: 1.1,
+                  colors: <Color>[Color(0x0DB8FF20), Color(0x00B8FF20)],
+                  stops: <double>[0, 0.64],
+                ),
+                borderRadius: _radius,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(0, 20, 0, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    if (title != null)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                        child: Text(
+                          title!,
+                          style: theme.textTheme.headlineMedium,
+                        ),
                       ),
-                    ),
-                  Flexible(child: SingleChildScrollView(child: child)),
-                ],
+                    Flexible(child: SingleChildScrollView(child: child)),
+                  ],
+                ),
               ),
             ),
           ),

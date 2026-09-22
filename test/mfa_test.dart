@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -9,6 +10,7 @@ import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
 import 'package:loop_mobile/features/security/mfa/passkey_sheet.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 import 'package:loop_mobile/integrations/privy/privy_mfa_gateway.dart';
 
 import 'support/loop_ground_probe.dart';
@@ -794,6 +796,76 @@ void main() {
       );
     });
 
+    testWidgets('the secret can be copied with one tap', (tester) async {
+      final container = _container(
+        _FakeMfaGateway(afterSubmit: <LoopMfaEnrollment>[totp]),
+      );
+      await container.read(loopMfaProvider.notifier).load();
+      await _pumpSheet(tester, container);
+      await tester.tap(find.byKey(const ValueKey<String>('mfa-sheet-begin')));
+      await tester.pumpAndSettle();
+
+      final copied = <String>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied.add(
+              (call.arguments as Map<Object?, Object?>)['text']! as String,
+            );
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('mfa-sheet-secret-copy')),
+      );
+      await tester.pump();
+      expect(copied, <String>['JBSWY3DPEHPK3PXP']);
+      expect(find.text('已复制密钥'), findsOneWidget);
+      // The explanation names the kind of app the reader needs.
+      expect(find.textContaining('Google Authenticator'), findsOneWidget);
+    });
+
+    testWidgets('the keyboard never covers the code field or the buttons', (
+      tester,
+    ) async {
+      // iPhone 14 Pro Max, 2026-09-22: the keypad sat over the 6-digit field
+      // and the 验证并开启 / 关闭 buttons, and nothing could be scrolled up.
+      final container = _container(
+        _FakeMfaGateway(afterSubmit: <LoopMfaEnrollment>[totp]),
+      );
+      await container.read(loopMfaProvider.notifier).load();
+      await _pumpSheet(tester, container);
+      await tester.tap(find.byKey(const ValueKey<String>('mfa-sheet-begin')));
+      await tester.pumpAndSettle();
+
+      tester.view.viewInsets = const FakeViewPadding(bottom: 600);
+      addTearDown(tester.view.resetViewInsets);
+      await tester.pumpAndSettle();
+
+      final sheetBottom = tester
+          .getRect(find.byKey(const ValueKey<String>('loop-sheet')))
+          .bottom;
+      expect(sheetBottom, lessThanOrEqualTo(1400 - 600));
+
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('mfa-sheet-close')),
+      );
+      await tester.pumpAndSettle();
+      final close = tester.getRect(
+        find.byKey(const ValueKey<String>('mfa-sheet-close')),
+      );
+      expect(close.bottom, lessThanOrEqualTo(1400 - 600));
+    });
+
     testWidgets('a secret is shown as a square and as a key to type', (
       tester,
     ) async {
@@ -863,6 +935,7 @@ Future<void> _pumpSheet(
       container: container,
       child: MaterialApp(
         theme: LoopTheme.dark,
+        builder: (context, child) => LoopToastHost(child: child!),
         home: Scaffold(
           body: Builder(
             builder: (context) => Center(

@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/security/mfa/mfa_controller.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 import 'package:loop_mobile/widgets/loop_sheet.dart';
+import 'package:loop_mobile/widgets/loop_toast.dart';
 
 /// What a failed second-factor call means, in the owner's words.
 ///
@@ -104,7 +105,9 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
           Text(
             state.hasTotp
                 ? '关闭后，登录服务在要求二次验证时不会再问你验证码。'
-                : '用验证器 App 生成 6 位验证码。密钥由登录服务签发，LOOP 不保存它。',
+                : '验证器 App 是手机上生成 6 位验证码的应用，例如 Google Authenticator、'
+                      'Microsoft Authenticator、1Password。用它扫码或输入密钥即可。'
+                      '密钥由登录服务签发，LOOP 不保存它。',
             style: LoopTypography.caption(12, color: LoopColors.text3),
           ),
           const SizedBox(height: 12),
@@ -128,6 +131,14 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
         ],
       ),
     );
+  }
+
+  /// The secret goes to the clipboard as typed, for the authenticator that
+  /// cannot scan; nothing else about it is kept or logged.
+  Future<void> _copySecret(String secret) async {
+    await Clipboard.setData(ClipboardData(text: secret));
+    if (!mounted) return;
+    LoopToast.show(context, message: '已复制密钥', kind: LoopToastKind.ok);
   }
 
   List<Widget> _enrolment(LoopMfaController controller, LoopMfaState state) {
@@ -158,10 +169,23 @@ class _LoopMfaSheetState extends ConsumerState<_LoopMfaSheet> {
       _LoopTotpSquare(data: secret.authUrl),
       const SizedBox(height: 12),
       const LoopLabel('手动输入的密钥', tight: true),
-      SelectableText(
-        secret.secret,
-        key: const ValueKey<String>('mfa-sheet-secret'),
-        style: LoopTypography.figure(15, color: LoopColors.chalk),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Expanded(
+            child: SelectableText(
+              secret.secret,
+              key: const ValueKey<String>('mfa-sheet-secret'),
+              style: LoopTypography.figure(15, color: LoopColors.chalk),
+            ),
+          ),
+          const SizedBox(width: 12),
+          LoopButton(
+            key: const ValueKey<String>('mfa-sheet-secret-copy'),
+            label: '复制',
+            onPressed: () => unawaited(_copySecret(secret.secret)),
+          ),
+        ],
       ),
       const SizedBox(height: 14),
       const LoopLabel('验证器给出的 6 位码', tight: true),
