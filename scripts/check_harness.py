@@ -10327,7 +10327,7 @@ def check_notification_contract(root: Path) -> list[str]:
         )
         gated = (
             "config.canInitializeFirebase" in production_code
-            and "LoopFirebaseIngress.ensureApp()" in production_code
+            and "LoopFirebaseIngress.ensureApp(" in production_code
             and "if (firebaseApp != null)" in production_code
         )
         if len(overrides) != 1 or not gated:

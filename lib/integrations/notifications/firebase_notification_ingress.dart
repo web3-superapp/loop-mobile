@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:loop_mobile/app/notifications/loop_push_registration_diagnostics.dart';
 import 'package:loop_mobile/firebase_options.dart';
 import 'package:loop_mobile/integrations/notifications/loop_notification_event_source.dart';
 import 'package:loop_mobile/integrations/notifications/loop_push_token_source.dart';
@@ -32,15 +33,27 @@ abstract final class LoopFirebaseIngress {
   /// failure is not thrown — a device that cannot reach the Firebase
   /// initialisation path still has an account, a wallet and a market, and none
   /// of them may be held up by push.
-  static Future<FirebaseApp?> ensureApp() async {
+  ///
+  /// It is, however, written down. Swallowing the failure entirely left the
+  /// device with a disabled token source and no way for any surface to say
+  /// so: it read exactly like a device that had registered. [diagnostics]
+  /// receives the step and the time, never the options, the error or anything
+  /// out of the configuration.
+  static Future<FirebaseApp?> ensureApp({
+    LoopPushRegistrationDiagnosticsRecorder? diagnostics,
+  }) async {
     final options = DefaultFirebaseOptions.currentPlatformOrNull;
-    if (options == null) return null;
+    if (options == null) {
+      diagnostics?.record(LoopPushRegistrationGate.noPlatform);
+      return null;
+    }
     try {
       if (Firebase.apps.isNotEmpty) return Firebase.app();
       return await Firebase.initializeApp(options: options);
     } catch (_) {
       // Unknown initialization failures are fail-closed. They are never logged
       // with the payload or the configuration.
+      diagnostics?.record(LoopPushRegistrationGate.tokenSourceDisabled);
       return null;
     }
   }

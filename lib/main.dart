@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
+import 'package:loop_mobile/app/notifications/loop_push_registration_diagnostics.dart';
+import 'package:loop_mobile/app/notifications/loop_push_registration_providers.dart';
 import 'package:loop_mobile/features/chain/chain_gateway.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
 import 'package:loop_mobile/features/mining/mining_gateway.dart';
@@ -61,12 +63,25 @@ Future<void> main() async {
   // registration is attempted. The offline Preview entry point has its own
   // `main` and never reaches this line.
   final config = AppConfig.fromEnvironment();
+  // The device's own record of why it may not be addressable. It is created
+  // before the scope because the first thing that can go wrong — a Firebase
+  // that never came up — happens before there is one, and a device with no
+  // push provider must be able to say that rather than look registered.
+  final pushDiagnostics = LoopPushRegistrationDiagnosticsRecorder();
   final firebaseApp = config.canInitializeFirebase
-      ? await LoopFirebaseIngress.ensureApp()
+      ? await LoopFirebaseIngress.ensureApp(diagnostics: pushDiagnostics)
       : null;
+  // `ensureApp` records the two failures it can tell apart. This is the
+  // third: a build that was never given a configuration to try.
+  if (!config.canInitializeFirebase) {
+    pushDiagnostics.record(LoopPushRegistrationGate.tokenSourceDisabled);
+  }
   runApp(
     ProviderScope(
       overrides: [
+        loopPushRegistrationDiagnosticsProvider.overrideWithValue(
+          pushDiagnostics,
+        ),
         if (firebaseApp != null) ...[
           loopNotificationEventSourceProvider.overrideWithValue(
             FirebaseLoopNotificationEventSource.forDefaultApp(),
