@@ -402,9 +402,11 @@ final class StreamVideoSdkSession {
   ]) {
     _refusal = refusal;
     if (kDebugMode) {
+      // The kind of answer, never the answer: an SDK error can carry a token,
+      // a user id or a URL, and a device log is not the place for any of them.
       debugPrint(
         'LOOP voice session refused: ${refusal.name}'
-        '${detail == null ? '' : ' · $detail'}',
+        '${detail == null ? '' : ' · ${detail.runtimeType}'}',
       );
     }
     return StreamVideoSessionAuthorization.unavailable;

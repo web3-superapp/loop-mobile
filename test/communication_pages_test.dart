@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/chat/calls/stream_foreground_call_view.dart
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/features/chat/v2/chat_search_screen.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/community_chat_screen.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
@@ -1335,6 +1336,13 @@ void main() {
       expect(voice.commands, contains('leave'));
       expect(find.textContaining('房间已结束'), findsWidgets);
       expect(back, <String>['back']);
+      // The strip is the only sign the account was in a room; left standing
+      // it offers a way back into one that is gone.
+      final scope = ProviderScope.containerOf(
+        tester.element(find.byType(VoiceRoomScreen)),
+        listen: false,
+      );
+      expect(scope.read(voiceRoomSessionProvider), isNull);
     });
 
     testWidgets('the listener list has a door, or no sentence about it', (
@@ -1540,6 +1548,46 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('2 人在房间里'), findsOneWidget);
+    });
+
+    testWidgets('a page that is gone, or behind, reads nothing', (
+      tester,
+    ) async {
+      // The fifteen seconds belong to the page: a room page the reader left,
+      // and a LOOP that is not in front of them, ask for nothing at all.
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
+      );
+      await pumpCommunityPage(
+        tester,
+        const _UnmountHarness(
+          child: VoiceRoomScreen(communityId: testCommunityId),
+        ),
+        voiceRoom: voice,
+      );
+
+      // It is reading while it is here.
+      final onScreen = voice.commands.length;
+      await tester.pump(const Duration(seconds: 15));
+      await tester.pumpAndSettle();
+      expect(voice.commands.length, greaterThan(onScreen));
+
+      // LOOP goes behind something else.
+      final backgrounded = voice.commands.length;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump(const Duration(seconds: 60));
+      expect(voice.commands, hasLength(backgrounded));
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+
+      // The reader leaves the page.
+      await tester.tap(find.byKey(const ValueKey<String>('harness-unmount')));
+      await tester.pumpAndSettle();
+      final left = voice.commands.length;
+      await tester.pump(const Duration(seconds: 60));
+      await tester.pumpAndSettle();
+      expect(voice.commands, hasLength(left));
     });
 
     testWidgets('a room with no call of its own is still read', (tester) async {
@@ -3442,6 +3490,35 @@ void main() {
 
 /// One Stream Audio Room call, recorded into the same log as the LOOP
 /// commands so a test can pin the order of the two.
+/// Takes a page off the screen the way leaving it does, without this file
+/// mounting a tree of its own.
+class _UnmountHarness extends StatefulWidget {
+  const _UnmountHarness({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_UnmountHarness> createState() => _UnmountHarnessState();
+}
+
+class _UnmountHarnessState extends State<_UnmountHarness> {
+  var _mounted = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        Expanded(child: _mounted ? widget.child : const SizedBox.shrink()),
+        TextButton(
+          key: const ValueKey<String>('harness-unmount'),
+          onPressed: () => setState(() => _mounted = false),
+          child: const Text('leave'),
+        ),
+      ],
+    );
+  }
+}
+
 final class _FakeVoiceMediaFactory implements AudioRoomCallFactory {
   _FakeVoiceMediaFactory({required this.log, this.joinFailures = 0});
 

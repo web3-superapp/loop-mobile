@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
+import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
@@ -370,9 +371,7 @@ class _CommunityProfileScreenState
       // cannot be entered is still the community's one live room.
       LoopToast.show(
         context,
-        message:
-            '${communicationUnavailableReason(outcome.unconfirmedReason)}'
-            '再点一次「开启语音房」可以重试。',
+        message: voiceRoomOpenUnfinishedText(outcome.unconfirmedReason),
         kind: LoopToastKind.warn,
       );
       return;
@@ -502,11 +501,15 @@ class _CommunityActionPair extends ConsumerWidget {
     // page is on screen that row is read again, so a room somebody else
     // opened lights this control up without the reader touching anything.
     final watched = ref.watch(communityVoiceLiveControllerProvider);
+    // A room that ended has to take the control with it: an entry left
+    // standing over a room nobody is in is a door into 「房间已结束」, and the
+    // owner cannot open the next room while it is there. So the watched row
+    // replaces the record's own rather than being added to it — for this
+    // community, and never for another one's answer.
     final voiceLive =
-        voice.isLive ||
-        (watched != null &&
-            watched.communityId == detail.community.communityId &&
-            watched.isLive);
+        watched != null && watched.communityId == detail.community.communityId
+        ? watched.isLive
+        : voice.isLive;
     final joined = detail.viewer.hasJoined;
     final banned =
         detail.viewer.membership?.status == CommunityMemberStatus.banned;

@@ -224,7 +224,10 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
           ref.read(voiceRoomControllerProvider.notifier).refreshHandRaises(),
         );
       case AudioRoomRoomSignal.participants:
-        unawaited(_readLiveRoom());
+        // Through the poll, so this read is the one the fifteen seconds are
+        // counted from and a burst of cues is one read rather than four
+        // requests per cue.
+        _livePoll.readNow();
     }
   }
 
@@ -388,12 +391,14 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                 key: const ValueKey<String>('voiceroom-media-backstage'),
                 icon: 'warn',
                 message: '这个房间还没有开放收听',
-                // The server names which of its two writes is unconfirmed;
-                // 「刷新一次」 is the read that makes it try again.
+                // One fact, one next step. The fact is the server's own when
+                // it named which write is unconfirmed, and the next step is
+                // the button below — so it is not said twice.
                 reason: snapshot.providerSync.confirmed
                     ? '这里不会发起语音连接。刷新一次，或让主持人重新开启。'
-                    : '${communicationUnavailableReason(snapshot.providerSync.reason)}'
-                          '这里不会发起语音连接，刷新一次再看。',
+                    : communicationUnavailableReason(
+                        snapshot.providerSync.reason,
+                      ),
                 action: LoopButton(
                   key: const ValueKey<String>(
                     'voiceroom-media-backstage-retry',
@@ -587,6 +592,13 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     // including this one (decision 0069). There is nothing left to leave and
     // nothing left on this page, so it says what happened and goes back.
     if (failure == CommunityFailureKind.stale) {
+      // The membership went with the room, and the strip is the only sign
+      // the account was in one: left standing it offers a way back into a
+      // room that is gone.
+      final communityId = widget.communityId;
+      if (communityId != null) {
+        ref.read(voiceRoomSessionProvider.notifier).leave(communityId);
+      }
       LoopToast.show(
         context,
         message: '房间已结束 · 主持人已经结束这个语音房',
@@ -1032,6 +1044,18 @@ String voiceRoomFailureText(CommunityFailureKind? kind, String? reasonCode) =>
     reasonCode != null && _voiceRoomNamedRefusals.contains(reasonCode)
     ? communicationUnavailableReason(reasonCode)
     : communityFailureReason(kind);
+
+/// What the host is told when the room was opened and cannot be entered.
+///
+/// Two sentences, both in the host's own terms: what is missing, and the one
+/// thing that finishes it. The shared `reasonCode` copy is written for whoever
+/// is looking at a room — 「刷新一次，或让主持人重新开启」 tells the host to ask
+/// themselves — so the host's own moment has its own words.
+String voiceRoomOpenUnfinishedText(String? reasonCode) => switch (reasonCode) {
+  'STREAM_CALL_CREATE_UNCONFIRMED' => '语音房记下了，但通话还没有建好。再点一次「开启语音房」可以接着建。',
+  'STREAM_CALL_GO_LIVE_UNCONFIRMED' => '语音房建好了，但还没有开放收听。再点一次「开启语音房」可以重试。',
+  _ => '语音房还没有准备好，现在谁都进不去。再点一次「开启语音房」可以重试。',
+};
 
 /// What an unconfirmed provider write means for the reader.
 String voiceRoomProviderSyncText(String? reasonCode) =>
@@ -2046,9 +2070,11 @@ class VoiceRoomSpeakerGrid extends StatelessWidget {
             _SpeakerTile(
               key: ValueKey<String>('voiceroom-speaker-${speaker.key}'),
               name: speaker.name,
-              // A tile is here because a microphone is open; the ring is for
-              // the one being heard at this moment.
-              muted: !speaker.isSpeaking,
+              // Every tile here has an open microphone, so none of them is
+              // drawn as a closed one; the ring marks the one being heard at
+              // this moment.
+              ring: speaker.isSpeaking,
+              dim: false,
               caption: speaker.isSpeaking ? '正在发言' : '麦克风已开',
             ),
         ],
@@ -2100,7 +2126,8 @@ class VoiceRoomSpeakerGrid extends StatelessWidget {
           for (final member in roster.items)
             _SpeakerTile(
               name: voiceRoomMemberName(member),
-              muted: member.muted,
+              ring: !member.muted,
+              dim: member.muted,
               caption: member.muted ? '已静音' : '可以发言',
             ),
         ],
@@ -2124,13 +2151,21 @@ final class VoiceRoomLiveSpeakers {
 class _SpeakerTile extends StatelessWidget {
   const _SpeakerTile({
     required this.name,
-    required this.muted,
+    required this.ring,
+    required this.dim,
     required this.caption,
     super.key,
   });
 
   final String name;
-  final bool muted;
+
+  /// The prototype's Lime ring: this person is being heard right now.
+  final bool ring;
+
+  /// The quiet tile: a microphone that is closed. It is not the same thing as
+  /// having no ring — an open microphone nobody is talking into has neither a
+  /// ring nor the muted grey.
+  final bool dim;
 
   /// The one line under the name. A record says what LOOP granted, a call
   /// says what it hears; the tile never mixes the two.
@@ -2149,16 +2184,16 @@ class _SpeakerTile extends StatelessWidget {
         Container(
           width: 52,
           height: 52,
-          decoration: muted
-              ? null
-              : const BoxDecoration(
+          decoration: ring
+              ? const BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.fromBorderSide(
                     BorderSide(color: LoopColors.lime, width: 2),
                   ),
-                ),
+                )
+              : null,
           alignment: Alignment.center,
-          child: LoopInitialsAvatar(label: name, size: muted ? 52 : 46),
+          child: LoopInitialsAvatar(label: name, size: ring ? 46 : 52),
         ),
         const SizedBox(height: 5),
         Text(
@@ -2173,7 +2208,11 @@ class _SpeakerTile extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: LoopTypography.caption(
             11,
-            color: muted ? LoopColors.text3 : LoopColors.lime,
+            color: dim
+                ? LoopColors.text3
+                : ring
+                ? LoopColors.lime
+                : LoopColors.text2,
           ),
         ),
       ],
