@@ -6,6 +6,10 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<!-- LOOP only uses the platform HTTPS stack; no proprietary encryption, so
+	     App Store Connect need not ask about export compliance per build. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>CFBundleDisplayName</key>
 	<string>Loop</string>
 	<key>CFBundleExecutable</key>
