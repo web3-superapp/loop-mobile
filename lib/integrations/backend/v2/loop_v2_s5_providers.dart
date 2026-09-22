@@ -4,6 +4,7 @@ import 'package:loop_mobile/features/market/alerts/alerts_gateway.dart';
 import 'package:loop_mobile/features/market/market_read_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
+import 'package:loop_mobile/features/notifications/push_device_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_providers.dart';
@@ -14,6 +15,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.da
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_write_origin_source.dart';
 import 'package:loop_mobile/integrations/backend/v2/market/loop_v2_market_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/notifications/loop_v2_notifications_api.dart';
+import 'package:loop_mobile/integrations/backend/v2/notifications/loop_v2_push_device_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/wallet/loop_v2_wallet_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/watchlist/loop_v2_watchlist_api.dart';
 
@@ -48,6 +50,11 @@ final loopV2AlertsApiProvider = Provider<LoopV2AlertsApi?>((ref) {
 final loopV2NotificationsApiProvider = Provider<LoopV2NotificationsApi?>((ref) {
   final dio = ref.watch(loopBackendDioProvider);
   return dio == null ? null : DioLoopV2NotificationsApi(dio);
+});
+
+final loopV2PushDeviceApiProvider = Provider<LoopV2PushDeviceApi?>((ref) {
+  final dio = ref.watch(loopBackendDioProvider);
+  return dio == null ? null : DioLoopV2PushDeviceApi(dio);
 });
 
 /// The optional platform/device annotation attached to S5 writes. It reuses the
@@ -146,6 +153,21 @@ final loopV2NotificationsGatewayProvider = Provider<NotificationsGateway>((
     return const UnavailableNotificationsGateway();
   }
   return DioLoopV2NotificationsGateway(
+    api: api,
+    clientMetadata: metadata,
+    session: session,
+    originSource: ref.watch(loopV2WriteOriginSourceProvider),
+  );
+});
+
+final loopV2PushDeviceGatewayProvider = Provider<PushDeviceGateway>((ref) {
+  final api = ref.watch(loopV2PushDeviceApiProvider);
+  final metadata = ref.watch(loopV2ClientMetadataProvider);
+  final session = ref.watch(loopAuthenticatedSessionProvider);
+  if (api == null || metadata == null || session == null) {
+    return const UnavailablePushDeviceGateway();
+  }
+  return DioLoopV2PushDeviceGateway(
     api: api,
     clientMetadata: metadata,
     session: session,

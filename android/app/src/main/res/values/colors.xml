@@ -3,4 +3,6 @@
     <!-- LOOP Ink; matches the in-app ground so the launch frame does not flash. -->
     <color name="ic_launcher_background">#050604</color>
     <color name="loop_ink">#050604</color>
+    <!-- LOOP Lime; the accent Android tints the notification icon with. -->
+    <color name="loop_lime">#B8FF20</color>
 </resources>

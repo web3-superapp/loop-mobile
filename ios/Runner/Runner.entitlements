@@ -2,6 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- LOOP keeps its own keychain items. An empty access group is the
+	     explicit refusal of a shared one: the V2 device journal must not be
+	     readable by any other application signed by the same team. -->
+	<key>keychain-access-groups</key>
+	<array/>
 	<key>aps-environment</key>
 	<string>$(LOOP_APS_ENVIRONMENT)</string>
 	<key>com.apple.developer.applesignin</key>

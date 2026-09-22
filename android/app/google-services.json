@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "225868941577",
+    "project_id": "loop-d4746",
+    "storage_bucket": "loop-d4746.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:225868941577:android:fe779e131119af7c64abd8",
+        "android_client_info": {
+          "package_name": "com.cywd.loop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCPB1b1u7gf0omomAI4bHULxear14Ogrfs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The status-bar icon Android draws for a LOOP notification.
+
+     Android 5+ renders this as a single-colour alpha mask: every opaque pixel
+     becomes white and the tint from `default_notification_color` is applied
+     around it. The launcher plate must therefore stay out of it — a filled
+     square here is exactly how an app ends up with a white blob in the status
+     bar. This is the LOOP mark's stroke and nothing else. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="128"
+    android:viewportHeight="128">
+    <path
+        android:pathData="M64 64c-11-24-45-24-45 0s34 24 45 0c11-24 45-24 45 0s-34 24-45 0"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="14"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

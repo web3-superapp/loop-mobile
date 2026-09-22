@@ -4,6 +4,7 @@ import copy
 import importlib.util
 import json
 import plistlib
+import shutil
 import struct
 import tempfile
 import unittest
@@ -135,7 +136,11 @@ def write_audio_room_native_fixture(
 
     info_path = root / "ios" / "Runner" / "Info.plist"
     info_path.parent.mkdir(parents=True)
-    info: dict[str, object] = {}
+    # S70: push is declared, and only push. The guard reads this array rather
+    # than merely tolerating it, so the minimum fixture has to carry it.
+    info: dict[str, object] = {
+        "UIBackgroundModes": list(check_harness.IOS_PUSH_BACKGROUND_MODES),
+    }
     if include_ios_microphone:
         info["NSMicrophoneUsageDescription"] = "用于在 Loop 语音房中发言"
     with info_path.open("wb") as stream:
@@ -6817,7 +6822,13 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected disabled production source guard: {result}",
         )
 
-    def test_production_main_cannot_override_disabled_notification_source(self) -> None:
+    # S70 replaced "never override" with "override once, and only for a build
+    # that actually started Firebase". An ungated override is the same mistake
+    # the old rule was written against: a production composition that claims a
+    # provider it has not brought up.
+    def test_production_main_cannot_override_the_source_without_firebase(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             main = root / "lib" / "main.dart"
@@ -6831,9 +6842,47 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_notification_contract(root)
 
         self.assertTrue(
-            any("must not override the disabled" in error for error in result),
+            any(
+                "config.canInitializeFirebase" in error
+                and "exactly once" in error
+                for error in result
+            ),
             msg=f"expected production entrypoint guard: {result}",
         )
+
+    def test_production_main_may_mount_the_gated_firebase_ingress(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            main = root / "lib" / "main.dart"
+            main.parent.mkdir(parents=True)
+            shutil.copyfile(check_harness.ROOT / "lib/main.dart", main)
+
+            result = check_harness.check_notification_contract(root)
+
+        self.assertEqual(
+            [],
+            [error for error in result if "lib/main.dart" in error],
+            msg=f"the shipped production entrypoint must satisfy its own guard: {result}",
+        )
+
+    def test_preview_entrypoint_cannot_reach_a_push_provider(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            preview = root / "lib" / "main_preview.dart"
+            preview.parent.mkdir(parents=True)
+            preview.write_text(
+                "await LoopFirebaseIngress.ensureApp();\n"
+                "final override = pushDeviceGatewayProvider.overrideWith(x);\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_notification_contract(root)
+
+        for marker in ("LoopFirebaseIngress", "pushDeviceGatewayProvider"):
+            self.assertTrue(
+                any(marker in error for error in result),
+                msg=f"expected Preview push-isolation guard for {marker!r}: {result}",
+            )
 
     def test_notification_coordinator_rejects_forged_identity_and_second_slot(
         self,
@@ -7297,9 +7346,12 @@ class HarnessTests(unittest.TestCase):
 
             manifest = root / "android" / "app" / "src" / "main" / "AndroidManifest.xml"
             manifest_text = manifest.read_text(encoding="utf-8")
+            # POST_NOTIFICATIONS left this guard on 2026-09-22 (S70): push is
+            # declared now. The call-UI permissions never belonged to a
+            # foreground Audio Room and are still refused.
             manifest_text = manifest_text.replace(
-                '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" tools:node="remove" />',
-                '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />',
+                '<uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" tools:node="remove" />',
+                '<uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />',
             )
             manifest_text = manifest_text.replace(
                 '<activity android:name="io.getstream.video.flutter.stream_video_push_notification.IncomingCallActivity" tools:node="remove" />',
@@ -7321,7 +7373,14 @@ class HarnessTests(unittest.TestCase):
 
             entitlements_path = root / "ios" / "Runner" / "Runner.entitlements"
             with entitlements_path.open("wb") as stream:
-                plistlib.dump({"aps-environment": "development"}, stream)
+                # `aps-environment` is LOOP's now; VoIP push still is not.
+                plistlib.dump(
+                    {
+                        "aps-environment": "development",
+                        "com.apple.developer.voip": True,
+                    },
+                    stream,
+                )
             (root / "ios" / "Runner" / "AppDelegate.swift").write_text(
                 "import CallKit\nimport PushKit\nlet provider: CXProvider? = nil\n",
                 encoding="utf-8",
@@ -7333,14 +7392,14 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_audio_room_native_contract(root)
 
         expected_fragments = (
-            "POST_NOTIFICATIONS",
+            "USE_FULL_SCREEN_INTENT",
             "IncomingCallActivity",
             # The still camera left this guard on 2026-09-19 (the chat composer
             # declares it); the camera *hardware feature* never belonged to
             # Audio Room and is still refused.
             "android.hardware.camera",
             "UIBackgroundModes",
-            "aps-environment",
+            "com.apple.developer.voip",
             "import CallKit",
             "import PushKit",
             "CXProvider",
@@ -7351,6 +7410,75 @@ class HarnessTests(unittest.TestCase):
                 any(fragment in error for error in result),
                 msg=f"expected foreground Audio Room guard error containing {fragment!r}: {result}",
             )
+
+    def test_push_registration_contract_accepts_the_shipped_slice(self) -> None:
+        result = check_harness.check_push_registration_contract(check_harness.ROOT)
+        self.assertEqual([], result)
+
+    def test_push_registration_contract_rejects_a_second_firebase_project(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            config = root / "android" / "app" / "google-services.json"
+            config.parent.mkdir(parents=True)
+            config.write_text(
+                json.dumps(
+                    {
+                        "project_info": {
+                            "project_id": "someone-elses-project",
+                            "project_number": "1",
+                        },
+                        "client": [
+                            {
+                                "client_info": {
+                                    "android_client_info": {
+                                        "package_name": "com.example.other"
+                                    }
+                                }
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_push_registration_contract(root)
+
+        self.assertTrue(
+            any("loop-d4746" in error for error in result),
+            msg=f"expected Firebase project guard: {result}",
+        )
+        self.assertTrue(
+            any("com.cywd.loop" in error for error in result),
+            msg=f"expected Firebase application guard: {result}",
+        )
+
+    def test_push_registration_contract_rejects_a_renamed_stream_configuration(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registrar = (
+                root
+                / "lib"
+                / "integrations"
+                / "communication"
+                / "stream_push_device_registrar.dart"
+            )
+            registrar.parent.mkdir(parents=True)
+            source = (
+                check_harness.ROOT
+                / "lib/integrations/communication/stream_push_device_registrar.dart"
+            ).read_text(encoding="utf-8")
+            registrar.write_text(
+                source.replace("'LOOPAPNS'", "'apn'"), encoding="utf-8"
+            )
+            result = check_harness.check_push_registration_contract(root)
+
+        self.assertTrue(
+            any("LOOPAPNS" in error for error in result),
+            msg=f"expected Stream dashboard configuration guard: {result}",
+        )
 
     def test_chat_camera_contract_accepts_the_declared_camera(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

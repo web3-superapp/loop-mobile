@@ -65,6 +65,14 @@
 	<string>用于从相册选择图片，在聊天里发送或设置头像</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>用于把聊天里的图片保存到你的相册</string>
+	<!-- APNs delivers a LOOP notification to a backgrounded app; without this
+	     mode iOS drops the silent half of it and the app only learns about
+	     the notification if the owner taps it. This is the push mode only:
+	     LOOP declares no audio, VoIP, fetch or processing background mode. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

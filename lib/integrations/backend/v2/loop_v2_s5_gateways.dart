@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/features/notifications/notification_models.dart';
 import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
+import 'package:loop_mobile/features/notifications/push_device_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_gateway.dart';
 import 'package:loop_mobile/features/wallet/wallet_read_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_session.dart';
@@ -21,6 +22,7 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_write_origin_source.dart';
 import 'package:loop_mobile/integrations/backend/v2/market/loop_v2_market_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/notifications/loop_v2_notifications_api.dart';
+import 'package:loop_mobile/integrations/backend/v2/notifications/loop_v2_push_device_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/wallet/loop_v2_wallet_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/watchlist/loop_v2_watchlist_api.dart';
 
@@ -493,6 +495,71 @@ final class DioLoopV2NotificationsGateway
         clientVersion: clientVersion,
         expectedVersion: expectedVersion,
         categories: categories,
+        origin: writeOrigin,
+      ),
+    );
+  }
+}
+
+/// The account's push device registration.
+///
+/// It is deliberately not part of the notification-preferences resource: the
+/// preferences say what the account wants to hear about, and this says where a
+/// message could be delivered. Neither implies the other, and an accepted
+/// token is still not a delivered notification.
+final class DioLoopV2PushDeviceGateway
+    with _LoopV2S5Adapter
+    implements PushDeviceGateway {
+  DioLoopV2PushDeviceGateway({
+    required this._api,
+    required this.clientMetadata,
+    required this.session,
+    this.originSource,
+  });
+
+  final LoopV2PushDeviceApi _api;
+
+  @override
+  final LoopV2ClientMetadata clientMetadata;
+  @override
+  final LoopAuthenticatedSession session;
+  @override
+  final LoopV2WriteOriginSource? originSource;
+
+  @override
+  LoopChainGatewayMode get mode => LoopChainGatewayMode.production;
+
+  @override
+  Future<LoopPushTokenRegistration> registerToken({
+    required LoopPushPlatform platform,
+    required String token,
+    required String appVersion,
+  }) async {
+    final writeOrigin = await origin();
+    return cas(
+      (accessToken) => _api.registerToken(
+        accessToken: accessToken,
+        clientVersion: clientVersion,
+        platform: platform,
+        token: token,
+        appVersion: appVersion,
+        origin: writeOrigin,
+      ),
+    );
+  }
+
+  @override
+  Future<void> revokeToken({
+    required LoopPushPlatform platform,
+    required String token,
+  }) async {
+    final writeOrigin = await origin();
+    await cas(
+      (accessToken) => _api.revokeToken(
+        accessToken: accessToken,
+        clientVersion: clientVersion,
+        platform: platform,
+        token: token,
         origin: writeOrigin,
       ),
     );

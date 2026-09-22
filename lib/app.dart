@@ -10,6 +10,8 @@ import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/app/notifications/loop_notification_coordinator.dart';
+import 'package:loop_mobile/app/notifications/loop_push_registration_coordinator.dart';
+import 'package:loop_mobile/app/notifications/loop_push_registration_providers.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/app/session/loop_communication_retirement.dart';
 import 'package:loop_mobile/app/session/onboarding_sequence.dart';
@@ -159,6 +161,7 @@ class LoopApp extends ConsumerStatefulWidget {
 class _LoopAppState extends ConsumerState<LoopApp> {
   late final GoRouter router;
   late final LoopNotificationCoordinator notificationCoordinator;
+  late final LoopPushRegistrationCoordinator pushRegistrationCoordinator;
   late final PostAuthBootstrapCoordinator postAuthBootstrapCoordinator;
   late final PostAuthProfileRedirectCoordinator postAuthProfileCoordinator;
   late final LoopV2MetaObserver metaObserver;
@@ -222,6 +225,12 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       () => ref.read(loopOnboardingSequenceProvider),
       ref.read(loopRoutingErrorLogProvider),
       () => metaObserver.observe(LoopV2MetaObservationTrigger.navigation),
+    );
+    // The device registration and the notification ingress are separate
+    // owners of the same provider: one says where a message could arrive, the
+    // other says what to do with one that did.
+    pushRegistrationCoordinator = ref.read(
+      loopPushRegistrationCoordinatorProvider,
     );
     notificationCoordinator = LoopNotificationCoordinator(
       source: ref.read(loopNotificationEventSourceProvider),
@@ -327,6 +336,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       postAuthProfileCoordinator.onSessionChanged(previous, next);
       if (previous?.mode != next.mode) router.refresh();
       notificationCoordinator.onIdentityMayHaveChanged();
+      pushRegistrationCoordinator.onIdentityMayHaveChanged();
       postAuthBootstrapCoordinator.onSessionChanged(previous, next);
       // Leaving the account drops the in-memory position only. The stored
       // one survives, so signing in again as the same pending account
@@ -369,9 +379,11 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     ref.listenManual(loopBootstrapSessionProvider, (previous, next) {
       if (!identical(previous, next)) {
         notificationCoordinator.onIdentityMayHaveChanged();
+        pushRegistrationCoordinator.onIdentityMayHaveChanged();
       }
     });
     notificationCoordinator.start();
+    pushRegistrationCoordinator.start();
   }
 
   /// Puts the five-step account sequence on the step this account is on.
@@ -409,6 +421,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     _lifecycleListener?.dispose();
     _lifecycleListener = null;
     unawaited(notificationCoordinator.dispose());
+    unawaited(pushRegistrationCoordinator.dispose());
     router.dispose();
     super.dispose();
   }
@@ -1744,7 +1757,14 @@ Widget _profileScreen(BuildContext context, WidgetRef ref, String id) {
   );
 }
 
-Future<void> _signOut(WidgetRef ref) {
+Future<void> _signOut(WidgetRef ref) async {
+  // Both push registrations have to be dropped while the credentials that
+  // created them still exist: LOOP's own revoke needs the session's access
+  // token and Stream's `removeDevice` needs a connected user. Doing it after
+  // `exit()` would leave this device addressable for the account that left it.
+  // It is bounded; sign-out is the owner's decision and never waits on a
+  // provider.
+  await ref.read(loopPushRegistrationCoordinatorProvider).revokeForSignOut();
   final retirement = ref
       .read(loopCommunicationRetirementRegistryProvider)
       .capture();

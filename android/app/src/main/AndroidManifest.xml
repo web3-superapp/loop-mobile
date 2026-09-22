@@ -17,8 +17,12 @@
          camera hardware feature is declared. -->
     <uses-permission android:name="android.permission.CAMERA" />
 
-    <!-- Stream's optional push/call UI and background services are not enabled. -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" tools:node="remove" />
+    <!-- Android 13+ will not show a single notification without this, and the
+         one category the owner cannot turn off is 安全事件. LOOP asks for it
+         after the account exists, never on first launch. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Stream's optional call UI and background services are not enabled. -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" tools:node="remove" />
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" tools:node="remove" />
     <uses-permission android:name="android.permission.VIBRATE" tools:node="remove" />
@@ -107,6 +111,20 @@
         <service
             android:name="io.getstream.video.flutter.stream_video_flutter.service.StreamScreenShareService"
             tools:node="remove" />
+        <!-- Every LOOP notification lands in one channel. Without it the OS
+             creates its own "Miscellaneous" channel, which the owner cannot
+             recognise and cannot turn off separately. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="@string/loop_notification_channel_id" />
+        <!-- The launcher mark is a full-colour plate; a notification icon has
+             to be a single-colour alpha mask or the OS renders a white square. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_loop_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/loop_lime" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

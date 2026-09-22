@@ -497,7 +497,6 @@ ANDROID_AUDIO_ROOM_PERMISSIONS = frozenset(
 )
 ANDROID_AUDIO_ROOM_REMOVED_PERMISSIONS = frozenset(
     {
-        "android.permission.POST_NOTIFICATIONS",
         "android.permission.USE_FULL_SCREEN_INTENT",
         "android.permission.DISABLE_KEYGUARD",
         "android.permission.VIBRATE",
@@ -544,6 +543,22 @@ ANDROID_AUDIO_ROOM_REMOVED_COMPONENTS = {
 ANDROID_AUDIO_ROOM_FORBIDDEN_ACTIVE_PERMISSIONS = frozenset(
     ANDROID_AUDIO_ROOM_REMOVED_PERMISSIONS
 )
+# S70: Android 13+ shows nothing without it, and the one category the account
+# cannot turn off is 安全事件. It is declared once and asked for after login,
+# never on first launch.
+ANDROID_PUSH_PERMISSION = "android.permission.POST_NOTIFICATIONS"
+# Firebase posts into the channel named here. Without all three the OS invents
+# its own "Miscellaneous" channel and draws the launcher plate as a white
+# square in the status bar.
+ANDROID_PUSH_MANIFEST_META = {
+    "com.google.firebase.messaging.default_notification_channel_id": (
+        "@string/loop_notification_channel_id"
+    ),
+    "com.google.firebase.messaging.default_notification_icon": (
+        "@drawable/ic_loop_notification"
+    ),
+    "com.google.firebase.messaging.default_notification_color": "@color/loop_lime",
+}
 ANDROID_CHAT_CAMERA_PERMISSION = "android.permission.CAMERA"
 IOS_CHAT_CAMERA_USAGE_KEY = "NSCameraUsageDescription"
 # Two-sided on purpose. A declared permission with no caller is one nobody can
@@ -572,15 +587,22 @@ CHAT_CAMERA_TEST_MARKERS = {
         "拍出来的图走的是 S45 那条闸门",
     ),
 }
+# `aps-environment` left this set on 2026-09-22 (S70): ordinary push is the
+# whole point of the Firebase slice, and the entitlement is what makes APNs
+# hand the device a token at all. The VoIP and call entitlements stay out —
+# Audio Room is still foreground-only and LOOP still has no PushKit path.
 IOS_AUDIO_ROOM_FORBIDDEN_ENTITLEMENTS = frozenset(
     {
-        "aps-environment",
-        "com.apple.developer.aps-environment",
         "com.apple.developer.background-modes",
         "com.apple.developer.usernotifications.communication",
         "com.apple.developer.voip",
     }
 )
+# The one background mode LOOP declares. `audio`, `voip`, `fetch` and
+# `processing` would each buy a capability the product does not have, and a
+# reviewer reads this array as a claim about what the app does in the
+# background.
+IOS_PUSH_BACKGROUND_MODES = ("remote-notification",)
 IOS_AUDIO_ROOM_FORBIDDEN_RUNNER_MARKERS = (
     "import CallKit",
     "import PushKit",
@@ -628,9 +650,14 @@ NOTIFICATION_ROUTER_IMPORTS = frozenset(
         "'package:loop_mobile/core/navigation/stream_channel_route.dart'",
     }
 )
+FIREBASE_OPTIONS_PATH = Path("lib/firebase_options.dart")
 NOTIFICATION_PROVIDER_IMPORT_ALLOWED_PATHS = frozenset(
     {
         Path("lib/app/bootstrap/sdk_compatibility.dart"),
+        # The hand-written equivalent of `flutterfire configure`'s output. It
+        # imports `FirebaseOptions` and names no other provider type; the
+        # contract below holds it to the two applications LOOP registered.
+        FIREBASE_OPTIONS_PATH,
         NOTIFICATION_PROVIDER_INGRESS_PATH,
     }
 )
@@ -4744,7 +4771,7 @@ def check_build_profile_configuration_contract(root: Path) -> list[str]:
             "STREAM_API_KEY": "qpwjdy8zjbdu",
             "LOOP_BACKEND_BASE_URL": "https://api-dev.quant-dinger.cc",
             "LOOP_PASSKEY_RP_DOMAIN": "api-dev.quant-dinger.cc",
-            "FIREBASE_CONFIGURED": "false",
+            "FIREBASE_CONFIGURED": "true",
         },
         Path("config/release.example.json"): {
             "LOOP_BUILD_MODE": "release",
@@ -7376,8 +7403,15 @@ def check_audio_room_native_contract(root: Path) -> list[str]:
         microphone_description = info.get("NSMicrophoneUsageDescription")
         if not isinstance(microphone_description, str) or not microphone_description.strip():
             errors.append("iOS foreground Audio Room requires a non-empty NSMicrophoneUsageDescription")
-        if "UIBackgroundModes" in info:
-            errors.append("iOS foreground Audio Room must not declare UIBackgroundModes")
+        # S70: push replaced the blanket refusal. The array is checked rather
+        # than merely allowed, because `audio` or `voip` in it would turn
+        # Audio Room into a background call without a single Dart change.
+        if info.get("UIBackgroundModes") != list(IOS_PUSH_BACKGROUND_MODES):
+            errors.append(
+                "iOS must declare UIBackgroundModes as exactly "
+                f"{list(IOS_PUSH_BACKGROUND_MODES)}, found "
+                f"{info.get('UIBackgroundModes')!r}"
+            )
 
     ios_root = root / "ios"
     if ios_root.is_dir():
@@ -9342,14 +9376,22 @@ def check_source_guards(root: Path) -> list[str]:
         "PrivyLogLevel.verbose": "Privy verbose logging can expose OTPs and access tokens",
         ".devToken(": "Stream development tokens bypass backend identity validation",
         "connectGuestUser(": "Stream guest users bypass the Privy identity boundary",
-        "Firebase.initializeApp(": "Firebase must wait for real mobile configs and push-provider names",
+        # S70: the configuration now exists, so the question is no longer
+        # whether Firebase may start but who may start it. One owner, so a
+        # second `initializeApp` cannot race the first and leave two apps.
+        "Firebase.initializeApp(": (
+            "Firebase may only be initialized by the one reviewed provider ingress, "
+            f"{NOTIFICATION_PROVIDER_INGRESS_PATH}"
+        ),
     }
+    exempt = {"Firebase.initializeApp(": {NOTIFICATION_PROVIDER_INGRESS_PATH}}
     errors: list[str] = []
     for path in sorted((root / "lib").rglob("*.dart")):
         text = read_text(path)
+        relative = path.relative_to(root)
         for fragment, reason in forbidden.items():
-            if fragment in text:
-                errors.append(f"{path.relative_to(root)} contains forbidden `{fragment}`: {reason}")
+            if fragment in text and relative not in exempt.get(fragment, frozenset()):
+                errors.append(f"{relative} contains forbidden `{fragment}`: {reason}")
     return errors
 
 
@@ -10114,19 +10156,56 @@ def check_notification_contract(root: Path) -> list[str]:
                 "perform exactly one typed root navigation"
             )
 
+    # S70: the provider ingress exists now, so the rule changed from "never
+    # override" to "override exactly once, and only for a build that actually
+    # started Firebase". The default in the source file stays disabled, which
+    # is what every other composition — tests, the offline Preview entry point,
+    # a build with no configuration — still gets.
     production_entrypoint = root / "lib/main.dart"
     if production_entrypoint.is_file():
+        production = strip_dart_comments(read_text(production_entrypoint))
         production_code = strip_dart_comments_and_strings(
             read_text(production_entrypoint)
         )
-        if re.search(
-            r"\bloopNotificationEventSourceProvider\s*\.\s*override",
+        overrides = re.findall(
+            r"\bloopNotificationEventSourceProvider\s*\.\s*override\w*",
             production_code,
-        ):
+        )
+        gated = (
+            "config.canInitializeFirebase" in production_code
+            and "LoopFirebaseIngress.ensureApp()" in production_code
+            and "if (firebaseApp != null)" in production_code
+        )
+        if len(overrides) != 1 or not gated:
             errors.append(
-                "lib/main.dart must not override the disabled production notification "
-                "source before provider ingress is reviewed"
+                "lib/main.dart must override the notification source exactly once, "
+                "behind `config.canInitializeFirebase` and a successful "
+                "`LoopFirebaseIngress.ensureApp()`"
             )
+        if (
+            "loopNotificationEventSourceProvider.overrideWithValue(\n"
+            "            FirebaseLoopNotificationEventSource.forDefaultApp(),"
+        ) not in production:
+            errors.append(
+                "lib/main.dart must mount the reviewed Firebase notification ingress "
+                "as the production event source"
+            )
+
+    preview_entrypoint = root / "lib/main_preview.dart"
+    if preview_entrypoint.is_file():
+        preview = strip_dart_comments_and_strings(read_text(preview_entrypoint))
+        for marker in (
+            "loopNotificationEventSourceProvider",
+            "loopPushTokenSourceProvider",
+            "pushDeviceGatewayProvider",
+            "LoopFirebaseIngress",
+            "firebaseConfigured: true",
+        ):
+            if marker in preview:
+                errors.append(
+                    "the offline Preview entry point must not reach a push provider "
+                    f"(`{marker}`); Preview has no account and no device to register"
+                )
 
     lib_root = root / "lib"
     if lib_root.is_dir():
@@ -12889,6 +12968,295 @@ def check_launch_icon_contract(root: Path) -> list[str]:
     return errors
 
 
+PUSH_REGISTRATION_PATHS = (
+    "lib/firebase_options.dart",
+    "lib/features/notifications/push_device_gateway.dart",
+    "lib/integrations/backend/v2/notifications/loop_v2_push_device_api.dart",
+    "lib/integrations/notifications/firebase_notification_ingress.dart",
+    "lib/integrations/notifications/loop_push_token_source.dart",
+    "lib/integrations/communication/stream_push_device_registrar.dart",
+    "lib/app/notifications/loop_push_registration_coordinator.dart",
+    "lib/app/notifications/loop_push_registration_providers.dart",
+    "android/app/google-services.json",
+    "ios/Runner/GoogleService-Info.plist",
+    "test/firebase_push_registration_test.dart",
+)
+# The Firebase project LOOP's two mobile applications belong to. Every one of
+# these appears in three places — the Android JSON, the iOS plist and
+# `firebase_options.dart` — and a build where they disagree initialises one
+# project in Dart and another in the native SDK.
+FIREBASE_PROJECT_ID = "loop-d4746"
+FIREBASE_SENDER_ID = "225868941577"
+FIREBASE_ANDROID_APP_ID = "1:225868941577:android:fe779e131119af7c64abd8"
+FIREBASE_IOS_APP_ID = "1:225868941577:ios:7d96d5ce4f5679a464abd8"
+FIREBASE_APPLICATION_ID = "com.cywd.loop"
+# What the Stream dashboard calls the two push configurations of the LOOP app.
+# Stream routes by these names; a value here that no longer exists in the
+# dashboard stops chat pushes without any error anybody can see.
+STREAM_PUSH_PROVIDER_NAMES = ("firebase", "LOOPAPNS")
+
+
+def check_push_registration_contract(root: Path) -> list[str]:
+    """Lock the S70 push slice: one owner, one project, one device per account."""
+
+    errors: list[str] = []
+    for relative in PUSH_REGISTRATION_PATHS:
+        if not (root / relative).is_file():
+            errors.append(f"missing push registration path: {relative}")
+
+    # 1. One Firebase project, spelled the same way in all three files.
+    options_path = root / FIREBASE_OPTIONS_PATH
+    if options_path.is_file():
+        options = strip_dart_comments(read_text(options_path))
+        for fragment in (
+            f"projectId = '{FIREBASE_PROJECT_ID}'",
+            f"appId: '{FIREBASE_ANDROID_APP_ID}'",
+            f"appId: '{FIREBASE_IOS_APP_ID}'",
+            f"messagingSenderId: '{FIREBASE_SENDER_ID}'",
+            f"iosBundleId: '{FIREBASE_APPLICATION_ID}'",
+        ):
+            if fragment not in options:
+                errors.append(
+                    f"{FIREBASE_OPTIONS_PATH} must carry the reviewed Firebase value "
+                    f"`{fragment}`"
+                )
+        if "Firebase.initializeApp" in options:
+            errors.append(
+                f"{FIREBASE_OPTIONS_PATH} declares options only; initialization "
+                f"belongs to {NOTIFICATION_PROVIDER_INGRESS_PATH}"
+            )
+
+    android_config = root / "android/app/google-services.json"
+    if android_config.is_file():
+        try:
+            payload = json.loads(read_text(android_config))
+        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+            errors.append(f"android/app/google-services.json is not valid JSON: {error}")
+        else:
+            info = payload.get("project_info", {}) if isinstance(payload, dict) else {}
+            if info.get("project_id") != FIREBASE_PROJECT_ID:
+                errors.append(
+                    "android/app/google-services.json must name Firebase project "
+                    f"{FIREBASE_PROJECT_ID}"
+                )
+            if info.get("project_number") != FIREBASE_SENDER_ID:
+                errors.append(
+                    "android/app/google-services.json must carry sender id "
+                    f"{FIREBASE_SENDER_ID}"
+                )
+            clients = payload.get("client", []) if isinstance(payload, dict) else []
+            packages = {
+                client.get("client_info", {})
+                .get("android_client_info", {})
+                .get("package_name")
+                for client in clients
+                if isinstance(client, dict)
+            }
+            if packages != {FIREBASE_APPLICATION_ID}:
+                errors.append(
+                    "android/app/google-services.json must describe exactly the "
+                    f"{FIREBASE_APPLICATION_ID} application, found {sorted(packages)}"
+                )
+
+    ios_config, ios_errors = _parse_plist(
+        root / "ios/Runner/GoogleService-Info.plist",
+        "iOS GoogleService-Info.plist",
+    )
+    errors.extend(ios_errors)
+    if ios_config is not None:
+        for key, expected in (
+            ("PROJECT_ID", FIREBASE_PROJECT_ID),
+            ("GCM_SENDER_ID", FIREBASE_SENDER_ID),
+            ("BUNDLE_ID", FIREBASE_APPLICATION_ID),
+            ("GOOGLE_APP_ID", FIREBASE_IOS_APP_ID),
+        ):
+            if ios_config.get(key) != expected:
+                errors.append(
+                    f"ios/Runner/GoogleService-Info.plist `{key}` must be `{expected}`, "
+                    f"found {ios_config.get(key)!r}"
+                )
+        if ios_config.get("IS_GCM_ENABLED") is not True:
+            errors.append(
+                "ios/Runner/GoogleService-Info.plist must keep messaging enabled"
+            )
+    # The plist has to be in the Runner target's resources, or the native SDK
+    # finds no configuration on the device and reports it there instead of here.
+    xcode_project = root / "ios/Runner.xcodeproj/project.pbxproj"
+    if xcode_project.is_file():
+        project = read_text(xcode_project)
+        if "GoogleService-Info.plist in Resources" not in project:
+            errors.append(
+                "ios/Runner.xcodeproj must copy GoogleService-Info.plist into the "
+                "Runner target's resources"
+            )
+
+    # 2. The Android build actually reads that JSON, and the manifest can show
+    #    a notification at all.
+    settings_gradle = root / "android/settings.gradle.kts"
+    if settings_gradle.is_file() and (
+        'id("com.google.gms.google-services")' not in read_text(settings_gradle)
+    ):
+        errors.append(
+            "android/settings.gradle.kts must declare the google-services plugin "
+            "version, or google-services.json is never read"
+        )
+    app_gradle = root / "android/app/build.gradle.kts"
+    if app_gradle.is_file() and (
+        'id("com.google.gms.google-services")' not in read_text(app_gradle)
+    ):
+        errors.append("android/app/build.gradle.kts must apply the google-services plugin")
+
+    manifest, manifest_errors = _parse_xml(
+        root / "android/app/src/main/AndroidManifest.xml",
+        "Android main manifest",
+    )
+    errors.extend(manifest_errors)
+    if manifest is not None:
+        active = [
+            permission
+            for permission in manifest.findall("uses-permission")
+            if permission.get(ANDROID_NAME) == ANDROID_PUSH_PERMISSION
+            and permission.get(ANDROID_TOOLS_NODE) != "remove"
+        ]
+        if len(active) != 1:
+            errors.append(
+                "Android push requires exactly one active "
+                f"`{ANDROID_PUSH_PERMISSION}` declaration"
+            )
+        application = manifest.find("application")
+        declared = (
+            {
+                meta.get(ANDROID_NAME): (
+                    meta.get("{http://schemas.android.com/apk/res/android}value")
+                    or meta.get("{http://schemas.android.com/apk/res/android}resource")
+                )
+                for meta in application.findall("meta-data")
+            }
+            if application is not None
+            else {}
+        )
+        for name, expected in ANDROID_PUSH_MANIFEST_META.items():
+            if declared.get(name) != expected:
+                errors.append(
+                    f"Android manifest must point `{name}` at `{expected}`, found "
+                    f"{declared.get(name)!r}"
+                )
+    for relative, fragment in (
+        (
+            "android/app/src/main/res/values/strings.xml",
+            'name="loop_notification_channel_id"',
+        ),
+        ("android/app/src/main/res/values/colors.xml", 'name="loop_lime"'),
+        ("android/app/src/main/res/drawable/ic_loop_notification.xml", "<vector"),
+        (
+            "android/app/src/main/kotlin/com/cywd/loop/MainActivity.kt",
+            "createNotificationChannel(",
+        ),
+    ):
+        path = root / relative
+        if path.is_file() and fragment not in read_text(path):
+            errors.append(
+                f"{relative} must supply the default notification channel resource "
+                f"`{fragment}`"
+            )
+
+    # 3. The ingress stays the only Firebase owner, and stays narrow.
+    ingress_path = root / NOTIFICATION_PROVIDER_INGRESS_PATH
+    if ingress_path.is_file():
+        ingress = strip_dart_comments(read_text(ingress_path))
+        for fragment in (
+            "Firebase.initializeApp(options: options)",
+            "DefaultFirebaseOptions.currentPlatformOrNull",
+            "FirebaseMessaging.onMessage",
+            "FirebaseMessaging.onMessageOpenedApp",
+            "_messaging.getInitialMessage()",
+            "Map<String, Object?>.of(message.data)",
+            "alert: false",
+        ):
+            if fragment not in ingress:
+                errors.append(
+                    "the Firebase ingress must keep reviewed behaviour "
+                    f"`{fragment}`"
+                )
+        for fragment in (
+            "onBackgroundMessage",
+            "PushKit",
+            "CallKit",
+            "message.notification",
+            "debugPrint(",
+            "print(",
+        ):
+            if fragment in ingress:
+                errors.append(
+                    "the Firebase ingress must not own a background handler, VoIP "
+                    f"push, provider display copy or payload logging (`{fragment}`)"
+                )
+
+    # 4. The device registration is a port with a fail-closed default, and the
+    #    transport names exactly one route.
+    port_path = root / "lib/features/notifications/push_device_gateway.dart"
+    if port_path.is_file():
+        port = strip_dart_comments(read_text(port_path))
+        default_pattern = re.compile(
+            r"final\s+pushDeviceGatewayProvider\s*=\s*Provider<PushDeviceGateway>\s*"
+            r"\(\s*\(\s*ref\s*\)\s*=>\s*const\s+UnavailablePushDeviceGateway\s*"
+            r"\(\s*\)\s*,?\s*\)\s*;",
+            re.DOTALL,
+        )
+        if default_pattern.search(port) is None:
+            errors.append(
+                "pushDeviceGatewayProvider must default to "
+                "UnavailablePushDeviceGateway"
+            )
+    api_path = root / "lib/integrations/backend/v2/notifications/loop_v2_push_device_api.dart"
+    if api_path.is_file():
+        api = strip_dart_comments(read_text(api_path))
+        if "pushTokenPath = '/v2/devices/push-token'" not in api:
+            errors.append(
+                "the push device transport must address `/v2/devices/push-token`"
+            )
+        for fragment in (
+            "LoopV2Contract.validateSuccess(response, statusCode: 200)",
+            "requireBool(root, 'registered')",
+            "requireTimestamp(root, 'observedAt')",
+        ):
+            if fragment not in api:
+                errors.append(
+                    "the push device transport must strictly decode its `200` "
+                    f"(`{fragment}`)"
+                )
+
+    # 5. Stream's two configurations are named once, where a rename is visible.
+    registrar_path = root / "lib/integrations/communication/stream_push_device_registrar.dart"
+    if registrar_path.is_file():
+        registrar = strip_dart_comments(read_text(registrar_path))
+        for name in STREAM_PUSH_PROVIDER_NAMES:
+            if f"'{name}'" not in registrar:
+                errors.append(
+                    "the Stream push registrar must name dashboard configuration "
+                    f"`{name}`"
+                )
+        if "pushProviderName: device.provider.configurationName" not in registrar:
+            errors.append(
+                "the Stream push registrar must send the dashboard configuration "
+                "name with every device"
+            )
+
+    # 6. Sign-out drops the registration while the credentials still exist.
+    application_path = root / "lib/app.dart"
+    if application_path.is_file():
+        application = strip_dart_comments(read_text(application_path))
+        revoke = application.find("revokeForSignOut()")
+        exit_call = application.find(".exit(")
+        if revoke < 0 or exit_call < 0 or revoke > exit_call:
+            errors.append(
+                "lib/app.dart must revoke the push registration before "
+                "`LoopSessionController.exit`, while the session that created it "
+                "still exists"
+            )
+    return errors
+
+
 def check_secret_paths(paths: list[Path]) -> list[str]:
     errors: list[str] = []
     for path in paths:
@@ -12980,6 +13348,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_production_chat_audio_room_entry(root))
     errors.extend(check_friend_frontend_contract(root))
     errors.extend(check_notification_contract(root))
+    errors.extend(check_push_registration_contract(root))
     errors.extend(check_s5_truth_contract(root))
     errors.extend(check_s6_money_action_contract(root))
     errors.extend(check_s7_truth_contract(root))

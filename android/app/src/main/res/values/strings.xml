@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The one channel every LOOP notification lands in. The id is wire-ish:
+         it is stored by the OS and must never change, or the owner's choice to
+         mute LOOP silently resets. -->
+    <string name="loop_notification_channel_id" translatable="false">loop_default</string>
+    <string name="loop_notification_channel_name">LOOP 通知</string>
+    <string name="loop_notification_channel_description">交易、社区、安全与 Launch 的提醒</string>
+</resources>

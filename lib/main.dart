@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/features/chain/chain_gateway.dart';
 import 'package:loop_mobile/features/launch/launch_gateway.dart';
@@ -12,6 +13,7 @@ import 'package:loop_mobile/features/market/alerts/alerts_gateway.dart';
 import 'package:loop_mobile/features/market/market_read_gateway.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_gateway.dart';
 import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
+import 'package:loop_mobile/features/notifications/push_device_gateway.dart';
 import 'package:loop_mobile/features/profile/presentation/avatar_catalog.dart';
 import 'package:loop_mobile/features/profile/presentation/profile_gateway.dart';
 import 'package:loop_mobile/features/profile/about/about_gateway.dart';
@@ -24,6 +26,9 @@ import 'package:loop_mobile/features/profile/support/support_gateway.dart';
 import 'package:loop_mobile/integrations/device/local_auth_device_authenticator.dart';
 import 'package:loop_mobile/integrations/privy/privy_mfa_gateway.dart';
 import 'package:loop_mobile/integrations/device/secure_storage_app_lock_store.dart';
+import 'package:loop_mobile/integrations/notifications/firebase_notification_ingress.dart';
+import 'package:loop_mobile/integrations/notifications/loop_notification_event_source.dart';
+import 'package:loop_mobile/integrations/notifications/loop_push_token_source.dart';
 import 'package:loop_mobile/integrations/personalization/shared_preferences_display_store.dart';
 import 'package:loop_mobile/integrations/personalization/loop_personalization_providers.dart';
 import 'package:loop_mobile/integrations/social/loop_social_providers.dart';
@@ -48,9 +53,27 @@ import 'package:loop_mobile/features/community/community_gateway.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final displayBootstrap = await bootstrapSharedPreferencesDisplayPreferences();
+  // Firebase is brought up here and nowhere else, and only when this build was
+  // given a configuration. `FIREBASE_CONFIGURED=false`, a build-profile
+  // mismatch, and an initialization the device refused all end in the same
+  // place: the notification source stays disabled, no token is read, and no
+  // registration is attempted. The offline Preview entry point has its own
+  // `main` and never reaches this line.
+  final config = AppConfig.fromEnvironment();
+  final firebaseApp = config.canInitializeFirebase
+      ? await LoopFirebaseIngress.ensureApp()
+      : null;
   runApp(
     ProviderScope(
       overrides: [
+        if (firebaseApp != null) ...[
+          loopNotificationEventSourceProvider.overrideWithValue(
+            FirebaseLoopNotificationEventSource.forDefaultApp(),
+          ),
+          loopPushTokenSourceProvider.overrideWithValue(
+            FirebaseLoopPushTokenSource.forDefaultApp(),
+          ),
+        ],
         loopDisplayPreferencesStoreProvider.overrideWithValue(
           displayBootstrap.store,
         ),
@@ -135,6 +158,12 @@ Future<void> main() async {
         ),
         notificationsGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2NotificationsGatewayProvider),
+        ),
+        // Where a notification could be delivered, which is not the same as
+        // what the account asked to hear about; the preferences resource owns
+        // that and stays where it was.
+        pushDeviceGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2PushDeviceGatewayProvider),
         ),
         // S6 money actions. Availability here is transport assembly only: the
         // write switch, the canary ceiling and the device evidence stay

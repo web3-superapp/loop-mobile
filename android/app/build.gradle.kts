@@ -3,6 +3,10 @@ plugins {
     id("org.jetbrains.kotlin.android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // Firebase Cloud Messaging needs the project values from
+    // `google-services.json` in the merged resources; `firebase_options.dart`
+    // only covers what the Dart side of `Firebase.initializeApp` reads.
+    id("com.google.gms.google-services")
 }
 
 android {

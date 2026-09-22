@@ -7,5 +7,5 @@
   "STREAM_API_KEY": "qpwjdy8zjbdu",
   "LOOP_BACKEND_BASE_URL": "https://api-dev.quant-dinger.cc",
   "LOOP_PASSKEY_RP_DOMAIN": "api-dev.quant-dinger.cc",
-  "FIREBASE_CONFIGURED": "false"
+  "FIREBASE_CONFIGURED": "true"
 }

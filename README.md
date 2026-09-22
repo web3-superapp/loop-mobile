@@ -57,7 +57,7 @@ LOOP 的正式客户端是 **Flutter App**，目标平台为 iOS 与 Android。`
 - Profile presentation 只建模 nullable Alias、opaque `avatar:` reference、版本与更新时间；编辑、丢弃、保存单飞、冲突重载、失败重试与迟到结果隔离均已落地。Bio 不属于该契约，Visibility 仍归独立 Privacy 资源，Avatar 选择在来源契约确定前禁用。正式入口使用当前 Privy owner 的 authenticated CAS adapter，只有 matching advanced resource 才报告保存；显式 Preview 继续使用带标签的内存实现
 - Public Privacy 只建模 `discoverable` 与 `private/followers/public` copy-trade visibility 偏好，支持完整草稿替换、冲突冻结、显式重载与 owner/gateway 轮换。旧版 Portfolio Broadcast、群组白名单、活动/仓位可见性和 copy-trade 假授权表单已移除；偏好不代表发现、followers 或跟单执行已启用。正式入口使用 authenticated owner-scoped adapter，显式 Preview 继续使用带标签的内存实现
 - Social Privacy 作为另一份版本化资源，只接受 `friend_requests`、`group_invites` 与 `direct_messages` 三项完整替换，版本 0 为 fail-closed；冲突保留草稿并要求显式重载。它只影响社交资格，不证明好友关系、Stream 频道、消息或通知已存在
-- Notification preferences 已按后端契约完成 providerless 应用逻辑：只建模 `price_alert_triggered`、`provider_activity_projected`、`security_notice` 与 `support_update` 四项 owner intent，支持完整草稿替换、冲突冻结、重载、单飞与 owner/gateway 轮换。`delivery` 始终为 `unavailable`；旧版六分类、伪系统权限、空的设备设置动作和 Quiet hours 已移除。正式入口默认不可用，只有显式 Preview 使用带标签的内存实现；这不代表 Firebase、APNs/FCM、系统权限、Price Alert 或任何通知送达已接通
+- Notification preferences 已按后端契约完成 providerless 应用逻辑：只建模 `price_alert_triggered`、`provider_activity_projected`、`security_notice` 与 `support_update` 四项 owner intent，支持完整草稿替换、冲突冻结、重载、单飞与 owner/gateway 轮换。`delivery` 始终为 `unavailable`；旧版六分类、伪系统权限、空的设备设置动作和 Quiet hours 已移除。正式入口默认不可用，只有显式 Preview 使用带标签的内存实现；设备令牌已经能注册（S70），但这依然不代表 Price Alert 或任何一类通知已经送达——送达由服务端 push runtime 决定，当前仍是 `PUSH_RUNTIME_DEFERRED`
 - Account、Wallet、Market、Chat、Profile 与系统状态组件
 - 深色 LOOP 设计系统、键盘焦点、语义标签、reduced-motion 与手机/桌面响应式布局
 
@@ -159,7 +159,7 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 - 不要启用 Hyperliquid HIP-3、builder fee 或非 Core 市场
 - Pay 在 Wallet 保留明确不可用入口以表达新版产品位置，但 A / B / C 优先级不等于交付期；B5-B8 / D21 当前全部 deferred，落地页不得出现扫码、相机、金额或支付动作
 
-前端现已具备 V2 LOOP account/device-session、D0 观察型 metadata、保留的 V1 Stream Chat/Video token client、Chat 与前台 Audio Room 的主体轮换、后端 locator 边界、麦克风原生声明、通知意图契约和根协调器。这些客户端边界不代表真实 Privy token 已被 Development 接受，也不代表 Stream 已连接：正式入口仍使用 disabled notification EventSource，只有真实 session 与 V2 bootstrap identity 同时成立时才可能处理一个有界点击。Audio Room 仍需要“预创建房间 + 成员角色无 `create-call`”的 locator 契约和双端真机证据。Firebase/Push 仍未初始化；还需要 Android/iOS Firebase 配置、精确 Stream provider name、真实 payload fixture、服务端事件 ID/过期/账号绑定契约，以及 iOS 普通推送与 VoIP 的单一路由策略。后台响铃、Camera、PushKit 与 CallKit 随后单独启用。
+前端现已具备 V2 LOOP account/device-session、D0 观察型 metadata、保留的 V1 Stream Chat/Video token client、Chat 与前台 Audio Room 的主体轮换、后端 locator 边界、麦克风原生声明、通知意图契约和根协调器。这些客户端边界不代表真实 Privy token 已被 Development 接受，也不代表 Stream 已连接：只有真实 session 与 V2 bootstrap identity 同时成立时才可能处理一个有界点击。Audio Room 仍需要“预创建房间 + 成员角色无 `create-call`”的 locator 契约和双端真机证据。S70 接通了 Firebase 与推送：`lib/firebase_options.dart` 加两份控制台配置文件（项目 `loop-d4746`、包/bundle `com.cywd.loop`），`FIREBASE_CONFIGURED` 与 build profile 同时成立时 `lib/main.dart` 才初始化并挂上 `FirebaseLoopNotificationEventSource`；登录并通过后端校验后才申请系统权限、把令牌报给 `POST /v2/devices/push-token`，并登记到 Stream（Android `firebase`，iOS `LOOPAPNS` + APNs device token），退出前先撤销这三处。仍未验证的是真机送达：还需要服务端 `notification.v1` 信封（事件 ID、过期、账号绑定）的真实 payload、Android/iOS 双端真机回执，以及后端 push runtime 从 `PUSH_RUNTIME_DEFERRED` 打开。后台响铃、PushKit 与 CallKit 仍未启用。
 
 ## 仓库结构
 
