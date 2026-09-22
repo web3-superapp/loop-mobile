@@ -861,6 +861,37 @@ void main() {
       expect(opened, <String>[testCommunityId]);
     });
 
+    testWidgets('AI opens the AI page rather than answering with a toast', (
+      tester,
+    ) async {
+      final opened = <String>[];
+      await pumpCommunityPage(
+        tester,
+        CommunityProfileScreen(
+          communityId: testCommunityId,
+          onOpenAi: opened.add,
+        ),
+        community: FakeCommunityGateway(detail: testDetail()),
+      );
+
+      final action = find.byKey(
+        const ValueKey<String>('community-profile-open-ai'),
+      );
+      await tester.ensureVisible(action);
+      await tester.pumpAndSettle();
+      await tester.tap(action);
+      await tester.pumpAndSettle();
+
+      expect(opened, <String>[testCommunityId]);
+      // The reason stays on the record's own line, once; it is no longer a
+      // second copy that appears and takes itself away again.
+      expect(
+        find.byKey(const ValueKey<String>('community-profile-action-reasons')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Community AI 还没有开放'), findsOneWidget);
+    });
+
     testWidgets('the verification state is stated once, in words', (
       tester,
     ) async {

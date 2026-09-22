@@ -754,6 +754,8 @@ GoRouter _buildRouter(
               context.push('/community/members?id=$communityId'),
           onOpenChat: (communityId) =>
               context.push('/community/chat?id=$communityId'),
+          onOpenAi: (communityId) =>
+              context.push('/community/ai?id=$communityId'),
           onOpenVoiceRoom: (communityId) =>
               context.push('/chat/voice?id=$communityId'),
           onOpenMiningPanel: (communityId) =>

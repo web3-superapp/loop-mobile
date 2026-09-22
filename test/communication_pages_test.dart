@@ -3081,26 +3081,93 @@ void main() {
   });
 
   group('community-ai', () {
-    testWidgets('every functional area stays unavailable', (tester) async {
+    testWidgets('is the prototype page, in the prototype order, with nothing '
+        'behind it', (tester) async {
       await pumpCommunityPage(tester, const CommunityAiScreen());
 
+      // The page the AI button opens: the bar, the hero, the assistant's
+      // turn, what it will be able to do, the sample questions, and the
+      // composer the prototype ends with.
+      expect(find.text('Community AI'), findsWidgets);
       expect(
-        find.byKey(const ValueKey<String>('community-ai-unavailable')),
+        find.byKey(const ValueKey<String>('community-ai-hero')),
         findsOneWidget,
       );
-      await scrollToCommunitySection(
-        tester,
-        find.byKey(const ValueKey<String>('community-ai-composer-unavailable')),
+      expect(find.text('Community AI 还没有开放'), findsOneWidget);
+      // The server's own sentence reaches the reader, and no reason code
+      // does.
+      expect(find.textContaining('这一页暂时不可用。'), findsWidgets);
+      expect(find.textContaining('COMMUNITY_AI'), findsNothing);
+
+      final collection = tester.widget<ListView>(
+        find.byKey(const ValueKey<String>('community-ai-collection')),
       );
-      expect(
-        find.byKey(const ValueKey<String>('community-ai-composer-unavailable')),
-        findsOneWidget,
-      );
+      final blocks = (collection.childrenDelegate as SliverChildListDelegate)
+          .children
+          .map((widget) => widget.key)
+          .toList(growable: false);
+      expect(blocks, <Key?>[
+        null,
+        const ValueKey<String>('community-ai-unavailable'),
+        null,
+        null,
+        const ValueKey<String>('community-ai-scope-note'),
+        null,
+        const ValueKey<String>('community-ai-samples'),
+      ]);
+
       // The prototype's sample answer and knowledge-base figures have no
       // source and must not appear.
       expect(find.textContaining('知识库 14 篇文档'), findsNothing);
       expect(find.textContaining('今日 42 条讨论'), findsNothing);
-      expect(find.byType(TextField), findsNothing);
+    });
+
+    testWidgets('the composer takes no question and sends none', (
+      tester,
+    ) async {
+      await pumpCommunityPage(tester, const CommunityAiScreen());
+
+      expect(
+        find.byKey(const ValueKey<String>('community-ai-composer-unavailable')),
+        findsOneWidget,
+      );
+      final field = tester.widget<TextField>(
+        find.byKey(const ValueKey<String>('loop-composer-input')),
+      );
+      expect(field.enabled, isFalse);
+      final send = tester.widget<InkWell>(
+        find.byKey(const ValueKey<String>('loop-composer-send')),
+      );
+      expect(send.onTap, isNull);
+    });
+
+    testWidgets('a sample question is a question, never a control', (
+      tester,
+    ) async {
+      await pumpCommunityPage(tester, const CommunityAiScreen());
+
+      await scrollToCommunitySection(
+        tester,
+        find.byKey(const ValueKey<String>('community-ai-samples')),
+      );
+      for (final sample in const <String>[
+        'Tokenomics 怎么分配',
+        '怎么参与挖矿',
+        '这周有什么动态',
+      ]) {
+        final chip = find.byKey(
+          ValueKey<String>('community-ai-sample-$sample'),
+        );
+        expect(chip, findsOneWidget);
+        expect(
+          tester
+              .widget<InkWell>(
+                find.descendant(of: chip, matching: find.byType(InkWell)),
+              )
+              .onTap,
+          isNull,
+        );
+      }
     });
   });
 }

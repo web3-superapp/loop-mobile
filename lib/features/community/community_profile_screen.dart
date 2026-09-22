@@ -43,6 +43,7 @@ class CommunityProfileScreen extends ConsumerStatefulWidget {
     this.onBack,
     this.onOpenMembers,
     this.onOpenChat,
+    this.onOpenAi,
     this.onOpenVoiceRoom,
     this.onOpenMiningPanel,
     this.onOpenToken,
@@ -53,6 +54,14 @@ class CommunityProfileScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
   final ValueChanged<String>? onOpenMembers;
   final ValueChanged<String>? onOpenChat;
+
+  /// Opens this community's `community-ai` page.
+  ///
+  /// The page it opens is entirely unavailable, and that is the point: the
+  /// reason belongs on a page the reader can read, not in a toast that takes
+  /// it away again (device report 2026-09-22).
+  final ValueChanged<String>? onOpenAi;
+
   final ValueChanged<String>? onOpenVoiceRoom;
 
   /// The community's own mining panel, where the per-account figures the
@@ -174,6 +183,7 @@ class _CommunityProfileScreenState
             opening: ref.watch(voiceRoomOpenControllerProvider),
             onOpenChat: () =>
                 widget.onOpenChat?.call(detail.community.communityId),
+            onOpenAi: () => widget.onOpenAi?.call(detail.community.communityId),
             onOpenVoiceRoom: () =>
                 widget.onOpenVoiceRoom?.call(detail.community.communityId),
             onCreateVoiceRoom: () => unawaited(_createVoiceRoom(detail)),
@@ -383,16 +393,17 @@ class _CommunityFolio extends StatelessWidget {
 ///
 /// Each button states its own condition. A reader who has not joined is
 /// offered the join first, because the official group is not open to them
-/// until the server says it is; Community AI has no runtime and says so when
-/// tapped rather than silently swallowing the tap; the voice control is an
-/// entry while a room is live, an opening for an owner or an admin when none
-/// is, and the server's own reason for anybody else.
+/// until the server says it is; AI opens the community's AI page, which
+/// carries the reason it is closed on the page itself; the voice control is
+/// an entry while a room is live, an opening for an owner or an admin when
+/// none is, and the server's own reason for anybody else.
 class _CommunityActionPair extends ConsumerWidget {
   const _CommunityActionPair({
     required this.detail,
     required this.busy,
     required this.opening,
     required this.onOpenChat,
+    required this.onOpenAi,
     required this.onOpenVoiceRoom,
     required this.onCreateVoiceRoom,
     required this.onJoin,
@@ -406,6 +417,7 @@ class _CommunityActionPair extends ConsumerWidget {
   /// An open-room command is in flight, so the button must not start another.
   final bool opening;
   final VoidCallback onOpenChat;
+  final VoidCallback onOpenAi;
   final VoidCallback onOpenVoiceRoom;
   final VoidCallback onCreateVoiceRoom;
   final VoidCallback onJoin;
@@ -456,14 +468,12 @@ class _CommunityActionPair extends ConsumerWidget {
               key: const ValueKey<String>('community-profile-open-ai'),
               label: 'AI',
               icon: 'ai',
-              // The capability is closed, and a control that swallows the tap
-              // in silence reads as broken. It keeps the disabled look and
-              // answers with the server's own reason.
-              onPressed: () => LoopToast.show(
-                context,
-                message: aiReason,
-                kind: LoopToastKind.err,
-              ),
+              // The capability is closed, and for a while the tap answered
+              // with a toast that took the sentence away again — which read
+              // as a button that does nothing. It opens the page instead:
+              // `community-ai` states what the AI will do, what it cannot do
+              // yet, and why, and it stays on screen to be read.
+              onPressed: onOpenAi,
             ),
             if (voice.isLive)
               LoopButton(
