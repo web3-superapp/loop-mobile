@@ -32,6 +32,7 @@ import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
 import 'package:loop_mobile/integrations/notifications/loop_notification_router.dart';
 import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
+import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/policy/loop_client_policy.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
@@ -74,6 +75,7 @@ import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/features/wallet/wallet_screens.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_coordinator.dart';
@@ -195,6 +197,12 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         final lock = ref.read(loopAppLockProvider.notifier);
         lock.onEnteredForeground();
         unawaited(lock.refreshCapability());
+        // A registration that stopped at a condition which has since become
+        // true — the account was accepted while LOOP was away, the owner
+        // allowed notifications in Settings — has nobody else to re-ask it.
+        // An account already registered asks the provider for nothing, and a
+        // refused permission is never put to the owner twice.
+        pushRegistrationCoordinator.onIdentityMayHaveChanged();
       },
       // `onHide` is the outbound half of the pair: `onInactive` also fires on
       // the way back, and marking there would reset the window on return.
@@ -264,6 +272,15 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       if (!mounted || authorization != LoopBootstrapAuthorization.authorized) {
         return;
       }
+      // S73: this is the moment the LOOP identity behind the session starts
+      // to exist, and until it does the push registration has no account it
+      // may name. The session listener already ran — before the bootstrap
+      // was asked for — and the bootstrap provider publishes one owner
+      // object whose identity is filled in afterwards, so nothing else ever
+      // told the coordinator to look again and no device got as far as the
+      // permission prompt.
+      pushRegistrationCoordinator.onIdentityMayHaveChanged();
+      notificationCoordinator.onIdentityMayHaveChanged();
       // C-30 (3): 在线人数 counts the members connected to Stream right now
       // (decision 0047). Connecting here — not on the first chat page — is
       // what makes an open App count as online. It reports nothing and is
@@ -391,6 +408,17 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         pushRegistrationCoordinator.onIdentityMayHaveChanged();
       }
     });
+    // The capability document is observed on its own schedule, and a device
+    // that was signed in before it arrived would otherwise stay unregistered
+    // with nothing left to re-ask it. Only the answer changing matters; the
+    // coordinator decides again whether anything is due.
+    ref.listenManual<LoopCapabilityProjection>(
+      loopCapabilityProvider(LoopV2CapabilityId.pushNotifications),
+      (previous, next) {
+        if (previous?.isAvailable == next.isAvailable) return;
+        pushRegistrationCoordinator.onIdentityMayHaveChanged();
+      },
+    );
     notificationCoordinator.start();
     pushRegistrationCoordinator.start();
   }

@@ -13477,6 +13477,36 @@ def check_push_registration_contract(root: Path) -> list[str]:
                 "`LoopSessionController.exit`, while the session that created it "
                 "still exists"
             )
+        # S73: the session turns authenticated before the LOOP identity behind
+        # it exists, and the bootstrap owner is published once and filled in
+        # afterwards. Without an explicit re-ask at the moment the backend
+        # agrees the account exists, the registration stops at "no account"
+        # for the rest of the run and the device is never asked for the
+        # notification permission at all.
+        authorized = re.search(
+            r"authorization\s*!=\s*LoopBootstrapAuthorization\.authorized",
+            application,
+        )
+        # Comments are blanked rather than removed, so the window is measured
+        # on the code that follows, with its whitespace collapsed.
+        following = (
+            ""
+            if authorized is None
+            else re.sub(
+                r"\s+",
+                " ",
+                application[authorized.end() : authorized.end() + 2000],
+            )
+        )
+        if (
+            "pushRegistrationCoordinator.onIdentityMayHaveChanged()"
+            not in following[:200]
+        ):
+            errors.append(
+                "lib/app.dart must re-evaluate the push registration once the "
+                "backend has agreed the account exists, or no device is ever "
+                "asked for the notification permission"
+            )
     return errors
 
 

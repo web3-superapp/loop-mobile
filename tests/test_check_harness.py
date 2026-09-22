@@ -7514,6 +7514,38 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected Stream dashboard configuration guard: {result}",
         )
 
+    def test_push_registration_contract_requires_the_post_bootstrap_re_ask(
+        self,
+    ) -> None:
+        """S73: the gate that kept every device from being asked at all."""
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            application = root / "lib" / "app.dart"
+            application.parent.mkdir(parents=True)
+            source = (check_harness.ROOT / "lib/app.dart").read_text(
+                encoding="utf-8"
+            )
+            mutated = source.replace(
+                "      pushRegistrationCoordinator.onIdentityMayHaveChanged();\n"
+                "      notificationCoordinator.onIdentityMayHaveChanged();\n",
+                "      notificationCoordinator.onIdentityMayHaveChanged();\n",
+                1,
+            )
+            self.assertNotEqual(source, mutated)
+            application.write_text(mutated, encoding="utf-8")
+
+            result = check_harness.check_push_registration_contract(root)
+
+        self.assertTrue(
+            any(
+                "re-evaluate the push registration once the backend has agreed"
+                in error
+                for error in result
+            ),
+            msg=f"expected post-bootstrap re-ask guard: {result}",
+        )
+
     def test_chat_camera_contract_accepts_the_declared_camera(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
