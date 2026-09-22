@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/app/notifications/loop_push_registration_diagnostics.dart';
+import 'package:loop_mobile/app/notifications/loop_push_registration_providers.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -647,6 +649,10 @@ Future<void> pumpS5Page(
   MiningGateway? mining,
   LoopV2MetaSnapshot? meta,
   PrivyAuthGateway? privy,
+
+  /// Where this device's push registration stopped. Only the
+  /// notification-preferences page reads it.
+  LoopPushRegistrationDiagnosticsRecorder? pushDiagnostics,
   Size size = const Size(390, 2400),
   bool settle = true,
 }) async {
@@ -676,6 +682,10 @@ Future<void> pumpS5Page(
         loopV2MetaSnapshotProvider.overrideWith(
           (ref) async => meta ?? s5MetaSnapshot(),
         ),
+        if (pushDiagnostics != null)
+          loopPushRegistrationDiagnosticsProvider.overrideWithValue(
+            pushDiagnostics,
+          ),
       ],
       child: MaterialApp(
         theme: LoopTheme.dark,

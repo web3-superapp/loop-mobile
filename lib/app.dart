@@ -12,6 +12,7 @@ import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/app/notifications/loop_notification_coordinator.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_coordinator.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_providers.dart';
+import 'package:loop_mobile/app/session/loop_community_arrival.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/app/session/loop_communication_retirement.dart';
 import 'package:loop_mobile/app/session/onboarding_sequence.dart';
@@ -32,6 +33,7 @@ import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
 import 'package:loop_mobile/integrations/notifications/loop_notification_router.dart';
 import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
+import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/policy/loop_client_policy.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/account/account_screens.dart';
@@ -74,6 +76,7 @@ import 'package:loop_mobile/features/system/system_surfaces.dart';
 import 'package:loop_mobile/features/wallet/wallet_screens.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_coordinator.dart';
@@ -195,6 +198,13 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         final lock = ref.read(loopAppLockProvider.notifier);
         lock.onEnteredForeground();
         unawaited(lock.refreshCapability());
+        // A registration that stopped at a condition which has since become
+        // true — the account was accepted while LOOP was away, the owner
+        // turned notifications on in the system settings — has nobody else
+        // to re-ask it. An account already registered asks the provider for
+        // nothing, and a refusal is only ever *read* again, never put to the
+        // owner a second time.
+        pushRegistrationCoordinator.onIdentityMayHaveChanged();
       },
       // `onHide` is the outbound half of the pair: `onInactive` also fires on
       // the way back, and marking there would reset the window on return.
@@ -229,6 +239,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       () => ref.read(loopOnboardingSequenceProvider),
       ref.read(loopRoutingErrorLogProvider),
       () => metaObserver.observe(LoopV2MetaObservationTrigger.navigation),
+      _onProductFrameDrawn,
     );
     // The device registration and the notification ingress are separate
     // owners of the same provider: one says where a message could arrive, the
@@ -264,6 +275,15 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       if (!mounted || authorization != LoopBootstrapAuthorization.authorized) {
         return;
       }
+      // S73: this is the moment the LOOP identity behind the session starts
+      // to exist, and until it does the push registration has no account it
+      // may name. The session listener already ran — before the bootstrap
+      // was asked for — and the bootstrap provider publishes one owner
+      // object whose identity is filled in afterwards, so nothing else ever
+      // told the coordinator to look again and no device got as far as the
+      // permission prompt.
+      pushRegistrationCoordinator.onIdentityMayHaveChanged();
+      notificationCoordinator.onIdentityMayHaveChanged();
       // C-30 (3): 在线人数 counts the members connected to Stream right now
       // (decision 0047). Connecting here — not on the first chat page — is
       // what makes an open App count as online. It reports nothing and is
@@ -306,6 +326,9 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         // The server calling the profile active is the only thing that ends
         // the opening sequence, and it ends it for good.
         if (landing == LoopProfileLanding.community) {
+          // Decision 0076: the end of the opening is also an arrival, and on
+          // this path it is the first one this account has made.
+          _onCommunityArrival();
           unawaited(
             ref
                 .read(loopOnboardingSequenceProvider.notifier)
@@ -353,6 +376,9 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       if (next.mode == LoopSessionMode.signedOut ||
           next.mode == LoopSessionMode.preview) {
         ref.read(loopOnboardingSequenceProvider.notifier).leave();
+        // The next account on this device has not arrived anywhere yet, and
+        // must be asked about notifications on its own arrival.
+        ref.read(loopCommunityArrivalProvider.notifier).leave();
       }
     });
     // The launch gate reads the landing and the opening position, so a change
@@ -368,6 +394,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       previous,
       next,
     ) {
+      if (next.landing == LoopProfileLanding.community) _onCommunityArrival();
       if (previous?.landing == next.landing) return;
       // Losing the answer has to move the owner off whatever product page the
       // previous one allowed; gaining it only ever moves a page that was
@@ -391,8 +418,53 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         pushRegistrationCoordinator.onIdentityMayHaveChanged();
       }
     });
+    // The capability document is observed on its own schedule, and a device
+    // that was signed in before it arrived would otherwise stay unregistered
+    // with nothing left to re-ask it. Only the answer changing matters; the
+    // coordinator decides again whether anything is due.
+    ref.listenManual<LoopCapabilityProjection>(
+      loopCapabilityProvider(LoopV2CapabilityId.pushNotifications),
+      (previous, next) {
+        if (previous?.isAvailable == next.isAvailable) return;
+        pushRegistrationCoordinator.onIdentityMayHaveChanged();
+      },
+    );
     notificationCoordinator.start();
     pushRegistrationCoordinator.start();
+  }
+
+  /// Marks this account's arrival in Community, once per session.
+  ///
+  /// Decision 0076: this is the moment the device is asked about
+  /// notifications. The signal is the landing `GET /v2/profile` produced,
+  /// not a location — an account whose answer is Community has arrived
+  /// whether the router put it on the tab or on a conversation somewhere
+  /// under it, and a location string would miss the second one entirely.
+  ///
+  /// It is called from both places the answer can become Community: the
+  /// landing the profile read publishes, and the end of the five-step
+  /// opening. Either order works and neither can double the prompt, because
+  /// only the first call marks the arrival.
+  ///
+  /// Both of those places run *before* the frame that draws Community, so
+  /// this is only half of an arrival: the other half is
+  /// [_onProductFrameDrawn], and whichever of the two happens second is the
+  /// moment the device is asked.
+  void _onCommunityArrival() {
+    if (!mounted) return;
+    if (!ref.read(loopCommunityArrivalProvider.notifier).landed()) return;
+    pushRegistrationCoordinator.onIdentityMayHaveChanged();
+  }
+
+  /// A product page has been drawn. The other half of the arrival: without
+  /// it the landing is only a statement about where the account belongs, and
+  /// acting on it raises the dialog over the page the owner is still looking
+  /// at — the launch page on a restored session, 创建 LOOP ID at the end of
+  /// the opening.
+  void _onProductFrameDrawn() {
+    if (!mounted) return;
+    if (!ref.read(loopCommunityArrivalProvider.notifier).productDrawn()) return;
+    pushRegistrationCoordinator.onIdentityMayHaveChanged();
   }
 
   /// Puts the five-step account sequence on the step this account is on.
@@ -550,6 +622,7 @@ GoRouter _buildRouter(
   LoopOnboardingSequenceState Function() readOnboarding,
   LoopRoutingErrorLog routingErrors, [
   VoidCallback? onNavigation,
+  VoidCallback? onProductFrameDrawn,
 ]) {
   return GoRouter(
     initialLocation: '/auth',
@@ -659,14 +732,21 @@ GoRouter _buildRouter(
         ),
       ),
       ShellRoute(
-        builder: (context, state, child) => LoopShell(
-          location: state.uri.path,
-          child: Column(
-            children: <Widget>[
-              const LoopSoftUpdatePrompt(),
-              const ProfileAvailabilityBanner(),
-              Expanded(child: child),
-            ],
+        // Decision 0076: the one place in LOOP that may say a product page is
+        // actually on screen. Every tab and every page under one is drawn
+        // inside this shell, and nothing above it can tell a router location
+        // from a frame.
+        builder: (context, state, child) => LoopProductFrameReporter(
+          onDrawn: onProductFrameDrawn ?? () {},
+          child: LoopShell(
+            location: state.uri.path,
+            child: Column(
+              children: <Widget>[
+                const LoopSoftUpdatePrompt(),
+                const ProfileAvailabilityBanner(),
+                Expanded(child: child),
+              ],
+            ),
           ),
         ),
         // Peer tabs fade; every other route pushes horizontally through the

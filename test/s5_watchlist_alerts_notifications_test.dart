@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/app/notifications/loop_push_registration_diagnostics.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/market/alerts/alert_models.dart';
 import 'package:loop_mobile/features/market/alerts/alerts_screen.dart';
@@ -829,6 +830,115 @@ void main() {
       expect(find.textContaining('推送还没有开放'), findsWidgets);
     });
 
+    // S73: the capability document answers for LOOP, and this page used to
+    // let that one sentence stand for the device too. A device that never got
+    // as far as the permission prompt said exactly what a registered device
+    // that had received nothing said.
+    testWidgets('the page says this device was never asked for permission', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const NotificationPreferencesScreen(),
+        notifications: FakeNotificationsGateway(),
+        pushDiagnostics: _pushDiagnostics(LoopPushRegistrationGate.noPrincipal),
+      );
+
+      expect(find.text('还没有向这台设备请求通知权限'), findsOneWidget);
+    });
+
+    // Decision 0076: the prompt waits for Community, and the page
+    // says which moment it is waiting for rather than only that it is.
+    testWidgets('a prompt that waits for Community says so', (tester) async {
+      await pumpS5Page(
+        tester,
+        const NotificationPreferencesScreen(),
+        notifications: FakeNotificationsGateway(),
+        pushDiagnostics: _pushDiagnostics(
+          LoopPushRegistrationGate.awaitingCommunity,
+        ),
+      );
+
+      expect(find.text('还没有向这台设备请求通知权限'), findsOneWidget);
+      expect(find.text('进入社区后会请求一次。'), findsOneWidget);
+    });
+
+    testWidgets('a refused permission names the one step that changes it', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const NotificationPreferencesScreen(),
+        notifications: FakeNotificationsGateway(),
+        pushDiagnostics: _pushDiagnostics(
+          LoopPushRegistrationGate.permissionDenied,
+        ),
+      );
+
+      expect(find.text('通知权限已拒绝，这台设备收不到推送'), findsOneWidget);
+      expect(find.text('可以在系统设置里为 LOOP 重新打开通知。'), findsOneWidget);
+    });
+
+    testWidgets('a registered device still does not claim a delivery', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const NotificationPreferencesScreen(),
+        notifications: FakeNotificationsGateway(),
+        pushDiagnostics: _pushDiagnostics(LoopPushRegistrationGate.registered),
+      );
+
+      expect(find.text('这台设备已登记接收推送'), findsOneWidget);
+      expect(find.text('这不代表已经能送达。'), findsOneWidget);
+    });
+
+    // The server's own statement is not repeated in this device's words: one
+    // screen would then read as two different problems.
+    testWidgets('LOOP having no push runtime is said once, not twice', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const NotificationPreferencesScreen(),
+        notifications: FakeNotificationsGateway(),
+        pushDiagnostics: _pushDiagnostics(
+          LoopPushRegistrationGate.capabilityUnavailable,
+        ),
+      );
+
+      expect(find.text('推送尚不可用'), findsOneWidget);
+      expect(
+        find.byKey(
+          const ValueKey<String>('notification-preferences-push-device'),
+        ),
+        findsNothing,
+      );
+    });
+
+    testWidgets(
+      'the sentence follows the registration while the page is open',
+      (tester) async {
+        final recorder = LoopPushRegistrationDiagnosticsRecorder();
+        addTearDown(recorder.dispose);
+        recorder.record(LoopPushRegistrationGate.noPrincipal);
+
+        await pumpS5Page(
+          tester,
+          const NotificationPreferencesScreen(),
+          notifications: FakeNotificationsGateway(),
+          pushDiagnostics: recorder,
+        );
+        expect(find.text('还没有向这台设备请求通知权限'), findsOneWidget);
+
+        recorder.record(LoopPushRegistrationGate.registered);
+        await tester.pumpAndSettle();
+
+        expect(find.text('还没有向这台设备请求通知权限'), findsNothing);
+        expect(find.text('这台设备已登记接收推送'), findsOneWidget);
+      },
+    );
+
     testWidgets('推送开通之后，那句「尚不可用」就不再出现', (tester) async {
       await pumpS5Page(
         tester,
@@ -950,4 +1060,13 @@ void main() {
       );
     });
   });
+}
+
+/// A recorder already stopped at one step.
+LoopPushRegistrationDiagnosticsRecorder _pushDiagnostics(
+  LoopPushRegistrationGate gate,
+) {
+  final recorder = LoopPushRegistrationDiagnosticsRecorder()..record(gate);
+  addTearDown(recorder.dispose);
+  return recorder;
 }

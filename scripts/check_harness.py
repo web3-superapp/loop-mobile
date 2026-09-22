@@ -10327,7 +10327,7 @@ def check_notification_contract(root: Path) -> list[str]:
         )
         gated = (
             "config.canInitializeFirebase" in production_code
-            and "LoopFirebaseIngress.ensureApp()" in production_code
+            and "LoopFirebaseIngress.ensureApp(" in production_code
             and "if (firebaseApp != null)" in production_code
         )
         if len(overrides) != 1 or not gated:
@@ -13439,15 +13439,64 @@ def check_push_registration_contract(root: Path) -> list[str]:
     if coordinator_path.is_file():
         coordinator = strip_dart_comments(read_text(coordinator_path))
         for fragment in (
-            "if (!_readPushCapabilityAvailable()) return;",
+            "if (!_readPushCapabilityAvailable()) {",
+            "_record(LoopPushRegistrationGate.capabilityUnavailable);",
             "_runtimeDeferred = true;",
             "if (_askedPrincipal != principal)",
+            # Decision 0076: the permission is asked for once the account has
+            # arrived in Community, not at the moment it becomes addressable.
+            # Both paths that can register carry the same gate, because the
+            # provider issues its first token by itself.
+            "if (!_readCommunityReached()) {",
+            # A refusal is read again, never asked again: the owner was told
+            # to change it in the system settings, and `requestPermission`
+            # would report the stale answer for the rest of the install.
+            "_permission = await _source.currentPermission();",
         ):
             if fragment not in coordinator:
                 errors.append(
-                    "push registration must wait for the capability, ask the device "
-                    f"once per account, and stop after a deferred runtime (`{fragment}`)"
+                    "push registration must wait for the capability and for the "
+                    "arrival in Community, ask the device once per account, read "
+                    "a refusal rather than repeat it, and stop after a deferred "
+                    f"runtime (`{fragment}`)"
                 )
+        if coordinator.count("if (!_readCommunityReached()) {") != 2:
+            errors.append(
+                "both registration paths — the synchronisation and the provider's "
+                "own token refresh — must wait for the arrival in Community "
+                "(decision 0076)"
+            )
+        arrival_gate = coordinator.find("_readCommunityReached()")
+        prompt = coordinator.find("_source.requestPermission()")
+        if arrival_gate < 0 or prompt < 0 or arrival_gate > prompt:
+            errors.append(
+                "the arrival in Community must be checked before the device is "
+                "asked for the notification permission (decision 0076)"
+            )
+        # A composition with no push provider says so itself, rather than
+        # reporting whichever account condition happened to be read first.
+        source_gate = coordinator.find("if (!_source.isEnabled) {")
+        later_gates = {
+            "the platform": coordinator.find("if (platform == null) {"),
+            "the account": coordinator.find("if (principal == null) {"),
+            "the arrival in Community": arrival_gate,
+            "the capability": coordinator.find(
+                "if (!_readPushCapabilityAvailable()) {"
+            ),
+        }
+        if source_gate < 0:
+            errors.append(
+                "a build with no push provider must be the first thing the "
+                "registration reports (`if (!_source.isEnabled) {`)"
+            )
+        else:
+            for name, position in later_gates.items():
+                if 0 <= position < source_gate:
+                    errors.append(
+                        "a build with no push provider must be reported before "
+                        f"{name} is looked at, or a device with no Firebase "
+                        "describes itself as an account that is not ready yet"
+                    )
 
     # 7. Stream's two configurations are named once, where a rename is visible.
     registrar_path = root / "lib/integrations/communication/stream_push_device_registrar.dart"
@@ -13477,6 +13526,72 @@ def check_push_registration_contract(root: Path) -> list[str]:
                 "`LoopSessionController.exit`, while the session that created it "
                 "still exists"
             )
+        # S73: the session turns authenticated before the LOOP identity behind
+        # it exists, and the bootstrap owner is published once and filled in
+        # afterwards. Without an explicit re-ask at the moment the backend
+        # agrees the account exists, the registration stops at "no account"
+        # for the rest of the run and the device is never asked for the
+        # notification permission at all.
+        #
+        # Comments are blanked rather than removed, so the check reads the
+        # code that follows with its whitespace collapsed, and it is anchored
+        # to the end of the guard clause rather than to a window.
+        authorized = re.search(
+            r"authorization\s*!=\s*LoopBootstrapAuthorization\.authorized"
+            r"\s*\)\s*\{\s*return;\s*\}",
+            re.sub(r"\s+", " ", application),
+        )
+        collapsed = re.sub(r"\s+", " ", application)
+        if authorized is None or not collapsed[authorized.end() :].lstrip().startswith(
+            "pushRegistrationCoordinator.onIdentityMayHaveChanged();"
+        ):
+            errors.append(
+                "lib/app.dart must re-evaluate the push registration once the "
+                "backend has agreed the account exists, or no device is ever "
+                "asked for the notification permission"
+            )
+        # Decision 0076: the arrival is the landing `GET /v2/profile`
+        # produced, not a location — a deep link under `/community/…` is an
+        # arrival too. Both places the answer can become Community mark it,
+        # and leaving the account takes it away again.
+        for fragment in (
+            "if (next.landing == LoopProfileLanding.community) "
+            "_onCommunityArrival();",
+            "ref.read(loopCommunityArrivalProvider.notifier).landed()",
+            "ref.read(loopCommunityArrivalProvider.notifier).leave();",
+        ):
+            if fragment not in collapsed:
+                errors.append(
+                    "lib/app.dart must mark the arrival in Community from the "
+                    f"landing the profile read published (`{fragment}`)"
+                )
+        if collapsed.count("_onCommunityArrival();") < 2:
+            errors.append(
+                "both paths into Community — the published landing and the end "
+                "of the five-step opening — must mark the arrival (decision "
+                "0076)"
+            )
+        if re.search(
+            r"matchedLocation\s*==\s*(LoopRouteManifest\.defaultPath|'/community')",
+            collapsed,
+        ):
+            errors.append(
+                "the arrival in Community must not be read from a route "
+                "location: a deep link under `/community/…` would never arrive"
+            )
+        # Decision 0076: the landing says where the account belongs; only the
+        # shell can say a page was drawn. Acting on the landing alone raises
+        # the dialog over the page the owner is still looking at — the launch
+        # page on a restored session, 创建 LOOP ID at the end of the opening.
+        for fragment in (
+            "LoopProductFrameReporter(",
+            "ref.read(loopCommunityArrivalProvider.notifier).productDrawn()",
+        ):
+            if fragment not in collapsed:
+                errors.append(
+                    "lib/app.dart must take the drawn product frame as the "
+                    f"other half of the arrival (`{fragment}`)"
+                )
     return errors
 
 
