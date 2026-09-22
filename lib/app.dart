@@ -12,6 +12,7 @@ import 'package:loop_mobile/app/loop_display_preferences.dart';
 import 'package:loop_mobile/app/notifications/loop_notification_coordinator.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_coordinator.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_providers.dart';
+import 'package:loop_mobile/app/session/loop_community_arrival.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/app/session/loop_communication_retirement.dart';
 import 'package:loop_mobile/app/session/onboarding_sequence.dart';
@@ -199,9 +200,10 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         unawaited(lock.refreshCapability());
         // A registration that stopped at a condition which has since become
         // true — the account was accepted while LOOP was away, the owner
-        // allowed notifications in Settings — has nobody else to re-ask it.
-        // An account already registered asks the provider for nothing, and a
-        // refused permission is never put to the owner twice.
+        // turned notifications on in the system settings — has nobody else
+        // to re-ask it. An account already registered asks the provider for
+        // nothing, and a refusal is only ever *read* again, never put to the
+        // owner a second time.
         pushRegistrationCoordinator.onIdentityMayHaveChanged();
       },
       // `onHide` is the outbound half of the pair: `onInactive` also fires on
@@ -323,6 +325,9 @@ class _LoopAppState extends ConsumerState<LoopApp> {
         // The server calling the profile active is the only thing that ends
         // the opening sequence, and it ends it for good.
         if (landing == LoopProfileLanding.community) {
+          // Decision 0076: the end of the opening is also an arrival, and on
+          // this path it is the first one this account has made.
+          _onCommunityArrival();
           unawaited(
             ref
                 .read(loopOnboardingSequenceProvider.notifier)
@@ -370,6 +375,9 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       if (next.mode == LoopSessionMode.signedOut ||
           next.mode == LoopSessionMode.preview) {
         ref.read(loopOnboardingSequenceProvider.notifier).leave();
+        // The next account on this device has not arrived anywhere yet, and
+        // must be asked about notifications on its own arrival.
+        ref.read(loopCommunityArrivalProvider.notifier).leave();
       }
     });
     // The launch gate reads the landing and the opening position, so a change
@@ -385,6 +393,7 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       previous,
       next,
     ) {
+      if (next.landing == LoopProfileLanding.community) _onCommunityArrival();
       if (previous?.landing == next.landing) return;
       // Losing the answer has to move the owner off whatever product page the
       // previous one allowed; gaining it only ever moves a page that was
@@ -421,6 +430,24 @@ class _LoopAppState extends ConsumerState<LoopApp> {
     );
     notificationCoordinator.start();
     pushRegistrationCoordinator.start();
+  }
+
+  /// Marks this account's arrival in Community, once per session.
+  ///
+  /// Decision 0076: this is the moment the device is asked about
+  /// notifications. The signal is the landing `GET /v2/profile` produced,
+  /// not a location — an account whose answer is Community has arrived
+  /// whether the router put it on the tab or on a conversation somewhere
+  /// under it, and a location string would miss the second one entirely.
+  ///
+  /// It is called from both places the answer can become Community: the
+  /// landing the profile read publishes, and the end of the five-step
+  /// opening. Either order works and neither can double the prompt, because
+  /// only the first call marks the arrival.
+  void _onCommunityArrival() {
+    if (!mounted) return;
+    if (!ref.read(loopCommunityArrivalProvider.notifier).reach()) return;
+    pushRegistrationCoordinator.onIdentityMayHaveChanged();
   }
 
   /// Puts the five-step account sequence on the step this account is on.

@@ -18,6 +18,12 @@ enum LoopPushRegistrationGate {
   /// LOOP identity behind the session has not been established yet.
   noPrincipal,
 
+  /// There is an account, and the owner has not been put down on the
+  /// Community yet — the five-step opening is still running, or the
+  /// session has not landed anywhere. Decision 0076 asks for the permission
+  /// there and nowhere earlier.
+  awaitingCommunity,
+
   /// A platform LOOP registered no push application for.
   noPlatform,
 

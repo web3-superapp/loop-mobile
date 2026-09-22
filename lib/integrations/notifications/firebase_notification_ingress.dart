@@ -159,6 +159,29 @@ final class FirebaseLoopPushTokenSource implements LoopPushTokenSource {
   final FirebaseMessaging _messaging;
 
   @override
+  bool get isEnabled => true;
+
+  @override
+  Future<LoopPushPermission> currentPermission() async {
+    try {
+      // Reads; never prompts. `getNotificationSettings` is how a refusal the
+      // owner reversed in the system settings reaches LOOP.
+      final settings = await _messaging.getNotificationSettings();
+      return _permission(settings.authorizationStatus);
+    } catch (_) {
+      return LoopPushPermission.unsupported;
+    }
+  }
+
+  static LoopPushPermission _permission(AuthorizationStatus status) =>
+      switch (status) {
+        AuthorizationStatus.authorized => LoopPushPermission.granted,
+        AuthorizationStatus.provisional => LoopPushPermission.provisional,
+        AuthorizationStatus.denied => LoopPushPermission.denied,
+        AuthorizationStatus.notDetermined => LoopPushPermission.denied,
+      };
+
+  @override
   Future<LoopPushPermission> requestPermission() async {
     try {
       // While LOOP is in the foreground the provider must not draw anything:
@@ -170,12 +193,7 @@ final class FirebaseLoopPushTokenSource implements LoopPushTokenSource {
         sound: false,
       );
       final settings = await _messaging.requestPermission();
-      return switch (settings.authorizationStatus) {
-        AuthorizationStatus.authorized => LoopPushPermission.granted,
-        AuthorizationStatus.provisional => LoopPushPermission.provisional,
-        AuthorizationStatus.denied => LoopPushPermission.denied,
-        AuthorizationStatus.notDetermined => LoopPushPermission.denied,
-      };
+      return _permission(settings.authorizationStatus);
     } catch (_) {
       return LoopPushPermission.unsupported;
     }

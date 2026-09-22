@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loop_mobile/app.dart';
+import 'package:loop_mobile/app/session/loop_community_arrival.dart';
 import 'package:loop_mobile/app/session/onboarding_sequence.dart';
 import 'package:loop_mobile/app/session/post_auth_profile_redirect_coordinator.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
@@ -626,6 +627,34 @@ void main() {
       }
     });
 
+    // Decision 0076: the notification permission is asked for on the first
+    // arrival at Community and nowhere earlier. These two tests are about
+    // the arrival itself; what is asked on it belongs to the push
+    // registration's own tests.
+    testWidgets('开号途中没有进过社区，所以不会问通知权限', (tester) async {
+      final store = InMemoryLoopOnboardingProgressStore();
+      final router = await _pumpLoopApp(tester, store: store);
+
+      expect(router.state.matchedLocation, '/auth/wallet/create');
+      expect(
+        _mountedScope(tester).read(loopCommunityArrivalProvider),
+        isFalse,
+        reason: '系统弹窗不能压在开号的任何一步上',
+      );
+    });
+
+    testWidgets('已开号的账号一落到社区，就算进过社区', (tester) async {
+      final store = InMemoryLoopOnboardingProgressStore();
+      final router = await _pumpLoopApp(
+        tester,
+        store: store,
+        status: ProfileStatus.active,
+      );
+
+      expect(router.state.matchedLocation, '/community');
+      expect(_mountedScope(tester).read(loopCommunityArrivalProvider), isTrue);
+    });
+
     testWidgets('a profile that never answers stops waiting and says so', (
       tester,
     ) async {
@@ -911,6 +940,11 @@ Future<GoRouter> _pumpLoopApp(
 }
 
 const Object _unset = Object();
+
+/// The application scope this test mounted, for the few facts that are read
+/// from a provider rather than from the screen.
+ProviderContainer _mountedScope(WidgetTester tester) =>
+    ProviderScope.containerOf(tester.element(find.byType(LoopApp)));
 
 /// Reads the `NN / NN` counter the step page prints in its top right.
 String _stepCounter(WidgetTester tester) {

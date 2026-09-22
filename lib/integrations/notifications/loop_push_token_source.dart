@@ -16,11 +16,31 @@ enum LoopPushPermission { granted, provisional, denied, unsupported }
 /// reviewed ingress; everything above this line — the coordinator, the backend
 /// gateway, the Stream registration — never names Firebase.
 abstract interface class LoopPushTokenSource {
+  /// Whether this composition has a push provider at all.
+  ///
+  /// `false` is a build fact, not a device answer: it never changes during a
+  /// run, and it is the honest reason a device is unreachable when the
+  /// provider could not be brought up. Without it the first gate the
+  /// registration reports would be whichever condition happened to be
+  /// checked first, and a build with no Firebase at all would describe
+  /// itself as an account that is not ready yet.
+  bool get isEnabled;
+
   /// Asks the device, once, whether LOOP may show notifications.
   ///
   /// On a device that has already answered, the platform returns the stored
   /// answer without showing a prompt, so this is safe to call again.
   Future<LoopPushPermission> requestPermission();
+
+  /// Reads the device's current answer **without asking for one**.
+  ///
+  /// The platform only shows its dialog once. After a refusal the owner can
+  /// still allow notifications in the system settings, and this is how LOOP
+  /// finds out: it is read again when the App comes back to the foreground.
+  /// Calling [requestPermission] there would be asking a question the
+  /// platform has already answered and would report a stale refusal for the
+  /// rest of the installation.
+  Future<LoopPushPermission> currentPermission();
 
   /// The current registration token, or `null` when there is not one yet.
   ///
@@ -50,7 +70,14 @@ final class DisabledLoopPushTokenSource implements LoopPushTokenSource {
   const DisabledLoopPushTokenSource();
 
   @override
+  bool get isEnabled => false;
+
+  @override
   Future<LoopPushPermission> requestPermission() async =>
+      LoopPushPermission.unsupported;
+
+  @override
+  Future<LoopPushPermission> currentPermission() async =>
       LoopPushPermission.unsupported;
 
   @override

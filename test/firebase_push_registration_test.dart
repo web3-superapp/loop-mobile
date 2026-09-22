@@ -8,6 +8,7 @@ import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_coordinator.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_diagnostics.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_providers.dart';
+import 'package:loop_mobile/app/session/loop_community_arrival.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/notifications/push_device_gateway.dart';
@@ -16,7 +17,9 @@ import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta_providers.dart';
 import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/notifications/loop_v2_push_device_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/security/loop_v2_security_api.dart';
@@ -27,6 +30,7 @@ import 'package:loop_mobile/integrations/notifications/loop_notification_router.
 import 'package:loop_mobile/integrations/notifications/loop_push_token_source.dart';
 
 import 'support/s5_fixtures.dart';
+import 'support/s5_page_harness.dart';
 
 const _accessToken = 'privy-access-token';
 const _principal = 'did:privy:user-a';
@@ -653,6 +657,66 @@ void main() {
       );
     });
 
+    test('这个 build 起不来推送时，这一步是粘的：start() 之后也没被盖掉', () async {
+      final harness = _Harness(principal: _principal, sourceEnabled: false);
+      addTearDown(harness.dispose);
+      // What `lib/main.dart` writes down before the scope exists, when
+      // Firebase could not be brought up.
+      harness.diagnostics.record(LoopPushRegistrationGate.tokenSourceDisabled);
+
+      harness.coordinator.start();
+      await _settle();
+
+      expect(
+        harness.gate,
+        LoopPushRegistrationGate.tokenSourceDisabled,
+        reason: '没有推送组件的设备不能被说成「账号还没准备好」',
+      );
+      expect(harness.source.permissionRequests, 0);
+    });
+
+    test('拒绝之后只再读，不再问；系统设置里改回来就能接着登记', () async {
+      final harness = _Harness(
+        principal: _principal,
+        permission: LoopPushPermission.denied,
+        settingsPermission: LoopPushPermission.granted,
+      );
+      addTearDown(harness.dispose);
+
+      harness.coordinator.start();
+      await _settle();
+      expect(harness.gate, LoopPushRegistrationGate.permissionDenied);
+      expect(harness.source.permissionRequests, 1);
+      expect(harness.source.permissionReads, 0);
+
+      // 回到前台：读一次系统设置，不再弹第二次。
+      harness.coordinator.onIdentityMayHaveChanged();
+      await _settle();
+
+      expect(harness.source.permissionRequests, 1, reason: '同一个账号只被问一次，第二次只能读');
+      expect(harness.source.permissionReads, 1);
+      expect(harness.gateway.registered, <String>[_firebaseToken]);
+      expect(harness.gate, LoopPushRegistrationGate.registered);
+    });
+
+    test('系统设置里仍然是拒绝时，读到的还是拒绝', () async {
+      final harness = _Harness(
+        principal: _principal,
+        permission: LoopPushPermission.denied,
+      );
+      addTearDown(harness.dispose);
+
+      harness.coordinator.start();
+      await _settle();
+      harness.coordinator.onIdentityMayHaveChanged();
+      await _settle();
+
+      expect(harness.source.permissionRequests, 1);
+      expect(harness.source.permissionReads, 1);
+      expect(harness.gate, LoopPushRegistrationGate.permissionDenied);
+      expect(harness.gateway.registered, isEmpty);
+    });
+
     test('后端认下账号之后再问一次，这时候才会请求权限并登记', () async {
       // 真机上的顺序：会话先变成已登录，LOOP 的身份要等 bootstrap 回来才存在。
       // 第一次问的时候还没有账号，之后没人再问过 —— 于是权限弹窗从未出现。
@@ -674,25 +738,122 @@ void main() {
     });
   });
 
+  group('通知权限在社区里问，开号途中不问（决定 0076）', () {
+    test('开号还没走完时，什么都不问、也不登记', () async {
+      final harness = _Harness(principal: _principal, communityReached: false);
+      addTearDown(harness.dispose);
+
+      harness.coordinator.start();
+      await _settle();
+
+      expect(harness.gate, LoopPushRegistrationGate.awaitingCommunity);
+      expect(harness.source.permissionRequests, 0, reason: '系统弹窗不能压在「创建钱包」上面');
+      expect(harness.gateway.registered, isEmpty);
+    });
+
+    test('第一次进入社区时问一次，并登记这台设备', () async {
+      final harness = _Harness(principal: _principal, communityReached: false);
+      addTearDown(harness.dispose);
+
+      harness.coordinator.start();
+      await _settle();
+      expect(harness.source.permissionRequests, 0);
+
+      harness.communityReached = true;
+      harness.coordinator.onIdentityMayHaveChanged();
+      await _settle();
+
+      expect(harness.source.permissionRequests, 1);
+      expect(harness.gateway.registered, <String>[_firebaseToken]);
+      expect(harness.gate, LoopPushRegistrationGate.registered);
+    });
+
+    test('再回到社区不会再问第二次', () async {
+      final harness = _Harness(principal: _principal, communityReached: false);
+      addTearDown(harness.dispose);
+
+      harness.coordinator.start();
+      await _settle();
+      harness.communityReached = true;
+      harness.coordinator
+        ..onIdentityMayHaveChanged()
+        ..onIdentityMayHaveChanged();
+      await _settle();
+      harness.coordinator.onIdentityMayHaveChanged();
+      await _settle();
+
+      expect(harness.source.permissionRequests, 1);
+      expect(harness.gateway.registered, <String>[_firebaseToken]);
+    });
+
+    // A restored session lands in Community without walking the opening
+    // sequence. The device has answered the question in an earlier run, so
+    // the platform hands back the stored answer without drawing anything and
+    // the arrival only has the registration left to do.
+    test('已开号的会话恢复后直接进入社区：只登记，不需要再答一次', () async {
+      final harness = _Harness(principal: _principal);
+      addTearDown(harness.dispose);
+
+      harness.coordinator.start();
+      await _settle();
+
+      expect(harness.source.permissionRequests, 1);
+      expect(harness.gateway.registered, <String>[_firebaseToken]);
+      expect(harness.gate, LoopPushRegistrationGate.registered);
+    });
+
+    test('provider 自己发的第一枚令牌，也要等进了社区', () async {
+      final harness = _Harness(principal: _principal, communityReached: false);
+      addTearDown(harness.dispose);
+
+      harness.coordinator.start();
+      await _settle();
+      harness.source.emitRefresh(_rotatedFirebaseToken);
+      await _settle();
+
+      expect(harness.gateway.registered, isEmpty);
+      expect(harness.gate, LoopPushRegistrationGate.awaitingCommunity);
+
+      harness.communityReached = true;
+      harness.coordinator.onIdentityMayHaveChanged();
+      await _settle();
+
+      expect(harness.gateway.registered, <String>[_firebaseToken]);
+    });
+
+    test('进过社区这件事属于这一次会话，退出之后不算数', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final arrival = container.read(loopCommunityArrivalProvider.notifier);
+
+      expect(container.read(loopCommunityArrivalProvider), isFalse);
+      expect(arrival.reach(), isTrue);
+      expect(arrival.reach(), isFalse, reason: '只有第一次到达才是一次到达，否则每次切回社区都会重问一遍');
+      expect(container.read(loopCommunityArrivalProvider), isTrue);
+
+      arrival.leave();
+      expect(container.read(loopCommunityArrivalProvider), isFalse);
+    });
+  });
+
   group('真机上拦住登记的是哪一道门（S73）', () {
     setUp(() => debugDefaultTargetPlatformOverride = TargetPlatform.iOS);
     tearDown(() => debugDefaultTargetPlatformOverride = null);
 
-    /// The real sequence: the session turns authenticated first, and the LOOP
-    /// identity behind it only exists once `bootstrap` has answered. The
-    /// bootstrap provider publishes one owner object and fills the identity
-    /// into it afterwards, so a listener on that provider never sees the
-    /// identity appear.
+    /// The real sequence, through the real provider graph: the session turns
+    /// authenticated first, and the LOOP identity behind it only exists once
+    /// `bootstrap` has answered. The bootstrap owner is published once and
+    /// the identity is filled into it afterwards, so a listener on that
+    /// provider never sees the identity appear.
     test('会话已登录、LOOP 身份还没回来时，登记停在账号上，不会先弹权限', () async {
-      final repository = _TestBootstrapRepository();
-      final bootstrap = LoopBootstrapSession(
-        principalKey: _principal,
-        accessTokens: _TestAccessTokens(),
-        repository: repository,
-      );
       final diagnostics = LoopPushRegistrationDiagnosticsRecorder();
       final source = _TestPushTokenSource(
         permission: LoopPushPermission.granted,
+      );
+      final gateway = _TestPushDeviceGateway(
+        available: true,
+        defers: false,
+        revokeHangs: false,
       );
       final container = ProviderContainer(
         overrides: [
@@ -700,7 +861,21 @@ void main() {
             _config(firebaseConfigured: true),
           ),
           loopSessionProvider.overrideWith(_AuthenticatedSession.new),
-          loopBootstrapSessionProvider.overrideWithValue(bootstrap),
+          // The real `loopBootstrapSessionProvider` is left to build itself
+          // out of these two, so the test observes the same object lifetime
+          // the device has.
+          loopBackendAccessTokenSourceProvider.overrideWithValue(
+            _TestAccessTokens(),
+          ),
+          loopBootstrapRepositoryProvider.overrideWithValue(
+            _TestBootstrapRepository(),
+          ),
+          loopV2MetaSnapshotProvider.overrideWith(
+            (ref) async => s5MetaSnapshot(
+              pushNotifications: LoopV2CapabilityAvailability.available,
+            ),
+          ),
+          pushDeviceGatewayProvider.overrideWithValue(gateway),
           loopPushTokenSourceProvider.overrideWithValue(source),
           loopPushRegistrationDiagnosticsProvider.overrideWithValue(
             diagnostics,
@@ -708,6 +883,13 @@ void main() {
         ],
       );
       addTearDown(container.dispose);
+      // The capability document is observed the way the application observes
+      // it, and awaited so the test is not racing the read the device's own
+      // startup has long finished.
+      container.listen(loopV2MetaSnapshotProvider, (previous, next) {});
+      await container.read(loopV2MetaSnapshotProvider.future);
+      // The account is already where decision 0076 asks the question.
+      container.read(loopCommunityArrivalProvider.notifier).reach();
       var republished = 0;
       container.listen(
         loopBootstrapSessionProvider,
@@ -725,11 +907,12 @@ void main() {
       expect(source.permissionRequests, 0);
 
       // The identity arrives. Nothing about the provider graph changes.
+      final bootstrap = container.read(loopBootstrapSessionProvider);
       expect(
-        await bootstrap.authorize(),
+        await bootstrap?.authorize(),
         LoopBootstrapAuthorization.authorized,
       );
-      expect(bootstrap.identity, isNotNull);
+      expect(bootstrap?.identity, isNotNull);
       expect(republished, 0, reason: '身份是填进同一个对象里的，监听这个 provider 的人看不到它出现');
       expect(
         diagnostics.value.gate,
@@ -743,11 +926,9 @@ void main() {
         ..onIdentityMayHaveChanged();
       await _settle();
 
-      expect(
-        diagnostics.value.gate,
-        isNot(LoopPushRegistrationGate.noPrincipal),
-        reason: '这一次账号这道门是开的',
-      );
+      expect(source.permissionRequests, 1, reason: '这一次才轮到系统弹窗，而且只弹一次');
+      expect(gateway.registered, <String>[_firebaseToken]);
+      expect(diagnostics.value.gate, LoopPushRegistrationGate.registered);
     });
   });
 
@@ -924,6 +1105,9 @@ Future<void> _settle() async {
 final class _Harness {
   _Harness({
     required this.principal,
+    this.communityReached = true,
+    bool sourceEnabled = true,
+    LoopPushPermission? settingsPermission,
     LoopPushPlatform? platform = LoopPushPlatform.android,
     LoopPushPermission permission = LoopPushPermission.granted,
     String? apnsToken,
@@ -938,6 +1122,8 @@ final class _Harness {
          permission: permission,
          apnsToken: apnsToken,
          hasToken: hasToken,
+         enabled: sourceEnabled,
+         settingsPermission: settingsPermission,
        ),
        gateway = _TestPushDeviceGateway(
          available: gatewayAvailable,
@@ -952,6 +1138,7 @@ final class _Harness {
       readStreamRegistrar: () => stream,
       readPrincipalKey: _readPrincipal,
       readPushCapabilityAvailable: () => pushCapabilityAvailable,
+      readCommunityReached: () => communityReached,
       platform: platform,
       appVersion: s5ClientVersion,
       diagnostics: diagnostics,
@@ -962,6 +1149,10 @@ final class _Harness {
   /// Mutable so a test can do what the device does: become an account the
   /// backend has agreed exists *after* the coordinator first looked.
   String? principal;
+
+  /// Mutable for the same reason: the owner walks the opening sequence and
+  /// then arrives at Community.
+  bool communityReached;
 
   final _TestPushTokenSource source;
   final _TestPushDeviceGateway gateway;
@@ -988,9 +1179,17 @@ final class _TestPushTokenSource implements LoopPushTokenSource {
     required this.permission,
     this.apnsToken,
     this.hasToken = true,
-  });
+    this.enabled = true,
+    LoopPushPermission? settingsPermission,
+  }) : settingsPermission = settingsPermission ?? permission;
 
   final LoopPushPermission permission;
+
+  /// What the system settings say now, which is not always what the owner
+  /// answered the prompt.
+  final LoopPushPermission settingsPermission;
+
+  final bool enabled;
   final String? apnsToken;
 
   /// iOS before APNs has answered: permission is granted and there is still
@@ -999,8 +1198,18 @@ final class _TestPushTokenSource implements LoopPushTokenSource {
   final StreamController<String> _refreshes = StreamController<String>();
 
   var permissionRequests = 0;
+  var permissionReads = 0;
   var tokenReads = 0;
   var deleted = 0;
+
+  @override
+  bool get isEnabled => enabled;
+
+  @override
+  Future<LoopPushPermission> currentPermission() async {
+    permissionReads += 1;
+    return settingsPermission;
+  }
 
   void emitRefresh(String token) => _refreshes.add(token);
 

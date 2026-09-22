@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_coordinator.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_diagnostics.dart';
+import 'package:loop_mobile/app/session/loop_community_arrival.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/notifications/push_device_gateway.dart';
@@ -53,6 +54,9 @@ final loopPushRegistrationCoordinatorProvider =
         readPushCapabilityAvailable: () => ref
             .read(loopCapabilityProvider(LoopV2CapabilityId.pushNotifications))
             .isAvailable,
+        // Decision 0076: the permission is asked for at Community,
+        // not at the moment the account becomes addressable.
+        readCommunityReached: () => ref.read(loopCommunityArrivalProvider),
         platform: switch (metadata?.platform) {
           LoopV2Platform.android => LoopPushPlatform.android,
           LoopV2Platform.ios => LoopPushPlatform.ios,

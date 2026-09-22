@@ -847,6 +847,24 @@ void main() {
       expect(find.text('还没有向这台设备请求通知权限'), findsOneWidget);
     });
 
+    // Decision 0076: the prompt waits for Community, and the page
+    // says which moment it is waiting for rather than only that it is.
+    testWidgets('a prompt that waits for the home page says so', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const NotificationPreferencesScreen(),
+        notifications: FakeNotificationsGateway(),
+        pushDiagnostics: _pushDiagnostics(
+          LoopPushRegistrationGate.awaitingCommunity,
+        ),
+      );
+
+      expect(find.text('还没有向这台设备请求通知权限'), findsOneWidget);
+      expect(find.text('进入社区后会请求一次。'), findsOneWidget);
+    });
+
     testWidgets('a refused permission names the one step that changes it', (
       tester,
     ) async {

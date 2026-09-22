@@ -107,6 +107,14 @@ class _NotificationPreferencesScreenState
           title: '还没有向这台设备请求通知权限',
           body: '账号准备好之后会请求一次。',
         );
+      // Decision 0076: the prompt waits for Community, which is
+      // where this page's reader will be as soon as they leave 通知设置.
+      case LoopPushRegistrationGate.awaitingCommunity:
+        return const LoopNotice(
+          key: key,
+          title: '还没有向这台设备请求通知权限',
+          body: '进入社区后会请求一次。',
+        );
       case LoopPushRegistrationGate.noPlatform:
       case LoopPushRegistrationGate.tokenSourceDisabled:
         return const LoopNotice(
@@ -135,7 +143,7 @@ class _NotificationPreferencesScreenState
           tone: LoopNoticeTone.warn,
           icon: 'warn',
           title: '这台设备还没有登记成功',
-          body: '稍后会自动再试一次。',
+          body: '下次回到 LOOP 时会再试一次。',
         );
     }
   }
@@ -302,7 +310,7 @@ class _NotificationPreferencesScreenState
           const LoopNotice(
             key: ValueKey<String>('notification-preferences-notice'),
             title: '开关只是意图',
-            body: '目前只有"价格提醒"会生成应用内通知，其他类别还没有开放。推送暂时不可用。',
+            body: '目前只有"价格提醒"会生成应用内通知，其他类别还没有开放。',
           ),
         ],
       ],

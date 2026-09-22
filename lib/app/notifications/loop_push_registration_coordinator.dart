@@ -29,6 +29,7 @@ final class LoopPushRegistrationCoordinator {
     required this._readStreamRegistrar,
     required this._readPrincipalKey,
     required this._readPushCapabilityAvailable,
+    required this._readCommunityReached,
     required this._platform,
     required this._appVersion,
     required this._diagnostics,
@@ -56,6 +57,16 @@ final class LoopPushRegistrationCoordinator {
   /// deadlock. The pending evidence is a claim the UI must not make; it is not
   /// a reason to refuse the registration that would resolve it.
   final bool Function() _readPushCapabilityAvailable;
+
+  /// Whether the owner has arrived at Community in this run.
+  ///
+  /// Decision 0076. The account exists from the moment the backend accepts
+  /// the session, which is somewhere in the middle of the five-step opening;
+  /// asking there puts the system dialog on top of 创建钱包 and asks about
+  /// notifications before there is anything to be notified about. The one
+  /// moment that is both after the account and in context is the first
+  /// arrival at Community.
+  final bool Function() _readCommunityReached;
 
   /// `null` on a platform LOOP registered no push application for. Everything
   /// below then stays inert rather than sending `platform: 'unknown'`.
@@ -131,6 +142,15 @@ final class LoopPushRegistrationCoordinator {
   }
 
   Future<void> _synchronize() async {
+    // The build facts first, in the order in which they stop being
+    // changeable. A composition with no push provider — a Firebase that
+    // could not be brought up, a build that was never given a configuration,
+    // the offline Preview — can never register, and saying "the account is
+    // not ready" there would describe a wait that is not happening.
+    if (!_source.isEnabled) {
+      _record(LoopPushRegistrationGate.tokenSourceDisabled);
+      return;
+    }
     final platform = _platform;
     // The build fact first: a platform with no push application never
     // acquires an account, so reporting the account would name the condition
@@ -145,6 +165,10 @@ final class LoopPushRegistrationCoordinator {
       return;
     }
     if (principal == _registeredPrincipal && _registeredToken != null) return;
+    if (!_readCommunityReached()) {
+      _record(LoopPushRegistrationGate.awaitingCommunity);
+      return;
+    }
     if (_runtimeDeferred) {
       _record(LoopPushRegistrationGate.runtimeDeferred);
       return;
@@ -169,6 +193,12 @@ final class LoopPushRegistrationCoordinator {
     if (_askedPrincipal != principal) {
       _permission = await _source.requestPermission();
       _askedPrincipal = principal;
+    } else if (_permission == LoopPushPermission.denied) {
+      // The owner was told where to change it, so the refusal is read again
+      // — never asked again. `currentPermission` draws nothing; it is the
+      // only way a permission granted in the system settings can reach LOOP,
+      // and it is what makes the notification page's one next step true.
+      _permission = await _source.currentPermission();
     }
     switch (_permission) {
       case LoopPushPermission.granted:
@@ -205,6 +235,15 @@ final class LoopPushRegistrationCoordinator {
     final principal = _readPrincipalKey();
     final platform = _platform;
     if (principal == null || platform == null || _runtimeDeferred) return;
+    // The provider issues the first token by itself, before anybody has been
+    // asked anything — on Android it can arrive while the owner is still on
+    // 创建钱包. Registering it here would put the device on the server's list
+    // before the moment decision 0076 chose. The arrival runs `_synchronize`,
+    // which reads the current token anyway.
+    if (!_readCommunityReached()) {
+      _record(LoopPushRegistrationGate.awaitingCommunity);
+      return;
+    }
     if (token == _registeredToken && principal == _registeredPrincipal) return;
 
     final previousStreamDevice = _registeredStreamDevice;
