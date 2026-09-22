@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/app/notifications/loop_push_registration_diagnostics.dart';
+import 'package:loop_mobile/app/notifications/loop_push_registration_providers.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
@@ -62,6 +64,80 @@ class _NotificationPreferencesScreenState
       title: '推送还没有在真机上确认过',
       body: '推送通道已经配好，但还没有一台设备确认收到过。开关照常保存，也照常影响站内的通知列表。',
     );
+  }
+
+  /// What this device can say about its own registration.
+  ///
+  /// The capability document answers for LOOP; it cannot answer for the
+  /// device in front of the reader. The card below used to be the only thing
+  /// this page said about the channel, and it said the same thing whether the
+  /// owner had refused notifications, the account was still being prepared,
+  /// or the registration had never been attempted at all — the case that was
+  /// true on every device until 2026-09-22.
+  ///
+  /// The two steps LOOP itself is the reason for are left to the card below,
+  /// which already says them in the server's own words; repeating them here
+  /// would read as two different problems on one screen.
+  Widget _pushDeviceNotice() {
+    return ValueListenableBuilder<LoopPushRegistrationDiagnostics>(
+      valueListenable: ref.watch(loopPushRegistrationDiagnosticsProvider),
+      builder: (context, diagnostics, _) => _pushDeviceCopy(diagnostics.gate),
+    );
+  }
+
+  static Widget _pushDeviceCopy(LoopPushRegistrationGate gate) {
+    const key = ValueKey<String>('notification-preferences-push-device');
+    switch (gate) {
+      // Nothing has been attempted yet in this run, which is a moment rather
+      // than a state, and the Preview composition never attempts anything at
+      // all. Neither is a fact about the reader's device.
+      case LoopPushRegistrationGate.notStarted:
+      case LoopPushRegistrationGate.capabilityUnavailable:
+      case LoopPushRegistrationGate.runtimeDeferred:
+        return const SizedBox.shrink();
+      case LoopPushRegistrationGate.registered:
+        return const LoopNotice(
+          key: key,
+          title: '这台设备已登记接收推送',
+          body: '这不代表已经能送达。',
+        );
+      case LoopPushRegistrationGate.noPrincipal:
+        return const LoopNotice(
+          key: key,
+          title: '还没有向这台设备请求通知权限',
+          body: '账号准备好之后会请求一次。',
+        );
+      case LoopPushRegistrationGate.noPlatform:
+      case LoopPushRegistrationGate.tokenSourceDisabled:
+        return const LoopNotice(
+          key: key,
+          title: '这台设备上没有推送通道',
+          body: '通知只会留在应用内的通知列表里。',
+        );
+      case LoopPushRegistrationGate.permissionDenied:
+        return const LoopNotice(
+          key: key,
+          tone: LoopNoticeTone.warn,
+          icon: 'warn',
+          title: '通知权限已拒绝，这台设备收不到推送',
+          body: '可以在系统设置里为 LOOP 重新打开通知。',
+        );
+      case LoopPushRegistrationGate.noTokenYet:
+        return const LoopNotice(
+          key: key,
+          title: '正在等待系统分配推送通道',
+          body: '拿到之后这台设备会自动登记。',
+        );
+      case LoopPushRegistrationGate.gatewayNotProduction:
+      case LoopPushRegistrationGate.registerFailed:
+        return const LoopNotice(
+          key: key,
+          tone: LoopNoticeTone.warn,
+          icon: 'warn',
+          title: '这台设备还没有登记成功',
+          body: '稍后会自动再试一次。',
+        );
+    }
   }
 
   @override
@@ -211,6 +287,9 @@ class _NotificationPreferencesScreenState
               label: '推送尚不可用',
               fact: resource.push!,
             ),
+          // LOOP's own answer first, then this device's. They are two
+          // different claims and the page keeps them apart.
+          _pushDeviceNotice(),
           for (final section in _sections)
             ..._sectionWidgets(section, resource, state, controller),
           LoopProvenanceFooter(
