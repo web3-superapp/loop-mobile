@@ -12,6 +12,21 @@ import 'package:privy_flutter/privy_flutter.dart';
 /// Kept apart from [PrivyAuthGateway] for the same reason
 /// [PrivyCredentialGateway] is: a test double for the session does not have
 /// to know about MFA, and the SDK's types stay out of the session surface.
+/// The relying party as the Privy SDK wants it: an `https://` origin.
+///
+/// LOOP configures the relying party as a bare registrable domain, which is
+/// what the platform's passkey APIs take as the RP ID and what the
+/// apple-app-site-association / assetlinks files are published under. The
+/// Privy SDK, however, validates the value as a URL and answers a bare domain
+/// with `passkeyCreationFailed("Invalid relying party URL")` (seen on an
+/// iPhone 14 Pro Max, 2026-09-22). The scheme is added here, at the SDK
+/// boundary, so the rest of LOOP keeps reasoning about a domain.
+String privyRelyingPartyOrigin(String relyingParty) {
+  final trimmed = relyingParty.trim();
+  if (trimmed.startsWith('https://')) return trimmed;
+  return 'https://$trimmed';
+}
+
 abstract interface class PrivyMfaAccountGateway {
   Future<LoopSecondFactorFacts> readSecondFactor();
 
@@ -300,7 +315,7 @@ mixin PrivySdkMfaAccount implements PrivyMfaAccountGateway {
   Future<LoopSecondFactorFacts> linkPasskey(String relyingParty) async {
     _require();
     final result = await mfaPrivy.passkey.link(
-      relyingParty: relyingParty,
+      relyingParty: privyRelyingPartyOrigin(relyingParty),
       displayName: 'LOOP',
     );
     return _applied(result, passkey: true);

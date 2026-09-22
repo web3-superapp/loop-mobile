@@ -9,10 +9,31 @@ import 'package:loop_mobile/features/security/mfa/mfa_models.dart';
 import 'package:loop_mobile/features/security/mfa/mfa_sheet.dart';
 import 'package:loop_mobile/features/security/mfa/passkey_sheet.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
+import 'package:loop_mobile/integrations/privy/privy_mfa_gateway.dart';
 
 import 'support/loop_ground_probe.dart';
 
 void main() {
+  group('privy relying party', () {
+    test('the SDK is handed an https origin, never a bare domain', () {
+      // iPhone 14 Pro Max, 2026-09-22: the bare domain LOOP configures as
+      // the RP ID came back from the Privy SDK as
+      // passkeyCreationFailed("Invalid relying party URL").
+      expect(
+        privyRelyingPartyOrigin('api-dev.quant-dinger.cc'),
+        'https://api-dev.quant-dinger.cc',
+      );
+      expect(
+        privyRelyingPartyOrigin(' api-dev.quant-dinger.cc '),
+        'https://api-dev.quant-dinger.cc',
+      );
+      expect(
+        privyRelyingPartyOrigin('https://api-dev.quant-dinger.cc'),
+        'https://api-dev.quant-dinger.cc',
+      );
+    });
+  });
+
   loopWatchGround();
 
   const totp = LoopMfaEnrollment(kind: LoopMfaMethodKind.totp);
