@@ -169,6 +169,98 @@ void main() {
     expect(keyring.peek('voice-room-open:$testCommunityId'), isNull);
   });
 
+  test('a key is never held against a room that is over', () async {
+    // The server answers a replayed key with the room that key opened,
+    // whatever became of it since. Held past the end of that room, the key
+    // would answer every future 开启 with the room that ended — a community
+    // that could never open another one.
+    final api = _RecordingCommunicationApi();
+    final keyring = LoopV2CommandKeyring();
+    final gateway = DioLoopV2CommunicationGateway(
+      api: api,
+      clientMetadata: _metadata,
+      session: _immediateSession(),
+      keyring: keyring,
+    );
+    const signature = 'voice-room-open:$testCommunityId';
+
+    // An unfinished opening keeps its key.
+    api.room = testVoiceRoomSnapshot(
+      role: VoiceRoomRole.host,
+      host: true,
+      backstage: true,
+      providerConfirmed: false,
+      providerReason: 'STREAM_CALL_GO_LIVE_UNCONFIRMED',
+    );
+    await gateway.createRoom(testCommunityId);
+    final key = keyring.peek(signature);
+    expect(key, isNotNull);
+
+    // The replay answers with that room, ended. There is nothing left to
+    // finish, so the key goes.
+    api.room = testVoiceRoomSnapshot(
+      role: VoiceRoomRole.host,
+      host: true,
+      backstage: true,
+      state: VoiceRoomState.ended,
+      providerConfirmed: false,
+      providerReason: 'STREAM_CALL_GO_LIVE_UNCONFIRMED',
+    );
+    await gateway.createRoom(testCommunityId);
+    expect(keyring.peek(signature), isNull);
+
+    // The next opening is a new command, and can make a new room.
+    api.room = testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true);
+    await gateway.createRoom(testCommunityId);
+    expect(api.keys.last, isNot(key));
+  });
+
+  test(
+    'ending a room, and finding none, both let the opening key go',
+    () async {
+      for (final release in <String>['end', 'current']) {
+        final api = _RecordingCommunicationApi();
+        final keyring = LoopV2CommandKeyring();
+        final gateway = DioLoopV2CommunicationGateway(
+          api: api,
+          clientMetadata: _metadata,
+          session: _immediateSession(),
+          keyring: keyring,
+        );
+        const signature = 'voice-room-open:$testCommunityId';
+
+        api.room = testVoiceRoomSnapshot(
+          role: VoiceRoomRole.host,
+          host: true,
+          backstage: true,
+          providerConfirmed: false,
+          providerReason: 'STREAM_CALL_GO_LIVE_UNCONFIRMED',
+        );
+        await gateway.createRoom(testCommunityId);
+        expect(keyring.peek(signature), isNotNull, reason: release);
+
+        if (release == 'end') {
+          // The host ends the room the key opened.
+          api.commanded = testVoiceRoomSnapshot(
+            role: VoiceRoomRole.host,
+            host: true,
+            state: VoiceRoomState.ended,
+          );
+          await gateway.endRoom(testVoiceRoomId);
+        } else {
+          // Or the community simply has no live room any more.
+          api.current = const VoiceRoomCurrent(
+            snapshot: null,
+            reasonCode: 'COMMUNITY_VOICE_ROOM_NOT_LIVE',
+          );
+          await gateway.loadCurrent(testCommunityId);
+        }
+
+        expect(keyring.peek(signature), isNull, reason: release);
+      }
+    },
+  );
+
   test('reads never reserve a key', () async {
     final api = _RecordingCommunityApi()..detail = testDetail();
     final keyring = LoopV2CommandKeyring();
@@ -189,6 +281,12 @@ final class _RecordingCommunicationApi implements LoopV2CommunicationApi {
   final List<String> keys = <String>[];
   VoiceRoomSnapshot? room;
 
+  /// What `GET …/voice-rooms/current` answers with, when a test asks.
+  VoiceRoomCurrent? current;
+
+  /// What a command answers with, when a test sends one.
+  VoiceRoomSnapshot? commanded;
+
   @override
   Future<VoiceRoomSnapshot> createVoiceRoom({
     required String accessToken,
@@ -199,6 +297,23 @@ final class _RecordingCommunicationApi implements LoopV2CommunicationApi {
     keys.add(idempotencyKey);
     return Future<VoiceRoomSnapshot>.value(room!);
   }
+
+  @override
+  Future<VoiceRoomCurrent> getCurrentVoiceRoom({
+    required String accessToken,
+    required String clientVersion,
+    required String communityId,
+  }) => Future<VoiceRoomCurrent>.value(current!);
+
+  @override
+  Future<VoiceRoomSnapshot> command({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required String voiceRoomId,
+    required VoiceRoomCommand command,
+    String? publicProfileId,
+  }) => Future<VoiceRoomSnapshot>.value(commanded!);
 
   /// Every other endpoint of the module is out of this test's way.
   @override
