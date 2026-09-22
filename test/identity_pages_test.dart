@@ -66,6 +66,36 @@ void main() {
       expect(tester.getTopLeft(_band), isNot(before));
     });
 
+    testWidgets(
+      'the wait is drawn across the whole page, not its left 244 dp',
+      (tester) async {
+        // Seen on an iPhone 14 Pro Max on 2026-09-22: the Scaffold hands its
+        // body a loose width and pins it to the left edge, so the Column took
+        // the loader's 244 dp and the wordmark, rail and line sat in the left
+        // margin of a 430 dp page.
+        await _pump(
+          tester,
+          const AccountSurfaceScreen.fromId(
+            'splash',
+            splashPhase: LoopSplashPhase.preparingAccount,
+          ),
+        );
+
+        final pageCenter = tester.getCenter(find.byType(Scaffold)).dx;
+        for (final key in const <String>[
+          'loop-splash-wordmark',
+          'loop-splash-loader',
+          'loop-splash-preparing',
+        ]) {
+          expect(
+            tester.getCenter(find.byKey(ValueKey<String>(key))).dx,
+            moreOrLessEquals(pageCenter, epsilon: 1),
+            reason: '$key is not centred on the page',
+          );
+        }
+      },
+    );
+
     testWidgets('the rail stops and states the reason once the wait ends', (
       tester,
     ) async {

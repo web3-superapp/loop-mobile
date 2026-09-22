@@ -409,67 +409,76 @@ class SplashScreen extends StatelessWidget {
     final waiting = preparing;
     return Scaffold(
       key: const ValueKey<String>('loop-splash-screen'),
+      // The Scaffold hands its body a loose width and pins it to the left
+      // edge, so a Column whose widest child is the 244 dp loader would sit
+      // in the left 244 dp of the page. The expand makes the width tight, and
+      // the Column's centering then measures against the whole page.
       body: SafeArea(
-        child: Column(
-          children: <Widget>[
-            const Spacer(),
-            const LoopBrandMark(
-              key: ValueKey<String>('loop-splash-wordmark'),
-              kind: LoopBrandMarkKind.wordmark,
-              height: 96,
-              semanticLabel: 'LOOP',
-            ),
-            const SizedBox(height: 20),
-            // The mark sweeps while something is still being waited on, and
-            // settles the moment nothing is: a wait that ended badly gets the
-            // still rail and the reason under it.
-            LoopBrandLoader(
-              key: const ValueKey<String>('loop-splash-loader'),
-              animating: !unavailable,
-            ),
-            if (waiting) ...<Widget>[
-              const SizedBox(height: 18),
-              Semantics(
-                liveRegion: true,
-                child: Text(
-                  '正在准备你的账号…',
-                  key: const ValueKey<String>('loop-splash-preparing'),
-                  textAlign: TextAlign.center,
-                  style: LoopTypography.caption(12, color: LoopColors.text3),
-                ),
+        child: SizedBox.expand(
+          child: Column(
+            children: <Widget>[
+              const Spacer(),
+              const LoopBrandMark(
+                key: ValueKey<String>('loop-splash-wordmark'),
+                kind: LoopBrandMarkKind.wordmark,
+                height: 96,
+                semanticLabel: 'LOOP',
               ),
-            ],
-            if (unavailable && unavailableReason != null) ...<Widget>[
-              const SizedBox(height: 18),
-              Semantics(
-                liveRegion: true,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
+              const SizedBox(height: 20),
+              // The mark sweeps while something is still being waited on, and
+              // settles the moment nothing is: a wait that ended badly gets the
+              // still rail and the reason under it.
+              LoopBrandLoader(
+                key: const ValueKey<String>('loop-splash-loader'),
+                animating: !unavailable,
+              ),
+              if (waiting) ...<Widget>[
+                const SizedBox(height: 18),
+                Semantics(
+                  liveRegion: true,
                   child: Text(
-                    unavailableReason!,
-                    key: const ValueKey<String>('loop-splash-unavailable'),
+                    '正在准备你的账号…',
+                    key: const ValueKey<String>('loop-splash-preparing'),
                     textAlign: TextAlign.center,
                     style: LoopTypography.caption(12, color: LoopColors.text3),
                   ),
                 ),
-              ),
-            ],
-            const Spacer(),
-            // Waiting is not a choice, so it is offered none. The entry frame
-            // keeps the prototype's single full-width action.
-            if (phase == LoopSplashPhase.entry)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: LoopButton(
-                  key: const ValueKey<String>('loop-splash-enter'),
-                  label: '进入 LOOP',
-                  primary: true,
-                  block: true,
-                  onPressed: onContinue,
+              ],
+              if (unavailable && unavailableReason != null) ...<Widget>[
+                const SizedBox(height: 18),
+                Semantics(
+                  liveRegion: true,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      unavailableReason!,
+                      key: const ValueKey<String>('loop-splash-unavailable'),
+                      textAlign: TextAlign.center,
+                      style: LoopTypography.caption(
+                        12,
+                        color: LoopColors.text3,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            const SizedBox(height: 24),
-          ],
+              ],
+              const Spacer(),
+              // Waiting is not a choice, so it is offered none. The entry frame
+              // keeps the prototype's single full-width action.
+              if (phase == LoopSplashPhase.entry)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: LoopButton(
+                    key: const ValueKey<String>('loop-splash-enter'),
+                    label: '进入 LOOP',
+                    primary: true,
+                    block: true,
+                    onPressed: onContinue,
+                  ),
+                ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
