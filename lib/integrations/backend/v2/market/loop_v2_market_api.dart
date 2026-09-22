@@ -636,12 +636,24 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
     if ((quality == LoopFactQuality.proxied) != (proxyAsset != null)) {
       LoopV2ChainCodec.invalid();
     }
-    final pool = LoopV2Contract.strictMap(map['pool'], const <String>{
-      'address',
-      'protocol',
-      'quoteAssetId',
-      'quoteSymbol',
-    });
+    final pool = LoopV2Contract.strictMapWithOptional(
+      map['pool'],
+      const <String>{'address', 'protocol', 'quoteAssetId', 'quoteSymbol'},
+      // Decision 0064 made `origin` required, but the deployed API does not
+      // send it yet. A payload without it is exactly the pre-0064 world, where
+      // the only pool that could be charted was one LOOP had registered, so it
+      // is read as `registry`. Once the backend ships, move `origin` into the
+      // required set above — an unknown *value* is already rejected.
+      const <String>{'origin'},
+    );
+    final rawOrigin = pool['origin'];
+    var origin = LoopCandlePoolOrigin.registry;
+    if (rawOrigin != null) {
+      if (rawOrigin is! String) LoopV2ChainCodec.invalid();
+      origin =
+          LoopCandlePoolOrigin.tryParse(rawOrigin) ??
+          LoopV2ChainCodec.invalid();
+    }
 
     final items = <LoopCandle>[];
     DateTime? previousOpen;
@@ -734,6 +746,7 @@ final class DioLoopV2MarketApi implements LoopV2MarketApi {
           pattern: LoopV2ChainCodec.displayTextPattern,
           maxLength: 64,
         ),
+        origin: origin,
         quoteAssetId: LoopV2ChainCodec.optionalString(
           pool,
           'quoteAssetId',

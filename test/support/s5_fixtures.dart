@@ -500,6 +500,10 @@ Map<String, Object?> s5CandlesBody({
   Object? labelKey = 'market.candles.onChainSwapAggregate',
   Object? proxyAsset,
   String priceUnit = 'USDT per WBNB',
+  // Decision 0064's `origin`. `omitOrigin` reproduces a recording made before
+  // the field shipped.
+  String origin = 'registry',
+  bool omitOrigin = false,
   List<Object?>? items,
 }) => <String, Object?>{
   'assetId': assetId,
@@ -514,6 +518,7 @@ Map<String, Object?> s5CandlesBody({
     'pool': <String, Object?>{
       'address': s5PoolAddress,
       'protocol': 'pancakeswap_v3',
+      if (!omitOrigin) 'origin': origin,
       'quoteAssetId': s5UsdtAssetId,
       'quoteSymbol': 'USDT',
     },
@@ -961,19 +966,22 @@ MarketCandleSeries s5Series({
   String? labelKey = 'market.candles.onChainSwapAggregate',
   String? proxyAsset,
   String priceUnit = 'USDT per WBNB',
+  LoopCandlePoolOrigin poolOrigin = LoopCandlePoolOrigin.registry,
+  LoopFactSource source = LoopFactSource.loopIndexer,
   List<LoopCandle>? items,
 }) => MarketCandleSeries(
   assetId: assetId,
   interval: LoopCandleInterval.oneHour,
   candles: MarketCandlesAvailable(
     quality: quality,
-    source: LoopFactSource.loopIndexer,
+    source: source,
     fetchedAt: DateTime.utc(2026, 9, 8, 7, 30),
     labelKey: labelKey,
     proxyAsset: proxyAsset,
-    pool: const LoopCandlePool(
+    pool: LoopCandlePool(
       address: s5PoolAddress,
       protocol: 'pancakeswap_v3',
+      origin: poolOrigin,
       quoteAssetId: s5UsdtAssetId,
       quoteSymbol: 'USDT',
     ),

@@ -1195,6 +1195,61 @@ void main() {
       expect(available.source, LoopFactSource.geckoterminal);
     });
 
+    // S66/decision 0064: the pool says whether LOOP indexes it. Three states
+    // have to be told apart, because only the first one has a trade feed.
+    test('a pool says whether LOOP registered it', () async {
+      Future<LoopCandlePool> read(Map<String, Object?> body) async {
+        final api = DioLoopV2MarketApi(
+          s5Dio(
+            (options, handler) => handler.resolve(s5Response(options, body)),
+          ),
+        );
+        final series = await api.getCandles(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+          assetId: s5WbnbAssetId,
+          interval: LoopCandleInterval.oneHour,
+        );
+        return (series.candles as MarketCandlesAvailable).pool;
+      }
+
+      expect(
+        (await read(s5CandlesBody())).origin,
+        LoopCandlePoolOrigin.registry,
+      );
+      final provider = await read(
+        s5CandlesBody(source: 'geckoterminal', origin: 'provider'),
+      );
+      expect(provider.origin, LoopCandlePoolOrigin.provider);
+      expect(provider.isProviderPool, isTrue);
+      // A recording made before the field shipped describes the only pool
+      // that could then be charted: a registered one.
+      expect(
+        (await read(s5CandlesBody(omitOrigin: true))).origin,
+        LoopCandlePoolOrigin.registry,
+      );
+    });
+
+    test('an origin the client does not know is refused', () async {
+      final api = DioLoopV2MarketApi(
+        s5Dio(
+          (options, handler) => handler.resolve(
+            s5Response(options, s5CandlesBody(origin: 'indexer')),
+          ),
+        ),
+      );
+
+      await expectLater(
+        api.getCandles(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+          assetId: s5WbnbAssetId,
+          interval: LoopCandleInterval.oneHour,
+        ),
+        throwsA(isA<LoopBackendFailure>()),
+      );
+    });
+
     test('proxied candles carry the asset whose pool was charted', () async {
       final api = DioLoopV2MarketApi(
         s5Dio(

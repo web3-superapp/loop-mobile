@@ -346,6 +346,48 @@ void main() {
       },
     );
 
+    // S66/decision 0064: a registered asset LOOP has no pool for is charted
+    // from the provider's top pool. The line under the chart has to say that,
+    // because the trades tab of the same asset is unavailable on purpose.
+    testWidgets('a provider top pool is named as one LOOP has not registered', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const TokenDetailScreen(assetId: s5WbnbAssetId),
+        market: FakeMarketReadGateway(
+          candles: S5Answer<MarketCandleSeries>(
+            value: s5Series(
+              quality: LoopFactQuality.fresh,
+              source: LoopFactSource.geckoterminal,
+              labelKey: null,
+              poolOrigin: LoopCandlePoolOrigin.provider,
+              priceUnit: 'USD per WBNB',
+            ),
+          ),
+        ),
+      );
+
+      expect(find.textContaining('主池来自 GeckoTerminal'), findsOneWidget);
+      expect(find.textContaining('未登记池'), findsOneWidget);
+      // 「来源 X · 池 Y」 is the registered wording; it must not read as if
+      // LOOP indexed this pool.
+      expect(find.textContaining('来源 GeckoTerminal · 池'), findsNothing);
+    });
+
+    testWidgets('a registered pool keeps the plain source and pool line', (
+      tester,
+    ) async {
+      await pumpS5Page(
+        tester,
+        const TokenDetailScreen(assetId: s5WbnbAssetId),
+        market: FakeMarketReadGateway(),
+      );
+
+      expect(find.textContaining('来源 LOOP 链上索引 · 池 0x'), findsOneWidget);
+      expect(find.textContaining('未登记池'), findsNothing);
+    });
+
     testWidgets('an unavailable candle block states its reason', (
       tester,
     ) async {

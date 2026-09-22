@@ -775,9 +775,12 @@ class _CandleBody extends StatelessWidget {
                   // the label is shown whenever the server sends one.
                   if (block.hasSourceLabel)
                     marketCandleLabelText(block.labelKey),
-                  '来源 ${loopFactSourceLabel(block.source)}',
+                  // Source and pool are one clause: a provider top pool is
+                  // charted but not indexed by LOOP, and saying 「来源
+                  // GeckoTerminal」 apart from 「未登记池」 would let the chart
+                  // imply a trade feed that this asset does not have.
+                  marketCandleSourcePoolText(block.source, block.pool),
                   '观察于 ${loopRelativeTime(block.fetchedAt)}',
-                  '池 ${loopTruncatedAddress(block.pool.address)}',
                 ].where((part) => part.isNotEmpty).join(' · '),
                 style: Theme.of(context).textTheme.labelMedium,
               ),

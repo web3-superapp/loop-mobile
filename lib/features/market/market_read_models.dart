@@ -443,19 +443,47 @@ final class LoopCandle {
   bool get isDown => close < open;
 }
 
+/// Whether LOOP indexes the pool the chart was drawn from.
+///
+/// `registry` is a pool LOOP has registered and indexed — the same pool that
+/// backs `/trades` and the derived candles. `provider` is the top pool the
+/// answering source reported for an asset LOOP has no registered pool for
+/// (decision 0064): the chart exists, the trade feed does not, and the page
+/// must not let the first imply the second.
+enum LoopCandlePoolOrigin {
+  registry('registry'),
+  provider('provider');
+
+  const LoopCandlePoolOrigin(this.wireName);
+
+  final String wireName;
+
+  static LoopCandlePoolOrigin? tryParse(String value) {
+    for (final origin in values) {
+      if (origin.wireName == value) return origin;
+    }
+    return null;
+  }
+}
+
 @immutable
 final class LoopCandlePool {
   const LoopCandlePool({
     required this.address,
     required this.protocol,
+    required this.origin,
     required this.quoteAssetId,
     required this.quoteSymbol,
   });
 
   final String address;
   final String protocol;
+  final LoopCandlePoolOrigin origin;
   final String? quoteAssetId;
   final String quoteSymbol;
+
+  /// The pool is the source's top pool, not one LOOP indexes.
+  bool get isProviderPool => origin == LoopCandlePoolOrigin.provider;
 }
 
 sealed class MarketCandleBlock {
@@ -512,6 +540,20 @@ String marketCandleLabelText(String? labelKey) => switch (labelKey) {
   'market.candles.onChainSwapAggregate' => '按成交价折算',
   null => '',
   _ => '来源标注 $labelKey',
+};
+
+/// zh-CN attribution for a candle series: who answered, and which pool was
+/// charted. A provider top pool says so in the same breath, because 「来源
+/// GeckoTerminal」 alone would read as if LOOP indexed that pool too, and the
+/// trades tab of the same asset is then unavailable on purpose.
+String marketCandleSourcePoolText(
+  LoopFactSource source,
+  LoopCandlePool pool,
+) => switch (pool.origin) {
+  LoopCandlePoolOrigin.registry =>
+    '来源 ${loopFactSourceLabel(source)} · 池 ${loopTruncatedAddress(pool.address)}',
+  LoopCandlePoolOrigin.provider =>
+    '主池来自 ${loopFactSourceLabel(source)} · 未登记池 ${loopTruncatedAddress(pool.address)}',
 };
 
 @immutable
