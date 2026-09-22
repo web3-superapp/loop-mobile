@@ -573,17 +573,41 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     // up would leave a connected room this account is no longer in.
     final disconnected = await _mediaLink.disconnect();
     if (!mounted) return;
+    final CommunityFailureKind? failure;
     try {
-      await _run(
-        controller.leave,
-        disconnected ? '已离开语音房' : '已离开语音房，语音连接的收尾没有确认',
-      );
+      failure = await controller.leave();
     } finally {
       // The media surface is showing this departure. A leave that went
       // through has already taken it off the screen; a leave the server
       // refused leaves it mounted, and it must stop saying 「正在离开」.
       _mediaLink.exitSettled();
     }
+    if (!mounted) return;
+    // A room that ended while the reader was leaving it refuses every write,
+    // including this one (decision 0069). There is nothing left to leave and
+    // nothing left on this page, so it says what happened and goes back.
+    if (failure == CommunityFailureKind.stale) {
+      LoopToast.show(
+        context,
+        message: '房间已结束 · 主持人已经结束这个语音房',
+        kind: LoopToastKind.warn,
+      );
+      _refreshCommunityProfile();
+      widget.onBack?.call();
+      return;
+    }
+    LoopToast.show(
+      context,
+      message: failure != null
+          ? voiceRoomFailureText(
+              failure,
+              ref.read(voiceRoomControllerProvider).failureReasonCode,
+            )
+          : disconnected
+          ? '已离开语音房'
+          : '已离开语音房，语音连接的收尾没有确认',
+      kind: failure != null ? LoopToastKind.warn : LoopToastKind.ok,
+    );
     _refreshCommunityProfile();
   }
 
@@ -1865,10 +1889,24 @@ class _VoiceRoomMinimizedBannerState
       _leaving = false;
       _confirmingExit = false;
     });
-    if (failure != null) {
+    // A room that ended refuses every write, this one included (decision
+    // 0069). The membership went with the room, so the strip goes too — it
+    // is the only sign the account was in one, and a strip standing over a
+    // room that is gone has no way back in.
+    if (failure != null && failure != CommunityFailureKind.stale) {
       LoopToast.show(
         context,
         message: voiceRoomFailureText(failure, reasonCode),
+        kind: LoopToastKind.warn,
+        clearsTabBar: _clearsTabBar(context),
+      );
+      return;
+    }
+    if (failure == CommunityFailureKind.stale) {
+      ref.read(voiceRoomSessionProvider.notifier).leave(session.communityId);
+      LoopToast.show(
+        context,
+        message: '房间已结束 · 主持人已经结束这个语音房',
         kind: LoopToastKind.warn,
         clearsTabBar: _clearsTabBar(context),
       );

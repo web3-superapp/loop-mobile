@@ -1304,6 +1304,39 @@ void main() {
       expect(find.byType(Scaffold), findsOneWidget);
     });
 
+    testWidgets('leaving a room that already ended goes back, not in circles', (
+      tester,
+    ) async {
+      // A room that ended refuses every write, this one included. There is
+      // nothing left to leave and nothing left on the page.
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      final back = <String>[];
+      await pumpCommunityPage(
+        tester,
+        VoiceRoomScreen(
+          communityId: testCommunityId,
+          onBack: () => back.add('back'),
+        ),
+        voiceRoom: voice,
+      );
+
+      voice.failure = CommunityFailureKind.stale;
+      final leave = find.byKey(const ValueKey<String>('voiceroom-leave'));
+      await scrollToCommunitySection(tester, leave);
+      await tester.tap(leave);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-confirm-accept')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(voice.commands, contains('leave'));
+      expect(find.textContaining('房间已结束'), findsWidgets);
+      expect(back, <String>['back']);
+    });
+
     testWidgets('the listener list has a door, or no sentence about it', (
       tester,
     ) async {
