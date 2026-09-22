@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/time/loop_foreground_poll.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/chat/calls/active_voice_media.dart';
+import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_link.dart';
@@ -56,6 +58,27 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
   VoiceRoomPagePresence? _presence;
   var _entered = false;
 
+  /// The provider's own account of the room changing, while this device holds
+  /// a call for it.
+  ///
+  /// Everything on this page that moves because of somebody else — how many
+  /// are in the room, who is on the list, who raised a hand — was read once
+  /// and never again. The provider tells a connected device the moment any of
+  /// them changes (decision 0069), and each of those cues is answered with the
+  /// LOOP read that owns the answer. Nothing here is composed out of an event.
+  StreamSubscription<AudioRoomRoomSignal>? _signals;
+  AudioRoomCallHandle? _signalSource;
+
+  /// The floor under the cues above, for a device that is not connected — a
+  /// member who joined in LOOP and whose audio has not come up, or a provider
+  /// connection that dropped. Fifteen seconds is the contract's own floor for
+  /// this read (decision 0069); the cues are what make the page answer in
+  /// seconds.
+  late final LoopForegroundPoll _livePoll = LoopForegroundPoll(
+    interval: const Duration(seconds: 15),
+    read: _readLiveRoom,
+  );
+
   @override
   void initState() {
     super.initState();
@@ -73,6 +96,10 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
 
   @override
   void dispose() {
+    _livePoll.stop();
+    unawaited(_signals?.cancel());
+    _signals = null;
+    _signalSource = null;
     // A page that was closed some other way than a pop — the whole shell
     // going down, an account change — still gives the count back. Riverpod
     // refuses a write from a life-cycle callback, so this one waits a
@@ -153,12 +180,73 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         }
       }
     }
+    // A room that is being shown is a room that keeps being read: the cues
+    // from this device's own call, and a floor under them for a device that
+    // holds no call at all.
+    _bindSignals(ref.watch(activeVoiceMediaProvider));
+    if (snapshot != null && !blocked) {
+      _livePoll.start();
+    } else {
+      _livePoll.stop();
+    }
     return PopScope<Object?>(
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) _releasePresence(immediate: true);
       },
       child: _buildPage(context, capability, mode, state, controller, id),
     );
+  }
+
+  /// Listens to the call this device holds, and only to that one.
+  void _bindSignals(AudioRoomCallHandle? call) {
+    if (identical(call, _signalSource)) return;
+    unawaited(_signals?.cancel());
+    _signals = null;
+    _signalSource = call;
+    if (call == null) return;
+    _signals = call.roomSignals.listen(
+      _onRoomSignal,
+      onError: (Object _, StackTrace _) {
+        // A cue that did not arrive says nothing; the floor below still
+        // reads the room.
+      },
+    );
+  }
+
+  /// Answers one provider cue with the LOOP read that owns the answer.
+  void _onRoomSignal(AudioRoomRoomSignal signal) {
+    if (!mounted) return;
+    switch (signal) {
+      case AudioRoomRoomSignal.handRaise:
+        // Decision 0069: the event says the queue moved and carries no
+        // identity at all, so who it was comes from the queue itself.
+        unawaited(
+          ref.read(voiceRoomControllerProvider.notifier).refreshHandRaises(),
+        );
+      case AudioRoomRoomSignal.participants:
+        // Through the poll, so this read is the one the fifteen seconds are
+        // counted from and a burst of cues is one read rather than four
+        // requests per cue.
+        _livePoll.readNow();
+    }
+  }
+
+  /// Reads everything about this room that somebody else can change.
+  ///
+  /// The room record carries the head counts, the queue is the host's own
+  /// read, and the rosters are the session page's. Each keeps its own failure:
+  /// a read that did not finish leaves that part of the page as it was.
+  Future<void> _readLiveRoom() async {
+    if (!mounted) return;
+    final controller = ref.read(voiceRoomControllerProvider.notifier);
+    await controller.refreshRoom();
+    if (!mounted) return;
+    await controller.refreshHandRaises();
+    if (!mounted || !widget.expanded) return;
+    for (final view in VoiceRoomRosterView.values) {
+      if (!mounted) return;
+      await controller.loadRoster(view);
+    }
   }
 
   Widget _buildPage(
@@ -229,8 +317,16 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             key: const ValueKey<String>('voiceroom-capability-unavailable'),
             icon: 'warn',
             message: '语音房当前不可用',
-            reason: capability.reasonCode == null
-                ? '尚未读取到能力清单，本页不请求任何语音房。'
+            // Three different answers used to share one sentence about a
+            // list this page never named: LOOP closed the room type, LOOP
+            // was never asked, and the ask did not get through. Only the
+            // last one is worth another try where the reader stands, and a
+            // host who has just opened a room lands here often enough that
+            // it has to say which of the three it is.
+            reason: capability.unreachable
+                ? '这台设备没能读到语音房的开放状态，请检查网络后重试。'
+                : capability.reasonCode == null
+                ? '这次还没有读到语音房的开放状态，请稍后再试。'
                 : communicationUnavailableReason(capability.reasonCode),
           )
         else if (id == null)
@@ -259,16 +355,29 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             const LoopLabel('正在发言', tight: true),
             VoiceRoomSpeakerGrid(
               roster: state.roster(VoiceRoomRosterView.speaker),
+              // Who can be heard right now comes from this device's own call
+              // when it holds one: LOOP's roster is the parts it granted, and
+              // it does not carry the host at all (decision 0052) — which is
+              // why the grid was empty while the host was talking.
+              live: _liveSpeakers(snapshot),
               onRetry: () =>
                   unawaited(controller.loadRoster(VoiceRoomRosterView.speaker)),
             ),
             LoopLabel('听众 ${snapshot.participants.listenerCount}'),
-            const LoopNotice(
-              key: ValueKey<String>('voiceroom-listeners-elsewhere'),
-              icon: 'info',
-              body: '听众列表在展开视图查看。',
-              margin: EdgeInsets.fromLTRB(16, 0, 16, 0),
-            ),
+            // 「听众列表在展开视图查看」 stood here as a sentence with no way
+            // out of it: the reader on the review device read it and asked
+            // where that view was. The way out is the control itself, and
+            // where there is nowhere to go the sentence is not written.
+            if (widget.onOpenExpanded != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                child: LoopButton(
+                  key: const ValueKey<String>('voiceroom-listeners-open'),
+                  label: '查看听众名单',
+                  block: true,
+                  onPressed: () => widget.onOpenExpanded!(id),
+                ),
+              ),
           ],
           if (widget.expanded) _RoomFacts(snapshot: snapshot),
           if (snapshot.viewer.hasJoined && snapshot.room.isJoinable)
@@ -282,7 +391,14 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                 key: const ValueKey<String>('voiceroom-media-backstage'),
                 icon: 'warn',
                 message: '这个房间还没有开放收听',
-                reason: '这里不会发起语音连接。刷新一次，或让主持人重新开启。',
+                // One fact, one next step. The fact is the server's own when
+                // it named which write is unconfirmed, and the next step is
+                // the button below — so it is not said twice.
+                reason: snapshot.providerSync.confirmed
+                    ? '这里不会发起语音连接。刷新一次，或让主持人重新开启。'
+                    : communicationUnavailableReason(
+                        snapshot.providerSync.reason,
+                      ),
                 action: LoopButton(
                   key: const ValueKey<String>(
                     'voiceroom-media-backstage-retry',
@@ -346,7 +462,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             // the membership exists and connects without a second tap.
             onJoin: () => _run(controller.join, '已加入，正在连接语音'),
             onLeave: () => _leave(controller),
-            onRaise: () => _run(controller.raiseHand, '已举手，等待主持人邀请'),
+            onRaise: () => _raiseHand(controller),
             onCancel: () => _run(controller.cancelHandRaise, '已取消举手'),
             onBack: back,
           ),
@@ -389,6 +505,21 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         ],
       ],
     );
+  }
+
+  /// What this device's own call hears in this room, when it holds one.
+  ///
+  /// A call for another room, or a connection that is not up, answers
+  /// nothing: the grid then falls back to LOOP's record, which says what it
+  /// is a record of.
+  VoiceRoomLiveSpeakers? _liveSpeakers(VoiceRoomSnapshot snapshot) {
+    final live = ref.watch(audioRoomLivePresenceProvider);
+    if (live == null ||
+        live.roomId != snapshot.room.roomId ||
+        !live.connected) {
+      return null;
+    }
+    return VoiceRoomLiveSpeakers(live.speakers);
   }
 
   /// The way back, with the community page told what this page just read.
@@ -447,17 +578,48 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
     // up would leave a connected room this account is no longer in.
     final disconnected = await _mediaLink.disconnect();
     if (!mounted) return;
+    final CommunityFailureKind? failure;
     try {
-      await _run(
-        controller.leave,
-        disconnected ? '已离开语音房' : '已离开语音房，语音连接的收尾没有确认',
-      );
+      failure = await controller.leave();
     } finally {
       // The media surface is showing this departure. A leave that went
       // through has already taken it off the screen; a leave the server
       // refused leaves it mounted, and it must stop saying 「正在离开」.
       _mediaLink.exitSettled();
     }
+    if (!mounted) return;
+    // A room that ended while the reader was leaving it refuses every write,
+    // including this one (decision 0069). There is nothing left to leave and
+    // nothing left on this page, so it says what happened and goes back.
+    if (failure == CommunityFailureKind.stale) {
+      // The membership went with the room, and the strip is the only sign
+      // the account was in one: left standing it offers a way back into a
+      // room that is gone.
+      final communityId = widget.communityId;
+      if (communityId != null) {
+        ref.read(voiceRoomSessionProvider.notifier).leave(communityId);
+      }
+      LoopToast.show(
+        context,
+        message: '房间已结束 · 主持人已经结束这个语音房',
+        kind: LoopToastKind.warn,
+      );
+      _refreshCommunityProfile();
+      widget.onBack?.call();
+      return;
+    }
+    LoopToast.show(
+      context,
+      message: failure != null
+          ? voiceRoomFailureText(
+              failure,
+              ref.read(voiceRoomControllerProvider).failureReasonCode,
+            )
+          : disconnected
+          ? '已离开语音房'
+          : '已离开语音房，语音连接的收尾没有确认',
+      kind: failure != null ? LoopToastKind.warn : LoopToastKind.ok,
+    );
     _refreshCommunityProfile();
   }
 
@@ -573,6 +735,39 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       _mediaLink.exitSettled();
     }
     _refreshCommunityProfile();
+  }
+
+  /// Raises this account's hand, and says whether the room was told.
+  ///
+  /// The queue entry is LOOP's, and the host learns about it from a provider
+  /// event the server sends after it (decision 0069). Those are two different
+  /// answers: a hand that is recorded and a host who was told. When the event
+  /// did not go out the reader is told so here, because the next thing they
+  /// will do is wait.
+  Future<void> _raiseHand(VoiceRoomController controller) async {
+    final failure = await controller.raiseHand();
+    if (!mounted) return;
+    if (failure != null) {
+      LoopToast.show(
+        context,
+        message: voiceRoomFailureText(
+          failure,
+          ref.read(voiceRoomControllerProvider).failureReasonCode,
+        ),
+        kind: LoopToastKind.warn,
+      );
+      return;
+    }
+    final sync = controller.lastCommandSync;
+    if (sync != null && !sync.confirmed) {
+      LoopToast.show(
+        context,
+        message: voiceRoomProviderSyncText(sync.reason),
+        kind: LoopToastKind.warn,
+      );
+      return;
+    }
+    LoopToast.show(context, message: '已举手，等待主持人邀请');
   }
 
   Future<void> _run(
@@ -839,6 +1034,8 @@ class _MediaSection extends StatelessWidget {
 const _voiceRoomNamedRefusals = <String>{
   'VOICE_ROOM_BACKSTAGE_NOT_LIVE',
   'STREAM_CALL_GO_LIVE_UNCONFIRMED',
+  'STREAM_CALL_CREATE_UNCONFIRMED',
+  'STREAM_CALL_EVENT_UNCONFIRMED',
   'COMMUNITY_VOICE_ROOM_NOT_LIVE',
 };
 
@@ -847,6 +1044,18 @@ String voiceRoomFailureText(CommunityFailureKind? kind, String? reasonCode) =>
     reasonCode != null && _voiceRoomNamedRefusals.contains(reasonCode)
     ? communicationUnavailableReason(reasonCode)
     : communityFailureReason(kind);
+
+/// What the host is told when the room was opened and cannot be entered.
+///
+/// Two sentences, both in the host's own terms: what is missing, and the one
+/// thing that finishes it. The shared `reasonCode` copy is written for whoever
+/// is looking at a room — 「刷新一次，或让主持人重新开启」 tells the host to ask
+/// themselves — so the host's own moment has its own words.
+String voiceRoomOpenUnfinishedText(String? reasonCode) => switch (reasonCode) {
+  'STREAM_CALL_CREATE_UNCONFIRMED' => '语音房记下了，但通话还没有建好。再点一次「开启语音房」可以接着建。',
+  'STREAM_CALL_GO_LIVE_UNCONFIRMED' => '语音房建好了，但还没有开放收听。再点一次「开启语音房」可以重试。',
+  _ => '语音房还没有准备好，现在谁都进不去。再点一次「开启语音房」可以重试。',
+};
 
 /// What an unconfirmed provider write means for the reader.
 String voiceRoomProviderSyncText(String? reasonCode) =>
@@ -1704,10 +1913,24 @@ class _VoiceRoomMinimizedBannerState
       _leaving = false;
       _confirmingExit = false;
     });
-    if (failure != null) {
+    // A room that ended refuses every write, this one included (decision
+    // 0069). The membership went with the room, so the strip goes too — it
+    // is the only sign the account was in one, and a strip standing over a
+    // room that is gone has no way back in.
+    if (failure != null && failure != CommunityFailureKind.stale) {
       LoopToast.show(
         context,
         message: voiceRoomFailureText(failure, reasonCode),
+        kind: LoopToastKind.warn,
+        clearsTabBar: _clearsTabBar(context),
+      );
+      return;
+    }
+    if (failure == CommunityFailureKind.stale) {
+      ref.read(voiceRoomSessionProvider.notifier).leave(session.communityId);
+      LoopToast.show(
+        context,
+        message: '房间已结束 · 主持人已经结束这个语音房',
         kind: LoopToastKind.warn,
         clearsTabBar: _clearsTabBar(context),
       );
@@ -1810,13 +2033,56 @@ class VoiceRoomSpeakerGrid extends StatelessWidget {
     required this.roster,
     required this.onRetry,
     super.key,
+    this.live,
   });
 
   final VoiceRoomRosterState roster;
   final VoidCallback onRetry;
 
+  /// What this device hears in the call right now, when it is in it.
+  ///
+  /// It answers the question the grid asks — who is speaking — and LOOP's
+  /// roster does not: the roster is the record of the parts LOOP granted, the
+  /// host is in no view of it (decision 0052), and a mute mark on it is an
+  /// intent rather than a microphone. So a connected device draws the call,
+  /// and everything else draws the record and says so.
+  final VoiceRoomLiveSpeakers? live;
+
   @override
-  Widget build(BuildContext context) => switch (roster.phase) {
+  Widget build(BuildContext context) {
+    final heard = live;
+    if (heard == null) return _roster(context);
+    if (heard.speakers.isEmpty) {
+      return const LoopEmpty(
+        key: ValueKey<String>('voiceroom-speakers-silent'),
+        message: '现在没有人在发言',
+        reason: '这次通话里还没有人开麦。有人开麦就会出现在这里。',
+      );
+    }
+    return Padding(
+      key: const ValueKey<String>('voiceroom-speakers-live'),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      child: Wrap(
+        spacing: 14,
+        runSpacing: 14,
+        children: <Widget>[
+          for (final speaker in heard.speakers)
+            _SpeakerTile(
+              key: ValueKey<String>('voiceroom-speaker-${speaker.key}'),
+              name: speaker.name,
+              // Every tile here has an open microphone, so none of them is
+              // drawn as a closed one; the ring marks the one being heard at
+              // this moment.
+              ring: speaker.isSpeaking,
+              dim: false,
+              caption: speaker.isSpeaking ? '正在发言' : '麦克风已开',
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _roster(BuildContext context) => switch (roster.phase) {
     CommunityViewPhase.loading => const LoopSkeleton(
       key: ValueKey<String>('voiceroom-speakers-loading'),
       type: LoopSkeletonType.list,
@@ -1860,7 +2126,9 @@ class VoiceRoomSpeakerGrid extends StatelessWidget {
           for (final member in roster.items)
             _SpeakerTile(
               name: voiceRoomMemberName(member),
-              muted: member.muted,
+              ring: !member.muted,
+              dim: member.muted,
+              caption: member.muted ? '已静音' : '可以发言',
             ),
         ],
       ),
@@ -1868,11 +2136,40 @@ class VoiceRoomSpeakerGrid extends StatelessWidget {
   };
 }
 
+/// The people a connected call can hear, handed to the grid as one value.
+///
+/// A null [VoiceRoomSpeakerGrid.live] is a device with no call in this room;
+/// an empty list is a call in which nobody has a microphone open. They are
+/// different sentences, and a bare list could not tell them apart.
+@immutable
+final class VoiceRoomLiveSpeakers {
+  const VoiceRoomLiveSpeakers(this.speakers);
+
+  final List<AudioRoomSpeaker> speakers;
+}
+
 class _SpeakerTile extends StatelessWidget {
-  const _SpeakerTile({required this.name, required this.muted});
+  const _SpeakerTile({
+    required this.name,
+    required this.ring,
+    required this.dim,
+    required this.caption,
+    super.key,
+  });
 
   final String name;
-  final bool muted;
+
+  /// The prototype's Lime ring: this person is being heard right now.
+  final bool ring;
+
+  /// The quiet tile: a microphone that is closed. It is not the same thing as
+  /// having no ring — an open microphone nobody is talking into has neither a
+  /// ring nor the muted grey.
+  final bool dim;
+
+  /// The one line under the name. A record says what LOOP granted, a call
+  /// says what it hears; the tile never mixes the two.
+  final String caption;
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -1887,16 +2184,16 @@ class _SpeakerTile extends StatelessWidget {
         Container(
           width: 52,
           height: 52,
-          decoration: muted
-              ? null
-              : const BoxDecoration(
+          decoration: ring
+              ? const BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.fromBorderSide(
                     BorderSide(color: LoopColors.lime, width: 2),
                   ),
-                ),
+                )
+              : null,
           alignment: Alignment.center,
-          child: LoopInitialsAvatar(label: name, size: muted ? 52 : 46),
+          child: LoopInitialsAvatar(label: name, size: ring ? 46 : 52),
         ),
         const SizedBox(height: 5),
         Text(
@@ -1906,12 +2203,16 @@ class _SpeakerTile extends StatelessWidget {
           style: LoopTypography.caption(11),
         ),
         Text(
-          muted ? '已静音' : '发言中',
+          caption,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: LoopTypography.caption(
             11,
-            color: muted ? LoopColors.text3 : LoopColors.lime,
+            color: dim
+                ? LoopColors.text3
+                : ring
+                ? LoopColors.lime
+                : LoopColors.text2,
           ),
         ),
       ],

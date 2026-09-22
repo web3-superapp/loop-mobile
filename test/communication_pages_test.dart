@@ -13,6 +13,7 @@ import 'package:loop_mobile/features/chat/calls/stream_foreground_call_view.dart
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
 import 'package:loop_mobile/features/chat/group_alias/group_alias_stream_message_identity.dart';
 import 'package:loop_mobile/features/chat/v2/chat_search_screen.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/community_chat_screen.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
@@ -1302,6 +1303,321 @@ void main() {
       expect(vertical, hasLength(1));
       expect(find.byType(AppBar), findsNothing);
       expect(find.byType(Scaffold), findsOneWidget);
+    });
+
+    testWidgets('leaving a room that already ended goes back, not in circles', (
+      tester,
+    ) async {
+      // A room that ended refuses every write, this one included. There is
+      // nothing left to leave and nothing left on the page.
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.listener),
+      );
+      final back = <String>[];
+      await pumpCommunityPage(
+        tester,
+        VoiceRoomScreen(
+          communityId: testCommunityId,
+          onBack: () => back.add('back'),
+        ),
+        voiceRoom: voice,
+      );
+
+      voice.failure = CommunityFailureKind.stale;
+      final leave = find.byKey(const ValueKey<String>('voiceroom-leave'));
+      await scrollToCommunitySection(tester, leave);
+      await tester.tap(leave);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-confirm-accept')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(voice.commands, contains('leave'));
+      expect(find.textContaining('房间已结束'), findsWidgets);
+      expect(back, <String>['back']);
+      // The strip is the only sign the account was in a room; left standing
+      // it offers a way back into one that is gone.
+      final scope = ProviderScope.containerOf(
+        tester.element(find.byType(VoiceRoomScreen)),
+        listen: false,
+      );
+      expect(scope.read(voiceRoomSessionProvider), isNull);
+    });
+
+    testWidgets('the listener list has a door, or no sentence about it', (
+      tester,
+    ) async {
+      // 「听众列表在展开视图查看」 was a sentence with no way out of it, and
+      // the reader on the review device asked where that view was.
+      final opened = <String>[];
+      await pumpCommunityPage(
+        tester,
+        VoiceRoomScreen(
+          communityId: testCommunityId,
+          onOpenExpanded: opened.add,
+        ),
+        voiceRoom: FakeVoiceRoomGateway(snapshot: testVoiceRoomSnapshot()),
+      );
+
+      final door = find.byKey(
+        const ValueKey<String>('voiceroom-listeners-open'),
+      );
+      await scrollToCommunitySection(tester, door);
+      await tester.tap(door);
+      await tester.pumpAndSettle();
+      expect(opened, <String>[testCommunityId]);
+
+      // A page with nowhere to send the reader says nothing about a list
+      // they cannot reach.
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: FakeVoiceRoomGateway(snapshot: testVoiceRoomSnapshot()),
+      );
+      expect(find.textContaining('展开视图'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-listeners-open')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('the host who is speaking is in 正在发言', (tester) async {
+      // The review device: the host was talking and the grid was empty,
+      // because it was drawn from LOOP's speaker roster — which records the
+      // parts LOOP granted and carries no host at all.
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+
+      // No call of this device's own yet: the record is what there is, and it
+      // says what it is a record of.
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-speakers-empty')),
+        findsOneWidget,
+      );
+
+      final speaking = find.byKey(
+        const ValueKey<String>('fake-presence-speaking'),
+      );
+      await scrollToCommunitySection(tester, speaking);
+      await tester.tap(speaking);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-speakers-live')),
+        findsOneWidget,
+      );
+      expect(find.text('NightOwl'), findsWidgets);
+      expect(find.text('正在发言'), findsWidgets);
+    });
+
+    testWidgets('a call nobody is speaking in says so, and not 没有发言人', (
+      tester,
+    ) async {
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+
+      final counting = find.byKey(
+        const ValueKey<String>('fake-presence-counting'),
+      );
+      await scrollToCommunitySection(tester, counting);
+      await tester.tap(counting);
+      await tester.pumpAndSettle();
+
+      // Connected with nobody publishing: that is a quiet room, not a room
+      // with no speakers in LOOP's record.
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-speakers-silent')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-speakers-empty')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a hand raised in the room reaches the host who is watching', (
+      tester,
+    ) async {
+      // The review devices: a listener raised a hand, the server recorded it,
+      // and the host's page — which had read the queue when it opened — went
+      // on showing an empty one until the room ended.
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-queue-empty')),
+        findsOneWidget,
+      );
+
+      // Somebody raises a hand. The provider tells this device the queue
+      // moved; the queue itself still comes from LOOP.
+      voice.handRaises = <VoiceRoomHandRaiseEntry>[
+        testHandRaiseEntry(alias: 'DeFiMaxi_349'),
+      ];
+      media.handles.single.emitSignal(AudioRoomRoomSignal.handRaise);
+      await tester.pumpAndSettle();
+
+      final queue = find.byKey(
+        ValueKey<String>('voiceroom-queue-$testRequestId'),
+      );
+      await scrollToCommunitySection(tester, queue);
+      expect(queue, findsOneWidget);
+      expect(find.text('DeFiMaxi_349'), findsWidgets);
+    });
+
+    testWidgets('a hand the room was not told about says so', (tester) async {
+      // The hand is recorded either way; whether the host was told is the
+      // provider's own answer, and it is the one that decides what the
+      // reader does next.
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(
+          role: VoiceRoomRole.listener,
+          providerConfirmed: false,
+          providerReason: 'STREAM_CALL_EVENT_UNCONFIRMED',
+        ),
+      )..loadSnapshot = testVoiceRoomSnapshot(role: VoiceRoomRole.listener);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+      );
+
+      final raise = find.byKey(const ValueKey<String>('voiceroom-raise-hand'));
+      await scrollToCommunitySection(tester, raise);
+      await tester.tap(raise);
+      await tester.pumpAndSettle();
+
+      expect(voice.commands, contains('raise-hand'));
+      expect(find.textContaining('主持人可能要稍后才看到'), findsOneWidget);
+      expect(find.text('已举手，等待主持人邀请'), findsNothing);
+    });
+
+    testWidgets('a listener who arrives changes the count the host reads', (
+      tester,
+    ) async {
+      // 「主持人这边仍显示 1 人在房间里」: the room record was read when the
+      // page opened, and joining is somebody else's action.
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(
+          role: VoiceRoomRole.host,
+          host: true,
+          joinedCount: 1,
+        ),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+
+      expect(find.text('1 人在房间里'), findsOneWidget);
+
+      voice.loadSnapshot = testVoiceRoomSnapshot(
+        role: VoiceRoomRole.host,
+        host: true,
+        joinedCount: 2,
+      );
+      media.handles.single.emitSignal(AudioRoomRoomSignal.participants);
+      await tester.pumpAndSettle();
+
+      expect(find.text('2 人在房间里'), findsOneWidget);
+    });
+
+    testWidgets('a page that is gone, or behind, reads nothing', (
+      tester,
+    ) async {
+      // The fifteen seconds belong to the page: a room page the reader left,
+      // and a LOOP that is not in front of them, ask for nothing at all.
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
+      );
+      await pumpCommunityPage(
+        tester,
+        const _UnmountHarness(
+          child: VoiceRoomScreen(communityId: testCommunityId),
+        ),
+        voiceRoom: voice,
+      );
+
+      // It is reading while it is here.
+      final onScreen = voice.commands.length;
+      await tester.pump(const Duration(seconds: 15));
+      await tester.pumpAndSettle();
+      expect(voice.commands.length, greaterThan(onScreen));
+
+      // LOOP goes behind something else.
+      final backgrounded = voice.commands.length;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump(const Duration(seconds: 60));
+      expect(voice.commands, hasLength(backgrounded));
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+
+      // The reader leaves the page.
+      await tester.tap(find.byKey(const ValueKey<String>('harness-unmount')));
+      await tester.pumpAndSettle();
+      final left = voice.commands.length;
+      await tester.pump(const Duration(seconds: 60));
+      await tester.pumpAndSettle();
+      expect(voice.commands, hasLength(left));
+    });
+
+    testWidgets('a room with no call of its own is still read', (tester) async {
+      // No provider cue reaches a device that holds no call — a member who
+      // joined in LOOP whose audio never came up, or a connection that
+      // dropped. The floor under the cues is what answers for them.
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(
+          role: VoiceRoomRole.host,
+          host: true,
+          joinedCount: 1,
+        ),
+      );
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+      );
+
+      expect(find.text('1 人在房间里'), findsOneWidget);
+
+      voice.loadSnapshot = testVoiceRoomSnapshot(
+        role: VoiceRoomRole.host,
+        host: true,
+        joinedCount: 2,
+      );
+      await tester.pump(const Duration(seconds: 15));
+      await tester.pumpAndSettle();
+
+      expect(find.text('2 人在房间里'), findsOneWidget);
     });
 
     testWidgets('the queue names its rows the way the roster does', (
@@ -3174,6 +3490,35 @@ void main() {
 
 /// One Stream Audio Room call, recorded into the same log as the LOOP
 /// commands so a test can pin the order of the two.
+/// Takes a page off the screen the way leaving it does, without this file
+/// mounting a tree of its own.
+class _UnmountHarness extends StatefulWidget {
+  const _UnmountHarness({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_UnmountHarness> createState() => _UnmountHarnessState();
+}
+
+class _UnmountHarnessState extends State<_UnmountHarness> {
+  var _mounted = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        Expanded(child: _mounted ? widget.child : const SizedBox.shrink()),
+        TextButton(
+          key: const ValueKey<String>('harness-unmount'),
+          onPressed: () => setState(() => _mounted = false),
+          child: const Text('leave'),
+        ),
+      ],
+    );
+  }
+}
+
 final class _FakeVoiceMediaFactory implements AudioRoomCallFactory {
   _FakeVoiceMediaFactory({required this.log, this.joinFailures = 0});
 
@@ -3230,6 +3575,15 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
   @override
   Stream<AudioRoomCallReading> get readings => _readings.stream;
 
+  final StreamController<AudioRoomRoomSignal> _signals =
+      StreamController<AudioRoomRoomSignal>.broadcast();
+
+  @override
+  Stream<AudioRoomRoomSignal> get roomSignals => _signals.stream;
+
+  /// Stands in for the provider telling this device the room changed.
+  void emitSignal(AudioRoomRoomSignal signal) => _signals.add(signal);
+
   /// Stands in for the WebRTC stack being torn down under a call nobody
   /// asked to leave — the provider connection is closed and the reading says
   /// so, with no retirement of this device's own behind it. This is what the
@@ -3239,10 +3593,15 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
   /// Stands in for the provider's call state moving on its own. The reading
   /// leaves the call itself, which is what the strip reads once the room page
   /// is no longer on the screen.
-  void emit(AudioRoomLivePhase phase, {int? participantCount}) {
+  void emit(
+    AudioRoomLivePhase phase, {
+    int? participantCount,
+    List<AudioRoomSpeaker> speakers = const <AudioRoomSpeaker>[],
+  }) {
     _reading = AudioRoomCallReading(
       phase: phase,
       participantCount: participantCount,
+      speakers: speakers,
     );
     _readings.add(_reading);
   }
@@ -3285,9 +3644,11 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
     void Function({
       required AudioRoomLivePhase phase,
       required int? participantCount,
+      required List<AudioRoomSpeaker> speakers,
     })?
     onPresence,
     VoidCallback? onDisconnected,
+    Future<void> Function()? onSpeakAgainRequested,
   }) {
     return Column(
       children: <Widget>[
@@ -3302,9 +3663,37 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
             onPresence?.call(
               phase: AudioRoomLivePhase.connected,
               participantCount: 3,
+              speakers: const <AudioRoomSpeaker>[],
             );
           },
           child: const Text('报告人数'),
+        ),
+        // Stands in for the SFU reporting somebody with a microphone open:
+        // the grid above this panel draws the call, not LOOP's record of the
+        // parts it granted.
+        TextButton(
+          key: const ValueKey<String>('fake-presence-speaking'),
+          onPressed: () {
+            const speakers = <AudioRoomSpeaker>[
+              AudioRoomSpeaker(
+                key: 'session-host',
+                name: 'NightOwl',
+                isLocal: true,
+                isSpeaking: true,
+              ),
+            ];
+            emit(
+              AudioRoomLivePhase.connected,
+              participantCount: 1,
+              speakers: speakers,
+            );
+            onPresence?.call(
+              phase: AudioRoomLivePhase.connected,
+              participantCount: 1,
+              speakers: speakers,
+            );
+          },
+          child: const Text('报告有人在说话'),
         ),
         // Stands in for the SDK putting a dropped connection back on its own:
         // the call view stays, and the surfaces above it are told the phase,
@@ -3316,6 +3705,7 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
             onPresence?.call(
               phase: AudioRoomLivePhase.reconnecting,
               participantCount: null,
+              speakers: const <AudioRoomSpeaker>[],
             );
           },
           child: const Text('报告重连中'),
@@ -3329,6 +3719,7 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
             onPresence?.call(
               phase: AudioRoomLivePhase.connected,
               participantCount: null,
+              speakers: const <AudioRoomSpeaker>[],
             );
           },
           child: const Text('报告连接但未统计'),

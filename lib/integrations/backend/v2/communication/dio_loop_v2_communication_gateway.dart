@@ -36,17 +36,27 @@ final class DioLoopV2CommunicationGateway
   Future<T> _read<T>(Future<T> Function(String accessToken) request) =>
       executeCommunityRequest(_session, request);
 
+  /// [retainKey] keeps the reserved key after a write the server accepted.
+  ///
+  /// A command that came back 2xx has normally happened, and the next one is a
+  /// new command with a new key. Opening a voice room is the exception: the
+  /// room row commits before the provider calls, so a 201 can describe a room
+  /// that exists and cannot be entered, and the only way to finish it is the
+  /// same key again — the server then skips the local write and repeats the
+  /// provider half. A fresh key is refused outright, because the room that
+  /// cannot be entered is still holding the community's one live slot.
   Future<T> _write<T>(
     String signature,
-    Future<T> Function(String accessToken, String idempotencyKey) request,
-  ) async {
+    Future<T> Function(String accessToken, String idempotencyKey) request, {
+    bool Function(T result)? retainKey,
+  }) async {
     final key = _keyring.reserve(signature);
     try {
       final result = await executeCommunityRequest(
         _session,
         (accessToken) => request(accessToken, key),
       );
-      _keyring.release(signature);
+      if (!(retainKey?.call(result) ?? false)) _keyring.release(signature);
       return result;
     } on CommunityGatewayException catch (failure) {
       // Only an unresolved outcome keeps the key for an identical retry.
@@ -102,13 +112,20 @@ final class DioLoopV2CommunicationGateway
   );
 
   @override
-  Future<VoiceRoomCurrent> loadCurrent(String communityId) => _read(
-    (accessToken) => _api.getCurrentVoiceRoom(
-      accessToken: accessToken,
-      clientVersion: _clientVersion,
-      communityId: communityId,
-    ),
-  );
+  Future<VoiceRoomCurrent> loadCurrent(String communityId) async {
+    final current = await _read(
+      (accessToken) => _api.getCurrentVoiceRoom(
+        accessToken: accessToken,
+        clientVersion: _clientVersion,
+        communityId: communityId,
+      ),
+    );
+    // A community with no live room has no unfinished opening either. The key
+    // that opened the last one must not outlive it: replaying it answers with
+    // the room it opened, whatever became of that room since.
+    if (!current.isLive) _releaseOpenKey(communityId);
+    return current;
+  }
 
   @override
   Future<VoiceRoomSnapshot> createRoom(String communityId) => _write(
@@ -119,6 +136,12 @@ final class DioLoopV2CommunicationGateway
       idempotencyKey: key,
       communityId: communityId,
     ),
+    // A live room nobody can be let into yet is a command that is not
+    // finished, and the same key is what finishes it. A room that is no longer
+    // live is a different matter: replaying the key answers with that same
+    // ended room for ever, so the key is let go and the next 开启 is a new
+    // command that can make a new room.
+    retainKey: (snapshot) => snapshot.room.isLive && !snapshot.room.audioOpen,
   );
 
   @override
@@ -232,6 +255,16 @@ final class DioLoopV2CommunicationGateway
       _command(VoiceRoomCommand.muteAll, voiceRoomId);
 
   @override
-  Future<VoiceRoomSnapshot> endRoom(String voiceRoomId) =>
-      _command(VoiceRoomCommand.endRoom, voiceRoomId);
+  Future<VoiceRoomSnapshot> endRoom(String voiceRoomId) async {
+    final ended = await _command(VoiceRoomCommand.endRoom, voiceRoomId);
+    // The room this key opened is over, so the key has nothing left to
+    // finish. Holding it would make the community's next 开启 replay the
+    // opening of the room that just ended.
+    _releaseOpenKey(ended.room.communityId);
+    return ended;
+  }
+
+  /// Lets go of the key that opened one community's room.
+  void _releaseOpenKey(String communityId) =>
+      _keyring.release('voice-room-open:$communityId');
 }

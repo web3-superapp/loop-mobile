@@ -353,6 +353,7 @@ final class ActiveVoiceMediaController extends Notifier<AudioRoomCallHandle?> {
               roomId: roomId,
               phase: reading.phase,
               participantCount: reading.participantCount,
+              speakers: reading.speakers,
             ),
           );
     } catch (_) {

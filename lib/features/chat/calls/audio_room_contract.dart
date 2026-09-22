@@ -225,6 +225,68 @@ String? audioRoomLivePhaseNote(AudioRoomLivePhase phase) => switch (phase) {
   AudioRoomLivePhase.connected => null,
 };
 
+/// Something happened in this room that LOOP's own record has to be read for.
+///
+/// The provider tells a connected device the moment the room changes; LOOP
+/// owns what the change means — who the person is, where they are in the
+/// queue, what the host may do about them. So a signal is never state: it is
+/// the cue to read the LOOP resource that holds the answer. On the review
+/// devices nothing carried that cue at all, and a host sat looking at 「1 人在
+/// 房间里」 with a listener in the room and a raised hand nobody was told about.
+enum AudioRoomRoomSignal {
+  /// Somebody raised or cancelled a hand (decision 0069). The queue itself is
+  /// read from LOOP; the event carries no identity on purpose, so that an
+  /// anonymous member cannot be matched to a participant tile.
+  handRaise,
+
+  /// The people in the room changed: a device joined or left the call, or the
+  /// provider's member list was written.
+  participants,
+}
+
+/// One person this device can hear in the call right now.
+///
+/// It is the provider's account of the moment, and it is the only one there
+/// is: LOOP's speaker roster is a record of the parts it granted, it does not
+/// include the host at all (decision 0052), and the 「正在发言」 grid built from
+/// it was empty on the review device while the host was talking. A tile here
+/// exists because a microphone is open, which is the question the grid asks.
+@immutable
+final class AudioRoomSpeaker {
+  const AudioRoomSpeaker({
+    required this.key,
+    required this.name,
+    required this.isLocal,
+    required this.isSpeaking,
+  });
+
+  /// Tells two tiles apart within one reading. It is never rendered and it is
+  /// never matched against a LOOP identifier.
+  final String key;
+
+  /// What the provider carries for this person, or the one word left when it
+  /// carries none.
+  final String name;
+
+  final bool isLocal;
+
+  /// Whether this person is speaking at this moment, as the provider hears
+  /// it. A microphone that is open and quiet is not speaking.
+  final bool isSpeaking;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AudioRoomSpeaker &&
+          other.key == key &&
+          other.name == name &&
+          other.isLocal == isLocal &&
+          other.isSpeaking == isSpeaking;
+
+  @override
+  int get hashCode => Object.hash(key, name, isLocal, isSpeaking);
+}
+
 /// One reading of one call, taken from the provider's own call state.
 ///
 /// The call view reads that state for itself, but it is the only thing that
@@ -237,6 +299,7 @@ final class AudioRoomCallReading {
   const AudioRoomCallReading({
     required this.phase,
     required this.participantCount,
+    this.speakers = const <AudioRoomSpeaker>[],
   });
 
   final AudioRoomLivePhase phase;
@@ -245,15 +308,23 @@ final class AudioRoomCallReading {
   /// A connected reading is never 0; see [AudioRoomLivePresence].
   final int? participantCount;
 
+  /// Who has a microphone open in the call, as the provider reports it. It is
+  /// empty for a call this device is not connected to: there is nothing to
+  /// hear, and the list this device still holds describes a moment that has
+  /// passed.
+  final List<AudioRoomSpeaker> speakers;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is AudioRoomCallReading &&
           other.phase == phase &&
-          other.participantCount == participantCount;
+          other.participantCount == participantCount &&
+          listEquals(other.speakers, speakers);
 
   @override
-  int get hashCode => Object.hash(phase, participantCount);
+  int get hashCode =>
+      Object.hash(phase, participantCount, Object.hashAll(speakers));
 }
 
 /// What this device's own provider call reports, while it holds one.
@@ -268,6 +339,7 @@ final class AudioRoomLivePresence {
     required this.roomId,
     required this.phase,
     required this.participantCount,
+    this.speakers = const <AudioRoomSpeaker>[],
   });
 
   /// The provider room this reading belongs to. A reading never travels to
@@ -287,16 +359,22 @@ final class AudioRoomLivePresence {
   /// read as an empty room.
   final int? participantCount;
 
+  /// Who has a microphone open in this call right now. See
+  /// [AudioRoomCallReading.speakers].
+  final List<AudioRoomSpeaker> speakers;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is AudioRoomLivePresence &&
           other.roomId == roomId &&
           other.phase == phase &&
-          other.participantCount == participantCount;
+          other.participantCount == participantCount &&
+          listEquals(other.speakers, speakers);
 
   @override
-  int get hashCode => Object.hash(roomId, phase, participantCount);
+  int get hashCode =>
+      Object.hash(roomId, phase, participantCount, Object.hashAll(speakers));
 }
 
 /// Publishes the live call reading to the surfaces outside the call view.

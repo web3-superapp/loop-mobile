@@ -111,6 +111,11 @@ class StreamVoiceRoomPage extends ConsumerWidget {
     final callFactory = authorized
         ? ref.watch(audioRoomCallFactoryProvider)
         : null;
+    // Which step a session that did not hold stopped at. It is read only for
+    // the sentence the lobby prints; nothing gates on it.
+    final sessionRefusal = authorized
+        ? null
+        : ref.watch(streamVideoSessionRefusalProvider);
 
     return _StreamVoiceRoomSurface(
       key: ValueKey<String?>(principalKey),
@@ -130,6 +135,7 @@ class StreamVoiceRoomPage extends ConsumerWidget {
       authorization: authorization,
       target: resolvedTarget,
       callFactory: callFactory,
+      sessionRefusal: sessionRefusal,
       onRetrySession: () =>
           _retrySession(ref, hasSuppliedTarget: suppliedTarget != null),
       onRetryTarget: suppliedTarget != null
@@ -180,6 +186,7 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
     required this.authorization,
     required this.target,
     required this.callFactory,
+    required this.sessionRefusal,
     required this.onRetrySession,
     required this.onRetryTarget,
     super.key,
@@ -210,6 +217,9 @@ class _StreamVoiceRoomSurface extends StatefulWidget {
   final AsyncValue<StreamVideoSessionAuthorization>? authorization;
   final AsyncValue<AudioRoomTarget?>? target;
   final AudioRoomCallFactory? callFactory;
+
+  /// Which step the voice session did not get past, when it did not hold.
+  final StreamVideoSessionRefusal? sessionRefusal;
 
   /// Retires the provider session, drops what was derived from it and reads
   /// the room again. Never a bare provider invalidation: see
@@ -282,7 +292,10 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   /// under a room that no longer exists.
   var _verifyingRoom = false;
   String? _joinError;
-  ({AudioRoomLivePhase phase, int? participantCount})? _reportedPresence;
+
+  /// The reading this surface last published. It is held as the reading
+  /// itself, because two readings differ when the people in them differ.
+  AudioRoomCallReading? _reportedPresence;
 
   AudioRoomTarget? get _target {
     final value = widget.target;
@@ -426,8 +439,10 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       // strip outside this page from printing a head count for a call that
       // ended, or one that never connected.
       _schedulePresenceReport(
-        phase: AudioRoomLivePhase.idle,
-        participantCount: null,
+        const AudioRoomCallReading(
+          phase: AudioRoomLivePhase.idle,
+          participantCount: null,
+        ),
       );
     }
     if (widget.inline) {
@@ -442,6 +457,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
               onMicrophoneEnabled: widget.onMicrophoneEnabled,
               onPresence: _reportPresence,
               onDisconnected: _retireStoppedCall,
+              onSpeakAgainRequested: _reconnectForSpeak,
             );
     }
     return Scaffold(
@@ -475,6 +491,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
                   onMicrophoneEnabled: widget.onMicrophoneEnabled,
                   onPresence: _reportPresence,
                   onDisconnected: _retireStoppedCall,
+                  onSpeakAgainRequested: _reconnectForSpeak,
                 ),
         ),
       ),
@@ -491,6 +508,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       appIsForeground: _appIsForeground,
       cleanupPending: _cleanupPending,
       cleanupFailed: _cleanupFailed,
+      sessionRefusal: widget.sessionRefusal,
       autoConnect: widget.autoConnect,
       autoConnectSuspended: _autoConnectSuspended,
       refreshingConnection: _refreshingConnection,
@@ -778,6 +796,39 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     // With [autoConnect] the frame after this schedules the attempt on the
     // room and the client that were just read.
     if (!widget.autoConnect) await _joinMuted();
+  }
+
+  /// Puts this call back so the reader can speak again.
+  ///
+  /// One call starts one microphone (decision 0005), and a member who muted
+  /// their own had nothing left to press: the control read 「重新进入后再发言」
+  /// and the only way out of it was leaving the room. The membership is
+  /// untouched here — this takes the media down and lets the ready room
+  /// connect again on its own, which is a call with its own microphone in it.
+  Future<void> _reconnectForSpeak() async {
+    final handle = _foregroundCall;
+    if (handle == null ||
+        _leaving ||
+        _exiting ||
+        _cleanupPending ||
+        _refreshingConnection) {
+      return;
+    }
+    _generation += 1;
+    widget.activeMedia?.surrender(handle);
+    final cleanupGeneration = ++_cleanupGeneration;
+    setState(() {
+      _joining = false;
+      _joiningCall = null;
+      _cleanupHandles = <AudioRoomCallHandle>[handle];
+      _cleanupPending = true;
+      _cleanupFailed = false;
+      _joinError = null;
+      // The reader asked for the audio back in the same breath, so the ready
+      // room reconnects without a second tap.
+      _autoConnectSuspended = false;
+    });
+    await _completeCleanup(<AudioRoomCallHandle>[handle], cleanupGeneration);
   }
 
   /// The single exit, asked for from inside the call view.
@@ -1166,8 +1217,15 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   void _reportPresence({
     required AudioRoomLivePhase phase,
     required int? participantCount,
+    required List<AudioRoomSpeaker> speakers,
   }) {
-    _publishPresence(phase: phase, participantCount: participantCount);
+    _publishPresence(
+      AudioRoomCallReading(
+        phase: phase,
+        participantCount: participantCount,
+        speakers: speakers,
+      ),
+    );
   }
 
   /// Publishes the lobby's own reading after this frame.
@@ -1175,40 +1233,31 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   /// A write during a build is not allowed, and the lobby is rebuilt for
   /// every step of the connection, so the reading is sent only when it is not
   /// the one already published.
-  void _schedulePresenceReport({
-    required AudioRoomLivePhase phase,
-    required int? participantCount,
-  }) {
-    final reading = (phase: phase, participantCount: participantCount);
+  void _schedulePresenceReport(AudioRoomCallReading reading) {
     if (_reportedPresence == reading) return;
     _reportedPresence = reading;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _publishPresence(
-        phase: phase,
-        participantCount: participantCount,
-        deduplicate: false,
-      );
+      _publishPresence(reading, deduplicate: false);
     });
   }
 
-  void _publishPresence({
-    required AudioRoomLivePhase phase,
-    required int? participantCount,
+  void _publishPresence(
+    AudioRoomCallReading reading, {
     bool deduplicate = true,
   }) {
     final presence = widget.presence;
     final roomId = _foregroundCall?.roomId ?? _target?.roomId;
     if (presence == null || roomId == null) return;
-    final reading = (phase: phase, participantCount: participantCount);
     if (deduplicate && _reportedPresence == reading) return;
     _reportedPresence = reading;
     try {
       presence.report(
         AudioRoomLivePresence(
           roomId: roomId,
-          phase: phase,
-          participantCount: participantCount,
+          phase: reading.phase,
+          participantCount: reading.participantCount,
+          speakers: reading.speakers,
         ),
       );
     } catch (_) {
@@ -1257,6 +1306,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     required AsyncValue<AudioRoomTarget?>? target,
     required AudioRoomCallFactory? callFactory,
     required String? joinError,
+    required StreamVideoSessionRefusal? sessionRefusal,
     required bool appIsForeground,
     required bool cleanupPending,
     required bool cleanupFailed,
@@ -1303,6 +1353,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       target: target,
       callFactory: callFactory,
       joinError: joinError,
+      sessionRefusal: sessionRefusal,
       appIsForeground: appIsForeground,
       cleanupPending: cleanupPending,
       cleanupFailed: cleanupFailed,
@@ -1351,6 +1402,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     required AsyncValue<AudioRoomTarget?>? target,
     required AudioRoomCallFactory? callFactory,
     required String? joinError,
+    required StreamVideoSessionRefusal? sessionRefusal,
     required bool appIsForeground,
     required bool cleanupPending,
     required bool cleanupFailed,
@@ -1398,9 +1450,11 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     }
     if (authorization.hasError ||
         authorization.value != StreamVideoSessionAuthorization.authorized) {
-      return const _StreamVoiceContent(
+      return _StreamVoiceContent(
         title: '语音会话暂时不可用',
-        message: '这台设备没能建立语音会话，可能是语音令牌没取到，也可能是没连上语音服务。这里保持断开，不会创建任何通话。',
+        // The step that did not finish, instead of a sentence that guessed
+        // two causes aloud and named neither.
+        message: streamVideoSessionRefusalText(sessionRefusal),
         tone: LoopTone.warning,
         icon: Icons.cloud_off_rounded,
         retryAuthorization: true,
@@ -1459,6 +1513,23 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     );
   }
 }
+
+/// What a voice session that did not hold stopped at, and what to do next.
+///
+/// Five steps fail for five different reasons and only two of them are worth
+/// retrying where the reader stands; the sentence that guessed 「可能是语音令牌
+/// 没取到，也可能是没连上语音服务」 named neither, and left a reader who was
+/// already in the room with nothing to act on. The provider's own answer stays
+/// in the debug log: it is an SDK string, not something a reader can use.
+String streamVideoSessionRefusalText(StreamVideoSessionRefusal? refusal) =>
+    switch (refusal) {
+      StreamVideoSessionRefusal.identity => '这台设备还没有拿到语音身份。请退出这一页再进来。',
+      StreamVideoSessionRefusal.credential => '这次通话的语音凭证没有发下来。请检查网络后重试。',
+      StreamVideoSessionRefusal.client => '语音连接没能在这台设备上建立。请重试一次。',
+      StreamVideoSessionRefusal.connection => '这台设备没能连上语音服务。请检查网络后重试。',
+      StreamVideoSessionRefusal.accountChanged => '登录状态在连接过程中发生了变化。请退出这一页再进来。',
+      null => '这台设备没能建立语音会话。这里保持断开，不会创建任何通话。',
+    };
 
 /// One sentence for one refusal.
 ///

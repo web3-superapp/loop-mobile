@@ -396,6 +396,122 @@ void main() {
     );
   });
 
+  test('muting yourself is not being moved off the speaker seat', () {
+    // The review device: a host pressed 静音 and was told to come back into
+    // the room, which is the sentence for a seat the host had taken away.
+    expect(
+      streamMicrophoneNote(
+        retiring: false,
+        microphoneEnabled: false,
+        canSendAudio: true,
+        everCouldSendAudio: true,
+        speakSpent: true,
+      ),
+      startsWith('你已静音。'),
+    );
+    expect(
+      streamMicrophoneNote(
+        retiring: false,
+        microphoneEnabled: false,
+        canSendAudio: false,
+        everCouldSendAudio: true,
+        speakSpent: true,
+      ),
+      startsWith('你已被移出发言席'),
+    );
+    // An account that was never a speaker is simply a listener.
+    expect(
+      streamMicrophoneNote(
+        retiring: false,
+        microphoneEnabled: false,
+        canSendAudio: false,
+        everCouldSendAudio: false,
+        speakSpent: false,
+      ),
+      '你在这个房间是只收听的角色。',
+    );
+    // An open microphone says so instead of telling the reader how to open
+    // one.
+    expect(
+      streamMicrophoneNote(
+        retiring: false,
+        microphoneEnabled: true,
+        canSendAudio: true,
+        everCouldSendAudio: true,
+        speakSpent: true,
+      ),
+      startsWith('你的麦克风已打开'),
+    );
+  });
+
+  test('a microphone this call cannot reopen is offered another call', () {
+    expect(
+      StreamSpeakAgainPolicy.offers(
+        pageCanReconnect: true,
+        speakSpent: true,
+        microphoneEnabled: false,
+        canSendAudio: true,
+        retirementStarted: false,
+      ),
+      isTrue,
+    );
+    // An open microphone is muted, not reconnected.
+    expect(
+      StreamSpeakAgainPolicy.offers(
+        pageCanReconnect: true,
+        speakSpent: true,
+        microphoneEnabled: true,
+        canSendAudio: true,
+        retirementStarted: false,
+      ),
+      isFalse,
+    );
+    // A seat the host took back is not returned by another call.
+    expect(
+      StreamSpeakAgainPolicy.offers(
+        pageCanReconnect: true,
+        speakSpent: true,
+        microphoneEnabled: false,
+        canSendAudio: false,
+        retirementStarted: false,
+      ),
+      isFalse,
+    );
+    // A call on its way out is not put back.
+    expect(
+      StreamSpeakAgainPolicy.offers(
+        pageCanReconnect: true,
+        speakSpent: true,
+        microphoneEnabled: false,
+        canSendAudio: true,
+        retirementStarted: true,
+      ),
+      isFalse,
+    );
+    // The first Speak of a call is still the microphone's own command.
+    expect(
+      StreamSpeakAgainPolicy.offers(
+        pageCanReconnect: true,
+        speakSpent: false,
+        microphoneEnabled: false,
+        canSendAudio: true,
+        retirementStarted: false,
+      ),
+      isFalse,
+    );
+    // Nothing is offered where nothing can put a call back.
+    expect(
+      StreamSpeakAgainPolicy.offers(
+        pageCanReconnect: false,
+        speakSpent: true,
+        microphoneEnabled: false,
+        canSendAudio: true,
+        retirementStarted: false,
+      ),
+      isFalse,
+    );
+  });
+
   test('a consumed Speak requires a new Call before capture can restart', () {
     expect(
       StreamMicrophoneControlPolicy.canRequest(

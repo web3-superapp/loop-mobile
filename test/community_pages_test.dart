@@ -1671,6 +1671,134 @@ void main() {
       expect(entered, <String>[testCommunityId]);
     });
 
+    testWidgets('a room opened elsewhere lights this page up while it waits', (
+      tester,
+    ) async {
+      // The review devices: the second phone stood on the community page
+      // while the room was opened on the first, and its voice control stayed
+      // dark for as long as it was looked at.
+      final voiceRoom = FakeVoiceRoomGateway();
+      await pumpProfile(
+        tester,
+        role: CommunityRole.member,
+        voiceRoom: voiceRoom,
+        onOpenVoiceRoom: (_) {},
+      );
+
+      final enter = find.byKey(
+        const ValueKey<String>('community-profile-open-voice'),
+      );
+      await scrollToVoice(tester, enter);
+      expect(tester.widget<LoopButton>(enter).onPressed, isNull);
+
+      // Somebody opens a room. Nothing on this page was touched.
+      voiceRoom.snapshot = testVoiceRoomSnapshot();
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+
+      expect(voiceRoom.commands, contains('current:$testCommunityId'));
+      expect(tester.widget<LoopButton>(enter).onPressed, isNotNull);
+      expect(tester.widget<LoopButton>(enter).semanticLabel, '进入语音房');
+    });
+
+    testWidgets('a room that ends takes the entry with it', (tester) async {
+      // The watched row replaces the record's own rather than being added to
+      // it: an entry left standing over a room that ended is a door into
+      // 「房间已结束」, and the owner cannot open the next room while it is
+      // there.
+      final voiceRoom = FakeVoiceRoomGateway(snapshot: testVoiceRoomSnapshot());
+      await pumpProfile(
+        tester,
+        role: CommunityRole.owner,
+        voice: testVoiceLive,
+        voiceRoom: voiceRoom,
+        onOpenVoiceRoom: (_) {},
+      );
+
+      final enter = find.byKey(
+        const ValueKey<String>('community-profile-open-voice'),
+      );
+      await scrollToVoice(tester, enter);
+      expect(tester.widget<LoopButton>(enter).semanticLabel, '进入语音房');
+
+      // The room ends somewhere else.
+      voiceRoom.snapshot = null;
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+
+      expect(enter, findsNothing);
+      expect(createButton, findsOneWidget);
+    });
+
+    testWidgets('the community page behind or below reads nothing', (
+      tester,
+    ) async {
+      final voiceRoom = FakeVoiceRoomGateway();
+      await pumpProfile(
+        tester,
+        role: CommunityRole.member,
+        voiceRoom: voiceRoom,
+        onOpenVoiceRoom: (_) {},
+      );
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      final onScreen = voiceRoom.commands.length;
+      expect(onScreen, greaterThan(0));
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump(const Duration(seconds: 60));
+      expect(voiceRoom.commands, hasLength(onScreen));
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(
+        voiceRoom.commands.length,
+        greaterThan(onScreen),
+        reason: 'a reader who comes back is not shown the moment they left',
+      );
+    });
+
+    testWidgets('a room nobody can enter yet is not entered', (tester) async {
+      // 201 says the room row committed, not that the call behind it exists.
+      // A host walked into a room that could not be heard; the page now says
+      // what is missing and keeps the one control that finishes it.
+      final voiceRoom = FakeVoiceRoomGateway(
+        createdSnapshot: testVoiceRoomSnapshot(
+          role: VoiceRoomRole.host,
+          host: true,
+          backstage: true,
+          providerConfirmed: false,
+          providerReason: 'STREAM_CALL_GO_LIVE_UNCONFIRMED',
+        ),
+      );
+      final entered = <String>[];
+      await pumpProfile(
+        tester,
+        role: CommunityRole.owner,
+        voiceRoom: voiceRoom,
+        onOpenVoiceRoom: entered.add,
+      );
+
+      await scrollToVoice(tester, createButton);
+      await tester.tap(createButton);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-confirm-accept')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(voiceRoom.commands, contains('create:$testCommunityId'));
+      expect(find.text('语音房已开启'), findsNothing);
+      expect(entered, isEmpty);
+      // The host's own two sentences: what is missing, and the one control
+      // that finishes it.
+      expect(find.textContaining('还没有开放收听'), findsOneWidget);
+      expect(find.textContaining('再点一次「开启语音房」'), findsOneWidget);
+      // The control that repeats the unfinished half is still on the page.
+      expect(createButton, findsOneWidget);
+    });
+
     testWidgets('a room that is already live is stated, not claimed', (
       tester,
     ) async {

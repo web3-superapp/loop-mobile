@@ -146,6 +146,11 @@ abstract interface class AudioRoomCallHandle {
   /// taken before the page closed is not what the call is doing now.
   Stream<AudioRoomCallReading> get readings;
 
+  /// Every provider event that means a LOOP record about this room is stale.
+  ///
+  /// The page reads the record; nothing here composes state out of an event.
+  Stream<AudioRoomRoomSignal> get roomSignals;
+
   Future<void> joinMuted();
 
   Future<AudioRoomMicrophoneOutcome> setMicrophoneEnabled({
@@ -175,6 +180,11 @@ abstract interface class AudioRoomCallHandle {
   /// on, so the page takes it down and offers the connection again. It is
   /// never called while the SDK is reconnecting, and never for a call this
   /// device is already retiring.
+  ///
+  /// [onSpeakAgainRequested] is asked when a member who already spoke in this
+  /// call wants the microphone back. One call starts one microphone, so that
+  /// is a new call — a decision that belongs to whoever owns the call, never
+  /// to this handle.
   Widget buildForeground({
     required Future<void> Function() onLeaveRequested,
     bool inline,
@@ -182,9 +192,11 @@ abstract interface class AudioRoomCallHandle {
     void Function({
       required AudioRoomLivePhase phase,
       required int? participantCount,
+      required List<AudioRoomSpeaker> speakers,
     })?
     onPresence,
     VoidCallback? onDisconnected,
+    Future<void> Function()? onSpeakAgainRequested,
   });
 }
 
@@ -336,6 +348,37 @@ final class AudioRoomCallCommandCoordinator {
   }
 }
 
+/// Reads one provider event as the LOOP record it invalidates, or nothing.
+///
+/// Only two kinds of event say that something LOOP holds has changed: the
+/// custom event the server sends after a hand raise (decision 0069), and the
+/// four that say the people in the room are not the ones this device was told
+/// about. Everything else belongs to the call, which the call view reads for
+/// itself.
+///
+/// The name of the hand-raise event is the server's, spelled once here: an
+/// event this client does not recognise is not a cue to read anything.
+AudioRoomRoomSignal? audioRoomRoomSignalOf(StreamCallEvent event) {
+  if (event is StreamCallCustomEvent) {
+    return event.custom?[audioRoomEventKindKey] == audioRoomHandRaiseEventKind
+        ? AudioRoomRoomSignal.handRaise
+        : null;
+  }
+  if (event is StreamCallSessionParticipantJoinedEvent ||
+      event is StreamCallSessionParticipantLeftEvent ||
+      event is StreamCallMemberAddedEvent ||
+      event is StreamCallMemberRemovedEvent) {
+    return AudioRoomRoomSignal.participants;
+  }
+  return null;
+}
+
+/// Where the server writes what one of its own events is (decision 0069).
+const audioRoomEventKindKey = 'loop_event_kind';
+
+/// The one custom event LOOP sends into a room.
+const audioRoomHandRaiseEventKind = 'voiceRoomHandRaise';
+
 abstract interface class AudioRoomCallFactory {
   AudioRoomCallHandle create(AudioRoomTarget target);
 }
@@ -403,6 +446,13 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
   @override
   Stream<AudioRoomCallReading> get readings => _call.partialState(_readingOf);
 
+  @override
+  Stream<AudioRoomRoomSignal> get roomSignals => _call.callEvents
+      .asStream()
+      .map(audioRoomRoomSignalOf)
+      .where((signal) => signal != null)
+      .cast<AudioRoomRoomSignal>();
+
   /// The same figures the call panel prints, from the same official state.
   static AudioRoomCallReading _readingOf(CallState state) {
     final connected = state.status.isConnected;
@@ -412,6 +462,13 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
         connected: connected,
         participantCount: state.participantCount,
         knownParticipants: state.callParticipants.length,
+      ),
+      // The same people the call panel draws, for the surfaces that have no
+      // panel to read: a room page whose call view is not the thing on
+      // screen still says who can be heard.
+      speakers: StreamCallParticipantPresentation.speaking(
+        connected: connected,
+        participants: state.callParticipants,
       ),
     );
   }
@@ -522,14 +579,17 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
     void Function({
       required AudioRoomLivePhase phase,
       required int? participantCount,
+      required List<AudioRoomSpeaker> speakers,
     })?
     onPresence,
     VoidCallback? onDisconnected,
+    Future<void> Function()? onSpeakAgainRequested,
   }) {
     return StreamForegroundCallView(
       call: _call,
       onPresence: onPresence,
       onDisconnected: onDisconnected,
+      onSpeakAgainRequested: onSpeakAgainRequested,
       retirementStarted: () => retirementStarted,
       onMicrophoneRequested: onMicrophoneEnabled == null
           ? setMicrophoneEnabled

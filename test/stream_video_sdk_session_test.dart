@@ -46,6 +46,65 @@ void main() {
     },
   );
 
+  test('a session that did not hold names the step that stopped it', () async {
+    // The one word `unavailable` is all the gates need; the lobby needs the
+    // step, because a voice identity that never arrived and a voice service
+    // that never answered have opposite next steps for the reader.
+    final noIdentity = StreamVideoSdkSession(
+      apiKey: 'public-key',
+      source: _RecordingSource(identity: null),
+      clientFactory: _RecordingClientFactory(),
+      initialPrincipalKey: 'privy-principal-a',
+    );
+    addTearDown(noIdentity.dispose);
+    await noIdentity.authorize();
+    expect(noIdentity.refusal, StreamVideoSessionRefusal.identity);
+
+    final noToken = StreamVideoSdkSession(
+      apiKey: 'public-key',
+      source: _RecordingSource(
+        identity: identity,
+        // Deferred: an error future created and listened to in the same turn
+        // is reported as unhandled before the session ever awaits it.
+        tokenFuture: Future<String>.delayed(
+          Duration.zero,
+          () => throw StateError('no token'),
+        ),
+      ),
+      clientFactory: _RecordingClientFactory(),
+      initialPrincipalKey: 'privy-principal-a',
+    );
+    addTearDown(noToken.dispose);
+    await noToken.authorize();
+    expect(noToken.refusal, StreamVideoSessionRefusal.credential);
+
+    final noConnection = StreamVideoSdkSession(
+      apiKey: 'public-key',
+      source: _RecordingSource(identity: identity),
+      clientFactory: _RecordingClientFactory(
+        connectFuture: Future<bool>.value(false),
+      ),
+      initialPrincipalKey: 'privy-principal-a',
+    );
+    addTearDown(noConnection.dispose);
+    await noConnection.authorize();
+    expect(noConnection.refusal, StreamVideoSessionRefusal.connection);
+
+    final connected = StreamVideoSdkSession(
+      apiKey: 'public-key',
+      source: _RecordingSource(identity: identity),
+      clientFactory: _RecordingClientFactory(),
+      initialPrincipalKey: 'privy-principal-a',
+    );
+    addTearDown(connected.dispose);
+    expect(
+      await connected.authorize(),
+      StreamVideoSessionAuthorization.authorized,
+    );
+    // An authorized session names no step at all.
+    expect(connected.refusal, isNull);
+  });
+
   test('missing backend identity never constructs the SDK client', () async {
     final source = _RecordingSource(identity: null);
     final factory = _RecordingClientFactory();

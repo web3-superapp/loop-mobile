@@ -16,6 +16,14 @@ mixin CommunitySingleFlight {
 
   int nextGeneration() => ++_generation;
 
+  /// The generation as it stands, for work that must not retire anything.
+  ///
+  /// A read refreshes what is already on screen; it owns nothing and it must
+  /// never retire a command that is in flight. Taking the current generation
+  /// instead of a new one is how such work drops its own stale result without
+  /// dropping somebody else's live one.
+  int get currentGeneration => _generation;
+
   bool isCurrent(int generation) => generation == _generation;
 
   Future<void> single(Future<void> Function() body) {

@@ -569,6 +569,27 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
   /// view leaves its loading phase, so the guard is what makes that one call.
   final Set<VoiceRoomRosterView> _rosterInFlight = <VoiceRoomRosterView>{};
 
+  VoiceRoomProviderSync? _lastCommandSync;
+
+  /// One queue read at a time: a burst of cues is one question.
+  var _queueInFlight = false;
+
+  /// How many commands are in flight.
+  ///
+  /// A command that was superseded must not clear the 忙 flag the command
+  /// that superseded it raised, and the last one out must always clear it.
+  var _commandsInFlight = 0;
+
+  /// What the server said about the provider write its last command made.
+  ///
+  /// The page state carries the room as it was last *read*, and a read reports
+  /// only its own provider work — so the answer a command gave about its own
+  /// write is gone by the time the room has been read again. One command needs
+  /// it: raising a hand is told to the room through a provider event (decision
+  /// 0069), and an event that was not sent means the hand is recorded and the
+  /// host has not been told. It is read straight after awaiting the command.
+  VoiceRoomProviderSync? get lastCommandSync => _lastCommandSync;
+
   @override
   VoiceRoomPageState build() {
     nextGeneration();
@@ -579,10 +600,15 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
 
   String? get communityId => _communityId;
 
+  /// Opens one community's room, and reads it every time.
+  ///
+  /// It used to answer a community it had already read with the snapshot it
+  /// was still holding. That snapshot outlives the room it describes: a host
+  /// who ends a room and opens a new one for the same community reaches a page
+  /// that shows the old one — 「房间已结束」 over a room created seconds before
+  /// — and `GET …/voice-rooms/current` is never sent at all, which is a create
+  /// that looks like a failure with a 201 behind it. A page that opens reads.
   Future<void> open(String communityId) {
-    if (_communityId == communityId && state.isReady) {
-      return Future<void>.value();
-    }
     _communityId = communityId;
     return reload();
   }
@@ -651,12 +677,20 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
   Future<void> refreshRoom() {
     final snapshot = state.snapshot;
     if (snapshot == null) return reload();
+    // A command is already reading this room for itself, and its read is the
+    // one the page will take. A refresh that ran beside it used to retire it:
+    // the command then returned "nothing went wrong" without ever clearing
+    // 忙, and every control on the page stayed disabled for as long as the
+    // page was open.
+    if (state.busy) return Future<void>.value();
     return single(() async {
       final gateway = ref.read(voiceRoomGatewayProvider);
-      final generation = nextGeneration();
+      // Taken, never advanced: this read retires nothing.
+      final generation = currentGeneration;
+      final roomId = snapshot.room.voiceRoomId;
       try {
-        final next = await gateway.load(snapshot.room.voiceRoomId);
-        if (!isCurrent(generation)) return;
+        final next = await gateway.load(roomId);
+        if (!_mayWriteRead(generation)) return;
         _publishSession(next);
         state = state.copyWith(
           phase: CommunityViewPhase.ready,
@@ -664,16 +698,57 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
           clearFailure: true,
         );
       } on CommunityGatewayException catch (error) {
-        if (!isCurrent(generation)) return;
+        if (!_mayWriteRead(generation)) return;
         state = state.copyWith(
           failureKind: error.kind,
           failureReasonCode: error.reasonCode,
         );
       } catch (_) {
-        if (!isCurrent(generation)) return;
+        if (!_mayWriteRead(generation)) return;
         state = state.copyWith(failureKind: CommunityFailureKind.unexpected);
       }
     });
+  }
+
+  /// Whether a read that started at [generation] may still write.
+  ///
+  /// It may not once a command or a reload has begun: those own the page, and
+  /// an answer read before them describes the room as it was.
+  bool _mayWriteRead(int generation) => isCurrent(generation) && !state.busy;
+
+  /// Reads the hand-raise queue again, and nothing else.
+  ///
+  /// The queue is the host's own read and it changes because of somebody
+  /// else: on the review devices a listener raised a hand and the host's page,
+  /// which had read the queue when it opened, went on showing an empty one.
+  /// The provider's own event is what triggers this (decision 0069) — the
+  /// event says only that the queue moved, and the identities, the order and
+  /// the commands all come from this read.
+  ///
+  /// It touches neither the room nor the rosters: a queue that could not be
+  /// read leaves the page exactly as it was.
+  Future<void> refreshHandRaises() async {
+    final snapshot = state.snapshot;
+    if (snapshot == null || !snapshot.viewer.isHost) return;
+    // A command reads the queue as part of itself, and two cues arriving
+    // together are one read.
+    if (state.busy || _queueInFlight) return;
+    final generation = currentGeneration;
+    final roomId = snapshot.room.voiceRoomId;
+    final List<VoiceRoomHandRaiseEntry> queue;
+    _queueInFlight = true;
+    try {
+      queue = await ref.read(voiceRoomGatewayProvider).listHandRaises(roomId);
+    } catch (_) {
+      return;
+    } finally {
+      _queueInFlight = false;
+    }
+    if (!_mayWriteRead(generation) ||
+        state.snapshot?.room.voiceRoomId != roomId) {
+      return;
+    }
+    state = state.copyWith(handRaises: queue);
   }
 
   /// The queue is a host-facing read. A failure there must not take the room
@@ -700,13 +775,23 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
     final gateway = ref.read(voiceRoomGatewayProvider);
     final generation = nextGeneration();
     state = state.copyWith(busy: true, clearFailure: true);
+    _lastCommandSync = null;
+    _commandsInFlight += 1;
     try {
       final committed = await body(gateway, snapshot.room.voiceRoomId);
-      if (!isCurrent(generation)) return null;
+      // Superseded by a later command or a whole reload: the page belongs to
+      // that one now. It is not a success and is not reported as one —
+      // 「已加入」 over a page that had moved on was a sentence about nothing —
+      // and it is not a refusal either: the server may well have applied it,
+      // so the reader is told to look rather than told it failed. The one
+      // word the page keeps for a refusal the *server* named (`stale`, a
+      // room that has ended) stays that refusal's alone.
+      if (!isCurrent(generation)) return CommunityFailureKind.cancelled;
+      _lastCommandSync = committed.providerSync;
       final next = await _reread(gateway, committed);
-      if (!isCurrent(generation)) return null;
+      if (!isCurrent(generation)) return CommunityFailureKind.cancelled;
       final queue = await _loadQueue(gateway, next);
-      if (!isCurrent(generation)) return null;
+      if (!isCurrent(generation)) return CommunityFailureKind.cancelled;
       _publishSession(next);
       state = VoiceRoomPageState(
         mode: state.mode,
@@ -718,7 +803,6 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
     } on CommunityGatewayException catch (error) {
       if (isCurrent(generation)) {
         state = state.copyWith(
-          busy: false,
           failureKind: error.kind,
           failureReasonCode: error.reasonCode,
         );
@@ -726,12 +810,16 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
       return error.kind;
     } catch (_) {
       if (isCurrent(generation)) {
-        state = state.copyWith(
-          busy: false,
-          failureKind: CommunityFailureKind.unexpected,
-        );
+        state = state.copyWith(failureKind: CommunityFailureKind.unexpected);
       }
       return CommunityFailureKind.unexpected;
+    } finally {
+      _commandsInFlight -= 1;
+      // The last command out puts the flag down, whatever became of it. A
+      // command that is still running owns it and keeps it up.
+      if (_commandsInFlight == 0 && state.busy) {
+        state = state.copyWith(busy: false);
+      }
     }
   }
 
@@ -979,22 +1067,131 @@ final class VoiceRoomOpenController extends Notifier<bool> {
   @override
   bool build() => false;
 
-  Future<CommunityFailureKind?> openRoom(String communityId) async {
-    if (state) return CommunityFailureKind.stale;
+  Future<VoiceRoomOpenOutcome> openRoom(String communityId) async {
+    if (state) {
+      return const VoiceRoomOpenOutcome.refused(CommunityFailureKind.stale);
+    }
     state = true;
     try {
-      await ref.read(voiceRoomGatewayProvider).createRoom(communityId);
+      final room = await ref
+          .read(voiceRoomGatewayProvider)
+          .createRoom(communityId);
       state = false;
-      return null;
+      return VoiceRoomOpenOutcome.opened(room);
     } on CommunityGatewayException catch (error) {
       state = false;
-      return error.kind;
+      return VoiceRoomOpenOutcome.refused(error.kind);
     } catch (_) {
       state = false;
-      return CommunityFailureKind.unexpected;
+      return const VoiceRoomOpenOutcome.refused(
+        CommunityFailureKind.unexpected,
+      );
     }
   }
 }
+
+/// What came back from opening a room.
+///
+/// A 201 is not the same answer as a room the community can enter: the room
+/// row commits before the provider calls, and the response says which of them
+/// landed. A room that exists and cannot be entered is a command that is not
+/// finished — the page says so instead of walking the host into a room nobody
+/// can hear, and opening it again repeats the provider half of the same
+/// command rather than asking for a second room.
+@immutable
+final class VoiceRoomOpenOutcome {
+  const VoiceRoomOpenOutcome.opened(VoiceRoomSnapshot this.room)
+    : failure = null;
+
+  const VoiceRoomOpenOutcome.refused(CommunityFailureKind this.failure)
+    : room = null;
+
+  final VoiceRoomSnapshot? room;
+  final CommunityFailureKind? failure;
+
+  /// The room was opened and this account can be let into the call.
+  bool get isOpen => room?.room.audioOpen ?? false;
+
+  /// The server's own name for the write it could not confirm.
+  String? get unconfirmedReason => room != null && !room!.providerSync.confirmed
+      ? room!.providerSync.reason
+      : null;
+}
+
+/// Whether one community has a live voice room right now.
+///
+/// The community record carries the same fact and is read once, when the page
+/// opens. A reader standing on a community page while somebody opens a room
+/// therefore saw nothing at all: on the review devices the second phone kept a
+/// dark voice control for as long as it was looked at. This is that one row,
+/// read again on the page's own interval and only while the page is on screen.
+///
+/// It is read-only and it only ever *adds* a room: a read that did not finish
+/// leaves the page with what it already had, and never takes a live room off a
+/// page that was told about one.
+@immutable
+final class CommunityVoiceLive {
+  const CommunityVoiceLive({
+    required this.communityId,
+    required this.isLive,
+    required this.voiceRoomId,
+  });
+
+  final String communityId;
+  final bool isLive;
+
+  /// The room the community has, when it has one.
+  final String? voiceRoomId;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CommunityVoiceLive &&
+          other.communityId == communityId &&
+          other.isLive == isLive &&
+          other.voiceRoomId == voiceRoomId;
+
+  @override
+  int get hashCode => Object.hash(communityId, isLive, voiceRoomId);
+}
+
+final class CommunityVoiceLiveController extends Notifier<CommunityVoiceLive?>
+    with CommunitySingleFlight {
+  @override
+  CommunityVoiceLive? build() {
+    nextGeneration();
+    // Principal-scoped, like every other voice read: a sign-out takes the
+    // answer with it rather than carrying it into the next account.
+    ref.watch(voiceRoomGatewayProvider);
+    ref.onDispose(nextGeneration);
+    return null;
+  }
+
+  /// Reads `GET …/voice-rooms/current` once for [communityId].
+  Future<void> read(String communityId) => single(() async {
+    final generation = nextGeneration();
+    try {
+      final current = await ref
+          .read(voiceRoomGatewayProvider)
+          .loadCurrent(communityId);
+      if (!isCurrent(generation)) return;
+      state = CommunityVoiceLive(
+        communityId: communityId,
+        isLive: current.isLive,
+        voiceRoomId: current.snapshot?.room.voiceRoomId,
+      );
+    } catch (_) {
+      // A read that did not finish says nothing. The page keeps the row it
+      // was opened with.
+    }
+  });
+}
+
+final communityVoiceLiveControllerProvider =
+    NotifierProvider.autoDispose<
+      CommunityVoiceLiveController,
+      CommunityVoiceLive?
+    >(CommunityVoiceLiveController.new);
 
 final voiceRoomOpenControllerProvider =
     NotifierProvider.autoDispose<VoiceRoomOpenController, bool>(

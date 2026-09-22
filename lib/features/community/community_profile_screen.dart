@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/time/loop_foreground_poll.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/chain/chain_models.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
+import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_controllers.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
@@ -84,6 +86,45 @@ class CommunityProfileScreen extends ConsumerStatefulWidget {
 
 class _CommunityProfileScreenState
     extends ConsumerState<CommunityProfileScreen> {
+  /// Reads the community's voice row again while this page is on screen.
+  ///
+  /// Whether a room is live is the one fact on this page that changes because
+  /// of somebody else, and it was read once: a reader standing here while a
+  /// room opened saw a dark control for as long as they looked at it. Five
+  /// seconds is the room's own scale — it is opened and entered in the same
+  /// minute — and the read stops with the page and with the app going behind
+  /// something else.
+  late final LoopForegroundPoll _voicePoll = LoopForegroundPoll(
+    interval: const Duration(seconds: 5),
+    read: _readVoiceRow,
+  );
+
+  @override
+  void dispose() {
+    _voicePoll.stop();
+    super.dispose();
+  }
+
+  /// One read of `GET …/voice-rooms/current` for the community on screen.
+  ///
+  /// Only a member may read it, and only a page that knows which community it
+  /// is showing asks: a viewer the server has not let in gets nothing from
+  /// this and the poll makes no request on their behalf.
+  Future<void> _readVoiceRow() async {
+    final id = widget.communityId;
+    if (id == null || !mounted) return;
+    await ref.read(communityVoiceLiveControllerProvider.notifier).read(id);
+  }
+
+  /// Keeps the poll armed for exactly the page that can use it.
+  void _bindVoicePoll({required bool watching}) {
+    if (watching) {
+      _voicePoll.start();
+    } else {
+      _voicePoll.stop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final capability = ref.watch(
@@ -103,6 +144,16 @@ class _CommunityProfileScreenState
 
     final detail = state.value;
     final community = detail?.community;
+    // A page that has not read the community yet, or is showing somebody
+    // else's, asks nothing; a member's page reads the voice row on its own
+    // interval for as long as it is here.
+    _bindVoicePoll(
+      watching:
+          id != null &&
+          detail != null &&
+          detail.community.communityId == id &&
+          detail.viewer.hasJoined,
+    );
     return LoopDashboardPage(
       key: const ValueKey<String>('community-profile-screen'),
       archetype: LoopPageArchetype.record,
@@ -297,14 +348,32 @@ class _CommunityProfileScreenState
       sheetKey: 'community-open-voice-room-sheet',
     );
     if (!confirmed || !mounted) return;
-    final failure = await ref
+    final outcome = await ref
         .read(voiceRoomOpenControllerProvider.notifier)
         .openRoom(detail.community.communityId);
     if (!mounted) return;
+    final failure = outcome.failure;
     if (failure == null) {
-      LoopToast.show(context, message: '语音房已开启');
-      unawaited(ref.read(communityProfileControllerProvider.notifier).reload());
-      widget.onOpenVoiceRoom?.call(detail.community.communityId);
+      if (outcome.isOpen) {
+        LoopToast.show(context, message: '语音房已开启');
+        unawaited(
+          ref.read(communityProfileControllerProvider.notifier).reload(),
+        );
+        widget.onOpenVoiceRoom?.call(detail.community.communityId);
+        return;
+      }
+      // The room row exists and the call behind it does not, so nobody can be
+      // let in — including the host who just opened it. This is the state the
+      // review device met as a room it entered and could not hear. The page
+      // stays where it is and 「开启语音房」 stays on it: the next tap repeats
+      // the provider half of the same command, which is the one recovery
+      // there is. Asking for a second room would be refused — the room that
+      // cannot be entered is still the community's one live room.
+      LoopToast.show(
+        context,
+        message: voiceRoomOpenUnfinishedText(outcome.unconfirmedReason),
+        kind: LoopToastKind.warn,
+      );
       return;
     }
     LoopToast.show(
@@ -428,6 +497,19 @@ class _CommunityActionPair extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final chat = detail.chat;
     final voice = detail.voice;
+    // The record's own voice row was read when the page opened. While the
+    // page is on screen that row is read again, so a room somebody else
+    // opened lights this control up without the reader touching anything.
+    final watched = ref.watch(communityVoiceLiveControllerProvider);
+    // A room that ended has to take the control with it: an entry left
+    // standing over a room nobody is in is a door into 「房间已结束」, and the
+    // owner cannot open the next room while it is there. So the watched row
+    // replaces the record's own rather than being added to it — for this
+    // community, and never for another one's answer.
+    final voiceLive =
+        watched != null && watched.communityId == detail.community.communityId
+        ? watched.isLive
+        : voice.isLive;
     final joined = detail.viewer.hasJoined;
     final banned =
         detail.viewer.membership?.status == CommunityMemberStatus.banned;
@@ -438,11 +520,11 @@ class _CommunityActionPair extends ConsumerWidget {
     final aiReason = communicationUnavailableReason(
       aiCapability.reasonCode ?? _aiDeferred,
     );
-    final mayOpenRoom = detail.viewer.mayOpenVoiceRoom && !voice.isLive;
+    final mayOpenRoom = detail.viewer.mayOpenVoiceRoom && !voiceLive;
     final chatReason = chatOpenable
         ? null
         : communicationUnavailableReason(chat.reasonCode);
-    final voiceReason = voice.isLive || mayOpenRoom
+    final voiceReason = voiceLive || mayOpenRoom
         ? null
         : communicationUnavailableReason(voice.reasonCode);
     return Column(
@@ -475,7 +557,7 @@ class _CommunityActionPair extends ConsumerWidget {
               // yet, and why, and it stays on screen to be read.
               onPressed: onOpenAi,
             ),
-            if (voice.isLive)
+            if (voiceLive)
               LoopButton(
                 key: const ValueKey<String>('community-profile-open-voice'),
                 label: '',
