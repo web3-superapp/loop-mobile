@@ -361,12 +361,20 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                   unawaited(controller.loadRoster(VoiceRoomRosterView.speaker)),
             ),
             LoopLabel('听众 ${snapshot.participants.listenerCount}'),
-            const LoopNotice(
-              key: ValueKey<String>('voiceroom-listeners-elsewhere'),
-              icon: 'info',
-              body: '听众列表在展开视图查看。',
-              margin: EdgeInsets.fromLTRB(16, 0, 16, 0),
-            ),
+            // 「听众列表在展开视图查看」 stood here as a sentence with no way
+            // out of it: the reader on the review device read it and asked
+            // where that view was. The way out is the control itself, and
+            // where there is nowhere to go the sentence is not written.
+            if (widget.onOpenExpanded != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                child: LoopButton(
+                  key: const ValueKey<String>('voiceroom-listeners-open'),
+                  label: '查看听众名单',
+                  block: true,
+                  onPressed: () => widget.onOpenExpanded!(id),
+                ),
+              ),
           ],
           if (widget.expanded) _RoomFacts(snapshot: snapshot),
           if (snapshot.viewer.hasJoined && snapshot.room.isJoinable)

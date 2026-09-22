@@ -1304,6 +1304,43 @@ void main() {
       expect(find.byType(Scaffold), findsOneWidget);
     });
 
+    testWidgets('the listener list has a door, or no sentence about it', (
+      tester,
+    ) async {
+      // 「听众列表在展开视图查看」 was a sentence with no way out of it, and
+      // the reader on the review device asked where that view was.
+      final opened = <String>[];
+      await pumpCommunityPage(
+        tester,
+        VoiceRoomScreen(
+          communityId: testCommunityId,
+          onOpenExpanded: opened.add,
+        ),
+        voiceRoom: FakeVoiceRoomGateway(snapshot: testVoiceRoomSnapshot()),
+      );
+
+      final door = find.byKey(
+        const ValueKey<String>('voiceroom-listeners-open'),
+      );
+      await scrollToCommunitySection(tester, door);
+      await tester.tap(door);
+      await tester.pumpAndSettle();
+      expect(opened, <String>[testCommunityId]);
+
+      // A page with nowhere to send the reader says nothing about a list
+      // they cannot reach.
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: FakeVoiceRoomGateway(snapshot: testVoiceRoomSnapshot()),
+      );
+      expect(find.textContaining('展开视图'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-listeners-open')),
+        findsNothing,
+      );
+    });
+
     testWidgets('the host who is speaking is in 正在发言', (tester) async {
       // The review device: the host was talking and the grid was empty,
       // because it was drawn from LOOP's speaker roster — which records the
