@@ -12,6 +12,7 @@ import 'package:loop_mobile/features/chat/v2/chat_search_screen.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
+import 'package:loop_mobile/features/community/community_ai_gateway.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
@@ -767,6 +768,7 @@ Future<void> pumpCommunityPage(
   WidgetTester tester,
   Widget page, {
   CommunityGateway? community,
+  CommunityAiGateway? communityAi,
   SocialGateway? social,
   SearchGateway? search,
   ChatV2Gateway? chat,
@@ -816,6 +818,8 @@ Future<void> pumpCommunityPage(
       overrides: [
         if (community != null)
           communityGatewayProvider.overrideWithValue(community),
+        if (communityAi != null)
+          communityAiGatewayProvider.overrideWithValue(communityAi),
         if (social != null) socialGatewayProvider.overrideWithValue(social),
         if (search != null) searchGatewayProvider.overrideWithValue(search),
         if (chat != null) chatV2GatewayProvider.overrideWithValue(chat),

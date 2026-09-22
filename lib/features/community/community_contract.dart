@@ -34,7 +34,7 @@ enum CommunityFailureKind {
 }
 
 final class CommunityGatewayException implements Exception {
-  const CommunityGatewayException(this.kind, {this.reasonCode});
+  const CommunityGatewayException(this.kind, {this.reasonCode, this.scope});
 
   final CommunityFailureKind kind;
 
@@ -43,6 +43,11 @@ final class CommunityGatewayException implements Exception {
   /// and it is the only way a page can answer 「为什么」 with the server's own
   /// answer instead of a sentence for the whole class.
   final String? reasonCode;
+
+  /// Which budget a `rateLimited` refusal was measured against, when the
+  /// server named one. The caller's own minute and the community's day are
+  /// two different waits.
+  final String? scope;
 
   @override
   String toString() => 'CommunityGatewayException(${kind.name})';

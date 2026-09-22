@@ -16,16 +16,18 @@ enum LoopBackendFailureKind {
 /// rather than echoed: an unlisted key never reaches a page, and a value that
 /// is not a bounded scalar is dropped instead of rendered. The three slots
 /// below are the only ones the frozen contract defines (`docs/api-v2-conventions`
-/// §7.1): the rule that refused the request, and the two figures that rule
-/// compared.
+/// §7.1): the rule that refused the request, the two figures that rule
+/// compared, and — on a quota refusal — which budget was exhausted.
 final class LoopFailureDetails {
   const LoopFailureDetails({
     this.reasonCode,
     this.exposureUsd,
     this.ceilingUsd,
+    this.scope,
   });
 
   static final RegExp _reasonCodePattern = RegExp(r'^[A-Z][A-Z0-9_]{0,63}$');
+  static final RegExp _scopePattern = RegExp(r'^[a-z][a-zA-Z0-9]{0,31}$');
   static final RegExp _decimalPattern = RegExp(
     r'^(0|[1-9][0-9]{0,77})(\.[0-9]{1,30})?$',
   );
@@ -49,6 +51,7 @@ final class LoopFailureDetails {
       reasonCode: scalar('reasonCode', _reasonCodePattern, 64),
       exposureUsd: scalar('exposureUsd', _decimalPattern, 110),
       ceilingUsd: scalar('ceilingUsd', _decimalPattern, 110),
+      scope: scalar('scope', _scopePattern, 32),
     );
     return details.isEmpty ? null : details;
   }
@@ -60,8 +63,16 @@ final class LoopFailureDetails {
   final String? exposureUsd;
   final String? ceilingUsd;
 
+  /// Which budget a `RATE_LIMITED` refusal was measured against — the
+  /// caller's own minute, or the whole community's day. They are two
+  /// different waits, so they are two different sentences.
+  final String? scope;
+
   bool get isEmpty =>
-      reasonCode == null && exposureUsd == null && ceilingUsd == null;
+      reasonCode == null &&
+      exposureUsd == null &&
+      ceilingUsd == null &&
+      scope == null;
 
   /// True only when both figures the ceiling rules compare are present.
   bool get hasCeilingFigures => exposureUsd != null && ceilingUsd != null;

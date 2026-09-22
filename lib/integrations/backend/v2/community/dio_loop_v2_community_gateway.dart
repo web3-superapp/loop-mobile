@@ -255,8 +255,9 @@ Future<T> executeCommunityRequest<T>(
   } on LoopBackendFailure catch (failure) {
     throw CommunityGatewayException(
       communityFailureKindForV2(failure),
-      // The allowlisted scalar the envelope carried, nothing else from it.
+      // The allowlisted scalars the envelope carried, nothing else from it.
       reasonCode: failure.detailsSafe?.reasonCode,
+      scope: failure.detailsSafe?.scope,
     );
   } on CommunityGatewayException {
     rethrow;

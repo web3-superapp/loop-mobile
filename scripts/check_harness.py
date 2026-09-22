@@ -8160,6 +8160,99 @@ def check_v2_community_truth_contract(root: Path) -> list[str]:
     return errors
 
 
+COMMUNITY_AI_TEST_MARKERS = {
+    Path("test/community_ai_test.dart"): (
+        "the overview read carries no idempotency key and decodes whole",
+        "a knowledge count the rows do not support is refused",
+        "a quota refusal names the budget it was measured against",
+        "the same question replays one key; a new question takes a new one",
+        "the five states each render their own block",
+        "the open page states its sources, brief and abilities",
+        "a cited handle opens the source it names",
+        "every answer can be reported once, by reason",
+    ),
+}
+
+# The prototype's 「知识库 14 篇文档」 and its 42-message figure have no backend
+# (loop-api decision 0066 §6): LOOP ingests no documents, so a document count
+# is not a fact this client may render, and the discussion figure is the
+# server's `brief.messageCount` or nothing at all.
+COMMUNITY_AI_FORBIDDEN_COPY = ("知识库", "篇文档")
+
+
+def check_community_ai_contract(root: Path) -> list[str]:
+    """Keep Community AI on the server's own answers (decision 0066)."""
+
+    errors = require_fragments(
+        root,
+        {
+            # Strict on the way in: the three routes are decoded against the
+            # frozen key sets, and the two writes carry the 429 the model
+            # budgets answer with.
+            "lib/integrations/backend/v2/community/loop_v2_community_ai_api.dart": (
+                "'$communitiesPath/$id/ai/overview'",
+                "'$communitiesPath/$id/ai/ask'",
+                "'$communitiesPath/$id/ai/answers/$answer/report'",
+                "allowedCodes: LoopV2ModuleRequest.communityAiWriteErrors,",
+                "if (sourceCount != sources.length) LoopV2ProjectionCodec.invalid();",
+                "if (answer.isEmpty && refusal == null) LoopV2ProjectionCodec.invalid();",
+            ),
+            # One question is one logical operation: the key is bound to the
+            # question's own text, so an identical retry replays the stored
+            # answer instead of spending a second model call.
+            "lib/integrations/backend/v2/community/dio_loop_v2_community_ai_gateway.dart": (
+                "'community-ai-ask:$communityId:${question.trim()}'",
+                "if (!communityOutcomeIsUnresolved(failure.kind)) {",
+            ),
+            # Every model-written block carries the model and the time, every
+            # answer can be reported, and the disclaimer never leaves the foot
+            # of the page.
+            "lib/features/community/community_ai_screen.dart": (
+                "_CommunityAiGeneratedMark(",
+                "'community-ai-report-${answer.answerId}'",
+                "showCommunityAiReportSheet(",
+                "communityAiKnowledgeLine(overview.knowledge)",
+                "_CommunityAiDisclaimer(",
+            ),
+            "lib/features/community/community_ai_models.dart": (
+                "String communityAiBriefHeading(CommunityAiBriefAvailable brief)",
+                "'今日至少 ${brief.messageCount} 条讨论'",
+                "List<CommunityAiAnswerRun> communityAiAnswerRuns(",
+            ),
+            # A Preview composition must not answer for a model: decision 0066
+            # forbids a sentence no model wrote.
+            "lib/features/community/community_ai_gateway.dart": (
+                "final class UnavailableCommunityAiGateway implements CommunityAiGateway",
+            ),
+        },
+    )
+
+    for relative in (
+        "lib/features/community/community_ai_screen.dart",
+        "lib/features/community/community_ai_models.dart",
+    ):
+        path = root / relative
+        if not path.is_file():
+            continue
+        source = strip_dart_comments(read_text(path))
+        for forbidden in COMMUNITY_AI_FORBIDDEN_COPY:
+            if forbidden in source:
+                errors.append(
+                    f"{relative} must not publish a document count for "
+                    f"Community AI; found `{forbidden}`"
+                )
+
+    preview = root / "lib/main_preview.dart"
+    if preview.is_file() and "communityAiGatewayProvider" in read_text(preview):
+        errors.append(
+            "main_preview.dart must leave Community AI closed: a Preview "
+            "answer is a sentence no model wrote"
+        )
+
+    errors.extend(check_behavior_test_evidence(root, COMMUNITY_AI_TEST_MARKERS))
+    return errors
+
+
 COMMUNITY_LOGO_CALL_SITES = (
     # The Community home's joined list — the one surface that already drew a
     # preset, and the only one, which is what the device reported.
@@ -13472,6 +13565,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_product_contract(root))
     errors.extend(check_v2_primary_navigation_contract(root))
     errors.extend(check_v2_community_truth_contract(root))
+    errors.extend(check_community_ai_contract(root))
     errors.extend(check_community_identity_contract(root))
     errors.extend(check_route_manifest_contract(root))
     errors.extend(check_chat_attachment_contract(root))

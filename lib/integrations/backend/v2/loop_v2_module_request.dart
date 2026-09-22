@@ -94,6 +94,32 @@ abstract final class LoopV2ModuleRequest {
     },
   };
 
+  /// The two Community AI writes (decision 0066).
+  ///
+  /// They are the write catalogue plus `429 RATE_LIMITED`: a model call is
+  /// paid for out of two durable budgets — the caller's own minute and the
+  /// community's day — and an exhausted budget is a refusal the reader has to
+  /// be told about, not an unreadable payload.
+  static const communityAiWriteErrors = <int, Set<String>>{
+    400: <String>{'INVALID_REQUEST'},
+    401: <String>{'AUTH_REQUIRED', 'AUTH_INVALID'},
+    403: <String>{'PERMISSION_DENIED', 'POLICY_BLOCKED'},
+    404: <String>{'NOT_FOUND'},
+    409: <String>{
+      'ACCOUNT_BOOTSTRAP_REQUIRED',
+      'IDEMPOTENCY_CONFLICT',
+      'VERSION_CONFLICT',
+    },
+    422: <String>{'VALIDATION_FAILED'},
+    429: <String>{'RATE_LIMITED'},
+    500: <String>{'INTERNAL_ERROR'},
+    503: <String>{
+      'CAPABILITY_UNAVAILABLE',
+      'PROVIDER_DISCONNECTED',
+      'REQUEST_TIMEOUT',
+    },
+  };
+
   /// S5 reads add the two codes only the chain and market routes can answer
   /// with: a non-BSC `assetId` and an indexer that has never run.
   static const chainReadErrors = <int, Set<String>>{

@@ -1,10 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:loop_mobile/features/community/community_ai_gateway.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
 import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_providers.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/community/dio_loop_v2_community_ai_gateway.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/dio_loop_v2_community_gateway.dart';
+import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_ai_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/search/dio_loop_v2_search_gateway.dart';
@@ -17,6 +20,11 @@ import 'package:loop_mobile/integrations/backend/v2/social/loop_v2_social_api.da
 final loopV2CommunityApiProvider = Provider<LoopV2CommunityApi?>((ref) {
   final dio = ref.watch(loopBackendDioProvider);
   return dio == null ? null : DioLoopV2CommunityApi(dio);
+});
+
+final loopV2CommunityAiApiProvider = Provider<LoopV2CommunityAiApi?>((ref) {
+  final dio = ref.watch(loopBackendDioProvider);
+  return dio == null ? null : DioLoopV2CommunityAiApi(dio);
 });
 
 final loopV2SocialApiProvider = Provider<LoopV2SocialApi?>((ref) {
@@ -39,6 +47,23 @@ final loopV2CommunityGatewayProvider = Provider<CommunityGateway>((ref) {
     return const UnavailableCommunityGateway();
   }
   return DioLoopV2CommunityGateway(
+    api: api,
+    clientMetadata: metadata,
+    session: session,
+  );
+});
+
+/// Production Community AI gateway. It stays closed until the transport, the
+/// client metadata and the authenticated session all exist; a closed gateway
+/// answers `unavailable`, never a fixture answer.
+final loopV2CommunityAiGatewayProvider = Provider<CommunityAiGateway>((ref) {
+  final api = ref.watch(loopV2CommunityAiApiProvider);
+  final metadata = ref.watch(loopV2ClientMetadataProvider);
+  final session = ref.watch(loopAuthenticatedSessionProvider);
+  if (api == null || metadata == null || session == null) {
+    return const UnavailableCommunityAiGateway();
+  }
+  return DioLoopV2CommunityAiGateway(
     api: api,
     clientMetadata: metadata,
     session: session,

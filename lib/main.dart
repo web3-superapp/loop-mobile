@@ -48,6 +48,7 @@ import 'package:loop_mobile/features/social/social_gateway.dart';
 import 'package:loop_mobile/features/community/search_gateway.dart';
 import 'package:loop_mobile/features/chat/v2/chat_merge_export.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_gateway.dart';
+import 'package:loop_mobile/features/community/community_ai_gateway.dart';
 import 'package:loop_mobile/features/community/community_gateway.dart';
 
 Future<void> main() async {
@@ -121,6 +122,9 @@ Future<void> main() async {
         ),
         communityGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2CommunityGatewayProvider),
+        ),
+        communityAiGatewayProvider.overrideWith(
+          (ref) => ref.watch(loopV2CommunityAiGatewayProvider),
         ),
         socialGatewayProvider.overrideWith(
           (ref) => ref.watch(loopV2SocialGatewayProvider),

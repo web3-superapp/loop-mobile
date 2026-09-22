@@ -466,6 +466,8 @@ class LoopStreamPage extends StatelessWidget {
     this.folioCollapsed = false,
     this.filters,
     this.composer,
+    this.footnote,
+    this.subtitle,
     this.tabPage = false,
     this.updating = false,
     this.block,
@@ -513,6 +515,17 @@ class LoopStreamPage extends StatelessWidget {
   /// collection shorter than the viewport still has the gesture.
   final Widget collection;
   final LoopComposer? composer;
+
+  /// One line that stays under the collection and above the composer.
+  ///
+  /// It is for a statement the page must keep making while it is read — the
+  /// Community AI disclaimer is the one caller — not for a control. A page
+  /// with nothing to say there leaves it null and loses no pixels.
+  final Widget? footnote;
+
+  /// The 11px line under the title (`LoopTopbar.subtitle`): the one fact that
+  /// qualifies what the page is showing.
+  final String? subtitle;
   final bool tabPage;
 
   /// The page is re-reading data it already shows (`state.refreshing`).
@@ -550,6 +563,7 @@ class LoopStreamPage extends StatelessWidget {
               LoopTopbar(
                 title: title,
                 kicker: kicker,
+                subtitle: subtitle,
                 onBack: onBack,
                 actions: actions,
                 minHeight: LoopLayout.topbarContentHeight,
@@ -570,6 +584,7 @@ class LoopStreamPage extends StatelessWidget {
                     collection: collection,
                   ),
                 ),
+                ?footnote,
                 ?composer,
               ],
             ],
