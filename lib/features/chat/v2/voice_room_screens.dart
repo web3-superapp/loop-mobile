@@ -290,7 +290,12 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
                 key: const ValueKey<String>('voiceroom-media-backstage'),
                 icon: 'warn',
                 message: '这个房间还没有开放收听',
-                reason: '这里不会发起语音连接。刷新一次，或让主持人重新开启。',
+                // The server names which of its two writes is unconfirmed;
+                // 「刷新一次」 is the read that makes it try again.
+                reason: snapshot.providerSync.confirmed
+                    ? '这里不会发起语音连接。刷新一次，或让主持人重新开启。'
+                    : '${communicationUnavailableReason(snapshot.providerSync.reason)}'
+                          '这里不会发起语音连接，刷新一次再看。',
                 action: LoopButton(
                   key: const ValueKey<String>(
                     'voiceroom-media-backstage-retry',
@@ -847,6 +852,8 @@ class _MediaSection extends StatelessWidget {
 const _voiceRoomNamedRefusals = <String>{
   'VOICE_ROOM_BACKSTAGE_NOT_LIVE',
   'STREAM_CALL_GO_LIVE_UNCONFIRMED',
+  'STREAM_CALL_CREATE_UNCONFIRMED',
+  'STREAM_CALL_EVENT_UNCONFIRMED',
   'COMMUNITY_VOICE_ROOM_NOT_LIVE',
 };
 

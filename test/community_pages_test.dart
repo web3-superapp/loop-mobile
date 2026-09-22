@@ -1671,6 +1671,44 @@ void main() {
       expect(entered, <String>[testCommunityId]);
     });
 
+    testWidgets('a room nobody can enter yet is not entered', (tester) async {
+      // 201 says the room row committed, not that the call behind it exists.
+      // A host walked into a room that could not be heard; the page now says
+      // what is missing and keeps the one control that finishes it.
+      final voiceRoom = FakeVoiceRoomGateway(
+        createdSnapshot: testVoiceRoomSnapshot(
+          role: VoiceRoomRole.host,
+          host: true,
+          backstage: true,
+          providerConfirmed: false,
+          providerReason: 'STREAM_CALL_GO_LIVE_UNCONFIRMED',
+        ),
+      );
+      final entered = <String>[];
+      await pumpProfile(
+        tester,
+        role: CommunityRole.owner,
+        voiceRoom: voiceRoom,
+        onOpenVoiceRoom: entered.add,
+      );
+
+      await scrollToVoice(tester, createButton);
+      await tester.tap(createButton);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-confirm-accept')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(voiceRoom.commands, contains('create:$testCommunityId'));
+      expect(find.text('语音房已开启'), findsNothing);
+      expect(entered, isEmpty);
+      expect(find.textContaining('还没有确认开放收听'), findsOneWidget);
+      expect(find.textContaining('再点一次「开启语音房」'), findsOneWidget);
+      // The control that repeats the unfinished half is still on the page.
+      expect(createButton, findsOneWidget);
+    });
+
     testWidgets('a room that is already live is stated, not claimed', (
       tester,
     ) async {

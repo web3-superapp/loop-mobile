@@ -175,6 +175,11 @@ abstract interface class AudioRoomCallHandle {
   /// on, so the page takes it down and offers the connection again. It is
   /// never called while the SDK is reconnecting, and never for a call this
   /// device is already retiring.
+  ///
+  /// [onSpeakAgainRequested] is asked when a member who already spoke in this
+  /// call wants the microphone back. One call starts one microphone, so that
+  /// is a new call — a decision that belongs to whoever owns the call, never
+  /// to this handle.
   Widget buildForeground({
     required Future<void> Function() onLeaveRequested,
     bool inline,
@@ -185,6 +190,7 @@ abstract interface class AudioRoomCallHandle {
     })?
     onPresence,
     VoidCallback? onDisconnected,
+    Future<void> Function()? onSpeakAgainRequested,
   });
 }
 
@@ -525,11 +531,13 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
     })?
     onPresence,
     VoidCallback? onDisconnected,
+    Future<void> Function()? onSpeakAgainRequested,
   }) {
     return StreamForegroundCallView(
       call: _call,
       onPresence: onPresence,
       onDisconnected: onDisconnected,
+      onSpeakAgainRequested: onSpeakAgainRequested,
       retirementStarted: () => retirementStarted,
       onMicrophoneRequested: onMicrophoneEnabled == null
           ? setMicrophoneEnabled

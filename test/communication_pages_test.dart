@@ -3288,6 +3288,7 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
     })?
     onPresence,
     VoidCallback? onDisconnected,
+    Future<void> Function()? onSpeakAgainRequested,
   }) {
     return Column(
       children: <Widget>[

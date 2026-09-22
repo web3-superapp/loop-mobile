@@ -452,6 +452,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
               onMicrophoneEnabled: widget.onMicrophoneEnabled,
               onPresence: _reportPresence,
               onDisconnected: _retireStoppedCall,
+              onSpeakAgainRequested: _reconnectForSpeak,
             );
     }
     return Scaffold(
@@ -485,6 +486,7 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
                   onMicrophoneEnabled: widget.onMicrophoneEnabled,
                   onPresence: _reportPresence,
                   onDisconnected: _retireStoppedCall,
+                  onSpeakAgainRequested: _reconnectForSpeak,
                 ),
         ),
       ),
@@ -789,6 +791,39 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
     // With [autoConnect] the frame after this schedules the attempt on the
     // room and the client that were just read.
     if (!widget.autoConnect) await _joinMuted();
+  }
+
+  /// Puts this call back so the reader can speak again.
+  ///
+  /// One call starts one microphone (decision 0005), and a member who muted
+  /// their own had nothing left to press: the control read 「重新进入后再发言」
+  /// and the only way out of it was leaving the room. The membership is
+  /// untouched here — this takes the media down and lets the ready room
+  /// connect again on its own, which is a call with its own microphone in it.
+  Future<void> _reconnectForSpeak() async {
+    final handle = _foregroundCall;
+    if (handle == null ||
+        _leaving ||
+        _exiting ||
+        _cleanupPending ||
+        _refreshingConnection) {
+      return;
+    }
+    _generation += 1;
+    widget.activeMedia?.surrender(handle);
+    final cleanupGeneration = ++_cleanupGeneration;
+    setState(() {
+      _joining = false;
+      _joiningCall = null;
+      _cleanupHandles = <AudioRoomCallHandle>[handle];
+      _cleanupPending = true;
+      _cleanupFailed = false;
+      _joinError = null;
+      // The reader asked for the audio back in the same breath, so the ready
+      // room reconnects without a second tap.
+      _autoConnectSuspended = false;
+    });
+    await _completeCleanup(<AudioRoomCallHandle>[handle], cleanupGeneration);
   }
 
   /// The single exit, asked for from inside the call view.

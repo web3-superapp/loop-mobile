@@ -1,9 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/dio_loop_v2_community_gateway.dart';
 import 'package:loop_mobile/integrations/backend/v2/community/loop_v2_community_api.dart';
+import 'package:loop_mobile/integrations/backend/v2/communication/dio_loop_v2_communication_gateway.dart';
+import 'package:loop_mobile/integrations/backend/v2/communication/loop_v2_communication_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_command_keyring.dart';
 import 'package:loop_mobile/integrations/backend/loop_authenticated_session.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap.dart';
@@ -11,6 +14,7 @@ import 'package:loop_mobile/integrations/backend/loop_bootstrap_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
 
+import 'support/communication_test_harness.dart';
 import 'support/community_test_harness.dart';
 
 void main() {
@@ -129,6 +133,42 @@ void main() {
     expect(LoopV2Contract.uuidV4Pattern.hasMatch(api.keys.single), isTrue);
   });
 
+  test('a room that cannot be entered keeps the key that opened it', () async {
+    // The room row commits before the provider calls, so a 201 can describe a
+    // room nobody can be let into. The one recovery is the same key again:
+    // the server repeats the provider half. A fresh key is refused, because
+    // the room that cannot be entered is still the community's one live room.
+    final api = _RecordingCommunicationApi();
+    final keyring = LoopV2CommandKeyring();
+    final gateway = DioLoopV2CommunicationGateway(
+      api: api,
+      clientMetadata: _metadata,
+      session: _immediateSession(),
+      keyring: keyring,
+    );
+
+    api.room = testVoiceRoomSnapshot(
+      role: VoiceRoomRole.host,
+      host: true,
+      backstage: true,
+      providerConfirmed: false,
+      providerReason: 'STREAM_CALL_GO_LIVE_UNCONFIRMED',
+    );
+    await gateway.createRoom(testCommunityId);
+    final key = api.keys.single;
+    expect(keyring.peek('voice-room-open:$testCommunityId'), key);
+
+    // The second attempt is the same command, not a second room.
+    await gateway.createRoom(testCommunityId);
+    expect(api.keys, <String>[key, key]);
+
+    // A room the community can enter finishes the command.
+    api.room = testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true);
+    await gateway.createRoom(testCommunityId);
+    expect(api.keys.last, key);
+    expect(keyring.peek('voice-room-open:$testCommunityId'), isNull);
+  });
+
   test('reads never reserve a key', () async {
     final api = _RecordingCommunityApi()..detail = testDetail();
     final keyring = LoopV2CommandKeyring();
@@ -142,6 +182,27 @@ void main() {
     await gateway.loadCommunity(testCommunityId);
     expect(api.keys, isEmpty);
   });
+}
+
+/// Records the key of every voice-room create without issuing a request.
+final class _RecordingCommunicationApi implements LoopV2CommunicationApi {
+  final List<String> keys = <String>[];
+  VoiceRoomSnapshot? room;
+
+  @override
+  Future<VoiceRoomSnapshot> createVoiceRoom({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required String communityId,
+  }) {
+    keys.add(idempotencyKey);
+    return Future<VoiceRoomSnapshot>.value(room!);
+  }
+
+  /// Every other endpoint of the module is out of this test's way.
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 const _metadata = LoopV2ClientMetadata(

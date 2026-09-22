@@ -984,21 +984,55 @@ final class VoiceRoomOpenController extends Notifier<bool> {
   @override
   bool build() => false;
 
-  Future<CommunityFailureKind?> openRoom(String communityId) async {
-    if (state) return CommunityFailureKind.stale;
+  Future<VoiceRoomOpenOutcome> openRoom(String communityId) async {
+    if (state) {
+      return const VoiceRoomOpenOutcome.refused(CommunityFailureKind.stale);
+    }
     state = true;
     try {
-      await ref.read(voiceRoomGatewayProvider).createRoom(communityId);
+      final room = await ref
+          .read(voiceRoomGatewayProvider)
+          .createRoom(communityId);
       state = false;
-      return null;
+      return VoiceRoomOpenOutcome.opened(room);
     } on CommunityGatewayException catch (error) {
       state = false;
-      return error.kind;
+      return VoiceRoomOpenOutcome.refused(error.kind);
     } catch (_) {
       state = false;
-      return CommunityFailureKind.unexpected;
+      return const VoiceRoomOpenOutcome.refused(
+        CommunityFailureKind.unexpected,
+      );
     }
   }
+}
+
+/// What came back from opening a room.
+///
+/// A 201 is not the same answer as a room the community can enter: the room
+/// row commits before the provider calls, and the response says which of them
+/// landed. A room that exists and cannot be entered is a command that is not
+/// finished — the page says so instead of walking the host into a room nobody
+/// can hear, and opening it again repeats the provider half of the same
+/// command rather than asking for a second room.
+@immutable
+final class VoiceRoomOpenOutcome {
+  const VoiceRoomOpenOutcome.opened(VoiceRoomSnapshot this.room)
+    : failure = null;
+
+  const VoiceRoomOpenOutcome.refused(CommunityFailureKind this.failure)
+    : room = null;
+
+  final VoiceRoomSnapshot? room;
+  final CommunityFailureKind? failure;
+
+  /// The room was opened and this account can be let into the call.
+  bool get isOpen => room?.room.audioOpen ?? false;
+
+  /// The server's own name for the write it could not confirm.
+  String? get unconfirmedReason => room != null && !room!.providerSync.confirmed
+      ? room!.providerSync.reason
+      : null;
 }
 
 final voiceRoomOpenControllerProvider =

@@ -297,14 +297,34 @@ class _CommunityProfileScreenState
       sheetKey: 'community-open-voice-room-sheet',
     );
     if (!confirmed || !mounted) return;
-    final failure = await ref
+    final outcome = await ref
         .read(voiceRoomOpenControllerProvider.notifier)
         .openRoom(detail.community.communityId);
     if (!mounted) return;
+    final failure = outcome.failure;
     if (failure == null) {
-      LoopToast.show(context, message: '语音房已开启');
-      unawaited(ref.read(communityProfileControllerProvider.notifier).reload());
-      widget.onOpenVoiceRoom?.call(detail.community.communityId);
+      if (outcome.isOpen) {
+        LoopToast.show(context, message: '语音房已开启');
+        unawaited(
+          ref.read(communityProfileControllerProvider.notifier).reload(),
+        );
+        widget.onOpenVoiceRoom?.call(detail.community.communityId);
+        return;
+      }
+      // The room row exists and the call behind it does not, so nobody can be
+      // let in — including the host who just opened it. This is the state the
+      // review device met as a room it entered and could not hear. The page
+      // stays where it is and 「开启语音房」 stays on it: the next tap repeats
+      // the provider half of the same command, which is the one recovery
+      // there is. Asking for a second room would be refused — the room that
+      // cannot be entered is still the community's one live room.
+      LoopToast.show(
+        context,
+        message:
+            '${communicationUnavailableReason(outcome.unconfirmedReason)}'
+            '再点一次「开启语音房」可以重试。',
+        kind: LoopToastKind.warn,
+      );
       return;
     }
     LoopToast.show(

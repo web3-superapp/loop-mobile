@@ -259,6 +259,58 @@ abstract final class StreamCallParticipantPresentation {
   }
 }
 
+/// Whether the one control this view has left is another call.
+///
+/// Stream Video 1.4.3 starts one microphone per Call: after a mute the track
+/// stays in the session, and a second Speak would enter the SDK's stopped
+/// track recreation path, which this app never enters (decision 0005). The
+/// control therefore had nothing to offer a member who muted their own
+/// microphone and said 「重新进入后再发言」 — on the review device that is what
+/// a host saw the moment they pressed 静音. A call the page can put back is an
+/// answer; without a page that can put one back there is none.
+abstract final class StreamSpeakAgainPolicy {
+  static bool offers({
+    required bool pageCanReconnect,
+    required bool speakSpent,
+    required bool microphoneEnabled,
+    required bool canSendAudio,
+    required bool retirementStarted,
+  }) =>
+      pageCanReconnect &&
+      speakSpent &&
+      !microphoneEnabled &&
+      canSendAudio &&
+      !retirementStarted;
+}
+
+/// What this account's microphone is doing, and what it can do next.
+///
+/// Four situations used to share two sentences, and the one a host met most
+/// often — muting their own microphone — landed on the sentence written for an
+/// account that had lost the seat entirely. [everCouldSendAudio] is what tells
+/// those two apart: a permission that is gone now and was there a moment ago
+/// is a seat the host took back, and coming back into the room does not return
+/// it.
+String streamMicrophoneNote({
+  required bool retiring,
+  required bool microphoneEnabled,
+  required bool canSendAudio,
+  required bool everCouldSendAudio,
+  required bool speakSpent,
+}) {
+  if (retiring && !microphoneEnabled) {
+    return '正在退出这次通话。麦克风不会再启动；如有需要先静音，再重试退出。';
+  }
+  if (microphoneEnabled) return '你的麦克风已打开，房间里的人能听到你。点「静音」随时关掉。';
+  if (!canSendAudio) {
+    return everCouldSendAudio
+        ? '你已被移出发言席，现在只能收听。要再发言，请等主持人重新邀请。'
+        : '你在这个房间是只收听的角色。';
+  }
+  if (speakSpent) return '你已静音。要再次发言，点「重新连接后发言」把这次语音重新接一遍。';
+  return '你以静音状态进入。准备好后点「发言」，系统麦克风权限只在开始采集时申请。';
+}
+
 /// Foreground Audio Room UI driven directly by Stream's official [CallState].
 ///
 /// Only microphone/leave command progress and sanitized command errors are
@@ -289,6 +341,7 @@ class StreamForegroundCallView extends StatefulWidget {
     this.inline = false,
     this.onPresence,
     this.onDisconnected,
+    this.onSpeakAgainRequested,
   });
 
   final Call call;
@@ -327,6 +380,18 @@ class StreamForegroundCallView extends StatefulWidget {
   onMicrophoneRequested;
   final Future<void> Function() onLeaveRequested;
 
+  /// Asked when a member who has already spoken in this call wants the
+  /// microphone back.
+  ///
+  /// Stream Video 1.4.3 starts one microphone per Call: a track that was muted
+  /// stays in the session and a second Speak would enter the SDK's stopped
+  /// track recreation path, which this app never enters (decision 0005). So
+  /// the way back to speaking is another call, not another command — and it is
+  /// the page that owns the call, not this view. Without it the control had
+  /// nothing to offer and said so as 「重新进入后再发言」, which on the review
+  /// device was what a host saw the moment they muted themselves.
+  final Future<void> Function()? onSpeakAgainRequested;
+
   @override
   State<StreamForegroundCallView> createState() =>
       _StreamForegroundCallViewState();
@@ -336,6 +401,18 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
   var _microphoneBusy = false;
   var _leaveBusy = false;
   var _microphoneEnableRequested = false;
+
+  /// True while this call is being put back so the reader can speak again.
+  var _speakAgainBusy = false;
+
+  /// True once this call ever let this account send audio.
+  ///
+  /// Losing that permission mid-call is the host taking the seat back, and it
+  /// is the one state 「重新进入后再发言」 was written for. An account that was
+  /// never a speaker is simply a listener, and the two must not share a
+  /// sentence: a host who muted their own microphone was being told to leave
+  /// the room and come back.
+  var _hadSendAudio = false;
   String? _commandError;
   ({AudioRoomLivePhase phase, int? participantCount})? _published;
 
@@ -409,6 +486,9 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
       builder: (context, data) {
         _publishPresence(data);
         _reportDisconnection(data);
+        // Remembered, never derived backwards: a permission that is gone now
+        // and was there a moment ago is a seat the host took back.
+        if (data.canSendAudio) _hadSendAudio = true;
         final retirementStarted = widget.retirementStarted();
         final canRequestMicrophone = StreamMicrophoneControlPolicy.canRequest(
           status: data.status,
@@ -517,15 +597,13 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
         _ParticipantGrid(participants: data.participants, phase: phase),
         SizedBox(height: widget.inline ? 14 : 22),
         Text(
-          retirementStarted && !data.microphoneEnabled
-              ? '正在退出这次通话。麦克风不会再启动；如有需要先静音，再重试退出。'
-              : data.canSendAudio &&
-                    _microphoneEnableRequested &&
-                    !data.microphoneEnabled
-              ? '麦克风已关闭。本版本要求先退出再重新进入，才能再次发言。'
-              : data.canSendAudio
-              ? '你以静音状态进入。准备好后点「发言」，系统麦克风权限只在开始采集时申请。'
-              : '你在这个房间是只收听的角色。',
+          streamMicrophoneNote(
+            retiring: retirementStarted,
+            microphoneEnabled: data.microphoneEnabled,
+            canSendAudio: data.canSendAudio,
+            everCouldSendAudio: _hadSendAudio,
+            speakSpent: _microphoneEnableRequested,
+          ),
           textAlign: widget.inline ? TextAlign.start : TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
@@ -556,42 +634,73 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
         ],
         Row(
           children: <Widget>[
+            // A microphone this call cannot open again is not a dead label:
+            // the way back to speaking is another call, and this is where the
+            // reader asks for one.
             Expanded(
-              child: OutlinedButton.icon(
-                onPressed:
-                    !_microphoneBusy && !_leaveBusy && canRequestMicrophone
-                    ? () => _setMicrophone(enabled: !data.microphoneEnabled)
-                    : null,
-                icon: _microphoneBusy
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Icon(
-                        data.microphoneEnabled
-                            ? Icons.mic_off_rounded
+              child:
+                  StreamSpeakAgainPolicy.offers(
+                    pageCanReconnect: widget.onSpeakAgainRequested != null,
+                    speakSpent: _microphoneEnableRequested,
+                    microphoneEnabled: data.microphoneEnabled,
+                    canSendAudio: data.canSendAudio,
+                    retirementStarted: retirementStarted,
+                  )
+                  ? OutlinedButton.icon(
+                      key: const ValueKey<String>(
+                        'voiceroom-media-speak-again',
+                      ),
+                      onPressed:
+                          _speakAgainBusy || _leaveBusy || _microphoneBusy
+                          ? null
+                          : _requestSpeakAgain,
+                      icon: _speakAgainBusy
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.sync_rounded),
+                      label: Text(_speakAgainBusy ? '正在重新连接语音' : '重新连接后发言'),
+                    )
+                  : OutlinedButton.icon(
+                      onPressed:
+                          !_microphoneBusy &&
+                              !_leaveBusy &&
+                              !_speakAgainBusy &&
+                              canRequestMicrophone
+                          ? () =>
+                                _setMicrophone(enabled: !data.microphoneEnabled)
+                          : null,
+                      icon: _microphoneBusy
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Icon(
+                              data.microphoneEnabled
+                                  ? Icons.mic_off_rounded
+                                  : data.canSendAudio &&
+                                        !_microphoneEnableRequested &&
+                                        !retirementStarted
+                                  ? Icons.mic_rounded
+                                  : Icons.headphones_rounded,
+                            ),
+                      label: Text(
+                        _microphoneBusy
+                            ? '正在切换麦克风'
+                            : data.microphoneEnabled
+                            ? '静音'
                             : data.canSendAudio &&
                                   !_microphoneEnableRequested &&
                                   !retirementStarted
-                            ? Icons.mic_rounded
-                            : Icons.headphones_rounded,
+                            ? '发言'
+                            : retirementStarted
+                            ? '需要先重试退出'
+                            : data.canSendAudio
+                            ? '这次通话不能再开麦'
+                            : '仅收听',
                       ),
-                label: Text(
-                  _microphoneBusy
-                      ? '正在切换麦克风'
-                      : data.microphoneEnabled
-                      ? '静音'
-                      : data.canSendAudio &&
-                            !_microphoneEnableRequested &&
-                            !retirementStarted
-                      ? '发言'
-                      : retirementStarted
-                      ? '需要先重试退出'
-                      : data.canSendAudio
-                      ? '重新进入后再发言'
-                      : '仅收听',
-                ),
-              ),
+                    ),
             ),
             const SizedBox(width: 12),
             IconButton.filled(
@@ -619,6 +728,29 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
         ),
       ],
     );
+  }
+
+  /// Hands the page the one decision that can give the microphone back.
+  Future<void> _requestSpeakAgain() async {
+    final speakAgain = widget.onSpeakAgainRequested;
+    if (speakAgain == null || _speakAgainBusy) return;
+    setState(() {
+      _speakAgainBusy = true;
+      _commandError = null;
+    });
+    try {
+      await speakAgain();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _speakAgainBusy = false;
+        _commandError = '语音没能重新接上，请再试一次。';
+      });
+      return;
+    }
+    // A call that was put back takes this view down with it; one the page
+    // could not replace leaves it here, and the control has to work again.
+    if (mounted) setState(() => _speakAgainBusy = false);
   }
 
   Future<void> _setMicrophone({required bool enabled}) async {

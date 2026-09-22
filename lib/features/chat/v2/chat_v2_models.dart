@@ -668,6 +668,11 @@ String communicationUnavailableReason(String? reasonCode) =>
       'VOICE_ROOM_BACKSTAGE_NOT_LIVE' => '这个房间还没有开放收听。刷新一次，或让主持人重新开启。',
       'STREAM_CALL_GO_LIVE_UNCONFIRMED' =>
         '这个房间还没有确认开放收听，现在可能听不到。刷新一次，或让主持人重新开启。',
+      // The room row exists and the provider call behind it does not, so
+      // nobody can be let in. Opening it again is what finishes it.
+      'STREAM_CALL_CREATE_UNCONFIRMED' => '这个语音房还没有在服务商那边建好，现在进不去。',
+      // The hand was recorded; the room was not told about it.
+      'STREAM_CALL_EVENT_UNCONFIRMED' => '举手已经记下了，主持人可能要稍后才看到。',
       'STREAM_CALL_MUTE_UNCONFIRMED' => '这次静音还没有在服务商那边确认。',
       'COMMUNITY_AI_RUNTIME_DEFERRED' => 'Community AI 还没有开放，这一页暂时不可用。',
       null => '这一项暂时读不到。',

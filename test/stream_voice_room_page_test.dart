@@ -1266,6 +1266,36 @@ void main() {
     expect(find.text('重新连接语音'), findsOneWidget);
   });
 
+  testWidgets('speaking again takes this call down and makes another', (
+    tester,
+  ) async {
+    // One call starts one microphone, so the way back to speaking is another
+    // call. The membership is untouched: nothing here leaves the room.
+    final handle = _RecordingAudioRoomCall(roomId: 'loop-daily');
+    final factory = _RecordingAudioRoomCallFactory(handle);
+
+    await tester.pumpWidget(
+      _readyPage(
+        factory: factory,
+        target: _target('loop-daily'),
+        autoConnect: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(factory.createCalls, 1);
+    expect(handle.joinCalls, 1);
+
+    await tester.tap(find.byKey(const Key('fake-speak-again')));
+    await tester.pumpAndSettle();
+
+    // The call that was refused is retired, and a second one was made for the
+    // same room without the reader leaving it.
+    expect(handle.leaveCalls, 1);
+    expect(factory.createCalls, 2);
+    expect(handle.joinCalls, 2);
+  });
+
   test('one Call accepts only one Speak request', () async {
     final handle = _RecordingAudioRoomCall(roomId: 'loop-daily');
 
@@ -1514,6 +1544,7 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
     })?
     onPresence,
     VoidCallback? onDisconnected,
+    Future<void> Function()? onSpeakAgainRequested,
   }) {
     return Column(
       children: <Widget>[
@@ -1556,6 +1587,15 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
               unawaited(onLeaveRequested().catchError((Object _) {})),
           child: const Text('Leave fake room'),
         ),
+        // Stands in for 「重新连接后发言」: the view asks the page for a call
+        // whose microphone has not been spent yet.
+        if (onSpeakAgainRequested != null)
+          TextButton(
+            key: const Key('fake-speak-again'),
+            onPressed: () =>
+                unawaited(onSpeakAgainRequested().catchError((Object _) {})),
+            child: const Text('Speak again fake'),
+          ),
       ],
     );
   }
