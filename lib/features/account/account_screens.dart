@@ -72,6 +72,7 @@ class AccountSurfaceScreen extends StatelessWidget {
     this.onPrimaryAction,
     this.onRecoveryDecision,
     this.splashPhase = LoopSplashPhase.entry,
+    this.splashUnavailableReason,
     this.appLock,
     this.onToggleAppLock,
     this.mfa,
@@ -105,6 +106,9 @@ class AccountSurfaceScreen extends StatelessWidget {
   /// What the launch page is waiting for, if anything. Only `splash` reads it.
   final LoopSplashPhase splashPhase;
 
+  /// Why that wait ended with nothing. See [SplashScreen.unavailableReason].
+  final String? splashUnavailableReason;
+
   /// The device-local lock, for `security-setup`. Absent in a tree that
   /// composed none.
   final LoopAppLockState? appLock;
@@ -130,6 +134,7 @@ class AccountSurfaceScreen extends StatelessWidget {
     return switch (_id) {
       'splash' => SplashScreen(
         phase: splashPhase,
+        unavailableReason: splashUnavailableReason,
         onContinue: () => _navigate(context, 'auth'),
       ),
       'auth-wallet' => ExternalWalletScreen(
@@ -369,6 +374,14 @@ enum LoopSplashPhase {
   /// and any page drawn before it is one the owner would be taken away from
   /// (device report 2026-09-21 · F1).
   preparingAccount,
+
+  /// The wait ended without an answer: the read failed, or it ran past the
+  /// ceiling it is given.
+  ///
+  /// The mark stops here. A rail that keeps sweeping after LOOP has given up
+  /// says the account is still being prepared, which is the one thing that is
+  /// no longer true, so the movement ends and the reason takes its place.
+  accountUnavailable,
 }
 
 class SplashScreen extends StatelessWidget {
@@ -376,14 +389,24 @@ class SplashScreen extends StatelessWidget {
     required this.onContinue,
     super.key,
     this.phase = LoopSplashPhase.entry,
+    this.unavailableReason,
   });
 
   final VoidCallback onContinue;
   final LoopSplashPhase phase;
 
+  /// Why the wait ended with nothing, for [LoopSplashPhase.accountUnavailable].
+  ///
+  /// It is the reason the rest of the application already shows for the same
+  /// failure; the launch page never writes one of its own, and shows no line
+  /// at all when it was handed none.
+  final String? unavailableReason;
+
   @override
   Widget build(BuildContext context) {
     final preparing = phase == LoopSplashPhase.preparingAccount;
+    final unavailable = phase == LoopSplashPhase.accountUnavailable;
+    final waiting = preparing;
     return Scaffold(
       key: const ValueKey<String>('loop-splash-screen'),
       body: SafeArea(
@@ -397,8 +420,14 @@ class SplashScreen extends StatelessWidget {
               semanticLabel: 'LOOP',
             ),
             const SizedBox(height: 20),
-            const LoopBrandLoader(key: ValueKey<String>('loop-splash-loader')),
-            if (preparing) ...<Widget>[
+            // The mark sweeps while something is still being waited on, and
+            // settles the moment nothing is: a wait that ended badly gets the
+            // still rail and the reason under it.
+            LoopBrandLoader(
+              key: const ValueKey<String>('loop-splash-loader'),
+              animating: !unavailable,
+            ),
+            if (waiting) ...<Widget>[
               const SizedBox(height: 18),
               Semantics(
                 liveRegion: true,
@@ -410,10 +439,25 @@ class SplashScreen extends StatelessWidget {
                 ),
               ),
             ],
+            if (unavailable && unavailableReason != null) ...<Widget>[
+              const SizedBox(height: 18),
+              Semantics(
+                liveRegion: true,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(
+                    unavailableReason!,
+                    key: const ValueKey<String>('loop-splash-unavailable'),
+                    textAlign: TextAlign.center,
+                    style: LoopTypography.caption(12, color: LoopColors.text3),
+                  ),
+                ),
+              ),
+            ],
             const Spacer(),
             // Waiting is not a choice, so it is offered none. The entry frame
             // keeps the prototype's single full-width action.
-            if (!preparing)
+            if (phase == LoopSplashPhase.entry)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: LoopButton(
@@ -434,47 +478,210 @@ class SplashScreen extends StatelessWidget {
 
 /// `.loop-brand-loader`: the rail, the Lime line and the dot at its end.
 ///
-/// The prototype's line animates once and stops; under `reduceMotion` it is
-/// drawn already complete. This is the static reading of the same mark: a
-/// 244-wide rail with the Lime line over it and the dot at the right end, so
-/// the launch frame is the prototype's and not a Material progress bar
-/// (audit 2026-09-20 §C.1).
-class LoopBrandLoader extends StatelessWidget {
-  const LoopBrandLoader({super.key, this.width = 244});
+/// The prototype's line draws itself once in 1.18s and stops, because in the
+/// prototype there is nothing behind it. In the App there is: the launch page
+/// holds a verified session until `GET /v2/profile` answers, and on a slow
+/// path that answer took more than ten seconds on a real device. A line that
+/// filled the rail in a second and then sat still said the work had finished
+/// when it had not, and the page read as frozen (device report 2026-09-22).
+///
+/// So the mark is indeterminate while [animating]: a Lime band sweeps the
+/// rail and comes back, with the prototype's dot riding its leading edge. It
+/// claims no fraction, because LOOP knows none — it only says the wait is
+/// still running.
+///
+/// [animating] false is the settled reading: the full Lime line with the dot
+/// at the right end, which is also what `reduceMotion` is given while the
+/// wait is on, so movement is never the only thing carrying the message.
+class LoopBrandLoader extends StatefulWidget {
+  const LoopBrandLoader({super.key, this.width = 244, this.animating = true});
 
+  /// `.loop-brand-loader{width:min(244px,64vw)}`.
   final double width;
+
+  /// Whether something is still being waited on.
+  final bool animating;
+
+  /// One end-to-end pass of the band. `reverse` makes the return trip, so a
+  /// full cycle is twice this.
+  static const Duration sweep = Duration(milliseconds: 1150);
+
+  /// `.loop-brand-loader-track{height:12px}`.
+  static const double trackHeight = 12;
+
+  /// How much of the rail the travelling band covers.
+  static const double bandWidth = 84;
+
+  /// `.loop-brand-loader-rail,.loop-brand-loader-line{stroke-width:2}`.
+  static const double railThickness = 2;
+
+  /// `.loop-brand-loader-point` — the 8px dot the prototype lands with.
+  static const double pointSize = 8;
+
+  @override
+  State<LoopBrandLoader> createState() => LoopBrandLoaderState();
+}
+
+class LoopBrandLoaderState extends State<LoopBrandLoader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: LoopBrandLoader.sweep,
+  );
+
+  /// Whether the band is moving right now.
+  ///
+  /// Exposed so a test can hold the two facts apart: the rail sweeps while the
+  /// account is being prepared, and stops the moment the wait ends — which is
+  /// the whole of this widget's behaviour and cannot be read off one frame.
+  @visibleForTesting
+  bool get isSweeping => _controller.isAnimating;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncTicker();
+  }
+
+  @override
+  void didUpdateWidget(covariant LoopBrandLoader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncTicker();
+  }
+
+  void _syncTicker() {
+    if (_settled) {
+      if (_controller.isAnimating) _controller.stop();
+      _controller.value = 0;
+    } else if (!_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  /// The still reading: the wait is over, or the device asked for less motion.
+  bool get _settled =>
+      !widget.animating || MediaQuery.disableAnimationsOf(context);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'LOOP 正在加载',
-      liveRegion: true,
+      // Spoken from the wait itself, never from whether the band happens to
+      // move: a reduced-motion device is still waiting and still says so.
+      label: widget.animating ? 'LOOP 正在加载' : 'LOOP',
+      liveRegion: widget.animating,
       child: SizedBox(
-        width: width,
-        height: 12,
-        child: Center(
-          child: Stack(
-            alignment: Alignment.centerRight,
-            children: <Widget>[
-              Container(
-                height: 2,
-                decoration: BoxDecoration(
-                  color: LoopColors.lime,
-                  borderRadius: BorderRadius.circular(1),
-                ),
-              ),
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: LoopColors.lime,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ],
-          ),
-        ),
+        width: widget.width,
+        height: LoopBrandLoader.trackHeight,
+        child: _settled ? _settledRail() : _sweepingRail(),
       ),
+    );
+  }
+
+  /// `.loop-brand-loader-line` at `stroke-dashoffset:0` with the point shown —
+  /// the frame the prototype's own reduced-motion rule draws.
+  Widget _settledRail() {
+    return Center(
+      child: Stack(
+        alignment: Alignment.centerRight,
+        children: <Widget>[
+          Container(
+            height: LoopBrandLoader.railThickness,
+            decoration: BoxDecoration(
+              color: LoopColors.lime,
+              borderRadius: BorderRadius.circular(
+                LoopBrandLoader.railThickness / 2,
+              ),
+            ),
+          ),
+          Container(
+            width: LoopBrandLoader.pointSize,
+            height: LoopBrandLoader.pointSize,
+            decoration: const BoxDecoration(
+              color: LoopColors.lime,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sweepingRail() {
+    final travel = math.max(0.0, widget.width - LoopBrandLoader.bandWidth);
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final t = Curves.easeInOut.transform(_controller.value);
+        // The dot rides whichever end of the band is leading, so the mark
+        // reads as one object turning around rather than two crossing.
+        final forward = _controller.status != AnimationStatus.reverse;
+        return Stack(
+          alignment: Alignment.centerLeft,
+          children: <Widget>[
+            // `.loop-brand-loader-rail{stroke:rgba(243,245,239,.16)}`.
+            Container(
+              height: LoopBrandLoader.railThickness,
+              decoration: BoxDecoration(
+                color: LoopColors.line,
+                borderRadius: BorderRadius.circular(
+                  LoopBrandLoader.railThickness / 2,
+                ),
+              ),
+            ),
+            Positioned(
+              key: const ValueKey<String>('loop-brand-loader-band'),
+              left: travel * t,
+              child: SizedBox(
+                width: LoopBrandLoader.bandWidth,
+                height: LoopBrandLoader.trackHeight,
+                child: Center(
+                  child: Stack(
+                    alignment: forward
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
+                    children: <Widget>[
+                      Container(
+                        height: LoopBrandLoader.railThickness,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: forward
+                                ? Alignment.centerLeft
+                                : Alignment.centerRight,
+                            end: forward
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
+                            colors: const <Color>[
+                              LoopColors.limeSoft,
+                              LoopColors.lime,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            LoopBrandLoader.railThickness / 2,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: LoopBrandLoader.pointSize,
+                        height: LoopBrandLoader.pointSize,
+                        decoration: const BoxDecoration(
+                          color: LoopColors.lime,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

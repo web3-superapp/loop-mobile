@@ -41,6 +41,100 @@ void main() {
       await tester.pump();
       expect(entered, isTrue);
     });
+
+    testWidgets('the rail keeps sweeping for as long as the account is being '
+        'prepared', (tester) async {
+      await _pump(
+        tester,
+        const AccountSurfaceScreen.fromId(
+          'splash',
+          splashPhase: LoopSplashPhase.preparingAccount,
+        ),
+      );
+
+      expect(find.text('正在准备你的账号…'), findsOneWidget);
+      expect(_loader(tester).isSweeping, isTrue);
+
+      // The complaint this answers: a mark that finishes once looks like a
+      // frozen App while a slow read is still running. Long past the single
+      // pass the prototype animates, the band is still moving and still in a
+      // different place than it was a frame earlier.
+      await tester.pump(const Duration(seconds: 12));
+      expect(_loader(tester).isSweeping, isTrue);
+      final before = tester.getTopLeft(_band);
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(tester.getTopLeft(_band), isNot(before));
+    });
+
+    testWidgets('the rail stops and states the reason once the wait ends', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        const AccountSurfaceScreen.fromId(
+          'splash',
+          splashPhase: LoopSplashPhase.accountUnavailable,
+          splashUnavailableReason: '资料服务当前不可用，没有任何修改被保存。',
+        ),
+      );
+
+      expect(_loader(tester).isSweeping, isFalse);
+      expect(_band, findsNothing);
+      expect(find.text('正在准备你的账号…'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('loop-splash-unavailable')),
+        findsOneWidget,
+      );
+      expect(find.text('资料服务当前不可用，没有任何修改被保存。'), findsOneWidget);
+      // Nothing on this page leads anywhere while the account is unknown.
+      expect(
+        find.byKey(const ValueKey<String>('loop-splash-enter')),
+        findsNothing,
+      );
+    });
+
+    testWidgets(
+      'a device that asked for less motion still waits, and says so',
+      (tester) async {
+        tester.view.physicalSize = const Size(1170, 2532);
+        tester.view.devicePixelRatio = 3;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: LoopTheme.dark,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: child!,
+            ),
+            home: const AccountSurfaceScreen.fromId(
+              'splash',
+              splashPhase: LoopSplashPhase.preparingAccount,
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(_loader(tester).isSweeping, isFalse);
+        // The movement is gone; the sentence and the spoken label are not.
+        expect(find.text('正在准备你的账号…'), findsOneWidget);
+        expect(
+          tester
+              .widget<Semantics>(
+                find
+                    .descendant(
+                      of: find.byKey(
+                        const ValueKey<String>('loop-splash-loader'),
+                      ),
+                      matching: find.byType(Semantics),
+                    )
+                    .first,
+              )
+              .properties
+              .label,
+          'LOOP 正在加载',
+        );
+      },
+    );
   });
 
   group('auth-wallet', () {
@@ -297,6 +391,13 @@ void main() {
     });
   });
 }
+
+final Finder _band = find.byKey(
+  const ValueKey<String>('loop-brand-loader-band'),
+);
+
+LoopBrandLoaderState _loader(WidgetTester tester) =>
+    tester.state<LoopBrandLoaderState>(find.byType(LoopBrandLoader));
 
 Future<void> _pump(WidgetTester tester, Widget child) async {
   tester.view.physicalSize = const Size(1170, 2532);

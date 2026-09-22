@@ -1390,6 +1390,24 @@ final List<RouteBase> _accountRoutes =
         })
         .toList(growable: false);
 
+/// What the launch page is doing for the session that is on it.
+///
+/// Three states, and only the first two are waits: holding for
+/// `GET /v2/profile`, the read having ended with no answer, and the signed-out
+/// brand frame.
+LoopSplashPhase _splashPhase(WidgetRef ref) {
+  final landing = ref.watch(loopProfileLandingProvider);
+  if (loopPostAuthHoldsAtLaunch(
+    session: ref.watch(loopSessionProvider),
+    landing: landing,
+  )) {
+    return LoopSplashPhase.preparingAccount;
+  }
+  return landing.isUnavailable
+      ? LoopSplashPhase.accountUnavailable
+      : LoopSplashPhase.entry;
+}
+
 /// Account step pages. Every capability stays fail-closed: this composition
 /// never asserts a wallet, recovery or protection capability it has not been
 /// told about by the integration layer.
@@ -1425,13 +1443,16 @@ Widget _accountScreen(BuildContext context, WidgetRef ref, String id) {
     // F1: the launch page is also the page a verified session waits on while
     // `GET /v2/profile` decides where it belongs. It says so instead of
     // offering a way in that leads nowhere.
-    splashPhase:
-        loopPostAuthHoldsAtLaunch(
-          session: ref.watch(loopSessionProvider),
-          landing: ref.watch(loopProfileLandingProvider),
-        )
-        ? LoopSplashPhase.preparingAccount
-        : LoopSplashPhase.entry,
+    splashPhase: _splashPhase(ref),
+    // A wait that ran past its ceiling ends here rather than in a rail that
+    // keeps moving: the mark settles and the same reason the shell's banner
+    // carries is stated on the page the owner is looking at.
+    splashUnavailableReason:
+        _splashPhase(ref) == LoopSplashPhase.accountUnavailable
+        ? profileFailureReason(
+            ref.watch(loopProfileLandingProvider).failureKind,
+          )
+        : null,
     onBack: back,
     onPrimaryAction: id == 'auth-wallet' && config.canConnectExternalWallet
         ? () => unawaited(
