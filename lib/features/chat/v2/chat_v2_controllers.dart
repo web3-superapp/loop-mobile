@@ -579,10 +579,15 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
 
   String? get communityId => _communityId;
 
+  /// Opens one community's room, and reads it every time.
+  ///
+  /// It used to answer a community it had already read with the snapshot it
+  /// was still holding. That snapshot outlives the room it describes: a host
+  /// who ends a room and opens a new one for the same community reaches a page
+  /// that shows the old one — 「房间已结束」 over a room created seconds before
+  /// — and `GET …/voice-rooms/current` is never sent at all, which is a create
+  /// that looks like a failure with a 201 behind it. A page that opens reads.
   Future<void> open(String communityId) {
-    if (_communityId == communityId && state.isReady) {
-      return Future<void>.value();
-    }
     _communityId = communityId;
     return reload();
   }

@@ -678,9 +678,58 @@ void main() {
     expect(authorizations, 2);
     expect(find.text('已加入，语音连接失败'), findsOneWidget);
     expect(find.text('重试会话'), findsOneWidget);
-    // The sentence no longer says the token is what was missing: on the
-    // review device it had already been granted.
-    expect(find.textContaining('可能是语音令牌没取到'), findsOneWidget);
+    // A session that named no step keeps the one sentence that claims
+    // nothing. It no longer guesses two causes aloud: on the review device
+    // the token it named had already been granted.
+    expect(find.textContaining('这台设备没能建立语音会话'), findsOneWidget);
+    expect(find.textContaining('可能是语音令牌没取到'), findsNothing);
+  });
+
+  testWidgets('a session that did not hold says which step stopped it', (
+    tester,
+  ) async {
+    // Five steps fail for five reasons and only two of them are worth
+    // retrying where the reader stands. The lobby is the screen the reader
+    // is left on, so it names the step rather than the two it could guess.
+    for (final (refusal, sentence) in <(StreamVideoSessionRefusal, String)>[
+      (StreamVideoSessionRefusal.identity, '这台设备还没有拿到语音身份'),
+      (StreamVideoSessionRefusal.credential, '这次通话的语音凭证没有发下来'),
+      (StreamVideoSessionRefusal.client, '语音连接没能在这台设备上建立'),
+      (StreamVideoSessionRefusal.connection, '这台设备没能连上语音服务'),
+      (StreamVideoSessionRefusal.accountChanged, '登录状态在连接过程中发生了变化'),
+    ]) {
+      // A fresh tree per step: the surface keeps its own state across a pump
+      // of the same shape, and this test is about five different sessions.
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            streamVideoPrincipalKeyProvider.overrideWithValue('principal-a'),
+            streamVideoAuthorizationProvider.overrideWith(
+              (ref) async => StreamVideoSessionAuthorization.unavailable,
+            ),
+            streamVideoSessionRefusalProvider.overrideWith((ref) => refusal),
+          ],
+          child: MaterialApp(
+            theme: LoopTheme.dark,
+            home: Scaffold(
+              body: StreamVoiceRoomPage(
+                autoConnect: true,
+                inline: true,
+                target: _target('loop-daily'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining(sentence),
+        findsOneWidget,
+        reason: 'the lobby names ${refusal.name}',
+      );
+    }
   });
 
   testWidgets('the connection note follows the part LOOP granted', (

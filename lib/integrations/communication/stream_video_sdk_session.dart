@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:stream_video_flutter/stream_video_flutter.dart';
 
 /// Server-owned Stream identity returned by the future LOOP bootstrap.
@@ -31,6 +32,37 @@ abstract interface class StreamVideoSessionSource {
 }
 
 enum StreamVideoSessionAuthorization { authorized, unavailable }
+
+/// Which step of the voice session did not finish.
+///
+/// Authorization has five steps and they fail for five different reasons —
+/// the device has no voice identity yet, the short-lived credential did not
+/// arrive, the client could not be built, the connection to the voice service
+/// did not open, or the signed-in account changed underneath it. All five used
+/// to leave this session as the one word `unavailable`, and the lobby had to
+/// guess out loud: 「可能是语音令牌没取到，也可能是没连上语音服务」. On the
+/// review device that sentence stood over a room the account was already in,
+/// with no way to tell which half was true and nothing in the log either.
+///
+/// It names a step, never an answer: the provider's own words stay in the
+/// debug log, and no token or identifier is carried here.
+enum StreamVideoSessionRefusal {
+  /// The backend did not give this device a voice identity.
+  identity,
+
+  /// The short-lived voice credential was not issued.
+  credential,
+
+  /// The voice client could not be built from the credential.
+  client,
+
+  /// The client was built and the connection to the voice service did not
+  /// open.
+  connection,
+
+  /// The signed-in account changed while the session was being established.
+  accountChanged,
+}
 
 /// Testable lifecycle surface around a principal-bound Stream Video client.
 abstract interface class StreamVideoClientPort {
@@ -165,6 +197,7 @@ final class StreamVideoSdkSession {
       Map<StreamVideoClientPort, Future<void>>.identity();
   StreamVideoClientPort? _client;
   StreamVideoIdentity? _identity;
+  StreamVideoSessionRefusal? _refusal;
   String? _boundPrincipalKey;
   String? _principalKey;
   var _generation = 0;
@@ -172,6 +205,10 @@ final class StreamVideoSdkSession {
   var _disposed = false;
 
   StreamVideoIdentity? get identity => _authorized ? _identity : null;
+
+  /// Which step the last attempt did not get past, while this session holds
+  /// no authorization. An authorized session names none.
+  StreamVideoSessionRefusal? get refusal => _authorized ? null : _refusal;
 
   /// The official client remains inside the communication/calls boundary.
   StreamVideo? get officialClient {
@@ -184,7 +221,7 @@ final class StreamVideoSdkSession {
     final generation = _generation;
     if (_disposed || _principalKey == null) {
       return Future<StreamVideoSessionAuthorization>.value(
-        StreamVideoSessionAuthorization.unavailable,
+        _refuse(StreamVideoSessionRefusal.accountChanged),
       );
     }
     if (_authorized && _client != null) {
@@ -223,7 +260,7 @@ final class StreamVideoSdkSession {
       // A stale error can never authorize the current principal.
     }
     if (!_isCurrent(generation)) {
-      return StreamVideoSessionAuthorization.unavailable;
+      return _refuse(StreamVideoSessionRefusal.accountChanged);
     }
     return authorize();
   }
@@ -233,7 +270,7 @@ final class StreamVideoSdkSession {
     Future<void> invalidated,
   ) async {
     if (!_isCurrent(generation)) {
-      return StreamVideoSessionAuthorization.unavailable;
+      return _refuse(StreamVideoSessionRefusal.accountChanged);
     }
 
     StreamVideoIdentity? identity;
@@ -243,18 +280,21 @@ final class StreamVideoSdkSession {
         generation: generation,
         invalidated: invalidated,
       );
-    } catch (_) {
-      return StreamVideoSessionAuthorization.unavailable;
+    } catch (error) {
+      return _refuse(StreamVideoSessionRefusal.identity, error);
     }
-    if (!_isCurrent(generation) || identity == null || !identity.isValid) {
-      return StreamVideoSessionAuthorization.unavailable;
+    if (!_isCurrent(generation)) {
+      return _refuse(StreamVideoSessionRefusal.accountChanged);
+    }
+    if (identity == null || !identity.isValid) {
+      return _refuse(StreamVideoSessionRefusal.identity);
     }
 
     final existingIdentity = _identity;
     if (existingIdentity != null &&
         existingIdentity.userId != identity.userId) {
       await _retireClient();
-      return StreamVideoSessionAuthorization.unavailable;
+      return _refuse(StreamVideoSessionRefusal.accountChanged);
     }
 
     String initialToken;
@@ -264,13 +304,14 @@ final class StreamVideoSdkSession {
         generation: generation,
         invalidated: invalidated,
       );
-    } catch (_) {
-      return StreamVideoSessionAuthorization.unavailable;
+    } catch (error) {
+      return _refuse(StreamVideoSessionRefusal.credential, error);
     }
-    if (!_isCurrent(generation) ||
-        initialToken.isEmpty ||
-        initialToken != initialToken.trim()) {
-      return StreamVideoSessionAuthorization.unavailable;
+    if (!_isCurrent(generation)) {
+      return _refuse(StreamVideoSessionRefusal.accountChanged);
+    }
+    if (initialToken.isEmpty || initialToken != initialToken.trim()) {
+      return _refuse(StreamVideoSessionRefusal.credential);
     }
 
     StreamVideoClientPort client;
@@ -299,13 +340,18 @@ final class StreamVideoSdkSession {
           return token;
         },
       );
-    } catch (_) {
-      return StreamVideoSessionAuthorization.unavailable;
+    } catch (error) {
+      return _refuse(StreamVideoSessionRefusal.client, error);
     }
 
     if (!_isCurrent(generation) || client.userId != identity.userId) {
+      final stale = !_isCurrent(generation);
       await _retireSpecificClient(client);
-      return StreamVideoSessionAuthorization.unavailable;
+      return _refuse(
+        stale
+            ? StreamVideoSessionRefusal.accountChanged
+            : StreamVideoSessionRefusal.client,
+      );
     }
     _client = client;
     _identity = identity;
@@ -313,9 +359,9 @@ final class StreamVideoSdkSession {
     Future<bool> rawConnection;
     try {
       rawConnection = client.connect();
-    } catch (_) {
+    } catch (error) {
       await _retireClient();
-      return StreamVideoSessionAuthorization.unavailable;
+      return _refuse(StreamVideoSessionRefusal.connection, error);
     }
     unawaited(_reapRetiredConnection(rawConnection, client, generation));
     bool connected;
@@ -325,17 +371,43 @@ final class StreamVideoSdkSession {
         generation: generation,
         invalidated: invalidated,
       );
-    } catch (_) {
+    } catch (error) {
       await _retireClient();
-      return StreamVideoSessionAuthorization.unavailable;
+      return _refuse(StreamVideoSessionRefusal.connection, error);
     }
 
     if (!connected || !_isCurrent(generation) || !identical(_client, client)) {
+      final stale = !_isCurrent(generation) || !identical(_client, client);
       await _retireClient();
-      return StreamVideoSessionAuthorization.unavailable;
+      return _refuse(
+        stale
+            ? StreamVideoSessionRefusal.accountChanged
+            : StreamVideoSessionRefusal.connection,
+      );
     }
     _authorized = true;
+    _refusal = null;
     return StreamVideoSessionAuthorization.authorized;
+  }
+
+  /// Records which step did not finish and answers the one word the rest of
+  /// the app reads.
+  ///
+  /// [detail] is the provider's or the backend's own answer. It goes to the
+  /// debug log and nowhere else: a reader cannot act on an SDK string, and it
+  /// is the only account of what happened on the device.
+  StreamVideoSessionAuthorization _refuse(
+    StreamVideoSessionRefusal refusal, [
+    Object? detail,
+  ]) {
+    _refusal = refusal;
+    if (kDebugMode) {
+      debugPrint(
+        'LOOP voice session refused: ${refusal.name}'
+        '${detail == null ? '' : ' · $detail'}',
+      );
+    }
+    return StreamVideoSessionAuthorization.unavailable;
   }
 
   Future<void> _reapRetiredConnection(

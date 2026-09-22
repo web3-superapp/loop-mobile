@@ -229,8 +229,16 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             key: const ValueKey<String>('voiceroom-capability-unavailable'),
             icon: 'warn',
             message: '语音房当前不可用',
-            reason: capability.reasonCode == null
-                ? '尚未读取到能力清单，本页不请求任何语音房。'
+            // Three different answers used to share one sentence about a
+            // list this page never named: LOOP closed the room type, LOOP
+            // was never asked, and the ask did not get through. Only the
+            // last one is worth another try where the reader stands, and a
+            // host who has just opened a room lands here often enough that
+            // it has to say which of the three it is.
+            reason: capability.unreachable
+                ? '这台设备没能读到语音房的开放状态，请检查网络后重试。'
+                : capability.reasonCode == null
+                ? '这次还没有读到语音房的开放状态，请稍后再试。'
                 : communicationUnavailableReason(capability.reasonCode),
           )
         else if (id == null)

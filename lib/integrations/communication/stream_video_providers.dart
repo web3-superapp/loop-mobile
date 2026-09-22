@@ -79,6 +79,21 @@ final streamVideoAuthorizationProvider =
       return session.authorize();
     });
 
+/// Which step of the voice session did not finish, for the one surface that
+/// has to say so.
+///
+/// The authorization itself answers with a single word, because everything
+/// that gates on it only ever asks whether this device may hold a call. The
+/// lobby is the exception: it is the screen a reader is left on, and 「可能是
+/// 这个，也可能是那个」 is not something a reader can act on. The session
+/// records the step before the future completes, so this is read after the
+/// authorization landed.
+final streamVideoSessionRefusalProvider =
+    Provider.autoDispose<StreamVideoSessionRefusal?>((ref) {
+      ref.watch(streamVideoAuthorizationProvider);
+      return ref.watch(streamVideoSdkSessionProvider)?.refusal;
+    });
+
 Future<void> _disposeSessionSafely(StreamVideoSdkSession session) async {
   try {
     await session.dispose();
