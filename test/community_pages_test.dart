@@ -1671,6 +1671,36 @@ void main() {
       expect(entered, <String>[testCommunityId]);
     });
 
+    testWidgets('a room opened elsewhere lights this page up while it waits', (
+      tester,
+    ) async {
+      // The review devices: the second phone stood on the community page
+      // while the room was opened on the first, and its voice control stayed
+      // dark for as long as it was looked at.
+      final voiceRoom = FakeVoiceRoomGateway();
+      await pumpProfile(
+        tester,
+        role: CommunityRole.member,
+        voiceRoom: voiceRoom,
+        onOpenVoiceRoom: (_) {},
+      );
+
+      final enter = find.byKey(
+        const ValueKey<String>('community-profile-open-voice'),
+      );
+      await scrollToVoice(tester, enter);
+      expect(tester.widget<LoopButton>(enter).onPressed, isNull);
+
+      // Somebody opens a room. Nothing on this page was touched.
+      voiceRoom.snapshot = testVoiceRoomSnapshot();
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+
+      expect(voiceRoom.commands, contains('current:$testCommunityId'));
+      expect(tester.widget<LoopButton>(enter).onPressed, isNotNull);
+      expect(tester.widget<LoopButton>(enter).semanticLabel, '进入语音房');
+    });
+
     testWidgets('a room nobody can enter yet is not entered', (tester) async {
       // 201 says the room row committed, not that the call behind it exists.
       // A host walked into a room that could not be heard; the page now says

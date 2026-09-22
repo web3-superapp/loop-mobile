@@ -1035,6 +1035,87 @@ final class VoiceRoomOpenOutcome {
       : null;
 }
 
+/// Whether one community has a live voice room right now.
+///
+/// The community record carries the same fact and is read once, when the page
+/// opens. A reader standing on a community page while somebody opens a room
+/// therefore saw nothing at all: on the review devices the second phone kept a
+/// dark voice control for as long as it was looked at. This is that one row,
+/// read again on the page's own interval and only while the page is on screen.
+///
+/// It is read-only and it only ever *adds* a room: a read that did not finish
+/// leaves the page with what it already had, and never takes a live room off a
+/// page that was told about one.
+@immutable
+final class CommunityVoiceLive {
+  const CommunityVoiceLive({
+    required this.communityId,
+    required this.isLive,
+    required this.voiceRoomId,
+  });
+
+  final String communityId;
+  final bool isLive;
+
+  /// The room the community has, when it has one.
+  final String? voiceRoomId;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CommunityVoiceLive &&
+          other.communityId == communityId &&
+          other.isLive == isLive &&
+          other.voiceRoomId == voiceRoomId;
+
+  @override
+  int get hashCode => Object.hash(communityId, isLive, voiceRoomId);
+}
+
+final class CommunityVoiceLiveController extends Notifier<CommunityVoiceLive?>
+    with CommunitySingleFlight {
+  @override
+  CommunityVoiceLive? build() {
+    nextGeneration();
+    // Principal-scoped, like every other voice read: a sign-out takes the
+    // answer with it rather than carrying it into the next account.
+    ref.watch(voiceRoomGatewayProvider);
+    ref.onDispose(nextGeneration);
+    return null;
+  }
+
+  /// Reads `GET …/voice-rooms/current` once for [communityId].
+  Future<void> read(String communityId) => single(() async {
+    final generation = nextGeneration();
+    try {
+      final current = await ref
+          .read(voiceRoomGatewayProvider)
+          .loadCurrent(communityId);
+      if (!isCurrent(generation)) return;
+      state = CommunityVoiceLive(
+        communityId: communityId,
+        isLive: current.isLive,
+        voiceRoomId: current.snapshot?.room.voiceRoomId,
+      );
+    } catch (_) {
+      // A read that did not finish says nothing. The page keeps the row it
+      // was opened with.
+    }
+  });
+
+  /// Drops the answer for a page that is going away.
+  void forget() {
+    nextGeneration();
+    if (state != null) state = null;
+  }
+}
+
+final communityVoiceLiveControllerProvider =
+    NotifierProvider.autoDispose<
+      CommunityVoiceLiveController,
+      CommunityVoiceLive?
+    >(CommunityVoiceLiveController.new);
+
 final voiceRoomOpenControllerProvider =
     NotifierProvider.autoDispose<VoiceRoomOpenController, bool>(
       VoiceRoomOpenController.new,
