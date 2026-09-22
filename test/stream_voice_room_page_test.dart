@@ -1451,6 +1451,15 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
   @override
   Stream<AudioRoomCallReading> get readings => _readings.stream;
 
+  final StreamController<AudioRoomRoomSignal> _signals =
+      StreamController<AudioRoomRoomSignal>.broadcast();
+
+  @override
+  Stream<AudioRoomRoomSignal> get roomSignals => _signals.stream;
+
+  /// Stands in for the provider telling this device the room changed.
+  void emitSignal(AudioRoomRoomSignal signal) => _signals.add(signal);
+
   /// Stands in for the provider's call state moving on its own.
   void emit(AudioRoomCallReading reading) {
     _reading = reading;

@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/time/loop_foreground_poll.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/chat/calls/active_voice_media.dart';
+import 'package:loop_mobile/features/chat/calls/audio_room_call.dart';
 import 'package:loop_mobile/features/chat/calls/audio_room_contract.dart';
 import 'package:loop_mobile/features/chat/calls/stream_voice_room_page.dart';
 import 'package:loop_mobile/features/chat/calls/voice_media_link.dart';
@@ -56,6 +58,27 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
   VoiceRoomPagePresence? _presence;
   var _entered = false;
 
+  /// The provider's own account of the room changing, while this device holds
+  /// a call for it.
+  ///
+  /// Everything on this page that moves because of somebody else — how many
+  /// are in the room, who is on the list, who raised a hand — was read once
+  /// and never again. The provider tells a connected device the moment any of
+  /// them changes (decision 0069), and each of those cues is answered with the
+  /// LOOP read that owns the answer. Nothing here is composed out of an event.
+  StreamSubscription<AudioRoomRoomSignal>? _signals;
+  AudioRoomCallHandle? _signalSource;
+
+  /// The floor under the cues above, for a device that is not connected — a
+  /// member who joined in LOOP and whose audio has not come up, or a provider
+  /// connection that dropped. Fifteen seconds is the contract's own floor for
+  /// this read (decision 0069); the cues are what make the page answer in
+  /// seconds.
+  late final LoopForegroundPoll _livePoll = LoopForegroundPoll(
+    interval: const Duration(seconds: 15),
+    read: _readLiveRoom,
+  );
+
   @override
   void initState() {
     super.initState();
@@ -73,6 +96,10 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
 
   @override
   void dispose() {
+    _livePoll.stop();
+    unawaited(_signals?.cancel());
+    _signals = null;
+    _signalSource = null;
     // A page that was closed some other way than a pop — the whole shell
     // going down, an account change — still gives the count back. Riverpod
     // refuses a write from a life-cycle callback, so this one waits a
@@ -153,12 +180,70 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         }
       }
     }
+    // A room that is being shown is a room that keeps being read: the cues
+    // from this device's own call, and a floor under them for a device that
+    // holds no call at all.
+    _bindSignals(ref.watch(activeVoiceMediaProvider));
+    if (snapshot != null && !blocked) {
+      _livePoll.start();
+    } else {
+      _livePoll.stop();
+    }
     return PopScope<Object?>(
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) _releasePresence(immediate: true);
       },
       child: _buildPage(context, capability, mode, state, controller, id),
     );
+  }
+
+  /// Listens to the call this device holds, and only to that one.
+  void _bindSignals(AudioRoomCallHandle? call) {
+    if (identical(call, _signalSource)) return;
+    unawaited(_signals?.cancel());
+    _signals = null;
+    _signalSource = call;
+    if (call == null) return;
+    _signals = call.roomSignals.listen(
+      _onRoomSignal,
+      onError: (Object _, StackTrace _) {
+        // A cue that did not arrive says nothing; the floor below still
+        // reads the room.
+      },
+    );
+  }
+
+  /// Answers one provider cue with the LOOP read that owns the answer.
+  void _onRoomSignal(AudioRoomRoomSignal signal) {
+    if (!mounted) return;
+    switch (signal) {
+      case AudioRoomRoomSignal.handRaise:
+        // Decision 0069: the event says the queue moved and carries no
+        // identity at all, so who it was comes from the queue itself.
+        unawaited(
+          ref.read(voiceRoomControllerProvider.notifier).refreshHandRaises(),
+        );
+      case AudioRoomRoomSignal.participants:
+        unawaited(_readLiveRoom());
+    }
+  }
+
+  /// Reads everything about this room that somebody else can change.
+  ///
+  /// The room record carries the head counts, the queue is the host's own
+  /// read, and the rosters are the session page's. Each keeps its own failure:
+  /// a read that did not finish leaves that part of the page as it was.
+  Future<void> _readLiveRoom() async {
+    if (!mounted) return;
+    final controller = ref.read(voiceRoomControllerProvider.notifier);
+    await controller.refreshRoom();
+    if (!mounted) return;
+    await controller.refreshHandRaises();
+    if (!mounted || !widget.expanded) return;
+    for (final view in VoiceRoomRosterView.values) {
+      if (!mounted) return;
+      await controller.loadRoster(view);
+    }
   }
 
   Widget _buildPage(
@@ -359,7 +444,7 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             // the membership exists and connects without a second tap.
             onJoin: () => _run(controller.join, '已加入，正在连接语音'),
             onLeave: () => _leave(controller),
-            onRaise: () => _run(controller.raiseHand, '已举手，等待主持人邀请'),
+            onRaise: () => _raiseHand(controller),
             onCancel: () => _run(controller.cancelHandRaise, '已取消举手'),
             onBack: back,
           ),
@@ -586,6 +671,39 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
       _mediaLink.exitSettled();
     }
     _refreshCommunityProfile();
+  }
+
+  /// Raises this account's hand, and says whether the room was told.
+  ///
+  /// The queue entry is LOOP's, and the host learns about it from a provider
+  /// event the server sends after it (decision 0069). Those are two different
+  /// answers: a hand that is recorded and a host who was told. When the event
+  /// did not go out the reader is told so here, because the next thing they
+  /// will do is wait.
+  Future<void> _raiseHand(VoiceRoomController controller) async {
+    final failure = await controller.raiseHand();
+    if (!mounted) return;
+    if (failure != null) {
+      LoopToast.show(
+        context,
+        message: voiceRoomFailureText(
+          failure,
+          ref.read(voiceRoomControllerProvider).failureReasonCode,
+        ),
+        kind: LoopToastKind.warn,
+      );
+      return;
+    }
+    final sync = controller.lastCommandSync;
+    if (sync != null && !sync.confirmed) {
+      LoopToast.show(
+        context,
+        message: voiceRoomProviderSyncText(sync.reason),
+        kind: LoopToastKind.warn,
+      );
+      return;
+    }
+    LoopToast.show(context, message: '已举手，等待主持人邀请');
   }
 
   Future<void> _run(

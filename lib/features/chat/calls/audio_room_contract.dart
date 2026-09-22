@@ -225,6 +225,25 @@ String? audioRoomLivePhaseNote(AudioRoomLivePhase phase) => switch (phase) {
   AudioRoomLivePhase.connected => null,
 };
 
+/// Something happened in this room that LOOP's own record has to be read for.
+///
+/// The provider tells a connected device the moment the room changes; LOOP
+/// owns what the change means — who the person is, where they are in the
+/// queue, what the host may do about them. So a signal is never state: it is
+/// the cue to read the LOOP resource that holds the answer. On the review
+/// devices nothing carried that cue at all, and a host sat looking at 「1 人在
+/// 房间里」 with a listener in the room and a raised hand nobody was told about.
+enum AudioRoomRoomSignal {
+  /// Somebody raised or cancelled a hand (decision 0069). The queue itself is
+  /// read from LOOP; the event carries no identity on purpose, so that an
+  /// anonymous member cannot be matched to a participant tile.
+  handRaise,
+
+  /// The people in the room changed: a device joined or left the call, or the
+  /// provider's member list was written.
+  participants,
+}
+
 /// One reading of one call, taken from the provider's own call state.
 ///
 /// The call view reads that state for itself, but it is the only thing that

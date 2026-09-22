@@ -1304,6 +1304,134 @@ void main() {
       expect(find.byType(Scaffold), findsOneWidget);
     });
 
+    testWidgets('a hand raised in the room reaches the host who is watching', (
+      tester,
+    ) async {
+      // The review devices: a listener raised a hand, the server recorded it,
+      // and the host's page — which had read the queue when it opened — went
+      // on showing an empty one until the room ended.
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(role: VoiceRoomRole.host, host: true),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId, expanded: true),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('voiceroom-queue-empty')),
+        findsOneWidget,
+      );
+
+      // Somebody raises a hand. The provider tells this device the queue
+      // moved; the queue itself still comes from LOOP.
+      voice.handRaises = <VoiceRoomHandRaiseEntry>[
+        testHandRaiseEntry(alias: 'DeFiMaxi_349'),
+      ];
+      media.handles.single.emitSignal(AudioRoomRoomSignal.handRaise);
+      await tester.pumpAndSettle();
+
+      final queue = find.byKey(
+        ValueKey<String>('voiceroom-queue-$testRequestId'),
+      );
+      await scrollToCommunitySection(tester, queue);
+      expect(queue, findsOneWidget);
+      expect(find.text('DeFiMaxi_349'), findsWidgets);
+    });
+
+    testWidgets('a hand the room was not told about says so', (tester) async {
+      // The hand is recorded either way; whether the host was told is the
+      // provider's own answer, and it is the one that decides what the
+      // reader does next.
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(
+          role: VoiceRoomRole.listener,
+          providerConfirmed: false,
+          providerReason: 'STREAM_CALL_EVENT_UNCONFIRMED',
+        ),
+      )..loadSnapshot = testVoiceRoomSnapshot(role: VoiceRoomRole.listener);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+      );
+
+      final raise = find.byKey(const ValueKey<String>('voiceroom-raise-hand'));
+      await scrollToCommunitySection(tester, raise);
+      await tester.tap(raise);
+      await tester.pumpAndSettle();
+
+      expect(voice.commands, contains('raise-hand'));
+      expect(find.textContaining('主持人可能要稍后才看到'), findsOneWidget);
+      expect(find.text('已举手，等待主持人邀请'), findsNothing);
+    });
+
+    testWidgets('a listener who arrives changes the count the host reads', (
+      tester,
+    ) async {
+      // 「主持人这边仍显示 1 人在房间里」: the room record was read when the
+      // page opened, and joining is somebody else's action.
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(
+          role: VoiceRoomRole.host,
+          host: true,
+          joinedCount: 1,
+        ),
+      );
+      final media = _FakeVoiceMediaFactory(log: voice.commands);
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+        audioRoomCallFactory: media,
+      );
+
+      expect(find.text('1 人在房间里'), findsOneWidget);
+
+      voice.loadSnapshot = testVoiceRoomSnapshot(
+        role: VoiceRoomRole.host,
+        host: true,
+        joinedCount: 2,
+      );
+      media.handles.single.emitSignal(AudioRoomRoomSignal.participants);
+      await tester.pumpAndSettle();
+
+      expect(find.text('2 人在房间里'), findsOneWidget);
+    });
+
+    testWidgets('a room with no call of its own is still read', (tester) async {
+      // No provider cue reaches a device that holds no call — a member who
+      // joined in LOOP whose audio never came up, or a connection that
+      // dropped. The floor under the cues is what answers for them.
+      final voice = FakeVoiceRoomGateway(
+        snapshot: testVoiceRoomSnapshot(
+          role: VoiceRoomRole.host,
+          host: true,
+          joinedCount: 1,
+        ),
+      );
+      await pumpCommunityPage(
+        tester,
+        const VoiceRoomScreen(communityId: testCommunityId),
+        voiceRoom: voice,
+      );
+
+      expect(find.text('1 人在房间里'), findsOneWidget);
+
+      voice.loadSnapshot = testVoiceRoomSnapshot(
+        role: VoiceRoomRole.host,
+        host: true,
+        joinedCount: 2,
+      );
+      await tester.pump(const Duration(seconds: 15));
+      await tester.pumpAndSettle();
+
+      expect(find.text('2 人在房间里'), findsOneWidget);
+    });
+
     testWidgets('the queue names its rows the way the roster does', (
       tester,
     ) async {
@@ -3229,6 +3357,15 @@ final class _FakeVoiceMediaCall implements AudioRoomCallHandle {
 
   @override
   Stream<AudioRoomCallReading> get readings => _readings.stream;
+
+  final StreamController<AudioRoomRoomSignal> _signals =
+      StreamController<AudioRoomRoomSignal>.broadcast();
+
+  @override
+  Stream<AudioRoomRoomSignal> get roomSignals => _signals.stream;
+
+  /// Stands in for the provider telling this device the room changed.
+  void emitSignal(AudioRoomRoomSignal signal) => _signals.add(signal);
 
   /// Stands in for the WebRTC stack being torn down under a call nobody
   /// asked to leave — the provider connection is closed and the reading says

@@ -146,6 +146,11 @@ abstract interface class AudioRoomCallHandle {
   /// taken before the page closed is not what the call is doing now.
   Stream<AudioRoomCallReading> get readings;
 
+  /// Every provider event that means a LOOP record about this room is stale.
+  ///
+  /// The page reads the record; nothing here composes state out of an event.
+  Stream<AudioRoomRoomSignal> get roomSignals;
+
   Future<void> joinMuted();
 
   Future<AudioRoomMicrophoneOutcome> setMicrophoneEnabled({
@@ -408,6 +413,38 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
 
   @override
   Stream<AudioRoomCallReading> get readings => _call.partialState(_readingOf);
+
+  @override
+  Stream<AudioRoomRoomSignal> get roomSignals => _call.callEvents
+      .asStream()
+      .map(_signalOf)
+      .where((signal) => signal != null)
+      .cast<AudioRoomRoomSignal>();
+
+  /// Reads one provider event as the LOOP record it invalidates, or nothing.
+  ///
+  /// Only two of the SDK's events say something LOOP holds has changed: the
+  /// custom event the server sends after a hand raise (decision 0069), and the
+  /// four that say the people in the room are not the ones this device was
+  /// told about. Everything else belongs to the call, which the call view
+  /// reads for itself.
+  static AudioRoomRoomSignal? _signalOf(StreamCallEvent event) {
+    if (event is StreamCallCustomEvent) {
+      return event.custom?['loop_event_kind'] == _handRaiseEventKind
+          ? AudioRoomRoomSignal.handRaise
+          : null;
+    }
+    if (event is StreamCallSessionParticipantJoinedEvent ||
+        event is StreamCallSessionParticipantLeftEvent ||
+        event is StreamCallMemberAddedEvent ||
+        event is StreamCallMemberRemovedEvent) {
+      return AudioRoomRoomSignal.participants;
+    }
+    return null;
+  }
+
+  /// The one custom event LOOP sends into a room (decision 0069).
+  static const _handRaiseEventKind = 'voiceRoomHandRaise';
 
   /// The same figures the call panel prints, from the same official state.
   static AudioRoomCallReading _readingOf(CallState state) {

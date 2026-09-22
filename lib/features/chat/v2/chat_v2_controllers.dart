@@ -569,6 +569,18 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
   /// view leaves its loading phase, so the guard is what makes that one call.
   final Set<VoiceRoomRosterView> _rosterInFlight = <VoiceRoomRosterView>{};
 
+  VoiceRoomProviderSync? _lastCommandSync;
+
+  /// What the server said about the provider write its last command made.
+  ///
+  /// The page state carries the room as it was last *read*, and a read reports
+  /// only its own provider work — so the answer a command gave about its own
+  /// write is gone by the time the room has been read again. One command needs
+  /// it: raising a hand is told to the room through a provider event (decision
+  /// 0069), and an event that was not sent means the hand is recorded and the
+  /// host has not been told. It is read straight after awaiting the command.
+  VoiceRoomProviderSync? get lastCommandSync => _lastCommandSync;
+
   @override
   VoiceRoomPageState build() {
     nextGeneration();
@@ -681,6 +693,31 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
     });
   }
 
+  /// Reads the hand-raise queue again, and nothing else.
+  ///
+  /// The queue is the host's own read and it changes because of somebody
+  /// else: on the review devices a listener raised a hand and the host's page,
+  /// which had read the queue when it opened, went on showing an empty one.
+  /// The provider's own event is what triggers this (decision 0069) — the
+  /// event says only that the queue moved, and the identities, the order and
+  /// the commands all come from this read.
+  ///
+  /// It touches neither the room nor the rosters: a queue that could not be
+  /// read leaves the page exactly as it was.
+  Future<void> refreshHandRaises() async {
+    final snapshot = state.snapshot;
+    if (snapshot == null || !snapshot.viewer.isHost) return;
+    final roomId = snapshot.room.voiceRoomId;
+    final List<VoiceRoomHandRaiseEntry> queue;
+    try {
+      queue = await ref.read(voiceRoomGatewayProvider).listHandRaises(roomId);
+    } catch (_) {
+      return;
+    }
+    if (state.snapshot?.room.voiceRoomId != roomId) return;
+    state = state.copyWith(handRaises: queue);
+  }
+
   /// The queue is a host-facing read. A failure there must not take the room
   /// down, so it degrades to an empty queue.
   Future<List<VoiceRoomHandRaiseEntry>> _loadQueue(
@@ -705,9 +742,11 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
     final gateway = ref.read(voiceRoomGatewayProvider);
     final generation = nextGeneration();
     state = state.copyWith(busy: true, clearFailure: true);
+    _lastCommandSync = null;
     try {
       final committed = await body(gateway, snapshot.room.voiceRoomId);
       if (!isCurrent(generation)) return null;
+      _lastCommandSync = committed.providerSync;
       final next = await _reread(gateway, committed);
       if (!isCurrent(generation)) return null;
       final queue = await _loadQueue(gateway, next);
