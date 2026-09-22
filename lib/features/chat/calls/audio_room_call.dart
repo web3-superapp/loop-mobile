@@ -348,6 +348,37 @@ final class AudioRoomCallCommandCoordinator {
   }
 }
 
+/// Reads one provider event as the LOOP record it invalidates, or nothing.
+///
+/// Only two kinds of event say that something LOOP holds has changed: the
+/// custom event the server sends after a hand raise (decision 0069), and the
+/// four that say the people in the room are not the ones this device was told
+/// about. Everything else belongs to the call, which the call view reads for
+/// itself.
+///
+/// The name of the hand-raise event is the server's, spelled once here: an
+/// event this client does not recognise is not a cue to read anything.
+AudioRoomRoomSignal? audioRoomRoomSignalOf(StreamCallEvent event) {
+  if (event is StreamCallCustomEvent) {
+    return event.custom?[audioRoomEventKindKey] == audioRoomHandRaiseEventKind
+        ? AudioRoomRoomSignal.handRaise
+        : null;
+  }
+  if (event is StreamCallSessionParticipantJoinedEvent ||
+      event is StreamCallSessionParticipantLeftEvent ||
+      event is StreamCallMemberAddedEvent ||
+      event is StreamCallMemberRemovedEvent) {
+    return AudioRoomRoomSignal.participants;
+  }
+  return null;
+}
+
+/// Where the server writes what one of its own events is (decision 0069).
+const audioRoomEventKindKey = 'loop_event_kind';
+
+/// The one custom event LOOP sends into a room.
+const audioRoomHandRaiseEventKind = 'voiceRoomHandRaise';
+
 abstract interface class AudioRoomCallFactory {
   AudioRoomCallHandle create(AudioRoomTarget target);
 }
@@ -418,34 +449,9 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
   @override
   Stream<AudioRoomRoomSignal> get roomSignals => _call.callEvents
       .asStream()
-      .map(_signalOf)
+      .map(audioRoomRoomSignalOf)
       .where((signal) => signal != null)
       .cast<AudioRoomRoomSignal>();
-
-  /// Reads one provider event as the LOOP record it invalidates, or nothing.
-  ///
-  /// Only two of the SDK's events say something LOOP holds has changed: the
-  /// custom event the server sends after a hand raise (decision 0069), and the
-  /// four that say the people in the room are not the ones this device was
-  /// told about. Everything else belongs to the call, which the call view
-  /// reads for itself.
-  static AudioRoomRoomSignal? _signalOf(StreamCallEvent event) {
-    if (event is StreamCallCustomEvent) {
-      return event.custom?['loop_event_kind'] == _handRaiseEventKind
-          ? AudioRoomRoomSignal.handRaise
-          : null;
-    }
-    if (event is StreamCallSessionParticipantJoinedEvent ||
-        event is StreamCallSessionParticipantLeftEvent ||
-        event is StreamCallMemberAddedEvent ||
-        event is StreamCallMemberRemovedEvent) {
-      return AudioRoomRoomSignal.participants;
-    }
-    return null;
-  }
-
-  /// The one custom event LOOP sends into a room (decision 0069).
-  static const _handRaiseEventKind = 'voiceRoomHandRaise';
 
   /// The same figures the call panel prints, from the same official state.
   static AudioRoomCallReading _readingOf(CallState state) {

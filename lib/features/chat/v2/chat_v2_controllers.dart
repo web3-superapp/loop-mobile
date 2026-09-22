@@ -571,6 +571,15 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
 
   VoiceRoomProviderSync? _lastCommandSync;
 
+  /// One queue read at a time: a burst of cues is one question.
+  var _queueInFlight = false;
+
+  /// How many commands are in flight.
+  ///
+  /// A command that was superseded must not clear the 忙 flag the command
+  /// that superseded it raised, and the last one out must always clear it.
+  var _commandsInFlight = 0;
+
   /// What the server said about the provider write its last command made.
   ///
   /// The page state carries the room as it was last *read*, and a read reports
@@ -668,12 +677,20 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
   Future<void> refreshRoom() {
     final snapshot = state.snapshot;
     if (snapshot == null) return reload();
+    // A command is already reading this room for itself, and its read is the
+    // one the page will take. A refresh that ran beside it used to retire it:
+    // the command then returned "nothing went wrong" without ever clearing
+    // 忙, and every control on the page stayed disabled for as long as the
+    // page was open.
+    if (state.busy) return Future<void>.value();
     return single(() async {
       final gateway = ref.read(voiceRoomGatewayProvider);
-      final generation = nextGeneration();
+      // Taken, never advanced: this read retires nothing.
+      final generation = currentGeneration;
+      final roomId = snapshot.room.voiceRoomId;
       try {
-        final next = await gateway.load(snapshot.room.voiceRoomId);
-        if (!isCurrent(generation)) return;
+        final next = await gateway.load(roomId);
+        if (!_mayWriteRead(generation)) return;
         _publishSession(next);
         state = state.copyWith(
           phase: CommunityViewPhase.ready,
@@ -681,17 +698,23 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
           clearFailure: true,
         );
       } on CommunityGatewayException catch (error) {
-        if (!isCurrent(generation)) return;
+        if (!_mayWriteRead(generation)) return;
         state = state.copyWith(
           failureKind: error.kind,
           failureReasonCode: error.reasonCode,
         );
       } catch (_) {
-        if (!isCurrent(generation)) return;
+        if (!_mayWriteRead(generation)) return;
         state = state.copyWith(failureKind: CommunityFailureKind.unexpected);
       }
     });
   }
+
+  /// Whether a read that started at [generation] may still write.
+  ///
+  /// It may not once a command or a reload has begun: those own the page, and
+  /// an answer read before them describes the room as it was.
+  bool _mayWriteRead(int generation) => isCurrent(generation) && !state.busy;
 
   /// Reads the hand-raise queue again, and nothing else.
   ///
@@ -707,14 +730,24 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
   Future<void> refreshHandRaises() async {
     final snapshot = state.snapshot;
     if (snapshot == null || !snapshot.viewer.isHost) return;
+    // A command reads the queue as part of itself, and two cues arriving
+    // together are one read.
+    if (state.busy || _queueInFlight) return;
+    final generation = currentGeneration;
     final roomId = snapshot.room.voiceRoomId;
     final List<VoiceRoomHandRaiseEntry> queue;
+    _queueInFlight = true;
     try {
       queue = await ref.read(voiceRoomGatewayProvider).listHandRaises(roomId);
     } catch (_) {
       return;
+    } finally {
+      _queueInFlight = false;
     }
-    if (state.snapshot?.room.voiceRoomId != roomId) return;
+    if (!_mayWriteRead(generation) ||
+        state.snapshot?.room.voiceRoomId != roomId) {
+      return;
+    }
     state = state.copyWith(handRaises: queue);
   }
 
@@ -743,14 +776,22 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
     final generation = nextGeneration();
     state = state.copyWith(busy: true, clearFailure: true);
     _lastCommandSync = null;
+    _commandsInFlight += 1;
     try {
       final committed = await body(gateway, snapshot.room.voiceRoomId);
-      if (!isCurrent(generation)) return null;
+      // Superseded by a later command or a whole reload: the page belongs to
+      // that one now. It is not a success and is not reported as one —
+      // 「已加入」 over a page that had moved on was a sentence about nothing —
+      // and it is not a refusal either: the server may well have applied it,
+      // so the reader is told to look rather than told it failed. The one
+      // word the page keeps for a refusal the *server* named (`stale`, a
+      // room that has ended) stays that refusal's alone.
+      if (!isCurrent(generation)) return CommunityFailureKind.cancelled;
       _lastCommandSync = committed.providerSync;
       final next = await _reread(gateway, committed);
-      if (!isCurrent(generation)) return null;
+      if (!isCurrent(generation)) return CommunityFailureKind.cancelled;
       final queue = await _loadQueue(gateway, next);
-      if (!isCurrent(generation)) return null;
+      if (!isCurrent(generation)) return CommunityFailureKind.cancelled;
       _publishSession(next);
       state = VoiceRoomPageState(
         mode: state.mode,
@@ -762,7 +803,6 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
     } on CommunityGatewayException catch (error) {
       if (isCurrent(generation)) {
         state = state.copyWith(
-          busy: false,
           failureKind: error.kind,
           failureReasonCode: error.reasonCode,
         );
@@ -770,12 +810,16 @@ final class VoiceRoomController extends Notifier<VoiceRoomPageState>
       return error.kind;
     } catch (_) {
       if (isCurrent(generation)) {
-        state = state.copyWith(
-          busy: false,
-          failureKind: CommunityFailureKind.unexpected,
-        );
+        state = state.copyWith(failureKind: CommunityFailureKind.unexpected);
       }
       return CommunityFailureKind.unexpected;
+    } finally {
+      _commandsInFlight -= 1;
+      // The last command out puts the flag down, whatever became of it. A
+      // command that is still running owns it and keeps it up.
+      if (_commandsInFlight == 0 && state.busy) {
+        state = state.copyWith(busy: false);
+      }
     }
   }
 
@@ -1141,12 +1185,6 @@ final class CommunityVoiceLiveController extends Notifier<CommunityVoiceLive?>
       // was opened with.
     }
   });
-
-  /// Drops the answer for a page that is going away.
-  void forget() {
-    nextGeneration();
-    if (state != null) state = null;
-  }
 }
 
 final communityVoiceLiveControllerProvider =
