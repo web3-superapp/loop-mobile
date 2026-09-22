@@ -154,7 +154,7 @@ void main() {
         );
         // Delivery is unavailable in both compositions; a saved intent never
         // implies a channel exists.
-        expect(preferences.push.reasonCode, 'PUSH_RUNTIME_DEFERRED');
+        expect(preferences.push?.reasonCode, 'PUSH_RUNTIME_DEFERRED');
       },
     );
 
@@ -206,7 +206,7 @@ void main() {
       );
       expect(saved.version, preferences.version + 1);
       expect(saved.enabledFor(LoopNotificationCategory.communityAll), isTrue);
-      expect(saved.push.reasonCode, 'PUSH_RUNTIME_DEFERRED');
+      expect(saved.push?.reasonCode, 'PUSH_RUNTIME_DEFERRED');
     });
   });
 

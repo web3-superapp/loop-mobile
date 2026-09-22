@@ -19,12 +19,15 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_chain_failure.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_command_keyring.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_module_request.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_id_source.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_write_origin_source.dart';
 import 'package:loop_mobile/integrations/backend/v2/market/loop_v2_market_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/notifications/loop_v2_notifications_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/notifications/loop_v2_push_device_api.dart';
+import 'package:loop_mobile/integrations/backend/v2/security/loop_v2_security_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/wallet/loop_v2_wallet_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/watchlist/loop_v2_watchlist_api.dart';
+import 'package:uuid/uuid.dart';
 
 /// Shared plumbing for the six authenticated S5 adapters.
 ///
@@ -501,30 +504,39 @@ final class DioLoopV2NotificationsGateway
   }
 }
 
-/// The account's push device registration.
+/// The account's push device registration (decision 0067).
 ///
 /// It is deliberately not part of the notification-preferences resource: the
 /// preferences say what the account wants to hear about, and this says where a
 /// message could be delivered. Neither implies the other, and an accepted
 /// token is still not a delivered notification.
-final class DioLoopV2PushDeviceGateway
-    with _LoopV2S5Adapter
-    implements PushDeviceGateway {
+///
+/// This is a `/v2/devices` command, not an S5 read: it needs the caller's own
+/// session id and a fresh idempotency key per attempt, which is why it does
+/// not use the S5 adapter's `cas`/`idempotent` helpers.
+final class DioLoopV2PushDeviceGateway implements PushDeviceGateway {
   DioLoopV2PushDeviceGateway({
-    required this._api,
-    required this.clientMetadata,
-    required this.session,
-    this.originSource,
-  });
+    required LoopV2PushDeviceApi api,
+    required LoopV2ClientMetadata clientMetadata,
+    required LoopAuthenticatedSession session,
+    required LoopV2SessionIdSource sessionIds,
+    Uuid uuid = const Uuid(),
+    // ignore: prefer_initializing_formals
+  }) : _api = api,
+       // ignore: prefer_initializing_formals
+       _clientMetadata = clientMetadata,
+       // ignore: prefer_initializing_formals
+       _session = session,
+       // ignore: prefer_initializing_formals
+       _sessionIds = sessionIds,
+       // ignore: prefer_initializing_formals
+       _uuid = uuid;
 
   final LoopV2PushDeviceApi _api;
-
-  @override
-  final LoopV2ClientMetadata clientMetadata;
-  @override
-  final LoopAuthenticatedSession session;
-  @override
-  final LoopV2WriteOriginSource? originSource;
+  final LoopV2ClientMetadata _clientMetadata;
+  final LoopAuthenticatedSession _session;
+  final LoopV2SessionIdSource _sessionIds;
+  final Uuid _uuid;
 
   @override
   LoopChainGatewayMode get mode => LoopChainGatewayMode.production;
@@ -535,33 +547,52 @@ final class DioLoopV2PushDeviceGateway
     required String token,
     required String appVersion,
   }) async {
-    final writeOrigin = await origin();
-    return cas(
+    final command = await _command();
+    return executeChainRequest(
+      _session,
       (accessToken) => _api.registerToken(
         accessToken: accessToken,
-        clientVersion: clientVersion,
+        clientVersion: _clientMetadata.clientVersion,
         platform: platform,
         token: token,
         appVersion: appVersion,
-        origin: writeOrigin,
+        command: command,
       ),
+      write: true,
     );
   }
 
   @override
-  Future<void> revokeToken({
-    required LoopPushPlatform platform,
-    required String token,
-  }) async {
-    final writeOrigin = await origin();
-    await cas(
+  Future<LoopPushTokenRevocation> revokeToken() async {
+    final command = await _command();
+    return executeChainRequest(
+      _session,
       (accessToken) => _api.revokeToken(
         accessToken: accessToken,
-        clientVersion: clientVersion,
-        platform: platform,
-        token: token,
-        origin: writeOrigin,
+        clientVersion: _clientMetadata.clientVersion,
+        command: command,
       ),
+      write: true,
+    );
+  }
+
+  /// One command annotation per attempt.
+  ///
+  /// The key is fresh every time rather than reserved per logical operation:
+  /// the server keys the registration by `(session, token)` itself, and
+  /// replaying a key whose body has changed is `409 IDEMPOTENCY_CONFLICT`. A
+  /// device command with no session of its own cannot be issued at all.
+  Future<LoopV2SessionCommand> _command() async {
+    final sessionId = await _sessionIds.resolve();
+    final deviceId = await _sessionIds.resolveDeviceId();
+    if (sessionId == null || deviceId == null) {
+      throw const LoopChainException(LoopChainFailureKind.unavailable);
+    }
+    return LoopV2SessionCommand(
+      platform: _clientMetadata.platform,
+      deviceId: deviceId,
+      sessionId: sessionId,
+      idempotencyKey: _uuid.v4(),
     );
   }
 }

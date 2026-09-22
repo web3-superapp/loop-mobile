@@ -1,0 +1,18 @@
+/* The push copy (decision 0067).
+
+   APNs resolves `loc-key` / `loc-args` against this table, so the server sends
+   a key and LOOP owns every visible word. Nothing here names an amount, an
+   address, a ticker, a balance, a code, a message body or a community — a
+   notification says what kind of thing happened and where to look, and the app
+   re-reads the authoritative state after the tap (03 §15.1).
+
+   The table is deliberately not localized into an `.lproj` folder: LOOP ships
+   one language, and a bundle-root table is the one iOS falls back to for every
+   region rather than only for the one that was built. */
+
+"push.priceAlertTriggered.title" = "价格提醒已触发";
+"push.priceAlertTriggered.body" = "点开查看触发详情";
+"push.securityEvent.title" = "账号安全提醒";
+"push.securityEvent.body" = "有新的登录或设备变动，请前往设备管理确认";
+"push.communityVoiceRoomStarted.title" = "社区语音房开播了";
+"push.communityVoiceRoomStarted.body" = "点开进入房间";

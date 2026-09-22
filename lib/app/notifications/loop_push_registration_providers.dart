@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_coordinator.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
+import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/notifications/push_device_gateway.dart';
 import 'package:loop_mobile/integrations/backend/loop_bootstrap_providers.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
@@ -29,6 +31,13 @@ final loopPushRegistrationCoordinatorProvider =
           return StreamChatPushDeviceRegistrar(session.client);
         },
         readPrincipalKey: () => _verifiedPrincipalKey(ref),
+        // Availability, not usability: `pushNotifications` keeps
+        // `PUSH_DEVICE_DELIVERY_EVIDENCE_PENDING` as pending evidence until a
+        // real device has received a notification, and nothing can be
+        // received before it is registered.
+        readPushCapabilityAvailable: () => ref
+            .read(loopCapabilityProvider(LoopV2CapabilityId.pushNotifications))
+            .isAvailable,
         platform: switch (metadata?.platform) {
           LoopV2Platform.android => LoopPushPlatform.android,
           LoopV2Platform.ios => LoopPushPlatform.ios,

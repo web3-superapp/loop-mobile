@@ -519,6 +519,11 @@ LoopV2MetaSnapshot s5MetaSnapshot({
   // The Privy BSC swap device evidence is pending until a real device proves
   // it; a test may clear it to exercise the open path.
   bool swapEvidencePending = true,
+  LoopV2CapabilityAvailability pushNotifications =
+      LoopV2CapabilityAvailability.unavailable,
+  // `pushNotifications` records that no real device has been seen receiving
+  // anything yet, separately from whether the channel exists at all.
+  bool pushEvidencePending = true,
 }) {
   return LoopV2MetaSnapshot(
     clientPolicy: LoopV2ClientPolicy(
@@ -559,6 +564,7 @@ LoopV2MetaSnapshot s5MetaSnapshot({
               LoopV2CapabilityId.notificationsFeed => notificationsFeed,
               LoopV2CapabilityId.sendApprovals => sendApprovals,
               LoopV2CapabilityId.privySwap => privySwap,
+              LoopV2CapabilityId.pushNotifications => pushNotifications,
               _ => LoopV2CapabilityAvailability.unavailable,
             },
             reasonCode: switch (id) {
@@ -594,9 +600,22 @@ LoopV2MetaSnapshot s5MetaSnapshot({
                 privySwap == LoopV2CapabilityAvailability.available
                     ? null
                     : 'BSC_WRITES_DISABLED',
+              LoopV2CapabilityId.pushNotifications =>
+                pushNotifications == LoopV2CapabilityAvailability.available
+                    ? null
+                    : 'PUSH_RUNTIME_DEFERRED',
               _ => 'CAPABILITY_NOT_DELIVERED',
             },
-            evidence: id == LoopV2CapabilityId.privySwap && swapEvidencePending
+            evidence:
+                (id == LoopV2CapabilityId.pushNotifications &&
+                    pushNotifications ==
+                        LoopV2CapabilityAvailability.available &&
+                    pushEvidencePending)
+                ? const LoopV2CapabilityEvidence(
+                    status: LoopV2CapabilityEvidenceStatus.pending,
+                    reasonCode: 'PUSH_DEVICE_DELIVERY_EVIDENCE_PENDING',
+                  )
+                : id == LoopV2CapabilityId.privySwap && swapEvidencePending
                 ? const LoopV2CapabilityEvidence(
                     status: LoopV2CapabilityEvidenceStatus.pending,
                     reasonCode: 'PRIVY_BSC_SWAP_DEVICE_EVIDENCE_PENDING',

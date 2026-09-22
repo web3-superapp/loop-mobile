@@ -639,15 +639,16 @@ NOTIFICATION_GLOBAL_INGRESS_PATTERNS = (
     ),
     (re.compile(r"\.\s*getInitialMessage\s*\("), ".getInitialMessage("),
 )
-# Decision 0057 added a fourth reviewed kind: a triggered price alert opens the
-# token page. The router therefore needs the canonical asset-route contract, so
-# it can reject a non-canonical `asset_id` before it becomes a location. The
-# allowlist stays closed: a raw provider-payload import is still rejected.
+# Decision 0067 replaced the speculative `notification.v1` envelope with the
+# four-key payload the server actually sends. The chat CID left with it: a push
+# now points at a notification record, and the only parameterised destination is
+# the token page, which still needs the canonical asset-route contract to reject
+# a non-canonical `assetId` before it becomes a location. The allowlist stays
+# closed: a raw provider-payload import is still rejected.
 NOTIFICATION_ROUTER_IMPORTS = frozenset(
     {
         "'dart:collection'",
         "'package:loop_mobile/core/navigation/market_asset_route.dart'",
-        "'package:loop_mobile/core/navigation/stream_channel_route.dart'",
     }
 )
 FIREBASE_OPTIONS_PATH = Path("lib/firebase_options.dart")
@@ -665,27 +666,40 @@ NOTIFICATION_PROVIDER_IMPORT_MARKERS = (
     "package:firebase_core/firebase_core.dart",
     "package:firebase_messaging/firebase_messaging.dart",
 )
+# The first push dictionary (decision 0067 §7.3). A fourth event type is a
+# contract change, not a client decision.
 NOTIFICATION_KIND_MEMBERS = frozenset(
-    {"chatMessage", "audioRoomActivity", "systemNotice", "priceAlertTriggered"}
+    {"priceAlertTriggered", "securityEvent", "communityVoiceRoomStarted"}
 )
+NOTIFICATION_CONTEXT_ROUTE_MEMBERS = frozenset({"token", "devices", "voiceRoom"})
 NOTIFICATION_SOURCE_EVENT_KIND_MEMBERS = frozenset(
     {"foreground", "background", "interaction"}
 )
+# Four intents for three events: a price alert has two, because the asset is
+# the feed's answer and a notification that cannot be matched to a record must
+# still land somewhere that names nothing.
 NOTIFICATION_INTENT_CLASSES = frozenset(
     {
-        "LoopChatNotificationIntent",
-        "LoopAudioRoomNotificationIntent",
-        "LoopNotificationCenterIntent",
         "LoopPriceAlertNotificationIntent",
+        "LoopPriceAlertListNotificationIntent",
+        "LoopSecurityEventNotificationIntent",
+        "LoopVoiceRoomNotificationIntent",
     }
 )
-# Step 4: the chat intent no longer holds a route literal at all. It resolves
-# through `loopChatLocationForCid`, the one mapper shared with chat search and
-# the compatibility deep link, and the parser rejects every channel that mapper
-# cannot name.
-NOTIFICATION_ROUTE_LITERALS = frozenset({"/chat/voice", "/notifications"})
+# Both parameterless destinations. The two price-alert intents hold no literal
+# at all: they go through `MarketAssetRoute`, which is where the canonical
+# asset identity is enforced.
+NOTIFICATION_ROUTE_LITERALS = frozenset({"/chat/voice", "/profile/devices"})
+# `lib/app.dart` joined this set with decision 0067: confirming a pointer needs
+# the notification feed, which is a feature gateway the router may not import,
+# so the composition root is where the two meet. It may name the pointer and
+# the context; it still may not construct routing identity (checked below).
 NOTIFICATION_ROUTER_CONSUMER_PATHS = frozenset(
-    {NOTIFICATION_ROUTER_PATH, NOTIFICATION_COORDINATOR_PATH}
+    {
+        NOTIFICATION_ROUTER_PATH,
+        NOTIFICATION_COORDINATOR_PATH,
+        NOTIFICATION_APPLICATION_PATH,
+    }
 )
 NOTIFICATION_ROUTER_IMPORT = (
     "package:loop_mobile/integrations/notifications/loop_notification_router.dart"
@@ -9818,23 +9832,28 @@ def check_notification_contract(root: Path) -> list[str]:
 
         required_fragments = (
             "class LoopNotificationRouter",
-            "static const String schema = 'notification.v1'",
-            "static const String chatMessageKind = 'chat.message'",
-            "static const String audioRoomActivityKind = 'audio_room.activity'",
-            "static const String systemNoticeKind = 'system.notice'",
-            "static const String priceAlertTriggeredKind = 'price_alert.triggered'",
-            "MarketAssetRoute.isCanonical(rawAssetId)",
+            # The exact four keys of decision 0067, and the only version.
+            "static const String eventVersion = '1'",
+            "'type'",
+            "'entityRef'",
+            "'contextRoute'",
+            "'eventVersion'",
+            "'price_alert_triggered'",
+            "'security_event'",
+            "'community_voice_room_started'",
+            # The asset comes from the feed record, never from the payload, and
+            # only a canonical CAIP identity may address the token page.
+            "MarketAssetRoute.isCanonical(assetId)",
             "String get location => MarketAssetRoute.token(assetId)",
-            "'recipient_stream_user_id'",
+            "String get location => MarketAssetRoute.alertsPath",
+            "context.contextRoute == pointer.contextRoute.wireName",
             "LoopNotificationIngress.foreground",
             "LoopNotificationIngress.background",
             "LoopNotificationIngress.interaction",
             "LoopNotificationSessionMode.authenticated",
             "LoopNotificationDisposition.duplicateInteraction",
-            "loopChatLocationForCid(channel.cid)!",
-            "loopChatLocationForCid(cid) == null",
             "String get location => '/chat/voice'",
-            "String get location => '/notifications'",
+            "String get location => '/profile/devices'",
         )
         for fragment in required_fragments:
             if fragment not in executable:
@@ -9859,6 +9878,12 @@ def check_notification_contract(root: Path) -> list[str]:
             'data["route"]',
             "data['path']",
             'data["path"]',
+            # The payload names a destination family, never a destination: the
+            # parameters belong to the feed record the client reads back.
+            "data['contextParams']",
+            'data["contextParams"]',
+            "data['assetId']",
+            'data["assetId"]',
             "deep_link",
             "call_cid",
             "room_id",
@@ -9871,19 +9896,37 @@ def check_notification_contract(root: Path) -> list[str]:
                 )
 
         kind_match = re.search(
-            r"enum\s+_LoopNotificationKind\s*\{(?P<body>[^}]*)\}",
+            r"enum\s+LoopPushNotificationType\s*\{(?P<body>.*?);",
             executable_code,
             re.DOTALL,
         )
         kind_members = (
             frozenset(
-                member.strip()
-                for member in kind_match.group("body").split(",")
-                if member.strip()
+                re.findall(r"^\s*(\w+)\s*\(", kind_match.group("body"), re.MULTILINE)
             )
             if kind_match
             else frozenset()
         )
+        route_match = re.search(
+            r"enum\s+LoopNotificationContextRoute\s*\{(?P<body>.*?);",
+            executable_code,
+            re.DOTALL,
+        )
+        route_members = (
+            frozenset(
+                re.findall(
+                    r"^\s*(\w+)\s*\(", route_match.group("body"), re.MULTILINE
+                )
+            )
+            if route_match
+            else frozenset()
+        )
+        if route_members != NOTIFICATION_CONTEXT_ROUTE_MEMBERS:
+            errors.append(
+                "notification context routes must stay on the reviewed allowlist: "
+                f"expected {sorted(NOTIFICATION_CONTEXT_ROUTE_MEMBERS)}, "
+                f"found {sorted(route_members)}"
+            )
         if kind_members != NOTIFICATION_KIND_MEMBERS:
             errors.append(
                 "notification kinds must stay on the reviewed four-kind allowlist: "
@@ -9998,9 +10041,14 @@ def check_notification_contract(root: Path) -> list[str]:
             re.DOTALL,
         )
         context_body = context_match.group("body") if context_match else ""
+        # Decision 0067 took the recipient out of the payload, so there is
+        # nothing left to compare a stream user id against. The context is now
+        # produced only after the same two facts as before — a real
+        # authenticated session and a backend-verified bootstrap identity — and
+        # carries neither of them onward.
         authenticated_context_pattern = re.compile(
-            r"return\s+LoopNotificationSessionContext\s*\.\s*authenticated\s*"
-            r"\(\s*identity\s*\.\s*streamUserId\s*\)\s*;"
+            r"return\s+const\s+LoopNotificationSessionContext\s*\.\s*"
+            r"authenticated\s*\(\s*\)\s*;"
         )
         authenticated_context_calls = tuple(
             re.finditer(
@@ -10018,8 +10066,21 @@ def check_notification_contract(root: Path) -> list[str]:
         ):
             errors.append(
                 "notification coordinator authenticated context must come only from a "
-                "real authenticated session and bootstrap-derived stream identity"
+                "real authenticated session and a verified bootstrap identity"
             )
+        # The tap is confirmed against the account's own feed before anything
+        # opens. Without this the payload would be the only source of a
+        # destination again, which is exactly what 0067 forbids.
+        for fragment in (
+            "await _resolveContext(pointer)",
+            "LoopNotificationRouter.resolve(pointer, context: context)",
+            "_currentContext().mode != LoopNotificationSessionMode.authenticated",
+        ):
+            if fragment not in coordinator:
+                errors.append(
+                    "notification coordinator must confirm a pointer against the "
+                    f"current account's feed before navigating (`{fragment}`)"
+                )
 
         resolution_match = re.search(
             r"Future<void>\s+_resolveIdentity\s*\(\s*\{"
@@ -12979,8 +13040,21 @@ PUSH_REGISTRATION_PATHS = (
     "lib/app/notifications/loop_push_registration_providers.dart",
     "android/app/google-services.json",
     "ios/Runner/GoogleService-Info.plist",
+    "ios/Runner/Localizable.strings",
     "test/firebase_push_registration_test.dart",
 )
+# Decision 0067 sends only localization keys; every visible word is the
+# client's. Android resource names cannot contain `.`, so the same six strings
+# are spelled two ways — that is a constraint of the platform, not a second
+# vocabulary, and both spellings are checked here so one cannot drift.
+PUSH_COPY_EVENTS = (
+    "priceAlertTriggered",
+    "securityEvent",
+    "communityVoiceRoomStarted",
+)
+# A format specifier here would mean the server supplies part of the sentence,
+# which is the one thing the copy rule exists to prevent.
+PUSH_COPY_FORBIDDEN_SUBSTITUTIONS = ("%@", "%s", "%d", "%1$", "%2$")
 # The Firebase project LOOP's two mobile applications belong to. Every one of
 # these appears in three places — the Android JSON, the iOS plist and
 # `firebase_options.dart` — and a build where they disagree initialises one
@@ -13217,8 +13291,14 @@ def check_push_registration_contract(root: Path) -> list[str]:
             )
         for fragment in (
             "LoopV2Contract.validateSuccess(response, statusCode: 200)",
-            "requireBool(root, 'registered')",
+            # The whole logout header set, one fresh key per attempt, and a
+            # `200` that is read rather than assumed.
+            "...command.headers",
+            "requireTrue(root, 'registered')",
+            "requireFalse(root, 'registered')",
             "requireTimestamp(root, 'observedAt')",
+            "optionalTimestamp(root, 'revokedAt')",
+            "LoopPushTokenRegistration.firebaseProvider",
         ):
             if fragment not in api:
                 errors.append(
@@ -13226,7 +13306,57 @@ def check_push_registration_contract(root: Path) -> list[str]:
                     f"(`{fragment}`)"
                 )
 
-    # 5. Stream's two configurations are named once, where a rename is visible.
+    # 5. The push copy belongs to the client, in both spellings.
+    android_strings_path = root / "android/app/src/main/res/values/strings.xml"
+    ios_strings_path = root / "ios/Runner/Localizable.strings"
+    android_strings = (
+        read_text(android_strings_path) if android_strings_path.is_file() else ""
+    )
+    ios_strings = read_text(ios_strings_path) if ios_strings_path.is_file() else ""
+    for event in PUSH_COPY_EVENTS:
+        for part in ("title", "body"):
+            android_name = f'name="push_{event}_{part}"'
+            ios_key = f'"push.{event}.{part}"'
+            if android_strings and android_name not in android_strings:
+                errors.append(
+                    f"android strings.xml must define the push copy {android_name}"
+                )
+            if ios_strings and ios_key not in ios_strings:
+                errors.append(
+                    f"ios Localizable.strings must define the push copy {ios_key}"
+                )
+    for table, label in ((android_strings, "android"), (ios_strings, "ios")):
+        for marker in PUSH_COPY_FORBIDDEN_SUBSTITUTIONS:
+            if marker in table:
+                errors.append(
+                    f"{label} push copy must not take a substitution (`{marker}`); "
+                    "a notification says what kind of thing happened, and the "
+                    "server supplies no part of the sentence"
+                )
+    if xcode_project.is_file() and (
+        "Localizable.strings in Resources" not in read_text(xcode_project)
+    ):
+        errors.append(
+            "ios/Runner.xcodeproj must copy Localizable.strings into the Runner "
+            "target's resources, or `loc-key` resolves to the key itself"
+        )
+
+    # 6. Registration waits for the capability, and sign-out drops it first.
+    coordinator_path = root / "lib/app/notifications/loop_push_registration_coordinator.dart"
+    if coordinator_path.is_file():
+        coordinator = strip_dart_comments(read_text(coordinator_path))
+        for fragment in (
+            "if (!_readPushCapabilityAvailable()) return;",
+            "_runtimeDeferred = true;",
+            "if (_askedPrincipal != principal)",
+        ):
+            if fragment not in coordinator:
+                errors.append(
+                    "push registration must wait for the capability, ask the device "
+                    f"once per account, and stop after a deferred runtime (`{fragment}`)"
+                )
+
+    # 7. Stream's two configurations are named once, where a rename is visible.
     registrar_path = root / "lib/integrations/communication/stream_push_device_registrar.dart"
     if registrar_path.is_file():
         registrar = strip_dart_comments(read_text(registrar_path))

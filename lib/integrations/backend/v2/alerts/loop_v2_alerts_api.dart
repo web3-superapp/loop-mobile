@@ -288,7 +288,7 @@ final class DioLoopV2AlertsApi implements LoopV2AlertsApi {
         map,
         'lastEvaluatedAt',
       ),
-      delivery: LoopV2ChainCodec.unavailable(map['delivery']),
+      delivery: LoopV2ChainCodec.deliveryChannel(map['delivery']),
       version: LoopV2ChainCodec.requireInt(map, 'version', minimum: 1),
       createdAt: LoopV2ChainCodec.requireTimestamp(map, 'createdAt'),
       updatedAt: LoopV2ChainCodec.requireTimestamp(map, 'updatedAt'),

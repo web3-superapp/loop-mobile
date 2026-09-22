@@ -67,7 +67,7 @@ void main() {
         findsOneWidget,
       );
 
-      final data = _systemNoticePayload();
+      final data = _securityEventPayload();
       source.add(
         LoopNotificationSourceEvent(
           kind: LoopNotificationSourceEventKind.foreground,
@@ -94,41 +94,26 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // The frozen 93-route IA has no independent notification centre. The
-      // router still emits the legacy `/notifications` intent; the app
-      // records it as a routing error and stays on Community until the
-      // in-context notice target is decided.
+      // Decision 0067 replaced the speculative notification-centre intent
+      // with a destination that exists in the frozen IA: a security event
+      // opens device management, which re-reads `GET /v2/devices` for itself.
       expect(
-        find.byKey(const ValueKey<String>('community-screen')),
+        find.byKey(const ValueKey<String>('devices-screen')),
         findsOneWidget,
       );
-      expect(
-        find.byKey(
-          const ValueKey<String>('notifications-provider-unavailable'),
-        ),
-        findsNothing,
-      );
-      expect(routingErrors.entries.map((error) => error.location), <String>[
-        '/notifications',
-      ]);
-      expect(routingErrors.last?.severity, LoopRoutingSeverity.info);
+      expect(routingErrors.entries, isEmpty);
       expect(routingErrors.errors, isEmpty);
     },
   );
 }
 
-Map<String, Object?> _systemNoticePayload() {
-  final now = DateTime.fromMillisecondsSinceEpoch(
-    DateTime.now().toUtc().millisecondsSinceEpoch,
-    isUtc: true,
-  );
+/// The exact four-key payload of decision 0067 for a security event.
+Map<String, Object?> _securityEventPayload() {
   return <String, Object?>{
-    'loop_schema': LoopNotificationRouter.schema,
-    'event_id': '123e4567-e89b-42d3-a456-426614174000',
-    'recipient_stream_user_id': 'loop_7a7448be64e24f9fa9f1891f1beec7fd',
-    'kind': LoopNotificationRouter.systemNoticeKind,
-    'occurred_at': now.subtract(const Duration(minutes: 1)).toIso8601String(),
-    'expires_at': now.add(const Duration(minutes: 10)).toIso8601String(),
+    'type': LoopPushNotificationType.securityEvent.wireName,
+    'entityRef': 'deviceSession:00000000-0000-4000-8000-00000000000a',
+    'contextRoute': LoopNotificationContextRoute.devices.wireName,
+    'eventVersion': LoopNotificationRouter.eventVersion,
   };
 }
 

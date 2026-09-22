@@ -10,7 +10,9 @@ import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/notifications/push_device_gateway.dart';
 import 'package:loop_mobile/firebase_options.dart';
 import 'package:loop_mobile/integrations/backend/loop_backend_failure.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_session.dart';
 import 'package:loop_mobile/integrations/backend/v2/notifications/loop_v2_push_device_api.dart';
+import 'package:loop_mobile/integrations/backend/v2/security/loop_v2_security_api.dart';
 import 'package:loop_mobile/integrations/communication/stream_push_device_registrar.dart';
 import 'package:loop_mobile/integrations/notifications/firebase_notification_ingress.dart';
 import 'package:loop_mobile/integrations/notifications/loop_notification_event_source.dart';
@@ -21,6 +23,10 @@ import 'support/s5_fixtures.dart';
 
 const _accessToken = 'privy-access-token';
 const _principal = 'did:privy:user-a';
+const _deviceId = '3f7c1a2b-4d5e-4f60-8a71-9b2c3d4e5f60';
+const _sessionId = '5a716283-9c0d-4e1f-8a2b-3c4d5e6f7081';
+const _idempotencyKey = '7c8d9e0f-1a2b-4c3d-8e4f-5a6b7c8d9e0f';
+const _pushTokenId = '9e0f1a2b-3c4d-4e5f-8a6b-7c8d9e0f1a2b';
 const _firebaseToken =
     'f7Qk2n9XsZ0AbCdEfGhIjKlMnOpQrStUvWxYz012345678-_abcdefghijklmnop';
 const _rotatedFirebaseToken =
@@ -105,8 +111,8 @@ void main() {
     });
   });
 
-  group('设备令牌上报', () {
-    test('注册带上契约头、不带 Idempotency-Key，并送出约定的三个字段', () async {
+  group('设备令牌上报（0067）', () {
+    test('注册带上整套登出头集合，包括一枚 Idempotency-Key', () async {
       RequestOptions? captured;
       final api = DioLoopV2PushDeviceApi(
         s5Dio((options, handler) {
@@ -121,20 +127,51 @@ void main() {
         platform: LoopPushPlatform.android,
         token: _firebaseToken,
         appVersion: s5ClientVersion,
+        command: _command(),
       );
 
       expect(captured!.method, 'POST');
       expect(captured!.path, '/v2/devices/push-token');
-      expect(captured!.headers['authorization'], 'Bearer $_accessToken');
-      expect(captured!.headers['x-loop-contract-version'], '2.0');
-      expect(captured!.headers.containsKey('idempotency-key'), isFalse);
+      final headers = captured!.headers;
+      expect(headers['authorization'], 'Bearer $_accessToken');
+      expect(headers['x-loop-contract-version'], '2.0');
+      expect(headers['x-loop-client-version'], s5ClientVersion);
+      expect(headers['x-loop-platform'], 'android');
+      expect(headers['x-loop-device-id'], _deviceId);
+      expect(headers['x-loop-session-id'], _sessionId);
+      expect(headers['idempotency-key'], _idempotencyKey);
       expect(captured!.data, <String, Object?>{
         'platform': 'android',
         'token': _firebaseToken,
         'appVersion': s5ClientVersion,
       });
       expect(registration.registered, isTrue);
+      expect(registration.pushTokenId, _pushTokenId);
+      expect(registration.provider, 'fcm');
       expect(registration.observedAt, DateTime.utc(2026, 9, 22, 4, 5, 6));
+    });
+
+    test('body 里的 platform 与头不一致时，请求根本不会发出去', () async {
+      var sent = false;
+      final api = DioLoopV2PushDeviceApi(
+        s5Dio((options, handler) {
+          sent = true;
+          handler.resolve(s5Response(options, _registrationBody()));
+        }),
+      );
+
+      await expectLater(
+        api.registerToken(
+          accessToken: _accessToken,
+          clientVersion: s5ClientVersion,
+          platform: LoopPushPlatform.ios,
+          token: _firebaseToken,
+          appVersion: s5ClientVersion,
+          command: _command(),
+        ),
+        throwsA(_failure(LoopBackendFailureKind.invalidRequest)),
+      );
+      expect(sent, isFalse, reason: '这样的请求只会白烧掉一枚幂等键');
     });
 
     test('服务端说 registered:false 时，200 也不算注册成功', () async {
@@ -147,35 +184,46 @@ void main() {
       );
 
       await expectLater(
-        api.registerToken(
-          accessToken: _accessToken,
-          clientVersion: s5ClientVersion,
-          platform: LoopPushPlatform.ios,
-          token: _firebaseToken,
-          appVersion: s5ClientVersion,
-        ),
+        _register(api),
         throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
       );
     });
 
-    test('多出来的字段是无效响应，不是可以只读一半的响应', () async {
-      final api = DioLoopV2PushDeviceApi(
-        s5Dio((options, handler) {
-          final body = _registrationBody()..['surprise'] = true;
-          handler.resolve(s5Response(options, body));
-        }),
-      );
+    test('回执必须是对这台设备说的：平台、版本、provider 都要对得上', () async {
+      for (final body in <Map<String, Object?>>[
+        _registrationBody()..['platform'] = 'ios',
+        _registrationBody()..['provider'] = 'apns',
+        _registrationBody()..['appVersion'] = '9.9.9',
+      ]) {
+        final api = DioLoopV2PushDeviceApi(
+          s5Dio(
+            (options, handler) => handler.resolve(s5Response(options, body)),
+          ),
+        );
 
-      await expectLater(
-        api.registerToken(
-          accessToken: _accessToken,
-          clientVersion: s5ClientVersion,
-          platform: LoopPushPlatform.android,
-          token: _firebaseToken,
-          appVersion: s5ClientVersion,
-        ),
-        throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
-      );
+        await expectLater(
+          _register(api),
+          throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+        );
+      }
+    });
+
+    test('多出来或少掉的字段都是无效响应，不是可以只读一半的响应', () async {
+      final extra = _registrationBody()..['surprise'] = true;
+      final missing = _registrationBody()..remove('pushTokenId');
+
+      for (final body in <Map<String, Object?>>[extra, missing]) {
+        final api = DioLoopV2PushDeviceApi(
+          s5Dio(
+            (options, handler) => handler.resolve(s5Response(options, body)),
+          ),
+        );
+
+        await expectLater(
+          _register(api),
+          throwsA(_failure(LoopBackendFailureKind.invalidPayload)),
+        );
+      }
     });
 
     test('不像令牌的东西根本不会被送出去', () async {
@@ -194,37 +242,73 @@ void main() {
           platform: LoopPushPlatform.android,
           token: 'https://example.invalid/steal?token=$_firebaseToken',
           appVersion: s5ClientVersion,
+          command: _command(),
         ),
         throwsA(_failure(LoopBackendFailureKind.invalidRequest)),
       );
       expect(sent, isFalse);
     });
 
-    test('撤销走 DELETE，令牌在请求体里而不是查询串里', () async {
+    test('后端没配 Firebase 凭据时是 503，客户端读成 unavailable', () async {
+      final api = DioLoopV2PushDeviceApi(
+        s5Dio(
+          (options, handler) => handler.reject(
+            s5ErrorResponse(
+              options,
+              statusCode: 503,
+              code: 'CAPABILITY_UNAVAILABLE',
+            ),
+          ),
+        ),
+      );
+
+      await expectLater(
+        _register(api),
+        throwsA(_failure(LoopBackendFailureKind.unavailable)),
+      );
+    });
+
+    test('撤销不带 body、不带查询串，只带这台设备的 session', () async {
       RequestOptions? captured;
       final api = DioLoopV2PushDeviceApi(
         s5Dio((options, handler) {
           captured = options;
-          handler.resolve(
-            s5Response(options, _registrationBody(registered: false)),
-          );
+          handler.resolve(s5Response(options, _revocationBody()));
         }),
       );
 
-      await api.revokeToken(
+      final revocation = await api.revokeToken(
         accessToken: _accessToken,
         clientVersion: s5ClientVersion,
-        platform: LoopPushPlatform.ios,
-        token: _firebaseToken,
+        command: _command(),
       );
 
       expect(captured!.method, 'DELETE');
       expect(captured!.path, '/v2/devices/push-token');
       expect(captured!.uri.query, isEmpty);
-      expect(captured!.data, <String, Object?>{
-        'platform': 'ios',
-        'token': _firebaseToken,
-      });
+      expect(captured!.data, isNull);
+      expect(captured!.headers['idempotency-key'], _idempotencyKey);
+      expect(revocation.registered, isFalse);
+      expect(revocation.revokedAt, DateTime.utc(2026, 9, 22, 4, 10));
+    });
+
+    test('这台设备本来就没有令牌时，撤销照样是 200，revokedAt 为空', () async {
+      final api = DioLoopV2PushDeviceApi(
+        s5Dio(
+          (options, handler) => handler.resolve(
+            s5Response(options, _revocationBody(revokedAt: null)),
+          ),
+        ),
+      );
+
+      final revocation = await api.revokeToken(
+        accessToken: _accessToken,
+        clientVersion: s5ClientVersion,
+        command: _command(),
+      );
+
+      expect(revocation.registered, isFalse);
+      expect(revocation.revokedAt, isNull);
     });
   });
 
@@ -243,6 +327,20 @@ void main() {
 
     test('后端网关还没装好时，不去打扰设备', () async {
       final harness = _Harness(principal: _principal, gatewayAvailable: false);
+      addTearDown(harness.dispose);
+
+      harness.coordinator.start();
+      await _settle();
+
+      expect(harness.source.permissionRequests, 0);
+      expect(harness.gateway.registered, isEmpty);
+    });
+
+    test('capability 不是 available 时，连系统权限都不问', () async {
+      final harness = _Harness(
+        principal: _principal,
+        pushCapabilityAvailable: false,
+      );
       addTearDown(harness.dispose);
 
       harness.coordinator.start();
@@ -297,7 +395,9 @@ void main() {
       harness.coordinator.start();
       await _settle();
 
-      expect(harness.gateway.registered, <String>[_firebaseToken]);
+      expect(harness.gateway.registered, <String>[
+        _firebaseToken,
+      ], reason: '决定 0067：iOS 也上报 FCM 令牌，APNs 由 Firebase 代发');
       expect(harness.gateway.platforms, <LoopPushPlatform>[
         LoopPushPlatform.ios,
       ]);
@@ -327,7 +427,7 @@ void main() {
       expect(harness.source.permissionRequests, 1);
     });
 
-    test('令牌轮换时重报新的，并撤销旧的', () async {
+    test('令牌轮换时重报新的；旧行由服务端在同一事务里作废', () async {
       final harness = _Harness(principal: _principal);
       addTearDown(harness.dispose);
 
@@ -340,7 +440,11 @@ void main() {
         _firebaseToken,
         _rotatedFirebaseToken,
       ]);
-      expect(harness.gateway.revoked, <String>[_firebaseToken]);
+      expect(
+        harness.gateway.revokeCalls,
+        0,
+        reason: 'DELETE 不带令牌，这时候调它只会删掉刚建好的那一行',
+      );
       expect(harness.stream.added.map((device) => device.id), <String>[
         _firebaseToken,
         _rotatedFirebaseToken,
@@ -350,14 +454,17 @@ void main() {
       ]);
     });
 
-    test('后端拒绝注册时，Stream 那边也不会被登记', () async {
-      final harness = _Harness(principal: _principal, gatewayRefuses: true);
+    test('后端返回 unavailable 时不再重试，也不登记到 Stream', () async {
+      final harness = _Harness(principal: _principal, gatewayDefers: true);
       addTearDown(harness.dispose);
 
       harness.coordinator.start();
       await _settle();
+      harness.coordinator.onIdentityMayHaveChanged();
+      await _settle();
 
       expect(harness.gateway.registered, <String>[_firebaseToken]);
+      expect(harness.coordinator.runtimeDeferred, isTrue);
       expect(harness.stream.added, isEmpty);
       expect(harness.coordinator.registeredToken, isNull);
     });
@@ -370,7 +477,7 @@ void main() {
       await _settle();
       await harness.coordinator.revokeForSignOut();
 
-      expect(harness.gateway.revoked, <String>[_firebaseToken]);
+      expect(harness.gateway.revokeCalls, 1);
       expect(harness.stream.removed.map((device) => device.id), <String>[
         _firebaseToken,
       ]);
@@ -395,36 +502,53 @@ void main() {
   });
 
   group('点开通知之后重新读状态，不信任 payload 说了什么', () {
-    final router = LoopNotificationRouter(clock: () => _now);
-    const session = LoopNotificationSessionContext.authenticated(_streamUser);
+    const session = LoopNotificationSessionContext.authenticated();
 
-    test('payload 自带 contextRoute 时，整条通知作废，而不是照着它跳', () {
-      final decision = router.route(
+    LoopNotificationRouter router() =>
+        LoopNotificationRouter(clock: () => DateTime.utc(2026, 9, 22, 12));
+
+    test('payload 恰好四个键，多一个就整条作废', () {
+      final decision = router().route(
         data: <String, Object?>{
-          ..._envelope(LoopNotificationRouter.systemNoticeKind),
-          'contextRoute': '/wallet/send',
+          ..._pushPayload(LoopPushNotificationType.priceAlertTriggered),
+          'contextParams': 'assetId=eip155:56:native',
         },
         ingress: LoopNotificationIngress.interaction,
         session: session,
       );
 
       expect(decision.disposition, LoopNotificationDisposition.malformed);
-      expect(decision.intent, isNull);
+      expect(decision.pointer, isNull);
     });
 
-    test('目的地来自类型，不来自 payload 里的任何字符串', () {
-      final decision = router.route(
-        data: _envelope(LoopNotificationRouter.systemNoticeKind),
+    test('推送只给出一个指针，具体去哪一页要等 feed 回答', () {
+      final decision = router().route(
+        data: _pushPayload(LoopPushNotificationType.priceAlertTriggered),
         ingress: LoopNotificationIngress.interaction,
         session: session,
       );
 
-      expect(decision.intent?.location, '/notifications');
+      expect(decision.disposition, LoopNotificationDisposition.pointerReady);
+      expect(
+        LoopNotificationRouter.resolve(decision.pointer!).location,
+        '/market/alerts',
+        reason: '没有 feed 记录时，只能打开不指名任何资产的那一页',
+      );
+      expect(
+        LoopNotificationRouter.resolve(
+          decision.pointer!,
+          context: const LoopNotificationContext(
+            contextRoute: 'token',
+            assetId: 'eip155:56:native',
+          ),
+        ).location,
+        '/market/token?assetId=${Uri.encodeQueryComponent('eip155:56:native')}',
+      );
     });
 
     test('前台收到时只是「看到了」，不跳转也不消费这次点击', () {
-      final foreground = LoopNotificationRouter(clock: () => _now).route(
-        data: _envelope(LoopNotificationRouter.systemNoticeKind),
+      final foreground = router().route(
+        data: _pushPayload(LoopPushNotificationType.securityEvent),
         ingress: LoopNotificationIngress.foreground,
         session: session,
       );
@@ -433,7 +557,7 @@ void main() {
         foreground.disposition,
         LoopNotificationDisposition.foregroundObserved,
       );
-      expect(foreground.intent, isNull);
+      expect(foreground.pointer, isNull);
     });
 
     test('provider 的两条流合成一条，取消时两条都停', () async {
@@ -476,17 +600,33 @@ void main() {
   });
 }
 
-final _now = DateTime.utc(2026, 9, 22, 12);
-const _streamUser = 'loop_7a7448be64e24f9fa9f1891f1beec7fd';
+Map<String, Object?> _pushPayload(LoopPushNotificationType type) =>
+    <String, Object?>{
+      'type': type.wireName,
+      'entityRef': '${type.entityPrefix}:00000000-0000-4000-8000-00000000000a',
+      'contextRoute': type.contextRoute.wireName,
+      'eventVersion': LoopNotificationRouter.eventVersion,
+    };
 
-Map<String, Object?> _envelope(String kind) => <String, Object?>{
-  'loop_schema': LoopNotificationRouter.schema,
-  'event_id': '123e4567-e89b-42d3-a456-426614174000',
-  'recipient_stream_user_id': _streamUser,
-  'kind': kind,
-  'occurred_at': '2026-09-22T11:59:00.000Z',
-  'expires_at': '2026-09-22T12:10:00.000Z',
-};
+LoopV2SessionCommand _command({
+  LoopV2Platform platform = LoopV2Platform.android,
+}) => LoopV2SessionCommand(
+  platform: platform,
+  deviceId: _deviceId,
+  sessionId: _sessionId,
+  idempotencyKey: _idempotencyKey,
+);
+
+Future<LoopPushTokenRegistration> _register(DioLoopV2PushDeviceApi api) {
+  return api.registerToken(
+    accessToken: _accessToken,
+    clientVersion: s5ClientVersion,
+    platform: LoopPushPlatform.android,
+    token: _firebaseToken,
+    appVersion: s5ClientVersion,
+    command: _command(),
+  );
+}
 
 AppConfig _config({
   required bool firebaseConfigured,
@@ -505,8 +645,22 @@ AppConfig _config({
 Map<String, Object?> _registrationBody({bool registered = true}) =>
     <String, Object?>{
       'registered': registered,
+      'pushTokenId': _pushTokenId,
+      'platform': 'android',
+      'provider': 'fcm',
+      'appVersion': s5ClientVersion,
       'observedAt': '2026-09-22T04:05:06.000Z',
+      'contractVersion': '2.0',
     };
+
+Map<String, Object?> _revocationBody({
+  String? revokedAt = '2026-09-22T04:10:00.000Z',
+}) => <String, Object?>{
+  'registered': false,
+  'revokedAt': revokedAt,
+  'observedAt': '2026-09-22T04:10:00.000Z',
+  'contractVersion': '2.0',
+};
 
 Matcher _failure(LoopBackendFailureKind kind) =>
     isA<LoopBackendFailure>().having((failure) => failure.kind, 'kind', kind);
@@ -524,7 +678,8 @@ final class _Harness {
     LoopPushPermission permission = LoopPushPermission.granted,
     String? apnsToken,
     bool gatewayAvailable = true,
-    bool gatewayRefuses = false,
+    bool gatewayDefers = false,
+    bool pushCapabilityAvailable = true,
     bool revokeHangs = false,
     Duration revokeTimeout = const Duration(seconds: 3),
   }) : source = _TestPushTokenSource(
@@ -533,7 +688,7 @@ final class _Harness {
        ),
        gateway = _TestPushDeviceGateway(
          available: gatewayAvailable,
-         refuses: gatewayRefuses,
+         defers: gatewayDefers,
          revokeHangs: revokeHangs,
        ),
        stream = _TestStreamRegistrar() {
@@ -542,6 +697,7 @@ final class _Harness {
       readGateway: () => gateway,
       readStreamRegistrar: () => stream,
       readPrincipalKey: () => principal,
+      readPushCapabilityAvailable: () => pushCapabilityAvailable,
       platform: platform,
       appVersion: s5ClientVersion,
       revokeTimeout: revokeTimeout,
@@ -601,18 +757,18 @@ final class _TestPushTokenSource implements LoopPushTokenSource {
 final class _TestPushDeviceGateway implements PushDeviceGateway {
   _TestPushDeviceGateway({
     required this.available,
-    required this.refuses,
+    required this.defers,
     required this.revokeHangs,
   });
 
   final bool available;
-  final bool refuses;
+  final bool defers;
   final bool revokeHangs;
 
   final registered = <String>[];
-  final revoked = <String>[];
   final platforms = <LoopPushPlatform>[];
   final appVersions = <String>[];
+  var revokeCalls = 0;
 
   @override
   LoopChainGatewayMode get mode => available
@@ -628,22 +784,28 @@ final class _TestPushDeviceGateway implements PushDeviceGateway {
     registered.add(token);
     platforms.add(platform);
     appVersions.add(appVersion);
-    if (refuses) {
+    if (defers) {
       throw const LoopChainException(LoopChainFailureKind.unavailable);
     }
     return LoopPushTokenRegistration(
       registered: true,
+      pushTokenId: _pushTokenId,
+      platform: platform,
+      provider: LoopPushTokenRegistration.firebaseProvider,
+      appVersion: appVersion,
       observedAt: DateTime.utc(2026, 9, 22, 4, 5, 6),
     );
   }
 
   @override
-  Future<void> revokeToken({
-    required LoopPushPlatform platform,
-    required String token,
-  }) async {
-    if (revokeHangs) return Completer<void>().future;
-    revoked.add(token);
+  Future<LoopPushTokenRevocation> revokeToken() async {
+    if (revokeHangs) return Completer<LoopPushTokenRevocation>().future;
+    revokeCalls += 1;
+    return LoopPushTokenRevocation(
+      registered: false,
+      revokedAt: DateTime.utc(2026, 9, 22, 4, 10),
+      observedAt: DateTime.utc(2026, 9, 22, 4, 10),
+    );
   }
 }
 

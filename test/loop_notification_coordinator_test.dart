@@ -12,11 +12,11 @@ import 'package:loop_mobile/integrations/privy/privy_auth_gateway.dart';
 void main() {
   final now = DateTime.utc(2026, 8, 25, 12);
 
-  test('authorized initial interaction navigates to its fixed route once', () async {
+  test('the destination comes from the feed, not from the payload', () async {
     final source = _TestEventSource(
       initialInteraction: _event(
         LoopNotificationSourceEventKind.interaction,
-        kind: LoopNotificationRouter.chatMessageKind,
+        type: LoopPushNotificationType.priceAlertTriggered,
       ),
     );
     final tokens = _TokenSource();
@@ -29,11 +29,22 @@ void main() {
     expect(await bootstrap.authorize(), LoopBootstrapAuthorization.authorized);
     final session = _authenticated(_principalA);
     final navigations = <String>[];
+    // The payload named `priceAlert:<id>` and nothing else. Which asset that
+    // alert watches is the feed's answer, read back for the account that is
+    // signed in now.
+    final resolved = <String>[];
     final coordinator = LoopNotificationCoordinator(
       source: source,
       readSession: () => session,
       readBootstrapSession: () => bootstrap,
       navigate: (intent) => navigations.add(intent.location),
+      resolveContext: (pointer) async {
+        resolved.add(pointer.entityRef);
+        return const LoopNotificationContext(
+          contextRoute: 'token',
+          assetId: _wbnbAssetId,
+        );
+      },
       clock: () => now,
     );
     addTearDown(() async {
@@ -49,10 +60,88 @@ void main() {
     expect(source.initialInteractionCalls, 1);
     expect(tokens.calls, 1);
     expect(repository.calls, 1);
+    expect(resolved, <String>[
+      'priceAlert:00000000-0000-4000-8000-000000000001',
+    ]);
     expect(navigations, <String>[
-      '/chat/dm?cid=${Uri.encodeComponent('messaging:loop_direct_0123456789abcdef0123456789abcdef')}',
+      '/market/token?assetId=${Uri.encodeQueryComponent(_wbnbAssetId)}',
     ]);
   });
+
+  test(
+    'an unresolvable price alert opens the alerts page, naming no asset',
+    () async {
+      final source = _TestEventSource(
+        initialInteraction: _event(
+          LoopNotificationSourceEventKind.interaction,
+          type: LoopPushNotificationType.priceAlertTriggered,
+        ),
+      );
+      final bootstrap = _bootstrap(
+        principalKey: _principalA,
+        repository: _Repository((_) async => _identityA),
+      );
+      await bootstrap.authorize();
+      final navigations = <String>[];
+      final coordinator = LoopNotificationCoordinator(
+        source: source,
+        readSession: () => _authenticated(_principalA),
+        readBootstrapSession: () => bootstrap,
+        navigate: (intent) => navigations.add(intent.location),
+        // This account's feed has no such notification, or the read failed.
+        // Either way the payload does not get to choose a token.
+        resolveContext: (_) async => null,
+        clock: () => now,
+      );
+      addTearDown(() async {
+        await coordinator.dispose();
+        bootstrap.dispose();
+        await source.close();
+      });
+
+      coordinator.start();
+      await _flushAsyncWork();
+
+      expect(navigations, <String>['/market/alerts']);
+    },
+  );
+
+  test(
+    'a feed record for another destination cannot redirect the tap',
+    () async {
+      final source = _TestEventSource(
+        initialInteraction: _event(
+          LoopNotificationSourceEventKind.interaction,
+          type: LoopPushNotificationType.priceAlertTriggered,
+        ),
+      );
+      final bootstrap = _bootstrap(
+        principalKey: _principalA,
+        repository: _Repository((_) async => _identityA),
+      );
+      await bootstrap.authorize();
+      final navigations = <String>[];
+      final coordinator = LoopNotificationCoordinator(
+        source: source,
+        readSession: () => _authenticated(_principalA),
+        readBootstrapSession: () => bootstrap,
+        navigate: (intent) => navigations.add(intent.location),
+        resolveContext: (_) async =>
+            const LoopNotificationContext(contextRoute: 'devices'),
+        clock: () => now,
+      );
+      addTearDown(() async {
+        await coordinator.dispose();
+        bootstrap.dispose();
+        await source.close();
+      });
+
+      coordinator.start();
+      await _flushAsyncWork();
+
+      expect(navigations, <String>['/market/alerts']);
+    },
+  );
 
   test(
     'foreground and background delivery never navigate or consume the tap',
@@ -69,6 +158,7 @@ void main() {
         readSession: () => _authenticated(_principalA),
         readBootstrapSession: () => bootstrap,
         navigate: (intent) => navigations.add(intent.location),
+        resolveContext: (_) async => null,
         clock: () => now,
       );
       addTearDown(() async {
@@ -81,13 +171,13 @@ void main() {
       source.emit(
         _event(
           LoopNotificationSourceEventKind.foreground,
-          kind: LoopNotificationRouter.systemNoticeKind,
+          type: LoopPushNotificationType.securityEvent,
         ),
       );
       source.emit(
         _event(
           LoopNotificationSourceEventKind.background,
-          kind: LoopNotificationRouter.systemNoticeKind,
+          type: LoopPushNotificationType.securityEvent,
         ),
       );
       expect(navigations, isEmpty);
@@ -95,10 +185,11 @@ void main() {
       source.emit(
         _event(
           LoopNotificationSourceEventKind.interaction,
-          kind: LoopNotificationRouter.systemNoticeKind,
+          type: LoopPushNotificationType.securityEvent,
         ),
       );
-      expect(navigations, <String>['/notifications']);
+      await _flushAsyncWork();
+      expect(navigations, <String>['/profile/devices']);
     },
   );
 
@@ -121,6 +212,7 @@ void main() {
         readSession: () => session,
         readBootstrapSession: () => currentBootstrap,
         navigate: (intent) => navigations.add(intent.location),
+        resolveContext: (_) async => null,
         clock: () => now,
       );
       addTearDown(() async {
@@ -133,7 +225,7 @@ void main() {
       source.emit(
         _event(
           LoopNotificationSourceEventKind.interaction,
-          kind: LoopNotificationRouter.audioRoomActivityKind,
+          type: LoopPushNotificationType.communityVoiceRoomStarted,
         ),
       );
       expect(navigations, isEmpty);
@@ -164,6 +256,7 @@ void main() {
       readSession: () => session,
       readBootstrapSession: () => currentBootstrap,
       navigate: (intent) => navigations.add(intent.location),
+      resolveContext: (_) async => null,
       clock: () => now,
     );
     addTearDown(() async {
@@ -176,15 +269,15 @@ void main() {
     source.emit(
       _event(
         LoopNotificationSourceEventKind.interaction,
-        kind: LoopNotificationRouter.systemNoticeKind,
-        eventId: '123e4567-e89b-42d3-a456-426614174005',
+        type: LoopPushNotificationType.securityEvent,
+        entity: '00000000-0000-4000-8000-000000000005',
       ),
     );
     source.emit(
       _event(
         LoopNotificationSourceEventKind.interaction,
-        kind: LoopNotificationRouter.audioRoomActivityKind,
-        eventId: '123e4567-e89b-42d3-a456-426614174006',
+        type: LoopPushNotificationType.communityVoiceRoomStarted,
+        entity: '00000000-0000-4000-8000-000000000006',
       ),
     );
     expect(navigations, isEmpty);
@@ -211,6 +304,7 @@ void main() {
       readSession: () => _authenticated(_principalA),
       readBootstrapSession: () => bootstrap,
       navigate: (intent) => navigations.add(intent.location),
+      resolveContext: (_) async => null,
       clock: () => now,
       restoringWait: const Duration(milliseconds: 5),
     );
@@ -224,7 +318,7 @@ void main() {
     source.emit(
       _event(
         LoopNotificationSourceEventKind.interaction,
-        kind: LoopNotificationRouter.systemNoticeKind,
+        type: LoopPushNotificationType.securityEvent,
       ),
     );
     await _flushAsyncWork();
@@ -233,8 +327,8 @@ void main() {
     source.emit(
       _event(
         LoopNotificationSourceEventKind.interaction,
-        kind: LoopNotificationRouter.audioRoomActivityKind,
-        eventId: '123e4567-e89b-42d3-a456-426614174007',
+        type: LoopPushNotificationType.communityVoiceRoomStarted,
+        entity: '00000000-0000-4000-8000-000000000007',
       ),
     );
     await Future<void>.delayed(const Duration(milliseconds: 30));
@@ -270,6 +364,7 @@ void main() {
         readSession: () => session,
         readBootstrapSession: () => currentBootstrap,
         navigate: (intent) => navigations.add(intent.location),
+        resolveContext: (_) async => null,
         clock: () => now,
       );
       addTearDown(() async {
@@ -283,7 +378,7 @@ void main() {
       source.emit(
         _event(
           LoopNotificationSourceEventKind.interaction,
-          kind: LoopNotificationRouter.systemNoticeKind,
+          type: LoopPushNotificationType.securityEvent,
         ),
       );
       await _flushAsyncWork();
@@ -326,6 +421,7 @@ void main() {
         readSession: () => session,
         readBootstrapSession: () => currentBootstrap,
         navigate: (intent) => navigations.add(intent.location),
+        resolveContext: (_) async => null,
         clock: () => now,
       );
       addTearDown(() async {
@@ -339,7 +435,7 @@ void main() {
       source.emit(
         _event(
           LoopNotificationSourceEventKind.interaction,
-          kind: LoopNotificationRouter.systemNoticeKind,
+          type: LoopPushNotificationType.securityEvent,
         ),
       );
       await _flushAsyncWork();
@@ -355,75 +451,85 @@ void main() {
       source.emit(
         _event(
           LoopNotificationSourceEventKind.interaction,
-          kind: LoopNotificationRouter.systemNoticeKind,
-          eventId: '123e4567-e89b-42d3-a456-426614174002',
-          recipientStreamUserId: _identityB.streamUserId,
+          type: LoopPushNotificationType.securityEvent,
+          entity: '00000000-0000-4000-8000-000000000002',
         ),
       );
-      expect(navigations, <String>['/notifications']);
+      await _flushAsyncWork();
+      expect(navigations, <String>['/profile/devices']);
     },
   );
 
-  test('expired payload and expired restoring window never navigate', () async {
-    final expiredSource = _TestEventSource();
-    final authorizedBootstrap = _bootstrap(
-      principalKey: _principalA,
-      repository: _Repository((_) async => _identityA),
-    );
-    await authorizedBootstrap.authorize();
-    final navigations = <String>[];
-    final expiredCoordinator = LoopNotificationCoordinator(
-      source: expiredSource,
-      readSession: () => _authenticated(_principalA),
-      readBootstrapSession: () => authorizedBootstrap,
-      navigate: (intent) => navigations.add(intent.location),
-      clock: () => DateTime.utc(2026, 8, 25, 12, 11),
-    );
-    addTearDown(() async {
-      await expiredCoordinator.dispose();
-      authorizedBootstrap.dispose();
-      await expiredSource.close();
-    });
-    expiredCoordinator.start();
-    expiredSource.emit(
-      _event(
-        LoopNotificationSourceEventKind.interaction,
-        kind: LoopNotificationRouter.systemNoticeKind,
-      ),
-    );
-    expect(navigations, isEmpty);
+  test(
+    'an over-full payload and an expired restoring window never navigate',
+    () async {
+      final expiredSource = _TestEventSource();
+      final authorizedBootstrap = _bootstrap(
+        principalKey: _principalA,
+        repository: _Repository((_) async => _identityA),
+      );
+      await authorizedBootstrap.authorize();
+      final navigations = <String>[];
+      final expiredCoordinator = LoopNotificationCoordinator(
+        source: expiredSource,
+        readSession: () => _authenticated(_principalA),
+        readBootstrapSession: () => authorizedBootstrap,
+        navigate: (intent) => navigations.add(intent.location),
+        resolveContext: (_) async => null,
+        clock: () => DateTime.utc(2026, 8, 25, 12, 11),
+      );
+      addTearDown(() async {
+        await expiredCoordinator.dispose();
+        authorizedBootstrap.dispose();
+        await expiredSource.close();
+      });
+      expiredCoordinator.start();
+      // A fifth key is not a richer notification: it is a payload LOOP did not
+      // write, and half-reading it is how a sender nobody vetted gets a
+      // destination.
+      expiredSource.emit(
+        _event(
+          LoopNotificationSourceEventKind.interaction,
+          type: LoopPushNotificationType.securityEvent,
+          extra: const <String, Object?>{'contextParams': 'assetId=PEPE'},
+        ),
+      );
+      await _flushAsyncWork();
+      expect(navigations, isEmpty);
 
-    final restoringSource = _TestEventSource();
-    var restoringSession = const LoopSessionState.restoring();
-    LoopBootstrapSession? restoringBootstrap;
-    final restoringCoordinator = LoopNotificationCoordinator(
-      source: restoringSource,
-      readSession: () => restoringSession,
-      readBootstrapSession: () => restoringBootstrap,
-      navigate: (intent) => navigations.add(intent.location),
-      clock: () => now,
-      restoringWait: const Duration(milliseconds: 5),
-    );
-    addTearDown(() async {
-      await restoringCoordinator.dispose();
-      await restoringSource.close();
-    });
-    restoringCoordinator.start();
-    restoringSource.emit(
-      _event(
-        LoopNotificationSourceEventKind.interaction,
-        kind: LoopNotificationRouter.systemNoticeKind,
-        eventId: '123e4567-e89b-42d3-a456-426614174003',
-      ),
-    );
-    await Future<void>.delayed(const Duration(milliseconds: 30));
+      final restoringSource = _TestEventSource();
+      var restoringSession = const LoopSessionState.restoring();
+      LoopBootstrapSession? restoringBootstrap;
+      final restoringCoordinator = LoopNotificationCoordinator(
+        source: restoringSource,
+        readSession: () => restoringSession,
+        readBootstrapSession: () => restoringBootstrap,
+        navigate: (intent) => navigations.add(intent.location),
+        resolveContext: (_) async => null,
+        clock: () => now,
+        restoringWait: const Duration(milliseconds: 5),
+      );
+      addTearDown(() async {
+        await restoringCoordinator.dispose();
+        await restoringSource.close();
+      });
+      restoringCoordinator.start();
+      restoringSource.emit(
+        _event(
+          LoopNotificationSourceEventKind.interaction,
+          type: LoopPushNotificationType.securityEvent,
+          entity: '00000000-0000-4000-8000-000000000003',
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 30));
 
-    restoringSession = _authenticated(_principalA);
-    restoringBootstrap = authorizedBootstrap;
-    restoringCoordinator.onIdentityMayHaveChanged();
-    await _flushAsyncWork();
-    expect(navigations, isEmpty);
-  });
+      restoringSession = _authenticated(_principalA);
+      restoringBootstrap = authorizedBootstrap;
+      restoringCoordinator.onIdentityMayHaveChanged();
+      await _flushAsyncWork();
+      expect(navigations, isEmpty);
+    },
+  );
 
   test('dispose cancels delivery and ignores a late identity result', () async {
     final source = _TestEventSource();
@@ -439,6 +545,7 @@ void main() {
       readSession: () => _authenticated(_principalA),
       readBootstrapSession: () => bootstrap,
       navigate: (intent) => navigations.add(intent.location),
+      resolveContext: (_) async => null,
       clock: () => now,
     );
     addTearDown(() async {
@@ -449,7 +556,7 @@ void main() {
     source.emit(
       _event(
         LoopNotificationSourceEventKind.interaction,
-        kind: LoopNotificationRouter.systemNoticeKind,
+        type: LoopPushNotificationType.securityEvent,
       ),
     );
     await _flushAsyncWork();
@@ -460,8 +567,8 @@ void main() {
     source.emit(
       _event(
         LoopNotificationSourceEventKind.interaction,
-        kind: LoopNotificationRouter.audioRoomActivityKind,
-        eventId: '123e4567-e89b-42d3-a456-426614174004',
+        type: LoopPushNotificationType.communityVoiceRoomStarted,
+        entity: '00000000-0000-4000-8000-000000000004',
       ),
     );
     await _flushAsyncWork();
@@ -484,6 +591,7 @@ void main() {
 const _principalA = 'did:privy:user-a';
 const _principalB = 'did:privy:user-b';
 const _streamUserA = 'loop_7a7448be64e24f9fa9f1891f1beec7fd';
+const _wbnbAssetId = 'eip155:56:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c';
 
 const _identityA = LoopBootstrapIdentity(
   loopUserId: '7a7448be-64e2-4f9f-a9f1-891f1beec7fd',
@@ -513,25 +621,25 @@ LoopBootstrapSession _bootstrap({
   );
 }
 
+/// The exact four-key push payload of decision 0067, and nothing else.
+///
+/// There is no recipient, no expiry and no event id in it: a push is a pointer
+/// at a record, and the record is read back from the account's own feed after
+/// the tap.
 LoopNotificationSourceEvent _event(
   LoopNotificationSourceEventKind sourceKind, {
-  required String kind,
-  String eventId = '123e4567-e89b-42d3-a456-426614174000',
-  String recipientStreamUserId = _streamUserA,
+  required LoopPushNotificationType type,
+  String entity = '00000000-0000-4000-8000-000000000001',
+  Map<String, Object?> extra = const <String, Object?>{},
 }) {
   return LoopNotificationSourceEvent(
     kind: sourceKind,
     data: <String, Object?>{
-      'loop_schema': LoopNotificationRouter.schema,
-      'event_id': eventId,
-      'recipient_stream_user_id': recipientStreamUserId,
-      'kind': kind,
-      'occurred_at': '2026-08-25T11:59:00.000Z',
-      'expires_at': '2026-08-25T12:10:00.000Z',
-      if (kind == LoopNotificationRouter.chatMessageKind)
-        // Step 4: only a channel whose LOOP-assigned prefix names a surface
-        // can produce a navigation intent.
-        'cid': 'messaging:loop_direct_0123456789abcdef0123456789abcdef',
+      'type': type.wireName,
+      'entityRef': '${type.entityPrefix}:$entity',
+      'contextRoute': type.contextRoute.wireName,
+      'eventVersion': LoopNotificationRouter.eventVersion,
+      ...extra,
     },
   );
 }

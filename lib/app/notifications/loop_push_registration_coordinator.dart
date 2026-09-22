@@ -17,13 +17,16 @@ import 'package:loop_mobile/integrations/notifications/loop_push_token_source.da
 /// registration and an offline device all mean the same thing — the account is
 /// not addressable on this device — and no page turns into an error because a
 /// background registration did not complete. The notification-preferences page
-/// remains the honest surface for what the account asked to hear about.
+/// remains the honest surface for what the account asked to hear about, and
+/// it says 「推送尚不可用」 from the capability document rather than from
+/// anything observed here.
 final class LoopPushRegistrationCoordinator {
   LoopPushRegistrationCoordinator({
     required this._source,
     required this._readGateway,
     required this._readStreamRegistrar,
     required this._readPrincipalKey,
+    required this._readPushCapabilityAvailable,
     required this._platform,
     required this._appVersion,
     this.revokeTimeout = const Duration(seconds: 3),
@@ -37,8 +40,19 @@ final class LoopPushRegistrationCoordinator {
   ///
   /// It must only answer non-null once the backend has accepted the session:
   /// a token registered against an unverified session names an account the
-  /// server has not agreed exists.
+  /// server has not agreed exists, and the command carries that session's id.
   final String? Function() _readPrincipalKey;
+
+  /// Whether `GET /v2/meta/capabilities` says `pushNotifications` is
+  /// available.
+  ///
+  /// Deliberately *availability*, not usability. That capability publishes
+  /// `PUSH_DEVICE_DELIVERY_EVIDENCE_PENDING` as pending evidence until a real
+  /// device has received something, and no device can receive anything until
+  /// it has registered — gating registration on the evidence would be a
+  /// deadlock. The pending evidence is a claim the UI must not make; it is not
+  /// a reason to refuse the registration that would resolve it.
+  final bool Function() _readPushCapabilityAvailable;
 
   /// `null` on a platform LOOP registered no push application for. Everything
   /// below then stays inert rather than sending `platform: 'unknown'`.
@@ -46,7 +60,9 @@ final class LoopPushRegistrationCoordinator {
   final String _appVersion;
 
   /// Sign-out must not wait on push. Whatever has not answered by then is
-  /// abandoned; the server drops a token that stops being deliverable anyway.
+  /// abandoned — the server voids this session's token in the same
+  /// transaction as the logout anyway, so the revoke is tidiness and never a
+  /// step logout depends on.
   final Duration revokeTimeout;
 
   StreamSubscription<String>? _subscription;
@@ -56,6 +72,10 @@ final class LoopPushRegistrationCoordinator {
   LoopStreamPushDevice? _registeredStreamDevice;
   String? _askedPrincipal;
   LoopPushPermission _permission = LoopPushPermission.unsupported;
+
+  /// The server said it has no push runtime. Set once per run; a retry would
+  /// only ask the same closed capability again.
+  var _runtimeDeferred = false;
   var _started = false;
   var _disposed = false;
 
@@ -63,6 +83,8 @@ final class LoopPushRegistrationCoordinator {
   String? get registeredToken => _registeredToken;
 
   LoopPushPermission get permission => _permission;
+
+  bool get runtimeDeferred => _runtimeDeferred;
 
   void start() {
     if (_started || _disposed) return;
@@ -87,9 +109,9 @@ final class LoopPushRegistrationCoordinator {
 
   /// Drops this device's registration **while the session still exists**.
   ///
-  /// Called before the session is torn down, because both the LOOP revoke and
-  /// Stream's `removeDevice` need the credentials that sign-out is about to
-  /// take away. Never throws and never outlasts [revokeTimeout].
+  /// Both the LOOP revoke and Stream's `removeDevice` need the credentials
+  /// sign-out is about to take away, so this runs before the session is torn
+  /// down. Never throws and never outlasts [revokeTimeout].
   Future<void> revokeForSignOut() async {
     if (_disposed) return;
     try {
@@ -104,9 +126,14 @@ final class LoopPushRegistrationCoordinator {
     final platform = _platform;
     if (principal == null || platform == null) return;
     if (principal == _registeredPrincipal && _registeredToken != null) return;
+    if (_runtimeDeferred) return;
 
     final gateway = _readGateway();
     if (gateway.mode != LoopChainGatewayMode.production) return;
+    // 0067 §7.6: while the capability is not available there is no push
+    // runtime to register with, and `POST` would answer `503`. Not asking is
+    // the same outcome without the request or the permission prompt.
+    if (!_readPushCapabilityAvailable()) return;
 
     // A device answers once per account. Asking again on every identity
     // change would re-prompt on Android 13 and, worse, teach the owner that
@@ -130,25 +157,22 @@ final class LoopPushRegistrationCoordinator {
   Future<void> _onTokenRefreshed(String token) async {
     final principal = _readPrincipalKey();
     final platform = _platform;
-    if (principal == null || platform == null) return;
+    if (principal == null || platform == null || _runtimeDeferred) return;
     if (token == _registeredToken && principal == _registeredPrincipal) return;
 
-    final previousToken = _registeredToken;
     final previousStreamDevice = _registeredStreamDevice;
     await _register(principal, token);
-    if (previousToken == null || previousToken == token) return;
     if (_registeredToken != token) return;
-    // The old token is now somebody else's or nobody's. Dropping it is the
-    // only thing that stops a rotated device from being addressed twice. The
-    // previous Stream device is only dropped when the new registration moved
-    // to a different one; on iOS the APNs token usually does not rotate with
-    // the Firebase one.
-    await _dropToken(
-      previousToken,
-      previousStreamDevice == _registeredStreamDevice
-          ? null
-          : previousStreamDevice,
-    );
+    // LOOP's own side needs nothing further: the same session registering a
+    // new token retires the previous row in the server's transaction, and the
+    // revoke route names no token, so calling it here would drop the row that
+    // was just created. Stream keeps one entry per device id, so only a device
+    // that actually changed has to be removed.
+    if (previousStreamDevice == null ||
+        previousStreamDevice == _registeredStreamDevice) {
+      return;
+    }
+    await _removeStreamDevice(previousStreamDevice);
   }
 
   Future<void> _register(String principal, String token) async {
@@ -161,9 +185,17 @@ final class LoopPushRegistrationCoordinator {
         appVersion: _appVersion,
       );
       if (!registration.registered) return;
+    } on LoopChainException catch (failure) {
+      // `503 CAPABILITY_UNAVAILABLE` / `PUSH_RUNTIME_DEFERRED`: the backend has
+      // no Firebase credentials. Retrying cannot change that, and repeating it
+      // on every identity change would be a loop nobody can see.
+      if (failure.kind == LoopChainFailureKind.unavailable) {
+        _runtimeDeferred = true;
+      }
+      return;
     } catch (_) {
       // Fail-closed: an unregistered device is the state LOOP already
-      // describes everywhere as 「推送未接通」.
+      // describes everywhere as 「推送尚不可用」.
       return;
     }
     if (_disposed || _readPrincipalKey() != principal) return;
@@ -177,11 +209,12 @@ final class LoopPushRegistrationCoordinator {
 
   /// How Stream addresses this device, which is not how LOOP's backend does.
   ///
-  /// Android is the same Firebase token on both sides. iOS is not: Stream's
-  /// `LOOPAPNS` configuration talks to Apple directly and needs the APNs
-  /// device token, while LOOP's own sender goes through Firebase and needs the
-  /// registration token. Sending the wrong one to either is a registration
-  /// that is accepted and never delivers.
+  /// LOOP's backend takes the Firebase registration token on both platforms —
+  /// decision 0067 uploads the APNs key to the same Firebase project and lets
+  /// FCM reach Apple. Stream is a second, independent sender: its `LOOPAPNS`
+  /// configuration talks to Apple directly and needs the APNs device token.
+  /// Sending the wrong one to either is a registration that is accepted and
+  /// never delivers.
   Future<LoopStreamPushDevice?> _streamDevice(String firebaseToken) async {
     switch (_platform) {
       case null:
@@ -202,46 +235,42 @@ final class LoopPushRegistrationCoordinator {
   }
 
   Future<void> _revoke() async {
-    final token = _registeredToken;
     final streamDevice = _registeredStreamDevice;
-    final platform = _platform;
+    final hadRegistration = _registeredToken != null;
     _registeredPrincipal = null;
     _registeredToken = null;
     _registeredStreamDevice = null;
     _askedPrincipal = null;
-    if (token == null || platform == null) return;
-    await _dropToken(token, streamDevice);
-    await _source.deleteToken();
-  }
-
-  Future<void> _dropToken(String token, LoopStreamPushDevice? device) async {
-    final platform = _platform;
-    if (platform == null) return;
-    if (device != null) {
-      try {
-        await _readStreamRegistrar()?.removeDevice(device);
-      } catch (_) {
-        // A provider refusal is not a LOOP fact.
-      }
-    }
+    if (streamDevice != null) await _removeStreamDevice(streamDevice);
+    if (!hadRegistration) return;
     try {
-      await _readGateway().revokeToken(platform: platform, token: token);
+      // Idempotent by contract, and available even while push is not: a
+      // session with no token still answers `200` with `revokedAt: null`.
+      await _readGateway().revokeToken();
     } catch (_) {
-      // The server expires a token it cannot deliver to; an unconfirmed
-      // revoke is not a reason to keep the owner on the sign-out screen.
+      // The server voids this session's token when the session ends anyway.
+      // An unconfirmed revoke is not a reason to keep the owner on the
+      // sign-out screen.
     }
+    await _source.deleteToken();
   }
 
   Future<void> _addStreamDevice(String token) async {
     final device = await _streamDevice(token);
     if (device == null || device == _registeredStreamDevice) return;
     try {
-      if (await (_readStreamRegistrar()?.addDevice(device) ??
-          Future<bool>.value(false))) {
-        _registeredStreamDevice = device;
-      }
+      final accepted = await _readStreamRegistrar()?.addDevice(device) ?? false;
+      if (accepted) _registeredStreamDevice = device;
     } catch (_) {
       // Chat still works over the websocket; only its push does not.
+    }
+  }
+
+  Future<void> _removeStreamDevice(LoopStreamPushDevice device) async {
+    try {
+      await _readStreamRegistrar()?.removeDevice(device);
+    } catch (_) {
+      // A provider refusal is not a LOOP fact.
     }
   }
 

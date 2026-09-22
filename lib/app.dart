@@ -26,6 +26,10 @@ import 'package:loop_mobile/features/security/mfa/passkey_sheet.dart';
 import 'package:loop_mobile/core/network/loop_connectivity_signal.dart';
 import 'package:loop_mobile/core/navigation/launch_route.dart';
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
+import 'package:loop_mobile/features/chain/chain_contract.dart';
+import 'package:loop_mobile/features/notifications/notification_models.dart';
+import 'package:loop_mobile/features/notifications/notifications_gateway.dart';
+import 'package:loop_mobile/integrations/notifications/loop_notification_router.dart';
 import 'package:loop_mobile/core/navigation/loop_routing_error_log.dart';
 import 'package:loop_mobile/core/navigation/route_manifest.dart';
 import 'package:loop_mobile/core/policy/loop_client_policy.dart';
@@ -237,6 +241,11 @@ class _LoopAppState extends ConsumerState<LoopApp> {
       readSession: () => ref.read(loopSessionProvider),
       readBootstrapSession: () => ref.read(loopBootstrapSessionProvider),
       navigate: (intent) => router.go(intent.location),
+      // Decision 0067: the push payload is a pointer, never a result. Before
+      // anything opens, the notification is looked up again in *this*
+      // account's feed, and the destination comes from that record. A pointer
+      // this account cannot see resolves to a page that names nothing.
+      resolveContext: (pointer) => _resolveNotificationContext(ref, pointer),
     );
     postAuthBootstrapCoordinator = PostAuthBootstrapCoordinator(() async {
       // Riverpod invalidates principal-dependent providers after publishing
@@ -1755,6 +1764,35 @@ Widget _profileScreen(BuildContext context, WidgetRef ref, String id) {
     },
     onSignOut: () => _signOut(ref),
   );
+}
+
+/// Re-reads the notification feed and answers what it says about [pointer].
+///
+/// `null` is the honest answer for every way this can fail to confirm: the
+/// gateway is unavailable, the read failed, or the account signed in now has
+/// no such notification. None of them authorises using the payload's own
+/// `contextRoute`, and the caller falls back to a destination that carries no
+/// identifier from it.
+Future<LoopNotificationContext?> _resolveNotificationContext(
+  WidgetRef ref,
+  LoopNotificationPointer pointer,
+) async {
+  final gateway = ref.read(notificationsGatewayProvider);
+  if (gateway.mode != LoopChainGatewayMode.production) return null;
+  final LoopNotificationFeed feed;
+  try {
+    feed = await gateway.loadFeed();
+  } catch (_) {
+    return null;
+  }
+  for (final entry in feed.items) {
+    if (entry.entityRef != pointer.entityRef) continue;
+    return LoopNotificationContext(
+      contextRoute: entry.contextRoute,
+      assetId: entry.contextParams[MarketAssetRoute.assetParameter],
+    );
+  }
+  return null;
 }
 
 Future<void> _signOut(WidgetRef ref) async {

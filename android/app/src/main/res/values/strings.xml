@@ -6,4 +6,19 @@
     <string name="loop_notification_channel_id" translatable="false">loop_default</string>
     <string name="loop_notification_channel_name">LOOP 通知</string>
     <string name="loop_notification_channel_description">交易、社区、安全与 Launch 的提醒</string>
+
+    <!-- The push copy (decision 0067). The server sends only `title_loc_key`
+         and `body_loc_key`; every visible word is here, so a notification can
+         never carry an amount, an address, a ticker, a balance, a code, a
+         message body or a community name (03 §15.1).
+
+         Android resource names cannot contain `.`, so the iOS `loc-key`
+         `push.priceAlertTriggered.title` is `push_priceAlertTriggered_title`
+         here. The backend must send this exact spelling on Android. -->
+    <string name="push_priceAlertTriggered_title">价格提醒已触发</string>
+    <string name="push_priceAlertTriggered_body">点开查看触发详情</string>
+    <string name="push_securityEvent_title">账号安全提醒</string>
+    <string name="push_securityEvent_body">有新的登录或设备变动，请前往设备管理确认</string>
+    <string name="push_communityVoiceRoomStarted_title">社区语音房开播了</string>
+    <string name="push_communityVoiceRoomStarted_body">点开进入房间</string>
 </resources>

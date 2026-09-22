@@ -6520,7 +6520,10 @@ class HarnessTests(unittest.TestCase):
         mutations = (
             # The toast no longer waits for the committed resource.
             ("if (applied) {", "if (true) {"),
-            # The page stops stating that delivery is unavailable.
+            # The page stops stating that delivery is unavailable. Since
+            # decision 0067 the channel has two states, so the sentence is
+            # conditional — but when the server does say it is unavailable,
+            # this is still the page's only way of passing that on.
             ("推送尚不可用", "推送已就绪"),
         )
         for original, replacement in mutations:
@@ -6711,7 +6714,7 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected closed route allowlist: {result}",
         )
 
-    def test_notification_router_rejects_a_fifth_kind(self) -> None:
+    def test_notification_router_rejects_a_fourth_event_type(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             router = root / check_harness.NOTIFICATION_ROUTER_PATH
@@ -6721,8 +6724,13 @@ class HarnessTests(unittest.TestCase):
             ).read_text(encoding="utf-8")
             router.write_text(
                 source.replace(
-                    "  priceAlertTriggered,",
-                    "  priceAlertTriggered,\n  walletActivity,",
+                    "  securityEvent(",
+                    "  walletActivity(\n"
+                    "    'wallet_activity',\n"
+                    "    'wallet',\n"
+                    "    LoopNotificationContextRoute.devices,\n"
+                    "  ),\n"
+                    "  securityEvent(",
                     1,
                 ),
                 encoding="utf-8",
@@ -6730,7 +6738,29 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_notification_contract(root)
         self.assertTrue(
             any("four-kind allowlist" in error for error in result),
-            msg=f"expected closed kind allowlist: {result}",
+            msg=f"expected closed event-type allowlist: {result}",
+        )
+
+    def test_notification_router_rejects_a_fourth_context_route(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            router = root / check_harness.NOTIFICATION_ROUTER_PATH
+            router.parent.mkdir(parents=True)
+            source = (
+                REPOSITORY_ROOT / check_harness.NOTIFICATION_ROUTER_PATH
+            ).read_text(encoding="utf-8")
+            router.write_text(
+                source.replace(
+                    "  devices('devices'),",
+                    "  devices('devices'),\n  send('send'),",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            result = check_harness.check_notification_contract(root)
+        self.assertTrue(
+            any("context routes must stay" in error for error in result),
+            msg=f"expected closed context-route allowlist: {result}",
         )
 
     def test_notification_router_rejects_a_raw_provider_payload_import(
@@ -6768,8 +6798,8 @@ class HarnessTests(unittest.TestCase):
             ).read_text(encoding="utf-8")
             router.write_text(
                 source.replace(
-                    "MarketAssetRoute.isCanonical(rawAssetId)",
-                    "rawAssetId.isNotEmpty",
+                    "MarketAssetRoute.isCanonical(assetId)",
+                    "assetId.isNotEmpty",
                     1,
                 ),
                 encoding="utf-8",
@@ -6777,7 +6807,7 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_notification_contract(root)
         self.assertTrue(
             any(
-                "MarketAssetRoute.isCanonical(rawAssetId)" in error
+                "MarketAssetRoute.isCanonical(assetId)" in error
                 for error in result
             ),
             msg=f"expected canonical price-alert identity guard: {result}",
@@ -6892,10 +6922,14 @@ class HarnessTests(unittest.TestCase):
             self._copy_notification_application_contract(root)
             coordinator_path = root / check_harness.NOTIFICATION_COORDINATOR_PATH
             source = coordinator_path.read_text(encoding="utf-8")
+            # Calling the session authenticated without the backend having
+            # agreed it exists is the forgery this guard is for.
             mutated = source.replace(
-                "LoopNotificationSessionContext.authenticated(identity.streamUserId)",
-                "LoopNotificationSessionContext.authenticated("
-                "session.account!.privyUserId)",
+                "    final identity = _readBootstrapSession()?.identity;\n"
+                "    if (identity == null) {\n"
+                "      return const LoopNotificationSessionContext.restoring();\n"
+                "    }\n",
+                "",
             ).replace(
                 "_DeferredInteraction? _deferredInteraction;",
                 "_DeferredInteraction? _deferredInteraction;\n"
@@ -6907,7 +6941,7 @@ class HarnessTests(unittest.TestCase):
             result = check_harness.check_notification_contract(root)
 
         self.assertTrue(
-            any("bootstrap-derived stream identity" in error for error in result),
+            any("a verified bootstrap identity" in error for error in result),
             msg=f"expected bootstrap identity guard: {result}",
         )
         self.assertTrue(

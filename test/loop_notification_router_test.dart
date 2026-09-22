@@ -2,373 +2,342 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/integrations/notifications/loop_notification_router.dart';
 
 void main() {
-  final now = DateTime.utc(2026, 8, 25, 12);
-  const authenticated = LoopNotificationSessionContext.authenticated(
-    'loop_7a7448be64e24f9fa9f1891f1beec7fd',
-  );
+  final now = DateTime.utc(2026, 9, 22, 12);
+  const authenticated = LoopNotificationSessionContext.authenticated();
+  const wbnb = 'eip155:56:0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c';
 
-  LoopNotificationRouter router({int capacity = 128}) {
+  LoopNotificationRouter router({
+    int capacity = 128,
+    DateTime Function()? clock,
+  }) {
     return LoopNotificationRouter(
-      clock: () => now,
-      openedEventCapacity: capacity,
+      clock: clock ?? () => now,
+      openedPointerCapacity: capacity,
     );
   }
 
-  test('interaction resolves only the strict Chat CID route', () {
-    const hex = '0123456789abcdef0123456789abcdef';
-    final decision = router().route(
-      data: _payload(
-        kind: LoopNotificationRouter.chatMessageKind,
-        cid: 'messaging:loop_direct_$hex',
-      ),
-      ingress: LoopNotificationIngress.interaction,
-      session: authenticated,
-    );
-
-    expect(decision.disposition, LoopNotificationDisposition.navigationReady);
-    expect(decision.intent, isA<LoopChatNotificationIntent>());
-    expect(
-      decision.intent?.location,
-      '/chat/dm?cid=${Uri.encodeComponent('messaging:loop_direct_$hex')}',
-    );
-  });
-
-  test('a channel with no LOOP prefix produces no navigation intent', () {
-    // A payload LOOP cannot map has nothing to open: it must not fall back to
-    // a generic channel page, which would be a broader destination than the
-    // notification authorised.
-    for (final cid in <String>[
-      'messaging:loop-room-42',
-      'messaging:loop_direct_short',
-      'messaging:some_other_channel',
-    ]) {
+  group('只认这四个键', () {
+    test('一条合规的推送解析成一个指针，而不是一个结果', () {
       final decision = router().route(
-        data: _payload(kind: LoopNotificationRouter.chatMessageKind, cid: cid),
+        data: _payload(type: LoopPushNotificationType.priceAlertTriggered),
         ingress: LoopNotificationIngress.interaction,
         session: authenticated,
       );
 
+      expect(decision.disposition, LoopNotificationDisposition.pointerReady);
       expect(
-        decision.disposition,
-        LoopNotificationDisposition.malformed,
-        reason: cid,
+        decision.pointer?.type,
+        LoopPushNotificationType.priceAlertTriggered,
       );
-      expect(decision.intent, isNull, reason: cid);
-    }
-  });
+      expect(decision.pointer?.entityRef, 'priceAlert:$_uuid');
+    });
 
-  test('a chat notification lands on the surface its channel prefix names', () {
-    const hex = '0123456789abcdef0123456789abcdef';
-    final instance = router();
-    var eventCounter = 0;
-    String? locationFor(String cid) {
-      eventCounter += 1;
-      return instance
-          .route(
-            data: _payload(
-              kind: LoopNotificationRouter.chatMessageKind,
-              cid: cid,
-              eventId:
-                  '123e4567-e89b-42d3-a456-4266141740'
-                  '${eventCounter.toString().padLeft(2, '0')}',
-            ),
-            ingress: LoopNotificationIngress.interaction,
-            session: authenticated,
-          )
-          .intent
-          ?.location;
-    }
+    test('多一个键就整条作废，不是可以只读一半的推送', () {
+      for (final extra in <Map<String, Object?>>[
+        <String, Object?>{'contextParams': 'assetId=$wbnb'},
+        <String, Object?>{'assetId': wbnb},
+        <String, Object?>{'body': '余额 747.39'},
+        <String, Object?>{'deep_link': '/wallet/send'},
+      ]) {
+        final decision = router().route(
+          data: _payload(
+            type: LoopPushNotificationType.priceAlertTriggered,
+            extra: extra,
+          ),
+          ingress: LoopNotificationIngress.interaction,
+          session: authenticated,
+        );
 
-    expect(
-      locationFor('messaging:loop_direct_$hex'),
-      '/chat/dm?cid=${Uri.encodeComponent('messaging:loop_direct_$hex')}',
-    );
-    expect(
-      locationFor('messaging:loop_group_$hex'),
-      '/chat/group?cid=${Uri.encodeComponent('messaging:loop_group_$hex')}',
-    );
-    // A community channel carries its community, because the community record
-    // is the gate for its official channel.
-    expect(
-      locationFor('messaging:loop_community_$hex'),
-      '/community/chat?id=01234567-89ab-cdef-0123-456789abcdef',
-    );
-  });
-
-  test('Audio Room and system events resolve only fixed safe destinations', () {
-    final instance = router();
-    final audio = instance.route(
-      data: _payload(
-        kind: LoopNotificationRouter.audioRoomActivityKind,
-        eventId: '123e4567-e89b-42d3-a456-426614174001',
-      ),
-      ingress: LoopNotificationIngress.interaction,
-      session: authenticated,
-    );
-    final system = instance.route(
-      data: _payload(
-        kind: LoopNotificationRouter.systemNoticeKind,
-        eventId: '123e4567-e89b-42d3-a456-426614174002',
-      ),
-      ingress: LoopNotificationIngress.interaction,
-      session: authenticated,
-    );
-
-    expect(audio.intent, isA<LoopAudioRoomNotificationIntent>());
-    expect(audio.intent?.location, '/chat/voice');
-    expect(system.intent, isA<LoopNotificationCenterIntent>());
-    expect(system.intent?.location, '/notifications');
-  });
-
-  test('delivery never navigates and does not consume a later interaction', () {
-    final instance = router();
-    final data = _payload(kind: LoopNotificationRouter.chatMessageKind);
-
-    final foreground = instance.route(
-      data: data,
-      ingress: LoopNotificationIngress.foreground,
-      session: authenticated,
-    );
-    final background = instance.route(
-      data: data,
-      ingress: LoopNotificationIngress.background,
-      session: authenticated,
-    );
-    final interaction = instance.route(
-      data: data,
-      ingress: LoopNotificationIngress.interaction,
-      session: authenticated,
-    );
-
-    expect(
-      foreground.disposition,
-      LoopNotificationDisposition.foregroundObserved,
-    );
-    expect(foreground.intent, isNull);
-    expect(
-      background.disposition,
-      LoopNotificationDisposition.backgroundDeferred,
-    );
-    expect(background.intent, isNull);
-    expect(
-      interaction.disposition,
-      LoopNotificationDisposition.navigationReady,
-    );
-  });
-
-  test('one process claims the same interaction only once', () {
-    final instance = router();
-    final data = _payload(kind: LoopNotificationRouter.systemNoticeKind);
-
-    final first = instance.route(
-      data: data,
-      ingress: LoopNotificationIngress.interaction,
-      session: authenticated,
-    );
-    final duplicate = instance.route(
-      data: data,
-      ingress: LoopNotificationIngress.interaction,
-      session: authenticated,
-    );
-
-    expect(first.disposition, LoopNotificationDisposition.navigationReady);
-    expect(
-      duplicate.disposition,
-      LoopNotificationDisposition.duplicateInteraction,
-    );
-    expect(duplicate.intent, isNull);
-  });
-
-  test('session and server-derived recipient gates fail closed', () {
-    final instance = router();
-    final data = _payload(kind: LoopNotificationRouter.chatMessageKind);
-
-    expect(
-      instance
-          .route(
-            data: data,
-            ingress: LoopNotificationIngress.interaction,
-            session: const LoopNotificationSessionContext.restoring(),
-          )
-          .disposition,
-      LoopNotificationDisposition.sessionDeferred,
-    );
-    expect(
-      instance
-          .route(
-            data: data,
-            ingress: LoopNotificationIngress.interaction,
-            session: const LoopNotificationSessionContext.ineligible(),
-          )
-          .disposition,
-      LoopNotificationDisposition.sessionRejected,
-    );
-    expect(
-      instance
-          .route(
-            data: data,
-            ingress: LoopNotificationIngress.interaction,
-            session: const LoopNotificationSessionContext.authenticated(
-              'loop_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-            ),
-          )
-          .disposition,
-      LoopNotificationDisposition.recipientMismatch,
-    );
-  });
-
-  test('unknown provider-like and expanded payloads are malformed', () {
-    final instance = router();
-    final cases = <Map<String, Object?>>[
-      <String, Object?>{
-        'type': 'message.new',
-        'cid': 'messaging:loop-room-42',
-        'message_id': 'provider-message',
-      },
-      <String, Object?>{
-        'sender': 'stream.video',
-        'type': 'call.ring',
-        'call_cid': 'audio_room:untrusted-room',
-      },
-      _payload(kind: LoopNotificationRouter.audioRoomActivityKind)
-        ..['room_id'] = 'untrusted-room',
-      _payload(kind: LoopNotificationRouter.chatMessageKind)
-        ..['title'] = 'untrusted body marker',
-      _payload(kind: LoopNotificationRouter.chatMessageKind)
-        ..['loop_schema'] = 'notification.v2',
-      _payload(kind: 'chat.unknown'),
-      _payload(kind: LoopNotificationRouter.chatMessageKind)
-        ..['cid'] = 'livestream:loop-room-42',
-      _payload(kind: LoopNotificationRouter.chatMessageKind)
-        ..['cid'] = 'messaging:bad\u0000room',
-      _payload(kind: LoopNotificationRouter.chatMessageKind)
-        ..['event_id'] = 'not-a-canonical-uuid',
-      _payload(kind: LoopNotificationRouter.chatMessageKind)
-        ..['expires_at'] = 42,
-    ];
-
-    for (final data in cases) {
-      final decision = instance.route(
-        data: data,
-        ingress: LoopNotificationIngress.interaction,
-        session: authenticated,
-      );
-      expect(
-        decision.disposition,
-        LoopNotificationDisposition.malformed,
-        reason: '$data',
-      );
-      expect(decision.intent, isNull);
-    }
-  });
-
-  test('canonical lifetime, future skew, and expiry are enforced', () {
-    final instance = router();
-    final invalidFormat = _payload(
-      kind: LoopNotificationRouter.systemNoticeKind,
-    )..['occurred_at'] = '2026-08-25T11:59:00Z';
-    final future = _payload(kind: LoopNotificationRouter.systemNoticeKind)
-      ..['occurred_at'] = '2026-08-25T12:05:00.001Z';
-    final excessiveLifetime =
-        _payload(kind: LoopNotificationRouter.systemNoticeKind)
-          ..['occurred_at'] = '2026-08-25T12:00:00.000Z'
-          ..['expires_at'] = '2026-09-01T12:00:00.001Z';
-    final expired = _payload(kind: LoopNotificationRouter.systemNoticeKind)
-      ..['occurred_at'] = '2026-08-25T11:00:00.000Z'
-      ..['expires_at'] = '2026-08-25T12:00:00.000Z';
-
-    for (final data in <Map<String, Object?>>[
-      invalidFormat,
-      future,
-      excessiveLifetime,
-    ]) {
-      expect(
-        instance
-            .route(
-              data: data,
-              ingress: LoopNotificationIngress.interaction,
-              session: authenticated,
-            )
-            .disposition,
-        LoopNotificationDisposition.invalidTime,
-      );
-    }
-    expect(
-      instance
-          .route(
-            data: expired,
-            ingress: LoopNotificationIngress.interaction,
-            session: authenticated,
-          )
-          .disposition,
-      LoopNotificationDisposition.expired,
-    );
-  });
-
-  test(
-    'interaction receipt memory is bounded and does not claim payload data',
-    () {
-      final instance = router(capacity: 1);
-      final first = _payload(
-        kind: LoopNotificationRouter.systemNoticeKind,
-        eventId: '123e4567-e89b-42d3-a456-426614174001',
-      );
-      final second = _payload(
-        kind: LoopNotificationRouter.systemNoticeKind,
-        eventId: '123e4567-e89b-42d3-a456-426614174002',
-      );
-
-      for (final data in <Map<String, Object?>>[first, second, first]) {
         expect(
-          instance
+          decision.disposition,
+          LoopNotificationDisposition.malformed,
+          reason: extra.keys.first,
+        );
+        expect(decision.pointer, isNull, reason: extra.keys.first);
+      }
+    });
+
+    test('少一个键、值不是字符串、版本不对，都是无效载荷', () {
+      final missing = _payload(type: LoopPushNotificationType.securityEvent)
+        ..remove('contextRoute');
+      final nonString = _payload(type: LoopPushNotificationType.securityEvent)
+        ..['eventVersion'] = 1;
+      final wrongVersion = _payload(
+        type: LoopPushNotificationType.securityEvent,
+      )..['eventVersion'] = '2';
+
+      for (final data in <Map<String, Object?>>[
+        missing,
+        nonString,
+        wrongVersion,
+      ]) {
+        expect(
+          router()
               .route(
                 data: data,
                 ingress: LoopNotificationIngress.interaction,
                 session: authenticated,
               )
               .disposition,
-          LoopNotificationDisposition.navigationReady,
+          LoopNotificationDisposition.malformed,
         );
       }
+    });
 
-      const marker = 'secret-notification-body-marker';
-      final malformed = _payload(kind: LoopNotificationRouter.systemNoticeKind)
-        ..['body'] = marker;
-      final decision = instance.route(
-        data: malformed,
+    test('Stream 自己的聊天推送在这里失败关闭，而不是被半懂', () {
+      // Stream 的 data 带 sender / cid / message_id 等键，与 LOOP 的信封不是
+      // 同一件东西；半懂它就等于让另一个发送方决定去哪一页。
+      final decision = router().route(
+        data: const <String, Object?>{
+          'sender': 'stream.chat',
+          'type': 'message.new',
+          'version': 'v2',
+          'id': 'message-id',
+        },
         ingress: LoopNotificationIngress.interaction,
         session: authenticated,
       );
-      expect(decision.toString(), isNot(contains(marker)));
-    },
-  );
 
-  test('invalid process receipt capacity is rejected', () {
-    expect(
-      () => LoopNotificationRouter(openedEventCapacity: 0),
-      throwsArgumentError,
-    );
-    expect(
-      () => LoopNotificationRouter(openedEventCapacity: 1025),
-      throwsArgumentError,
-    );
+      expect(decision.disposition, LoopNotificationDisposition.malformed);
+    });
+
+    test('type 与 contextRoute 配不上时，不用其中一半去解释另一半', () {
+      final data = _payload(type: LoopPushNotificationType.securityEvent)
+        ..['contextRoute'] = 'token';
+
+      expect(
+        router()
+            .route(
+              data: data,
+              ingress: LoopNotificationIngress.interaction,
+              session: authenticated,
+            )
+            .disposition,
+        LoopNotificationDisposition.malformed,
+      );
+    });
+
+    test('entityRef 的前缀属于身份的一部分，不是标签', () {
+      for (final entityRef in <String>[
+        'voiceRoom:$_uuid',
+        'priceAlert:not-a-uuid',
+        'priceAlert:',
+        ' priceAlert:$_uuid',
+        // A zero-width space, written as its code point: pasted into source
+        // it would be an invisible difference nobody could review.
+        'priceAlert:$_uuid${String.fromCharCode(0x200b)}',
+      ]) {
+        final data = _payload(
+          type: LoopPushNotificationType.priceAlertTriggered,
+        )..['entityRef'] = entityRef;
+
+        expect(
+          router()
+              .route(
+                data: data,
+                ingress: LoopNotificationIngress.interaction,
+                session: authenticated,
+              )
+              .disposition,
+          LoopNotificationDisposition.malformed,
+          reason: entityRef,
+        );
+      }
+    });
+  });
+
+  group('送达上下文与会话', () {
+    test('前台与后台只是「看到了」，从不导航', () {
+      for (final ingress in <LoopNotificationIngress>[
+        LoopNotificationIngress.foreground,
+        LoopNotificationIngress.background,
+      ]) {
+        final decision = router().route(
+          data: _payload(type: LoopPushNotificationType.securityEvent),
+          ingress: ingress,
+          session: authenticated,
+        );
+
+        expect(decision.pointer, isNull, reason: ingress.name);
+        expect(
+          decision.disposition,
+          ingress == LoopNotificationIngress.foreground
+              ? LoopNotificationDisposition.foregroundObserved
+              : LoopNotificationDisposition.backgroundDeferred,
+        );
+      }
+    });
+
+    test('未登录被拒绝，正在恢复的会话只是被推迟', () {
+      expect(
+        router()
+            .route(
+              data: _payload(type: LoopPushNotificationType.securityEvent),
+              ingress: LoopNotificationIngress.interaction,
+              session: const LoopNotificationSessionContext.ineligible(),
+            )
+            .disposition,
+        LoopNotificationDisposition.sessionRejected,
+      );
+      expect(
+        router()
+            .route(
+              data: _payload(type: LoopPushNotificationType.securityEvent),
+              ingress: LoopNotificationIngress.interaction,
+              session: const LoopNotificationSessionContext.restoring(),
+            )
+            .disposition,
+        LoopNotificationDisposition.sessionDeferred,
+      );
+    });
+
+    test('同一个指针在一分钟内只开一次，过了窗口再触发就是新的一件事', () {
+      var clock = now;
+      final single = router(clock: () => clock);
+      final data = _payload(type: LoopPushNotificationType.priceAlertTriggered);
+
+      expect(
+        single
+            .route(
+              data: data,
+              ingress: LoopNotificationIngress.interaction,
+              session: authenticated,
+            )
+            .disposition,
+        LoopNotificationDisposition.pointerReady,
+      );
+      expect(
+        single
+            .route(
+              data: data,
+              ingress: LoopNotificationIngress.interaction,
+              session: authenticated,
+            )
+            .disposition,
+        LoopNotificationDisposition.duplicateInteraction,
+      );
+
+      clock = now.add(const Duration(minutes: 2));
+      expect(
+        single
+            .route(
+              data: data,
+              ingress: LoopNotificationIngress.interaction,
+              session: authenticated,
+            )
+            .disposition,
+        LoopNotificationDisposition.pointerReady,
+        reason: '两分钟后同一个提醒再次触发，是一件新的事',
+      );
+    });
+
+    test('去重表有上界，最旧的一条先让位', () {
+      final small = router(capacity: 1);
+      final first = _payload(
+        type: LoopPushNotificationType.priceAlertTriggered,
+      );
+      final second = _payload(
+        type: LoopPushNotificationType.priceAlertTriggered,
+        entity: '00000000-0000-4000-8000-00000000000b',
+      );
+
+      for (final data in <Map<String, Object?>>[first, second, first]) {
+        expect(
+          small
+              .route(
+                data: data,
+                ingress: LoopNotificationIngress.interaction,
+                session: authenticated,
+              )
+              .disposition,
+          LoopNotificationDisposition.pointerReady,
+        );
+      }
+    });
+
+    test('容量必须在界内', () {
+      expect(() => router(capacity: 0), throwsArgumentError);
+      expect(() => router(capacity: 2048), throwsArgumentError);
+      expect(
+        () => LoopNotificationRouter(duplicateWindow: Duration.zero),
+        throwsArgumentError,
+      );
+    });
+  });
+
+  group('目的地来自 feed 的记录', () {
+    LoopNotificationPointer pointer(LoopPushNotificationType type) {
+      return router()
+          .route(
+            data: _payload(type: type),
+            ingress: LoopNotificationIngress.interaction,
+            session: authenticated,
+          )
+          .pointer!;
+    }
+
+    test('feed 确认了资产，才打开那一个 Token 页', () {
+      final intent = LoopNotificationRouter.resolve(
+        pointer(LoopPushNotificationType.priceAlertTriggered),
+        context: const LoopNotificationContext(
+          contextRoute: 'token',
+          assetId: wbnb,
+        ),
+      );
+
+      expect(intent, isA<LoopPriceAlertNotificationIntent>());
+      expect(
+        intent.location,
+        '/market/token?assetId=${Uri.encodeQueryComponent(wbnb)}',
+      );
+    });
+
+    test('feed 没确认资产就退到价格提醒页，不猜一个 Token', () {
+      for (final context in <LoopNotificationContext?>[
+        null,
+        const LoopNotificationContext(contextRoute: 'token'),
+        const LoopNotificationContext(contextRoute: 'token', assetId: 'PEPE'),
+        const LoopNotificationContext(contextRoute: 'devices', assetId: wbnb),
+      ]) {
+        final intent = LoopNotificationRouter.resolve(
+          pointer(LoopPushNotificationType.priceAlertTriggered),
+          context: context,
+        );
+
+        expect(intent, isA<LoopPriceAlertListNotificationIntent>());
+        expect(intent.location, '/market/alerts');
+      }
+    });
+
+    test('安全事件与语音房的目的地不带任何来自 payload 的参数', () {
+      expect(
+        LoopNotificationRouter.resolve(
+          pointer(LoopPushNotificationType.securityEvent),
+        ).location,
+        '/profile/devices',
+      );
+      expect(
+        LoopNotificationRouter.resolve(
+          pointer(LoopPushNotificationType.communityVoiceRoomStarted),
+        ).location,
+        '/chat/voice',
+      );
+    });
   });
 }
 
+const _uuid = '00000000-0000-4000-8000-00000000000a';
+
 Map<String, Object?> _payload({
-  required String kind,
-  String eventId = '123e4567-e89b-42d3-a456-426614174000',
-  // Step 4: only a channel whose LOOP-assigned prefix names a surface can
-  // produce a navigation intent, so the default payload carries one.
-  String cid = 'messaging:loop_direct_0123456789abcdef0123456789abcdef',
+  required LoopPushNotificationType type,
+  String entity = _uuid,
+  Map<String, Object?> extra = const <String, Object?>{},
 }) {
   return <String, Object?>{
-    'loop_schema': LoopNotificationRouter.schema,
-    'event_id': eventId,
-    'recipient_stream_user_id': 'loop_7a7448be64e24f9fa9f1891f1beec7fd',
-    'kind': kind,
-    'occurred_at': '2026-08-25T11:59:00.000Z',
-    'expires_at': '2026-08-25T12:10:00.000Z',
-    if (kind == LoopNotificationRouter.chatMessageKind) 'cid': cid,
+    'type': type.wireName,
+    'entityRef': '${type.entityPrefix}:$entity',
+    'contextRoute': type.contextRoute.wireName,
+    'eventVersion': LoopNotificationRouter.eventVersion,
+    ...extra,
   };
 }

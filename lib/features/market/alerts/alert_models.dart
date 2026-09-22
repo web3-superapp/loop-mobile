@@ -90,7 +90,9 @@ final class LoopPriceAlert {
   final DateTime? lastEvaluatedAt;
 
   /// Always unavailable in this step: there is no push channel.
-  final LoopUnavailable delivery;
+  /// The push channel for a triggered alert, or `null` once the server has
+  /// one. The alert is recorded in the feed either way.
+  final LoopUnavailable? delivery;
   final int version;
   final DateTime createdAt;
   final DateTime updatedAt;

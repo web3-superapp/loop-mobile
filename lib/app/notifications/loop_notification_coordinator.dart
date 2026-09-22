@@ -13,6 +13,10 @@ final class LoopNotificationCoordinator {
     required LoopSessionState Function() readSession,
     required LoopBootstrapSession? Function() readBootstrapSession,
     required void Function(LoopNotificationNavigationIntent intent) navigate,
+    required Future<LoopNotificationContext?> Function(
+      LoopNotificationPointer pointer,
+    )
+    resolveContext,
     DateTime Function()? clock,
     Duration restoringWait = const Duration(seconds: 15),
   }) {
@@ -29,6 +33,7 @@ final class LoopNotificationCoordinator {
       readSession,
       readBootstrapSession,
       navigate,
+      resolveContext,
       restoringWait,
       clock,
     );
@@ -39,6 +44,7 @@ final class LoopNotificationCoordinator {
     this._readSession,
     this._readBootstrapSession,
     this._navigate,
+    this._resolveContext,
     this._restoringWait,
     DateTime Function()? clock,
   ) : _router = LoopNotificationRouter(clock: clock);
@@ -47,6 +53,17 @@ final class LoopNotificationCoordinator {
   final LoopSessionState Function() _readSession;
   final LoopBootstrapSession? Function() _readBootstrapSession;
   final void Function(LoopNotificationNavigationIntent intent) _navigate;
+
+  /// Re-reads `GET /v2/notifications/feed` for the account that is signed in
+  /// now and returns what it says about this pointer, or `null`.
+  ///
+  /// This is the step decision 0067 requires between the tap and the page: the
+  /// payload chose which record to look for, and the record — not the payload
+  /// — chooses the destination.
+  final Future<LoopNotificationContext?> Function(
+    LoopNotificationPointer pointer,
+  )
+  _resolveContext;
   final Duration _restoringWait;
   final LoopNotificationRouter _router;
 
@@ -125,20 +142,43 @@ final class LoopNotificationCoordinator {
       session: _currentContext(),
     );
 
-    if (decision.disposition == LoopNotificationDisposition.navigationReady) {
-      final intent = decision.intent;
-      if (intent == null) return;
-      try {
-        _navigate(intent);
-      } catch (_) {
-        // A retired navigator cannot turn a notification into another effect.
-      }
+    if (decision.disposition == LoopNotificationDisposition.pointerReady) {
+      final pointer = decision.pointer;
+      if (pointer == null) return;
+      unawaited(_openPointer(pointer));
       return;
     }
 
     if (event.kind == LoopNotificationSourceEventKind.interaction &&
         decision.disposition == LoopNotificationDisposition.sessionDeferred) {
       _defer(event);
+    }
+  }
+
+  /// Confirms the pointer against the account's own feed, then navigates.
+  ///
+  /// A failed or empty read is not a failed tap: the pointer still names a
+  /// kind of thing, and the destination it falls back to carries nothing from
+  /// the payload. Every one of these pages re-reads its own authority on open,
+  /// so the notification is never the source of what is shown.
+  Future<void> _openPointer(LoopNotificationPointer pointer) async {
+    LoopNotificationContext? context;
+    try {
+      context = await _resolveContext(pointer);
+    } catch (_) {
+      // A feed read that failed says nothing about the pointer; it does not
+      // authorise following the payload instead.
+    }
+    if (_disposed) return;
+    // The account may have changed while the feed was being read. A pointer
+    // resolved for the previous owner must not open anything for this one.
+    if (_currentContext().mode != LoopNotificationSessionMode.authenticated) {
+      return;
+    }
+    try {
+      _navigate(LoopNotificationRouter.resolve(pointer, context: context));
+    } catch (_) {
+      // A retired navigator cannot turn a notification into another effect.
     }
   }
 
@@ -155,7 +195,7 @@ final class LoopNotificationCoordinator {
     if (identity == null) {
       return const LoopNotificationSessionContext.restoring();
     }
-    return LoopNotificationSessionContext.authenticated(identity.streamUserId);
+    return const LoopNotificationSessionContext.authenticated();
   }
 
   void _defer(LoopNotificationSourceEvent event) {

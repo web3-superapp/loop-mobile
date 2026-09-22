@@ -829,6 +829,44 @@ void main() {
       expect(find.textContaining('推送还没有开放'), findsWidgets);
     });
 
+    testWidgets('推送开通之后，那句「尚不可用」就不再出现', (tester) async {
+      await pumpS5Page(
+        tester,
+        const NotificationPreferencesScreen(),
+        notifications: FakeNotificationsGateway(
+          preferences: S5Answer<LoopNotificationPreferences>(
+            value: s5Preferences(push: null),
+          ),
+        ),
+        meta: s5MetaSnapshot(
+          pushNotifications: LoopV2CapabilityAvailability.available,
+        ),
+      );
+
+      expect(find.text('推送尚不可用'), findsNothing);
+      // 通道有了，不等于这台设备收到过；页面只说后面这件事。
+      expect(find.text('推送还没有在真机上确认过'), findsOneWidget);
+    });
+
+    testWidgets('真机确认过之后，这一行也收起来', (tester) async {
+      await pumpS5Page(
+        tester,
+        const NotificationPreferencesScreen(),
+        notifications: FakeNotificationsGateway(
+          preferences: S5Answer<LoopNotificationPreferences>(
+            value: s5Preferences(push: null),
+          ),
+        ),
+        meta: s5MetaSnapshot(
+          pushNotifications: LoopV2CapabilityAvailability.available,
+          pushEvidencePending: false,
+        ),
+      );
+
+      expect(find.text('推送尚不可用'), findsNothing);
+      expect(find.text('推送还没有在真机上确认过'), findsNothing);
+    });
+
     testWidgets('an unavailable capability stops the page', (tester) async {
       await pumpS5Page(
         tester,
@@ -846,18 +884,15 @@ void main() {
     });
   });
 
-  group('priceAlertTriggered intent', () {
-    Map<String, Object?> envelope({
-      String assetId = s5WbnbAssetId,
-      String kind = LoopNotificationRouter.priceAlertTriggeredKind,
+  group('priceAlertTriggered 推送', () {
+    Map<String, Object?> payload({
+      String entity = '0b2c1d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e',
+      String contextRoute = 'token',
     }) => <String, Object?>{
-      'loop_schema': LoopNotificationRouter.schema,
-      'event_id': '7d9b0a1c-2e3f-4a5b-8c6d-7e8f9a0b1c2d',
-      'recipient_stream_user_id': 'loop_abcdefgh12',
-      'kind': kind,
-      'occurred_at': '2026-09-08T07:31:00.000Z',
-      'expires_at': '2026-09-08T09:31:00.000Z',
-      'asset_id': assetId,
+      'type': LoopPushNotificationType.priceAlertTriggered.wireName,
+      'entityRef': 'priceAlert:$entity',
+      'contextRoute': contextRoute,
+      'eventVersion': LoopNotificationRouter.eventVersion,
     };
 
     LoopNotificationDecision route(Map<String, Object?> data) {
@@ -867,40 +902,52 @@ void main() {
       return router.route(
         data: data,
         ingress: LoopNotificationIngress.interaction,
-        session: const LoopNotificationSessionContext.authenticated(
-          'loop_abcdefgh12',
-        ),
+        session: const LoopNotificationSessionContext.authenticated(),
       );
     }
 
-    test('an interaction opens the token page for that exact asset', () {
-      final decision = route(envelope());
+    test('推送只带一个 alert 指针，不带资产', () {
+      final decision = route(payload());
 
-      expect(decision.disposition, LoopNotificationDisposition.navigationReady);
-      expect(decision.intent, isA<LoopPriceAlertNotificationIntent>());
+      expect(decision.disposition, LoopNotificationDisposition.pointerReady);
       expect(
-        decision.intent!.location,
+        decision.pointer?.entityRef,
+        'priceAlert:0b2c1d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e',
+      );
+    });
+
+    test('资产由 feed 的那条记录决定，才打开对应 Token 页', () {
+      final intent = LoopNotificationRouter.resolve(
+        route(payload()).pointer!,
+        context: const LoopNotificationContext(
+          contextRoute: 'token',
+          assetId: s5WbnbAssetId,
+        ),
+      );
+
+      expect(
+        intent.location,
         '/market/token?assetId=${Uri.encodeQueryComponent(s5WbnbAssetId)}',
       );
     });
 
-    test('a non-canonical assetId fails closed', () {
-      final decision = route(envelope(assetId: 'PEPE'));
+    test('feed 给不出规范资产时退回价格提醒页', () {
+      final intent = LoopNotificationRouter.resolve(
+        route(payload()).pointer!,
+        context: const LoopNotificationContext(
+          contextRoute: 'token',
+          assetId: 'PEPE',
+        ),
+      );
 
-      expect(decision.disposition, LoopNotificationDisposition.malformed);
-      expect(decision.intent, isNull);
+      expect(intent.location, '/market/alerts');
     });
 
-    test('a price-alert envelope without an assetId is malformed', () {
-      final data = envelope()..remove('asset_id');
-
-      expect(route(data).disposition, LoopNotificationDisposition.malformed);
-    });
-
-    test('an asset id on a chat envelope is an unknown key', () {
-      final data = envelope(kind: LoopNotificationRouter.chatMessageKind);
-
-      expect(route(data).disposition, LoopNotificationDisposition.malformed);
+    test('contextRoute 与类型对不上时不解析成指针', () {
+      expect(
+        route(payload(contextRoute: 'devices')).disposition,
+        LoopNotificationDisposition.malformed,
+      );
     });
   });
 }

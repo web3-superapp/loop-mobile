@@ -92,7 +92,7 @@ final class DioLoopV2NotificationsApi implements LoopV2NotificationsApi {
         items: items,
         nextCursor: LoopV2ChainCodec.cursor(root, 'nextCursor'),
         unreadCount: LoopV2ChainCodec.requireInt(root, 'unreadCount'),
-        push: LoopV2ChainCodec.unavailable(root['push']),
+        push: LoopV2ChainCodec.deliveryChannel(root['push']),
       );
     } on DioException catch (error) {
       throw LoopV2Contract.mapDioFailure(
@@ -241,7 +241,7 @@ final class DioLoopV2NotificationsApi implements LoopV2NotificationsApi {
       version: LoopV2ChainCodec.requireInt(root, 'version'),
       updatedAt: LoopV2ChainCodec.optionalTimestamp(root, 'updatedAt'),
       categories: parsed,
-      push: LoopV2ChainCodec.unavailable(root['push']),
+      push: LoopV2ChainCodec.deliveryChannel(root['push']),
     );
   }
 }

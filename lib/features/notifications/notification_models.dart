@@ -84,8 +84,12 @@ final class LoopNotificationPreferences {
   final DateTime? updatedAt;
   final Map<LoopNotificationCategory, LoopNotificationCategoryState> categories;
 
-  /// Always unavailable: there is no FCM/APNs project.
-  final LoopUnavailable push;
+  /// The push channel, or `null` once the server has one.
+  ///
+  /// It is not a promise about this device: the account may still have refused
+  /// the system permission, and no notification has been seen arriving on a
+  /// real device yet. It only says whether there is a channel at all.
+  final LoopUnavailable? push;
 
   bool enabledFor(LoopNotificationCategory category) =>
       categories[category]?.enabled ?? false;
@@ -184,7 +188,7 @@ final class LoopNotificationFeed {
   final List<LoopNotificationEntry> items;
   final String? nextCursor;
   final int unreadCount;
-  final LoopUnavailable push;
+  final LoopUnavailable? push;
 
   List<LoopNotificationEntry> get priceAlerts => items
       .where((entry) => entry.type == LoopNotificationCategory.tradePriceAlert)

@@ -11,6 +11,7 @@ import 'package:loop_mobile/integrations/backend/loop_backend_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/alerts/loop_v2_alerts_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/chain/loop_v2_chain_api.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_s5_gateways.dart';
+import 'package:loop_mobile/integrations/backend/v2/loop_v2_s8_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_write_origin_source.dart';
 import 'package:loop_mobile/integrations/backend/v2/market/loop_v2_market_api.dart';
@@ -164,13 +165,21 @@ final loopV2PushDeviceGatewayProvider = Provider<PushDeviceGateway>((ref) {
   final api = ref.watch(loopV2PushDeviceApiProvider);
   final metadata = ref.watch(loopV2ClientMetadataProvider);
   final session = ref.watch(loopAuthenticatedSessionProvider);
-  if (api == null || metadata == null || session == null) {
+  // A `/v2/devices` command needs the caller's own session id, which the S8
+  // source reads from the session module's journal. Without it the command
+  // cannot be issued, so the port stays fail-closed rather than sending a
+  // header set the server will refuse.
+  final sessionIds = ref.watch(loopV2SessionIdSourceProvider);
+  if (api == null ||
+      metadata == null ||
+      session == null ||
+      sessionIds == null) {
     return const UnavailablePushDeviceGateway();
   }
   return DioLoopV2PushDeviceGateway(
     api: api,
     clientMetadata: metadata,
     session: session,
-    originSource: ref.watch(loopV2WriteOriginSourceProvider),
+    sessionIds: sessionIds,
   );
 });

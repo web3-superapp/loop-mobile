@@ -39,6 +39,31 @@ class NotificationPreferencesScreen extends ConsumerStatefulWidget {
 
 class _NotificationPreferencesScreenState
     extends ConsumerState<NotificationPreferencesScreen> {
+  /// The one line the notification resource cannot say for itself.
+  ///
+  /// Availability and usability are different answers here. The server calls
+  /// the capability available as soon as it has a push runtime, and separately
+  /// records that no real device has been seen receiving anything yet. The
+  /// first decides whether this device registers at all; the second is a claim
+  /// the page must not make. Neither closes the switches: they change what the
+  /// account is recorded as wanting, and that is true in every state.
+  Widget _pushChannelNotice(LoopCapabilityProjection capability) {
+    // Only the half the resource card cannot state. A closed capability is
+    // already said once, in the server's own words, further down the page;
+    // saying it twice on one screen reads as two different problems.
+    if (capability.decision != LoopCapabilityDecision.available ||
+        !capability.evidencePending) {
+      return const SizedBox.shrink();
+    }
+    return const LoopNotice(
+      key: ValueKey<String>('notification-preferences-push-channel'),
+      tone: LoopNoticeTone.warn,
+      icon: 'warn',
+      title: '推送还没有在真机上确认过',
+      body: '推送通道已经配好，但还没有一台设备确认收到过。开关照常保存，也照常影响站内的通知列表。',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final capability = ref.watch(
@@ -80,6 +105,15 @@ class _NotificationPreferencesScreenState
           : null,
       sections: <Widget>[
         LoopChainPreviewNotice(mode: mode, resource: '通知设置'),
+        // 0067 §7.6: the push channel is a separate fact from the ten
+        // switches. Saving a preference has always worked; whether anything
+        // can be delivered is the server's answer, and the page says which of
+        // the two it is talking about rather than letting a switch imply both.
+        _pushChannelNotice(
+          ref.watch(
+            loopCapabilityProvider(LoopV2CapabilityId.pushNotifications),
+          ),
+        ),
         if (resource != null)
           LoopChalkCard(
             key: const ValueKey<String>('notification-preferences-summary'),
@@ -166,11 +200,17 @@ class _NotificationPreferencesScreenState
               reason: loopChainFailureReason(state.failureKind),
               onRetry: () => unawaited(controller.reload()),
             ),
-          LoopUnavailableCard.fact(
-            key: const ValueKey<String>('notification-push-unavailable'),
-            label: '推送尚不可用',
-            fact: resource.push,
-          ),
+          // The server's own statement about the channel. Once it has one
+          // this disappears and `_pushChannelNotice` takes over, because
+          // "there is a channel" and "this device has been seen receiving
+          // something" are two different claims and only the first is made
+          // here.
+          if (resource.push != null)
+            LoopUnavailableCard.fact(
+              key: const ValueKey<String>('notification-push-unavailable'),
+              label: '推送尚不可用',
+              fact: resource.push!,
+            ),
           for (final section in _sections)
             ..._sectionWidgets(section, resource, state, controller),
           LoopProvenanceFooter(

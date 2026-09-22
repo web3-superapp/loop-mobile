@@ -368,6 +368,34 @@ abstract final class LoopV2ChainCodec {
       requireString(source, key, pattern: assetIdPattern, maxLength: 64);
 
   /// A `{status: "unavailable", reasonCode}` block with exactly two keys.
+  /// A channel the server may now have: `{status, reasonCode}` where
+  /// `available` carries a null reason and `unavailable` carries one.
+  ///
+  /// Decision 0067 gave `push` (and the alert resource's `delivery`) a second
+  /// state. Reading them with [unavailable] was right while there was no push
+  /// runtime and wrong the moment there is one: the whole feed would have
+  /// become an invalid payload on the day delivery was switched on, which is
+  /// the worst possible day for the notifications page to go blank.
+  ///
+  /// `null` means available. It is deliberately not a `LoopUnavailable` with
+  /// an empty reason: there is nothing to say, and a surface that renders a
+  /// reason-less refusal reads as a refusal.
+  static LoopUnavailable? deliveryChannel(Object? raw) {
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'reasonCode',
+    });
+    switch (map['status']) {
+      case 'available':
+        if (map['reasonCode'] != null) invalid();
+        return null;
+      case 'unavailable':
+        return LoopUnavailable(requireReasonCode(map, 'reasonCode'));
+      default:
+        invalid();
+    }
+  }
+
   static LoopUnavailable unavailable(Object? raw) {
     final map = LoopV2Contract.strictMap(raw, const <String>{
       'status',

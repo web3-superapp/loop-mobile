@@ -1,46 +1,155 @@
 import 'dart:collection';
 
 import 'package:loop_mobile/core/navigation/market_asset_route.dart';
-import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 
-/// The only delivery contexts a future centralized provider adapter may pass
-/// into LOOP's notification router.
+/// The only delivery contexts the centralized provider ingress may pass into
+/// LOOP's notification router.
 enum LoopNotificationIngress { foreground, background, interaction }
 
 /// Session eligibility is supplied by the application composition root.
 ///
 /// Only [authenticated] may resolve an interaction. Preview, signed-out, and
 /// authenticated-unverified sessions map to [ineligible]. Restoring may be
-/// retried by a future ingress coordinator, but this router never queues data.
+/// retried by the ingress coordinator, but this router never queues data.
 enum LoopNotificationSessionMode { restoring, ineligible, authenticated }
 
 final class LoopNotificationSessionContext {
-  const LoopNotificationSessionContext._(this.mode, this.streamUserId);
+  const LoopNotificationSessionContext._(this.mode);
 
   const LoopNotificationSessionContext.restoring()
-    : this._(LoopNotificationSessionMode.restoring, null);
+    : this._(LoopNotificationSessionMode.restoring);
 
   const LoopNotificationSessionContext.ineligible()
-    : this._(LoopNotificationSessionMode.ineligible, null);
+    : this._(LoopNotificationSessionMode.ineligible);
 
-  const LoopNotificationSessionContext.authenticated(String streamUserId)
-    : this._(LoopNotificationSessionMode.authenticated, streamUserId);
+  /// The composition root has a real LOOP session **and** a backend-verified
+  /// bootstrap identity.
+  ///
+  /// Decision 0067 removed the recipient field from the payload, so there is
+  /// no longer anything in a notification to compare an account against. The
+  /// binding moved somewhere stronger: the token is issued to one device
+  /// session and voided with it, and the destination is confirmed by re-reading
+  /// the *current* account's feed after the tap. A pointer that account cannot
+  /// see never opens a page that names anything.
+  const LoopNotificationSessionContext.authenticated()
+    : this._(LoopNotificationSessionMode.authenticated);
 
   final LoopNotificationSessionMode mode;
-  final String? streamUserId;
 }
 
 enum LoopNotificationDisposition {
   malformed,
-  invalidTime,
-  expired,
   sessionDeferred,
   sessionRejected,
-  recipientMismatch,
   foregroundObserved,
   backgroundDeferred,
-  navigationReady,
+  pointerReady,
   duplicateInteraction,
+}
+
+/// The three events the first push dictionary carries (decision 0067 §7.3).
+///
+/// Each one owns exactly one destination family. The pairing is checked rather
+/// than trusted: a payload whose `type` and `contextRoute` disagree is not a
+/// new combination to honour, it is a payload nobody wrote.
+enum LoopPushNotificationType {
+  priceAlertTriggered(
+    'price_alert_triggered',
+    'priceAlert',
+    LoopNotificationContextRoute.token,
+  ),
+  securityEvent(
+    'security_event',
+    'deviceSession',
+    LoopNotificationContextRoute.devices,
+  ),
+  communityVoiceRoomStarted(
+    'community_voice_room_started',
+    'voiceRoom',
+    LoopNotificationContextRoute.voiceRoom,
+  );
+
+  const LoopPushNotificationType(
+    this.wireName,
+    this.entityPrefix,
+    this.contextRoute,
+  );
+
+  final String wireName;
+
+  /// The `<kind>` half of `entityRef`. It is part of the identity, not a
+  /// label: `priceAlert:<uuid>` and `voiceRoom:<uuid>` are different things
+  /// even when the UUID matches.
+  final String entityPrefix;
+
+  final LoopNotificationContextRoute contextRoute;
+
+  static LoopPushNotificationType? tryParse(String value) {
+    for (final type in values) {
+      if (type.wireName == value) return type;
+    }
+    return null;
+  }
+}
+
+/// The destination slugs the server may name.
+enum LoopNotificationContextRoute {
+  token('token'),
+  devices('devices'),
+  voiceRoom('voice-room');
+
+  const LoopNotificationContextRoute(this.wireName);
+
+  final String wireName;
+
+  static LoopNotificationContextRoute? tryParse(String value) {
+    for (final route in values) {
+      if (route.wireName == value) return route;
+    }
+    return null;
+  }
+}
+
+/// What a push actually is: a pointer at something to go and read.
+///
+/// It is never a result. The notification says a price alert fired; it does
+/// not say which asset, at what price, or that anything is still true. That
+/// comes from the account's own feed after the tap.
+final class LoopNotificationPointer {
+  const LoopNotificationPointer._(this.type, this.entityRef);
+
+  final LoopPushNotificationType type;
+
+  /// `<kind>:<uuid>`, exactly as the server sent it.
+  final String entityRef;
+
+  LoopNotificationContextRoute get contextRoute => type.contextRoute;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LoopNotificationPointer &&
+          other.type == type &&
+          other.entityRef == entityRef;
+
+  @override
+  int get hashCode => Object.hash(type, entityRef);
+
+  @override
+  String toString() => 'LoopNotificationPointer(${type.wireName})';
+}
+
+/// The authoritative destination, read back from `GET /v2/notifications/feed`
+/// after the tap.
+///
+/// `contextRoute` and `assetId` here are the *server's record of the
+/// notification*, not the push payload. They are what a page may be opened
+/// with; the payload only decided which record to look for.
+final class LoopNotificationContext {
+  const LoopNotificationContext({required this.contextRoute, this.assetId});
+
+  final String contextRoute;
+  final String? assetId;
 }
 
 /// A fixed application destination produced only after strict validation.
@@ -50,43 +159,11 @@ sealed class LoopNotificationNavigationIntent {
   String get location;
 }
 
-final class LoopChatNotificationIntent
-    extends LoopNotificationNavigationIntent {
-  const LoopChatNotificationIntent._(this.channel);
-
-  final LoopStreamChannelAddress channel;
-
-  /// The LOOP-assigned channel prefix decides the surface: a community
-  /// channel opens `community-chat`, a direct channel opens `dm`, a group
-  /// channel opens `group`. The parser already rejected every other shape, so
-  /// no intent can exist without a mapped location.
-  @override
-  String get location => loopChatLocationForCid(channel.cid)!;
-}
-
-/// Audio notifications can only open the foreground lobby. A notification can
-/// never choose a call type, room ID, join state, or microphone state.
-final class LoopAudioRoomNotificationIntent
-    extends LoopNotificationNavigationIntent {
-  const LoopAudioRoomNotificationIntent._();
-
-  @override
-  String get location => '/chat/voice';
-}
-
-final class LoopNotificationCenterIntent
-    extends LoopNotificationNavigationIntent {
-  const LoopNotificationCenterIntent._();
-
-  @override
-  String get location => '/notifications';
-}
-
-/// A triggered price alert opens the token page for the asset it watches.
+/// A triggered price alert whose asset the feed confirmed.
 ///
-/// The destination is decided by the server's `contextRoute` + `contextParams`
-/// and is validated here against the canonical CAIP identity: a malformed or
-/// non-canonical `assetId` fails closed rather than opening another asset.
+/// The `assetId` is validated against the canonical CAIP identity: the token
+/// page addresses one contract, and a page that recovered its subject from
+/// anything looser would show a different asset's facts.
 final class LoopPriceAlertNotificationIntent
     extends LoopNotificationNavigationIntent {
   const LoopPriceAlertNotificationIntent._(this.assetId);
@@ -97,310 +174,281 @@ final class LoopPriceAlertNotificationIntent
   String get location => MarketAssetRoute.token(assetId);
 }
 
+/// A triggered price alert whose asset the feed did not confirm.
+///
+/// The alerts page is where price alerts live and it reads its own authority,
+/// so it is the honest destination when the notification cannot be matched to
+/// a record: the reader still lands on their alerts instead of on a token
+/// chosen from an unverified payload, or on nothing at all.
+final class LoopPriceAlertListNotificationIntent
+    extends LoopNotificationNavigationIntent {
+  const LoopPriceAlertListNotificationIntent._();
+
+  @override
+  String get location => MarketAssetRoute.alertsPath;
+}
+
+/// A new sign-in or a revoked device session opens device management, which
+/// re-reads `GET /v2/devices` for itself.
+final class LoopSecurityEventNotificationIntent
+    extends LoopNotificationNavigationIntent {
+  const LoopSecurityEventNotificationIntent._();
+
+  @override
+  String get location => '/profile/devices';
+}
+
+/// Audio notifications can only open the foreground lobby. A notification can
+/// never choose a call type, room ID, join state, or microphone state.
+final class LoopVoiceRoomNotificationIntent
+    extends LoopNotificationNavigationIntent {
+  const LoopVoiceRoomNotificationIntent._();
+
+  @override
+  String get location => '/chat/voice';
+}
+
 /// A provider-neutral result that never retains the untrusted input map.
 final class LoopNotificationDecision {
-  const LoopNotificationDecision._(this.disposition, this.intent);
+  const LoopNotificationDecision._(this.disposition, this.pointer);
 
-  const LoopNotificationDecision._withoutNavigation(
+  const LoopNotificationDecision._withoutPointer(
     LoopNotificationDisposition disposition,
   ) : this._(disposition, null);
 
-  const LoopNotificationDecision._navigate(
-    LoopNotificationNavigationIntent intent,
-  ) : this._(LoopNotificationDisposition.navigationReady, intent);
+  const LoopNotificationDecision._ready(LoopNotificationPointer pointer)
+    : this._(LoopNotificationDisposition.pointerReady, pointer);
 
   final LoopNotificationDisposition disposition;
-  final LoopNotificationNavigationIntent? intent;
+
+  /// Present only for an accepted interaction. It still has to be resolved
+  /// against the account's own feed before it can become a location.
+  final LoopNotificationPointer? pointer;
 }
 
-enum _LoopNotificationKind {
-  chatMessage,
-  audioRoomActivity,
-  systemNotice,
-  priceAlertTriggered,
-}
-
-final class _LoopNotificationEvent {
-  const _LoopNotificationEvent({
-    required this.eventId,
-    required this.recipientStreamUserId,
-    required this.kind,
-    this.channel,
-    this.assetId,
-  });
-
-  final String eventId;
-  final String recipientStreamUserId;
-  final _LoopNotificationKind kind;
-  final LoopStreamChannelAddress? channel;
-  final String? assetId;
-}
-
-enum _LoopNotificationParseFailure { malformed, invalidTime, expired }
+enum _LoopNotificationParseFailure { malformed }
 
 final class _LoopNotificationParseResult {
-  const _LoopNotificationParseResult.event(this.event) : failure = null;
+  const _LoopNotificationParseResult.pointer(this.pointer) : failure = null;
 
-  const _LoopNotificationParseResult.failure(this.failure) : event = null;
+  const _LoopNotificationParseResult.failure(this.failure) : pointer = null;
 
-  final _LoopNotificationEvent? event;
+  final LoopNotificationPointer? pointer;
   final _LoopNotificationParseFailure? failure;
 }
 
-/// Strictly classifies LOOP-owned, normalized navigation envelopes.
+/// Strictly classifies the four-key push envelope of decision 0067.
 ///
 /// This is deliberately not a parser for raw Firebase, Stream Chat, Stream
-/// Video, APNs, or PushKit payloads. Their exact provider templates and names
-/// must be verified before one centralized ingress adapter may map them into
-/// this contract. Unknown data therefore fails closed with no SDK call,
-/// navigation, persistence, or payload logging.
+/// Video, APNs, or PushKit payloads. The centralized ingress hands it
+/// `RemoteMessage.data` and nothing else; a Stream chat push, whose data
+/// carries its own sender and channel keys, fails closed here rather than
+/// being half-understood. Unknown data produces no SDK call, no navigation, no
+/// persistence and no payload logging.
 final class LoopNotificationRouter {
   LoopNotificationRouter({
     DateTime Function()? clock,
-    int openedEventCapacity = 128,
+    int openedPointerCapacity = 128,
+    this.duplicateWindow = const Duration(seconds: 60),
   }) : _clock = clock ?? DateTime.now,
-       _openedEventCapacity = openedEventCapacity {
-    if (openedEventCapacity < 1 || openedEventCapacity > 1024) {
+       _openedPointerCapacity = openedPointerCapacity {
+    if (openedPointerCapacity < 1 || openedPointerCapacity > 1024) {
       throw ArgumentError.value(
-        openedEventCapacity,
-        'openedEventCapacity',
+        openedPointerCapacity,
+        'openedPointerCapacity',
         'must be between 1 and 1024',
+      );
+    }
+    if (duplicateWindow <= Duration.zero ||
+        duplicateWindow > const Duration(minutes: 10)) {
+      throw ArgumentError.value(
+        duplicateWindow,
+        'duplicateWindow',
+        'must be greater than zero and at most ten minutes',
       );
     }
   }
 
-  static const String schema = 'notification.v1';
-  static const String chatMessageKind = 'chat.message';
-  static const String audioRoomActivityKind = 'audio_room.activity';
-  static const String systemNoticeKind = 'system.notice';
-  static const String priceAlertTriggeredKind = 'price_alert.triggered';
+  /// The exact four keys, and their only accepted version.
+  static const String eventVersion = '1';
+  static const Set<String> payloadKeys = <String>{
+    'type',
+    'entityRef',
+    'contextRoute',
+    'eventVersion',
+  };
 
-  static const Set<String> _commonKeys = <String>{
-    'loop_schema',
-    'event_id',
-    'recipient_stream_user_id',
-    'kind',
-    'occurred_at',
-    'expires_at',
-  };
-  static const Set<String> _chatKeys = <String>{..._commonKeys, 'cid'};
-  static const Set<String> _priceAlertKeys = <String>{
-    ..._commonKeys,
-    'asset_id',
-  };
-  static final RegExp _eventIdPattern = RegExp(
-    r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+  /// How long the same pointer is treated as the same tap arriving twice.
+  ///
+  /// The server already guarantees one push per event per device, permanently,
+  /// so this is not an event history: it is the window in which a duplicate
+  /// callback is a duplicate callback. Beyond it, the same alert firing again
+  /// is a new thing to open.
+  final Duration duplicateWindow;
+
+  static final RegExp _uuidPattern = RegExp(
+    r'^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
   );
-  static final RegExp _streamUserIdPattern = RegExp(r'^loop_[a-z0-9_-]{8,58}$');
-  static final RegExp _timestampPattern = RegExp(
-    r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$',
-  );
+  // Written with escapes rather than the characters themselves: a bidi
+  // override pasted into source is exactly the trick this pattern exists
+  // to reject, and it would sit here looking like nothing at all.
   static final RegExp _forbiddenTextControlPattern = RegExp(
-    r'[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2060-\u2069\ufeff]',
+    '[\\u0000-\\u001f\\u007f-\\u009f\\u200b-\\u200f'
+    '\\u2028-\\u202e\\u2060-\\u2069\\ufeff]',
   );
-  static const Duration _futureSkew = Duration(minutes: 5);
-  static const Duration _maximumLifetime = Duration(days: 7);
 
   final DateTime Function() _clock;
-  final int _openedEventCapacity;
-  final LinkedHashSet<String> _openedEventKeys = LinkedHashSet<String>();
+  final int _openedPointerCapacity;
+  final LinkedHashMap<String, DateTime> _openedPointers =
+      LinkedHashMap<String, DateTime>();
 
   LoopNotificationDecision route({
     required Map<String, Object?> data,
     required LoopNotificationIngress ingress,
     required LoopNotificationSessionContext session,
   }) {
-    final parsed = _parse(data, _clock().toUtc());
-    final failure = parsed.failure;
-    if (failure != null) {
-      return LoopNotificationDecision._withoutNavigation(switch (failure) {
-        _LoopNotificationParseFailure.malformed =>
-          LoopNotificationDisposition.malformed,
-        _LoopNotificationParseFailure.invalidTime =>
-          LoopNotificationDisposition.invalidTime,
-        _LoopNotificationParseFailure.expired =>
-          LoopNotificationDisposition.expired,
-      });
+    final parsed = _parse(data);
+    if (parsed.failure != null) {
+      return const LoopNotificationDecision._withoutPointer(
+        LoopNotificationDisposition.malformed,
+      );
     }
-    final event = parsed.event!;
+    final pointer = parsed.pointer!;
 
     switch (session.mode) {
       case LoopNotificationSessionMode.restoring:
-        return const LoopNotificationDecision._withoutNavigation(
+        return const LoopNotificationDecision._withoutPointer(
           LoopNotificationDisposition.sessionDeferred,
         );
       case LoopNotificationSessionMode.ineligible:
-        return const LoopNotificationDecision._withoutNavigation(
+        return const LoopNotificationDecision._withoutPointer(
           LoopNotificationDisposition.sessionRejected,
         );
       case LoopNotificationSessionMode.authenticated:
-        final streamUserId = session.streamUserId;
-        if (streamUserId == null ||
-            !_streamUserIdPattern.hasMatch(streamUserId) ||
-            streamUserId != event.recipientStreamUserId) {
-          return const LoopNotificationDecision._withoutNavigation(
-            LoopNotificationDisposition.recipientMismatch,
-          );
-        }
+        break;
     }
 
     switch (ingress) {
       case LoopNotificationIngress.foreground:
-        return const LoopNotificationDecision._withoutNavigation(
+        return const LoopNotificationDecision._withoutPointer(
           LoopNotificationDisposition.foregroundObserved,
         );
       case LoopNotificationIngress.background:
-        return const LoopNotificationDecision._withoutNavigation(
+        return const LoopNotificationDecision._withoutPointer(
           LoopNotificationDisposition.backgroundDeferred,
         );
       case LoopNotificationIngress.interaction:
         break;
     }
 
-    final receiptKey = '${event.recipientStreamUserId}\u0000${event.eventId}';
-    if (!_claimOpenedEvent(receiptKey)) {
-      return const LoopNotificationDecision._withoutNavigation(
+    if (!_claimOpenedPointer(pointer.entityRef)) {
+      return const LoopNotificationDecision._withoutPointer(
         LoopNotificationDisposition.duplicateInteraction,
       );
     }
-
-    return LoopNotificationDecision._navigate(switch (event.kind) {
-      _LoopNotificationKind.chatMessage => LoopChatNotificationIntent._(
-        event.channel!,
-      ),
-      _LoopNotificationKind.audioRoomActivity =>
-        const LoopAudioRoomNotificationIntent._(),
-      _LoopNotificationKind.systemNotice =>
-        const LoopNotificationCenterIntent._(),
-      _LoopNotificationKind.priceAlertTriggered =>
-        LoopPriceAlertNotificationIntent._(event.assetId!),
-    });
+    return LoopNotificationDecision._ready(pointer);
   }
 
-  bool _claimOpenedEvent(String receiptKey) {
-    if (_openedEventKeys.contains(receiptKey)) return false;
-    if (_openedEventKeys.length >= _openedEventCapacity) {
-      _openedEventKeys.remove(_openedEventKeys.first);
+  /// Turns an accepted pointer into a destination, using the account's own
+  /// notification record rather than the payload.
+  ///
+  /// [context] is what `GET /v2/notifications/feed` says about this
+  /// `entityRef` for the account that is signed in now. `null` — the read
+  /// failed, or that account has no such notification — is not a reason to
+  /// follow the payload instead: a price alert then opens the alerts page,
+  /// which names no asset, and the two parameterless destinations are
+  /// unchanged because there was never anything in the payload to choose them
+  /// with.
+  static LoopNotificationNavigationIntent resolve(
+    LoopNotificationPointer pointer, {
+    LoopNotificationContext? context,
+  }) {
+    final confirmed =
+        context != null &&
+        context.contextRoute == pointer.contextRoute.wireName;
+    return switch (pointer.type) {
+      LoopPushNotificationType.priceAlertTriggered => _priceAlertIntent(
+        confirmed ? context.assetId : null,
+      ),
+      LoopPushNotificationType.securityEvent =>
+        const LoopSecurityEventNotificationIntent._(),
+      LoopPushNotificationType.communityVoiceRoomStarted =>
+        const LoopVoiceRoomNotificationIntent._(),
+    };
+  }
+
+  static LoopNotificationNavigationIntent _priceAlertIntent(String? assetId) {
+    if (assetId == null || !MarketAssetRoute.isCanonical(assetId)) {
+      return const LoopPriceAlertListNotificationIntent._();
     }
-    _openedEventKeys.add(receiptKey);
+    return LoopPriceAlertNotificationIntent._(assetId);
+  }
+
+  bool _claimOpenedPointer(String entityRef) {
+    final now = _clock().toUtc();
+    final opened = _openedPointers[entityRef];
+    if (opened != null && now.difference(opened) < duplicateWindow) {
+      return false;
+    }
+    _openedPointers.remove(entityRef);
+    if (_openedPointers.length >= _openedPointerCapacity) {
+      _openedPointers.remove(_openedPointers.keys.first);
+    }
+    _openedPointers[entityRef] = now;
     return true;
   }
 
-  _LoopNotificationParseResult _parse(Map<String, Object?> data, DateTime now) {
-    final rawKind = data['kind'];
-    final kind = switch (rawKind) {
-      chatMessageKind => _LoopNotificationKind.chatMessage,
-      audioRoomActivityKind => _LoopNotificationKind.audioRoomActivity,
-      systemNoticeKind => _LoopNotificationKind.systemNotice,
-      priceAlertTriggeredKind => _LoopNotificationKind.priceAlertTriggered,
-      _ => null,
-    };
-    if (kind == null) {
-      return const _LoopNotificationParseResult.failure(
-        _LoopNotificationParseFailure.malformed,
-      );
-    }
-
-    final allowedKeys = switch (kind) {
-      _LoopNotificationKind.chatMessage => _chatKeys,
-      _LoopNotificationKind.priceAlertTriggered => _priceAlertKeys,
-      _ => _commonKeys,
-    };
-    if (data.length != allowedKeys.length ||
-        !data.keys.every(allowedKeys.contains) ||
+  _LoopNotificationParseResult _parse(Map<String, Object?> data) {
+    // Exactly four keys, every value a String. A payload with a fifth key is
+    // not a richer notification, it is a different sender's.
+    if (data.length != payloadKeys.length ||
+        !data.keys.every(payloadKeys.contains) ||
         !data.values.every((value) => value is String)) {
       return const _LoopNotificationParseResult.failure(
         _LoopNotificationParseFailure.malformed,
       );
     }
-
-    final rawSchema = data['loop_schema']! as String;
-    final eventId = data['event_id']! as String;
-    final recipientStreamUserId = data['recipient_stream_user_id']! as String;
-    final rawOccurredAt = data['occurred_at']! as String;
-    final rawExpiresAt = data['expires_at']! as String;
-    if (rawSchema != schema ||
-        !_eventIdPattern.hasMatch(eventId) ||
-        !_streamUserIdPattern.hasMatch(recipientStreamUserId)) {
+    if (data['eventVersion'] != eventVersion) {
       return const _LoopNotificationParseResult.failure(
         _LoopNotificationParseFailure.malformed,
       );
     }
 
-    final occurredAt = _parseCanonicalTimestamp(rawOccurredAt);
-    final expiresAt = _parseCanonicalTimestamp(rawExpiresAt);
-    if (occurredAt == null ||
-        expiresAt == null ||
-        !expiresAt.isAfter(occurredAt) ||
-        expiresAt.difference(occurredAt) > _maximumLifetime ||
-        occurredAt.isAfter(now.add(_futureSkew))) {
+    final type = LoopPushNotificationType.tryParse(data['type']! as String);
+    final contextRoute = LoopNotificationContextRoute.tryParse(
+      data['contextRoute']! as String,
+    );
+    // The dictionary pairs each type with one destination family. A payload
+    // that pairs them differently is refused rather than resolved by one of
+    // the two halves.
+    if (type == null ||
+        contextRoute == null ||
+        contextRoute != type.contextRoute) {
       return const _LoopNotificationParseResult.failure(
-        _LoopNotificationParseFailure.invalidTime,
+        _LoopNotificationParseFailure.malformed,
       );
     }
-    if (!expiresAt.isAfter(now)) {
+
+    final entityRef = data['entityRef']! as String;
+    if (!_isEntityRef(entityRef, type)) {
       return const _LoopNotificationParseResult.failure(
-        _LoopNotificationParseFailure.expired,
+        _LoopNotificationParseFailure.malformed,
       );
     }
-
-    LoopStreamChannelAddress? channel;
-    if (kind == _LoopNotificationKind.chatMessage) {
-      final cid = data['cid']! as String;
-      if (!_isBoundedText(cid, maxLength: 255)) {
-        return const _LoopNotificationParseResult.failure(
-          _LoopNotificationParseFailure.malformed,
-        );
-      }
-      channel = parseLoopStreamChannelCid(cid);
-      // A channel whose LOOP-assigned prefix names no surface cannot produce a
-      // navigation intent: there is nothing to open, and a generic channel
-      // page would be a broader destination than the payload authorises.
-      if (channel == null || loopChatLocationForCid(cid) == null) {
-        return const _LoopNotificationParseResult.failure(
-          _LoopNotificationParseFailure.malformed,
-        );
-      }
-    }
-
-    String? assetId;
-    if (kind == _LoopNotificationKind.priceAlertTriggered) {
-      final rawAssetId = data['asset_id']! as String;
-      // Only the canonical CAIP identity may address a token page.
-      if (!MarketAssetRoute.isCanonical(rawAssetId)) {
-        return const _LoopNotificationParseResult.failure(
-          _LoopNotificationParseFailure.malformed,
-        );
-      }
-      assetId = rawAssetId;
-    }
-
-    return _LoopNotificationParseResult.event(
-      _LoopNotificationEvent(
-        eventId: eventId,
-        recipientStreamUserId: recipientStreamUserId,
-        kind: kind,
-        channel: channel,
-        assetId: assetId,
-      ),
+    return _LoopNotificationParseResult.pointer(
+      LoopNotificationPointer._(type, entityRef),
     );
   }
 
-  static DateTime? _parseCanonicalTimestamp(String rawValue) {
-    if (!_timestampPattern.hasMatch(rawValue)) return null;
-    final parsed = DateTime.tryParse(rawValue);
-    if (parsed == null ||
-        !parsed.isUtc ||
-        parsed.toIso8601String() != rawValue) {
-      return null;
+  static bool _isEntityRef(String value, LoopPushNotificationType type) {
+    if (value.isEmpty ||
+        value.length > 128 ||
+        value.trim() != value ||
+        _forbiddenTextControlPattern.hasMatch(value)) {
+      return false;
     }
-    return parsed;
-  }
-
-  static bool _isBoundedText(String value, {required int maxLength}) {
-    return value.isNotEmpty &&
-        value.length <= maxLength &&
-        value.trim() == value &&
-        !_forbiddenTextControlPattern.hasMatch(value);
+    final prefix = '${type.entityPrefix}:';
+    if (!value.startsWith(prefix)) return false;
+    return _uuidPattern.hasMatch(value.substring(prefix.length));
   }
 }

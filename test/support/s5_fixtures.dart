@@ -1272,16 +1272,20 @@ LoopNotificationFeed s5Feed({
   int unreadCount = 1,
   String? nextCursor,
   List<LoopNotificationEntry>? items,
+  LoopUnavailable? push = const LoopUnavailable('PUSH_RUNTIME_DEFERRED'),
 }) => LoopNotificationFeed(
   items: items ?? <LoopNotificationEntry>[s5Notification(readAt: readAt)],
   nextCursor: nextCursor,
   unreadCount: unreadCount,
-  push: const LoopUnavailable('PUSH_RUNTIME_DEFERRED'),
+  push: push,
 );
 
 LoopNotificationPreferences s5Preferences({
   int version = 0,
   bool communityAll = false,
+  // Decision 0067 gave the channel a second state. `null` is a server that
+  // has a push runtime; it still proves nothing about this device.
+  LoopUnavailable? push = const LoopUnavailable('PUSH_RUNTIME_DEFERRED'),
 }) => LoopNotificationPreferences(
   version: version,
   updatedAt: version == 0 ? null : DateTime.utc(2026, 9, 8, 7),
@@ -1295,5 +1299,5 @@ LoopNotificationPreferences s5Preferences({
         locked: category == LoopNotificationCategory.securityEvent,
       ),
   },
-  push: const LoopUnavailable('PUSH_RUNTIME_DEFERRED'),
+  push: push,
 );
