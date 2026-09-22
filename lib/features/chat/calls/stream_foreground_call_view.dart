@@ -249,6 +249,37 @@ abstract final class StreamCallParticipantPresentation {
     required bool isLocal,
   }) => isLocal && suppliedName.trim().isNotEmpty;
 
+  /// Who can be heard in this call right now, in the shape the surfaces
+  /// outside the call view read.
+  ///
+  /// A tile exists because a microphone is open — that is the question 「正在
+  /// 发言」 asks, and it is the only one the provider answers. LOOP's own
+  /// speaker roster answers a different one: which parts it granted, without
+  /// the host in it at all (decision 0052), which is why the grid was empty on
+  /// the review device while the host was talking.
+  ///
+  /// A call that is not connected has nobody in it to hear: the rows this
+  /// device still holds describe a moment that has passed.
+  static List<AudioRoomSpeaker> speaking({
+    required bool connected,
+    required List<CallParticipantState> participants,
+  }) {
+    if (!connected) return const <AudioRoomSpeaker>[];
+    return <AudioRoomSpeaker>[
+      for (final participant in participants)
+        if (participant.isAudioEnabled || participant.isSpeaking)
+          AudioRoomSpeaker(
+            key: participant.sessionId,
+            name: name(
+              suppliedName: participant.name,
+              isLocal: participant.isLocal,
+            ),
+            isLocal: participant.isLocal,
+            isSpeaking: participant.isSpeaking,
+          ),
+    ];
+  }
+
   /// The caption: microphone state, for every row including the reader's own.
   static String microphoneState({
     required bool isSpeaking,
@@ -366,6 +397,7 @@ class StreamForegroundCallView extends StatefulWidget {
   final void Function({
     required AudioRoomLivePhase phase,
     required int? participantCount,
+    required List<AudioRoomSpeaker> speakers,
   })?
   onPresence;
 
@@ -414,7 +446,7 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
   /// the room and come back.
   var _hadSendAudio = false;
   String? _commandError;
-  ({AudioRoomLivePhase phase, int? participantCount})? _published;
+  AudioRoomCallReading? _published;
 
   /// One report per stopped call: the page takes this call down when it
   /// arrives, and a second frame on the same dead call must not ask twice.
@@ -427,7 +459,9 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
     final report = widget.onPresence;
     if (report == null) return;
     final connected = data.status.isConnected;
-    final reading = (
+    // Held as the reading itself rather than as a record: two readings differ
+    // when the people in them differ, and a list is not the same list twice.
+    final reading = AudioRoomCallReading(
       phase: StreamCallStatusPresentation.livePhase(data.status),
       // The same figure the panel prints, so the room facts and the shell
       // strip never disagree with the line right below them.
@@ -436,12 +470,22 @@ class _StreamForegroundCallViewState extends State<StreamForegroundCallView> {
         participantCount: data.participantCount,
         knownParticipants: data.knownParticipants,
       ),
+      // The page above this view draws 「正在发言」 from the same reading, so
+      // the grid and the rows below it are one account of one moment.
+      speakers: StreamCallParticipantPresentation.speaking(
+        connected: connected,
+        participants: data.participants,
+      ),
     );
     if (_published == reading) return;
     _published = reading;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      report(phase: reading.phase, participantCount: reading.participantCount);
+      report(
+        phase: reading.phase,
+        participantCount: reading.participantCount,
+        speakers: reading.speakers,
+      );
     });
   }
 

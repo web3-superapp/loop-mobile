@@ -352,6 +352,11 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
             const LoopLabel('正在发言', tight: true),
             VoiceRoomSpeakerGrid(
               roster: state.roster(VoiceRoomRosterView.speaker),
+              // Who can be heard right now comes from this device's own call
+              // when it holds one: LOOP's roster is the parts it granted, and
+              // it does not carry the host at all (decision 0052) — which is
+              // why the grid was empty while the host was talking.
+              live: _liveSpeakers(snapshot),
               onRetry: () =>
                   unawaited(controller.loadRoster(VoiceRoomRosterView.speaker)),
             ),
@@ -487,6 +492,21 @@ class _VoiceRoomScreenState extends ConsumerState<VoiceRoomScreen> {
         ],
       ],
     );
+  }
+
+  /// What this device's own call hears in this room, when it holds one.
+  ///
+  /// A call for another room, or a connection that is not up, answers
+  /// nothing: the grid then falls back to LOOP's record, which says what it
+  /// is a record of.
+  VoiceRoomLiveSpeakers? _liveSpeakers(VoiceRoomSnapshot snapshot) {
+    final live = ref.watch(audioRoomLivePresenceProvider);
+    if (live == null ||
+        live.roomId != snapshot.room.roomId ||
+        !live.connected) {
+      return null;
+    }
+    return VoiceRoomLiveSpeakers(live.speakers);
   }
 
   /// The way back, with the community page told what this page just read.
@@ -1943,13 +1963,54 @@ class VoiceRoomSpeakerGrid extends StatelessWidget {
     required this.roster,
     required this.onRetry,
     super.key,
+    this.live,
   });
 
   final VoiceRoomRosterState roster;
   final VoidCallback onRetry;
 
+  /// What this device hears in the call right now, when it is in it.
+  ///
+  /// It answers the question the grid asks — who is speaking — and LOOP's
+  /// roster does not: the roster is the record of the parts LOOP granted, the
+  /// host is in no view of it (decision 0052), and a mute mark on it is an
+  /// intent rather than a microphone. So a connected device draws the call,
+  /// and everything else draws the record and says so.
+  final VoiceRoomLiveSpeakers? live;
+
   @override
-  Widget build(BuildContext context) => switch (roster.phase) {
+  Widget build(BuildContext context) {
+    final heard = live;
+    if (heard == null) return _roster(context);
+    if (heard.speakers.isEmpty) {
+      return const LoopEmpty(
+        key: ValueKey<String>('voiceroom-speakers-silent'),
+        message: '现在没有人在发言',
+        reason: '这次通话里还没有人开麦。有人开麦就会出现在这里。',
+      );
+    }
+    return Padding(
+      key: const ValueKey<String>('voiceroom-speakers-live'),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      child: Wrap(
+        spacing: 14,
+        runSpacing: 14,
+        children: <Widget>[
+          for (final speaker in heard.speakers)
+            _SpeakerTile(
+              key: ValueKey<String>('voiceroom-speaker-${speaker.key}'),
+              name: speaker.name,
+              // A tile is here because a microphone is open; the ring is for
+              // the one being heard at this moment.
+              muted: !speaker.isSpeaking,
+              caption: speaker.isSpeaking ? '正在发言' : '麦克风已开',
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _roster(BuildContext context) => switch (roster.phase) {
     CommunityViewPhase.loading => const LoopSkeleton(
       key: ValueKey<String>('voiceroom-speakers-loading'),
       type: LoopSkeletonType.list,
@@ -1994,6 +2055,7 @@ class VoiceRoomSpeakerGrid extends StatelessWidget {
             _SpeakerTile(
               name: voiceRoomMemberName(member),
               muted: member.muted,
+              caption: member.muted ? '已静音' : '可以发言',
             ),
         ],
       ),
@@ -2001,11 +2063,32 @@ class VoiceRoomSpeakerGrid extends StatelessWidget {
   };
 }
 
+/// The people a connected call can hear, handed to the grid as one value.
+///
+/// A null [VoiceRoomSpeakerGrid.live] is a device with no call in this room;
+/// an empty list is a call in which nobody has a microphone open. They are
+/// different sentences, and a bare list could not tell them apart.
+@immutable
+final class VoiceRoomLiveSpeakers {
+  const VoiceRoomLiveSpeakers(this.speakers);
+
+  final List<AudioRoomSpeaker> speakers;
+}
+
 class _SpeakerTile extends StatelessWidget {
-  const _SpeakerTile({required this.name, required this.muted});
+  const _SpeakerTile({
+    required this.name,
+    required this.muted,
+    required this.caption,
+    super.key,
+  });
 
   final String name;
   final bool muted;
+
+  /// The one line under the name. A record says what LOOP granted, a call
+  /// says what it hears; the tile never mixes the two.
+  final String caption;
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -2039,7 +2122,7 @@ class _SpeakerTile extends StatelessWidget {
           style: LoopTypography.caption(11),
         ),
         Text(
-          muted ? '已静音' : '发言中',
+          caption,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: LoopTypography.caption(

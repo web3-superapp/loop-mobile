@@ -1550,6 +1550,7 @@ final class _RecordingAudioRoomCall implements AudioRoomCallHandle {
     void Function({
       required AudioRoomLivePhase phase,
       required int? participantCount,
+      required List<AudioRoomSpeaker> speakers,
     })?
     onPresence,
     VoidCallback? onDisconnected,

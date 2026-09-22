@@ -192,6 +192,7 @@ abstract interface class AudioRoomCallHandle {
     void Function({
       required AudioRoomLivePhase phase,
       required int? participantCount,
+      required List<AudioRoomSpeaker> speakers,
     })?
     onPresence,
     VoidCallback? onDisconnected,
@@ -456,6 +457,13 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
         participantCount: state.participantCount,
         knownParticipants: state.callParticipants.length,
       ),
+      // The same people the call panel draws, for the surfaces that have no
+      // panel to read: a room page whose call view is not the thing on
+      // screen still says who can be heard.
+      speakers: StreamCallParticipantPresentation.speaking(
+        connected: connected,
+        participants: state.callParticipants,
+      ),
     );
   }
 
@@ -565,6 +573,7 @@ final class _StreamAudioRoomCallHandle implements AudioRoomCallHandle {
     void Function({
       required AudioRoomLivePhase phase,
       required int? participantCount,
+      required List<AudioRoomSpeaker> speakers,
     })?
     onPresence,
     VoidCallback? onDisconnected,

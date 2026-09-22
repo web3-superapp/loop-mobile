@@ -292,7 +292,10 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   /// under a room that no longer exists.
   var _verifyingRoom = false;
   String? _joinError;
-  ({AudioRoomLivePhase phase, int? participantCount})? _reportedPresence;
+
+  /// The reading this surface last published. It is held as the reading
+  /// itself, because two readings differ when the people in them differ.
+  AudioRoomCallReading? _reportedPresence;
 
   AudioRoomTarget? get _target {
     final value = widget.target;
@@ -436,8 +439,10 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
       // strip outside this page from printing a head count for a call that
       // ended, or one that never connected.
       _schedulePresenceReport(
-        phase: AudioRoomLivePhase.idle,
-        participantCount: null,
+        const AudioRoomCallReading(
+          phase: AudioRoomLivePhase.idle,
+          participantCount: null,
+        ),
       );
     }
     if (widget.inline) {
@@ -1212,8 +1217,15 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   void _reportPresence({
     required AudioRoomLivePhase phase,
     required int? participantCount,
+    required List<AudioRoomSpeaker> speakers,
   }) {
-    _publishPresence(phase: phase, participantCount: participantCount);
+    _publishPresence(
+      AudioRoomCallReading(
+        phase: phase,
+        participantCount: participantCount,
+        speakers: speakers,
+      ),
+    );
   }
 
   /// Publishes the lobby's own reading after this frame.
@@ -1221,40 +1233,31 @@ class _StreamVoiceRoomSurfaceState extends State<_StreamVoiceRoomSurface>
   /// A write during a build is not allowed, and the lobby is rebuilt for
   /// every step of the connection, so the reading is sent only when it is not
   /// the one already published.
-  void _schedulePresenceReport({
-    required AudioRoomLivePhase phase,
-    required int? participantCount,
-  }) {
-    final reading = (phase: phase, participantCount: participantCount);
+  void _schedulePresenceReport(AudioRoomCallReading reading) {
     if (_reportedPresence == reading) return;
     _reportedPresence = reading;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _publishPresence(
-        phase: phase,
-        participantCount: participantCount,
-        deduplicate: false,
-      );
+      _publishPresence(reading, deduplicate: false);
     });
   }
 
-  void _publishPresence({
-    required AudioRoomLivePhase phase,
-    required int? participantCount,
+  void _publishPresence(
+    AudioRoomCallReading reading, {
     bool deduplicate = true,
   }) {
     final presence = widget.presence;
     final roomId = _foregroundCall?.roomId ?? _target?.roomId;
     if (presence == null || roomId == null) return;
-    final reading = (phase: phase, participantCount: participantCount);
     if (deduplicate && _reportedPresence == reading) return;
     _reportedPresence = reading;
     try {
       presence.report(
         AudioRoomLivePresence(
           roomId: roomId,
-          phase: phase,
-          participantCount: participantCount,
+          phase: reading.phase,
+          participantCount: reading.participantCount,
+          speakers: reading.speakers,
         ),
       );
     } catch (_) {
