@@ -13439,7 +13439,7 @@ def check_push_registration_contract(root: Path) -> list[str]:
     if coordinator_path.is_file():
         coordinator = strip_dart_comments(read_text(coordinator_path))
         for fragment in (
-            "if (!_readPushCapabilityAvailable()) return;",
+            "if (!_readPushCapabilityAvailable()) {",
             "_runtimeDeferred = true;",
             "if (_askedPrincipal != principal)",
         ):

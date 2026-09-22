@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loop_mobile/app/app_config.dart';
 import 'package:loop_mobile/app/notifications/loop_push_registration_coordinator.dart';
+import 'package:loop_mobile/app/notifications/loop_push_registration_diagnostics.dart';
 import 'package:loop_mobile/app/session/loop_session_controller.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
 import 'package:loop_mobile/features/notifications/push_device_gateway.dart';
@@ -13,6 +14,20 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_session_providers.da
 import 'package:loop_mobile/integrations/communication/stream_chat_providers.dart';
 import 'package:loop_mobile/integrations/communication/stream_push_device_registrar.dart';
 import 'package:loop_mobile/integrations/notifications/loop_push_token_source.dart';
+
+/// Where this device's push registration stopped.
+///
+/// One per application ProviderScope, and the only writer is the coordinator
+/// below — except at startup, where `lib/main.dart` records a push provider
+/// that could not be brought up at all, before this scope exists. That is why
+/// the recorder is a value the entry point may override rather than something
+/// the coordinator creates for itself.
+final loopPushRegistrationDiagnosticsProvider =
+    Provider<LoopPushRegistrationDiagnosticsRecorder>((ref) {
+      final recorder = LoopPushRegistrationDiagnosticsRecorder();
+      ref.onDispose(recorder.dispose);
+      return recorder;
+    });
 
 /// The one push registration owner per application ProviderScope.
 ///
@@ -43,6 +58,7 @@ final loopPushRegistrationCoordinatorProvider =
           LoopV2Platform.ios => LoopPushPlatform.ios,
           null => null,
         },
+        diagnostics: ref.watch(loopPushRegistrationDiagnosticsProvider),
         appVersion: ref.watch(
           appConfigProvider.select(
             (config) => config.loopClientVersionForCurrentBuild,
