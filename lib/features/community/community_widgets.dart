@@ -951,6 +951,163 @@ String communityVerificationLabel(CommunityVerification status) =>
       CommunityVerification.rejected => '未通过',
     };
 
+/// The applicant's own reading of the review, in words.
+///
+/// It is deliberately not [communityVerificationLabel]: that one is what a
+/// reader is told about somebody else's community (已验证 / 审核中 / 未通过),
+/// and this one is what an applicant is told about a review they are waiting
+/// on. 「已通过」 and 「已驳回」 name the decision that was made about their
+/// submission; 「已验证」 and 「未通过」 name a property of the community.
+String communityApplicationStatusLabel(CommunityVerification status) =>
+    switch (status) {
+      CommunityVerification.pending => '审核中',
+      CommunityVerification.verified => '已通过',
+      CommunityVerification.rejected => '已驳回',
+    };
+
+/// How many code points of an operator's reason a list row carries before it
+/// elides. The whole reason is on the community record; a row states enough of
+/// it to be recognised.
+const int communityRejectedReasonPreviewRunes = 30;
+
+/// `驳回：名称与已上线社区重复` — the head of the operator's own words.
+///
+/// A refusal with no reason still says it was refused: the operator is not
+/// obliged to give one, and 「驳回：」 followed by nothing would read as a
+/// reason this device failed to load.
+String communityRejectedReasonPreview(String? reason) {
+  final text = reason?.trim();
+  if (text == null || text.isEmpty) return '驳回：运维没有给出原因';
+  final runes = text.runes.toList(growable: false);
+  if (runes.length <= communityRejectedReasonPreviewRunes) return '驳回：$text';
+  final head = String.fromCharCodes(
+    runes.take(communityRejectedReasonPreviewRunes),
+  );
+  return '驳回：$head…';
+}
+
+/// The second line of a 我创建的 row: when it was submitted, or why it was
+/// refused. A refused application says why instead of when, because the reason
+/// is the only thing on that row its owner can act on.
+String communityApplicationRowLine(OwnedCommunity entry) {
+  final review = entry.application;
+  if (review == null) {
+    // A deployment that carries no review block still has a community with a
+    // creation time on it, and that is what the row dates.
+    return '创建于 ${loopLocalTimestampLabel(entry.community.createdAt)}';
+  }
+  if (review.isRejected) {
+    return communityRejectedReasonPreview(review.rejectedReason);
+  }
+  return '提交于 ${loopLocalTimestampLabel(review.submittedAt)}';
+}
+
+/// `.badge` for an application's review state.
+///
+/// [LoopBadge] publishes two pairs — Lime and the neutral ground — and a
+/// refusal is neither: 「已驳回」 in the neutral pair reads as one more piece of
+/// metadata beside 「审核中」, and in Lime it reads as an achievement. The pill
+/// keeps [LoopBadge]'s geometry and type exactly, and only the refusal adds a
+/// third pair, from the one non-Lime accent the palette already carries.
+///
+/// It is a status, never an action: nothing here is tappable.
+class CommunityApplicationBadge extends StatelessWidget {
+  const CommunityApplicationBadge(this.status, {super.key});
+
+  final CommunityVerification status;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = communityApplicationStatusLabel(status);
+    if (status != CommunityVerification.rejected) {
+      return LoopBadge(
+        label,
+        kind: status == CommunityVerification.verified
+            ? LoopBadgeKind.up
+            : LoopBadgeKind.mute,
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+      decoration: BoxDecoration(
+        color: LoopColors.danger.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Text(
+        label,
+        style: LoopTypography.label(
+          12,
+          weight: FontWeight.w700,
+          color: LoopColors.danger,
+        ),
+      ),
+    );
+  }
+}
+
+/// The owner's own progress card, directly under the record's hero.
+///
+/// It exists for exactly two states and for exactly one reader. `pending`
+/// says when the version under review was submitted and what verification
+/// unlocks, so the wait is a wait for something nameable. `rejected` prints
+/// the operator's own words in full — the 我创建的 row elides them, this is
+/// where they are read — and offers the one command that changes the state.
+/// A `verified` application draws nothing: the community is verified, and the
+/// record already says so.
+///
+/// Every other viewer receives no `application` at all (backend decision
+/// 0073), so this card cannot be shown to one. It never derives the state
+/// from the community's own `verificationStatus`, which is a fact about the
+/// community and not about anybody's application.
+class CommunityApplicationStatusCard extends StatelessWidget {
+  const CommunityApplicationStatusCard({
+    required this.review,
+    required this.viewer,
+    super.key,
+    this.busy = false,
+    this.onResubmit,
+  });
+
+  final CommunityApplicationReview? review;
+  final CommunityViewer viewer;
+  final bool busy;
+
+  /// Opens the profile edit and, once it is saved, asks for a new review.
+  final VoidCallback? onResubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = review;
+    if (state == null || !viewer.isOwner) return const SizedBox.shrink();
+    if (state.isPending) {
+      return LoopNotice(
+        key: const ValueKey<String>('community-application-pending'),
+        icon: 'clock',
+        title: '审核中 · 提交于 ${loopLocalTimestampLabel(state.submittedAt)}',
+        body: '通过后开放挖矿权重与官方群。运维核验前，这个社区不带验证标记。',
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      );
+    }
+    if (!state.isRejected) return const SizedBox.shrink();
+    final reason = state.rejectedReason?.trim();
+    return LoopNotice(
+      key: const ValueKey<String>('community-application-rejected'),
+      icon: 'warn',
+      tone: LoopNoticeTone.danger,
+      title: '已驳回',
+      body: reason == null || reason.isEmpty
+          ? '运维没有给出原因。修改社区资料后可以重新提交。'
+          : '原因：$reason',
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      trailing: LoopButton(
+        key: const ValueKey<String>('community-application-resubmit'),
+        label: '修改资料后重新提交',
+        onPressed: busy ? null : onResubmit,
+      ),
+    );
+  }
+}
+
 /// One community row. The subtitle only ever carries server-maintained facts.
 ///
 /// It is a function, not a widget, because [LoopRecordGroup] needs the row
@@ -1144,6 +1301,63 @@ Future<bool> confirmCommunityAction(
   return confirmed ?? false;
 }
 
+/// Where an applicant goes to watch their own application.
+///
+/// One sentence, held in one place, because it is said twice: on the sheet
+/// that confirms the submission and nowhere else it could drift from.
+const String communityApplicationProgressHint = '可以在「我的 → 我的社区 → 我创建的」查看审核进度。';
+
+/// The confirmation an accepted application gets.
+///
+/// A Toast said 「社区申请已提交，状态为审核中」 and took it away again, and the
+/// applicant was left on the directory with no idea where the answer would
+/// arrive. This states the same fact and, with it, the one thing the applicant
+/// now has to know: where to look. It is a sheet rather than a Toast because
+/// it carries an instruction, and an instruction that disappears on its own is
+/// not one (decision 0079 §1).
+Future<void> showCommunityApplicationSubmittedSheet(
+  BuildContext context, {
+  required String communityName,
+}) async {
+  await showLoopSheet<void>(
+    context,
+    barrierLabel: '关闭确认弹层',
+    builder: (sheetContext) => Padding(
+      key: const ValueKey<String>('community-apply-submitted-sheet'),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            '申请已提交 · 审核中',
+            style: LoopTypography.heading(18, weight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '「$communityName」已进入审核队列，你是它的所有者。'
+            '$communityApplicationProgressHint'
+            '通过后才会显示验证标记，并开放挖矿权重与官方群。',
+            style: LoopTypography.body(13, color: LoopColors.muted),
+          ),
+          const SizedBox(height: 18),
+          LoopButtonPair(
+            padded: false,
+            children: <Widget>[
+              LoopButton(
+                key: const ValueKey<String>('community-apply-submitted-open'),
+                label: '查看社区',
+                primary: true,
+                onPressed: () => Navigator.of(sheetContext).pop(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 /// Owner-only community profile edit sheet.
 ///
 /// `slug` and `verificationStatus` are not editable and are shown read-only,
@@ -1152,14 +1366,51 @@ Future<CommunityProfileEdit?> showCommunityProfileEditSheet(
   BuildContext context, {
   required CommunitySummary community,
 }) {
-  final nameController = TextEditingController(text: community.name);
-  final descriptionController = TextEditingController(
-    text: community.description ?? '',
-  );
   return showLoopSheet<CommunityProfileEdit>(
     context,
     barrierLabel: '关闭社区资料编辑',
-    builder: (sheetContext) => Padding(
+    builder: (sheetContext) => _CommunityProfileEditForm(community: community),
+  );
+}
+
+/// The edit sheet's own state.
+///
+/// The two controllers used to be created beside the sheet and disposed in
+/// the future's `whenComplete`, which fires when the route pops — while its
+/// exit animation is still rebuilding the fields it owns. A caller that
+/// opened a second sheet straight after (修改资料后重新提交) met
+/// 「A TextEditingController was used after being disposed」 and a broken
+/// frame. The controllers belong to a [State] whose `dispose` runs when the
+/// widget is actually gone, which is the same shape the application form has.
+class _CommunityProfileEditForm extends StatefulWidget {
+  const _CommunityProfileEditForm({required this.community});
+
+  final CommunitySummary community;
+
+  @override
+  State<_CommunityProfileEditForm> createState() =>
+      _CommunityProfileEditFormState();
+}
+
+class _CommunityProfileEditFormState extends State<_CommunityProfileEditForm> {
+  late final TextEditingController _name = TextEditingController(
+    text: widget.community.name,
+  );
+  late final TextEditingController _description = TextEditingController(
+    text: widget.community.description ?? '',
+  );
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _description.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final community = widget.community;
+    return Padding(
       key: const ValueKey<String>('community-edit-sheet'),
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       child: Column(
@@ -1173,13 +1424,13 @@ Future<CommunityProfileEdit?> showCommunityProfileEditSheet(
           const SizedBox(height: 12),
           TextField(
             key: const ValueKey<String>('community-edit-name'),
-            controller: nameController,
+            controller: _name,
             decoration: const InputDecoration(labelText: '社区名称'),
           ),
           const SizedBox(height: 12),
           TextField(
             key: const ValueKey<String>('community-edit-description'),
-            controller: descriptionController,
+            controller: _description,
             maxLines: 3,
             decoration: const InputDecoration(labelText: '简介（可留空）'),
           ),
@@ -1198,9 +1449,9 @@ Future<CommunityProfileEdit?> showCommunityProfileEditSheet(
                 label: '下一步',
                 primary: true,
                 onPressed: () {
-                  final name = nameController.text.trim();
-                  final description = descriptionController.text.trim();
-                  Navigator.of(sheetContext).pop(
+                  final name = _name.text.trim();
+                  final description = _description.text.trim();
+                  Navigator.of(context).pop(
                     CommunityProfileEdit(
                       name: name == community.name || name.isEmpty
                           ? null
@@ -1219,17 +1470,14 @@ Future<CommunityProfileEdit?> showCommunityProfileEditSheet(
               LoopButton(
                 key: const ValueKey<String>('community-edit-cancel'),
                 label: '取消',
-                onPressed: () => Navigator.of(sheetContext).pop(),
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ],
           ),
         ],
       ),
-    ),
-  ).whenComplete(() {
-    nameController.dispose();
-    descriptionController.dispose();
-  });
+    );
+  }
 }
 
 /// The community application form.

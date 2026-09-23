@@ -287,6 +287,61 @@ final class CommunitySummary {
   bool get hasBoundAsset => boundAssetKey != null;
 }
 
+/// The owner's own view of a community application's review state.
+///
+/// It is projected **only to the current owner** (backend decision 0073), on
+/// the record and on the `owned` group of the home aggregate. Every other
+/// viewer receives nothing at all, which is why its absence is never an error
+/// here: a stranger reading a community is not reading a failed projection,
+/// they are reading a community.
+///
+/// The three states pair with the review columns: `pending` has been reviewed
+/// by nobody, `verified` carries the time it was reviewed and no reason, and
+/// `rejected` carries the time and — when the operator gave one — the reason.
+@immutable
+final class CommunityApplicationReview {
+  const CommunityApplicationReview({
+    required this.status,
+    required this.submittedAt,
+    required this.reviewedAt,
+    required this.rejectedReason,
+  });
+
+  final CommunityVerification status;
+
+  /// The last submission. A resubmission moves it forward, so 「提交于」 is
+  /// always the date of the version under review and never the first try.
+  final DateTime submittedAt;
+
+  /// When the operator answered. Null while the application is pending.
+  final DateTime? reviewedAt;
+
+  /// Why it was refused, in the operator's own words. Null when the
+  /// application was not refused, and null when it was refused without one —
+  /// the page states the refusal either way and invents no cause.
+  final String? rejectedReason;
+
+  bool get isPending => status == CommunityVerification.pending;
+
+  bool get isVerified => status == CommunityVerification.verified;
+
+  /// True when the owner may edit the profile and submit it again.
+  bool get isRejected => status == CommunityVerification.rejected;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CommunityApplicationReview &&
+          other.status == status &&
+          other.submittedAt == submittedAt &&
+          other.reviewedAt == reviewedAt &&
+          other.rejectedReason == rejectedReason;
+
+  @override
+  int get hashCode =>
+      Object.hash(status, submittedAt, reviewedAt, rejectedReason);
+}
+
 @immutable
 final class CommunityMembership {
   const CommunityMembership({
@@ -640,10 +695,16 @@ final class CommunityDetail {
     required this.officialLinks,
     required this.chat,
     required this.voice,
+    this.application,
   });
 
   final CommunitySummary community;
   final CommunityViewer viewer;
+
+  /// The review state of this community's application, projected to the
+  /// current owner only. `null` for every other viewer — an absence the
+  /// contract states, not a read that failed.
+  final CommunityApplicationReview? application;
   final LoopMiningPowerFact miningPower;
 
   /// Members connected to Stream at the moment this page was read, or the
@@ -667,6 +728,36 @@ final class JoinedCommunity {
 
   final CommunitySummary community;
   final CommunityMembership membership;
+}
+
+/// One community the reader currently owns, with the review state of its
+/// application.
+///
+/// It is a separate group from [JoinedCommunity] because the server puts a
+/// community in exactly one of the two (backend decision 0073): an owner's own
+/// community is no longer listed among the ones they joined. The two are not
+/// interchangeable — this one carries an application, and only its owner can
+/// be handed one.
+@immutable
+final class OwnedCommunity {
+  const OwnedCommunity({
+    required this.community,
+    required this.membership,
+    this.application,
+  });
+
+  final CommunitySummary community;
+  final CommunityMembership membership;
+
+  /// The review state, when the aggregate carried one. A deployment that
+  /// predates the review columns sends no block, and the row then states the
+  /// community's own `verificationStatus` without a submission date.
+  final CommunityApplicationReview? application;
+
+  /// What the row says this application is in: the review block when there is
+  /// one, and otherwise the community's stored verification state.
+  CommunityVerification get status =>
+      application?.status ?? community.verificationStatus;
 }
 
 @immutable
@@ -694,13 +785,26 @@ final class CommunityHome {
     required this.observedAt,
     required this.source,
     required this.recommendation,
+    this.owned = const <OwnedCommunity>[],
+    this.ownedTruncated = false,
   });
 
+  /// The memberships that are **not** this account's own communities.
   final List<JoinedCommunity> joined;
 
   /// The aggregate could not carry every joined community; "view all" must go
   /// through the paginated directory.
   final bool joinedTruncated;
+
+  /// The communities this account owns, newest submission first.
+  ///
+  /// Empty is the ordinary answer — most accounts have never applied — and is
+  /// also what a deployment that predates the group answers. The surfaces that
+  /// read it draw nothing at all when it is empty; they never draw an empty
+  /// group.
+  final List<OwnedCommunity> owned;
+
+  final bool ownedTruncated;
   final List<CommunitySummary> discover;
   final LoopUnavailableFact unread;
   final LoopUnavailableFact liveVoice;

@@ -83,7 +83,13 @@ class _CommunityDiscoverScreenState
     if (!mounted) return;
     final detail = outcome.detail;
     if (detail != null) {
-      LoopToast.show(context, message: '社区申请已提交，状态为审核中');
+      // The answer arrives on 我的 → 我的社区 → 我创建的, and the applicant is
+      // told so here rather than left to find it.
+      await showCommunityApplicationSubmittedSheet(
+        context,
+        communityName: detail.community.name,
+      );
+      if (!mounted) return;
       widget.onOpenCommunity?.call(detail.community.communityId);
       return;
     }

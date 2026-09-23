@@ -483,7 +483,21 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(gateway.commands, contains('create:frog-holders'));
-      expect(find.text('社区申请已提交，状态为审核中'), findsOneWidget);
+      // The acceptance is a sheet, not a Toast: it carries an instruction —
+      // where the answer will arrive — and an instruction that disappears on
+      // its own is not one.
+      expect(
+        find.byKey(const ValueKey<String>('community-apply-submitted-sheet')),
+        findsOneWidget,
+      );
+      expect(find.text('申请已提交 · 审核中'), findsOneWidget);
+      expect(find.textContaining('我的 → 我的社区 → 我创建的'), findsOneWidget);
+      expect(opened, isEmpty);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('community-apply-submitted-open')),
+      );
+      await tester.pumpAndSettle();
       expect(opened, <String>[testCommunityId]);
     });
 

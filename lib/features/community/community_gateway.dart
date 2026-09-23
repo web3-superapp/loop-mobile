@@ -31,6 +31,12 @@ abstract interface class CommunityGateway {
     CommunityProfileEdit edit,
   );
 
+  /// Submits a refused application again, unchanged in shape: the owner edits
+  /// the profile first (that is [editProfile]) and then asks for a new review.
+  /// Only a `rejected` application may be resubmitted; every other state is
+  /// the server's `stale`.
+  Future<CommunityDetail> resubmitApplication(String communityId);
+
   /// Lists the member directory. `q` narrows the page to a member alias
   /// prefix; the server owns the normalization and the length bound. A cursor
   /// is bound to the query it was issued for, so a caller that changes `q`
@@ -105,6 +111,10 @@ final class UnavailableCommunityGateway implements CommunityGateway {
     String communityId,
     CommunityProfileEdit edit,
   ) => _unavailable();
+
+  @override
+  Future<CommunityDetail> resubmitApplication(String communityId) =>
+      _unavailable();
 
   @override
   Future<CommunityMemberDirectory> listMembers(

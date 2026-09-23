@@ -21,4 +21,8 @@
     <string name="push_securityEvent_body">有新的登录或设备变动，请前往设备管理确认</string>
     <string name="push_communityVoiceRoomStarted_title">社区语音房开播了</string>
     <string name="push_communityVoiceRoomStarted_body">点开进入房间</string>
+    <string name="push_communityApplicationVerified_title">社区审核已通过</string>
+    <string name="push_communityApplicationVerified_body">点开查看这个社区</string>
+    <string name="push_communityApplicationRejected_title">社区审核未通过</string>
+    <string name="push_communityApplicationRejected_body">点开查看原因与重新提交</string>
 </resources>

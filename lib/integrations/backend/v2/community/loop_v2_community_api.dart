@@ -63,6 +63,15 @@ abstract interface class LoopV2CommunityApi {
     required String communityId,
   });
 
+  /// Owner-only `rejected -> pending` transition. Body-less; the server
+  /// refuses every other state with `DATA_STALE`.
+  Future<CommunityDetail> resubmitApplication({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required String communityId,
+  });
+
   Future<CommunityMemberDirectory> listMembers({
     required String accessToken,
     required String clientVersion,
@@ -171,6 +180,9 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
       LoopV2Contract.validateSuccess(response, statusCode: 200);
       final root = LoopV2Contract.strictMap(response.data, const <String>{
         'joined',
+        // Always sent since backend decision 0073: the aggregate answers in
+        // two groups and a community is in exactly one of them.
+        'owned',
         'discover',
         'unread',
         'liveVoice',
@@ -199,6 +211,17 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
           ),
         );
       }
+      final owned = LoopV2Contract.strictMap(root['owned'], const <String>{
+        'items',
+        'truncated',
+      });
+      final ownedItems = <OwnedCommunity>[
+        for (final raw in LoopV2ProjectionCodec.requireList(
+          owned['items'],
+          maximum: 50,
+        ))
+          LoopV2ProjectionCodec.ownedCommunity(raw),
+      ];
       final discover = <CommunitySummary>[
         for (final raw in LoopV2ProjectionCodec.requireList(
           root['discover'],
@@ -216,6 +239,8 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
       return CommunityHome(
         joined: List<JoinedCommunity>.unmodifiable(joinedItems),
         joinedTruncated: LoopV2ProjectionCodec.requireBool(joined, 'truncated'),
+        owned: List<OwnedCommunity>.unmodifiable(ownedItems),
+        ownedTruncated: LoopV2ProjectionCodec.requireBool(owned, 'truncated'),
         discover: List<CommunitySummary>.unmodifiable(discover),
         unread: LoopV2ProjectionCodec.unavailable(root['unread']),
         liveVoice: LoopV2ProjectionCodec.unavailable(root['liveVoice']),
@@ -450,6 +475,27 @@ final class DioLoopV2CommunityApi implements LoopV2CommunityApi {
     return _detailRequest(
       () => _dio.delete<Object?>(
         '$communitiesPath/$id/membership',
+        options: LoopV2ModuleRequest.writeOptions(
+          accessToken,
+          clientVersion,
+          idempotencyKey,
+        ),
+      ),
+      allowedCodes: LoopV2ModuleRequest.writeErrors,
+    );
+  }
+
+  @override
+  Future<CommunityDetail> resubmitApplication({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required String communityId,
+  }) {
+    final id = _requireId(communityId);
+    return _detailRequest(
+      () => _dio.post<Object?>(
+        '$communitiesPath/$id/resubmit',
         options: LoopV2ModuleRequest.writeOptions(
           accessToken,
           clientVersion,

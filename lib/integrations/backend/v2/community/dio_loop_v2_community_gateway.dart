@@ -133,6 +133,17 @@ final class DioLoopV2CommunityGateway implements CommunityGateway {
   );
 
   @override
+  Future<CommunityDetail> resubmitApplication(String communityId) => _write(
+    'resubmit:$communityId',
+    (accessToken, key) => _api.resubmitApplication(
+      accessToken: accessToken,
+      clientVersion: _clientVersion,
+      idempotencyKey: key,
+      communityId: communityId,
+    ),
+  );
+
+  @override
   Future<CommunityDetail> editProfile(
     String communityId,
     CommunityProfileEdit edit,

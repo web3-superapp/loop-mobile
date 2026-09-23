@@ -669,27 +669,50 @@ NOTIFICATION_PROVIDER_IMPORT_MARKERS = (
 # The first push dictionary (decision 0067 §7.3). A fourth event type is a
 # contract change, not a client decision.
 NOTIFICATION_KIND_MEMBERS = frozenset(
-    {"priceAlertTriggered", "securityEvent", "communityVoiceRoomStarted"}
+    {
+        "priceAlertTriggered",
+        "securityEvent",
+        "communityVoiceRoomStarted",
+        # Backend decision 0073. Two kinds share one destination family:
+        # a verdict and a refusal both open the community they are about,
+        # because the destination is a place to read and not the answer.
+        "communityApplicationVerified",
+        "communityApplicationRejected",
+    }
 )
-NOTIFICATION_CONTEXT_ROUTE_MEMBERS = frozenset({"token", "devices", "voiceRoom"})
+NOTIFICATION_CONTEXT_ROUTE_MEMBERS = frozenset(
+    {"token", "devices", "voiceRoom", "communityProfile"}
+)
 NOTIFICATION_SOURCE_EVENT_KIND_MEMBERS = frozenset(
     {"foreground", "background", "interaction"}
 )
-# Four intents for three events: a price alert has two, because the asset is
-# the feed's answer and a notification that cannot be matched to a record must
-# still land somewhere that names nothing.
+# Six intents for five events. Two families have a pair, for the same reason
+# in both: the identifier is the feed's answer, and a notification that cannot
+# be matched to a record must still land somewhere that names nothing — the
+# alerts page for a price alert, the community tab for an application review.
 NOTIFICATION_INTENT_CLASSES = frozenset(
     {
         "LoopPriceAlertNotificationIntent",
         "LoopPriceAlertListNotificationIntent",
         "LoopSecurityEventNotificationIntent",
         "LoopVoiceRoomNotificationIntent",
+        "LoopCommunityApplicationNotificationIntent",
+        "LoopCommunityIndexNotificationIntent",
     }
 )
-# Both parameterless destinations. The two price-alert intents hold no literal
+# The parameterless destinations, plus the one parameterised literal: the
+# community record is addressed by the id the **feed** carried, checked against
+# the UUID shape before it is used. The two price-alert intents hold no literal
 # at all: they go through `MarketAssetRoute`, which is where the canonical
 # asset identity is enforced.
-NOTIFICATION_ROUTE_LITERALS = frozenset({"/chat/voice", "/profile/devices"})
+NOTIFICATION_ROUTE_LITERALS = frozenset(
+    {
+        "/chat/voice",
+        "/profile/devices",
+        "/community",
+        "/community/profile?id=${Uri.encodeQueryComponent(communityId)}",
+    }
+)
 # `lib/app.dart` joined this set with decision 0067: confirming a pointer needs
 # the notification feed, which is a feature gateway the router may not import,
 # so the composition root is where the two meet. It may name the pointer and
@@ -13240,6 +13263,12 @@ PUSH_COPY_EVENTS = (
     "priceAlertTriggered",
     "securityEvent",
     "communityVoiceRoomStarted",
+    # Backend decision 0073: the two review outcomes of a community
+    # application. Like every other entry they name nothing — not the
+    # community and not the operator's reason — because a push travels
+    # outside the session that could authorise reading either.
+    "communityApplicationVerified",
+    "communityApplicationRejected",
 )
 # A format specifier here would mean the server supplies part of the sentence,
 # which is the one thing the copy rule exists to prevent.

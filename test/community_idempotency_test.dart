@@ -444,6 +444,14 @@ final class _RecordingCommunityApi implements LoopV2CommunityApi {
   }) => _write(idempotencyKey, detail);
 
   @override
+  Future<CommunityDetail> resubmitApplication({
+    required String accessToken,
+    required String clientVersion,
+    required String idempotencyKey,
+    required String communityId,
+  }) => _write(idempotencyKey, detail);
+
+  @override
   Future<CommunityMemberDirectory> listMembers({
     required String accessToken,
     required String clientVersion,

@@ -259,6 +259,17 @@ class _CommunityProfileScreenState
             onRetry: () => unawaited(controller.reload()),
           )
         else ...<Widget>[
+          // 0 · the owner's own review, directly under the hero. It is the
+          // first thing on the page for exactly one reader, because a pending
+          // or refused application is the only thing about this community
+          // that reader can still do something about. Every other viewer is
+          // sent no `application` and sees nothing here.
+          CommunityApplicationStatusCard(
+            review: detail.application,
+            viewer: detail.viewer,
+            busy: state.busy,
+            onResubmit: () => unawaited(_resubmit(controller, detail)),
+          ),
           // 1 · identity: the logo, the name, one mono line of counts and the
           // community's own description.
           CommunityIdentityBlock(
@@ -441,6 +452,61 @@ class _CommunityProfileScreenState
       message: communityFailureReason(failure),
       kind: LoopToastKind.err,
     );
+  }
+
+  /// 修改资料后重新提交: the edit, and then the new review.
+  ///
+  /// They are two commands and they are kept two. The owner edits the profile
+  /// first — `PATCH` never touches the review state — and only a saved edit is
+  /// followed by `POST …/resubmit`. An edit that failed does not ask for a
+  /// review of the version that was refused, and an owner who decides the
+  /// refusal was about nothing they wrote may submit the same profile again:
+  /// whether that is acceptable is the operator's call, not this page's.
+  Future<void> _resubmit(
+    CommunityProfileController controller,
+    CommunityDetail detail,
+  ) async {
+    final edit = await showCommunityProfileEditSheet(
+      context,
+      community: detail.community,
+    );
+    if (edit == null || !mounted) return;
+    final confirmed = await confirmCommunityAction(
+      context,
+      title: '重新提交社区申请？',
+      body: '资料会先保存，然后重新进入审核队列。短链接与验证状态不能在这里修改。',
+      confirmLabel: '提交',
+      sheetKey: 'community-resubmit-confirm-sheet',
+    );
+    if (!confirmed) return;
+    if (!edit.isEmpty) {
+      final editFailure = await controller.editProfile(edit);
+      if (!mounted) return;
+      if (editFailure != null) {
+        LoopToast.show(
+          context,
+          message: communityFailureReason(editFailure),
+          kind: LoopToastKind.err,
+        );
+        return;
+      }
+    }
+    final failure = await controller.resubmitApplication();
+    if (!mounted) return;
+    if (failure == null) {
+      LoopToast.show(context, message: '已重新提交，状态回到审核中');
+      return;
+    }
+    LoopToast.show(
+      context,
+      message: failure == CommunityFailureKind.stale
+          ? '这份申请已经不是「已驳回」了，页面已刷新，请查看最新状态。'
+          : communityFailureReason(failure),
+      kind: LoopToastKind.err,
+    );
+    if (failure == CommunityFailureKind.stale) {
+      unawaited(controller.reload());
+    }
   }
 
   /// Opens a room for this community. The button exists only for a viewer the

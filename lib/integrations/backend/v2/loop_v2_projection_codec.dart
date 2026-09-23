@@ -778,6 +778,93 @@ abstract final class LoopV2ProjectionCodec {
       officialLinks: officialLinks(root['officialLinks']),
       chat: chatSection(root['chat']),
       voice: voiceSection(root['voice']),
+      // Owner-only (backend decision 0073). The key is always sent; a record
+      // read by anybody but the current owner carries `null`, which is a
+      // stated absence and not a read that failed.
+      application: applicationReview(root['application']),
+    );
+  }
+
+  /// The review block of a community application, or null.
+  ///
+  /// Strict on the pairing the server states, because a half-read review is
+  /// the one thing this block must never become: a `pending` application that
+  /// arrived with a reason, or a `rejected` one that arrived without a review
+  /// time, is a projection the page cannot narrate, and rendering it would put
+  /// a sentence on the screen that nothing behind it supports.
+  static CommunityApplicationReview? applicationReview(Object? raw) {
+    if (raw == null) return null;
+    final map = LoopV2Contract.strictMap(raw, const <String>{
+      'status',
+      'submittedAt',
+      'reviewedAt',
+      'rejectedReason',
+    });
+    final rawStatus = map['status'];
+    if (rawStatus is! String) invalid();
+    final status = CommunityVerification.tryParse(rawStatus);
+    if (status == null) invalid();
+    final reviewedAt = _optionalTimestamp(map, 'reviewedAt');
+    final reason = _rejectedReason(map['rejectedReason']);
+    switch (status) {
+      case CommunityVerification.pending:
+        if (reviewedAt != null || reason != null) invalid();
+      case CommunityVerification.verified:
+        if (reviewedAt == null || reason != null) invalid();
+      case CommunityVerification.rejected:
+        if (reviewedAt == null) invalid();
+    }
+    return CommunityApplicationReview(
+      status: status,
+      submittedAt: requireTimestamp(map, 'submittedAt'),
+      reviewedAt: reviewedAt,
+      rejectedReason: reason,
+    );
+  }
+
+  /// The server's own bound on an operator's refusal reason, in code points.
+  static const int maximumRejectedReasonRunes = 280;
+
+  static DateTime? _optionalTimestamp(Map<String, Object?> source, String key) {
+    if (source[key] == null) return null;
+    return requireTimestamp(source, key);
+  }
+
+  /// An operator's refusal reason: free text under the alias character rules,
+  /// bounded in **code points** because that is the unit the server counts in.
+  static String? _rejectedReason(Object? raw) {
+    if (raw == null) return null;
+    if (raw is! String ||
+        raw.isEmpty ||
+        raw.runes.length > maximumRejectedReasonRunes ||
+        !aliasPattern.hasMatch(raw)) {
+      invalid();
+    }
+    return raw;
+  }
+
+  /// One row of the home aggregate's `owned` group.
+  ///
+  /// The shape mirrors a `joined` item and adds the review block, which is
+  /// required here: the group exists only for the viewer's own communities,
+  /// so every row in it has an application and the viewer is the one account
+  /// entitled to read it (backend decision 0073).
+  static OwnedCommunity ownedCommunity(Object? raw) {
+    final item = LoopV2Contract.strictMap(raw, const <String>{
+      'community',
+      'membership',
+      'application',
+    });
+    final review = applicationReview(item['application']);
+    if (review == null) invalid();
+    final summary = community(item['community']);
+    // The two say the same thing about the same community (decision 0073);
+    // a row where they disagree is a projection this page cannot narrate.
+    if (review.status != summary.verificationStatus) invalid();
+    return OwnedCommunity(
+      community: summary,
+      membership: membership(item['membership']),
+      application: review,
     );
   }
 
@@ -790,6 +877,9 @@ abstract final class LoopV2ProjectionCodec {
     'officialLinks',
     'chat',
     'voice',
+    // Always sent since backend decision 0073; `null` for every viewer who is
+    // not the current owner.
+    'application',
     'contractVersion',
   };
 
