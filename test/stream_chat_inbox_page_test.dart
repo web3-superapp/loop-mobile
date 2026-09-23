@@ -319,6 +319,50 @@ void main() {
     },
   );
 
+  testWidgets('the inbox opens the stranger requests it never lists', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appConfigProvider.overrideWithValue(_config()),
+          privyAuthGatewayProvider.overrideWithValue(
+            const AuthenticatedTestPrivyGateway(),
+          ),
+        ],
+        child: const LoopApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final router = GoRouter.of(
+      tester.element(find.byKey(const ValueKey<String>('community-screen'))),
+    );
+    router.go('/chat');
+    await tester.pumpAndSettle();
+
+    // A request that has not been accepted is not a conversation and never
+    // enters the channel list, so the inbox carries its own entry.
+    final entry = find.byKey(
+      const ValueKey<String>('stream-chat-message-requests-entry'),
+    );
+    expect(entry, findsOneWidget);
+    // No count is printed: LOOP publishes none this page could read.
+    expect(find.textContaining('条请求'), findsNothing);
+
+    await tester.tap(entry);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey<String>('dm-requests-screen')),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'the generic Chat inbox no longer offers an Audio Room without a community',
     (tester) async {

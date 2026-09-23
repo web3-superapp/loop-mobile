@@ -41,9 +41,14 @@ class ChatCreateMenuButton extends StatelessWidget {
         PopupMenuItem<_ChatCreateAction>(
           key: ValueKey<String>('chat-add-friend-menu-item'),
           value: _ChatCreateAction.addFriend,
+          // The item opens search, and search is where the path starts: find
+          // the account, open its card, send the request. Naming only 「添加
+          // 好友」 left a reader who landed on a search field with no idea
+          // that this was the same errand.
           child: _ChatCreateMenuRow(
             icon: Icons.person_add_alt_1_outlined,
             label: '添加好友',
+            detail: '搜索用户并发送消息请求',
           ),
         ),
       ],
@@ -52,18 +57,40 @@ class ChatCreateMenuButton extends StatelessWidget {
 }
 
 class _ChatCreateMenuRow extends StatelessWidget {
-  const _ChatCreateMenuRow({required this.icon, required this.label});
+  const _ChatCreateMenuRow({
+    required this.icon,
+    required this.label,
+    this.detail,
+  });
 
   final IconData icon;
   final String label;
 
+  /// What the item actually does, when the label alone would leave the
+  /// reader guessing where it lands.
+  final String? detail;
+
   @override
   Widget build(BuildContext context) {
+    final detail = this.detail;
     return Row(
       children: <Widget>[
         Icon(icon, size: 20, color: LoopColors.chat),
         const SizedBox(width: 12),
-        Text(label),
+        if (detail == null)
+          Text(label)
+        else
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(label),
+                const SizedBox(height: 2),
+                Text(detail, style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
       ],
     );
   }

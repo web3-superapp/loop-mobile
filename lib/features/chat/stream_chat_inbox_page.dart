@@ -178,13 +178,65 @@ class StreamChatInboxPage extends ConsumerWidget {
                         '这个账号的官方会话，含送达状态与历史记录。',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
+                      // `#scr-community` puts 「陌生人请求」 on the message
+                      // centre, above the conversations. It is the other half
+                      // of the direct-message path: a request that has not
+                      // been accepted yet is not a conversation and never
+                      // appears in this list, so without this row the only
+                      // way to reach one was the Community panel.
+                      const _MessageRequestsEntry(),
+                      const SizedBox(height: 16),
                       Expanded(child: content),
                     ],
                   ),
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The inbox's entry to the stranger requests waiting on this account.
+///
+/// It states what the page can do, not how many are waiting: LOOP publishes
+/// no pending count this page could read without opening the request list
+/// itself, and a number nobody read is not a number this row may print.
+class _MessageRequestsEntry extends StatelessWidget {
+  const _MessageRequestsEntry();
+
+  @override
+  Widget build(BuildContext context) {
+    return LoopCard(
+      key: const ValueKey<String>('stream-chat-message-requests-entry'),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      semanticLabel: '陌生人请求，接受、忽略或举报',
+      onTap: () => unawaited(context.push<void>('/chat/requests')),
+      child: Row(
+        children: <Widget>[
+          const Icon(
+            Icons.mark_email_unread_outlined,
+            size: 20,
+            color: LoopColors.chat,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text('陌生人请求', style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 2),
+                Text('接受、忽略或举报', style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.chevron_right_rounded,
+            size: 20,
+            color: LoopColors.vapor,
           ),
         ],
       ),

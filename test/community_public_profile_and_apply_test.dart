@@ -1,11 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_discover_screen.dart';
 import 'package:loop_mobile/features/community/community_members_screen.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
+import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
-import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/community_test_harness.dart';
 
@@ -57,6 +59,36 @@ Future<void> _openApplyForm(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+/// Opens the shared public-profile card the way a page opens it.
+class _PublicProfileSheetHost extends StatelessWidget {
+  const _PublicProfileSheetHost({
+    required this.identity,
+    required this.onOpenDirectMessage,
+  });
+
+  final PublicProfileIdentity identity;
+  final PublicProfileDirectMessageHandler onOpenDirectMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: TextButton(
+          key: const ValueKey<String>('open-sheet'),
+          onPressed: () => unawaited(
+            showPublicProfileSheet<Object>(
+              context,
+              identity: identity,
+              onOpenDirectMessage: onOpenDirectMessage,
+            ),
+          ),
+          child: const Text('open'),
+        ),
+      ),
+    );
+  }
+}
+
 void main() {
   group('public profile sheet', () {
     testWidgets('shows only the four-field identity projection', (
@@ -84,7 +116,45 @@ void main() {
       expect(find.textContaining('2,840'), findsNothing);
     });
 
-    testWidgets('the dm control is disabled with its reason', (tester) async {
+    testWidgets('the card opens the conversation with the member it drew', (
+      tester,
+    ) async {
+      final opened = <PublicProfileIdentity>[];
+      await pumpCommunityPage(
+        tester,
+        CommunityMembersScreen(
+          communityId: testCommunityId,
+          onOpenDirectMessage: opened.add,
+        ),
+        community: FakeCommunityGateway(members: testDirectory()),
+        social: FakeSocialGateway(),
+      );
+
+      await tester.tap(find.text('frog_member'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('public-profile-open-dm')),
+      );
+      await tester.pumpAndSettle();
+
+      // The whole projection travels, so the conversation is named by the
+      // same four fields this card drew.
+      expect(opened.single.publicProfileId, testMemberId);
+      expect(opened.single.displayName, 'frog_member');
+      expect(opened.single.loopId, 'LOOP-3HJKMNPQ');
+      expect(opened.single.profile?.alias, 'frog_member');
+      expect(opened.single.profile?.loopId, 'LOOP-3HJKMNPQ');
+      // The card closes with the command: the conversation is the next
+      // surface, not something behind a panel that is still open.
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-sheet')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a card with nowhere to go offers no conversation', (
+      tester,
+    ) async {
       await pumpCommunityPage(
         tester,
         const CommunityMembersScreen(communityId: testCommunityId),
@@ -96,18 +166,97 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        tester
-            .widget<LoopButton>(
-              find.byKey(const ValueKey<String>('public-profile-open-dm')),
-            )
-            .onPressed,
-        isNull,
+        find.byKey(const ValueKey<String>('public-profile-sheet')),
+        findsOneWidget,
       );
-      expect(find.textContaining('私聊还不能从这里发起'), findsOneWidget);
-      // Group chat is live, so a reason that tells the owner to wait for
-      // 聊天开放 states something that already happened.
-      expect(find.textContaining('聊天开放后'), findsNothing);
+      // No disabled control and no sentence about a path that does exist:
+      // 「私聊还不能从这里发起」 stopped being true when the direct channel
+      // and the message request were connected.
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-open-dm')),
+        findsNothing,
+      );
+      expect(find.textContaining('私聊还不能从这里发起'), findsNothing);
     });
+
+    testWidgets('the viewer own card carries no conversation', (tester) async {
+      final opened = <PublicProfileIdentity>[];
+      await pumpCommunityPage(
+        tester,
+        _PublicProfileSheetHost(
+          identity: PublicProfileIdentity.fromProfile(
+            testProfile(),
+            isSelf: true,
+          ),
+          onOpenDirectMessage: opened.add,
+        ),
+        social: FakeSocialGateway(),
+      );
+
+      await tester.tap(find.byKey(const ValueKey<String>('open-sheet')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-sheet')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-open-dm')),
+        findsNothing,
+      );
+      expect(opened, isEmpty);
+    });
+
+    test(
+      'the viewer own LOOP ID closes the control without an isSelf fact',
+      () {
+        // The global search holds no `isSelf` fact, so the account signed in
+        // now is identified by the one identifier both sides publish.
+        const mine = 'LOOP-7HJKMNPQ';
+        final identity = PublicProfileIdentity.fromSearchSnapshot(
+          stableId: testOwnerId,
+          title: 'frog_maxi',
+          subtitle: mine,
+        );
+        expect(
+          publicProfileDirectMessageOffered(
+            identity: identity,
+            hasHandler: true,
+            viewerLoopId: mine,
+          ),
+          isFalse,
+        );
+        expect(
+          publicProfileDirectMessageOffered(
+            identity: identity,
+            hasHandler: true,
+            viewerLoopId: 'LOOP-3HJKMNPQ',
+          ),
+          isTrue,
+        );
+        // An unread profile answers nothing, and a card with no command target
+        // is never a conversation.
+        expect(
+          publicProfileDirectMessageOffered(
+            identity: identity,
+            hasHandler: true,
+            viewerLoopId: null,
+          ),
+          isTrue,
+        );
+        expect(
+          publicProfileDirectMessageOffered(
+            identity: const PublicProfileIdentity(
+              publicProfileId: null,
+              displayName: 'frog_maxi',
+            ),
+            hasHandler: true,
+            viewerLoopId: null,
+          ),
+          isFalse,
+        );
+      },
+    );
 
     testWidgets('the follow badge repeats the server answer', (tester) async {
       final social = FakeSocialGateway();

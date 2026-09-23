@@ -26,11 +26,19 @@ class GlobalSearchScreen extends ConsumerStatefulWidget {
     this.initialQuery,
     this.onBack,
     this.onOpenCommunity,
+    this.onOpenDirectMessage,
   });
 
   final String? initialQuery;
   final VoidCallback? onBack;
   final ValueChanged<String>? onOpenCommunity;
+
+  /// Opens the direct conversation with the account whose card is open.
+  ///
+  /// `#scr-search`'s `USERS` row is a `dm` entry in the prototype. The result
+  /// opens the shared public-profile card, and the card carries the control;
+  /// the route stays with the shell.
+  final PublicProfileDirectMessageHandler? onOpenDirectMessage;
 
   @override
   ConsumerState<GlobalSearchScreen> createState() => _GlobalSearchScreenState();
@@ -68,6 +76,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
               subtitle: result.subtitle,
               avatarRef: result.avatarRef,
             ),
+            onOpenDirectMessage: widget.onOpenDirectMessage,
           ),
         );
     }

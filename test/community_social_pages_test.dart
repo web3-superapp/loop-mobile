@@ -9,6 +9,7 @@ import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/social/blocklist_screen.dart';
 import 'package:loop_mobile/features/social/connections_screen.dart';
 import 'package:loop_mobile/features/social/dm_requests_screen.dart';
+import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/features/social/social_models.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
@@ -794,6 +795,46 @@ void main() {
         findsOneWidget,
       );
       expect(communities, <String>[testCommunityId]);
+    });
+
+    testWidgets('a user result opens the conversation it named', (
+      tester,
+    ) async {
+      final opened = <PublicProfileIdentity>[];
+      final gateway = FakeSearchGateway(
+        pages: <SearchDomain, SearchPage>{
+          SearchDomain.users: _searchPage(SearchDomain.users),
+        },
+      );
+      await pumpCommunityPage(
+        tester,
+        GlobalSearchScreen(
+          initialQuery: 'frog',
+          onOpenDirectMessage: opened.add,
+        ),
+        search: gateway,
+        social: FakeSocialGateway(),
+      );
+
+      await tester.tap(find.byKey(const ValueKey<String>('search-seg-users')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('frog_maxi'));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('public-profile-open-dm')),
+      );
+      await tester.pumpAndSettle();
+
+      // Only the server's `stableId` is the command target; the snapshot is
+      // display copy, and its subtitle travels only because it is a
+      // canonical LOOP ID.
+      expect(opened.single.publicProfileId, testMemberId);
+      expect(opened.single.displayName, 'frog_maxi');
+      expect(opened.single.loopId, 'LOOP-7HJKMNPQ');
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-sheet')),
+        findsNothing,
+      );
     });
 
     testWidgets('a short prefix spends no quota', (tester) async {

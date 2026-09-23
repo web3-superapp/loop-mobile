@@ -212,8 +212,8 @@ class _ConnectionsScreenState extends ConsumerState<ConnectionsScreen> {
     );
   }
 
-  /// The row offers exactly two commands: open the conversation (still an
-  /// unavailable placeholder before D7) and follow / unfollow.
+  /// The row offers exactly two commands: open the conversation and
+  /// follow / unfollow.
   Future<void> _openRow(
     ConnectionEntry entry,
     String target,

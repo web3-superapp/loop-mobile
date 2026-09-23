@@ -65,10 +65,18 @@ class CommunityMembersScreen extends ConsumerStatefulWidget {
     required this.communityId,
     super.key,
     this.onBack,
+    this.onOpenDirectMessage,
   });
 
   final String? communityId;
   final VoidCallback? onBack;
+
+  /// Opens the direct conversation with the member whose card is open.
+  ///
+  /// `#scr-community-members` makes every member row a `dm` entry. The row
+  /// opens the shared public-profile card instead, and the card carries the
+  /// control; the route stays with the shell, which owns every destination.
+  final PublicProfileDirectMessageHandler? onOpenDirectMessage;
 
   @override
   ConsumerState<CommunityMembersScreen> createState() =>
@@ -501,7 +509,11 @@ class _CommunityMembersScreenState
   ) async {
     final chosen = await showPublicProfileSheet<CommunityGovernanceAction>(
       context,
-      identity: PublicProfileIdentity.fromProfile(entry.profile),
+      identity: PublicProfileIdentity.fromProfile(
+        entry.profile,
+        isSelf: entry.isSelf,
+      ),
+      onOpenDirectMessage: widget.onOpenDirectMessage,
       // Exactly the server's list for this row, in the server's order.
       actions: <PublicProfileSheetAction<CommunityGovernanceAction>>[
         for (final action in entry.actions)

@@ -68,6 +68,7 @@ import 'package:loop_mobile/features/profile/profile_screens.dart';
 import 'package:loop_mobile/features/profile/profile_v2_screens.dart';
 import 'package:loop_mobile/features/social/blocklist_screen.dart';
 import 'package:loop_mobile/features/social/connections_screen.dart';
+import 'package:loop_mobile/features/social/public_profile_sheet.dart';
 import 'package:loop_mobile/features/social/dm_requests_screen.dart';
 import 'package:loop_mobile/features/shell/loop_pending_surface.dart';
 import 'package:loop_mobile/integrations/backend/v2/loop_v2_contract.dart';
@@ -836,6 +837,8 @@ GoRouter _buildRouter(
           // inside the page; LOOP has no route for another account.
           onOpenCommunity: (communityId) =>
               context.push('/community/profile?id=$communityId'),
+          onOpenDirectMessage: (identity) =>
+              _openDirectMessageFromProfile(context, identity),
         ),
       ),
       GoRoute(
@@ -873,6 +876,8 @@ GoRouter _buildRouter(
         builder: (context, state) => CommunityMembersScreen(
           communityId: state.uri.queryParameters['id'],
           onBack: () => _popOrHome(context),
+          onOpenDirectMessage: (identity) =>
+              _openDirectMessageFromProfile(context, identity),
         ),
       ),
       GoRoute(
@@ -1798,6 +1803,29 @@ String? _intentIdOf(Uri uri) {
     return null;
   }
   return value;
+}
+
+/// Opens the direct conversation the public-profile card asked for.
+///
+/// The prototype makes a member row, a global-search user row and a group
+/// member row `dm` entries. LOOP puts the shared public-profile card in
+/// between; this is where that card's control becomes the one route that
+/// opens a conversation. The peer's own projection travels as typed
+/// navigation state — never in the URL — so the header and the `@`
+/// candidates name the same person the card drew (R15-1).
+void _openDirectMessageFromProfile(
+  BuildContext context,
+  PublicProfileIdentity identity,
+) {
+  final publicProfileId = identity.publicProfileId;
+  if (publicProfileId == null) return;
+  context.push(
+    '/chat/dm',
+    extra: DirectMessageTarget(
+      publicProfileId: publicProfileId,
+      identity: identity.profile,
+    ),
+  );
 }
 
 void _popOrHome(BuildContext context) {
