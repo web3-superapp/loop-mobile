@@ -6860,7 +6860,8 @@ def check_native_matrix(root: Path) -> list[str]:
             "ios/Podfile": ("platform :ios, '17.0'",),
             "ios/Podfile.lock": (
                 "shared_preferences_foundation",
-                "COCOAPODS: 1.16.2",
+                "local_auth_darwin",
+                "COCOAPODS: 1.",
             ),
             "ios/Runner.xcodeproj/project.pbxproj": (
                 "PRODUCT_BUNDLE_IDENTIFIER = com.cywd.loop;",
