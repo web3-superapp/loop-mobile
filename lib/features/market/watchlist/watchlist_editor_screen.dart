@@ -73,13 +73,17 @@ class _WatchlistEditorScreenState extends ConsumerState<WatchlistEditorScreen> {
       kicker: loopChainPreviewKicker(mode),
       onBack: widget.onBack,
       actions: <Widget>[
-        // `.topbar .seg`: the prototype's 完成 text pill. A bare ✓ glyph did
-        // not read as a save (audit 2026-09-21 §G.6).
-        LoopSeg(
+        // The prototype's 完成 text pill, turned into the framed ✓ every
+        // other top bar now carries (decision 0087). The earlier ✓ that
+        // «did not read as a save» (audit 2026-09-21 §G.6) was a bare glyph
+        // with no ground and no name; this one keeps the pill's frame and
+        // answers 完成 to the screen reader and to a long press.
+        LoopIconButton(
           key: const ValueKey<String>('watchlist-save-action'),
+          icon: 'check',
           label: '完成',
-          selected: false,
-          onSelected: state.canSave ? () => unawaited(_save(controller)) : null,
+          framed: true,
+          onPressed: state.canSave ? () => unawaited(_save(controller)) : null,
         ),
       ],
       primary: LoopFolioPrimary(

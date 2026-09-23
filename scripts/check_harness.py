@@ -13220,6 +13220,102 @@ def _png_rgba_rows(data: bytes) -> list[bytes]:
     return rows
 
 
+TOPBAR_HOSTS = (
+    "LoopFocusPage(",
+    "LoopDashboardPage(",
+    "LoopStreamPage(",
+    "LoopTopbar(",
+)
+
+# Controls that are words rather than glyphs. `Text` covers a label dropped
+# into the bar bare; the other three are LOOP's own lettered controls.
+TOPBAR_WORD_CONTROLS = ("LoopSeg", "LoopButton", "LoopBadge", "Text")
+
+
+def _closing_index(source: str, opening: int) -> int:
+    """Index of the bracket that closes the one at [opening], or -1."""
+
+    depth = 0
+    for index in range(opening, len(source)):
+        character = source[index]
+        if character in "([{":
+            depth += 1
+        elif character in ")]}":
+            depth -= 1
+            if depth == 0:
+                return index
+    return -1
+
+
+def check_topbar_action_glyph_contract(root: Path) -> list[str]:
+    """Decision 0087: a top bar carries glyphs, never words.
+
+    The prototype drew 新建 / 完成 / 添加 / 导出 / 批量回收 / 行情 as `.topbar
+    .seg` text pills, and six pages copied them. A word in a bar that already
+    holds a back control and a two-line title is the widest thing in it, and
+    six pages spelling their one action while thirty others drew it made the
+    bar read differently page to page. The word survives as the control's
+    accessible name; the bar shows the glyph.
+
+    The scan is structural rather than a list of banned strings: for every
+    LOOP page and every `LoopTopbar`, the *direct* children of its `actions:`
+    list are read, and a lettered control there is an error. Nesting is not
+    followed — the sheet a blocked action opens, or the badge inside a glyph,
+    is that control's own business.
+    """
+
+    errors: list[str] = []
+    for path in sorted((root / "lib").rglob("*.dart")):
+        source = strip_dart_comments(read_text(path))
+        for host in TOPBAR_HOSTS:
+            for host_match in re.finditer(re.escape(host), source):
+                opening = host_match.end() - 1
+                closing = _closing_index(source, opening)
+                if closing < 0:
+                    continue
+                arguments = source[opening : closing + 1]
+                for argument_match in re.finditer(
+                    r"(?<![A-Za-z0-9_])actions:\s*(?:const\s*)?<Widget>\s*\[",
+                    arguments,
+                ):
+                    list_open = opening + argument_match.end() - 1
+                    list_close = _closing_index(source, list_open)
+                    if list_close < 0:
+                        continue
+                    element = source[list_open + 1 : list_close]
+                    stack: list[str] = []
+                    for index, character in enumerate(element):
+                        if character in "([{":
+                            stack.append(character)
+                            continue
+                        if character in ")]}":
+                            if stack:
+                                stack.pop()
+                            continue
+                        if stack and any(bracket != "[" for bracket in stack):
+                            # Inside an argument list or a closure: not a
+                            # direct child of the actions list.
+                            continue
+                        name_match = re.match(
+                            r"([A-Za-z_][A-Za-z0-9_]*)\s*\(", element[index:]
+                        )
+                        if name_match is None:
+                            continue
+                        if index and re.match(
+                            r"[A-Za-z0-9_.]", element[index - 1]
+                        ):
+                            continue
+                        if name_match.group(1) not in TOPBAR_WORD_CONTROLS:
+                            continue
+                        line = source[: list_open + 1 + index].count("\n") + 1
+                        errors.append(
+                            f"{path.relative_to(root)}:{line} a top-bar action "
+                            f"must be a glyph control, not `{name_match.group(1)}` "
+                            "(decision 0087)"
+                        )
+    return errors
+
+
 def check_launch_icon_contract(root: Path) -> list[str]:
     """The adaptive foreground carries the mark only; any baked plate is cropped
     into an octagon by the launcher and Android 12+ splash circular masks."""
@@ -13884,6 +13980,7 @@ def validate(root: Path = ROOT) -> list[str]:
     errors.extend(check_self_mounted_pages_watched(root))
     errors.extend(check_records(root))
     errors.extend(check_launch_icon_contract(root))
+    errors.extend(check_topbar_action_glyph_contract(root))
     visible, visible_error = git_visible_paths(root)
     if visible_error:
         errors.append(f"unable to inspect Git-visible paths: {visible_error}")
@@ -13910,7 +14007,7 @@ def main() -> int:
         "seven-band typography on the platform sans with bundled Noto Sans SC, "
         "declared light grounds, pages mounted under the product theme, "
         "armed page ground probe, watched self-mounted pages, "
-        "plate-free launch icon, "
+        "plate-free launch icon, glyph-only top-bar actions, "
         "build-profile isolation, bounded Stream token loading, providerless control boundaries, production Audio Room entry, Debug-only routine "
         "verification, authenticated social/friend/group boundaries, records, user-visible copy, "
         "channel-resolved chat names, recognised chat contract addresses, "

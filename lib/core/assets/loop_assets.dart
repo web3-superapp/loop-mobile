@@ -36,12 +36,16 @@ abstract final class LoopAssetPaths {
 /// Linear SVG sprite names, without the `i-` prefix.
 ///
 /// Sixty-one of them are the prototype's own set from `shell-open.html`.
-/// `refresh` is the one addition: the prototype never drew a re-read control,
-/// and a banner that offers one had to spell it out in text, which is a wide
-/// word in a bar that is already two lines tall. It is drawn to the same
-/// specification as the imported sheet — a 24 box, `fill="none"`,
-/// `currentColor` at 1.7 with round caps and joins — so it inherits colour and
-/// size from its caller exactly as the rest do.
+/// Three are drawn here, to the same specification as the imported sheet — a
+/// 24 box, `fill="none"`, `currentColor` at 1.7 with round caps and joins — so
+/// they inherit colour and size from their caller exactly as the rest do:
+///
+/// * `refresh`: the prototype never drew a re-read control, and a banner that
+///   offers one had to spell it out in text, which is a wide word in a bar
+///   that is already two lines tall.
+/// * `plus` and `share`: decision 0087 turned every top-bar word into a glyph,
+///   and the prototype's 新建 / 添加 / 导出 were `.seg` text pills, so the
+///   sheet it shipped has no glyph for either 「多一个」 or 「交给系统」.
 abstract final class LoopIconNames {
   static const Set<String> all = <String>{
     'ai',
@@ -88,10 +92,12 @@ abstract final class LoopIconNames {
     'phishing',
     'phone',
     'pin',
+    'plus',
     'question',
     'refresh',
     'search',
     'settings',
+    'share',
     'shield',
     'shuffle',
     'smart',

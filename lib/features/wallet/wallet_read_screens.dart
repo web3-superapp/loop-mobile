@@ -766,11 +766,15 @@ class _WalletAssetScreenState extends ConsumerState<WalletAssetScreen> {
       title: '钱包资产 · ${asset?.symbol ?? row?.symbol ?? '—'}',
       onBack: widget.onBack,
       actions: <Widget>[
-        LoopSeg(
+        // `#scr-asset` draws 行情 as a `.topbar .seg`; decision 0087 keeps the
+        // pill's frame and swaps the word for the bar glyph the 行情 tab
+        // itself wears.
+        LoopIconButton(
           key: const ValueKey<String>('wallet-asset-market-action'),
+          icon: 'chart',
           label: '行情',
-          selected: false,
-          onSelected: () => _open(MarketAssetRoute.token(assetId)),
+          framed: true,
+          onPressed: () => _open(MarketAssetRoute.token(assetId)),
         ),
       ],
       primary: LoopFolioPrimary(
@@ -1670,16 +1674,16 @@ class _WalletManagerScreenState extends ConsumerState<WalletManagerScreen> {
       title: '我的钱包',
       onBack: widget.onBack,
       actions: <Widget>[
-        // The prototype's 添加. There is one creation path and it is the
-        // wallet-less block's own button. A greyed chip whose only answer was
-        // a toast at the foot of the page read as a control that does
-        // nothing, so the tap opens a sheet that stays until it is dismissed
-        // and says what the product does and does not do here.
-        LoopSeg(
+        // The prototype's 添加, as a glyph (decision 0087). There is one
+        // creation path and it is the wallet-less block's own button. A greyed
+        // chip whose only answer was a toast at the foot of the page read as a
+        // control that does nothing, so the tap opens a sheet that stays until
+        // it is dismissed and says what the product does and does not do here.
+        LoopIconButton(
           key: const ValueKey<String>('wallets-add-action'),
+          icon: 'plus',
           label: '添加',
-          selected: false,
-          onSelected: null,
+          framed: true,
           onBlocked: () => unawaited(
             showLoopSheet<void>(
               context,
@@ -2050,12 +2054,16 @@ class _TransactionHistoryScreenState
         // The prototype's 导出, doing what it says: the rows this page is
         // currently listing are encoded as CSV on device and handed to the
         // system share sheet. Nothing is uploaded, and nothing beyond what is
-        // on screen is fetched.
-        LoopSeg(
+        // on screen is fetched. Decision 0087 draws it as the share glyph —
+        // 「交给系统」 is exactly what the tap does — and the name still
+        // switches to 导出中 while a run is in flight, because that state was
+        // only ever carried by the word.
+        LoopIconButton(
           key: const ValueKey<String>('tx-history-export-action'),
+          icon: 'share',
           label: _exporting ? '导出中' : '导出',
-          selected: false,
-          onSelected: page == null || _exporting
+          framed: true,
+          onPressed: page == null || _exporting
               ? null
               : () => unawaited(_export(page)),
           onBlocked: page != null

@@ -20,16 +20,20 @@ void main() {
         reason: name,
       );
     }
-    // 61 sprites imported from the prototype plus the LOOP-drawn `refresh`.
-    expect(LoopIconNames.all, hasLength(62));
+    // 61 sprites imported from the prototype plus three drawn for LOOP:
+    // `refresh`, and `plus` / `share` for the top-bar words decision 0087
+    // turned into glyphs.
+    expect(LoopIconNames.all, hasLength(64));
     expect(LoopIconNames.contains('refresh'), isTrue);
+    expect(LoopIconNames.contains('plus'), isTrue);
+    expect(LoopIconNames.contains('share'), isTrue);
     expect(
       Directory(LoopAssetPaths.icons)
           .listSync()
           .whereType<File>()
           .where((file) => file.path.endsWith('.svg'))
           .length,
-      62,
+      64,
     );
     for (final file in LoopTokenAssets.bySymbol.values) {
       expect(

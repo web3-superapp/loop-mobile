@@ -530,10 +530,12 @@ void main() {
         notifications: FakeNotificationsGateway(),
       );
       await expectChalk(tester, const SizedBox.shrink());
-      final seg = tester.widget<LoopSeg>(
+      // Decision 0087: the word moved into the glyph's name.
+      final create = tester.widget<LoopIconButton>(
         find.byKey(const ValueKey<String>('alerts-create-action')),
       );
-      expect(seg.label, '新建');
+      expect(create.label, '新建');
+      expect(create.icon, 'plus');
     });
 
     testWidgets('watchlist-edit puts the list above the groups', (
@@ -545,10 +547,11 @@ void main() {
         watchlist: FakeWatchlistGateway(),
       );
       await expectChalk(tester, const SizedBox.shrink());
-      final done = tester.widget<LoopSeg>(
+      final done = tester.widget<LoopIconButton>(
         find.byKey(const ValueKey<String>('watchlist-save-action')),
       );
       expect(done.label, '完成');
+      expect(done.icon, 'check');
       // The prototype's order: the list the page exists to edit comes first.
       final hint = tester.getTopLeft(find.text('拖动排序 · 左滑删除')).dy;
       final groups = tester.getTopLeft(find.text('分组')).dy;
