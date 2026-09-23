@@ -53,8 +53,8 @@ void main() {
 
       final text = tester.widget<Text>(find.text('| 模拟器 |\nuuu'));
       expect(text.style!.fontSize, 14);
-      // Band 4 · body. The prototype's `.msg-txt` is `line-height:1.55`.
-      expect(text.style!.height, 1.55);
+      // Band 4 · body, 14/1.4 since decision 0080.
+      expect(text.style!.height, 1.4);
       expect(text.style!.color, LoopColors.chalk);
 
       await _disposeHarness(tester, harness);
@@ -67,9 +67,9 @@ void main() {
       await _pumpMessage(tester, harness: harness);
 
       final box = tester.renderObject<RenderBox>(find.text('一行\n二行'));
-      // 2 × 14 × 1.55 = 43.4. A markdown-split message adds the style sheet's
+      // 2 × 14 × 1.4 = 39.2. A markdown-split message adds the style sheet's
       // 8px block spacing on top of it.
-      expect(box.size.height, closeTo(2 * 14 * 1.55, 1));
+      expect(box.size.height, closeTo(2 * 14 * 1.4, 1));
 
       await _disposeHarness(tester, harness);
     });

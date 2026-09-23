@@ -119,41 +119,50 @@ void main() {
     expect(LoopLayout.designBaseline, const Size(390, 844));
   });
 
-  test('text theme uses Sora with weights and IBM Plex Mono for figures', () {
+  test('the text theme is the platform sans; figures are tabular', () {
     final text = LoopTheme.dark.textTheme;
     final title = text.headlineLarge!;
-    expect(title.fontFamily, 'Sora');
-    expect(title.fontSize, 24);
-    expect(title.fontWeight, FontWeight.w800);
-    expect(title.letterSpacing, lessThan(0));
-    expect(title.fontVariations, contains(const FontVariation.weight(800)));
+    // 22 semibold, the display optical cut, no tracking (decision 0080).
+    expect(title.fontFamily, LoopFonts.systemDisplay);
+    expect(title.fontSize, 22);
+    expect(title.fontWeight, FontWeight.w600);
+    expect(title.letterSpacing, 0);
+    expect(title.fontVariations, isNull);
     expect(title.fontFamilyFallback, contains('Noto Sans SC'));
+    expect(title.fontFamilyFallback!.first, LoopFonts.android);
 
-    expect(text.displayMedium!.fontSize, 32);
+    expect(text.displayMedium!.fontSize, 26);
     expect(text.bodyLarge!.fontSize, 14);
-    expect(text.bodyLarge!.fontWeight, FontWeight.w500);
+    expect(text.bodyLarge!.fontWeight, FontWeight.w400);
     expect(text.bodyMedium!.fontSize, 13);
-    expect(text.bodyMedium!.height, 1.55);
+    expect(text.bodyMedium!.height, 1.4);
 
-    for (final mono in <TextStyle>[
+    // Every figure step is the page's own sans with equal digit advances, so
+    // a right-aligned price column lines up without a second voice.
+    for (final figure in <TextStyle>[
       LoopMono.display,
       LoopMono.headline,
       LoopMono.value,
       LoopMono.body,
-      LoopMono.label,
       LoopMono.stamp,
     ]) {
-      expect(mono.fontFamily, 'IBM Plex Mono');
-      expect(mono.fontFeatures, contains(const FontFeature.tabularFigures()));
-      expect(mono.fontFamilyFallback, contains('Noto Sans SC'));
+      expect(figure.fontFamily, LoopFonts.familyFor(figure.fontSize!));
+      expect(figure.fontFeatures, contains(const FontFeature.tabularFigures()));
+      expect(figure.fontFamilyFallback, contains('Noto Sans SC'));
     }
-    expect(LoopMono.display.fontSize, 32);
+    expect(LoopMono.display.fontSize, 28);
+
+    // Fixed width survives for one job: addresses, hashes, code.
+    expect(LoopMono.address.fontFamily, LoopFonts.mono);
+    expect(LoopType.code.fontFamily, LoopFonts.mono);
+    expect(LoopType.codeSm.fontFamily, LoopFonts.mono);
     expect(LoopTypography.mono(size: 12).fontFamily, 'IBM Plex Mono');
   });
 
   test('the seven bands are the whole vocabulary', () {
-    // Band 1-6 are proportional and lead with Sora, so a mixed 中英 line
-    // resolves Latin from Sora and Han from the bundled Noto Sans SC.
+    // Bands 1-6 are the platform's own UI sans: SF Pro through the engine's
+    // Cupertino aliases, Roboto at the head of the fallback chain, and
+    // Chinese from PingFang SC or the bundled Noto Sans SC.
     final proportional = <String, TextStyle>{
       'displayXl': LoopType.displayXl,
       'display': LoopType.display,
@@ -171,44 +180,91 @@ void main() {
       'captionSm': LoopType.captionSm,
       'action': LoopType.action,
       'label': LoopType.label,
+      'eyebrow': LoopType.eyebrow,
     };
     proportional.forEach((name, style) {
-      expect(style.fontFamily, 'Sora', reason: name);
-      expect(style.fontFamilyFallback?.first, 'Noto Sans SC', reason: name);
       expect(
-        style.fontVariations,
-        contains(FontVariation.weight(style.fontWeight!.value.toDouble())),
+        style.fontFamily,
+        LoopFonts.familyFor(style.fontSize!),
         reason: name,
       );
+      expect(style.fontFamilyFallback?.first, LoopFonts.android, reason: name);
+      expect(style.fontFamilyFallback, contains(LoopFonts.cjk), reason: name);
+      // Nothing carries a variation axis any more: the system face instances
+      // itself and the bundled Noto Sans SC statics are matched by weight.
+      expect(style.fontVariations, isNull, reason: name);
+      // Hierarchy is weight and grey, not tracking — and the 0 is written,
+      // not left null, so Material's own tracking cannot leak into a merge.
+      expect(style.letterSpacing, 0, reason: name);
       expect(
         style.leadingDistribution,
         TextLeadingDistribution.even,
         reason: name,
       );
-      // Nothing in the ladder drops below the prototype's 11px screen floor
-      // (`.scr :is(.label,.badge,…,small){font-size:11px}`).
+      // The ladder spans 11 to 28: nothing under the prototype's 11px screen
+      // floor, nothing shouting above 28.
       expect(style.fontSize, greaterThanOrEqualTo(11), reason: name);
+      expect(style.fontSize, lessThanOrEqualTo(28), reason: name);
+      expect(style.height, inInclusiveRange(1.2, 1.4), reason: name);
+      expect(style.fontFeatures, isNull, reason: name);
     });
 
-    // Band 6b (eyebrow) and band 7 are the only fixed-width styles.
-    for (final MapEntry<String, TextStyle> entry in <String, TextStyle>{
-      'eyebrow': LoopType.eyebrow,
-      'monoDisplay': LoopType.monoDisplay,
-      'monoTitle': LoopType.monoTitle,
-      'monoQuote': LoopType.monoQuote,
-      'monoValue': LoopType.monoValue,
-      'monoBody': LoopType.monoBody,
-      'monoStamp': LoopType.monoStamp,
-    }.entries) {
-      expect(entry.value.fontFamily, 'IBM Plex Mono', reason: entry.key);
-      expect(entry.value.fontSize, greaterThanOrEqualTo(11), reason: entry.key);
-    }
+    // The eyebrow is no longer an uppercase fixed-width Latin stamp.
+    expect(LoopType.eyebrow.fontSize, 12);
+    expect(LoopType.eyebrow.fontWeight, FontWeight.w500);
+    expect(LoopType.eyebrow.color, LoopColors.text3);
 
-    // Restating a weight has to move the variable axis with it, otherwise the
-    // Sora file keeps rendering the previous weight.
-    final bold = LoopTypography.withWeight(LoopType.body, FontWeight.w700);
-    expect(bold.fontWeight, FontWeight.w700);
-    expect(bold.fontVariations, contains(const FontVariation.weight(700)));
+    // Band 7 is the same voice with tabular figures; band 7b is the only
+    // fixed-width one.
+    for (final MapEntry<String, TextStyle> entry in <String, TextStyle>{
+      'figureXl': LoopType.figureXl,
+      'figureLg': LoopType.figureLg,
+      'figureMd': LoopType.figureMd,
+      'figure': LoopType.figure,
+      'figureSm': LoopType.figureSm,
+      'figureXs': LoopType.figureXs,
+    }.entries) {
+      expect(
+        entry.value.fontFamily,
+        LoopFonts.familyFor(entry.value.fontSize!),
+        reason: entry.key,
+      );
+      expect(
+        entry.value.fontFeatures,
+        contains(const FontFeature.tabularFigures()),
+        reason: entry.key,
+      );
+      expect(entry.value.fontSize, greaterThanOrEqualTo(11), reason: entry.key);
+      expect(entry.value.fontSize, lessThanOrEqualTo(28), reason: entry.key);
+    }
+    // The `mono*` names the feature slices call are those steps.
+    expect(LoopType.monoDisplay, LoopType.figureXl);
+    expect(LoopType.monoTitle, LoopType.figureLg);
+    expect(LoopType.monoQuote, LoopType.figureMd);
+    expect(LoopType.monoValue, LoopType.figure);
+    expect(LoopType.monoBody, LoopType.figureSm);
+    expect(LoopType.monoStamp, LoopType.figureXs);
+
+    // Restating a weight is still the only sanctioned way to move one.
+    final bold = LoopTypography.withWeight(LoopType.body, FontWeight.w600);
+    expect(bold.fontWeight, FontWeight.w600);
+    expect(bold.fontSize, LoopType.body.fontSize);
+  });
+
+  test('the shipped font assets are the CJK face and the code face', () {
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+    expect(pubspec, contains('family: Noto Sans SC'));
+    expect(pubspec, contains('family: IBM Plex Mono'));
+    expect(pubspec, isNot(contains('family: Sora')));
+    expect(File('assets/fonts/Sora-Variable.ttf').existsSync(), isFalse);
+    for (final asset in <String>[
+      'assets/fonts/NotoSansSC-Regular.ttf',
+      'assets/fonts/NotoSansSC-Medium.ttf',
+      'assets/fonts/NotoSansSC-Bold.ttf',
+      'assets/fonts/IBMPlexMono-Regular.ttf',
+    ]) {
+      expect(File(asset).existsSync(), isTrue, reason: asset);
+    }
   });
 
   test('buttons and sheets take the token sizes and veil', () {

@@ -90,7 +90,11 @@ void main() {
     );
     expect(
       tester.widget<Text>(find.text(r'$0.000013')).style?.fontFamily,
-      LoopFonts.mono,
+      LoopFonts.system,
+    );
+    expect(
+      tester.widget<Text>(find.text(r'$0.000013')).style?.fontFeatures,
+      contains(const FontFeature.tabularFigures()),
     );
     expect(find.text('1H · 固定演示'), findsOneWidget);
     expect(find.text('市值'), findsOneWidget);

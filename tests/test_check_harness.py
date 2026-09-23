@@ -326,6 +326,104 @@ class HarnessTests(unittest.TestCase):
             msg=f"expected secure-journal sensitive-field guard: {result}",
         )
 
+    def test_typography_guard_rejects_a_returned_display_face(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            fonts = root / "assets" / "fonts"
+            fonts.mkdir(parents=True)
+            for asset in (
+                "NotoSansSC-Regular.ttf",
+                "NotoSansSC-Medium.ttf",
+                "NotoSansSC-Bold.ttf",
+                "OFL-NotoSansSC.txt",
+                "IBMPlexMono-Regular.ttf",
+                "IBMPlexMono-Medium.ttf",
+                "IBMPlexMono-SemiBold.ttf",
+                "OFL-IBMPlexMono.txt",
+                "Sora-Variable.ttf",
+            ):
+                (fonts / asset).write_text("x", encoding="utf-8")
+            (root / "pubspec.yaml").write_text(
+                "flutter:\n"
+                "  fonts:\n"
+                "    - family: Sora\n"
+                "        - asset: assets/fonts/Sora-Variable.ttf\n"
+                "    - family: Noto Sans SC\n"
+                "        - asset: assets/fonts/NotoSansSC-Regular.ttf\n"
+                "        - asset: assets/fonts/NotoSansSC-Medium.ttf\n"
+                "        - asset: assets/fonts/NotoSansSC-Bold.ttf\n"
+                "    - family: IBM Plex Mono\n"
+                "        - asset: assets/fonts/IBMPlexMono-Regular.ttf\n"
+                "        - asset: assets/fonts/IBMPlexMono-Medium.ttf\n"
+                "        - asset: assets/fonts/IBMPlexMono-SemiBold.ttf\n",
+                encoding="utf-8",
+            )
+            theme = root / "lib" / "core" / "theme"
+            theme.mkdir(parents=True)
+            (theme / "loop_theme.dart").write_text(
+                "const family = 'Sora';\n"
+                "const features = [FontFeature.tabularFigures()];\n",
+                encoding="utf-8",
+            )
+
+            result = check_harness.check_typography_band_contract(root)
+
+        self.assertTrue(
+            any("Sora-Variable.ttf is back" in error for error in result),
+            msg=f"expected the retired display face to be refused: {result}",
+        )
+        self.assertTrue(
+            any("declares the `Sora` family" in error for error in result),
+            msg=f"expected pubspec Sora registration to be refused: {result}",
+        )
+        self.assertTrue(
+            any("names Sora" in error for error in result),
+            msg=f"expected the theme to be held to the platform sans: {result}",
+        )
+
+    def test_typography_guard_requires_tabular_figures(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            fonts = root / "assets" / "fonts"
+            fonts.mkdir(parents=True)
+            for asset in (
+                "NotoSansSC-Regular.ttf",
+                "NotoSansSC-Medium.ttf",
+                "NotoSansSC-Bold.ttf",
+                "OFL-NotoSansSC.txt",
+                "IBMPlexMono-Regular.ttf",
+                "IBMPlexMono-Medium.ttf",
+                "IBMPlexMono-SemiBold.ttf",
+                "OFL-IBMPlexMono.txt",
+            ):
+                (fonts / asset).write_text("x", encoding="utf-8")
+            (root / "pubspec.yaml").write_text(
+                "flutter:\n"
+                "  fonts:\n"
+                "    - family: Noto Sans SC\n"
+                "        - asset: assets/fonts/NotoSansSC-Regular.ttf\n"
+                "        - asset: assets/fonts/NotoSansSC-Medium.ttf\n"
+                "        - asset: assets/fonts/NotoSansSC-Bold.ttf\n"
+                "    - family: IBM Plex Mono\n"
+                "        - asset: assets/fonts/IBMPlexMono-Regular.ttf\n"
+                "        - asset: assets/fonts/IBMPlexMono-Medium.ttf\n"
+                "        - asset: assets/fonts/IBMPlexMono-SemiBold.ttf\n",
+                encoding="utf-8",
+            )
+            theme = root / "lib" / "core" / "theme"
+            theme.mkdir(parents=True)
+            (theme / "loop_theme.dart").write_text(
+                "const family = 'CupertinoSystemText';\n", encoding="utf-8"
+            )
+
+            result = check_harness.check_typography_band_contract(root)
+
+        self.assertEqual(
+            ["lib/core/theme/loop_theme.dart no longer asks for tabular "
+             "figures; a price column stops lining up"],
+            result,
+        )
+
     def test_production_bootstrap_cannot_fall_back_to_v1(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

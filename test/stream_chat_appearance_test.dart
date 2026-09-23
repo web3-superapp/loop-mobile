@@ -31,9 +31,9 @@ void main() {
       expect(textStyle.resolve(_outgoing)!.color, LoopColors.ink);
       expect(textStyle.resolve(_incoming)!.color, LoopColors.chalk);
       // Band 4 (`LoopType.body`), the same size as the in-house bubble in
-      // chat_components.dart. See decision 0069.
+      // chat_components.dart. See decisions 0069 and 0080.
       expect(textStyle.resolve(_incoming)!.fontSize, 14);
-      expect(textStyle.resolve(_incoming)!.fontWeight, FontWeight.w500);
+      expect(textStyle.resolve(_incoming)!.fontWeight, FontWeight.w400);
       expect(
         textStyle.resolve(_incoming)!.fontFamilyFallback,
         contains('Noto Sans SC'),

@@ -9004,22 +9004,27 @@ TYPOGRAPHY_FORBIDDEN_LITERALS = {
     "fontSize:": "a size belongs to a band step in LoopType / LoopTypography",
     "fontWeight:": (
         "a weight belongs to a band; restate one with "
-        "LoopTypography.withWeight so the variable Sora axis moves too"
+        "LoopTypography.withWeight"
     ),
     "fontFamily:": (
-        "a family belongs to LoopFonts; a page never names Sora, "
+        "a family belongs to LoopFonts; a page never names the system face, "
         "IBM Plex Mono, Noto Sans SC or 'monospace' itself"
     ),
 }
 
+# The proportional voice is the platform's own UI sans (decision 0080), so no
+# display face is bundled any more. A file that comes back is a page deciding
+# its own voice.
+TYPOGRAPHY_RETIRED_FONT_ASSETS = ("Sora-Variable.ttf", "OFL-Sora.txt")
+
 
 def check_typography_band_contract(root: Path) -> list[str]:
-    """Keep every page on the seven type bands (decision 0069).
+    """Keep every page on the seven type bands (decisions 0069 and 0080).
 
-    The prototype's Latin voice (Sora) has no CJK coverage and the bundled
-    Noto Sans SC statics are matched by weight, so a hand-written `fontSize`
-    or `fontWeight` produces a 中英 line whose two halves disagree. Sizes,
-    weights and families therefore live only in `LoopTypography` / `LoopType`.
+    Sizes, weights and families live only in `LoopTypography` / `LoopType`: a
+    hand-written `fontSize` or `fontWeight` sets the Latin half of a 中英 line
+    against the Han half, which resolves a different file, and it puts a page
+    outside the ladder the whole product is read through.
     """
 
     errors: list[str] = []
@@ -9054,6 +9059,47 @@ def check_typography_band_contract(root: Path) -> list[str]:
             errors.append(f"assets/fonts/{asset} is not registered in pubspec.yaml")
     if "family: Noto Sans SC" not in pubspec:
         errors.append("pubspec.yaml does not declare the `Noto Sans SC` family")
+
+    # IBM Plex Mono is the address/hash band and keeps its registration; the
+    # display face is gone and must not come back through either door.
+    for asset in (
+        "IBMPlexMono-Regular.ttf",
+        "IBMPlexMono-Medium.ttf",
+        "IBMPlexMono-SemiBold.ttf",
+        "OFL-IBMPlexMono.txt",
+    ):
+        if not (fonts_dir / asset).is_file():
+            errors.append(
+                f"assets/fonts/{asset} is missing; addresses and hashes have "
+                "no fixed-width face"
+            )
+        elif asset.endswith(".ttf") and f"assets/fonts/{asset}" not in pubspec:
+            errors.append(f"assets/fonts/{asset} is not registered in pubspec.yaml")
+    for asset in TYPOGRAPHY_RETIRED_FONT_ASSETS:
+        if (fonts_dir / asset).is_file():
+            errors.append(
+                f"assets/fonts/{asset} is back; the proportional voice is the "
+                "platform's own sans (decision 0080)"
+            )
+    if "family: Sora" in pubspec:
+        errors.append(
+            "pubspec.yaml declares the `Sora` family; the proportional bands "
+            "take the platform sans (decision 0080)"
+        )
+
+    theme_path = root / "lib" / "core" / "theme" / "loop_theme.dart"
+    if theme_path.is_file():
+        theme = strip_dart_comments(read_text(theme_path))
+        if "FontFeature.tabularFigures()" not in theme:
+            errors.append(
+                "lib/core/theme/loop_theme.dart no longer asks for tabular "
+                "figures; a price column stops lining up"
+            )
+        if "'Sora'" in theme:
+            errors.append(
+                "lib/core/theme/loop_theme.dart names Sora; the proportional "
+                "bands take the platform sans (decision 0080)"
+            )
     return errors
 
 
@@ -13821,7 +13867,7 @@ def main() -> int:
         "Spot-only product, New Pairs source-scoped truth, Chat snapshot, Preview request truth and exact conversation identity, security capability truth, provider-owned MFA, device-local application lock, device-local display preferences, five-step account opening, Dio trust boundaries, bounded candle, Wallet identity, Wallet route, local draft, "
         "S5 chain/market/wallet-read truth, S6 money-action truth, "
         "S7 launch/mining/referral truth, S9 dual chain slots, "
-        "seven-band typography with bundled Noto Sans SC, "
+        "seven-band typography on the platform sans with bundled Noto Sans SC, "
         "declared light grounds, pages mounted under the product theme, "
         "armed page ground probe, watched self-mounted pages, "
         "plate-free launch icon, "

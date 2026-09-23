@@ -301,85 +301,131 @@ abstract final class LoopLayout {
   static const double railBreakpoint = 900;
 
   /// Topbar reserve. Derived from the type ladder, not chosen: 6 top padding
-  /// + one 11px eyebrow line at 1.25 + two 24px title lines at the heading
-  /// band's 1.22 leading (6 + 13.75 + 58.56 = 78.31), rounded to 80. A page
-  /// title wraps to two lines in Chinese far more often than in English, so
-  /// the second line is reserved rather than clipped.
+  /// + one 12px eyebrow line at 1.25 + two 22px title lines at the heading
+  /// band's 1.25 leading (6 + 15 + 55 = 76), kept at 80 so the reserve did
+  /// not move when decision 0080 lowered the ladder — the 4px it gains is
+  /// cushion, not a gap a page has to fill. A page title wraps to two lines in
+  /// Chinese far more often than in English, so the second line is reserved
+  /// rather than clipped.
   static const double topbarHeight = 80;
 
   /// Content box inside [topbarHeight], after the bar's own top padding.
   static const double topbarContentHeight = 74;
 }
 
-/// Font families (chapter 4.2). Sora ships as a variable font and carries the
-/// Latin/figure voice; Noto Sans SC ships as three static weights (Regular /
-/// Medium / Bold, GB2312-complete subset) and carries every CJK glyph. Because
-/// Sora has no CJK coverage, a mixed 中英 line resolves per glyph: Latin from
-/// Sora, Han from Noto Sans SC — the same order the prototype declares in
-/// `body{font-family:var(--body),'Noto Sans SC',…}`.
+/// Font families (decision 0080, which replaces the display voice of chapter
+/// 4.2). LOOP ships no display face any more: every proportional band asks the
+/// platform for its own UI sans — SF Pro on iOS/macOS through the engine's
+/// `CupertinoSystem*` aliases, Roboto on Android — and Chinese resolves
+/// through the fallback chain, Apple's PingFang SC beside SF Pro and the
+/// bundled Noto Sans SC everywhere else. Both halves of a 中英 line therefore
+/// come from one vendor's stack.
+///
+/// IBM Plex Mono survives for one job: addresses, hashes and code, where a
+/// fixed advance is the point. **Figures are no longer fixed-width.** They are
+/// the same system sans asked for `tabularFigures`, which is what a price
+/// column actually needs — equal digit advances inside the page's one voice.
 abstract final class LoopFonts {
-  static const String display = 'Sora';
-  static const String body = 'Sora';
+  /// The system UI sans at text optical size. On iOS/macOS the engine maps it
+  /// to SF Pro Text; on every other platform it does not resolve and the head
+  /// of [systemFallback] takes the primary position.
+  static const String system = 'CupertinoSystemText';
+
+  /// The system UI sans at display optical size (SF Pro Display on Apple).
+  static const String systemDisplay = 'CupertinoSystemDisplay';
+
+  /// The size at which Apple switches from the text cut to the display cut.
+  static const double displayOpticalSize = 20;
+
+  /// Android's own UI sans. The `CupertinoSystem*` aliases resolve on Apple
+  /// platforms only; a family list whose primary name is unknown falls
+  /// through to the next entry, so Roboto has to lead the fallback chain.
+  static const String android = 'Roboto';
+
   static const String mono = 'IBM Plex Mono';
 
-  /// The bundled CJK family. It leads every fallback list so Chinese renders
-  /// in the shipped file instead of whatever the device happens to install.
+  /// The bundled CJK family — the controlled Chinese face for every device
+  /// whose platform stack we do not trust.
   static const String cjk = 'Noto Sans SC';
 
-  /// Fallback chain for the proportional bands. Bundled CJK first, then the
-  /// platform stacks for scripts we do not ship (Japanese kana, Korean,
-  /// Cyrillic beyond the subset, emoji-adjacent symbols).
-  static const List<String> cjkFallback = <String>[
-    cjk,
+  /// Names kept for the call sites that ask for "the body face" or "the
+  /// display face" rather than a band step.
+  static const String body = system;
+  static const String display = systemDisplay;
+
+  /// The optical cut a band step of [size] asks for.
+  static String familyFor(double size) =>
+      size >= displayOpticalSize ? systemDisplay : system;
+
+  /// Fallback chain for the proportional bands: Android's Latin face, then
+  /// Apple's CJK companion to SF Pro, then the bundled file, then the OEM
+  /// stacks for scripts none of those carry.
+  static const List<String> systemFallback = <String>[
+    android,
     'PingFang SC',
+    cjk,
+    'HarmonyOS Sans SC',
     'Source Han Sans SC',
-    'Hiragino Sans GB',
     'Microsoft YaHei',
     'sans-serif',
   ];
 
+  /// Retained name for the same chain (Stream's theme adapter calls it).
+  static const List<String> cjkFallback = systemFallback;
+
   /// Fallback chain for the fixed-width band. IBM Plex Mono has no Han
-  /// coverage, so a Chinese eyebrow label still resolves to the bundled CJK
-  /// file rather than the system monospace face.
+  /// coverage, so a Chinese run inside an address line still lands on a real
+  /// CJK face instead of the system monospace.
   static const List<String> monoFallback = <String>[
+    'SF Mono',
+    'Menlo',
     cjk,
     'PingFang SC',
-    'Menlo',
     'monospace',
   ];
 }
 
-/// Type builders. Weight is applied twice on purpose: `fontWeight` for
-/// matching/semantics and `fontVariations` so the variable Sora file renders
-/// the exact weight instead of synthesising it. The Noto Sans SC statics are
-/// matched by `fontWeight` alone and ignore the variation axis.
+/// Type builders. Every band is the platform's own sans; weight is matched by
+/// `fontWeight` alone, because neither the system face (which the engine
+/// instances itself) nor the bundled Noto Sans SC statics take a variation
+/// axis from us.
 ///
 /// Leading is distributed evenly ([TextLeadingDistribution.even]) because a
 /// mixed 中英 line resolves two files with different ascent/descent ratios;
 /// proportional leading would shift the baseline whenever a run switches
 /// script.
 abstract final class LoopTypography {
-  static TextStyle sora({
+  /// The proportional builder behind bands 1–6 and, with [tabularFigures],
+  /// band 7.
+  static TextStyle sans({
     required double size,
     required FontWeight weight,
     double? height,
     double? letterSpacing,
     Color color = LoopColors.chalk,
+    bool tabularFigures = false,
   }) {
     return TextStyle(
-      fontFamily: LoopFonts.body,
-      fontFamilyFallback: LoopFonts.cjkFallback,
+      fontFamily: LoopFonts.familyFor(size),
+      fontFamilyFallback: LoopFonts.systemFallback,
       fontSize: size,
       fontWeight: weight,
-      fontVariations: <FontVariation>[FontVariation.weight(weight.value * 1.0)],
       height: height,
       leadingDistribution: TextLeadingDistribution.even,
-      letterSpacing: letterSpacing,
+      // Explicit, never null: a null tracking lets Material's own 2021
+      // typography (+0.5 on a label, +0.3 on a title) leak through the merge
+      // that builds a `Text`'s style, and the ladder stops being the ladder.
+      letterSpacing: letterSpacing ?? 0,
       color: color,
+      fontFeatures: tabularFigures
+          ? const <FontFeature>[FontFeature.tabularFigures()]
+          : null,
     );
   }
 
-  /// Numbers, addresses, tickers, timestamps and status stamps.
+  /// Fixed width. Addresses, transaction hashes, contract identifiers and
+  /// code — never an amount, a price or a percentage: those are band 7, which
+  /// is the page's own voice with equal digit advances.
   static TextStyle mono({
     required double size,
     FontWeight weight = FontWeight.w500,
@@ -394,181 +440,152 @@ abstract final class LoopTypography {
       fontWeight: weight,
       height: height,
       leadingDistribution: TextLeadingDistribution.even,
-      letterSpacing: letterSpacing,
+      letterSpacing: letterSpacing ?? 0,
       color: color,
       fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
     );
   }
 
   // ---------------------------------------------------------------------
-  // The seven bands. Every band fixes weight, line height and a tracking
-  // ratio expressed in `em`; a call site may only choose a step size from the
-  // band's documented ladder. Feature code never writes `fontSize`,
-  // `fontWeight` or `fontFamily` — see `scripts/check_harness.py`.
+  // The seven bands. Every band fixes weight and line height; tracking is 0
+  // everywhere, because a system UI sans is already spaced for the screen and
+  // Han glyphs have no business being tracked. A call site may only choose a
+  // step size from the band's documented ladder. Feature code never writes
+  // `fontSize`, `fontWeight` or `fontFamily` — see `scripts/check_harness.py`.
+  //
+  // Hierarchy is carried by weight and by the grey of the token, not by size:
+  // the whole ladder spans 11 → 28, where it used to span 11 → 42.
   // ---------------------------------------------------------------------
 
-  /// Band 1 · display — brand statements and hero figures.
-  /// Prototype `.hero-num` / `.folio-heading` / `.mining-power-value`
-  /// (`800 32px/1.1 -1.5px`, `800 27px/.96 -1.25px`, `800 44px/.95 -2px`).
-  /// Line height is lifted to 1.15: the prototype values are Latin-only and a
-  /// two-line Chinese heading overlaps below ~1.1.
+  /// Band 1 · display — the one big statement on a page: a hero figure, a
+  /// folio heading. 26–28 semibold, not 32–42 extrabold.
   static TextStyle display(double size, {Color color = LoopColors.chalk}) =>
-      sora(
-        size: size,
-        weight: FontWeight.w800,
-        height: 1.15,
-        letterSpacing: size * -0.046,
-        color: color,
-      );
+      sans(size: size, weight: FontWeight.w600, height: 1.2, color: color);
 
-  /// Band 2 · heading — page titles and section headings.
-  /// Prototype `.topbar h2` (`800 24px/1.12 -.65px`) and `.sheet-head h3`.
+  /// Band 2 · heading — page titles and section headings. 20–22 semibold.
   static TextStyle heading(
     double size, {
-    FontWeight weight = FontWeight.w800,
+    FontWeight weight = FontWeight.w600,
     Color color = LoopColors.chalk,
-  }) => sora(
-    size: size,
-    weight: weight,
-    height: 1.22,
-    letterSpacing: size * -0.027,
-    color: color,
-  );
+  }) => sans(size: size, weight: weight, height: 1.25, color: color);
 
-  /// Band 3 · title — card and row titles (`.row-t`, `.tcard-id b`).
+  /// Band 3 · title — card and row titles. 15–16 at medium/semibold.
   static TextStyle title(
     double size, {
-    FontWeight weight = FontWeight.w700,
+    FontWeight weight = FontWeight.w600,
     Color color = LoopColors.chalk,
-  }) => sora(
-    size: size,
-    weight: weight,
-    height: 1.35,
-    letterSpacing: size * -0.012,
-    color: color,
-  );
+  }) => sans(size: size, weight: weight, height: 1.3, color: color);
 
-  /// Band 4 · body — running prose. Prototype `[data-primary-body]`
-  /// (`14px/1.5`) at the document weight 500; 1.55 gives Han glyphs, which
-  /// fill their em box, the extra leading Latin does not need.
+  /// Band 4 · body — running prose at 14 regular. 1.4 is the loose end of the
+  /// ladder's range, kept for prose because Han glyphs fill their em box.
   static TextStyle body(double size, {Color color = LoopColors.chalk}) =>
-      sora(size: size, weight: FontWeight.w500, height: 1.55, color: color);
+      sans(size: size, weight: FontWeight.w400, height: 1.4, color: color);
 
-  /// Band 5 · caption — supporting copy. Prototype `[data-support-copy]`
-  /// (`12px/1.45`) with the on-screen floor of 11px
+  /// Band 5 · caption — supporting copy at 12, with the on-screen floor of 11
   /// (`.scr :is(.label,.badge,…,small){font-size:11px}`).
   static TextStyle caption(double size, {Color color = LoopColors.text3}) =>
-      sora(size: size, weight: FontWeight.w500, height: 1.45, color: color);
+      sans(size: size, weight: FontWeight.w400, height: 1.35, color: color);
 
-  /// Band 6 · label — controls and inline labels. Prototype
-  /// `[data-primary-control]` (`14px`) and `.tab` (`700 11px .015em`).
+  /// Band 6 · label — controls and inline labels.
   static TextStyle label(
     double size, {
-    FontWeight weight = FontWeight.w600,
+    FontWeight weight = FontWeight.w500,
     Color color = LoopColors.text3,
-  }) => sora(
-    size: size,
-    weight: weight,
-    height: 1.25,
-    letterSpacing: size * 0.008,
-    color: color,
-  );
+  }) => sans(size: size, weight: weight, height: 1.25, color: color);
 
-  /// Band 6b · eyebrow — the one fixed-width label. Prototype `.label`
-  /// (`600 10px/1.2 var(--mono)`, `letter-spacing:.15em`, uppercase) raised to
-  /// the 11px screen floor.
+  /// Band 6b · eyebrow — the small subheading over a group. It used to be an
+  /// uppercase, letter-spaced, fixed-width Latin stamp (`MARKET SIGNALS`); it
+  /// is now a 12px Chinese subheading in the page's own voice, told apart by
+  /// weight and grey. The strings themselves are each page's to restate.
   static TextStyle eyebrow(double size, {Color color = LoopColors.text3}) =>
-      mono(
-        size: size,
-        weight: FontWeight.w600,
-        height: 1.25,
-        letterSpacing: size * 0.15,
-        color: color,
-      );
+      sans(size: size, weight: FontWeight.w500, height: 1.25, color: color);
 
-  /// Band 7 · mono — figures, amounts, addresses, IDs and timestamps only.
+  /// Band 7 · figure — every number the product shows: amounts, prices,
+  /// percentages, counts, timestamps. The page's own sans with
+  /// [FontFeature.tabularFigures], so a right-aligned column lines up without
+  /// leaving the one voice. Addresses and hashes are [code], not this.
   static TextStyle figure(
     double size, {
     FontWeight weight = FontWeight.w600,
-    double height = 1.35,
+    double height = 1.3,
     Color color = LoopColors.chalk,
-  }) => mono(
+  }) => sans(
     size: size,
     weight: weight,
     height: height,
-    letterSpacing: size * -0.008,
     color: color,
+    tabularFigures: true,
   );
 
-  /// Restate [style] at [weight]. Sora is variable, so `copyWith(fontWeight:)`
-  /// alone leaves `fontVariations` pinned to the old axis value and the file
-  /// keeps rendering the previous weight. Always go through this.
-  static TextStyle withWeight(TextStyle style, FontWeight weight) {
-    if (style.fontFamily == LoopFonts.mono) {
-      return style.copyWith(fontWeight: weight);
-    }
-    return style.copyWith(
-      fontWeight: weight,
-      fontVariations: <FontVariation>[FontVariation.weight(weight.value * 1.0)],
-    );
-  }
+  /// Band 7b · code — the fixed-width band, and the only one: an address, a
+  /// transaction hash, a contract identifier, a raw payload. A fixed advance
+  /// is what makes two hashes comparable by eye; nothing else needs it.
+  static TextStyle code(
+    double size, {
+    FontWeight weight = FontWeight.w500,
+    double height = 1.4,
+    Color color = LoopColors.chalk,
+  }) => mono(size: size, weight: weight, height: height, color: color);
+
+  /// Restate [style] at [weight]. Kept as the single sanctioned way to move a
+  /// weight: the bands no longer carry a variation axis, so this is now a
+  /// plain restatement, and call sites do not have to know that.
+  static TextStyle withWeight(TextStyle style, FontWeight weight) =>
+      style.copyWith(fontWeight: weight);
 }
 
 /// The named steps of the seven bands. This is the whole vocabulary available
 /// to pages: `lib/features/**` and `lib/widgets/**` take a step from here (or
 /// the `TextTheme` slot that mirrors it) and never a raw number.
 ///
-/// | band | step | size | weight | height | tracking |
+/// | band | step | size | weight | height | family |
 /// | --- | --- | --- | --- | --- | --- |
-/// | display | `displayXl` | 42 | 800 | 1.15 | -0.046em |
-/// | display | `display` | 32 | 800 | 1.15 | -0.046em |
-/// | display | `displaySm` | 27 | 800 | 1.15 | -0.046em |
-/// | heading | `headingLg` | 24 | 800 | 1.22 | -0.027em |
-/// | heading | `heading` | 21 | 700 | 1.22 | -0.027em |
-/// | heading | `headingSm` | 18 | 700 | 1.22 | -0.027em |
-/// | title | `titleLg` | 17 | 700 | 1.35 | -0.012em |
-/// | title | `title` | 15 | 600 | 1.35 | -0.012em |
-/// | title | `titleSm` | 13 | 600 | 1.35 | -0.012em |
-/// | body | `bodyLg` | 15 | 500 | 1.55 | 0 |
-/// | body | `body` | 14 | 500 | 1.55 | 0 |
-/// | body | `bodySm` | 13 | 500 | 1.55 | 0 |
-/// | caption | `caption` | 12 | 500 | 1.45 | 0 |
-/// | caption | `captionSm` | 11 | 500 | 1.45 | 0 |
-/// | label | `action` | 14 | 700 | 1.25 | +0.008em |
-/// | label | `label` | 12 | 600 | 1.25 | +0.008em |
-/// | label | `eyebrow` | 11 | 600 | 1.25 | +0.15em, mono |
-/// | mono | `monoDisplay` | 32 | 600 | 1.05 | -0.008em |
-/// | mono | `monoTitle` | 20 | 600 | 1.15 | -0.008em |
-/// | mono | `monoQuote` | 17 | 600 | 1.15 | -0.008em |
-/// | mono | `monoValue` | 13 | 600 | 1.35 | -0.008em |
-/// | mono | `monoBody` | 12 | 500 | 1.5 | -0.008em |
-/// | mono | `monoStamp` | 11 | 500 | 1.35 | -0.008em |
+/// | display | `displayXl` | 28 | 600 | 1.2 | system display |
+/// | display | `display` | 26 | 600 | 1.2 | system display |
+/// | display | `displaySm` | 24 | 600 | 1.2 | system display |
+/// | heading | `headingLg` | 22 | 600 | 1.25 | system display |
+/// | heading | `heading` | 20 | 600 | 1.25 | system display |
+/// | heading | `headingSm` | 17 | 600 | 1.3 | system text |
+/// | title | `titleLg` | 16 | 600 | 1.3 | system text |
+/// | title | `title` | 15 | 600 | 1.3 | system text |
+/// | title | `titleSm` | 13 | 500 | 1.3 | system text |
+/// | body | `bodyLg` | 15 | 400 | 1.4 | system text |
+/// | body | `body` | 14 | 400 | 1.4 | system text |
+/// | body | `bodySm` | 13 | 400 | 1.4 | system text |
+/// | caption | `caption` | 12 | 400 | 1.35 | system text |
+/// | caption | `captionSm` | 11 | 400 | 1.35 | system text |
+/// | label | `action` | 14 | 600 | 1.25 | system text |
+/// | label | `label` | 12 | 500 | 1.25 | system text |
+/// | label | `eyebrow` | 12 | 500 | 1.25 | system text |
+/// | figure | `figureXl` (`monoDisplay`) | 28 | 600 | 1.2 | system display, tnum |
+/// | figure | `figureLg` (`monoTitle`) | 20 | 600 | 1.25 | system display, tnum |
+/// | figure | `figureMd` (`monoQuote`) | 17 | 600 | 1.3 | system text, tnum |
+/// | figure | `figure` (`monoValue`) | 13 | 500 | 1.3 | system text, tnum |
+/// | figure | `figureSm` (`monoBody`) | 12 | 400 | 1.4 | system text, tnum |
+/// | figure | `figureXs` (`monoStamp`) | 11 | 400 | 1.35 | system text, tnum |
+/// | code | `code` | 13 | 500 | 1.4 | IBM Plex Mono |
+/// | code | `codeSm` | 11 | 500 | 1.35 | IBM Plex Mono |
+///
+/// Tracking is 0 on every step. The `mono*` names are kept because the
+/// feature slices call them; they are band 7 — tabular figures in the page's
+/// own sans — and no longer a fixed-width face.
 abstract final class LoopType {
   // Band 1 · display.
-  static final TextStyle displayXl = LoopTypography.display(42);
-  static final TextStyle display = LoopTypography.display(32);
-  static final TextStyle displaySm = LoopTypography.display(27);
+  static final TextStyle displayXl = LoopTypography.display(28);
+  static final TextStyle display = LoopTypography.display(26);
+  static final TextStyle displaySm = LoopTypography.display(24);
 
   // Band 2 · heading.
-  static final TextStyle headingLg = LoopTypography.heading(24);
-  static final TextStyle heading = LoopTypography.heading(
-    21,
-    weight: FontWeight.w700,
-  );
-  static final TextStyle headingSm = LoopTypography.heading(
-    18,
-    weight: FontWeight.w700,
-  );
+  static final TextStyle headingLg = LoopTypography.heading(22);
+  static final TextStyle heading = LoopTypography.heading(20);
+  static final TextStyle headingSm = LoopTypography.heading(17);
 
   // Band 3 · title.
-  static final TextStyle titleLg = LoopTypography.title(17);
-  static final TextStyle title = LoopTypography.title(
-    15,
-    weight: FontWeight.w600,
-  );
+  static final TextStyle titleLg = LoopTypography.title(16);
+  static final TextStyle title = LoopTypography.title(15);
   static final TextStyle titleSm = LoopTypography.title(
     13,
-    weight: FontWeight.w600,
+    weight: FontWeight.w500,
   );
 
   // Band 4 · body.
@@ -586,51 +603,71 @@ abstract final class LoopType {
   // Band 6 · label.
   static final TextStyle action = LoopTypography.label(
     14,
-    weight: FontWeight.w700,
+    weight: FontWeight.w600,
     color: LoopColors.chalk,
   );
   static final TextStyle label = LoopTypography.label(12);
-  static final TextStyle eyebrow = LoopTypography.eyebrow(11);
+  static final TextStyle eyebrow = LoopTypography.eyebrow(12);
 
-  // Band 7 · mono.
-  static final TextStyle monoDisplay = LoopTypography.figure(32, height: 1.05);
-  static final TextStyle monoTitle = LoopTypography.figure(20, height: 1.15);
-  static final TextStyle monoQuote = LoopTypography.figure(17, height: 1.15);
-  static final TextStyle monoValue = LoopTypography.figure(13);
-  static final TextStyle monoBody = LoopTypography.figure(
+  // Band 7 · figure — tabular numbers in the page's own voice.
+  static final TextStyle figureXl = LoopTypography.figure(28, height: 1.2);
+  static final TextStyle figureLg = LoopTypography.figure(20, height: 1.25);
+  static final TextStyle figureMd = LoopTypography.figure(17);
+  static final TextStyle figure = LoopTypography.figure(
+    13,
+    weight: FontWeight.w500,
+  );
+  static final TextStyle figureSm = LoopTypography.figure(
     12,
-    weight: FontWeight.w500,
-    height: 1.5,
+    weight: FontWeight.w400,
+    height: 1.4,
     color: LoopColors.text2,
   );
-  static final TextStyle monoStamp = LoopTypography.figure(
+  static final TextStyle figureXs = LoopTypography.figure(
     11,
-    weight: FontWeight.w500,
+    weight: FontWeight.w400,
+    height: 1.35,
     color: LoopColors.text2,
   );
+
+  // The names the feature slices already call, over the same steps.
+  static final TextStyle monoDisplay = figureXl;
+  static final TextStyle monoTitle = figureLg;
+  static final TextStyle monoQuote = figureMd;
+  static final TextStyle monoValue = figure;
+  static final TextStyle monoBody = figureSm;
+  static final TextStyle monoStamp = figureXs;
+
+  // Band 7b · code — the only fixed-width steps.
+  static final TextStyle code = LoopTypography.code(13);
+  static final TextStyle codeSm = LoopTypography.code(11, height: 1.35);
 }
 
-/// `LoopMono` styles: the fixed-width set every number, address, ticker and
-/// time must use. These are band 7 (plus the mono eyebrow) under the names the
-/// feature slices already call; new code should prefer [LoopType].
+/// `LoopMono` styles: the set every number, ticker and time must use. Since
+/// decision 0080 these are band 7 — the page's own sans with tabular figures
+/// — under the names the feature slices already call; only [address] is still
+/// fixed-width. New code should prefer [LoopType].
 abstract final class LoopMono {
   /// Main figure (balance, price).
-  static final TextStyle display = LoopType.monoDisplay;
+  static final TextStyle display = LoopType.figureXl;
 
   /// Card headline figure.
-  static final TextStyle headline = LoopType.monoTitle;
+  static final TextStyle headline = LoopType.figureLg;
 
   /// Row trailing value.
-  static final TextStyle value = LoopType.monoValue;
+  static final TextStyle value = LoopType.figure;
 
   /// Body-sized figure inside prose.
-  static final TextStyle body = LoopType.monoBody;
+  static final TextStyle body = LoopType.figureSm;
 
-  /// Uppercase mono eyebrow (`.label` in the prototype).
+  /// The small subheading over a group (the former uppercase eyebrow).
   static final TextStyle label = LoopType.eyebrow;
 
-  /// Address / hash / timestamp stamp.
-  static final TextStyle stamp = LoopType.monoStamp;
+  /// Timestamp / count stamp.
+  static final TextStyle stamp = LoopType.figureXs;
+
+  /// Address, hash, contract identifier — the fixed-width band.
+  static final TextStyle address = LoopType.code;
 }
 
 abstract final class LoopTheme {

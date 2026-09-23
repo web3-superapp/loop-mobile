@@ -56,7 +56,6 @@ void main() {
       LoopBrandAssets.appIconSvg,
       LoopBrandAssets.wordmarkWebp,
       LoopBrandAssets.wordmarkSvg,
-      'assets/fonts/Sora-Variable.ttf',
       'assets/fonts/IBMPlexMono-Regular.ttf',
       'assets/fonts/IBMPlexMono-Medium.ttf',
       'assets/fonts/IBMPlexMono-SemiBold.ttf',
@@ -64,6 +63,10 @@ void main() {
       expect(File(path).existsSync(), isTrue, reason: path);
     }
     expect(File('assets/fonts/NotoSansSC[wght].ttf').existsSync(), isFalse);
+    // The proportional voice is the platform's own sans (decision 0080): no
+    // display face ships with the app any more.
+    expect(File('assets/fonts/Sora-Variable.ttf').existsSync(), isFalse);
+    expect(File('assets/fonts/OFL-Sora.txt').existsSync(), isFalse);
   });
 
   test('every sprite is drawn to the one sheet specification', () {
