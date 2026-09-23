@@ -20,7 +20,10 @@ import 'package:loop_mobile/features/community/community_logo.dart';
 import 'package:loop_mobile/features/community/community_models.dart';
 import 'package:loop_mobile/features/community/community_state.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
+import 'package:loop_mobile/features/launch/launch_contract.dart';
 import 'package:loop_mobile/features/market/loop_sparkline.dart';
+import 'package:loop_mobile/features/mining/mining_controllers.dart';
+import 'package:loop_mobile/features/mining/mining_models.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
 import 'package:loop_mobile/features/market/token_card_chart.dart';
@@ -116,6 +119,32 @@ class _CommunityProfileScreenState
     await ref.read(communityVoiceLiveControllerProvider.notifier).read(id);
   }
 
+  /// The community whose mining reads this page has already started.
+  String? _miningReadFor;
+
+  /// Starts the two mining reads the card's three cells are printed from.
+  ///
+  /// Exactly once per community, and only for a community that has a token to
+  /// mine: a page that asked on every rebuild would retry a failed read for as
+  /// long as the reader stood here. Both providers are the ones the mining
+  /// panel itself uses, so opening the panel from this card costs no second
+  /// request.
+  void _bindMiningReads(CommunityDetail? detail) {
+    final community = detail?.community;
+    if (community == null || !community.hasBoundAsset) return;
+    if (_miningReadFor == community.communityId) return;
+    _miningReadFor = community.communityId;
+    scheduleMicrotask(() {
+      if (!mounted) return;
+      unawaited(
+        ref
+            .read(miningCommunityControllerProvider.notifier)
+            .open(community.communityId),
+      );
+      unawaited(ref.read(miningAssetsControllerProvider.notifier).load());
+    });
+  }
+
   /// Keeps the poll armed for exactly the page that can use it.
   void _bindVoicePoll({required bool watching}) {
     if (watching) {
@@ -154,6 +183,7 @@ class _CommunityProfileScreenState
           detail.community.communityId == id &&
           detail.viewer.hasJoined,
     );
+    _bindMiningReads(detail);
     return LoopDashboardPage(
       key: const ValueKey<String>('community-profile-screen'),
       archetype: LoopPageArchetype.record,
@@ -266,6 +296,7 @@ class _CommunityProfileScreenState
           const LoopLabel('挖矿'),
           CommunityMiningSummaryCard(
             fact: detail.miningPower,
+            account: _accountReading(detail),
             onOpenPanel: widget.onOpenMiningPanel == null
                 ? null
                 : () => widget.onOpenMiningPanel!(detail.community.communityId),
@@ -293,6 +324,59 @@ class _CommunityProfileScreenState
           const SizedBox(height: 20),
         ],
       ],
+    );
+  }
+
+  /// The reader's own three cells on this community's bound asset.
+  ///
+  /// They are two reads the mining module already owns — the community panel
+  /// this card opens (`GET /v2/mining/communities/{id}`, decision 0045) and
+  /// the power composition (`GET /v2/mining/assets`) — so the panel opened
+  /// from here costs no second request. Nothing is computed on the device: a
+  /// figure is the server's or it is the reason there is none.
+  CommunityMiningAccountReading _accountReading(CommunityDetail detail) {
+    if (!detail.community.hasBoundAsset) {
+      return CommunityMiningAccountReading.unread('这个社区没有绑定代币，这三格没有可读的数。');
+    }
+    final panel = ref.watch(miningCommunityControllerProvider);
+    final composition = ref.watch(miningAssetsControllerProvider);
+    if (panel.phase == LaunchViewPhase.loading ||
+        composition.phase == LaunchViewPhase.loading) {
+      return CommunityMiningAccountReading.unread('我的持仓、算力与预估正在读取。');
+    }
+    final community = panel.value;
+    final assets = composition.value;
+    if (community == null || assets == null) {
+      return CommunityMiningAccountReading.unread('这次没有读到我的挖矿数据，可以进面板重试。');
+    }
+    final boundAssetId = community.community.boundAssetId;
+    final row = boundAssetId == null
+        ? null
+        : assets.included
+              .where((item) => item.assetId == boundAssetId)
+              .firstOrNull;
+    return CommunityMiningAccountReading(
+      // A wallet that holds none of the community's token holds 0 of it —
+      // that is a reading, not an absence — and the row says so only when a
+      // settlement actually counted this asset.
+      holding: row == null
+          ? const CommunityMiningCell.missing('这次结算没有算到这个代币的持仓。')
+          : CommunityMiningCell.value(
+              row.symbol == null
+                  ? loopGroupedFigure(row.holding)
+                  : '${loopGroupedFigure(row.holding)} ${row.symbol}',
+            ),
+      power: switch (community.myContribution) {
+        MiningFigureValue(:final value) => CommunityMiningCell.value(
+          loopGroupedFigure(value),
+        ),
+        MiningFigureUnavailable(:final reasonCode) =>
+          CommunityMiningCell.missing(launchReasonCodeText(reasonCode)),
+      },
+      // The daily estimate LOOP settles is one account's across every asset
+      // (`GET /v2/mining/summary.estimatedToday`); no endpoint states it per
+      // community, and this card does not divide one to invent it.
+      estimatedDaily: const CommunityMiningCell.missing('每日预估按账号总算力结算，在挖矿页读。'),
     );
   }
 

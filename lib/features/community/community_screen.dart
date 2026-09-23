@@ -468,12 +468,9 @@ class _CommunitySearchPanelState extends State<_CommunitySearchPanel> {
               hintText: '输入至少 $searchMinimumRunes 个字符',
             ),
           ),
-          const SizedBox(height: 12),
-          const LoopNotice(
-            key: ValueKey<String>('community-search-entry-note'),
-            body: '全局资产与社区搜索从社区 Tab 顶部进入。这是唯一的全局搜索入口。',
-            margin: EdgeInsets.zero,
-          ),
+          // The panel used to explain where the panel is — 「全局资产与社区搜索
+          // 从社区 Tab 顶部进入。这是唯一的全局搜索入口。」 — to a reader who
+          // had just opened it from there (device walkthrough 2026-09-23).
           const SizedBox(height: 12),
           LoopButtonPair(
             padded: false,

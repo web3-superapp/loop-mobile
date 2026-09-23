@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loop_mobile/core/policy/loop_capability_projection.dart';
+import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
 import 'package:loop_mobile/features/chain/chain_widgets.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -204,14 +205,10 @@ class CommunityUnavailableCard extends StatelessWidget {
   }
 }
 
-/// A server-side time in UTC — a snapshot's, an observation's. The client
-/// never restates it as a local wall clock or as a relative "just now".
-String communitySettlementLabel(DateTime computedAt) {
-  final value = computedAt.toUtc();
-  String two(int part) => part.toString().padLeft(2, '0');
-  return '${value.year}-${two(value.month)}-${two(value.day)} '
-      '${two(value.hour)}:${two(value.minute)} UTC';
-}
+/// A server-side time — a snapshot's, an observation's — on the reader's own
+/// wall clock. It is never restated as a relative "just now".
+String communitySettlementLabel(DateTime computedAt) =>
+    loopLocalTimestampLabel(computedAt);
 
 /// A count in the community record's own mono voice, grouped in thousands.
 ///
@@ -368,6 +365,65 @@ class CommunityIdentityBlock extends StatelessWidget {
   }
 }
 
+/// One of the three per-account cells on the community record's mining card.
+///
+/// A cell is either the server's own figure or the reason there is none. The
+/// client computes neither: a holding, a power and a daily estimate are three
+/// settled readings, and a card that multiplied them itself would be printing
+/// a number nobody settled.
+@immutable
+final class CommunityMiningCell {
+  const CommunityMiningCell.value(this.value) : reason = null;
+
+  const CommunityMiningCell.missing(this.reason) : value = null;
+
+  /// The figure as the server sent it, already grouped for reading.
+  final String? value;
+
+  /// Why there is no figure. Null exactly when [value] is not.
+  final String? reason;
+}
+
+/// The three cells `我的持仓 / 我的算力 / 预估每日` on the community record.
+///
+/// They are one account's readings on this community's bound asset, and the
+/// community projection carries none of them: they are read from the mining
+/// module (`GET /v2/mining/communities/{id}` and `GET /v2/mining/assets`).
+/// Until 2026-09-23 the card printed three em dashes and a line saying it
+/// would not estimate them, which is true of the estimate and was not true of
+/// the other two.
+@immutable
+final class CommunityMiningAccountReading {
+  const CommunityMiningAccountReading({
+    required this.holding,
+    required this.power,
+    required this.estimatedDaily,
+  });
+
+  /// Nothing has been read yet: the panel and the composition are both still
+  /// in flight, or this build never asked for them.
+  factory CommunityMiningAccountReading.unread(String reason) =>
+      CommunityMiningAccountReading(
+        holding: CommunityMiningCell.missing(reason),
+        power: CommunityMiningCell.missing(reason),
+        estimatedDaily: CommunityMiningCell.missing(reason),
+      );
+
+  final CommunityMiningCell holding;
+  final CommunityMiningCell power;
+  final CommunityMiningCell estimatedDaily;
+
+  /// The reasons behind the cells that have no figure, each said once.
+  List<String> get missingReasons {
+    final reasons = <String>[];
+    for (final cell in <CommunityMiningCell>[holding, power, estimatedDaily]) {
+      final reason = cell.reason;
+      if (reason != null && !reasons.contains(reason)) reasons.add(reason);
+    }
+    return reasons;
+  }
+}
+
 /// The community record's mining block (`#scr-community-profile .card`
 /// → `mining-community`): the reviewed weight, the community's own power,
 /// and the three per-account columns.
@@ -380,10 +436,15 @@ class CommunityMiningSummaryCard extends StatelessWidget {
   const CommunityMiningSummaryCard({
     required this.fact,
     super.key,
+    this.account,
     this.onOpenPanel,
   });
 
   final LoopMiningPowerFact fact;
+
+  /// The reader's own three cells, when this page read them.
+  final CommunityMiningAccountReading? account;
+
   final VoidCallback? onOpenPanel;
 
   @override
@@ -395,11 +456,14 @@ class CommunityMiningSummaryCard extends StatelessWidget {
       MiningCommunityWeightApproved(:final value) => value,
       _ => communityMissingFigure,
     };
-    final power = settled?.power ?? communityMissingFigure;
-    // Where the three per-account columns are read. They are one account's
-    // figures across the community's asset, and this record carries none of
-    // them; the panel does.
-    const panel = '我的持仓、我的算力与预估收益要在社区挖矿面板里读，这张卡片不替它们估算。';
+    // 531381.12 is read digit by digit; 531,381.12 is read at a glance. The
+    // separator never rounds and never abbreviates (walkthrough · a48).
+    final power = settled == null
+        ? communityMissingFigure
+        : loopGroupedFigure(settled.power);
+    final reading =
+        account ??
+        CommunityMiningAccountReading.unread('这三格要在社区挖矿面板里读，这张卡片没有读到。');
     // A later run that did not complete leaves this number the last complete
     // snapshot's (Decision 0057). The card dates it instead of withdrawing
     // it; why that run stopped is on the mining page, which this card opens.
@@ -410,6 +474,7 @@ class CommunityMiningSummaryCard extends StatelessWidget {
         '最近一次算力快照 · ${communityObservedAtLabel(computedAt)}。',
       LoopMiningPowerUnavailable() => '',
     };
+    final panel = reading.missingReasons.join('');
     final note = switch (fact) {
       LoopMiningPowerUnavailable(:final reasonCode) =>
         '${communityUnavailableReason(reasonCode)}$panel',
@@ -478,12 +543,25 @@ class CommunityMiningSummaryCard extends StatelessWidget {
               const SizedBox(height: 11),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const <Widget>[
-                  _MiningColumn(label: '我的持仓'),
-                  SizedBox(width: 16),
-                  _MiningColumn(label: '我的算力', accent: true),
-                  SizedBox(width: 16),
-                  _MiningColumn(label: '预估/日'),
+                children: <Widget>[
+                  _MiningColumn(
+                    slug: 'holding',
+                    label: '我的持仓',
+                    cell: reading.holding,
+                  ),
+                  const SizedBox(width: 16),
+                  _MiningColumn(
+                    slug: 'power',
+                    label: '我的算力',
+                    cell: reading.power,
+                    accent: true,
+                  ),
+                  const SizedBox(width: 16),
+                  _MiningColumn(
+                    slug: 'estimated',
+                    label: '预估/日',
+                    cell: reading.estimatedDaily,
+                  ),
                 ],
               ),
             ],
@@ -502,30 +580,49 @@ class CommunityMiningSummaryCard extends StatelessWidget {
   }
 }
 
-/// One column of the mining card. Every one of the three is an account-level
-/// figure the community record does not carry, so each prints the dash and
-/// the card's own line says where the figure lives.
+/// One column of the mining card: the account's own figure, or the em dash
+/// that stands for the reason the card's own line carries.
 class _MiningColumn extends StatelessWidget {
-  const _MiningColumn({required this.label, this.accent = false});
+  const _MiningColumn({
+    required this.slug,
+    required this.label,
+    required this.cell,
+    this.accent = false,
+  });
 
+  final String slug;
   final String label;
+  final CommunityMiningCell cell;
   final bool accent;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Text(
-          communityMissingFigure,
-          style: LoopTypography.figure(
-            13,
-            color: accent ? LoopColors.lime : LoopColors.chalk,
-          ),
+    final value = cell.value;
+    return Semantics(
+      container: true,
+      label: '$label，${value ?? cell.reason ?? communityMissingFigure}',
+      child: ExcludeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              value ?? communityMissingFigure,
+              key: ValueKey<String>('community-mining-cell-$slug'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LoopTypography.figure(
+                13,
+                color: accent ? LoopColors.lime : LoopColors.chalk,
+              ),
+            ),
+            Text(
+              label,
+              style: LoopTypography.caption(11, color: LoopColors.text3),
+            ),
+          ],
         ),
-        Text(label, style: LoopTypography.caption(11, color: LoopColors.text3)),
-      ],
+      ),
     );
   }
 }
@@ -987,14 +1084,13 @@ LoopRowPosition communityRowPosition(int index, int length) {
   return LoopRowPosition.middle;
 }
 
-/// Server observation time in UTC. The client never restates it as a local
-/// wall clock or as a relative "just now".
-String communityObservedAtLabel(DateTime observedAt) {
-  final value = observedAt.toUtc();
-  String two(int part) => part.toString().padLeft(2, '0');
-  return '${value.year}-${two(value.month)}-${two(value.day)} '
-      '${two(value.hour)}:${two(value.minute)} UTC';
-}
+/// Server observation time, on the reader's own wall clock.
+///
+/// It used to print UTC while the chat two taps away printed local time for
+/// the same instant (device walkthrough 2026-09-23 · chat-forward, members,
+/// snapshots). One app, one clock.
+String communityObservedAtLabel(DateTime observedAt) =>
+    loopLocalTimestampLabel(observedAt);
 
 /// Second confirmation for a governance or relationship action.
 ///

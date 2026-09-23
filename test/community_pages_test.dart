@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_controllers.dart';
 import 'package:loop_mobile/features/chat/v2/chat_v2_models.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
@@ -16,6 +17,8 @@ import 'package:loop_mobile/integrations/backend/v2/loop_v2_meta.dart';
 import 'package:loop_mobile/widgets/loop_components.dart';
 
 import 'support/communication_test_harness.dart';
+import 'support/s7_fixtures.dart';
+import 'support/s7_page_harness.dart';
 import 'support/community_test_harness.dart';
 import 'support/loop_stream_scroll.dart';
 
@@ -427,7 +430,15 @@ void main() {
       );
       expect(folio.stamp, isNull);
       expect(folio.caption, isNot(contains('数据观察于')));
-      expect(find.textContaining('数据观察于 2026-09-08 01:00 UTC'), findsOneWidget);
+      // The instant is the server's; the clock it is read on is the
+      // reader's, so the expectation is built the same way the page builds
+      // it rather than pinned to one timezone.
+      expect(
+        find.textContaining(
+          '数据观察于 ${loopLocalTimestampLabel(DateTime.utc(2026, 9, 8, 1))}',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a row prints the head count and never an unread zero', (
@@ -982,8 +993,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('与 Stream 保持连接'), findsOneWidget);
       expect(find.textContaining('最近活跃'), findsOneWidget);
-      // The observation carries its own time, in UTC, as the server gave it.
-      expect(find.text('观察于 2026-09-16 06:44 UTC'), findsOneWidget);
+      // The observation carries its own time, on the reader's wall clock.
+      expect(
+        find.text(
+          '观察于 ${loopLocalTimestampLabel(DateTime.utc(2026, 9, 16, 6, 44))}',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a zero observation is a reading, not an absence', (
@@ -1063,15 +1079,110 @@ void main() {
       expect(find.textContaining('社区总算力 0'), findsOneWidget);
       // The reading says which baseline settled it, and when.
       expect(find.textContaining('开发基线'), findsOneWidget);
-      expect(find.textContaining('2026-09-15 14:58 UTC'), findsOneWidget);
+      expect(
+        find.textContaining(
+          loopLocalTimestampLabel(DateTime.utc(2026, 9, 15, 14, 58)),
+        ),
+        findsOneWidget,
+      );
       // The version that settled it stays a backend identifier.
       expect(find.textContaining('miningFormula-devBaseline'), findsNothing);
-      // The three per-account columns have no source in this read, so they
-      // print the dash and the card says where they are read instead.
+      // The three per-account columns are still the prototype's three, and
+      // this community has no token bound, so they say that rather than
+      // offering to estimate.
       expect(find.text('我的持仓'), findsOneWidget);
       expect(find.text('我的算力'), findsOneWidget);
       expect(find.text('预估/日'), findsOneWidget);
-      expect(find.textContaining('社区挖矿面板里读'), findsOneWidget);
+      expect(find.textContaining('这个社区没有绑定代币'), findsOneWidget);
+    });
+
+    testWidgets('the three per-account cells are read, not dashed', (
+      tester,
+    ) async {
+      // Device walkthrough 2026-09-23 · a48: 我的持仓 / 我的算力 / 预估每日 were
+      // three em dashes under a line saying the card would not estimate them.
+      // Two of the three are settled readings the mining module already has.
+      final mining = FakeMiningGateway(
+        community: S7Answer<MiningCommunity>(value: s7MiningSettledCommunity()),
+        assets: S7Answer<MiningAssets>(
+          value: s7MiningSettledAssets(
+            included: <MiningAssetRow>[
+              s7MiningAssetRow(holding: '1234.5', power: '987.65'),
+            ],
+          ),
+        ),
+      );
+      await pumpCommunityPage(
+        tester,
+        const CommunityProfileScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          detail: testDetail(
+            community: testCommunity(boundAssetKey: s7CakeAssetId),
+            miningPower: testSettledCommunityMiningPower(),
+          ),
+        ),
+        mining: mining,
+      );
+
+      final card = find.byKey(
+        const ValueKey<String>('community-mining-summary'),
+      );
+      await scrollToCommunitySection(tester, card);
+
+      // The panel this card opens is the one that was read: no second
+      // request is made when the reader taps through.
+      expect(mining.requestedCommunityIds, <String>[testCommunityId]);
+      expect(
+        tester
+            .widget<Text>(
+              find.byKey(
+                const ValueKey<String>('community-mining-cell-holding'),
+              ),
+            )
+            .data,
+        '1,234.5 Cake',
+      );
+      expect(
+        tester
+            .widget<Text>(
+              find.byKey(const ValueKey<String>('community-mining-cell-power')),
+            )
+            .data,
+        '0',
+      );
+      // The daily estimate is settled per account, not per community, and
+      // the card divides nothing to invent one.
+      expect(
+        tester
+            .widget<Text>(
+              find.byKey(
+                const ValueKey<String>('community-mining-cell-estimated'),
+              ),
+            )
+            .data,
+        '—',
+      );
+      expect(find.textContaining('每日预估按账号总算力结算'), findsOneWidget);
+    });
+
+    testWidgets('the community power is grouped in thousands', (tester) async {
+      // 531381.12 was printed digit by digit (walkthrough · a48).
+      await pumpCommunityPage(
+        tester,
+        const CommunityProfileScreen(communityId: testCommunityId),
+        community: FakeCommunityGateway(
+          detail: testDetail(
+            miningPower: testSettledCommunityMiningPower(power: '531381.12'),
+          ),
+        ),
+      );
+
+      final card = find.byKey(
+        const ValueKey<String>('community-mining-summary'),
+      );
+      await scrollToCommunitySection(tester, card);
+      expect(find.textContaining('社区总算力 531,381.12'), findsOneWidget);
+      expect(find.textContaining('社区总算力 531381.12'), findsNothing);
     });
 
     // Decision 0057: the number stays, and the card says which moment it is
@@ -1095,7 +1206,10 @@ void main() {
       );
       await scrollToCommunitySection(tester, card);
       expect(
-        find.textContaining('显示的是 2026-09-15 14:58 UTC 的算力快照 · 最近一次快照未完成'),
+        find.textContaining(
+          '显示的是 ${loopLocalTimestampLabel(DateTime.utc(2026, 9, 15, 14, 58))} '
+          '的算力快照 · 最近一次快照未完成',
+        ),
         findsOneWidget,
       );
       // The figure is still the one the last complete snapshot settled.

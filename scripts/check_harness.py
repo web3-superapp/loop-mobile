@@ -6860,7 +6860,8 @@ def check_native_matrix(root: Path) -> list[str]:
             "ios/Podfile": ("platform :ios, '17.0'",),
             "ios/Podfile.lock": (
                 "shared_preferences_foundation",
-                "COCOAPODS: 1.16.2",
+                "local_auth_darwin",
+                "COCOAPODS: 1.",
             ),
             "ios/Runner.xcodeproj/project.pbxproj": (
                 "PRODUCT_BUNDLE_IDENTIFIER = com.cywd.loop;",
@@ -8046,7 +8047,8 @@ def check_route_manifest_contract(root: Path) -> list[str]:
 S3_COMMUNITY_TEST_MARKERS = {
     Path("test/community_social_pages_test.dart"): (
         "a result opens through its destination kind",
-        "the three deferred domains show their server reason",
+        "an asset result opens the token page by its assetId",
+        "the two deferred domains show their server reason",
     ),
     Path("test/community_pages_test.dart"): (
         "a row renders exactly the commands the server published",
@@ -8065,10 +8067,15 @@ def check_v2_community_truth_contract(root: Path) -> list[str]:
         {
             # `search` may only navigate by the server's destination kind: a
             # route assembled from display copy would be an invented fact.
+            # `assetDetail` (backend decision 0071) is the one destination
+            # that carries a parameter, and the token page is opened with
+            # that `assetId` — never with the symbol printed on the row.
             "lib/features/community/search_screen.dart": (
                 "switch (result.destination)",
-                "SearchDestinationKind.communityProfile",
-                "SearchDestinationKind.publicProfile",
+                "case SearchCommunityProfileDestination():",
+                "case SearchPublicProfileDestination():",
+                "case SearchAssetDestination(:final assetId):",
+                "widget.onOpenAsset?.call(assetId)",
                 "PublicProfileIdentity.fromSearchSnapshot(",
             ),
             # Governance visibility is decided per row by the server and

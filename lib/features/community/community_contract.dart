@@ -421,9 +421,14 @@ String communityUnavailableReason(String reasonCode) => switch (reasonCode) {
   'COMMUNITY_LINKS_DEFERRED' => '官方链接还没有开放。',
   'MESSAGE_PREVIEW_DEFERRED' => '消息预览还没有开放。',
   'AI_MODERATION_DEFERRED' => 'AI 巡查还没有开放。',
-  'ASSET_REGISTRY_DEFERRED' => '资产搜索还没有开放。',
-  'LAUNCH_MODULE_DEFERRED' => 'Launch 搜索还没有开放。',
-  'DAPP_DIRECTORY_DEFERRED' => 'DApp 目录还没有开放。',
+  // The two search domains that still answer nothing do so for different
+  // reasons, and 「还没有开放」 said both (device walkthrough 2026-09-23 ·
+  // a63–a65): the Launch module is here and has no project directory to
+  // search, while no DApp directory has been integrated at all. Backend
+  // decision 0071 gave each its own code and opened the asset domain.
+  'ASSET_REGISTRY_NOT_COMPOSED' => '资产注册表这次没有组合出来，稍后再试。',
+  'LAUNCH_PROJECT_DIRECTORY_PENDING' => 'LOOP 还没有 Launch 项目目录，这里没有可搜的条目。',
+  'DAPP_DIRECTORY_NOT_INTEGRATED' => 'DApp 目录还没有接入，这一域搜不到东西。',
   'REFERRAL_GRAPH_DEFERRED' => '邀请数据还没有开放。',
   'INVITE_CODE_DEFERRED' => '邀请码还没有开放，暂时不能分享。',
   'COMMUNITY_RUNTIME_UNAVAILABLE' => '社区暂时不可用，稍后再试。',

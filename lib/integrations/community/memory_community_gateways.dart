@@ -604,6 +604,17 @@ final class MemorySocialGateway implements SocialGateway {
   }
 }
 
+/// `(assetId, symbol, name)` for the preview asset domain.
+const List<(String, String, String)> _previewAssets =
+    <(String, String, String)>[
+      (
+        'eip155:56:0x55d398326f99059ff775485246999027b3197955',
+        'USDT',
+        'Tether USD',
+      ),
+      ('eip155:56:native', 'BNB', 'BNB'),
+    ];
+
 final class MemorySearchGateway implements SearchGateway {
   const MemorySearchGateway();
 
@@ -618,18 +629,37 @@ final class MemorySearchGateway implements SearchGateway {
   }) async {
     switch (domain) {
       case SearchDomain.assets:
-        return const SearchPage(
-          domain: SearchDomain.assets,
-          available: false,
-          reasonCode: 'ASSET_REGISTRY_DEFERRED',
-          results: <SearchResult>[],
+        // The registry the production domain searches is the backend's; this
+        // preview holds one demonstration row so the page's own behaviour —
+        // a result that opens the token page by `assetId` — can be walked
+        // without a server. It is labelled 开发预览 like every preview fact.
+        final needle = query.trim().toLowerCase();
+        return SearchPage(
+          domain: domain,
+          available: true,
+          reasonCode: null,
+          results: <SearchResult>[
+            for (final asset in _previewAssets)
+              if (asset.$2.toLowerCase().startsWith(needle) ||
+                  asset.$3.toLowerCase().startsWith(needle))
+                SearchResult(
+                  resultType: SearchResultType.asset,
+                  stableId: asset.$1,
+                  title: asset.$2,
+                  subtitle: asset.$3,
+                  avatarRef: null,
+                  memberCount: null,
+                  verificationStatus: 'pending',
+                  destination: SearchAssetDestination(asset.$1),
+                ),
+          ],
           nextCursor: null,
         );
       case SearchDomain.launch:
         return const SearchPage(
           domain: SearchDomain.launch,
           available: false,
-          reasonCode: 'LAUNCH_MODULE_DEFERRED',
+          reasonCode: 'LAUNCH_PROJECT_DIRECTORY_PENDING',
           results: <SearchResult>[],
           nextCursor: null,
         );
@@ -637,7 +667,7 @@ final class MemorySearchGateway implements SearchGateway {
         return const SearchPage(
           domain: SearchDomain.dapps,
           available: false,
-          reasonCode: 'DAPP_DIRECTORY_DEFERRED',
+          reasonCode: 'DAPP_DIRECTORY_NOT_INTEGRATED',
           results: <SearchResult>[],
           nextCursor: null,
         );
@@ -660,7 +690,7 @@ final class MemorySearchGateway implements SearchGateway {
                   avatarRef: community.logoRef,
                   memberCount: community.memberCount,
                   verificationStatus: community.verificationStatus.wireName,
-                  destination: SearchDestinationKind.communityProfile,
+                  destination: const SearchCommunityProfileDestination(),
                 ),
           ],
           nextCursor: null,
@@ -683,7 +713,7 @@ final class MemorySearchGateway implements SearchGateway {
                   avatarRef: profile.avatarRef,
                   memberCount: null,
                   verificationStatus: null,
-                  destination: SearchDestinationKind.publicProfile,
+                  destination: const SearchPublicProfileDestination(),
                 ),
           ],
           nextCursor: null,

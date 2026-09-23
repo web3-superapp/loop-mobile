@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chat/v2/chat_forward_screens.dart';
 import 'package:loop_mobile/core/navigation/stream_channel_route.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -19,6 +20,7 @@ import 'package:loop_mobile/features/chat/v2/community_chat_screen.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_identity_scope.dart';
 import 'package:loop_mobile/features/chat/v2/direct_message_screen.dart';
 import 'package:loop_mobile/features/chat/v2/group_screens.dart';
+import 'package:loop_mobile/features/chat/v2/loop_stream_channel_surface.dart';
 import 'package:loop_mobile/features/chat/v2/voice_room_screens.dart';
 import 'package:loop_mobile/features/community/community_ai_screen.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
@@ -301,6 +303,104 @@ void main() {
 
       expect(social.commands, contains('message-request:$testMemberId'));
       expect(find.text('消息请求已发送'), findsOneWidget);
+    });
+
+    testWidgets('a refused message request stays on the page, and retries', (
+      tester,
+    ) async {
+      // Device walkthrough 2026-09-23 · i06/i07: the server answered 404 and
+      // the page said nothing at all, so the control was pressed again and
+      // again.
+      final social = FakeSocialGateway(
+        writeFailure: CommunityFailureKind.notFound,
+      );
+      await pumpCommunityPage(
+        tester,
+        const DirectMessageScreen(
+          target: DirectMessageTarget(publicProfileId: testMemberId),
+        ),
+        chat: FakeChatV2Gateway(failure: CommunityFailureKind.notFound),
+        social: social,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('dm-send-message-request')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('dm-message-request-failed')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('对方没有开放被找到'), findsWidgets);
+      // The control is still there, and it says what pressing it does now.
+      final retry = find.byKey(
+        const ValueKey<String>('dm-send-message-request'),
+      );
+      expect(retry, findsOneWidget);
+      expect(tester.widget<LoopButton>(retry).label, '重新发送消息请求');
+      expect(tester.widget<LoopButton>(retry).onPressed, isNotNull);
+
+      await tester.tap(retry);
+      await tester.pumpAndSettle();
+      expect(
+        social.commands
+            .where((command) => command == 'message-request:$testMemberId')
+            .length,
+        2,
+      );
+    });
+
+    testWidgets('a refusal names the switch, never the account', (
+      tester,
+    ) async {
+      expect(
+        directMessageRequestFailureReason(CommunityFailureKind.notFound),
+        '对方没有开放被找到，或者这个账号不存在，消息请求没有送出。',
+      );
+      // Every other kind keeps the shared sentence; none of them enumerates.
+      expect(
+        directMessageRequestFailureReason(CommunityFailureKind.rateLimited),
+        communityFailureReason(CommunityFailureKind.rateLimited),
+      );
+    });
+
+    testWidgets('the thread carries one line, not a card over the composer', (
+      tester,
+    ) async {
+      await pumpCommunityPage(
+        tester,
+        DirectMessageScreen(
+          target: DirectMessageTarget(
+            publicProfileId: testMemberId,
+            identity: testProfile(
+              publicProfileId: testMemberId,
+              loopId: 'LOOP-3HJKMNPQ',
+              alias: 'NightOwl',
+            ),
+          ),
+        ),
+        chat: FakeChatV2Gateway(),
+      );
+      await tester.pumpAndSettle();
+
+      // Without a Stream session the surface stops at its own block, so the
+      // header it was handed is read off the widget itself.
+      final surface = tester.widget<LoopStreamChannelSurface>(
+        find.byType(LoopStreamChannelSurface),
+      );
+      final strip = (surface.header! as Column).children
+          .whereType<LoopChatHeaderStrip>()
+          .single;
+      expect(strip.key, const ValueKey<String>('dm-protection-note'));
+      expect(strip.segments.single, contains('不声明端到端加密'));
+      // No card is pinned over the composer any more, and the quarter-screen
+      // Chalk hero is gone: the top bar already names the peer.
+      expect(surface.footer, isNull);
+      expect(find.byType(LoopFolioPrimary), findsNothing);
+      // The composer keeps the one placeholder every conversation shares:
+      // a pasted address is read here too (decision 0075).
+      expect(surface.composerHint, loopChatComposerHint);
     });
 
     testWidgets('a resolved operation opens the returned channel only', (
@@ -692,7 +792,10 @@ void main() {
       // The author and the clock are two lines of the export row now, the way
       // `#scr-chat-merge-preview` sets them.
       expect(find.text('匿名成员'), findsOneWidget);
-      expect(find.text('2026-09-08 09:34 UTC'), findsOneWidget);
+      expect(
+        find.text(loopLocalTimestampLabel(DateTime.utc(2026, 9, 8, 9, 34))),
+        findsOneWidget,
+      );
       expect(find.textContaining('LOOP-'), findsNothing);
       expect(find.textContaining('0x'), findsNothing);
       // `01`: the row carries its ordinal, and `1/1` says the whole

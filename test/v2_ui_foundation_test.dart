@@ -187,7 +187,7 @@ void main() {
       expect(search.background, LoopColors.elevated);
     });
 
-    testWidgets('the search panel names the only global search entry', (
+    testWidgets('the search panel does not explain where the panel is', (
       tester,
     ) async {
       await _pumpCommunity(tester);
@@ -197,12 +197,15 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // 01 §3 / §12.2: the one sentence a user must be able to read here.
+      // 01 §3 / §12.2 fixes the entry sentence for `chat-search`, which is
+      // the page that has to send a reader somewhere else. Printing it inside
+      // the global search panel told a reader who had just opened it from the
+      // Community tab where to open it (device walkthrough 2026-09-23 · a08).
       expect(
         find.byKey(const ValueKey<String>('community-search-entry-note')),
-        findsOne,
+        findsNothing,
       );
-      expect(find.textContaining('全局资产与社区搜索从社区 Tab 顶部进入'), findsOne);
+      expect(find.textContaining('唯一的全局搜索入口'), findsNothing);
       // The retired Home entry must not be described anywhere.
       expect(find.textContaining('从首页'), findsNothing);
     });

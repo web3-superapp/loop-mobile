@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/chain/chain_contract.dart';
 import 'package:loop_mobile/features/profile/security/security_models.dart';
 import 'package:loop_mobile/features/profile/security/security_screens.dart';
@@ -319,8 +320,20 @@ void main() {
       expect(find.text('iOS · 1.0.0'), findsNWidgets(2));
       expect(find.textContaining('会话 3d4e'), findsOneWidget);
       expect(find.textContaining('会话 4e5f'), findsOneWidget);
-      expect(find.textContaining('首次登录 2026-09-08 20:00 UTC'), findsOneWidget);
-      expect(find.textContaining('首次登录 2026-09-03 01:00 UTC'), findsOneWidget);
+      // Both instants are the server's, printed on the reader's own wall
+      // clock like every other timestamp in the app.
+      expect(
+        find.textContaining(
+          '首次登录 ${loopLocalTimestampLabel(DateTime.utc(2026, 9, 8, 20))}',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          '首次登录 ${loopLocalTimestampLabel(DateTime.utc(2026, 9, 3, 1))}',
+        ),
+        findsOneWidget,
+      );
       // The session in hand is being used, so no observation time is printed
       // beside it; the older session of the same device says whose it is.
       expect(find.text('本次会话'), findsOneWidget);

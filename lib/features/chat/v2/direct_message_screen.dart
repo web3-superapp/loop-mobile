@@ -156,9 +156,10 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
     if (cid == null) {
       if (state.block == DirectChannelBlock.friendshipRequired) {
         return _FriendshipRequired(
-          target: widget.target!,
+          identity: identity,
           requestSent: state.requestSent,
           busy: state.busy,
+          failure: state.requestFailure,
           onSend: _sendMessageRequest,
         );
       }
@@ -209,32 +210,29 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
       key: ValueKey<String>('dm-$cid'),
       cid: cid,
       keyPrefix: 'dm-channel',
+      // The placeholder stays the one every conversation shares (decision
+      // 0075): a pasted contract address is read in a private thread too —
+      // `_withTokenCards` draws the card under any bubble in any channel —
+      // so this composer promises exactly what it does. The walkthrough note
+      // about 「贴合约地址识别代币」 in `dm` is left for the main agent, with
+      // that evidence.
       composerHint: loopChatComposerHint,
       header: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           CommunityPreviewNotice(mode: state.mode, resource: '私聊'),
-          // `#scr-dm` opens on a Chalk hero, not on a warning. The page's one
-          // primary narrative states what this conversation is; the caveat
-          // about encryption is the last thing before the composer, below.
-          LoopChatHeaderFold(
+          // A quarter of the screen was a card repeating the name already in
+          // the top bar, and the encryption caveat was a second card pinned
+          // over the composer at the foot of the thread. One line at the top
+          // says the caveat once and gives the rest of the height back to the
+          // conversation (device walkthrough 2026-09-23 · h28/h29). The Chalk
+          // hero stays on the state that has no thread to show.
+          LoopChatHeaderStrip(
+            key: const ValueKey<String>('dm-protection-note'),
+            segments: const <String>['不声明端到端加密 · 私聊由 Stream Chat 承载'],
             collapsed: loopChatKeyboardIsUp(context),
-            child: directMessageFolio(identity),
           ),
         ],
-      ),
-      // `#scr-dm` puts the protection note at the foot of the thread. It used
-      // to be the first card on the page, which made "we do not promise
-      // end-to-end encryption" the opening line of every private conversation.
-      footer: LoopChatHeaderFold(
-        collapsed: loopChatKeyboardIsUp(context),
-        child: const LoopNotice(
-          key: ValueKey<String>('dm-protection-note'),
-          icon: 'info',
-          title: '不声明端到端加密',
-          body: '私聊由 Stream Chat 承载，保护能力取决于供应商策略，LOOP 不做端到端加密承诺。',
-          margin: EdgeInsets.fromLTRB(16, 4, 16, 8),
-        ),
       ),
     );
 
@@ -263,39 +261,65 @@ class _DirectMessageScreenState extends ConsumerState<DirectMessageScreen> {
       failure = CommunityFailureKind.unexpected;
     }
     controller.setBusy(false);
-    if (!mounted) return;
     if (failure == null) {
       controller.markRequestSent();
+      if (!mounted) return;
       LoopToast.show(context, message: '消息请求已发送');
       return;
     }
+    // The refusal is state, not an announcement: it stays under the control
+    // until the next attempt. The toast is the same sentence, said once.
+    controller.markRequestFailed(failure);
+    if (!mounted) return;
     LoopToast.show(
       context,
-      message: communityFailureReason(failure),
+      message: directMessageRequestFailureReason(failure),
       kind: LoopToastKind.warn,
     );
   }
 }
 
+/// zh-CN copy for a message request the server refused.
+///
+/// Reachability is not enumerable (decision 0070): a closed 私聊 switch, a
+/// missing friendship and an account that does not exist all answer the same
+/// not-found kind, so the sentence names the switch without claiming which of
+/// the three it was. Every other kind keeps the shared refusal copy.
+String directMessageRequestFailureReason(CommunityFailureKind kind) =>
+    switch (kind) {
+      CommunityFailureKind.notFound => '对方没有开放被找到，或者这个账号不存在，消息请求没有送出。',
+      _ => communityFailureReason(kind),
+    };
+
 class _FriendshipRequired extends StatelessWidget {
   const _FriendshipRequired({
-    required this.target,
+    required this.identity,
     required this.requestSent,
     required this.busy,
+    required this.failure,
     required this.onSend,
   });
 
-  final DirectMessageTarget target;
+  /// The peer this card names, when the caller carried one.
+  final LoopPublicProfile? identity;
   final bool requestSent;
   final bool busy;
+
+  /// Why the last send did not go through, or null when none was refused.
+  final CommunityFailureKind? failure;
   final Future<void> Function() onSend;
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
-    padding: const EdgeInsets.symmetric(vertical: 12),
+    padding: const EdgeInsets.only(bottom: 12),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
+        // With no thread to read, the page has the room for its own primary:
+        // `#scr-dm` opens on the Chalk hero, and this is the state where it
+        // is the only thing on screen. A conversation that did open keeps the
+        // one-line strip instead, so the messages get the height.
+        directMessageFolio(identity),
         LoopEmpty(
           key: const ValueKey<String>('dm-friendship-required'),
           icon: 'shield',
@@ -310,12 +334,25 @@ class _FriendshipRequired extends StatelessWidget {
                     '先发送一条消息请求，对方接受后这个会话才会打开。'
                     '这个结果不代表对方账号一定存在。',
         ),
+        // A refused send is the page's own outcome and outlives the toast
+        // that announced it. It never replaces the control: the same request
+        // may be sent again, under a new idempotency key, once the other
+        // account opens 「显示 LOOP ID」.
+        if (failure != null)
+          LoopNotice(
+            key: const ValueKey<String>('dm-message-request-failed'),
+            icon: 'warn',
+            tone: LoopNoticeTone.warn,
+            title: '消息请求没有送出',
+            body: directMessageRequestFailureReason(failure!),
+            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+          ),
         if (!requestSent)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             child: LoopButton(
               key: const ValueKey<String>('dm-send-message-request'),
-              label: '发送消息请求',
+              label: failure == null ? '发送消息请求' : '重新发送消息请求',
               block: true,
               primary: true,
               onPressed: busy ? null : () => unawaited(onSend()),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loop_mobile/core/time/loop_time_format.dart';
 import 'package:loop_mobile/features/community/community_contract.dart';
 import 'package:loop_mobile/features/community/community_widgets.dart';
 import 'package:loop_mobile/features/community/search_controller.dart';
@@ -71,6 +72,8 @@ MessageRequestPage _requests({int items = 1}) => MessageRequestPage(
   nextCursor: null,
 );
 
+const testAssetId = 'eip155:56:0x55d398326f99059ff775485246999027b3197955';
+
 SearchPage _searchPage(
   SearchDomain domain, {
   bool available = true,
@@ -83,20 +86,38 @@ SearchPage _searchPage(
   results: <SearchResult>[
     for (var index = 0; index < results; index += 1)
       SearchResult(
-        resultType: domain == SearchDomain.users
-            ? SearchResultType.user
-            : SearchResultType.community,
-        stableId: domain == SearchDomain.users ? testMemberId : testCommunityId,
-        title: domain == SearchDomain.users ? 'frog_maxi' : 'Frog Holders',
-        subtitle: domain == SearchDomain.users
-            ? 'LOOP-7HJKMNPQ'
-            : 'frog-holders',
+        resultType: switch (domain) {
+          SearchDomain.users => SearchResultType.user,
+          SearchDomain.assets => SearchResultType.asset,
+          _ => SearchResultType.community,
+        },
+        stableId: switch (domain) {
+          SearchDomain.users => testMemberId,
+          SearchDomain.assets => testAssetId,
+          _ => testCommunityId,
+        },
+        title: switch (domain) {
+          SearchDomain.users => 'frog_maxi',
+          SearchDomain.assets => 'USDT',
+          _ => 'Frog Holders',
+        },
+        subtitle: switch (domain) {
+          SearchDomain.users => 'LOOP-7HJKMNPQ',
+          SearchDomain.assets => 'Tether USD',
+          _ => 'frog-holders',
+        },
         avatarRef: null,
-        memberCount: domain == SearchDomain.users ? null : 128,
-        verificationStatus: domain == SearchDomain.users ? null : 'verified',
-        destination: domain == SearchDomain.users
-            ? SearchDestinationKind.publicProfile
-            : SearchDestinationKind.communityProfile,
+        memberCount: domain == SearchDomain.communities ? 128 : null,
+        verificationStatus: switch (domain) {
+          SearchDomain.communities => 'verified',
+          SearchDomain.assets => 'pending',
+          _ => null,
+        },
+        destination: switch (domain) {
+          SearchDomain.users => const SearchPublicProfileDestination(),
+          SearchDomain.assets => const SearchAssetDestination(testAssetId),
+          _ => const SearchCommunityProfileDestination(),
+        },
       ),
   ],
   nextCursor: null,
@@ -125,7 +146,12 @@ void main() {
       );
       expect(card, findsOneWidget);
       expect(find.text('230.5'), findsOneWidget);
-      expect(find.textContaining('2026-09-15 14:58 UTC'), findsOneWidget);
+      expect(
+        find.textContaining(
+          loopLocalTimestampLabel(DateTime.utc(2026, 9, 15, 14, 58)),
+        ),
+        findsOneWidget,
+      );
       // The version that settled it is a backend identifier: it is not in the
       // row's own sentence.
       expect(find.textContaining('miningFormula-devBaseline'), findsNothing);
@@ -163,7 +189,10 @@ void main() {
       );
       expect(find.text('230.5'), findsOneWidget);
       expect(
-        find.textContaining('显示的是 2026-09-15 14:58 UTC 的算力快照 · 最近一次快照未完成'),
+        find.textContaining(
+          '显示的是 ${loopLocalTimestampLabel(DateTime.utc(2026, 9, 15, 14, 58))} '
+          '的算力快照 · 最近一次快照未完成',
+        ),
         findsOneWidget,
       );
     });
@@ -670,28 +699,22 @@ void main() {
   });
 
   group('search', () {
-    testWidgets('the three deferred domains show their server reason', (
+    testWidgets('the two deferred domains show their server reason', (
       tester,
     ) async {
       final gateway = FakeSearchGateway(
         pages: <SearchDomain, SearchPage>{
           SearchDomain.communities: _searchPage(SearchDomain.communities),
-          SearchDomain.assets: _searchPage(
-            SearchDomain.assets,
-            available: false,
-            reasonCode: 'ASSET_REGISTRY_DEFERRED',
-            results: 0,
-          ),
           SearchDomain.launch: _searchPage(
             SearchDomain.launch,
             available: false,
-            reasonCode: 'LAUNCH_MODULE_DEFERRED',
+            reasonCode: 'LAUNCH_PROJECT_DIRECTORY_PENDING',
             results: 0,
           ),
           SearchDomain.dapps: _searchPage(
             SearchDomain.dapps,
             available: false,
-            reasonCode: 'DAPP_DIRECTORY_DEFERRED',
+            reasonCode: 'DAPP_DIRECTORY_NOT_INTEGRATED',
             results: 0,
           ),
         },
@@ -705,7 +728,6 @@ void main() {
       expect(find.text('Frog Holders'), findsOneWidget);
 
       for (final domain in <SearchDomain>[
-        SearchDomain.assets,
         SearchDomain.launch,
         SearchDomain.dapps,
       ]) {
@@ -732,7 +754,7 @@ void main() {
           SearchDomain.launch: _searchPage(
             SearchDomain.launch,
             available: false,
-            reasonCode: 'LAUNCH_MODULE_DEFERRED',
+            reasonCode: 'LAUNCH_PROJECT_DIRECTORY_PENDING',
             results: 0,
           ),
         },
@@ -753,7 +775,134 @@ void main() {
         find.byKey(const ValueKey<String>('search-domain-unavailable-launch')),
         findsOneWidget,
       );
-      expect(find.textContaining('Launch 搜索还没有开放'), findsOneWidget);
+      // A domain LOOP has no catalogue for says so; it is not the same
+      // sentence as a domain that has one and is not wired to it yet.
+      expect(find.textContaining('LOOP 还没有 Launch 项目目录'), findsOneWidget);
+    });
+
+    testWidgets('the field promises only the domains that answer', (
+      tester,
+    ) async {
+      // Device walkthrough 2026-09-23 · a55–a65: the label offered five
+      // domains while three of them refused every query.
+      expect(searchFieldLabel, '搜索资产、社区、用户');
+      expect(searchableDomains, <SearchDomain>[
+        SearchDomain.assets,
+        SearchDomain.communities,
+        SearchDomain.users,
+      ]);
+
+      await pumpCommunityPage(
+        tester,
+        const GlobalSearchScreen(),
+        search: FakeSearchGateway(),
+      );
+      final field = tester.widget<TextField>(
+        find.byKey(const ValueKey<String>('search-field')),
+      );
+      expect(field.decoration!.labelText, searchFieldLabel);
+      // The five chips stay: a deferred domain still states its own reason.
+      for (final domain in searchDomainOrder) {
+        expect(
+          find.byKey(ValueKey<String>('search-seg-${domain.wireName}')),
+          findsOneWidget,
+        );
+      }
+    });
+
+    testWidgets('a submitted query lands on the domain that has results', (
+      tester,
+    ) async {
+      // 「voy」 answered 「没有匹配的结果」 under 社区 while the account being
+      // looked for sat under 用户 (device walkthrough 2026-09-23 · a59/a62).
+      final gateway = FakeSearchGateway(
+        pages: <SearchDomain, SearchPage>{
+          SearchDomain.communities: _searchPage(
+            SearchDomain.communities,
+            results: 0,
+          ),
+          SearchDomain.users: _searchPage(SearchDomain.users),
+        },
+      );
+      await pumpCommunityPage(
+        tester,
+        const GlobalSearchScreen(initialQuery: 'frog'),
+        search: gateway,
+        social: FakeSocialGateway(),
+      );
+
+      // 资产 is asked before 用户 — the chip order — and it refused here, so
+      // the refusal stays with it and the page lands on the domain that
+      // answered.
+      expect(gateway.queries, <String>[
+        'communities:frog',
+        'assets:frog',
+        'users:frog',
+      ]);
+      expect(find.text('frog_maxi'), findsOneWidget);
+      final seg = tester.widget<LoopSeg>(
+        find.byKey(const ValueKey<String>('search-seg-users')),
+      );
+      expect(seg.selected, isTrue);
+    });
+
+    testWidgets('an asset result opens the token page by its assetId', (
+      tester,
+    ) async {
+      // Backend decision 0071 opened the 资产 domain. The row is navigated by
+      // `destination.assetId` alone — never by the symbol on it.
+      final opened = <String>[];
+      final gateway = FakeSearchGateway(
+        pages: <SearchDomain, SearchPage>{
+          SearchDomain.assets: _searchPage(SearchDomain.assets),
+        },
+      );
+      await pumpCommunityPage(
+        tester,
+        GlobalSearchScreen(initialQuery: 'usd', onOpenAsset: opened.add),
+        search: gateway,
+      );
+
+      await tester.tap(find.byKey(const ValueKey<String>('search-seg-assets')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('USDT'), findsOneWidget);
+      expect(find.text('Tether USD'), findsOneWidget);
+      await tester.tap(find.text('USDT'));
+      await tester.pumpAndSettle();
+      expect(opened, <String>[testAssetId]);
+      // The asset domain never opens the public-profile card.
+      expect(
+        find.byKey(const ValueKey<String>('public-profile-sheet')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a domain the reader chose is never overruled', (tester) async {
+      final gateway = FakeSearchGateway(
+        pages: <SearchDomain, SearchPage>{
+          SearchDomain.communities: _searchPage(SearchDomain.communities),
+          SearchDomain.users: _searchPage(SearchDomain.users, results: 0),
+        },
+      );
+      await pumpCommunityPage(
+        tester,
+        const GlobalSearchScreen(initialQuery: 'frog'),
+        search: gateway,
+        social: FakeSocialGateway(),
+      );
+      expect(gateway.queries, <String>['communities:frog']);
+
+      await tester.tap(find.byKey(const ValueKey<String>('search-seg-users')));
+      await tester.pumpAndSettle();
+
+      // The empty answer stands: the reader asked this domain by hand.
+      expect(gateway.queries, <String>['communities:frog', 'users:frog']);
+      expect(find.text('Frog Holders'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('community-state-empty')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a result opens through its destination kind', (tester) async {

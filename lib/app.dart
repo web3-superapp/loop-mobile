@@ -98,6 +98,7 @@ import 'package:stream_chat_flutter/stream_chat_flutter.dart'
         StreamChat,
         StreamChatConfigurationData,
         StreamComponentBuilders,
+        StreamMessageListViewConfiguration,
         streamChatComponentBuilders;
 
 final _loopStreamComponentBuilders = StreamComponentBuilders(
@@ -157,6 +158,20 @@ final loopStreamChatConfiguration = StreamChatConfigurationData(
   // comes back. Text typed in one visit is lost when the page is left — LOOP
   // has no local draft store of its own, and this is the honest cost.
   draftMessagesEnabled: false,
+  messageListViewConfiguration: const StreamMessageListViewConfiguration(
+    // The floating day pill is off. It is drawn over the thread rather than
+    // in it — in `dm` it half-covered the first bubble — and the day it names
+    // is read off whichever item the viewport happens to anchor on, offset by
+    // the list's own special rows
+    // (`floating_date_divider.dart:71`, `messageIndex = index - 2`). Three
+    // visits to the same screen of messages printed 周一, 周四 and 今天 on
+    // 2026-09-23, and only the first was right.
+    //
+    // The inline divider stays: it is built from one message's own
+    // `createdAt.toLocal()` (`message_list_view.dart:1068`), it sits between
+    // the two days it separates, and it scrolls with them.
+    showFloatingDateDivider: false,
+  ),
 );
 
 class LoopApp extends ConsumerStatefulWidget {
@@ -839,6 +854,10 @@ GoRouter _buildRouter(
               context.push('/community/profile?id=$communityId'),
           onOpenDirectMessage: (identity) =>
               _openDirectMessageFromProfile(context, identity),
+          // An `assetDetail` result carries the registry's own CAIP id, and
+          // the token page is the one route that takes one.
+          onOpenAsset: (assetId) =>
+              context.push(MarketAssetRoute.token(assetId)),
         ),
       ),
       GoRoute(

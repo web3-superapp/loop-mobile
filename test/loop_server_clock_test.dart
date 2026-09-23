@@ -129,5 +129,22 @@ void main() {
       );
       expect(clock.offset, const Duration(minutes: 30));
     });
+
+    test('the first undated delivery cannot set the clock backwards', () {
+      // Device walkthrough 2026-09-23 · a10/a11/a33: the first message the
+      // socket replayed into a watched channel was two days old, and it was
+      // taken as the drift. 「今天」 then labelled Monday's messages.
+      final device = DateTime.utc(2026, 9, 23, 3);
+      final clock = LoopServerClock(deviceNow: () => device);
+
+      clock.observeAtLeast(
+        serverTime: DateTime.utc(2026, 9, 21, 12),
+        at: device,
+      );
+
+      expect(clock.offset, Duration.zero);
+      expect(clock.hasServerObservation, isFalse);
+      expect(clock.nowUtc(), device);
+    });
   });
 }
