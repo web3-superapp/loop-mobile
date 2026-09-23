@@ -827,18 +827,33 @@ LoopAssetSummary s5Summary({String symbol = 'WBNB'}) => LoopAssetSummary(
   status: LoopAssetStatus.pending,
 );
 
+/// The row-level 1H series the list delivers with each row (decision 0085).
+///
+/// Four closes is enough for a line and short enough to read in a failure
+/// message; `null` on a row is the contract's "no series for this one".
+MarketRowSparklineSeries s5RowSparkline({
+  List<String> closes = const <String>['1', '3', '2', '4'],
+}) => MarketRowSparklineSeries(
+  interval: LoopCandleInterval.oneHour,
+  observedAt: DateTime.utc(2026, 9, 8, 7, 30),
+  closes: <Decimal>[for (final close in closes) s5Decimal(close)],
+);
+
 MarketAssetRow s5MarketRow({
   String assetId = s5WbnbAssetId,
   LoopFact? price,
   LoopFact? change,
   LoopAssetSummary? asset,
   String? logoUrl,
+  MarketRowSparklineSeries? sparkline,
+  bool withSparkline = true,
 }) => MarketAssetRow(
   assetId: assetId,
   asset: asset ?? s5Summary(),
   price: price ?? s5FreshFact('747.39'),
   priceChange24h: change ?? s5FreshFact('0.27'),
   logoUrl: logoUrl,
+  sparkline: sparkline ?? (withSparkline ? s5RowSparkline() : null),
 );
 
 MarketOverview s5Overview({

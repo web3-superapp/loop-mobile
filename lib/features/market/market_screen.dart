@@ -283,7 +283,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
               key: ValueKey<String>('market-asset-${row.assetId}'),
               row: row,
               miningWeight: marketMiningWeightFor(miningRules, row.assetId),
-              sparkline: MarketRowSparkline(assetId: row.assetId),
+              sparkline: MarketRowSparkline(series: row.sparkline),
               onTap: () => _open(MarketAssetRoute.token(row.assetId)),
             ),
         ],

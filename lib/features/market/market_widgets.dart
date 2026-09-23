@@ -11,7 +11,6 @@ import 'package:loop_mobile/features/market/loop_sparkline.dart';
 import 'package:loop_mobile/features/market/market_controllers.dart';
 import 'package:loop_mobile/features/market/market_mining_hooks.dart';
 import 'package:loop_mobile/features/market/market_read_models.dart';
-import 'package:loop_mobile/features/market/token_card_chart.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_membership_controller.dart';
 import 'package:loop_mobile/features/market/watchlist/watchlist_models.dart';
 import 'package:loop_mobile/widgets/loop_assets.dart';
@@ -131,14 +130,30 @@ const double marketRowHeight = 58;
 /// the slot collapsed the value column moved sideways from row to row.
 const Size marketRowSparklineSize = Size(48, 24);
 
-/// The price column's width.
+/// The price column's floor.
 ///
 /// The design's grid is `1fr 96px 88px` with 8pt gaps, which on a 390pt screen
 /// leaves the name cell 60pt once the 32pt mark and the 56pt line are inside
 /// it — and 「成交额 $1.28B」 ellipsised to 「成交额 $…」 (first render, S78b).
 /// The fixed columns are trimmed to what their own content actually needs at
 /// the ladder's steps, and the difference goes to the name.
+///
+/// It is a floor and not a width: decision 0085. A fixed 84pt cell ellipsised
+/// 「$85,866.13」 to 「$85,866…」 on a real iPhone — the column that the whole
+/// list is read down lost the one thing it carries. The price is the last
+/// thing in a 行情 row that may be abbreviated, so when the figure needs more
+/// than the floor it takes it, up to [marketRowPriceMaxWidth], out of the name
+/// cell beside it: a truncated 「PancakeSwap Tok…」 still names the row, a
+/// truncated price names nothing. The change block never moves.
 const double marketRowPriceWidth = 84;
+
+/// How far the price column may grow into the name.
+///
+/// The widest figure the row can print is a four-significant-digit sub-dollar
+/// price (`$0.0000012345`, 13 characters). Past this the name would be down to
+/// a couple of glyphs, so the price ellipsises instead — with the magnitude
+/// rule below that case does not arise for any price BSC has quoted.
+const double marketRowPriceMaxWidth = 124;
 
 /// The change block: `76×30`, radius 6.
 const double marketRowChangeWidth = 70;
@@ -192,13 +207,63 @@ String marketAssetSubtitle(MarketAssetRow row, {MarketMiningWeight? weight}) {
 
 /// The price a 行情 row prints.
 ///
-/// `loopFormatUsd` rounds to cents, which turns every sub-cent asset into
-/// `$0` — on a page that refuses to print a zero for a fact it could not read,
-/// a zero for a fact it did read is worse. Below a dollar the figure keeps
-/// three significant digits instead.
-String marketRowPrice(Decimal value) => value.abs() < Decimal.one
-    ? loopFormatCompactFigure(value, preciseBelowOne: true)
-    : loopFormatUsd(value);
+/// `loopFormatUsd` rounds to cents at every magnitude, which prints
+/// 「$85,866.13」 for BTCB and `$0` for every sub-cent asset. Both are wrong in
+/// the same way: cents are meaningful for a $12 token and noise for a $85,866
+/// one, and a page that refuses to print a zero for a fact it could not read
+/// must not print one for a fact it did.
+///
+/// So the precision follows the magnitude (decision 0085) — the rule every
+/// exchange price list uses:
+///
+/// | figure | fraction digits | example |
+/// | --- | --- | --- |
+/// | ≥ 10,000 | 0 | `$85,866` |
+/// | ≥ 1,000 | 1 | `$1,248.4` |
+/// | ≥ 1 | 2 | `$747.39` |
+/// | < 1 | four significant digits | `$0.0000012345`, `$0.8741` |
+///
+/// The digits are kept, not trimmed: `$12.00` and `$12.30` are one column, and
+/// `$12` beside `$12.34` is a ragged one. The threshold is re-read after
+/// rounding, because 9,999.96 rounds to 10,000.0 and belongs one row up.
+String marketRowPrice(Decimal value) {
+  final negative = value < Decimal.zero;
+  final absolute = negative ? -value : value;
+  if (absolute < Decimal.one) {
+    return loopFormatCompactFigure(
+      value,
+      preciseBelowOne: true,
+      significantDigits: marketRowPriceSubUnitDigits,
+    );
+  }
+  var digits = _marketRowPriceDigits(absolute);
+  var rounded = absolute.round(scale: digits);
+  final settled = _marketRowPriceDigits(rounded);
+  if (settled != digits) {
+    digits = settled;
+    rounded = absolute.round(scale: digits);
+  }
+  var body = loopFormatDecimal(rounded, maxFractionDigits: digits);
+  if (digits > 0) {
+    final dot = body.indexOf('.');
+    final present = dot < 0 ? 0 : body.length - dot - 1;
+    if (dot < 0) body = '$body.';
+    body = '$body${'0' * (digits - present)}';
+  }
+  return '\$${negative ? '-' : ''}$body';
+}
+
+/// Significant digits a 行情 price below a dollar keeps.
+const int marketRowPriceSubUnitDigits = 4;
+
+final Decimal _marketRowPriceNoDigitsFrom = Decimal.fromInt(10000);
+final Decimal _marketRowPriceOneDigitFrom = Decimal.fromInt(1000);
+
+int _marketRowPriceDigits(Decimal absolute) {
+  if (absolute >= _marketRowPriceNoDigitsFrom) return 0;
+  if (absolute >= _marketRowPriceOneDigitFrom) return 1;
+  return 2;
+}
 
 /// Which way a row moved over 24 hours.
 enum MarketMove {
@@ -363,8 +428,17 @@ class MarketAssetTile extends StatelessWidget {
             child: sparkline,
           ),
           const SizedBox(width: 6),
-          SizedBox(
-            width: marketRowPriceWidth,
+          // The price cell sizes to its own figure between a floor and a cap.
+          // A `Row`'s non-flexible children are laid out first and against
+          // unbounded width, so what this takes above the floor comes off the
+          // `Expanded` name beside it — which is the order a price list is
+          // read in (decision 0085).
+          ConstrainedBox(
+            key: const ValueKey<String>('market-row-price-slot'),
+            constraints: const BoxConstraints(
+              minWidth: marketRowPriceWidth,
+              maxWidth: marketRowPriceMaxWidth,
+            ),
             child: Text(
               // No figure and no stand-in: the identity line beside this
               // column already carries the whole reason, and a second,
@@ -901,51 +975,36 @@ class _MarketNewPairsListState extends ConsumerState<MarketNewPairsList> {
 
 /// The 1H line the prototype draws inside every 行情 row (`.market-spark`).
 ///
-/// It reads the same `1h` candle series the Token Card's line does, through
-/// the same controller family, so a row and the token page behind it never
-/// show two different shapes. There is no second source and no fallback: a
-/// series that is loading, unavailable or empty leaves the slot blank, and the
-/// price and change in the value column beside it are unaffected. The reason
-/// belongs to the token page, which has the room to state it.
-class MarketRowSparkline extends ConsumerStatefulWidget {
-  const MarketRowSparkline({required this.assetId, super.key});
+/// It draws the series the **row itself** carried
+/// ([MarketAssetRow.sparkline]) and reads nothing. Until decision 0085 this
+/// widget asked the candles controller for its own `1h` series when it
+/// mounted: one request per visible row, per scroll, against a rate-limited
+/// provider — which is why most rows on a real phone showed no line at all
+/// (iPhone report, 2026-09-23). There is no second source and no fallback: a
+/// row with no series, or with fewer than two closes, leaves the slot blank
+/// and the value column beside it is unaffected. The reason belongs to the
+/// token page, which has the room to state it.
+class MarketRowSparkline extends StatelessWidget {
+  const MarketRowSparkline({required this.series, super.key});
 
-  final String assetId;
+  /// The row's own closes, or `null` when the list delivered none.
+  final MarketRowSparklineSeries? series;
 
-  @override
-  ConsumerState<MarketRowSparkline> createState() => _MarketRowSparklineState();
-}
-
-class _MarketRowSparklineState extends ConsumerState<MarketRowSparkline> {
   @override
   Widget build(BuildContext context) {
-    final request = MarketCandleRequest(
-      assetId: widget.assetId,
-      interval: LoopCandleInterval.oneHour,
-    );
-    final state = ref.watch(marketCandlesControllerProvider(request));
-    if (state.phase == LoopChainViewPhase.loading) {
-      scheduleMicrotask(() {
-        if (mounted) {
-          unawaited(
-            ref.read(marketCandlesControllerProvider(request).notifier).load(),
-          );
-        }
-      });
-    }
-    if (tokenCardSparklineAbsence(state) != null) {
+    final resolved = series;
+    if (resolved == null || !resolved.hasShape) {
       return const SizedBox.shrink(
         key: ValueKey<String>('market-spark-absent'),
       );
     }
-    final available = state.value!.candles as MarketCandlesAvailable;
-    final closes = loopSparklineCloses(available.items);
+    final closes = resolved.closes;
     return LoopSparkline(
-      key: ValueKey<String>('market-spark-${widget.assetId}'),
+      key: const ValueKey<String>('market-spark-line'),
       closes: closes,
       semanticLabel:
-          '${closes.length} 个 1H 收盘价的走势线，'
-          '来源 ${loopFactSourceLabel(available.source)}',
+          '${closes.length} 个 ${resolved.interval.label} 收盘价的走势线，'
+          '观察于 ${loopRelativeTime(resolved.observedAt)}',
     );
   }
 }

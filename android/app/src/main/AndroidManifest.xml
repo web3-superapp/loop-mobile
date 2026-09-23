@@ -38,10 +38,16 @@
     <uses-permission android:name="${applicationId}.PERMISSION_CALL" tools:node="remove" />
     <permission android:name="${applicationId}.PERMISSION_CALL" tools:node="remove" />
 
+    <!-- Decision 0085: the system back gesture reaches Flutter through
+         OnBackInvokedDispatcher, and that is what
+         PredictiveBackPageTransitionsBuilder animates. targetSdk 36 enables the
+         dispatcher anyway; declaring it keeps the gesture and its animation on
+         API 33-35 devices as well. -->
     <application
         android:allowBackup="false"
         android:label="Loop"
         android:name="${applicationName}"
+        android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

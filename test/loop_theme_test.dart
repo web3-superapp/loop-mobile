@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_mobile/core/theme/loop_theme.dart';
@@ -280,13 +281,19 @@ void main() {
       const Size.square(LoopTouch.minimum),
     );
     expect(theme.bottomSheetTheme.modalBarrierColor, LoopColors.veil);
+    // Decision 0085: the push is the platform's own, because the iOS
+    // edge-swipe-back lives inside the Cupertino builder.
     expect(
       theme.pageTransitionsTheme.builders[TargetPlatform.iOS],
-      isA<LoopPushTransitionsBuilder>(),
+      isA<CupertinoPageTransitionsBuilder>(),
+    );
+    expect(
+      theme.pageTransitionsTheme.builders[TargetPlatform.macOS],
+      isA<CupertinoPageTransitionsBuilder>(),
     );
     expect(
       theme.pageTransitionsTheme.builders[TargetPlatform.android],
-      isA<LoopPushTransitionsBuilder>(),
+      isA<PredictiveBackPageTransitionsBuilder>(),
     );
   });
 }

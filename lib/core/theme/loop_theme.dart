@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 
 /// Lime Ledger colour tokens (01 handover document, chapter 4.1).
@@ -720,16 +721,7 @@ abstract final class LoopTheme {
       splashFactory: InkSparkle.splashFactory,
       visualDensity: VisualDensity.standard,
       materialTapTargetSize: MaterialTapTargetSize.padded,
-      pageTransitionsTheme: const PageTransitionsTheme(
-        builders: <TargetPlatform, PageTransitionsBuilder>{
-          TargetPlatform.android: LoopPushTransitionsBuilder(),
-          TargetPlatform.iOS: LoopPushTransitionsBuilder(),
-          TargetPlatform.fuchsia: LoopPushTransitionsBuilder(),
-          TargetPlatform.linux: LoopPushTransitionsBuilder(),
-          TargetPlatform.macOS: LoopPushTransitionsBuilder(),
-          TargetPlatform.windows: LoopPushTransitionsBuilder(),
-        },
-      ),
+      pageTransitionsTheme: loopPageTransitionsTheme,
       appBarTheme: AppBarTheme(
         elevation: 0,
         centerTitle: false,
@@ -883,43 +875,46 @@ abstract final class LoopTheme {
   }
 }
 
-/// Detail push transition (chapter 7): child pages slide in from the right
-/// with a fade, the outgoing page drifts slightly left. Peer tab switches use
-/// a plain fade instead (see `LoopTabPage`). Reduced motion disables both.
-class LoopPushTransitionsBuilder extends PageTransitionsBuilder {
-  const LoopPushTransitionsBuilder();
-
-  static const Curve curve = Cubic(0.22, 0.9, 0.3, 1);
-
-  @override
-  Widget buildTransitions<T>(
-    PageRoute<T> route,
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    Widget child,
-  ) {
-    if (MediaQuery.disableAnimationsOf(context)) return child;
-    final enter = CurvedAnimation(parent: animation, curve: curve);
-    final exit = CurvedAnimation(parent: secondaryAnimation, curve: curve);
-    return SlideTransition(
-      position: Tween<Offset>(
-        begin: Offset.zero,
-        end: const Offset(-0.06, 0),
-      ).animate(exit),
-      child: FadeTransition(
-        opacity: enter,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(1, 0),
-            end: Offset.zero,
-          ).animate(enter),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
+/// The push transition every LOOP detail page takes.
+///
+/// Decision 0085. Chapter 7 asked for "slide in from the right with a fade",
+/// and until this build LOOP answered it with one hand-written builder
+/// (`LoopPushTransitionsBuilder`) installed on all six platforms. That builder
+/// drew the right picture and removed the gesture: on iOS the edge-swipe-back
+/// is not a separate feature of the navigator, it lives *inside*
+/// [CupertinoPageTransitionsBuilder] — `CupertinoRouteTransitionMixin
+/// .buildPageTransitions` is what wraps the page in the back-gesture
+/// detector. Replace the builder and the whole right edge of every detail page
+/// goes dead. Android's own back animation (predictive back on U and above)
+/// was replaced the same way.
+///
+/// So the transition is the platform's, not ours:
+///
+/// - **iOS / macOS** — [CupertinoPageTransitionsBuilder]: the native parallax,
+///   and with it the edge-swipe-back that a phone user reaches for first.
+/// - **Android and the rest** — [PredictiveBackPageTransitionsBuilder]:
+///   animates with the system back gesture on Android U and above, and falls
+///   back to [FadeForwardsPageTransitionsBuilder] (a horizontal slide with a
+///   fade — chapter 7's own description) everywhere else.
+///
+/// Reduced motion needs no branch here and must not have one. A branch that
+/// returns the bare `child` would drop the gesture detector with the
+/// animation, and it is not needed: [AnimationController] already reads the
+/// platform's own "disable animations" flag and runs every route controller at
+/// 0.05× its duration, so a 500ms Cupertino push takes 25ms and the swipe
+/// still works. LOOP's own reduced-motion branches stay where they belong —
+/// the tab-bar indicator and `LoopTabPage`'s peer fade, neither of which is a
+/// route gesture.
+const PageTransitionsTheme loopPageTransitionsTheme = PageTransitionsTheme(
+  builders: <TargetPlatform, PageTransitionsBuilder>{
+    TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+    TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+    TargetPlatform.fuchsia: PredictiveBackPageTransitionsBuilder(),
+    TargetPlatform.linux: PredictiveBackPageTransitionsBuilder(),
+    TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+    TargetPlatform.windows: PredictiveBackPageTransitionsBuilder(),
+  },
+);
 
 extension LoopTextStyles on BuildContext {
   /// Existing alias used by feature slices for tabular figures.

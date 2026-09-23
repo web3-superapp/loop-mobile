@@ -12,9 +12,12 @@ void main() {
   ) async {
     final router = await pumpProductionApp(tester);
     router.go('/preview/loading');
-    // The skeleton pulse never settles; pump a bounded number of frames.
+    // The skeleton pulse never settles; pump a bounded number of frames. The
+    // budget has to clear the platform push (decision 0085 · 450ms on the
+    // Android builder these tests run under), or the page being left is still
+    // mounted when the next one arrives.
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 600));
 
     expect(find.text(loopComponentSpecimenLabel), findsOneWidget);
     expect(find.text('当前加载'), findsNothing);
@@ -37,7 +40,7 @@ void main() {
     }
     await tester.tap(find.byKey(const ValueKey<String>('loop-topbar-back')));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 600));
     expect(router.routeInformationProvider.value.uri.path, '/community');
   });
 

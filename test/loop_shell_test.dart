@@ -251,7 +251,7 @@ void main() {
     );
   });
 
-  testWidgets('tab pages fade and child pages push; reduced motion disables', (
+  testWidgets('peer tabs fade, a child page takes the platform push', (
     tester,
   ) async {
     final router = GoRouter(
@@ -297,42 +297,78 @@ void main() {
     expect(find.byType(LoopTabBar), findsOneWidget);
     await tester.pumpAndSettle();
 
+    // Decision 0085: a child page is not pushed by a LOOP-owned builder any
+    // more. It takes the theme's platform push — here the Android one, which
+    // is what these tests run under — and with it the system back gesture.
+    final push = Theme.of(tester.element(find.text('wallet')))
+        .pageTransitionsTheme
+        .builders[TargetPlatform.android];
+    expect(push, isA<PredictiveBackPageTransitionsBuilder>());
+
     unawaited(router.push('/wallet/send'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(find.byType(SlideTransition), findsWidgets);
     await tester.pumpAndSettle();
     expect(find.byType(LoopTabBar), findsNothing);
     expect(find.text('send'), findsOneWidget);
 
-    // Reduced motion: the push builder returns the child untouched.
+    // A pushed page can be left again, which is the whole point of the
+    // gesture: the route below it is still there.
+    final route = ModalRoute.of(tester.element(find.text('send')))!;
+    expect(route.isFirst, isFalse);
+    expect(route.popGestureEnabled, isTrue);
+
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('reduced motion removes the peer-tab fade', (tester) async {
+    // The page transition itself is the platform's now (decision 0085), and
+    // under reduced motion the platform collapses its own duration — so the
+    // assertion is on the one transition LOOP still owns: `LoopTabPage`'s
+    // peer fade, asked directly rather than through a route that carries the
+    // platform's fade above it.
+    const marker = SizedBox(key: ValueKey<String>('tab-child'));
+    final page = LoopTabPage<void>(child: marker);
+    Widget? moving;
+    Widget? still;
     await tester.pumpWidget(
-      MaterialApp.router(
-        theme: LoopTheme.dark,
-        routerConfig: router,
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(disableAnimations: true),
-          child: child!,
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Column(
+          children: <Widget>[
+            MediaQuery(
+              data: const MediaQueryData(),
+              child: Builder(
+                builder: (context) {
+                  moving = page.transitionsBuilder(
+                    context,
+                    kAlwaysCompleteAnimation,
+                    kAlwaysDismissedAnimation,
+                    marker,
+                  );
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
+            MediaQuery(
+              data: const MediaQueryData(disableAnimations: true),
+              child: Builder(
+                builder: (context) {
+                  still = page.transitionsBuilder(
+                    context,
+                    kAlwaysCompleteAnimation,
+                    kAlwaysDismissedAnimation,
+                    marker,
+                  );
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
-    await tester.pumpAndSettle();
-    router.go('/community');
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 1));
-    expect(find.text('community'), findsOneWidget);
-    await tester.pumpAndSettle();
-    unawaited(router.push('/wallet/send'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 1));
-    expect(
-      find.ancestor(
-        of: find.text('send'),
-        matching: find.byType(SlideTransition),
-      ),
-      findsNothing,
-    );
-    await tester.pumpAndSettle();
+
+    expect(moving, isA<FadeTransition>());
+    expect(still, same(marker));
   });
 
   testWidgets('wide layouts keep the rail with sprite icons and Ink ground', (

@@ -19,6 +19,7 @@ final class MarketAssetRow {
     this.volume24h,
     this.liquidityUsd,
     this.logoUrl,
+    this.sparkline,
   });
 
   final String assetId;
@@ -39,9 +40,46 @@ final class MarketAssetRow {
   final LoopFact? volume24h;
   final LoopFact? liquidityUsd;
 
+  /// The 1H shape this row draws, delivered **with the row**.
+  ///
+  /// Decision 0085. Until this build each row asked for its own `1h` candle
+  /// series when it mounted, which is one request per visible row against a
+  /// rate-limited provider on every scroll — and the reason most rows on a
+  /// real phone carried no line at all. A row now draws what its own payload
+  /// carries and asks for nothing: `null` means the list did not deliver a
+  /// series for this row, the slot stays reserved and empty, and the reason
+  /// belongs to the token page, which has the room to state it.
+  final MarketRowSparklineSeries? sparkline;
+
   /// Display text for the row. Falls back to the truncated CAIP identity so a
   /// missing registry row never becomes a guessed ticker.
   String get displayName => asset?.symbol ?? loopTruncatedAssetId(assetId);
+}
+
+/// A row's own close-price series, as the row contract delivers it.
+///
+/// Wire shape `{status, interval, closes[], observedAt}` (S81b). Only an
+/// `available` series becomes one of these; an `unavailable` one becomes
+/// `null` on the row, because a 58pt row has nowhere to put a reason.
+///
+/// The closes stay [Decimal] like every other figure LOOP reads: the sparkline
+/// normalises to `double` inside its painter and nowhere else. The series is
+/// a shape, never a quote — nothing may price, sign or compare from it.
+@immutable
+final class MarketRowSparklineSeries {
+  MarketRowSparklineSeries({
+    required this.interval,
+    required this.observedAt,
+    required List<Decimal> closes,
+  }) : closes = List<Decimal>.unmodifiable(closes);
+
+  final LoopCandleInterval interval;
+  final DateTime observedAt;
+  final List<Decimal> closes;
+
+  /// A series with fewer than two points draws no line; the slot stays empty
+  /// rather than showing a dot that reads as a flat market.
+  bool get hasShape => closes.length > 1;
 }
 
 sealed class MarketWatchlistBlock {
