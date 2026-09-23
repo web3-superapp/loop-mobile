@@ -220,29 +220,25 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             ),
           ),
           const LoopLabel('滑点上限'),
-          // `.segs`: one row of equal thirds, as the prototype lays it out.
-          // Stacked full-width buttons read as three separate actions, and
-          // the 「50 bps」 label was trade-desk vocabulary — the percentage is
+          // `.segs`: one row of chips, each as wide as the step it names.
+          // The 「50 bps」 label was trade-desk vocabulary — the percentage is
           // the same number in the unit the chooser already owns.
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Row(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: <Widget>[
-                for (final (index, bps)
-                    in _slippageChoices.indexed) ...<Widget>[
-                  if (index > 0) const SizedBox(width: 8),
-                  Expanded(
-                    child: LoopSeg(
-                      key: ValueKey<String>('swap-slippage-$bps'),
-                      label: moneySlippageLabel(bps),
-                      selected: bps == _slippageBps,
-                      onSelected: () => setState(() {
-                        _slippageBps = bps;
-                        _quote = null;
-                      }),
-                    ),
+                for (final bps in _slippageChoices)
+                  LoopSeg(
+                    key: ValueKey<String>('swap-slippage-$bps'),
+                    label: moneySlippageLabel(bps),
+                    selected: bps == _slippageBps,
+                    onSelected: () => setState(() {
+                      _slippageBps = bps;
+                      _quote = null;
+                    }),
                   ),
-                ],
               ],
             ),
           ),

@@ -1361,18 +1361,11 @@ class _InterestChips extends StatelessWidget {
         runSpacing: 7,
         children: <Widget>[
           for (final interest in ProfileInterest.values)
-            // `LoopSeg` centres its label in a `Container`, and a centred
-            // container under the loose bounded constraints a `Wrap` hands
-            // its children takes all the width offered: the five chips came
-            // out full-width, one per line (walkthrough 2026-09-23 · h05).
-            // Measuring each chip puts the row back into a flow.
-            IntrinsicWidth(
-              child: LoopSeg(
-                key: ValueKey<String>('interest-${interest.wireValue}'),
-                label: interest.label,
-                selected: selected.contains(interest),
-                onSelected: enabled ? () => onToggle(interest) : null,
-              ),
+            LoopSeg(
+              key: ValueKey<String>('interest-${interest.wireValue}'),
+              label: interest.label,
+              selected: selected.contains(interest),
+              onSelected: enabled ? () => onToggle(interest) : null,
             ),
         ],
       ),
