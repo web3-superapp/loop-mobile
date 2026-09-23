@@ -845,54 +845,66 @@ class _CompactChartControls extends StatelessWidget {
         for (final period in periods)
           ?loopCandleMovingAverageLabel(series, period),
     ];
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        for (final interval in LoopCandleInterval.values)
-          Semantics(
-            button: true,
-            selected: interval == selected,
-            child: Material(
-              type: MaterialType.transparency,
-              child: InkWell(
-                key: ValueKey<String>('token-interval-${interval.wireName}'),
-                borderRadius: BorderRadius.circular(6),
-                onTap: () => onSelected(interval),
-                child: Container(
-                  height: 28,
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: interval == selected
-                        ? LoopColors.chalk.withValues(alpha: 0.1)
-                        : Colors.transparent,
+        Row(
+          children: <Widget>[
+            for (final interval in LoopCandleInterval.values)
+              Semantics(
+                button: true,
+                selected: interval == selected,
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: InkWell(
+                    key: ValueKey<String>(
+                      'token-interval-${interval.wireName}',
+                    ),
                     borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    interval.label,
-                    // The chosen period takes the ladder's own small title —
-                    // Chalk by default — and the rest take it at the grey the
-                    // tab strip uses, so the row has one weight and one size.
-                    style: interval == selected
-                        ? LoopType.titleSm
-                        : LoopType.titleSm.copyWith(color: LoopColors.text3),
+                    onTap: () => onSelected(interval),
+                    child: Container(
+                      height: 28,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: interval == selected
+                            ? LoopColors.chalk.withValues(alpha: 0.1)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        interval.label,
+                        // The chosen period takes the ladder's own small title —
+                        // Chalk by default — and the rest take it at the grey the
+                        // tab strip uses, so the row has one weight and one size.
+                        style: interval == selected
+                            ? LoopType.titleSm
+                            : LoopType.titleSm.copyWith(
+                                color: LoopColors.text3,
+                              ),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+            const Spacer(),
+            ?trailing,
+          ],
+        ),
+        // The averages get the line under the periods, not the room left
+        // beside them: five tabs and the expand glyph leave a 360dp phone
+        // about 60dp, and 「MA7 780.2386 · MA25 786.5496」 was reaching the
+        // reader as 「MA7 7…」.
+        if (labels.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 6),
+          Text(
+            labels.join(' · '),
+            key: const ValueKey<String>('token-moving-averages'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: LoopType.figureXs,
           ),
-        const Spacer(),
-        if (labels.isNotEmpty)
-          Flexible(
-            child: Text(
-              labels.join(' · '),
-              key: const ValueKey<String>('token-moving-averages'),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.right,
-              style: LoopType.figureXs,
-            ),
-          ),
-        if (trailing != null) ...<Widget>[const SizedBox(width: 4), trailing!],
+        ],
       ],
     );
   }

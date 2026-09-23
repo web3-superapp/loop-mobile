@@ -387,13 +387,42 @@ class LoopDashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final refresh = block == null ? onRefresh : null;
+    final bar = block == null ? bottomBar : null;
+    // Built under a Builder so the insets are read from the context the
+    // bottom bar has already padded; read here, they would be the bare
+    // device insets and the page's last row would end under the bar.
+    final body = Builder(builder: (context) => _buildBody(context, refresh));
+    if (bar == null) return body;
+    // The bar is measured, not guessed: the scroll below reserves exactly the
+    // height this widget reports, so the page's last row clears it on every
+    // text scale without a constant anyone has to keep in step.
+    return _LoopPageBottomBar(
+      key: const ValueKey<String>('loop-page-bottom-bar'),
+      bar: bar,
+      builder: (context, reserved) {
+        final data = MediaQuery.of(context);
+        // Added to the device's own inset, never substituted for it: the bar
+        // already sits above the home indicator, and replacing the padding
+        // would let the last row end under it.
+        return MediaQuery(
+          data: data.copyWith(
+            padding: data.padding.copyWith(
+              bottom: data.padding.bottom + reserved,
+            ),
+          ),
+          child: body,
+        );
+      },
+    );
+  }
+
+  Widget _buildBody(BuildContext context, Future<void> Function()? refresh) {
     final bottom = tabPage
         ? MediaQuery.paddingOf(context).bottom
         : loopChildPageBottomInset(context);
     final topPadding = MediaQuery.paddingOf(context).top;
-    final refresh = block == null ? onRefresh : null;
-    final bar = block == null ? bottomBar : null;
-    final body = Semantics(
+    return Semantics(
       container: true,
       identifier: loopPageIdentifier(archetype, layoutMode),
       explicitChildNodes: true,
@@ -441,28 +470,6 @@ class LoopDashboardPage extends StatelessWidget {
         ),
       ),
     );
-    if (bar == null) return body;
-    // The bar is measured, not guessed: the scroll below reserves exactly the
-    // height this widget reports, so the page's last row clears it on every
-    // text scale without a constant anyone has to keep in step.
-    return _LoopPageBottomBar(
-      key: const ValueKey<String>('loop-page-bottom-bar'),
-      bar: bar,
-      builder: (context, reserved) {
-        final data = MediaQuery.of(context);
-        // Added to the device's own inset, never substituted for it: the bar
-        // already sits above the home indicator, and replacing the padding
-        // would let the last row end under it.
-        return MediaQuery(
-          data: data.copyWith(
-            padding: data.padding.copyWith(
-              bottom: data.padding.bottom + reserved,
-            ),
-          ),
-          child: body,
-        );
-      },
-    );
   }
 }
 
@@ -509,7 +516,15 @@ class _LoopPageBottomBarState extends State<_LoopPageBottomBar> {
           left: 0,
           right: 0,
           bottom: 0,
-          child: KeyedSubtree(key: _barKey, child: widget.bar),
+          // The bar sits beside the page's Scaffold, not inside it, so the
+          // only text style above it is WidgetsApp's red fallback — and
+          // LoopGround reads its ink from exactly that. A transparent Material
+          // gives the bar the theme's own text style and icon theme, the same
+          // ground the page's rows stand on.
+          child: Material(
+            type: MaterialType.transparency,
+            child: KeyedSubtree(key: _barKey, child: widget.bar),
+          ),
         ),
       ],
     );
